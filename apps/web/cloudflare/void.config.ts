@@ -19,7 +19,8 @@ export default defineConfig({
     vars: {
       WEB_START_CANDIDATE: 'off',
       WEB_START_NATIVE_LEGAL: 'off',
-      AUTH_COOKIE_DOMAIN: stagingProfile.cookieDomain,
+      WEB_START_NATIVE_SECURITY: 'off',
+      AUTH_COOKIE_PREFIX: stagingProfile.cookiePrefix,
       NEXT_PUBLIC_SUPABASE_URL: stagingProfile.supabaseUrl,
     },
     assets: {

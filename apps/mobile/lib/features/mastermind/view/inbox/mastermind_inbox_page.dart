@@ -1,134 +1,429 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/features/mastermind/iris/data/fixture_iris_relay.dart';
+import 'package:mobile/features/mastermind/iris/iris_flag.dart';
+import 'package:mobile/features/mastermind/iris/view/iris_chat_view.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/decisions_model.dart';
+import 'package:mobile/features/mastermind/presentation/freshness.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
-import 'package:mobile/features/mastermind/presentation/labels.dart';
-import 'package:mobile/features/mastermind/view/home_needs_you_card.dart';
+import 'package:mobile/features/mastermind/presentation/inbox_paging.dart';
+import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
+import 'package:mobile/features/mastermind/presentation/open_asks.dart';
+import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
+import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
+import 'package:mobile/features/mastermind/view/inbox/decisions_body.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_filters.dart';
-import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
+import 'package:mobile/features/mastermind/view/inbox/inbox_list_body.dart';
+import 'package:mobile/features/mastermind/view/inbox/inbox_segment_bar.dart';
+import 'package:mobile/features/mastermind/view/inbox/inbox_undo_all.dart';
+import 'package:mobile/features/mastermind/view/inbox/inbox_what_needs_me.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
 import 'package:mobile/features/mastermind/view/inbox/pending_replies_section.dart';
+import 'package:mobile/features/mastermind/view/inbox/tier_header.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
 import 'package:mobile/features/mastermind/view/mastermind_section.dart';
+import 'package:mobile/features/mastermind/view/widgets/collapsible_search.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// `/mastermind/inbox`: the Needs-you list, grouped by kind.
+/// `/mastermind/inbox`: the asks (Needs you, Resolved) and the Decisions
+/// journal beside them.
+///
+/// [initialSegment] is the `?segment=` the location carries (a Home link opens
+/// Decisions with it). The segment control changes it and [onSegment] reports
+/// each change so the route can keep it in the URL.
+///
+/// Search starts hidden: the navbar search icon reveals it, and it applies to
+/// every ask segment. A pull-down is a refresh and starts the list over from
+/// its first page.
+///
+/// The ask segments show every ask, built lazily a page at a time;
+/// [pageLoader] is the seam for a server-backed page (see [InboxPageLoader]).
 class MastermindInboxPage extends StatefulWidget {
-  const MastermindInboxPage({super.key});
+  const MastermindInboxPage({
+    this.initialSegment,
+    this.onSegment,
+    this.pageLoader,
+    this.initialTier,
+    this.initialSearch,
+    super.key,
+  });
+
+  /// The `?tier=` to scroll to on Needs you; null scrolls nowhere.
+  final InboxTier? initialTier;
+
+  /// The `?q=` the search starts with; null starts empty.
+  final String? initialSearch;
+
+  /// Null opens the default segment (Chat while Iris is on).
+  final InboxSegment? initialSegment;
+  final ValueChanged<InboxSegment>? onSegment;
+  final InboxPageLoader? pageLoader;
 
   @override
   State<MastermindInboxPage> createState() => _MastermindInboxPageState();
 }
 
 class _MastermindInboxPageState extends State<MastermindInboxPage> {
-  final _search = TextEditingController();
-  String _query = '';
+  late final _search = MastermindSearchController(
+    query: widget.initialSearch ?? '',
+  );
+  final _scroll = ScrollController();
+  final Map<InboxTier, GlobalKey> _tierKeys = {
+    for (final tier in InboxTier.values) tier: GlobalKey(),
+  };
+  late String _query = widget.initialSearch ?? '';
+  late InboxTier? _seeking = widget.initialTier;
+
+  /// Whether a long FYI tier shows its rows; a link to FYI opens it.
+  late bool _fyiOpen = widget.initialTier == InboxTier.fyi;
+  bool _seekScheduled = false;
   Product? _product;
+  late InboxSegment _segment = widget.initialSegment ?? defaultInboxSegment;
+  late final InboxPagingController _paging = InboxPagingController(
+    loader: widget.pageLoader,
+  );
+  Product? _decisionProduct;
+  bool? _decisionReversible;
+
+  @override
+  void didUpdateWidget(MastermindInboxPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Another Home link, or the URL a segment change wrote, while this page is
+    // already open.
+    if (oldWidget.initialSegment != widget.initialSegment) {
+      _segment = widget.initialSegment ?? defaultInboxSegment;
+      _paging.reset();
+    }
+    // A link to another tier or search while the page is open; a segment
+    // change drops both from the URL and must not clear what is typed.
+    final tier = widget.initialTier;
+    if (tier != null && tier != oldWidget.initialTier) _jumpTo(tier);
+    final search = widget.initialSearch;
+    if (search != null && search != oldWidget.initialSearch) {
+      _search.text.text = search;
+      _search.reveal();
+      _paging.reset();
+      _query = search;
+    }
+  }
+
+  /// Seek [tier] on the next build, opening FYI if it is collapsed.
+  void _jumpTo(InboxTier tier) {
+    _seeking = tier;
+    _seekScheduled = false;
+    if (tier == InboxTier.fyi) _fyiOpen = true;
+  }
+
+  /// Scrolls to [_seeking]'s heading. The list is lazy, so step down a screen
+  /// at a time until the heading is built, then bring it to the top.
+  void _seekTier(int attempt) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final tier = _seeking;
+      if (!mounted || tier == null) return;
+      final heading = _tierKeys[tier]?.currentContext;
+      if (heading != null) {
+        _seeking = null;
+        unawaited(Scrollable.ensureVisible(heading));
+        return;
+      }
+      if (!_scroll.hasClients || attempt >= 40) {
+        _seeking = null;
+        return;
+      }
+      final position = _scroll.position;
+      _scroll.jumpTo(
+        (position.pixels + position.viewportDimension).clamp(
+          0,
+          position.maxScrollExtent,
+        ),
+      );
+      _seekTier(attempt + 1);
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    mastermindIrisCapability.addListener(_irisChanged);
+  }
+
+  /// The hub turned Iris on or off while the page is open: the segment bar
+  /// follows, and an open Chat falls back to the default segment.
+  void _irisChanged() {
+    if (!mounted) return;
+    setState(() {
+      if (!availableInboxSegments.contains(_segment)) {
+        _segment = defaultInboxSegment;
+      }
+    });
+  }
 
   @override
   void dispose() {
+    mastermindIrisCapability.removeListener(_irisChanged);
     _search.dispose();
+    _scroll.dispose();
+    _paging.dispose();
     super.dispose();
+  }
+
+  void _selectSegment(InboxSegment value) {
+    _paging.reset();
+    setState(() => _segment = value);
+    widget.onSegment?.call(value);
+  }
+
+  void _clearFilters() {
+    _search.collapse();
+    _paging.reset();
+    setState(() {
+      _query = '';
+      _product = null;
+    });
   }
 
   @override
   Widget build(BuildContext context) => MastermindSection(
-    builder: (context, ready, freshness) {
-      var model = MastermindInboxModel.from(
-        ready.snapshot,
-        query: _query,
-        product: _product,
-      );
-      // The chips only exist while two products are present: a filter whose
-      // chip is gone could never be cleared and would strand the list.
-      if (_product != null &&
-          (model.products.length < 2 || !model.products.contains(_product))) {
-        _product = null;
-        model = MastermindInboxModel.from(ready.snapshot, query: _query);
-      }
-      return MastermindRepliesWatcher(
-        child: AppPageScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: MastermindFreshnessStrip(freshness: freshness),
-            ),
-            SliverList.list(
-              children: [
-                const PendingRepliesSection(),
-                if (!model.isEmpty)
-                  InboxFilters(
-                    controller: _search,
-                    products: model.products,
-                    selected: _product,
-                    onQuery: (value) => setState(() => _query = value),
-                    onProduct: (value) => setState(() => _product = value),
+    onRefresh: _paging.reset,
+    builder: (context, ready, freshness) =>
+        BlocBuilder<
+          MastermindAnsweredElsewhereCubit,
+          Map<String, AnsweredElsewhere>
+        >(
+          bloc: MastermindRepliesWatcher.answeredOf(context),
+          builder: (context, lingering) {
+            if (_segment == InboxSegment.chat) {
+              return _chat(context, ready.snapshot, freshness);
+            }
+            final asks = _segment.listsAsks;
+            final model = asks
+                ? _askModel(ready.snapshot, lingering.values)
+                : null;
+            final seeking = _seeking;
+            if (seeking != null && model != null && !_seekScheduled) {
+              if (model.tiers.any((group) => group.tier == seeking)) {
+                _seekScheduled = true;
+                _seekTier(0);
+              } else {
+                _seeking = null;
+              }
+            }
+            final list = AppPageScrollView(
+              controller: _scroll,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: MastermindFreshnessStrip(freshness: freshness),
+                ),
+                SliverList.list(
+                  children: [
+                    if (asks)
+                      MastermindCollapsibleSearch(
+                        controller: _search,
+                        placeholder:
+                            context.l10n.mastermindInboxSearchPlaceholder,
+                        onChanged: (value) {
+                          _paging.reset();
+                          setState(() => _query = value);
+                        },
+                      ),
+                    InboxSegmentBar(
+                      selected: _segment,
+                      onChanged: _selectSegment,
+                    ),
+                    if (model != null) ..._askHeader(model, ready.snapshot),
+                    if (_segment == InboxSegment.decisions)
+                      _decisions(ready.snapshot),
+                  ],
+                ),
+                if (model != null)
+                  InboxListBody(
+                    model: model,
+                    paging: _paging,
+                    onClearFilters: _clearFilters,
+                    tierKeys: _tierKeys,
+                    fyiExpanded: _fyiCollapsible(model) ? _fyiOpen : null,
+                    onToggleFyi: () => setState(() => _fyiOpen = !_fyiOpen),
+                    now: freshness.time.add(freshness.age),
                   ),
-                ..._body(context, model),
               ],
-            ),
-          ],
+            );
+            return MastermindRepliesWatcher(
+              // Keep the navbar action mounted when lazy rows scroll away.
+              child: Column(
+                children: [
+                  Expanded(child: list),
+                  if (asks) _SearchAction(controller: _search),
+                ],
+              ),
+            );
+          },
         ),
-      );
-    },
   );
 
-  List<Widget> _body(BuildContext context, MastermindInboxModel model) {
-    final l10n = context.l10n;
-    return [
-      if (model.isEmpty)
-        AppGroupedSection.spaced(
-          caption: l10n.mastermindNeedsYouTitle,
-          children: [
-            AppGroupedRow(
-              leading: const AppIconTile(icon: AppIcons.check),
-              title: Text(
-                model.security.isEmpty
-                    ? l10n.mastermindNothingNeedsYou
-                    : l10n.mastermindNothingNeedsReply,
-              ),
+  /// Chat: the Iris feed, with the segment bar and "What needs me" above the
+  /// oldest message. The composer lives in the shell dock.
+  Widget _chat(
+    BuildContext context,
+    MastermindSnapshot snapshot,
+    MastermindFreshness freshness,
+  ) => MastermindRepliesWatcher(
+    child: Column(
+      children: [
+        Expanded(
+          child: IrisChatView(
+            relay: context.read<MastermindRuntime>().iris,
+            onEnrol: () =>
+                unawaited(context.push<void>(Routes.mastermindIrisDevices)),
+            writesEnabled: FixtureIrisRelay.buildEnabled
+                ? _fixtureWrites
+                : null,
+            leading: (summary) => [
+              MastermindFreshnessStrip(freshness: freshness),
+              InboxSegmentBar(selected: _segment, onChanged: _selectSegment),
+              InboxWhatNeedsMe(open: openAsks(snapshot), summary: summary),
+            ],
+          ),
+        ),
+        ShellChromeActions(
+          ownerId: 'mastermind-inbox-chat',
+          locations: const {Routes.mastermindInbox},
+          actions: [
+            ShellActionSpec(
+              id: 'mastermind-iris-devices',
+              icon: LucideIcons.smartphone,
+              tooltip: context.l10n.mastermindIrisDevicesAction,
+              onPressed: () =>
+                  unawaited(context.push<void>(Routes.mastermindIrisDevices)),
             ),
           ],
-        )
-      else if (model.hasNoMatches)
-        AppGroupedSection.spaced(
-          children: [
-            AppGroupedRow(
-              leading: const AppIconTile(icon: LucideIcons.searchX),
-              title: Text(l10n.mastermindInboxNoMatches),
-            ),
-          ],
         ),
-      for (final group in model.groups)
-        AppGroupedSection.spaced(
-          caption: _groupTitle(l10n, group.kind),
-          captionTrailing: Text('${group.items.length}'),
-          children: [for (final item in group.items) InboxItemTile(item: item)],
-        ),
-      if (model.security.isNotEmpty)
-        AppGroupedSection.spaced(
-          caption: l10n.mastermindSecurityGroup,
-          children: [
-            for (final item in model.security)
-              AppGroupedRow(
-                leading: const AppIconTile(icon: LucideIcons.shield),
-                title: Text(securityLine(l10n, item)),
-                trailing: AppBadge.outline(
-                  child: Text(MastermindLabels.laneState(l10n, item.state)),
-                ),
-              ),
-          ],
-        ),
-    ];
+      ],
+    ),
+  );
+
+  MastermindInboxModel _askModel(
+    MastermindSnapshot snapshot,
+    Iterable<AnsweredElsewhere> lingering,
+  ) {
+    var model = MastermindInboxModel.from(
+      snapshot,
+      segment: _segment,
+      query: _query,
+      product: _product,
+      answeredElsewhere: lingering,
+    );
+    // The chips only exist while two products are present: a filter whose
+    // chip is gone could never be cleared and would strand the list.
+    if (_product != null &&
+        (model.products.length < 2 || !model.products.contains(_product))) {
+      _product = null;
+      model = MastermindInboxModel.from(
+        snapshot,
+        segment: _segment,
+        query: _query,
+        answeredElsewhere: lingering,
+      );
+    }
+    return model;
   }
 
-  static String _groupTitle(AppLocalizations l10n, ItemKind? kind) =>
-      switch (kind) {
-        ItemKind.decision => l10n.mastermindGroupDecisions,
-        ItemKind.action => l10n.mastermindGroupActions,
-        ItemKind.fyi => l10n.mastermindGroupFyi,
-        null => l10n.mastermindNeedsYouTitle,
-      };
+  List<Widget> _askHeader(
+    MastermindInboxModel model,
+    MastermindSnapshot snapshot,
+  ) => [
+    if (_segment == InboxSegment.needsYou)
+      InboxWhatNeedsMe(
+        open: openAsks(snapshot),
+        tiers: model.tiers,
+        onTier: (tier) => setState(() => _jumpTo(tier)),
+      ),
+    if (_segment != InboxSegment.resolved) ...const [
+      InboxUndoAll(),
+      PendingRepliesSection(),
+    ],
+    if (model.products.length > 1)
+      InboxFilters(
+        products: model.products,
+        selected: _product,
+        onProduct: (value) {
+          _paging.reset();
+          setState(() => _product = value);
+        },
+      ),
+  ];
+
+  static bool _fyiCollapsible(MastermindInboxModel model) => model.tiers.any(
+    (group) =>
+        group.tier == InboxTier.fyi &&
+        group.items.length > inboxFyiCollapseAbove,
+  );
+
+  Widget _decisions(MastermindSnapshot snapshot) {
+    var model = MastermindDecisionsModel.from(
+      snapshot,
+      product: _decisionProduct,
+      reversible: _decisionReversible,
+    );
+    // A chip only exists while it can split the journal: a filter whose chip
+    // is gone could never be cleared and would strand the list.
+    final productGone =
+        _decisionProduct != null &&
+        (model.products.length < 2 ||
+            !model.products.contains(_decisionProduct));
+    final reversibleGone =
+        _decisionReversible != null && !model.hasReversibleChoice;
+    if (productGone || reversibleGone) {
+      if (productGone) _decisionProduct = null;
+      if (reversibleGone) _decisionReversible = null;
+      model = MastermindDecisionsModel.from(
+        snapshot,
+        product: _decisionProduct,
+        reversible: _decisionReversible,
+      );
+    }
+    return DecisionsBody(
+      model: model,
+      product: _decisionProduct,
+      reversible: _decisionReversible,
+      onProduct: (value) => setState(() => _decisionProduct = value),
+      onReversible: (value) => setState(() => _decisionReversible = value),
+    );
+  }
 }
+
+/// The navbar search icon: opens and focuses the field, or clears and
+/// closes it.
+class _SearchAction extends StatelessWidget {
+  const _SearchAction({required this.controller});
+
+  final MastermindSearchController controller;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: controller,
+    builder: (context, _) => ShellChromeActions(
+      ownerId: 'mastermind-inbox',
+      locations: const {Routes.mastermindInbox},
+      actions: [
+        controller.searchActionSpec(
+          id: 'mastermind-inbox-search',
+          tooltip: context.l10n.mastermindInboxSearchAction,
+        ),
+      ],
+    ),
+  );
+}
+
+/// Fixture builds reach no relay, so their synthetic sends stay on.
+final ValueListenable<bool> _fixtureWrites = ValueNotifier(true);

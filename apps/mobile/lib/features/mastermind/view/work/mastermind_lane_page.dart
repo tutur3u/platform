@@ -5,10 +5,13 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/age_text.dart';
+import 'package:mobile/features/mastermind/presentation/hub_field.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
+import 'package:mobile/features/mastermind/threads/threads_flag.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
 import 'package:mobile/features/mastermind/view/mastermind_section.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/features/mastermind/view/work/lane_state_badge.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -63,15 +66,19 @@ class _Gone extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final threads = mastermindThreadsEnabled;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxxl),
       child: AppStateMessage(
-        icon: LucideIcons.briefcase,
+        icon: threads ? LucideIcons.messagesSquare : LucideIcons.briefcase,
         title: wasShown
             ? l10n.mastermindLaneFinishedTitle
             : l10n.mastermindLaneGoneTitle,
-        actionLabel: l10n.mastermindBackToWork,
-        onAction: () => context.go(Routes.mastermindWork),
+        actionLabel: threads
+            ? l10n.mastermindBackToThreads
+            : l10n.mastermindBackToWork,
+        onAction: () =>
+            context.go(threads ? '/mastermind/threads' : Routes.mastermindWork),
       ),
     );
   }
@@ -101,7 +108,7 @@ class _Detail extends StatelessWidget {
           showLeadingBrand: false,
         ),
         if (updated)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             children: [
               AppGroupedRow(
                 leading: const AppIconTile(
@@ -113,11 +120,20 @@ class _Detail extends StatelessWidget {
             ],
           ),
         // The title is the shell's title override above; the body repeats none.
-        AppGroupedSection.spaced(
+        MastermindGroup(
           children: [
-            row(l10n.mastermindLaneState, LaneStateBadge(state: lane.state)),
-            row(l10n.mastermindLaneRole, text(lane.role)),
-            row(l10n.mastermindLaneModel, text(lane.providerModel)),
+            row(
+              l10n.mastermindLaneState,
+              LaneStateBadge(
+                state: lane.state,
+                reason: lane.fields['state']?.reason(l10n),
+              ),
+            ),
+            row(l10n.mastermindLaneRole, text(HubField.text(l10n, lane.role))),
+            row(
+              l10n.mastermindLaneModel,
+              text(HubField.text(l10n, lane.providerModel)),
+            ),
             row(
               l10n.mastermindLaneAge,
               text(

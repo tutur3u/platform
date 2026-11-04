@@ -20,6 +20,10 @@ SELECT ok(has_function_privilege('service_role','public.get_product_feedback_sta
 INSERT INTO auth.users(id,email,email_confirmed_at) VALUES
  ('91600000-0000-4000-8000-000000000001','staff-fixture@tuturuuu.com',now()),
  ('91600000-0000-4000-8000-000000000002','unregistered-fixture@tuturuuu.com',now());
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 INSERT INTO private.infrastructure_employees(user_id,staff_email,managed_name,lifecycle_state)
  VALUES ('91600000-0000-4000-8000-000000000001','staff-fixture@tuturuuu.com','Synthetic staff','active');
 UPDATE auth.users SET raw_app_meta_data='{"employee_onboarding":true}'::jsonb

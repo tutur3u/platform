@@ -288,6 +288,12 @@ const checks = [
     parseOutput: () => 'Only apps/web carries the multi-account vault',
   },
   {
+    name: 'package-release-dependencies',
+    command: 'node',
+    args: ['scripts/ci/package-release-dependency-guard.js'],
+    parseOutput: () => 'Published packages only depend on released packages',
+  },
+  {
     name: 'legacy-api-route-wrappers',
     command: 'node',
     args: ['scripts/generate-web-api-route-wrappers.js', '--check'],

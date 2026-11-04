@@ -34,31 +34,30 @@ const HEAVY_PR_WORKFLOWS = [
   'ai-cloudflare.yaml',
   'api-worker.yaml',
   'apps-cloudflare.yaml',
-  'biome-check.yaml',
   'calendar-cloudflare.yaml',
   'calendar-generation-contract.yaml',
   'cms-cloudflare.yaml',
   'codeql.yml',
   'colab-cloudflare.yaml',
   'connected-mail-accounts-contract.yaml',
+  'contacts-start-candidate.yaml',
   'coordination-cloudflare.yaml',
   'creator-identity-contract.yaml',
   'cron-control-cloudflare.yaml',
   'desktop-beta.yaml',
   'devbox-control-cloudflare.yaml',
   'discord-python-ci.yml',
-  'docs-seo-check.yaml',
   'external-internal-packages.yaml',
   'external-project-storage-analytics-contract.yaml',
   'finance-cloudflare.yaml',
   'forms-cloudflare.yaml',
-  'i18n-check.yaml',
   'inventory-cloudflare.yaml',
   'inventory-offline-contract.yaml',
   'lettin-cloudflare.yaml',
   'mail-calendar-tasks-builds.yaml',
   'mail-cloudflare.yaml',
   'mail-profile-runtime-contract.yaml',
+  'mastermind-cloudflare.yaml',
   'meet-cloudflare.yaml',
   'mobile-build-android.yaml',
   'mobile-build-ios.yaml',
@@ -67,20 +66,26 @@ const HEAVY_PR_WORKFLOWS = [
   'mobile-build-windows.yaml',
   'mobile.yaml',
   'nova-cloudflare.yaml',
+  'ops-hub-cloudflare.yaml',
   'parley-cloudflare.yaml',
+  'pay-cloudflare.yaml',
   'periodic-report-delivery-contract.yaml',
+  'playground-cloudflare.yaml',
   'playground-runtime-acceptance.yaml',
   'programming-app-builds.yaml',
   'programming-database-contract.yaml',
   'report-review-receipts-contract.yaml',
+  'required-account-mfa-contract.yaml',
   'sdk-package-qualification.yaml',
   'security-egress-contract.yaml',
   'shortener-cloudflare.yaml',
   'sso-persistence-contract.yaml',
   'storefront-cloudflare.yaml',
   'supabase-baseline.yaml',
+  'task-board-database-contract.yaml',
   'time-tracker-control-contract.yaml',
   'topic-delivery-foundation-contract.yaml',
+  'tools-cloudflare.yaml',
   'track-cloudflare.yaml',
   'tsrs-shadow.yaml',
   'turbo-cache-cloudflare.yaml',
@@ -88,21 +93,23 @@ const HEAVY_PR_WORKFLOWS = [
   'tutoring-absence-credit-contract.yaml',
   'tutoring-teacher-hours-contract.yaml',
   'type-check.yaml',
+  'web-start-candidate.yaml',
+  'workspace-permission-scope-contract.yaml',
 ];
 
 // Sub-minute, script-only or security checks that stay on for every PR push.
 const ALWAYS_ON_PR_WORKFLOWS = [
-  'branch-name-check.yaml',
-  'check-migration-timestamps.yml',
-  'check-migrations.yml',
-  'codex-plugin.yaml',
-  'mobile-api-mappings.yaml',
   'security-checks.yaml',
   'security-review-classifier.yaml',
 ];
 
-// Always-on admission check: red unless ready-for-ci admitted this event.
-const ADMISSION_PR_WORKFLOWS = ['ci-admitted.yaml'];
+// The mixed entrypoint always reports admission and selects its validation callers.
+const ADMISSION_PR_WORKFLOWS = ['pr-checks.yaml'];
+const REUSABLE_GATED_WORKFLOWS = [
+  'biome-check.yaml',
+  'docs-seo-check.yaml',
+  'i18n-check.yaml',
+];
 
 // Paused runtimes keep their retained policy and are neither gated nor run.
 const PAUSED_PR_WORKFLOWS = [
@@ -181,6 +188,7 @@ function protectedTriggerDigest(file, on) {
 module.exports = {
   labelExpressionToJs,
   ADMISSION_PR_WORKFLOWS,
+  REUSABLE_GATED_WORKFLOWS,
   ALWAYS_ON_PR_WORKFLOWS,
   HEAVY_PR_WORKFLOWS,
   PAUSED_PR_WORKFLOWS,

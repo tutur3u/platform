@@ -22,10 +22,6 @@ class SignUpPage extends StatelessWidget {
     return context.read<AuthCubit>().signInWithApple();
   }
 
-  Future<void> _handleMicrosoftSignIn(BuildContext context) {
-    return context.read<AuthCubit>().signInWithMicrosoft();
-  }
-
   Future<void> _handleGithubSignIn(BuildContext context) {
     return context.read<AuthCubit>().signInWithGithub();
   }
@@ -58,7 +54,6 @@ class SignUpPage extends StatelessWidget {
                 child: AuthSocialButtons(
                   isLoading: state.isLoading,
                   onGooglePressed: () => _handleGoogleSignIn(context),
-                  onMicrosoftPressed: () => _handleMicrosoftSignIn(context),
                   onApplePressed: () => _handleAppleSignIn(context),
                   onGithubPressed: () => _handleGithubSignIn(context),
                 ),

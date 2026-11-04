@@ -237,7 +237,7 @@ select ok(
 
 select ok(
   to_regprocedure(
-    'private.list_ai_studio_consumption_events(uuid,uuid,timestamp with time zone,timestamp with time zone,integer,timestamp with time zone,uuid,text,text,text)'
+    'private.list_ai_studio_consumption_events(uuid,uuid,timestamp with time zone,timestamp with time zone,integer,timestamp with time zone,uuid,text,text,text,text,text)'
   ) is not null,
   'combined AI consumption event RPC exists'
 );
@@ -259,12 +259,12 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'private.list_ai_studio_consumption_events(uuid,uuid,timestamp with time zone,timestamp with time zone,integer,timestamp with time zone,uuid,text,text,text)',
+    'private.list_ai_studio_consumption_events(uuid,uuid,timestamp with time zone,timestamp with time zone,integer,timestamp with time zone,uuid,text,text,text,text,text)',
     'execute'
   )
     and not has_function_privilege(
       'authenticated',
-      'private.list_ai_studio_consumption_events(uuid,uuid,timestamp with time zone,timestamp with time zone,integer,timestamp with time zone,uuid,text,text,text)',
+      'private.list_ai_studio_consumption_events(uuid,uuid,timestamp with time zone,timestamp with time zone,integer,timestamp with time zone,uuid,text,text,text,text,text)',
       'execute'
     ),
   'only service role can list combined AI consumption events'

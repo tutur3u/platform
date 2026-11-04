@@ -2,6 +2,11 @@ import {
   buildDeliveryAssetUrl,
   getExternalProjectAssetRevision,
 } from './asset-delivery-url';
+import {
+  fieldDefinitionValues,
+  type UpsertFieldDefinitionPayload,
+} from './field-definition-values';
+import { assertWorkspaceExternalProjectReference } from './reference-scope';
 
 export {
   buildDeliveryAssetUrl,
@@ -28,7 +33,6 @@ import type {
   ExternalProjectEntryStatus,
   ExternalProjectFieldDefinition,
   ExternalProjectFieldScope,
-  ExternalProjectFieldType,
   ExternalProjectImportReport,
   ExternalProjectLoadingData,
   ExternalProjectRelationDefinition,
@@ -721,7 +725,7 @@ export async function listExternalProjectWorkspaceBindingSummaries(
     throw new Error(auditsError.message);
   }
 
-  const projectById = new Map(
+  const projectById = new Map<string, CanonicalExternalProject>(
     canonicalProjects.map((project) => [project.id, project])
   );
   const secretsByWorkspace = new Map<
@@ -1479,47 +1483,17 @@ export async function deleteWorkspaceExternalProjectCollection(
   return { id: collectionId };
 }
 
-type UpsertFieldDefinitionPayload = {
-  collection_id?: string | null;
-  default_value?: Json | null;
-  description?: string | null;
-  field_scope: ExternalProjectFieldScope;
-  field_type: ExternalProjectFieldType;
-  is_enabled?: boolean;
-  is_required?: boolean;
-  key: string;
-  label?: string | null;
-  options?: string[];
-  sort_order?: number;
-  source?: string;
-  actorId: string | null;
-  workspaceId: string;
-};
-
-function fieldDefinitionValues(payload: UpsertFieldDefinitionPayload) {
-  return {
-    collection_id: payload.collection_id ?? null,
-    default_value: payload.default_value ?? null,
-    description: payload.description ?? null,
-    field_scope: payload.field_scope,
-    field_type: payload.field_type,
-    is_enabled: payload.is_enabled ?? true,
-    is_required: payload.is_required ?? false,
-    key: payload.key,
-    label: payload.label ?? null,
-    options: payload.options ?? [],
-    sort_order: payload.sort_order ?? 0,
-    source: payload.source ?? 'cms',
-    updated_by: payload.actorId,
-    ws_id: payload.workspaceId,
-  };
-}
-
 export async function createWorkspaceExternalProjectFieldDefinition(
   payload: UpsertFieldDefinitionPayload,
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  await assertWorkspaceExternalProjectReference(
+    admin,
+    'collections',
+    payload.collection_id,
+    payload.workspaceId
+  );
   const values = fieldDefinitionValues(payload);
   const { data, error } = await admin
     .from('workspace_external_project_field_definitions')
@@ -1549,6 +1523,12 @@ export async function updateWorkspaceExternalProjectFieldDefinition(
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  await assertWorkspaceExternalProjectReference(
+    admin,
+    'collections',
+    payload.collection_id,
+    payload.workspaceId
+  );
   const { actorId, workspaceId, ...fields } = payload;
   const values: Database['public']['Tables']['workspace_external_project_field_definitions']['Update'] =
     {
@@ -1834,6 +1814,12 @@ export async function createWorkspaceExternalProjectBlock(
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  await assertWorkspaceExternalProjectReference(
+    admin,
+    'entries',
+    payload.entry_id,
+    payload.workspaceId
+  );
   const { actorId, workspaceId, ...values } = payload;
   const { data, error } = await admin
     .from('workspace_external_project_blocks')
@@ -1908,7 +1894,7 @@ export async function deleteWorkspaceExternalProjectBlock(
   }
 
   const storagePaths = Array.from(
-    new Set(
+    new Set<string>(
       (blockAssets ?? [])
         .map((asset) => asset.storage_path)
         .filter((value): value is string => typeof value === 'string')
@@ -2240,7 +2226,7 @@ export async function bulkUpdateWorkspaceExternalProjectEntries(
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
-  const entryIds = Array.from(new Set(payload.entryIds));
+  const entryIds = Array.from(new Set<string>(payload.entryIds));
 
   if (entryIds.length === 0) {
     return [];
@@ -2660,6 +2646,7 @@ export async function runWorkspaceExternalProjectImport(
   }
 
   const fixture = externalProjectAdapterFixtures[binding.adapter];
+  if (!fixture) throw new Error('Unsupported external project adapter');
   const warnings: string[] = [];
   const schemaCollectionBySlug = new Map(
     (fixture.schema?.collections ?? []).map(
@@ -2915,13 +2902,13 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     throw new Error('Workspace binding is incomplete');
   }
 
+  const fixture = externalProjectAdapterFixtures[binding.adapter];
+  if (!fixture) throw new Error('Unsupported external project adapter');
   const profileData =
     binding.canonical_project?.delivery_profile !== null &&
     binding.canonical_project?.delivery_profile !== undefined
       ? asJsonObject(binding.canonical_project.delivery_profile)
-      : asJsonObject(
-          externalProjectAdapterFixtures[binding.adapter].profileData
-        );
+      : asJsonObject(fixture.profileData);
 
   const collections = await listWorkspaceExternalProjectCollections(
     workspaceId,

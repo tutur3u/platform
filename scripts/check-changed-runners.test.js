@@ -255,3 +255,14 @@ for (const { branch, upstream, expected } of [
     }
   });
 }
+
+test('Playwright specs never run as Vitest unit tests', (t) => {
+  const root = fixture(
+    t,
+    'vitest run',
+    "import { test } from '@playwright/test';"
+  );
+  const output = plan(['apps/example/native.test.mjs'], { root });
+  assert.doesNotMatch(output, /vitest:apps\/example/);
+  assert.match(output, /playwright/);
+});

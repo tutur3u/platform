@@ -39,7 +39,7 @@ function installFetchFixture() {
     path: workflowPath,
     head_branch: env.STAGING_BRANCH,
     head_sha: wrapper,
-    event: 'workflow_run',
+    event: env.STAGING_RUN_EVENT || 'workflow_run',
     status: env.STAGING_STATUS,
     conclusion: env.STAGING_RESULT,
     repository,
@@ -80,7 +80,8 @@ function installFetchFixture() {
       const entry = blobs.find(
         (entry) =>
           entry.path === file &&
-          !!entry.legacy === (file === workflowPath && kind === 'old')
+          entry.kind ===
+            (file === workflowPath && kind !== 'unknown' ? kind : 'new')
       );
       const chosen =
         kind === 'unknown' ? { ...entry, sha: 'd'.repeat(40) } : entry;
@@ -102,6 +103,8 @@ function installFetchFixture() {
         },
       ]);
   }
+  // Manual classification verifies immutable source before selected status proof.
+  if (run.event === 'workflow_dispatch') script.push(script.splice(4, 1)[0]);
   script.push(
     [
       `${runRoute}/attempts/1/jobs?per_page=100&page=1`,
@@ -139,6 +142,68 @@ function installFetchFixture() {
     [statusRoute, status],
     [runRoute, run]
   );
+  const laterPush = env.STAGING_LATER_PUSH === 'true';
+  if (env.STAGING_LATER_MANUAL === 'true' || laterPush) {
+    const laterUrl = 'https://github.com/example/platform/actions/runs/202';
+    const later = {
+      ...marker,
+      id: 302,
+      created_at: '2026-01-01T00:02:00Z',
+      payload: { ...marker.payload, runId: '202', runUrl: laterUrl },
+    };
+    const laterRun = {
+      ...run,
+      id: 202,
+      event: laterPush ? 'push' : 'workflow_dispatch',
+      head_sha: target,
+      run_attempt: Number(env.MANUAL_ATTEMPT || 1),
+      status: env.MANUAL_STATUS || 'completed',
+      conclusion: laterPush
+        ? 'failure'
+        : env.MANUAL_RESULT === ''
+          ? null
+          : env.MANUAL_RESULT || 'success',
+      ...(env.MANUAL_WRONG_REPOSITORY === 'true'
+        ? { repository: { ...repository, id: 999 } }
+        : {}),
+    };
+    const replies = new Map(script);
+    replies.set(markersRoute, [later, marker]);
+    replies.set(`${base}/actions/runs/202`, laterRun);
+    replies.set(`${base}/deployments/302`, later);
+    replies.set(`${base}/deployments/302/statuses?per_page=1&page=1`, [
+      { ...status[0], id: 402, log_url: laterUrl },
+    ]);
+    let laterReads = 0;
+    let observed = 0;
+    globalThis.fetch = async (input, options) => {
+      const url = new URL(input);
+      const route = url.pathname + url.search;
+      if (
+        ++observed > 100 ||
+        url.origin !== 'https://api.github.com' ||
+        options?.method !== 'GET' ||
+        options.redirect !== 'error' ||
+        !replies.has(route)
+      ) {
+        fs.appendFileSync(env.REQUEST_LOG, 'FETCH_FIXTURE_UNEXPECTED\n');
+        throw new Error('unexpected fixture request');
+      }
+      fs.appendFileSync(env.REQUEST_LOG, `FETCH ${route}\n`);
+      let reply = replies.get(route);
+      if (
+        route === `${base}/actions/runs/202` &&
+        ++laterReads > 1 &&
+        env.MANUAL_RECLASSIFIED === 'true'
+      )
+        reply = { ...laterRun, event: 'push' };
+      return new Response(JSON.stringify(reply), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+    return;
+  }
   let next = 0;
   globalThis.fetch = async (input, options) => {
     const url = new URL(input);

@@ -155,6 +155,31 @@ describe('short-link documents', () => {
     expect(clicks[0]).toMatchObject({ user_agent: 'UA' });
   });
 
+  it('looks up the exact case-sensitive slug and does not let analytics failure block redirect', async () => {
+    const fixture = setup();
+    const findBySlug = vi.fn(
+      async (slug: string) => rows.find((row) => row.id === slugs[slug]) ?? null
+    );
+    const recordClick = vi.fn(async () => {
+      throw new Error('analytics unavailable');
+    });
+    fixture.deps.store = () => ({
+      findBySlug,
+      findById: async (id: string) => rows.find((row) => row.id === id) ?? null,
+      recordClick,
+    });
+    const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const response = await fixture.call(`${origin}/My-Alias_1`);
+    expect(findBySlug).toHaveBeenCalledExactlyOnceWith('My-Alias_1');
+    expect(recordClick).toHaveBeenCalledOnce();
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://example.com/landing?utm=a&utm=b'
+    );
+    expect(logError).toHaveBeenCalled();
+    logError.mockRestore();
+  });
+
   it('renders not-found, invalid and password pages through Start', async () => {
     const { call, clicks, pages } = setup();
     for (const slug of ['missing', 'broken', 'locked', 'my-alias_1'])

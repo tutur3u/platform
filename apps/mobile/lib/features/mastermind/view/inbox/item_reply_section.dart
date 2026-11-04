@@ -3,12 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/ask_card_source.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
-import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
+import 'package:mobile/features/mastermind/view/inbox/reply_choice.dart';
 import 'package:mobile/features/mastermind/view/inbox/reply_composer.dart';
 import 'package:mobile/features/mastermind/view/inbox/reply_status_panel.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_list_row.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The reply half of the detail page. What it shows follows the hub:
@@ -17,9 +20,12 @@ import 'package:mobile/l10n/l10n.dart';
 /// * replies on: the composer (option tiles and free text);
 /// * replies off, or not known: the options read-only and "Reply on your Mac".
 class ItemReplySection extends StatelessWidget {
-  const ItemReplySection({required this.item, super.key});
+  const ItemReplySection({required this.item, required this.choice, super.key});
 
   final NeedsYou item;
+
+  /// The selection and words the sticky action bar sends.
+  final ReplyChoice choice;
 
   @override
   Widget build(BuildContext context) {
@@ -28,19 +34,21 @@ class ItemReplySection extends StatelessWidget {
       bloc: replies,
       builder: (context, state) {
         final entry = state.entryFor(item.id, item.versionHash);
-        if (entry != null) {
+        final pending = state.pendingOptionFor(item.id, item.versionHash);
+        if (entry != null && pending == null) {
           return ReplyEntryPanel(
             entry: entry,
             status: state.statusFor(item.id),
             replies: replies,
           );
         }
+        if (isRiskyAsk(item)) return _RiskyComingSoon(item: item);
         if (state.canReply) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ReplyIssueBanner(issue: state.statusFor(item.id).issue),
-              ReplyComposer(item: item, replies: replies),
+              ReplyComposer(item: item, replies: replies, choice: choice),
             ],
           );
         }
@@ -50,6 +58,52 @@ class ItemReplySection extends StatelessWidget {
           onRetry: () => replies.loadCapabilities(force: true),
         );
       },
+    );
+  }
+}
+
+/// A risky ask is answered only with a device-key-signed write, which is not
+/// enabled yet: the options stay read-only and nothing is sent.
+class _RiskyComingSoon extends StatelessWidget {
+  const _RiskyComingSoon({required this.item});
+
+  final NeedsYou item;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final options = selectableOptions(item);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (options.isNotEmpty)
+          MastermindGroup(
+            caption: l10n.mastermindReplyOptionsTitle,
+            dividerInset: AppLayout.rowHorizontalPadding,
+            children: [
+              for (final (index, option) in options)
+                MastermindListRow(
+                  title: option,
+                  subtitle: item.optionRecommended(index)
+                      ? l10n.mastermindRecommended
+                      : null,
+                ),
+            ],
+          ),
+        MastermindGroup(
+          children: [
+            AppGroupedRow(
+              key: const ValueKey('risky-ask-coming-soon'),
+              leading: const AppIconTile(
+                icon: LucideIcons.fingerprint,
+                tone: AppTone.warning,
+              ),
+              title: Text(l10n.mastermindRiskyComingSoon),
+              subtitle: Text(l10n.mastermindRiskyComingSoonHint),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -73,23 +127,20 @@ class _ReadOnlyOptions extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (options.isNotEmpty)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             caption: l10n.mastermindReplyOptionsTitle,
+            dividerInset: AppLayout.rowHorizontalPadding,
             children: [
-              for (final (_, option) in options)
-                AppGroupedRow(
-                  title: Wrap(
-                    children: [
-                      OptionChip(
-                        option: option,
-                        recommended: option == item.recommendedOption,
-                      ),
-                    ],
-                  ),
+              for (final (index, option) in options)
+                MastermindListRow(
+                  title: option,
+                  subtitle: item.optionRecommended(index)
+                      ? l10n.mastermindRecommended
+                      : null,
                 ),
             ],
           ),
-        AppGroupedSection.spaced(
+        MastermindGroup(
           children: [
             switch (capability) {
               ReplyCapability.unknown ||

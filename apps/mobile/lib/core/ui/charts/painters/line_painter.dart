@@ -5,6 +5,7 @@ import 'package:mobile/core/ui/charts/chart_gaps.dart';
 import 'package:mobile/core/ui/charts/chart_markers.dart';
 import 'package:mobile/core/ui/charts/chart_palette.dart';
 import 'package:mobile/core/ui/charts/chart_patterns.dart';
+import 'package:mobile/core/ui/charts/chart_time_axis.dart';
 import 'package:mobile/core/ui/charts/chart_value_axis.dart';
 import 'package:mobile/core/ui/charts/painters/chart_canvas.dart';
 
@@ -19,6 +20,7 @@ class LinePainter extends ChartPainter implements ChartBucketGeometry {
     this.selectedSeries = 0,
     this.axes = true,
     this.textScaler = TextScaler.noScaling,
+    this.timeLabel,
   });
   final List<ChartSeries> series;
   final AppChartPalette palette;
@@ -30,12 +32,16 @@ class LinePainter extends ChartPainter implements ChartBucketGeometry {
   final bool axes;
   final TextScaler textScaler;
 
+  /// Formats the x-axis ticks; null keeps the default labels.
+  final ChartTimeLabeler? timeLabel;
+
   ChartCanvas chartCanvas(Size size) => ChartCanvas(
     size,
     palette,
     axis: axis,
     axes: axes,
     textScaler: textScaler,
+    timeLabel: timeLabel,
   );
 
   @override
@@ -75,6 +81,13 @@ class LinePainter extends ChartPainter implements ChartBucketGeometry {
       final path = Path();
       if (band.t != null) {
         final x = c.x(band.t!, times.first, times.last);
+        if (band.end case final end?) {
+          final right = c.x(end, times.first, times.last);
+          canvas.drawRect(
+            Rect.fromLTRB(x, c.plot.top, right, c.plot.bottom),
+            Paint()..color = palette.neutral.withValues(alpha: 0.08),
+          );
+        }
         path
           ..moveTo(x, c.plot.top)
           ..lineTo(x, c.plot.bottom);

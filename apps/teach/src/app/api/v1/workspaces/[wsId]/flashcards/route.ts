@@ -2,6 +2,7 @@ import { requireEducationWorkspaceAccess } from '@tuturuuu/education-core/educat
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { requireWorkspaceModules } from '@/lib/quiz-module-access';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -124,6 +125,16 @@ export const POST = withSessionAuth(
     }
 
     const { moduleId, ...payload } = parsedBody.data;
+
+    if (moduleId != null) {
+      const moduleFailure = await requireWorkspaceModules(
+        access.sbAdmin,
+        access.normalizedWsId,
+        [moduleId]
+      );
+      if (moduleFailure) return moduleFailure;
+    }
+
     const { data, error } = await context.supabase
       .from('workspace_flashcards')
       .insert({
@@ -150,6 +161,14 @@ export const POST = withSessionAuth(
         });
       if (linkError) {
         console.error('Failed to link flashcard module', linkError);
+        const { error: cleanupError } = await context.supabase
+          .from('workspace_flashcards')
+          .delete()
+          .eq('id', data.id)
+          .eq('ws_id', access.normalizedWsId);
+        if (cleanupError) {
+          console.error('Failed to remove unlinked flashcard', cleanupError);
+        }
         return NextResponse.json(
           { message: 'Error linking workspace flashcard to course module' },
           { status: 500 }

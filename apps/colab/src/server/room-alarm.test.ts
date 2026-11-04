@@ -57,7 +57,13 @@ function fixture(mode: Room['mode'] = 'open') {
   const object = instance();
   const room = createRoom(
     'expiry-fixture',
-    { id: 'host', email: 'host@tuturuuu.com', name: 'Host', expires: deadline },
+    {
+      id: 'host',
+      email: 'host@tuturuuu.com',
+      staffVerified: true,
+      name: 'Host',
+      expires: deadline,
+    },
     {
       title: 'Fixture',
       startsAt: null,

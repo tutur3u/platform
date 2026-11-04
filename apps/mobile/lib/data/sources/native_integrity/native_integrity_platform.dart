@@ -4,7 +4,7 @@ import 'package:app_attest/app_attest.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobile/data/sources/device_secure_storage.dart';
 import 'package:mobile/data/sources/native_integrity/native_integrity_turnstile.dart';
 
 enum IntegrityPlatformKind { apple, android, other }
@@ -22,7 +22,7 @@ abstract interface class NativeIntegrityPlatform {
 
 class DeviceIntegrityPlatform implements NativeIntegrityPlatform {
   static const _channel = MethodChannel('mobile/native_integrity');
-  static const _storage = FlutterSecureStorage();
+  static final DeviceSecureStorage _storage = deviceSecureStorage;
   final _keyScopes = <String, String>{};
   static String? _preparedProject;
   static Future<void>? _preparing;

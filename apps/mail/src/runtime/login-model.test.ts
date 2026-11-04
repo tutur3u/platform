@@ -20,10 +20,15 @@ vi.mock('../constants/common', () => ({
 import LoginPage from '../app/[locale]/(auth)/login/page';
 import { withMailRequest } from './request-context';
 
-function login(params: Record<string, string>) {
+function login(
+  params: Record<string, string>,
+  url = 'https://mail.tuturuuu.com/login',
+  appBase = ''
+) {
   return withMailRequest(
     {
-      request: new Request('https://mail.tuturuuu.com/login'),
+      request: new Request(url),
+      appBase,
       responseHeaders: new Headers(),
       waitUntil: () => {},
     },
@@ -45,6 +50,19 @@ describe('native canonical Mail SSO model', () => {
     await expect(
       login({ next: 'https://attacker.example' })
     ).rejects.toMatchObject({ options: { href: destination.toString() } });
+  });
+  it('keeps mounted central sign-in returns on the serving host and rejects foreign next URLs', async () => {
+    const target = new URL('/login', 'https://tuturuuu.com');
+    const back = new URL('/mail/verify-token', 'https://tuturuuu.com');
+    back.searchParams.set('nextUrl', '/personal');
+    target.searchParams.set('returnUrl', back.toString());
+    await expect(
+      login(
+        { next: 'https://attacker.example' },
+        'https://tuturuuu.com/mail/login',
+        '/mail'
+      )
+    ).rejects.toMatchObject({ options: { href: target.toString() } });
   });
   it('requires web-session proof with an app claim and honors forced refresh', async () => {
     mocks.claims.mockReturnValue({ sub: 'actor' });

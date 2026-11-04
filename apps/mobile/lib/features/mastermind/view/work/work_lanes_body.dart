@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
 import 'package:mobile/features/mastermind/view/home_needs_you_card.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
 import 'package:mobile/features/mastermind/view/work/lane_tile.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -28,7 +29,7 @@ class WorkLanesBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (model.isEmpty)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             caption: l10n.mastermindLanesLabel,
             children: [
               AppGroupedRow(
@@ -38,7 +39,7 @@ class WorkLanesBody extends StatelessWidget {
             ],
           )
         else if (model.hasNoMatches)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             children: [
               AppGroupedRow(
                 leading: const AppIconTile(icon: LucideIcons.searchX),
@@ -52,7 +53,7 @@ class WorkLanesBody extends StatelessWidget {
             ],
           ),
         for (final group in model.groups)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             caption: toBeginningOfSentenceCase(
               MastermindLabels.laneState(l10n, group.state),
               l10n.localeName,
@@ -76,15 +77,15 @@ class WorkSecurityGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return AppGroupedSection.spaced(
+    return MastermindGroup(
       caption: l10n.mastermindSecurityGroup,
       children: [
         for (final item in items)
           AppGroupedRow(
             leading: const AppIconTile(icon: LucideIcons.shield),
             title: Text(securityLine(l10n, item)),
-            trailing: AppBadge.outline(
-              child: Text(MastermindLabels.laneState(l10n, item.state)),
+            trailing: MastermindStatusChip(
+              label: MastermindLabels.laneState(l10n, item.state),
             ),
           ),
       ],

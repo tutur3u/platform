@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
+
 /// Synthetic values from the public schema, never from a local snapshot.
 final class MastermindSnapshotBuilder {
   MastermindSnapshotBuilder.defaults({this.seed = 23});
@@ -102,7 +104,13 @@ final class MastermindSnapshotBuilder {
     // JSON whitespace approaches the cap without inventing invalid records.
     return Uint8List.fromList(
       nearCap
-          ? [...encoded, ...List<int>.filled(599999 - encoded.length, 32)]
+          ? [
+              ...encoded,
+              ...List<int>.filled(
+                mastermindSnapshotMaxBytes - 1 - encoded.length,
+                32,
+              ),
+            ]
           : encoded,
     );
   }

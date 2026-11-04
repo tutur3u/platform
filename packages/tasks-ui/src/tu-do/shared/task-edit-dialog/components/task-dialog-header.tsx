@@ -329,8 +329,16 @@ export function TaskDialogHeader({
       ? getTicketIdentifier(ticketPrefix, displayNumber)
       : null;
 
+  // The side panel is narrow at any viewport, so its actions wrap under the title.
+  const isPanel = presentation === 'panel';
+
   return (
-    <div className="flex items-center justify-between border-b px-4 py-2 md:px-8">
+    <div
+      className={cn(
+        'flex items-center justify-between border-b px-4 py-2',
+        isPanel ? 'flex-wrap gap-y-1' : 'md:px-8'
+      )}
+    >
       <div className="flex min-w-0 items-center gap-2">
         <div
           className={cn(
@@ -366,7 +374,12 @@ export function TaskDialogHeader({
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1 md:gap-2">
+      <div
+        className={cn(
+          'flex items-center gap-1 md:gap-2',
+          isPanel && 'ml-auto flex-wrap justify-end'
+        )}
+      >
         {/* Collaboration Sync Status */}
         {collaborationMode && realtimeEnabled && isOpen && !isCreateMode && (
           <Tooltip>

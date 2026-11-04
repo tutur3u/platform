@@ -13,8 +13,10 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
@@ -22,6 +24,7 @@ import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { MailActorProvider } from '@/components/mail-actor-provider';
 import { DEFAULT_MAIL_FOLDER, getMailFolderHref } from './mail-folders';
+import { MailSourceProvider } from './mail-source';
 import { MailWorkspace } from './mail-workspace';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
@@ -41,9 +44,16 @@ export default async function Layout({ children, params }: LayoutProps) {
   const user = await getSatelliteAppSessionUser('mail');
 
   if (!user?.id) redirect('/login');
+  const isStaff = isVerifiedTuturuuuStaffSession(
+    user &&
+      (await getVerifiedAuthUser(
+        await createAdminClient({ noCookie: true }),
+        user.id
+      ))
+  );
   const workspace = await getWorkspace(id, { useAdmin: true, user });
 
-  if (!workspace?.personal && !isExactTuturuuuDotComEmail(user.email)) {
+  if (!workspace?.personal && !isStaff) {
     redirect('/not-available');
   }
 
@@ -80,51 +90,50 @@ export default async function Layout({ children, params }: LayoutProps) {
   );
 
   return (
-    <SidebarProvider
-      initialBehavior={sidebarBehavior}
-      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
-    >
-      <Structure
-        actions={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <NavbarActions userId={user.id} />
-          </Suspense>
-        }
-        defaultCollapsed={defaultCollapsed}
-        links={await getNavigationLinks({ personalOrWsId: workspaceSlug })}
-        personalOrWsId={workspaceSlug}
-        notificationPopover={<NotificationPopover userId={user.id} />}
-        userPopover={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <UserNav hideMetadata />
-          </Suspense>
-        }
-        workspace={workspace}
-        wsId={wsId}
+    <MailSourceProvider connectedByDefault={!isStaff}>
+      <SidebarProvider
+        initialBehavior={sidebarBehavior}
+        initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
       >
-        <RealtimeLogProvider wsId={wsId}>
-          <div data-workspace-slug={workspaceSlug}>
-            <MailActorProvider actorId={user.id}>
-              <MailWorkspace
-                workspaceId={workspaceSlug}
-                connectedByDefault={!isExactTuturuuuDotComEmail(user.email)}
-              >
-                {children}
-              </MailWorkspace>
-            </MailActorProvider>
-          </div>
-        </RealtimeLogProvider>
-      </Structure>
-    </SidebarProvider>
+        <Structure
+          actions={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+              }
+            >
+              <NavbarActions userId={user.id} />
+            </Suspense>
+          }
+          defaultCollapsed={defaultCollapsed}
+          links={await getNavigationLinks({ personalOrWsId: workspaceSlug })}
+          personalOrWsId={workspaceSlug}
+          notificationPopover={<NotificationPopover userId={user.id} />}
+          userPopover={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+              }
+            >
+              <UserNav hideMetadata />
+            </Suspense>
+          }
+          workspace={workspace}
+          wsId={wsId}
+        >
+          <RealtimeLogProvider wsId={wsId}>
+            <div data-workspace-slug={workspaceSlug}>
+              <MailActorProvider actorId={user.id}>
+                <MailWorkspace workspaceId={workspaceSlug}>
+                  {children}
+                </MailWorkspace>
+              </MailActorProvider>
+            </div>
+          </RealtimeLogProvider>
+        </Structure>
+      </SidebarProvider>
+    </MailSourceProvider>
   );
 }

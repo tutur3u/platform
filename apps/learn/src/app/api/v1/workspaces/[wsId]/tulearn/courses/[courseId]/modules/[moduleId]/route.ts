@@ -459,11 +459,7 @@ export const POST = withSessionAuth<Params>(
 );
 
 export const DELETE = withSessionAuth<Params>(
-  async (
-    request,
-    { supabase, user },
-    { courseId: _courseId, moduleId, wsId }
-  ) => {
+  async (request, { supabase, user }, { courseId, moduleId, wsId }) => {
     try {
       const subject = await resolveTulearnSubject({
         requestSupabase: supabase,
@@ -481,13 +477,20 @@ export const DELETE = withSessionAuth<Params>(
 
       const sbAdmin = await createAdminClient();
 
-      const { data: module, error: moduleErr } = await sbAdmin
-        .from('workspace_course_modules')
-        .select('quiz_deadline')
-        .eq('id', moduleId)
-        .maybeSingle();
-
-      if (moduleErr) throw moduleErr;
+      const module = await getLearnerModuleDetail({
+        courseId,
+        db: sbAdmin,
+        moduleId,
+        studentPlatformUserId: subject.studentPlatformUserId,
+        studentWorkspaceUserId: subject.studentWorkspaceUserId,
+        wsId: subject.wsId,
+      });
+      if (!module) {
+        return NextResponse.json(
+          { message: 'Module not found' },
+          { status: 404 }
+        );
+      }
       if (
         module?.quiz_deadline &&
         new Date() > new Date(module.quiz_deadline)

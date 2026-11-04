@@ -59,27 +59,6 @@ class AuthGoogleButton extends StatelessWidget {
   }
 }
 
-class AuthMicrosoftButton extends StatelessWidget {
-  const AuthMicrosoftButton({
-    required this.isLoading,
-    required this.onPressed,
-    super.key,
-  });
-
-  final bool isLoading;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return AuthSocialButton(
-      label: context.l10n.authContinueWithMicrosoft,
-      logoAssetPath: 'assets/logos/microsoft.svg',
-      isLoading: isLoading,
-      onPressed: onPressed,
-    );
-  }
-}
-
 class AuthAppleButton extends StatelessWidget {
   const AuthAppleButton({
     required this.isLoading,
@@ -132,7 +111,6 @@ class AuthSocialButtons extends StatelessWidget {
   const AuthSocialButtons({
     required this.isLoading,
     required this.onGooglePressed,
-    required this.onMicrosoftPressed,
     required this.onApplePressed,
     required this.onGithubPressed,
     super.key,
@@ -140,7 +118,6 @@ class AuthSocialButtons extends StatelessWidget {
 
   final bool isLoading;
   final VoidCallback? onGooglePressed;
-  final VoidCallback? onMicrosoftPressed;
   final VoidCallback? onApplePressed;
   final VoidCallback? onGithubPressed;
 
@@ -150,11 +127,6 @@ class AuthSocialButtons extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AuthGoogleButton(isLoading: isLoading, onPressed: onGooglePressed),
-        const shad.Gap(12),
-        AuthMicrosoftButton(
-          isLoading: isLoading,
-          onPressed: onMicrosoftPressed,
-        ),
         const shad.Gap(12),
         AuthAppleButton(isLoading: isLoading, onPressed: onApplePressed),
         const shad.Gap(12),

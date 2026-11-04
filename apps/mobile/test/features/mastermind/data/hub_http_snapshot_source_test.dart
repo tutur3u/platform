@@ -229,7 +229,7 @@ void main() {
         final stream = () async* {
           while (chunks < 100) {
             chunks++;
-            yield Uint8List(10000);
+            yield Uint8List(100000);
           }
         }();
         return http.StreamedResponse(

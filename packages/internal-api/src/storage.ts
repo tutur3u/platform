@@ -743,26 +743,10 @@ export async function getWorkspaceStorageAnalytics(
   );
 }
 
-export async function exportWorkspaceStorageLinks(
-  workspaceId: string,
-  payload: {
-    path: string;
-  },
-  clientOptions?: InternalApiClientOptions
-) {
-  const client = getInternalApiClient(clientOptions);
-  return client.json<WorkspaceStorageExportLinksResponse>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/storage/export-links`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-      cache: 'no-store',
-    }
-  );
-}
+export {
+  exportWorkspaceStorageLinks,
+  revokeWorkspaceStorageExportLinks,
+} from './storage-export-links';
 
 export async function deleteWorkspaceStorageObject(
   workspaceId: string,

@@ -6,19 +6,29 @@ import type {
   WorkspaceDefaultPermissionsRole,
 } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
+import { canManageCreatorGrantRole } from '@/lib/workspace-creator-grant-permissions';
 import { getWorkspaceMembers } from '@/lib/workspace-members';
-import { normalizeRoleMembers } from '@/lib/workspace-role-members';
 import {
   hasRootExternalProjectsAdminPermission,
   requireWorkspaceExternalProjectAccess,
   requireWorkspaceExternalProjectMemberBootstrapAccess,
 } from './access';
 import { attachExternalProjectInvitationRoles } from './team-invitations';
+import { requireExternalProjectRoleInWorkspace } from './team-role-members';
+import {
+  type WorkspaceRolePayload,
+  writableTeamRolePermissions,
+} from './team-role-payload';
 
 export {
   inviteExternalProjectTeamMembers,
   updateExternalProjectTeamInvitationRoles,
 } from './team-invitations';
+export {
+  addExternalProjectRoleMembers,
+  listExternalProjectRoleMembers,
+  removeExternalProjectRoleMember,
+} from './team-role-members';
 
 type WorkspaceRolePermissionValue =
   Database['public']['Enums']['workspace_role_permission'];
@@ -26,14 +36,6 @@ type WorkspaceExternalProjectAccess = Extract<
   Awaited<ReturnType<typeof requireWorkspaceExternalProjectAccess>>,
   { ok: true }
 >;
-type WorkspaceRolePayload = {
-  name: string;
-  permissions: Array<{
-    enabled: boolean;
-    id: string;
-  }>;
-};
-
 const DEFAULT_MEMBER_TYPES: WorkspaceDefaultPermissionMemberType[] = [
   'MEMBER',
   'GUEST',
@@ -315,6 +317,10 @@ export async function createExternalProjectTeamRole({
     );
   }
 
+  const permissions = await writableTeamRolePermissions(
+    access,
+    payload.permissions
+  );
   const { data: role, error: roleError } = await access.admin
     .from('workspace_roles')
     .insert({
@@ -338,7 +344,7 @@ export async function createExternalProjectTeamRole({
   const { error: permissionsError } = await access.admin
     .from('workspace_role_permissions')
     .insert(
-      payload.permissions.map(
+      permissions.map(
         (permission): TablesInsert<'workspace_role_permissions'> => ({
           enabled: permission.enabled,
           permission: permission.id as WorkspaceRolePermissionValue,
@@ -389,6 +395,24 @@ export async function updateExternalProjectTeamRole({
     return roleAccess.response;
   }
 
+  if (
+    payload.name !== roleAccess.role.name &&
+    !(await canManageCreatorGrantRole(access.admin, {
+      roleId,
+      userId: access.user.id,
+      wsId: access.normalizedWorkspaceId,
+    }))
+  ) {
+    return NextResponse.json(
+      { message: 'Only the workspace creator can rename this role' },
+      { status: 403 }
+    );
+  }
+
+  const permissions = await writableTeamRolePermissions(
+    access,
+    payload.permissions
+  );
   const roleQuery = access.admin
     .from('workspace_roles')
     .update({ name: payload.name } satisfies TablesUpdate<'workspace_roles'>)
@@ -398,7 +422,7 @@ export async function updateExternalProjectTeamRole({
   const permissionsQuery = access.admin
     .from('workspace_role_permissions')
     .upsert(
-      payload.permissions.map(
+      permissions.map(
         (permission): TablesInsert<'workspace_role_permissions'> => ({
           enabled: permission.enabled,
           permission: permission.id as WorkspaceRolePermissionValue,
@@ -505,10 +529,14 @@ export async function updateExternalProjectTeamDefaultPermissions({
     );
   }
 
+  const permissions = await writableTeamRolePermissions(
+    access,
+    payload.permissions
+  );
   const { error } = await access.admin
     .from('workspace_default_permissions')
     .upsert(
-      payload.permissions.map(
+      permissions.map(
         (permission): TablesInsert<'workspace_default_permissions'> => ({
           enabled: permission.enabled,
           member_type: memberType,
@@ -550,168 +578,6 @@ export async function parseExternalProjectTeamMemberType(request: Request) {
   }
 
   return { memberType, ok: true as const };
-}
-
-async function requireExternalProjectRoleInWorkspace({
-  access,
-  roleId,
-}: {
-  access: ExternalProjectTeamAccess;
-  roleId: string;
-}) {
-  const { data: role, error } = await access.admin
-    .from('workspace_roles')
-    .select('id')
-    .eq('id', roleId)
-    .eq('ws_id', access.normalizedWorkspaceId)
-    .single();
-
-  if (error || !role) {
-    return {
-      ok: false as const,
-      response: NextResponse.json(
-        { message: 'Access level not found' },
-        { status: 404 }
-      ),
-    };
-  }
-
-  return { ok: true as const };
-}
-
-export async function addExternalProjectRoleMembers({
-  access,
-  request,
-  roleId,
-}: {
-  access: ExternalProjectTeamAccess;
-  request: Request;
-  roleId: string;
-}) {
-  const data = (await request.json()) as { memberIds?: string[] };
-
-  if (!data?.memberIds) {
-    return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
-  }
-
-  const roleAccess = await requireExternalProjectRoleInWorkspace({
-    access,
-    roleId,
-  });
-
-  if (!roleAccess.ok) {
-    return roleAccess.response;
-  }
-
-  const { error } = await access.admin.from('workspace_role_members').insert(
-    data.memberIds.map((memberId) => ({
-      role_id: roleId,
-      user_id: memberId,
-    }))
-  );
-
-  if (error) {
-    console.error('Error adding CMS team role members', {
-      error,
-      roleId,
-      wsId: access.normalizedWorkspaceId,
-    });
-    return NextResponse.json(
-      { message: 'Error adding people to access level' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success' });
-}
-
-export async function listExternalProjectRoleMembers({
-  access,
-  roleId,
-}: {
-  access: ExternalProjectTeamAccess;
-  roleId: string;
-}) {
-  const roleAccess = await requireExternalProjectRoleInWorkspace({
-    access,
-    roleId,
-  });
-
-  if (!roleAccess.ok) {
-    return roleAccess.response;
-  }
-
-  const { data, error, count } = await access.admin
-    .from('workspace_role_members')
-    .select(
-      'user_id, users:user_id(id, display_name, avatar_url, user_private_details(email))',
-      { count: 'exact' }
-    )
-    .eq('role_id', roleId);
-
-  if (error) {
-    console.error('Error fetching CMS team role members', {
-      error,
-      roleId,
-      wsId: access.normalizedWorkspaceId,
-    });
-    return NextResponse.json(
-      { message: 'Error loading access level people' },
-      { status: 500 }
-    );
-  }
-
-  const members = normalizeRoleMembers(
-    data as Parameters<typeof normalizeRoleMembers>[0]
-  ).map((member) => ({
-    avatar_url: member.avatar_url,
-    display_name: member.display_name,
-    email: member.email,
-    full_name: member.full_name ?? null,
-    id: member.id,
-  }));
-
-  return NextResponse.json({ count: count ?? members.length, data: members });
-}
-
-export async function removeExternalProjectRoleMember({
-  access,
-  roleId,
-  userId,
-}: {
-  access: ExternalProjectTeamAccess;
-  roleId: string;
-  userId: string;
-}) {
-  const roleAccess = await requireExternalProjectRoleInWorkspace({
-    access,
-    roleId,
-  });
-
-  if (!roleAccess.ok) {
-    return roleAccess.response;
-  }
-
-  const { error } = await access.admin
-    .from('workspace_role_members')
-    .delete()
-    .eq('role_id', roleId)
-    .eq('user_id', userId);
-
-  if (error) {
-    console.error('Error removing CMS team role member', {
-      error,
-      roleId,
-      userId,
-      wsId: access.normalizedWorkspaceId,
-    });
-    return NextResponse.json(
-      { message: 'Error removing access level person' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success' });
 }
 
 export function createRouteErrorResponse(message: string, error: unknown) {

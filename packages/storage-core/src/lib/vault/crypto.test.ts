@@ -12,6 +12,8 @@ import {
 import { workspaceKeyWrapper } from './workspace-key-wrapper';
 
 describe('portable vault envelopes', () => {
+  // The first wrapper use derives its key with production scrypt parameters;
+  // on shared CI runners that one-time derivation can exceed Vitest's default.
   it('uses the existing workspace master-key wrapper', async () => {
     const wrapper = workspaceKeyWrapper('synthetic-vault-test-master-key');
     const { dataKey, encryptedDataKey } = await createEncryptedDataKey(wrapper);
@@ -27,7 +29,7 @@ describe('portable vault envelopes', () => {
     ).rejects.toThrow('authentication failed');
     dataKey.fill(0);
     restored.fill(0);
-  });
+  }, 30_000);
 
   it('decrypts the pre-extraction mobile scalar and file wire formats', () => {
     const key = randomBytes(32);

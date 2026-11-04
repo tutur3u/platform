@@ -352,17 +352,21 @@ class _InventoryManagePageState extends State<InventoryManagePage>
               }
 
               if (data == null) {
-                return AppPageBody(
-                  child: Center(
-                    child: FinanceEmptyState(
-                      icon: Icons.error_outline,
-                      title: l10n.commonSomethingWentWrong,
-                      body:
-                          snapshot.error?.toString() ??
-                          l10n.inventoryManageLabel,
-                      action: shad.SecondaryButton(
-                        onPressed: () => unawaited(_reload(forceRefresh: true)),
-                        child: Text(l10n.commonRetry),
+                return NovaRefreshIndicator.state(
+                  onRefresh: () => _reload(forceRefresh: true),
+                  child: AppPageBody(
+                    child: Center(
+                      child: FinanceEmptyState(
+                        icon: Icons.error_outline,
+                        title: l10n.commonSomethingWentWrong,
+                        body:
+                            snapshot.error?.toString() ??
+                            l10n.inventoryManageLabel,
+                        action: shad.SecondaryButton(
+                          onPressed: () =>
+                              unawaited(_reload(forceRefresh: true)),
+                          child: Text(l10n.commonRetry),
+                        ),
                       ),
                     ),
                   ),
@@ -379,6 +383,7 @@ class _InventoryManagePageState extends State<InventoryManagePage>
                   NovaRefreshIndicator(
                     onRefresh: () => _reload(forceRefresh: true),
                     child: AppPageListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       children: [
                         if (snapshot.hasError || _limitedData)
                           InventoryReadWarning(

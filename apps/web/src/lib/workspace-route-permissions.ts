@@ -1,4 +1,5 @@
 import type { PermissionId } from '@tuturuuu/types';
+import { isAdminImpliedPermission } from '@tuturuuu/utils/creator-grant-permissions';
 
 const EDUCATION_ROUTE_PERMISSIONS = [
   'manage_users',
@@ -192,7 +193,10 @@ export function hasRequiredWorkspaceRoutePermission({
     return false;
   }
 
-  if (grantedPermissions.includes('admin')) {
+  if (
+    grantedPermissions.includes('admin') &&
+    requiredPermissions.some(isAdminImpliedPermission)
+  ) {
     return true;
   }
 

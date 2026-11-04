@@ -2,6 +2,8 @@
 import { getLegalDocument } from '@tuturuuu/legal';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { toLegalPageConfig } from '../src/components/legal/canonical-legal-config';
+import { LegalMarkdown } from '../src/components/legal/legal-markdown';
 import type { Fetcher } from './fallback';
 import { createWebCandidateHandler } from './handler';
 import { stagingProfile } from './profile';
@@ -12,17 +14,33 @@ const env = {
   WEB_START_NATIVE_LEGAL: 'on',
   NEXT_FALLBACK_ORIGIN: 'https://tuturuuu-next-fixture.vercel.app',
   NEXT_PUBLIC_SUPABASE_URL: stagingProfile.supabaseUrl,
-  AUTH_COOKIE_DOMAIN: stagingProfile.cookieDomain,
-  TRUSTED_PROXY_ORIGIN_SECRET: 'disposable-test-origin-proof-key-123456',
+  AUTH_COOKIE_PREFIX: stagingProfile.cookiePrefix,
+  VERCEL_AUTOMATION_BYPASS_SECRET: 'test-bypass-secret-00000000000000000000',
+  CF_ACCESS_TEAM_DOMAIN: 'fixture-team.cloudflareaccess.com',
+  CF_ACCESS_AUD: 'fixture-aud',
 };
-const paths = [
-  '/privacy',
-  '/terms',
-  '/en/privacy',
-  '/en/terms',
-  '/vi/privacy',
-  '/vi/terms',
-];
+const pages = [
+  { kind: 'privacy', slug: 'privacy', seoKey: 'privacy' },
+  { kind: 'terms', slug: 'terms', seoKey: 'terms' },
+  { kind: 'acceptable-use', slug: 'acceptable-use', seoKey: 'acceptable_use' },
+  { kind: 'dpa', slug: 'legal/dpa', seoKey: 'legal_dpa' },
+  { kind: 'sla', slug: 'legal/sla', seoKey: 'legal_sla' },
+  {
+    kind: 'subprocessors',
+    slug: 'legal/subprocessors',
+    seoKey: 'legal_subprocessors',
+  },
+  {
+    kind: 'community-guidelines',
+    slug: 'community-guidelines',
+    seoKey: 'community_guidelines',
+  },
+] as const;
+const paths = pages.flatMap(({ slug }) => [
+  `/${slug}`,
+  `/en/${slug}`,
+  `/vi/${slug}`,
+]);
 function setup() {
   const start = vi.fn(async () => new Response('<main>native legal</main>'));
   const fetcher = vi.fn<Fetcher>(
@@ -36,7 +54,11 @@ function setup() {
   return {
     start,
     fetcher,
-    handler: createWebCandidateHandler({ start, fetcher }),
+    handler: createWebCandidateHandler({
+      start,
+      fetcher,
+      verifyAccess: async () => true,
+    }),
   };
 }
 function request(path: string, init?: RequestInit) {
@@ -55,7 +77,7 @@ describe('native legal slice dispatch and rollback', () => {
       const { start, fetcher, handler } = setup();
       for (const method of ['GET', 'HEAD']) {
         const response = await handler(
-          request(path + '?tag=1&tag=2', { method }),
+          request(`${path}?tag=1&tag=2`, { method }),
           env
         );
         expect(response.status).toBe(200);
@@ -75,27 +97,25 @@ describe('native legal slice dispatch and rollback', () => {
     }
   );
   it.each([undefined, '', 'off', 'true', 'unknown'])(
-    'rolls back to attested Next for %s',
+    'disables every public route to a static 404 for %s',
     async (flag) => {
       const { start, fetcher, handler } = setup();
-      const response = await handler(request('/vi/privacy?keep=%2f'), {
-        ...env,
-        WEB_START_NATIVE_LEGAL: flag,
-      });
-      expect(await response.text()).toBe('Next');
-      expect(response.headers.get('x-tuturuuu-web-renderer')).toBe(
-        'Next-fallback'
-      );
+      for (const path of paths) {
+        const response = await handler(request(`${path}?keep=%2f`), {
+          ...env,
+          WEB_START_NATIVE_LEGAL: flag,
+        });
+        expect(await response.text()).toContain('Not migrated yet');
+        expect(response.headers.get('x-tuturuuu-web-renderer')).toBe(
+          'not-migrated'
+        );
+        expect(response.status).toBe(404);
+      }
       expect(start).not.toHaveBeenCalled();
-      expect(fetcher).toHaveBeenCalledOnce();
-      const forwarded = fetcher.mock.calls[0]?.[0];
-      expect(forwarded).toBeInstanceOf(Request);
-      expect(forwarded instanceof Request ? forwarded.url : undefined).toBe(
-        env.NEXT_FALLBACK_ORIGIN + '/vi/privacy?keep=%2f'
-      );
+      expect(fetcher).not.toHaveBeenCalled();
     }
   );
-  it('keeps APIs, satellite routes, unknown locales, RSC and writes on Next', async () => {
+  it('returns 404 for APIs, satellite routes, unknown locales, RSC and writes', async () => {
     const { start, fetcher, handler } = setup();
     const requests = [
       request('/api/v1/legal'),
@@ -112,9 +132,11 @@ describe('native legal slice dispatch and rollback', () => {
       ].map((name) => request('/privacy', { headers: { [name]: '1' } })),
     ];
     for (const input of requests)
-      expect(await (await handler(input, env)).text()).toBe('Next');
+      expect(await (await handler(input, env)).text()).toContain(
+        'Not migrated yet'
+      );
     expect(start).not.toHaveBeenCalled();
-    expect(fetcher).toHaveBeenCalledTimes(requests.length);
+    expect(fetcher).not.toHaveBeenCalled();
   });
   it('does not bypass candidate admission, including signed-in requests', async () => {
     const { start, fetcher, handler } = setup();
@@ -141,9 +163,10 @@ describe('native legal slice dispatch and rollback', () => {
 
 describe('framework adapter renders canonical legal content', () => {
   for (const locale of ['en', 'vi'] as const) {
-    for (const kind of ['privacy', 'terms'] as const) {
-      it(`${locale}/${kind}: retains every canonical section, summary and review notice`, () => {
+    for (const { kind } of pages) {
+      it(`${locale}/${kind}: retains every canonical section and summary with the live footer`, () => {
         const document = getLegalDocument(kind, locale);
+        expect(toLegalPageConfig(document).footerText).toBe(document.footer);
         const page = new DOMParser().parseFromString(
           renderToStaticMarkup(<LegalPage kind={kind} locale={locale} />),
           'text/html'
@@ -163,14 +186,40 @@ describe('framework adapter renders canonical legal content', () => {
         expect(page.querySelector('footer')?.textContent).toContain(
           document.footer
         );
-        for (const section of document.sections) {
-          const text = page.body.textContent ?? '';
-          // The renderer must keep paragraph content and meaningful link labels.
-          expect(text).toContain(
-            section.content
-              .split('\n')[0]
-              ?.replace(/\*\*/gu, '')
-              .replace(/\[([^\]]+)\]\([^)]+\)/gu, '$1')
+        expect(
+          page.querySelector('section[aria-labelledby="summary"] p')
+            ?.textContent
+        ).toBe(document.summaryDescription);
+        expect(
+          [...page.querySelectorAll('dl > div')].map((row) => [
+            row.querySelector('dt')?.textContent,
+            row.querySelector('dd')?.textContent,
+          ])
+        ).toEqual(document.summaryRows.map((row) => [row.topic, row.summary]));
+        for (const [index, section] of document.sections.entries()) {
+          const region = page.querySelector(
+            `section[aria-labelledby="section-${index + 1}"]`
+          );
+          expect(region?.querySelector('h2')?.textContent).toBe(section.title);
+          const canonicalContent =
+            locale === 'vi'
+              ? section.content.replace(
+                  /\]\((\/(?!\/|en\/|vi\/)[^)]+)\)/gu,
+                  (_match, path) => `](/vi${path})`
+                )
+              : section.content;
+          const canonical = new DOMParser().parseFromString(
+            renderToStaticMarkup(
+              <LegalMarkdown>{canonicalContent}</LegalMarkdown>
+            ),
+            'text/html'
+          );
+          expect(
+            [...(region?.children ?? [])]
+              .slice(1)
+              .map((element) => element.outerHTML)
+          ).toEqual(
+            [...canonical.body.children].map((element) => element.outerHTML)
           );
         }
         for (const link of page.querySelectorAll('a[href^="#"]')) {

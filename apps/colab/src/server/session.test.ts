@@ -25,7 +25,11 @@ const user = {
   id: account.id,
   email: account.email,
   email_confirmed_at: '2026-01-01',
-  user_metadata: { email: 'fake@tuturuuu.com', full_name: 'Verified name' },
+  user_metadata: {
+    email: 'fake@tuturuuu.com',
+    staffVerified: true,
+    full_name: 'Verified name',
+  },
 };
 afterEach(() => vi.unstubAllGlobals());
 it('renews near-expiry sessions only from the verified central identity and forwards rotated auth cookies', async () => {

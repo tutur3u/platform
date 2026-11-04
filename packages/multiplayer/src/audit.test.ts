@@ -7,6 +7,7 @@ it('projects audit events using current team visibility and admin permissions', 
     id: 'host',
     name: 'Host',
     email: 'host@tuturuuu.com',
+    staffVerified: true,
     expires: now + 3600000,
   };
   const alice = {

@@ -1,33 +1,39 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { connection, NextResponse } from 'next/server';
+import { authorizeInfrastructureMigrationExport } from '../migration-export-auth';
 
 export async function GET(req: Request) {
   await connection();
 
-  const permissions = await getPermissions({
-    request: req,
-    wsId: ROOT_WORKSPACE_ID,
-  });
-
-  if (!permissions?.containsPermission('view_infrastructure')) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-  }
-
-  const sbAdmin = await createAdminClient();
-
   const { searchParams } = new URL(req.url);
-  const wsId = searchParams.get('ws_id');
-  const limit = searchParams.get('limit') || '1000';
-  const offset = searchParams.get('offset') || '0';
+  const rawWsId = searchParams.get('ws_id');
+  const limit = String(
+    Math.min(
+      1000,
+      Math.max(
+        1,
+        Number.parseInt(searchParams.get('limit') || '1000', 10) || 1000
+      )
+    )
+  );
+  const offset = String(
+    Math.max(0, Number.parseInt(searchParams.get('offset') || '0', 10) || 0)
+  );
 
-  if (!wsId) {
+  if (!rawWsId) {
     return NextResponse.json(
       { message: 'Missing ws_id parameter' },
       { status: 400 }
     );
   }
+
+  const authorization = await authorizeInfrastructureMigrationExport(
+    req,
+    rawWsId
+  );
+  if (!authorization.ok) return authorization.response;
+  const wsId = authorization.value.wsId;
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   const { data, error, count } = await sbAdmin
     .schema('private')

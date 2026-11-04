@@ -628,7 +628,7 @@ export async function callAiChatRoute({
       creditSource,
       id: chatId,
       isMiraMode: miraMode,
-      messages,
+      messages: messages.filter((message) => message.role !== 'system'),
       model,
       observabilityContext,
       persistenceRequestId,
@@ -645,6 +645,10 @@ export async function callAiChatRoute({
 
   return createAiChatPost({
     serverAPIKeyFallback: true,
+    serverSystemInstructions: messages
+      .filter((message) => message.role === 'system')
+      .flatMap((message) => message.parts.map((part) => part.text))
+      .join('\n\n'),
     resolveAuth: async () => ({
       ok: true,
       supabase,

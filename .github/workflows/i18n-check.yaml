@@ -1,27 +1,16 @@
 name: i18n Check
 
 on:
+  workflow_call:
   push:
     branches:
       - main
       - production
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, labeled]
-    # Docs and agent-instruction PRs carry no locale bundles; skip the runner.
-    paths-ignore:
-      - '**/*.md'
-      - '**/*.mdx'
-      - 'apps/docs/**'
-      - 'plans/**'
-      - 'plugins/**'
-      - '.agents/**'
-      - '.claude/**'
-      - '.codex/**'
   workflow_dispatch:
 
 concurrency:
   # PR merge refs are unique across forks and differ from manual branch runs.
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  group: i18n-check-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 permissions:
@@ -42,7 +31,7 @@ jobs:
     needs: [check-ci]
     if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     outputs:
@@ -50,10 +39,23 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          clean: true
+          persist-credentials: ${{ runner.environment != 'self-hosted' }}
+      - name: Isolate persistent runner state
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/pr-runner-hygiene
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: runner.environment == 'self-hosted'
+        with:
+          node-version: 24
+          package-manager-cache: ${{ runner.environment != 'self-hosted' }}
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
+          cache-enabled: ${{ runner.environment != 'self-hosted' }}
 
       - name: Check if translations are sorted
         id: sort-check
@@ -79,7 +81,7 @@ jobs:
     needs: [check-ci]
     if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     outputs:
@@ -88,13 +90,28 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          clean: true
+          persist-credentials: ${{ runner.environment != 'self-hosted' }}
+      - name: Isolate persistent runner state
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/pr-runner-hygiene
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: runner.environment == 'self-hosted'
+        with:
+          node-version: 24
+          package-manager-cache: ${{ runner.environment != 'self-hosted' }}
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
+          cache-enabled: ${{ runner.environment != 'self-hosted' }}
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+        env:
+          BUN_INSTALL_FLAGS: ${{ runner.environment == 'self-hosted' && '--ignore-scripts' || '' }}
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile $BUN_INSTALL_FLAGS
 
       - name: Run i18n-check
         id: i18n-check
@@ -133,7 +150,7 @@ jobs:
     needs: [check-ci]
     if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     outputs:
@@ -143,10 +160,18 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          clean: true
+          persist-credentials: ${{ runner.environment != 'self-hosted' }}
+      - name: Isolate persistent runner state
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/pr-runner-hygiene
+
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
+          package-manager-cache: ${{ runner.environment != 'self-hosted' }}
 
       - name: Run key parity check
         id: parity-check
@@ -178,7 +203,7 @@ jobs:
     needs: [check-ci]
     if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     outputs:
@@ -186,15 +211,24 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          clean: true
+          persist-credentials: ${{ runner.environment != 'self-hosted' }}
+      - name: Isolate persistent runner state
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/pr-runner-hygiene
+
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
+          package-manager-cache: ${{ runner.environment != 'self-hosted' }}
 
       - name: Setup Bun for rendered translation tracing
         uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
+          cache-enabled: ${{ runner.environment != 'self-hosted' }}
 
       - name: Run namespace check
         id: namespace-check

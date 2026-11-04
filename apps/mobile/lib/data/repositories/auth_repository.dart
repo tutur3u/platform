@@ -380,15 +380,6 @@ class AuthRepository {
     return await _launchBrowserGoogleSignIn();
   }
 
-  Future<AuthActionResult> signInWithMicrosoft() {
-    return _launchBrowserOAuthSignIn(
-      provider: OAuthProvider.azure,
-      queryParams: const {},
-      scopes: 'email',
-      errorCode: AuthErrorCode.microsoftBrowserLaunchFailed,
-    );
-  }
-
   Future<AuthActionResult> signInWithApple() async {
     if (!_shouldTryNativeAppleSignIn()) {
       return const AuthActionResult.failure(

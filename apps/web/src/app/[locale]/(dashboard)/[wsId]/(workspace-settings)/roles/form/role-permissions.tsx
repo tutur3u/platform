@@ -10,6 +10,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { FormField, FormItem } from '@tuturuuu/ui/form';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
+import { isAdminImpliedPermission } from '@tuturuuu/utils/creator-grant-permissions';
+import { isExplicitGrantPermission } from '@tuturuuu/utils/explicit-grant-permissions';
 import { cn } from '@tuturuuu/utils/format';
 import { permissionGroups } from '@tuturuuu/utils/permissions';
 import { useTranslations } from 'next-intl';
@@ -42,6 +44,12 @@ export default function RoleFormPermissionsSection({
 
   // Check if admin permission is enabled
   const isAdminEnabled = form.watch('permissions.admin') === true;
+  // Admin never implies a creator-grant (manage_subscription) or an
+  // explicit-grant (manage_mastermind) permission.
+  const grantedViaAdmin = (permissionId: string) =>
+    isAdminEnabled &&
+    isAdminImpliedPermission(permissionId) &&
+    !isExplicitGrantPermission(permissionId);
 
   const totalPermissions = groups.reduce(
     (acc, group) => acc + group.permissions.length,
@@ -280,35 +288,37 @@ export default function RoleFormPermissionsSection({
                               <div
                                 className={cn(
                                   'rounded-lg border p-3 transition-colors sm:p-4',
-                                  isAdminEnabled && permission.id !== 'admin'
+                                  grantedViaAdmin(permission.id)
                                     ? 'border-dynamic-green/30 bg-dynamic-green/10 opacity-75'
                                     : field.value
                                       ? 'border-dynamic-green/20 bg-dynamic-green/5'
                                       : 'bg-muted/30'
                                 )}
                               >
-                                {isAdminEnabled &&
-                                  permission.id !== 'admin' && (
-                                    <div className="mb-2 flex items-center gap-1.5 text-dynamic-green text-xs">
-                                      <Lock className="h-3 w-3" />
-                                      <span>
-                                        {t('ws-roles.granted_via_admin')}
-                                      </span>
-                                    </div>
-                                  )}
+                                {grantedViaAdmin(permission.id) && (
+                                  <div className="mb-2 flex items-center gap-1.5 text-dynamic-green text-xs">
+                                    <Lock className="h-3 w-3" />
+                                    <span>
+                                      {t('ws-roles.granted_via_admin')}
+                                    </span>
+                                  </div>
+                                )}
                                 <RolePermission
                                   icon={permission.icon}
                                   title={permission.title}
                                   description={permission.description}
-                                  value={isAdminEnabled ? true : field.value}
+                                  value={
+                                    grantedViaAdmin(permission.id)
+                                      ? true
+                                      : field.value
+                                  }
                                   onChange={(value) => {
                                     field.onChange(value);
                                     form.trigger('permissions');
                                   }}
                                   disabled={
                                     permission?.disabled ||
-                                    (isAdminEnabled &&
-                                      permission.id !== 'admin')
+                                    grantedViaAdmin(permission.id)
                                   }
                                 />
                               </div>

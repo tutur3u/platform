@@ -132,11 +132,10 @@ export function isAuthenticatedCloudflareOrigin(
     secret.length < MIN_ORIGIN_SECRET_LENGTH
   )
     return false;
-  const presented = readHeader(headers, CLOUDFLARE_ORIGIN_AUTH_HEADER);
+  const presented = readHeader(headers, CLOUDFLARE_ORIGIN_AUTH_HEADER) ?? '';
   return (
-    presented !== null &&
-    (verifyOriginClientIpProof({ proof: presented, secret }) !== null ||
-      constantTimeEquals(presented, secret))
+    verifyOriginClientIpProof({ proof: presented, secret }) !== null ||
+    constantTimeEquals(presented, secret)
   );
 }
 

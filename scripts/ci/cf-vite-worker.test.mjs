@@ -150,10 +150,20 @@ for (const mode of ['source', 'build-output']) {
 
   test(`${mode} restores environment after Vite import failure`, async (t) => {
     const { root } = fixture(t);
+    const vite = join(root, 'node_modules/vite');
+    mkdirSync(vite, { recursive: true });
+    writeFileSync(
+      join(vite, 'package.json'),
+      JSON.stringify({ type: 'module', main: 'index.js' })
+    );
+    writeFileSync(
+      join(vite, 'index.js'),
+      "throw new Error('fixture Vite import failed');"
+    );
     const before = { ...process.env };
     await assert.rejects(
       startCfViteWorker({ root, mode, secrets: FIXTURE_SECRETS }),
-      (error) => error.code === 'MODULE_NOT_FOUND' && /vite/.test(error.message)
+      /fixture Vite import failed/
     );
     assert.deepEqual({ ...process.env }, before);
   });

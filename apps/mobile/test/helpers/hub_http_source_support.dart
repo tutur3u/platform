@@ -10,12 +10,14 @@ HubHttpSnapshotSource hubSource(
   FakeHub hub,
   FakeTokens tokens, {
   Duration timeout = const Duration(seconds: 5),
+  List<String>? diagnostics,
 }) => HubHttpSnapshotSource(
   baseUrl: hubBase,
   tokens: tokens,
   client: hub.client,
   timeout: timeout,
   clock: () => DateTime.utc(2026, 10, 28, 7),
+  diagnostics: diagnostics?.add,
 );
 
 SnapshotUnavailableKind snapshotKind(SnapshotFetch fetch) =>

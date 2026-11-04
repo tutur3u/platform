@@ -61,7 +61,8 @@ export async function loadTutoringPlanData(
   current: () => boolean
 ) {
   const teachers = await completeTutoringPages(
-    (page) => listTutoringTeachers(wsId, { page, pageSize: 100 }),
+    (page) =>
+      listTutoringTeachers(wsId, { page, pageSize: 100, tutorsOnly: false }),
     current
   );
   const sessions = await completeTutoringPages(

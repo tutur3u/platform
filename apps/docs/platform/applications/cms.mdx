@@ -2,6 +2,7 @@
 title: 'CMS'
 description: 'Dedicated Tuturuuu CMS app for site editing, preview, publishing, media, and team access.'
 updatedAt: '2026-08-10'
+audience: users
 ---
 
 ## Overview
@@ -56,6 +57,32 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - CMS Games is disabled by default for every workspace. Enable it from the CMS settings dialog, which writes `ENABLE_CMS_GAMES=true` to workspace configs and reveals the `/{wsId}/games` sidebar route.
 - Only platform admins can open `/internal/projects`.
 - Workspace member and role management lives on `/{wsId}/members`. Read paths resolve through CMS workspace access so editors with CMS access can load people, invites, roles, member defaults, and guest defaults without requiring direct workspace settings-route access. Write paths still respect member and role management permissions.
+
+### Studio enablement and canonical projects
+
+Product decision: enabling External Project Studio for a workspace and
+creating or changing `canonical_external_projects` rows are root platform-admin
+actions.
+
+- **Scope:** the root linking console, the root admin external-project routes,
+  and `POST /api/v1/workspaces/{wsId}/external-projects/setup`.
+- **Default:** a workspace does not have the studio until a root
+  external-project admin (`manage_external_projects` or
+  `manage_workspace_roles` in the root workspace) binds it. Every binding a root
+  admin creates through setup writes the same
+  `workspace_external_project_binding_audits` row as the linking console.
+- **Workspace managers:** creators, admins, and holders of workspace-level
+  `manage_external_projects` manage content, collections, and sync inside a
+  studio that is already enabled. They cannot run setup, enable the studio for
+  their own workspace, or change shared canonical project metadata; setup
+  returns `403` for them, including through CMS sessions and app tokens.
+- **Linked apps:** a linked app authenticating with its app credentials may call
+  setup only for the studio it is already bound to. Setup then refreshes that
+  workspace's field definitions and template only; it never creates a binding
+  or creates or alters a canonical project.
+- **Regression coverage:**
+  `apps/web/src/lib/external-projects/studio-setup.test.ts` and
+  `apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.test.ts`.
 
 ## API Ownership
 
@@ -150,7 +177,7 @@ before application dispatch or network access. Apex stays held until the
 shared-session decision and auth guard are admitted; the same artifact can
 support a mount after that separate review. This policy is covered by
 `apps/cms/src/runtime/root-host-policy.test.ts` and the emitted Worker gate.
-Hosted staging uses `cms-staging.tuturuuu.com`; `workers.dev` hosts are not admitted.
+Hosted staging uses `<app>.tutur3u.com`; `workers.dev` hosts are not admitted.
 Every response is noindex, nofollow and nosnippet. Non-assets force private,
 no-store and vary by Cookie, Authorization and Accept-Language; static cache
 exemptions require GET/HEAD, status 200 and non-HTML without cookies.
@@ -171,3 +198,11 @@ behavior. Page loaders and API handlers still validate the actor and CMS
 permissions. Machine-key APIs retain their ambient-cookie removal and route
 authentication. Mounted-session and redirect regressions are covered by
 `apps/cms/src/proxy.test.ts`.
+
+## Machine credential binding
+
+Machine synchronization credentials must match the enabled workspace binding.
+Built-in projects match their registered adapter id; custom projects match the
+canonical project id. The shared `custom` adapter name grants no project access.
+This follows the same identity rule as app-token handoff. Coverage:
+`apps/web/src/lib/external-projects/app-credentials.test.ts`.

@@ -3,7 +3,11 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { NextResponse } from 'next/server';
+import { authorizeCrawlerRead } from '../access-control';
 
 export async function GET(req: Request) {
   try {
@@ -17,9 +21,20 @@ export async function GET(req: Request) {
 
     const { user } = await resolveAuthenticatedSessionUser(supabase);
 
-    if (!user?.email?.endsWith('@tuturuuu.com')) {
-      throw new Error('Unauthorized');
+    if (
+      !isVerifiedTuturuuuStaffSession(
+        user &&
+          (await getVerifiedAuthUser(
+            await createAdminClient({ noCookie: true }),
+            user.id
+          ))
+      )
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+
+    const denied = await authorizeCrawlerRead(req, ROOT_WORKSPACE_ID);
+    if (denied) return denied;
 
     const sbAdmin = await createAdminClient();
 

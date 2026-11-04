@@ -10,16 +10,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/workspace.dart';
-import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_pending_overlay.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/inventory/view/inventory_products_page.dart';
-import 'package:mobile/features/inventory/widgets/inventory_product_card.dart';
+import 'package:mobile/features/inventory/widgets/inventory_item_row.dart';
 import 'package:mobile/features/inventory/widgets/inventory_sales_periods.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -49,8 +49,6 @@ class _Inventory extends InventoryRepository {
     count: query == 'missing' ? 0 : 1,
   );
 }
-
-class _Finance extends Mock implements FinanceRepository {}
 
 class _Permissions extends Mock implements WorkspacePermissionsRepository {}
 
@@ -155,7 +153,8 @@ void main() {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                InventoryProductCard(
+                InventoryItemRow(
+                  stockVisible: true,
                   product: InventoryProduct(
                     id: product.id,
                     name: product.name,
@@ -192,7 +191,6 @@ void main() {
                       ),
                     ],
                   ),
-                  currency: 'USD',
                 ),
               ],
             ),
@@ -202,17 +200,17 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
-      expect(find.text('Low stock • Minimum amount: 5'), findsOneWidget);
+      expect(find.byIcon(LucideIcons.triangleAlert), findsOneWidget);
+      expect(find.text('Low stock • Minimum amount: 5'), findsNothing);
       expect(
         find.bySemanticsLabel(
-          RegExp('Booth 2 • Bag • 1 available.*Low stock • Minimum amount: 5'),
+          RegExp('Booth 2 · Bag · 1 available · Low stock · Minimum amount: 5'),
         ),
         findsOneWidget,
       );
       expect(
         find.bySemanticsLabel(
-          RegExp('Booth 3 • Session • Unlimited available'),
+          RegExp('Booth 3 · Session · Unlimited available'),
         ),
         findsOneWidget,
       );
@@ -277,7 +275,7 @@ void main() {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  InventoryProductCard(product: overlaid, currency: 'USD'),
+                  InventoryItemRow(product: overlaid, stockVisible: true),
                 ],
               ),
             ),
@@ -286,22 +284,22 @@ void main() {
           ),
         );
         await tester.pump();
-        expect(find.text('Booth 1 • Cup'), findsOneWidget);
+        expect(find.text('Booth 1 · Cup'), findsOneWidget);
         expect(
-          find.text('Warehouse new-warehouse • Unit new-unit'),
+          find.text('Warehouse new-warehouse · Unit new-unit'),
           findsOneWidget,
         );
-        expect(find.text('Low stock • Minimum amount: 2.5'), findsOneWidget);
+        expect(find.text('1.5'), findsOneWidget);
         expect(
           find.bySemanticsLabel(
-            RegExp('Booth 1 • Cup • 1.5 available.*Minimum amount: 2.5'),
+            RegExp('Booth 1 · Cup · 1.5 available.*Minimum amount: 2.5'),
           ),
           findsOneWidget,
         );
         expect(
           find.bySemanticsLabel(
             RegExp(
-              'Warehouse new-warehouse • Unit new-unit • Unlimited available',
+              'Warehouse new-warehouse · Unit new-unit · Unlimited available',
             ),
           ),
           findsOneWidget,
@@ -327,9 +325,9 @@ void main() {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                InventoryProductCard(
+                InventoryItemRow(
                   product: _product(rows: 4),
-                  currency: 'USD',
+                  stockVisible: true,
                 ),
                 const SizedBox(height: 12),
                 InventorySalesPeriodBar(
@@ -358,10 +356,13 @@ void main() {
       );
       await tester.pump();
       expect(tester.takeException(), isNull);
-      expect(find.text('Synthetic owner • Coffee'), findsOneWidget);
-      expect(find.textContaining('Unlimited available'), findsNWidgets(4));
+      expect(find.text('Coffee'), findsOneWidget);
+      expect(find.text('Synthetic owner • Coffee'), findsNothing);
+      expect(find.text('Unlimited'), findsNWidgets(3));
+      expect(find.text('1 more location'), findsOneWidget);
       expect(find.text('Low stock'), findsNothing);
-      expect(find.text('Booth 4 • Bag'), findsOneWidget);
+      expect(find.text('Booth 3 · Bag'), findsOneWidget);
+      expect(find.text('Booth 4 · Bag'), findsNothing);
       await tester.scrollUntilVisible(
         find.text('New period').hitTestable(),
         250,
@@ -430,9 +431,9 @@ void main() {
                   body: 'No low-stock products right now.',
                 ),
                 const SizedBox(height: 16),
-                InventoryProductCard(
+                InventoryItemRow(
                   product: _product(amount: 8),
-                  currency: 'USD',
+                  stockVisible: true,
                 ),
               ],
             ),
@@ -463,7 +464,6 @@ void main() {
       _viewport(tester, const Size(390, 844));
       final workspace = _Workspace();
       final inventory = _Inventory();
-      final finance = _Finance();
       final permissions = _Permissions();
       final auth = _Auth();
       final shell = ShellChromeActionsCubit();
@@ -480,8 +480,10 @@ void main() {
       );
       when(() => permissions.peekPermissions(any())).thenReturn(null);
       when(() => permissions.readCachedPermissions(any())).thenAnswer(
-        (_) async =>
-            const WorkspacePermissions(permissions: {}, isCreator: false),
+        (_) async => const WorkspacePermissions(
+          permissions: {'view_inventory_stock'},
+          isCreator: false,
+        ),
       );
       addTearDown(() async {
         await auth.close();
@@ -500,15 +502,13 @@ void main() {
         const Stream<WorkspaceState>.empty(),
         initialState: state,
       );
-      when(() => finance.peekWorkspaceDefaultCurrency(any())).thenReturn('USD');
-      when(
-        () => finance.getWorkspaceDefaultCurrency(any()),
-      ).thenAnswer((_) async => 'USD');
       when(
         () => permissions.getPermissions(wsId: any(named: 'wsId')),
       ).thenAnswer(
-        (_) async =>
-            const WorkspacePermissions(permissions: {}, isCreator: false),
+        (_) async => const WorkspacePermissions(
+          permissions: {'view_inventory_stock'},
+          isCreator: false,
+        ),
       );
       final key = GlobalKey();
       await tester.pumpApp(
@@ -521,7 +521,6 @@ void main() {
           child: _scaled(
             InventoryProductsPage(
               inventoryRepository: inventory,
-              financeRepository: finance,
               permissionsRepository: permissions,
             ),
             1,
@@ -531,8 +530,9 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Festival coffee'), findsOneWidget);
-      expect(find.textContaining('Unlimited available'), findsOneWidget);
+      expect(find.text('Unlimited'), findsOneWidget);
       expect(find.text('Create product'), findsNothing);
+      expect(find.text('Low stock in loaded products'), findsNothing);
       expect(tester.takeException(), isNull);
       await _capture(tester, key, 'compact-products-mounted');
       shell.state

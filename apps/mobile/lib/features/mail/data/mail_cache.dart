@@ -249,6 +249,20 @@ class MailCache {
     return write;
   }
 
+  /// Fetch without caching until the complete preparation passes its budget.
+  Future<Map<String, dynamic>> fetchForPreparation(
+    String wsId,
+    String path,
+    Future<Map<String, dynamic>> Function() fetch,
+  ) async {
+    try {
+      return await fetch();
+    } on ApiException catch (error) {
+      await _denyRead(wsId, path, error, mailboxSettings: false);
+      rethrow;
+    }
+  }
+
   Future<void> _denyRead(
     String wsId,
     String path,

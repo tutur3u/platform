@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, Mail, Route, Tag, Users } from '@tuturuuu/icons';
+import { Bot, Inbox, Mail, Route, Tag, Users } from '@tuturuuu/icons';
 import {
   getMailCatchAllConfiguration,
   getMailMailboxSettings,
@@ -12,7 +12,6 @@ import {
   updateMailMailboxSettings,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
-import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -35,7 +34,9 @@ import { MailGroupSettings } from './mail-group-settings';
 import { MailLabelSettings } from './mail-label-settings';
 import { MailMemberSettings } from './mail-member-settings';
 import { MailReadingSettings } from './mail-reading-settings';
+import { MailSettingsShell } from './mail-settings-shell';
 import { MailSignaturePreview } from './mail-signature-preview';
+import { MailSourceSettings } from './mail-source';
 
 export function MailSettingsDialog({
   mailbox,
@@ -168,6 +169,12 @@ export function MailSettingsDialog({
       {
         items: [
           {
+            description: t('source_description'),
+            icon: Inbox,
+            label: t('source'),
+            name: 'source',
+          },
+          {
             description: t('reading_settings_description'),
             icon: Mail,
             label: t('reading_settings'),
@@ -218,13 +225,14 @@ export function MailSettingsDialog({
         ? membersQuery
         : settingsQuery;
   const settingsUnavailable =
+    tab !== 'source' &&
     tab !== 'reading' &&
     tab !== 'labels' &&
     (activeQuery.isLoading || activeQuery.isError);
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <SettingsDialogShell
+      <MailSettingsShell
         activeTab={tab}
         keyboardNavigation
         navItems={navItems}
@@ -242,6 +250,7 @@ export function MailSettingsDialog({
             />
           ) : null}
           <div hidden={settingsUnavailable} className="space-y-6">
+            {tab === 'source' ? <MailSourceSettings /> : null}
             {tab === 'reading' ? <MailReadingSettings /> : null}
             {tab === 'identity' ? (
               <>
@@ -467,7 +476,7 @@ export function MailSettingsDialog({
             ) : null}
           </div>
         </div>
-      </SettingsDialogShell>
+      </MailSettingsShell>
     </Dialog>
   );
 }

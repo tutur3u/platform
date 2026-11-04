@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { accessMocks, logDrainMocks } = vi.hoisted(() => ({
   accessMocks: {
+    ExternalProjectSetupForbiddenError: class extends Error {},
     ensureWorkspaceExternalProjectStudio: vi.fn(),
     requireWorkspaceExternalProjectSetupAccess: vi.fn(),
   },
@@ -25,7 +26,7 @@ describe('external project setup route', () => {
     vi.clearAllMocks();
   });
 
-  it('requires manage access before auto-setting up a workspace', async () => {
+  it('requires root setup access before auto-setting up a workspace', async () => {
     accessMocks.requireWorkspaceExternalProjectSetupAccess.mockResolvedValue({
       ok: false,
       response: new Response(JSON.stringify({ error: 'Forbidden' }), {
@@ -55,6 +56,7 @@ describe('external project setup route', () => {
       admin: { from: vi.fn() },
       normalizedWorkspaceId: 'ws_123',
       ok: true,
+      setupScope: 'root',
       user: { id: 'user_123' },
     });
     accessMocks.ensureWorkspaceExternalProjectStudio.mockResolvedValue({
@@ -109,6 +111,7 @@ describe('external project setup route', () => {
         actorId: 'user_123',
         adapter: 'yashie',
         schema: manifest.schema,
+        scope: 'root',
         workspaceId: 'ws_123',
       })
     );
@@ -124,6 +127,7 @@ describe('external project setup route', () => {
       admin: { from: vi.fn() },
       normalizedWorkspaceId: 'ws_123',
       ok: true,
+      setupScope: 'root',
       user: { id: 'user_123' },
     });
     accessMocks.ensureWorkspaceExternalProjectStudio.mockResolvedValue({
@@ -161,6 +165,39 @@ describe('external project setup route', () => {
         adapter: 'custom',
         template,
       })
+    );
+  });
+
+  it('returns forbidden when a linked app tries to enable a studio', async () => {
+    accessMocks.requireWorkspaceExternalProjectSetupAccess.mockResolvedValue({
+      admin: { from: vi.fn() },
+      normalizedWorkspaceId: 'ws_123',
+      ok: true,
+      setupScope: 'workspace',
+      user: null,
+    });
+    accessMocks.ensureWorkspaceExternalProjectStudio.mockRejectedValue(
+      new accessMocks.ExternalProjectSetupForbiddenError(
+        'External Project Studio must be enabled by a platform administrator'
+      )
+    );
+
+    const response = await POST(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws_123/external-projects/setup',
+        {
+          body: JSON.stringify({ adapter: 'custom' }),
+          method: 'POST',
+        }
+      ) as never,
+      { params: Promise.resolve({ wsId: 'ws_123' }) }
+    );
+
+    expect(response.status).toBe(403);
+    expect(
+      accessMocks.ensureWorkspaceExternalProjectStudio
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({ actorId: null, scope: 'workspace' })
     );
   });
 });

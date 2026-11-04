@@ -23,3 +23,31 @@ Map<String, List<TaskBoardTask>> _mergeTaskListSnapshots(
       ),
   });
 }
+
+TaskBoardDetail _decodeBoardDetailCache(Object? json) {
+  if (json is! Map) {
+    throw const FormatException('Invalid task board detail cache payload.');
+  }
+  return TaskBoardDetail.fromJson(Map<String, dynamic>.from(json));
+}
+
+List<TaskBoardTask> _decodeListTasksCache(Object? json) {
+  if (json is! List<dynamic>) {
+    throw const FormatException('Invalid task board list cache payload.');
+  }
+  return json
+      .whereType<Map<String, dynamic>>()
+      .map(TaskBoardTask.fromJson)
+      .toList(growable: false);
+}
+
+CacheKey _detailCacheKey({required String wsId, required String boardId}) {
+  return CacheKey(
+    namespace: 'tasks.board_detail',
+    userId: currentCacheUserId(),
+    workspaceId: wsId,
+    locale: currentCacheLocaleTag(),
+    schemaVersion: 2,
+    params: {'boardId': boardId},
+  );
+}

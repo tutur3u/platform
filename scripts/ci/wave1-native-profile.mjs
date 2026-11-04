@@ -4,7 +4,80 @@ import { readFileSync } from 'node:fs';
 export const profiles = JSON.parse(
   readFileSync(new URL('./wave1-native-profiles.json', import.meta.url), 'utf8')
 );
+function webProfileFor(environment) {
+  assert.equal(environment, 'staging', 'Web publishes to staging only');
+  const web = profiles.webStaging;
+  return {
+    app: 'web',
+    environment,
+    name: web.stagingWorker,
+    host: web.stagingHost,
+    secrets: web.secrets,
+    accountId: profiles.accountId,
+  };
+}
+function webPublicationConfig(base, profile, { main, assets, sourceSha }) {
+  const web = profiles.webStaging;
+  assert.match(
+    sourceSha ?? '',
+    /^[a-f0-9]{40}$/u,
+    'Exact Web staging source required'
+  );
+  assert.equal(
+    base.name,
+    web.sourceWorker,
+    'Unexpected original Worker identity'
+  );
+  assert.equal(
+    base.no_bundle,
+    true,
+    'Only prebundled native output may publish'
+  );
+  assert.equal(base.assets?.binding, 'ASSETS');
+  assert.equal(base.assets.run_worker_first, true);
+  assert.equal(base.assets.not_found_handling, 'none');
+  assert.deepEqual(base.compatibility_flags, [
+    'nodejs_compat',
+    'global_fetch_strictly_public',
+  ]);
+  assert.equal(base.compatibility_date, '2026-10-19');
+  assert.deepEqual(
+    base.vars ?? {},
+    {
+      WEB_START_CANDIDATE: 'off',
+      WEB_START_NATIVE_LEGAL: 'off',
+      WEB_START_NATIVE_SECURITY: 'off',
+      AUTH_COOKIE_PREFIX: web.vars.AUTH_COOKIE_PREFIX,
+      NEXT_PUBLIC_SUPABASE_URL: web.vars.NEXT_PUBLIC_SUPABASE_URL,
+    },
+    'Source vars require explicit profile review'
+  );
+  for (const key of resourceKeys)
+    assert.ok(empty(base[key]), `Unadmitted source resource: ${key}`);
+  assert.ok(empty(base.env), 'Named source environments are not admitted');
+  const config = {
+    name: profile.name,
+    account_id: profile.accountId,
+    main,
+    no_bundle: true,
+    upload_source_maps: false,
+    compatibility_date: base.compatibility_date,
+    compatibility_flags: base.compatibility_flags,
+    rules: base.rules,
+    assets: { ...base.assets, directory: assets },
+    workers_dev: false,
+    preview_urls: false,
+    routes: [],
+    secrets: { required: profile.secrets },
+    vars: { ...web.vars, WEB_STAGING_SOURCE_SHA: sourceSha },
+    observability: { enabled: true, head_sampling_rate: 0.05 },
+  };
+  assertStagingIsolation(config);
+  return config;
+}
+
 export function profileFor(app, environment, subdomain) {
+  if (app === 'web') return webProfileFor(environment);
   assert.ok(Object.hasOwn(profiles.apps, app), 'Unknown wave-1 app');
   assert.ok(
     ['staging', 'production'].includes(environment),
@@ -31,9 +104,12 @@ export function profileFor(app, environment, subdomain) {
     name,
     host,
     secrets:
-      environment === 'production' && app === 'calendar'
-        ? [...settings.secrets, 'GOOGLE_REDIRECT_URI']
-        : settings.secrets,
+      environment === 'production'
+        ? app === 'calendar'
+          ? [...settings.secrets, 'GOOGLE_REDIRECT_URI']
+          : settings.secrets
+        : // Staging-only names (Access JWT and service token) never reach production.
+          [...settings.secrets, ...(settings.stagingSecrets ?? [])],
     accountId: profiles.accountId,
   };
 }
@@ -84,7 +160,9 @@ export function assertStagingIsolation(config) {
   };
   check(config);
 }
-export function publicationConfig(base, profile, { main, assets }) {
+export function publicationConfig(base, profile, { main, assets, sourceSha }) {
+  if (profile.app === 'web')
+    return webPublicationConfig(base, profile, { main, assets, sourceSha });
   const originalName =
     profile.app === 'apps'
       ? 'tuturuuu-apps-vite-staging'
@@ -133,6 +211,7 @@ export function publicationConfig(base, profile, { main, assets }) {
     account_id: profile.accountId,
     main,
     no_bundle: true,
+    upload_source_maps: false,
     compatibility_date: base.compatibility_date,
     compatibility_flags: base.compatibility_flags,
     rules: base.rules,
@@ -142,17 +221,20 @@ export function publicationConfig(base, profile, { main, assets }) {
     routes: [],
     secrets: { required: profile.secrets },
     vars: {
+      ...(!production
+        ? { NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN: '.staging.tutur3u.com' }
+        : {}),
       NEXT_PUBLIC_APP_URL: `https://${profile.host}`,
       [`NEXT_PUBLIC_${profile.app.toUpperCase()}_APP_URL`]: `https://${profile.host}`,
       NEXT_PUBLIC_WEB_APP_URL: production
         ? 'https://tuturuuu.com'
-        : 'https://staging.tuturuuu.com',
+        : 'https://web.tutur3u.com',
       ...(profile.app === 'apps'
         ? {
             APPS_CANONICAL_HOST_ENABLED: production ? '1' : '0',
             INTERNAL_WEB_API_ORIGIN: production
               ? 'https://tuturuuu.com'
-              : 'https://staging.tuturuuu.com',
+              : 'https://web.tutur3u.com',
           }
         : {}),
       ...(profile.app === 'calendar'

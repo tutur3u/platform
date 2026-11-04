@@ -85,15 +85,10 @@ export const permissionGroups = ({
   catalog = 'workspace',
   t = (key: string) => key,
   wsId,
-  user,
 }: PermissionGroupsOptions) => {
   const includeFullCatalog = catalog === 'full';
   const includeRootPermissions =
     includeFullCatalog || wsId === ROOT_WORKSPACE_ID;
-  const includeInternalWorkspacePermissions =
-    includeFullCatalog ||
-    wsId === ROOT_WORKSPACE_ID ||
-    user?.email?.endsWith('@tuturuuu.com');
 
   return (
     [
@@ -182,7 +177,7 @@ export const permissionGroups = ({
         title: t('ws-roles.workspace'),
         description: t('ws-roles.workspace_description'),
         permissions: [
-          ...(includeInternalWorkspacePermissions
+          ...(includeRootPermissions
             ? [
                 {
                   id: 'manage_workspace_secrets',

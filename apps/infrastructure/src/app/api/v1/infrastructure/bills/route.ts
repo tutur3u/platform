@@ -1,24 +1,39 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { connection, NextResponse } from 'next/server';
-import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
+import { authorizeInfrastructureMigrationExport } from '../migration-export-auth';
 
 export async function GET(req: Request) {
   await connection();
 
   const { searchParams } = new URL(req.url);
-  const wsId = searchParams.get('ws_id');
-  const limit = searchParams.get('limit') || '1000';
-  const offset = searchParams.get('offset') || '0';
+  const rawWsId = searchParams.get('ws_id');
+  const limit = String(
+    Math.min(
+      1000,
+      Math.max(
+        1,
+        Number.parseInt(searchParams.get('limit') || '1000', 10) || 1000
+      )
+    )
+  );
+  const offset = String(
+    Math.max(0, Number.parseInt(searchParams.get('offset') || '0', 10) || 0)
+  );
 
-  if (!wsId) {
+  if (!rawWsId) {
     return NextResponse.json(
       { message: 'Missing ws_id parameter' },
       { status: 400 }
     );
   }
 
-  const authorization = await authorizeInfrastructureAdminRequest();
+  const authorization = await authorizeInfrastructureMigrationExport(
+    req,
+    rawWsId
+  );
   if (!authorization.ok) return authorization.response;
-  const supabase = authorization.sbAdmin;
+  const wsId = authorization.value.wsId;
+  const supabase = await createAdminClient({ noCookie: true });
 
   const { data, error, count } = await supabase
     .from('finance_invoices')

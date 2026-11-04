@@ -77,7 +77,7 @@ void main() {
       expect(find.byType(TextField), findsNothing);
     });
 
-    testWidgets('an unknown age says Unknown and no ETA drops the row', (
+    testWidgets('an unpublished age gives a reason and no ETA drops the row', (
       tester,
     ) async {
       await _pump(
@@ -85,7 +85,7 @@ void main() {
         workJson([workLane(1, ageSeconds: null)]),
         id: laneId(1),
       );
-      expect(find.text('Unknown'), findsOneWidget);
+      expect(find.text('Not published yet'), findsOneWidget);
       expect(find.text('Estimated time left'), findsNothing);
       expect(find.text('Product'), findsOneWidget);
       expect(find.text('Area'), findsNothing);

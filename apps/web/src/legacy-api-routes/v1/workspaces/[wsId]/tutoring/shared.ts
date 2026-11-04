@@ -65,6 +65,8 @@ export const TutoringSessionCreateSchema = z.object({
         startTime: TimeStringSchema,
         durationMinutes: z.number().int().positive().max(480).default(45),
         teacherUserId: z.string().uuid().nullable().optional(),
+        // This session's own content; absent means the payload `content`.
+        content: z.string().max(10000).optional(),
       })
     )
     .min(1)
@@ -129,6 +131,7 @@ export const TutoringMarkSchema = z.object({
 });
 
 export interface TutoringSessionSlotInput {
+  groupId?: string;
   sessionDate: string;
   startTime: string;
   durationMinutes: number;
@@ -183,6 +186,21 @@ function toComparableSlot<T extends TutoringSessionSlotInput>(slot: T) {
   };
 }
 
+/**
+ * One teacher tutors many learners in the same session, whatever their class
+ * group, so an identical date, start and duration never blocks the teacher.
+ * Partially overlapping intervals still do.
+ */
+function isSameTutoringSlot(
+  a: { absoluteStartMinutes: number; absoluteEndMinutes: number },
+  b: { absoluteStartMinutes: number; absoluteEndMinutes: number }
+) {
+  return (
+    a.absoluteStartMinutes === b.absoluteStartMinutes &&
+    a.absoluteEndMinutes === b.absoluteEndMinutes
+  );
+}
+
 export function findConflictsWithinSlots(slots: TutoringSessionSlotInput[]) {
   const conflicts: TutoringSessionConflict[] = [];
   const normalized = slots
@@ -211,7 +229,8 @@ export function findConflictsWithinSlots(slots: TutoringSessionSlotInput[]) {
       if (
         current.teacherUserId &&
         candidate.teacherUserId &&
-        current.teacherUserId === candidate.teacherUserId
+        current.teacherUserId === candidate.teacherUserId &&
+        !isSameTutoringSlot(current, candidate)
       ) {
         conflicts.push({
           conflictType: 'teacher',
@@ -240,6 +259,7 @@ export function findConflictsWithinSlots(slots: TutoringSessionSlotInput[]) {
 }
 
 interface ExistingTutoringSession {
+  group_id?: string;
   session_date: string;
   start_time: string;
   duration_minutes: number;
@@ -258,6 +278,7 @@ export function findConflictsWithExistingSessions(
   const normalizedExisting = existingSessions
     .map((session) => {
       const normalized = toComparableSlot({
+        groupId: session.group_id,
         durationMinutes: session.duration_minutes,
         sessionDate: session.session_date,
         startTime: session.start_time,
@@ -291,7 +312,8 @@ export function findConflictsWithExistingSessions(
       if (
         incoming.teacherUserId &&
         existing.teacherUserId &&
-        incoming.teacherUserId === existing.teacherUserId
+        incoming.teacherUserId === existing.teacherUserId &&
+        !isSameTutoringSlot(incoming, existing)
       ) {
         conflicts.push({
           conflictType: 'teacher',

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import type { MeteredAiCredential as PublicAiCredential } from './public-credential';
 
 /** The canonical Colab server is the trust anchor. No caller-supplied verifier URL. */
@@ -43,7 +44,7 @@ export async function authenticateColabGrant(
   if (
     error ||
     !host?.email_confirmed_at ||
-    !host.email?.toLowerCase().endsWith('@tuturuuu.com') ||
+    !isVerifiedTuturuuuStaffSession(host) ||
     (host.banned_until && Date.parse(host.banned_until) > Date.now())
   )
     throw reject();

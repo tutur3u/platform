@@ -1,8 +1,10 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import { exportWorkspaceStorageLinks } from '@tuturuuu/internal-api';
+import { revokeWorkspaceStorageExportLinks } from '@tuturuuu/internal-api/storage';
+import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -33,6 +35,18 @@ export function ExportLinksDialogContent({
     staleTime: 60 * 1000,
   });
 
+  const revokeMutation = useMutation({
+    mutationFn: () =>
+      revokeWorkspaceStorageExportLinks(wsId, { path: folderPath }),
+    retry: false,
+    onSuccess: async () => {
+      setCopiedPath(null);
+      await exportQuery.refetch();
+      toast.success(t('links.revoked'));
+    },
+    onError: () => toast.error(t('links.revoke_failed')),
+  });
+
   const loaderManifest = useMemo(() => {
     return exportQuery.data ? createLoaderManifest(exportQuery.data) : '';
   }, [exportQuery.data]);
@@ -49,7 +63,7 @@ export function ExportLinksDialogContent({
     }
   };
 
-  if (exportQuery.isLoading) {
+  if (exportQuery.isLoading || revokeMutation.isPending) {
     return (
       <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-2xl border border-dynamic-border border-dashed bg-muted/20 text-center">
         <Loader2 className="h-6 w-6 animate-spin text-dynamic-blue" />
@@ -81,6 +95,15 @@ export function ExportLinksDialogContent({
 
   return (
     <>
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          disabled={revokeMutation.isPending}
+          onClick={() => revokeMutation.mutate()}
+        >
+          {t('revoke_and_replace')}
+        </Button>
+      </div>
       <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <ExportSummaryCard
           assetCount={exportQuery.data.files.length}

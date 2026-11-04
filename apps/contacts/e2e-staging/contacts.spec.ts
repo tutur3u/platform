@@ -12,7 +12,7 @@ import { localized } from './policy';
 test('native probe is staging-only and carries candidate identity', async ({
   page,
 }) => {
-  const response = await page.goto(config.baseURL + '/__contacts1');
+  const response = await page.goto(`${config.baseURL}/__contacts1`);
   expect(response?.status()).toBe(200);
   expect(response?.headers()['x-tuturuuu-contacts-renderer']).toBe(
     'native-Start'

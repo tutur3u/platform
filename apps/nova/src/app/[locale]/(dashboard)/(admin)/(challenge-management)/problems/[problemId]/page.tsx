@@ -9,8 +9,13 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { requireNovaAppSessionUser } from '@/lib/app-session';
+import {
+  canManageNovaChallenge,
+  getNovaProblemChallengeId,
+} from '@/lib/challenge-management-auth';
 import ProblemComponent from '../../../../shared/problem-component';
 import PromptComponent from '../../../../shared/prompt-component';
 import PromptForm from '../../../../shared/prompt-form';
@@ -30,6 +35,19 @@ export default async function Page({ params }: Props) {
   await connection();
 
   const { problemId } = await params;
+  const user = await requireNovaAppSessionUser();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { challengeId, error } = await getNovaProblemChallengeId(
+    problemId,
+    sbAdmin
+  );
+  if (
+    error ||
+    !challengeId ||
+    !(await canManageNovaChallenge(user, challengeId, sbAdmin))
+  ) {
+    notFound();
+  }
   const problem = await getProblem(problemId);
   const submissions = await getSubmissions(problemId);
 

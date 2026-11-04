@@ -24,11 +24,12 @@ ChildrenPoint parseChildrenPoint(JsonReader r) {
   );
 }
 
-Staff parseStaff(JsonReader r) {
-  r.keys(
-    ['role', 'title', 'state', 'model'],
-    ['role', 'title', 'state', 'model'],
-  );
+Staff parseStaff(JsonReader input) {
+  final r = JsonReader(adaptThread(input.object()), input.path)
+    ..keys(
+      ['role', 'title', 'state', 'model'],
+      ['role', 'title', 'state', 'model'],
+    );
   return Staff(
     role: r.field('role').string(maxLength: 80),
     title: r.field('title').string(maxLength: 80),

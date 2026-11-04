@@ -1,20 +1,34 @@
-import { type Fetcher, proxyNext } from './fallback';
+import { verifyCloudflareAccessRequest } from '@tuturuuu/utils/cloudflare-access';
+import { type Fetcher, notMigrated, proxyNext } from './fallback';
 import { shouldRenderNativeLegal } from './native-legal';
+import { shouldRenderNativeSecurity } from './native-security';
+import { answerPreflight } from './preflight';
 import {
+  admittedNativeStaging,
   admittedOrigin,
+  hasHostOnlyStagingCookies,
   stagingProfile,
   type WebCandidateEnv,
 } from './profile';
 
+export type AccessVerifier = (
+  request: Request,
+  config: { teamDomain?: string; audience?: string }
+) => Promise<boolean>;
+
 export function createWebCandidateHandler({
   start,
   fetcher = fetch,
+  verifyAccess = verifyCloudflareAccessRequest,
 }: {
   start: (request: Request) => Response | Promise<Response>;
   fetcher?: Fetcher;
+  verifyAccess?: AccessVerifier;
 }) {
   return async (request: Request, env: WebCandidateEnv) => {
-    const origin = admittedOrigin(request, env);
+    const staging = env.WEB_START_CANDIDATE === 'staging';
+    const admitted = staging && admittedNativeStaging(request, env);
+    const origin = staging ? null : admittedOrigin(request, env);
     const nativeProbe =
       new URL(request.url).pathname === '/__web1' &&
       ['GET', 'HEAD'].includes(request.method);
@@ -22,35 +36,71 @@ export function createWebCandidateHandler({
       request,
       env.WEB_START_NATIVE_LEGAL
     );
+    const nativeSecurity = shouldRenderNativeSecurity(
+      request,
+      env.WEB_START_NATIVE_SECURITY
+    );
+    const nativeDocument = nativeLegal || nativeSecurity;
     let response: Response;
-    if (!origin || !env.TRUSTED_PROXY_ORIGIN_SECRET) {
+    if (request.method === 'OPTIONS') {
+      response = answerPreflight(request);
+    } else if (
+      !admitted &&
+      (!origin ||
+        !env.TRUSTED_PROXY_ORIGIN_SECRET ||
+        !env.VERCEL_AUTOMATION_BYPASS_SECRET)
+    ) {
       response = new Response('Web candidate disabled', { status: 503 });
+    } else if (
+      // Defense in depth behind Access: a gap in the Access app (path, policy
+      // or bypass) must not expose the issuer. Fails closed before any work.
+      !(await verifyAccess(request, {
+        teamDomain: env.CF_ACCESS_TEAM_DOMAIN,
+        audience: env.CF_ACCESS_AUD,
+      }).catch(() => false))
+    ) {
+      response = new Response('Forbidden', { status: 403 });
     } else {
       try {
-        response =
-          nativeProbe || nativeLegal
-            ? await start(request)
-            : await proxyNext(
-                request,
-                origin,
-                env.TRUSTED_PROXY_ORIGIN_SECRET,
-                fetcher
-              );
+        if (nativeProbe || nativeDocument) response = await start(request);
+        else if (staging) response = notMigrated();
+        else if (
+          origin &&
+          env.TRUSTED_PROXY_ORIGIN_SECRET &&
+          env.VERCEL_AUTOMATION_BYPASS_SECRET
+        )
+          response = await proxyNext(
+            request,
+            origin,
+            env.TRUSTED_PROXY_ORIGIN_SECRET,
+            env.VERCEL_AUTOMATION_BYPASS_SECRET,
+            fetcher
+          );
+        else response = new Response('Web candidate disabled', { status: 503 });
       } catch {
-        response = new Response('Next fallback unavailable', { status: 502 });
+        response = new Response(
+          staging ? 'Native staging unavailable' : 'Next fallback unavailable',
+          { status: 502 }
+        );
       }
     }
     const headers = new Headers(response.headers);
+    if (admitted && /^[a-f0-9]{40}$/u.test(env.WEB_STAGING_SOURCE_SHA ?? ''))
+      headers.set('x-tuturuuu-source-sha', env.WEB_STAGING_SOURCE_SHA ?? '');
     headers.set('strict-transport-security', stagingProfile.hsts);
     headers.set('x-robots-tag', 'noindex, nofollow');
     headers.set('cdn-cache-control', 'no-store');
-    if (origin) {
+    if (origin || admitted) {
       headers.set(
         'x-tuturuuu-web-renderer',
-        nativeProbe || nativeLegal ? 'native-Start' : 'Next-fallback'
+        nativeProbe || nativeDocument
+          ? 'native-Start'
+          : staging
+            ? 'not-migrated'
+            : 'Next-fallback'
       );
     }
-    if (nativeLegal && origin) {
+    if (nativeDocument && (origin || admitted)) {
       headers.set('cache-control', 'no-store');
       headers.set(
         'content-security-policy',
@@ -59,8 +109,29 @@ export function createWebCandidateHandler({
       headers.set('x-content-type-options', 'nosniff');
       headers.set('referrer-policy', 'strict-origin-when-cross-origin');
     }
-    if (headers.has('set-cookie') || response.status >= 500)
+    if (
+      headers.has('set-cookie') ||
+      response.status >= 500 ||
+      response.status === 403
+    )
       headers.set('cache-control', 'no-store');
+    if (staging && !hasHostOnlyStagingCookies(headers)) {
+      void response.body?.cancel().catch(() => {});
+      for (const name of [
+        'set-cookie',
+        'content-length',
+        'content-encoding',
+        'content-type',
+        'location',
+        'etag',
+      ])
+        headers.delete(name);
+      headers.set('cache-control', 'no-store');
+      return new Response('Staging cookie scope rejected', {
+        status: 500,
+        headers,
+      });
+    }
     return new Response(request.method === 'HEAD' ? null : response.body, {
       status: response.status,
       statusText: response.statusText,

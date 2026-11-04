@@ -5,13 +5,8 @@ import {
 } from './oauth-providers';
 
 describe('auth OAuth providers', () => {
-  it('exposes Microsoft Azure for account login and linking', () => {
-    expect(AUTH_OAUTH_PROVIDERS).toEqual([
-      'apple',
-      'google',
-      'azure',
-      'github',
-    ]);
+  it('excludes Microsoft Azure from customer login and linking', () => {
+    expect(AUTH_OAUTH_PROVIDERS).toEqual(['apple', 'google', 'github']);
   });
 
   // The email scope is what makes Azure usable for account matching at all, and
@@ -26,7 +21,7 @@ describe('auth OAuth providers', () => {
 
   it('keeps an options entry for every advertised provider', () => {
     expect(Object.keys(AUTH_OAUTH_PROVIDER_OPTIONS).sort()).toEqual(
-      [...AUTH_OAUTH_PROVIDERS].sort()
+      [...AUTH_OAUTH_PROVIDERS, 'azure'].sort()
     );
   });
 });

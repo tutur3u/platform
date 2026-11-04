@@ -29,6 +29,7 @@ import {
   TutoringEndWeakSupport,
 } from './tutoring-end-weak-support';
 import { WorkspacePersonPicker } from './tutoring-people-picker';
+import { TutoringQueueContent } from './tutoring-queue-content';
 
 interface TutoringQueueFilters {
   groupId: string;
@@ -227,9 +228,7 @@ export function TutoringQueueCard({
         ),
         cell: ({ row }) => (
           <div className="max-w-80 space-y-1">
-            <p className="line-clamp-2 text-sm">
-              {row.original.feedback_content || '-'}
-            </p>
+            <TutoringQueueContent item={row.original} />
             {!row.original.review_only &&
             row.original.feedback_created_at &&
             Date.parse(row.original.feedback_created_at) <=
@@ -248,6 +247,9 @@ export function TutoringQueueCard({
               >
                 {t('weak_content_review_due')}
               </Badge>
+            ) : null}
+            {row.original.support_group ? (
+              <Badge variant="outline">{t('queue_support_group')}</Badge>
             ) : null}
           </div>
         ),

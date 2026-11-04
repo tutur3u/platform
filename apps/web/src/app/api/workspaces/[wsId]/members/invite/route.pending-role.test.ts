@@ -12,7 +12,8 @@ const mocks = vi.hoisted(() => ({
 function resultFor(
   table: string,
   mode: 'list' | 'single',
-  filters: Record<string, string>
+  filters: Record<string, string>,
+  selectedColumns = ''
 ) {
   if (table === 'workspace_invites') {
     return mode === 'single'
@@ -30,13 +31,34 @@ function resultFor(
           error: null,
         };
   }
+  if (table === 'workspace_role_permissions') {
+    return { data: [], error: null };
+  }
   if (table === 'workspace_roles') {
     return mode === 'single'
-      ? { data: filters.id === ROLE_ID ? { id: ROLE_ID } : null, error: null }
+      ? {
+          data:
+            filters.id === ROLE_ID
+              ? { id: ROLE_ID, ws_id: 'workspace-1' }
+              : null,
+          error: null,
+        }
       : {
           data: [
-            { id: ROLE_ID, name: 'Editor' },
-            { id: REVIEWER_ROLE_ID, name: 'Reviewer' },
+            {
+              id: ROLE_ID,
+              name: 'Editor',
+              ...(selectedColumns.includes('ws_id') && {
+                ws_id: 'workspace-1',
+              }),
+            },
+            {
+              id: REVIEWER_ROLE_ID,
+              name: 'Reviewer',
+              ...(selectedColumns.includes('ws_id') && {
+                ws_id: 'workspace-1',
+              }),
+            },
           ],
           error: null,
         };
@@ -46,6 +68,7 @@ function resultFor(
 
 function createQuery(table: string) {
   const filters: Record<string, string> = {};
+  let selectedColumns = '';
   const query = {
     eq: (column: string, value: string) => {
       filters[column] = value;
@@ -53,12 +76,17 @@ function createQuery(table: string) {
     },
     in: () => query,
     maybeSingle: async () => resultFor(table, 'single', filters),
-    select: () => query,
+    select: (columns: string) => {
+      selectedColumns = columns;
+      return query;
+    },
   };
 
   Object.defineProperty(query, 'then', {
     value: (resolve: (value: unknown) => unknown) => {
-      return Promise.resolve(resolve(resultFor(table, 'list', filters)));
+      return Promise.resolve(
+        resolve(resultFor(table, 'list', filters, selectedColumns))
+      );
     },
   });
 
@@ -110,6 +138,7 @@ describe('pending workspace invitation roles', () => {
         withoutPermission: vi.fn(() => false),
         wsId: 'workspace-1',
       },
+      user: { id: USER_ID },
     });
   });
 
@@ -158,6 +187,7 @@ describe('pending workspace invitation roles', () => {
     expect(response.status).toBe(200);
     expect(mocks.rpcCalls).toContainEqual({
       args: {
+        p_actor_id: USER_ID,
         p_email: 'pending@example.com',
         p_role_ids: [ROLE_ID, REVIEWER_ROLE_ID],
         p_user_id: null,

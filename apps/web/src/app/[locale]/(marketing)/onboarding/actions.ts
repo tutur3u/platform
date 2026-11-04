@@ -22,10 +22,21 @@ import { FLOW_TYPES, getFlowSteps, ONBOARDING_STEPS } from './types';
 /**
  * Check if a user is whitelisted to access the platform
  */
-export async function checkUserWhitelistStatus(
-  userId: string
-): Promise<WhitelistStatus> {
+export async function checkUserWhitelistStatus(): Promise<WhitelistStatus> {
   const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user)
+    return {
+      is_whitelisted: false,
+      enabled: false,
+      allow_challenge_management: false,
+      allow_manage_all_challenges: false,
+      allow_role_management: false,
+    };
+  const userId = user.id;
 
   const { data, error } = await supabase
     .rpc('get_user_whitelist_status', { user_id_param: userId })
@@ -48,10 +59,14 @@ export async function checkUserWhitelistStatus(
 /**
  * Get user's onboarding progress
  */
-export async function getUserOnboardingProgress(
-  userId: string
-): Promise<OnboardingProgress | null> {
+export async function getUserOnboardingProgress(): Promise<OnboardingProgress | null> {
   const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) return null;
+  const userId = user.id;
 
   const { data, error } = await supabase
     .from('onboarding_progress')
@@ -82,19 +97,23 @@ export async function getUserOnboardingProgress(
  * Create or update user's onboarding progress
  */
 export async function updateOnboardingProgress(
-  userId: string,
   updates: Partial<
     Omit<OnboardingProgress, 'user_id' | 'created_at' | 'updated_at'>
   >
 ): Promise<OnboardingProgress | null> {
   const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) return null;
 
   const { data, error } = await supabase
     .from('onboarding_progress')
     .upsert(
       {
-        user_id: userId,
         ...updates,
+        user_id: user.id,
       },
       {
         onConflict: 'user_id',
@@ -122,11 +141,10 @@ export async function updateOnboardingProgress(
  * Mark an onboarding step as completed
  */
 export async function completeOnboardingStep(
-  userId: string,
   step: OnboardingStep,
   nextStep?: OnboardingStep
 ): Promise<{ success: boolean; progress?: OnboardingProgress }> {
-  const progress = await getUserOnboardingProgress(userId);
+  const progress = await getUserOnboardingProgress();
   const completedSteps = progress?.completed_steps || [];
   const flowType = (progress?.flow_type || FLOW_TYPES.PERSONAL) as FlowType;
 
@@ -147,15 +165,15 @@ export async function completeOnboardingStep(
     updates.completed_at = new Date().toISOString();
   }
 
-  const result = await updateOnboardingProgress(userId, updates);
+  const result = await updateOnboardingProgress(updates);
   return { success: !!result, progress: result || undefined };
 }
 
 /**
  * Check if user has completed onboarding
  */
-export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
-  const progress = await getUserOnboardingProgress(userId);
+export async function hasCompletedOnboarding(): Promise<boolean> {
+  const progress = await getUserOnboardingProgress();
   return !!progress?.completed_at;
 }
 
@@ -163,7 +181,6 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
  * Set the use case and determine flow type
  */
 export async function setOnboardingUseCase(
-  userId: string,
   useCase: UseCase
 ): Promise<{ success: boolean; flowType: FlowType }> {
   const flowType: FlowType =
@@ -171,7 +188,7 @@ export async function setOnboardingUseCase(
       ? FLOW_TYPES.TEAM
       : FLOW_TYPES.PERSONAL;
 
-  const result = await updateOnboardingProgress(userId, {
+  const result = await updateOnboardingProgress({
     use_case: useCase,
     flow_type: flowType,
     current_step: ONBOARDING_STEPS.PROFILE,
@@ -184,7 +201,6 @@ export async function setOnboardingUseCase(
  * Create workspace from onboarding data
  */
 export async function createWorkspaceFromOnboarding(
-  userId: string,
   workspaceName: string,
   avatarUrl?: string
 ): Promise<{ success: boolean; workspaceId?: string; error?: string }> {
@@ -197,7 +213,7 @@ export async function createWorkspaceFromOnboarding(
       error: authError,
     } = await supabase.auth.getUser();
 
-    if (authError || !user?.id || user.id !== userId) {
+    if (authError || !user?.id) {
       return { success: false, error: 'Authentication error' };
     }
 
@@ -222,6 +238,10 @@ export async function createWorkspaceFromOnboarding(
       };
     }
 
+    // Create the service-role client before the workspace exists so a missing
+    // configuration cannot leave a half-created workspace behind.
+    const sbAdmin = await createAdminClient();
+
     // First, create the workspace
     const { data: workspace, error: workspaceError } = await supabase
       .from('workspaces')
@@ -237,23 +257,39 @@ export async function createWorkspaceFromOnboarding(
       return { success: false, error: 'Failed to create workspace' };
     }
 
-    // Add the user as a workspace member. `add_ws_creator()` has already done
-    // this for the creator, so a plain insert collides on the primary key and
-    // the cleanup below would delete the workspace that was just created.
-    const { error: memberError } = await supabase
+    // `add_ws_creator()` normally adds the creator as a member. Every
+    // authenticated INSERT into workspace_members is rejected by RLS, even with
+    // ON CONFLICT DO NOTHING, so confirm the creator row with the service role
+    // and add it only when the trigger did not.
+    const { data: existingMember, error: memberLookupError } = await sbAdmin
       .from('workspace_members')
-      .upsert(
-        {
-          ws_id: workspace.id,
-          user_id: userId,
-        },
-        { ignoreDuplicates: true, onConflict: 'ws_id,user_id' }
-      );
+      .select('user_id')
+      .eq('ws_id', workspace.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    let memberError = memberLookupError;
+
+    if (!memberError && !existingMember) {
+      const { error: insertError } = await sbAdmin
+        .from('workspace_members')
+        .insert({ ws_id: workspace.id, user_id: user.id });
+
+      // A concurrent insert of the same creator row still leaves a member.
+      memberError = insertError?.code === '23505' ? null : insertError;
+    }
 
     if (memberError) {
       console.error('Error adding user as workspace member:', memberError);
       // Try to clean up the workspace if adding member failed
-      await supabase.from('workspaces').delete().eq('id', workspace.id);
+      const { error: cleanupError } = await sbAdmin
+        .from('workspaces')
+        .delete()
+        .eq('id', workspace.id);
+      if (cleanupError) {
+        console.error('Error cleaning up workspace:', cleanupError);
+        return { success: false, error: 'Failed to clean up workspace' };
+      }
       return { success: false, error: 'Failed to add user to workspace' };
     }
 
@@ -261,7 +297,7 @@ export async function createWorkspaceFromOnboarding(
     const { error: userUpdateError } = await supabase
       .from('user_private_details')
       .update({ default_workspace_id: workspace.id })
-      .eq('user_id', userId);
+      .eq('user_id', user.id);
 
     if (userUpdateError) {
       console.error('Error updating user default workspace:', userUpdateError);
@@ -271,7 +307,6 @@ export async function createWorkspaceFromOnboarding(
     // Create Polar customer and free subscription for the new workspace
     try {
       const polar = createPolarClient();
-      const sbAdmin = await createAdminClient();
 
       // Get or create Polar customer
       await getOrCreatePolarCustomer({
@@ -312,12 +347,10 @@ export async function createWorkspaceFromOnboarding(
 /**
  * Complete onboarding and redirect to dashboard
  */
-export async function completeOnboardingAndRedirect(
-  userId: string,
-  workspaceId: string
-) {
+export async function completeOnboardingAndRedirect(workspaceId: string) {
   // Mark onboarding as completed
-  await completeOnboardingStep(userId, ONBOARDING_STEPS.CELEBRATION);
+  const result = await completeOnboardingStep(ONBOARDING_STEPS.CELEBRATION);
+  if (!result.success) return;
 
   // Redirect to the workspace dashboard
   redirect(`/${workspaceId}`);

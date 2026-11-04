@@ -1,4 +1,3 @@
-import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
 import {
   createCentralizedAuthProxy,
   propagateAuthCookies,
@@ -28,7 +27,7 @@ import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { guardBrowserApiSession } from '@tuturuuu/utils/required-mfa-api-session';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import {
@@ -57,6 +56,8 @@ import { getMeetAppOrigin } from './lib/meet-app-url';
 import { feedbackProxyPayloadLimit } from './lib/product-feedback-limits';
 import { profileMediaProxyPayloadLimit } from './lib/profile-media-proxy';
 import { guardApiCostAndCsrf } from './lib/security/api-request-guard';
+import { isVerifiedStaffCliSession } from './lib/staff-cli-session';
+import { withStagingOriginProof } from './lib/staging-origin-proof';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
 import { workspaceHomeRedirectUrl } from './lib/workspace-home-redirect';
@@ -574,7 +575,7 @@ async function resolveRateLimitDebugIdentity(req: NextRequest): Promise<{
     }
     const userEmail = user.email ?? null;
     return {
-      isStaff: isExactTuturuuuDotComEmail(userEmail),
+      isStaff: isVerifiedTuturuuuStaffSession(user),
       userEmail,
       userId: user.id,
     };
@@ -651,25 +652,6 @@ async function handleProxyGuardResponse(
     });
   }
   return guardResponse;
-}
-
-function isTrustedCliTuturuuuRateLimitBypass(
-  _pathname: string,
-  headers: Headers
-) {
-  const token = getBearerToken(headers);
-  if (!token?.startsWith('ttr_app_')) {
-    return false;
-  }
-
-  try {
-    const verification = verifyCliAccessToken(token);
-    return (
-      verification.ok && isExactTuturuuuDotComEmail(verification.claims.email)
-    );
-  } catch {
-    return false;
-  }
 }
 
 function hasLikelyAuthenticatedApiCredential(req: NextRequest): boolean {
@@ -1036,7 +1018,7 @@ async function guardGuestWorkspaceRoute({
     return null;
   }
 }
-export async function proxy(req: NextRequest): Promise<NextResponse> {
+async function webProxy(req: NextRequest): Promise<NextResponse> {
   if (
     req.nextUrl.pathname.startsWith('/api') ||
     req.nextUrl.pathname === '/native-integrity/turnstile'
@@ -1060,6 +1042,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       ? [EMAIL_RATE_LIMIT_OVERRIDE_ROUTE_POLICY]
       : undefined;
     return guardBrowserApiSession(req, async () => {
+      const trustedStaffCli = await isVerifiedStaffCliSession(req.headers);
       const guardResponse = await guardApiProxyRequest(req, {
         additionalRoutePolicies,
         ...calendarPreferenceGuardOptions(req),
@@ -1068,7 +1051,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           feedbackProxyPayloadLimit(req.method, req.nextUrl.pathname),
         trustedBypassRules: [
           {
-            matches: isTrustedCliTuturuuuRateLimitBypass,
+            matches: () => trustedStaffCli,
           },
         ],
       });
@@ -1430,6 +1413,14 @@ const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
   return null;
 };
 
+export const proxy = withStagingOriginProof(
+  webProxy,
+  () =>
+    new NextResponse('Forbidden', {
+      status: 403,
+      headers: { 'Cache-Control': 'no-store' },
+    })
+);
 export const config = {
   matcher: [
     /*
@@ -1440,18 +1431,8 @@ export const config = {
      * - sw.js (service worker)
      * - monitoring (analytics)
      * - .well-known (domain verification files)
-     * Excludes files with the following extensions for static assets:
-     * - svg
-     * - png
-     * - jpg
-     * - jpeg
-     * - mp3
-     * - wav
-     * - ogg
-     * - m4a
-     * - pdf
-     * - gif
-     * - webp
+     * Excludes static assets: svg, png, jpg, jpeg, mp3, wav, ogg, m4a, pdf,
+     * gif and webp.
      */
 
     '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|manifest.webmanifest|sw.js|serwist|monitoring|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|mp3|wav|ogg|m4a|pdf|gif|webp)$).*)',

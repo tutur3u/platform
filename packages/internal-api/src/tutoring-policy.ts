@@ -3,6 +3,12 @@ import {
   parseTutoringCampusOptions,
   TUTORING_CAMPUS_LABEL_MAX_LENGTH,
 } from './tutoring-campus-options';
+import {
+  hasTutoringTagExclusions,
+  isTutoringGroupExcluded,
+  parseTutoringGroupExclusions,
+  type TutoringGroupExclusion,
+} from './tutoring-group-rules';
 
 export {
   getTutoringCampusChoices,
@@ -27,11 +33,8 @@ export interface TutoringTimeRule {
   label?: string;
 }
 
-export interface TutoringGroupExclusion {
-  scope: 'all' | 'make_up' | 'weak_support';
-  match: 'contains' | 'exact' | 'prefix' | 'suffix';
-  value: string;
-}
+export type { TutoringGroupExclusion };
+export { hasTutoringTagExclusions, isTutoringGroupExcluded };
 
 export interface TutoringPolicy {
   preset: 'standard' | 'easy_center' | 'custom';
@@ -58,6 +61,11 @@ export interface TutoringPolicy {
    * students, so queues skip them and teachers in them are labelled as tutors.
    */
   tutorGroupIds: string[];
+  /**
+   * Groups listing learners who need tutoring. Each current learner member is
+   * queued for weak support under their current classes; empty by default.
+   */
+  supportGroupIds: string[];
   /** Class group id to the label of the shift rule its classes follow. */
   shiftByGroupId: Record<string, string>;
   parentMessageTemplate: string;
@@ -67,7 +75,7 @@ export const DEFAULT_PARENT_MESSAGE_TEMPLATE =
   'Trung tâm xin gửi lịch kèm {{reason}} của {{student}}: {{time}} ngày {{date}} ({{duration}} phút), lớp {{group}}, giáo viên {{teacher}}. Mong phụ huynh sắp xếp cho con tham gia đúng giờ. Xin cảm ơn.';
 
 export const EASY_CENTER_PARENT_MESSAGE_TEMPLATE =
-  'Trung tâm EASY xin được xếp lịch kèm cho bạn {{student}} như sau:\n• Giờ kèm: {{time}}\n• Ngày: {{date}}\n• Cơ sở: {{campus}}\nMong phụ huynh thu xếp cho con tham gia đúng giờ. Trân trọng.';
+  'Trung tâm EASY xin được xếp lịch kèm cho bạn {{student}} như sau:\n• Giờ kèm: {{time_range}}\n• Ngày: {{date}} {{weekday}}\n• Cơ sở: {{campus}}\nLịch học chính thức: {{class_time}}\nMong phụ huynh thu xếp cho con tham gia đúng giờ. Trân trọng.';
 
 export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
   preset: 'standard',
@@ -85,6 +93,7 @@ export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
   campusByGroupId: {},
   campusOptions: [],
   tutorGroupIds: [],
+  supportGroupIds: [],
   shiftByGroupId: {},
   parentMessageTemplate: DEFAULT_PARENT_MESSAGE_TEMPLATE,
 };
@@ -301,6 +310,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     restrictWeakContentEditors: defaults.restrictWeakContentEditors,
     groupExclusions: defaults.groupExclusions,
     tutorGroupIds: [],
+    supportGroupIds: [],
     shiftByGroupId: {},
     ...saved,
   };
@@ -371,28 +381,13 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
   )
     return null;
   const tutorGroupIds = parseTutorGroupIds(candidate.tutorGroupIds);
-  if (!tutorGroupIds) return null;
+  const supportGroupIds = parseTutorGroupIds(candidate.supportGroupIds);
+  if (!tutorGroupIds || !supportGroupIds) return null;
 
-  const groupExclusions: TutoringGroupExclusion[] = [];
-  for (const raw of candidate.groupExclusions) {
-    if (!raw || typeof raw !== 'object') return null;
-    const exclusion = raw as Record<string, unknown>;
-    if (
-      !['all', 'make_up', 'weak_support'].includes(String(exclusion.scope)) ||
-      !['contains', 'exact', 'prefix', 'suffix'].includes(
-        String(exclusion.match)
-      ) ||
-      typeof exclusion.value !== 'string' ||
-      !exclusion.value.trim() ||
-      exclusion.value.length > 80
-    )
-      return null;
-    groupExclusions.push({
-      scope: exclusion.scope as TutoringGroupExclusion['scope'],
-      match: exclusion.match as TutoringGroupExclusion['match'],
-      value: exclusion.value.trim(),
-    });
-  }
+  const groupExclusions = parseTutoringGroupExclusions(
+    candidate.groupExclusions
+  );
+  if (!groupExclusions) return null;
 
   const campusEntries = Object.entries(candidate.campusByGroupId);
   if (!isGroupLabelMap(campusEntries, TUTORING_CAMPUS_LABEL_MAX_LENGTH))
@@ -465,35 +460,12 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     ),
     campusOptions,
     tutorGroupIds,
+    supportGroupIds,
     shiftByGroupId: Object.fromEntries(
       shiftEntries.map(([groupId, label]) => [groupId, String(label).trim()])
     ),
     parentMessageTemplate: candidate.parentMessageTemplate,
   };
-}
-
-/**
- * Match groups using the workspace's editable eligibility rules. Tutor groups
- * hold no real students, so they are excluded whatever their name is.
- */
-export function isTutoringGroupExcluded(
-  policy: TutoringPolicy,
-  groupName: string,
-  reason: 'make_up' | 'weak_support',
-  groupId?: string | null
-) {
-  if (groupId && policy.tutorGroupIds.includes(groupId.toLowerCase()))
-    return true;
-  const name = groupName.trim().toLocaleLowerCase();
-  return policy.groupExclusions.some((rule) => {
-    if (rule.scope !== 'all' && rule.scope !== reason) return false;
-    const value = rule.value.trim().toLocaleLowerCase();
-    if (!value) return false;
-    if (rule.match === 'exact') return name === value;
-    if (rule.match === 'prefix') return name.startsWith(value);
-    if (rule.match === 'suffix') return name.endsWith(value);
-    return name.includes(value);
-  });
 }
 
 export function getTutoringShiftLabel(
@@ -640,22 +612,36 @@ export function readTutoringPolicyConfigRows(rows: TutoringPolicyConfigRow[]) {
   return readTutoringPolicy(base);
 }
 
+/** Parent-message fields that every render supplies. */
+type TutoringMessageBaseKey =
+  | 'student'
+  | 'reason'
+  | 'date'
+  | 'time'
+  | 'duration'
+  | 'group'
+  | 'teacher'
+  | 'campus';
+
+/**
+ * Fields added later. A render that omits one shows "Chưa xác định" instead of
+ * leaving the braces in the message.
+ */
+type TutoringMessageDerivedKey = 'time_range' | 'weekday' | 'class_time';
+
+export type TutoringParentMessageValues = Record<
+  TutoringMessageBaseKey,
+  string
+> &
+  Partial<Record<TutoringMessageDerivedKey, string>>;
+
 export function renderTutoringParentMessage(
   template: string,
-  values: Record<
-    | 'student'
-    | 'reason'
-    | 'date'
-    | 'time'
-    | 'duration'
-    | 'group'
-    | 'teacher'
-    | 'campus',
-    string
-  >
+  values: TutoringParentMessageValues
 ) {
   return template.replace(
-    /\{\{(student|reason|date|time|duration|group|teacher|campus)\}\}/g,
-    (_, key: keyof typeof values) => values[key]
+    /\{\{(student|reason|date|time|duration|group|teacher|campus|time_range|weekday|class_time)\}\}/g,
+    (_, key: keyof TutoringParentMessageValues) =>
+      values[key] ?? 'Chưa xác định'
   );
 }

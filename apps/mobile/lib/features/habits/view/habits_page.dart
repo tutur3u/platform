@@ -237,8 +237,11 @@ class _HabitsViewState extends State<_HabitsView> {
                     }
                     if (state.status == HabitsStatus.error &&
                         state.trackers.isEmpty) {
-                      return AppPageBody(
-                        child: HabitsErrorView(error: state.error),
+                      return NovaRefreshIndicator.state(
+                        onRefresh: _refreshCurrentSection,
+                        child: AppPageBody(
+                          child: HabitsErrorView(error: state.error),
+                        ),
                       );
                     }
 
@@ -441,6 +444,11 @@ class _HabitsViewState extends State<_HabitsView> {
                   showLeaderboard: !isPersonalWorkspace,
                   onRetry: () =>
                       cubit.loadTrackerDetail(trackerId, refresh: true),
+                  onRefresh: () => cubit.loadTrackerDetail(
+                    trackerId,
+                    refresh: true,
+                    retainError: true,
+                  ),
                   onLogEntry: () => _openTrackerEntryComposer(trackerId),
                   onEditTracker: () async {
                     final tracker = state.detail?.tracker;

@@ -1,6 +1,16 @@
-import { expect, it, vi } from 'vitest';
+const readScope = vi.hoisted(() => vi.fn());
+vi.mock('@tuturuuu/utils/task-read-scope', () => ({
+  loadTaskReadScope: readScope,
+}));
+
+import { beforeEach, expect, it, vi } from 'vitest';
 import type { MiraToolContext } from '../mira-tool-types';
 import { executeGetTask, executeSearchTasks } from './task-read';
+
+beforeEach(() => {
+  readScope.mockReset();
+  readScope.mockResolvedValue({ mode: 'workspace' });
+});
 
 it('keeps board-only search results while enforcing both parent visibility paths', async () => {
   const calls: Array<[string, ...unknown[]]> = [];
@@ -89,3 +99,66 @@ it('authorizes the final detail read atomically through workspace parents', asyn
     'direct_board.not.is.null,and(board_id.is.null,task_lists.not.is.null)',
   ]);
 });
+
+it.each(['detail', 'search'])(
+  'denies guest %s reads when no boards are shared',
+  async (operation) => {
+    readScope.mockResolvedValue({ mode: 'boards', boardIds: [] });
+    const from = vi.fn(() => {
+      throw new Error('Unauthorized task query');
+    });
+    const ctx = {
+      wsId: 'workspace',
+      userId: 'guest',
+      supabase: { from },
+    } as unknown as MiraToolContext;
+    const result =
+      operation === 'detail'
+        ? await executeGetTask({ taskId: 'private-task' }, ctx)
+        : await executeSearchTasks({ query: 'Private' }, ctx);
+    expect(result).toHaveProperty('error');
+    expect(from).not.toHaveBeenCalled();
+  }
+);
+
+it.each(['detail', 'search'])(
+  'restricts guest %s reads to shared boards in the query',
+  async (operation) => {
+    readScope.mockResolvedValue({ mode: 'boards', boardIds: ['shared-board'] });
+    const calls: Array<[string, ...unknown[]]> = [];
+    const builder: Record<string, unknown> = {};
+    for (const method of [
+      'select',
+      'eq',
+      'is',
+      'or',
+      'in',
+      'ilike',
+      'order',
+      'range',
+    ]) {
+      builder[method] = (...args: unknown[]) => {
+        calls.push([method, ...args]);
+        return builder;
+      };
+    }
+    builder.maybeSingle = () => Promise.resolve({ data: null, error: null });
+    // biome-ignore lint/suspicious/noThenProperty: Supabase queries are awaitable.
+    builder.then = (resolve: (value: unknown) => unknown) =>
+      Promise.resolve({ data: [], count: 0, error: null }).then(resolve);
+    const ctx = {
+      wsId: 'workspace',
+      userId: 'guest',
+      supabase: { from: () => builder },
+    } as unknown as MiraToolContext;
+    if (operation === 'detail')
+      await executeGetTask({ taskId: 'private-task' }, ctx);
+    else await executeSearchTasks({ query: 'Private' }, ctx);
+    expect(calls).toContainEqual(['in', 'direct_board.id', ['shared-board']]);
+    expect(calls).toContainEqual([
+      'in',
+      'task_lists.workspace_boards.id',
+      ['shared-board'],
+    ]);
+  }
+);

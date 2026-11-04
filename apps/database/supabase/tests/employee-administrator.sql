@@ -6,6 +6,10 @@ select no_plan();
 insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data) values
 ('00000000-0000-4000-8000-000000009920','administrator-fixture@tuturuuu.com',now(),'{}','{}'),
 ('00000000-0000-4000-8000-000000009921','creator-fixture@tuturuuu.com',now(),'{}','{}');
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 insert into public.workspaces(id,name,creator_id,personal) values
 ('00000000-0000-0000-0000-000000000000','Root fixture','00000000-0000-4000-8000-000000009921',false),
 ('00000000-0000-4000-8000-000000009922','Foreign fixture','00000000-0000-4000-8000-000000009921',false)
@@ -18,30 +22,25 @@ on conflict(ws_id,user_id) do update set type='MEMBER';
 update public.workspace_default_permissions set enabled=false where ws_id='00000000-0000-0000-0000-000000000000';
 delete from public.workspace_role_members where user_id='00000000-0000-4000-8000-000000009920';
 insert into public.workspace_roles(id,ws_id,name) values
-('00000000-0000-4000-8000-000000009923','00000000-0000-4000-8000-000000009922','Foreign role fixture'),
-('00000000-0000-4000-8000-000000009924','00000000-0000-0000-0000-000000000000','Root role fixture');
+('00000000-0000-4000-8000-000000009923','00000000-0000-4000-8000-000000009922','Foreign role fixture');
 insert into public.workspace_role_members(role_id,user_id) values('00000000-0000-4000-8000-000000009923','00000000-0000-4000-8000-000000009920');
 insert into public.workspace_role_permissions(ws_id,role_id,permission,enabled) values
-('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000009923','admin',true);
-select throws_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'42501','Employee administrator access denied','foreign role with root admin permission is denied');
+('00000000-0000-4000-8000-000000009922','00000000-0000-4000-8000-000000009923','admin',true);
+select throws_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'42501','Employee administrator access denied','foreign role admin is not a root workspace grant');
 select throws_ok($$select private.employee_creation_preflight('00000000-0000-4000-8000-000000009920','00000000-0000-4000-8000-000000009925','denied-fixture@tuturuuu.com','Denied fixture')$$,'42501','Employee administrator access denied','foreign role admin cannot create intent');
 update public.workspace_role_permissions set permission='manage_internal_accounts' where role_id='00000000-0000-4000-8000-000000009923';
-select throws_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'42501','Employee administrator access denied','foreign role with root explicit permission is denied');
+select throws_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'42501','Employee administrator access denied','foreign role explicit permission is not a root workspace grant');
 select throws_ok($$select private.finalize_employee_creation('00000000-0000-4000-8000-000000009920','00000000-0000-4000-8000-000000009925','denied-fixture@tuturuuu.com','Denied fixture')$$,'42501','Employee administrator access denied','foreign explicit grant cannot reach finalization target lookup');
 select ok(not exists(select 1 from private.employee_creation_intents where user_id='00000000-0000-4000-8000-000000009925'),'denied actor left no creation intent');
 delete from public.workspace_role_members where user_id='00000000-0000-4000-8000-000000009920';
-insert into public.workspace_role_members(role_id,user_id) values('00000000-0000-4000-8000-000000009924','00000000-0000-4000-8000-000000009920');
-insert into public.workspace_role_permissions(ws_id,role_id,permission,enabled) values
-('00000000-0000-4000-8000-000000009922','00000000-0000-4000-8000-000000009924','admin',true);
-select throws_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'42501','Employee administrator access denied','root role with foreign admin permission is denied');
-update public.workspace_role_permissions set permission='manage_internal_accounts' where role_id='00000000-0000-4000-8000-000000009924';
-select throws_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'42501','Employee administrator access denied','root role with foreign explicit permission is denied');
-update public.workspace_role_permissions set ws_id='00000000-0000-0000-0000-000000000000' where role_id='00000000-0000-4000-8000-000000009924';
+insert into public.workspace_role_members(role_id,user_id) values('00000000-0000-4000-8000-000000009923','00000000-0000-4000-8000-000000009920');
+select throws_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'42501','Employee administrator access denied','foreign role explicit permission is not a root workspace grant');
+update public.workspace_roles set ws_id='00000000-0000-0000-0000-000000000000' where id='00000000-0000-4000-8000-000000009923';
 select lives_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'valid root role explicit grant permits employee operations');
 select lives_ok($$select private.employee_creation_preflight('00000000-0000-4000-8000-000000009920','00000000-0000-4000-8000-000000009925','allowed-fixture@tuturuuu.com','Allowed fixture')$$,'valid explicit actor creates a retained intent');
-update public.workspace_role_permissions set permission='admin' where role_id='00000000-0000-4000-8000-000000009924';
+update public.workspace_role_permissions set permission='admin' where role_id='00000000-0000-4000-8000-000000009923';
 select lives_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'valid root role admin permits employee operations');
-update public.workspace_role_permissions set enabled=false where role_id='00000000-0000-4000-8000-000000009924';
+update public.workspace_role_permissions set enabled=false where role_id='00000000-0000-4000-8000-000000009923';
 select throws_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'42501','Employee administrator access denied','disabled root role grant is denied');
 insert into public.workspace_default_permissions(ws_id,permission,member_type,enabled) values
 ('00000000-0000-0000-0000-000000000000','admin','MEMBER',true)

@@ -1,4 +1,4 @@
-'use server';
+import 'server-only';
 
 import {
   createAdminClient,
@@ -233,7 +233,7 @@ export async function fetchWorkspaceSummaries({
   const { data: workspaces, error } = await sbAdmin
     .from('workspaces')
     .select(
-      'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(user_id), workspace_subscriptions!left(created_at, status, product_id)'
+      'id, name, personal, avatar_url, logo_url, created_at, creator_id, deleted, workspace_members!inner(user_id), workspace_subscriptions!left(created_at, status, product_id)'
     )
     .eq('workspace_members.user_id', userId);
 
@@ -293,6 +293,7 @@ export async function fetchWorkspaceSummaries({
         | {
             avatar_url?: string | null;
             creator_id?: string | null;
+            deleted?: boolean | null;
             id?: string | null;
             logo_url?: string | null;
             name?: string | null;
@@ -310,6 +311,7 @@ export async function fetchWorkspaceSummaries({
         | Array<{
             avatar_url?: string | null;
             creator_id?: string | null;
+            deleted?: boolean | null;
             id?: string | null;
             logo_url?: string | null;
             name?: string | null;
@@ -341,6 +343,7 @@ export async function fetchWorkspaceSummaries({
         avatar_url,
         logo_url,
         creator_id,
+        deleted,
         workspace_subscriptions!left (
           created_at,
           status,
@@ -414,6 +417,7 @@ export async function fetchWorkspaceSummaries({
 
     guestWorkspaceById.set(workspaceId, {
       id: workspaceId,
+      ...(workspace?.deleted ? { deleted: true } : {}),
       name: workspace?.name || (workspace?.personal ? 'Personal' : 'Untitled'),
       personal: workspace?.personal ?? false,
       avatar_url: workspace?.avatar_url || null,
@@ -439,6 +443,7 @@ export async function fetchWorkspaceSummaries({
   const memberSummaries = workspaces.map((ws) => {
     return {
       id: ws.id,
+      ...(ws.deleted ? { deleted: true } : {}),
       name: ws.personal ? displayLabel || ws.name || 'Personal' : ws.name,
       personal: ws.personal,
       avatar_url: ws.personal ? userAvatarUrl || ws.avatar_url : ws.avatar_url,

@@ -462,6 +462,18 @@ describe('Permission Helpers', () => {
     it('should return false for non-existing permission', () => {
       expect(hasPermission(mockContext, 'manage_finance' as never)).toBe(false);
     });
+
+    it('does not let admin imply manage_subscription', () => {
+      const adminContext = { ...mockContext, permissions: ['admin' as const] };
+      expect(hasPermission(adminContext, 'manage_workspace_roles')).toBe(true);
+      expect(hasPermission(adminContext, 'manage_subscription')).toBe(false);
+      expect(
+        hasPermission(
+          { ...mockContext, permissions: ['admin', 'manage_subscription'] },
+          'manage_subscription'
+        )
+      ).toBe(true);
+    });
   });
 
   describe('hasAnyPermission', () => {

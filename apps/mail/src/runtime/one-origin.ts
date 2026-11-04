@@ -18,7 +18,7 @@ export function mailOneOriginConfig(env: object): OneOriginConfig {
     sharedOrigin: text('NEXT_PUBLIC_WEB_APP_URL', 'https://tuturuuu.com'),
     subdomainOrigin: text('NEXT_PUBLIC_APP_URL', 'https://mail.tuturuuu.com'),
     basePathReady: false,
-    machinePathPrefixes: ['/_mail'],
+    machinePathPrefixes: ['/_mail', '/_rum'],
     ...readOneOriginEnv(vars, 'mail'),
   };
 }

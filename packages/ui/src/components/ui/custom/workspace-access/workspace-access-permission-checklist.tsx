@@ -1,6 +1,7 @@
 import { ShieldCheck } from '@tuturuuu/icons';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { isAdminImpliedPermission } from '@tuturuuu/utils/creator-grant-permissions';
 import { cn } from '@tuturuuu/utils/format';
 import type { permissionGroups } from '@tuturuuu/utils/permissions';
 import { useTranslations } from 'next-intl';
@@ -81,7 +82,9 @@ export function WorkspaceAccessPermissionChecklist({
             <div className="mt-3 grid gap-2 sm:mt-4">
               {group.permissions.map((permission) => {
                 const checked = selectedPermissions.has(permission.id);
-                const adminLocked = adminEnabled;
+                // Admin never implies manage_subscription.
+                const adminLocked =
+                  adminEnabled && isAdminImpliedPermission(permission.id);
 
                 return (
                   <label

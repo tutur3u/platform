@@ -25,6 +25,7 @@ select throws_ok(
 );
 reset role;
 
+select set_config('request.jwt.claim.role','service_role',true);
 set local role service_role;
 select lives_ok(
   $$select * from public.get_user_workspace_subscription_info('00009209-0000-4000-8000-000000000001'::uuid)$$,

@@ -88,7 +88,7 @@ export async function GET(request: Request, { params }: Params) {
 
 /**
  * POST - Generate a new E2EE key for this workspace
- * Any authenticated workspace member may initialize a missing key.
+ * Requires manage_e2ee to initialize a missing key.
  */
 export async function POST(request: Request, { params }: Params) {
   const { wsId } = await params;
@@ -124,6 +124,13 @@ export async function POST(request: Request, { params }: Params) {
       { status: 403 }
     );
   }
+
+  const permission = await checkE2EEPermission(auth.supabase, wsId, auth.user);
+  if (!permission.authorized)
+    return NextResponse.json(
+      { error: 'E2EE management permission required' },
+      { status: permission.reason === 'membership_lookup_failed' ? 500 : 403 }
+    );
 
   const adminClient = await createAdminClient();
 

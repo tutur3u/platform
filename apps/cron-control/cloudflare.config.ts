@@ -16,18 +16,19 @@ export default defineConfig({
     observability: {
       enabled: true,
       headSamplingRate: 0.05,
+      traces: { enabled: false, headSamplingRate: 0.05, persist: true },
       logs: { enabled: true, headSamplingRate: 0.05, invocationLogs: true },
     },
     triggers: [
-      '*/5 * * * *',
-      '17 3 * * *',
+      '* * * * *',
       '0 */12 * * *',
-      '0 6 * * *',
       '0 */6 * * *',
+      '0 6 * * *',
       '*/10 * * * *',
       '*/15 * * * *',
+      '17 3 * * *',
       '*/30 * * * *',
-      '* * * * *',
+      '*/5 * * * *',
     ].map((schedule) => triggers.scheduled({ schedule })),
     env: {
       WEB_ORIGIN: bindings.text('https://tuturuuu.com'),

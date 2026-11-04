@@ -7,3 +7,8 @@ useDefault = true
 [[allowlists]]
 description = "Skill provenance manifests map reference file names to content digests"
 paths = ['''^\.agents/skills/[^/]+/UPSTREAM\.json$''']
+
+[[allowlists]]
+description = "SQL grant guard baseline holds SHA-256 file and finding digests, not credentials"
+targetRules = ['generic-api-key']
+paths = ['''^scripts/ci/sql-grant-guard\.baseline\.json$''']

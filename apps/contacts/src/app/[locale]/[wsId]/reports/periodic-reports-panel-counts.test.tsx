@@ -5,6 +5,7 @@ import PeriodicReportsPanel from './periodic-reports-panel';
 
 type QueryPage = {
   queryScope: string;
+  summaryPartial?: boolean;
   data: { id: string }[];
   counts: typeof counts;
   categoryCounts: typeof categoryCounts;
@@ -60,6 +61,9 @@ vi.mock('@tuturuuu/internal-api/reports', () => ({
     'skipped',
     'rejected',
   ],
+}));
+vi.mock('@tuturuuu/utils/timezone', () => ({
+  getBrowserTimezone: () => 'Asia/Ho_Chi_Minh',
 }));
 vi.mock('@tuturuuu/ui/hooks/use-workspace-visibility', () => ({
   useWorkspaceActor: () => state.actor,
@@ -245,4 +249,33 @@ it('retains current rows and totals during same-scope background refresh', async
     screen.getByRole('button', { name: 'Row action' })
   ).toBeInTheDocument();
   expect(state.summary.mock.lastCall?.[0].counts).toEqual(counts);
+});
+
+it('sends the viewer timezone only with a period range, including a cross-month one', async () => {
+  render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+  await state.options.queryFn({ pageParam: 1 });
+  expect(state.list.mock.lastCall?.[1].timezone).toBeUndefined();
+
+  state.filters = { ...state.filters, start: '2026-10-01', end: '2026-11-03' };
+  render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+  await state.options.queryFn({ pageParam: 1 });
+  expect(state.list.mock.lastCall?.[1]).toMatchObject({
+    periodStart: '2026-10-01',
+    periodEnd: '2026-11-03',
+    timezone: 'Asia/Ho_Chi_Minh',
+  });
+});
+
+it('passes the partial-summary flag from the server to the status cards', async () => {
+  const { rerender } = render(
+    <PeriodicReportsPanel wsId="workspace" permissions={permissions} />
+  );
+  await ownedResult();
+  rerender(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+  expect(state.summary.mock.lastCall?.[0].partial).toBe(false);
+  const firstPage = state.query.data?.pages[0];
+  if (!firstPage) throw new Error('missing page');
+  state.query.data = { pages: [{ ...firstPage, summaryPartial: true }] };
+  rerender(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+  expect(state.summary.mock.lastCall?.[0].partial).toBe(true);
 });

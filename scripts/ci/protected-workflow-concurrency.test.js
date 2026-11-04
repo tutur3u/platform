@@ -30,9 +30,11 @@ const serialized = [
   'release-please-auto-merge.yaml',
   'release-please-transient-retry.yaml',
   'release-please.yaml',
+  'release-realtime-package.yaml',
   'release-sdk-dev.yaml',
   'release-sdk-package.yaml',
   'release-supabase-package.yaml',
+  'release-turnstile-package.yaml',
   'release-types-package.yaml',
   'release-typescript-config-package.yaml',
   'release-ui-package.yaml',
@@ -83,6 +85,8 @@ const prExceptions = {
 };
 const mainExceptions = {
   ...prExceptions,
+  'supabase-staging.yaml':
+    'Protected main migrations serialize exact-SHA marker evidence',
   'release-sdk-dev.yaml':
     'Dev publication retains its serial npm dist-tag lock',
   // PR revisions supersede; main never cancels an active staging upload.

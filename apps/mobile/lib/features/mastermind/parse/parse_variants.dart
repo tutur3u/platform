@@ -12,7 +12,8 @@ bool _security(JsonReader r) =>
 NeedsYouItem parseNeedsYouItem(JsonReader r) =>
     _security(r) ? parseSecurityItem(r) : parseNeedsYou(r);
 
-NeedsYouItem parseOpenNeedsYou(JsonReader r) {
+NeedsYouItem parseOpenNeedsYou(JsonReader input) {
+  final r = JsonReader(adaptDecision(input.object()), input.path);
   if (r.field('state').value != 'open') r.field('state').fail();
   return parseNeedsYouItem(r);
 }
@@ -40,8 +41,19 @@ List<T> _singleSecurityPerProduct<T>(JsonReader r, List<T> items) {
 List<NeedsYouItem> parseOpenNeedsYouItems(JsonReader r) =>
     _singleSecurityPerProduct(r, r.list(parseOpenNeedsYou));
 
-List<LaneItem> parseLaneItems(JsonReader r) =>
-    _singleSecurityPerProduct(r, r.list(parseLaneItem));
+List<LaneItem> parseLaneItems(JsonReader r) {
+  final items = <LaneItem>[];
+  r.list((row) {
+    try {
+      items.add(parseLaneItem(row));
+    } on SchemaViolation {
+      if (row.value case {'title': 'Security issue'}) rethrow;
+      // Optional lane telemetry must not blank the snapshot.
+    }
+    return null;
+  });
+  return _singleSecurityPerProduct(r, items);
+}
 
 List<BacklogEntry> parseBacklogEntries(JsonReader r) =>
     _singleSecurityPerProduct(r, r.list(parseBacklogEntry));

@@ -9,6 +9,7 @@ import {
 import { NextResponse } from 'next/server';
 import { ENABLE_EDUCATION_SECRET } from '../tulearn/constants';
 import type { EducationAuthContext } from '../types';
+import { checkEducationWorkspaceEligibility } from './workspace-eligibility';
 
 export const EDUCATION_WORKSPACE_PERMISSION = 'ai_lab' satisfies PermissionId;
 export const EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION =
@@ -73,28 +74,26 @@ export async function checkEducationWorkspaceAccess({
     noCookie: true,
   })) as TypedSupabaseClient;
 
-  const { data: educationSecret, error: educationSecretError } = await sbAdmin
-    .from('workspace_secrets')
-    .select('value')
-    .eq('ws_id', normalizedWsId)
-    .eq('name', ENABLE_EDUCATION_SECRET)
-    .maybeSingle();
-
-  if (educationSecretError) {
-    console.error('Failed to verify education feature flag', {
-      error: educationSecretError,
-      wsId: normalizedWsId,
-    });
-    return educationAccessFailure('Failed to verify education access', 500);
-  }
-
-  const educationEnabled =
-    educationSecret?.value?.trim().toLowerCase() === 'true';
-  if (!educationEnabled) {
-    return educationAccessFailure(
-      'Education is not enabled for this workspace',
-      404
-    );
+  const eligibility = await checkEducationWorkspaceEligibility({
+    membershipType: membership.membershipType,
+    readEducationSecret: async () => {
+      const result = await sbAdmin
+        .from('workspace_secrets')
+        .select('value')
+        .eq('ws_id', normalizedWsId)
+        .eq('name', ENABLE_EDUCATION_SECRET)
+        .maybeSingle();
+      if (result.error) {
+        console.error('Failed to verify education feature flag', {
+          error: result.error,
+          wsId: normalizedWsId,
+        });
+      }
+      return result;
+    },
+  });
+  if (!eligibility.ok) {
+    return educationAccessFailure(eligibility.message, eligibility.status);
   }
 
   const permissions = await getPermissions({

@@ -92,6 +92,30 @@ describe('workspace route permission mapping', () => {
     ).toBe(false);
   });
 
+  it('does not let admin imply manage_subscription', () => {
+    expect(
+      hasRequiredWorkspaceRoutePermission({
+        grantedPermissions: ['admin'],
+        requiredPermissions: ['manage_subscription'],
+      })
+    ).toBe(false);
+    expect(
+      hasRequiredWorkspaceRoutePermission({
+        grantedPermissions: ['admin'],
+        requiredPermissions: [
+          'manage_subscription',
+          'manage_workspace_billing',
+        ],
+      })
+    ).toBe(true);
+    expect(
+      hasRequiredWorkspaceRoutePermission({
+        grantedPermissions: ['manage_subscription'],
+        requiredPermissions: ['manage_subscription'],
+      })
+    ).toBe(true);
+  });
+
   it('matches any explicitly enabled route permission', () => {
     expect(
       hasRequiredWorkspaceRoutePermission({

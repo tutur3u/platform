@@ -274,7 +274,7 @@ abstract final class InventoryEndpoints {
   }
 
   static String product(String wsId, String productId) =>
-      '/api/v1/workspaces/$wsId/products/$productId';
+      '/api/v1/workspaces/$wsId/products/${Uri.encodeComponent(productId)}';
 
   static String createProduct(String wsId) =>
       '/api/v1/workspaces/$wsId/products';

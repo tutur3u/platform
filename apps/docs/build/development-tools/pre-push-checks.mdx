@@ -2,6 +2,7 @@
 title: "Pre-push checks"
 description: "Run the build-free changed-files gate before pushing so cheap CI failures are caught locally in seconds."
 updatedAt: "2026-10-23"
+audience: developers
 ---
 
 ## Why this gate exists
@@ -35,6 +36,7 @@ alias still fails closed; a workspace binary is never used as a fallback. A dang
 | --- | --- |
 | Any | Branch name (same pattern as `branch-name-check.yaml`), source-size ceiling, docs inventory and app SEO `--check` |
 | JS/TS/JSON/CSS outside `apps/mobile` | Biome `check --error-on-warnings` on those files (pinned 2.5.13); Oxlint on JS/TS files as an **advisory** step |
+| `packages/internal-api/**`, `packages/sdk/**`, `packages/utils/**`, `packages/types/**` | SDK portable source approval (`sdk-portable`): resolves the source closure and checks its allowlist without emitting files or running TypeScript. Utils and types are conservatively scoped to cover portable imports. |
 | `apps/*` or `packages/*` source | App-session, satellite cookie and server-console guards |
 | A workspace's source, `tsconfig*.json` or `package.json` | Type-check of the projects its `type-check` script checks |
 | A workspace's related tests | Changed and colocated tests use `node --test` when they import `node:test` or their package's `test` script uses `node --test`; explicit Vitest imports retain Vitest; files that import `bun:test` run with `bun test` from their workspace directory (the Meet realtime Durable Object suites, which Node cannot load). Other related tests use the owning workspace's Vitest config. Each file runs under one runner. |
@@ -70,6 +72,12 @@ workspace dependencies with `~/.bun/bin/ttr resources run -- bun install --force
 keeping legitimate package links. Remove links only after proving they are
 undeclared orphan symlinks; follow the conditional
 [orphan alias recovery procedure](/reference/packages/sdk#orphan-workspace-aliases).
+
+For Vite/Oxc validation, keep the worktree container outside another checkout.
+An enclosing checkout's TypeScript project references can cause `TSCONFIG_ERROR`
+for a missing config package even when the worktree's own package links resolve.
+Move only the owned worktree with `git worktree move`, retain TTR admission, and
+rerun the failed contract; do not change compiler settings to hide this failure.
 
 ## Type-checking without built declarations
 
@@ -160,3 +168,14 @@ programs retain runtime and test files. This prevents host tooling such as
 ordinary request wrappers. Keep the configuration check in the package gate
 when moving config roots. `scripts/ci/vite-config-type-boundary.test.js` verifies
 the compiler's resolved app/config roots and the package command wiring.
+
+## Web browser and fixture test discovery
+
+Playwright's authenticated project collects only `*.spec.ts`; its setup project
+owns `auth.setup.ts`. Keep Vitest fixture tests out of browser collection.
+Check discovery without starting services with
+`bun run --cwd apps/web test:e2e -- --list` and require a nonzero test count.
+The root Vitest project `web-e2e-fixtures` runs the employee fixture unit tests:
+`bun x vitest run --project web-e2e-fixtures --maxWorkers=1`.
+The chat bridge fixture remains an explicit SQL qualification target requiring
+its envelope; it is not an ordinary unit test.

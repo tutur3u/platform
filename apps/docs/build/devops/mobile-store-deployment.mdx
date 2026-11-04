@@ -2,6 +2,7 @@
 title: "Mobile Store Deployment Vault"
 description: "What every Mobile Deployment vault field is, what it does in the store release workflow, and where to obtain its value."
 updatedAt: "2026-09-28"
+audience: developers
 ---
 
 This runbook explains each field on the **Infrastructure → Mobile Deployment**
@@ -24,8 +25,10 @@ the runner, DLLs and `data` directory with Inno Setup. The installer is per-user
 and does not require administrator privileges.
 
 Release Please owns `apps/mobile/pubspec.yaml` (currently the common version
-source). Desktop tags use `desktop-v<pubspec-version>-<run-id>` to identify
-immutable GitHub Releases. Production pushes affecting the mobile app trigger
+source). Mobile and desktop both publish the next unused patch of that
+`major.minor` from their own release history; desktop tags are
+`desktop-v<version>` with the run ID kept in the release body (see
+[desktop versions](/build/devops/desktop-beta-distribution#versions-and-release-notes)). Production pushes affecting the mobile app trigger
 both store delivery and the existing desktop release flow; desktop publication
 retains `DESKTOP_BETA_ENABLED`, platform selection, protected environment, bundle
 audit and provenance gates. Manual `desktop-beta.yaml` dispatch with
@@ -372,20 +375,24 @@ does not exist.
 
 Create an internal TestFlight group with automatic distribution enabled. After
 upload, CI waits up to 30 minutes for the exact build to become valid and
-available for internal testing. It then assigns the build to all existing
-TestFlight groups, including external groups, and reads the assignments back.
-An accepted upload alone does not pass verification. New groups are discovered
-on each run, so future groups are included by default.
+available for internal testing. It then assigns the build to internal TestFlight
+groups and reads the assignments back. External groups require explicit opt-in
+by exact name or ID; newly created external groups are never included by default.
+An accepted upload alone does not pass verification.
 
-The `mobile-store-beta` GitHub environment accepts two optional variables:
+Configure these optional GitHub repository variables. The review scheduler reads
+the repository-level external opt-in before entering any environment:
 
 | Variable | Default | Effect |
 | --- | --- | --- |
 | `TESTFLIGHT_BETA_ENABLED` | `true` | Set `false` to skip automatic group assignment. The internal group's own automatic distribution setting still applies. |
-| `TESTFLIGHT_BETA_GROUPS` | `all` | Comma-separated exact group names or App Store Connect group IDs to limit assignment. Unknown names fail the run. |
+| `TESTFLIGHT_BETA_GROUPS` | empty | Optional internal group names or IDs. Empty or `all` selects internal groups only. |
+| `TESTFLIGHT_EXTERNAL_BETA_GROUPS` | empty | Explicit opt-in: comma-separated exact external group names or IDs. `all` is rejected. Empty disables external assignment, review submission and notification, including the review queue. |
+
+Distribution defaults to internal only to prevent unintended external disclosure. Legacy `TESTFLIGHT_BETA_GROUPS` cannot authorize external distribution. Regression coverage: `scripts/ci/testflight-distribution.test.js`.
 
 External groups require TestFlight beta review before testers can install a new
-build. If an external group is selected, CI creates a missing English (U.S.)
+build. If an external group is explicitly selected, CI creates a missing English (U.S.)
 What to Test localization, enables automatic tester notification, and submits
 the build for beta review. A workflow success with `WAITING_FOR_REVIEW` or
 `IN_REVIEW` confirms submission, not external tester availability. Confirm
@@ -519,7 +526,8 @@ and field pointer to inspect the rejected build's TestFlight information in
 App Store Connect before retrying the production review workflow.
 
 Apple permits one external beta build per app version in review at a time. The
-review queue checks every five minutes and explicitly dispatches production
+review queue checks every five minutes and, only when
+`TESTFLIGHT_EXTERNAL_BETA_GROUPS` is nonempty, dispatches production
 with `mode=retry_ios_review`, so it never starts a new release. It leaves existing
 reviews in place and submits the newest eligible
 build, even while an older app version is under review. It waits rather than
@@ -685,3 +693,27 @@ presence and multiple-ticket assertions. A five-second reply deadline remains
 in place. Failure diagnostics report only statuses and counters, never tickets
 or signing secrets. The harness closes both clients, its loopback fixture and
 the Worker; it does not validate hosted SFU or physical-device screen capture.
+
+### Device-bound secure storage and Linux development releases
+
+On iOS, auth sessions and the cache, app-lock settings, sale journal, App Attest
+metadata, voice-note access, profile timeline access and habits access stores use
+`first_unlock_this_device`. App Attest storage contains key identifiers and
+registration metadata; its private keys remain managed by the native API.
+Old `unlocked` items migrate on their first read through a durable device-bound
+staging item. Reads, writes and deletes serialize per key, and explicit deletion
+also removes staging so a later read cannot restore deleted data. Failed or
+interrupted migrations retry on the next access. Session persistence handles
+Keychain duplicate-item status -25299 by deleting the old item and retrying once;
+other errors and retry failures propagate to the caller.
+
+Device MFA and note device-lock secrets retain `unlocked_this_device`: these are
+already device-bound and intentionally require an unlocked device. Android and
+other platform storage behavior is unchanged. Regression coverage lives in
+`apps/mobile/test/data/sources/keychain_accessibility_migration_test.dart`.
+
+The Linux development-target release CI job requires repository variables
+`NEXT_PUBLIC_SUPABASE_URL` and `API_BASE_URL`. When either is absent, the build and
+bundle audit skip with a job summary. When both exist, the release URL validator
+must accept them before the build receives them as Dart defines. Production URL
+validation remains mandatory in both the build tooling and app startup.

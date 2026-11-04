@@ -125,7 +125,7 @@ export function ThreadDetail({
         <div className="absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 flex justify-center lg:hidden">
           {mobileList}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <MailContentState
             kind={loading ? 'loading' : error ? 'error' : 'reader'}
             onAction={error ? onRetry : undefined}

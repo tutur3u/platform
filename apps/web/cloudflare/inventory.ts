@@ -2,7 +2,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { createSatelliteApiRewrites } from '../src/lib/satellite-api-rewrites';
 import { createSourceGraph } from './inventory-source';
-import { nativeLegalPages } from './native-legal';
+import { nativeLegalChangesPages, nativeLegalPages } from './native-legal';
+import { nativeSecurityPages } from './native-security';
 
 export function filesUnder(root: string): string[] {
   return readdirSync(root, { withFileTypes: true })
@@ -68,6 +69,15 @@ export function generateInventory(repo: string) {
                 : name;
       pattern = `${pattern === '/' ? '' : pattern}/${endpoint}`;
     }
+    const nativeSource = nativeLegalChangesPages.some(
+      (page) => page.source === source
+    )
+      ? 'apps/web/src/components/legal/legal-changes.tsx'
+      : nativeLegalPages.some((page) => page.source === source)
+        ? 'apps/web/cloudflare/start/legal-page.tsx'
+        : nativeSecurityPages.some((page) => page.source === source)
+          ? 'apps/web/cloudflare/start/security-page.tsx'
+          : null;
     const serviceWorker = local === 'serwist/[path]/route.ts';
     return [
       {
@@ -82,18 +92,14 @@ export function generateInventory(repo: string) {
               : isMetadata
                 ? 'metadata'
                 : 'route',
-        owner: nativeLegalPages.some((page) => page.source === source)
-          ? 'web-start'
-          : 'web-next',
-        disposition: nativeLegalPages.some((page) => page.source === source)
-          ? 'native-Start'
-          : 'Next-fallback',
+        owner: nativeSource ? 'web-start' : 'web-next',
+        disposition: nativeSource ? 'native-Start' : 'Next-fallback',
         cacheComponents: true,
-        ...(nativeLegalPages.some((page) => page.source === source)
+        ...(nativeSource
           ? {
-              nativeSource: 'apps/web/cloudflare/start/legal-page.tsx',
+              nativeSource,
               nativeBoundaries: graph.boundaries([
-                'apps/web/cloudflare/start/legal-page.tsx',
+                nativeSource,
                 'apps/web/cloudflare/start/routes/__root.tsx',
                 'apps/web/cloudflare/start/static-handler.tsx',
               ]),
@@ -176,6 +182,7 @@ export function generateInventory(repo: string) {
   ];
   return {
     schemaVersion: 1,
+    stagingUnmigrated: 'not-migrated-404',
     generatedBy: 'bun apps/web/cloudflare/generate-inventory.ts',
     analysis:
       'Conservative first-party static import closure, including inherited layouts/templates. Signal lines live in modules; unresolved imports remain migration blockers. No runtime parity is implied.',
@@ -221,6 +228,7 @@ export function generateInventory(repo: string) {
 export function routeManifest(inventory: ReturnType<typeof generateInventory>) {
   return {
     schemaVersion: 2,
+    stagingUnmigrated: inventory.stagingUnmigrated,
     generatedBy: inventory.generatedBy,
     serviceWorker: inventory.serviceWorker,
     crons: inventory.crons,

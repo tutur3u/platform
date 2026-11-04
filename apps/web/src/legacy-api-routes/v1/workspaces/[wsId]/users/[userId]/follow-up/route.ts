@@ -34,12 +34,12 @@ export async function POST(
     params: Promise<{ wsId: string; userId: string }>;
   }
 ) {
-  const { wsId, userId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const { wsId: rawWsId, userId } = await params;
+  const permissions = await getPermissions({ wsId: rawWsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
-  const { withoutPermission } = permissions;
+  const { withoutPermission, wsId } = permissions;
 
   if (withoutPermission('create_lead_generations')) {
     return NextResponse.json(
@@ -107,6 +107,7 @@ export async function POST(
     .from('workspace_users')
     .select('id, display_name, email')
     .eq('id', userId)
+    .eq('ws_id', wsId)
     .single();
 
   if (receiverError || !receiver) {

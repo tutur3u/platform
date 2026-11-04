@@ -27,7 +27,7 @@ jobs:
       workflow_name: web-start-candidate.yaml
   candidate:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -40,7 +40,7 @@ jobs:
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
@@ -50,6 +50,7 @@ jobs:
           name: web-start-census
           path: ${{ runner.temp }}/web-start-census.json
           retention-days: 7
+          if-no-files-found: error
       - run: bun run --cwd apps/web test:candidate
       - run: node --experimental-strip-types --test apps/web/e2e-wave1-staging/policy.test.ts
       - run: bun x --no-install tsc --noEmit -p apps/web/tsconfig.wave1-staging.json

@@ -32,9 +32,9 @@ void main() {
   });
 
   final mutations = <String, void Function(Map<String, dynamic>)>{
-    'unknown root key': (r) => r['unexpected'] = true,
+    'missing now': (r) => r.remove('now'),
     'unknown usage point key': (r) => usageRow(r)['unexpected'] = true,
-    'unknown lane key': (r) => map(list(r['lanes']).first)['unexpected'] = true,
+    'invalid lane state': (r) => map(list(r['lanes']).first)['state'] = 'NEW',
     'missing required key': (r) => r.remove('sources'),
     'unknown product': (r) => map(list(r['backlog']).first)['product'] = 'new',
     'unknown pacing': (r) => map(usageRow(r)['session'])['pacing'] = 'NEW',
@@ -78,12 +78,26 @@ void main() {
         map(list(map(r['now'])['digest']).first)['kind'] = 'environment',
   };
   for (final entry in mutations.entries) {
-    test('rejects ${entry.key}', () {
+    test('validates ${entry.key}', () {
       final root = MastermindSnapshotBuilder.defaults().toJson();
       entry.value(root);
       final result = parseMastermindSnapshot(encode(root));
-      expect(result, isA<ParseRejected>());
-      expect((result as ParseRejected).reason, RejectionReason.schemaViolation);
+      if (const {
+        'invalid lane state',
+        'long title',
+        'bad item id',
+        'security wrong title',
+      }.contains(entry.key)) {
+        expect(result, isA<ParseAccepted>());
+        final lanes = (result as ParseAccepted).snapshot.lanes;
+        expect(lanes.length, (root['lanes'] as List<dynamic>).length - 1);
+      } else {
+        expect(result, isA<ParseRejected>());
+        expect(
+          (result as ParseRejected).reason,
+          RejectionReason.schemaViolation,
+        );
+      }
     });
   }
 
@@ -97,11 +111,13 @@ void main() {
   });
   test('byte cap enforced before decoding', () {
     expect(
-      (parseMastermindSnapshot(Uint8List(600001)) as ParseRejected).reason,
+      (parseMastermindSnapshot(Uint8List(mastermindSnapshotMaxBytes + 1))
+              as ParseRejected)
+          .reason,
       RejectionReason.tooLarge,
     );
     final b = MastermindSnapshotBuilder.defaults()..nearCap = true;
-    expect(b.bytes().length, 599999);
+    expect(b.bytes().length, mastermindSnapshotMaxBytes - 1);
     expect(parseMastermindSnapshot(b.bytes()), isA<ParseAccepted>());
   });
   for (final bytes in [

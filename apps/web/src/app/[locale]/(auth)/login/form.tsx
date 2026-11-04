@@ -58,6 +58,7 @@ import * as z from 'zod';
 import { DEV_MODE } from '@/constants/common';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
+import { getCrossAppPkceParams } from '@/lib/auth/cross-app-pkce';
 import {
   isManagedTuturuuuHostname,
   isRootTuturuuuHostname,
@@ -236,13 +237,8 @@ function getStaticReturnApp(
   returnUrl: string | null | undefined,
   localReturnPath: string | null
 ) {
-  if (!returnUrl) {
-    return null;
-  }
-
-  if (localReturnPath) {
-    return 'web';
-  }
+  if (!returnUrl) return null;
+  if (localReturnPath) return 'web';
 
   const appDomain =
     getMountedAppVerifyTokenMatch(returnUrl) ?? getAppDomainByUrl(returnUrl);
@@ -869,6 +865,7 @@ export default function LoginForm({
       }
 
       const crossAppReturn = await createCrossAppReturnUrlWithInternalApi({
+        ...getCrossAppPkceParams(searchParams),
         returnUrl,
       });
 
@@ -1401,7 +1398,6 @@ export default function LoginForm({
       >
         {t('login.continue_with_google')}
       </SocialLoginButton>
-
       <SocialLoginButton
         disabled={loading}
         onClick={() => void handleOAuthLogin('azure')}
@@ -1409,9 +1405,11 @@ export default function LoginForm({
           <SocialImageLogo src="/media/logos/microsoft.svg" alt="Microsoft" />
         }
       >
-        {t('login.continue_with_microsoft')}
+        {t('login.staff_microsoft')}
       </SocialLoginButton>
-
+      <p className="text-muted-foreground text-sm">
+        {t('login.microsoft_email_recovery')}
+      </p>
       <SocialLoginButton
         disabled={loading}
         onClick={() => void handleOAuthLogin('apple')}
@@ -1419,7 +1417,6 @@ export default function LoginForm({
       >
         {t('login.continue_with_apple')}
       </SocialLoginButton>
-
       <SocialLoginButton
         disabled={loading}
         onClick={() => void handleOAuthLogin('github')}
@@ -1429,7 +1426,6 @@ export default function LoginForm({
       </SocialLoginButton>
     </div>
   );
-
   const renderRateLimitedSocialAuthSuggestion = (email: string) => (
     <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/20 p-4">
       <p className="text-muted-foreground text-sm leading-relaxed">
@@ -1532,12 +1528,10 @@ export default function LoginForm({
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
     const diagnosticCode = searchParams.get('diagnosticCode');
-
     if (!error && !errorDescription && !diagnosticCode) {
       oauthErrorToastKeyRef.current = null;
       return;
     }
-
     const toastKey = `${error ?? ''}:${errorDescription ?? ''}:${diagnosticCode ?? ''}`;
     if (oauthErrorToastKeyRef.current === toastKey) {
       return;
@@ -1550,9 +1544,11 @@ export default function LoginForm({
     toast.error(t('login.failed'), {
       description: formatDiagnosticDescription(
         errorDescription ||
-          (error === 'auth_failed'
-            ? t('login.oauth_callback_failed')
-            : t('login.social_sign_in_failed')),
+          (error === 'azure_tenant_restricted'
+            ? t('login.microsoft_tenant_restricted')
+            : error === 'auth_failed'
+              ? t('login.oauth_callback_failed')
+              : t('login.social_sign_in_failed')),
         diagnosticCode
       ),
     });

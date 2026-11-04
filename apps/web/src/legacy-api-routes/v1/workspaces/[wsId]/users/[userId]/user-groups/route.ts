@@ -138,7 +138,15 @@ async function getDataFromSession({
     return access.response;
   }
 
-  const { normalizedWsId, sbAdmin } = access.context;
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
+
+  if (
+    permissions.withoutPermission('create_invoices') &&
+    permissions.withoutPermission('update_invoices') &&
+    permissions.withoutPermission('view_invoices') &&
+    permissions.withoutPermission('view_user_groups')
+  )
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
 
   const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')

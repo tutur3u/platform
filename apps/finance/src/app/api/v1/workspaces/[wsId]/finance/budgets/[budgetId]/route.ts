@@ -1,3 +1,4 @@
+import { validateFinanceReferences } from '@tuturuuu/apis/finance/workspace-references';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -62,6 +63,13 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!existing.data) {
     return NextResponse.json({ message: 'Budget not found' }, { status: 404 });
   }
+
+  const invalidReference = await validateFinanceReferences(
+    sbAdmin,
+    wsId,
+    parsed.data
+  );
+  if (invalidReference) return invalidReference;
 
   const { data, error } = await sbAdmin
     .from('finance_budgets')

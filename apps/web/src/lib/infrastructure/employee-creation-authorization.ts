@@ -4,6 +4,7 @@ import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { z } from 'zod';
 import type { EmployeeCreationAuthorization } from './employee-creation-boundary';
@@ -72,7 +73,7 @@ export async function authorizeCurrentEmployeeActor(
     if (
       !current ||
       current.id !== user.id ||
-      !isExactTuturuuuDotComEmail(current.email) ||
+      !isVerifiedTuturuuuStaffSession(current) ||
       (signedEmail?.success &&
         current.email?.trim().toLowerCase() !== signedEmail.data) ||
       !current.email_confirmed_at ||

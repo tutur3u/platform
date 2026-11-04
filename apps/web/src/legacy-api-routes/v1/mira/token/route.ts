@@ -1,3 +1,4 @@
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 /**
  * Mira Voice Token API
  * POST /api/v1/mira/token - Get ephemeral token for Mira voice chat
@@ -6,7 +7,6 @@
 import { Modality, ThinkingLevel } from '@google/genai';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -176,14 +176,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const emailResult = await supabase
-      .from('user_private_details')
-      .select('email')
-      .eq('user_id', user.id)
-      .single();
-
-    const userEmail = emailResult.data?.email;
-    const isTuturuuuEmployee = isExactTuturuuuDotComEmail(userEmail);
+    const isTuturuuuEmployee = isVerifiedTuturuuuStaffSession(user);
 
     if (!isTuturuuuEmployee) {
       return Response.json(

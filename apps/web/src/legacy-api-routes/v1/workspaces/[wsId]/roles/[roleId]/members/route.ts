@@ -1,5 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { canAddCreatorGrantRoleMember } from '@/lib/workspace-creator-grant-permissions';
+import { addWorkspaceRoleMembers } from '@/lib/workspace-role-member-mutations';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
@@ -22,12 +24,12 @@ export async function GET(req: Request, { params }: Params) {
 
   const { data: role, error: roleError } = await supabase
     .from('workspace_roles')
-    .select('id')
+    .select('id,ws_id')
     .eq('id', roleId)
     .eq('ws_id', resolvedWsId)
-    .single();
+    .maybeSingle();
 
-  if (roleError || !role) {
+  if (roleError || !role || role.ws_id !== resolvedWsId) {
     console.log(roleError);
     return NextResponse.json({ message: 'Role not found' }, { status: 404 });
   }
@@ -72,37 +74,31 @@ export async function POST(req: Request, { params }: Params) {
 
   const { data: role } = await supabase
     .from('workspace_roles')
-    .select('id')
+    .select('id,ws_id')
     .eq('id', roleId)
     .eq('ws_id', access.permissions.wsId)
     .maybeSingle();
-  if (!role) {
+  if (!role || role.ws_id !== access.permissions.wsId) {
     return NextResponse.json({ message: 'Role not found' }, { status: 404 });
   }
 
-  const data = (await req.json()) as {
-    memberIds: string[];
-  };
-
-  if (!data?.memberIds)
-    return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
-
-  const { error: roleError } = await supabase
-    .from('workspace_role_members')
-    .insert(
-      data.memberIds.map((memberId) => ({
-        user_id: memberId,
-        role_id: roleId,
-      }))
-    );
-
-  if (roleError) {
-    console.log(roleError);
+  if (
+    !(await canAddCreatorGrantRoleMember(supabase, {
+      roleId,
+      userId: access.user?.id,
+      wsId: access.permissions.wsId,
+    }))
+  ) {
     return NextResponse.json(
-      { message: 'Error adding new members to role' },
-      { status: 500 }
+      { message: 'Only the workspace creator can add members to this role' },
+      { status: 403 }
     );
   }
 
-  return NextResponse.json({ message: 'success' });
+  return addWorkspaceRoleMembers({
+    request: req,
+    admin: supabase,
+    wsId: access.permissions.wsId,
+    roleId,
+  });
 }

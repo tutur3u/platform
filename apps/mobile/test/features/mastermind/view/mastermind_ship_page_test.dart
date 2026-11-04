@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_chip.dart';
+import 'package:mobile/core/ui/kit/app_filter_bar.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
+import 'package:mobile/features/mastermind/model/snapshot.dart';
 
 import '../../../helpers/mastermind_ship_fixture.dart';
 import '../../../helpers/mastermind_ship_pump.dart';
+import '../../../helpers/mastermind_time_finder.dart';
 import '../../../helpers/mastermind_view_harness.dart';
 import '../../../helpers/mastermind_work_pump.dart';
 
@@ -53,15 +55,45 @@ final Map<String, dynamic> _mixed = shipJson(
   ),
 );
 
+Finder _pill(String label) => find.descendant(
+  of: find.byType(AppFilterBar<ReleaseProduct?>),
+  matching: find.text(label),
+);
+
 void main() {
-  group('environments', () {
-    testWidgets('a product with a failing environment comes first', (
+  testWidgets('Vietnamese at 200% keeps the final control above the dock', (
+    tester,
+  ) async {
+    await pumpShip(
       tester,
-    ) async {
+      _mixed,
+      locale: const Locale('vi'),
+      textScale: 2,
+      size: const Size(430, 800),
+      dockClearance: 120,
+    );
+    expect(
+      Localizations.localeOf(
+        tester.element(find.byType(CustomScrollView).first),
+      ).languageCode,
+      'vi',
+    );
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -20000));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.getRect(find.byType(AppGroupedRow).last).bottom,
+      lessThanOrEqualTo(680),
+    );
+  });
+
+  group('environments', () {
+    testWidgets('failing first, then the most recent release', (tester) async {
       await pumpShip(tester, _mixed);
+      // PKTM went live 2 h ago, Upskii a day ago.
       final order = ['Tuturuuu web', 'PKTM', 'Upskii'];
       final tops = [for (final name in order) top(tester, name)];
-      expect([...tops]..sort(), tops, reason: 'failing, then by name');
+      expect([...tops]..sort(), tops, reason: 'failing, then by recency');
     });
 
     testWidgets('production is listed before staging', (tester) async {
@@ -76,7 +108,8 @@ void main() {
       expect(find.text('Deploy failure'), findsOneWidget);
       expect(find.text('Deploy in progress'), findsOneWidget);
       expect(find.text('CI pending'), findsOneWidget);
-      expect(find.text('Needs attention'), findsOneWidget);
+      // The product header and its failing environment.
+      expect(find.text('Failing'), findsOneWidget);
     });
 
     testWidgets('shows the version, commit id and subject as display text', (
@@ -85,7 +118,7 @@ void main() {
       await pumpShip(tester, _mixed);
       expect(find.text('v1.2.3'), findsWidgets);
       expect(find.text('abcdef1'), findsWidgets);
-      expect(find.text('fix · ci'), findsWidgets);
+      expect(find.textContaining('fix · ci'), findsWidgets);
       expect(find.byTooltip('Copy commit id'), findsWidgets);
       final copy = tester.getSize(find.byTooltip('Copy commit id').first);
       expect(copy.width, greaterThanOrEqualTo(44));
@@ -113,32 +146,54 @@ void main() {
       expect(find.text('v1.2.3'), findsNothing);
     });
 
-    testWidgets('each environment keeps its own freshness chip', (
+    testWidgets('freshness is a chip only when it is not fresh', (
       tester,
     ) async {
       // The snapshot is fresh; one environment was last checked long ago.
       await pumpShip(tester, _mixed);
-      expect(find.text('Updated Feb 1, 2026 00:30 GMT+7'), findsOneWidget);
+      // Fresh and healthy: the strip stays off this tab; the row says Stale.
+      expect(find.textContaining('Updated'), findsNothing);
       expect(find.text('Stale'), findsOneWidget);
-      expect(find.text('fresh'), findsNWidgets(4));
+      expect(find.text('fresh'), findsNothing);
     });
 
-    testWidgets('a release with no age says unknown, not zero', (tester) async {
+    testWidgets('a release with no age leaves its line out, never zero', (
+      tester,
+    ) async {
       await pumpShip(tester, _mixed);
-      expect(find.text('Unknown'), findsOneWidget);
-      expect(find.text('Live 1 day ago'), findsOneWidget);
+      // Upskii and PKTM have an age; Tuturuuu web does not.
+      expect(findTimeLabel('Live 1d'), findsOneWidget);
+      expect(findTimeLabel('Live 2h'), findsOneWidget);
+      expect(find.text('· GitHub deployment'), findsNWidgets(2));
+      expect(find.textContaining('Live'), findsNWidgets(2));
+      expect(find.textContaining('Live 0'), findsNothing);
     });
 
-    testWidgets('times are absolute GMT+7', (tester) async {
+    testWidgets('times are relative, absolute GMT+7 in semantics', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
       await pumpShip(tester, _mixed);
+      expect(find.text('fix · ci'), findsWidgets);
+      // The hub's age (2 h before the 17:30Z snapshot) wins over released_at.
+      expect(findTimeLabel('Released 2h'), findsWidgets);
+      // Checked at 17:00Z, read at 17:32Z.
+      expect(findTimeLabel('Checked 32m'), findsWidgets);
       expect(
-        find.textContaining('Released Jan 31, 2026 17:00 GMT+7'),
+        find.bySemanticsLabel(
+          RegExp(
+            r'Released 2 hours ago, 31 January 22:30 GMT\+7 · '
+            r'Checked 32 minutes ago, 1 February 00:00 GMT\+7 · '
+            'GitHub deployment',
+          ),
+        ),
         findsWidgets,
       );
-      expect(
-        find.textContaining('Checked Feb 1, 2026 00:00 GMT+7'),
-        findsWidgets,
-      );
+      // A long press on a time shows it in full, in GMT+7.
+      await tester.longPress(findTimeLabel('Checked 32m').first);
+      await tester.pump();
+      expect(find.text('1 Feb, 00:00 GMT+7'), findsOneWidget);
+      semantics.dispose();
     });
   });
 
@@ -175,14 +230,14 @@ void main() {
   });
 
   group('release cadence age', () {
-    testWidgets('a production release after the snapshot reads just now', (
+    testWidgets('a production release after the snapshot reads now', (
       tester,
     ) async {
       final json = shipJson(
         cadence: [shipCadence('Upskii', '2026-02-01T10:00:00+00:00')],
       );
       await pumpShip(tester, json);
-      expect(find.text('just now'), findsOneWidget);
+      expect(findTimeLabel('now'), findsOneWidget);
     });
   });
 
@@ -244,10 +299,7 @@ void main() {
       final json = Map<String, dynamic>.of(_mixed)
         ..['generated_at'] = '2026-01-31T14:30:00+00:00';
       await pumpShip(tester, json);
-      expect(
-        find.textContaining('Mastermind last published 3 h ago'),
-        findsOneWidget,
-      );
+      expect(findTimeLabel('Published 3h'), findsOneWidget);
       expect(find.text('Tuturuuu web'), findsWidgets);
     });
 
@@ -283,14 +335,16 @@ void main() {
     ) async {
       final router = workRouter(Routes.mastermindShip);
       await pumpShip(tester, _mixed, router: router);
-      await tester.tap(find.widgetWithText(AppChip, 'Upskii'));
+      await tester.ensureVisible(_pill('Upskii'));
+      await tester.tap(_pill('Upskii'));
       await tester.pumpAndSettle();
       expect(
         workUri(router).toString(),
         '${Routes.mastermindShip}?product=Upskii',
       );
       expect(find.text('Deploy failure'), findsNothing);
-      await tester.tap(find.widgetWithText(AppChip, 'Upskii'));
+      await tester.ensureVisible(_pill('All'));
+      await tester.tap(_pill('All'));
       await tester.pumpAndSettle();
       expect(workUri(router).toString(), Routes.mastermindShip);
       expect(find.text('Deploy failure'), findsOneWidget);

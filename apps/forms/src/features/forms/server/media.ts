@@ -1,5 +1,9 @@
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database } from '@tuturuuu/types';
+import {
+  encodeStoragePath,
+  sanitizePathStrict,
+} from '@tuturuuu/utils/storage-path';
 import { createDefaultFormStudioInput } from '../schema';
 import type { FormDefinition } from '../types';
 
@@ -20,14 +24,24 @@ export function sanitizeFormMediaForStorage(
         url?: string | null;
         alt?: string | null;
       }
-    | undefined
+    | undefined,
+  wsId: string
 ): {
   storagePath: string;
   url: string;
   alt: string;
 } {
+  const storagePath = media?.storagePath ?? '';
+  if (
+    storagePath &&
+    (!storagePath.startsWith(`${wsId}/forms/`) ||
+      storagePath.length <= `${wsId}/forms/`.length ||
+      sanitizePathStrict(storagePath) !== storagePath)
+  ) {
+    return { storagePath: '', url: '', alt: media?.alt ?? '' };
+  }
   return {
-    storagePath: media?.storagePath ?? '',
+    storagePath,
     url: media?.storagePath ? '' : (media?.url ?? ''),
     alt: media?.alt ?? '',
   };
@@ -41,17 +55,14 @@ async function resolveFormMedia(
         url?: string | null;
         alt?: string | null;
       }
-    | undefined
+    | undefined,
+  wsId: string
 ): Promise<{
   storagePath: string;
   url: string;
   alt: string;
 }> {
-  const normalized = {
-    storagePath: media?.storagePath ?? DEFAULT_FORM_MEDIA.storagePath,
-    url: media?.url ?? DEFAULT_FORM_MEDIA.url,
-    alt: media?.alt ?? DEFAULT_FORM_MEDIA.alt,
-  };
+  const normalized = sanitizeFormMediaForStorage(media, wsId);
 
   if (!normalized.storagePath) {
     return normalized;
@@ -59,7 +70,7 @@ async function resolveFormMedia(
 
   const { data, error } = await supabase.storage
     .from('workspaces')
-    .createSignedUrl(normalized.storagePath, 60 * 60);
+    .createSignedUrl(encodeStoragePath(normalized.storagePath), 60 * 60);
 
   if (error || !data?.signedUrl) {
     return normalized;
@@ -76,13 +87,13 @@ export async function resolveFormDefinitionMedia(
   definition: FormDefinition
 ) {
   const [coverImage, seoImage] = await Promise.all([
-    resolveFormMedia(supabase, definition.theme.coverImage),
-    resolveFormMedia(supabase, definition.seo.image),
+    resolveFormMedia(supabase, definition.theme.coverImage, definition.wsId),
+    resolveFormMedia(supabase, definition.seo.image, definition.wsId),
   ]);
   const sectionMediaEntries = await Promise.all(
     definition.sections.map(async (section) => [
       section.id,
-      await resolveFormMedia(supabase, section.image),
+      await resolveFormMedia(supabase, section.image, definition.wsId),
     ])
   );
   const optionMediaEntries = await Promise.all(
@@ -90,7 +101,10 @@ export async function resolveFormDefinitionMedia(
       section.questions.flatMap((question) =>
         question.options.map(
           async (option) =>
-            [option.id, await resolveFormMedia(supabase, option.image)] as const
+            [
+              option.id,
+              await resolveFormMedia(supabase, option.image, definition.wsId),
+            ] as const
         )
       )
     )
@@ -101,7 +115,7 @@ export async function resolveFormDefinitionMedia(
         async (question) =>
           [
             question.id,
-            await resolveFormMedia(supabase, question.image),
+            await resolveFormMedia(supabase, question.image, definition.wsId),
           ] as const
       )
     )

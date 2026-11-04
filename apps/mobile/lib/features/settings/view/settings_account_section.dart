@@ -28,11 +28,6 @@ class SettingsAccountSection extends StatelessWidget {
     final workspaceName = context.select<WorkspaceCubit, String?>(
       (cubit) => cubit.state.currentWorkspace?.name,
     );
-    final workspaceCount = context.select<WorkspaceCubit, int>((cubit) {
-      final state = cubit.state;
-      final count = state.workspaces.length;
-      return count == 0 && state.currentWorkspace != null ? 1 : count;
-    });
     return SettingsCompactSection(
       title: l10n.settingsAccountSectionTitle,
       children: [
@@ -50,9 +45,6 @@ class SettingsAccountSection extends StatelessWidget {
           grouped: true,
           icon: LucideIcons.arrowLeftRight,
           title: l10n.settingsSwitchWorkspace,
-          trailingValue: workspaceCount > 1
-              ? l10n.settingsWorkspaceCountValue(workspaceCount)
-              : null,
           onTap: () => showWorkspacePickerSheet(context),
         ),
         const HiddenWorkspacesSettingsRow(

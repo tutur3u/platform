@@ -6,6 +6,7 @@ import { resolveSupabaseSessionRequest } from '@tuturuuu/auth/supabase-session-u
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { createRequestClient } from '@tuturuuu/supabase/request/server';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { z } from 'zod';
 import { createStaffAuthTransport } from './staff-auth-transport';
 import type { StaffOperationContext } from './staff-operation';
@@ -20,6 +21,14 @@ const currentIdentity = z.object({
   email: z.string().nullable().optional(),
   email_confirmed_at: z.string().nullable().optional(),
   banned_until: z.string().nullable().optional(),
+  identities: z
+    .array(
+      z.object({
+        provider: z.string(),
+        identity_data: z.record(z.string(), z.unknown()).optional(),
+      })
+    )
+    .optional(),
   app_metadata: z
     .object({ employee_onboarding: z.unknown().optional() })
     .optional(),
@@ -122,9 +131,7 @@ export function createStaffActorResolver(deps: StaffAuthDependencies) {
       const ban =
         user.banned_until == null ? null : Date.parse(user.banned_until);
       if (
-        !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@tuturuuu\.com$/i.test(
-          user.email ?? ''
-        ) ||
+        !isVerifiedTuturuuuStaffSession(user) ||
         !user.email_confirmed_at ||
         !Number.isFinite(Date.parse(user.email_confirmed_at)) ||
         (ban !== null && (!Number.isFinite(ban) || ban > deps.now())) ||

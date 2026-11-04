@@ -109,6 +109,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage>
     return NovaRefreshIndicator(
       onRefresh: _load,
       child: AppPageListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
           if (_loading) const NovaLoadingIndicator(size: 20),
           if (_failed)
@@ -216,7 +217,6 @@ class _AccountSecurityPageState extends State<AccountSecurityPage>
                 OAuthProvider.google: 'Google',
                 OAuthProvider.apple: 'Apple',
                 OAuthProvider.github: 'GitHub',
-                OAuthProvider.azure: 'Microsoft',
               }.entries)
                 if (!_identities.any(
                   (identity) => identity.provider == entry.key.name,

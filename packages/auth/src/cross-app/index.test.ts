@@ -1,15 +1,27 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 let mapUrlToApp: typeof import('./index').mapUrlToApp;
 let normalizeClientRedirectPath: typeof import('./index').normalizeClientRedirectPath;
 let verifyRouteToken: typeof import('./index').verifyRouteToken;
 
 beforeAll(async () => {
-  process.env.NEXT_PUBLIC_SUPABASE_URL ??= 'http://localhost:54321';
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??= 'test-publishable-key';
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'http://localhost:54321');
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'test-publishable-key');
 
   ({ mapUrlToApp, normalizeClientRedirectPath, verifyRouteToken } =
     await import('./index.js'));
+});
+
+afterAll(() => {
+  vi.unstubAllEnvs();
 });
 
 beforeEach(() => {
@@ -121,16 +133,17 @@ describe('mapUrlToApp', () => {
     ).toBe('meet');
   });
 
-  it.each([
-    ['nova', 'https://nova.ai.vn'],
-    ['rewise', 'https://rewise.me'],
-  ])('maps the %s canonical external production origin', (app, origin) => {
-    expect(mapUrlToApp(`${origin}/verify-token?nextUrl=%2Fdashboard`)).toBe(
-      app
-    );
-  });
+  it.each([['nova', 'https://nova.ai.vn']])(
+    'maps the %s canonical external production origin',
+    (app, origin) => {
+      expect(mapUrlToApp(`${origin}/verify-token?nextUrl=%2Fdashboard`)).toBe(
+        app
+      );
+    }
+  );
 
   it.each([
+    'https://rewise.me',
     'https://rewise.me.evil.com',
     'https://nova.ai.vn.evil.com',
     'https://evilrewise.me',

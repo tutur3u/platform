@@ -1,3 +1,4 @@
+import './storage-auth-test-fixture';
 import { readFile } from 'node:fs/promises';
 import type { LettinDraft } from '@tuturuuu/internal-api/lettin';
 import { convertV4MiniflareOptions, Miniflare } from 'miniflare';

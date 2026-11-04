@@ -1,31 +1,14 @@
 import '@tanstack/react-start/server-only';
-import type { AbstractIntlMessages } from 'use-intl';
-import { createTranslator } from 'use-intl/core';
+import { createIntlServer } from '@tuturuuu/start-bridge/intl/server';
+import { runtimeAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
-import { mailRequest } from './request-context';
 
-export async function getLocale() {
-  const request = mailRequest().request;
-  const segment = new URL(request.url).pathname.split('/')[1];
-  if (segment === 'en' || segment === 'vi') return segment;
-  return request.headers.get('x-next-intl-locale') === 'vi' ? 'vi' : 'en';
-}
-
-export async function getMessages() {
-  return (await getLocale()) === 'vi' ? vi : en;
-}
-
-export async function getTranslations(
-  options?: string | { locale?: string; namespace?: string }
-) {
-  const locale =
-    (typeof options === 'object' ? options.locale : undefined) ??
-    (await getLocale());
-  const messages: AbstractIntlMessages = locale === 'vi' ? vi : en;
-  return createTranslator({
-    locale,
-    messages,
-    namespace: typeof options === 'string' ? options : options?.namespace,
-  });
-}
+const intl = () => createIntlServer({ en, vi }, { basePath: runtimeAppBase() });
+export const getLocale = () => intl().getLocale();
+export const getMessages = (
+  ...args: Parameters<ReturnType<typeof createIntlServer>['getMessages']>
+) => intl().getMessages(...args);
+export const getTranslations = (
+  ...args: Parameters<ReturnType<typeof createIntlServer>['getTranslations']>
+) => intl().getTranslations(...args);

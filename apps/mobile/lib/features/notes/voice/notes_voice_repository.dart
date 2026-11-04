@@ -9,6 +9,7 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/scoped_cache_access.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/device_secure_storage.dart';
 import 'package:mobile/features/notes/voice/notes_voice_access.dart';
 import 'package:mobile/features/notes/voice/notes_voice_document.dart';
 import 'package:mobile/features/notes/voice/notes_voice_job.dart';
@@ -23,7 +24,7 @@ class NotesVoiceRepository {
        _cache = cache ?? CacheStore.instance,
        _actor = actor ?? currentCacheUserId,
        _access = ScopedCacheAccess(
-         secureStorage ?? const FlutterSecureStorage(),
+         secureStorage ?? deviceSecureStorage,
          markerPrefix: 'notes-voice-denied-v1',
        );
   final ApiClient _api;

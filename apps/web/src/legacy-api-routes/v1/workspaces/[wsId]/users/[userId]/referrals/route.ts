@@ -217,6 +217,14 @@ export async function GET(req: Request, { params }: Params) {
     }
   }
 
+  if (
+    !permissions.containsPermission('view_users_public_info') &&
+    !permissions.containsPermission('view_users_private_info') &&
+    !permissions.containsPermission('update_users')
+  ) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
   // Default: list referred users
   const { data, error, count } = await sbAdmin
     .from('workspace_users')
@@ -248,9 +256,9 @@ export async function GET(req: Request, { params }: Params) {
 
   return NextResponse.json({
     data: withRequireAttentionFlag(
-      referredUsers as unknown as {
-        id: string;
-      }[],
+      permissions.containsPermission('view_users_private_info')
+        ? referredUsers
+        : referredUsers.map((user) => ({ ...user, email: null, phone: null })),
       requireAttentionUserIds
     ),
     count: count ?? 0,

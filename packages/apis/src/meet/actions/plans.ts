@@ -6,6 +6,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { parseTimeFromTimetz } from '@tuturuuu/utils/time-helper';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { revalidatePath } from 'next/cache';
 
 // Types for batched operations
@@ -205,10 +206,23 @@ export interface CreatePlanInput {
 }
 
 export async function createPlan(data: CreatePlanInput) {
-  const sbAdmin = await createAdminClient();
   const supabase = await createClient();
 
   const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+  if (!user) return { error: 'Not authenticated' };
+  if (data.ws_id) {
+    const membership = await verifyWorkspaceMembershipType({
+      supabase,
+      userId: user.id,
+      wsId: data.ws_id,
+    });
+    if (membership.error === 'membership_lookup_failed') {
+      return { error: 'Failed to verify workspace access' };
+    }
+    if (!membership.ok) return { error: 'Forbidden' };
+  }
+  const sbAdmin = await createAdminClient();
 
   // Backend validation: ensure end_time is after start_time
   if (data.start_time && data.end_time) {
@@ -294,7 +308,30 @@ export interface UpdatePlanInput {
   agenda_content?: any;
 }
 
-export async function updatePlan(planId: string, data: UpdatePlanInput) {
+const UPDATABLE_PLAN_FIELDS = [
+  'name',
+  'dates',
+  'start_time',
+  'end_time',
+  'timezone',
+  'duration_minutes',
+  'where_to_meet',
+  'description',
+  'agenda_content',
+] as const satisfies readonly (keyof UpdatePlanInput)[];
+
+// Only editable fields reach the admin client; ws_id, creator_id, is_public and
+// the like must never be writable through a plan update.
+function pickUpdatablePlanFields(data: UpdatePlanInput): UpdatePlanInput {
+  const updates: Record<string, unknown> = {};
+  for (const field of UPDATABLE_PLAN_FIELDS) {
+    if (data[field] !== undefined) updates[field] = data[field];
+  }
+  return updates as UpdatePlanInput;
+}
+
+export async function updatePlan(planId: string, input: UpdatePlanInput) {
+  const data = pickUpdatablePlanFields(input);
   const supabase = await createClient();
   const { user } = await resolveAuthenticatedSessionUser(supabase);
 

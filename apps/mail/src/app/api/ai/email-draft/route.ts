@@ -1,8 +1,14 @@
 import { google } from '@ai-sdk/google';
+import { authorizeAiWorkspace } from '@tuturuuu/ai/chat/google/route-auth';
 import { withAiMemory } from '@tuturuuu/ai/memory';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { attachSupabaseAuthUser } from '@tuturuuu/auth/app-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  getVerifiedAuthUser,
+  type SupabaseUser,
+} from '@tuturuuu/supabase/next/user';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { generateObject } from 'ai';
 import type { NextRequest } from 'next/server';
 import { resolveMailRouteContext } from '@/lib/mail/auth';
@@ -16,6 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const payload = await req.json();
+    let wsId = payload.wsId;
     let user: SupabaseUser | null = null;
     if (tempAuth.status === 'valid') {
       user = tempAuth.context.user as SupabaseUser;
@@ -23,6 +30,7 @@ export async function POST(req: NextRequest) {
       const auth = await resolveMailRouteContext(req, payload.wsId);
       if (!auth.ok) return auth.response;
       user = auth.context.user as SupabaseUser;
+      wsId = auth.context.normalizedWsId;
     }
 
     if (!user) {
@@ -36,14 +44,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user has authorized email domain
-    if (!isValidTuturuuuEmail(user.email)) {
+    const admin = await createAdminClient({ noCookie: true });
+    user = await getVerifiedAuthUser(admin, user.id);
+    if (!isVerifiedTuturuuuStaffSession(user, { allowXwf: true })) {
       return Response.json(
         {
           message: 'Only Tuturuuu emails are allowed',
         },
-        { status: 401 }
+        { status: 403 }
       );
+    }
+
+    if (!user) return Response.json({ message: 'Forbidden' }, { status: 403 });
+
+    if (tempAuth.status === 'valid') {
+      const requestedWsId = wsId ?? tempAuth.context.wsId;
+      if (typeof requestedWsId !== 'string')
+        return Response.json(
+          { message: 'Workspace is required' },
+          { status: 400 }
+        );
+      const access = await authorizeAiWorkspace({
+        request: req,
+        supabase: attachSupabaseAuthUser(admin, user),
+        membershipClient: admin,
+        userId: user.id,
+        wsId: requestedWsId,
+      });
+      if (!access.ok) return access.response;
+      wsId = access.wsId;
     }
 
     const {
@@ -55,7 +84,6 @@ export async function POST(req: NextRequest) {
       revisionInstructions,
       userEmail,
       userDisplayName,
-      wsId,
     } = payload;
 
     const isRevision = revisionInstructions && existingContent;

@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { Tables } from '@tuturuuu/types';
+import { isWorkspaceTemplateBackgroundPath } from '@tuturuuu/utils/template-background-path';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -118,7 +119,9 @@ export async function serializeBoardTemplate(
 ) {
   let backgroundUrl: string | null = null;
 
-  if (template.background_path) {
+  if (
+    isWorkspaceTemplateBackgroundPath(template.background_path, template.ws_id)
+  ) {
     const { data, error } = await context.sbAdmin.storage
       .from('workspaces')
       .createSignedUrl(template.background_path, 3600);

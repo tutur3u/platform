@@ -7,6 +7,7 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The one reply waiting to send, if exactly one is: it has a single place to
@@ -33,7 +34,7 @@ class PendingRepliesSection extends StatelessWidget {
       builder: (context, state) {
         if (state.pendingCount == 0) return const SizedBox.shrink();
         final only = _onlyPending(state);
-        return AppGroupedSection.spaced(
+        return MastermindGroup(
           children: [
             AppGroupedRow(
               leading: const AppIconTile(icon: LucideIcons.send),

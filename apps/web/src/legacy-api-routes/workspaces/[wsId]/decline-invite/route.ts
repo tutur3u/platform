@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthEmail } from '@tuturuuu/supabase/next/user';
 import {
   isWorkspaceUuidLiteral,
   normalizeWorkspaceId,
@@ -38,25 +39,25 @@ export const POST = withSessionAuth<{ wsId: string }>(
     }
 
     const sbAdmin = await createAdminClient();
-    const authEmail = user.email?.trim().toLowerCase() || null;
-    const { data: privateDetails, error: privateDetailsError } = await sbAdmin
-      .from('user_private_details')
-      .select('email')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (privateDetailsError) {
-      console.error('Failed to read invite recipient private email:', {
-        error: privateDetailsError,
+    let authEmail: string | null;
+    try {
+      authEmail = await getVerifiedAuthEmail(sbAdmin, user.id);
+    } catch (authEmailError) {
+      console.error('Failed to resolve verified auth email:', {
+        error: authEmailError,
         userId: user.id,
         wsId,
       });
+      return NextResponse.json(
+        {
+          error: 'Failed to verify account email',
+          errorCode: 'AUTH_IDENTITY_LOOKUP_FAILED',
+        },
+        { status: 500 }
+      );
     }
 
-    const privateEmail = privateDetails?.email?.trim().toLowerCase() || null;
-    const candidateEmails = [...new Set([authEmail, privateEmail])].filter(
-      (email): email is string => typeof email === 'string' && email.length > 0
-    );
+    const candidateEmails = authEmail ? [authEmail] : [];
 
     const { error: workspaceInvitesError } = await sbAdmin
       .from('workspace_invites')

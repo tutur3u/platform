@@ -77,6 +77,7 @@ function fixture(
         id: actor,
         email: options.email ?? 'fixture@tuturuuu.com',
         email_confirmed_at: options.confirmed === false ? null : date,
+        identities: [{ provider: 'email', identity_data: {} }],
         banned_until: options.ban ?? null,
         app_metadata: { employee_onboarding: options.onboarding ?? true },
       },

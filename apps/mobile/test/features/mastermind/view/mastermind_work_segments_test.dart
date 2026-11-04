@@ -348,7 +348,7 @@ void main() {
       await pumpWork(tester, _json(), segment: WorkSegment.staff);
       expect(find.text('Reviewer · codex / gpt-5'), findsOneWidget);
       expect(find.text('failed'), findsOneWidget);
-      expect(find.text('Builder · Unknown model'), findsOneWidget);
+      expect(find.text('Builder · Not published yet'), findsOneWidget);
     });
 
     testWidgets('says nothing about activity: no last-active, runs or today', (

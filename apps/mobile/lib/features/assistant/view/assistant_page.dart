@@ -56,6 +56,7 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_primary_action.dart';
+import 'package:mobile/features/assistant/widgets/assistant_creation_hold_banner.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
@@ -147,6 +148,9 @@ class _AssistantPageState extends State<AssistantPage>
   double? _composerHeight;
   bool _settingsWritePending = false;
   bool _newConversationPending = false;
+  void _dismissCreationBanner(String wsId) => setState(
+    () => AssistantCreationHoldBanner.dismiss(_creationBannerScope(wsId)),
+  );
   bool Function()? _newConversationCurrent;
   final _inputFocusNode = FocusNode();
   final _scrollController = ScrollController();

@@ -13,6 +13,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
       - "scripts/desktop-deployment/**"
+      - "scripts/mobile-deployment/build-name.mjs"
+      - "scripts/ci/normalize-release-notes.js"
       - ".github/workflows/desktop-beta.yaml"
       - ".github/actions/setup-flutter-with-cache/**"
   workflow_dispatch:
@@ -49,7 +51,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - run: node --test scripts/desktop-deployment/*.test.mjs
@@ -66,7 +68,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - uses: ./.github/actions/setup-flutter-with-cache
@@ -111,6 +113,9 @@ jobs:
 
   release-status:
     name: Desktop beta availability
+    # GitHub requires push access to include draft releases in the listing.
+    permissions:
+      contents: write
     needs: check-ci
     if: (needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production' && !inputs.dry_run) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
@@ -118,9 +123,12 @@ jobs:
       enabled: ${{ steps.status.outputs.enabled }}
       platforms: ${{ steps.platforms.outputs.platforms }}
       matrix: ${{ steps.platforms.outputs.matrix }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - id: platforms
@@ -135,6 +143,12 @@ jobs:
           if [ "$ENABLED" != true ]; then
             echo 'Desktop downloads are coming soon. Signing setup and platform verification are deferred; no desktop release was published.' >> "$GITHUB_STEP_SUMMARY"
           fi
+      - name: Derive next desktop version
+        id: version
+        if: steps.status.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/desktop-deployment/release-version.mjs
 
   build:
     name: Desktop beta (${{ matrix.platform }})
@@ -150,11 +164,13 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.release-status.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}
+    env:
+      DESKTOP_VERSION: ${{ needs.release-status.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - name: Validate Windows smoke and updater scripts
@@ -194,7 +210,7 @@ jobs:
       - name: Build Windows beta
         if: matrix.platform == 'windows'
         working-directory: apps/mobile
-        run: flutter build windows --release --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
+        run: flutter build windows --release --target lib/main_production.dart --build-name="$env:DESKTOP_VERSION" --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
       - name: Select Windows signing mode
         id: windows-signing
         if: matrix.platform == 'windows'
@@ -207,11 +223,11 @@ jobs:
       - name: Build macOS beta
         if: matrix.platform == 'macos'
         working-directory: apps/mobile
-        run: flutter build macos --release --flavor production --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
+        run: flutter build macos --release --flavor production --target lib/main_production.dart --build-name="$DESKTOP_VERSION" --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
       - name: Build Linux beta
         if: matrix.platform == 'linux'
         working-directory: apps/mobile
-        run: flutter build linux --release --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
+        run: flutter build linux --release --target lib/main_production.dart --build-name="$DESKTOP_VERSION" --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
       - name: Audit and package beta
         if: matrix.platform == 'linux'
         shell: bash
@@ -286,6 +302,7 @@ jobs:
     needs: [build, release-status]
     env:
       DESKTOP_BETA_PLATFORMS: ${{ needs.release-status.outputs.platforms }}
+      DESKTOP_VERSION: ${{ needs.release-status.outputs.version }}
     if: (always() && !cancelled() && needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production' && (needs.build.result == 'success' || needs.build.result == 'failure')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     environment: desktop-beta
     runs-on: macos-latest
@@ -297,11 +314,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Release notes list app changes since the previous desktop beta.
+          fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: desktop-beta-*
           merge-multiple: true
@@ -319,6 +338,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/desktop-deployment/verify-provenance.mjs
       - name: Publish immutable beta release
+        id: publication
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/desktop-deployment/publish.mjs
+      - name: Remove this run's failed draft
+        if: failure() && steps.publication.outputs.draft_tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DESKTOP_DRAFT_TAG: ${{ steps.publication.outputs.draft_tag }}
+        run: node scripts/desktop-deployment/cleanup-draft.mjs

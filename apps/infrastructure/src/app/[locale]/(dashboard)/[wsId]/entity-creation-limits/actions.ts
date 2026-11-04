@@ -2,7 +2,11 @@
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceProductTier } from '@tuturuuu/types/db';
-import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
+import {
+  ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
+} from '@tuturuuu/utils/constants';
+import { authorizeInfrastructureRootMemberRequest } from '@/lib/infrastructure-admin-access';
 
 function parseRequiredText(formData: FormData, fieldName: string) {
   const value = String(formData.get(fieldName) ?? '').trim();
@@ -63,9 +67,12 @@ export async function addPlatformEntityCreationLimitTable(
   wsId: string,
   formData: FormData
 ): Promise<{ status: 'table-added' }> {
-  await enforceRootWorkspaceAdmin(wsId, {
-    redirectTo: `/${wsId}/settings`,
-  });
+  if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID)
+    throw new Error('Forbidden');
+  const authorization = await authorizeInfrastructureRootMemberRequest(
+    'manage_workspace_roles'
+  );
+  if (!authorization.ok) throw new Error('Forbidden');
 
   const targetTable = parseRequiredText(formData, 'targetTable');
   const notes = parseOptionalText(formData, 'notes');
@@ -95,9 +102,12 @@ export async function updatePlatformEntityCreationLimitMetadata(
   targetTable: string,
   formData: FormData
 ): Promise<{ status: 'metadata-saved' }> {
-  await enforceRootWorkspaceAdmin(wsId, {
-    redirectTo: `/${wsId}/settings`,
-  });
+  if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID)
+    throw new Error('Forbidden');
+  const authorization = await authorizeInfrastructureRootMemberRequest(
+    'manage_workspace_roles'
+  );
+  if (!authorization.ok) throw new Error('Forbidden');
 
   const notes = parseOptionalText(formData, 'notes');
 
@@ -127,9 +137,12 @@ export async function updatePlatformEntityCreationLimitTier(
   tier: WorkspaceProductTier,
   formData: FormData
 ): Promise<{ status: 'tier-saved' }> {
-  await enforceRootWorkspaceAdmin(wsId, {
-    redirectTo: `/${wsId}/settings`,
-  });
+  if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID)
+    throw new Error('Forbidden');
+  const authorization = await authorizeInfrastructureRootMemberRequest(
+    'manage_workspace_roles'
+  );
+  if (!authorization.ok) throw new Error('Forbidden');
 
   try {
     const sbAdmin = await createAdminClient();
@@ -161,9 +174,12 @@ export async function reattachPlatformEntityCreationLimitTrigger(
   wsId: string,
   targetTable: string
 ): Promise<{ status: 'trigger-reattached' }> {
-  await enforceRootWorkspaceAdmin(wsId, {
-    redirectTo: `/${wsId}/settings`,
-  });
+  if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID)
+    throw new Error('Forbidden');
+  const authorization = await authorizeInfrastructureRootMemberRequest(
+    'manage_workspace_roles'
+  );
+  if (!authorization.ok) throw new Error('Forbidden');
 
   try {
     const sbAdmin = await createAdminClient();

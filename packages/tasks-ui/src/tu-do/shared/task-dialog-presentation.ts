@@ -9,7 +9,12 @@ export const TASK_DOCUMENT_CREATE_PRESENTATION_CONFIG_ID =
 export const TASK_DOCUMENT_EDIT_PRESENTATION_CONFIG_ID =
   'TASK_DOCUMENT_EDIT_PRESENTATION';
 
-export type TaskDialogPresentation = 'compact' | 'focused' | 'fullscreen';
+/** `panel` is the board's right side panel; it is not a saved preference. */
+export type TaskDialogPresentation =
+  | 'compact'
+  | 'focused'
+  | 'fullscreen'
+  | 'panel';
 export type TaskDialogMode = 'edit' | 'create';
 
 export interface TaskDialogPresentationPreferences {
@@ -50,15 +55,20 @@ export function resolveTaskDialogOpeningPresentation({
   preferences,
   draftId,
   mode = 'edit',
+  panelSurface = false,
   selectedListStatus,
 }: {
   preferences: TaskDialogPresentationPreferences;
   draftId?: string;
   mode?: TaskDialogMode;
+  /** True while a board asks for task edits in its side panel. */
+  panelSurface?: boolean;
   selectedListStatus?: string | null;
 }): TaskDialogPresentation {
   if (draftId) return 'fullscreen';
   const isDocument = selectedListStatus === 'documents';
+  // Documents keep their own preference; tasks open beside the board.
+  if (panelSurface && mode === 'edit' && !isDocument) return 'panel';
   if (mode === 'create') {
     return isDocument ? preferences.documentCreate : preferences.taskCreate;
   }

@@ -1,7 +1,6 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const {
-  attacker,
   completion,
   evaluateIf,
   loadWorkflows,
@@ -24,7 +23,6 @@ test('every workflow_run consumer rejects name-spoofed completions', () => {
     'production-package-resume.yaml',
     'release-please-transient-retry.yaml',
     'supabase-production.yaml',
-    'supabase-staging.yaml',
   ]) {
     assert.ok(
       consumers.some((consumer) => consumer.file === file),
@@ -78,29 +76,6 @@ test('workflow_run consumers keep secrets out of workflow and job env', () => {
 
 test('spoof check catches each missing workflow_run guard', () => {
   const consumers = workflowRunConsumers();
-  const staging = consumers.find(
-    ({ file }) => file === 'supabase-staging.yaml'
-  );
-  for (const [guard, label] of [
-    [
-      /github\.event\.workflow_run\.event == 'push' &&/u,
-      'same-repository pull request',
-    ],
-    [
-      /&&\s*github\.event\.workflow_run\.head_repository\.full_name == github\.repository/u,
-      'fork head repository',
-    ],
-  ]) {
-    const weakened = structuredClone(staging);
-    weakened.workflow.jobs.migrate.if =
-      staging.workflow.jobs.migrate.if.replace(guard, '');
-    assert.notEqual(
-      weakened.workflow.jobs.migrate.if,
-      staging.workflow.jobs.migrate.if
-    );
-    assert.match(spoofFailures([weakened]).join('\n'), new RegExp(label, 'u'));
-  }
-
   // Supabase Production: each guard on the admission job is load-bearing.
   const production = consumers.filter(
     ({ file }) => file === 'supabase-production.yaml'
@@ -115,7 +90,7 @@ test('spoof check catches each missing workflow_run guard', () => {
       'same-repository pull request completion of "Production Deployment Planner"',
     ],
     [
-      / && \(github\.event\.workflow_run\.event == 'workflow_run' \|\| github\.event\.workflow_run\.event == 'workflow_dispatch'\)/u,
+      / && \(github\.event\.workflow_run\.event == 'push' \|\| github\.event\.workflow_run\.event == 'workflow_run' \|\| github\.event\.workflow_run\.event == 'workflow_dispatch'\)/u,
       'same-repository pull request completion of "Supabase Staging Migration"',
     ],
   ]) {
@@ -129,83 +104,6 @@ test('spoof check catches each missing workflow_run guard', () => {
     });
     assert.match(spoofFailures(weakened).join('\n'), new RegExp(label, 'u'));
   }
-});
-
-test('Supabase Staging migrates only trusted main push completions', () => {
-  const workflow = readWorkflow('supabase-staging.yaml');
-  const migrate = workflow.jobs.migrate;
-  const trusted = (overrides = {}) =>
-    completion('Vercel Platform Preview Deployment', 'main', {
-      event: 'push',
-      head_repository: { full_name: repository },
-      ...overrides,
-    });
-  assert.deepEqual(runningJobs(workflow, trusted()), ['migrate']);
-  const dispatch = (ref) => ({
-    event_name: 'workflow_dispatch',
-    ref,
-    repository,
-  });
-  assert.deepEqual(runningJobs(workflow, dispatch('refs/heads/main')), [
-    'migrate',
-  ]);
-  // Manual staging migrations from unreviewed branches are refused.
-  assert.deepEqual(runningJobs(workflow, dispatch('refs/heads/feature/x')), []);
-
-  // Ineligible runs get a private lock instead of queueing with real ones.
-  const group = (github) =>
-    evaluateIf(
-      `(${workflow.concurrency.group.replace(/^\$\{\{|\}\}$/gu, '')}) == 'supabase-staging-migration'`,
-      { run_id: 9, ...github }
-    );
-  assert.equal(group(trusted()), true);
-  assert.equal(group(dispatch('refs/heads/main')), true);
-  for (const github of [
-    trusted({ head_repository: { full_name: attacker } }),
-    trusted({ head_repository: null }),
-    trusted({ event: 'pull_request' }),
-    dispatch('refs/heads/feature/x'),
-  ]) {
-    assert.equal(group(github), false);
-  }
-  for (const overrides of [
-    { event: 'pull_request' },
-    { event: 'workflow_dispatch' },
-    { head_repository: { full_name: attacker } },
-    { head_branch: 'feature/x' },
-    { conclusion: 'failure' },
-  ]) {
-    assert.deepEqual(runningJobs(workflow, trusted(overrides)), []);
-  }
-
-  // Secrets reach only the migration step, after the target checkout and the
-  // target's tuturuuu.ci.ts have been admitted by the job gate.
-  assert.equal(migrate.env?.SUPABASE_ACCESS_TOKEN, undefined);
-  // The migration target and its marker come from the trust step's verified
-  // SHA, never from the raw event (no job-level TARGET_SHA).
-  assert.equal(migrate.env?.TARGET_SHA, undefined);
-  const marker = migrate.steps.find(
-    (step) => step.name === 'Record successful staging migration marker'
-  );
-  assert.match(
-    marker.env.DEPLOYMENT_MARKER_SHA,
-    /^\$\{\{ steps\.trigger\.outputs\.head_sha \}\}$/u
-  );
-  assert.match(marker.if, /^steps\.trigger\.outputs\.trusted == 'true' && /u);
-  const withSecrets = migrate.steps
-    .filter((step) => /secrets\./u.test(JSON.stringify(step.env ?? {})))
-    .map((step) => step.name);
-  assert.deepEqual(withSecrets, ['Deploy migrations to staging']);
-  const checkout = migrate.steps.find((step) =>
-    step.uses?.startsWith('actions/checkout@')
-  );
-  assert.equal(checkout.with['persist-credentials'], false);
-  assert.ok(
-    migrate.steps.every(
-      (step) => !/\$\{\{\s*(?:env|secrets)\./u.test(step.run ?? '')
-    ),
-    'staging scripts read secrets from env, not interpolation'
-  );
 });
 
 test('Supabase Production evaluates only same-repository trusted completions', () => {

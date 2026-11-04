@@ -3,6 +3,7 @@ import {
   isMiraImagePath,
   resolveMiraImageReadAccess,
 } from '@tuturuuu/storage-core/mira-image-access';
+import type { StorageAccessOutcome } from '@tuturuuu/storage-core/storage-access-audit';
 import {
   classifyWorkspaceStoragePath,
   resolveWorkspaceStorageAccess,
@@ -11,6 +12,7 @@ import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { auditStorageAccess } from '@/lib/storage/storage-access-audit';
 import {
   createMiraImageAccessContext,
   createWorkspaceStorageAccessContext,
@@ -25,6 +27,7 @@ const SignedReadUrlRequestSchema = z.object({
 
 /** Signed read URL validity: 1 hour */
 const SIGNED_URL_EXPIRY_SECONDS = 3600;
+const AUDIT_ROUTE = '/api/ai/chat/signed-read-url';
 
 /**
  * POST /api/ai/chat/signed-read-url
@@ -53,11 +56,24 @@ export const POST = withSessionAuth(
     try {
       const body = await req.json();
       const { paths } = SignedReadUrlRequestSchema.parse(body);
+      // One audit row per requested object (no file names; see storage-core).
+      const audit = (outcomes: StorageAccessOutcome[]) =>
+        auditStorageAccess(
+          paths.map((path, index) => ({
+            action: 'sign' as const,
+            actorId: user.id,
+            outcome: outcomes[index] ?? 'error',
+            path,
+            route: AUDIT_ROUTE,
+            wsId: path.split('/')[0],
+          }))
+        );
       if (
         paths.some(
           (path) => !isAiChatResourcePath(path) && !isMiraImagePath(path)
         )
       ) {
+        audit(paths.map(() => 'invalid'));
         return NextResponse.json(
           { message: 'Invalid storage path' },
           { status: 400 }
@@ -82,7 +98,17 @@ export const POST = withSessionAuth(
         )
       );
 
+      const decided = (rejected: StorageAccessOutcome) =>
+        decisions.map((decision) =>
+          decision === 'invalid'
+            ? 'invalid'
+            : decision === 'forbidden'
+              ? 'denied'
+              : rejected
+        );
+
       if (decisions.includes('invalid')) {
+        audit(decided('invalid'));
         return NextResponse.json(
           { message: 'Invalid storage path' },
           { status: 400 }
@@ -90,6 +116,7 @@ export const POST = withSessionAuth(
       }
 
       if (decisions.includes('forbidden')) {
+        audit(decided('denied'));
         return NextResponse.json(
           { message: "You don't have access to this file" },
           { status: 403 }
@@ -129,12 +156,14 @@ export const POST = withSessionAuth(
           error,
           pathCount: paths.length,
         });
+        audit(paths.map(() => 'error'));
         return NextResponse.json(
           { message: 'Failed to generate read URLs' },
           { status: 500 }
         );
       }
 
+      audit(paths.map(() => 'allowed'));
       const urls = paths.map((path, index) => ({
         path,
         signedUrl: signedUrls?.[index]?.signedUrl ?? null,

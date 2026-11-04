@@ -1,6 +1,10 @@
 import type { NotificationItem } from '@tuturuuu/transactional/emails/notification-digest';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
+  hasWebCronBudget,
+  WEB_CRON_BATCH_LIMIT,
+} from '@/lib/cron/web-cron-budget';
+import {
   chunkValues,
   fetchAllChunkedPaginatedRows,
   fetchAllPaginatedRows,
@@ -139,6 +143,12 @@ export async function fetchPendingBatchedNotificationBatches(
       query = query.or(`ws_id.eq.${ROOT_WORKSPACE_ID},ws_id.is.null`);
     }
 
+    if (hasWebCronBudget()) {
+      return query
+        .order('window_end', { ascending: true })
+        .order('id', { ascending: true })
+        .range(0, WEB_CRON_BATCH_LIMIT - 1);
+    }
     return query
       .order('window_end', { ascending: true })
       .order('id', { ascending: true })

@@ -100,6 +100,7 @@ export function SidebarStructure({
   const { behavior, handleBehaviorChange } = useSidebar();
   const {
     isCollapsed,
+    mobileSidebarOpen,
     setIsCollapsed,
     appsLauncherOpen,
     setAppsLauncherOpen,
@@ -185,6 +186,7 @@ export function SidebarStructure({
           header={null}
           hideSizeToggle={behavior === 'hover' || behavior === 'hidden'}
           isCollapsed={isCollapsed}
+          mobileSidebarOpen={mobileSidebarOpen}
           notificationPopover={notificationPopover}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}

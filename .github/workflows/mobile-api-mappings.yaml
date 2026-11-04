@@ -1,21 +1,12 @@
 name: Mobile API Mappings
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  group: mobile-api-mappings-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 on:
+  workflow_call:
   push:
-    branches: [main]
-    paths:
-      - "apps/mobile/lib/core/config/api_config.dart"
-      - "apps/*/src/app/api/**"
-      - "apps/web/src/legacy-api-routes/**"
-      - "apps/tanstack-web/migration/route-manifest.json"
-      - "packages/sdk/src/**"
-      - "scripts/check-mobile-api-mappings.*"
-      - ".github/workflows/mobile-api-mappings.yaml"
-  pull_request:
     branches: [main]
     paths:
       - "apps/mobile/lib/core/config/api_config.dart"
@@ -42,15 +33,27 @@ jobs:
   verify:
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          clean: true
+          persist-credentials: ${{ runner.environment != 'self-hosted' }}
+      - name: Isolate persistent runner state
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/pr-runner-hygiene
 
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: runner.environment == 'self-hosted'
+        with:
+          node-version: 24
+          package-manager-cache: ${{ runner.environment != 'self-hosted' }}
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
+          cache-enabled: ${{ runner.environment != 'self-hosted' }}
 
       - name: Verify mobile API ownership mappings
         run: bun check:mobile-api-mappings

@@ -24,6 +24,7 @@ for (const app of ['calendar', 'mail', 'apps']) {
       assert.equal(p.accountId, 'e8912e2867beecc673d171907bf09649');
       assert.equal(emitted.name, p.name);
       assert.equal(emitted.workers_dev, false);
+      assert.equal(emitted.upload_source_maps, false);
       assert.deepEqual(emitted.routes, []);
       assert.ok(receipt.files['server/index.js']);
       assert.deepEqual(emitted.secrets.required, p.secrets);

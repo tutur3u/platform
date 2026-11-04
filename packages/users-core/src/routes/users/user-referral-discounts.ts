@@ -21,7 +21,15 @@ export async function GET(request: Request, { params }: Params) {
     return access.response;
   }
 
-  const { normalizedWsId: wsId, sbAdmin } = access.context;
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
+
+  if (
+    permissions.withoutPermission('create_invoices') &&
+    permissions.withoutPermission('update_invoices') &&
+    permissions.withoutPermission('view_invoices') &&
+    permissions.withoutPermission('update_users')
+  )
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   const privateDb = sbAdmin.schema('private');
 
   const { data, error } = await privateDb

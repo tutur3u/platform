@@ -1,8 +1,10 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import { TaskDialogWrapper } from '@tuturuuu/tasks-ui/tu-do/shared/task-dialog-wrapper';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/calendar-auth-token';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
@@ -36,7 +38,13 @@ export default async function CalendarLabPage({ params }: PageProps) {
   if (!permissions) notFound();
   const { withoutPermission } = permissions;
 
-  const isEmployee = user.email?.endsWith('@tuturuuu.com');
+  const isEmployee = isVerifiedTuturuuuStaffSession(
+    user &&
+      (await getVerifiedAuthUser(
+        await createAdminClient({ noCookie: true }),
+        user.id
+      ))
+  );
   if (!isEmployee) redirect(`/${wsId}`);
 
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);

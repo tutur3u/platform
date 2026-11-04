@@ -8,7 +8,11 @@ const steps = job.steps;
 const groupIndex = steps.findIndex((step) => step.parallel);
 
 test('plugin pilot preserves its triggers, switchboard and required check', () => {
-  assert.deepEqual(workflow.on, { push: null, workflow_dispatch: null });
+  assert.deepEqual(workflow.on, {
+    workflow_call: null,
+    push: { branches: ['main', 'production', 'release-please--branches--**'] },
+    workflow_dispatch: null,
+  });
   assert.deepEqual(Object.keys(workflow.jobs), ['check-ci', 'validate']);
   assert.deepEqual(workflow.jobs['check-ci'], {
     permissions: { contents: 'read', deployments: 'read' },

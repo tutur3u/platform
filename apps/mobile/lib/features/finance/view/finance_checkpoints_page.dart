@@ -113,13 +113,20 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
             if (_isLoadingSummary && summary == null)
               const AppPageBody(child: AppLoadingIndicator.page())
             else if (_error != null && summary == null)
-              _CheckpointError(error: _error, onRetry: _load)
+              NovaRefreshIndicator.state(
+                onRefresh: () => _load(showLoader: false, forceRefresh: true),
+                child: _CheckpointError(error: _error, onRetry: _load),
+              )
             else if (summary == null || summary.wallets.isEmpty)
-              _CheckpointEmpty(onBatchCheck: _openBatchSheet)
+              NovaRefreshIndicator.state(
+                onRefresh: () => _load(showLoader: false, forceRefresh: true),
+                child: _CheckpointEmpty(onBatchCheck: _openBatchSheet),
+              )
             else
               NovaRefreshIndicator(
                 onRefresh: () => _load(showLoader: false, forceRefresh: true),
                 child: AppPageListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   children: [
                     FinanceCheckpointTotalsPanel(
                       totals: summary.totalsByCurrency,

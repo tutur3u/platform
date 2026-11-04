@@ -4,9 +4,11 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
+import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_memory_file.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_reset_preferences.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -288,4 +290,50 @@ void main() {
       ),
     ).called(1);
   });
+
+  Future<void> createChatThrows(Object error) async => when(
+    () => repository.createChat(
+      id: any(named: 'id'),
+      wsId: any(named: 'wsId'),
+      modelId: any(named: 'modelId'),
+      message: any(named: 'message'),
+      timezone: any(named: 'timezone'),
+      initialSettings: any(named: 'initialSettings'),
+      isCurrent: any(named: 'isCurrent'),
+    ),
+  ).thenThrow(error);
+
+  for (final held in [
+    const AssistantCreationUncertainException('held'),
+    const AssistantCreationSelectedException(),
+  ]) {
+    test('a held creation (${held.runtimeType}) asks for New chat, '
+        'not a retry', () async {
+      // After a reset and an app restart the creation envelope stays held:
+      // creating fails on device, so the voice note never reached the server
+      // yet surfaced as a retryable "Upload didn't finish".
+      when(
+        () => repository.hasUnknownChatCreation(any()),
+      ).thenAnswer((_) async => true);
+      when(() => preferences.loadChatId(any())).thenAnswer((_) async => null);
+      await createChatThrows(held);
+      await cubit.loadWorkspace('ws');
+      expect(cubit.state.creationOutcomeUnknown, isTrue);
+
+      await attachVoiceNote();
+
+      final failed = cubit.state.composerAttachments.single;
+      expect(failed.uploadState, AssistantAttachmentUploadState.error);
+      expect(failed.failure, AssistantAttachmentFailure.newChatRequired);
+      expect(failed.failure!.retryable, isFalse);
+      verifyNever(
+        () => repository.uploadAttachment(
+          wsId: any(named: 'wsId'),
+          chatId: any(named: 'chatId'),
+          file: any(named: 'file'),
+          onProgress: any(named: 'onProgress'),
+        ),
+      );
+    });
+  }
 }

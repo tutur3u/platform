@@ -11,6 +11,10 @@ String chartTimeLabel(DateTime t, {bool date = false}) {
       : time;
 }
 
+/// Formats one x-axis tick. [date] is true on the first tick and wherever the
+/// day changes; a caller can still decide to leave the date out.
+typedef ChartTimeLabeler = String Function(DateTime t, {required bool date});
+
 class ChartTimeTick {
   const ChartTimeTick(this.t, this.label, this.rect);
   final DateTime t;
@@ -23,6 +27,7 @@ List<ChartTimeTick> chartTimeTicks(
   double width, {
   required TextStyle style,
   TextScaler textScaler = TextScaler.noScaling,
+  ChartTimeLabeler? labeler,
 }) {
   if (times.isEmpty || width <= 0) return [];
   final result = <ChartTimeTick>[];
@@ -36,7 +41,9 @@ List<ChartTimeTick> chartTimeTicks(
         local.year != previous.year ||
         local.month != previous.month ||
         local.day != previous.day;
-    final label = chartTimeLabel(time, date: showDate);
+    final label = labeler == null
+        ? chartTimeLabel(time, date: showDate)
+        : labeler(time, date: showDate);
     final painter = TextPainter(
       text: TextSpan(text: label, style: style),
       textDirection: TextDirection.ltr,

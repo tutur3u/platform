@@ -20,11 +20,10 @@ void main() {
       authCubit = _MockAuthCubit();
       when(() => authCubit.signInWithApple()).thenAnswer((_) async {});
       when(() => authCubit.signInWithGoogle()).thenAnswer((_) async {});
-      when(() => authCubit.signInWithMicrosoft()).thenAnswer((_) async {});
       when(() => authCubit.signInWithGithub()).thenAnswer((_) async {});
     });
 
-    testWidgets('renders all web-parity social buttons', (tester) async {
+    testWidgets('offers customer providers without Microsoft', (tester) async {
       const state = AuthState.unauthenticated();
       when(() => authCubit.state).thenReturn(state);
       whenListen(
@@ -39,7 +38,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Continue with Google'), findsOneWidget);
-      expect(find.text('Continue with Microsoft'), findsOneWidget);
+      expect(find.text('Continue with Microsoft'), findsNothing);
       expect(find.text('Continue with Apple'), findsOneWidget);
       expect(find.text('Continue with GitHub'), findsOneWidget);
       expect(find.byType(shad.TextField), findsNothing);

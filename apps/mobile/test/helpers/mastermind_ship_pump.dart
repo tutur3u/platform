@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/features/mastermind/view/insights/mastermind_insights_page.dart';
 import 'package:mobile/features/mastermind/view/ship/mastermind_ship_page.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 import 'helpers.dart';
 import 'mastermind_view_harness.dart';
@@ -20,6 +21,8 @@ Future<MastermindViewHarness> _pump(
   FakeHubSource? source,
   Size size = const Size(430, 4000),
   double dockClearance = 0,
+  Locale locale = const Locale('en'),
+  double textScale = 1,
 }) async {
   workSurface(tester, size);
   final harness = MastermindViewHarness(
@@ -32,10 +35,16 @@ Future<MastermindViewHarness> _pump(
       harness.wrap(
         Builder(
           builder: (context) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(padding: EdgeInsets.only(bottom: dockClearance)),
-            child: page,
+            data: MediaQuery.of(context).copyWith(
+              padding: EdgeInsets.only(bottom: dockClearance),
+              textScaler: TextScaler.linear(textScale),
+            ),
+            child: Localizations.override(
+              context: context,
+              locale: locale,
+              delegates: AppLocalizations.localizationsDelegates,
+              child: page,
+            ),
           ),
         ),
       ),
@@ -55,6 +64,8 @@ Future<MastermindViewHarness> pumpShip(
   FakeHubSource? source,
   Size size = const Size(430, 4000),
   double dockClearance = 0,
+  Locale locale = const Locale('en'),
+  double textScale = 1,
 }) => _pump(
   tester,
   json,
@@ -64,6 +75,8 @@ Future<MastermindViewHarness> pumpShip(
   source: source,
   size: size,
   dockClearance: dockClearance,
+  locale: locale,
+  textScale: textScale,
 );
 
 Future<MastermindViewHarness> pumpInsights(
@@ -74,6 +87,8 @@ Future<MastermindViewHarness> pumpInsights(
   FakeHubSource? source,
   Size size = const Size(430, 12000),
   double dockClearance = 0,
+  Locale locale = const Locale('en'),
+  double textScale = 1,
 }) => _pump(
   tester,
   json,
@@ -83,6 +98,8 @@ Future<MastermindViewHarness> pumpInsights(
   source: source,
   size: size,
   dockClearance: dockClearance,
+  locale: locale,
+  textScale: textScale,
 );
 
 double top(WidgetTester tester, String text) =>

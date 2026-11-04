@@ -77,6 +77,7 @@ function fixture(denial?: 'identity' | 'registry' | 'schema') {
             ? 'staff@tuturuuu.com.evil'
             : 'staff@tuturuuu.com',
         email_confirmed_at: item(3).createdAt,
+        identities: [{ provider: 'email', identity_data: {} }],
         app_metadata: { employee_onboarding: true },
       },
       error: null,

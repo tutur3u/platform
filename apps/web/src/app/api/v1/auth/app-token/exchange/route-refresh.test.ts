@@ -3,7 +3,8 @@ import {
   createAppCoordinationToken,
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
-import { describe, expect, it, vi } from 'vitest';
+import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { POST } from './route';
 import {
   createAdminClientMock,
@@ -18,6 +19,9 @@ import {
 
 describe('app token exchange route', () => {
   registerExchangeTestSetup();
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
   it('refreshes workspace session app tokens without a fresh cross-app token', async () => {
     mockRegisteredApp([], 'workspace-app', [workspaceId]);
     const { token: refreshToken } = createAppCoordinationToken(
@@ -122,6 +126,10 @@ describe('app token exchange route', () => {
         'app-token:refresh',
       ]);
     }
+    expect(getUpstashRestRedisClient).toHaveBeenCalledWith({
+      family: 'replay',
+      fairness: { principal: victimUserId, source: 'unknown' },
+    });
     expect(mocks.redisSet).toHaveBeenCalledWith(
       expect.stringMatching(
         /^app-token:refresh:used:11111111-1111-4111-8111-111111111111:/u
@@ -166,6 +174,37 @@ describe('app token exchange route', () => {
       error: 'Invalid or expired refresh token',
     });
     expect(mocks.redisSet).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the guard store owns replay fences and errors', async () => {
+    // Assigning the family with no usable store configuration selects `off`.
+    vi.stubEnv('ABUSE_GUARD_FAMILIES', 'replay');
+    mockRegisteredApp(['external-projects:*']);
+    mocks.redisGet.mockRejectedValueOnce(new Error('guard unavailable'));
+    const { token: refreshToken } = createAppCoordinationToken(
+      {
+        email: 'victim@example.com',
+        expiresInSeconds: 86_400,
+        originApp: 'web',
+        scopes: ['app-token:refresh'],
+        targetApp: 'yoola',
+        userId: victimUserId,
+      },
+      { secret: 'test-secret' }
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        refreshToken,
+        requestedScopes: ['external-projects:*'],
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get('Retry-After')).toBe('30');
   });
 
   it('rejects refresh requests with non-refresh app tokens', async () => {

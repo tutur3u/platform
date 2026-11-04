@@ -10,14 +10,12 @@ import 'package:mobile/l10n/l10n.dart';
 class LoginSocialSection extends StatelessWidget {
   const LoginSocialSection({
     required this.onGoogle,
-    required this.onMicrosoft,
     required this.onApple,
     required this.onGithub,
     super.key,
   });
 
   final Future<void> Function() onGoogle;
-  final Future<void> Function() onMicrosoft;
   final Future<void> Function() onApple;
   final Future<void> Function() onGithub;
 
@@ -29,7 +27,6 @@ class LoginSocialSection extends StatelessWidget {
       builder: (context, state) => AuthSocialButtons(
         isLoading: state.isLoading,
         onGooglePressed: onGoogle,
-        onMicrosoftPressed: onMicrosoft,
         onApplePressed: onApple,
         onGithubPressed: onGithub,
       ),

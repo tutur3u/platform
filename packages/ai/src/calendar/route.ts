@@ -1,7 +1,9 @@
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { Output, streamText } from 'ai';
+import { authorizeAiWorkspace } from '../chat/google/route-auth';
 import { withAiMemory } from '../memory';
 import { calendarEventsSchema } from './events';
 
@@ -28,8 +30,17 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user?.email?.endsWith('@tuturuuu.com'))
-    return new Response('Unauthorized', { status: 401 });
+  if (!isVerifiedTuturuuuStaffSession(user))
+    return new Response('Forbidden', { status: 403 });
+  if (!user) return new Response('Forbidden', { status: 403 });
+
+  const access = await authorizeAiWorkspace({
+    request: req,
+    supabase,
+    userId: user.id,
+    wsId: context.wsId ?? ROOT_WORKSPACE_ID,
+  });
+  if (!access.ok) return access.response;
 
   // Extract timezone information from context if available
   const userTimezone = extractTimezone(context.prompt);
@@ -71,7 +82,7 @@ For example:
       source: 'calendar_event_generation',
       surface: 'calendar_event_generation',
       userId: user.id,
-      wsId: context.wsId ?? ROOT_WORKSPACE_ID,
+      wsId: access.wsId,
     }),
     output: Output.object({ schema: calendarEventsSchema }),
     prompt: promptText,

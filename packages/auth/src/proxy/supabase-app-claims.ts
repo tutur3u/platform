@@ -1,6 +1,7 @@
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import { mfaProofFromVerifiedClaims } from '@tuturuuu/utils/required-mfa-policy';
 import { resolveVerifiedSupabaseMfa } from '@tuturuuu/utils/required-mfa-supabase-session';
+import type { NextRequest } from 'next/server';
 import type { AppCoordinationTokenClaims } from '../app-coordination';
 import { APP_SESSION_SCOPE } from '../app-session';
 
@@ -9,6 +10,8 @@ export async function createAppSessionClaimsFromSupabaseClaims(
   options: {
     now: Date;
     targetApp: AppName | string;
+    /** Incoming request, so the policy lookup is shared request-wide. */
+    request?: NextRequest;
   }
 ): Promise<AppCoordinationTokenClaims | null> {
   const record =
@@ -21,7 +24,7 @@ export async function createAppSessionClaimsFromSupabaseClaims(
     return null;
   }
 
-  const assurance = await resolveVerifiedSupabaseMfa(record);
+  const assurance = await resolveVerifiedSupabaseMfa(record, options.request);
   if (assurance.status !== 'allowed') return null;
 
   const nowSeconds = Math.floor(options.now.getTime() / 1000);

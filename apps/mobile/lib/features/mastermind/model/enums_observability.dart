@@ -84,6 +84,26 @@ enum ItemState {
   final String wireName;
 }
 
+/// Where an answered item was answered (schema 1.5 `answered_via`). Unknown
+/// values parse to null rather than rejecting the row.
+enum AnsweredVia {
+  phone('phone'),
+  mac('mac'),
+  chat('chat'),
+  auto('auto'),
+  batch('batch');
+
+  const AnsweredVia(this.wireName);
+  final String wireName;
+
+  static AnsweredVia? fromWire(Object? value) {
+    for (final via in values) {
+      if (via.wireName == value) return via;
+    }
+    return null;
+  }
+}
+
 enum ItemKind {
   decision('decision'),
   action('action'),

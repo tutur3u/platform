@@ -12,6 +12,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_current_card.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
+import 'package:mobile/features/workspace/widgets/workspace_visibility_sheet.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/helpers.dart';
@@ -111,7 +112,7 @@ void main() {
         .widgetList<AppSectionHeader>(find.byType(AppSectionHeader))
         .map((header) => (header.title, header.count))
         .toList();
-    expect(headers, [('Personal', 1), ('Team workspaces', 2)]);
+    expect(headers, [('Personal', null), ('Team workspaces', null)]);
     final pinnedBottom = tester.getRect(pinned).bottom;
     final personalTop = tester.getRect(find.text('Personal').first).top;
     final teamTop = tester.getRect(find.text('Team workspaces')).top;
@@ -168,6 +169,7 @@ void main() {
       loaded,
       mode: WorkspacePickerMode.defaultWorkspace,
     );
+    expect(find.byKey(const ValueKey('workspace-picker-manage')), findsNothing);
     expect(find.text('Default workspace'), findsWidgets);
     expect(
       find.byKey(const ValueKey('workspace-current-personal_ws')),
@@ -242,6 +244,24 @@ void main() {
         .singleWhere((spec) => spec.id.endsWith('/search'));
     expect(action.inDock, isTrue);
     expect(action.searchHint, 'Search workspaces');
+  });
+
+  testWidgets('Manage replaces the picker and shell dock Back dismisses it', (
+    tester,
+  ) async {
+    final chrome = ShellChromeActionsCubit();
+    addTearDown(chrome.close);
+    await _open(tester, loaded, chrome: chrome);
+    await tester.tap(find.byKey(const ValueKey('workspace-picker-manage')));
+    await tester.pumpAndSettle();
+    expect(find.byType(WorkspacePickerSheet), findsNothing);
+    expect(find.byType(WorkspaceVisibilitySheet), findsOneWidget);
+    expect(find.byType(AppBar), findsNothing);
+    final back = chrome.state.backForLocation('/test');
+    expect(back, isNotNull);
+    await back!();
+    await tester.pumpAndSettle();
+    expect(find.byType(WorkspaceVisibilitySheet), findsNothing);
   });
 
   testWidgets('a long list builds lazily and scrolls clear of the footer', (

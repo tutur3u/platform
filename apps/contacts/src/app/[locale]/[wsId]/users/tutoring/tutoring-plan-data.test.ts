@@ -1,5 +1,48 @@
 import { describe, expect, it, vi } from 'vitest';
-import { completeTutoringPages } from './tutoring-plan-data';
+import {
+  completeTutoringPages,
+  loadTutoringPlanData,
+} from './tutoring-plan-data';
+
+const api = vi.hoisted(() => ({ teachers: vi.fn(), sessions: vi.fn() }));
+vi.mock('@tuturuuu/internal-api/tutoring', () => ({
+  listTutoringTeachers: api.teachers,
+  listTutoringSessions: api.sessions,
+}));
+
+it('loads main teacher names for existing sessions through the unrestricted catalog', async () => {
+  const main = {
+    id: 'main-teacher',
+    full_name: 'Main Teacher B',
+    display_name: null,
+  };
+  api.teachers.mockImplementation(async (_wsId, options) => {
+    const data = options.tutorsOnly === false ? [main] : [];
+    return { page: 1, pageSize: 100, count: data.length, totalPages: 1, data };
+  });
+  api.sessions.mockResolvedValue({
+    page: 1,
+    pageSize: 100,
+    count: 1,
+    totalPages: 1,
+    data: [{ id: 'existing-session', teacher_user_id: main.id }],
+  });
+  const result = await loadTutoringPlanData(
+    'center',
+    '2026-10-01',
+    '2026-10-31',
+    () => true
+  );
+  expect(api.teachers).toHaveBeenCalledWith('center', {
+    page: 1,
+    pageSize: 100,
+    tutorsOnly: false,
+  });
+  expect(result).toMatchObject({
+    teachers: [{ id: main.id, full_name: 'Main Teacher B' }],
+    sessions: [{ id: 'existing-session', teacher_user_id: main.id }],
+  });
+});
 
 function page(current: number, count: number) {
   return {

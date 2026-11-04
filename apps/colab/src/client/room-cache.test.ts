@@ -8,6 +8,7 @@ it('does not restore hidden teams when an older HTTP request finishes after the 
   const owner = {
     id: 'host',
     email: 'host@tuturuuu.com',
+    staffVerified: true,
     name: 'Host',
     expires: now + 3600000,
   };

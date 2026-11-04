@@ -50,9 +50,6 @@ void main() {
         () => authRepository.signInWithApple(),
       ).thenAnswer((_) async => const AuthActionResult.externalFlowStarted());
       when(
-        () => authRepository.signInWithMicrosoft(),
-      ).thenAnswer((_) async => const AuthActionResult.externalFlowStarted());
-      when(
         () => authRepository.signInWithGithub(),
       ).thenAnswer((_) async => const AuthActionResult.externalFlowStarted());
     });
@@ -156,31 +153,6 @@ void main() {
           errorCode: null,
         ),
         AuthState.authenticated(_user()),
-      ],
-    );
-
-    blocTest<AuthCubit, AuthState>(
-      'stores a localized error code when Microsoft sign-in fails',
-      build: () {
-        when(() => authRepository.signInWithMicrosoft()).thenAnswer(
-          (_) async => const AuthActionResult.failure(
-            AuthErrorCode.microsoftBrowserLaunchFailed,
-          ),
-        );
-        return AuthCubit(authRepository: authRepository);
-      },
-      act: (cubit) => cubit.signInWithMicrosoft(),
-      expect: () => <AuthState>[
-        const AuthState.unauthenticated().copyWith(
-          isLoading: true,
-          error: null,
-          errorCode: null,
-        ),
-        const AuthState.unauthenticated().copyWith(
-          isLoading: false,
-          error: null,
-          errorCode: AuthErrorCode.microsoftBrowserLaunchFailed,
-        ),
       ],
     );
 

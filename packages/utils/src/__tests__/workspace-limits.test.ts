@@ -1,4 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const auth = vi.hoisted(() => ({
+  getUserById: vi.fn(),
+  createAdminClient: vi.fn(),
+}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: auth.createAdminClient,
+}));
+
 import { MAX_WORKSPACES_FOR_FREE_USERS } from '../constants';
 import {
   checkWorkspaceCreationLimit,
@@ -10,9 +19,36 @@ describe('checkWorkspaceCreationLimit', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    auth.createAdminClient.mockImplementation(async () => ({
+      auth: { admin: { getUserById: auth.getUserById } },
+    }));
+    auth.getUserById.mockResolvedValue({
+      data: {
+        user: {
+          id: mockUserId,
+          email: 'user@example.com',
+          email_confirmed_at: '2026-01-01',
+          identities: [{ provider: 'email', identity_data: {} }],
+        },
+      },
+      error: null,
+    });
   });
 
   describe('when user has a Tuturuuu email', () => {
+    beforeEach(() =>
+      auth.getUserById.mockResolvedValue({
+        data: {
+          user: {
+            id: mockUserId,
+            email: 'user@tuturuuu.com',
+            email_confirmed_at: '2026-01-01',
+            identities: [{ provider: 'email', identity_data: {} }],
+          },
+        },
+        error: null,
+      })
+    );
     it('should allow creation for @tuturuuu.com email', async () => {
       const mockSupabase = createMockSupabase({ count: 100, error: null });
 
@@ -50,6 +86,32 @@ describe('checkWorkspaceCreationLimit', () => {
       expect(result.canCreate).toBe(true);
       expect(result.currentCount).toBeUndefined();
       expect(result.limit).toBeUndefined();
+    });
+  });
+
+  describe('when the staff lookup throws', () => {
+    it('fails closed to the regular workspace limit and logs the error', async () => {
+      const failure = new Error('admin client unavailable');
+      auth.createAdminClient.mockRejectedValue(failure);
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const mockSupabase = createMockSupabase({
+        count: MAX_WORKSPACES_FOR_FREE_USERS,
+        error: null,
+      });
+
+      const result = await checkWorkspaceCreationLimit(
+        mockSupabase,
+        mockUserId,
+        'user@tuturuuu.com'
+      );
+
+      expect(result.canCreate).toBe(false);
+      expect(result.errorCode).toBe(WORKSPACE_LIMIT_ERROR_CODE);
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Failed to resolve staff status for workspace creation limit',
+        failure
+      );
+      errorSpy.mockRestore();
     });
   });
 

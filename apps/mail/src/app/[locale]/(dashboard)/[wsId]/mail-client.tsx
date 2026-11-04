@@ -37,11 +37,12 @@ import { toComposeInitialDraft } from './mail-composer-utils';
 import { MailContentState } from './mail-content-state';
 import { MailDeliveryList } from './mail-delivery-list';
 import type { MailFolder } from './mail-folders';
-import { getMailFolderHref, mailFolderIcons } from './mail-folders';
+import { getMailFolderHref } from './mail-folders';
 import { MailIconButton } from './mail-icon-button';
 import { MailKeyboardHelp } from './mail-keyboard-help';
 import { MailLabelMenu } from './mail-label-menu';
-import { MailMarkFolderRead } from './mail-mark-folder-read';
+import { MailListHeader } from './mail-list-header';
+import { resolveActiveMailboxId, useMailboxHint } from './mail-mailbox-hint';
 import {
   getCurrentMailPaneLayout,
   normalizeMailPaneLayout,
@@ -49,7 +50,6 @@ import {
 } from './mail-pane-layout';
 import { MailQuickFilters } from './mail-quick-filters';
 import { createMailReplyActions } from './mail-reply-actions';
-import { MailSyncStatus } from './mail-sync-status';
 import { mailThreadDetailQuery } from './mail-thread-detail-query';
 import { loadMailThreadPage } from './mail-thread-page-query';
 import {
@@ -59,6 +59,7 @@ import {
 import { ThreadDetail } from './thread-detail';
 import { useMailBootstrap } from './use-mail-bootstrap';
 import { useMailKeyboard } from './use-mail-keyboard';
+import { useMailRefresh } from './use-mail-refresh';
 import { useMailThreadActions } from './use-mail-thread-actions';
 import { useMailViewedThreadRead } from './use-mail-viewed-thread-read';
 
@@ -124,10 +125,12 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
 
   const bootstrapQuery = useMailBootstrap(workspaceId);
   const mailboxes = bootstrapQuery.data?.mailboxes ?? [];
-  const activeMailbox =
-    mailboxes.find((mailbox) => mailbox.id === mailboxId) ?? mailboxes[0];
-  const activeMailboxId = activeMailbox?.id ?? null;
-  const FolderIcon = mailFolderIcons[folder];
+  const activeMailboxId = resolveActiveMailboxId({
+    hint: useMailboxHint(workspaceId),
+    mailboxes: bootstrapQuery.data?.mailboxes,
+    requested: mailboxId,
+  });
+  const activeMailbox = mailboxes.find(({ id }) => id === activeMailboxId);
   const threadQueryKey = getMailThreadsQueryKey({
     folder,
     folderId,
@@ -220,6 +223,12 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     },
   });
 
+  const { refresh, refreshing } = useMailRefresh({
+    bootstrapQuery,
+    mailboxId: activeMailboxId,
+    threadsQuery,
+    workspaceId,
+  });
   const {
     bulkMutation,
     mutateThread,
@@ -361,49 +370,23 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       router.push(`${getMailFolderHref(workspaceId, nextFolder)}?${params}`);
     },
     refresh: () => {
-      if (
-        threadsQuery.isFetching ||
-        bootstrapQuery.isFetching ||
-        actionsPending
-      )
-        return;
-      if (activeMailboxId) void threadsQuery.refetch();
-      else void bootstrapQuery.refetch();
+      if (refreshing || actionsPending) return;
+      refresh().catch(() => toast.error(t('load_failed')));
     },
   });
 
   const listPanel = (
     <section className="flex h-full min-h-0 min-w-0 max-w-full flex-col bg-background/95">
-      <div className="flex min-h-16 items-center gap-3 border-dynamic border-b px-5">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
-          <FolderIcon className="size-4" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate font-semibold text-base tracking-tight">
-            {t(folder)}
-          </h1>
-          <p className="truncate text-muted-foreground text-xs">
-            {activeMailbox?.address}
-          </p>
-        </div>
-        {activeMailboxId && (folder === 'inbox' || folder === 'archive') ? (
-          <MailMarkFolderRead
-            workspaceId={workspaceId}
-            mailboxId={activeMailboxId}
-            folder={folder}
-            disabled={actionsPending}
-          />
-        ) : null}
-        <MailSyncStatus
-          state={syncState}
-          refreshing={threadsQuery.isFetching || bootstrapQuery.isFetching}
-          onRefresh={() =>
-            activeMailboxId
-              ? threadsQuery.refetch({ throwOnError: true })
-              : bootstrapQuery.refetch({ throwOnError: true })
-          }
-        />
-      </div>
+      <MailListHeader
+        actionsPending={actionsPending}
+        address={activeMailbox?.address}
+        folder={folder}
+        mailboxId={activeMailboxId}
+        onRefresh={refresh}
+        refreshing={refreshing}
+        syncState={syncState}
+        workspaceId={workspaceId}
+      />
       <div className="space-y-2 border-dynamic border-b p-3">
         <div className="relative">
           <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -504,7 +487,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         ) : !activeMailboxId ? (
           <MailContentState kind="no_mailbox" />
         ) : threads.length ? (
-          <div className="space-y-1 p-2">
+          <div className="space-y-0.5 p-1.5">
             <MailDeliveryList
               threads={threads}
               mailboxAddress={activeMailbox?.address}

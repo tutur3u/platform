@@ -305,12 +305,14 @@ function mockRegisteredApp(
     app: {
       allowedScopes,
       allowedWorkspaceIds,
+      callbackPaths: [],
       createdAt: null,
       createdBy: null,
       displayName: appId,
       enabled: true,
       id: appId,
       origins: [`https://${appId}.example.com`],
+      requirePkce: false,
       secretIssuedAt: null,
       secretLastFour: 'test',
       updatedAt: null,
@@ -388,6 +390,7 @@ export function registerExchangeTestSetup() {
     mocks.redisSet.mockResolvedValue('OK');
     vi.mocked(getUpstashRestRedisClient).mockResolvedValue({
       del: vi.fn(),
+      eval: vi.fn(),
       decr: vi.fn(),
       expire: vi.fn(),
       get: mocks.redisGet,

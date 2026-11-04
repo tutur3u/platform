@@ -8,6 +8,13 @@ vi.mock('@tuturuuu/satellite/workspace-access', () => ({
   resolveSatelliteRequestActor: mocks.actor,
 }));
 
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: vi.fn(async () => ({
+    membershipType: 'MEMBER',
+    containsPermission: () => true,
+  })),
+}));
+
 import { hasAIWhitelistAccess } from './authorization';
 
 describe('AI whitelist verified email', () => {
@@ -18,14 +25,23 @@ describe('AI whitelist verified email', () => {
     });
   });
   it.each([
+    ['staff@tuturuuu.com', '2026-01-01', true],
     ['outside@example.com', '2026-01-01', false],
     ['staff@tuturuuu.com', null, false],
-    ['Staff@Tuturuuu.com', '2026-01-01', true],
+    ['Staff@Tuturuuu.com', '2026-01-01', false],
+    ['staff@xwf.tuturuuu.com', '2026-01-01', false],
   ])(
     'authorizes only confirmed canonical staff email',
     async (email, confirmed, allowed) => {
       mocks.getUserById.mockResolvedValue({
-        data: { user: { id: 'actor', email, email_confirmed_at: confirmed } },
+        data: {
+          user: {
+            id: 'actor',
+            email,
+            email_confirmed_at: confirmed,
+            identities: [{ provider: 'email', identity_data: {} }],
+          },
+        },
         error: null,
       });
       expect(await hasAIWhitelistAccess()).toBe(allowed);

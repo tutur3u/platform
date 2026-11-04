@@ -6,6 +6,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthRedirectOrigin } from '@/app/[locale]/(auth)/login/auth-redirect-origin';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
+import { isAzureSessionTenantAllowed } from '@/lib/auth/azure-tenant';
 import {
   createAuthDiagnosticCode,
   getReturnUrlKind,
@@ -45,11 +46,13 @@ function replaceLegacyOnboardingDestination(url: URL) {
  * - Relative paths (same origin)
  * - Same-origin absolute URLs
  * - Trusted internal app domains and registered external app origins
- * - Managed *.tuturuuu.com URLs for temporary internal app subdomains
+ * - Managed *.tuturuuu.com URLs for temporary internal app subdomains, only
+ *   when this request is itself on the shared-cookie tuturuuu.com domain
  */
 async function validateRedirectUrl(
   encodedUrl: string,
-  requestOrigin: string
+  requestOrigin: string,
+  request: NextRequest
 ): Promise<{
   url: string;
   isExternal: boolean;
@@ -93,7 +96,9 @@ async function validateRedirectUrl(
       };
     }
 
-    const managedReturnUrl = normalizeManagedTuturuuuReturnUrl(decodedUrl);
+    const managedReturnUrl = normalizeManagedTuturuuuReturnUrl(decodedUrl, {
+      currentHost: request,
+    });
 
     if (managedReturnUrl) {
       return {
@@ -167,13 +172,37 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const supabase = await createClient();
 
   if (_code) {
+    let sessionExchanged = false;
+    const clearLocalSession = async () => {
+      try {
+        const result = await supabase.auth.signOut({ scope: 'local' });
+        if (result?.error) {
+          console.error('[auth/callback] Failed to clear local session');
+        }
+      } catch {
+        console.error('[auth/callback] Failed to clear local session');
+      }
+    };
     try {
       // Exchange the code for a session
       const exchangeResult = await supabase.auth.exchangeCodeForSession(_code);
       if (exchangeResult?.error) {
         throw exchangeResult.error;
       }
+      sessionExchanged = true;
+      if (
+        !isAzureSessionTenantAllowed(
+          exchangeResult?.data?.session,
+          process.env.TUTURUUU_AZURE_TENANT_ID
+        )
+      ) {
+        await clearLocalSession();
+        const loginUrl = new URL('/login', redirectOrigin);
+        loginUrl.searchParams.set('error', 'azure_tenant_restricted');
+        return NextResponse.redirect(loginUrl);
+      }
     } catch (error) {
+      if (sessionExchanged) await clearLocalSession();
       const diagnosticCode = createAuthDiagnosticCode(
         'oauth_callback_exchange'
       );
@@ -200,7 +229,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   if (multiAccount) {
     const addAccountUrl = new URL('/add-account', redirectOrigin);
     if (_returnUrl) {
-      const validated = await validateRedirectUrl(_returnUrl, redirectOrigin);
+      const validated = await validateRedirectUrl(
+        _returnUrl,
+        redirectOrigin,
+        request
+      );
       if (validated) {
         addAccountUrl.searchParams.set('returnUrl', validated.url);
       }
@@ -210,7 +243,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   // Handle returnUrl with cross-app token generation for external apps
   if (_returnUrl) {
-    const validated = await validateRedirectUrl(_returnUrl, redirectOrigin);
+    const validated = await validateRedirectUrl(
+      _returnUrl,
+      redirectOrigin,
+      request
+    );
 
     if (validated) {
       if (validated.isExternal && validated.targetApp) {

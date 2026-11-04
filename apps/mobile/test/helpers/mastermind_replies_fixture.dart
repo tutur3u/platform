@@ -141,15 +141,19 @@ MastermindRepliesCubit repliesCubit({
   Future<CapabilitiesFetch> Function()? fetchCapabilities,
   Future<void> Function()? refreshSnapshot,
   AccessLostCallback? onAccessLost,
+  bool Function(String itemId)? isAnsweredElsewhere,
   DateTime Function()? clock,
+  Duration optionUndoWindow = MastermindRepliesCubit.defaultOptionUndoWindow,
 }) => MastermindRepliesCubit(
   store: store ?? MemoryOutboxStore(),
   transport: transport ?? FakeReplyTransport(),
   fetchCapabilities: fetchCapabilities ?? capabilities(),
   refreshSnapshot: refreshSnapshot,
   onAccessLost: onAccessLost,
+  isAnsweredElsewhere: isAnsweredElsewhere,
   clock: clock ?? () => DateTime.utc(2026, 1, 31, 17, 32),
   random: Random(7),
+  optionUndoWindow: optionUndoWindow,
 );
 
 NeedsYou parsedItem(Map<String, dynamic> item) {

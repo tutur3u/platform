@@ -3,6 +3,7 @@ import {
   encodeStoragePath,
   sanitizePathStrict,
 } from '@tuturuuu/utils/storage-path';
+import { canAccessAiChatAttachments } from '../../chat/attachment-access';
 import {
   commitFixedAiCreditReservation,
   releaseFixedAiCreditReservation,
@@ -367,6 +368,19 @@ export async function executeConvertFileToMarkdown(
   }
 
   const sbAdmin = await createAdminClient();
+  if (
+    !sourceUrl &&
+    (!targetPath || (chatFolder && targetPath.startsWith(`${chatFolder}/`))) &&
+    ctx.chatId &&
+    !(await canAccessAiChatAttachments({
+      supabase: sbAdmin,
+      wsId: ctx.wsId,
+      chatId: ctx.chatId,
+      actorId: ctx.userId,
+    }))
+  ) {
+    return { ok: false, error: 'Chat attachments are unavailable.' };
+  }
 
   if (!sourceUrl && !targetPath) {
     if (!ctx.chatId) {

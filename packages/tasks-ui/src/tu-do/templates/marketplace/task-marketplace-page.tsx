@@ -4,6 +4,7 @@ import MarketplaceClient from '@tuturuuu/tasks-ui/tu-do/templates/marketplace/cl
 import type { BoardTemplate } from '@tuturuuu/tasks-ui/tu-do/templates/types';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { isWorkspaceTemplateBackgroundPath } from '@tuturuuu/utils/template-background-path';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
@@ -63,7 +64,12 @@ async function getPublicTemplates(): Promise<{ templates: BoardTemplate[] }> {
       };
 
       let backgroundUrl: string | null = null;
-      if (template.background_path) {
+      if (
+        isWorkspaceTemplateBackgroundPath(
+          template.background_path,
+          template.ws_id
+        )
+      ) {
         try {
           const { data: signedUrlData } = await supabase.storage
             .from('workspaces')

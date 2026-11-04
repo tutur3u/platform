@@ -10,8 +10,8 @@ select plan(12);
 create temp table results (name text, ok boolean);
 create temp table fx as select id as actor from public.users limit 1;
 
-insert into private.devbox_leases (id, actor_id, status)
-  select 'f1111111-1111-4111-8111-111111111111', actor, 'active' from fx;
+insert into private.devbox_leases (id, actor_id, status, expires_at)
+  select 'f1111111-1111-4111-8111-111111111111', actor, 'active', now() + interval '1 hour' from fx;
 insert into private.devbox_runs (id, actor_id, lease_id, command)
   select x.id::uuid, fx.actor, 'f1111111-1111-4111-8111-111111111111', '{true}'
   from fx, (values ('f2222222-2222-4222-8222-222222222222'), ('f3333333-3333-4333-8333-333333333333')) x(id);

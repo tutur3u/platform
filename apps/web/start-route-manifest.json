@@ -1,5 +1,6 @@
 {
   "schemaVersion": 2,
+  "stagingUnmigrated": "not-migrated-404",
   "generatedBy": "bun apps/web/cloudflare/generate-inventory.ts",
   "serviceWorker": {
     "url": "/serwist/sw.js",
@@ -42,18 +43,18 @@
     }
   ],
   "summary": {
-    "total": 838,
+    "total": 844,
     "categories": {
-      "api": 646,
+      "api": 650,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 161,
+      "page": 163,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 3, "Next-fallback": 835 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 832 }
   },
   "routes": [
     {
@@ -716,9 +717,10 @@
       "pattern": "/[locale]/acceptable-use",
       "source": "apps/web/src/app/[locale]/(marketing)/acceptable-use/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/legal-page.tsx"
     },
     {
       "pattern": "/[locale]/account/delete",
@@ -820,9 +822,10 @@
       "pattern": "/[locale]/community-guidelines",
       "source": "apps/web/src/app/[locale]/(marketing)/community-guidelines/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/legal-page.tsx"
     },
     {
       "pattern": "/[locale]/contact",
@@ -881,28 +884,49 @@
       "cronOwner": null
     },
     {
+      "pattern": "/[locale]/legal/changes/full",
+      "source": "apps/web/src/app/[locale]/(marketing)/legal/changes/full/page.tsx",
+      "category": "page",
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/src/components/legal/legal-changes.tsx"
+    },
+    {
+      "pattern": "/[locale]/legal/changes",
+      "source": "apps/web/src/app/[locale]/(marketing)/legal/changes/page.tsx",
+      "category": "page",
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/src/components/legal/legal-changes.tsx"
+    },
+    {
       "pattern": "/[locale]/legal/dpa",
       "source": "apps/web/src/app/[locale]/(marketing)/legal/dpa/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/legal-page.tsx"
     },
     {
       "pattern": "/[locale]/legal/sla",
       "source": "apps/web/src/app/[locale]/(marketing)/legal/sla/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/legal-page.tsx"
     },
     {
       "pattern": "/[locale]/legal/subprocessors",
       "source": "apps/web/src/app/[locale]/(marketing)/legal/subprocessors/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/legal-page.tsx"
     },
     {
       "pattern": "/[locale]/logout",
@@ -1157,9 +1181,10 @@
       "pattern": "/[locale]/security/bug-bounty",
       "source": "apps/web/src/app/[locale]/(marketing)/security/bug-bounty/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/security-page.tsx"
     },
     {
       "pattern": "/[locale]/security",
@@ -1173,9 +1198,10 @@
       "pattern": "/[locale]/security/policy",
       "source": "apps/web/src/app/[locale]/(marketing)/security/policy/page.tsx",
       "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/cloudflare/start/security-page.tsx"
     },
     {
       "pattern": "/[locale]/share/[type]/[resourceId]/modules/[moduleId]",
@@ -2683,6 +2709,22 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/mastermind/access",
+      "source": "apps/web/src/app/api/v1/mastermind/access/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mastermind/push-events",
+      "source": "apps/web/src/app/api/v1/mastermind/push-events/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/meet/plans/[planId]/availability",
       "source": "apps/web/src/app/api/v1/meet/plans/[planId]/availability/route.ts",
       "category": "api",
@@ -2829,6 +2871,14 @@
     {
       "pattern": "/api/v1/mira/xp",
       "source": "apps/web/src/app/api/v1/mira/xp/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mobile/feature-flags",
+      "source": "apps/web/src/app/api/v1/mobile/feature-flags/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -5677,6 +5727,14 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/tutoring/export",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/export/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/tutoring/payroll",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/payroll/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

@@ -84,7 +84,10 @@ void main() {
   final destinations = <String>{
     for (final module in AppRegistry.allModules) ...[
       module.route,
-      for (final item in module.miniAppNavItems) item.route,
+      for (final item in module.miniAppNavItems)
+        // Threads replaces Work only behind a flag; with it off the route
+        // redirects to Work by design. threads_flag_test.dart builds it.
+        if (item.id != 'mastermind_threads') item.route,
     ],
   }.toList()..sort();
 

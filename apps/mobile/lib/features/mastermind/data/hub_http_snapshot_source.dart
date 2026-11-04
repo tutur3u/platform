@@ -2,17 +2,21 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/features/mastermind/data/hub_capabilities.dart';
 import 'package:mobile/features/mastermind/data/hub_config.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/parse/event_feed_parser.dart';
+import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
 
 /// Reads the owner-only Mastermind hub Worker over HTTPS.
 ///
 /// The bearer token is read from [AccessTokenProvider] for every request and
 /// lives only in that request's headers. Nothing here logs, stores or echoes a
 /// token, header, body or URL; failures collapse to [SnapshotUnavailableKind].
+/// An `unavailable` outcome records only its reason (a status code, timeout,
+/// transport error type, header or size refusal) through `diagnostics`.
 final class HubHttpSnapshotSource implements MastermindSnapshotSource {
   HubHttpSnapshotSource({
     required Uri? baseUrl,
@@ -20,16 +24,21 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
     http.Client? client,
     this.timeout = const Duration(seconds: 20),
     DateTime Function()? clock,
+    void Function(String message)? diagnostics,
   }) : _base = baseUrl == null
            ? null
            : MastermindHubConfig.parseBaseUrl(baseUrl.toString()),
        _tokens = tokens,
        _client = client ?? http.Client(),
        _ownsClient = client == null,
-       _clock = clock ?? DateTime.now;
+       _clock = clock ?? DateTime.now,
+       _diagnostics = diagnostics ?? _debugLog;
 
-  /// Matches the formatted snapshot limit the parsers enforce.
-  static const maxSnapshotBytes = 600000;
+  /// Matches the snapshot limit the parser and the cache enforce.
+  static const int maxSnapshotBytes = mastermindSnapshotMaxBytes;
+
+  /// Matches the events page limit its parser enforces.
+  static const int maxEventsBytes = mastermindEventFeedMaxBytes;
   static const _maxErrorBytes = 1024;
   static const _maxCapabilityBytes = 4096;
   static final _digestPattern = RegExp(r'^[a-f0-9]{64}$');
@@ -39,7 +48,10 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
   final http.Client _client;
   final bool _ownsClient;
   final DateTime Function() _clock;
+  final void Function(String message) _diagnostics;
   final Duration timeout;
+
+  static void _debugLog(String message) => debugPrint(message);
 
   /// Releases the HTTP client this source created. An injected client belongs
   /// to its caller and is left open.
@@ -65,40 +77,52 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
       maxBytes: maxSnapshotBytes,
     );
     final receivedAt = _clock().toUtc();
-    switch (reply?.status) {
+    switch (reply.status) {
       case 200:
+        if (reply.tooLarge) return _unavailableSnapshot('too-large');
         final digest = snapshotDigestFromHeaders(
-          hubDigest: reply!.hubDigest,
+          hubDigest: reply.hubDigest,
           etag: reply.etag,
         );
-        if (digest == null || reply.tooLarge) {
-          return const SnapshotFetch.unavailable(
-            SnapshotUnavailableKind.unavailable,
-          );
-        }
+        if (digest == null) return _unavailableSnapshot(reply.headerShape);
         return SnapshotFetch.ok(reply.bytes, receivedAt, digest: digest);
       case 304:
-        if (requested == null) {
-          return const SnapshotFetch.unavailable(
-            SnapshotUnavailableKind.unavailable,
-          );
-        }
-        final hasHeader = reply!.hubDigest != null || reply.etag != null;
+        if (requested == null) return _unavailableSnapshot('unexpected-304');
+        final hasHeader = reply.hubDigest != null || reply.etag != null;
         final digest = hasHeader
             ? snapshotDigestFromHeaders(
                 hubDigest: reply.hubDigest,
                 etag: reply.etag,
               )
             : requested;
-        if (digest == null) {
-          return const SnapshotFetch.unavailable(
-            SnapshotUnavailableKind.unavailable,
-          );
-        }
+        if (digest == null) return _unavailableSnapshot(reply.headerShape);
         // A digest that differs from the one sent is rejected by the cubit.
         return SnapshotFetch.notModified(digest, receivedAt);
       default:
-        return SnapshotFetch.unavailable(_kindFor(reply, events: false));
+        return SnapshotFetch.unavailable(
+          _kindFor(reply, events: false, route: 'snapshot'),
+        );
+    }
+  }
+
+  SnapshotFetch _unavailableSnapshot(String reason) {
+    _diagnose('snapshot', reason);
+    return const SnapshotFetch.unavailable(SnapshotUnavailableKind.unavailable);
+  }
+
+  EventsFetch _unavailableEvents(String reason) {
+    _diagnose('events', reason);
+    return const EventsFetch.unavailable(SnapshotUnavailableKind.unavailable);
+  }
+
+  /// Debug-level breadcrumb for an `unavailable` outcome. [reason] is built
+  /// only from fixed strings, status codes and error types: never a token,
+  /// header value, URL or body.
+  void _diagnose(String route, String reason) {
+    try {
+      _diagnostics('Mastermind hub $route unavailable: $reason');
+    } on Object {
+      // Diagnostics never change the fetch outcome.
     }
   }
 
@@ -131,18 +155,21 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
           'limit': '$limit',
         },
       ),
-      maxBytes: maxSnapshotBytes,
+      maxBytes: maxEventsBytes,
     );
-    if (reply?.status != 200) {
-      return EventsFetch.unavailable(_kindFor(reply, events: true));
+    if (reply.status != 200) {
+      return EventsFetch.unavailable(
+        _kindFor(reply, events: true, route: 'events'),
+      );
     }
-    final replied = reply!.hubDigest;
-    if (reply.tooLarge || (replied != null && replied != digest)) {
-      return const EventsFetch.unavailable(SnapshotUnavailableKind.unavailable);
+    if (reply.tooLarge) return _unavailableEvents('too-large');
+    final replied = reply.hubDigest;
+    if (replied != null && replied != digest) {
+      return _unavailableEvents('digest-mismatch');
     }
     final parsed = parseMastermindEventFeed(reply.bytes);
     if (parsed is! EventFeedParseAccepted) {
-      return const EventsFetch.unavailable(SnapshotUnavailableKind.unavailable);
+      return _unavailableEvents('malformed-body');
     }
     return EventsFetch.ok(parsed.feed, digest, _clock().toUtc());
   }
@@ -160,11 +187,20 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
       base.replace(path: '/v1/capabilities'),
       maxBytes: _maxCapabilityBytes,
     );
-    if (reply?.status == 200 && !reply!.tooLarge) {
-      final capabilities = MastermindCapabilities.parse(reply.bytes);
+    if (reply.status == 200) {
+      final capabilities = reply.tooLarge
+          ? null
+          : MastermindCapabilities.parse(reply.bytes);
       if (capabilities != null) return CapabilitiesFetchOk(capabilities);
+      _diagnose(
+        'capabilities',
+        reply.tooLarge ? 'too-large' : 'malformed-body',
+      );
+      return const CapabilitiesFetchUnavailable(
+        SnapshotUnavailableKind.unavailable,
+      );
     }
-    final kind = _kindFor(reply, events: false);
+    final kind = _kindFor(reply, events: false, route: 'capabilities');
     return CapabilitiesFetchUnavailable(
       // A Worker without the route is simply unavailable, not "no snapshot".
       kind == SnapshotUnavailableKind.noSnapshot
@@ -173,19 +209,31 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
     );
   }
 
-  SnapshotUnavailableKind _kindFor(_Reply? reply, {required bool events}) {
-    switch (reply?.status) {
+  SnapshotUnavailableKind _kindFor(
+    _Reply reply, {
+    required bool events,
+    required String route,
+  }) {
+    final kind = _statusKind(reply, events: events);
+    if (kind == SnapshotUnavailableKind.unavailable) {
+      _diagnose(route, reply.failure ?? 'status ${reply.status}');
+    }
+    return kind;
+  }
+
+  SnapshotUnavailableKind _statusKind(_Reply reply, {required bool events}) {
+    switch (reply.status) {
       case 401:
         return SnapshotUnavailableKind.unauthorized;
       case 403:
         return SnapshotUnavailableKind.forbidden;
       case 404:
-        if (!events || reply!.errorClass == 'no_snapshot') {
+        if (!events || reply.errorClass == 'no_snapshot') {
           return SnapshotUnavailableKind.noSnapshot;
         }
         return SnapshotUnavailableKind.digestNotFound;
       case 409:
-        return events && reply!.errorClass == 'cursor_ahead'
+        return events && reply.errorClass == 'cursor_ahead'
             ? SnapshotUnavailableKind.cursorAhead
             : SnapshotUnavailableKind.unavailable;
       default:
@@ -197,9 +245,9 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
   ///
   /// A 401 reply means access is lost only when the token provider confirms the
   /// session is gone (it returns null). A provider that throws, or a request
-  /// that fails or times out, is null here: the hub is unavailable, which
-  /// never clears cached data.
-  Future<_Reply?> _get(
+  /// that fails or times out, is a [_Reply.failed] here: the hub is
+  /// unavailable, which never clears cached data.
+  Future<_Reply> _get(
     Uri uri, {
     required int maxBytes,
     String? ifNoneMatch,
@@ -213,7 +261,7 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
         if (token == null) return _Reply(401);
       }
       var reply = await _exchange(uri, token, ifNoneMatch, maxBytes);
-      if (reply?.status == 401 && !refreshed) {
+      if (reply.status == 401 && !refreshed) {
         final fresh = _usable(await _tokens.refreshAccessToken());
         if (fresh != null && fresh != token) {
           reply = await _exchange(uri, fresh, ifNoneMatch, maxBytes);
@@ -221,7 +269,7 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
       }
       return reply;
     } on Object {
-      return null;
+      return _Reply.failed('token-provider');
     }
   }
 
@@ -230,7 +278,7 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
 
   /// Runs the request under [timeout]. On expiry the request is aborted and the
   /// body subscription cancelled, so a stalled hub cannot hold the socket.
-  Future<_Reply?> _exchange(
+  Future<_Reply> _exchange(
     Uri uri,
     String token,
     String? ifNoneMatch,
@@ -251,9 +299,12 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
           throw TimeoutException(null);
         },
       );
-    } on Object {
+    } on TimeoutException {
       if (!abort.isCompleted) abort.complete();
-      return null;
+      return _Reply.failed('timeout');
+    } on Object catch (error) {
+      if (!abort.isCompleted) abort.complete();
+      return _Reply.failed('transport ${error.runtimeType}');
     }
   }
 
@@ -328,9 +379,11 @@ final class HubHttpSnapshotSource implements MastermindSnapshotSource {
     return done.future;
   }
 
+  /// Accepts a strong or weak quoted ETag, or a bare digest. The request
+  /// always carries the strong form `"<digest>"`.
   String? _digestFromEtag(String? value) {
     if (value == null) return null;
-    final quoted = snapshotDigestFromHeaders(etag: value);
+    final quoted = snapshotDigestFromEtag(value);
     if (quoted != null) return quoted;
     return _digestPattern.hasMatch(value) ? value : null;
   }
@@ -343,13 +396,36 @@ final class _Reply {
     this.etag,
     Uint8List? bytes,
     this.tooLarge = false,
-  }) : bytes = bytes ?? Uint8List(0);
+  }) : bytes = bytes ?? Uint8List(0),
+       failure = null;
+
+  /// No HTTP status: the request timed out or failed before a reply.
+  _Reply.failed(String this.failure)
+    : status = 0,
+      hubDigest = null,
+      etag = null,
+      bytes = Uint8List(0),
+      tooLarge = false;
 
   final int status;
   final String? hubDigest;
   final String? etag;
   final Uint8List bytes;
   final bool tooLarge;
+
+  /// Why no reply arrived; fixed strings and error types only.
+  final String? failure;
+
+  /// Which digest headers were present, never their values.
+  String get headerShape {
+    if (hubDigest == null && etag == null) return 'bad-headers none';
+    final names = [
+      if (hubDigest != null) 'x-hub-digest',
+      if (etag case final tag?)
+        if (tag.startsWith('W/')) 'etag weak' else 'etag',
+    ];
+    return 'bad-headers ${names.join('+')}';
+  }
 
   /// `{"error":"<class>"}` from a non-200 reply; never anything else.
   String? get errorClass {

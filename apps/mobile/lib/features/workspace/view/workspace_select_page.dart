@@ -57,10 +57,15 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
           }
 
           if (state.status == WorkspaceStatus.error) {
-            return _ErrorView(
-              error: state.error,
-              onRetry: () => context.read<WorkspaceCubit>().loadWorkspaces(
+            return NovaRefreshIndicator.state(
+              onRefresh: () => context.read<WorkspaceCubit>().loadWorkspaces(
                 forceRefresh: true,
+              ),
+              child: _ErrorView(
+                error: state.error,
+                onRetry: () => context.read<WorkspaceCubit>().loadWorkspaces(
+                  forceRefresh: true,
+                ),
               ),
             );
           }
@@ -70,27 +75,41 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
               state.visibilityStatus != WorkspaceStatus.error) {
             return const AppLoadingIndicator.page();
           }
-          if (state.workspaces.isNotEmpty && state.visibleWorkspaces.isEmpty) {
-            return AppPageBody(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(l10n.workspaceAllHidden, textAlign: TextAlign.center),
-                    const shad.Gap(16),
-                    shad.PrimaryButton(
-                      onPressed: () =>
-                          showWorkspacePickerSheet(context, hiddenOnly: true),
-                      child: Text(l10n.workspaceHiddenTitle),
-                    ),
-                  ],
+          if (state.workspaces.any((workspace) => !workspace.deleted) &&
+              state.visibleWorkspaces.isEmpty) {
+            return NovaRefreshIndicator.state(
+              onRefresh: () => context.read<WorkspaceCubit>().loadWorkspaces(
+                forceRefresh: true,
+              ),
+              child: AppPageBody(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l10n.workspaceAllHidden,
+                        textAlign: TextAlign.center,
+                      ),
+                      const shad.Gap(16),
+                      shad.PrimaryButton(
+                        onPressed: () =>
+                            showWorkspacePickerSheet(context, hiddenOnly: true),
+                        child: Text(l10n.workspaceHiddenTitle),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
           }
-          if (state.workspaces.isEmpty) {
-            return _EmptyView(
-              onCreateWorkspace: () => showCreateWorkspaceDialog(context),
+          if (!state.workspaces.any((workspace) => !workspace.deleted)) {
+            return NovaRefreshIndicator.state(
+              onRefresh: () => context.read<WorkspaceCubit>().loadWorkspaces(
+                forceRefresh: true,
+              ),
+              child: _EmptyView(
+                onCreateWorkspace: () => showCreateWorkspaceDialog(context),
+              ),
             );
           }
 
@@ -194,11 +213,7 @@ class _WorkspaceListView extends StatelessWidget {
         (l10n.workspaceTeamSection, LucideIcons.users, sections.team),
       ])
         if (workspaces.isNotEmpty) ...[
-          (_) => AppSectionHeader(
-            title: title,
-            icon: icon,
-            count: workspaces.length,
-          ),
+          (_) => AppSectionHeader(title: title, icon: icon),
           for (final (index, workspace) in workspaces.indexed)
             (_) => AppGroupedSlice(
               position: AppSlicePosition.of(index, workspaces.length),

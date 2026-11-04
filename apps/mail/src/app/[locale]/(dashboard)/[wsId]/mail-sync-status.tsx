@@ -8,6 +8,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import type { MailSyncState } from './use-mail-thread-actions';
+import { useSettlingSpin } from './use-settling-spin';
 
 export function MailSyncStatus({
   state,
@@ -20,7 +21,9 @@ export function MailSyncStatus({
 }) {
   const t = useTranslations('mail');
   const refreshingRef = useRef(false);
+  const iconRef = useRef<HTMLSpanElement>(null);
   const busy = refreshing || state === 'syncing';
+  useSettlingSpin(iconRef, busy);
   const failed = state === 'failed' && !busy;
   const Icon = failed ? CloudAlert : RefreshCw;
   const label = busy ? t('syncing') : failed ? t('sync_failed') : t('synced');
@@ -48,7 +51,15 @@ export function MailSyncStatus({
           size="icon"
           variant="ghost"
         >
-          <Icon className={cn('size-4', busy && 'animate-spin')} />
+          <span
+            ref={iconRef}
+            className={cn(
+              'flex transition-opacity',
+              busy && 'motion-reduce:opacity-50'
+            )}
+          >
+            <Icon className="size-4" />
+          </span>
         </Button>
       </TooltipTrigger>
       <TooltipContent className="max-w-64">

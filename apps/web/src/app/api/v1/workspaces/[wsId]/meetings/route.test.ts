@@ -83,7 +83,11 @@ beforeEach(() => {
   mocks.tier.mockResolvedValue('FREE');
   mocks.identity.mockResolvedValue({
     data: {
-      user: { email: 'host@tuturuuu.com', email_confirmed_at: '2026-01-01' },
+      user: {
+        email: 'host@tuturuuu.com',
+        email_confirmed_at: '2026-01-01',
+        identities: [{ provider: 'email', identity_data: {} }],
+      },
     },
     error: null,
   });
@@ -119,23 +123,31 @@ beforeEach(() => {
 });
 
 describe('meeting creation authorization', () => {
-  it.each(['external@gmail.com', 'host@tuturuuu.com.attacker.test', undefined])(
-    'denies %s before accessing database',
-    async (email) => {
-      mocks.auth.mockResolvedValue(authenticatedContext(email));
-      mocks.identity.mockResolvedValue({
-        data: { user: { email, email_confirmed_at: '2026-01-01' } },
-        error: null,
-      });
-      const response = await POST(request(), params);
-      expect(response.status).toBe(403);
-      expect((await response.json()).code).toBe('MEET_CREATION_RESTRICTED');
-      expect(mocks.from).not.toHaveBeenCalled();
-    }
-  );
+  it.each([
+    'external@gmail.com',
+    'host@tuturuuu.com.attacker.test',
+    'Host@TUTURUUU.COM',
+    undefined,
+  ])('denies %s before accessing database', async (email) => {
+    mocks.auth.mockResolvedValue(authenticatedContext(email));
+    mocks.identity.mockResolvedValue({
+      data: {
+        user: {
+          email,
+          email_confirmed_at: '2026-01-01',
+          identities: [{ provider: 'email', identity_data: {} }],
+        },
+      },
+      error: null,
+    });
+    const response = await POST(request(), params);
+    expect(response.status).toBe(403);
+    expect((await response.json()).code).toBe('MEET_CREATION_RESTRICTED');
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
 
   it('allows an authenticated company account and stamps its actor', async () => {
-    mocks.auth.mockResolvedValue(authenticatedContext('Host@TUTURUUU.COM'));
+    mocks.auth.mockResolvedValue(authenticatedContext());
     expect((await POST(request(), params)).status).toBe(200);
     expect(mocks.insert).toHaveBeenCalledWith(
       expect.objectContaining({ creator_id: 'actor', ws_id: 'workspace-id' })

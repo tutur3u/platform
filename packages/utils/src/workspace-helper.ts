@@ -18,7 +18,10 @@ import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from './constants';
-import { isValidTuturuuuEmail } from './email/client';
+import {
+  applyExplicitGrants,
+  createPermissionCheck,
+} from './explicit-grant-permissions';
 import { permissions as rolePermissions } from './permissions';
 
 export class WorkspaceAuthError extends Error {
@@ -80,7 +83,6 @@ type AuthenticatedWorkspacePrincipal = {
   id: string;
 };
 
-// Structured logging utility
 const logWorkspaceError = (
   context: string,
   error: unknown,
@@ -506,7 +508,6 @@ export async function getWorkspaceInvites() {
         .ilike('email', `%${principal.email}%`)
     : null;
 
-  // use promise.all to run both queries in parallel
   const [invites, emailInvites] = await Promise.all([
     invitesQuery,
     emailInvitesQuery,
@@ -518,33 +519,7 @@ export async function getWorkspaceInvites() {
   return data;
 }
 
-export async function getUnresolvedInquiriesCount() {
-  const supabase = await createClient();
-  const principal = await resolveAuthenticatedPrincipal(supabase);
-
-  if (!principal?.email || !isValidTuturuuuEmail(principal.email))
-    return { count: 0, latestDate: null };
-
-  const sbAdmin = await createAdminClient();
-
-  const { count } = await sbAdmin
-    .from('support_inquiries')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_resolved', false);
-
-  const { data: latestInquiry } = await sbAdmin
-    .from('support_inquiries')
-    .select('created_at')
-    .eq('is_resolved', false)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  return {
-    count: count || 0,
-    latestDate: latestInquiry?.created_at || null,
-  };
-}
+export { getUnresolvedInquiriesCount } from './workspace-inquiries';
 
 export function enforceRootWorkspace(
   wsId: string,
@@ -828,7 +803,8 @@ async function getPermissionsImpl({
     : (membership.membershipType ?? 'MEMBER');
 
   const permissionsQuery =
-    membershipType === 'MEMBER' && !isCreator
+    membershipType === 'MEMBER' &&
+    (!isCreator || resolvedWorkspaceId === ROOT_WORKSPACE_ID)
       ? sbAdmin
           .from('workspace_role_members')
           .select(
@@ -859,35 +835,29 @@ async function getPermissionsImpl({
 
   const { data: permissionsData, error: permissionsError } = permissionsRes;
   const { data: defaultData, error: defaultError } = defaultRes;
+  if (permissionsError || defaultError) return null;
 
-  if (permissionsError) return null;
-  if (defaultError) return null;
+  const roleGranted: PermissionId[] = permissionsData.flatMap(
+    (m) =>
+      m.workspace_roles?.workspace_role_permissions?.map((p) => p.permission) ||
+      []
+  );
+  const { explicitGrants, permissions } = applyExplicitGrants(
+    resolvedWorkspaceId,
+    roleGranted,
+    isCreator
+      ? rolePermissions({
+          wsId: resolvedWorkspaceId,
+          user: { id: userId } as SupabaseUser,
+        }).map(({ id }) => id)
+      : [...roleGranted, ...defaultData.map((d) => d.permission)]
+  );
 
-  const permissions = isCreator
-    ? rolePermissions({
-        wsId: resolvedWorkspaceId,
-        user: { id: userId } as SupabaseUser,
-      }).map(({ id }) => id)
-    : [
-        // permissions from role memberships
-        ...permissionsData.flatMap(
-          (m) =>
-            m.workspace_roles?.workspace_role_permissions?.map(
-              (p) => p.permission
-            ) || []
-        ),
-        // default workspace permissions
-        ...defaultData.map((d) => d.permission),
-      ].filter((value, index, self) => self.indexOf(value) === index);
-
-  const isAdmin = permissions.includes('admin');
-
-  const containsPermission = (permission: PermissionId) => {
-    const hasPermission =
-      isCreator || isAdmin || permissions.includes(permission);
-    // console.log(permission, 'is allowed:', hasPermission);
-    return hasPermission;
-  };
+  const containsPermission = createPermissionCheck({
+    explicitGrants,
+    isCreator,
+    permissions,
+  });
 
   const withoutPermission = (permission: PermissionId) =>
     !containsPermission(permission);

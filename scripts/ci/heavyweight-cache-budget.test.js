@@ -492,7 +492,7 @@ test('Gradle restores never register setup-java post-job saves', () => {
   let restores = 0;
   for (const [file, document] of Object.entries({ ...workflows, ...actions })) {
     const groups = document.runs
-      ? [document.runs.steps]
+      ? [document.runs.steps ?? []]
       : Object.values(document.jobs).map((job) => job.steps || []);
     for (const steps of groups) {
       for (const step of steps) {

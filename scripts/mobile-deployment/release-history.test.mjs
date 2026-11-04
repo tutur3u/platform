@@ -174,6 +174,71 @@ describe('mobile beta release history', () => {
     }
   });
 
+  test('skips a TestFlight source that rewritten history made unreachable', async () => {
+    const originalFetch = globalThis.fetch;
+    const originalWarn = console.warn;
+    const responses = [
+      { data: [{ id: 'app' }] },
+      { data: [{ id: 'v1', attributes: { version: '0.11.1' } }], links: {} },
+      {
+        data: [
+          {
+            attributes: {
+              version: '205001',
+              uploadedDate: '2026-09-23T12:00:00Z',
+            },
+          },
+        ],
+      },
+      {
+        workflow_runs: [
+          {
+            run_number: 105,
+            head_sha: 'rewritten',
+            created_at: '2026-09-23T11:00:00Z',
+          },
+        ],
+      },
+    ];
+    globalThis.fetch = async () => ({
+      ok: true,
+      json: async () => responses.shift(),
+    });
+    const warnings = [];
+    console.warn = (message) => warnings.push(message);
+    const { privateKey } = generateKeyPairSync('ec', {
+      namedCurve: 'prime256v1',
+    });
+    const logRanges = [];
+    try {
+      const releases = await releaseHistory({
+        credentials: { privateKey, keyId: 'key', issuerId: 'issuer' },
+        githubToken: 'test-token',
+        version: '0.11.2',
+        sha: 'current',
+        date: '2026-09-24',
+        git: (_command, args) => {
+          if (args[0] === 'merge-base') {
+            if (args[2] === 'rewritten') throw new Error('not a commit');
+            return '';
+          }
+          logRanges.push(args[3]);
+          return 'fix(mobile): current patch (#2)';
+        },
+      });
+
+      assert.deepEqual(releases, [
+        { version: '0.11.1', date: '2026-09-23', changes: [] },
+        { version: '0.11.2', date: '2026-09-24', changes: ['Current patch'] },
+      ]);
+      assert.deepEqual(logRanges, ['mobile-v0.11.0..current']);
+      assert.ok(warnings[0].includes('0.11.1 source rewritten'));
+    } finally {
+      globalThis.fetch = originalFetch;
+      console.warn = originalWarn;
+    }
+  });
+
   test('uses the last reachable tag when a new minor has no base tag', async () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async () => ({

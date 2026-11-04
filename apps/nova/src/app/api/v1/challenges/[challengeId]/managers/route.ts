@@ -24,15 +24,16 @@ export async function POST(request: NextRequest) {
   const { data: userRole } = await sbAdmin
     .from('platform_user_roles')
     .select(
-      'allow_challenge_management, allow_manage_all_challenges, allow_role_management'
+      'enabled, allow_challenge_management, allow_manage_all_challenges, allow_role_management'
     )
     .eq('user_id', user.id)
     .single();
 
   if (
-    !userRole?.allow_challenge_management &&
-    !userRole?.allow_manage_all_challenges &&
-    !userRole?.allow_role_management
+    !userRole?.enabled ||
+    (!userRole.allow_challenge_management &&
+      !userRole.allow_manage_all_challenges &&
+      !userRole.allow_role_management)
   ) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
@@ -155,15 +156,16 @@ export async function DELETE(request: NextRequest) {
   const { data: userRole } = await sbAdmin
     .from('platform_user_roles')
     .select(
-      ' allow_challenge_management, allow_manage_all_challenges, allow_role_management,...users!inner(...user_private_details!inner(email))'
+      'enabled, allow_challenge_management, allow_manage_all_challenges, allow_role_management'
     )
-    .eq('users.user_private_details.email', user.email)
+    .eq('user_id', user.id)
     .single();
 
   if (
-    !userRole?.allow_challenge_management &&
-    !userRole?.allow_manage_all_challenges &&
-    !userRole?.allow_role_management
+    !userRole?.enabled ||
+    (!userRole.allow_challenge_management &&
+      !userRole.allow_manage_all_challenges &&
+      !userRole.allow_role_management)
   ) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }

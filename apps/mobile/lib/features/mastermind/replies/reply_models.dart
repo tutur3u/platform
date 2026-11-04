@@ -40,6 +40,7 @@ final class OutboxEntry {
     this.optionIndex,
     this.optionLabel,
     this.text,
+    this.holdUntil,
   }) : assert(
          (optionIndex == null) != (text == null),
          'A reply carries an option index or text, never both.',
@@ -56,12 +57,28 @@ final class OutboxEntry {
   final String? optionLabel;
   final String? text;
 
+  /// The one-tap Undo deadline. Held replies are durable but not dispatched
+  /// until this timestamp, unless the app is about to enter the background.
+  final DateTime? holdUntil;
+
   OutboxEntry withStatus(OutboxStatus next) => OutboxEntry(
     idempotencyKey: idempotencyKey,
     itemId: itemId,
     versionHash: versionHash,
     createdAt: createdAt,
     status: next,
+    optionIndex: optionIndex,
+    optionLabel: optionLabel,
+    text: text,
+    holdUntil: holdUntil,
+  );
+
+  OutboxEntry withoutHold() => OutboxEntry(
+    idempotencyKey: idempotencyKey,
+    itemId: itemId,
+    versionHash: versionHash,
+    createdAt: createdAt,
+    status: status,
     optionIndex: optionIndex,
     optionLabel: optionLabel,
     text: text,
@@ -85,6 +102,7 @@ final class OutboxEntry {
     if (optionIndex != null) 'option_index': optionIndex!,
     if (optionLabel != null) 'option_label': optionLabel!,
     if (text != null) 'text': text!,
+    if (holdUntil != null) 'hold_until': holdUntil!.toUtc().toIso8601String(),
   };
 
   /// Strict: anything off-shape is dropped rather than repaired or sent.
@@ -100,6 +118,12 @@ final class OutboxEntry {
     final index = raw['option_index'];
     final label = raw['option_label'];
     final text = raw['text'];
+    final holdRaw = raw['hold_until'];
+    final holdUntil = holdRaw == null
+        ? null
+        : holdRaw is String
+        ? DateTime.tryParse(holdRaw)
+        : null;
     if (key is! String ||
         !_uuid.hasMatch(key) ||
         item is! String ||
@@ -114,6 +138,7 @@ final class OutboxEntry {
         (label != null && (label is! String || label.length > 200))) {
       return null;
     }
+    if (holdRaw != null && holdUntil == null) return null;
     return OutboxEntry(
       idempotencyKey: key,
       itemId: item,
@@ -123,6 +148,7 @@ final class OutboxEntry {
       optionIndex: index as int?,
       optionLabel: label as String?,
       text: text as String?,
+      holdUntil: holdUntil?.toUtc(),
     );
   }
 

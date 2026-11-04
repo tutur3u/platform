@@ -40,9 +40,13 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        com.tuturuuu.app.mobile.telemetry.FirebaseStartupGate.install(
+            this, flutterEngine.dartExecutor.binaryMessenger,
+        )
         flutterEngine.plugins.add(com.tuturuuu.app.mobile.notifications.DeliveredInboxNotificationsPlugin())
         flutterEngine.plugins.add(com.tuturuuu.app.mobile.live.LiveScreenCapturePlugin())
         flutterEngine.plugins.add(com.tuturuuu.app.mobile.meet.MeetScreenSharePlugin())
+        flutterEngine.plugins.add(com.tuturuuu.app.mobile.iris.IrisDeviceKeyPlugin())
 
         // Safety-net registration for video_player. Auto-registration should
         // already handle this, but explicit registration avoids runtime

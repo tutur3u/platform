@@ -31,6 +31,12 @@ function buildReturnUrl(
 
 export const GET = withSessionAuth<{ provider: string }>(
   async (request, { supabase }, { provider }) => {
+    if (provider === 'azure') {
+      return NextResponse.json(
+        { message: 'Microsoft linking is unavailable' },
+        { status: 403 }
+      );
+    }
     const parsedProvider = ProviderSchema.safeParse(provider);
 
     if (!parsedProvider.success) {

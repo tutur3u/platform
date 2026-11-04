@@ -6,6 +6,28 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Drive export links use versioned, expiring tokens plus a service-only folder
+  revocation marker in the Supabase `.tuturuuu/drive-export-revocations` namespace.
+  Read markers uncached on every fetch and fail closed on missing markers or
+  storage errors. Initialize with insert-only writes; never reset a version during
+  issuance or provider migration. Require `manage_drive` before rotating it.
+  See [Drive export lifetime and revocation](../../../../../apps/docs/platform/applications/drive.mdx#export-link-lifetime-and-revocation)
+  for the seven-day default, override cap, legacy-token cutover, existing private-root
+  RLS prerequisite, and already-issued read URL limitation.
+- Shared JSON content validation bounds streamed bytes and structural complexity
+  before constructing and scanning leaf paths. Keep skipped emoji fields inside
+  structural bounds except for explicit machine-state exemptions. Whiteboard
+  PATCH saves strip the top-level snapshot and use an 8 MiB streamed cap; other
+  fields retain generic checks. Preserve route-specific body limits and test adversarial
+  structure with small deterministic fixtures. See [request validation bounds](../../../../../apps/docs/platform/features/mobile-workspace-tools.mdx#request-content-validation-bounds).
+- Provider execution requires a newly acquired metered reservation; an existing
+  idempotent reservation returns 409 before invoking a provider. AI-chat attachment
+  reads require the authenticated source-chat owner even when a different product
+  uses the same UUID. Prompt preparation and conversion tools share the owner
+  and workspace-membership fence before storage reads/signing; AI chats have no
+  workspace column. Keep workspace admission in each route. See [AI Studio](../../../../../apps/docs/platform/ai/ai-studio.mdx#execution-and-attachment-authorization).
+
+
 - Workspace user reads share the users-core field projection and effective
   public/private permissions. Attendance and score adapters verify every requested
   user/class against the permission workspace. Preserve app-session actors and
@@ -38,6 +60,12 @@ and its focused regression coverage before adding a reason or changing middlewar
   preserve membership, workspace filters, visibility and creator checks.
   Expand one resource at a time with its existing error envelope and regression
   coverage. See [typed workspace boundaries](../../../../../apps/docs/build/development-tools/codex-plugin.mdx#typed-workspace-boundaries).
+- Hive product handlers live in `apps/hive/src/app/api/v1/hive` and use
+  `HIVE_DATABASE_URL`; membership/platform roles still use platform services.
+  Trace the current handler before applying a historical Supabase world-event
+  fix. A maintenance Worker is an approval-gated routing operation, not app
+  restoration. See the [Hive migration plan](../../../../../docs-internal/build/devops/hive-cloudflare-migration.mdx)
+  and [maintenance runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/hive-cloudflare-maintenance.mdx).
 
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
@@ -124,14 +152,18 @@ and its focused regression coverage before adding a reason or changing middlewar
   `useEffect`.
 - Client/shared UI app API calls should go through `packages/internal-api/src/*`
   helpers instead of scattered raw `fetch('/api/...')` calls.
-- Mounted app adapters register `registerDefaultAppBaseResolver` from
-  `@tuturuuu/internal-api/client` once at startup for helpers without options.
-  Read request-local context inside the callback and return an absolute URL on
-  SSR; never capture an incoming request in the registered closure. Select
-  app-owned routes when the adapter also calls central APIs. See the
+- Mounted app adapters register `registerDefaultAppBaseResolver` from `@tuturuuu/internal-api/client`
+  once for helpers without options. Read request context in the callback; SSR returns an absolute URL.
+  Never capture a request. Select app-owned routes when central APIs are also used.
+  API helpers take raw validated `/api/...` inputs; the resolver applies the mount.
+  Prefix rendered href/src separately, including CID image replacements. See the
   [bridge resolver contract](../../../../../apps/docs/build/devops/start-bridge.mdx#internal-api-resolver-registration)
   for browser setup, teardown and regression coverage.
 - Every `fetch` inside a query function should include `{ cache: 'no-store' }`.
+- Web mounts the Sonner toaster. Client mutations should import `toast` from
+  `@tuturuuu/ui/sonner`; the legacy `hooks/use-toast` store has no mounted Web
+  consumer and can silently hide failures. Preserve safe API errors, pending
+  confirmation and mutation retry policy; see the workspace deletion regressions.
 - Use `@tuturuuu/icons`, `@tuturuuu/ui/dialog`, and dynamic design tokens.
   Native browser dialogs, emojis in UI code, and hard-coded hue classes are not
   acceptable.
@@ -192,8 +224,9 @@ and its focused regression coverage before adding a reason or changing middlewar
   enforces it.
 - Central-login app identity comes from `packages/utils/src/internal-domains.ts`,
   not the infrastructure project's reserved-host list or shared-cookie domains.
-  Rewise (`https://rewise.me`) and Nova (`https://nova.ai.vn`) are internal
-  satellites with exact HTTPS production origins outside `tuturuuu.com`.
+  Nova (`https://nova.ai.vn`) is an internal satellite with an exact HTTPS
+  production origin outside `tuturuuu.com`. Rewise is served only at
+  `https://rewise.tuturuuu.com`; the expired `rewise.me` must never be trusted.
   Preserve their registrations when changing canonical SEO hosts; verify the
   domain, cross-app mapping, and web return-validation regression suites.
 - **Never copy the multi-account vault into another app.**
@@ -262,6 +295,13 @@ protocol and its explicitly in-memory regression boundary.
   cannot be split.
 - API routes should parse JSON inside a `try/catch` before Zod validation and
   return explicit `400` for malformed JSON.
+- For secret writes that can select a service-role client, use one strict Zod
+  allowlist before choosing the client, and construct mutations from parsed
+  editable fields only. Reject caller-supplied identity, workspace and timestamp
+  columns with HTTP 400. Keep editor request bodies aligned with that contract;
+  workspace-secret edits carry the id in the URL, not the JSON body. Regression
+  tests must cover unknown fields on both client paths and workspace predicates
+  on successful elevated updates.
 - Validate UUID path params with shared Zod GUID schemas instead of ad-hoc
   regex checks.
 - Initialize Supabase with `createClient(request)` in API routes that must
@@ -769,7 +809,7 @@ Reset participation acknowledgement when switching scenarios. Keep filtered sele
 visible. Load private rubrics only after session-owner and meeting-host checks;
 render the session snapshot. See the Parley product guide and studio setup,
 invitation, review-route and Meet-link regression tests. Keep shared chat mention
-markers lazy and unguessable; see the [native import checks](../../../../../apps/docs/build/development-tools/thanh-local-e2e.mdx#native-worker-imports).
+markers lazy and unguessable; see the [native import checks](../../../../../apps/docs/build/development-tools/local-e2e.mdx#native-worker-imports).
 
 ## Calendar OAuth operator alerts
 
@@ -1295,7 +1335,7 @@ restoring real timers; see the Calendar application decision and tracker tests.
 
 Trace mobile preference requests through `ApiOrigins.baseUrlForPath`, not only `ownerForPath`: personal/workspace calendar-settings GET/PATCH now default directly to Web, while older published builds retain Infrastructure-to-Calendar routing. Keep Web settings paths out of satellite rewrites; changing the mobile host alone can still send traffic back to Calendar. Inspect `apps/web/vercel.json` and the active hosting policy separately: application MFA cannot bypass a provider challenge before application execution. Reuse the Bearer actor already verified by the MFA guard for exact preference GET/PATCH quotas; do not add an authentication request or rely on a warm trust cache.
 Keep preferences bounded and separate from unrelated gateway traffic. Retain anonymous quotas, MFA, IP blocks and route permissions. Test cold-cache/shared-IP rejection, token rotation, actor isolation, forged credentials and Settings mount request counts.
-Middleware logs alone cannot attribute a TestFlight incident; obtain safe rejection headers and correlate both hosts. See the Calendar settings decision, native API protection runbook and `api-proxy-calendar-preference-reads.test.ts`. Keep the calendar preference Web routing fix independently deliverable before native integrity. `NATIVE_INTEGRITY_MODE` defaults to `off`; `monitor` may record only scalar verification verdicts and must continue through existing auth/MFA/quota/permission controls on every integrity failure. Enforce only after operator acceptance of real providers, signed devices, nonce/counter replay storage, key deletion and unsupported/older-client policy. The guard also covers existing Web browser/server consumers without proofs, so keep enforce inactive until their proof coverage or a separately reviewed trusted-browser policy is accepted; never bypass by omitted header or User-Agent. Do not infer Vercel hosting clearance from a valid app proof. Follow the [native integrity runbook](../../../../../apps/docs/build/devops/calendar-native-api-protection.mdx#native-integrity-rollout-default-off) for configuration, acceptance and rollback; keep tokens, key IDs and request bindings out of logs. Turnstile fallback is separately default-off and requires server-owned unsupported-actor eligibility; live Apple or verified Play capability bars the downgrade. Request-owned verified-user reuse applies only to the exact unchanged Request in one process; distinct proxy/route objects or runtimes resolve identity normally, never through a trusted client header or assumed cross-runtime WeakMap.
+Middleware logs alone cannot attribute a TestFlight incident; obtain safe rejection headers and correlate both hosts. See the Calendar settings decision, native API protection runbook and `api-proxy-calendar-preference-reads.test.ts`. Keep the calendar preference Web routing fix independently deliverable before native integrity. `NATIVE_INTEGRITY_MODE` defaults to `off`; `monitor` may record only scalar verification verdicts and must continue through existing auth/MFA/quota/permission controls on every integrity failure. Enforce only after operator acceptance of real providers, signed devices, nonce/counter replay storage, key deletion and unsupported/older-client policy. The guard also covers existing Web browser/server consumers without proofs, so keep enforce inactive until their proof coverage or a separately reviewed trusted-browser policy is accepted; never bypass by omitted header or User-Agent. Do not infer Vercel hosting clearance from a valid app proof. Follow the [native integrity runbook](https://github.com/tutur3u/internal-docs/blob/main/apps/docs/build/devops/calendar-native-api-protection.mdx#native-integrity-rollout-default-off) for configuration, acceptance and rollback; keep tokens, key IDs and request bindings out of logs. Turnstile fallback is separately default-off and requires server-owned unsupported-actor eligibility; live Apple or verified Play capability bars the downgrade. Request-owned verified-user reuse applies only to the exact unchanged Request in one process; distinct proxy/route objects or runtimes resolve identity normally, never through a trusted client header or assumed cross-runtime WeakMap.
 
 ### Storage object key transport
 
@@ -1344,3 +1384,85 @@ Keep editable profile/contact emails and supplied session emails for display onl
 Direct recipient ids remain valid without a confirmed mailbox. Cross-app SQL must
 canonicalize at both minting and redemption so outstanding handoffs follow the
 same rule; preserve the signed MFA transfer and existing bearer-redemption ACL.
+
+
+### Staff-session authorization
+
+Use `@tuturuuu/utils/email/staff-session` only with a current subject-bound Auth
+user containing provider identities. App-session and profile projections require
+`getVerifiedAuthUser` first. Preserve independent workspace/role and feature gates;
+an address syntax predicate or UI visibility flag never grants staff authority.
+See the staff-session decision in `apps/docs/platform/architecture/authorization.mdx`
+and the shared helper's identity matrix and route denial regressions.
+
+For AI memory or billing attribution, resolve the request scope with
+`authorizeAiWorkspace` before provider or memory work. Temporary authentication
+does not grant workspace membership; retain a canonical authorized workspace id.
+### Web cron scheduler handover
+
+The five web Vercel schedules have a dormant candidate in the existing Cron
+Control Worker. Follow [the web cron migration runbook](../../../../../apps/docs/build/devops/web-cloudflare-migration.mdx)
+for the shared execution gate, default-off/shadow modes, operation bounds and
+stop/drain/owner-switch sequence. A dispatch slot claim alone does not fence a
+Vercel invocation. Retain the web boundary gate through rollback; an expired or
+unknown operation requires reconciliation with its original identity. Validate
+the real local workerd SQLite stop and restart test as well as the pure ledger
+tests before enabling a job. This preparation grants no deployment authority.
+
+
+## Abuse-guard command fairness
+
+For assigned replay/password callers, pass trusted source and verified principal
+identity through a request-scoped `client.withFairness` view. Never mutate a shared
+client, key quotas by token/target, or replace durable quotas with a local cache.
+The control object checks identity quotas and family spend in one transaction;
+subject denials, retries and successful refunds still count. Bounded caches are
+shortcuts whose misses recheck durable admission after eviction or restart.
+Follow the [store runbook](https://github.com/tutur3u/internal-docs/blob/main/apps/docs/build/devops/abuse-guard-store.mdx#durable-command-fairness)
+for defaults, canonical IP buckets, tests and remaining activation holds. Command
+allowances do not establish a total bound on Worker/control-DO request billing.
+
+All abuse-guard RPCs reserve family commands durably before subject execution.
+Retain reservations for interrupted or skipped work; never defer accounting to an
+isolate-local flush. Verify the budget across isolate replacement in workerd.
+This limits subject commands, while the request-cost activation hold remains.
+
+### Staff identity checks before permission reads
+
+For staff-only routes, reject unverified, foreign-tenant and disallowed-domain
+identities before calling workspace permission readers: those readers query data.
+Keep role permissions as an additional gate after verified identity checks.
+The export and crawler denial matrix is covered by
+`apps/web/src/lib/staff-session.test.ts` and `staff-exact-domain.test.ts`.
+When a role gate is added to an identity-policy test, mock its permission boundary
+and assert denied identities never call it; keep role-reader coverage separate.
+
+### Tutoring payroll
+
+Report and payroll export totals share internal-api's pure
+`calculateTutoringPayroll`. Preserve the duration-bearing slot key until a
+product decision changes it. Apply `view_payroll` or a verified actor-to-workspace
+teacher link before reading sessions with the admin client. Never trust a client
+teacher filter as authorization. Apply the same self scope to detailed exports,
+session lists and teacher pickers, which otherwise reveal reconstructible work
+hours. Require both export dates and an inclusive span of at most 366 days. See the tutoring feature page and export route
+permission/parity regressions.
+
+Parent-message previews also expose teacher work hours. Apply the shared teacher
+read scope to both the preview session lookup and save, and return no preview
+when a concurrent reassignment makes the scoped save miss. Keep the editor gate.
+
+### Private native Worker admission
+
+For owner-only native apps, keep admission at the Worker entry before assets,
+Start server functions or rendering. Use the request-injected satellite auth
+core with an explicit app target and secret; legacy satellite helpers may
+fall back to database identity. Never permit that fallback before an owner
+gate that promises zero data reads on denial. Mastermind's binding/key rotation,
+short session and publication gates are documented in
+`apps/docs/build/devops/mastermind-web.mdx`.
+
+Keep emitted-Worker acceptance behind an explicit `test:runtime` command and
+`.acceptance.mjs` filename so source-only gates cannot invoke it without an
+artifact. Use `.invalid` hosts for isolated runtime preview fixtures; retain
+production-like preview refusal in the source auth matrix.

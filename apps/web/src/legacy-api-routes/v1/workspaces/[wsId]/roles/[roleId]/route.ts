@@ -5,7 +5,12 @@ import type {
   TablesUpdate,
   WorkspaceRole,
 } from '@tuturuuu/types';
+import { isExplicitGrantPermission } from '@tuturuuu/utils/explicit-grant-permissions';
 import { NextResponse } from 'next/server';
+import {
+  canManageCreatorGrantRole,
+  filterCreatorGrantPermissions,
+} from '@/lib/workspace-creator-grant-permissions';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
@@ -29,7 +34,11 @@ async function authorizeRoleRequest(req: Request, wsId: string) {
     };
   }
 
-  return { error: null, permissions: access.permissions };
+  return {
+    error: null,
+    permissions: access.permissions,
+    userId: access.user?.id,
+  };
 }
 
 export async function GET(req: Request, { params }: Params) {
@@ -85,14 +94,45 @@ export async function PUT(req: Request, { params }: Params) {
     name: data.name,
   };
 
+  const existingRole = await supabase
+    .from('workspace_roles')
+    .select('name')
+    .eq('id', id)
+    .eq('ws_id', resolvedWsId)
+    .maybeSingle();
+
+  if (existingRole.error) {
+    return NextResponse.json(
+      { message: 'Error fetching workspace role' },
+      { status: 500 }
+    );
+  }
+
+  if (!existingRole.data) {
+    return NextResponse.json({ message: 'Role not found' }, { status: 404 });
+  }
+
+  if (
+    data.name !== existingRole.data.name &&
+    !(await canManageCreatorGrantRole(supabase, {
+      roleId: id,
+      userId: authorization.userId,
+      wsId: resolvedWsId,
+    }))
+  ) {
+    return NextResponse.json(
+      { message: 'Only the workspace creator can rename this role' },
+      { status: 403 }
+    );
+  }
+
   // Update the role first so permission rows are only written for a role that
   // belongs to the authorized workspace.
   const roleRes = await supabase
     .from('workspace_roles')
-    .update(coreData)
+    .select('id')
     .eq('id', id)
     .eq('ws_id', resolvedWsId)
-    .select('id')
     .maybeSingle();
 
   if (roleRes.error) {
@@ -113,17 +153,25 @@ export async function PUT(req: Request, { params }: Params) {
 
   const updatedRoleId = roleRes.data.id;
 
+  const writablePermissions = await filterCreatorGrantPermissions(supabase, {
+    permissions,
+    userId: authorization.userId,
+    wsId: resolvedWsId,
+  });
+
   const permissionsRes = await supabase
     .from('workspace_role_permissions')
     .upsert(
-      permissions.map(
-        (permission): TablesInsert<'workspace_role_permissions'> => ({
-          ws_id: resolvedWsId,
-          role_id: updatedRoleId,
-          permission: permission.id as WorkspaceRolePermissionValue,
-          enabled: permission.enabled,
-        })
-      )
+      writablePermissions
+        .filter((permission) => !isExplicitGrantPermission(permission.id))
+        .map(
+          (permission): TablesInsert<'workspace_role_permissions'> => ({
+            ws_id: resolvedWsId,
+            role_id: updatedRoleId,
+            permission: permission.id as WorkspaceRolePermissionValue,
+            enabled: permission.enabled,
+          })
+        )
     );
 
   if (permissionsRes.error) {
@@ -132,6 +180,21 @@ export async function PUT(req: Request, { params }: Params) {
       roleId: id,
       wsId: resolvedWsId,
     });
+    return NextResponse.json(
+      { message: 'Error updating workspace role' },
+      { status: 500 }
+    );
+  }
+
+  // A rejected permission save must leave the role name untouched.
+  const updateRes = await supabase
+    .from('workspace_roles')
+    .update(coreData)
+    .eq('id', updatedRoleId)
+    .eq('ws_id', resolvedWsId);
+
+  if (updateRes.error) {
+    console.error('Error updating workspace role', updateRes.error);
     return NextResponse.json(
       { message: 'Error updating workspace role' },
       { status: 500 }

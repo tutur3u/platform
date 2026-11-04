@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { MAX_PAYLOAD_SIZE } from './constants';
+import { whiteboardSaveByteLimit } from './whiteboard-request-policy';
 
 async function requestBodyExceedsLimit(req: NextRequest, maxBytes: number) {
   const body = req.clone().body;
@@ -21,16 +22,17 @@ async function requestBodyExceedsLimit(req: NextRequest, maxBytes: number) {
   }
 }
 
-/** The caller may supply an explicit route bound; all other routes keep 512 KiB. */
+/** Whiteboard saves have a dedicated cap; other routes default to 512 KiB. */
 export async function guardApiProxyBody(
   req: NextRequest,
   maxBytes = MAX_PAYLOAD_SIZE
 ) {
+  const byteLimit = whiteboardSaveByteLimit(req) ?? maxBytes;
   const contentLength = req.headers.get('content-length');
   const size = contentLength ? Number.parseInt(contentLength, 10) : 0;
   if (
-    (!Number.isNaN(size) && size > maxBytes) ||
-    (await requestBodyExceedsLimit(req, maxBytes))
+    (!Number.isNaN(size) && size > byteLimit) ||
+    (await requestBodyExceedsLimit(req, byteLimit))
   ) {
     return NextResponse.json(
       { error: 'Payload Too Large', message: 'Request body exceeds limit' },

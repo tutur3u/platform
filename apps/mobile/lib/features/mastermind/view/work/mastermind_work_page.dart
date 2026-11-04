@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/features/mastermind/machines/machine_list.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
@@ -33,6 +34,8 @@ class MastermindWorkPage extends StatefulWidget {
     this.initialProduct,
     this.initialArea,
     this.onSelection,
+    this.statePriority = laneStatePriority,
+    this.segmentBarBuilder,
     super.key,
   });
 
@@ -41,6 +44,17 @@ class MastermindWorkPage extends StatefulWidget {
   final Product? initialProduct;
   final Area? initialArea;
   final ValueChanged<WorkSelection>? onSelection;
+
+  /// The order the state groups and chips follow. Threads puts waiting first.
+  final List<LaneState> statePriority;
+
+  /// Replaces the segment control, which Threads labels and styles itself.
+  final Widget Function(
+    BuildContext context,
+    WorkSegment selected,
+    ValueChanged<WorkSegment> onChanged,
+  )?
+  segmentBarBuilder;
 
   @override
   State<MastermindWorkPage> createState() => _MastermindWorkPageState();
@@ -112,6 +126,7 @@ class _MastermindWorkPageState extends State<MastermindWorkPage> {
         state: _state,
         product: _product,
         area: _area,
+        statePriority: widget.statePriority,
       );
 
   /// Rewrites the URL once this frame is built, but only while this page is on
@@ -135,10 +150,17 @@ class _MastermindWorkPageState extends State<MastermindWorkPage> {
         ),
         SliverList.list(
           children: [
-            WorkSegmentBar(
-              selected: _segment,
-              onChanged: (value) => _select(() => _segment = value),
-            ),
+            if (widget.segmentBarBuilder case final build?)
+              build(
+                context,
+                _segment,
+                (value) => _select(() => _segment = value),
+              )
+            else
+              WorkSegmentBar(
+                selected: _segment,
+                onChanged: (value) => _select(() => _segment = value),
+              ),
             ...switch (_segment) {
               WorkSegment.lanes => _lanes(context, ready.snapshot),
               WorkSegment.backlog => [
@@ -147,6 +169,12 @@ class _MastermindWorkPageState extends State<MastermindWorkPage> {
                   controller: _backlogSearch,
                   query: _backlogQuery,
                   onQuery: (value) => setState(() => _backlogQuery = value),
+                ),
+              ],
+              WorkSegment.machines => [
+                MachineList(
+                  snapshot: ready.snapshot.machines,
+                  now: DateTime.now().toUtc(),
                 ),
               ],
               WorkSegment.staff => [WorkStaffSection(snapshot: ready.snapshot)],
@@ -182,7 +210,7 @@ class _MastermindWorkPageState extends State<MastermindWorkPage> {
         WorkFilters(
           controller: _search,
           states: [
-            for (final state in laneStatePriority)
+            for (final state in widget.statePriority)
               if ((model.stateCounts[state] ?? 0) > 0 || state == _state) state,
           ],
           stateCounts: model.stateCounts,

@@ -1,7 +1,18 @@
 import '@testing-library/jest-dom';
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Structure } from './structure';
+
+beforeEach(() => {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  );
+});
+afterEach(() => vi.unstubAllGlobals());
 
 describe('Structure', () => {
   it('removes sidebar chrome and desktop padding when the sidebar is hidden', () => {

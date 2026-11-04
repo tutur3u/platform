@@ -37,6 +37,15 @@ const active: EmployeeProviderUser = {
   email,
   aud: 'authenticated',
   created_at: '2026-01-01',
+  identities: [
+    {
+      id: 'fixture-identity',
+      identity_id: 'fixture-identity',
+      user_id: target,
+      provider: 'email',
+      identity_data: {},
+    },
+  ],
   email_confirmed_at: '2026-01-01',
   app_metadata: { employee_onboarding: true },
   user_metadata: {},

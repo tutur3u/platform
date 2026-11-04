@@ -1,12 +1,16 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   type AiTempAuthContext,
   validateAiTempAuthRequest,
 } from '@tuturuuu/utils/ai-temp-auth';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -151,22 +155,10 @@ export async function resolveAiRouteAuth(
 export async function isInternalTuturuuuAiUser(
   auth: Extract<AiRouteAuthResult, { ok: true }>
 ) {
-  const tempEmail =
-    typeof auth.tempAuthContext?.user?.email === 'string'
-      ? auth.tempAuthContext.user.email
-      : null;
-  const sessionEmail =
-    typeof auth.user.email === 'string' ? auth.user.email : null;
-
-  if (isExactTuturuuuDotComEmail(tempEmail ?? sessionEmail)) {
-    return true;
-  }
-
-  const { data } = await auth.supabase
-    .from('user_private_details')
-    .select('email')
-    .eq('user_id', auth.user.id)
-    .maybeSingle();
-
-  return isExactTuturuuuDotComEmail(data?.email);
+  return isVerifiedTuturuuuStaffSession(
+    await getVerifiedAuthUser(
+      await createAdminClient({ noCookie: true }),
+      auth.user.id
+    )
+  );
 }

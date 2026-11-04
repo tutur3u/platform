@@ -11,6 +11,7 @@ import {
 import { join, resolve } from 'node:path';
 import { auditBundle } from './audit-bundle.mjs';
 import { packageWindows } from './package-windows.mjs';
+import { desktopBuildVersion } from './release-version.mjs';
 import { withMacosSigning } from './sign-macos.mjs';
 import { stageLocalInferenceMacos } from './stage-local-inference-macos.mjs';
 
@@ -19,10 +20,11 @@ const runnerTemp = process.env.RUNNER_TEMP;
 const run = process.env.GITHUB_RUN_ID;
 if (!runnerTemp || !/^\d+$/.test(run ?? ''))
   throw new Error('CI runner required');
-const version = (await readFile('apps/mobile/pubspec.yaml', 'utf8')).match(
-  /^version: (\d+\.\d+\.\d+)\+/m
-)?.[1];
-if (!version) throw new Error('Invalid app version');
+// Published builds receive the derived release version; dry runs use pubspec.
+const version = desktopBuildVersion(
+  await readFile('apps/mobile/pubspec.yaml', 'utf8'),
+  process.env.DESKTOP_VERSION
+);
 const output = join(runnerTemp, 'desktop-artifacts');
 await mkdir(output, { recursive: true });
 async function receipt(name, verification) {

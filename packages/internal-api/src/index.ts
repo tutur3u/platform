@@ -1641,7 +1641,6 @@ export {
   getSharedCourseContent,
   getTulearnBootstrap,
   getTulearnCourse,
-  getTulearnCourseModule,
   getTulearnHome,
   getTulearnPractice,
   getTulearnTestAttempt,
@@ -1685,6 +1684,7 @@ export {
   type UpdateTulearnProfilePayload,
   updateTulearnProfile,
 } from './tulearn';
+export * from './tulearn-module-exports';
 export {
   createTutoringSession,
   exportTutoringSessions,

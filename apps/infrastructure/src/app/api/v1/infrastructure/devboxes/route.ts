@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { listDevboxControlSnapshot } from '@/lib/devboxes/admin-store';
-import { authorizeDevboxRootMember } from '@/lib/devboxes/authorization';
+import { authorizeDevboxRootViewer } from '@/lib/devboxes/authorization';
 import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
 
 export async function GET(request: Request) {
-  const authorization = await authorizeDevboxRootMember(request);
+  const authorization = await authorizeDevboxRootViewer(request);
   if (!authorization.ok) return authorization.response;
 
   try {

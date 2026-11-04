@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { whiteboardSaveByteLimit } from './whiteboard-request-policy';
 
 export const MAX_EMOJIS_PER_FIELD = 10;
 export const MAX_SHORT_TEXT_FIELD_GRAPHEMES = 280;
@@ -6,7 +7,10 @@ export const MAX_SHORT_TEXT_FIELD_GRAPHEMES = 280;
 export const MAX_DESCRIPTION_FIELD_GRAPHEMES = 100_000;
 
 export type RequestContentViolation = {
-  code: 'EMOJI_LIMIT_EXCEEDED' | 'TEXT_BOMB_DETECTED';
+  code:
+    | 'EMOJI_LIMIT_EXCEEDED'
+    | 'TEXT_BOMB_DETECTED'
+    | 'REQUEST_COMPLEXITY_EXCEEDED';
   count: number;
   limit: number;
   message: string;
@@ -167,7 +171,71 @@ function getStringContentViolation(
   return null;
 }
 
+const MAX_CONTENT_BYTES = 2 * 1024 * 1024;
+const MAX_CONTENT_DEPTH = 32;
+const MAX_CONTENT_NODES = 10_000;
+const MAX_CONTENT_PATH_LENGTH = 2048;
+
+function complexityViolation(
+  count: number,
+  limit: number
+): RequestContentViolation {
+  return {
+    code: 'REQUEST_COMPLEXITY_EXCEEDED',
+    count,
+    limit,
+    message: 'Request content exceeds validation limits',
+    path: 'body',
+  };
+}
+
+function findComplexityViolation(
+  value: unknown,
+  path: string
+): RequestContentViolation | null {
+  const stack = [{ value, depth: 0, pathLength: path.length }];
+  let nodes = 1;
+  let textSize = 0;
+  while (stack.length) {
+    const item = stack.pop();
+    if (!item) break;
+    if (item.depth > MAX_CONTENT_DEPTH)
+      return complexityViolation(item.depth, MAX_CONTENT_DEPTH);
+    if (item.pathLength > MAX_CONTENT_PATH_LENGTH)
+      return complexityViolation(item.pathLength, MAX_CONTENT_PATH_LENGTH);
+    if (typeof item.value === 'string') textSize += item.value.length;
+    if (item.value && typeof item.value === 'object') {
+      for (const key in item.value) {
+        if (!Object.hasOwn(item.value, key)) continue;
+        nodes += 1;
+        if (nodes > MAX_CONTENT_NODES)
+          return complexityViolation(nodes, MAX_CONTENT_NODES);
+        textSize += key.length;
+        const pathLength = item.pathLength + key.length + 2;
+        if (pathLength > MAX_CONTENT_PATH_LENGTH)
+          return complexityViolation(pathLength, MAX_CONTENT_PATH_LENGTH);
+        const child: unknown = Reflect.get(item.value, key);
+        stack.push({ value: child, depth: item.depth + 1, pathLength });
+      }
+    }
+    if (textSize > MAX_CONTENT_BYTES)
+      return complexityViolation(textSize, MAX_CONTENT_BYTES);
+  }
+  return null;
+}
+
 export function findRequestContentViolation(
+  value: unknown,
+  path = 'body',
+  options?: FindRequestContentViolationOptions
+): RequestContentViolation | null {
+  return (
+    findComplexityViolation(value, path) ??
+    visitRequestContent(value, path, options)
+  );
+}
+
+function visitRequestContent(
   value: unknown,
   path = 'body',
   options?: FindRequestContentViolationOptions
@@ -178,11 +246,7 @@ export function findRequestContentViolation(
 
   if (Array.isArray(value)) {
     for (const [index, item] of value.entries()) {
-      const violation = findRequestContentViolation(
-        item,
-        `${path}[${index}]`,
-        options
-      );
+      const violation = visitRequestContent(item, `${path}[${index}]`, options);
       if (violation) {
         return violation;
       }
@@ -193,11 +257,7 @@ export function findRequestContentViolation(
 
   if (value && typeof value === 'object') {
     for (const [key, item] of Object.entries(value)) {
-      const violation = findRequestContentViolation(
-        item,
-        `${path}.${key}`,
-        options
-      );
+      const violation = visitRequestContent(item, `${path}.${key}`, options);
       if (violation) {
         return violation;
       }
@@ -247,9 +307,30 @@ export async function getRequestContentViolationForRequest(
     return null;
   }
 
+  const whiteboardLimit = whiteboardSaveByteLimit(request);
+  const maxContentBytes = whiteboardLimit ?? MAX_CONTENT_BYTES;
   let rawBody = '';
   try {
-    rawBody = await request.clone().text();
+    const body = request.clone().body;
+    if (!body) return null;
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    let bytes = 0;
+    try {
+      while (true) {
+        const chunk = await reader.read();
+        if (chunk.done) break;
+        bytes += chunk.value.byteLength;
+        if (bytes > maxContentBytes) {
+          void reader.cancel().catch(() => {});
+          return complexityViolation(bytes, maxContentBytes);
+        }
+        rawBody += decoder.decode(chunk.value, { stream: true });
+      }
+      rawBody += decoder.decode();
+    } finally {
+      reader.releaseLock();
+    }
   } catch {
     return null;
   }
@@ -259,7 +340,17 @@ export async function getRequestContentViolationForRequest(
   }
 
   try {
-    const parsedBody = JSON.parse(rawBody);
+    let parsedBody: unknown = JSON.parse(rawBody);
+    if (
+      whiteboardLimit !== undefined &&
+      parsedBody &&
+      typeof parsedBody === 'object' &&
+      !Array.isArray(parsedBody)
+    ) {
+      parsedBody = Object.fromEntries(
+        Object.entries(parsedBody).filter(([key]) => key !== 'snapshot')
+      );
+    }
 
     if (
       options?.allowDescriptionYjsState === true &&

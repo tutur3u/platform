@@ -10,6 +10,10 @@ insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data,raw_user_me
 ('00000000-0000-4000-8000-000000009940','restore-admin-fixture@tuturuuu.com',now(),'{}','{}'),
 ('00000000-0000-4000-8000-000000009941','restore-legacy-fixture@tuturuuu.com',now(),'{}','{}'),
 ('00000000-0000-4000-8000-000000009945','restore-foreign-fixture@example.test',now(),'{}','{}');
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 insert into public.workspaces(id,name,creator_id,personal) values
 ('00000000-0000-0000-0000-000000000000','Restore root fixture','00000000-0000-4000-8000-000000009940',false)
 on conflict(id) do update set creator_id=excluded.creator_id;
@@ -35,6 +39,10 @@ select is(private.inspect_employee_management('00000000-0000-4000-8000-000000009
 select is(private.inspect_employee_management('00000000-0000-4000-8000-000000009940','00000000-0000-4000-8000-000000009941','restore-legacy-fixture@tuturuuu.com')->>'managed','false','unregistered ordinary staff remains unmanaged');
 insert into auth.users(id,email,email_confirmed_at,banned_until,raw_app_meta_data,raw_user_meta_data) values
 ('00000000-0000-4000-8000-000000009942','restore-target-fixture@tuturuuu.com',now(),now()+interval '100 years','{"employee_onboarding":true}','{}');
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 select throws_ok($$select private.begin_employee_restore('00000000-0000-4000-8000-000000009940','00000000-0000-4000-8000-000000009942','restore-target-fixture@tuturuuu.com',0,'00000000-0000-4000-8000-000000009950')$$,'23514','Employee restoration tuple or revision conflict','pending creation cannot restore');
 select private.finalize_employee_creation('00000000-0000-4000-8000-000000009940','00000000-0000-4000-8000-000000009942','restore-target-fixture@tuturuuu.com','Restore fixture');
 select throws_ok($$select private.begin_employee_restore('00000000-0000-4000-8000-000000009940','00000000-0000-4000-8000-000000009942','restore-target-fixture@tuturuuu.com',0,'00000000-0000-4000-8000-000000009950')$$,'23514','Employee restoration tuple or revision conflict','provisioned creation cannot restore');

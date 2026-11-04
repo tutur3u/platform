@@ -77,9 +77,8 @@ const TANSTACK_WEB_PROXY_TARGET_OPT_IN_ENV =
 const DNS_IPV4_FIRST_NODE_OPTION = '--dns-result-order=ipv4first';
 const DEFAULT_PORTLESS_ALIAS_VERIFY_ATTEMPTS = 3;
 const DEFAULT_PORTLESS_ALIAS_VERIFY_DELAY_MS = 1_000;
-const DEFAULT_PORTLESS_RUNTIME_DIR = path.join(os.homedir(), '.portless');
 const DEFAULT_PORTLESS_PROXY_TLS_MARKER = path.join(
-  DEFAULT_PORTLESS_RUNTIME_DIR,
+  process.env.PORTLESS_STATE_DIR || path.join(os.homedir(), '.portless'),
   'proxy.tls'
 );
 const E2E_DIAGNOSTIC_SERVICES = Object.freeze([

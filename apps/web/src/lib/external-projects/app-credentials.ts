@@ -2,6 +2,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { verifyExternalAppSecret } from '@/lib/app-coordination/external-apps';
 import { resolveWorkspaceExternalProjectBinding } from '@/lib/external-projects/access';
+import { appTokenTargetMatchesExternalProjectBinding } from './app-binding';
 
 /**
  * Authorization for machine-to-machine calls made by a linked external project
@@ -70,7 +71,13 @@ export async function authorizeExternalAppRequest({
 
   const binding = await resolveWorkspaceExternalProjectBinding(wsId, admin);
 
-  if (!binding.enabled || binding.adapter !== verification.app.id) {
+  if (
+    !binding.enabled ||
+    !appTokenTargetMatchesExternalProjectBinding({
+      binding,
+      targetApp: verification.app.id,
+    })
+  ) {
     return {
       response: NextResponse.json(
         { error: 'App is not linked to this workspace' },

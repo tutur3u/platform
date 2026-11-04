@@ -67,6 +67,24 @@ describe('desktop deployment public metadata', () => {
     ])
       expect(parseDesktopPackages([{ ...release, ...change }])).toEqual([]);
   });
+  it('accepts run-free desktop tags', () => {
+    const tag = 'desktop-v0.23.1';
+    expect(
+      parseDesktopPackages([
+        {
+          ...release,
+          tag_name: tag,
+          html_url: `https://github.com/tutur3u/platform/releases/tag/${tag}`,
+          assets: [
+            {
+              ...release.assets[0],
+              browser_download_url: `https://github.com/tutur3u/platform/releases/download/${tag}/Tuturuuu-linux-x64.deb`,
+            },
+          ],
+        },
+      ])[0]?.tag
+    ).toBe(tag);
+  });
   it('retains an earlier available platform artifact when a newer release lacks it', () => {
     expect(
       parseDesktopPackages([

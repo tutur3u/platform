@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
+import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
 
 /// Where the Mastermind event cursor sits for the cached export.
 final class StoredEventCursor {
@@ -34,7 +35,7 @@ final class FileSnapshotStore implements MastermindSnapshotStore {
        _userId = userId;
 
   static const _metaSchema = 1;
-  static const _maxBytes = 600000;
+  static const int _maxBytes = mastermindSnapshotMaxBytes;
   static final _hex64 = RegExp(r'^[a-f0-9]{64}$');
 
   final Future<Directory> Function() _baseDirectory;

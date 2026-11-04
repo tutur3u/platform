@@ -14,8 +14,8 @@ const read = (path: string) =>
   JSON.parse(readFileSync(resolve(appRoot, path), 'utf8'));
 const source = (path: string) => readFileSync(resolve(appRoot, path), 'utf8');
 
-// These real CLI negatives are authored UNRUN under the execution hold. They
-// probe host/resolution failures, not acceptance of the complete app or bridge.
+// Real CLI negatives probe host/resolution failures, not acceptance of the
+// complete app or bridge, which the aggregate compiler command checks.
 function negativeProgram(
   parent: string,
   probe: string | undefined,
@@ -64,13 +64,13 @@ describe('complete app, genuine declaration bridge and actual Worker programs', 
   it('retains every app root and inherited semantic check in both app programs', () => {
     const app = read('tsconfig.json');
     const boundary = read('tsconfig.boundary.json');
+    const host = read('tsconfig.config.json');
     const base = read('../../packages/typescript-config/base.json');
     expect(base.compilerOptions.strict).toBe(true);
     expect(app.include).toEqual([
       'src/**/*',
       'scripts/**/*',
       'messages/**/*.json',
-      '*.ts',
     ]);
     expect(app.exclude).toEqual([
       'node_modules',
@@ -104,7 +104,16 @@ describe('complete app, genuine declaration bridge and actual Worker programs', 
     });
     expect(boundary.include).toBeUndefined();
     expect(boundary.exclude).toBeUndefined();
-    for (const config of [app, boundary, read('tsconfig.worker.json')]) {
+    expect(host.extends).toBe('./tsconfig.json');
+    expect(host.include).toEqual([
+      'vite.config.ts',
+      'void.config.ts',
+      'vitest.config.ts',
+      'next.config.ts',
+    ]);
+    expect(host.compilerOptions.types).toEqual(['node']);
+    expect(host.compilerOptions.noEmit).toBe(true);
+    for (const config of [app, boundary, host, read('tsconfig.worker.json')]) {
       expect(config.references).toBeUndefined();
       for (const key of ['noCheck', 'strict', 'skipLibCheck'])
         expect(config.compilerOptions[key]).toBeUndefined();
@@ -166,12 +175,12 @@ describe('complete app, genuine declaration bridge and actual Worker programs', 
     expect(result.output).toMatch(/TS2304[^\n]*'ExportedHandler'/u);
   });
 
-  it('requires all three compiler commands and preserves inherited Turbo contracts', () => {
+  it('requires all four compiler commands and preserves inherited Turbo contracts', () => {
     const pkg = read('package.json');
     const local = read('turbo.json');
     const root = read('../../turbo.json');
     expect(pkg.scripts['type-check']).toBe(
-      'bun run type-check:app && bun run type-check:boundary && bun run type-check:worker'
+      'bun run type-check:app && bun run type-check:boundary && bun run type-check:worker && bun run type-check:config'
     );
     expect(pkg.scripts['type-check:app']).toBe(
       'tsc --noEmit --project tsconfig.json'
@@ -181,6 +190,9 @@ describe('complete app, genuine declaration bridge and actual Worker programs', 
     );
     expect(pkg.scripts['type-check:worker']).toBe(
       'tsc --noEmit --project tsconfig.worker.json'
+    );
+    expect(pkg.scripts['type-check:config']).toBe(
+      'tsc --noEmit --project tsconfig.config.json'
     );
     expect(local.extends).toEqual(['//']);
     expect(local.tasks['type-check'].inputs).toBeUndefined();

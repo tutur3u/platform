@@ -108,6 +108,11 @@
       "import": "./dist/programming.js",
       "require": "./dist/programming.js"
     },
+    "./tulearn": {
+      "types": "./dist/tulearn.d.ts",
+      "import": "./dist/tulearn.js",
+      "require": "./dist/tulearn.js"
+    },
     "./external-project-team": {
       "types": "./dist/external-project-team.d.ts",
       "import": "./dist/external-project-team.js",
@@ -282,6 +287,11 @@
       "types": "./dist/task-history.d.ts",
       "import": "./dist/task-history.js",
       "require": "./dist/task-history.js"
+    },
+    "./task-sprints": {
+      "types": "./dist/task-sprints.d.ts",
+      "import": "./dist/task-sprints.js",
+      "require": "./dist/task-sprints.js"
     },
     "./tutoring": {
       "types": "./dist/tutoring.d.ts",

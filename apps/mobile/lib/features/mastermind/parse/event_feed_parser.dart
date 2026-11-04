@@ -28,12 +28,15 @@ final class EventFeedParseRejected extends EventFeedParseOutcome {
   final String path;
 }
 
+/// Largest `GET /v1/events` page; a page holds at most 200 events.
+const mastermindEventFeedMaxBytes = 600000;
+
 /// Parses a schema 1.4 `GET /v1/events` body. `after_seq` is the cursor after
 /// the page (the Worker advances it to the last returned event). Payload kinds
 /// follow the events schema: `needs_you` and `decision` carry
 /// `decision|action|fyi` items and no payload is ever a security row.
 EventFeedParseOutcome parseMastermindEventFeed(Uint8List bytes) {
-  if (bytes.length > 600000) {
+  if (bytes.length > mastermindEventFeedMaxBytes) {
     return const EventFeedParseOutcome.rejected(RejectionReason.tooLarge);
   }
   final Object? decoded;

@@ -11,13 +11,18 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_network.dart';
+import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
+import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
+import 'package:mobile/features/assistant/data/mira_offline_reads.dart';
 import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
+import 'package:mobile/features/chat/data/chat_stream_completion.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
@@ -28,6 +33,7 @@ import 'assistant_attachment_upload.dart';
 import 'assistant_calendar_insight.dart';
 import 'assistant_chat_persistence_contract.dart';
 import 'assistant_created_chat.dart';
+import 'assistant_first_message_creation.dart';
 import 'assistant_history_message.dart';
 import 'assistant_history_parts.dart';
 import 'assistant_reaction_journal.dart';
@@ -41,6 +47,8 @@ part 'assistant_repository_cache.dart';
 part 'assistant_repository_settings.dart';
 part 'assistant_repository_chat.dart';
 part 'assistant_repository_native_receipt.dart';
+part 'assistant_repository_native_stream.dart';
+part 'assistant_repository_first_message.dart';
 part 'assistant_repository_reactions.dart';
 part 'assistant_repository_creation.dart';
 part 'assistant_repository_legacy_stream.dart';
@@ -56,6 +64,8 @@ class AssistantRepository
     ChatRepository? chatRepository,
     String? Function()? currentUserId,
     CacheStore? chatCacheStore,
+    bool Function()? offlineReadEnabled,
+    Future<bool> Function()? networkAvailable,
     AssistantReactionJournal? reactionJournal,
   }) : this._(
          apiClient ?? ApiClient(),
@@ -65,6 +75,8 @@ class AssistantRepository
          currentUserId ?? currentCacheUserId,
          chatCacheStore ?? CacheStore.instance,
          reactionJournal ?? AssistantReactionJournal(),
+         offlineReadEnabled ?? (() => false),
+         networkAvailable ?? hasNetworkConnection,
        );
 
   AssistantRepository._(
@@ -75,6 +87,8 @@ class AssistantRepository
     this._currentUserId,
     this._chatCacheStore,
     this._reactionJournal,
+    this._offlineReadEnabled,
+    this._networkAvailable,
   ) : _chatRepository =
           chatRepository ??
           ChatRepository(apiClient: _apiClient, httpClient: _httpClient);
@@ -82,6 +96,10 @@ class AssistantRepository
   @override
   final ApiClient _apiClient;
   final AssistantReactionJournal _reactionJournal;
+  @override
+  final bool Function() _offlineReadEnabled;
+  @override
+  final Future<bool> Function() _networkAvailable;
   final ApiClient _tasksApiClient;
   final http.Client _httpClient;
   @override
@@ -89,6 +107,21 @@ class AssistantRepository
   @override
   final String? Function() _currentUserId;
   String? get currentActorId => _currentUserId();
+  Stream<AssistantStreamEvent> streamFirstChat({
+    required AssistantFirstMessageCreation creation,
+    required String chatId,
+    required String wsId,
+    required List<AssistantMessage> messages,
+    required String timezone,
+    required ApiMutationAdmission admission,
+  }) => _firstChatDispatchStream(
+    creation: creation,
+    chatId: chatId,
+    wsId: wsId,
+    messages: messages,
+    timezone: timezone,
+    admission: admission,
+  );
 
   @override
   final CacheStore _chatCacheStore;
@@ -173,6 +206,37 @@ class AssistantRepository
     initialSettings: initialSettings,
     isCurrent: isCurrent,
   );
+
+  @override
+  Future<Map<String, dynamic>> _miraRead(
+    String wsId,
+    String kind,
+    String path, {
+    bool forceRefresh = false,
+  }) {
+    Future<Map<String, dynamic>> read() => readThroughJson(
+      api: _apiClient,
+      namespace: 'mira.$kind',
+      workspaceId: wsId,
+      path: path,
+      cacheStore: _chatCacheStore,
+      cacheUserId: _currentUserId,
+      forceRefresh: forceRefresh,
+    );
+    return forceRefresh ? CacheStore.awaitRevalidation(read) : read();
+  }
+
+  AssistantChatRecord _assistantChatRecordFromConversation(
+    ChatConversation conversation, {
+    String? modelId,
+  }) {
+    return AssistantChatRecord(
+      id: conversation.id,
+      title: conversation.title,
+      model: modelId ?? conversation.metadata['modelId']?.toString(),
+      createdAt: conversation.createdAt,
+    );
+  }
 
   static final Random _random = Random.secure();
 
@@ -420,6 +484,42 @@ class AssistantRepository
     int? limit,
     bool forceRefresh = false,
   }) async {
+    Future<List<Map<String, dynamic>>> fetchLegacy() async {
+      final rows = await _apiClient.getJsonList('/api/v1/ai/chats');
+      final mapped = rows
+          .whereType<Map<String, dynamic>>()
+          .map((row) {
+            final record = AssistantChatRecord.fromJson(row);
+            final route = AssistantChatRoute.parse('ai-chat-${record.id}');
+            return AssistantChatRecord(
+              id: route.conversationId,
+              title: record.title,
+              model: record.model,
+              isPublic: record.isPublic,
+              createdAt: record.createdAt,
+            );
+          })
+          .toList(growable: false);
+      final limited = limit == null
+          ? mapped
+          : mapped.take(limit).toList(growable: false);
+      return limited.map((chat) => chat.toJson()).toList(growable: false);
+    }
+
+    if (_offlineReadEnabled() && wsId != null) {
+      final payload = await _miraRead(
+        wsId,
+        'conversations',
+        '/api/v1/workspaces/$wsId/chat/conversations?archived=active&limit=40&offset=0',
+      );
+      final native = ChatConversationPage.fromJson(payload).conversations
+          .where((c) => c.type == ChatConversationType.ai && !c.isReadOnlyAgent)
+          .map(_assistantChatRecordFromConversation)
+          .take(limit ?? 40)
+          .toList();
+      if (native.isNotEmpty || !await _networkAvailable()) return native;
+      return _decodeRecentChatsCache(await fetchLegacy());
+    }
     if (wsId != null && wsId.isNotEmpty) {
       try {
         final page = await _chatRepository.listConversations(
@@ -457,29 +557,7 @@ class AssistantRepository
           decode: _decodeRecentChatsCache,
           forceRefresh: forceRefresh,
           tags: [_assistantHistoryCacheTag, 'module:assistant'],
-          fetch: () async {
-            final rows = await _apiClient.getJsonList('/api/v1/ai/chats');
-            final mapped = rows
-                .whereType<Map<String, dynamic>>()
-                .map((row) {
-                  final record = AssistantChatRecord.fromJson(row);
-                  final route = AssistantChatRoute.parse(
-                    'ai-chat-${record.id}',
-                  );
-                  return AssistantChatRecord(
-                    id: route.conversationId,
-                    title: record.title,
-                    model: record.model,
-                    isPublic: record.isPublic,
-                    createdAt: record.createdAt,
-                  );
-                })
-                .toList(growable: false);
-            final limited = limit == null
-                ? mapped
-                : mapped.take(limit).toList(growable: false);
-            return limited.map((chat) => chat.toJson()).toList(growable: false);
-          },
+          fetch: fetchLegacy,
         );
     return result.data ?? const <AssistantChatRecord>[];
   }

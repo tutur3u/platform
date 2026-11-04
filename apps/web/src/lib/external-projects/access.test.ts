@@ -106,7 +106,6 @@ function createAccessRequest(token = 'ttr_app_test') {
 
 import {
   appTokenHasRequiredScope,
-  ensureWorkspaceExternalProjectStudio,
   requireWorkspaceExternalProjectAccess,
   requireWorkspaceExternalProjectMemberBootstrapAccess,
   requireWorkspaceExternalProjectSetupAccess,
@@ -673,7 +672,7 @@ describe('external project access auth dispatch', () => {
     workspaceMocks.getPermissions.mockImplementation(
       async ({ wsId }: { wsId: string }) =>
         createPermissionsResult(
-          wsId === ROOT_WORKSPACE_ID ? [] : ['manage_external_projects'],
+          wsId === ROOT_WORKSPACE_ID ? ['manage_external_projects'] : [],
           wsId
         )
     );
@@ -708,86 +707,5 @@ describe('external project access auth dispatch', () => {
     expect(
       appCoordinationMocks.verifyAppCoordinationToken
     ).not.toHaveBeenCalled();
-  });
-});
-
-describe('external project setup access', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    storeMocks.upsertWorkspaceExternalProjectFieldDefinitionsFromSchema.mockResolvedValue(
-      undefined
-    );
-  });
-
-  it('keeps same-adapter canonical bindings immutable during idempotent setup', async () => {
-    const schema = {
-      collections: [
-        {
-          collection_type: 'games',
-          fields: [{ key: 'subtitle', type: 'string' }],
-          slug: 'games',
-          title: 'Games',
-        },
-      ],
-    };
-    const fixture = createAdminFixture({
-      adapter: 'theguyser',
-      id: 'theguyser',
-      is_active: true,
-    });
-
-    await expect(
-      ensureWorkspaceExternalProjectStudio({
-        actorId: 'user-1',
-        adapter: 'theguyser',
-        admin: fixture.admin as never,
-        schema: schema as never,
-        workspaceId: 'ws-1',
-      })
-    ).resolves.toMatchObject({
-      binding: {
-        adapter: 'theguyser',
-        canonical_id: 'theguyser',
-        enabled: true,
-        workspace_id: 'ws-1',
-      },
-      createdBinding: false,
-      createdCanonicalProject: false,
-    });
-
-    expect(fixture.canonicalProjectUpdate).not.toHaveBeenCalled();
-    expect(fixture.workspaceSecretDelete).not.toHaveBeenCalled();
-    expect(fixture.workspaceSecretInsert).not.toHaveBeenCalled();
-    expect(
-      storeMocks.upsertWorkspaceExternalProjectFieldDefinitionsFromSchema
-    ).toHaveBeenCalledWith(
-      {
-        actorId: 'user-1',
-        schema,
-        workspaceId: 'ws-1',
-      },
-      fixture.admin
-    );
-  });
-
-  it('keeps different-adapter existing bindings as setup conflicts', async () => {
-    const fixture = createAdminFixture({
-      adapter: 'yoola',
-      id: 'legacy-yoola',
-      is_active: true,
-    });
-
-    await expect(
-      ensureWorkspaceExternalProjectStudio({
-        actorId: 'user-1',
-        adapter: 'theguyser',
-        admin: fixture.admin as never,
-        schema: { collections: [] } as never,
-        workspaceId: 'ws-1',
-      })
-    ).rejects.toThrow('Workspace is already configured for legacy-yoola');
-
-    expect(fixture.workspaceSecretDelete).not.toHaveBeenCalled();
-    expect(fixture.workspaceSecretInsert).not.toHaveBeenCalled();
   });
 });

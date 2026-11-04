@@ -1,6 +1,23 @@
 part of 'snapshot_parser.dart';
 
-EnvironmentRow parseEnvironmentRow(JsonReader r) {
+EnvironmentRow parseEnvironmentRow(JsonReader input) {
+  var r = input;
+  final fields = {
+    for (final e in r.object().entries) e.key: HubField.parse(e.value),
+  };
+  r = JsonReader({
+    for (final e in fields.entries)
+      e.key:
+          e.value.value ??
+          (const {
+                'deploy_status',
+                'ci_state',
+                'freshness',
+                'evidence',
+              }.contains(e.key)
+              ? 'unknown'
+              : null),
+  }, r.path);
   r.keys(
     [
       'product',
@@ -32,6 +49,7 @@ EnvironmentRow parseEnvironmentRow(JsonReader r) {
     ],
   );
   return EnvironmentRow(
+    fields: fields,
     product: r
         .field('product')
         .enumOf<ReleaseProduct>(ReleaseProduct.values, (v) => v.wireName),

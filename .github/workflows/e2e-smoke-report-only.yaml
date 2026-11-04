@@ -1,0 +1,83 @@
+name: Web E2E report-only
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 19 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-report-only-${{ github.event_name }}-${{ github.ref }}-${{ (github.run_attempt > 1 || github.event_name != 'push') && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  cancel-in-progress: ${{ github.event_name == 'push' && github.run_attempt == 1 }}
+
+jobs:
+  e2e:
+    # The only admitted Docker E2E exception; never run PR-controlled source.
+    if: github.ref == 'refs/heads/main' && github.repository == 'tutur3u/platform'
+    runs-on: [self-hosted, macOS, ARM64, tuturuuu-mac-studio]
+    timeout-minutes: 60
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Expose retained E2E CLI compatibility
+        shell: bash
+        run: |
+          e2e_tools="$RUNNER_TEMP/e2e-tools-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir -p "$e2e_tools"
+          printf '%s\n' '#!/bin/sh' 'exec bun x "$@"' > "$e2e_tools/bunx"
+          chmod 700 "$e2e_tools/bunx"
+          echo "$e2e_tools" >> "$GITHUB_PATH"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: ./.github/actions/setup-supabase-cli-with-retry
+      - name: Install Chromium
+        working-directory: apps/web
+        run: bun x playwright install chromium
+      - name: Smoke (six-minute Playwright budget, excluding provisioning)
+        if: github.event_name != 'schedule'
+        timeout-minutes: 45
+        id: smoke
+        run: node scripts/ci/run-web-e2e-report-only.js smoke
+      - name: Nightly full suite
+        if: github.event_name == 'schedule'
+        timeout-minutes: 45
+        id: nightly
+        run: node scripts/ci/run-web-e2e-report-only.js nightly
+      - name: Clean up owned runtime
+        id: cleanup
+        if: always()
+        timeout-minutes: 10
+        run: node scripts/ci/run-web-e2e-report-only.js cleanup
+      - name: Upload synthetic-fixture reports and traces
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Summarize report-only result
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
+          NIGHTLY_OUTCOME: ${{ steps.nightly.outcome }}
+          CLEANUP_OUTCOME: ${{ steps.cleanup.outcome }}
+          RUN_MODE: ${{ github.event_name }}
+        run: |
+          echo "Report-only E2E ($RUN_MODE): $JOB_STATUS; smoke=$SMOKE_OUTCOME nightly=$NIGHTLY_OUTCOME cleanup=$CLEANUP_OUTCOME. Inspect step outcomes and report artifacts; this check is non-required." >> "$GITHUB_STEP_SUMMARY"

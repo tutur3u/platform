@@ -7,9 +7,21 @@ const POSTGRES_FIXTURE_WS_ID = '00000000-0000-0000-0000-000000000003';
 const mocks = vi.hoisted(() => {
   const normalizeWorkspaceId = vi.fn(async () => NORMALIZED_WS_ID);
   const authGetUser = vi.fn();
-  const adminPrivateEmailMaybeSingle = vi.fn();
+  const adminGetUserById = vi.fn();
+  const emailInviteRows: string[] = [];
+  const deletedEmailInvites: string[] = [];
   const adminInviteDeleteEq = vi.fn();
-  const adminEmailInviteDeleteIn = vi.fn();
+  const adminEmailInviteDeleteIn = vi.fn(
+    async (_column: string, emails: string[]) => {
+      deletedEmailInvites.push(
+        ...emailInviteRows.filter((email) => emails.includes(email))
+      );
+      return { error: null };
+    }
+  );
+  const adminEmailInviteDeleteEq = vi.fn(() => ({
+    in: adminEmailInviteDeleteIn,
+  }));
   const finalizeWorkspaceInvitationNotifications = vi.fn();
 
   const sessionSupabase = {
@@ -22,17 +34,8 @@ const mocks = vi.hoisted(() => {
   };
 
   const adminSupabase = {
+    auth: { admin: { getUserById: adminGetUserById } },
     from: vi.fn((table: string) => {
-      if (table === 'user_private_details') {
-        return {
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              maybeSingle: adminPrivateEmailMaybeSingle,
-            })),
-          })),
-        };
-      }
-
       if (table === 'workspace_invites') {
         return {
           delete: vi.fn(() => ({
@@ -44,9 +47,7 @@ const mocks = vi.hoisted(() => {
       if (table === 'workspace_email_invites') {
         return {
           delete: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              in: adminEmailInviteDeleteIn,
-            })),
+            eq: adminEmailInviteDeleteEq,
           })),
         };
       }
@@ -56,9 +57,12 @@ const mocks = vi.hoisted(() => {
   };
 
   return {
+    adminEmailInviteDeleteEq,
     adminEmailInviteDeleteIn,
     adminInviteDeleteEq,
-    adminPrivateEmailMaybeSingle,
+    adminGetUserById,
+    deletedEmailInvites,
+    emailInviteRows,
     adminSupabase,
     authGetUser,
     normalizeWorkspaceId,
@@ -98,24 +102,32 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 describe('POST /api/workspaces/[wsId]/decline-invite', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.emailInviteRows.splice(0);
+    mocks.deletedEmailInvites.splice(0);
+    mocks.adminGetUserById.mockResolvedValue({
+      data: {
+        user: {
+          id: 'user-1',
+          email: 'Auth@Example.com',
+          email_confirmed_at: '2026-01-01T00:00:00.000Z',
+        },
+      },
+      error: null,
+    });
 
     mocks.authGetUser.mockResolvedValue({
       data: { user: { id: 'user-1', email: 'auth@example.com' } },
       error: null,
     });
     mocks.normalizeWorkspaceId.mockResolvedValue(NORMALIZED_WS_ID);
-    mocks.adminPrivateEmailMaybeSingle.mockResolvedValue({
-      data: { email: 'private@example.com' },
-      error: null,
-    });
     mocks.adminInviteDeleteEq.mockImplementation(() => ({
       eq: vi.fn().mockResolvedValue({ error: null }),
     }));
-    mocks.adminEmailInviteDeleteIn.mockResolvedValue({ error: null });
     mocks.finalizeWorkspaceInvitationNotifications.mockResolvedValue(undefined);
   });
 
-  it('declines direct and email invites through the server-owned cleanup path', async () => {
+  it('declines direct invites and email invites addressed to the confirmed Auth email', async () => {
+    mocks.emailInviteRows.push('auth@example.com');
     const { POST } = await import(
       '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
     );
@@ -136,10 +148,15 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
       'ws_id',
       NORMALIZED_WS_ID
     );
+    expect(mocks.adminGetUserById).toHaveBeenCalledWith('user-1');
+    expect(mocks.adminEmailInviteDeleteEq).toHaveBeenCalledWith(
+      'ws_id',
+      NORMALIZED_WS_ID
+    );
     expect(mocks.adminEmailInviteDeleteIn).toHaveBeenCalledWith('email', [
       'auth@example.com',
-      'private@example.com',
     ]);
+    expect(mocks.deletedEmailInvites).toEqual(['auth@example.com']);
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalled();
     expect(mocks.finalizeWorkspaceInvitationNotifications).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -148,6 +165,46 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
         workspaceId: NORMALIZED_WS_ID,
       })
     );
+  });
+
+  it('does not delete an invite addressed only to the editable profile email', async () => {
+    mocks.emailInviteRows.push('private@example.com');
+
+    const { POST } = await import(
+      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.adminEmailInviteDeleteIn).toHaveBeenCalledWith('email', [
+      'auth@example.com',
+    ]);
+    expect(mocks.deletedEmailInvites).toEqual([]);
+  });
+
+  it('uses the same fail-closed identity error as accept-invite', async () => {
+    mocks.adminGetUserById.mockResolvedValueOnce({
+      data: { user: null },
+      error: { message: 'lookup failed' },
+    });
+
+    const { POST } = await import(
+      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Failed to verify account email',
+      errorCode: 'AUTH_IDENTITY_LOOKUP_FAILED',
+    });
+    expect(mocks.adminInviteDeleteEq).not.toHaveBeenCalled();
+    expect(mocks.adminEmailInviteDeleteIn).not.toHaveBeenCalled();
+    expect(mocks.deletedEmailInvites).toEqual([]);
   });
 
   it('keeps a successful decline when notification finalization fails', async () => {
@@ -185,7 +242,6 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
     );
     expect(mocks.adminEmailInviteDeleteIn).toHaveBeenCalledWith('email', [
       'auth@example.com',
-      'private@example.com',
     ]);
   });
 
@@ -206,7 +262,6 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
     );
     expect(mocks.adminEmailInviteDeleteIn).toHaveBeenCalledWith('email', [
       'auth@example.com',
-      'private@example.com',
     ]);
   });
 

@@ -210,6 +210,36 @@ export const POST = withSessionAuth(
     const { moduleId, setId, quizzes } = parsedBody.data;
 
     try {
+      if (moduleId != null) {
+        const { data: module, error } = await access.sbAdmin
+          .from('workspace_course_modules')
+          .select('id, workspace_user_groups!inner(ws_id)')
+          .eq('id', moduleId)
+          .eq('workspace_user_groups.ws_id', access.normalizedWsId)
+          .maybeSingle();
+        if (error) throw error;
+        if (!module) {
+          return NextResponse.json(
+            { message: 'Module not found' },
+            { status: 404 }
+          );
+        }
+      }
+      if (setId != null) {
+        const { data: set, error } = await access.sbAdmin
+          .from('workspace_quiz_sets')
+          .select('id')
+          .eq('id', setId)
+          .eq('ws_id', access.normalizedWsId)
+          .maybeSingle();
+        if (error) throw error;
+        if (!set) {
+          return NextResponse.json(
+            { message: 'Quiz set not found' },
+            { status: 404 }
+          );
+        }
+      }
       for (const quiz of quizzes) {
         let quizId: string;
 

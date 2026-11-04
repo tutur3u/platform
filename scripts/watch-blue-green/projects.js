@@ -1,31 +1,6 @@
 const DEFAULT_PLATFORM_PROJECT_ID = 'platform';
 const DEFAULT_PLATFORM_BRANCH = 'production';
 const LOG_DRAIN_DATABASE_URL_KEY = 'PLATFORM_LOG_DRAIN_DATABASE_URL';
-const RESERVED_MANAGED_PROJECT_HOSTNAMES = new Set([
-  'api.tuturuuu.com',
-  'calendar.tuturuuu.com',
-  'cms.tuturuuu.com',
-  'dev.tuturuuu.com',
-  'finance.tuturuuu.com',
-  'hive.tuturuuu.com',
-  'inventory.tuturuuu.com',
-  'storefront.tuturuuu.com',
-  'learn.tuturuuu.com',
-  'localhost',
-  'mira.tuturuuu.com',
-  'nova.ai.vn',
-  'platform.tuturuuu.com',
-  'qr.tuturuuu.com',
-  'rewise.me',
-  'staging.tuturuuu.com',
-  'tasks.tuturuuu.com',
-  'teach.tuturuuu.com',
-  'track.tuturuuu.com',
-  'tuturuuu.com',
-  'www.tuturuuu.com',
-]);
-const SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$/u;
 const fs = require('node:fs');
 const path = require('node:path');
 const {
@@ -38,6 +13,21 @@ const {
   validateBlueGreenProxyConfig,
   writeBlueGreenProxyConfig,
 } = require('../docker-web/blue-green.js');
+const {
+  isReservedManagedProjectHostname,
+  isSafeManagedProjectHostname,
+  normalizeManagedProjectHostname,
+} = require('../../packages/utils/src/managed-project-hostnames-core.cjs');
+const {
+  isSafeProjectBranch,
+} = require('../../packages/utils/src/managed-project-branch-core.cjs');
+
+function assertSafeProjectBranch(project) {
+  if (!isSafeProjectBranch(project.selected_branch))
+    throw new Error(
+      'Refusing an unsafe selected branch for a managed project.'
+    );
+}
 const {
   getComposeCommandArgs,
   getComposeFile,
@@ -101,18 +91,10 @@ function sanitizeHostnames(hostnames) {
   return [
     ...new Set(
       hostnames
-        .map((hostname) =>
-          String(hostname ?? '')
-            .trim()
-            .toLowerCase()
-            .replace(/^https?:\/\//u, '')
-            .replace(/\/.*$/u, '')
-        )
+        .map(normalizeManagedProjectHostname)
         .filter((hostname) => hostname.length > 0)
-        .filter((hostname) =>
-          SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN.test(hostname)
-        )
-        .filter((hostname) => !RESERVED_MANAGED_PROJECT_HOSTNAMES.has(hostname))
+        .filter((hostname) => isSafeManagedProjectHostname(hostname))
+        .filter((hostname) => !isReservedManagedProjectHostname(hostname))
     ),
   ];
 }
@@ -169,6 +151,7 @@ function renderManagedProjectCompose(
   project,
   { env = process.env, rootDir = process.cwd() } = {}
 ) {
+  assertSafeProjectBranch(project);
   const safeProjectId = normalizeProjectId(project.id);
   const serviceName = getProjectServiceName(project.id);
   const paths = getProjectRuntimePaths(project.id, rootDir);
@@ -215,7 +198,10 @@ function renderManagedProjectProxyServerBlocks(projects) {
   return projects
     .flatMap((project) => {
       const hostnames = sanitizeHostnames(project.hostnames);
-      if (hostnames.length === 0) {
+      if (
+        hostnames.length === 0 ||
+        !isSafeProjectBranch(project.selected_branch)
+      ) {
         return [];
       }
 
@@ -290,9 +276,14 @@ async function withLogDrainSql(env, callback, postgresFactory = null) {
 }
 
 function normalizeProjectBranch(value) {
-  return typeof value === 'string' && value.trim().length > 0
-    ? value.trim()
-    : DEFAULT_PLATFORM_BRANCH;
+  if (value === undefined || value === null || value === '')
+    return DEFAULT_PLATFORM_BRANCH;
+  if (!isSafeProjectBranch(value)) {
+    throw new Error(
+      'Refusing an unsafe selected branch for the platform project.'
+    );
+  }
+  return value;
 }
 
 async function readPlatformProject({
@@ -614,6 +605,7 @@ async function syncManagedProjectCheckout(
   project,
   { env, rootDir, runCommand }
 ) {
+  assertSafeProjectBranch(project);
   const paths = getProjectRuntimePaths(project.id, rootDir);
   fs.mkdirSync(paths.projectDir, { recursive: true });
 
@@ -995,6 +987,7 @@ module.exports = {
   getProjectRuntimePaths,
   getProjectServiceName,
   getManagedProjectDeploymentEnv,
+  isSafeProjectBranch,
   normalizeProjectBranch,
   processManagedInfrastructureProjects,
   readPlatformProject,

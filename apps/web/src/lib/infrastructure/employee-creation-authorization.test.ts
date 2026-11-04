@@ -56,6 +56,12 @@ beforeEach(() => {
       select: vi.fn(() => query),
       eq: vi.fn((key: string, value: unknown) => {
         mock.filters.push([key, value]);
+        if (
+          table === 'workspace_role_members' &&
+          key === 'workspace_roles.workspace_role_permissions.enabled'
+        ) {
+          return Promise.resolve({ data: [], error: null });
+        }
         return query;
       }),
       maybeSingle: mock.member,
@@ -64,7 +70,11 @@ beforeEach(() => {
         error: null,
       })),
     };
-    if (table !== 'workspace_members' && table !== 'workspaces')
+    if (
+      table !== 'workspace_members' &&
+      table !== 'workspaces' &&
+      table !== 'workspace_role_members'
+    )
       throw new Error('Unexpected authority query');
     return query;
   });
@@ -77,6 +87,7 @@ beforeEach(() => {
       user: {
         ...user,
         email_confirmed_at: '2026-01-01T00:00:00Z',
+        identities: [{ provider: 'email', identity_data: {} }],
         banned_until: null,
       },
     },
@@ -97,7 +108,12 @@ it.each([
   async ({ signed, current }) => {
     mock.identity.mockResolvedValue({
       data: {
-        user: { ...user, email: current, email_confirmed_at: '2026-01-01' },
+        user: {
+          ...user,
+          email: current,
+          email_confirmed_at: '2026-01-01',
+          identities: [{ provider: 'email', identity_data: {} }],
+        },
       },
       error: null,
     });
@@ -138,6 +154,7 @@ it('preserves ordinary Infra acceptance of a changed internal Auth email', async
         ...user,
         email: 'renamed@tuturuuu.com',
         email_confirmed_at: '2026-01-01',
+        identities: [{ provider: 'email', identity_data: {} }],
       },
     },
     error: null,
@@ -161,7 +178,19 @@ describe('fresh root employee creation authority', () => {
       await authorizeEmployeeCreation(new Request('https://web.test/employees'))
     ).toEqual({ authorized: true, actorUserId: user.id });
     expect(mock.from).not.toHaveBeenCalledWith('workspace_default_permissions');
-    expect(mock.from).not.toHaveBeenCalledWith('workspace_role_members');
+    expect(mock.from).toHaveBeenCalledWith('workspace_role_members');
+    expect(mock.filters).toContainEqual([
+      'workspace_roles.ws_id',
+      ROOT_WORKSPACE_ID,
+    ]);
+    expect(mock.filters).toContainEqual([
+      'workspace_roles.workspace_role_permissions.ws_id',
+      ROOT_WORKSPACE_ID,
+    ]);
+    expect(mock.filters).toContainEqual([
+      'workspace_roles.workspace_role_permissions.enabled',
+      true,
+    ]);
   });
 
   it('uses the registered infra session and server actor', async () => {
@@ -215,6 +244,7 @@ describe('fresh root employee creation authority', () => {
         wsId: ROOT_WORKSPACE_ID,
         request: new Request('https://web.test/employees'),
       });
+      expect(permissions?.containsPermission('manage_mastermind')).toBe(false);
       expect(permissions?.membershipType).toBe('MEMBER');
       expect(permissions?.containsPermission('manage_internal_accounts')).toBe(
         true
@@ -287,7 +317,11 @@ describe('fresh root employee creation authority', () => {
   it.each([
     { ...user, email: 'actor@sub.tuturuuu.com' },
     { ...user, id: 'other' },
-    { ...user, email_confirmed_at: null },
+    {
+      ...user,
+      email_confirmed_at: null,
+      identities: [{ provider: 'email', identity_data: {} }],
+    },
     { ...user, banned_until: 'not-a-date' },
     { ...user, banned_until: '2100-01-01T00:00:00Z' },
   ])('rejects stale or invalid current identity', async (changes) => {
@@ -296,6 +330,7 @@ describe('fresh root employee creation authority', () => {
         user: {
           ...user,
           email_confirmed_at: '2026-01-01T00:00:00Z',
+          identities: [{ provider: 'email', identity_data: {} }],
           banned_until: null,
           ...changes,
         },

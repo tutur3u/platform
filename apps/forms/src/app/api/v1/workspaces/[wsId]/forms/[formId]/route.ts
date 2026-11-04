@@ -9,6 +9,7 @@ import {
   getPrivateFormsClient,
   saveFormDefinition,
 } from '@/features/forms/server';
+import { FormNotFoundError } from '@/features/forms/server/errors';
 
 export async function GET(
   request: NextRequest,
@@ -91,6 +92,9 @@ export async function PUT(
 
     return NextResponse.json({ id });
   } catch (error) {
+    if (error instanceof FormNotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Internal server error',

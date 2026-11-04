@@ -68,11 +68,9 @@ lib/features/inventory/view/inventory_checkout_page.dart
 lib/features/inventory/view/inventory_manage_page.dart
 lib/features/inventory/view/inventory_page.dart
 lib/features/inventory/view/inventory_product_editor_page.dart
-lib/features/inventory/view/inventory_products_page.dart
 lib/features/inventory/view/inventory_sales_page.dart
 lib/features/inventory/widgets/inventory_form_scaffold.dart
 lib/features/inventory/widgets/inventory_low_stock_card.dart
-lib/features/inventory/widgets/inventory_product_card.dart
 lib/features/inventory/widgets/inventory_sales_period_editor.dart
 lib/features/inventory/widgets/inventory_sales_periods.dart
 lib/features/inventory/widgets/inventory_stock_health_panel.dart

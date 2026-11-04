@@ -5,6 +5,14 @@ import {
 } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
+  isKnownReplay,
+  preLimitReplayAttempt,
+  rememberReplay,
+} from '@tuturuuu/utils/abuse-guard/replay-guard';
+import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
+import { guardSourceBucket } from '@tuturuuu/utils/abuse-guard/source';
+import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
+import {
   readRequiredMfaPolicy,
   satisfiesRequiredMfaPolicy,
 } from '@tuturuuu/utils/required-mfa-policy';
@@ -19,14 +27,20 @@ const refreshSchema = z.object({
 
 const REFRESH_REPLAY_KEY_PREFIX = 'cli:refresh:used';
 
-type RefreshTokenConsumeResult = 'consumed' | 'replayed' | 'unavailable';
+type RefreshTokenConsumeResult =
+  | 'consumed'
+  | 'limited'
+  | 'replayed'
+  | 'unavailable';
 
 async function consumeRefreshTokenOnce({
   exp,
+  ip,
   jti,
   sub,
 }: {
   exp: number;
+  ip: string;
   jti: string;
   sub: string;
 }): Promise<RefreshTokenConsumeResult> {
@@ -36,19 +50,28 @@ async function consumeRefreshTokenOnce({
     return 'replayed';
   }
 
-  const redis = await getUpstashRestRedisClient().catch(() => null);
+  const key = `${REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
+  // Known replays and over-limit callers cost no store operation.
+  if (isKnownReplay(key)) return 'replayed';
+  if (preLimitReplayAttempt(sub, ip) !== null) return 'limited';
+
+  const redis = await getUpstashRestRedisClient({
+    family: 'replay',
+    fairness: { principal: sub, source: guardSourceBucket(ip) },
+  }).catch(() => null);
   if (!redis) {
     return 'unavailable';
   }
 
-  const key = `${REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
   try {
     const consumed = await redis.set(key, '1', {
       ex: ttlSeconds,
       nx: true,
     });
 
-    return consumed === 'OK' ? 'consumed' : 'replayed';
+    if (consumed === 'OK') return 'consumed';
+    rememberReplay(key, exp);
+    return 'replayed';
   } catch {
     return 'unavailable';
   }
@@ -76,11 +99,26 @@ export async function POST(request: NextRequest) {
 
   const consumeResult = await consumeRefreshTokenOnce({
     exp: verification.claims.exp,
+    ip: extractIPFromRequest(request.headers),
     jti: verification.claims.jti,
     sub: verification.claims.sub,
   });
 
+  if (consumeResult === 'limited') {
+    return NextResponse.json(
+      { error: 'Too many refresh attempts' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
   if (consumeResult === 'unavailable') {
+    // Legacy policy continues without the fence; once the guard store owns
+    // replay fences, an unavailable store fails closed.
+    if (isAbuseGuardFamilyAssigned('replay')) {
+      return NextResponse.json(
+        { error: 'Refresh temporarily unavailable' },
+        { status: 503, headers: { 'Retry-After': '30' } }
+      );
+    }
     console.warn('CLI refresh replay protection unavailable; continuing');
   } else if (consumeResult === 'replayed') {
     return NextResponse.json(

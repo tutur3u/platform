@@ -1,5 +1,10 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { NextResponse } from 'next/server';
 import type { AuroraExternalStatisticalForecast } from '../types';
 
@@ -62,7 +67,15 @@ export async function POST() {
     return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
   }
 
-  if (!user.email?.endsWith('@tuturuuu.com')) {
+  if (
+    !isVerifiedTuturuuuStaffSession(
+      user &&
+        (await getVerifiedAuthUser(
+          await createAdminClient({ noCookie: true }),
+          user.id
+        ))
+    )
+  ) {
     return NextResponse.json(
       { message: 'Unauthorized email domain' },
       { status: 403 }

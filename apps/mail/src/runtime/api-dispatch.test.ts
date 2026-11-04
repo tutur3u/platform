@@ -1,6 +1,13 @@
+import {
+  dispatchEndpoint as bridgeDispatch,
+  type BridgeEndpoint as MailEndpoint,
+  sortEndpoints,
+} from '@tuturuuu/start-bridge/endpoints';
 import { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { describe, expect, it, vi } from 'vitest';
-import { dispatchEndpoint, type MailEndpoint } from './api-dispatch';
+
+const dispatchEndpoint = (request: NextRequest, endpoints: MailEndpoint[]) =>
+  bridgeDispatch(sortEndpoints(endpoints), request);
 
 const base = 'https://mail.tuturuuu.com';
 describe('native Mail endpoint dispatch', () => {
@@ -8,8 +15,8 @@ describe('native Mail endpoint dispatch', () => {
     const dynamic = vi.fn(() => Response.json({ wrong: true }));
     const bulk = vi.fn(() => Response.json({ bulk: true }));
     const endpoints: MailEndpoint[] = [
-      { pattern: '/mail/messages/[messageId]', methods: { GET: dynamic } },
-      { pattern: '/mail/messages/bulk', methods: { PATCH: bulk } },
+      { pattern: '/mail/messages/[messageId]', module: { GET: dynamic } },
+      { pattern: '/mail/messages/bulk', module: { PATCH: bulk } },
     ];
     const result = await dispatchEndpoint(
       new NextRequest(`${base}/mail/messages/bulk`, { method: 'PATCH' }),
@@ -42,7 +49,7 @@ describe('native Mail endpoint dispatch', () => {
         body: bytes,
         headers: { range: 'bytes=2-4' },
       }),
-      [{ pattern: '/webhook', methods: { POST: handler } }]
+      [{ pattern: '/webhook', module: { POST: handler } }]
     );
     expect(response?.status).toBe(206);
     expect(response?.headers.get('content-range')).toBe('bytes 2-4/5');
@@ -54,7 +61,7 @@ describe('native Mail endpoint dispatch', () => {
       () => new Response('body', { headers: { etag: 'version' } })
     );
     const endpoints: MailEndpoint[] = [
-      { pattern: '/item/[id]', methods: { GET: get } },
+      { pattern: '/item/[id]', module: { GET: get } },
     ];
     const head = await dispatchEndpoint(
       new NextRequest(`${base}/item/one`, { method: 'HEAD' }),
@@ -91,7 +98,7 @@ describe('native Mail endpoint dispatch', () => {
           method: 'POST',
           body: 'original-operation',
         }),
-        [{ pattern: '/send', methods: { POST: send } }]
+        [{ pattern: '/send', module: { POST: send } }]
       )
     ).rejects.toThrow('provider outcome unknown');
     expect(send).toHaveBeenCalledTimes(1);

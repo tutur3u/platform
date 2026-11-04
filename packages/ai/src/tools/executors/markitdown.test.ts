@@ -24,6 +24,18 @@ vi.mock('../../credits/reservations', () => ({
   reserveFixedAiCredits: reserveFixedAiCreditsMock,
 }));
 
+function ownedAttachmentQuery() {
+  const query = {
+    select: () => query,
+    eq: () => query,
+    maybeSingle: async () => ({
+      data: { id: 'chat-1', user_id: 'user-1' },
+      error: null,
+    }),
+  };
+  return query;
+}
+
 function createContext(
   overrides: Partial<MiraToolContext> = {}
 ): MiraToolContext {
@@ -73,6 +85,7 @@ describe('executeConvertFileToMarkdown', () => {
       error: null,
     });
     createAdminClientMock.mockResolvedValue({
+      from: ownedAttachmentQuery,
       rpc: vi.fn(),
       storage: { from: vi.fn().mockReturnValue({ createSignedUrl, list }) },
     });
@@ -115,6 +128,7 @@ describe('executeConvertFileToMarkdown', () => {
       error: null,
     });
     createAdminClientMock.mockResolvedValue({
+      from: ownedAttachmentQuery,
       rpc: vi.fn(),
       storage: {
         from: vi.fn().mockReturnValue({

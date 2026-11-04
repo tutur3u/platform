@@ -1,0 +1,137 @@
+---
+title: "Cloudflare backend ownership"
+description: "New schedules, queues and heavy background work run on Cloudflare; a shrink-only guard holds the legacy owners."
+updatedAt: '2026-10-26'
+---
+
+## Decision
+
+New crons, queues, schedulers and heavy or long-running backend work belong on
+**Cloudflare**: Workers Cron Triggers, Queues, Workflows and Durable Objects. Do
+not add them as Vercel Cron entries, Next.js `after()` continuations, new
+`/api/cron` processor routes, pg_cron jobs, Supabase Edge Functions or Trigger.dev
+tasks. This applies to all new services and to every legacy owner as it migrates.
+
+Every Cloudflare job must meet the
+[runaway-work and cost acceptance](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance)
+rules: bounded work and retries, idempotent progress, no rescheduling after a
+terminal state, and a tested durable stop fence. Usage alerts and CPU limits are
+not spending caps.
+
+## Target platform
+
+The target platform is **Cloudflare**: Workers, Hyperdrive in front of Postgres,
+R2, Durable Objects, Queues and [Cron Control](/build/devops/cloudflare-cron-control).
+The managed Postgres host is still to be decided.
+
+Supabase (Postgres host and Auth) and Vercel (hosting and crons) are
+**transitional** systems of record. They stay in service until migration phases
+retire them. Until then, Workers keep using the existing Supabase tables, RPCs,
+claims and RLS through injected credentials. This page does not authorize a
+database migration, a new datastore or a production cutover. Each one needs its
+own reviewed change.
+
+Pending user decisions, not settled here: the Postgres host, the auth
+implementation, acceptable user impact (re-login, mobile upgrade, write freeze),
+the RLS end state, the `web` hosting path, and keeping the paused runtimes out of
+scope.
+
+### Stop-list
+
+Effective now. Existing usage keeps working; this list has no retirement dates.
+
+- No new Supabase-only features: Edge Functions, new Realtime channels, new
+  Supabase Storage buckets or new Auth providers.
+- No new Vercel crons and no Vercel edge or middleware-specific configuration.
+- No new direct Supabase calls from the mobile app. Go through the app API.
+
+## Choose the Cloudflare primitive
+
+| Work shape | Primitive | Notes |
+| --- | --- | --- |
+| Recurring trigger for an existing authenticated processor | Cron Trigger in [Cron Control](/build/devops/cloudflare-cron-control) | One controller; per-job default-off flag, slot claim and stop fence |
+| Recurring work that can run in a Worker | Cron Control job with a Worker processor | Call existing RPCs/claims directly; bound batches per tick |
+| Fan-out, retry isolation or bursts | Queue consumer | Align `max_retries`/DLQ with the durable attempt budget |
+| Multi-step or long-running work with checkpoints | Workflow | Persist step results; finite attempts and deadlines |
+| Per-entity coordination, leases or ordered state | Durable Object | No self-rearming alarm chains; check the stop fence before rescheduling |
+| Best-effort follow-up of a request | `ctx.waitUntil` on the Worker host | Only for bounded, losable work; durable business work needs a queue |
+
+The [background work inventory](/build/devops/background-work-inventory) maps
+every current owner to its target and cutover class. Reuse Cron Control for
+recurring jobs instead of adding another controller for the same work. Preserve current cadence when moving a schedule; changing it needs
+job-specific evidence and a product decision.
+
+## Shrink-only guard
+
+`scripts/ci/cloudflare-backend-ownership.test.js` runs in the root script suite
+and fails when a new owner appears outside Cloudflare:
+
+| Kind | Detected as |
+| --- | --- |
+| `vercel-cron` | A `crons` entry in any `vercel.json`, keyed by project, path and schedule |
+| `cron-catalog` | An enabled job in a `cron.config.json` catalog |
+| `pg-cron` | A live pg_cron job after replaying every migration's `cron.schedule`/`cron.unschedule` in order |
+| `edge-function` | Any file under `supabase/functions/` or a `[functions.*]` section in `supabase/config.toml` |
+| `trigger-dev` | `trigger.config.*`, an `@trigger.dev/*` dependency or a source import |
+| `next-after` | Active app or package source importing `after` from `next/server` |
+| `next-cron-route` | A Next.js `src/app/api/cron/**/route.*` processor |
+
+A migration after the rule's cutoff (`20261023000000`) may not call
+`cron.schedule`, even for an allowlisted name, except to re-tune a justified
+retained Postgres job. A changed cadence is a new owner. Tests, paused runtimes
+and the guard's own files are excluded.
+
+`scripts/ci/cloudflare-backend-ownership-allowlist.js` records each legacy owner
+with its owner, Cloudflare target and plan. The test pins the adopted baseline;
+entries may be removed but never added. Removing a legacy definition without
+removing its entry fails as stale, so the list shrinks with each migration.
+
+```bash
+node --test scripts/ci/cloudflare-backend-ownership.test.js
+node scripts/ci/cloudflare-backend-ownership.js   # prints violations, exits 1
+```
+
+To retire an entry: move the schedule or processor to Cloudflare behind its
+default-off flag, complete the cutover, delete the legacy definition in its own
+reviewed change, then delete the allowlist entry. Never run both owners unfenced.
+
+## Web's five Vercel crons
+
+The [web migration runbook](/build/devops/web-cloudflare-migration#cron-migration)
+prepares the five web schedules in the existing Cron Control Worker. Their
+Vercel definitions stay active. `CRON_CONTROL_WEB_MODE=off` and the per-job
+allowlist keep Cloudflare dormant; `shadow` compares due slots without processor
+or ledger work. Active requests use the existing authenticated web endpoints.
+
+Before cutover, wire the shared SQLite execution gate into both scheduler paths
+at the web processor boundary. It defaults to Vercel ownership, persists active
+operation identity and completed slots, and blocks owner changes while a run is
+unresolved. Expiry does not authorize replay. Operator stop is durable across
+restarts; failed or abandoned runs require identity-preserving reconciliation.
+Do not clear the gate environment to roll back. Switch owners only after drain,
+then disable the Vercel definition in a separately reviewed change.
+
+Web has one attempt per job per slot, five failed slots before durable dispatch
+stop, and no alarm/retry chains. Cloudflare notification batches are capped at
+25, notification pagination at 20 page reads, and deadline reminders at 500 tasks
+and 1,000 watcher entries with pre-write validation. Other processors retain their
+existing finite claims and drain limits. See the runbook for exact gate operation
+counts, stop/restart tests, retained receipt limitations and acceptance evidence.
+
+## Retained Postgres exceptions
+
+pg_cron may keep a job only when it is **pure in-database maintenance**: a single
+SQL statement against Postgres tables with no HTTP, storage or provider side
+effects, where a Cloudflare trigger would add a Worker invocation and a service-key
+round trip to run the same SQL in the same database. Each retained job carries its
+justification in the allowlist; jobs using `pg_net` are not exceptions. New
+exceptions are not admitted through the guard: schedule new work from Cloudflare.
+
+## Regression evidence
+
+The guard test covers the repository scan, allowlist metadata, the frozen baseline,
+new and re-cadenced Vercel crons, catalog enablement, stale entries, post-cutoff
+migrations, unschedule replay, SQL comments/quoting/PL/pgSQL parsing, Edge Function
+source and configuration, Trigger.dev configuration/dependencies/imports, Next
+`after()` imports and new cron routes. It does not certify hosted schedules,
+processor behavior or spend; those remain per-job cutover evidence.

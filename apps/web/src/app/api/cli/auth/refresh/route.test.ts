@@ -51,6 +51,51 @@ describe('CLI auth refresh route', () => {
 
   afterEach(() => {
     consoleWarn.mockRestore();
+    vi.unstubAllEnvs();
+  });
+
+  function refreshRequest(refreshToken: string) {
+    return new NextRequest('https://tuturuuu.com/api/cli/auth/refresh', {
+      body: JSON.stringify({ refreshToken }),
+      headers: { 'x-forwarded-for': '198.51.100.20' },
+      method: 'POST',
+    });
+  }
+
+  it('answers a known replay from memory once the store owns fences', async () => {
+    vi.stubEnv('ABUSE_GUARD_FAMILIES', 'replay');
+    refreshReplaySet.mockResolvedValue(null);
+    const session = createCliAppSession({
+      email: 'agent@example.com',
+      userId: 'user-replay',
+    });
+
+    expect((await POST(refreshRequest(session.refresh.token))).status).toBe(
+      401
+    );
+    expect((await POST(refreshRequest(session.refresh.token))).status).toBe(
+      401
+    );
+    // The second replay never reached the store.
+    expect(refreshReplaySet).toHaveBeenCalledTimes(1);
+  });
+
+  it('pre-limits one principal before spending store operations', async () => {
+    vi.stubEnv('ABUSE_GUARD_FAMILIES', 'replay');
+    const statuses: number[] = [];
+    for (let attempt = 0; attempt < 25; attempt += 1) {
+      const session = createCliAppSession({
+        email: 'agent@example.com',
+        userId: 'user-flood',
+      });
+      const response = await POST(refreshRequest(session.refresh.token));
+      statuses.push(response.status);
+      if (response.status === 429) {
+        expect(response.headers.get('Retry-After')).toBe('60');
+      }
+    }
+    expect(statuses.indexOf(429)).toBe(20);
+    expect(refreshReplaySet).toHaveBeenCalledTimes(20);
   });
 
   it('refreshes a CLI session from a Tuturuuu refresh JWT', async () => {
@@ -78,6 +123,10 @@ describe('CLI auth refresh route', () => {
     expect(body.session.refresh_token).toMatch(/^ttr_app_/u);
     expect(body.session.access_token).not.toBe(oldSession.access.token);
     expect(body.session.refresh_token).not.toBe(oldSession.refresh.token);
+    expect(getUpstashRestRedisClient).toHaveBeenCalledWith({
+      family: 'replay',
+      fairness: { principal: 'user-1', source: 'unknown' },
+    });
     expect(refreshReplaySet).toHaveBeenCalledWith(
       `cli:refresh:used:user-1:${oldSession.refresh.claims.jti}`,
       '1',
@@ -183,6 +232,27 @@ describe('CLI auth refresh route', () => {
       'CLI refresh replay protection unavailable; continuing'
     );
     expect(createAdminClient).toHaveBeenCalled();
+  });
+
+  it('fails closed when the guard store owns replay fences and errors', async () => {
+    // Assigning the family with no usable store configuration selects `off`.
+    vi.stubEnv('ABUSE_GUARD_FAMILIES', 'replay');
+    refreshReplaySet.mockRejectedValueOnce(new Error('guard unavailable'));
+    const oldSession = createCliAppSession({
+      email: 'agent@example.com',
+      userId: 'user-1',
+    });
+
+    const response = await POST(
+      new NextRequest('https://tuturuuu.com/api/cli/auth/refresh', {
+        body: JSON.stringify({ refreshToken: oldSession.refresh.token }),
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get('Retry-After')).toBe('30');
+    expect(createAdminClient).not.toHaveBeenCalled();
   });
 
   it('continues when refresh-token replay protection errors', async () => {

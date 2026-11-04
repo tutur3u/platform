@@ -1,8 +1,12 @@
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import 'server-only';
 
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 
 export async function getManagedCronAdminUser(
   request?: Pick<Request, 'headers'>
@@ -10,7 +14,15 @@ export async function getManagedCronAdminUser(
   const supabase = await createClient(request);
   const { user } = await resolveAuthenticatedSessionUser(supabase);
 
-  return isExactTuturuuuDotComEmail(user?.email) ? user : null;
+  return isVerifiedTuturuuuStaffSession(
+    user &&
+      (await getVerifiedAuthUser(
+        await createAdminClient({ noCookie: true }),
+        user.id
+      ))
+  )
+    ? user
+    : null;
 }
 
 export async function hasManagedCronAdminAccess(

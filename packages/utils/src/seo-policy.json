@@ -139,12 +139,6 @@
     "publicPaths": [],
     "publicPatterns": []
   },
-  "playground": {
-    "origin": "https://playground.tuturuuu.com",
-    "localePrefix": "never",
-    "publicPaths": [],
-    "publicPatterns": []
-  },
   "rewise": {
     "origin": "https://rewise.tuturuuu.com",
     "localePrefix": "never",

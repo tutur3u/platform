@@ -14,7 +14,10 @@ final class EnvironmentRow implements EventPayload {
     required this.observedAt,
     required this.freshness,
     required this.evidence,
+    this.fields = const {},
   });
+
+  final Map<String, HubField> fields;
 
   final ReleaseProduct product;
   final Environment environment;

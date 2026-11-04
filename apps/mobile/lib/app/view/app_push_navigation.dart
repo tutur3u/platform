@@ -3,6 +3,8 @@ part of 'app.dart';
 extension _AppPushNavigation on _AppState {
   Future<void> _loadWorkspacesWithReminders() async {
     await _workspaceCubit.loadWorkspaces();
+    if (!mounted) return;
+    _syncOfflinePreparationScope();
     final userId = _authCubit.state.user?.id;
     if (userId != null) {
       await ReminderService.instance.startWorkspaceSession(
@@ -13,6 +15,8 @@ extension _AppPushNavigation on _AppState {
   }
 
   void _handleLifecycleState(AppLifecycleState state) {
+    _mobileFlags.setForeground(foreground: state == AppLifecycleState.resumed);
+    _mastermind.irisLifecycle(state);
     if (state == AppLifecycleState.paused ||
         (state == AppLifecycleState.inactive &&
             _appLockCubit.state.delay != AppLockDelay.immediately) ||
@@ -24,6 +28,7 @@ extension _AppPushNavigation on _AppState {
     // Phases that ended while the app slept are settled before anything
     // else reads the Pomodoro.
     unawaited(_pomodoroController.reconcile());
+    unawaited(PushNotificationService.instance.refreshRegistration());
 
     final backgroundedAt = _backgroundedAt;
     _backgroundedAt = null;
@@ -64,6 +69,12 @@ extension _AppPushNavigation on _AppState {
         );
         unawaited(archiveOpenedNotification(request.notificationId));
       }
+      return;
+    }
+    final mastermindLocation = request.mastermindLocation;
+    if (mastermindLocation != null) {
+      // The router's Mastermind access gate still holds the tab roots.
+      _router.go(mastermindLocation);
       return;
     }
     if (request.openTarget == 'mail') {

@@ -3,6 +3,8 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { CrawlerContent } from './crawler-content';
@@ -29,7 +31,15 @@ export default async function DatasetDetailsPage({ params }: Props) {
 
   const { user } = await resolveAuthenticatedSessionUser(supabase);
 
-  if (!user?.email?.endsWith('@tuturuuu.com')) {
+  if (
+    !isVerifiedTuturuuuStaffSession(
+      user &&
+        (await getVerifiedAuthUser(
+          await createAdminClient({ noCookie: true }),
+          user.id
+        ))
+    )
+  ) {
     throw new Error('Unauthorized');
   }
 

@@ -7,6 +7,7 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/scoped_cache_access.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/device_secure_storage.dart';
 
 bool habitsAccessDenied(Object error) =>
     error is ApiException &&
@@ -25,7 +26,7 @@ class HabitsSnapshotDenial {
 class HabitsSnapshotAccess {
   HabitsSnapshotAccess(this.store, {FlutterSecureStorage? storage})
     : _access = ScopedCacheAccess(
-        storage ?? const FlutterSecureStorage(),
+        storage ?? deviceSecureStorage,
         markerPrefix: 'habits-workspace-denied-v1',
       );
 

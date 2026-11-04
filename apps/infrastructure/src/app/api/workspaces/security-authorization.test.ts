@@ -31,7 +31,7 @@ describe('Infrastructure workspace API authorization', () => {
     expect(mocks.authorizeAdmin).toHaveBeenCalledWith('manage_workspace_roles');
   });
 
-  it('binds workspace secret listing and creation authorization to wsId', async () => {
+  it('binds workspace secret listing and creation platform authorization', async () => {
     const { GET, POST } = await import('./[wsId]/secrets/route');
     const context = { params: Promise.resolve({ wsId: 'tenant-workspace' }) };
 
@@ -46,17 +46,11 @@ describe('Infrastructure workspace API authorization', () => {
 
     expect(getResponse.status).toBe(403);
     expect(postResponse.status).toBe(403);
-    expect(mocks.authorizeSecrets).toHaveBeenNthCalledWith(
-      1,
-      'tenant-workspace'
-    );
-    expect(mocks.authorizeSecrets).toHaveBeenNthCalledWith(
-      2,
-      'tenant-workspace'
-    );
+    expect(mocks.authorizeSecrets).toHaveBeenNthCalledWith(1);
+    expect(mocks.authorizeSecrets).toHaveBeenNthCalledWith(2);
   });
 
-  it('binds workspace secret update and deletion authorization to wsId', async () => {
+  it('binds workspace secret update and deletion platform authorization', async () => {
     const { DELETE, PUT } = await import('./[wsId]/secrets/[secretId]/route');
     const context = {
       params: Promise.resolve({
@@ -79,13 +73,7 @@ describe('Infrastructure workspace API authorization', () => {
 
     expect(putResponse.status).toBe(403);
     expect(deleteResponse.status).toBe(403);
-    expect(mocks.authorizeSecrets).toHaveBeenNthCalledWith(
-      1,
-      'tenant-workspace'
-    );
-    expect(mocks.authorizeSecrets).toHaveBeenNthCalledWith(
-      2,
-      'tenant-workspace'
-    );
+    expect(mocks.authorizeSecrets).toHaveBeenNthCalledWith(1);
+    expect(mocks.authorizeSecrets).toHaveBeenNthCalledWith(2);
   });
 });

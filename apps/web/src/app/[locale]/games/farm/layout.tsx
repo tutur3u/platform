@@ -1,5 +1,9 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import type React from 'react';
@@ -17,7 +21,17 @@ export async function FarmGameRuntime({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!isValidTuturuuuEmail(user?.email)) notFound();
+  if (
+    !isVerifiedTuturuuuStaffSession(
+      user &&
+        (await getVerifiedAuthUser(
+          await createAdminClient({ noCookie: true }),
+          user.id
+        )),
+      { allowXwf: true }
+    )
+  )
+    notFound();
 
   return children;
 }

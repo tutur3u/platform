@@ -1,6 +1,8 @@
 import { miraClientCapabilitiesInputSchema } from '@tuturuuu/ai/tools/mira-client-capabilities';
 import type { ChatAttachmentDraft } from '@tuturuuu/internal-api';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
@@ -14,6 +16,7 @@ import {
   listAiChatMessages,
 } from '@/lib/chat/agent-discovery';
 import { normalizeChatMessageTimestamp } from '@/lib/chat/chat-timestamp';
+import { initialAiSettingsSchema } from '@/lib/chat/initial-ai-settings';
 import { notifyChatMessageRecipients } from '@/lib/chat/notifications';
 import {
   type ChatConversation,
@@ -41,6 +44,7 @@ import {
   NATIVE_AI_ASSISTANT_ERROR_MESSAGE,
   publishChatRealtimeMessages,
 } from './ai-message-shared';
+import { sendFirstAiChatMessage } from './first-ai-message';
 import {
   type NativeAiMessagePersistence,
   sendNativeAiConversationMessages,
@@ -69,6 +73,7 @@ const attachmentSchema = z.object({
 });
 
 const createMessageSchema = z.object({
+  initialConversation: initialAiSettingsSchema.optional(),
   attachments: z.array(attachmentSchema).max(20).optional(),
   clientRequestId: z.string().uuid().optional(),
   content: z.string().max(10000).default(''),
@@ -199,15 +204,44 @@ export const POST = withSessionAuth<RouteParams>(
     // that the model endpoint would reject after their message has been saved.
     let miraMode = false;
     if (parsed.data.miraMode === true) {
-      miraMode = isExactTuturuuuDotComEmail(auth.user.email);
-      if (!miraMode) {
-        const { data } = await auth.supabase
-          .from('user_private_details')
-          .select('email')
-          .eq('user_id', auth.user.id)
-          .maybeSingle();
-        miraMode = isExactTuturuuuDotComEmail(data?.email);
+      miraMode = isVerifiedTuturuuuStaffSession(
+        await getVerifiedAuthUser(
+          await createAdminClient({ noCookie: true }),
+          auth.user.id
+        )
+      );
+    }
+
+    if (parsed.data.initialConversation) {
+      if (
+        !wantsChatMessageStream(request) ||
+        !z.uuid().safeParse(params.conversationId).success ||
+        !parsed.data.clientRequestId ||
+        parsed.data.kind !== 'user' ||
+        !parsed.data.content.trim() ||
+        attachments.length ||
+        parsed.data.replyToMessageId
+      ) {
+        return NextResponse.json(
+          {
+            code: 'chat_first_message_invalid_request',
+            message: 'Invalid first message',
+          },
+          { status: 400 }
+        );
       }
+      return sendFirstAiChatMessage({
+        auth,
+        context: context.context,
+        conversationId: params.conversationId,
+        content: parsed.data.content,
+        clientRequestId: parsed.data.clientRequestId,
+        initialSettings: parsed.data.initialConversation,
+        request,
+        miraMode,
+        timezone: parsed.data.timezone,
+        clientCapabilities: parsed.data.clientCapabilities,
+      });
     }
 
     if (isAiChatConversationId(params.conversationId)) {

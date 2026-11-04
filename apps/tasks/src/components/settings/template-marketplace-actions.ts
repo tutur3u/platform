@@ -1,6 +1,8 @@
 'use server';
 
 import type { BoardTemplate } from '@tuturuuu/tasks-ui/tu-do/templates/types';
+import type { Database } from '@tuturuuu/types';
+import { isWorkspaceTemplateBackgroundPath } from '@tuturuuu/utils/template-background-path';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
 
 export async function listPublicBoardTemplates(): Promise<BoardTemplate[]> {
@@ -22,46 +24,55 @@ export async function listPublicBoardTemplates(): Promise<BoardTemplate[]> {
   }
 
   return Promise.all(
-    templates.map(async (template) => {
-      const content = template.content as {
-        labels?: unknown[];
-        lists?: Array<{ tasks?: unknown[] }>;
-      };
+    templates.map(
+      async (
+        template: Database['public']['Tables']['board_templates']['Row']
+      ) => {
+        const content = template.content as {
+          labels?: unknown[];
+          lists?: Array<{ tasks?: unknown[] }>;
+        };
 
-      let backgroundUrl: string | null = null;
-      if (template.background_path) {
-        try {
-          const { data: signedUrlData } = await supabase.storage
-            .from('workspaces')
-            .createSignedUrl(template.background_path, 3600);
-          backgroundUrl = signedUrlData?.signedUrl || null;
-        } catch (error) {
-          console.error('Error generating signed URL:', error);
+        let backgroundUrl: string | null = null;
+        if (
+          isWorkspaceTemplateBackgroundPath(
+            template.background_path,
+            template.ws_id
+          )
+        ) {
+          try {
+            const { data: signedUrlData } = await supabase.storage
+              .from('workspaces')
+              .createSignedUrl(template.background_path, 3600);
+            backgroundUrl = signedUrlData?.signedUrl || null;
+          } catch (error) {
+            console.error('Error generating signed URL:', error);
+          }
         }
-      }
 
-      return {
-        id: template.id,
-        wsId: template.ws_id,
-        createdBy: template.created_by,
-        sourceBoardId: template.source_board_id,
-        name: template.name,
-        description: template.description,
-        visibility: template.visibility as 'public',
-        backgroundUrl,
-        createdAt: template.created_at,
-        updatedAt: template.updated_at,
-        isOwner: template.created_by === user.id,
-        stats: {
-          labels: content.labels?.length || 0,
-          lists: content.lists?.length || 0,
-          tasks:
-            content.lists?.reduce(
-              (acc, list) => acc + (list.tasks?.length || 0),
-              0
-            ) || 0,
-        },
-      };
-    })
+        return {
+          id: template.id,
+          wsId: template.ws_id,
+          createdBy: template.created_by,
+          sourceBoardId: template.source_board_id,
+          name: template.name,
+          description: template.description,
+          visibility: template.visibility as 'public',
+          backgroundUrl,
+          createdAt: template.created_at,
+          updatedAt: template.updated_at,
+          isOwner: template.created_by === user.id,
+          stats: {
+            labels: content.labels?.length || 0,
+            lists: content.lists?.length || 0,
+            tasks:
+              content.lists?.reduce(
+                (acc, list) => acc + (list.tasks?.length || 0),
+                0
+              ) || 0,
+          },
+        };
+      }
+    )
   );
 }

@@ -5,6 +5,10 @@ select plan(20);
 insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data) values
 ('00000000-0000-4000-8000-000000095001','rpc-admin@tuturuuu.com',now(),'{}','{}'),
 ('00000000-0000-4000-8000-000000095002','rpc-outsider@example.com',now(),'{}','{}');
+-- A confirmed address alone is not a verified staff identity.
+insert into auth.identities(provider_id,user_id,provider,identity_data)
+select id::text,id,'email',jsonb_build_object('sub',id::text,'email',email)
+from auth.users where id='00000000-0000-4000-8000-000000095001';
 insert into public.workspaces(id,name,creator_id,personal) values
 ('00000000-0000-0000-0000-000000000000','RPC fixture','00000000-0000-4000-8000-000000095001',false)
 on conflict(id) do update set creator_id=excluded.creator_id;

@@ -1,4 +1,3 @@
-import { Ratelimit } from '@upstash/ratelimit';
 import type { NextRequest, NextResponse } from 'next/server';
 import {
   extractIPFromRequest,
@@ -11,10 +10,18 @@ import {
   hasCachedIpBlockAppealRelief,
 } from './abuse-protection/edge-trust';
 import { guardApiProxyBody } from './api-proxy-body';
+
+export { clearApiProxyGuardLimiterCache } from './api-proxy-rate-limiters';
+
 import {
   DEFAULT_TRUSTED_BYPASS_RULES,
   type TrustedProxyBypassRule,
 } from './api-proxy-bypass-rules';
+import {
+  forgetRateLimiters,
+  getRateLimiters,
+  type RateLimitResult,
+} from './api-proxy-rate-limiters';
 import {
   isFinanceInvoiceCreateSupportRead,
   isFinanceRead,
@@ -24,10 +31,6 @@ import { guardOfflineDownloadRequest } from './offline-download-guard';
 import { buildProxyRateLimitRejection } from './proxy-rate-limit-rejection';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
 import { enforceRequiredMfaRequest } from './required-mfa-runtime';
-import {
-  getUpstashRatelimitRedisClient,
-  type UpstashRatelimitRedisClient,
-} from './upstash-rest';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -100,28 +103,6 @@ export type GuardOptions = {
   trustedBypassRules?: TrustedProxyBypassRule[];
 };
 
-type RateLimitBucket = {
-  limiter: RateLimiter;
-  window: RateLimitWindow;
-};
-
-type Limiters = {
-  get: RateLimitBucket[];
-  mutate: RateLimitBucket[];
-};
-
-type RateLimitResult = {
-  limit: number;
-  remaining: number;
-  reset: number;
-  success: boolean;
-};
-
-type RateLimiter = {
-  limit: (identifier: string) => Promise<RateLimitResult>;
-};
-
-const limiterCache = new Map<string, Limiters>();
 const GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN =
   /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
@@ -570,52 +551,6 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
   },
 ];
 
-function createRedisRateLimitBuckets(
-  redis: UpstashRatelimitRedisClient,
-  prefixBase: string,
-  kind: 'get' | 'mutate',
-  configs: RateLimitConfig[]
-): RateLimitBucket[] {
-  return configs.map((config) => ({
-    window: config.window,
-    limiter: new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(config.limit, config.duration),
-      prefix: `${prefixBase}:${kind}:${config.window}`,
-      analytics: false,
-    }),
-  }));
-}
-
-async function getRateLimiters(
-  prefixBase: string,
-  profile: RateLimitProfile
-): Promise<Limiters | null> {
-  const cacheKey = `${prefixBase}:${JSON.stringify(profile)}`;
-  const cached = limiterCache.get(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  const redis = await getUpstashRatelimitRedisClient().catch(() => null);
-  if (!redis) {
-    return null;
-  }
-
-  const limiters = {
-    get: createRedisRateLimitBuckets(redis, prefixBase, 'get', profile.get),
-    mutate: createRedisRateLimitBuckets(
-      redis,
-      prefixBase,
-      'mutate',
-      profile.mutate
-    ),
-  };
-
-  limiterCache.set(cacheKey, limiters);
-  return limiters;
-}
-
 function getRoutePolicy(
   req: NextRequest,
   routePolicies: ProxyRoutePolicy[]
@@ -1019,10 +954,6 @@ export function isTrustedProxyBypassForRequest(
   );
 }
 
-export function clearApiProxyGuardLimiterCache() {
-  limiterCache.clear();
-}
-
 export async function guardApiProxyRequest(
   req: NextRequest,
   options: GuardOptions
@@ -1184,12 +1115,12 @@ export async function guardApiProxyRequest(
         try {
           result = await limiter.limit(limiterId);
         } catch {
-          limiterCache.delete(limiterCacheKey);
+          forgetRateLimiters(limiterCacheKey);
           break;
         }
 
         if (!result) {
-          limiterCache.delete(limiterCacheKey);
+          forgetRateLimiters(limiterCacheKey);
           break;
         }
 
@@ -1218,7 +1149,7 @@ export async function guardApiProxyRequest(
               'X-RateLimit-Remaining': `${remaining}`,
               'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
               'X-RateLimit-Caller-Class': effectiveCallerClass,
-              'X-RateLimit-Window': window,
+              'X-RateLimit-Window': result.window ?? window,
               'X-RateLimit-Policy':
                 options.diagnosticPolicyName ?? routePolicy.key,
             },
@@ -1229,7 +1160,9 @@ export async function guardApiProxyRequest(
     }
   }
 
-  const offlineResponse = await guardOfflineDownloadRequest(req);
+  const offlineResponse = await guardOfflineDownloadRequest(req, {
+    verifiedActor: authenticatedActor,
+  });
   if (offlineResponse) return offlineResponse;
 
   const allowDescriptionYjsState =
