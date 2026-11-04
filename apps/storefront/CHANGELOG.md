@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.1](https://github.com/tutur3u/platform/compare/storefront-v0.32.0...storefront-v0.32.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **security:** isolate staging hosts from production cookies ([#7245](https://github.com/tutur3u/platform/issues/7245)) ([4395a92](https://github.com/tutur3u/platform/commit/4395a92e9a0d1ee03b93fc7a944cc2722afd2974))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/storefront-v0.31.1...storefront-v0.32.0) (2026-10-24)
 
 

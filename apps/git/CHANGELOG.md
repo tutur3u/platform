@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/git-v0.15.0...git-v0.16.0) (2026-11-04)
+
+
+### Features
+
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/git-v0.14.1...git-v0.15.0) (2026-10-24)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/internal-api",
-  "version": "0.55.0",
+  "version": "0.56.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -10,7 +10,10 @@
   "main": "./dist/index.js",
   "sideEffects": false,
   "types": "./dist/index.d.ts",
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },

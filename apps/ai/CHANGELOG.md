@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.20.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.19.0...ai-studio-v0.20.0) (2026-11-04)
+
+
+### Features
+
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
+
+### Bug Fixes
+
+* **ai:** align journal observation timer with disconnect ([#7303](https://github.com/tutur3u/platform/issues/7303)) ([0b0adde](https://github.com/tutur3u/platform/commit/0b0addedcb7a9394c72ef1a0c4e12cf5540e62da))
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **security:** isolate staging hosts from production cookies ([#7245](https://github.com/tutur3u/platform/issues/7245)) ([4395a92](https://github.com/tutur3u/platform/commit/4395a92e9a0d1ee03b93fc7a944cc2722afd2974))
+
 ## [0.19.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.18.1...ai-studio-v0.19.0) (2026-10-24)
 
 

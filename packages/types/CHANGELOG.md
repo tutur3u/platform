@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.38.0](https://github.com/tutur3u/platform/compare/types-v0.37.0...types-v0.38.0) (2026-11-04)
+
+
+### Features
+
+* **ai:** create Mira chat with the first message ([#6765](https://github.com/tutur3u/platform/issues/6765)) ([aae4d08](https://github.com/tutur3u/platform/commit/aae4d088b0225d428bce41153bac7cf204d5a8dd))
+* **database:** add topic teacher deadline notice types and receipts ([#6975](https://github.com/tutur3u/platform/issues/6975)) ([ee987de](https://github.com/tutur3u/platform/commit/ee987dec1d739c81a8d5eeda0502aa2c436249bf))
+* **database:** tutoring automation foundation ([#7254](https://github.com/tutur3u/platform/issues/7254)) ([dcc7d73](https://github.com/tutur3u/platform/commit/dcc7d73e488cabedda8874803201ce5c69e57b7f))
+* **mastermind:** add the Inbox ask card and accept the new hub fields ([#7395](https://github.com/tutur3u/platform/issues/7395)) ([fe316e8](https://github.com/tutur3u/platform/commit/fe316e8f95f3e569e26be81faac9fef56c8f8a1f))
+* **mastermind:** add the Inbox ask-v2 contract and shared fixture ([#7390](https://github.com/tutur3u/platform/issues/7390)) ([3371d16](https://github.com/tutur3u/platform/commit/3371d16e41c65551939195fb8e2cdcdfb71ccdcf))
+
+
+### Bug Fixes
+
+* **database:** restrict remaining privileged definer functions ([#7092](https://github.com/tutur3u/platform/issues/7092)) ([5743c29](https://github.com/tutur3u/platform/commit/5743c290cfccc7c9250f1c9e6027c3318482df74))
+* **database:** scope Discord mappings to the linked workspace ([#7014](https://github.com/tutur3u/platform/issues/7014)) ([cc59d0b](https://github.com/tutur3u/platform/commit/cc59d0ba1527509297ec18ac6a1d559991f1fe64))
+* **db:** consolidate has_workspace_permission and add manage_mastermind ([#7302](https://github.com/tutur3u/platform/issues/7302)) ([29ef37b](https://github.com/tutur3u/platform/commit/29ef37bf1f47571ade70b0ab3ba879554fa5aa79))
+* **db:** restrict subscription writes to billing service ([#7185](https://github.com/tutur3u/platform/issues/7185)) ([c1503bc](https://github.com/tutur3u/platform/commit/c1503bcaa98bd0ea0d3cae02cce34065c39e7681))
+* **mobile:** manage workspace visibility and filter Home choices ([#6978](https://github.com/tutur3u/platform/issues/6978)) ([8d625ae](https://github.com/tutur3u/platform/commit/8d625ae0a791b16db681a9ce238c66d0a8194003))
+* **permissions:** keep role workspace ownership consistent ([#7206](https://github.com/tutur3u/platform/issues/7206)) ([bcd7671](https://github.com/tutur3u/platform/commit/bcd76715785fb17e703e934c3e2b36e672222647))
+
 ## [0.37.0](https://github.com/tutur3u/platform/compare/types-v0.36.0...types-v0.37.0) (2026-10-24)
 
 

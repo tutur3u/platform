@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.1](https://github.com/tutur3u/platform/compare/sdk-v0.29.0...sdk-v0.29.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **sdk:** approve storage export links portable source ([#7154](https://github.com/tutur3u/platform/issues/7154)) ([8b60602](https://github.com/tutur3u/platform/commit/8b60602fd58b894a6bc5af3db8920676da1183ec))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/sdk-v0.28.0...sdk-v0.29.0) (2026-10-24)
 
 

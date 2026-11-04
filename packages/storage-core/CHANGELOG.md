@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/storage-core-v0.3.3...storage-core-v0.4.0) (2026-11-04)
+
+
+### Features
+
+* **storage:** app-side storage access audit log ([#6891](https://github.com/tutur3u/platform/issues/6891)) ([57cc3f1](https://github.com/tutur3u/platform/commit/57cc3f1750a94890f55a9b33496a1694c11c1888))
+
+
+### Bug Fixes
+
+* **drive:** expire and revoke export links ([#7140](https://github.com/tutur3u/platform/issues/7140)) ([307f08f](https://github.com/tutur3u/platform/commit/307f08fee6ded7b19fe61901390afa45c33d5dce))
+* **packages:** make the published [@tuturuuu](https://github.com/tuturuuu) chain installable and guard it ([#7389](https://github.com/tutur3u/platform/issues/7389)) ([b1378ab](https://github.com/tutur3u/platform/commit/b1378abcaa31c02b5861cc16e6aa6bb2f8789c3c))
+* **storage:** match Drive private roots case-insensitively ([#7084](https://github.com/tutur3u/platform/issues/7084)) ([85b61bb](https://github.com/tutur3u/platform/commit/85b61bb064adb66876fd9e993b8e8f0617fa5f25))
+* **storage:** own upload budget for workspace-managed user avatars ([#7289](https://github.com/tutur3u/platform/issues/7289)) ([25f6903](https://github.com/tutur3u/platform/commit/25f69034808c5aaf26493b9c27cc2f9fe3f75087))
+
 ## [0.3.3](https://github.com/tutur3u/platform/compare/storage-core-v0.3.2...storage-core-v0.3.3) (2026-10-24)
 
 

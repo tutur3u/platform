@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/tutur3u/platform/compare/payment-core-v0.6.1...payment-core-v0.6.2) (2026-11-04)
+
+
+### Bug Fixes
+
+* **billing:** abort deletion when subscription cleanup fails ([#7373](https://github.com/tutur3u/platform/issues/7373)) ([e3ef4d3](https://github.com/tutur3u/platform/commit/e3ef4d31a2a1bc18c15a9e4d6048811afbd226f3))
+
 ## [0.6.1](https://github.com/tutur3u/platform/compare/payment-core-v0.6.0...payment-core-v0.6.1) (2026-10-24)
 
 

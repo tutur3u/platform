@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/auth-v0.7.0...auth-v0.8.0) (2026-11-04)
+
+
+### Features
+
+* **auth:** guard staging cookie scope with explicit deploy environment ([#7315](https://github.com/tutur3u/platform/issues/7315)) ([25c85aa](https://github.com/tutur3u/platform/commit/25c85aa8b0e9b08a03aace0cab90aaa75ebd6bfd))
+
+
+### Bug Fixes
+
+* **auth:** align verified account email handling ([#7007](https://github.com/tutur3u/platform/issues/7007)) ([5f47957](https://github.com/tutur3u/platform/commit/5f47957d2c2053d3281866ba45e76fb5fdb1f356))
+* **auth:** scope the managed login shortcut to the configured shared cookie domain ([#7051](https://github.com/tutur3u/platform/issues/7051)) ([0f7d9e6](https://github.com/tutur3u/platform/commit/0f7d9e6f0bf96b41b48dd920015c309ff41dee82))
+* **db:** restrict subscription writes to billing service ([#7185](https://github.com/tutur3u/platform/issues/7185)) ([c1503bc](https://github.com/tutur3u/platform/commit/c1503bcaa98bd0ea0d3cae02cce34065c39e7681))
+* **e2e:** collect Playwright specs and keep shared localhost sessions ([#7163](https://github.com/tutur3u/platform/issues/7163)) ([35b2963](https://github.com/tutur3u/platform/commit/35b2963c77ddc5207f6fa778f9d40dc997af2a50))
+* **security:** stop trusting the expired rewise.me origin ([#7413](https://github.com/tutur3u/platform/issues/7413)) ([c8f3530](https://github.com/tutur3u/platform/commit/c8f3530fee7bdaa3a86fc23caaafa23112955ee0))
+
+
+### Performance Improvements
+
+* **auth:** verify the request user once across refresh, guard and MFA ([#7153](https://github.com/tutur3u/platform/issues/7153)) ([959206e](https://github.com/tutur3u/platform/commit/959206efa1b1b686c75a1d17eade931519e8729f))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/auth-v0.6.0...auth-v0.7.0) (2026-10-17)
 
 

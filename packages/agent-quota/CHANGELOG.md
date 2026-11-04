@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/tutur3u/platform/compare/agent-quota-v0.2.0...agent-quota-v0.2.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **agent-quota:** deflake concurrent ledger lock admissions ([#7286](https://github.com/tutur3u/platform/issues/7286)) ([b128439](https://github.com/tutur3u/platform/commit/b1284391c9b40179795cb0dc9f9d7a99ede839c0))
+* **agent-quota:** treat EPERM on an expired lease as stale ([#7344](https://github.com/tutur3u/platform/issues/7344)) ([c30b400](https://github.com/tutur3u/platform/commit/c30b400ce520967c9e5e926c72f8d32dc6da7fc4))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/agent-quota-v0.1.0...agent-quota-v0.2.0) (2026-10-24)
 
 

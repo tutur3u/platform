@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.23.0](https://github.com/tutur3u/platform/compare/tools-v0.22.1...tools-v0.23.0) (2026-11-04)
+
+
+### Features
+
+* **tools:** run Tools on TanStack Start + Void through the start bridge ([#7411](https://github.com/tutur3u/platform/issues/7411)) ([41e6ef1](https://github.com/tutur3u/platform/commit/41e6ef14bd87729309104931e761711f7e7b6d33))
+
+
+### Bug Fixes
+
+* **tools:** repair root script tests and random page test failing on main since [#7411](https://github.com/tutur3u/platform/issues/7411) ([#7424](https://github.com/tutur3u/platform/issues/7424)) ([091d4b8](https://github.com/tutur3u/platform/commit/091d4b8fa5389d57e41b17a34642a4a13c7e0203))
+
 ## [0.22.1](https://github.com/tutur3u/platform/compare/tools-v0.22.0...tools-v0.22.1) (2026-10-17)
 
 

@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/users-core-v0.11.2...users-core-v0.12.0) (2026-11-04)
+
+
+### Features
+
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
+
+### Bug Fixes
+
+* **api:** align user group workspace scoping ([#7001](https://github.com/tutur3u/platform/issues/7001)) ([7c7ec6e](https://github.com/tutur3u/platform/commit/7c7ec6ea248d9a3fdb7aabf9e64fbda1933ad321))
+* **api:** align workspace operation permissions and references ([#7033](https://github.com/tutur3u/platform/issues/7033)) ([86c6dd4](https://github.com/tutur3u/platform/commit/86c6dd4dd388a9081334293b0b0005452e846200))
+* **groups:** align group and member access checks ([#7028](https://github.com/tutur3u/platform/issues/7028)) ([6fa6453](https://github.com/tutur3u/platform/commit/6fa6453a9b76559fdac74fe6727c71348b090307))
+* **reports:** monthly report summary counts on first load ([#7527](https://github.com/tutur3u/platform/issues/7527)) ([72d124e](https://github.com/tutur3u/platform/commit/72d124ebf98fc35d91a902c8be4787216c0803ae))
+* **storage:** own upload budget for workspace-managed user avatars ([#7289](https://github.com/tutur3u/platform/issues/7289)) ([25f6903](https://github.com/tutur3u/platform/commit/25f69034808c5aaf26493b9c27cc2f9fe3f75087))
+* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening ([#7057](https://github.com/tutur3u/platform/issues/7057)) ([99aa5a8](https://github.com/tutur3u/platform/commit/99aa5a84b735abd4970bebb70bc7ccc3e8081c53))
+* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening ([#7057](https://github.com/tutur3u/platform/issues/7057)) ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
+* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening. ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
+* **users:** align approval and post delivery scoping ([#6989](https://github.com/tutur3u/platform/issues/6989)) ([d1a7052](https://github.com/tutur3u/platform/commit/d1a7052c247e19467cbff8aa60c8c06dbb46e91d))
+* **users:** align workspace read permissions ([#7022](https://github.com/tutur3u/platform/issues/7022)) ([6d81393](https://github.com/tutur3u/platform/commit/6d8139370238d3be6455724c7e71bd296004002e))
+* **users:** scope report delivery preview and send to the report's group ([#7061](https://github.com/tutur3u/platform/issues/7061)) ([f85a01e](https://github.com/tutur3u/platform/commit/f85a01ecfe0c67f0fdcd23fc89faa7530d31ce43))
+* **users:** tighten workspace read scoping and permissions ([#6979](https://github.com/tutur3u/platform/issues/6979)) ([f720f64](https://github.com/tutur3u/platform/commit/f720f64bc07ad85ec2e41c69d8ead1e342d9d802))
+* **users:** validate group-check participants ([#6984](https://github.com/tutur3u/platform/issues/6984)) ([e992446](https://github.com/tutur3u/platform/commit/e9924465065e4c82b915eef194bd8c742fc9ed87))
+
 ## [0.11.2](https://github.com/tutur3u/platform/compare/users-core-v0.11.1...users-core-v0.11.2) (2026-10-24)
 
 

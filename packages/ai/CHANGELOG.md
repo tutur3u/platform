@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/ai-v0.18.3...ai-v0.19.0) (2026-11-04)
+
+
+### Features
+
+* **ai:** add private Meet transcription evaluation harness ([#7269](https://github.com/tutur3u/platform/issues/7269)) ([28a5503](https://github.com/tutur3u/platform/commit/28a5503f53655583230e95046869485012a72575))
+* **meet:** default-allow Meet AI with a kill switch ([#7410](https://github.com/tutur3u/platform/issues/7410)) ([a96f160](https://github.com/tutur3u/platform/commit/a96f1609656bed08678af0dd1fb828711af4278a))
+* **meet:** fail-closed per-user Meet AI limiter ([#7417](https://github.com/tutur3u/platform/issues/7417)) ([fca5cb0](https://github.com/tutur3u/platform/commit/fca5cb0b31a5966bab2d8fe16b9d0c8f2f7986fe))
+* **meet:** improve transcription quality and support solo meetings ([#7267](https://github.com/tutur3u/platform/issues/7267)) ([ecc5e53](https://github.com/tutur3u/platform/commit/ecc5e53bfa6423ddbd9aaf789e6779c551064eab))
+
+
+### Bug Fixes
+
+* **ai:** accept only user and assistant chat input from clients ([#7139](https://github.com/tutur3u/platform/issues/7139)) ([3d6d542](https://github.com/tutur3u/platform/commit/3d6d54204c6b557ecb5a44c05c3e5d5fabf235cd))
+* **ai:** gate meeting transcription on the Meet AI allowlist and fail closed on rate-limit outages ([#7380](https://github.com/tutur3u/platform/issues/7380)) ([f303930](https://github.com/tutur3u/platform/commit/f3039306dfa2459e7c60e6604d9043b1f8b258dc))
+* **ai:** read evaluation inputs through one file handle ([#7280](https://github.com/tutur3u/platform/issues/7280)) ([c77068a](https://github.com/tutur3u/platform/commit/c77068a7515a21adfbe1fa42a6586c7113228982))
+* **ai:** require workspace access for meeting transcription ([#7357](https://github.com/tutur3u/platform/issues/7357)) ([c2763ae](https://github.com/tutur3u/platform/commit/c2763aeb66c094982c3bf8fa83d5b2da6d5cc3a5))
+* **ai:** validate public request admission before workspace lookups ([#7027](https://github.com/tutur3u/platform/issues/7027)) ([c969617](https://github.com/tutur3u/platform/commit/c96961748c672c2ca588c9a499a253a3f58a0f82))
+* **ai:** validate public request admission before workspace lookups. ([c969617](https://github.com/tutur3u/platform/commit/c96961748c672c2ca588c9a499a253a3f58a0f82))
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **infrastructure:** align secret and role permission access ([#7013](https://github.com/tutur3u/platform/issues/7013)) ([4917e16](https://github.com/tutur3u/platform/commit/4917e16567f3b348ace0159d6cc982be50b9a8b7))
+* **integrations:** align AI and project request authorization ([#7012](https://github.com/tutur3u/platform/issues/7012)) ([606e882](https://github.com/tutur3u/platform/commit/606e882bb3c44f39eb7277f4a9701acc492a025b))
+* **meet:** bill Meet AI to the meeting workspace's AI credits ([#7408](https://github.com/tutur3u/platform/issues/7408)) ([0f8b6dc](https://github.com/tutur3u/platform/commit/0f8b6dcac84f7b29d4c6a15e574330d7b3ad4349))
+* **mobile:** upload Mira attachments into the selected chat's store ([#6724](https://github.com/tutur3u/platform/issues/6724)) ([2109920](https://github.com/tutur3u/platform/commit/21099205486b88ca5aa9562071eab3e04dd7877b))
+* **packages:** make the published [@tuturuuu](https://github.com/tuturuuu) chain installable and guard it ([#7389](https://github.com/tutur3u/platform/issues/7389)) ([b1378ab](https://github.com/tutur3u/platform/commit/b1378abcaa31c02b5861cc16e6aa6bb2f8789c3c))
+* **tasks:** align board access and realtime delivery ([#7016](https://github.com/tutur3u/platform/issues/7016)) ([70aef15](https://github.com/tutur3u/platform/commit/70aef1546bf600aaa29fc046a915fc7c69be4d02))
+
+
+### Performance Improvements
+
+* **ai:** cut Mira time to first token ([#6725](https://github.com/tutur3u/platform/issues/6725)) ([192ce93](https://github.com/tutur3u/platform/commit/192ce93c5cf7d3cf38489d6be97ab589e271778a))
+
 ## [0.18.3](https://github.com/tutur3u/platform/compare/ai-v0.18.2...ai-v0.18.3) (2026-10-24)
 
 

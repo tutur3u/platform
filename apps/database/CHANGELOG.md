@@ -1,5 +1,75 @@
 # Changelog
 
+## [1.45.0](https://github.com/tutur3u/platform/compare/database-v1.44.0...database-v1.45.0) (2026-11-04)
+
+
+### Features
+
+* **ai:** create Mira chat with the first message ([#6765](https://github.com/tutur3u/platform/issues/6765)) ([aae4d08](https://github.com/tutur3u/platform/commit/aae4d088b0225d428bce41153bac7cf204d5a8dd))
+* **ci:** extend SQL grant guard for declarative safety ([#7249](https://github.com/tutur3u/platform/issues/7249)) ([482f819](https://github.com/tutur3u/platform/commit/482f8195fefcee7beabfb3574743ddd8c48eea18))
+* **database:** add declarative schema parity pack and privilege probes ([#7250](https://github.com/tutur3u/platform/issues/7250)) ([9a8f181](https://github.com/tutur3u/platform/commit/9a8f181ac81306443594f8439f88f88289367121))
+* **database:** add topic teacher deadline notice types and receipts ([#6975](https://github.com/tutur3u/platform/issues/6975)) ([ee987de](https://github.com/tutur3u/platform/commit/ee987dec1d739c81a8d5eeda0502aa2c436249bf))
+* **database:** bind external-project helpers to the caller ([#7119](https://github.com/tutur3u/platform/issues/7119)) ([72ad410](https://github.com/tutur3u/platform/commit/72ad410c6862644e504a6781470c4c38c6ae64af))
+* **database:** bind remaining membership helpers to the caller ([#7128](https://github.com/tutur3u/platform/issues/7128)) ([8f95a90](https://github.com/tutur3u/platform/commit/8f95a90945814df9b81ac67d3e8340973051f925))
+* **database:** tutoring automation foundation ([#7254](https://github.com/tutur3u/platform/issues/7254)) ([dcc7d73](https://github.com/tutur3u/platform/commit/dcc7d73e488cabedda8874803201ce5c69e57b7f))
+* **mastermind:** grant manage_mastermind to the platform owner ([#7204](https://github.com/tutur3u/platform/issues/7204)) ([976df21](https://github.com/tutur3u/platform/commit/976df21e1711a52e0bed3a6d33a7dbefd7e4afe0))
+* **meet:** add a fenced 365-day transcript retention purge ([#7276](https://github.com/tutur3u/platform/issues/7276)) ([bb0a4e1](https://github.com/tutur3u/platform/commit/bb0a4e18af0a0ebb4cf7b6dbe712e1ce79554420))
+* **meet:** draft consent and retention schema for Tess ([#7264](https://github.com/tutur3u/platform/issues/7264)) ([154a9f2](https://github.com/tutur3u/platform/commit/154a9f24703d792c8d8aff1849cdce9a3fc60f6d))
+* **meet:** limit transcript and notes reads to participants and admins ([#7293](https://github.com/tutur3u/platform/issues/7293)) ([ab3216d](https://github.com/tutur3u/platform/commit/ab3216dceaaed5483fa0debd90f091cb9473d06f))
+* **storage:** app-side storage access audit log ([#6891](https://github.com/tutur3u/platform/issues/6891)) ([57cc3f1](https://github.com/tutur3u/platform/commit/57cc3f1750a94890f55a9b33496a1694c11c1888))
+
+
+### Bug Fixes
+
+* **auth:** align cross-app handoff identity ([#7008](https://github.com/tutur3u/platform/issues/7008)) ([e5c30f9](https://github.com/tutur3u/platform/commit/e5c30f95886d20c8cce3a7bad1a9ad7d71a3cb63))
+* **auth:** require verified email to link a Microsoft identity ([#7132](https://github.com/tutur3u/platform/issues/7132)) ([d0414bc](https://github.com/tutur3u/platform/commit/d0414bcd93c7997bcdea3fcbfc1efd9ba262d5e4))
+* **database:** add caller checks to privileged reporting functions ([#7080](https://github.com/tutur3u/platform/issues/7080)) ([877bb82](https://github.com/tutur3u/platform/commit/877bb82dfb20dd5ea5a3cdc68256f230a63e457c))
+* **database:** add membership migration rollbacks (UT-062) ([#7359](https://github.com/tutur3u/platform/issues/7359)) ([45f58a3](https://github.com/tutur3u/platform/commit/45f58a3541de81c4254c41d6b725a42625b6dffc))
+* **database:** align AI chat and subscription RPC access ([#7035](https://github.com/tutur3u/platform/issues/7035)) ([9fd1c02](https://github.com/tutur3u/platform/commit/9fd1c021c78467bf692ea759fb8fd48664ed181b))
+* **database:** align time-tracking and task RPC permissions ([#7000](https://github.com/tutur3u/platform/issues/7000)) ([6730c79](https://github.com/tutur3u/platform/commit/6730c798f17be276dc3f1fe8efd60306a84b66f3))
+* **database:** align workspace merge phase permissions ([#7002](https://github.com/tutur3u/platform/issues/7002)) ([fa47e8d](https://github.com/tutur3u/platform/commit/fa47e8d24c03633e3dbee9f6ccb7d2f9540e3a8e))
+* **database:** cascade workspace-owned documents, logs and team memberships ([#6977](https://github.com/tutur3u/platform/issues/6977)) ([12cc8ad](https://github.com/tutur3u/platform/commit/12cc8adfc6aa963efee1e6cc0e2ec299a1cca8d8))
+* **database:** harden session management function guards ([#6993](https://github.com/tutur3u/platform/issues/6993)) ([fb921f4](https://github.com/tutur3u/platform/commit/fb921f4f2f102070da9eaaae63629b86c23ca21c))
+* **database:** pin notification trigger host and use Vault bearer (SR-327) ([#7113](https://github.com/tutur3u/platform/issues/7113)) ([1c8fdf9](https://github.com/tutur3u/platform/commit/1c8fdf9c9fdd85824f31d1fe562bb9b3c001f4dd))
+* **database:** quarantine orphan workspace role permissions before composite FK ([#7358](https://github.com/tutur3u/platform/issues/7358)) ([df66187](https://github.com/tutur3u/platform/commit/df6618727522e2ed7402fdac3b2ddfd80042d0b7))
+* **database:** restate employee runtime readiness ACL ([#7231](https://github.com/tutur3u/platform/issues/7231)) ([0047e77](https://github.com/tutur3u/platform/commit/0047e77296c6609401bd07de1fd12f4712568aaf))
+* **database:** restore employee readiness and whiteboard payload contracts ([#7189](https://github.com/tutur3u/platform/issues/7189)) ([4666c9c](https://github.com/tutur3u/platform/commit/4666c9c9eec6fed461042bdabc272b0152a075e6))
+* **database:** restrict an RPC to the service role ([#7059](https://github.com/tutur3u/platform/issues/7059)) ([4fb4eef](https://github.com/tutur3u/platform/commit/4fb4eef4533f0ca3e654fa5681f91d6010d22d7d))
+* **database:** restrict audit and legacy token privileges ([#7112](https://github.com/tutur3u/platform/issues/7112)) ([e6b4c45](https://github.com/tutur3u/platform/commit/e6b4c452c3f2cfc85e38dd18f1ffd0dcabe4d929))
+* **database:** restrict remaining privileged definer functions ([#7092](https://github.com/tutur3u/platform/issues/7092)) ([5743c29](https://github.com/tutur3u/platform/commit/5743c290cfccc7c9250f1c9e6027c3318482df74))
+* **database:** restrict two internal merge helpers to the service role ([#7069](https://github.com/tutur3u/platform/issues/7069)) ([291bb02](https://github.com/tutur3u/platform/commit/291bb02f9be4a7624a7f525e034ba02b0660df3c))
+* **database:** restrict workspace user link repair to the service role ([#6994](https://github.com/tutur3u/platform/issues/6994)) ([debface](https://github.com/tutur3u/platform/commit/debface3d868d9207a4568774c88e0ae7f31bd3d))
+* **database:** scope Discord mappings to the linked workspace ([#7014](https://github.com/tutur3u/platform/issues/7014)) ([cc59d0b](https://github.com/tutur3u/platform/commit/cc59d0ba1527509297ec18ac6a1d559991f1fe64))
+* **database:** scope public function execution privileges ([#7076](https://github.com/tutur3u/platform/issues/7076)) ([c2e1d7e](https://github.com/tutur3u/platform/commit/c2e1d7ed0287a719c7052967372cc77ee9acd436))
+* **database:** scope time request detail references ([#7024](https://github.com/tutur3u/platform/issues/7024)) ([c7fb9f5](https://github.com/tutur3u/platform/commit/c7fb9f523e612c3522460d6edcae98cbb2a3550c))
+* **database:** tighten table privileges ([#7197](https://github.com/tutur3u/platform/issues/7197)) ([a43d2c3](https://github.com/tutur3u/platform/commit/a43d2c3d159bcaca6e1716781750d2cdd0135e88))
+* **db:** consolidate has_workspace_permission and add manage_mastermind ([#7302](https://github.com/tutur3u/platform/issues/7302)) ([29ef37b](https://github.com/tutur3u/platform/commit/29ef37bf1f47571ade70b0ab3ba879554fa5aa79))
+* **db:** guard task cycle links to the cycle workspace ([#6942](https://github.com/tutur3u/platform/issues/6942)) ([54bf36e](https://github.com/tutur3u/platform/commit/54bf36edfff49ffed85957f3f8ceb3260099aeb7))
+* **db:** pin merge batch helper definer search_path ([#7282](https://github.com/tutur3u/platform/issues/7282)) ([61d03a8](https://github.com/tutur3u/platform/commit/61d03a8d784558a73889c296a107350015977194))
+* **db:** pin time tracking definer search_path and fix linked-request rejection ([#7281](https://github.com/tutur3u/platform/issues/7281)) ([51bb558](https://github.com/tutur3u/platform/commit/51bb55860abbc4900cef61342e8862b97e2f4c72))
+* **db:** pin workspace ownership in row policies ([#7136](https://github.com/tutur3u/platform/issues/7136)) ([232181a](https://github.com/tutur3u/platform/commit/232181a6f78f0bf4cb1ddc0cadc0427082163464))
+* **db:** protect workspace ownership changes ([#7184](https://github.com/tutur3u/platform/issues/7184)) ([123271e](https://github.com/tutur3u/platform/commit/123271e7d757f0f4c2a335153a92bab7535c8241))
+* **db:** restrict subscription writes to billing service ([#7185](https://github.com/tutur3u/platform/issues/7185)) ([c1503bc](https://github.com/tutur3u/platform/commit/c1503bcaa98bd0ea0d3cae02cce34065c39e7681))
+* **db:** scope workspace invites to their workspace ([#7137](https://github.com/tutur3u/platform/issues/7137)) ([9cde8ca](https://github.com/tutur3u/platform/commit/9cde8ca40fdcb86fa1cb49dd8f638ff8427fde24))
+* **db:** tighten storage insert policies and audit function search_path ([#7356](https://github.com/tutur3u/platform/issues/7356)) ([17a0b2a](https://github.com/tutur3u/platform/commit/17a0b2a0d4b1b077a40e8ce3c1b9fba1bdfad735))
+* **db:** tighten workspace ownership change paths ([#7194](https://github.com/tutur3u/platform/issues/7194)) ([b099b73](https://github.com/tutur3u/platform/commit/b099b7303ea29ad9f39df90dfc99352e96b821e4))
+* **db:** verify staff identity in domain-gated policies ([#7138](https://github.com/tutur3u/platform/issues/7138)) ([c4593fb](https://github.com/tutur3u/platform/commit/c4593fb27c8aeac4e757235fcdc36fbaf9d5d5a9))
+* **finance:** align database workspace boundaries ([#7031](https://github.com/tutur3u/platform/issues/7031)) ([01dbc5b](https://github.com/tutur3u/platform/commit/01dbc5b5f2ddc487e6f239888683026323ad48e7))
+* **finance:** require authorized callers for finance read RPCs ([#7003](https://github.com/tutur3u/platform/issues/7003)) ([90d5fe4](https://github.com/tutur3u/platform/commit/90d5fe4e6aa83a565e9b4965d97a54b624ed5518))
+* **finance:** restrict legacy finance chart and migration RPCs ([#7006](https://github.com/tutur3u/platform/issues/7006)) ([626ef83](https://github.com/tutur3u/platform/commit/626ef837b37b1af7cf5c576f261b40a939a4b418))
+* **finance:** scope categories and transaction access to the workspace ([#7150](https://github.com/tutur3u/platform/issues/7150)) ([f08c4ea](https://github.com/tutur3u/platform/commit/f08c4ead35be9b81465de2505121de003285f651))
+* **infra:** guard the managed cron secret in the database ([#7190](https://github.com/tutur3u/platform/issues/7190)) ([300ad76](https://github.com/tutur3u/platform/commit/300ad76390bff5712ba97b57980ec2a28caea345))
+* **meet:** preserve host identity and transcript access ([#7030](https://github.com/tutur3u/platform/issues/7030)) ([3753d70](https://github.com/tutur3u/platform/commit/3753d7060ace891269187a7972d4a460148905af))
+* **meet:** tighten legacy meeting and recording access ([#7270](https://github.com/tutur3u/platform/issues/7270)) ([08c55af](https://github.com/tutur3u/platform/commit/08c55af1c43bb9354e38aa6bda875e939f8c1003))
+* **permissions:** keep role workspace ownership consistent ([#7206](https://github.com/tutur3u/platform/issues/7206)) ([bcd7671](https://github.com/tutur3u/platform/commit/bcd76715785fb17e703e934c3e2b36e672222647))
+* **tasks:** restrict task list writes to authorized members ([#7125](https://github.com/tutur3u/platform/issues/7125)) ([f6d616f](https://github.com/tutur3u/platform/commit/f6d616f14bdbd76a215bca76fdfcda995cf356e8))
+* **time-tracking:** validate request task, category and linked-session scope ([#7068](https://github.com/tutur3u/platform/issues/7068)) ([716b49f](https://github.com/tutur3u/platform/commit/716b49f97999af4df1f20cc97214385e6e3f4f7d))
+
+
+### Performance Improvements
+
+* **database:** drop nine unused indexes to free production disk ([#7053](https://github.com/tutur3u/platform/issues/7053)) ([c576162](https://github.com/tutur3u/platform/commit/c576162619d563f7e893dfc803655df0281070b2))
+
 ## [1.44.0](https://github.com/tutur3u/platform/compare/database-v1.43.0...database-v1.44.0) (2026-10-24)
 
 
