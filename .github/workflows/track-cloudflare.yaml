@@ -150,3 +150,80 @@ jobs:
         TUTURUUU_NOINDEX=1
       format-paths: >-
         apps/track/src/start-bridge apps/track/src/routes apps/track/src/router.tsx apps/track/src/start.ts apps/track/cloudflare apps/track/vite.config.mts apps/track/void.config.ts apps/track/tsconfig.json apps/track/package.json apps/track/start-bridge.routes.json
+  # Tonight's cutover path: build the track Start Worker for production and
+  # upload it (Worker + assets + wrangler config) for an operator wrangler
+  # deploy. No publication happens here. PR runs build with fixtures only.
+  track-cutover-artifact:
+    needs: check-ci
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.PRODUCTION_SUPABASE_URL || 'https://track-ci.supabase.invalid' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_track_ci_placeholder' }}
+      NEXT_PUBLIC_APP_URL: https://track.tuturuuu.com
+      NEXT_PUBLIC_TRACK_APP_URL: https://track.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      WRANGLER_SEND_METRICS: 'false'
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Generate build metadata
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build shared dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="@tuturuuu/track^..." --concurrency=2
+          token: ''
+          team: ''
+      - name: Build the Start Worker
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/track && bun run build:cloudflare
+          token: ''
+          team: ''
+      - name: Write the production wrangler config
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const path = 'apps/track/dist/server/wrangler.json';
+          const c = JSON.parse(readFileSync(path, 'utf8'));
+          for (const k of ['configPath', 'userConfigPath', 'topLevelName', 'definedEnvironments']) delete c[k];
+          c.name = 'tuturuuu-track';
+          c.workers_dev = false;
+          c.preview_urls = false;
+          c.upload_source_maps = false;
+          c.vars = {
+            TUTURUUU_NOINDEX: '0',
+            NEXT_PUBLIC_APP_URL: 'https://track.tuturuuu.com',
+            NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
+          };
+          writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);
+          JS
+          test -f apps/track/dist/server/index.mjs
+          test -d apps/track/dist/client
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: track-cutover-${{ env.TRUSTED == 'true' && 'production' || 'fixture' }}-${{ env.SOURCE_SHA }}
+          path: apps/track/dist
+          retention-days: 14
+          if-no-files-found: error
+          include-hidden-files: true
