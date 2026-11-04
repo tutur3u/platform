@@ -1,6 +1,7 @@
 import { verifyAppSessionRequestWithToken } from '@tuturuuu/auth/app-session-core';
 import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { hasLiveRootAccess } from './permission';
 
 export interface MastermindEnvironment {
   ASSETS?: AssetsBinding;
@@ -121,13 +122,12 @@ export async function authenticate(
       return null;
     const owner = getSatelliteAppSessionUser('mastermind', request, env, now);
     if (!owner || owner.email !== payload.email) return null;
-    // Transitional owner-only mode until live manage_mastermind checks land.
-    // Re-read on EVERY request, before any memo, API call or render.
     const allowed = (env.OWNER_IDS ?? '')
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean);
-    return allowed.includes(owner.id) ? owner : null;
+    if (!allowed.includes(owner.id)) return null;
+    return (await hasLiveRootAccess(owner)) ? owner : null;
   } catch {
     return null;
   }
