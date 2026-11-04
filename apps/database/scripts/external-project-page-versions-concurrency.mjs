@@ -31,7 +31,7 @@ export async function verifyPagePublishConcurrency(container, fixture) {
     `select (public.publish_workspace_external_project_page_version('${ws}', '${version}')).replaced_page_version_id;`;
   const marker = fixture.indexOf('-- Deleting an entry');
   assert.ok(marker > 0, 'fixture seed boundary exists');
-  sql(fixture.slice(0, marker) + '\nreset role; commit;');
+  sql(`${fixture.slice(0, marker)}\nreset role; commit;`);
   const clients = [];
   function client() {
     const process = spawn('docker', args, { stdio: ['pipe', 'pipe', 'pipe'] });
