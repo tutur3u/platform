@@ -163,6 +163,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
       NEXT_PUBLIC_APP_URL: https://forms.tuturuuu.com
       NEXT_PUBLIC_FORMS_APP_URL: https://forms.tuturuuu.com
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       WRANGLER_SEND_METRICS: 'false'
     steps:

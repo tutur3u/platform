@@ -127,6 +127,14 @@ test('emitted forms Worker serves its root, mount and unknown paths', {
     envFiles: [staged.envFile],
     sendMetrics: false,
     bindings: {
+      TURNSTILE_SECRET_KEY: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
       TUTURUUU_APP_COORDINATION_SECRET: {
         type: 'plain_text',
         value: 'synthetic-runtime-only-coordination',
