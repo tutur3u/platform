@@ -1,4 +1,4 @@
--- Rollback for 20261101130030_assign_task_cycle.sql.
+-- Rollback for 20261104152700_assign_task_cycle.sql.
 -- Drops public.assign_task_cycle(uuid, uuid). No rows are changed.
 -- Deploy Tasks API code that does not call the assign_task_cycle rpc first,
 -- or every assign to a cycle fails.
