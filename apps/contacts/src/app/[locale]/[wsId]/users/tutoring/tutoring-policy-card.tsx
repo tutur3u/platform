@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { X } from '@tuturuuu/icons';
 import { updateTutoringPolicy } from '@tuturuuu/internal-api/tutoring';
 import {
   EASY_CENTER_TUTORING_POLICY,
@@ -58,7 +59,7 @@ export function TutoringPolicyCard({
     Exclude<PolicySectionId, 'presets'>,
     (keyof TutoringPolicy)[]
   > = {
-    timing: NUMERIC_FIELDS.map(([field]) => field),
+    timing: [...NUMERIC_FIELDS.map(([field]) => field), 'absenceCountFromDate'],
     exceptions: ['timeRules', 'shiftByGroupId'],
     groupShifts: ['shiftByGroupId'],
     weak: [
@@ -156,6 +157,7 @@ export function TutoringPolicyCard({
             onClick={() =>
               setDraft({
                 ...STANDARD_TUTORING_POLICY,
+                absenceCountFromDate: draft.absenceCountFromDate,
                 campusByGroupId: draft.campusByGroupId,
                 campusOptions: draft.campusOptions,
                 tutorGroupIds: draft.tutorGroupIds,
@@ -172,6 +174,7 @@ export function TutoringPolicyCard({
             onClick={() =>
               setDraft({
                 ...EASY_CENTER_TUTORING_POLICY,
+                absenceCountFromDate: draft.absenceCountFromDate,
                 campusByGroupId: draft.campusByGroupId,
                 campusOptions: draft.campusOptions,
                 tutorGroupIds: draft.tutorGroupIds,
@@ -222,6 +225,34 @@ export function TutoringPolicyCard({
               />
             </div>
           ))}
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="policy-absenceCountFromDate">
+            {t('policy_absenceCountFromDate')}
+          </Label>
+          <div className="flex max-w-xs gap-2">
+            <Input
+              disabled={!canConfigure}
+              id="policy-absenceCountFromDate"
+              onChange={(event) =>
+                edit({ absenceCountFromDate: event.target.value || null })
+              }
+              type="date"
+              value={draft.absenceCountFromDate ?? ''}
+            />
+            <Button
+              aria-label={t('policy_absenceCountFromDate_clear')}
+              disabled={!canConfigure || !draft.absenceCountFromDate}
+              onClick={() => edit({ absenceCountFromDate: null })}
+              size="icon"
+              variant="outline"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-muted-foreground text-xs">
+            {t('policy_absenceCountFromDate_help')}
+          </p>
         </div>
       </TutoringPolicySection>
 

@@ -42,6 +42,12 @@ export interface TutoringPolicy {
   leadMinutes: number;
   weakSupportSessions: number;
   absenceLookbackDays: number;
+  /**
+   * Workspace-local `YYYY-MM-DD`. Absences dated before it never feed make-up
+   * suggestions, on top of the rolling lookback; null counts the whole window.
+   * Older absences stay recorded; they are only left out of the queue.
+   */
+  absenceCountFromDate: string | null;
   reassessmentDays: number;
   followUpDays: number;
   weakContentReviewDays: number;
@@ -83,6 +89,7 @@ export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
   leadMinutes: 45,
   weakSupportSessions: 1,
   absenceLookbackDays: 28,
+  absenceCountFromDate: null,
   reassessmentDays: 14,
   followUpDays: 7,
   weakContentReviewDays: 0,
@@ -270,6 +277,39 @@ function isWeekdayList(value: unknown) {
   );
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const DAY_MS = 86_400_000;
+
+function isoDay(time: number) {
+  return new Date(time).toISOString().slice(0, 10);
+}
+
+/**
+ * A real calendar date no later than tomorrow in UTC, which is at or after
+ * today in every workspace timezone; null and absent both clear it.
+ */
+function parseAbsenceCountFromDate(value: unknown, now: Date) {
+  if (value === undefined || value === null) return { date: null };
+  if (typeof value !== 'string' || !ISO_DATE.test(value)) return null;
+  const time = Date.parse(`${value}T00:00:00Z`);
+  if (!Number.isFinite(time) || isoDay(time) !== value) return null;
+  if (value > isoDay(now.getTime() + DAY_MS)) return null;
+  return { date: value };
+}
+
+/**
+ * The earliest absence date that feeds make-up suggestions: the later of the
+ * rolling lookback and the chosen count-from date.
+ */
+export function getTutoringAbsenceCutoff(
+  policy: Pick<TutoringPolicy, 'absenceLookbackDays' | 'absenceCountFromDate'>,
+  now = Date.now()
+) {
+  const rolling = isoDay(now - policy.absenceLookbackDays * DAY_MS);
+  const from = policy.absenceCountFromDate;
+  return from && from > rolling ? from : rolling;
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function isGroupLabelMap(entries: [string, unknown][], maxLength: number) {
@@ -298,7 +338,10 @@ function parseTutorGroupIds(value: unknown) {
 }
 
 /** Strict validation is shared by settings UI and the API write boundary. */
-export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
+export function parseTutoringPolicy(
+  value: unknown,
+  now = new Date()
+): TutoringPolicy | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const saved = value as Record<string, unknown>;
   const defaults =
@@ -380,6 +423,11 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     Array.isArray(candidate.shiftByGroupId)
   )
     return null;
+  const absenceCountFrom = parseAbsenceCountFromDate(
+    candidate.absenceCountFromDate,
+    now
+  );
+  if (!absenceCountFrom) return null;
   const tutorGroupIds = parseTutorGroupIds(candidate.tutorGroupIds);
   const supportGroupIds = parseTutorGroupIds(candidate.supportGroupIds);
   if (!tutorGroupIds || !supportGroupIds) return null;
@@ -448,6 +496,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     leadMinutes: candidate.leadMinutes as number,
     weakSupportSessions: candidate.weakSupportSessions as number,
     absenceLookbackDays: candidate.absenceLookbackDays as number,
+    absenceCountFromDate: absenceCountFrom.date,
     reassessmentDays: candidate.reassessmentDays as number,
     followUpDays: candidate.followUpDays as number,
     weakContentReviewDays: candidate.weakContentReviewDays as number,
