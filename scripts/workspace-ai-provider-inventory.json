@@ -316,7 +316,7 @@
   },
   {
     "path": "apps/learn/src/app/api/v1/vocabulary/pronunciation/route.ts",
-    "sha256": "4ab2894fe9b0967159f23d2132bf54319a9eddd600c75e8e4e9bc5e640b65155",
+    "sha256": "d74ac913c420ef67ad89f427f3510dab98b99af9b08bf6398a5a9daa35d4f47a",
     "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
     "boundaries": [
       {
@@ -331,7 +331,7 @@
   },
   {
     "path": "apps/learn/src/app/api/v1/vocabulary/speech/route.ts",
-    "sha256": "dc087b3f5e31c79faac4b6d9690ae1806e43b48514bec812df1a765dd63c577c",
+    "sha256": "78f61a439985dc77cbc6978b728b84ea73b5b10e21b813afceb9a29a94ad3f83",
     "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
     "boundaries": [
       {

@@ -151,7 +151,6 @@ async function generateSpeech(
       ? `Read this vocabulary word in clear American English. Speak only the word: ${text}`
       : `Read this example sentence in clear American English. Speak only the sentence: ${text}`;
   const billingWorkspaceId = await resolveAiMemoryWorkspaceIdForUser({
-    fallbackWsId: '',
     supabase,
     userId: user.id,
   });
