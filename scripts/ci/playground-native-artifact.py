@@ -8,7 +8,10 @@ import importlib.util
 import os
 from pathlib import Path
 
-WORKER = "tuturuuu-playground-vite-staging"
+PROFILE = os.environ.get("VITE_PLAYGROUND_NATIVE_PROFILE", "staging")
+if PROFILE not in ("staging", "production"):
+    raise ValueError("Unknown playground native profile")
+WORKER = "tuturuuu-playground" if PROFILE == "production" else "tuturuuu-playground-vite-staging"
 PUBLIC_FILES = (
     "file.svg",
     "globe.svg",
@@ -27,6 +30,7 @@ def load():
     module.IDENTITY = {
         **module.IDENTITY,
         "name": WORKER,
+        "vars": {"TUTURUUU_NOINDEX": "0" if PROFILE == "production" else "1"},
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
         "workers_dev": False,

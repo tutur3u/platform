@@ -117,7 +117,7 @@ jobs:
       deployments: read
     with:
       workflow_name: playground-cloudflare.yaml
-  # Qualification only: no staging or production publisher.
+  # Qualify staging and production independently before Rex publishes either.
   native:
     needs: check-ci
     if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
@@ -140,3 +140,57 @@ jobs:
         TUTURUUU_NOINDEX=1
       format-paths: >-
         apps/playground/src/start-bridge apps/playground/src/routes apps/playground/src/router.tsx apps/playground/src/start.ts apps/playground/cloudflare apps/playground/vite.config.mts apps/playground/void.config.ts apps/playground/tsconfig.json apps/playground/package.json apps/playground/start-bridge.routes.json
+
+  cutover-artifact:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SOURCE_SHA: ${{ github.sha }}
+      PLAYGROUND_SOURCE_SHA: ${{ github.sha }}
+      VITE_PLAYGROUND_NATIVE_PROFILE: production
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_APP_URL: https://playground.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      TUTURUUU_NOINDEX: '0'
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Build owning workspace dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter='@tuturuuu/playground^...' --concurrency=2
+          token: ''
+          team: ''
+      - name: Generate exact-source build identity
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build production Start Worker
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+        working-directory: apps/playground
+        run: bun run build
+      - name: Package Worker, assets and emitted Wrangler config
+        run: |
+          python3 scripts/ci/playground-native-artifact.py config apps/playground
+          python3 scripts/ci/playground-native-artifact.py seal apps/playground --receipt "$RUNNER_TEMP/playground-native-artifact.json"
+          python3 scripts/ci/playground-native-artifact.py pack apps/playground --receipt "$RUNNER_TEMP/playground-native-artifact.json" --archive "$RUNNER_TEMP/playground-cutover.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playground-cutover-${{ github.sha }}
+          path: ${{ runner.temp }}/playground-cutover.tar.gz
+          if-no-files-found: error
+          retention-days: 7
