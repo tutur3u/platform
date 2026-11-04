@@ -24,6 +24,7 @@ export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/v1/workspaces/[wsId]/finance/fee-locks/[lockId]", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/finance/fee-locks/[lockId]/route'), ["GET"]) },
   { pattern: "/api/v1/workspaces/[wsId]/finance/fee-locks/lock-batch", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/finance/fee-locks/lock-batch/route'), ["POST"]) },
   { pattern: "/api/v1/workspaces/[wsId]/finance/fee-locks", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/finance/fee-locks/route'), ["GET","PUT"]) },
+  { pattern: "/api/v1/workspaces/[wsId]/finance/fee-locks/suggestion", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/finance/fee-locks/suggestion/route'), ["GET"]) },
   { pattern: "/api/v1/workspaces/[wsId]/finance/filter-users", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/finance/filter-users/route'), ["GET"]) },
   { pattern: "/api/v1/workspaces/[wsId]/finance/invoices/[invoiceId]/restore", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/finance/invoices/[invoiceId]/restore/route'), ["POST"]) },
   { pattern: "/api/v1/workspaces/[wsId]/finance/invoices/[invoiceId]", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/finance/invoices/[invoiceId]/route'), ["PUT","DELETE"]) },
