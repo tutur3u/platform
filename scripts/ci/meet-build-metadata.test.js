@@ -648,3 +648,20 @@ test('Meet builds with production Supabase values only on the production ref', (
     }
   );
 });
+
+test('Meet deploy preflight names only real Worker secrets', () => {
+  const { identity, secretNames } = require('./verify-meet-start-output');
+  const source = readFileSync(
+    resolve(root, '.github/workflows/meet-cloudflare.yaml'),
+    'utf8'
+  );
+  const required = [...source.matchAll(/--argjson required '(\[[^']+\])'/g)].map(
+    (match) => JSON.parse(match[1])
+  );
+  assert.equal(required.length, 2);
+  const [frontend, realtime] = required;
+  assert.deepEqual([...frontend].sort(), [...secretNames].sort());
+  for (const name of Object.keys(identity.vars))
+    assert.ok(!frontend.includes(name), `${name} is a var, not a secret`);
+  assert.ok(realtime.includes('MEET_AI_DISABLED_WORKSPACE_IDS'));
+});

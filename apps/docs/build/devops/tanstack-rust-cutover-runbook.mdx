@@ -148,29 +148,32 @@ legacy OpenNext build, on the same `meet.tuturuuu.com` custom domain. The
 `MeetLiveDurableObject` migration (`meet-live-v1`) is identical in both
 configurations, so no Durable Object migration runs.
 
+Promoting a `main` SHA that changes Meet paths to `production` is the public
+flip: the `meet-production` environment has no reviewer gate, so the `deploy`
+job runs `wrangler deploy` as soon as validation passes. Only the `production`
+ref builds a deployable artifact; other refs bake in the CI Supabase fixture.
+
 Release owner steps:
 
-1. Promote a green `main` SHA to `production`. The planner selects
-   `meet-cloudflare.yaml`; its `deploy` job records the current
-   `tuturuuu-meet` and `tuturuuu-meet-realtime` versions and deployments in the
+1. Run the private smoke first when the release allows it: upload a
+   production-ref artifact with `wrangler versions upload` (no traffic) and send
+   only operator requests to it with the `Cloudflare-Workers-Version-Overrides`
+   header on `meet.tuturuuu.com`. Check join, SFU media, lobby rename, consent,
+   an authenticated API call and a server action.
+2. Record the current `tuturuuu-meet` and `tuturuuu-meet-realtime` version IDs,
+   then promote the SHA. The `deploy` job stores the same IDs in the
    `meet-rollback-<sha>-<run>` artifact before any write.
-2. Private smoke before promotion (required): the deploy job's `wrangler
-   deploy` is the public flip, so first upload the qualified artifact with
-   `wrangler versions upload` (no traffic) and route only operator requests to
-   it with the `Cloudflare-Workers-Version-Overrides` header on
-   `meet.tuturuuu.com`. Promote only after the real-call QA passes (join, SFU
-   media, lobby rename, consent, an authenticated API call and a server
-   action). Record the legacy `tuturuuu-meet` and `tuturuuu-meet-realtime`
-   version IDs first.
-5. Keep `MEET_AI_ENABLED_WORKSPACE_IDS` set as a secret on `tuturuuu-meet`
-   (Meet AI is default-allow without it; the deploy job fails closed) and
-   watch errors for 30 minutes after the flip, rolling back at the first
-   regression.
-3. Rollback is one step: `wrangler versions deploy <legacy-version-id>@100%
+3. `MEET_AI_DISABLED` and `MEET_AI_ENABLED_WORKSPACE_IDS` are Worker vars pinned
+   in `apps/meet/void.config.ts` and `apps/meet-realtime/wrangler.jsonc`. A deploy
+   replaces vars, so the deployed SHA sets the Meet AI state. The
+   `MEET_AI_DISABLED_WORKSPACE_IDS` denylist is a secret that both Workers must
+   already have; the deploy job refuses to publish without it.
+4. Verify `https://meet.tuturuuu.com/api/build-info` reports the promoted SHA,
+   then watch errors for 30 minutes and roll back at the first regression.
+5. Rollback is one step: `wrangler versions deploy <legacy-version-id>@100%
    --name tuturuuu-meet` (and the same for `tuturuuu-meet-realtime` if its
    version changed), using the IDs from the rollback artifact. Rehearse once
    before announcing.
-4. Verify `https://meet.tuturuuu.com/api/build-info` reports the promoted SHA.
 
 To hold Meet again, set `productionPublicationPolicy.meet` back to
 `{ state: 'held', reason: ... }`; the planner and the deploy job's

@@ -63,6 +63,7 @@ const production = defineConfig({
         'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
         'SUPABASE_SECRET_KEY',
         'GOOGLE_GENERATIVE_AI_API_KEY',
+        'MEET_AI_DISABLED_WORKSPACE_IDS',
       ],
     },
     vars: {
