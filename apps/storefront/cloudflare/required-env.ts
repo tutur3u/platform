@@ -9,9 +9,13 @@ export const REQUIRED_ENV = ['INVENTORY_APP_URL'] as const;
 export function missingRequiredEnv(env: object): string[] {
   const values = env as Record<string, unknown>;
   if (values.TUTURUUU_REQUIRE_SECRETS !== '1') return [];
-  return REQUIRED_ENV.filter(
+  const missing: string[] = REQUIRED_ENV.filter(
     (name) => typeof values[name] !== 'string' || !values[name]
   );
+  // A production Worker must be a production build: refuse a bundle whose
+  // server code does not see NODE_ENV=production (inlined or runtime var).
+  if (serverNodeEnv() !== 'production') missing.push('NODE_ENV=production');
+  return missing;
 }
 
 export function misconfiguredResponse(missing: string[]): Response | null {
@@ -24,4 +28,12 @@ export function misconfiguredResponse(missing: string[]): Response | null {
     status: 503,
     headers: { 'Cache-Control': 'no-store' },
   });
+}
+
+function serverNodeEnv(): string | undefined {
+  try {
+    return process.env.NODE_ENV;
+  } catch {
+    return undefined;
+  }
 }
