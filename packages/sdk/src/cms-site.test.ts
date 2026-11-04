@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCmsSiteManifest, normalizeCmsSiteDelivery } from './cms-site';
+import { buildCmsSiteManifest, normalizeCmsSiteDelivery, readPublishedCmsPageVersion } from './cms-site';
 
 describe('CMS site v1 helpers', () => {
   it('builds the standard global CMS contract', () => {
@@ -139,5 +139,16 @@ describe('CMS site v1 helpers', () => {
     expect(result.collections.pages?.entries[0]?.assets[0]?.assetUrl).toBe(
       '/media/hero.jpg'
     );
+  });
+});
+
+
+describe('published layout delivery', () => {
+  it('reads only explicit published snapshots and preserves the schema version', () => {
+    const page = { id: 'version-one', blocks: { content: [] }, schema_version: 1 };
+    expect(readPublishedCmsPageVersion({ publishedPageVersion: page })).toEqual(page);
+    expect(readPublishedCmsPageVersion({ blocks: [] })).toBeNull();
+    expect(readPublishedCmsPageVersion({ publishedPageVersion: { ...page, schema_version: 0 } })).toBeNull();
+    expect(readPublishedCmsPageVersion({ publishedPageVersion: null })).toBeNull();
   });
 });
