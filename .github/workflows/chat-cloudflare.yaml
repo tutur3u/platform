@@ -32,6 +32,13 @@ jobs:
       - name: Build Start Worker
         working-directory: apps/chat
         run: bun run build:cloudflare
+      - name: Check bridge routes and native types
+        working-directory: apps/chat
+        run: |
+          bun run routes:check
+          bun run type-check:cloudflare
+      - name: Record emitted config receipt
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/chat "$CI_SOURCE_SHA" "$RUNNER_TEMP/chat-config-receipt.json"
       - name: Anonymous root and closed ingress smoke
         working-directory: apps/chat
         run: node --test cloudflare/anonymous.runtime.mjs
@@ -39,6 +46,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/cutover"
           tar -czf "$RUNNER_TEMP/cutover/chat-worker.tgz" -C apps/chat dist
+          cp "$RUNNER_TEMP/chat-config-receipt.json" "$RUNNER_TEMP/cutover/"
           echo "$CI_SOURCE_SHA" > "$RUNNER_TEMP/cutover/SOURCE_SHA"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
