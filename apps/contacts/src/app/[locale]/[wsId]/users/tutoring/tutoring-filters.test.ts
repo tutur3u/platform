@@ -4,6 +4,7 @@ import {
   addDaysToIsoDate,
   buildTutoringSessionQuery,
   buildTutoringStatQuery,
+  canExportTutoringFormat,
   countActiveTutoringFilters,
   DEFAULT_SESSION_FILTERS,
   endOfMonthIsoDate,
@@ -241,4 +242,46 @@ it('supports previous month and inclusive custom bounds', () => {
       toDate: '2026-10-31',
     })
   ).toEqual({ fromDate: '2026-10-01', toDate: '2026-10-31' });
+});
+
+describe('canExportTutoringFormat', () => {
+  const today = '2026-11-04';
+
+  it('exports the detailed sheet for every schedule range, open-ended ones included', () => {
+    for (const dateRange of ['upcoming', 'past', 'all'] as const) {
+      const query = buildTutoringSessionQuery(
+        { ...DEFAULT_SESSION_FILTERS, dateRange },
+        today
+      );
+      expect(canExportTutoringFormat(query, 'detailed')).toBe(true);
+    }
+    expect(canExportTutoringFormat({ fromDate: today }, 'detailed')).toBe(true);
+  });
+
+  it('keeps payroll to a closed range of at most 366 days', () => {
+    expect(
+      canExportTutoringFormat(
+        buildTutoringSessionQuery(DEFAULT_SESSION_FILTERS, today),
+        'payroll'
+      )
+    ).toBe(false);
+    expect(
+      canExportTutoringFormat(
+        { fromDate: '2026-11-01', toDate: '2026-11-30' },
+        'payroll'
+      )
+    ).toBe(true);
+    expect(
+      canExportTutoringFormat(
+        { fromDate: '2026-11-30', toDate: '2026-11-01' },
+        'payroll'
+      )
+    ).toBe(false);
+    expect(
+      canExportTutoringFormat(
+        { fromDate: '2025-01-01', toDate: '2026-11-30' },
+        'payroll'
+      )
+    ).toBe(false);
+  });
 });

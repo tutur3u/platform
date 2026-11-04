@@ -48,6 +48,7 @@ import {
   type TutoringExportFormat,
 } from './tutoring-export';
 import {
+  canExportTutoringFormat,
   isTutoringSessionFiltered,
   type TutoringSessionFilters,
 } from './tutoring-filters';
@@ -178,15 +179,7 @@ export function TutoringSessionsCard({
     useState<TutoringSessionRecord | null>(null);
   const [draftContent, setDraftContent] = useState('');
   const [isExporting, setIsExporting] = useState(false);
-  const canExport = Boolean(
-    exportQuery.fromDate &&
-      exportQuery.toDate &&
-      exportQuery.fromDate <= exportQuery.toDate &&
-      (Date.parse(exportQuery.toDate) - Date.parse(exportQuery.fromDate)) /
-        86_400_000 +
-        1 <=
-        366
-  );
+  const canExportPayroll = canExportTutoringFormat(exportQuery, 'payroll');
   const updateContent = useMutation({
     mutationFn: ({ id, content }: { id: string; content: string }) =>
       updateTutoringSession(wsId, id, { content }),
@@ -285,12 +278,7 @@ export function TutoringSessionsCard({
         <div className="flex items-center gap-2">
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
-              <Button
-                disabled={isExporting || !canExport}
-                title={!canExport ? t('payroll_invalid_range') : undefined}
-                size="sm"
-                variant="outline"
-              >
+              <Button disabled={isExporting} size="sm" variant="outline">
                 <Download className="h-4 w-4" />
                 {tCommon('common.export')}
               </Button>
@@ -298,14 +286,24 @@ export function TutoringSessionsCard({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>{t('export_scope')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {EXPORT_FORMATS.map((format) => (
-                <DropdownMenuItem
-                  key={format}
-                  onClick={() => void handleExport(format)}
-                >
-                  {t(`export_${format.replace('-', '_')}`)}
-                </DropdownMenuItem>
-              ))}
+              {EXPORT_FORMATS.map((format) => {
+                const blocked =
+                  format.startsWith('payroll') && !canExportPayroll;
+                return (
+                  <DropdownMenuItem
+                    disabled={blocked}
+                    key={format}
+                    onClick={() => void handleExport(format)}
+                  >
+                    {t(`export_${format.replace('-', '_')}`)}
+                  </DropdownMenuItem>
+                );
+              })}
+              {canExportPayroll ? null : (
+                <p className="max-w-64 px-2 py-1.5 text-muted-foreground text-xs">
+                  {t('payroll_invalid_range')}
+                </p>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
