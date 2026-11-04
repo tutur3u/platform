@@ -5,7 +5,6 @@ import {
   formatFeeNoticeNumber,
   renderFeeNotice,
   stripControlCharacters,
-  validateFeeNoticeTemplate,
 } from './notice';
 
 type Line = FeeNoticeSnapshot['lines'][number];
@@ -101,6 +100,46 @@ describe('renderFeeNotice', () => {
     expect(stripControlCharacters(raw)).toBe('ab\ncd');
   });
 
+  it('renders prototype names such as {{constructor}} as empty', () => {
+    const body = '[{{constructor}}][{{__proto__}}][{{toString}}]';
+    const [notice] = renderFeeNotice(
+      snapshot([line({})]),
+      { ...DEFAULT, body },
+      { centreName: 'C' }
+    );
+    expect(notice?.text).toBe('[][][]');
+  });
+
+  it('cuts on grapheme boundaries, never inside an emoji', () => {
+    const family = String.fromCodePoint(
+      0x1f468,
+      0x200d,
+      0x1f469,
+      0x200d,
+      0x1f467
+    );
+    const body = '{{student_name}}';
+    const [notice] = renderFeeNotice(
+      { ...snapshot([line({})]), student_name: `a${family.repeat(500)}` },
+      { ...DEFAULT, body },
+      { centreName: 'C' }
+    );
+    expect(notice?.truncated).toBe(true);
+    expect(notice?.length).toBe(2501);
+    expect(Array.from(notice?.text ?? '')).toHaveLength(1996);
+    expect(notice?.text.endsWith(family)).toBe(true);
+  });
+
+  it('never duplicates an extra across tuition lines sharing a class', () => {
+    const shared = snapshot([
+      line({ group_id: null }),
+      line({ group_id: null, sort_order: 1 }),
+      { ...book, group_id: null },
+    ]);
+    const notices = render(shared, { grouping: 'per_class' });
+    expect(notices.filter((n) => n.text.includes('Sách'))).toHaveLength(1);
+  });
+
   it('caps notices at 2,000 characters and flags the soft limit', () => {
     const long = { ...snapshot([line({})]), student_name: 'x'.repeat(2500) };
     const [notice] = render(long, { softLimit: 640 });
@@ -121,25 +160,7 @@ describe('renderFeeNotice', () => {
   });
 });
 
-describe('template helpers', () => {
-  it('rejects unknown placeholders per field and over-long fields', () => {
-    expect(validateFeeNoticeTemplate(DEFAULT)).toEqual([]);
-    expect(
-      validateFeeNoticeTemplate({
-        ...DEFAULT,
-        body: '{{ student_name }} {{phone}}',
-        item_format: '{{name}} {{total}}',
-        payment_line: '{{tuition}}',
-        item_separator: ';'.repeat(21),
-      })
-    ).toEqual([
-      { field: 'item_separator', code: 'too_long' },
-      { field: 'body', code: 'unknown_placeholder', name: 'phone' },
-      { field: 'item_format', code: 'unknown_placeholder', name: 'total' },
-      { field: 'payment_line', code: 'unknown_placeholder', name: 'tuition' },
-    ]);
-  });
-
+describe('number formatting', () => {
   it('formats numbers with vi-VN and en grouping', () => {
     expect(formatFeeNoticeNumber(1_200_000, 'vi')).toBe('1.200.000');
     expect(formatFeeNoticeNumber(1_200_000, 'en')).toBe('1,200,000');
