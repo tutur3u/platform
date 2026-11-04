@@ -9,6 +9,7 @@ import {
 } from '@/lib/external-projects/access';
 import {
   EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL,
+  EXTERNAL_PROJECT_PUBLIC_CACHE_CONTROL,
   externalProjectAssetCacheTag,
   workspaceExternalProjectCacheTag,
 } from '@/lib/external-projects/cache';
@@ -95,10 +96,9 @@ export async function GET(
       ...[...new Set(assetCacheTags)].slice(0, MAX_VERCEL_CACHE_TAGS - 1),
     ];
     const publicHeaders = {
-      'Cache-Control': 'no-store',
+      'Cache-Control': EXTERNAL_PROJECT_PUBLIC_CACHE_CONTROL,
       ETag: etag,
-      'CDN-Cache-Control': 'no-store',
-      'Vercel-CDN-Cache-Control': 'no-store',
+      'Vercel-CDN-Cache-Control': 'max-age=86400, stale-while-revalidate=43200',
       'Vercel-Cache-Tag': cacheTags.join(','),
     };
 
