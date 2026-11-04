@@ -5,6 +5,7 @@ import {
   type FeeLockLineInput,
   feeLockBatchLockRequestSchema,
   feeLockSaveDraftRequestSchema,
+  isFeeLockMoneyInRange,
   toFeeLockIlikePattern,
 } from './finance-fee-lock-contracts';
 
@@ -85,18 +86,16 @@ describe('fee-lock contracts', () => {
 });
 
 describe('fee-lock money bound', () => {
+  const book = (unit_price: number, quantity = 1) => ({
+    kind: 'extra' as const,
+    source: 'free_text' as const,
+    label: 'Sách',
+    unit_label: 'bộ',
+    unit_price,
+    quantity,
+  });
   const freeText = (unit_price: number) =>
-    draft([
-      tuition(id(2)),
-      {
-        kind: 'extra',
-        source: 'free_text',
-        label: 'Sách',
-        unit_label: 'bộ',
-        unit_price,
-        quantity: 1,
-      },
-    ]);
+    draft([tuition(id(2)), book(unit_price)]);
   const adjusted = (adjustment_amount: number) =>
     draft([tuition(id(2), { adjustment_amount, reason: 'Điều chỉnh' })]);
 
@@ -109,6 +108,17 @@ describe('fee-lock money bound', () => {
     expect(ok(freeText(1e14))).toBe(false);
     expect(ok(adjusted(-FEE_LOCK_MAX_MONEY))).toBe(true);
     expect(ok(adjusted(-FEE_LOCK_MAX_MONEY - 1))).toBe(false);
+  });
+
+  it('rejects a client-priced line that would overflow (400, not 500)', () => {
+    const parse = (lines: FeeLockLineInput[]) =>
+      feeLockSaveDraftRequestSchema.safeParse(draft(lines));
+    expect(parse([book(FEE_LOCK_MAX_MONEY, 2)]).error?.issues[0]?.message).toBe(
+      'line_amount_overflow'
+    );
+    expect(isFeeLockMoneyInRange(FEE_LOCK_MAX_MONEY)).toBe(true);
+    expect(isFeeLockMoneyInRange(-FEE_LOCK_MAX_MONEY - 1)).toBe(false);
+    expect(isFeeLockMoneyInRange(Number.NaN)).toBe(false);
   });
 });
 
