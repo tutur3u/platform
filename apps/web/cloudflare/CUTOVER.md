@@ -128,7 +128,8 @@ request, its binding assertion requires `CF_ACCESS_TEAM_DOMAIN` and
 fallback. Binding assertion failures return 503 without cookies. This wiring
 PR explicitly inlines `process.env.NODE_ENV` to `production` in Vite. The built
 server bundle has not been inspected locally; the startup refusal is rule 14's
-fallback. Keep both exact heads in the handoff; neither contains the other PR.
+fallback. Auth PR #7602 is stacked above wiring PR #7646. Use the exact top
+auth head for Rex: it includes both layers while their review diffs stay separate.
 
 Web's production `/` is a public marketing landing page. For an auth-gated app
 mount, smoke must expect anonymous `/` to redirect to `/login`, never accept
