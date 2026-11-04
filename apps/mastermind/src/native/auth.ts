@@ -11,6 +11,19 @@ export interface MastermindEnvironment {
   TUTURUUU_APP_COORDINATION_SECRET?: string;
   OPS_HUB?: { fetch(request: Request): Promise<Response> };
 }
+export function assertMastermindEnvironment(env: MastermindEnvironment): void {
+  const required = [
+    env.CF_ACCESS_TEAM_DOMAIN,
+    env.CF_ACCESS_AUD,
+    env.MASTERMIND_OWNER_EMAIL,
+    env.OWNER_IDS,
+    env.TUTURUUU_APP_COORDINATION_SECRET,
+  ];
+  if (required.some((value) => !value?.trim())) {
+    throw new Error('Required Mastermind environment is missing');
+  }
+}
+
 // Keep jose's cache and cooldown alive across requests within this isolate.
 const accessKeySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 function accessKeys(issuer: URL) {
