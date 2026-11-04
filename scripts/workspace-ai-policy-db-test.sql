@@ -10,7 +10,7 @@ BEGIN INSERT INTO audit.policy_test_events VALUES (coalesce(NEW.name,OLD.name));
 GRANT ALL ON public.workspace_secrets TO anon,authenticated,service_role;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon,authenticated,service_role;
 \i apps/database/supabase/migrations/20261029005000_guard_managed_cron_enabled_secret.sql
-\i apps/database/supabase/migrations/20261103135400_workspace_ai_policy.sql
+\i apps/database/supabase/migrations/20261104121600_workspace_ai_policy.sql
 DO $$
 DECLARE policy_name text; denied boolean;
 BEGIN

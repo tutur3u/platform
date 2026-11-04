@@ -20,7 +20,7 @@ CREATE TABLE public.workspace_members (ws_id uuid, user_id uuid);
 CREATE TABLE public.workspace_role_permissions (ws_id uuid, role_id uuid, permission text, enabled boolean, PRIMARY KEY(ws_id, role_id, permission));
 CREATE TABLE public.workspace_role_members (role_id uuid, user_id uuid, PRIMARY KEY(role_id, user_id));
 \if :apply_audit
-\i apps/database/supabase/migrations/20261103160000_workspace_ai_role_audit.sql
+\i apps/database/supabase/migrations/20261104121700_workspace_ai_role_audit.sql
 \endif
 INSERT INTO public.workspace_role_permissions VALUES ('22222222-2222-4222-8222-222222222222','33333333-3333-4333-8333-333333333333','update_user_groups',true);
 UPDATE public.workspace_role_permissions SET enabled=false;
