@@ -26,7 +26,12 @@ import { effectiveWorkerConfig } from '../../../scripts/start-bridge-codemod/wor
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
-const WORKER = 'tuturuuu-ai-vite-staging';
+const { AI_NATIVE_PROFILE_ENV, resolveAiNativeProfile } = await import(
+  new URL('../native-profile.ts', import.meta.url).href
+);
+const WORKER = resolveAiNativeProfile(
+  process.env[AI_NATIVE_PROFILE_ENV]
+).workerName;
 const PUBLIC_FILES = ['robots.txt'];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
 const EXPECTED = { '/': { redirect: '/login' }, '/v1/models': 401 };

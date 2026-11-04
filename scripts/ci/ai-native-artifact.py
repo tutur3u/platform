@@ -8,7 +8,10 @@ import importlib.util
 import os
 from pathlib import Path
 
-WORKER = "tuturuuu-ai-vite-staging"
+PROFILE = os.environ.get("VITE_AI_NATIVE_PROFILE") or "staging"
+if PROFILE not in ("staging", "production"):
+    raise ValueError("unknown VITE_AI_NATIVE_PROFILE: " + PROFILE)
+WORKER = "tuturuuu-ai" if PROFILE == "production" else "tuturuuu-ai-vite-staging"
 PUBLIC_FILES = (
     "robots.txt",
 )
