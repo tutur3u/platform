@@ -31,12 +31,14 @@ const render = (month?: string) =>
     params: Promise.resolve({ wsId: 'alias' }),
     searchParams: Promise.resolve({ month }),
   });
-const setup = (enabled: boolean, canView = true) => {
+const setup = (enabled: boolean, canView = true, canExport = true) => {
   mocks.enabled.mockResolvedValue(enabled);
   mocks.context.mockResolvedValue({
     currency: 'VND',
     permissions: {
-      withoutPermission: (p: string) => p === 'view_invoices' && !canView,
+      withoutPermission: (p: string) =>
+        (p === 'view_invoices' && !canView) ||
+        (p === 'export_finance_data' && !canExport),
     },
     user: { id: 'user-1' },
     wsId: WS_ID,
@@ -64,5 +66,19 @@ describe('fee-lock page gating', () => {
     expect((await render('2026-13')).props.initialMonth).toMatch(
       /^\d{4}-(0[1-9]|1[0-2])$/
     );
+  });
+
+  it('offers the export only with export_finance_data AND view_invoices', async () => {
+    setup(true);
+    expect((await render()).props.canExport).toBe(true);
+    setup(true, true, false);
+    const page = await render();
+    expect(page.type).toBe(mocks.feeLockPage);
+    expect(page.props.canExport).toBe(false);
+    // Without view_invoices there is no page at all, so no export either.
+    setup(true, false, true);
+    expect((await render()).type).toBe(mocks.accessDenied);
+    setup(true, false, false);
+    expect((await render()).type).toBe(mocks.accessDenied);
   });
 });
