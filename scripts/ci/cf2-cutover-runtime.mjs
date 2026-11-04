@@ -4,12 +4,16 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-const app = process.argv[2];
+const [app, sha] = process.argv.slice(2);
 assert.ok(['mail', 'apps'].includes(app));
 assert.equal(process.env.CI, 'true', 'Emitted Worker smoke runs in CI only');
 const root = resolve('apps', app);
+assert.match(sha ?? '', /^[a-f0-9]{40}$/u);
 const receipt = JSON.parse(
-  await readFile(join(root, 'cutover-receipt.json'), 'utf8')
+  await readFile(
+    join(root, `cutover-receipt-${sha}.json`),
+    'utf8'
+  )
 );
 const configPath = resolve(root, receipt.config);
 const config = JSON.parse(await readFile(configPath, 'utf8'));
