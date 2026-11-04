@@ -16,6 +16,7 @@
 --
 -- SECURITY INVOKER on purpose: current_user must be the calling role. Trigger
 -- firing does not check EXECUTE, so the function grants nothing to anyone.
+-- tuturuuu: no-grant (trigger)
 create function private.keep_auth_synced_private_details_email()
 returns trigger
 language plpgsql
