@@ -66,7 +66,7 @@ describe('tenant published renderer', () => {
     const h = harness(); await h.run('/');
     const body = JSON.stringify({ scope: 'workspace' });
     expect((await h.run('/__cms/purge', { method: 'POST', body })).status).toBe(401);
-    expect((await h.run('/__cms/purge', { method: 'POST', body, headers: { authorization: `Bearer ${'a'.repeat(64)}` } })).status).toBe(204);
+    expect((await h.run('/__cms/purge', { method: 'POST', body, headers: { authorization: `Bearer ${'a'.repeat(64)}`, 'content-type': 'application/json' } })).status).toBe(204);
     await h.run('/'); expect(h.renders()).toBe(2);
   });
   it('binds purge authorization and workspace to the request host', async () => {
@@ -76,7 +76,7 @@ describe('tenant published renderer', () => {
     const tokenA = `Bearer ${'a'.repeat(64)}`;
     const tokenB = `Bearer ${'b'.repeat(64)}`;
     expect((await h.run('/__cms/purge', { method: 'POST', body, headers: { authorization: tokenA, 'x-site-id': 'site-one', 'x-workspace-id': '00000000-0000-4000-8000-000000000001' } }, env)).status).toBe(401);
-    expect((await h.run('/__cms/purge', { method: 'POST', body, headers: { authorization: tokenB } }, env)).status).toBe(204);
+    expect((await h.run('/__cms/purge', { method: 'POST', body, headers: { authorization: tokenB, 'content-type': 'application/json' } }, env)).status).toBe(204);
     const epochKey = h.cacheKeys().find((key) => new URL(key).pathname === '/__cms/cache-epoch');
     expect(epochKey && new URL(epochKey).searchParams.get('site')).toBe('site-two');
     expect(epochKey && new URL(epochKey).searchParams.get('workspaceId')).toBe('00000000-0000-4000-8000-000000000002');
