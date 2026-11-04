@@ -139,3 +139,55 @@ test('startup transform matches a checkout path containing spaces and percent-en
     undefined
   );
 });
+
+test('provider startup log contains only the provider name and no secret values', () => {
+  const config = readFileSync('apps/ai/vite.config.mts', 'utf8');
+  const guard = config
+    .match(/code: `([\s\S]*?)\$\{code\}`/)[1]
+    .replace(
+      /import \{ env as nativeStartupEnv \} from 'cloudflare:workers';/,
+      ''
+    );
+  const required = {
+    TUTURUUU_APP_COORDINATION_SECRET: 'fixture-signing-secret-do-not-log',
+    SUPABASE_SECRET_KEY: 'fixture-service-secret-do-not-log',
+  };
+  const cases = [
+    [
+      { GOOGLE_GENERATIVE_AI_API_KEY: 'fixture-google-primary-secret' },
+      'google',
+    ],
+    [
+      { GOOGLE_API_KEY: 'fixture-google-alias-secret\nprivate-value' },
+      'google',
+    ],
+    [{ AI_GATEWAY_API_KEY: 'fixture-gateway-secret' }, 'gateway'],
+    [{ VERCEL_OIDC_TOKEN: 'fixture-oidc-secret' }, 'gateway'],
+    [
+      {
+        GOOGLE_GENERATIVE_AI_API_KEY: 'fixture-google-first-secret',
+        AI_GATEWAY_API_KEY: 'fixture-gateway-second-secret',
+      },
+      'google',
+    ],
+    [{}, 'unconfigured'],
+  ];
+  for (const [provider, expected] of cases) {
+    const env = { ...required, ...provider };
+    const lines = [];
+    runInNewContext(guard, {
+      nativeStartupEnv: env,
+      process: { env: { NODE_ENV: 'production' } },
+      console: { info: (...args) => lines.push(args) },
+    });
+    assert.deepEqual(lines, [[`ai provider: ${expected}`]]);
+    const output = lines.flat().join('\n');
+    for (const [name, value] of Object.entries(env)) {
+      assert.equal(
+        output.includes(value),
+        false,
+        `Secret value leaked for ${name}`
+      );
+    }
+  }
+});
