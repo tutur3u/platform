@@ -1,3 +1,7 @@
+import {
+  FEE_LOCK_EMPTY_CODE,
+  feeLockBatchItemResultSchema,
+} from '@tuturuuu/internal-api/finance-fee-lock-contracts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeSupabase } from '../fake-supabase.test-utils';
 
@@ -48,12 +52,13 @@ describe('POST /finance/fee-locks/lock-batch', () => {
     expect(db.client.from).not.toHaveBeenCalled();
   });
 
-  it('locks owned drafts, reports conflicts and never touches ids outside the workspace and month', async () => {
+  it('locks owned drafts, reports conflicts and invalid drafts, and never touches ids outside the workspace and month', async () => {
     const db = fakeSupabase({
       fee_locks: {
         data: [
           { id: id(1), version: 2 },
           { id: id(2), version: 5 },
+          { id: id(3), version: 1 },
         ],
       },
     });
@@ -62,6 +67,10 @@ describe('POST /finance/fee-locks/lock-batch', () => {
       .mockResolvedValueOnce({
         data: null,
         error: { code: 'PT409', details: '6' },
+      })
+      .mockResolvedValueOnce({
+        data: null,
+        error: { code: '22023', message: 'FEE_LOCK_EMPTY' },
       });
     mocks.gate.mockResolvedValue({
       context: {
@@ -75,19 +84,25 @@ describe('POST /finance/fee-locks/lock-batch', () => {
       items: [
         { id: id(1), expected_version: 2 },
         { id: id(2), expected_version: 4 },
+        { id: id(3), expected_version: 1 },
         { id: id(9), expected_version: 1 },
       ],
     });
-    expect((await response.json()).results).toEqual([
+    const { results } = await response.json();
+    expect(results).toEqual([
       { id: id(1), result: 'ok', version: 3, revision: 1 },
       { id: id(2), result: 'conflict', current_version: 6 },
+      { id: id(3), result: 'invalid', code: FEE_LOCK_EMPTY_CODE },
       { id: id(9), result: 'not_found' },
     ]);
+    for (const result of results) {
+      expect(feeLockBatchItemResultSchema.safeParse(result).success).toBe(true);
+    }
     expect(
       db.filtered('fee_locks', 'ws_id', WS) &&
         db.filtered('fee_locks', 'period_month', '2026-12-01')
     ).toBe(true);
-    expect(db.client.rpc).toHaveBeenCalledTimes(2);
+    expect(db.client.rpc).toHaveBeenCalledTimes(3);
     expect(db.client.rpc).toHaveBeenCalledWith('fee_lock_lock', {
       p_ws_id: WS,
       p_actor_id: 'actor-1',
