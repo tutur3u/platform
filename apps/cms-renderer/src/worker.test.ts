@@ -40,6 +40,7 @@ function harness() {
     renders: () => renders,
     cacheKeys: () => [...items.keys()],
     purgeKeys: () => purgeKeys,
+    environment: testEnvironment,
   };
 }
 describe('tenant published renderer', () => {
@@ -71,7 +72,7 @@ describe('tenant published renderer', () => {
   });
   it('binds purge authorization and workspace to the request host', async () => {
     const h = harness();
-    const env = { ...environment, CMS_SITES: JSON.stringify({ 'first.invalid': { id: 'site-two', workspaceId: '00000000-0000-4000-8000-000000000002', defaultLocale: 'vi' } }) };
+    const env = { ...h.environment, CMS_SITES: JSON.stringify({ 'first.invalid': { id: 'site-two', workspaceId: '00000000-0000-4000-8000-000000000002', defaultLocale: 'vi' } }) };
     const body = JSON.stringify({ scope: 'workspace' });
     const tokenA = `Bearer ${'a'.repeat(64)}`;
     const tokenB = `Bearer ${'b'.repeat(64)}`;
