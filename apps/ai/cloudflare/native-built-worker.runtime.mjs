@@ -115,6 +115,7 @@ test('emitted ai Worker serves its root, mount and unknown paths', {
     WORKER_CONFIG.compatibilityFlags
   );
   assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
+  assert.equal(config.preview_urls, false);
   assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
   for (const name of PUBLIC_FILES)
     assert.equal(
@@ -131,6 +132,14 @@ test('emitted ai Worker serves its root, mount and unknown paths', {
     envFiles: [staged.envFile],
     sendMetrics: false,
     bindings: {
+      TUTURUUU_APP_COORDINATION_SECRET: {
+        type: 'secret_text',
+        value: 'ai-runtime-fixture-signing-key',
+      },
+      SUPABASE_SECRET_KEY: {
+        type: 'secret_text',
+        value: 'ai-runtime-fixture-service-key',
+      },
       INTERNAL_WEB_API_ORIGIN: {
         type: 'plain_text',
         value: 'https://central.invalid',

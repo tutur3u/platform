@@ -19,6 +19,7 @@ export default defineConfig({
       'enable_request_signal',
     ],
     workers_dev: false,
+    preview_urls: false,
     vars: { TUTURUUU_NOINDEX: '1' },
     assets: {
       binding: 'ASSETS',

@@ -32,6 +32,8 @@ export async function startFixtureWorker(
     bindings: Object.fromEntries(
       Object.entries({
         INTERNAL_WEB_API_ORIGIN: 'https://central.invalid',
+        TUTURUUU_APP_COORDINATION_SECRET: 'ai-runtime-fixture-signing-key',
+        SUPABASE_SECRET_KEY: 'ai-runtime-fixture-service-key',
         ...bindings,
       }).map(([key, value]) => [key, { type: 'plain_text', value }])
     ),
