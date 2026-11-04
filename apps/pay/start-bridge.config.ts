@@ -5,10 +5,12 @@ import type { PayEnvironment } from './cloudflare/worker';
 
 const framablePaths = framablePathRegexes();
 
+const production = process.env.VITE_PAY_NATIVE_PROFILE === 'production';
+
 export default defineBridgeAppConfig<PayEnvironment>({
   csp: defaultContentSecurityPolicy,
   mounts: {
-    rootHosts: ['pay.tutur3u.com', 'pay.tuturuuu.com'],
+    rootHosts: [production ? 'pay.tuturuuu.com' : 'pay.tutur3u.com'],
     mountHosts: [],
     unknownHost: 'reject',
   },

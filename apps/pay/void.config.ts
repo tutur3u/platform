@@ -16,6 +16,7 @@ export default defineConfig({
     compatibility_date: '2026-10-12',
     compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
     workers_dev: false,
+    preview_urls: false,
     vars: production ? productionProfile : stagingProfile,
     assets: {
       binding: 'ASSETS',
