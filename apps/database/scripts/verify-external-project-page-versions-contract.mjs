@@ -6,6 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { verifyPagePublishConcurrency } from './external-project-page-versions-concurrency.mjs';
 import { assertStrictTap } from './programming-database-tap.mjs';
 import { ensureSupabaseBinary, runCommand } from './run-supabase.js';
 import {
@@ -153,6 +154,13 @@ export async function verifyPageVersionsDatabaseContract() {
         console.log(`SQL fixture: ${fixture}\n${tap}`);
         assertPageVersionsTap(tap);
       }
+      await verifyPagePublishConcurrency(
+        container,
+        readFileSync(
+          path.resolve(metadata.disposableRoot, 'supabase/tests', fixtures[0]),
+          'utf8'
+        )
+      );
       return { code: 0 };
     }
     return runCommand(

@@ -15,7 +15,7 @@ const tap = (n) =>
     ...Array.from({ length: n }, (_, i) => `ok ${i + 1} - assertion ${i + 1}`),
   ].join('\n');
 
-test('all forty assertions must pass with no missing, extra, failed or skipped outcome', () => {
+test('all forty-three assertions must pass with no missing, extra, failed or skipped outcome', () => {
   assert.equal(pageVersionsAssertionCount, 43);
   assert.doesNotThrow(() => assertPageVersionsTap(tap(43)));
   for (const invalid of [
