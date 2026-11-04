@@ -2,11 +2,9 @@ BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '60s';
 
--- Fee notice templates: one active, versioned plain-text template per
--- workspace for the fee-lock notice. Each save inserts a new version and
--- flips the active flag; the last 20 versions are kept. Served only by finance
--- routes with the admin client after the ENABLE_FEE_LOCK and permission
--- checks; writes go through private.fee_notice_template_save.
+-- One active, versioned plain-text fee notice template per workspace; each save
+-- adds a version (last 20 kept) via private.fee_notice_template_save, called
+-- only by finance routes after the ENABLE_FEE_LOCK and permission checks.
 
 CREATE TABLE public.fee_notice_templates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -44,9 +42,7 @@ CREATE POLICY account_required_mfa ON public.fee_notice_templates AS RESTRICTIVE
 REVOKE ALL ON public.fee_notice_templates FROM PUBLIC, anon, authenticated;
 GRANT ALL ON public.fee_notice_templates TO service_role;
 
--- Saves a new active version. p_expected_version (the active version the
--- editor loaded, or null to skip) guards against lost updates: a mismatch
--- raises 40001. p_restored_from is recorded when restoring an old version.
+-- Saves a new active version; a stale p_expected_version raises 40001.
 CREATE FUNCTION private.fee_notice_template_save(
   p_ws_id UUID,
   p_actor_id UUID,
@@ -61,7 +57,8 @@ CREATE FUNCTION private.fee_notice_template_save(
 )
 RETURNS public.fee_notice_templates
 LANGUAGE plpgsql
-SECURITY DEFINER
+-- Invoker rights: only service_role may call it, and it already owns the writes.
+SECURITY INVOKER
 SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE

@@ -1,11 +1,9 @@
--- Fee notice templates (20261104060400) and fee lock invoice links
--- (20261104060500): service-role-only access, versioned saves with one active
--- template, the placeholder allowlist, retention, and workspace-consistent
--- links. Synthetic fixtures only.
+-- M3 20261104130200 (templates) and M4 20261104130300 (invoice links): access,
+-- versioned saves, allowlist, retention, workspace guards. Synthetic fixtures only.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(30);
+select plan(32);
 
 create function pg_temp.fid(n int) returns uuid language sql immutable as
   $$ select ('00000000-0000-4000-8000-0000000fe' || lpad(n::text, 3, '0'))::uuid $$;
@@ -24,6 +22,11 @@ insert into public.workspace_users(id, ws_id, full_name) values
 insert into public.fee_locks(id, ws_id, student_id, period_month, status, revision, locked_at) values
   (pg_temp.fid(931), pg_temp.fid(910), pg_temp.fid(921), '2026-12-01', 'locked', 1, now()),
   (pg_temp.fid(932), pg_temp.fid(911), pg_temp.fid(922), '2026-12-01', 'locked', 1, now());
+-- 933 is a never-locked draft (deletable under M1) that still has a revision row.
+insert into public.fee_locks(id, ws_id, student_id, period_month) values
+  (pg_temp.fid(933), pg_temp.fid(910), pg_temp.fid(921), '2027-01-01');
+insert into public.fee_lock_revisions(fee_lock_id, ws_id, revision, total_amount, snapshot) values
+  (pg_temp.fid(931), pg_temp.fid(910), 1, 1200000, '{}'), (pg_temp.fid(933), pg_temp.fid(910), 1, 0, '{}');
 insert into private.workspace_wallets(id, ws_id, name) values
   (pg_temp.fid(941), pg_temp.fid(910), 'Synthetic wallet'),
   (pg_temp.fid(942), pg_temp.fid(911), 'Synthetic other wallet');
@@ -32,7 +35,8 @@ insert into public.transaction_categories(id, ws_id, name, is_expense) values
   (pg_temp.fid(944), pg_temp.fid(911), 'Synthetic other income', false);
 insert into public.finance_invoices(id, ws_id, wallet_id, category_id, customer_id, price, notice) values
   (pg_temp.fid(951), pg_temp.fid(910), pg_temp.fid(941), pg_temp.fid(943), pg_temp.fid(921), 1200000, 'Synthetic tuition'),
-  (pg_temp.fid(952), pg_temp.fid(911), pg_temp.fid(942), pg_temp.fid(944), pg_temp.fid(922), 1200000, 'Synthetic other tuition');
+  (pg_temp.fid(952), pg_temp.fid(911), pg_temp.fid(942), pg_temp.fid(944), pg_temp.fid(922), 1200000, 'Synthetic other tuition'),
+  (pg_temp.fid(953), pg_temp.fid(910), pg_temp.fid(941), pg_temp.fid(943), pg_temp.fid(921), 1200000, 'Synthetic second tuition');
 
 -- Save shorthand: workspace, body, expected version.
 create function pg_temp.save(p_ws uuid, p_body text, p_expected int default null)
@@ -68,7 +72,7 @@ select ok(not has_function_privilege('authenticated', 'private.fee_lock_invoice_
   'clients cannot call the link workspace trigger function');
 select is((select prosecdef::text || ':' || array_to_string(proconfig, ',') from pg_proc
   where oid = 'private.fee_notice_template_save(uuid,uuid,text,text,text,text,text,text,integer,integer)'::regprocedure),
-  'true:search_path=pg_catalog, pg_temp', 'the save function is SECURITY DEFINER with a pinned search_path');
+  'false:search_path=pg_catalog, pg_temp', 'the save function is SECURITY INVOKER with a pinned search_path');
 
 -- Templates.
 set local role service_role;
@@ -108,6 +112,15 @@ select lives_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, f
 select throws_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, fee_lock_id, fee_lock_revision,
   suggested_total, charged_total) values (pg_temp.fid(910), pg_temp.fid(951), pg_temp.fid(931), 1, 0, 0)$$,
   '23505', null, 'an invoice links to a fee lock once');
+select throws_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, fee_lock_id, fee_lock_revision,
+  suggested_total, charged_total) values (pg_temp.fid(910), pg_temp.fid(953), pg_temp.fid(931), 1, 0, 0)$$,
+  '23505', null, 'one locked revision pre-fills at most one invoice');
+select throws_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, fee_lock_id, fee_lock_revision,
+  suggested_total, charged_total) values (pg_temp.fid(910), pg_temp.fid(953), pg_temp.fid(931), 2, 0, 0)$$,
+  '23503', null, 'the linked revision must exist for that fee lock');
+insert into public.fee_lock_invoice_links(ws_id, invoice_id, fee_lock_id, fee_lock_revision, suggested_total, charged_total)
+  values (pg_temp.fid(910), pg_temp.fid(953), pg_temp.fid(933), 1, 0, 0);
+
 -- Same-workspace guards, one per reference.
 select throws_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, fee_lock_id, fee_lock_revision,
   suggested_total, charged_total) values (pg_temp.fid(910), pg_temp.fid(952), pg_temp.fid(931), 1, 0, 0)$$,
@@ -126,10 +139,10 @@ select throws_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, 
 reset role;
 select throws_ok($$delete from public.finance_invoices where id = pg_temp.fid(951)$$,
   '23503', null, 'a linked invoice cannot be deleted');
-select throws_ok($$delete from public.fee_locks where id = pg_temp.fid(931)$$,
-  '23503', null, 'a linked fee lock cannot be deleted');
+select throws_ok($$delete from public.fee_locks where id = pg_temp.fid(933)$$,
+  '23503', null, 'a linked fee lock cannot be deleted, even a deletable draft');
 
--- Rollback guards (copied from apps/database/rollbacks/2026110406040[05]_*; keep in sync).
+-- Rollback guards (copied from apps/database/rollbacks/202611041302/1303_*; keep in sync).
 select throws_ok($q$do $g$ begin
   if exists (select 1 from public.fee_lock_invoice_links) then
     raise exception 'fee lock invoice links exist; export and delete them first';

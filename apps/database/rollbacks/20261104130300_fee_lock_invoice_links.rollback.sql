@@ -1,7 +1,5 @@
--- Manual rollback only: removes fee_lock_invoice_links and its workspace
--- guard. Invoices are untouched. Deploy app code with ENABLE_FEE_LOCK off (or
--- without the prefill link insert) first. Refuses while links exist, because
--- they are the only record of which invoice came from which locked fee.
+-- Manual rollback only (app first: no prefill link insert). Invoices are
+-- untouched. Refuses while links exist: they are the only invoice-to-lock record.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '30s';
