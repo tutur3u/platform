@@ -49,7 +49,8 @@
     "./start/app-config": "./src/start/app-config.ts",
     "./proxy-matcher": "./src/next/proxy-matcher.ts",
     "./start/metadata": "./src/start/metadata.ts",
-    "./start/server-actions": "./src/start/server-actions.ts"
+    "./start/server-actions": "./src/start/server-actions.ts",
+    "./startup": "./src/server/startup.ts"
   },
   "bin": {
     "start-bridge-routes": "./src/codegen/cli.ts"
