@@ -868,10 +868,10 @@
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7530",
+        "reason": "Pin the live Meet AI containment vars (MEET_AI_DISABLED, MEET_AI_ENABLED_WORKSPACE_IDS) so a deploy cannot re-enable Meet AI; Wrangler line and use counts unchanged."
       },
-      "digest": "88750e50ee5662410bba8b7ffcf204da235dbeb7b1c8568539bd4b2d4b93d33d"
+      "digest": "24b73c6a77214480f9b159ac49ed398e5b92de1c45b56e44a32c054efcff23da"
     },
     "apps/meet-realtime/wrangler.staging.jsonc": {
       "lines": 2,
