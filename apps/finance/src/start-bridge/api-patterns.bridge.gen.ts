@@ -13,6 +13,7 @@ export const appApiPatterns = [
   "/api/v1/workspaces/[wsId]/finance/debts",
   "/api/v1/workspaces/[wsId]/finance/debts/[debtId]",
   "/api/v1/workspaces/[wsId]/finance/debts/summary",
+  "/api/v1/workspaces/[wsId]/finance/fee-locks/[lockId]",
   "/api/v1/workspaces/[wsId]/finance/filter-users",
   "/api/v1/workspaces/[wsId]/finance/invoices",
   "/api/v1/workspaces/[wsId]/finance/invoices/[invoiceId]",
