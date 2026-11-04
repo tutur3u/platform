@@ -316,6 +316,9 @@ export async function PUT(request: Request, { params }: Params) {
     const frozen = parsed.data.content?.trim()
       ? 'skipped'
       : await freezeLinkedLessonContent({
+          includePosts: !permissions.withoutPermission(
+            'view_user_groups_posts'
+          ),
           sbAdmin,
           sessionId: id,
           wsId: normalizedWsId,

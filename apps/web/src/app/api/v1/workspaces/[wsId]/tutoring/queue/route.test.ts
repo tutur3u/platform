@@ -530,7 +530,8 @@ describe('tutoring support queue', () => {
           group_id: 'group',
           title: 'Other day',
           content: 'Not the missed date',
-          created_at: '2026-09-22T03:00:00Z',
+          // Three days on: past the window a late report may join 20/09 in.
+          created_at: '2026-09-23T03:00:00Z',
         },
       ];
       const body = await (await listQueue()).json();

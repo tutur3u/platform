@@ -4,9 +4,12 @@ import {
 } from '@tuturuuu/internal-api/tutoring-policy';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
-  getMissedLessonContent,
+  composeMissedClassText,
+  getMissedClassNotes,
+  MISSED_CLASS_LABELS_VI,
   type TutoringLessonNoteSession,
 } from '@tuturuuu/utils/tutoring-lesson-content';
+import { loadLinkedClassPosts } from './linked-posts';
 
 /** The tutoring-session fields that decide whether content is still linked. */
 export interface LinkableTutoringSession {
@@ -71,15 +74,19 @@ function shiftIsoDate(date: string, days: number) {
 }
 
 /**
- * Reads the current lesson notes for each linked session's missed class.
- * Sessions that are not linked are skipped; a linked session without recorded
- * notes resolves to an empty string.
+ * Reads the current lesson notes for each linked session's missed class, and
+ * its class posts when `includePosts` (the viewer holds
+ * `view_user_groups_posts`), composed like the queue draft. Sessions that are
+ * not linked are skipped; a linked session without recorded notes resolves to
+ * an empty string.
  */
 export async function loadLinkedLessonContent({
+  includePosts = false,
   sbAdmin,
   sessions,
   wsId,
 }: {
+  includePosts?: boolean;
   sbAdmin: TypedSupabaseClient;
   sessions: LinkableTutoringSession[];
   wsId: string;
@@ -163,17 +170,23 @@ export async function loadLinkedLessonContent({
   }
 
   // Class sessions are timestamped; widen by a day for timezone offsets and let
-  // the local-date match decide.
-  const lessonsResult = await privateDb
-    .from('workspace_user_group_sessions')
-    .select(
-      'group_id,status,starts_at,start_timezone,recurrence_instance_date,description,description_json'
-    )
-    .eq('ws_id', wsId)
-    .in('group_id', groupIds)
-    .eq('status', 'scheduled')
-    .gte('starts_at', shiftIsoDate(first, -1))
-    .lt('starts_at', shiftIsoDate(last, 2));
+  // the local-date match decide. The tail also covers the days a late report
+  // may be written on, so a later lesson can claim it.
+  const [lessonsResult, postsByGroup] = await Promise.all([
+    privateDb
+      .from('workspace_user_group_sessions')
+      .select(
+        'group_id,status,starts_at,start_timezone,recurrence_instance_date,description,description_json'
+      )
+      .eq('ws_id', wsId)
+      .in('group_id', groupIds)
+      .eq('status', 'scheduled')
+      .gte('starts_at', shiftIsoDate(first, -1))
+      .lt('starts_at', shiftIsoDate(last, 3)),
+    includePosts
+      ? loadLinkedClassPosts({ first, groupIds, last, sbAdmin })
+      : new Map(),
+  ]);
   if (lessonsResult.error) throw lessonsResult.error;
 
   const lessonsByGroup = new Map<string, TutoringLessonNoteSession[]>();
@@ -194,13 +207,18 @@ export async function loadLinkedLessonContent({
 
   for (const session of targets) {
     const date = missedDateBySession.get(session.id);
+    const lessons = lessonsByGroup.get(session.group_id) ?? [];
+    const notes =
+      date &&
+      getMissedClassNotes(
+        lessons,
+        postsByGroup.get(session.group_id) ?? [],
+        [date],
+        lessons[0]?.startTimezone ?? 'Asia/Ho_Chi_Minh'
+      );
     result.set(
       session.id,
-      date
-        ? getMissedLessonContent(lessonsByGroup.get(session.group_id) ?? [], [
-            date,
-          ])
-        : ''
+      notes ? composeMissedClassText(notes, MISSED_CLASS_LABELS_VI) : ''
     );
   }
   return result;
@@ -213,10 +231,12 @@ export const FREEZE_TIMEOUT_MS = 3000;
 export const LINKED_CONTENT_NOT_STORED = 'LINKED_CONTENT_NOT_STORED';
 
 async function storeLinkedLessonContent({
+  includePosts,
   sbAdmin,
   sessionId,
   wsId,
 }: {
+  includePosts?: boolean;
   sbAdmin: TypedSupabaseClient;
   sessionId: string;
   wsId: string;
@@ -237,6 +257,7 @@ async function storeLinkedLessonContent({
 
   // Derive as if still pending: the notes as they stood at completion.
   const linked = await loadLinkedLessonContent({
+    includePosts,
     sbAdmin,
     sessions: [{ ...session, attendance_status: 'PENDING' }],
     wsId,
@@ -269,6 +290,8 @@ async function storeLinkedLessonContent({
  * still in flight at the timeout may land afterwards.
  */
 export async function freezeLinkedLessonContent(input: {
+  /** The completing actor holds `view_user_groups_posts`. */
+  includePosts?: boolean;
   sbAdmin: TypedSupabaseClient;
   sessionId: string;
   wsId: string;

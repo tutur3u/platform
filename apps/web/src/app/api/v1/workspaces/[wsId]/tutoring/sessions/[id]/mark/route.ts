@@ -101,6 +101,7 @@ export async function POST(request: Request, { params }: Params) {
 
   if (parsed.data.attendanceStatus === 'DONE') {
     const frozen = await freezeLinkedLessonContent({
+      includePosts: !permissions.withoutPermission('view_user_groups_posts'),
       sbAdmin,
       sessionId: id,
       wsId: normalizedWsId,

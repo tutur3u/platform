@@ -103,7 +103,11 @@ describe('missed class posts', () => {
   });
 
   it('keeps session notes and posts apart and reports dates with neither', () => {
-    const sessions = [lesson('2026-10-22T11:00:00Z', 'Unit 3')];
+    // 23/10 has its own lesson, so its report stays on 23/10.
+    const sessions = [
+      lesson('2026-10-22T11:00:00Z', 'Unit 3'),
+      lesson('2026-10-23T11:00:00Z', null),
+    ];
     const posts = [post('2026-10-23T03:00:00Z', null, 'Ôn tập')];
     expect(
       getMissedClassNotes(
@@ -386,7 +390,10 @@ describe('per-session content split', () => {
       '2026-10-22': '2026-10-22: Unit 5',
     });
     const withPosts = getMissedClassNotes(
-      [lesson('2026-10-20T01:00:00Z', 'Unit 4')],
+      [
+        lesson('2026-10-20T01:00:00Z', 'Unit 4'),
+        lesson('2026-10-22T01:00:00Z', null),
+      ],
       [
         {
           content: 'Body',

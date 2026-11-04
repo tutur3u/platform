@@ -108,10 +108,37 @@ export interface MissedClassNotes extends MissedLessonNotes {
   postContentByDate?: Record<string, string>;
 }
 
+/** How many days after a lesson its report may still be written. */
+export const POST_LESSON_WINDOW_DAYS = 2;
+
+function daysBetween(from: string, to: string) {
+  return (
+    (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) /
+    86_400_000
+  );
+}
+
 /**
- * Posts have no date of their own, so a post belongs to the missed date it was
- * created on, read in `timeZone` (the class's own zone). `missingDates` lists
- * missed dates with neither session notes nor a post.
+ * The lesson a post reports on: the latest scheduled class session on or
+ * before the post's created date, within `POST_LESSON_WINDOW_DAYS`; otherwise
+ * the created date itself. A report written the next morning, before the next
+ * lesson, belongs to the previous lesson.
+ */
+function postLessonDate(created: string, lessonDates: string[]) {
+  let best: string | null = null;
+  for (const date of lessonDates) {
+    const lag = daysBetween(date, created);
+    if (lag < 0 || lag > POST_LESSON_WINDOW_DAYS) continue;
+    if (!best || date > best) best = date;
+  }
+  return best ?? created;
+}
+
+/**
+ * Posts have no lesson date, so a post belongs to the lesson it reports on
+ * (see `postLessonDate`), with dates read in `timeZone` (the class's own
+ * zone). `missingDates` lists missed dates with neither session notes nor a
+ * post.
  */
 export function getMissedClassNotes(
   sessions: TutoringLessonNoteSession[],
@@ -121,9 +148,14 @@ export function getMissedClassNotes(
 ): MissedClassNotes {
   const lessons = getMissedLessonNotes(sessions, missedDates);
   const missed = new Set(missedDates);
+  const lessonDates = sessions
+    .filter((session) => session.status === 'scheduled')
+    .map(localDate)
+    .filter((date): date is string => Boolean(date));
   const entries = posts
     .map((post) => {
-      const date = zonedDate(post.createdAt, timeZone);
+      const created = zonedDate(post.createdAt, timeZone);
+      const date = created && postLessonDate(created, lessonDates);
       if (!date || !missed.has(date)) return null;
       const text = [post.title?.trim(), post.content?.trim()]
         .filter(Boolean)
@@ -147,4 +179,31 @@ export function getMissedClassNotes(
     ),
     missingDates: lessons.missingDates.filter((date) => !withPosts.has(date)),
   };
+}
+
+/** Section headings for a make-up drafted from both kinds of class notes. */
+export interface MissedClassLabels {
+  lessonNotes: string;
+  posts: string;
+}
+
+/** The Vietnamese headings the queue draft uses; the server composes with them. */
+export const MISSED_CLASS_LABELS_VI: MissedClassLabels = {
+  lessonNotes: 'Ghi chú buổi học',
+  posts: 'Bài viết của lớp',
+};
+
+const section = (label: string, text: string) => `${label}:\n${text}`;
+
+/** The missed class's session notes, then its posts; labelled when both exist. */
+export function composeMissedClassText(
+  notes: Pick<MissedClassNotes, 'content' | 'postContent'>,
+  labels: MissedClassLabels
+) {
+  if (notes.content && notes.postContent)
+    return [
+      section(labels.lessonNotes, notes.content),
+      section(labels.posts, notes.postContent),
+    ].join('\n\n');
+  return notes.content || notes.postContent;
 }

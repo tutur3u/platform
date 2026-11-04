@@ -1,8 +1,12 @@
 import type { TutoringQueueItem } from '@tuturuuu/internal-api';
-import type { MissedClassNotes } from '@tuturuuu/utils/tutoring-lesson-content';
+import {
+  composeMissedClassText,
+  type MissedClassNotes,
+} from '@tuturuuu/utils/tutoring-lesson-content';
 
 // The server derives linked make-up content with the same rule.
 export {
+  composeMissedClassText,
   getMissedClassNotes,
   getMissedLessonContent,
   getMissedLessonNotes,
@@ -17,19 +21,6 @@ export interface QueueDraftLabels {
 }
 
 const section = (label: string, text: string) => `${label}:\n${text}`;
-
-/** The missed class's session notes, then its posts; labelled when both exist. */
-export function composeMissedClassText(
-  notes: Pick<MissedClassNotes, 'content' | 'postContent'>,
-  labels: Pick<QueueDraftLabels, 'lessonNotes' | 'posts'>
-) {
-  if (notes.content && notes.postContent)
-    return [
-      section(labels.lessonNotes, notes.content),
-      section(labels.posts, notes.postContent),
-    ].join('\n\n');
-  return notes.content || notes.postContent;
-}
 
 /**
  * The Content a queue row drafts. Absent make-up teaches the class notes from

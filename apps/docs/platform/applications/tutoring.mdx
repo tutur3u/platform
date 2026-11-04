@@ -329,11 +329,17 @@ always on, no setting):
 
 - **Kèm nghỉ (absent make-up)** teaches what the class covered on the day the
   learner was absent: the class session's notes for that date, then the class's
-  **posts** (bài viết) created that day. When both exist the draft labels
-  them "Lesson notes" and "Class posts". Posts have no date field of their own,
-  so a post belongs to the missed date it was created on, in the class's time
-  zone (the class session's own zone, falling back to Asia/Ho_Chi_Minh when the
-  group has no session in range). Rejected posts are skipped, and only the
+  **posts** (bài viết, such as the daily report) about that lesson. When both
+  exist the draft labels them "Lesson notes" and "Class posts". Posts have no
+  lesson date of their own, so a post belongs to the latest scheduled class
+  session on or before the day it was created, within two days; with no
+  session in that window it belongs to the day it was created. A daily report
+  written the next morning, before the next lesson, therefore belongs to the
+  previous lesson, and a report written on a lesson day belongs to that day.
+  Days are read in the class's time zone (the class session's own zone,
+  falling back to Asia/Ho_Chi_Minh when the group has no session in range).
+  Approval does not gate a post: pending posts count, rejected posts are
+  skipped, and only the
   post's title and content are read, not its internal notes. Post text is
   included only for viewers who may read group posts
   (`view_user_groups_posts`).
@@ -353,9 +359,10 @@ always on, no setting):
 - A missed date with neither session notes nor a post shows the inline hint "No
   lesson notes recorded for {dates}" in the queue and the draft, instead of an
   empty field.
-- A make-up draft that is only session notes still follows the class notes while
-  pending ([linked content](#make-up-content-follows-the-missed-lessons-notes)).
-  A draft that includes a post, or a homeroom note, is saved as written.
+- A make-up draft that is only session notes still follows the class notes and
+  posts while pending
+  ([linked content](#make-up-content-follows-the-missed-lessons-notes)). A
+  draft that already includes a post, or a homeroom note, is saved as written.
 
 Existing sessions are not rewritten; only new drafts use this rule.
 
@@ -504,6 +511,13 @@ on, no setting):
   recorded for the missed class session. Notes a teacher adds or edits after
   scheduling appear in the schedule automatically. The schedule marks such
   sessions with "Follows the missed lesson notes".
+- The followed content includes the missed lesson's class **posts** (the
+  daily report), attributed and labelled as in the
+  [scheduling draft](#content-to-teach-follows-the-reason), so a report written
+  after the make-up was booked still appears. Posts are shown only to viewers
+  with `view_user_groups_posts`; completion stores them only when the actor
+  completing the session holds that permission. The server composes the labels
+  in Vietnamese ("Ghi chú buổi học" / "Bài viết của lớp").
 - When the session is **marked done** (row action or session edit), the notes as
   they stand are stored on the session and are **frozen**. Later edits to the
   class notes no longer change it.
@@ -541,7 +555,8 @@ blank content, still stores the notes; only real text sent with the completion
 counts as a manual edit. If the lookup fails, the list shows the stored content
 and completion still succeeds. Regression coverage:
 [`linked-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/linked-content.test.ts)
-(notes filled after scheduling, frozen after completion, manual edit kept,
+(notes and posts filled after scheduling, post permission, rejected posts,
+frozen after completion, manual edit kept,
 lookup failure, whitespace-only content, bounded wait, pairing order),
 [`sessions/[id]/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/%5Bid%5D/route.test.ts)
 (completion with absent, empty or blank content, and the completion warning) and

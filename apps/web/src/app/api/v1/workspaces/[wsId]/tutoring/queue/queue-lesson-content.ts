@@ -56,7 +56,8 @@ export async function loadQueueLessonNotes({
   if (!first || !last) return result;
 
   // Class sessions are timestamped; widen by a day for timezone offsets and let
-  // the local-date match decide.
+  // the local-date match decide. The tail also covers the days a late report may be
+  // written on (POST_LESSON_WINDOW_DAYS), so a later lesson can claim it.
   const privateDb = sbAdmin.schema('private');
   const [lessonsResult, postsResult] = await Promise.all([
     privateDb
@@ -68,7 +69,7 @@ export async function loadQueueLessonNotes({
       .in('group_id', groupIds)
       .eq('status', 'scheduled')
       .gte('starts_at', shiftIsoDate(first, -1))
-      .lt('starts_at', shiftIsoDate(last, 2))
+      .lt('starts_at', shiftIsoDate(last, 3))
       .limit(LESSON_ROW_LIMIT),
     includePosts
       ? privateDb
@@ -77,7 +78,7 @@ export async function loadQueueLessonNotes({
           .in('group_id', groupIds)
           .neq('post_approval_status', 'REJECTED')
           .gte('created_at', shiftIsoDate(first, -1))
-          .lt('created_at', shiftIsoDate(last, 2))
+          .lt('created_at', shiftIsoDate(last, 3))
           .order('created_at', { ascending: true })
           .limit(LESSON_ROW_LIMIT)
       : Promise.resolve({ data: [], error: null }),

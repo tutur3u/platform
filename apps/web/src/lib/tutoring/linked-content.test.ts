@@ -22,6 +22,7 @@ function matches(row: Row, filters: Filter[]) {
   return filters.every(([op, column, value]) => {
     const cell = row[column] as string;
     if (op === 'eq') return cell === value;
+    if (op === 'neq') return cell !== value;
     if (op === 'in') return (value as unknown[]).includes(cell);
     if (op === 'gte') return cell >= (value as string);
     if (op === 'lt') return cell < (value as string);
@@ -41,6 +42,10 @@ function query(table: string) {
     },
     eq: (column: string, value: unknown) => {
       filters.push(['eq', column, value]);
+      return builder;
+    },
+    neq: (column: string, value: unknown) => {
+      filters.push(['neq', column, value]);
       return builder;
     },
     in: (column: string, value: unknown) => {
@@ -119,6 +124,20 @@ function lesson(description: string | null) {
     description_json: null,
   };
 }
+
+/** Created the morning after the missed lesson, in the class's zone. */
+function report(content: string, status = 'APPROVED') {
+  return {
+    group_id: 'group-1',
+    title: null,
+    content,
+    created_at: `${recent(4)}T01:00:00Z`,
+    post_approval_status: status,
+  };
+}
+
+const withPosts = (notes: string) =>
+  `Ghi chú buổi học:\n${notes}\n\nBài viết của lớp:\n${missedDate}: Daily report`;
 
 beforeEach(() => {
   for (const key of Object.keys(tables)) delete tables[key];
@@ -294,5 +313,87 @@ describe('linked make-up content', () => {
     expect(consoleWarn).toHaveBeenCalled();
     consoleWarn.mockRestore();
     vi.useRealTimers();
+  });
+
+  it('shows a class report written after booking, labelled like the draft', async () => {
+    const pending = session();
+    tables.workspace_tutoring_sessions = [pending];
+    tables.workspace_user_group_sessions = [lesson('Unit 4: past tense')];
+    tables.user_group_posts = [];
+    const load = () =>
+      loadLinkedLessonContent({
+        includePosts: true,
+        sbAdmin,
+        sessions: [pending],
+        wsId,
+      });
+
+    expect((await load()).get(pending.id)).toBe(
+      `${missedDate}: Unit 4: past tense`
+    );
+    tables.user_group_posts = [report('Daily report')];
+    expect((await load()).get(pending.id)).toBe(
+      withPosts(`${missedDate}: Unit 4: past tense`)
+    );
+  });
+
+  it('includes pending-approval reports and excludes rejected ones', async () => {
+    const pending = session();
+    tables.workspace_tutoring_sessions = [pending];
+    tables.workspace_user_group_sessions = [lesson(null)];
+    tables.user_group_posts = [
+      report('Daily report', 'PENDING'),
+      report('Rejected draft', 'REJECTED'),
+    ];
+
+    const linked = await loadLinkedLessonContent({
+      includePosts: true,
+      sbAdmin,
+      sessions: [pending],
+      wsId,
+    });
+    expect(linked.get(pending.id)).toBe(`${missedDate}: Daily report`);
+  });
+
+  it('leaves out reports for viewers without post access', async () => {
+    const pending = session();
+    tables.workspace_tutoring_sessions = [pending];
+    tables.workspace_user_group_sessions = [lesson(null)];
+    tables.user_group_posts = [report('Daily report')];
+
+    const linked = await loadLinkedLessonContent({
+      sbAdmin,
+      sessions: [pending],
+      wsId,
+    });
+    expect(linked.get(pending.id)).toBe('');
+  });
+
+  it('freezes the report on completion and keeps done sessions frozen', async () => {
+    const completed = session({ attendance_status: 'DONE' });
+    tables.workspace_tutoring_sessions = [completed];
+    tables.workspace_user_group_sessions = [lesson('Unit 4: past tense')];
+    tables.user_group_posts = [report('Daily report')];
+
+    await expect(
+      freezeLinkedLessonContent({
+        includePosts: true,
+        sbAdmin,
+        sessionId: completed.id,
+        wsId,
+      })
+    ).resolves.toBe('stored');
+    const frozen = withPosts(`${missedDate}: Unit 4: past tense`);
+    expect(completed.content).toBe(frozen);
+
+    tables.user_group_posts = [report('Edited later')];
+    const linked = await loadLinkedLessonContent({
+      includePosts: true,
+      sbAdmin,
+      sessions: [completed],
+      wsId,
+    });
+    expect(linked.has(completed.id)).toBe(false);
+    expect(completed.content).toBe(frozen);
   });
 });
