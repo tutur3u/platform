@@ -201,6 +201,15 @@ CREATE TRIGGER fee_locks_same_workspace BEFORE INSERT OR UPDATE OF ws_id, studen
 CREATE TRIGGER fee_lock_lines_same_workspace BEFORE INSERT OR UPDATE OF ws_id, group_id, product_id, unit_id, warehouse_id
   ON public.fee_lock_lines FOR EACH ROW EXECUTE FUNCTION private.fee_lock_same_workspace();
 
+-- Inventory merge readiness (private.inventory_merge_schema_ready, 20261003101600):
+-- every single-column reference to workspace_products or inventory_warehouses
+-- carries the identity-writer and merged-reference guards, defined exactly as the
+-- 20261003090000 and 20261003101600 loops attached them to existing tables.
+CREATE TRIGGER inventory_identity_writer BEFORE INSERT OR UPDATE OR DELETE ON public.fee_lock_lines
+  FOR EACH ROW EXECUTE FUNCTION private.coordinate_inventory_identity_writer();
+CREATE TRIGGER inventory_merged_reference_guard BEFORE INSERT OR UPDATE ON public.fee_lock_lines
+  FOR EACH ROW EXECUTE FUNCTION private.reject_merged_inventory_reference();
+
 -- 6. Access: service role only. RLS is on with no permissive policy, so a
 -- mistaken grant still exposes nothing. The restrictive MFA policy keeps these
 -- relations consistent with every other public relation (see 20260923130000).

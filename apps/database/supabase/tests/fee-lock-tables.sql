@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(56);
+select plan(57);
 
 create function pg_temp.id(p text) returns uuid language sql immutable as $$ select ('00000000-0000-4000-8000-0000000fe' || p)::uuid $$;
 insert into auth.users(id, email) values (pg_temp.id('001'), 'fee-lock-owner@example.test'), (pg_temp.id('002'), 'fee-lock-staff@example.test') on conflict (id) do nothing;
@@ -141,5 +141,6 @@ select lives_ok($$delete from public.workspaces where id = pg_temp.id('011')$$, 
 select is((select count(*)::int from public.fee_locks where ws_id = pg_temp.id('011')) + (select count(*)::int from public.fee_lock_revisions where ws_id = pg_temp.id('011'))
   + (select count(*)::int from public.fee_lock_events where ws_id = pg_temp.id('011')), 0, 'no fee lock rows remain for the deleted workspace');
 
+select ok(private.inventory_merge_schema_ready(), 'M1 keeps the inventory merge schema ready: fee_lock_lines product and warehouse references carry both inventory guards');
 select * from finish();
 rollback;
