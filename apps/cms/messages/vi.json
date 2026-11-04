@@ -5264,6 +5264,7 @@
       "zoom_out_action": "Thu nhỏ"
     },
     "page_builder": {
+      "action_failed": "Không thể cập nhật trang",
       "blocks": {
         "CardGrid": "Lưới thẻ",
         "CtaButton": "Nút",
@@ -5281,6 +5282,7 @@
         "layout": "Bố cục"
       },
       "delete": "Xóa",
+      "draft_saved": "Đã lưu bản nháp",
       "drop_here": "Thả khối vào đây",
       "duplicate": "Nhân bản",
       "fields": {
@@ -5307,7 +5309,10 @@
         "variant": "Kiểu"
       },
       "inspector_empty": "Chọn một khối để chỉnh sửa",
+      "publish": "Xuất bản",
+      "published": "Đã xuất bản trang",
       "redo": "Làm lại",
+      "save_draft": "Lưu bản nháp",
       "undo": "Hoàn tác"
     },
     "root": {
