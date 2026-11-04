@@ -24,6 +24,7 @@ const countsSchema = z.array(
     suppressed: count,
     already_sent: count,
     previously_failed: count,
+    excluded_personal_only: count,
   })
 );
 const healthSchema = z.array(
@@ -63,8 +64,6 @@ export function createSupabasePolicyNoticeStore(
         await rpc('policy_notice_counts', {
           p_notice_id: input.noticeId,
           p_notice_version: input.version,
-          p_include_personal: input.includePersonalWorkspaces,
-          p_honour_unsubscribes: input.honourUnsubscribes,
         })
       );
       if (!row) throw new Error('policy_notice_counts returned no row');
@@ -73,6 +72,7 @@ export function createSupabasePolicyNoticeStore(
         suppressed: row.suppressed,
         alreadySent: row.already_sent,
         previouslyFailed: row.previously_failed,
+        excludedPersonalOnly: row.excluded_personal_only,
       };
     },
     async startRun(input) {
@@ -98,7 +98,6 @@ export function createSupabasePolicyNoticeStore(
         await rpc('policy_notice_next_recipients', {
           p_notice_id: input.noticeId,
           p_notice_version: input.version,
-          p_include_personal: input.includePersonalWorkspaces,
           p_limit: input.limit,
         })
       );

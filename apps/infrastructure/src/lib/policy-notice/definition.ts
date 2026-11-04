@@ -6,14 +6,12 @@ import {
 } from './template';
 
 /**
- * Whether the global unsubscribe (email_blacklist reason
- * 'recipient_unsubscribed') stops this notice. Legal ruling 4 Nov 2026 (Cora):
- * a required notice of Terms and Privacy changes is not advertising email, so
- * marketing-unsubscribed owners and admins still receive it. Hard bounces,
- * complaints and every other do-not-send entry always suppress, whatever this
- * says.
+ * Recipients: owners and administrators of non-personal (business)
+ * workspaces, one email per address (user decision "notify A"). Every
+ * suppression is honoured, including the global unsubscribe; there is no
+ * bypass. Everyone else sees the in-app notice instead.
  */
-export type MarketingUnsubscribePolicy = 'send' | 'suppress';
+export type PolicyNoticeAudience = 'business_workspace_owners_admins';
 
 export interface PolicyNoticeDefinition {
   id: string;
@@ -21,25 +19,24 @@ export interface PolicyNoticeDefinition {
   subject: string;
   html: string;
   text: string;
-  marketingUnsubscribe: MarketingUnsubscribePolicy;
-  /** Owners of personal workspaces count as workspace owners. */
-  includePersonalWorkspaces: boolean;
+  replyTo: string[];
+  audience: PolicyNoticeAudience;
 }
 
 export const POLICY_CHANGE_NOTICE: PolicyNoticeDefinition = {
   id: 'policy-change-2026-11-11',
-  templateVersion: 'v3',
+  templateVersion: 'v4',
   subject: POLICY_NOTICE_SUBJECT,
   html: POLICY_NOTICE_HTML,
   text: POLICY_NOTICE_TEXT,
-  marketingUnsubscribe: 'send',
-  includePersonalWorkspaces: true,
+  replyTo: ['legal@tuturuuu.com'],
+  audience: 'business_workspace_owners_admins',
 };
 
 /**
- * The ledger version: any change to the content, subject, audience or
- * unsubscribe policy is a new version, which needs its own dry run and
- * test-list send before a live send.
+ * The ledger version: any change to the content, subject, Reply-To or
+ * audience is a new version, which needs its own dry run and test-list send
+ * before a live send.
  */
 export function policyNoticeVersion(notice: PolicyNoticeDefinition) {
   const digest = createHash('sha256')
@@ -50,8 +47,8 @@ export function policyNoticeVersion(notice: PolicyNoticeDefinition) {
         notice.subject,
         notice.html,
         notice.text,
-        notice.marketingUnsubscribe,
-        notice.includePersonalWorkspaces,
+        notice.replyTo,
+        notice.audience,
       ])
     )
     .digest('hex');

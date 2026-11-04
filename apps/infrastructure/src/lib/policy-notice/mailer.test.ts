@@ -8,7 +8,7 @@ const input = {
   html: '<p>Body</p>',
   text: 'Body',
   noticeId: 'policy-change-2026-11-11',
-  bypassUnsubscribe: false,
+  replyTo: ['legal@tuturuuu.com'],
 };
 
 function mailerWith(result: unknown) {
@@ -21,7 +21,7 @@ function mailerWith(result: unknown) {
 }
 
 describe('EmailService mailer', () => {
-  it('sends one multipart message to one recipient through sendInternal', async () => {
+  it('sends one multipart message to one recipient, replying to legal@, with every suppression checked', async () => {
     const { mailer, sendInternal } = mailerWith({
       success: true,
       messageId: 'ses-1',
@@ -32,31 +32,24 @@ describe('EmailService mailer', () => {
       kind: 'sent',
       messageId: 'ses-1',
     });
-    expect(sendInternal).toHaveBeenCalledWith(
-      {
-        recipients: { to: ['owner@example.com'] },
-        content: { subject: 'Subject', html: '<p>Body</p>', text: 'Body' },
-        metadata: {
-          wsId: '00000000-0000-0000-0000-000000000000',
-          templateType: 'policy-notice',
-          entityType: 'policy_notice',
-          entityId: 'policy-change-2026-11-11',
-          priority: 'high',
-        },
+    expect(sendInternal).toHaveBeenCalledWith({
+      recipients: { to: ['owner@example.com'] },
+      content: {
+        subject: 'Subject',
+        html: '<p>Body</p>',
+        text: 'Body',
+        replyTo: ['legal@tuturuuu.com'],
       },
-      { skipRecipientBlacklist: false }
-    );
-  });
-
-  it('skips the blacklist check only when the bypass is requested', async () => {
-    const { mailer, sendInternal } = mailerWith({
-      success: true,
-      messageId: 'ses-2',
+      metadata: {
+        wsId: '00000000-0000-0000-0000-000000000000',
+        templateType: 'policy-notice',
+        entityType: 'policy_notice',
+        entityId: 'policy-change-2026-11-11',
+        priority: 'high',
+      },
     });
-    await mailer.send({ ...input, bypassUnsubscribe: true });
-    expect(sendInternal).toHaveBeenCalledWith(expect.anything(), {
-      skipRecipientBlacklist: true,
-    });
+    // No options: the email service's blacklist check is never skipped.
+    expect(sendInternal.mock.calls[0]).toHaveLength(1);
   });
 
   it.each([

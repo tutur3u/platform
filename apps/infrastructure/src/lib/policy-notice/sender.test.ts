@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   POLICY_CHANGE_NOTICE,
-  type PolicyNoticeDefinition,
   policyNoticeConfirmToken,
   policyNoticeRecipientHash,
   policyNoticeVersion,
@@ -60,7 +59,13 @@ class FakeStore implements PolicyNoticeStore {
 
   async counts() {
     this.calls.push('counts');
-    return { eligible: 3, suppressed: 1, alreadySent: 0, previouslyFailed: 0 };
+    return {
+      eligible: 3,
+      suppressed: 1,
+      alreadySent: 0,
+      previouslyFailed: 0,
+      excludedPersonalOnly: 9,
+    };
   }
 
   async startRun(input: { version: string; mode: string }) {
@@ -152,7 +157,7 @@ class FakeStore implements PolicyNoticeStore {
 }
 
 class FakeMailer implements PolicyNoticeMailer {
-  sent: Array<{ to: string; bypassUnsubscribe: boolean }> = [];
+  sent: Array<{ to: string }> = [];
   constructor(
     private outcome: (to: string) => MailerOutcome = () => ({
       kind: 'sent',
@@ -160,10 +165,9 @@ class FakeMailer implements PolicyNoticeMailer {
     })
   ) {}
   async send(input: Parameters<PolicyNoticeMailer['send']>[0]) {
-    this.sent.push({
-      to: input.to,
-      bypassUnsubscribe: input.bypassUnsubscribe,
-    });
+    this.sent.push({ to: input.to });
+    expect(input).not.toHaveProperty('bypassUnsubscribe');
+    expect(input.replyTo).toEqual(['legal@tuturuuu.com']);
     expect(input.subject).toBe(NOTICE.subject);
     expect(input.html).toBe(NOTICE.html);
     expect(input.text).toBe(NOTICE.text);
@@ -236,6 +240,7 @@ describe('runPolicyNotice', () => {
         suppressed: 1,
         alreadySent: 0,
         previouslyFailed: 0,
+        excludedPersonalOnly: 9,
       },
     });
     expect(mailer.sent).toHaveLength(0);
@@ -311,27 +316,6 @@ describe('runPolicyNotice', () => {
     expect(JSON.stringify([first, again]) + logs.join('')).not.toContain('@');
   });
 
-  it('test-list mode never bypasses an unsubscribe for an operator-typed address', async () => {
-    const store = new FakeStore();
-    store.suppressions.set('unsub@example.com', 'unsubscribed');
-    const mailer = new FakeMailer();
-    const deps = { store, mailer, clock: clock(), notice: NOTICE };
-    await runPolicyNotice({}, ACTOR, deps);
-
-    const result = await runPolicyNotice(
-      {
-        mode: 'test_list',
-        confirm: TEST,
-        testRecipients: ['unsub@example.com'],
-      },
-      ACTOR,
-      deps
-    );
-
-    expect(mailer.sent).toHaveLength(0);
-    expect(result).toMatchObject({ counts: { sent: 0, suppressed: 1 } });
-  });
-
   it('caps the test list at five addresses', async () => {
     const store = new FakeStore();
     await expect(
@@ -343,120 +327,43 @@ describe('runPolicyNotice', () => {
     ).rejects.toMatchObject({ code: 'invalid_request' });
   });
 
-  it.each(['send', 'suppress'] as const)(
-    'always suppresses hard bounces, complaints and do-not-send entries (unsubscribe policy %s)',
-    async (marketingUnsubscribe) => {
-      const notice: PolicyNoticeDefinition = {
-        ...NOTICE,
-        marketingUnsubscribe,
-      };
-      const version = policyNoticeVersion(notice);
-      const store = new FakeStore([
-        'bounced@example.com',
-        'complained@example.com',
-        'blocked@example.com',
-        'fine@example.com',
-      ]);
-      store.suppressions.set('bounced@example.com', 'hard_bounce');
-      store.suppressions.set('complained@example.com', 'complaint');
-      store.suppressions.set('blocked@example.com', 'blocked');
-      const mailer = new FakeMailer();
-      const deps = { store, mailer, clock: clock(), notice };
-      await runPolicyNotice({}, ACTOR, deps);
-      await runPolicyNotice(
-        {
-          mode: 'test_list',
-          confirm: policyNoticeConfirmToken('test_list', version),
-          testRecipients: ['complained@example.com', 'fine@example.com'],
-        },
-        ACTOR,
-        deps
-      );
-      const result = await runPolicyNotice(
-        { mode: 'live', confirm: policyNoticeConfirmToken('live', version) },
-        ACTOR,
-        deps
-      );
-
-      expect(mailer.sent.map((s) => s.to)).toEqual(['fine@example.com']);
-      expect(result).toMatchObject({
-        status: 'completed',
-        done: true,
-        counts: { sent: 0, suppressed: 2 },
-      });
-    }
-  );
-
-  it('sends to marketing-unsubscribed owners by default, bypassing only that entry', async () => {
-    const store = new FakeStore(['unsub@example.com']);
+  it('honours every suppression, unsubscribes included, in every mode', async () => {
+    const store = new FakeStore([
+      'bounced@example.com',
+      'complained@example.com',
+      'blocked@example.com',
+      'unsub@example.com',
+      'fine@example.com',
+    ]);
+    store.suppressions.set('bounced@example.com', 'hard_bounce');
+    store.suppressions.set('complained@example.com', 'complaint');
+    store.suppressions.set('blocked@example.com', 'blocked');
     store.suppressions.set('unsub@example.com', 'unsubscribed');
     const mailer = new FakeMailer();
-    await openGate(store, mailer);
-
-    await runPolicyNotice({ mode: 'live', confirm: LIVE }, ACTOR, {
-      store,
-      mailer,
-      clock: clock(),
-      notice: NOTICE,
-    });
-
-    expect(NOTICE.marketingUnsubscribe).toBe('send');
-    expect(mailer.sent.at(-1)).toEqual({
-      to: 'unsub@example.com',
-      bypassUnsubscribe: true,
-    });
-    expect(mailer.sent[0]).toEqual({
-      to: 'owner@example.com',
-      bypassUnsubscribe: false,
-    });
-  });
-
-  it('honours marketing unsubscribes when the switch says suppress', async () => {
-    const notice = { ...NOTICE, marketingUnsubscribe: 'suppress' as const };
-    const version = policyNoticeVersion(notice);
-    const store = new FakeStore(['unsub@example.com']);
-    store.suppressions.set('unsub@example.com', 'unsubscribed');
-    const mailer = new FakeMailer();
-    const deps = { store, mailer, clock: clock(), notice };
+    const deps = { store, mailer, clock: clock(), notice: NOTICE };
     await runPolicyNotice({}, ACTOR, deps);
-    await runPolicyNotice(
+    const preview = await runPolicyNotice(
       {
         mode: 'test_list',
-        confirm: policyNoticeConfirmToken('test_list', version),
-        testRecipients: ['owner@example.com'],
+        confirm: TEST,
+        testRecipients: ['unsub@example.com', 'fine@example.com'],
       },
       ACTOR,
       deps
     );
-    await runPolicyNotice(
-      { mode: 'live', confirm: policyNoticeConfirmToken('live', version) },
+    const live = await runPolicyNotice(
+      { mode: 'live', confirm: LIVE },
       ACTOR,
       deps
     );
 
-    expect(mailer.sent.map((s) => s.to)).toEqual(['owner@example.com']);
-    expect(version).not.toBe(VERSION);
-  });
-
-  it('re-checks an unsubscribed address before bypassing and suppresses a new hard block', async () => {
-    const store = new FakeStore(['unsub@example.com']);
-    store.suppressions.set('unsub@example.com', 'unsubscribed');
-    const mailer = new FakeMailer();
-    await openGate(store, mailer);
-    const classify = store.classify.bind(store);
-    store.classify = async (emails) => {
-      store.suppressions.set('unsub@example.com', 'hard_bounce');
-      return classify(emails);
-    };
-
-    await runPolicyNotice({ mode: 'live', confirm: LIVE }, ACTOR, {
-      store,
-      mailer,
-      clock: clock(),
-      notice: NOTICE,
+    expect(mailer.sent.map((s) => s.to)).toEqual(['fine@example.com']);
+    expect(preview).toMatchObject({ counts: { sent: 1, suppressed: 1 } });
+    expect(live).toMatchObject({
+      status: 'completed',
+      done: true,
+      counts: { sent: 0, suppressed: 3 },
     });
-
-    expect(mailer.sent.map((s) => s.to)).toEqual(['owner@example.com']);
     expect(store.statusOf('unsub@example.com')).toBe('suppressed');
   });
 

@@ -32,17 +32,17 @@ async function setup() {
 // Users 1..12 with workspaces covering every audience rule.
 async function seedAudience(db) {
   const users = [
-    [1, 'owner@example.com'], // owns a team workspace
-    [2, 'Admin@Example.com'], // admin through a role (mixed case)
+    [1, 'owner@example.com'], // owns a business workspace (and a personal one)
+    [2, 'Admin@Example.com'], // admin through a role (mixed case), owns a personal one
     [3, 'default-admin@example.com'], // admin through member defaults
-    [4, 'member@example.com'], // plain member: not in the audience
+    [4, 'member@example.com'], // member/student with a personal workspace: excluded
     [5, 'guest@example.com'], // guest with an admin role: not in the audience
     [6, 'unconfirmed@example.com'], // owner, email unconfirmed
     [7, 'deleted@example.com'], // owner, account deleted
     [8, 'banned@example.com'], // owner, banned
-    [9, 'personal@example.com'], // owns only a personal workspace
+    [9, 'personal@example.com'], // personal-only owner: excluded
     [10, 'gone-ws@example.com'], // owns only a deleted workspace
-    [11, 'multi@example.com'], // owns two and admins one: exactly one email
+    [11, 'multi@example.com'], // owns two business workspaces, admins one: one email
     [12, null], // owner without an address
   ];
   for (const [n, email] of users) {
@@ -73,6 +73,9 @@ async function seedAudience(db) {
   await ws(7, 11);
   await ws(8, 11);
   await ws(9, 12);
+  await ws(10, 1, { personal: true });
+  await ws(11, 2, { personal: true });
+  await ws(12, 4, { personal: true });
   const member = (w, u, type = 'MEMBER') =>
     db.query(
       'insert into public.workspace_members (ws_id, user_id, type) values ($1, $2, $3)',
@@ -114,12 +117,12 @@ async function asService(db, sql, params = []) {
   }
 }
 
-async function audience(db, includePersonal) {
+async function audience(db) {
   const { rows } = await asService(
     db,
     `select recipient_hash, email, suppression
-       from private.policy_notice_next_recipients($1, $2, $3, 100)`,
-    [NOTICE, V1, includePersonal]
+       from private.policy_notice_next_recipients($1, $2, 100)`,
+    [NOTICE, V1]
   );
   return rows;
 }
@@ -175,21 +178,20 @@ async function gateOpen(db, version = V1) {
   await finishRun(db, preview, 'completed');
 }
 
-test('audience is workspace owners and admins only, one row per address', async () => {
+test('audience is business-workspace owners and admins only, one row per address', async () => {
   const db = await setup();
   await seedAudience(db);
 
-  const emails = (await audience(db, true)).map((r) => r.email).sort();
-  assert.deepEqual(emails, [
+  const rows = await audience(db);
+  // Excluded: personal-only owner, member/student, guest admin, unconfirmed,
+  // deleted, banned, owner of a deleted workspace only, no address.
+  assert.deepEqual(rows.map((r) => r.email).sort(), [
     'admin@example.com',
     'default-admin@example.com',
     'multi@example.com',
     'owner@example.com',
-    'personal@example.com',
   ]);
-  const teamOnly = (await audience(db, false)).map((r) => r.email);
-  assert.equal(teamOnly.includes('personal@example.com'), false);
-  for (const row of await audience(db, true)) {
+  for (const row of rows) {
     assert.equal(row.recipient_hash, hash(row.email));
   }
 });
@@ -235,7 +237,7 @@ test('hard bounces, complaints and do-not-send entries always classify as suppre
   );
 });
 
-test('dry-run counts return integers only and follow the unsubscribe switch', async () => {
+test('dry-run counts are integers only and suppress unsubscribed addresses too', async () => {
   const db = await setup();
   await seedAudience(db);
   await db.exec(`
@@ -243,34 +245,22 @@ test('dry-run counts return integers only and follow the unsubscribe switch', as
       ('email', 'owner@example.com', 'recipient_unsubscribed'),
       ('email', 'multi@example.com', 'hard bounce');
   `);
-  const counts = async (honour) =>
-    (
-      await asService(
-        db,
-        'select * from private.policy_notice_counts($1, $2, true, $3)',
-        [NOTICE, V1, honour]
-      )
-    ).rows[0];
+  const { rows } = await asService(
+    db,
+    'select * from private.policy_notice_counts($1, $2)',
+    [NOTICE, V1]
+  );
 
-  const send = await counts(false);
-  assert.deepEqual(Object.keys(send).sort(), [
-    'already_sent',
-    'eligible',
-    'previously_failed',
-    'suppressed',
+  assert.deepEqual(rows, [
+    {
+      eligible: 2,
+      suppressed: 2,
+      already_sent: 0,
+      previously_failed: 0,
+      // member, guest, personal-only and deleted-workspace-only accounts
+      excluded_personal_only: 4,
+    },
   ]);
-  assert.deepEqual(send, {
-    eligible: 4,
-    suppressed: 1,
-    already_sent: 0,
-    previously_failed: 0,
-  });
-  assert.deepEqual(await counts(true), {
-    eligible: 3,
-    suppressed: 2,
-    already_sent: 0,
-    previously_failed: 0,
-  });
 });
 
 test('real sends refuse until a dry run and a test-list send exist for that version', async () => {
@@ -348,10 +338,8 @@ test('next recipients skip every address already in the ledger', async () => {
   assert.equal(await claim(db, live, 'admin@example.com'), true);
   assert.equal(await record(db, live, 'admin@example.com', 'unknown'), true);
 
-  const emails = (await audience(db, true)).map((r) => r.email);
-  assert.equal(emails.includes('owner@example.com'), false);
-  assert.equal(emails.includes('admin@example.com'), false);
-  assert.equal(emails.length, 3);
+  const emails = (await audience(db)).map((r) => r.email).sort();
+  assert.deepEqual(emails, ['default-admin@example.com', 'multi@example.com']);
 });
 
 test('health counts provider rejections and later bounces and complaints', async () => {
@@ -363,14 +351,27 @@ test('health counts provider rejections and later bounces and complaints', async
     ['b@example.com', 'sent'],
     ['c@example.com', 'failed'],
     ['d@example.com', 'unknown'],
+    ['e@example.com', 'sent'],
+    ['f@example.com', 'sent'],
   ]) {
     await claim(db, live, email);
-    await record(db, live, email, status, status === 'sent' ? 'ses' : null);
+    await record(
+      db,
+      live,
+      email,
+      status,
+      status === 'sent' ? `ses-${email}` : null
+    );
   }
   await db.exec(`
     insert into public.email_bounce_complaints (email_hash, event_type, bounce_type) values
       ('${hash('a@example.com')}', 'bounce', 'hard'),
       ('${hash('b@example.com').slice(0, 16)}', 'complaint', null);
+    -- Statuses written by the SES notification handler; each row counts once.
+    update private.policy_notice_deliveries set status = 'bounced'
+      where recipient_hash in ('${hash('a@example.com')}', '${hash('e@example.com')}');
+    update private.policy_notice_deliveries set status = 'complained'
+      where recipient_hash = '${hash('f@example.com')}';
   `);
   const { rows } = await asService(
     db,
@@ -379,11 +380,11 @@ test('health counts provider rejections and later bounces and complaints', async
   );
   // The owner preview counts as one more attempt.
   assert.deepEqual(rows[0], {
-    attempted: 5,
+    attempted: 7,
     rejected: 1,
     unknown: 1,
-    hard_bounces: 1,
-    complaints: 1,
+    hard_bounces: 2,
+    complaints: 2,
   });
 });
 
@@ -458,7 +459,7 @@ test('only service_role can reach the ledger', async () => {
   }
   await db.exec('set role authenticated');
   await assert.rejects(
-    db.query('select * from private.policy_notice_counts($1, $2, true, true)', [
+    db.query('select * from private.policy_notice_counts($1, $2)', [
       NOTICE,
       V1,
     ]),

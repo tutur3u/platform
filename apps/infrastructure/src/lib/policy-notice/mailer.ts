@@ -4,8 +4,9 @@ import type { MailerOutcome, PolicyNoticeMailer } from './types';
 
 /**
  * Sends through the existing EmailService (SES with the root workspace's
- * database credentials). One recipient per message, multipart HTML + text.
- * The service is loaded lazily, so a dry run never touches credentials.
+ * database credentials, From = the root sender). One recipient per message,
+ * multipart HTML + text. The service's own blacklist check always runs. The
+ * service is loaded lazily, so a dry run never touches credentials.
  */
 export function createEmailServiceMailer(
   load: () => Promise<EmailService>
@@ -15,24 +16,22 @@ export function createEmailServiceMailer(
   return {
     async send(input): Promise<MailerOutcome> {
       service ??= load();
-      const result = await (await service).sendInternal(
-        {
-          recipients: { to: [input.to] },
-          content: {
-            subject: input.subject,
-            html: input.html,
-            text: input.text,
-          },
-          metadata: {
-            wsId: ROOT_WORKSPACE_ID,
-            templateType: 'policy-notice',
-            entityType: 'policy_notice',
-            entityId: input.noticeId,
-            priority: 'high',
-          },
+      const result = await (await service).sendInternal({
+        recipients: { to: [input.to] },
+        content: {
+          subject: input.subject,
+          html: input.html,
+          text: input.text,
+          replyTo: input.replyTo,
         },
-        { skipRecipientBlacklist: input.bypassUnsubscribe }
-      );
+        metadata: {
+          wsId: ROOT_WORKSPACE_ID,
+          templateType: 'policy-notice',
+          entityType: 'policy_notice',
+          entityId: input.noticeId,
+          priority: 'high',
+        },
+      });
 
       if (result.success && result.messageId)
         return { kind: 'sent', messageId: result.messageId };

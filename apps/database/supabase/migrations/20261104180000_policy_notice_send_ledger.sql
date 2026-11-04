@@ -35,8 +35,12 @@ create table if not exists private.policy_notice_deliveries (
     recipient_hash text not null check (recipient_hash ~ '^[0-9a-f]{64}$'),
     run_id uuid not null references private.policy_notice_runs (id),
     mode text not null check (mode in ('test_list', 'live')),
-    status text not null
-        check (status in ('pending', 'sent', 'failed', 'suppressed', 'unknown')),
+    -- 'bounced' and 'complained' are set later from SES notifications.
+    status text not null constraint policy_notice_deliveries_status_check
+        check (status in (
+            'pending', 'sent', 'failed', 'suppressed', 'unknown',
+            'bounced', 'complained'
+        )),
     suppression text check (
         suppression in ('complaint', 'hard_bounce', 'blocked', 'unsubscribed')
     ),
@@ -44,14 +48,22 @@ create table if not exists private.policy_notice_deliveries (
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     primary key (notice_id, notice_version, recipient_hash),
-    check ((status = 'suppressed') = (suppression is not null)),
-    check ((status = 'sent') = (ses_message_id is not null))
+    constraint policy_notice_deliveries_suppressed_check
+        check ((status = 'suppressed') = (suppression is not null)),
+    constraint policy_notice_deliveries_message_check
+        check (
+            (status in ('sent', 'bounced', 'complained'))
+            = (ses_message_id is not null)
+        )
 );
 
 create index if not exists policy_notice_deliveries_run_idx
     on private.policy_notice_deliveries (run_id, status);
 create index if not exists policy_notice_deliveries_notice_idx
     on private.policy_notice_deliveries (notice_id, mode, status);
+create index if not exists policy_notice_deliveries_message_idx
+    on private.policy_notice_deliveries (ses_message_id)
+    where ses_message_id is not null;
 
 alter table private.policy_notice_runs enable row level security;
 alter table private.policy_notice_deliveries enable row level security;
@@ -77,10 +89,11 @@ revoke all on function private.policy_notice_recipient_hash(text)
 grant execute on function private.policy_notice_recipient_hash(text)
     to service_role;
 
--- Hard bounces, complaints and every email_blacklist entry other than the
--- global unsubscribe are always suppressing. Only 'unsubscribed' is subject to
--- the caller's switch. Bounce hashes are matched in both the full sha256 form
--- and the 16-character form the email service uses for abuse events.
+-- The suppression reason for an address. Every reason suppresses: hard
+-- bounces, complaints, any email_blacklist entry (do-not-email, domain blocks)
+-- and the global unsubscribe ('unsubscribed'). Bounce hashes are matched in
+-- both the full sha256 form and the 16-character form the email service uses
+-- for abuse events.
 create or replace function private.policy_notice_suppression(p_email text)
 returns text
 language sql
@@ -134,31 +147,30 @@ revoke all on function private.policy_notice_suppression(text)
 grant execute on function private.policy_notice_suppression(text)
     to service_role;
 
--- Workspace owners (creators) and administrators (MEMBER with an enabled
--- 'admin' permission through a role or the member defaults) of live
--- workspaces, one row per confirmed, active, non-anonymous account address.
-create or replace function private.policy_notice_audience(
-    p_include_personal boolean
-)
-returns table (email text)
+-- Every confirmed, active, non-anonymous account address, flagged when it
+-- owns or administers a live non-personal (business) workspace. Owners are
+-- creators; administrators are MEMBERs with an enabled 'admin' permission
+-- through a role or the member defaults. The notice audience is the flagged
+-- addresses; the rest are counted for the record only.
+create or replace function private.policy_notice_accounts()
+returns table (email text, business boolean)
 language sql
 stable
 security definer
 set search_path = pg_catalog, pg_temp
 as $$
-    with live_workspaces as (
+    with business_workspaces as (
         select w.id, w.creator_id
         from public.workspaces w
-        where coalesce(w.deleted, false) = false
-            and (p_include_personal or w.personal = false)
+        where coalesce(w.deleted, false) = false and w.personal = false
     ),
-    people as (
-        select lw.creator_id as user_id
-        from live_workspaces lw
+    business_people as (
+        select bw.creator_id as user_id
+        from business_workspaces bw
         union
         select wm.user_id
         from public.workspace_members wm
-        join live_workspaces lw on lw.id = wm.ws_id
+        join business_workspaces bw on bw.id = wm.ws_id
         where wm.type = 'MEMBER'
             and (
                 exists (
@@ -182,75 +194,79 @@ as $$
                 )
             )
     )
-    select distinct lower(btrim(u.email))
-    from people p
-    join auth.users u on u.id = p.user_id
+    select lower(btrim(u.email)), bool_or(bp.user_id is not null)
+    from auth.users u
+    left join business_people bp on bp.user_id = u.id
     where u.email is not null
         and btrim(u.email) <> ''
         and u.email_confirmed_at is not null
         and u.deleted_at is null
         and coalesce(u.is_anonymous, false) = false
-        and (u.banned_until is null or u.banned_until <= now());
+        and (u.banned_until is null or u.banned_until <= now())
+    group by lower(btrim(u.email));
 $$;
 
-revoke all on function private.policy_notice_audience(boolean)
+revoke all on function private.policy_notice_accounts()
     from public, anon, authenticated;
 -- tuturuuu: no-grant (internal)
 
 -- Dry run: counts only, so no address ever leaves the database.
 create or replace function private.policy_notice_counts(
     p_notice_id text,
-    p_notice_version text,
-    p_include_personal boolean,
-    p_honour_unsubscribes boolean
+    p_notice_version text
 )
 returns table (
     eligible integer,
     suppressed integer,
     already_sent integer,
-    previously_failed integer
+    previously_failed integer,
+    excluded_personal_only integer
 )
 language sql
 stable
 security definer
 set search_path = pg_catalog, pg_temp
 as $$
-    with audience as (
+    with accounts as (
         select
+            a.business,
             private.policy_notice_recipient_hash(a.email) as hash,
-            private.policy_notice_suppression(a.email) as suppression
-        from private.policy_notice_audience(p_include_personal) a
+            case
+                when a.business then private.policy_notice_suppression(a.email)
+            end as suppression
+        from private.policy_notice_accounts() a
     ),
     joined as (
-        select
-            case
-                when a.suppression = 'unsubscribed' and not p_honour_unsubscribes
-                    then null
-                else a.suppression
-            end as suppression,
-            d.status
-        from audience a
+        select a.business, a.suppression, d.status
+        from accounts a
         left join private.policy_notice_deliveries d
             on d.notice_id = p_notice_id
             and d.notice_version = p_notice_version
             and d.recipient_hash = a.hash
     )
     select
-        (count(*) filter (where status is null and suppression is null))::integer,
         (count(*) filter (
-            where status = 'suppressed'
-                or (status is null and suppression is not null)
+            where business and status is null and suppression is null
         ))::integer,
-        (count(*) filter (where status = 'sent'))::integer,
         (count(*) filter (
-            where status in ('pending', 'failed', 'unknown')
-        ))::integer
+            where business and (
+                status = 'suppressed'
+                or (status is null and suppression is not null)
+            )
+        ))::integer,
+        (count(*) filter (
+            where business and status in ('sent', 'bounced', 'complained')
+        ))::integer,
+        (count(*) filter (
+            where business and status in ('pending', 'failed', 'unknown')
+        ))::integer,
+        (count(*) filter (where not business))::integer
     from joined;
 $$;
 
-revoke all on function private.policy_notice_counts(text, text, boolean, boolean)
+revoke all on function private.policy_notice_counts(text, text)
     from public, anon, authenticated;
-grant execute on function private.policy_notice_counts(text, text, boolean, boolean)
+grant execute on function private.policy_notice_counts(text, text)
     to service_role;
 
 -- The next audience addresses with no ledger row for this version. A claimed
@@ -258,7 +274,6 @@ grant execute on function private.policy_notice_counts(text, text, boolean, bool
 create or replace function private.policy_notice_next_recipients(
     p_notice_id text,
     p_notice_version text,
-    p_include_personal boolean,
     p_limit integer
 )
 returns table (recipient_hash text, email text, suppression text)
@@ -272,7 +287,8 @@ as $$
         select
             x.email,
             private.policy_notice_recipient_hash(x.email) as hash
-        from private.policy_notice_audience(p_include_personal) x
+        from private.policy_notice_accounts() x
+        where x.business
     ) a
     where not exists (
         select 1
@@ -285,9 +301,9 @@ as $$
     limit least(greatest(coalesce(p_limit, 1), 1), 100);
 $$;
 
-revoke all on function private.policy_notice_next_recipients(text, text, boolean, integer)
+revoke all on function private.policy_notice_next_recipients(text, text, integer)
     from public, anon, authenticated;
-grant execute on function private.policy_notice_next_recipients(text, text, boolean, integer)
+grant execute on function private.policy_notice_next_recipients(text, text, integer)
     to service_role;
 
 -- Test-list classification: the same suppression rules for explicit addresses.
@@ -377,7 +393,7 @@ begin
         where d.notice_id = p_notice_id
             and d.notice_version <> p_notice_version
             and d.mode = 'live'
-            and d.status in ('pending', 'sent', 'unknown')
+            and d.status in ('pending', 'sent', 'unknown', 'bounced', 'complained')
     ) then
         raise exception 'policy_notice_gate:version_locked' using errcode = 'P0001';
     end if;
@@ -528,7 +544,9 @@ grant execute on function private.policy_notice_record(uuid, text, text, text, t
     to service_role;
 
 -- Circuit-breaker inputs for one version: provider rejections and unknown
--- outcomes from the ledger, plus bounces and complaints recorded after send.
+-- outcomes from the ledger, plus bounces and complaints, either set on the row
+-- from SES notifications or recorded in email_bounce_complaints after send.
+-- Each row counts once.
 create or replace function private.policy_notice_health(
     p_notice_id text,
     p_notice_version text
@@ -546,24 +564,28 @@ security invoker
 set search_path = pg_catalog, pg_temp
 as $$
     select
-        (count(*) filter (where d.status in ('sent', 'failed', 'unknown')))::integer,
+        (count(*) filter (
+            where d.status in ('sent', 'failed', 'unknown', 'bounced', 'complained')
+        ))::integer,
         (count(*) filter (where d.status = 'failed'))::integer,
         (count(*) filter (where d.status = 'unknown'))::integer,
         (count(*) filter (
-            where d.status = 'sent' and exists (
+            where d.status = 'bounced' or (d.status = 'sent' and exists (
                 select 1 from public.email_bounce_complaints b
                 where b.event_type = 'bounce'
                     and b.bounce_type = 'hard'
                     and b.email_hash in (d.recipient_hash, left(d.recipient_hash, 16))
                     and b.created_at >= d.created_at
-            )
+            ))
         ))::integer,
         (count(*) filter (
-            where d.status = 'sent' and exists (
-                select 1 from public.email_bounce_complaints b
-                where b.event_type = 'complaint'
-                    and b.email_hash in (d.recipient_hash, left(d.recipient_hash, 16))
-                    and b.created_at >= d.created_at
+            where d.status = 'complained' or (
+                d.status in ('sent', 'bounced') and exists (
+                    select 1 from public.email_bounce_complaints b
+                    where b.event_type = 'complaint'
+                        and b.email_hash in (d.recipient_hash, left(d.recipient_hash, 16))
+                        and b.created_at >= d.created_at
+                )
             )
         ))::integer
     from private.policy_notice_deliveries d

@@ -46,7 +46,7 @@
 
     <!-- ================= TIẾNG VIỆT ================= -->
     <h1 class="h1 text" style="margin:24px 0 8px 0;font-size:24px;line-height:32px;font-weight:700;color:#111827;">Chúng tôi cập nhật Điều khoản và Chính sách quyền riêng tư</h1>
-    <p class="muted" style="margin:0 0 20px 0;font-size:15px;line-height:24px;color:#4B5563;">Bạn nhận được email này vì bạn là chủ sở hữu hoặc quản trị viên một không gian làm việc trên Tuturuuu.</p>
+    <p class="muted" style="margin:0 0 20px 0;font-size:15px;line-height:24px;color:#4B5563;">Bạn nhận được email này vì bạn là chủ sở hữu hoặc quản trị viên của một không gian làm việc trên Tuturuuu.</p>
 
     <h2 class="text" style="margin:0 0 8px 0;font-size:16px;line-height:24px;font-weight:700;color:#111827;">Điểm chính</h2>
     <ul class="text" style="margin:0 0 20px 0;padding-left:20px;font-size:15px;line-height:24px;color:#1F2937;">
@@ -67,6 +67,7 @@
     </td></tr></table>
 
     <p class="muted" style="margin:0;font-size:14px;line-height:22px;color:#4B5563;">Câu hỏi và yêu cầu về quyền riêng tư: <a href="mailto:legal@tuturuuu.com" style="color:#4180E9;">legal@tuturuuu.com</a> · <a href="tel:19001509" style="color:#4180E9;">1900 1509</a></p>
+    <p class="muted" style="margin:12px 0 0 0;font-size:13px;line-height:20px;color:#6B7280;">Đây là email thông báo về thay đổi Điều khoản và Chính sách quyền riêng tư của Tuturuuu, không phải email quảng cáo.</p>
 
     <!-- divider -->
     <hr class="rule" style="border:0;border-top:1px solid #E5E7EB;margin:28px 0;">
@@ -94,6 +95,7 @@
     </td></tr></table>
 
     <p class="muted" lang="en" style="margin:0;font-size:14px;line-height:22px;color:#4B5563;">Questions and privacy requests: <a href="mailto:legal@tuturuuu.com" style="color:#4180E9;">legal@tuturuuu.com</a> · <a href="tel:19001509" style="color:#4180E9;">1900 1509</a></p>
+    <p class="muted" lang="en" style="margin:12px 0 0 0;font-size:13px;line-height:20px;color:#6B7280;">This is a service notice about changes to Tuturuuu's Terms and Privacy Policy, not a marketing email.</p>
 
   </td></tr>
 
