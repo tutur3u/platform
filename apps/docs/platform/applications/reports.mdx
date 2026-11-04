@@ -337,6 +337,29 @@ Changing this setting requires both `manage_user_report_automation` and
 including approvals from the report editor and bulk approval flows. It does not
 backfill previously approved reports or automatically resend delivered reports.
 
+### Approved, not sent
+
+A report that is approved but was never requested for delivery (not queued,
+processing, sent, failed, blocked or skipped, and with no recorded error) is
+counted in the Reports worklist under **Approved, not sent** ("Đã duyệt, chưa
+gửi"), across every stage in the current cadence and period. Enabling
+auto-send, deploys, migrations and scheduled worker runs never queue these
+reports. An administrator with both `manage_user_report_automation` and
+`send_user_group_report_emails` chooses per period and/or class:
+
+- **Send now** queues only the held reports in that scope through
+  `private.request_periodic_report_delivery`, the same per-report path as a
+  manual send, so its row locks, 409 guards, one queue row per report, worker
+  caps and workspace email limits all apply. At most 100 per action.
+- **Skip** marks them `skipped` without sending. They leave the list and can
+  still be sent manually later.
+
+The server re-derives the held set from the scope (client report ids are
+rejected), re-checks the count shown in the confirmation, and records each
+choice in `private.periodic_report_held_actions` (actor, time, workspace,
+scope, action, counts and the affected report ids) before acting. One
+confirmation key acts at most once, so a re-click replays the recorded result.
+
 The `20260911100000_periodic_report_approval_delivery.sql` migration atomically
 queues the report with its approval. Production migration CI applies it automatically
 after integration into production. Enable the setting after that workflow succeeds. `AUTO_SEND_APPROVED_REPORTS` is a workspace config, defaulting to off.

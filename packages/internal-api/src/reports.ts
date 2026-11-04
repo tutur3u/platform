@@ -118,6 +118,8 @@ export const PERIODIC_DELIVERY_CATEGORIES = [
   'unknown',
   'approval',
   'failure',
+  // Approved, never requested for delivery: waits for an explicit admin choice.
+  'held',
 ] as const;
 export type PeriodicReportDeliveryCategory =
   (typeof PERIODIC_DELIVERY_CATEGORIES)[number];
@@ -187,6 +189,8 @@ export interface PeriodicReportCounts {
   failed: number;
   pendingReview: number;
   total: number;
+  /** Approved reports never requested for delivery (all stages in scope). */
+  held?: number;
 }
 
 export interface ListPeriodicReportsParams {
@@ -571,6 +575,78 @@ export function updatePeriodicReportAutoSend(
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ autoSendAfterApproval: enabled }),
+    }
+  );
+}
+
+/** A period and/or class. The server derives the held reports itself. */
+export interface HeldPeriodicReportScope {
+  cadence: PeriodicReportCadence;
+  periodStart?: string;
+  periodEnd?: string;
+  groupId?: string;
+  /** Viewer IANA timezone; the period uses it when the workspace has none. */
+  timezone?: string;
+}
+
+export interface HeldPeriodicReportPreview {
+  count: number;
+  sendLimit: number;
+  skipLimit: number;
+}
+
+export interface HeldPeriodicReportActionResult {
+  action: 'send' | 'skip';
+  requested: number;
+  affected: number;
+  replayed: boolean;
+}
+
+const heldPath = (workspaceId: string) =>
+  `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/reports/held`;
+
+/** Counts held reports in a scope. Read-only: never queues or changes them. */
+export function previewHeldPeriodicReports(
+  workspaceId: string,
+  scope: HeldPeriodicReportScope,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<HeldPeriodicReportPreview>(
+    heldPath(workspaceId),
+    {
+      cache: 'no-store',
+      query: {
+        cadence: scope.cadence,
+        periodStart: scope.periodStart,
+        periodEnd: scope.periodEnd,
+        groupId: scope.groupId,
+        timezone: scope.timezone,
+      },
+    }
+  );
+}
+
+/**
+ * Admin-only, audited Send now or Skip for the held reports in a scope.
+ * `expectedCount` must match the server's count; one `idempotencyKey` acts
+ * at most once, so a re-click replays the recorded result.
+ */
+export function resolveHeldPeriodicReports(
+  workspaceId: string,
+  payload: HeldPeriodicReportScope & {
+    action: 'send' | 'skip';
+    expectedCount: number;
+    idempotencyKey: string;
+  },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<HeldPeriodicReportActionResult>(
+    heldPath(workspaceId),
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
     }
   );
 }

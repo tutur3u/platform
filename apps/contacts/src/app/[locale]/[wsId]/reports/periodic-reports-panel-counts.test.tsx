@@ -29,6 +29,7 @@ const state = vi.hoisted(() => ({
   actor: { assertActive: vi.fn() },
   summary: vi.fn(),
   worklist: vi.fn(),
+  held: vi.fn(),
   list: vi.fn(),
   setFilters: vi.fn(),
 }));
@@ -87,6 +88,20 @@ vi.mock('./periodic-report-row', () => ({
 }));
 vi.mock('./periodic-recipient-remediation', () => ({
   PeriodicRecipientRemediation: () => null,
+}));
+vi.mock('./periodic-held-reports', () => ({
+  PeriodicHeldReports: (props: {
+    heldCount?: number;
+    canResolve: boolean;
+    onReview: () => void;
+  }) => {
+    state.held(props);
+    return (
+      <button type="button" onClick={props.onReview}>
+        Review held
+      </button>
+    );
+  },
 }));
 vi.mock('./periodic-delivery-batch-dialog', () => ({
   PeriodicDeliveryBatchDialog: () => null,
@@ -278,4 +293,45 @@ it('passes the partial-summary flag from the server to the status cards', async 
   state.query.data = { pages: [{ ...firstPage, summaryPartial: true }] };
   rerender(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
   expect(state.summary.mock.lastCall?.[0].partial).toBe(true);
+});
+
+it('keeps the held group visible from the default view and opens it on the approved stage', async () => {
+  const heldPage = (queryScope: string) => ({
+    ...page(queryScope),
+    counts: { ...counts, held: 3 },
+  });
+  const { rerender } = render(
+    <PeriodicReportsPanel
+      wsId="workspace"
+      permissions={permissions}
+      canResolveHeld
+    />
+  );
+  const result = await state.options.queryFn({ pageParam: 1 });
+  state.query.data = {
+    pages: [heldPage(result.queryScope) as unknown as QueryPage],
+  };
+  rerender(
+    <PeriodicReportsPanel
+      wsId="workspace"
+      permissions={permissions}
+      canResolveHeld
+    />
+  );
+  expect(state.worklist.mock.lastCall?.[0]).toMatchObject({ heldCount: 3 });
+  expect(state.held.mock.lastCall?.[0]).toMatchObject({
+    heldCount: 3,
+    canResolve: true,
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Review held' }));
+  expect(state.setFilters).toHaveBeenCalledWith(
+    expect.objectContaining({ stage: 'approved' })
+  );
+  await state.options.queryFn({ pageParam: 1 });
+  expect(state.list.mock.lastCall?.[1]).toMatchObject({ category: 'held' });
+});
+
+it('never offers the held actions without the admin permission', async () => {
+  render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+  expect(state.held.mock.lastCall?.[0]).toMatchObject({ canResolve: false });
 });
