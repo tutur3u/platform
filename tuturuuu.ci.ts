@@ -103,7 +103,7 @@ export const ci = {
   'vercel-production-platform.yaml': true,
   'vercel-production-tools.yaml': true,
   'vercel-production-rewise.yaml': true,
-  'vercel-production-shortener.yaml': true,
+  'vercel-production-shortener.yaml': false,
   'vercel-production-tasks.yaml': true,
   'vercel-production-meet.yaml': false,
   'vercel-production-learn.yaml': true,
@@ -160,5 +160,10 @@ export const productionPublicationPolicy = {
   },
   mail: { state: 'held', reason: 'held for wave-1 cutover' },
   apps: { state: 'held', reason: 'held for wave-1 cutover' },
-  shortener: { state: 'held', reason: 'held for wave-2 cutover' },
+  shortener: {
+    state: 'admitted',
+    reason:
+      'Shortener native cutover by the release owner with a retained Vercel rollback',
+    surfaces: ['frontend'],
+  },
 } satisfies ProductionPublicationPolicy;
