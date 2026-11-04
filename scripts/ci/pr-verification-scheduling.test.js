@@ -28,6 +28,7 @@ const heavy = {
     'matrix-test',
   ],
   'external-internal-packages.yaml': ['Build'],
+  'external-project-page-versions-contract.yaml': ['contract'],
   'external-project-storage-analytics-contract.yaml': ['contract'],
   'fee-lock-database-contract.yaml': ['contract'],
   'inventory-offline-contract.yaml': ['contract'],
