@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { getAppDomainByUrl, PRODUCTION_INTERNAL_APP_DOMAINS } from './internal-domains';
+import {
+  getAppDomainByUrl,
+  PRODUCTION_INTERNAL_APP_DOMAINS,
+} from './internal-domains';
 import {
   getLaunchableApp,
   getLaunchableAppByHostname,
