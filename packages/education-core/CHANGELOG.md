@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.1](https://github.com/tutur3u/platform/compare/education-core-v0.5.0...education-core-v0.5.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **learn:** require parent consent for Tulearn parent links (SR-238) ([#7062](https://github.com/tutur3u/platform/issues/7062)) ([b085a0e](https://github.com/tutur3u/platform/commit/b085a0e331aa758fd1e8f490df284b6bf22ed63a))
+* **teach:** enforce page-level workspace membership ([#7098](https://github.com/tutur3u/platform/issues/7098)) ([77f5869](https://github.com/tutur3u/platform/commit/77f58694876e8320dcf38789f4b0ba2c5725589a))
+* **tulearn:** interim, parents see no periodic reports (fail-closed) ([#7539](https://github.com/tutur3u/platform/issues/7539)) ([b3b1e48](https://github.com/tutur3u/platform/commit/b3b1e483cc6922ee0fd8480ab43847833c93316b))
+* **tulearn:** parents see only approved, sent periodic reports ([#7547](https://github.com/tutur3u/platform/issues/7547)) ([487b501](https://github.com/tutur3u/platform/commit/487b5019de6b13be2cf05ead19461062355332fe))
+* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening ([#7057](https://github.com/tutur3u/platform/issues/7057)) ([99aa5a8](https://github.com/tutur3u/platform/commit/99aa5a84b735abd4970bebb70bc7ccc3e8081c53)) ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
+* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening. ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/education-core-v0.4.2...education-core-v0.5.0) (2026-10-04)
 
 

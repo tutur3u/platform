@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.0](https://github.com/tutur3u/platform/compare/lettin-v1.6.0...lettin-v1.7.0) (2026-11-04)
+
+
+### Features
+
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
+
+### Bug Fixes
+
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+
 ## [1.6.0](https://github.com/tutur3u/platform/compare/lettin-v1.5.1...lettin-v1.6.0) (2026-10-24)
 
 

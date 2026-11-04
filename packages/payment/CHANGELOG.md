@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/tutur3u/platform/compare/payment-v0.4.2...payment-v0.4.3) (2026-11-04)
+
+
+### Bug Fixes
+
+* **billing:** abort deletion when subscription cleanup fails ([#7373](https://github.com/tutur3u/platform/issues/7373)) ([e3ef4d3](https://github.com/tutur3u/platform/commit/e3ef4d31a2a1bc18c15a9e4d6048811afbd226f3))
+
 ## [0.4.2](https://github.com/tutur3u/platform/compare/payment-v0.4.1...payment-v0.4.2) (2026-09-20)
 
 

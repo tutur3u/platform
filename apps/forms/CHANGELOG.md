@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/forms-v0.20.0...forms-v0.21.0) (2026-11-04)
+
+
+### Features
+
+* **tasks:** hide Initiatives in Tasks and remove their create controls ([#7099](https://github.com/tutur3u/platform/issues/7099)) ([72cfb25](https://github.com/tutur3u/platform/commit/72cfb25d4df4bf068669b4dc21590a23b6f717a9))
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
+
+### Bug Fixes
+
+* **cms:** align form and content workspace permissions ([#7023](https://github.com/tutur3u/platform/issues/7023)) ([798d418](https://github.com/tutur3u/platform/commit/798d4189a31e2bacd66c49ce60d21c3b83241411))
+* **forms:** align definition and media workspace access ([#7015](https://github.com/tutur3u/platform/issues/7015)) ([98a5757](https://github.com/tutur3u/platform/commit/98a57572ce4e99b3b5240245c1577875a85de88b))
+* **forms:** scope share-link lookup to the resolved workspace ([#7065](https://github.com/tutur3u/platform/issues/7065)) ([869062d](https://github.com/tutur3u/platform/commit/869062d27200a075ba1afe112c0ae0ca2ac05661))
+* **meet:** validate plan creation access ([#7004](https://github.com/tutur3u/platform/issues/7004)) ([e16af79](https://github.com/tutur3u/platform/commit/e16af79b25a50c94395f4a6d579ffa3ce6485153))
+* **security:** isolate staging hosts from production cookies ([#7245](https://github.com/tutur3u/platform/issues/7245)) ([4395a92](https://github.com/tutur3u/platform/commit/4395a92e9a0d1ee03b93fc7a944cc2722afd2974))
+
 ## [0.20.0](https://github.com/tutur3u/platform/compare/forms-v0.19.1...forms-v0.20.0) (2026-10-24)
 
 

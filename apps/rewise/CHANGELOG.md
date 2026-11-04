@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.46.0](https://github.com/tutur3u/platform/compare/rewise-v0.45.0...rewise-v0.46.0) (2026-11-04)
+
+
+### Features
+
+* **tasks:** hide Initiatives in Tasks and remove their create controls ([#7099](https://github.com/tutur3u/platform/issues/7099)) ([72cfb25](https://github.com/tutur3u/platform/commit/72cfb25d4df4bf068669b4dc21590a23b6f717a9))
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
+
+### Bug Fixes
+
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **meet:** validate plan creation access ([#7004](https://github.com/tutur3u/platform/issues/7004)) ([e16af79](https://github.com/tutur3u/platform/commit/e16af79b25a50c94395f4a6d579ffa3ce6485153))
+
 ## [0.45.0](https://github.com/tutur3u/platform/compare/rewise-v0.44.1...rewise-v0.45.0) (2026-10-24)
 
 

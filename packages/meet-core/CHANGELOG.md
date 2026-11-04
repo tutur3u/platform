@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.5.0](https://github.com/tutur3u/platform/compare/meet-core-v1.4.2...meet-core-v1.5.0) (2026-11-04)
+
+
+### Features
+
+* **meet:** add transcription state and consent protocol ([#7266](https://github.com/tutur3u/platform/issues/7266)) ([2d601a1](https://github.com/tutur3u/platform/commit/2d601a1620cc8d39d425abb0617774c6eb2184bf))
+* **meet:** default-allow Meet AI with a kill switch ([#7410](https://github.com/tutur3u/platform/issues/7410)) ([a96f160](https://github.com/tutur3u/platform/commit/a96f1609656bed08678af0dd1fb828711af4278a))
+* **meet:** fail-closed per-user Meet AI limiter ([#7417](https://github.com/tutur3u/platform/issues/7417)) ([fca5cb0](https://github.com/tutur3u/platform/commit/fca5cb0b31a5966bab2d8fe16b9d0c8f2f7986fe))
+* **meet:** gate Meet AI behind a default-deny workspace allowlist ([#7354](https://github.com/tutur3u/platform/issues/7354)) ([c1ec761](https://github.com/tutur3u/platform/commit/c1ec761dedcdd01041e4b6b82f53aa62f001655f))
+* **meet:** improve transcription quality and support solo meetings ([#7267](https://github.com/tutur3u/platform/issues/7267)) ([ecc5e53](https://github.com/tutur3u/platform/commit/ecc5e53bfa6423ddbd9aaf789e6779c551064eab))
+* **meet:** limit transcript and notes reads to participants and admins ([#7293](https://github.com/tutur3u/platform/issues/7293)) ([ab3216d](https://github.com/tutur3u/platform/commit/ab3216dceaaed5483fa0debd90f091cb9473d06f))
+
+
+### Bug Fixes
+
+* **ai:** require workspace access for meeting transcription ([#7357](https://github.com/tutur3u/platform/issues/7357)) ([c2763ae](https://github.com/tutur3u/platform/commit/c2763aeb66c094982c3bf8fa83d5b2da6d5cc3a5))
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **meet:** admit AI credits before reserving transcript chunks ([#7243](https://github.com/tutur3u/platform/issues/7243)) ([0826b0e](https://github.com/tutur3u/platform/commit/0826b0eeee62421c284f1edfb9e4454bb2d1d526))
+* **meet:** bill Meet AI to the meeting workspace's AI credits ([#7408](https://github.com/tutur3u/platform/issues/7408)) ([0f8b6dc](https://github.com/tutur3u/platform/commit/0f8b6dcac84f7b29d4c6a15e574330d7b3ad4349))
+
 ## [1.4.2](https://github.com/tutur3u/platform/compare/meet-core-v1.4.1...meet-core-v1.4.2) (2026-10-24)
 
 

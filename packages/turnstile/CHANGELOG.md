@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/tutur3u/platform/compare/turnstile-v0.2.0...turnstile-v0.2.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **packages:** make the published [@tuturuuu](https://github.com/tuturuuu) chain installable and guard it ([#7389](https://github.com/tutur3u/platform/issues/7389)) ([b1378ab](https://github.com/tutur3u/platform/commit/b1378abcaa31c02b5861cc16e6aa6bb2f8789c3c))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/turnstile-v0.1.3...turnstile-v0.2.0) (2026-10-24)
 
 

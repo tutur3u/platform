@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/calendar-v0.36.0...calendar-v0.37.0) (2026-11-04)
+
+
+### Features
+
+* **calendar:** admit native production cutover ([#6952](https://github.com/tutur3u/platform/issues/6952)) ([1269e31](https://github.com/tutur3u/platform/commit/1269e310101f1b360ab1dadf0311cafe8a3d337a))
+* **calendar:** split staging and production hosts and verify Access on staging ([#7318](https://github.com/tutur3u/platform/issues/7318)) ([e1f9a4c](https://github.com/tutur3u/platform/commit/e1f9a4c69f948c9a458b4adc15f01d6e82807ea4))
+* **tasks:** hide Initiatives in Tasks and remove their create controls ([#7099](https://github.com/tutur3u/platform/issues/7099)) ([72cfb25](https://github.com/tutur3u/platform/commit/72cfb25d4df4bf068669b4dc21590a23b6f717a9))
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+* **web:** harden the staging issuer Worker and its protected Next fallback ([#7319](https://github.com/tutur3u/platform/issues/7319)) ([cb5292d](https://github.com/tutur3u/platform/commit/cb5292dc5fc90c10b2af9e9a241905c3c6f5de99))
+
+
+### Bug Fixes
+
+* align workspace scoping for time requests and tasks ([#6999](https://github.com/tutur3u/platform/issues/6999)) ([c889c8b](https://github.com/tutur3u/platform/commit/c889c8b65ed09b8fec7bb50cf4b8fe1f3bedee61))
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **calendar:** fail closed when the staging Tasks URL is unset ([#7345](https://github.com/tutur3u/platform/issues/7345)) ([2f9de15](https://github.com/tutur3u/platform/commit/2f9de15500e89f8228fb9f64cd982d0572b89bbc))
+* **calendar:** retire the temporary cutover smoke host and record staging G3 blockers ([#7312](https://github.com/tutur3u/platform/issues/7312)) ([e4a2dc5](https://github.com/tutur3u/platform/commit/e4a2dc53118e2f3a0397fc15665b144d568e7687))
+* **calendar:** scope connection PATCH and DELETE to the caller workspace ([#7073](https://github.com/tutur3u/platform/issues/7073)) ([78fc480](https://github.com/tutur3u/platform/commit/78fc480694d6ad14d3706f23d7a8dc93fa1e4641))
+* **meet:** validate plan creation access ([#7004](https://github.com/tutur3u/platform/issues/7004)) ([e16af79](https://github.com/tutur3u/platform/commit/e16af79b25a50c94395f4a6d579ffa3ce6485153))
+* **security:** isolate staging hosts from production cookies ([#7245](https://github.com/tutur3u/platform/issues/7245)) ([4395a92](https://github.com/tutur3u/platform/commit/4395a92e9a0d1ee03b93fc7a944cc2722afd2974))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/calendar-v0.35.0...calendar-v0.36.0) (2026-10-24)
 
 
