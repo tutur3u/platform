@@ -9474,6 +9474,8 @@
     "both_reason": "Cả hai",
     "both_reason_tooltip": "Đủ điều kiện cho cả bù buổi vắng và cần hỗ trợ",
     "campus": "Cơ sở",
+    "complete_content_description": "Nội dung này được lưu khi đánh dấu hoàn thành. Hãy sửa hoặc xóa trước khi lưu. Để trống thì chỉ lưu ghi chú buổi học.",
+    "complete_content_title": "Xác nhận nội dung lưu",
     "conflict_student_slots": "Buổi {slotA} bị trùng lịch với buổi {slotB} cho học viên đã chọn",
     "conflict_teacher_slots": "Buổi {slotA} bị trùng lịch với buổi {slotB} cho giáo viên đã chọn",
     "content": "Nội dung",
