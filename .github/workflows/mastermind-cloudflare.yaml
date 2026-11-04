@@ -112,6 +112,7 @@ concurrency:
 jobs:
   # Build artifact delivery with advisory runtime evidence; no publisher credentials.
   artifact:
+    if: github.event_name != 'pull_request' || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -142,6 +143,17 @@ jobs:
       - name: Build native Start Worker and assets
         working-directory: apps/mastermind
         run: bun run build:cloudflare
+      - name: Record emitted config receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/mastermind "$SOURCE_SHA" "$RUNNER_TEMP/native-emitted-config.json"
+      - name: Upload emitted config receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mastermind-native-config-receipt-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/native-emitted-config.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Locate and seal deployable output
         id: output
         run: |
