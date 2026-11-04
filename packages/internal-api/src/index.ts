@@ -470,6 +470,12 @@ export {
   updateExternalChatSettings,
 } from './external-chat';
 export {
+  getWorkspaceExternalProjectPageVersion,
+  listWorkspaceExternalProjectPageVersions,
+  publishWorkspaceExternalProjectPageVersion,
+  saveWorkspaceExternalProjectPageVersion,
+} from './external-project-page-versions';
+export {
   addWorkspaceExternalProjectRoleMembers,
   createWorkspaceExternalProjectRole,
   deleteWorkspaceExternalProjectRole,
