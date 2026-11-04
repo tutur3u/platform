@@ -27,4 +27,36 @@ describe('TipTap depth boundary', () => {
       );
     }
   );
+
+  it('accepts flat primitive node and mark attributes', () => {
+    expect(
+      tipTapDocSchema.safeParse({
+        content: [
+          {
+            attrs: { level: 2, title: 'Heading', visible: true },
+            marks: [
+              {
+                attrs: { href: 'https://example.com', target: null },
+                type: 'link',
+              },
+            ],
+            text: 'Hello',
+            type: 'text',
+          },
+        ],
+        type: 'doc',
+      }).success
+    ).toBe(true);
+  });
+
+  it('rejects nested attributes without traversing their depth', () => {
+    const nested = `${'{"nested":'.repeat(10000)}"value"${'}'.repeat(10000)}`;
+    const attrs = JSON.parse(nested);
+    expect(
+      tipTapDocSchema.safeParse({
+        content: [{ attrs, type: 'paragraph' }],
+        type: 'doc',
+      }).success
+    ).toBe(false);
+  });
 });

@@ -181,6 +181,29 @@ describe('CMS page version routes', () => {
     }
   );
 
+  it('keeps oversized-stream cancellation failures at 413', async () => {
+    const admin = fakeAdmin([]);
+    allow(admin.client);
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(1024 * 1024));
+        controller.enqueue(new Uint8Array(1024 * 1024));
+        controller.enqueue(new Uint8Array(1024 * 1024));
+      },
+      cancel() {
+        throw new Error('cancel failed');
+      },
+    });
+    const request = post({});
+    Object.defineProperty(request, 'body', { value: stream });
+
+    const response = await (await collection()).POST(request, context());
+
+    expect(response.status).toBe(413);
+    expect(stream.locked).toBe(false);
+    expect(admin.calls).toEqual([]);
+  });
+
   it('rejects deeply nested RichText with 400 before insertion', async () => {
     const admin = fakeAdmin([]);
     allow(admin.client);
@@ -199,6 +222,25 @@ describe('CMS page version routes', () => {
         '}}]}}',
     });
     const response = await (await collection()).POST(request, context());
+    expect(response.status).toBe(400);
+    expect(admin.calls).toEqual([]);
+  });
+
+  it('rejects 10k-deep attributes before size serialization or insertion', async () => {
+    const admin = fakeAdmin([]);
+    allow(admin.client);
+    const nestedAttrs = `${'{"nested":'.repeat(10000)}"value"${'}'.repeat(10000)}`;
+    const body =
+      '{"schemaVersion":1,"data":{"schemaVersion":1,"root":{"props":{}},"content":[{"type":"RichText","props":{"id":"body","doc":{"type":"doc","content":[{"type":"paragraph","attrs":' +
+      nestedAttrs +
+      ',"content":[{"type":"text","text":"Hello"}]}]}}]}}';
+    const request = new Request('http://localhost/x', {
+      method: 'POST',
+      body,
+    });
+
+    const response = await (await collection()).POST(request, context());
+
     expect(response.status).toBe(400);
     expect(admin.calls).toEqual([]);
   });
