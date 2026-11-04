@@ -29,14 +29,6 @@ attestation fails closed after forwarding, and does not replace that ownership
 check. These requirements must land before staging is published; source approval
 alone does not authorize publication or provisioning.
 
-For Mail and Apps native staging publication, configure repository variables
-`STAGING_SUPABASE_URL` and `STAGING_SUPABASE_PUBLISHABLE_KEY`. The build and
-publisher must use the same public inputs; their digest remains part of the
-sealed artifact. Worker secrets still require separate provisioning. Exact
-source/artifact admission, protected environments, the live stop fence and
-production holds remain mandatory. Verify this boundary with
-`node --test scripts/ci/wave1-mail-apps-staging.test.mjs`.
-
 ## Staging workflow protection preflight
 
 The Web staging publisher and reusable native staging publisher run

@@ -107,7 +107,7 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
-    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: github.event_name != 'workflow_dispatch' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -451,3 +451,63 @@ jobs:
       WAVE1_CONTROL_READ_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.WAVE1_CONTROL_READ_TOKEN || '' }}
       STAGING_SUPABASE_URL: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_URL || '' }}
       STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || '' }}
+
+  cutover-artifact:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_APP_URL: https://apps.tuturuuu.com
+      NEXT_PUBLIC_APPS_APP_URL: https://apps.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bun install --frozen-lockfile
+      - name: Require production public build inputs
+        run: test -n "$NEXT_PUBLIC_SUPABASE_URL" && test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+      - name: Generate exact source metadata
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ github.sha }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build native Start Worker and dependencies
+        run: bun turbo:local run build --filter=@tuturuuu/apps --concurrency=2
+      - name: Prepare route-free production artifact for Rex
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { resolve } from 'node:path';
+          const root = resolve('apps/apps');
+          const pointer = JSON.parse(readFileSync(resolve(root, '.wrangler/deploy/config.json')));
+          const configPath = resolve(root, '.wrangler/deploy', pointer.configPath);
+          const config = JSON.parse(readFileSync(configPath));
+          config.name = 'tuturuuu-apps';
+          config.workers_dev = false;
+          config.preview_urls = false;
+          config.routes = [];
+          config.vars = { ...config.vars, NEXT_PUBLIC_APP_URL: 'https://apps.tuturuuu.com', NEXT_PUBLIC_APPS_APP_URL: 'https://apps.tuturuuu.com', NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com', TUTURUUU_NOINDEX: '0', APPS_CANONICAL_HOST_ENABLED: '1', INTERNAL_WEB_API_ORIGIN: 'https://tuturuuu.com' };
+          writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
+          writeFileSync(resolve(root, 'cutover-receipt.json'), JSON.stringify({ sourceSha: process.env.GITHUB_SHA, worker: config.name, config: configPath.slice(root.length + 1), routes: [], productionRouteAttached: false }, null, 2) + '\n');
+          JS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: apps-cutover-${{ github.sha }}
+          path: |
+            apps/apps/dist/
+            apps/apps/cutover-receipt.json
+          retention-days: 7
+          if-no-files-found: error
