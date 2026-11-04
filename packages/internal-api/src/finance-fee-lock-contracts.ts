@@ -186,6 +186,26 @@ export const FEE_NOTICE_TEMPLATE_VERSION_CONFLICT_CODE =
   'FEE_NOTICE_TEMPLATE_VERSION_CONFLICT';
 export const FEE_NOTICE_TEMPLATE_INVALID_CODE = 'FEE_NOTICE_TEMPLATE_INVALID';
 
+/** `POST /finance/fee-locks/template/preview`: a locked student's notice or a built-in sample; `template` previews unsaved edits. */
+export const feeNoticePreviewRequestSchema = z.object({
+  lockId: z.guid().optional(),
+  template: feeNoticeTemplateInputSchema.optional(),
+});
+export type FeeNoticePreviewRequest = z.input<
+  typeof feeNoticePreviewRequestSchema
+>;
+/** Plain text: render it as a text node, or escape it (escapeFeeNoticeHtml) for HTML. */
+export interface FeeNoticePreviewResponse {
+  source: 'lock' | 'sample';
+  template_version: number | null;
+  notices: Array<{
+    group_id: string | null;
+    text: string;
+    length: number;
+    truncated: boolean;
+  }>;
+}
+
 export interface FeeNoticeTemplateVersion extends FeeNoticeTemplateInput {
   version: number;
   is_active: boolean;
