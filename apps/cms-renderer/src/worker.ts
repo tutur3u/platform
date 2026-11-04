@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { parseCmsPageVersion } from '@tuturuuu/cms-blocks/schema';
+import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
+import bridgeConfig from '../start-bridge.config';
 
 const tokensSchema = z.object({
   foreground: z.string().regex(/^#[0-9a-f]{6}$/i).default('#171717'),
@@ -37,6 +39,11 @@ export async function serve(request: Request, env: Environment, deps: Dependenci
   const fail = (status: number) => new Response(status === 404 ? 'Page not found' : 'Site unavailable', { status, headers: { 'Cache-Control': 'no-store' } });
   let sites: z.infer<typeof sitesSchema>;
   try { sites = sitesSchema.parse(JSON.parse(env.CMS_SITES ?? '{}')); } catch { return fail(503); }
+  if (!resolveAppBase(url, {
+    ...bridgeConfig.mounts,
+    app: 'cms-renderer',
+    rootHosts: Object.keys(sites),
+  })) return fail(404);
   const site = sites[url.hostname.toLowerCase()];
   if (!site) return fail(404);
   if (url.pathname.startsWith('/__cms/cache')) return fail(404);

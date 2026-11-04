@@ -2,7 +2,7 @@
 
 TanStack Start + Void + Vite+ Worker. The synthetic first-site fixture is never a production fallback. Unknown hosts, missing published pointers and unsupported schemas fail closed.
 
-Rex deploys the CI artifact, using its emitted `dist/server/wrangler.json`. This lane never deploys. Configure `CMS_DELIVERY_ORIGIN` as the HTTPS origin serving the reviewed Rust public delivery endpoint. Rust is not currently the production API runtime; the existing live endpoint must not be assumed to return page snapshots.
+Rex builds locally from the exact reviewed PR head and deploys the emitted `dist/server/wrangler.json`. CI runs afterwards and is not on the deployment path. This lane never deploys. Configure `CMS_DELIVERY_ORIGIN` as the HTTPS origin serving the reviewed Rust public delivery endpoint. Rust is not currently the production API runtime; the existing live endpoint must not be assumed to return page snapshots.
 
 Configure `CMS_SITES` as a hostname-keyed JSON object. Each site supplies `id`, `workspaceId`, `defaultLocale` and optional `tokens` (`foreground`/`background` hex colors and `font`: serif, sans-serif or monospace). Domain admission belongs to the deployment owner; this is not a self-service domain verification API. Do not route a domain before its ownership is verified.
 
@@ -10,4 +10,6 @@ Entries use full public-path slugs: `home` for `/`, `en` for `/en`, and `en/abou
 
 The cache key contains site ID, normalized path, locale and immutable version ID. Published delivery responses use a 30-second CDN TTL and HTML uses a 30-second edge TTL. Configure `CMS_PURGE_TOKEN` through the secret manager. A publish hook can POST `{ "path": "/", "locale": "vi", "version": "previous-version-id" }` to `/__cms/purge` on the site host with bearer authorization. The hook registration belongs to the publishing owner and is not wired by this source change. Version-key changes independently avoid serving the old HTML after delivery refreshes.
 
-`bun run build` generates the route tree, then `bun run type-check` validates it. CI runs focused renderer/SDK checks and the Rust delivery module tests before uploading an artifact. No credentials, live records, custom hostname or production route are included.
+`bun run build` generates the route tree, then `bun run type-check` validates it. The admitted CI artifact job runs focused renderer/SDK checks and records a bounded emitted-config receipt. PR execution requires a non-draft PR with the `ready-for-ci` label. It has no secret build inputs; any public Supabase build input must come from `vars.PRODUCTION_SUPABASE_URL`. No credentials, live records, custom hostname or production route are included.
+
+The Vite config defines `process.env.NODE_ENV` as `"production"` in the server environment. The Worker startup assertion runs before the server handler loads and refuses any other mode. `workers_dev` and `preview_urls` are false; `start-bridge.config.ts` sets `unknownHost: 'reject'` and the request path enforces that policy against the configured site hosts. CF-2's shared production startup helper replaces the local assertion after its exact head is relayed.
