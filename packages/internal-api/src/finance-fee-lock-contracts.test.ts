@@ -210,5 +210,9 @@ describe('fee-lock snapshot', () => {
     expect(ok({}, { quantity: 0 })).toBe(false);
     expect(ok({}, { line_amount: -1 })).toBe(false);
     expect(ok({}, { adjustment_amount: -FEE_LOCK_MAX_MONEY - 1 })).toBe(false);
+    expect(ok({}, { sort_order: 0 })).toBe(true);
+    expect(ok({}, { sort_order: 32_767 })).toBe(true);
+    expect(ok({}, { sort_order: 32_768 })).toBe(false);
+    expect(ok({}, { sort_order: -1 })).toBe(false);
   });
 });
