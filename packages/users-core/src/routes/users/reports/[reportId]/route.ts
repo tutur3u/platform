@@ -136,12 +136,19 @@ export async function PUT(request: Request, context: Params) {
         { status: 500 }
       );
     }
+    // Both reads share one shape: the delivery fields are only present when
+    // the month changed (ordinary draft saves never select them).
+    const existingReport: {
+      generation_mode: string | null;
+      delivered_at?: string | null;
+      delivery_status?: string | null;
+    } = existing.data;
 
     // Moving a report parents already received to another month is an
     // approver decision; unsent reports can be moved by any editor.
     if (
       periodChanged &&
-      isReportSent(existing.data) &&
+      isReportSent(existingReport) &&
       !permissions.containsPermission('approve_reports')
     ) {
       return NextResponse.json(
@@ -169,7 +176,7 @@ export async function PUT(request: Request, context: Params) {
       parsed.data.generation_status !== undefined;
     const isAiReport =
       parsed.data.generation_mode === 'ai' ||
-      existing.data.generation_mode === 'ai';
+      existingReport.generation_mode === 'ai';
     const approvalEnabled = (configResult.data?.value ?? 'true') === 'true';
     const reviewTransition = resolveReportReviewTransition({
       approvalEnabled,
