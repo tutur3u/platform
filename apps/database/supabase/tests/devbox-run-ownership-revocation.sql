@@ -1,4 +1,4 @@
--- Selene R2 on 20261104031100: revocation scope, NULL actors, runner owner
+-- Selene R2 on 20261104123000: revocation scope, NULL actors, runner owner
 -- immutability, loud prerequisite failures and the bounded sweep.
 begin;
 create extension if not exists pgtap with schema extensions;

@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const migrations = new URL('../supabase/migrations/', import.meta.url);
-const migrationName = '20261104031100_devbox_run_ownership.sql';
+const migrationName = '20261104123000_devbox_run_ownership.sql';
 const migration = readFileSync(new URL(migrationName, migrations), 'utf8');
 const live = readFileSync(
   new URL('20261026145300_reap_stale_devbox_runs.sql', migrations),
@@ -12,7 +12,7 @@ const live = readFileSync(
 );
 const rollback = readFileSync(
   new URL(
-    '../rollbacks/20261104031100_devbox_run_ownership.rollback.sql',
+    '../rollbacks/20261104123000_devbox_run_ownership.rollback.sql',
     import.meta.url
   ),
   'utf8'

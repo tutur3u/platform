@@ -6,7 +6,7 @@ select ok(to_regprocedure('private.devbox_identity_grant_active(uuid)') is not n
 select ok(exists(select 1 from pg_catalog.pg_trigger
     where tgrelid='private.devbox_personal_pool_grants'::regclass
         and tgname='cancel_devbox_runs_on_grant_revocation'),
-    '20261104031100 attaches cancellation hook to the real 20261104031050 grant table');
+    '20261104123000 attaches cancellation hook to the real 20261104031050 grant table');
 update private.devbox_control_settings set personal_pools_enabled = true where id;
 
 insert into public.users(id) values
