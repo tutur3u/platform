@@ -150,10 +150,16 @@ released. Release a unit only after its condition is confirmed for publication d
 Privacy, DPA, SLA and Subprocessors; each renders at `/legal/archive/2026-08-15/<kind>`
 from the same objects the canonical pages serve today (`getLegalDocumentVersion`), so
 the text is byte-identical and stays so after publication. Archive pages are noindex.
+The 2026-08-15 provider list is frozen as `third-party-providers.2026-08-15.ts` (in
+`apps/web` and the retired `apps/tanstack-web` copy), byte-identical to the list before
+Vercel Analytics and Speed Insights were removed. Edit only the live
+`third-party-providers.ts`; the frozen file and the archived text are hash-pinned.
 
 Regression coverage: `packages/legal/src/revision-2026-11-11/revision.test.ts` (EN/VI
 parity, no held text or tag renders, fallbacks render, no orphaned heading, empty
 section or empty table cell after stripping, cross-references resolve, notice
 placeholders resolve, the KS switch, block release, the publication switch) and
-`apps/web/src/components/legal/legal-archive.test.tsx` (archive identity, tables).
+`apps/web/src/components/legal/legal-archive.test.tsx` (archive identity, tables),
+and `legal-archive-freeze.test.ts` (frozen provider list and archive hashes; after the
+flip no live page renders the 2026-08-15 "Vercel Analytics" privacy prose).
 Existing hash locks in `legal-revisions.test.ts` keep the 2026-08-15 text unchanged.
