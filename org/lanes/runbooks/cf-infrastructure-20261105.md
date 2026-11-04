@@ -34,3 +34,15 @@ Expected downtime: no intentional outage; propagation and in-flight requests can
 briefly see either origin. Leave the Vercel deployment available until accepted.
 Security-review-required: yes (framework adapter reaches existing auth/data code).
 Tonight follows Atlas/Pax cutover direction; no merge or deployment by this lane.
+
+Selene conditions: workers_dev and preview_urls are false; unknown hosts reject.
+CI inlines NODE_ENV=production, checks missing secrets return 503, checks anonymous
+GET / redirects to /login and verifies unknown-host rejection. No local build/test.
+The default build remains Next; build:legacy is identical, so the existing Vercel
+build command is preserved without changing its project. CF CI explicitly runs
+build:cloudflare. Remote Vercel project configuration was not read or changed.
+Required startup secrets: TUTURUUU_APP_COORDINATION_SECRET, SUPABASE_SECRET_KEY.
+Known gaps: no Worker scheduled trigger is configured. Monitoring cron routes
+need explicit trigger ownership; cron.config.json output-file tracing from Next
+is not automatically carried over. Internal-accounts employee beforeFiles rewrite
+parity needs hosted confirmation. Direct Postgres paths need Hyperdrive review.

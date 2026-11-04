@@ -41,9 +41,17 @@ jobs:
       - name: Build native app and workspace suppliers
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: bun turbo:local run build --filter=@tuturuuu/infrastructure --concurrency=2
+          command: bun turbo:local run build --filter="@tuturuuu/infrastructure^..." --concurrency=2
           token: ''
           team: ''
+      - name: Build production Worker
+        working-directory: apps/infrastructure
+        run: bun run build:cloudflare
+      - name: Check production ingress and anonymous login
+        working-directory: apps/infrastructure
+        env:
+          CI: 'true'
+        run: bun run test:runtime
       - name: Package deployable Worker, config and assets
         run: |
           test -d apps/infrastructure/dist/client
