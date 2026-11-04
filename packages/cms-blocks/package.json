@@ -1,0 +1,26 @@
+{
+  "name": "@tuturuuu/cms-blocks",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./registry": "./src/registry.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.18",
+    "@types/react-dom": "~19.2.7",
+    "react-dom": "^19.2.8",
+    "typescript": "7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "packageManager": "bun@1.4.4"
+}
