@@ -2,6 +2,19 @@ import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-sess
 import 'server-only';
 import { getHostMeetingTier } from './meet-duration';
 
+const PAID_HOSTING_TIERS = ['PLUS', 'PRO', 'ENTERPRISE'];
+
+/**
+ * Server-only switch for opening Meet hosting to paid tiers. It fails closed:
+ * only the exact value `true` enables it; unset, blank or anything else keeps
+ * hosting limited to verified internal (staff) accounts.
+ */
+export function isMeetPaidTierHostingEnabled(
+  value = process.env.MEET_PAID_TIER_HOSTING_ENABLED
+) {
+  return value === 'true';
+}
+
 /** Pass only the current auth.admin.getUserById result, never handoff/profile metadata. */
 export async function canVerifiedAccountHostMeeting(
   accountId: string,
@@ -12,7 +25,6 @@ export async function canVerifiedAccountHostMeeting(
 ) {
   if (!identity?.email_confirmed_at || !identity.email) return false;
   if (isVerifiedTuturuuuStaffSession(identity)) return true;
-  return ['PLUS', 'PRO', 'ENTERPRISE'].includes(
-    await getHostMeetingTier(accountId)
-  );
+  if (!isMeetPaidTierHostingEnabled()) return false;
+  return PAID_HOSTING_TIERS.includes(await getHostMeetingTier(accountId));
 }
