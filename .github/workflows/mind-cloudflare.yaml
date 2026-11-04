@@ -220,3 +220,7 @@ jobs:
           path: ${{ runner.temp }}/mind-cutover.tar.gz
           retention-days: 7
           if-no-files-found: error
+      # After the upload: the result is reported on the card, never a gate tonight.
+      - name: Anonymous smoke on the sealed output in workerd
+        working-directory: apps/mind
+        run: node --test cloudflare/anonymous-smoke.runtime.mjs

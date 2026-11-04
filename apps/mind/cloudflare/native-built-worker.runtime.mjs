@@ -32,12 +32,23 @@ const require = createRequire(join(app, 'package.json'));
 const WORKER = 'tuturuuu-mind-vite-staging';
 const PUBLIC_FILES = ['robots.txt'];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
-const EXPECTED = { '/': 200 };
+const EXPECTED = {
+  '/': { redirect: '/login' },
+  '/login': { redirect: 'https://tuturuuu.com/login' },
+};
 // Response-policy probes (start-bridge.routes.json `runtimeProbes`).
 const POLICY_PROBES = [
-  { kind: 'page', path: '/' },
+  {
+    kind: 'page',
+    skip: 'signed-out users always reach central login',
+    fixture: 'cloudflare/anonymous-smoke.runtime.mjs',
+  },
   { kind: 'api', path: '/api/build-info' },
-  { kind: 'notFound', path: '/__native-smoke-missing__' },
+  {
+    kind: 'notFound',
+    skip: 'unknown paths redirect signed-out users to login',
+    fixture: 'cloudflare/anonymous-smoke.runtime.mjs',
+  },
 ];
 // The Worker's mounts: the generated defaults plus the app-owned
 // start-bridge.config.ts overrides, exactly as cloudflare/worker.ts spreads
