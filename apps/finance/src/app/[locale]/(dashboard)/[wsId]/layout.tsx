@@ -27,6 +27,7 @@ import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
+import { isFeeLockEnabled } from '@/lib/fee-lock-access';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import { getNavigationLinks } from './navigation';
@@ -70,9 +71,10 @@ export default async function Layout({ children, params }: LayoutProps) {
   const workspaceSlug = toWorkspaceSlug(wsId, {
     personal: !!workspace.personal,
   });
-  const [permissions, currency] = await Promise.all([
+  const [permissions, currency, feeLockEnabled] = await Promise.all([
     getPermissions({ user, wsId }),
     getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+    isFeeLockEnabled(wsId),
   ]);
   const resolvedCurrency = resolveSupportedCurrency(currency);
 
@@ -94,10 +96,13 @@ export default async function Layout({ children, params }: LayoutProps) {
           wsId={wsId}
           workspace={workspace}
           defaultCollapsed={defaultCollapsed}
-          links={await getNavigationLinks({
-            permissions: permissions ?? undefined,
-            personalOrWsId: workspaceSlug,
-          })}
+          links={
+            await getNavigationLinks({
+              feeLockEnabled,
+              permissions: permissions ?? undefined,
+              personalOrWsId: workspaceSlug,
+            })
+          }
           actions={
             <Suspense
               key={user.id}
