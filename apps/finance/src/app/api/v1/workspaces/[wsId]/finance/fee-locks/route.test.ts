@@ -8,7 +8,7 @@ vi.mock('./access', async (importOriginal) => ({
   getFeeLockCurrency: async () => 'VND',
 }));
 
-const { GET, foldFeeLockSearchText } = await import('./route');
+const { GET, PUT, foldFeeLockSearchText } = await import('./route');
 const WS = '00000000-0000-4000-8000-0000000fe010';
 const GROUP = '00000000-0000-4000-8000-0000000fe201';
 const params = { params: Promise.resolve({ wsId: 'personal' }) };
@@ -180,5 +180,98 @@ describe('GET /finance/fee-locks', () => {
 
   it('folds Vietnamese accents for search', () => {
     expect(foldFeeLockSearchText('Đặng Thị Ánh')).toBe('dang thi anh');
+  });
+});
+
+describe('PUT /finance/fee-locks', () => {
+  const STUDENT = '00000000-0000-4000-8000-0000000fe101';
+  const put = (body: unknown) =>
+    PUT(
+      new Request('https://finance.test/fee-locks', {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      }),
+      params
+    );
+  const draft = (adjustment = 0) => ({
+    student_id: STUDENT,
+    month: '2026-12',
+    lines: [
+      {
+        kind: 'tuition',
+        group_id: GROUP,
+        quantity: 8,
+        adjustment_amount: adjustment,
+        reason: 'Achievement',
+      },
+    ],
+  });
+  const allowWrite = (db: ReturnType<typeof fakeSupabase>) =>
+    mocks.gate.mockResolvedValue({
+      context: {
+        normalizedWsId: WS,
+        sbAdmin: db.client,
+        user: { id: 'actor-1' },
+      },
+    });
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it('needs create_invoices and rejects bad or out-of-range bodies before any write', async () => {
+    const db = fakeSupabase();
+    allowWrite(db);
+    expect((await put({ month: '2026-12' })).status).toBe(400);
+    expect((await put(draft(1e15))).status).toBe(400);
+    expect(mocks.gate).toHaveBeenCalledWith(expect.any(Request), 'personal', [
+      'create_invoices',
+    ]);
+    expect(db.rpcCalls).toHaveLength(0);
+  });
+
+  it('saves through the SQL function with the route workspace and the platform actor', async () => {
+    const db = fakeSupabase(
+      {},
+      { fee_lock_save_draft: { data: { id: 'lock-1', version: 1 } } }
+    );
+    allowWrite(db);
+    const response = await put({ ...draft(), ws_id: 'other-ws' });
+    expect(await response.json()).toEqual({ id: 'lock-1', version: 1 });
+    expect(db.rpcCalls[0]?.args).toMatchObject({
+      p_ws_id: WS,
+      p_actor_id: 'actor-1',
+      p_student_id: STUDENT,
+      p_month: '2026-12-01',
+      p_expected_version: null,
+      p_currency: 'VND',
+    });
+  });
+
+  it('maps 22003 to 400, PT404 to 404 and a version conflict to 409 with the current lock', async () => {
+    const save = (error: { code: string; message?: string }, tables = {}) => {
+      const db = fakeSupabase(tables, { fee_lock_save_draft: { error } });
+      allowWrite(db);
+      return { db, response: put({ ...draft(), expected_version: 2 }) };
+    };
+    const overflow = await save({
+      code: '22003',
+      message: 'FEE_LOCK_AMOUNT_OUT_OF_RANGE',
+    }).response;
+    expect([overflow.status, (await overflow.json()).code]).toEqual([
+      400,
+      'FEE_LOCK_AMOUNT_OUT_OF_RANGE',
+    ]);
+    expect((await save({ code: 'PT404' }).response).status).toBe(404);
+    const { db, response } = save(
+      { code: 'PT409' },
+      { fee_locks: { data: { id: 'lock-1', version: 3 } } }
+    );
+    const conflict = await response;
+    expect([conflict.status, (await conflict.json()).current.version]).toEqual([
+      409, 3,
+    ]);
+    expect(
+      db.filtered('fee_locks', 'ws_id', WS) &&
+        db.filtered('fee_locks', 'student_id', STUDENT)
+    ).toBe(true);
   });
 });
