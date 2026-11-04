@@ -269,7 +269,6 @@ test('emitted tools Worker serves its root, mount and unknown paths', {
           ),
           '/',
         ].map((path) => [APEX, path]);
-        probes.push(['unknown-host.invalid', '/']);
         for (const [host, path] of probes) {
           const before = egress.length;
           const response = await call(path, host);
@@ -289,6 +288,15 @@ test('emitted tools Worker serves its root, mount and unknown paths', {
       }
     );
   }
+
+  await t.test('an unknown host is rejected before app code runs', async () => {
+    assert.equal(MOUNTS.unknownHost, 'reject');
+    const before = egress.length;
+    const response = await call('/', 'unknown-host.invalid');
+    assert.equal(response.status, 404);
+    assert.equal(response.body, 'Not Found');
+    assert.equal(egress.length, before);
+  });
 
   await t.test('an unknown path is not a server error', async () => {
     const response = await get('/__native-smoke-missing__');
