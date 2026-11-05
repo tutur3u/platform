@@ -15,7 +15,10 @@ export const POST = withSessionAuth<SprintRouteParams>(
 
       return unplanBoardSprintTasks({ access, params, request });
     } catch (error) {
-      return sprintRouteErrorResponse(error, 'Error moving tasks out of sprints:');
+      return sprintRouteErrorResponse(
+        error,
+        'Error moving tasks out of sprints:'
+      );
     }
   },
   { allowAppSessionAuth: TASK_BOARD_SPRINT_APP_SESSION_AUTH }

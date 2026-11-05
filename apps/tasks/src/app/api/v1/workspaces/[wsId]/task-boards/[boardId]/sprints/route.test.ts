@@ -45,7 +45,6 @@ import {
   moveBoardSprintTasks,
   readBoardSprintState,
   removeBoardSprint,
-  startBoardSprint,
   unplanBoardSprintTasks,
   updateBoardSprint,
   updateBoardSprintLength,
@@ -78,7 +77,6 @@ const PUT = businessUnit(updateBoardSprintLength);
 const ADD = businessUnit(addBoardSprint);
 const PATCH = businessUnit(updateBoardSprint);
 const DELETE = businessUnit(removeBoardSprint);
-const START = businessUnit(startBoardSprint);
 const END = businessUnit(endBoardSprint);
 const MOVE = businessUnit(moveBoardSprintTasks);
 const UNPLAN = businessUnit(unplanBoardSprintTasks);

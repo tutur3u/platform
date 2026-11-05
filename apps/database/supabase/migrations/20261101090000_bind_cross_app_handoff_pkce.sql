@@ -1,5 +1,5 @@
-DO $pkce_lock$ BEGIN
-  SET LOCAL lock_timeout = '5s'; SET LOCAL statement_timeout = '60s';
+-- tuturuuu: reviewed(dynamic-sql-review): fixed SET LOCAL and bounded NOWAIT lock; no EXECUTE or data writes.
+DO $pkce_lock$ BEGIN SET LOCAL lock_timeout = '5s'; SET LOCAL statement_timeout = '60s';
   LOCK TABLE private.cross_app_tokens IN ACCESS EXCLUSIVE MODE NOWAIT;
 END; $pkce_lock$;
 -- Bind login handoff redemption to the initiating browser with RFC 7636 S256 PKCE.

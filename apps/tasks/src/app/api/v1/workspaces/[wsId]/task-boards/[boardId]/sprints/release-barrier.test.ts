@@ -27,10 +27,7 @@ vi.mock('@/lib/api-auth', () => ({
         params: T
       ) => Promise<Response> | Response
     ) =>
-    async (
-      request: NextRequest,
-      context: { params: Promise<T> | T }
-    ) =>
+    async (request: NextRequest, context: { params: Promise<T> | T }) =>
       handler(
         request,
         {
@@ -137,9 +134,14 @@ for (const mode of ['member', 'guest'] as const) {
         const request = new NextRequest('http://localhost/api/sprints', {
           method: testCase.method,
           headers: { 'Content-Type': 'application/json' },
-          body: testCase.body === undefined ? undefined : JSON.stringify(testCase.body),
+          body:
+            testCase.body === undefined
+              ? undefined
+              : JSON.stringify(testCase.body),
         });
-        const response = await testCase.handler(request, { params: Promise.resolve(params) });
+        const response = await testCase.handler(request, {
+          params: Promise.resolve(params),
+        });
         expect(response.status).toBe(403);
         expect(await response.json()).toEqual(gate);
         expect(mocks.requireBoardAccess).toHaveBeenCalledOnce();
@@ -149,9 +151,12 @@ for (const mode of ['member', 'guest'] as const) {
     }
 
     it('reads the unavailable shape without querying the excluded schema', async () => {
-      const response = await GET(new NextRequest('http://localhost/api/sprints'), {
-        params: Promise.resolve(params),
-      });
+      const response = await GET(
+        new NextRequest('http://localhost/api/sprints'),
+        {
+          params: Promise.resolve(params),
+        }
+      );
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({
         cyclesEnabled: false,
