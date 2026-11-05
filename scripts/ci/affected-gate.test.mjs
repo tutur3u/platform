@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, mkdirSync, realpathSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -59,22 +59,29 @@ const prEnv = (app) => ({ EVENT_NAME: 'pull_request', BASE_REF: 'main', APP: app
 test('gate end to end: unaffected app skips, affected and transitive apps run', () => {
   const r = repo(); try {
     r.change('apps/beta/index.js');
-    assert.equal(gate(prEnv('alpha'), { cwd: r.cwd }).run, false);
-    assert.equal(gate(prEnv('beta'), { cwd: r.cwd }).run, true);
-    assert.equal(gate(prEnv('alpha,beta'), { cwd: r.cwd }).run, true);
+    assert.equal(gate(prEnv('alpha'), { cwd: r.cwd, extraEdges: {} }).run, false);
+    assert.equal(gate(prEnv('beta'), { cwd: r.cwd, extraEdges: {} }).run, true);
+    assert.equal(gate(prEnv('alpha,beta'), { cwd: r.cwd, extraEdges: {} }).run, true);
     r.change('packages/core/index.js');
-    assert.equal(gate(prEnv('alpha'), { cwd: r.cwd }).run, true);
+    assert.equal(gate(prEnv('alpha'), { cwd: r.cwd, extraEdges: {} }).run, true);
+  } finally { r.close(); }
+});
+test('gate end to end: an extra edge makes the dependent app run', () => {
+  const r = repo(); try {
+    r.change('apps/beta/index.js');
+    assert.equal(gate(prEnv('alpha'), { cwd: r.cwd, extraEdges: {} }).run, false);
+    assert.equal(gate(prEnv('alpha'), { cwd: r.cwd, extraEdges: { 'apps/beta/': ['apps/alpha'] } }).run, true);
   } finally { r.close(); }
 });
 test('gate end to end: fail-safe paths, unknown apps, missing/bad base and push all run', () => {
   const r = repo(); try {
     r.change('apps/beta/index.js');
-    assert.equal(gate(prEnv('ghost'), { cwd: r.cwd }).run, true);
-    assert.equal(gate({ ...prEnv('alpha'), BASE_REF: 'no-such-branch' }, { cwd: r.cwd }).run, true);
-    assert.equal(gate({ ...prEnv('alpha'), BASE_REF: '' }, { cwd: r.cwd }).run, true);
-    assert.equal(gate({ ...prEnv('alpha'), EVENT_NAME: 'push' }, { cwd: r.cwd }).run, true);
+    assert.equal(gate(prEnv('ghost'), { cwd: r.cwd, extraEdges: {} }).run, true);
+    assert.equal(gate({ ...prEnv('alpha'), BASE_REF: 'no-such-branch' }, { cwd: r.cwd, extraEdges: {} }).run, true);
+    assert.equal(gate({ ...prEnv('alpha'), BASE_REF: '' }, { cwd: r.cwd, extraEdges: {} }).run, true);
+    assert.equal(gate({ ...prEnv('alpha'), EVENT_NAME: 'push' }, { cwd: r.cwd, extraEdges: {} }).run, true);
     r.change('turbo.json');
-    assert.equal(gate(prEnv('alpha'), { cwd: r.cwd }).run, true);
+    assert.equal(gate(prEnv('alpha'), { cwd: r.cwd, extraEdges: {} }).run, true);
   } finally { r.close(); }
 });
 test('CLI writes run and reason to GITHUB_OUTPUT and exits 0', () => {
@@ -82,7 +89,13 @@ test('CLI writes run and reason to GITHUB_OUTPUT and exits 0', () => {
     r.change('apps/beta/index.js');
     const out = path.join(r.cwd, 'gh-output');
     writeFileSync(out, '');
-    execFileSync(process.execPath, [path.resolve(import.meta.dirname, 'affected-gate.mjs')], { cwd: r.cwd, stdio: 'ignore', env: { ...process.env, ...prEnv('alpha'), GITHUB_OUTPUT: out } });
+    // Run a copy of the scripts next to an empty extra-edges file: the fixture repo has none of the real workspaces.
+    const scripts = mkdtempSync(path.join(realpathSync(os.tmpdir()), 'affected-gate-scripts-'));
+    try {
+      for (const file of ['affected-gate.mjs', 'affected-apps.mjs']) copyFileSync(path.resolve(import.meta.dirname, file), path.join(scripts, file));
+      writeFileSync(path.join(scripts, 'affected-apps.extra-edges.json'), '{}');
+      execFileSync(process.execPath, [path.join(scripts, 'affected-gate.mjs')], { cwd: r.cwd, stdio: 'ignore', env: { ...process.env, ...prEnv('alpha'), GITHUB_OUTPUT: out } });
+    } finally { rmSync(scripts, { recursive: true, force: true }); }
     assert.match(readFileSync(out, 'utf8'), /^run=false\nreason=alpha not affected\n$/u);
   } finally { r.close(); }
 });

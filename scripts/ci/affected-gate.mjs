@@ -29,14 +29,14 @@ function fetchBase(baseRef, cwd) {
   });
 }
 
-export function gate(env = process.env, { cwd = process.cwd() } = {}) {
+export function gate(env = process.env, { cwd = process.cwd(), extraEdges } = {}) {
   try {
     const eventName = env.EVENT_NAME ?? '';
     if (eventName !== 'pull_request') return decide({ eventName, apps: env.APP });
     const baseRef = env.BASE_REF;
     if (!baseRef) return { run: true, reason: 'base ref missing' };
     fetchBase(baseRef, cwd);
-    const result = calculate({ base: `origin/${baseRef}`, cwd });
+    const result = calculate({ base: `origin/${baseRef}`, cwd, extraEdges });
     return decide({
       eventName,
       apps: env.APP,
