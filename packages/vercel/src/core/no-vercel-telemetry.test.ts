@@ -15,6 +15,7 @@ const REPO_ROOT = resolve(__dirname, '../../../..');
 const SCAN_ROOTS = ['apps', 'packages'];
 const SELF = relative(REPO_ROOT, __filename).split(sep).join('/');
 const SOURCE_FILE = /\.(?:[cm]?[jt]sx?)$/;
+const REPO_SCAN_TIMEOUT_MS = 60_000;
 const SKIP_DIRS = new Set([
   'node_modules',
   '.next',
@@ -152,25 +153,29 @@ describe('Vercel Web Analytics and Speed Insights stay off', () => {
     ]);
   });
 
-  it('is not imported, mounted or declared anywhere in apps or packages', () => {
-    const violations: string[] = [];
-    const files = listRepoFiles();
-    expect(files.length).toBeGreaterThan(0);
+  it(
+    'is not imported, mounted or declared anywhere in apps or packages',
+    () => {
+      const violations: string[] = [];
+      const files = listRepoFiles();
+      expect(files.length).toBeGreaterThan(0);
 
-    for (const file of files) {
-      if (file === SELF) continue;
-      const isManifest = file.endsWith('/package.json');
-      if (!isManifest && !SOURCE_FILE.test(file)) continue;
-      const content = read(file);
-      if (content === null) continue;
-      const found = isManifest
-        ? findManifestViolations(content)
-        : findSourceViolations(content);
-      for (const problem of found) violations.push(`${file}: ${problem}`);
-    }
+      for (const file of files) {
+        if (file === SELF) continue;
+        const isManifest = file.endsWith('/package.json');
+        if (!isManifest && !SOURCE_FILE.test(file)) continue;
+        const content = read(file);
+        if (content === null) continue;
+        const found = isManifest
+          ? findManifestViolations(content)
+          : findSourceViolations(content);
+        for (const problem of found) violations.push(`${file}: ${problem}`);
+      }
 
-    expect(violations).toEqual([]);
-  });
+      expect(violations).toEqual([]);
+    },
+    REPO_SCAN_TIMEOUT_MS
+  );
 
   it('is not declared or trusted in the root manifest', () => {
     const root = JSON.parse(
