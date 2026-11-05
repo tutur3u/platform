@@ -8,6 +8,7 @@ const { readAllWorkflows } = require('./workflow-yaml-test-helper');
 const workflows = readAllWorkflows();
 
 const heavy = {
+  'app-builds-affected.yaml': ['affected', 'build', 'App-builds-affected'],
   'apps-cloudflare.yaml': [
     'validate',
     'restore-acceptance',
@@ -47,7 +48,6 @@ const heavy = {
   'parley-cloudflare.yaml': ['validate'],
   'periodic-report-delivery-contract.yaml': ['contract'],
   'playground-runtime-acceptance.yaml': ['acceptance'],
-  'programming-app-builds.yaml': ['build'],
   'programming-database-contract.yaml': ['contract'],
   'report-review-receipts-contract.yaml': ['contract'],
   'sdk-package-qualification.yaml': ['qualify'],

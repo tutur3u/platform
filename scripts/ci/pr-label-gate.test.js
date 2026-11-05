@@ -31,6 +31,7 @@ const PAUSED_JOB = /^(\$\{\{ )?false( \}\})?$/u;
 const PROTECTED_TRIGGERS = {
   'ai-cloudflare.yaml': '2b1f1ae8795d0216',
   'api-worker.yaml': '058d68d5d261d527',
+  'app-builds-affected.yaml': 'fcb6485f818aa571',
   'apps-cloudflare.yaml': '257f752668dce766',
   'biome-check.yaml': '6c39e758f15186ed',
   'calendar-cloudflare.yaml': 'e3e096233a6e8a60',
@@ -74,7 +75,6 @@ const PROTECTED_TRIGGERS = {
   'periodic-report-delivery-contract.yaml': 'dc372af9059d0c07',
   'playground-cloudflare.yaml': '7c22fc6d616e6d01',
   'playground-runtime-acceptance.yaml': '0a3cc2c97958f5cd',
-  'programming-app-builds.yaml': '0a3cc2c97958f5cd',
   'programming-database-contract.yaml': '0a3cc2c97958f5cd',
   'report-review-receipts-contract.yaml': '433352a4fb0e56e6',
   'required-account-mfa-contract.yaml': 'f803778bc2859492',

@@ -8,10 +8,20 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: app-builds-affected-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
+  check-ci:
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    permissions:
+      contents: read
+      deployments: read
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: app-builds-affected.yaml
   affected:
+    needs: check-ci
+    if: (always() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     outputs:
       mode: ${{ steps.selection.outputs.mode }}
@@ -24,26 +34,34 @@ jobs:
           persist-credentials: false
       - id: selection
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" = schedule ] || [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
-            json='{"mode":"all","apps":["apps/web","apps/learn","apps/infrastructure","apps/mail","apps/contacts","apps/tasks"],"reason":"full build trigger"}'
+          # The six apps programming-app-builds.yaml covers, by turbo package suffix (@tuturuuu/<name>).
+          export PROGRAMMING_APPS='["web","learn","infrastructure","mail","contacts","tasks"]'
+          if [ "$EVENT_NAME" = schedule ] || [ "$EVENT_NAME" = workflow_dispatch ]; then
+            json='{"mode":"all","apps":[],"reason":"full build trigger"}'
             changed=true
           else
-            git fetch origin "$GITHUB_BASE_REF"
-            json=$(node scripts/ci/affected-apps.mjs --base "origin/$GITHUB_BASE_REF")
-            changed=$(git diff --quiet "origin/$GITHUB_BASE_REF...HEAD" -- 'apps/**' 'packages/**' && echo false || echo true)
-            if [ "$(node -p 'JSON.parse(process.argv[1]).mode' "$json")" = all ]; then
-              json=$(node -e 'const x=JSON.parse(process.argv[1]); x.apps=["apps/web","apps/learn","apps/infrastructure","apps/mail","apps/contacts","apps/tasks"]; console.log(JSON.stringify(x))' "$json")
-            fi
+            git fetch --no-tags origin "$BASE_REF"
+            json=$(node scripts/ci/affected-apps.mjs --base "origin/$BASE_REF")
+            changed=$(git diff --quiet "origin/$BASE_REF...HEAD" -- 'apps/**' 'packages/**' && echo false || echo true)
           fi
-          {
-            echo "mode=$(node -p 'JSON.parse(process.argv[1]).mode' "$json")"
-            echo "apps=$(node -p 'JSON.stringify(JSON.parse(process.argv[1]).apps)' "$json")"
-            echo "code_changed=$changed"
-          } >> "$GITHUB_OUTPUT"
+          SELECTION="$json" CODE_CHANGED="$changed" node --input-type=module - <<'NODE'
+          import { appendFileSync } from "node:fs";
+          const sel = JSON.parse(process.env.SELECTION);
+          const programming = JSON.parse(process.env.PROGRAMMING_APPS);
+          const raw = sel.apps.map((dir) => dir.replace(/^apps\//, ""));
+          const apps = sel.mode === "all" ? programming : programming.filter((name) => raw.includes(name));
+          // Only a selection that came back empty for changed code is suspicious; a
+          // change confined to apps outside the six programming apps selects nothing.
+          const codeChanged = process.env.CODE_CHANGED === "true" && sel.mode !== "all" && raw.length === 0;
+          appendFileSync(process.env.GITHUB_OUTPUT, `mode=${sel.mode}\napps=${JSON.stringify(apps)}\ncode_changed=${codeChanged}\n`);
+          NODE
   build:
-    needs: affected
-    if: needs.affected.outputs.apps != '[]'
+    needs: [check-ci, affected]
+    if: (always() && needs.check-ci.result == 'success' && needs.affected.result == 'success' && needs.affected.outputs.apps != '[]') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -58,6 +76,14 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=8192
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
+      - name: Require a programming app name
+        env:
+          APP: ${{ matrix.app }}
+        run: |
+          case "$APP" in
+            web|learn|infrastructure|mail|contacts|tasks) echo "Building @tuturuuu/$APP" ;;
+            *) echo "::error::Unexpected app: $APP"; exit 1 ;;
+          esac
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -77,8 +103,8 @@ jobs:
           team: ''
   App-builds-affected:
     name: App builds (affected)
-    if: always()
-    needs: [affected, build]
+    needs: [check-ci, affected, build]
+    if: (always() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
