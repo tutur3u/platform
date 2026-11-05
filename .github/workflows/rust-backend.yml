@@ -58,7 +58,9 @@ on:
           - deploy
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # PR runs: one per PR, superseded runs cancelled. Every other event gets a unique
+  # group (run_id), so push/dispatch/deploy runs keep their previous behaviour.
+  group: ${{ github.event_name == 'pull_request' && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-run-{1}', github.workflow, github.run_id) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
