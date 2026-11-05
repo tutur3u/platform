@@ -18,10 +18,32 @@ ALTER TABLE private.password_vault_lifecycle_jobs FORCE ROW LEVEL SECURITY;
 REVOKE ALL ON private.password_vault_lifecycle_jobs FROM PUBLIC, anon, authenticated, supabase_auth_admin, service_role;
 CREATE INDEX password_vault_lifecycle_pending_idx ON private.password_vault_lifecycle_jobs(next_attempt_at, id)
   WHERE completed_at IS NULL;
+CREATE INDEX password_vault_lifecycle_pending_ws_idx ON private.password_vault_lifecycle_jobs(ws_id)
+  WHERE completed_at IS NULL;
+CREATE INDEX password_vault_lifecycle_pending_account_idx ON private.password_vault_lifecycle_jobs(user_id)
+  WHERE completed_at IS NULL AND kind = 'account';
 -- Capture only metadata: no vault row, audit or cross-domain FK write is on the user path.
+-- Subjects with no vault footprint are not enqueued, so unrelated workspaces cannot fill the outbox.
 CREATE FUNCTION private.password_vault_enqueue_lifecycle(p_kind text,p_ws uuid,p_user uuid)
 RETURNS void LANGUAGE plpgsql SET search_path = pg_catalog, pg_temp AS $$
+DECLARE relevant boolean;
 BEGIN
+  IF p_kind = 'account' THEN
+    relevant := EXISTS (SELECT 1 FROM private.password_vaults v WHERE v.created_by = p_user)
+      OR EXISTS (SELECT 1 FROM private.password_vault_members m WHERE m.user_id = p_user)
+      OR EXISTS (SELECT 1 FROM private.password_vault_machine_grants g WHERE g.issuer_user_id = p_user);
+  ELSE
+    relevant := EXISTS (SELECT 1 FROM private.password_vaults v WHERE v.ws_id = p_ws);
+  END IF;
+  IF NOT relevant THEN RETURN; END IF;
+  IF p_kind = 'workspace' THEN
+    UPDATE private.password_vault_lifecycle_jobs SET completed_at = clock_timestamp(), last_error_code = NULL
+      WHERE completed_at IS NULL AND ws_id = p_ws AND kind IN ('member', 'archive');
+  END IF;
+  IF EXISTS (SELECT 1 FROM private.password_vault_lifecycle_jobs j WHERE j.completed_at IS NULL
+    AND j.kind = p_kind AND j.ws_id IS NOT DISTINCT FROM p_ws AND j.user_id IS NOT DISTINCT FROM p_user) THEN
+    RETURN;
+  END IF;
   INSERT INTO private.password_vault_lifecycle_jobs(kind,ws_id,user_id) VALUES(p_kind,p_ws,p_user);
 EXCEPTION WHEN OTHERS THEN
   RAISE LOG 'Password vault lifecycle capture unavailable (SQLSTATE %); reconcile retained references', SQLSTATE;
@@ -67,7 +89,28 @@ CREATE TRIGGER password_vault_workspace_erased BEFORE DELETE ON public.workspace
   FOR EACH ROW EXECUTE FUNCTION private.password_vault_workspace_erased();
 CREATE FUNCTION private.password_vault_require_lifecycle_clean(p_ws uuid) RETURNS void
 LANGUAGE plpgsql SET search_path = pg_catalog, pg_temp AS $$
+DECLARE j_id uuid; drained integer := 0;
 BEGIN
+  -- Apply at most five of this workspace's own due jobs. Other workspaces' jobs
+  -- are not read here, so their backlog cannot block this workspace's writes.
+  LOOP
+    EXIT WHEN drained >= 5;
+    SELECT j.id INTO j_id FROM private.password_vault_lifecycle_jobs j
+      WHERE j.completed_at IS NULL AND j.attempts < 5 AND j.next_attempt_at <= clock_timestamp()
+        AND (j.ws_id = p_ws OR (j.kind = 'account' AND j.user_id IN (
+          SELECT created_by FROM private.password_vaults WHERE ws_id=p_ws
+          UNION SELECT user_id FROM private.password_vault_members WHERE ws_id=p_ws
+          UNION SELECT issuer_user_id FROM private.password_vault_machine_grants WHERE ws_id=p_ws)))
+      ORDER BY j.created_at, j.id
+      LIMIT 1;
+    EXIT WHEN j_id IS NULL;
+    BEGIN
+      PERFORM private.password_vault_apply_lifecycle(j_id);
+    EXCEPTION WHEN OTHERS THEN
+      EXIT;
+    END;
+    drained := drained + 1;
+  END LOOP;
   IF EXISTS (SELECT 1 FROM private.password_vault_lifecycle_jobs j WHERE j.completed_at IS NULL
     AND (j.ws_id = p_ws OR (j.kind = 'account' AND j.user_id IN (
       SELECT created_by FROM private.password_vaults WHERE ws_id=p_ws
@@ -166,14 +209,37 @@ END $$;
 CREATE FUNCTION private.password_vault_retry_lifecycle(p_limit integer DEFAULT 25) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp SET lock_timeout='100ms' AS $$
 DECLARE j private.password_vault_lifecycle_jobs; processed integer:=0; failed integer:=0;
+  remaining integer; terminal integer; oldest timestamptz; pending_cap constant integer:=1000;
 BEGIN
   IF COALESCE(NULLIF(current_setting('role',true),'none'),session_user::text)<>'service_role' THEN
     RAISE EXCEPTION 'Service role required' USING ERRCODE='42501'; END IF;
   IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 25 THEN
     RAISE EXCEPTION 'Invalid lifecycle batch limit' USING ERRCODE='22023'; END IF;
+  -- No-vault jobs are not security work. Finish them in one statement so they
+  -- cannot occupy the batch in front of a vault workspace.
+  UPDATE private.password_vault_lifecycle_jobs j SET completed_at=clock_timestamp(), last_error_code=NULL
+    WHERE j.completed_at IS NULL AND NOT (
+      (j.kind='account' AND (
+        EXISTS (SELECT 1 FROM private.password_vaults v WHERE v.created_by=j.user_id)
+        OR EXISTS (SELECT 1 FROM private.password_vault_members m WHERE m.user_id=j.user_id)
+        OR EXISTS (SELECT 1 FROM private.password_vault_machine_grants g WHERE g.issuer_user_id=j.user_id)))
+      OR (j.kind<>'account' AND EXISTS (SELECT 1 FROM private.password_vaults v WHERE v.ws_id=j.ws_id)));
   PERFORM private.password_vault_reconcile_lifecycle();
-  FOR j IN SELECT * FROM private.password_vault_lifecycle_jobs WHERE completed_at IS NULL AND attempts<5
-    AND next_attempt_at<=clock_timestamp() ORDER BY created_at,id LIMIT p_limit FOR UPDATE SKIP LOCKED LOOP
+  FOR j IN
+    SELECT q.* FROM private.password_vault_lifecycle_jobs q
+    JOIN (
+      SELECT s.id FROM (
+        SELECT j2.id, j2.created_at,
+          row_number() OVER (PARTITION BY COALESCE(j2.ws_id, j2.user_id) ORDER BY j2.created_at, j2.id) AS rn
+        FROM private.password_vault_lifecycle_jobs j2
+        WHERE j2.completed_at IS NULL AND j2.attempts<5 AND j2.next_attempt_at<=clock_timestamp()
+      ) s
+      ORDER BY s.rn, s.created_at, s.id
+      LIMIT p_limit
+    ) picked ON picked.id=q.id
+    ORDER BY q.created_at, q.id
+    FOR UPDATE OF q SKIP LOCKED
+  LOOP
     BEGIN
       PERFORM private.password_vault_apply_lifecycle(j.id);
       processed:=processed+1;
@@ -183,10 +249,22 @@ BEGIN
       failed:=failed+1;
     END;
   END LOOP;
+  DELETE FROM private.password_vault_lifecycle_jobs WHERE id IN (
+    SELECT id FROM private.password_vault_lifecycle_jobs
+    WHERE completed_at IS NOT NULL AND completed_at < clock_timestamp() - interval '24 hours'
+    ORDER BY completed_at LIMIT 500);
+  DELETE FROM private.password_vault_lifecycle_jobs WHERE id IN (
+    SELECT id FROM private.password_vault_lifecycle_jobs
+    WHERE completed_at IS NOT NULL ORDER BY completed_at DESC OFFSET 500);
+  SELECT count(*) FILTER (WHERE completed_at IS NULL),
+    count(*) FILTER (WHERE completed_at IS NULL AND attempts=5),
+    min(created_at) FILTER (WHERE completed_at IS NULL)
+    INTO remaining, terminal, oldest FROM private.password_vault_lifecycle_jobs;
   RETURN jsonb_build_object('processed',processed,'failed',failed,
-    'remaining',(SELECT count(*) FROM private.password_vault_lifecycle_jobs WHERE completed_at IS NULL),
-    'terminal',(SELECT count(*) FROM private.password_vault_lifecycle_jobs WHERE completed_at IS NULL AND attempts=5),
-    'oldestPendingAt',(SELECT min(created_at) FROM private.password_vault_lifecycle_jobs WHERE completed_at IS NULL));
+    'remaining',remaining,'terminal',terminal,'oldestPendingAt',oldest,
+    'pendingCap',pending_cap,
+    'alert', COALESCE(remaining > pending_cap, false) OR COALESCE(terminal > 0, false)
+      OR COALESCE(oldest < clock_timestamp() - interval '5 minutes', false));
 END $$;
 DO $$ DECLARE f record;
 BEGIN

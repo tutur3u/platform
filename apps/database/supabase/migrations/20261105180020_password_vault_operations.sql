@@ -76,9 +76,12 @@ BEGIN
   END IF;
   mutates := p_action NOT IN ('item.read', 'item.list', 'rotation.snapshot', 'key.read',
     'member.list', 'audit.list', 'request.status');
-  -- Workspace lock serializes creation against the 32-vault cap.
-  PERFORM 1 FROM public.workspaces WHERE id = p_ws FOR NO KEY UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501'; END IF;
+  -- Reads take FOR SHARE in require_workspace_member. The exclusive workspace
+  -- lock is only for writes, so a vault read cannot queue behind a workspace rename.
+  IF mutates THEN
+    PERFORM 1 FROM public.workspaces WHERE id = p_ws FOR NO KEY UPDATE;
+    IF NOT FOUND THEN RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501'; END IF;
+  END IF;
   -- Lock identity/membership rows before the vault, matching lifecycle invalidation.
   IF p_token IS NOT NULL THEN
     SELECT g0.issuer_user_id INTO actor FROM private.password_vault_machine_tokens t0
@@ -205,7 +208,7 @@ BEGIN
     ELSE
       IF p_token IS NOT NULL OR (p_input->>'expected_item_revision')::bigint IS DISTINCT FROM 0::bigint THEN
         RAISE EXCEPTION 'Vault access denied' USING ERRCODE = '42501'; END IF;
-      IF (SELECT count(*) FROM private.password_vault_items WHERE ws_id = p_ws AND vault_id = p_vault) >= 1000 THEN
+      IF (SELECT count(*) FROM private.password_vault_items WHERE ws_id = p_ws AND vault_id = p_vault AND deleted_at IS NULL) >= 1000 THEN
         RAISE EXCEPTION 'Item limit reached' USING ERRCODE = '54000'; END IF;
     END IF;
     SELECT jsonb_build_object('encrypted_data_key', encrypted_data_key, 'version', version) INTO result
@@ -290,7 +293,7 @@ BEGIN
       IF (p_input->>'expected_item_revision')::bigint IS DISTINCT FROM 0::bigint THEN
         RAISE EXCEPTION 'Item revision conflict' USING ERRCODE = '40001';
       END IF;
-      IF (SELECT count(*) FROM private.password_vault_items WHERE ws_id = p_ws AND vault_id = p_vault) >= 1000 THEN
+      IF (SELECT count(*) FROM private.password_vault_items WHERE ws_id = p_ws AND vault_id = p_vault AND deleted_at IS NULL) >= 1000 THEN
         RAISE EXCEPTION 'Item limit reached' USING ERRCODE = '54000';
       END IF;
       n := 1;
@@ -410,7 +413,7 @@ BEGIN
       VALUES (p_ws, p_vault, (p_input->>'token_id')::uuid, g.id, p_input->>'token_digest', (p_input->>'expires_at')::timestamptz);
   END CASE;
   IF p_action IN ('item.write', 'vault.rotate') AND EXISTS (
-    SELECT 1 FROM private.password_vault_items WHERE ws_id = p_ws AND vault_id = p_vault
+    SELECT 1 FROM private.password_vault_items WHERE ws_id = p_ws AND vault_id = p_vault AND deleted_at IS NULL
     HAVING sum(ciphertext_bytes) > 104857600
       OR sum(octet_length(COALESCE(encrypted_payload, encrypted_metadata))) > 8388608
   ) THEN RAISE EXCEPTION 'Vault byte limit reached' USING ERRCODE = '54000'; END IF;
@@ -442,7 +445,6 @@ BEGIN
     RAISE EXCEPTION 'Service role required' USING ERRCODE = '42501'; END IF;
   IF p_request IS NULL OR p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 32 THEN
     RAISE EXCEPTION 'Invalid page request' USING ERRCODE = '22023'; END IF;
-  PERFORM 1 FROM public.workspaces WHERE id = p_ws FOR NO KEY UPDATE;
   PERFORM private.password_vault_require_workspace_member(p_ws, p_actor);
   SELECT * INTO prior FROM private.password_vault_audit_events
     WHERE ws_id = p_ws AND vault_id IS NULL AND request_id = p_request;

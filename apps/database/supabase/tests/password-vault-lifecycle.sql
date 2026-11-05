@@ -41,6 +41,29 @@ SELECT is(pg_temp.pw_op('grant.create',jsonb_build_object('expected_revision',pg
  'grant_id','e8500000-0000-0000-0000-000000000001','scopes','["item.read"]'::jsonb,
  'item_ids','["e8300000-0000-0000-0000-000000000001"]'::jsonb,'expires_at',now()+interval '1 hour'),
  'e8000000-0000-0000-0000-000000000002')->>'error',NULL,'separate owner creates machine grant');
+SAVEPOINT foreign_backlog;
+INSERT INTO private.password_vault_lifecycle_jobs(kind,ws_id,user_id,created_at)
+ SELECT 'member','e8100000-0000-0000-0000-000000000099',gen_random_uuid(),clock_timestamp()-interval '1 hour'
+ FROM generate_series(1,30);
+INSERT INTO private.password_vault_lifecycle_jobs(kind,ws_id,user_id)
+ VALUES('member','e8100000-0000-0000-0000-000000000001','e8000000-0000-0000-0000-000000000099');
+SELECT is(pg_temp.pw_op('item.list','{}')->>'error',NULL,
+ 'a foreign lifecycle backlog does not block this workspace own read');
+SELECT is((SELECT count(*)::integer FROM private.password_vault_lifecycle_jobs
+ WHERE ws_id='e8100000-0000-0000-0000-000000000099' AND completed_at IS NULL),30,
+ 'foreign jobs stay pending while this workspace proceeds');
+SELECT ok(NOT EXISTS(SELECT 1 FROM private.password_vault_lifecycle_jobs
+ WHERE user_id='e8000000-0000-0000-0000-000000000099' AND completed_at IS NULL),
+ 'this workspace drains its own due job without the global pump');
+SELECT is((pg_temp.pw_as('service_role','SELECT private.password_vault_retry_lifecycle(25)')->>'remaining')::integer,0,
+ 'one bounded retry bulk-completes a no-vault backlog larger than the batch');
+INSERT INTO private.password_vault_lifecycle_jobs(kind,ws_id,user_id,attempts)
+ VALUES('member','e8100000-0000-0000-0000-000000000001','e8000000-0000-0000-0000-000000000098',5);
+SELECT is(pg_temp.pw_as('service_role','SELECT private.password_vault_retry_lifecycle(25)')->>'alert','true',
+ 'retry alerts while a terminal vault job remains');
+SELECT is((pg_temp.pw_as('service_role','SELECT private.password_vault_retry_lifecycle(25)')->>'pendingCap')::integer,1000,
+ 'retry reports the pending-job alert cap');
+ROLLBACK TO foreign_backlog;
 SAVEPOINT capture_failure;
 CREATE FUNCTION pg_temp.fail_capture() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN RAISE EXCEPTION 'synthetic outbox failure'; END $$;

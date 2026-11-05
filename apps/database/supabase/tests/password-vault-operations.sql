@@ -480,13 +480,32 @@ SELECT is(pg_temp.pw_op('member.set',jsonb_build_object('expected_revision',pg_t
 SELECT is(pg_temp.pw_op('request.status','{"request_id":"f7400000-0000-0000-0000-000000000016"}',
  'f7000000-0000-0000-0000-000000000002')->>'error','42501','current viewer role cannot reconcile a former write');
 SELECT is(pg_temp.pw_op('vault.rotate',pg_temp.pw_rotate())->>'error',NULL,'clear rotation fence before quota tests');
--- Fill item records with explicit fixtures, then exercise the real bounded write operation.
+-- Tombstones must not consume the live item cap or the live byte cap.
 INSERT INTO private.password_vault_items(ws_id,vault_id,id,version,name,revision,encrypted_payload,ciphertext_bytes,deleted_at)
  SELECT 'f7100000-0000-0000-0000-000000000001','f7200000-0000-0000-0000-000000000001',gen_random_uuid(),active_version,
  'Retained tombstone ' || n::text,1,repeat('t',64),64,now() FROM private.password_vaults CROSS JOIN generate_series(1,998) n
  WHERE id='f7200000-0000-0000-0000-000000000001';
-SELECT is(pg_temp.pw_op('item.write',pg_temp.pw_write('f7300000-0000-0000-0000-000000000003',0) || '{"name":"OVER_LIMIT"}')->>'error',
- '54000','item limit includes retained tombstones');
+SELECT is(pg_temp.pw_op('item.write',pg_temp.pw_write('f7300000-0000-0000-0000-000000000003',0) || '{"name":"TOMBSTONE_IGNORED"}')->>'error',
+ NULL,'deleted items do not consume the 1000-item cap');
+INSERT INTO private.password_vault_items(ws_id,vault_id,id,version,name,revision,encrypted_payload,ciphertext_bytes,deleted_at)
+ SELECT 'f7100000-0000-0000-0000-000000000001','f7200000-0000-0000-0000-000000000001',gen_random_uuid(),active_version,
+ 'Deleted byte ' || n::text,1,repeat('d',64),10485760,now() FROM private.password_vaults CROSS JOIN generate_series(1,11) n
+ WHERE id='f7200000-0000-0000-0000-000000000001';
+SELECT is(pg_temp.pw_op('item.write',pg_temp.pw_write('f7300000-0000-0000-0000-000000000004',0) || '{"name":"DELETED_BYTES_IGNORED"}')->>'error',
+ NULL,'deleted ciphertext bytes do not consume the vault byte cap');
+INSERT INTO private.password_vault_items(ws_id,vault_id,id,version,name,revision,encrypted_payload,ciphertext_bytes)
+ SELECT 'f7100000-0000-0000-0000-000000000001','f7200000-0000-0000-0000-000000000001',gen_random_uuid(),active_version,
+ 'Live byte ' || n::text,1,repeat('b',64),10000000 FROM private.password_vaults CROSS JOIN generate_series(1,11) n
+ WHERE id='f7200000-0000-0000-0000-000000000001';
+SELECT is(pg_temp.pw_op('item.write',pg_temp.pw_write('f7300000-0000-0000-0000-000000000005',0) || '{"name":"BYTE_OVER"}')->>'error',
+ '54000','live ciphertext bytes enforce the vault byte cap');
+CREATE TEMP TABLE byte_victim AS SELECT id, revision FROM private.password_vault_items
+ WHERE vault_id='f7200000-0000-0000-0000-000000000001' AND deleted_at IS NULL AND name LIKE 'Live byte %' LIMIT 1;
+SELECT is(pg_temp.pw_op('item.delete',jsonb_build_object('expected_revision',pg_temp.pw_revision(),
+ 'item_id',(SELECT id FROM byte_victim),'expected_item_revision',(SELECT revision FROM byte_victim)))->>'error',
+ NULL,'deleting one live item frees the byte cap');
+SELECT is(pg_temp.pw_op('item.write',pg_temp.pw_write('f7300000-0000-0000-0000-000000000005',0) || '{"name":"BYTE_AFTER_DELETE"}')->>'error',
+ NULL,'a small write succeeds after delete frees the byte cap');
 CREATE TEMP TABLE delete_input AS SELECT jsonb_build_object('expected_revision',pg_temp.pw_revision(),
  'item_id','f7300000-0000-0000-0000-000000000001','expected_item_revision',revision) AS input
  FROM private.password_vault_items WHERE id='f7300000-0000-0000-0000-000000000001';
@@ -497,6 +516,29 @@ SELECT is(pg_temp.pw_op('item.read','{"item_id":"f7300000-0000-0000-0000-0000000
 SELECT is(pg_temp.pw_op('item.delete',(SELECT input FROM delete_input),p_request=>'f7400000-0000-0000-0000-000000000018')->>'replayed',
  'true','identical deletion retry returns original receipt');
 SELECT is(pg_temp.pw_op('item.write',pg_temp.pw_write(p_item_revision=>0))->>'error','40001','tombstoned item identity cannot be reused');
+INSERT INTO private.password_vault_items(ws_id,vault_id,id,version,name,revision,encrypted_payload,ciphertext_bytes)
+ SELECT 'f7100000-0000-0000-0000-000000000001','f7200000-0000-0000-0000-000000000001',gen_random_uuid(),active_version,
+ 'Live cap ' || n::text,1,repeat('v',64),64 FROM private.password_vaults
+ CROSS JOIN generate_series(1, 1000 - (SELECT count(*) FROM private.password_vault_items
+  WHERE vault_id='f7200000-0000-0000-0000-000000000001' AND deleted_at IS NULL)) n
+ WHERE id='f7200000-0000-0000-0000-000000000001';
+SELECT is((SELECT count(*)::integer FROM private.password_vault_items
+ WHERE vault_id='f7200000-0000-0000-0000-000000000001' AND deleted_at IS NULL),1000,'fixture holds 1000 live items');
+SELECT is(pg_temp.pw_op('key.read',jsonb_build_object('item_id','f7300000-0000-0000-0000-000000000006',
+ 'expected_revision',pg_temp.pw_revision(),'expected_item_revision',0))->>'error',
+ '54000','live item cap blocks a new key read');
+SELECT is(pg_temp.pw_op('item.write',pg_temp.pw_write('f7300000-0000-0000-0000-000000000006',0) || '{"name":"ITEM_OVER"}')->>'error',
+ '54000','live item cap blocks a new item');
+CREATE TEMP TABLE cap_victim AS SELECT id, revision FROM private.password_vault_items
+ WHERE vault_id='f7200000-0000-0000-0000-000000000001' AND deleted_at IS NULL AND name LIKE 'Live cap %' LIMIT 1;
+SELECT is(pg_temp.pw_op('item.delete',jsonb_build_object('expected_revision',pg_temp.pw_revision(),
+ 'item_id',(SELECT id FROM cap_victim),'expected_item_revision',(SELECT revision FROM cap_victim)))->>'error',
+ NULL,'deleting a live item frees the item cap');
+SELECT is(pg_temp.pw_op('key.read',jsonb_build_object('item_id','f7300000-0000-0000-0000-000000000006',
+ 'expected_revision',pg_temp.pw_revision(),'expected_item_revision',0))->>'error',
+ NULL,'key read for a new item succeeds after delete frees quota');
+SELECT is(pg_temp.pw_op('item.write',pg_temp.pw_write('f7300000-0000-0000-0000-000000000006',0) || '{"name":"ITEM_AFTER_DELETE"}')->>'error',
+ NULL,'a new item succeeds after delete frees quota');
 SELECT is(count(*)::integer,31,'31 additional audited creates reach workspace vault cap') FROM (
  SELECT pg_temp.pw_op('vault.create',jsonb_build_object('label','Bounded vault ' || n::text,'encrypted_data_key',repeat('b',64)),
  p_vault=>gen_random_uuid()) r FROM generate_series(1,31) n) x WHERE r->>'error' IS NULL;
