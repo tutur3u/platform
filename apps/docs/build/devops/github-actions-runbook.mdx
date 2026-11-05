@@ -2,7 +2,7 @@
 title: "How CI works"
 description: "Public validation, review and delivery evidence for contributors."
 audience: developers
-updatedAt: "2026-11-01"
+updatedAt: "2026-11-05"
 ---
 
 GitHub Actions selects relevant checks from the repository workflows. Detailed operator runbooks are maintained privately.
@@ -42,3 +42,18 @@ The report-only Web browser workflow runs smoke or broader browser verification 
 ## Repository cache budget
 
 CI caches reduce repeated downloads and setup work. Cache availability is not guaranteed, and eviction can require fresh downloads. Reusing a cache never substitutes for checking the candidate source and dependency identity.
+
+## CI summary
+
+The `CI summary` check is one check run on the pull request head. `.github/workflows/ci-summary-poster.yml` computes it from the default branch. The workflow token is `contents: read`. It is not a `workflow_run` consumer. A dedicated GitHub App installation token posts the check. The job checks out the default branch only and does not run pull request code.
+
+The check stays in progress while the pull request is a draft, an expected workflow has not started, or a run or check is still open. A completed workflow fails the summary when its conclusion is not success, including skipped and neutral. A completed check fails the summary unless its conclusion is success, skipped, or neutral. The summary succeeds only when every expected run is success and no other completed run or check on that head is failing. Expected workflows are the active default-branch workflows whose `pull_request` trigger matches the base branch, labels, and changed paths. An unreadable trigger stays expected. The summary's own check and workflow run are ignored. Path matching can over-match, which waits for more workflows instead of going green early.
+
+`pull_request_target` posts the current picture. A schedule at minutes 7, 22, 37, and 52 refreshes every open pull request. GitHub may delay or drop a scheduled run, so a settled result can lag.
+
+The poster fails and posts nothing until these repository secrets exist:
+
+- `CI_SUMMARY_APP_ID`: the GitHub App's numeric id.
+- `CI_SUMMARY_APP_PRIVATE_KEY`: that app's PEM private key.
+
+Create the app for this repository, not as a grant of `checks: write` on the shared Actions token. Install it on `tutur3u/platform` with Actions read, Checks read and write, Contents read, Metadata read, and Pull requests read. Store the two secrets as Actions secrets. The deleted workflow id `407998590` stays deleted; this poster is a different file.

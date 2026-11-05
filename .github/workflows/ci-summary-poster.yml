@@ -1,0 +1,71 @@
+name: CI summary poster
+
+# Posts one "CI summary" check run on a pull request head. The workflow token
+# is contents: read only. A dedicated GitHub App installation token, minted
+# from CI_SUMMARY_APP_ID and CI_SUMMARY_APP_PRIVATE_KEY, performs the post.
+# Those secrets are absent until the repository owner creates that app and
+# installs it here; the job then fails and posts nothing.
+#
+# pull_request_target and schedule both run this file from the default branch.
+# The job checks out that branch and does not check out or execute pull request
+# code. schedule is the refresh: a trusted workflow_run gate rejects pull
+# request completions, and this file does not add a workflow_run trigger.
+# GitHub may delay or drop a schedule. The minutes sit off the hour.
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - converted_to_draft
+      - labeled
+      - unlabeled
+      - edited
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+
+concurrency:
+  group: "${{ github.event.pull_request.number && format('ci-summary-{0}', github.event.pull_request.number) || 'ci-summary-refresh' }}"
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  summary:
+    name: CI summary (poster)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Check out default-branch workflows
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch || 'main' }}
+          fetch-depth: 1
+          persist-credentials: false
+          sparse-checkout: |
+            .github/workflows/**
+            .github/actions/setup-bun-with-retry/**
+            scripts/ci/ci-summary.js
+            scripts/ci/setup-bun-with-backoff.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Install Bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+          cache-enabled: "false"
+
+      - name: Post the CI summary
+        env:
+          CI_SUMMARY_APP_ID: ${{ secrets.CI_SUMMARY_APP_ID }}
+          CI_SUMMARY_APP_PRIVATE_KEY: ${{ secrets.CI_SUMMARY_APP_PRIVATE_KEY }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          unset GITHUB_TOKEN GH_TOKEN
+          bun scripts/ci/ci-summary.js
