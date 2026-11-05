@@ -16,10 +16,10 @@ function harness() {
     put: async (request: RequestInfo | URL, response: Response) => { items.set(new Request(request).url, response.clone()); },
     delete: async (request: RequestInfo | URL) => items.delete(new Request(request).url),
   };
-  const delivery: typeof fetch = async () => Response.json({ collections: [{ entries: [
-    { slug: 'home', title: 'First site', publishedPageVersion: { id: version, schema_version: 1, blocks: fixture } },
-    { slug: 'en', title: 'First site English', publishedPageVersion: { id: version, schema_version: 1, blocks: fixture } },
-    { slug: 'draft', title: 'Draft', publishedPageVersion: null },
+  const delivery: typeof fetch = async () => Response.json({ workspaceId: '00000000-0000-4000-8000-000000000001', collections: [{ entries: [
+    { id: 'home-id', status: 'published', slug: 'home', title: 'First site', publishedPageVersion: { id: version, schema_version: 1, blocks: fixture } },
+    { id: 'en-id', status: 'published', slug: 'en', title: 'First site English', publishedPageVersion: { id: version, schema_version: 1, blocks: fixture } },
+    { id: 'draft-id', status: 'published', slug: 'draft', title: 'Draft', publishedPageVersion: null },
   ] }] });
   return {
     run: (path: string, init?: RequestInit, env = environment) => serve(new Request(`https://first.invalid${path}`, init), env, {

@@ -5,7 +5,7 @@
   "scripts": {
     "build": "vp build",
     "type-check": "tsc --noEmit",
-    "test": "bun test src/worker.test.ts"
+    "test": "bun test src/worker.test.ts src/live-delivery.test.ts"
   },
   "dependencies": {
     "@tanstack/react-router": "1.170.45",
