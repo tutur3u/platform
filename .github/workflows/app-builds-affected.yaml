@@ -38,8 +38,6 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
         run: |
-          # The six apps programming-app-builds.yaml covers, by turbo package suffix (@tuturuuu/<name>).
-          export PROGRAMMING_APPS='["web","learn","infrastructure","mail","contacts","tasks"]'
           if [ "$EVENT_NAME" = schedule ] || [ "$EVENT_NAME" = workflow_dispatch ]; then
             json='{"mode":"all","apps":[],"reason":"full build trigger"}'
             changed=true
@@ -48,17 +46,7 @@ jobs:
             json=$(node scripts/ci/affected-apps.mjs --base "origin/$BASE_REF")
             changed=$(git diff --quiet "origin/$BASE_REF...HEAD" -- 'apps/**' 'packages/**' && echo false || echo true)
           fi
-          SELECTION="$json" CODE_CHANGED="$changed" node --input-type=module - <<'NODE'
-          import { appendFileSync } from "node:fs";
-          const sel = JSON.parse(process.env.SELECTION);
-          const programming = JSON.parse(process.env.PROGRAMMING_APPS);
-          const raw = sel.apps.map((dir) => dir.replace(/^apps\//, ""));
-          const apps = sel.mode === "all" ? programming : programming.filter((name) => raw.includes(name));
-          // Only a selection that came back empty for changed code is suspicious; a
-          // change confined to apps outside the six programming apps selects nothing.
-          const codeChanged = process.env.CODE_CHANGED === "true" && sel.mode !== "all" && raw.length === 0;
-          appendFileSync(process.env.GITHUB_OUTPUT, `mode=${sel.mode}\napps=${JSON.stringify(apps)}\ncode_changed=${codeChanged}\n`);
-          NODE
+          SELECTION="$json" CODE_CHANGED="$changed" node scripts/ci/select-programming-apps.mjs
   build:
     needs: [check-ci, affected]
     if: (always() && needs.check-ci.result == 'success' && needs.affected.result == 'success' && needs.affected.outputs.apps != '[]') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
