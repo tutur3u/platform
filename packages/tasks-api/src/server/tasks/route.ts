@@ -54,10 +54,17 @@ import {
   loadTaskSourceFilterIds,
   type TaskSourceScope,
 } from './load-task-source-filter-ids';
+import { loadTicketIdentifierTaskIds } from './load-ticket-identifier-task-ids';
 import {
   applyPersonalTaskMetadata,
   loadPersonalTaskMetadata,
 } from './personal-overlays';
+import {
+  fullSelect,
+  fullSelectAssignedToMe,
+  timeTrackingSelect,
+  timeTrackingSelectAssignedToMe,
+} from './task-selects';
 
 async function deriveTaskDescriptionYjsState(
   description: string | null | undefined
@@ -955,7 +962,8 @@ export async function handleTaskRouteGET(
       !sourceFilterHasEmptySelection &&
       !sourceTasksDisabled &&
       !forTimeTracking &&
-      (sourceScope !== 'all_visible' ||
+      ((!!parsedIdentifier?.ticketPrefix && !isGuestBoardAccess) ||
+        sourceScope !== 'all_visible' ||
         hasRpcOnlyTaskFilters ||
         includeListCounts);
     const taskRouteLogContext = {
@@ -1016,6 +1024,19 @@ export async function handleTaskRouteGET(
     }
 
     const isPersonalWorkspace = workspaceRow?.personal === true;
+    const ticketIdentifierTaskIds =
+      parsedIdentifier?.ticketPrefix &&
+      (isPersonalWorkspace || forTimeTracking || isGuestBoardAccess)
+        ? await loadTicketIdentifierTaskIds(
+            sbAdmin,
+            user.id,
+            normalizedWorkspaceId,
+            {
+              displayNumber: parsedIdentifier.displayNumber,
+              ticketPrefix: parsedIdentifier.ticketPrefix,
+            }
+          )
+        : null;
     const shouldMergePersonalSort = !!(
       sortBy &&
       isPersonalWorkspace &&
@@ -1062,190 +1083,6 @@ export async function handleTaskRouteGET(
         }
       }
     }
-
-    const timeTrackingSelect = `
-        id,
-        display_number,
-        name,
-        priority,
-        start_date,
-        end_date,
-        list_id,
-        task_lists!inner (
-          id,
-          name,
-          status,
-          color,
-          deleted,
-          board_id,
-          workspace_boards!inner (
-            id,
-            name,
-            ticket_prefix,
-            ws_id,
-            workspaces!inner (
-              id,
-              name,
-              personal
-            )
-          )
-        ),
-        assignees:task_assignees(
-          user_id
-        )
-      `;
-
-    const timeTrackingSelectAssignedToMe = `
-        id,
-        display_number,
-        name,
-        priority,
-        start_date,
-        end_date,
-        list_id,
-        task_lists!inner (
-          id,
-          name,
-          status,
-          color,
-          deleted,
-          board_id,
-          workspace_boards!inner (
-            id,
-            name,
-            ticket_prefix,
-            ws_id,
-            workspaces!inner (
-              id,
-              name,
-              personal
-            )
-          )
-        ),
-        _currentUserAssignment:task_assignees!inner(
-          user_id
-        ),
-        assignees:task_assignees(
-          user_id
-        )
-      `;
-
-    const fullSelect = `
-        id,
-        display_number,
-        name,
-        description,
-        priority,
-        completed,
-        completed_at,
-        sort_key,
-        start_date,
-        end_date,
-        estimation_points,
-        created_at,
-        list_id,
-        closed_at,
-        task_lists!inner (
-          id,
-          name,
-          status,
-          color,
-          deleted,
-          board_id,
-          workspace_boards!inner (
-            id,
-            name,
-            ticket_prefix,
-            ws_id,
-            workspaces (
-              name
-            )
-          )
-        ),
-        assignees:task_assignees(
-          user_id,
-          user:users(
-            id,
-            display_name,
-            avatar_url
-          )
-        ),
-        labels:task_labels(
-          label:workspace_task_labels(
-            id,
-            name,
-            color,
-            created_at
-          )
-        ),
-        projects:task_project_tasks(
-          project:task_projects(
-            id,
-            name,
-            status
-          )
-        )
-      `;
-
-    const fullSelectAssignedToMe = `
-        id,
-        display_number,
-        name,
-        description,
-        priority,
-        completed,
-        completed_at,
-        sort_key,
-        start_date,
-        end_date,
-        estimation_points,
-        created_at,
-        list_id,
-        closed_at,
-        task_lists!inner (
-          id,
-          name,
-          status,
-          color,
-          deleted,
-          board_id,
-          workspace_boards!inner (
-            id,
-            name,
-            ticket_prefix,
-            ws_id,
-            workspaces (
-              name
-            )
-          )
-        ),
-        _currentUserAssignment:task_assignees!inner(
-          user_id
-        ),
-        assignees:task_assignees(
-          user_id,
-          user:users(
-            id,
-            display_name,
-            avatar_url
-          )
-        ),
-        labels:task_labels(
-          label:workspace_task_labels(
-            id,
-            name,
-            color,
-            created_at
-          )
-        ),
-        projects:task_project_tasks(
-          project:task_projects(
-            id,
-            name,
-            status
-          )
-        )
-      `;
 
     const selectedColumns = forTimeTracking
       ? assignedToMe
@@ -1459,7 +1296,14 @@ export async function handleTaskRouteGET(
         query = query.ilike('name', `%${searchQuery}%`);
       }
 
-      if (parsedIdentifier) {
+      if (ticketIdentifierTaskIds !== null) {
+        query = query.in(
+          'id',
+          ticketIdentifierTaskIds.length
+            ? ticketIdentifierTaskIds
+            : ['00000000-0000-0000-0000-000000000000']
+        );
+      } else if (parsedIdentifier) {
         query = query.eq('display_number', parsedIdentifier.displayNumber);
 
         if (parsedIdentifier.ticketPrefix) {
@@ -1671,7 +1515,14 @@ export async function handleTaskRouteGET(
           placedTasksQuery = placedTasksQuery.ilike('name', `%${searchQuery}%`);
         }
 
-        if (parsedIdentifier) {
+        if (ticketIdentifierTaskIds !== null) {
+          placedTasksQuery = placedTasksQuery.in(
+            'id',
+            ticketIdentifierTaskIds.length
+              ? ticketIdentifierTaskIds
+              : ['00000000-0000-0000-0000-000000000000']
+          );
+        } else if (parsedIdentifier) {
           placedTasksQuery = placedTasksQuery.eq(
             'display_number',
             parsedIdentifier.displayNumber
@@ -1859,7 +1710,14 @@ export async function handleTaskRouteGET(
           );
         }
 
-        if (parsedIdentifier) {
+        if (ticketIdentifierTaskIds !== null) {
+          defaultExternalQuery = defaultExternalQuery.in(
+            'id',
+            ticketIdentifierTaskIds.length
+              ? ticketIdentifierTaskIds
+              : ['00000000-0000-0000-0000-000000000000']
+          );
+        } else if (parsedIdentifier) {
           defaultExternalQuery = defaultExternalQuery.eq(
             'display_number',
             parsedIdentifier.displayNumber

@@ -297,3 +297,31 @@ describe('shift-assigned make-up suggestions', () => {
     ).toEqual([]);
   });
 });
+
+describe('shift-implied classes for excluded classes', () => {
+  it('derives no classes for a DDT or kindergarten class on a shift', () => {
+    for (const groupName of ['DDT Movers', 'mẫu giáo A']) {
+      expect(
+        buildShiftRuleSessions({
+          days: 6,
+          fromDate: '2026-10-26',
+          groupId: GROUP,
+          groupName,
+          policy: assigned('Shift 2'),
+        })
+      ).toEqual([]);
+    }
+  });
+
+  it('names the derived classes after their group so later filters can read them', () => {
+    const sessions = buildShiftRuleSessions({
+      days: 6,
+      fromDate: '2026-10-26',
+      groupId: GROUP,
+      groupName: 'English A1',
+      policy: assigned('Shift 2'),
+    });
+    expect(sessions).toHaveLength(2);
+    expect(sessions[0]?.groupName).toBe('English A1');
+  });
+});

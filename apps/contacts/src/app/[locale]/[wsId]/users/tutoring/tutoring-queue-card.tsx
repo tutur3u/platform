@@ -28,6 +28,7 @@ import {
   canEndWeakSupport,
   TutoringEndWeakSupport,
 } from './tutoring-end-weak-support';
+import { tutoringQueueFilterGroups } from './tutoring-filters';
 import { WorkspacePersonPicker } from './tutoring-people-picker';
 import { TutoringQueueContent } from './tutoring-queue-content';
 
@@ -54,6 +55,8 @@ interface Props {
   enabled: boolean;
   filters: TutoringQueueFilters;
   groups: UserGroup[];
+  /** Class tag names, loaded only when the policy has a tag exclusion rule. */
+  groupTags?: ReadonlyMap<string, readonly string[]>;
   pagination: { page: number; pageSize: number };
   policy: TutoringPolicy;
   schedulingKey: string | null;
@@ -90,6 +93,7 @@ export function TutoringQueueCard({
   enabled,
   filters,
   groups,
+  groupTags,
   pagination,
   policy,
   schedulingKey,
@@ -140,15 +144,21 @@ export function TutoringQueueCard({
     filters.groupId !== 'all' ||
     filters.studentUserId !== 'all';
 
+  // Classes excluded from all tutoring hold nobody here, so they are not offered.
   const groupOptions = useMemo<ComboboxOption[]>(
     () => [
       { label: t('all_groups'), value: 'all' },
-      ...groups.map((group) => ({
+      ...tutoringQueueFilterGroups(
+        policy,
+        groups,
+        filters.groupId,
+        groupTags
+      ).map((group) => ({
         label: group.name || group.id,
         value: group.id,
       })),
     ],
-    [groups, t]
+    [filters.groupId, groupTags, groups, policy, t]
   );
 
   const reasonLabels: Record<string, string> = {

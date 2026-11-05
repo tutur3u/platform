@@ -30,6 +30,8 @@ type TaskLabelJoinRow = {
 
 type TaskProjectJoinRow = {
   project_id: string;
+  ticket_number: number;
+  created_at: string;
   task_projects?: {
     id: string;
     name: string;
@@ -86,8 +88,10 @@ export async function GET(
           workspace_task_labels(id, name, color, created_at)
         ),
         projects:task_project_tasks(
+          ticket_number,
+          created_at,
           project_id,
-          task_projects(id, name, status)
+          task_projects(id, name, status, ticket_key)
         )
       `
       )
@@ -166,7 +170,15 @@ export async function GET(
         ?.map((label: TaskLabelJoinRow) => label.workspace_task_labels)
         .filter(Boolean),
       projects: taskAny.projects
-        ?.map((project: TaskProjectJoinRow) => project.task_projects)
+        ?.map((project: TaskProjectJoinRow) =>
+          project.task_projects
+            ? {
+                ...project.task_projects,
+                ticket_number: project.ticket_number,
+                created_at: project.created_at,
+              }
+            : null
+        )
         .filter(Boolean),
     };
     const { data: taskWorkspaceTier, error: tierError } = await sbAdmin.rpc(

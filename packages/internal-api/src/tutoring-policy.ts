@@ -11,10 +11,13 @@ import {
   TUTORING_CAMPUS_LABEL_MAX_LENGTH,
 } from './tutoring-campus-options';
 import {
+  filterTutoringEligibleGroups,
   hasTutoringTagExclusions,
   isTutoringGroupExcluded,
   parseTutoringGroupExclusions,
+  type TutoringExclusionReason,
   type TutoringGroupExclusion,
+  tutoringExclusionReason,
 } from './tutoring-group-rules';
 
 export {
@@ -44,8 +47,13 @@ export interface TutoringTimeRule {
   label?: string;
 }
 
-export type { TutoringGroupExclusion };
-export { hasTutoringTagExclusions, isTutoringGroupExcluded };
+export type { TutoringExclusionReason, TutoringGroupExclusion };
+export {
+  filterTutoringEligibleGroups,
+  hasTutoringTagExclusions,
+  isTutoringGroupExcluded,
+  tutoringExclusionReason,
+};
 
 export interface TutoringPolicy {
   preset: 'standard' | 'easy_center' | 'custom';

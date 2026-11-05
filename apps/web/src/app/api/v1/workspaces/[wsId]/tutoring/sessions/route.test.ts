@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   admin: vi.fn(),
   conflicts: vi.fn(),
   denyWeak: vi.fn(),
+  excluded: vi.fn(),
   linked: vi.fn(),
   resolveActor: vi.fn(),
   scope: vi.fn(),
@@ -77,6 +78,9 @@ vi.mock('@/lib/tutoring/teachers', () => ({
 vi.mock('@/lib/tutoring/weak-content-access', () => ({
   denyWeakContentEdit: mocks.denyWeak,
   isWeakSupportSession: () => false,
+}));
+vi.mock('@/lib/tutoring/group-exclusion', () => ({
+  denyExcludedTutoringGroup: mocks.excluded,
 }));
 vi.mock('@/lib/tutoring/linked-content', () => ({
   isLinkedContentSession: (session: { reason_type?: string }) =>
@@ -157,6 +161,7 @@ beforeEach(() => {
   mocks.admin.mockImplementation(async () => fakeAdmin());
   mocks.conflicts.mockResolvedValue({ data: [], error: null });
   mocks.denyWeak.mockResolvedValue(null);
+  mocks.excluded.mockResolvedValue(null);
   mocks.linked.mockResolvedValue(new Map());
   mocks.resolveActor.mockResolvedValue({ user: { id: 'session-actor' } });
   mocks.scope.mockResolvedValue(null);
@@ -309,6 +314,23 @@ describe('GET /tutoring/sessions', () => {
     expect((await list()).status).toBe(500);
   });
 
+  it('keeps listing booked sessions of a class the policy now excludes', async () => {
+    state.sessions = { count: 1, data: [sessionRow()], error: null };
+    state.groups = {
+      data: [{ id: groupId, name: 'Starters DDT 2' }],
+      error: null,
+    };
+
+    const body = await (await list()).json();
+
+    expect(body.count).toBe(1);
+    expect(body.data[0]).toMatchObject({
+      group: { name: 'Starters DDT 2' },
+      id: 'session-1',
+    });
+    expect(mocks.excluded).not.toHaveBeenCalled();
+  });
+
   it('answers HEAD with the same status and no body', async () => {
     const { HEAD } = await import('./route');
     const response = await HEAD(
@@ -380,6 +402,28 @@ describe('POST /tutoring/sessions', () => {
     );
 
     expect((await create(slotBody())).status).toBe(404);
+  });
+
+  it('refuses a new session in an excluded class before any write', async () => {
+    mocks.excluded.mockResolvedValue(
+      Response.json(
+        { code: 'TUTORING_GROUP_EXCLUDED', message: 'excluded' },
+        { status: 422 }
+      )
+    );
+
+    const response = await create(slotBody({ reasonType: 'WEAK_SUPPORT' }));
+
+    expect(response.status).toBe(422);
+    expect((await response.json()).code).toBe('TUTORING_GROUP_EXCLUDED');
+    expect(mocks.excluded).toHaveBeenCalledWith(
+      expect.objectContaining({
+        groupId,
+        reasonType: 'WEAK_SUPPORT',
+        wsId,
+      })
+    );
+    expect(state.inserted).toBeNull();
   });
 
   it('needs sessions[] or a start date and time', async () => {
