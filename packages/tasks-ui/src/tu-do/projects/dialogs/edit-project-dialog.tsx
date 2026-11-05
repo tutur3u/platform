@@ -62,7 +62,7 @@ export function EditProjectDialog({
       name: trimmedName,
       description: description.trim() || undefined,
       // Only send a changed key: choosing one needs project management.
-      ticket_key: ticketKey !== project?.ticket_key ? ticketKey : undefined,
+      ticket_key: ticketKey !== (project?.ticket_key ?? '') ? ticketKey : undefined,
     });
   };
 
