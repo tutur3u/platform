@@ -1,0 +1,94 @@
+name: App builds (affected)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
+  schedule:
+    - cron: '17 19 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: app-builds-affected-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  affected:
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.selection.outputs.mode }}
+      apps: ${{ steps.selection.outputs.apps }}
+      code_changed: ${{ steps.selection.outputs.code_changed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: selection
+        shell: bash
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = schedule ] || [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            json='{"mode":"all","apps":["apps/web","apps/learn","apps/infrastructure","apps/mail","apps/contacts","apps/tasks"],"reason":"full build trigger"}'
+            changed=true
+          else
+            git fetch origin "$GITHUB_BASE_REF"
+            json=$(node scripts/ci/affected-apps.mjs --base "origin/$GITHUB_BASE_REF")
+            changed=$(git diff --quiet "origin/$GITHUB_BASE_REF...HEAD" -- 'apps/**' 'packages/**' && echo false || echo true)
+            if [ "$(node -p 'JSON.parse(process.argv[1]).mode' "$json")" = all ]; then
+              json=$(node -e 'const x=JSON.parse(process.argv[1]); x.apps=["apps/web","apps/learn","apps/infrastructure","apps/mail","apps/contacts","apps/tasks"]; console.log(JSON.stringify(x))' "$json")
+            fi
+          fi
+          {
+            echo "mode=$(node -p 'JSON.parse(process.argv[1]).mode' "$json")"
+            echo "apps=$(node -p 'JSON.stringify(JSON.parse(process.argv[1]).apps)' "$json")"
+            echo "code_changed=$changed"
+          } >> "$GITHUB_OUTPUT"
+  build:
+    needs: affected
+    if: needs.affected.outputs.apps != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.affected.outputs.apps) }}
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://programming-ci.supabase.invalid
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_programming_ci_placeholder
+      NEXT_PUBLIC_APP_URL: https://programming-ci.invalid
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      NODE_OPTIONS: --max-old-space-size=8192
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Build application and shared dependencies without deployment
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/${{ matrix.app }}
+          token: ''
+          team: ''
+  App-builds-affected:
+    name: App builds (affected)
+    if: always()
+    needs: [affected, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Enforce affected build verdict
+        env:
+          MODE: ${{ needs.affected.outputs.mode }}
+          APPS: ${{ needs.affected.outputs.apps }}
+          CODE_CHANGED: ${{ needs.affected.outputs.code_changed }}
+          AFFECTED_RESULT: ${{ needs.affected.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: node --input-type=module -e 'import { verdict } from "./scripts/ci/affected-apps.mjs"; const apps=JSON.parse(process.env.APPS||"[]"); const r=verdict({mode:process.env.MODE,apps,codeChanged:process.env.CODE_CHANGED==="true",results:Object.fromEntries(apps.map(a=>[a,process.env.BUILD_RESULT==="success"?"success":process.env.BUILD_RESULT]))}); if(process.env.AFFECTED_RESULT!=="success"||!r.pass) { console.error(r.reason); process.exit(1) }'
