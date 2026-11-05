@@ -109,6 +109,36 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
+  affected-gate:
+    # Pull requests only: skip the heavy jobs when playground is unaffected.
+    # Every other event, and any error, resolves to run=true.
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.app.outputs.run || 'true' }}
+      reason: ${{ steps.app.outputs.reason }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        continue-on-error: true
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+          sparse-checkout: |
+            /.github/actions/affected-gate/
+            /scripts/ci/affected-apps.mjs
+            /scripts/ci/affected-gate.mjs
+            /apps/*/package.json
+            /packages/*/package.json
+          sparse-checkout-cone-mode: false
+      - id: app
+        continue-on-error: true
+        uses: ./.github/actions/affected-gate
+        with:
+          app: playground
   check-ci:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     uses: ./.github/workflows/ci-check.yml
@@ -119,8 +149,8 @@ jobs:
       workflow_name: playground-cloudflare.yaml
   # Qualification only: no staging or production publisher.
   native:
-    needs: check-ci
-    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    needs: [check-ci, affected-gate]
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/native-start-app.yaml
     permissions:
       contents: read
