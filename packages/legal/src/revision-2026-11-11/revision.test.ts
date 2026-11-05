@@ -49,7 +49,7 @@ function allParts() {
 describe('2026-11-11 revision source', () => {
   it('is extracted from the frozen FINAL', () => {
     expect(FINAL_SOURCE_SHA256).toBe(
-      'ee52b10d69cc1aed56fe1dd2df6a7cbfd4f59fa64fb4025e87987f2597eb9cfb'
+      '1234b293dfb5b83c4cc94ff6716a3a10df6bcd284263e394241ef38e8838a8f6'
     );
     expect(REVISION_DATE).toBe('2026-11-11');
   });
@@ -177,7 +177,7 @@ describe('2026-11-11 revision: shipped hold state', () => {
       expect(notice.binding).toContain('2026-11-11');
       expect(notice.rows.flat().join(' ')).toContain('2026-12-11');
       expect(notice.links).toContain('/legal/archive/2026-08-15');
-      expect(notice.rows).toHaveLength(20);
+      expect(notice.rows).toHaveLength(17);
       for (const row of notice.rows) {
         expect(row).toHaveLength(4);
         for (const cell of row) expect(cell.trim()).not.toBe('');
@@ -200,15 +200,18 @@ describe('2026-11-11 revision: release', () => {
     expect(ks('vi').match(/Tất cả tính năng AI đều được tắt/gu)).toHaveLength(
       5
     );
-    expect(renderRevisionNotice('en', { released }).rows).toHaveLength(21);
-    // The registry Gemini row also needs its own console check.
-    const registry = renderRevisionDocument('subprocessors', 'en', {
-      released: [...released, 'subprocessors/subprocessors-registry#3'],
-    }).sections.at(-1)!.content;
-    expect(registry).toContain('| Google (Gemini API) |');
-    expect(registry.indexOf('| Google (Gemini API) |')).toBeGreaterThan(
-      registry.indexOf('| Google Cloud |')
-    );
+    expect(renderRevisionNotice('en', { released }).rows).toHaveLength(18);
+    // The registry Gemini row is no longer held: it renders by default.
+    for (const locale of locales) {
+      const registry = renderRevisionDocument(
+        'subprocessors',
+        locale
+      ).sections.at(-1)!.content;
+      expect(registry).toContain('| Google (Gemini API) |');
+      expect(registry.indexOf('| Google (Gemini API) |')).toBeGreaterThan(
+        registry.indexOf('| Google Cloud |')
+      );
+    }
   });
 
   it('a released paired block replaces its fallback', () => {
@@ -274,11 +277,12 @@ describe('2026-11-11 revision: publication switch', () => {
         (s) => s.id === 'privacy-mobile'
       )
     ).toBe(false);
+    // Annex II no longer names the mobile app or Firebase.
     expect(
       getLegalDocument('dpa', 'en', later).sections.find(
         (s) => s.id === 'dpa-annex-2'
       )!.content
-    ).toContain('(mobile; from 20 November 2026)');
+    ).not.toMatch(/Firebase|\(mobile; from/u);
   });
 
   it('refuses a notice date other than the revision date', () => {

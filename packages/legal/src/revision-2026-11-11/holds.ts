@@ -12,7 +12,7 @@ export const HOLD_UNITS = {
     condition:
       'WS-AI-KILL-SWITCH is live in production and every designated education and student workspace is switched off; security confirms each named feature is refused by SHA',
     where:
-      'Privacy P3 bullet and P10 paragraph; Terms T9 bullet; DPA D9 bullet and D12 sentence; registry Google (Gemini API) row; change-notice row "AI in student and education workspaces"',
+      'Privacy P3 bullet and P10 paragraph; Terms T9 bullet; DPA D9 bullet and D12 sentence; change-notice row "AI in student and education workspaces"',
   },
   // --- Paired HOLD blocks with publishable fallbacks ------------------------
   'r33-r34': {
@@ -45,11 +45,6 @@ export const HOLD_UNITS = {
       'published by default: the tag says to remove the sentence only if Gemini request logging is turned off before publication; remove from RELEASED_HOLDS if it is',
     where: 'Privacy P10 Gemini request-logging sentence',
   },
-  'privacy/privacy-section-2#1': {
-    condition: 'the Vietnam web-analytics consent gate is live',
-    where:
-      'Privacy P4 table row "Improving the Services from usage statistics"',
-  },
   'privacy/privacy-section-5#1': {
     condition: 'the advertising-ID check is closed',
     where: 'Privacy P10 "We do not sell personal information" sentence',
@@ -71,11 +66,6 @@ export const HOLD_UNITS = {
     condition:
       'the OpenAI support-chat entity is verified and its terms are confirmed',
     where: 'Registry row "OpenAI" (support-chat fallback)',
-  },
-  'subprocessors/subprocessors-registry#3': {
-    condition:
-      'the Gemini console settings (55-day abuse-monitoring clause) are verified; also needs ks',
-    where: 'Registry row "Google (Gemini API)"',
   },
 } as const satisfies Record<
   string,
