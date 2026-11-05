@@ -49,10 +49,21 @@ test('verdict blocks skip-to-green and any non-success app result', () => {
   assert.equal(verdict({ mode: 'affected', apps: ['apps/a'], codeChanged: true, results: { 'apps/a': 'failure' } }).pass, false);
   assert.equal(verdict({ mode: 'affected', apps: ['apps/a'], codeChanged: true, results: { 'apps/a': 'success' } }).pass, true);
 });
-test('mode all requires at least one success and every result must succeed', () => {
-  assert.deepEqual(verdict({ mode: 'all', apps: [], codeChanged: true, results: {} }), { pass: false, reason: 'fail-safe all but nothing ran' });
-  assert.equal(verdict({ mode: 'all', apps: [], codeChanged: true, results: { a: 'success', b: 'success' } }).pass, true);
-  assert.equal(verdict({ mode: 'all', apps: [], codeChanged: true, results: { a: 'success', b: 'failure' } }).pass, false);
+test('mode all requires the full app list and a success for every listed app', () => {
+  assert.deepEqual(verdict({ mode: 'all', apps: [], codeChanged: true, results: {} }), { pass: false, reason: 'fail-safe all needs the full app list' });
+  assert.equal(verdict({ mode: 'all', apps: [], codeChanged: true, results: { a: 'success', b: 'success' } }).pass, false);
+  assert.equal(verdict({ mode: 'all', apps: ['a', 'b'], codeChanged: true, results: { a: 'success', b: 'success' } }).pass, true);
+  assert.deepEqual(verdict({ mode: 'all', apps: ['a', 'b'], codeChanged: true, results: { a: 'success' } }), { pass: false, reason: 'b result was missing' });
+  assert.equal(verdict({ mode: 'all', apps: ['a', 'b'], codeChanged: true, results: { a: 'success', b: 'failure' } }).pass, false);
+  assert.equal(verdict({ mode: 'all', apps: ['a'], codeChanged: true, results: { a: 'success', extra: 'cancelled' } }).pass, false);
+});
+test('loadGraph with a ref reads manifests from that commit, not the working copy', () => {
+  const f = fixture(); try {
+    writeFileSync(path.join(f.cwd, 'apps/beta/package.json'), JSON.stringify({ name: '@x/beta', dependencies: { '@x/ui': 'workspace:*' } }));
+    assert.equal(loadGraph(f.cwd).declares('apps/beta', 'packages/ui'), true);
+    assert.equal(loadGraph(f.cwd, 'HEAD').declares('apps/beta', 'packages/ui'), false);
+    assert.equal(loadGraph(f.cwd, 'HEAD').declares('apps/beta', 'packages/core'), true);
+  } finally { f.close(); }
 });
 test('docs-only classification is based on documentation extensions', () => {
   const f = fixture(); try {
