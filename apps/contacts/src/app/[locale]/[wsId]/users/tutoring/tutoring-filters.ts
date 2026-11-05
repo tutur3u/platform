@@ -248,3 +248,29 @@ export function formatSessionTimeRange(
 
   return `${format(start)} – ${format(end)}`;
 }
+
+const MAX_PAYROLL_RANGE_DAYS = 366;
+
+/**
+ * Whether the schedule's current filters can be exported in a given format.
+ *
+ * The detailed sheet exports whatever the schedule shows, so it follows every
+ * range, including the open-ended default (`upcoming`), `past` and `all`.
+ * Payroll totals only make sense for a closed pay period, so that format alone
+ * needs both dates, in order, within 366 days.
+ */
+export function canExportTutoringFormat(
+  query: TutoringDateBounds,
+  format: 'detailed' | 'payroll'
+) {
+  if (format === 'detailed') return true;
+
+  return Boolean(
+    query.fromDate &&
+      query.toDate &&
+      query.fromDate <= query.toDate &&
+      (Date.parse(query.toDate) - Date.parse(query.fromDate)) / 86_400_000 +
+        1 <=
+        MAX_PAYROLL_RANGE_DAYS
+  );
+}
