@@ -1,0 +1,40 @@
+{
+  "apps/apps/cloudflare/": [
+    "apps/finance",
+    "apps/pay"
+  ],
+  "apps/database/supabase/migrations/": [
+    "apps/web"
+  ],
+  "apps/meet/": [
+    "apps/meet-realtime"
+  ],
+  "apps/teach/": [
+    "apps/database"
+  ],
+  "apps/web/": [
+    "apps/database"
+  ],
+  "apps/web/messages/": [
+    "apps/tanstack-web"
+  ],
+  "packages/inventory-core/src/lib/infrastructure/employee-sql/": [
+    "apps/infrastructure"
+  ],
+  "packages/realtime/src/": [
+    "apps/chat-realtime"
+  ],
+  "packages/supabase/src/next/": [
+    "apps/tanstack-web"
+  ],
+  "packages/types/src/": [
+    "apps/database"
+  ],
+  "packages/utils/src/": [
+    "apps/coordination",
+    "apps/meet-realtime"
+  ],
+  "packages/utils/src/internal-accounts/": [
+    "apps/database"
+  ]
+}
