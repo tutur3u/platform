@@ -102,6 +102,9 @@
 # Code ownership itself
 /.github/CODEOWNERS                @vhpx
 
+# Merge-gate summary check posted from the default branch
+/.github/workflows/ci-summary.yml @vhpx @tuturuuu-release-bot
+
 /apps/database/rollbacks/ @vhpx @tuturuuu-release-bot
 
 /apps/database/supabase/schemas/ @vhpx
