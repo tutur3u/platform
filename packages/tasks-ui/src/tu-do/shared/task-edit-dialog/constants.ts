@@ -2,6 +2,13 @@
  * Constants for task edit dialog
  */
 
+import type { JSONContent } from '@tiptap/react';
+
+export const EMPTY_TASK_DESCRIPTION_DOC: JSONContent = {
+  type: 'doc',
+  content: [{ type: 'paragraph' }],
+};
+
 // Debounce delay for Yjs update events (milliseconds)
 export const DESCRIPTION_SYNC_DEBOUNCE_MS = 500;
 
