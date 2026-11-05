@@ -32,11 +32,13 @@ export type SprintAccessLevel = 'view' | 'plan' | 'manage';
 // workspace secret, which only verified Tuturuuu staff can set.
 export const BOARD_CYCLES_ENABLED_SECRET = 'ENABLE_BOARD_CYCLES';
 
+const BOARD_CYCLES_RELEASE_ENABLED = false;
+
 export async function areBoardCyclesEnabled(
   sbAdmin: TypedSupabaseClient,
   wsId: string
 ) {
-  if (!wsId) return false;
+  if (!BOARD_CYCLES_RELEASE_ENABLED || !wsId) return false;
   const { data, error } = await sbAdmin
     .from('workspace_secrets')
     .select('name')
@@ -68,6 +70,10 @@ export async function requireSprintAccess(
     requiredPermission: level === 'view' ? 'view' : 'edit',
   });
   if ('error' in access) return access;
+
+  if (!BOARD_CYCLES_RELEASE_ENABLED && level !== 'view') {
+    return { error: boardCyclesNotEnabledResponse() };
+  }
 
   if (level === 'manage' && access.access.mode !== 'member') {
     return {
@@ -272,6 +278,10 @@ export async function loadBoardSprints({
   | { ok: true; data: BoardSprintsResponse }
   | { ok: false; error: SprintQueryError }
 > {
+  if (!BOARD_CYCLES_RELEASE_ENABLED) {
+    return { ok: true, data: UNAVAILABLE };
+  }
+
   const cyclesEnabled = areBoardCyclesEnabled(sbAdmin, wsId).catch(() => false);
   const [boardResult, sprintsResult, reportsResult, unplannedResult] =
     await Promise.all([

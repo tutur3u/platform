@@ -48,11 +48,21 @@ export function cyclePlanningTaskSelect(scope: 'cycle' | 'backlog') {
       archived,
       board:workspace_boards!inner(id, ws_id, ticket_prefix, deleted_at, archived_at)
     ),${scope === 'cycle' ? '\n    in_cycle:task_cycle_tasks!inner(cycle_id),' : ''}
-    cycle_links:task_cycle_tasks!left(cycle_id, created_at, cycle:task_cycles!inner(board_id, deleted)),
+    cycle_links:task_cycle_tasks!left(cycle_id, created_at, cycle:task_cycles!inner(*)),
     assignees:task_assignees(user:users(id, display_name, avatar_url)),
     projects:task_project_tasks(project:task_projects(id, name)),
     labels:task_labels(label:workspace_task_labels(id, name))
   `;
+}
+
+export function isCycleBoardScopeUnavailable(error: {
+  code?: string;
+  message?: string;
+} | null) {
+  return (
+    (error?.code === '42703' || error?.code === 'PGRST204') &&
+    error.message?.includes('board_id') === true
+  );
 }
 
 type Maybe<T> = T | null | undefined;
