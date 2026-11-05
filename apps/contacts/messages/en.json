@@ -9537,6 +9537,7 @@
     "export_failed": "Export failed",
     "export_payroll_csv": "Payroll CSV",
     "export_payroll_xlsx": "Payroll XLSX",
+    "export_range_required": "Choose a date range to export",
     "export_ready": "Exported {count} rows",
     "export_scope": "Export current filters",
     "feature_disabled_description": "Turn tutoring on to schedule make-up and remedial sessions for this workspace.",

@@ -253,29 +253,20 @@ export function formatSessionTimeRange(
   return `${format(start)} – ${format(end)}`;
 }
 
-const MAX_PAYROLL_RANGE_DAYS = 366;
+const MAX_EXPORT_RANGE_DAYS = 366;
 
 /**
- * Whether the schedule's current filters can be exported in a given format.
- *
- * The detailed sheet exports whatever the schedule shows, so it follows every
- * range, including the open-ended default (`upcoming`), `past` and `all`.
- * Payroll totals only make sense for a closed pay period, so that format alone
- * needs both dates, in order, within 366 days.
+ * Both dates set, in order, and at most 366 days apart (inclusive). This is the
+ * range the export endpoint accepts for every mode; anything else answers 400.
  */
-export function canExportTutoringFormat(
-  query: TutoringDateBounds,
-  format: 'detailed' | 'payroll'
-) {
-  if (format === 'detailed') return true;
-
+function isClosedExportRange(query: TutoringDateBounds) {
   return Boolean(
     query.fromDate &&
       query.toDate &&
       query.fromDate <= query.toDate &&
       (Date.parse(query.toDate) - Date.parse(query.fromDate)) / 86_400_000 +
         1 <=
-        MAX_PAYROLL_RANGE_DAYS
+        MAX_EXPORT_RANGE_DAYS
   );
 }
 
@@ -306,4 +297,22 @@ export function tutoringQueueFilterGroups<
   return groups.filter(
     (group) => eligible.has(group.id) || group.id === selectedGroupId
   );
+}
+
+/**
+ * Whether the schedule's current filters can be exported in a given format.
+ *
+ * The export endpoint requires a closed date range for every mode, so both the
+ * detailed sheet and the payroll totals follow the same rule. The open-ended
+ * ranges (`upcoming`, `past`, `all`) cannot be exported until dates are chosen.
+ */
+export function canExportTutoringFormat(
+  query: TutoringDateBounds,
+  format: 'detailed' | 'payroll'
+) {
+  switch (format) {
+    case 'detailed':
+    case 'payroll':
+      return isClosedExportRange(query);
+  }
 }
