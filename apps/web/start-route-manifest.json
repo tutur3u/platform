@@ -43,18 +43,18 @@
     }
   ],
   "summary": {
-    "total": 844,
+    "total": 846,
     "categories": {
       "api": 650,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 163,
+      "page": 165,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 832 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 834 }
   },
   "routes": [
     {
@@ -878,6 +878,22 @@
     {
       "pattern": "/[locale]/invite/[code]",
       "source": "apps/web/src/app/[locale]/(marketing)/invite/[code]/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/legal/archive/2026-08-15/[kind]",
+      "source": "apps/web/src/app/[locale]/(marketing)/legal/archive/2026-08-15/[kind]/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/legal/archive/2026-08-15",
+      "source": "apps/web/src/app/[locale]/(marketing)/legal/archive/2026-08-15/page.tsx",
       "category": "page",
       "owner": "web-next",
       "disposition": "Next-fallback",
