@@ -108,7 +108,10 @@ export function getChatRealtimeSubscribeUrl(input: {
   return { expiresAt: signed.expiresAt, url };
 }
 
-export async function publishChatRealtimeEvent(event: ChatRealtimeEventInput) {
+export async function publishChatRealtimeEvent(
+  event: ChatRealtimeEventInput,
+  options: { signal?: AbortSignal } = {}
+) {
   const parsed = chatRealtimeEventSchema.parse({
     ...event,
     id: crypto.randomUUID(),
@@ -131,6 +134,7 @@ export async function publishChatRealtimeEvent(event: ChatRealtimeEventInput) {
           'Content-Type': 'application/json',
         },
         method: 'POST',
+        signal: options.signal,
       }
     );
 

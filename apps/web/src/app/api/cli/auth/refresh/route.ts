@@ -4,6 +4,15 @@ import {
   verifyCliRefreshToken,
 } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getConfirmedAuthEmail } from '@tuturuuu/supabase/next/user';
+import {
+  isKnownReplay,
+  preLimitReplayAttempt,
+  rememberReplay,
+} from '@tuturuuu/utils/abuse-guard/replay-guard';
+import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
+import { guardSourceBucket } from '@tuturuuu/utils/abuse-guard/source';
+import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
 import {
   readRequiredMfaPolicy,
   satisfiesRequiredMfaPolicy,
@@ -19,14 +28,20 @@ const refreshSchema = z.object({
 
 const REFRESH_REPLAY_KEY_PREFIX = 'cli:refresh:used';
 
-type RefreshTokenConsumeResult = 'consumed' | 'replayed' | 'unavailable';
+type RefreshTokenConsumeResult =
+  | 'consumed'
+  | 'limited'
+  | 'replayed'
+  | 'unavailable';
 
 async function consumeRefreshTokenOnce({
   exp,
+  ip,
   jti,
   sub,
 }: {
   exp: number;
+  ip: string;
   jti: string;
   sub: string;
 }): Promise<RefreshTokenConsumeResult> {
@@ -36,21 +51,40 @@ async function consumeRefreshTokenOnce({
     return 'replayed';
   }
 
-  const redis = await getUpstashRestRedisClient().catch(() => null);
+  const key = `${REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
+  // Known replays and over-limit callers cost no store operation.
+  if (isKnownReplay(key)) return 'replayed';
+  if (preLimitReplayAttempt(sub, ip) !== null) return 'limited';
+
+  const redis = await getUpstashRestRedisClient({
+    family: 'replay',
+    fairness: { principal: sub, source: guardSourceBucket(ip) },
+  }).catch(() => null);
   if (!redis) {
     return 'unavailable';
   }
 
-  const key = `${REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
   try {
     const consumed = await redis.set(key, '1', {
       ex: ttlSeconds,
       nx: true,
     });
 
-    return consumed === 'OK' ? 'consumed' : 'replayed';
+    if (consumed === 'OK') return 'consumed';
+    rememberReplay(key, exp);
+    return 'replayed';
   } catch {
     return 'unavailable';
+  }
+}
+
+/** Current Auth state for the subject; null when Auth cannot be reached. */
+async function readAuthUser(userId: string) {
+  try {
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    return await sbAdmin.auth.admin.getUserById(userId);
+  } catch {
+    return null;
   }
 }
 
@@ -76,11 +110,26 @@ export async function POST(request: NextRequest) {
 
   const consumeResult = await consumeRefreshTokenOnce({
     exp: verification.claims.exp,
+    ip: extractIPFromRequest(request.headers),
     jti: verification.claims.jti,
     sub: verification.claims.sub,
   });
 
+  if (consumeResult === 'limited') {
+    return NextResponse.json(
+      { error: 'Too many refresh attempts' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
   if (consumeResult === 'unavailable') {
+    // Legacy policy continues without the fence; once the guard store owns
+    // replay fences, an unavailable store fails closed.
+    if (isAbuseGuardFamilyAssigned('replay')) {
+      return NextResponse.json(
+        { error: 'Refresh temporarily unavailable' },
+        { status: 503, headers: { 'Retry-After': '30' } }
+      );
+    }
     console.warn('CLI refresh replay protection unavailable; continuing');
   } else if (consumeResult === 'replayed') {
     return NextResponse.json(
@@ -89,12 +138,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data, error } = await sbAdmin.auth.admin.getUserById(
-    verification.claims.sub
-  );
+  // SR-926: every refresh re-reads Auth for this subject. The new session's
+  // email is the confirmed Auth email only, never the old token's claim.
+  const authLookup = await readAuthUser(verification.claims.sub);
 
-  if (error || !data.user) {
+  if (!authLookup || authLookup.error) {
+    return NextResponse.json(
+      {
+        code: 'AUTH_IDENTITY_UNAVAILABLE',
+        error: 'Unable to verify account identity',
+      },
+      { status: 503, headers: { 'Retry-After': '30' } }
+    );
+  }
+
+  const { data } = authLookup;
+  if (!data.user || data.user.id !== verification.claims.sub) {
     return NextResponse.json(
       { error: 'Invalid or expired refresh token' },
       { status: 401 }
@@ -115,7 +174,7 @@ export async function POST(request: NextRequest) {
   const policy = await getCliAppSessionPolicy();
   const session = createCliAppSession({
     accessExpiresInSeconds: policy.cliAccessTtlSeconds,
-    email: data.user.email ?? verification.claims.email,
+    email: getConfirmedAuthEmail(data.user),
     mfa: verification.claims.mfa,
     refreshExpiresInSeconds: policy.cliRefreshTtlSeconds,
     userId: verification.claims.sub,

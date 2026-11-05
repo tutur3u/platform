@@ -75,6 +75,11 @@ describe('workspace-scoped email preview', () => {
       ['id', 'report'],
     ]);
     expect(calls).toContainEqual([
+      'external_user_monthly_reports_workspace_view',
+      'eq',
+      ['group_ws_id', 'workspace'],
+    ]);
+    expect(calls).toContainEqual([
       'workspace_configs',
       'eq',
       ['ws_id', 'workspace'],
@@ -83,6 +88,29 @@ describe('workspace-scoped email preview', () => {
     expect(preview.html).toContain('<strong>Learner</strong>');
     expect(preview.html).toContain('0.0');
     expect(preview.html).toContain('Easy Center');
+  });
+  it('limits the report to the actor groups when a group list is given', async () => {
+    const { client, calls } = database();
+    await loadReportEmailPreview(client as never, 'workspace', 'report', [
+      'group-a',
+    ]);
+    expect(calls).toContainEqual([
+      'external_user_monthly_reports_workspace_view',
+      'in',
+      ['group_id', ['group-a']],
+    ]);
+  });
+  it('does not restrict groups for workspace-wide readers', async () => {
+    const { client, calls } = database();
+    await loadReportEmailPreview(client as never, 'workspace', 'report', null);
+    expect(calls.some(([, method]) => method === 'in')).toBe(true);
+    expect(
+      calls.some(
+        ([table, method]) =>
+          table === 'external_user_monthly_reports_workspace_view' &&
+          method === 'in'
+      )
+    ).toBe(false);
   });
   it('fails closed for absent reports and failed template reads', async () => {
     await expect(

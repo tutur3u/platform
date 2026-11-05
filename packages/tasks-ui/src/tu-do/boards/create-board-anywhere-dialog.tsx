@@ -28,17 +28,27 @@ import { useTasksHref } from '../tasks-route-context';
 interface CreateBoardAnywhereDialogProps {
   children?: ReactNode;
   currentWorkspaceId?: string;
+  /** Controls the dialog from outside; no trigger renders when set. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function CreateBoardAnywhereDialog({
   children,
   currentWorkspaceId,
+  open: controlledOpen,
+  onOpenChange,
 }: CreateBoardAnywhereDialogProps) {
   const t = useTranslations('ws-task-boards.create_anywhere');
   const router = useRouter();
   const tasksHref = useTasksHref();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = (nextOpen: boolean) => {
+    if (controlledOpen === undefined) setUncontrolledOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  };
   const [name, setName] = useState('');
   const [workspaceId, setWorkspaceId] = useState(currentWorkspaceId ?? '');
 
@@ -140,14 +150,16 @@ export function CreateBoardAnywhereDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {children ?? (
-          <Button type="button" size="sm" className="gap-2">
-            <Plus className="size-4" />
-            {t('action')}
-          </Button>
-        )}
-      </DialogTrigger>
+      {controlledOpen === undefined ? (
+        <DialogTrigger asChild>
+          {children ?? (
+            <Button type="button" size="sm" className="gap-2">
+              <Plus className="size-4" />
+              {t('action')}
+            </Button>
+          )}
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>

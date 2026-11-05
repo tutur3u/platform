@@ -1,9 +1,14 @@
 import { createRootRoute } from '@tanstack/react-router';
+import {
+  appBaseHeadScript,
+  withAppBase,
+} from '@tuturuuu/start-bridge/start/base-path';
 import { Document, ErrorPage } from '../runtime/router-shell';
 
 export const Route = createRootRoute({
   errorComponent: ErrorPage,
   head: () => ({
+    scripts: [appBaseHeadScript()],
     meta: [
       { charSet: 'utf-8' },
       {
@@ -14,7 +19,7 @@ export const Route = createRootRoute({
       { title: 'Tuturuuu Mail' },
       { name: 'robots', content: 'noindex,nofollow' },
     ],
-    links: [{ rel: 'icon', href: '/favicon.ico' }],
+    links: [{ rel: 'icon', href: withAppBase('/favicon.ico') }],
   }),
   component: Document,
   notFoundComponent: () => (

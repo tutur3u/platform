@@ -7,6 +7,16 @@ bool canManageInventoryCatalog(WorkspacePermissions permissions) {
       permissions.containsPermission('delete_inventory');
 }
 
+/// Mirrors when the products API includes stock rows: view-stock, or
+/// create-sales for the checkout picker.
+bool canViewInventoryStock(WorkspacePermissions permissions) {
+  return permissions.containsPermission('view_inventory_stock') ||
+      permissions.containsPermission('view_stock_quantity') ||
+      permissions.containsPermission('adjust_inventory_stock') ||
+      permissions.containsPermission('update_stock_quantity') ||
+      canCreateInventorySales(permissions);
+}
+
 bool canManageInventorySetup(WorkspacePermissions permissions) {
   return permissions.containsPermission('manage_inventory_setup') ||
       permissions.containsPermission('create_inventory') ||

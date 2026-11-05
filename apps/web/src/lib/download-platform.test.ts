@@ -104,5 +104,6 @@ describe('store listings', () => {
 
   it('drops the CI run suffix from desktop tags', () => {
     expect(desktopDisplayVersion('desktop-v0.26.0-40215487156')).toBe('0.26.0');
+    expect(desktopDisplayVersion('desktop-v0.26.1')).toBe('0.26.1');
   });
 });

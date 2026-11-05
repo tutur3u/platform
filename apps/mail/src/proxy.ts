@@ -15,6 +15,7 @@ import {
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import {
   guardApiProxyRequest,
   hasAuthenticatedBearerToken,
@@ -98,6 +99,7 @@ function withMailApiCors(request: NextRequest, response: NextResponse) {
 }
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
+  const mounted = Boolean(req.nextUrl.basePath);
   if (req.nextUrl.pathname.startsWith('/api')) {
     if (req.method === 'OPTIONS') {
       return withMailApiCors(req, new NextResponse(null, { status: 204 }));
@@ -112,7 +114,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
     const hasBearerApiSession = hasAuthenticatedBearerToken(req.headers);
     const appSessionRefresh =
-      isLocalAuthApi || hasBearerApiSession
+      mounted || isLocalAuthApi || hasBearerApiSession
         ? null
         : await refreshAppSessionForRequest(req, {
             sessionMode: 'supabase-first',
@@ -146,18 +148,29 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     return withMailApiCors(
       req,
       appSessionRefresh?.response ??
-        clearSupabaseAuthCookies(req, NextResponse.next())
+        (mounted
+          ? NextResponse.next()
+          : clearSupabaseAuthCookies(req, NextResponse.next()))
     );
   }
 
-  const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
-    locales: supportedLocales,
-  });
+  if (
+    mounted &&
+    /^\/(?:en\/|vi\/)?verify-token\/?$/u.test(req.nextUrl.pathname)
+  )
+    return NextResponse.redirect(
+      new URL(withAppBase('/login', req.nextUrl.basePath), req.nextUrl.origin)
+    );
+  const verifyTokenResponse = mounted
+    ? null
+    : await consumeVerifyTokenRequest(req, {
+        locales: supportedLocales,
+      });
   if (verifyTokenResponse) {
     return verifyTokenResponse;
   }
 
-  const authRes = await authProxy(req);
+  const authRes = mounted ? NextResponse.next() : await authProxy(req);
   if (authRes.status >= 400) return authRes;
 
   if (authRes.headers.has('Location')) {
@@ -195,10 +208,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       req.nextUrl.origin,
       '/personal/inbox'
     );
-    const loginRedirect = clearSupabaseAuthCookies(
-      req,
-      NextResponse.redirect(new URL(nextPath, req.nextUrl))
+    const loginResponse = NextResponse.redirect(
+      new URL(withAppBase(nextPath, req.nextUrl.basePath), req.nextUrl.origin)
     );
+    const loginRedirect = mounted
+      ? loginResponse
+      : clearSupabaseAuthCookies(req, loginResponse);
     propagateAuthCookies(authRes, loginRedirect);
     return loginRedirect;
   }
@@ -230,7 +245,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     if (newPathSegments[wsIdIndex] !== 'internal') {
       newPathSegments[wsIdIndex] = 'internal';
-      const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
+      const redirectUrl = new URL(
+        withAppBase(`/${newPathSegments.join('/')}`, req.nextUrl.basePath),
+        req.nextUrl.origin
+      );
       redirectUrl.search = req.nextUrl.search;
 
       const rootRedirect = NextResponse.redirect(redirectUrl);
@@ -249,8 +267,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         newPathSegments[wsIdIndex] = 'personal';
 
         const redirectUrl = new URL(
-          `/${newPathSegments.join('/')}`,
-          req.nextUrl
+          withAppBase(`/${newPathSegments.join('/')}`, req.nextUrl.basePath),
+          req.nextUrl.origin
         );
         redirectUrl.search = req.nextUrl.search;
 

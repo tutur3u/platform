@@ -145,7 +145,10 @@ test('fresh hosted setup queues through the lightweight resources entry before S
   ];
   assert.equal(queueCalls.length, 2);
   for (const call of queueCalls) assert.ok(provisionIndex < call.index);
-  assert.ok(workflow.indexOf('runs-on: ubuntu-latest') < provisionIndex);
+  const runtimeJob = workflow.split('\n  runtime:\n')[1];
+  assert.ok(runtimeJob, 'runtime job must exist');
+  assert.match(runtimeJob, /^ {4}runs-on: ubuntu-24\.04$/mu);
+  assert.ok(workflow.indexOf('runs-on: ubuntu-24.04') < provisionIndex);
   assert.doesNotMatch(workflow, /bun ttr resources/u);
   const entry = fs.readFileSync(
     new URL('../../packages/sdk/src/cli/resources-entry.ts', import.meta.url),

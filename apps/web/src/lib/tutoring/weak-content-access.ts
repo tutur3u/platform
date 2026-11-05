@@ -15,6 +15,20 @@ interface PermissionChecker {
 }
 
 /**
+ * A tutoring session carries weak-support content when it is a weak-support
+ * session or was created from a `require_attention` feedback.
+ */
+export function isWeakSupportSession({
+  reasonType,
+  sourceFeedbackId,
+}: {
+  reasonType: string | null | undefined;
+  sourceFeedbackId: string | null | undefined;
+}) {
+  return reasonType === 'WEAK_SUPPORT' || Boolean(sourceFeedbackId);
+}
+
+/**
  * Weak-support tutoring content is the text of a `require_attention`
  * feedback. When the workspace tutoring policy restricts it, setting, editing,
  * deleting or ending it also needs class-management permission. Returns a 403

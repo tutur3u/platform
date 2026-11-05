@@ -1,5 +1,9 @@
 import type { TutoringSessionRecord } from '@tuturuuu/internal-api';
 import type { ListTutoringSessionsParams } from '@tuturuuu/internal-api/tutoring';
+import {
+  filterTutoringEligibleGroups,
+  type TutoringPolicy,
+} from '@tuturuuu/internal-api/tutoring-policy';
 
 export const TUTORING_DATE_RANGES = [
   'upcoming',
@@ -7,6 +11,8 @@ export const TUTORING_DATE_RANGES = [
   'tomorrow',
   'week',
   'month',
+  'lastMonth',
+  'custom',
   'past',
   'all',
 ] as const;
@@ -71,7 +77,8 @@ export function endOfMonthIsoDate(isoDate: string) {
  */
 export function resolveTutoringDateBounds(
   range: TutoringDateRange,
-  today: string
+  today: string,
+  custom: TutoringDateBounds = {}
 ): TutoringDateBounds {
   switch (range) {
     case 'today':
@@ -89,6 +96,12 @@ export function resolveTutoringDateBounds(
         fromDate: startOfMonthIsoDate(today),
         toDate: endOfMonthIsoDate(today),
       };
+    case 'custom':
+      return custom;
+    case 'lastMonth': {
+      const last = addDaysToIsoDate(startOfMonthIsoDate(today), -1);
+      return { fromDate: startOfMonthIsoDate(last), toDate: last };
+    }
     case 'past':
       return { toDate: addDaysToIsoDate(today, -1) };
     default:
@@ -97,6 +110,8 @@ export function resolveTutoringDateBounds(
 }
 
 export interface TutoringSessionFilters {
+  fromDate?: string;
+  toDate?: string;
   attendanceStatus: string;
   dateRange: TutoringDateRange;
   groupId: string;
@@ -133,7 +148,10 @@ export function buildTutoringSessionQuery(
   today: string
 ): ListTutoringSessionsParams {
   return {
-    ...resolveTutoringDateBounds(filters.dateRange, today),
+    ...resolveTutoringDateBounds(filters.dateRange, today, {
+      fromDate: filters.fromDate,
+      toDate: filters.toDate,
+    }),
     sortOrder: resolveTutoringSortOrder(filters.dateRange),
     attendanceStatus: optional(
       filters.attendanceStatus
@@ -233,4 +251,68 @@ export function formatSessionTimeRange(
   };
 
   return `${format(start)} – ${format(end)}`;
+}
+
+const MAX_EXPORT_RANGE_DAYS = 366;
+
+/**
+ * Both dates set, in order, and at most 366 days apart (inclusive). This is the
+ * range the export endpoint accepts for every mode; anything else answers 400.
+ */
+function isClosedExportRange(query: TutoringDateBounds) {
+  return Boolean(
+    query.fromDate &&
+      query.toDate &&
+      query.fromDate <= query.toDate &&
+      (Date.parse(query.toDate) - Date.parse(query.fromDate)) / 86_400_000 +
+        1 <=
+        MAX_EXPORT_RANGE_DAYS
+  );
+}
+
+/**
+ * Classes the support queue can be filtered by: those the workspace still
+ * allows make-up or weak support for, plus the current filter. The schedule's
+ * own filters keep every class, so booked history stays reachable.
+ */
+export function tutoringQueueFilterGroups<
+  T extends { id: string; name?: string | null },
+>(
+  policy: Pick<TutoringPolicy, 'groupExclusions' | 'tutorGroupIds'>,
+  groups: readonly T[],
+  selectedGroupId: string,
+  tagsByGroupId?: ReadonlyMap<string, readonly string[]>
+): T[] {
+  const eligible = new Set(
+    [
+      ...filterTutoringEligibleGroups(policy, groups, 'make_up', tagsByGroupId),
+      ...filterTutoringEligibleGroups(
+        policy,
+        groups,
+        'weak_support',
+        tagsByGroupId
+      ),
+    ].map((group) => group.id)
+  );
+  return groups.filter(
+    (group) => eligible.has(group.id) || group.id === selectedGroupId
+  );
+}
+
+/**
+ * Whether the schedule's current filters can be exported in a given format.
+ *
+ * The export endpoint requires a closed date range for every mode, so both the
+ * detailed sheet and the payroll totals follow the same rule. The open-ended
+ * ranges (`upcoming`, `past`, `all`) cannot be exported until dates are chosen.
+ */
+export function canExportTutoringFormat(
+  query: TutoringDateBounds,
+  format: 'detailed' | 'payroll'
+) {
+  switch (format) {
+    case 'detailed':
+    case 'payroll':
+      return isClosedExportRange(query);
+  }
 }

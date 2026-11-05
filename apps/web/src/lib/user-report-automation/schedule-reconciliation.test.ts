@@ -222,3 +222,35 @@ describe('reconcilePeriodicReportSchedules', () => {
     expect(scheduleUpdates(noGroups.writes)).toHaveLength(1);
   });
 });
+
+it('Cloudflare reconciles at most 25 schedules and leaves later due schedules untouched', async () => {
+  const { withWebCronBudget } = await import('../cron/web-cron-budget');
+  const stub = createAdminClientStub({
+    schedules: Array.from({ length: 40 }, (_, index) =>
+      baseSchedule({ id: `schedule-${index}`, group_id: 'group-1' })
+    ),
+  });
+  const result = await withWebCronBudget(() =>
+    reconcilePeriodicReportSchedules(stub.client as never, NOW)
+  );
+  expect(result).toEqual({ createdRuns: 25, dueSchedules: 25 });
+  expect(scheduleUpdates(stub.writes)).toHaveLength(25);
+  expect(
+    runInserts(stub.writes).map((write) => write.payload.schedule_id)
+  ).toEqual(Array.from({ length: 25 }, (_, index) => `schedule-${index}`));
+});
+it('Cloudflare rejects an oversized report group before run creation', async () => {
+  const { withWebCronBudget } = await import('../cron/web-cron-budget');
+  const stub = createAdminClientStub({
+    schedules: [baseSchedule()],
+    groups: Array.from({ length: 1001 }, (_, index) => ({
+      id: `group-${index}`,
+    })),
+  });
+  await expect(
+    withWebCronBudget(() =>
+      reconcilePeriodicReportSchedules(stub.client as never, NOW)
+    )
+  ).rejects.toThrow('group budget');
+  expect(stub.writes).toHaveLength(0);
+});

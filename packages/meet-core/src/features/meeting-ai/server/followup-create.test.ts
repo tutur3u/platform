@@ -3,6 +3,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 const mock = vi.hoisted(() => ({
   access: vi.fn(),
+  gate: vi.fn(),
   tools: vi.fn(),
   execute: vi.fn(),
   room: vi.fn(),
@@ -13,6 +14,7 @@ const mock = vi.hoisted(() => ({
 vi.mock('./followup-event', () => ({
   prepareCalendarFollowup: mock.prepareEvent,
 }));
+vi.mock('./workspace-gate', () => ({ meetAiAvailable: mock.gate }));
 vi.mock('./followup-context', () => ({ followupAccess: mock.access }));
 vi.mock('@tuturuuu/ai/meetings/workspace-tools', () => ({
   createMeetWorkspaceTools: mock.tools,
@@ -71,10 +73,12 @@ const request = (body: unknown = input, origin = 'https://meet.tuturuuu.com') =>
   );
 beforeEach(() => {
   vi.clearAllMocks();
+  mock.gate.mockResolvedValue(true);
   mock.access.mockResolvedValue({
     db: {},
     user: { id: userId },
     workspaceId: wsId,
+    wsId,
     meetingId,
     permissions: { withoutPermission: () => false },
   });
@@ -104,6 +108,18 @@ it('uses the verified actor and reviewed destination, then stores a private rece
     expect.anything(),
     expect.objectContaining({ action: 'personal.finish' })
   );
+});
+it('denies follow-up creation outside the Meet AI workspace gate before any write', async () => {
+  mock.gate.mockResolvedValue(false);
+  await expect(createFollowup(request(), params)).rejects.toMatchObject({
+    status: 403,
+  });
+  expect(mock.gate).toHaveBeenCalledWith(wsId);
+  expect(mock.prepareTask).not.toHaveBeenCalled();
+  expect(mock.prepareEvent).not.toHaveBeenCalled();
+  expect(mock.room).not.toHaveBeenCalled();
+  expect(mock.receipt).not.toHaveBeenCalled();
+  expect(mock.execute).not.toHaveBeenCalled();
 });
 it('rejects cross-origin requests and changed identities before writes', async () => {
   await expect(

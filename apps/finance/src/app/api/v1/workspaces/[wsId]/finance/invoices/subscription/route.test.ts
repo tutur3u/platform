@@ -316,76 +316,89 @@ describe('subscription invoice create route', () => {
     expect(mocks.getUser).not.toHaveBeenCalled();
   });
 
-  it('records the calculated referral promotion value on created subscription invoices', async () => {
-    const { POST } = await import('./route');
+  it.each(['local', 'foreign-wallet', 'foreign-group'])(
+    'validates %s references while preserving subscription referral promotion creation',
+    async (reference) => {
+      const { POST } = await import('./route');
 
-    const productValidationBuilder = createBuilder({
-      data: [
-        {
-          finance_category_id: 'category-1',
-          id: 'product-1',
+      const productValidationBuilder = createBuilder({
+        data: [
+          {
+            finance_category_id: 'category-1',
+            id: 'product-1',
+          },
+        ],
+        error: null,
+      });
+      const categoryBuilder = createBuilder({
+        data: {
+          id: 'category-1',
         },
-      ],
-      error: null,
-    });
-    const categoryBuilder = createBuilder({
-      data: {
-        id: 'category-1',
-      },
-      error: null,
-    });
-    const actorBuilder = createBuilder({
-      data: {
-        virtual_user_id: 'actor-1',
-      },
-      error: null,
-    });
-    const invoiceBuilder = createBuilder({
-      data: {
-        id: 'invoice-1',
-      },
-      error: null,
-    });
-    const invoiceGroupsBuilder = createBuilder({
-      data: null,
-      error: null,
-    });
-    const productsDataBuilder = createBuilder({
-      data: [
-        {
-          id: 'product-1',
-          name: 'Course fee',
+        error: null,
+      });
+      const actorBuilder = createBuilder({
+        data: {
+          virtual_user_id: 'actor-1',
         },
-      ],
-      error: null,
-    });
-    const invoiceProductsBuilder = createBuilder({
-      data: null,
-      error: null,
-    });
-    const promotionBuilder = createBuilder({
-      data: null,
-      error: null,
-    });
-    const stockBuilder = createBuilder({
-      data: null,
-      error: null,
-    });
-    const unitsBuilder = createBuilder({
-      data: [
-        {
-          id: 'unit-1',
-          name: 'Month',
+        error: null,
+      });
+      const invoiceBuilder = createBuilder({
+        data: {
+          id: 'invoice-1',
         },
-      ],
-      error: null,
-    });
+        error: null,
+      });
+      const invoiceGroupsBuilder = createBuilder({
+        data: null,
+        error: null,
+      });
+      const productsDataBuilder = createBuilder({
+        data: [
+          {
+            id: 'product-1',
+            name: 'Course fee',
+          },
+        ],
+        error: null,
+      });
+      const invoiceProductsBuilder = createBuilder({
+        data: null,
+        error: null,
+      });
+      const promotionBuilder = createBuilder({
+        data: null,
+        error: null,
+      });
+      const stockBuilder = createBuilder({
+        data: null,
+        error: null,
+      });
+      const unitsBuilder = createBuilder({
+        data: [
+          {
+            id: 'unit-1',
+            name: 'Month',
+          },
+        ],
+        error: null,
+      });
 
-    const schemaClient = {
-      from: vi.fn(() => unitsBuilder),
-    };
-    const sbAdmin = {
-      from: vi
+      const schemaClient = {
+        from: vi.fn((table: string) =>
+          table === 'workspace_wallets'
+            ? createBuilder({
+                data:
+                  reference === 'foreign-wallet' ? null : { id: 'wallet-1' },
+                error: null,
+              })
+            : unitsBuilder
+        ),
+      };
+      const groupsBuilder = createBuilder({
+        data: reference === 'foreign-group' ? [] : [{ id: 'group-1' }],
+        error: null,
+      });
+      const sequentialFrom = vi
         .fn()
         .mockReturnValueOnce(productValidationBuilder)
         .mockReturnValueOnce(categoryBuilder)
@@ -395,104 +408,116 @@ describe('subscription invoice create route', () => {
         .mockReturnValueOnce(productsDataBuilder)
         .mockReturnValueOnce(invoiceProductsBuilder)
         .mockReturnValueOnce(promotionBuilder)
-        .mockReturnValueOnce(stockBuilder),
-      schema: vi.fn(() => schemaClient),
-    };
+        .mockReturnValueOnce(stockBuilder);
+      const sbAdmin = {
+        from: vi.fn((table: string) =>
+          table === 'workspace_user_groups'
+            ? groupsBuilder
+            : sequentialFrom(table)
+        ),
+        schema: vi.fn(() => schemaClient),
+      };
 
-    mocks.getFinanceRouteContext.mockImplementation(async () => ({
-      context: {
-        normalizedWsId: '00000000-0000-0000-0000-000000000000',
-        permissions: withPermissions(['create_invoices']),
-        sbAdmin,
-        supabase: {},
-        user: {
-          email: 'agent@example.com',
-          id: 'platform-user-1',
+      mocks.getFinanceRouteContext.mockImplementation(async () => ({
+        context: {
+          normalizedWsId: '00000000-0000-0000-0000-000000000000',
+          permissions: withPermissions(['create_invoices']),
+          sbAdmin,
+          supabase: {},
+          user: {
+            email: 'agent@example.com',
+            id: 'platform-user-1',
+          },
         },
-      },
-    }));
-    mocks.getCalculatedInvoiceValuesFromRpc.mockResolvedValue({
-      allowPromotions: true,
-      discount_amount: 15,
-      promotion: {
+      }));
+      mocks.getCalculatedInvoiceValuesFromRpc.mockResolvedValue({
+        allowPromotions: true,
+        discount_amount: 15,
+        promotion: {
+          code: 'REF',
+          description: 'Referral Code for Referral System',
+          id: 'promo-referral-1',
+          name: 'Referral',
+          use_ratio: true,
+          value: 15,
+        },
+        rounding_applied: 0,
+        subtotal: 100,
+        total: 85,
+        values_recalculated: false,
+      });
+
+      const response = await POST(
+        new Request(
+          'http://localhost/api/v1/workspaces/ws-1/finance/invoices/subscription',
+          {
+            body: JSON.stringify({
+              category_id: 'category-1',
+              content: 'Subscription invoice',
+              customer_id: 'customer-1',
+              frontend_discount_amount: 15,
+              frontend_subtotal: 100,
+              frontend_total: 85,
+              group_ids: ['group-1'],
+              notes: '',
+              products: [
+                {
+                  category_id: 'category-1',
+                  price: 100,
+                  product_id: 'product-1',
+                  quantity: 1,
+                  unit_id: 'unit-1',
+                  warehouse_id: 'warehouse-1',
+                },
+              ],
+              promotion_id: 'promo-referral-1',
+              prepaid_month_count: 3,
+              selected_month: '2026-04',
+              wallet_id: 'wallet-1',
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            method: 'POST',
+          }
+        ),
+        {
+          params: Promise.resolve({
+            wsId: '00000000-0000-0000-0000-000000000000',
+          }),
+        }
+      );
+
+      if (reference !== 'local') {
+        expect(response.status).toBe(400);
+        expect(invoiceBuilder.insert).not.toHaveBeenCalled();
+        return;
+      }
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toMatchObject({
+        data: {
+          coverage_end_month: '2026-06',
+          coverage_start_month: '2026-04',
+          prepaid_month_count: 3,
+          valid_until: '2026-07-01T00:00:00.000Z',
+        },
+      });
+      expect(invoiceBuilder.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subscription_months: ['2026-04-01', '2026-05-01', '2026-06-01'],
+          valid_until: '2026-07-01T00:00:00.000Z',
+        })
+      );
+      expect(promotionBuilder.insert).toHaveBeenCalledWith({
         code: 'REF',
         description: 'Referral Code for Referral System',
-        id: 'promo-referral-1',
+        invoice_id: 'invoice-1',
         name: 'Referral',
+        promo_id: 'promo-referral-1',
         use_ratio: true,
         value: 15,
-      },
-      rounding_applied: 0,
-      subtotal: 100,
-      total: 85,
-      values_recalculated: false,
-    });
-
-    const response = await POST(
-      new Request(
-        'http://localhost/api/v1/workspaces/ws-1/finance/invoices/subscription',
-        {
-          body: JSON.stringify({
-            category_id: 'category-1',
-            content: 'Subscription invoice',
-            customer_id: 'customer-1',
-            frontend_discount_amount: 15,
-            frontend_subtotal: 100,
-            frontend_total: 85,
-            group_ids: ['group-1'],
-            notes: '',
-            products: [
-              {
-                category_id: 'category-1',
-                price: 100,
-                product_id: 'product-1',
-                quantity: 1,
-                unit_id: 'unit-1',
-                warehouse_id: 'warehouse-1',
-              },
-            ],
-            promotion_id: 'promo-referral-1',
-            prepaid_month_count: 3,
-            selected_month: '2026-04',
-            wallet_id: 'wallet-1',
-          }),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          method: 'POST',
-        }
-      ),
-      {
-        params: Promise.resolve({
-          wsId: '00000000-0000-0000-0000-000000000000',
-        }),
-      }
-    );
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
-      data: {
-        coverage_end_month: '2026-06',
-        coverage_start_month: '2026-04',
-        prepaid_month_count: 3,
-        valid_until: '2026-07-01T00:00:00.000Z',
-      },
-    });
-    expect(invoiceBuilder.insert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        subscription_months: ['2026-04-01', '2026-05-01', '2026-06-01'],
-        valid_until: '2026-07-01T00:00:00.000Z',
-      })
-    );
-    expect(promotionBuilder.insert).toHaveBeenCalledWith({
-      code: 'REF',
-      description: 'Referral Code for Referral System',
-      invoice_id: 'invoice-1',
-      name: 'Referral',
-      promo_id: 'promo-referral-1',
-      use_ratio: true,
-      value: 15,
-    });
-    expect(schemaClient.from).toHaveBeenCalledWith('inventory_units');
-  });
+      });
+      expect(schemaClient.from).toHaveBeenCalledWith('inventory_units');
+    }
+  );
 });

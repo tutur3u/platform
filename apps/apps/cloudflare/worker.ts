@@ -1,4 +1,5 @@
 import handler from '@tanstack/react-start/server-entry';
+import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { apiRequest } from '../src/native/api.server';
 import {
@@ -25,7 +26,7 @@ const publicPaths = new Set([
   '/site.webmanifest',
 ]);
 export async function appsRequest(request: Request, env: AppsEnvironment) {
-  return withRequestContext(request, async () => {
+  const result = await withRequestContext(request, async () => {
     const url = new URL(request.url);
     if (
       url.hostname === 'apps.tuturuuu.com' &&
@@ -95,5 +96,6 @@ export async function appsRequest(request: Request, env: AppsEnvironment) {
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     return request.method === 'HEAD' ? new Response(null, response) : response;
   });
+  return enforceStagingCookiePolicy(request, result);
 }
 export default { fetch: appsRequest };

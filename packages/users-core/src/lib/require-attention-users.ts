@@ -32,7 +32,7 @@ export async function fetchRequireAttentionUserIds(
     throw error;
   }
 
-  return new Set(
+  return new Set<string>(
     (data ?? [])
       .map((row) => row.user_id)
       .filter((userId): userId is string => Boolean(userId))

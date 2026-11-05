@@ -63,6 +63,7 @@ async function requirePublicLinkManager({
   boardId,
   rawWsId,
   requiredPermission,
+  requireMember = false,
   supabase,
   user,
 }: {
@@ -73,6 +74,12 @@ async function requirePublicLinkManager({
    * listing its members. Only changing the sharing needs manage rights.
    */
   requiredPermission: TaskBoardGuestPermission;
+  /**
+   * Creating or disabling the public link changes who can see the board, so it
+   * is restricted to workspace members. A guest share, even with edit, never
+   * grants it.
+   */
+  requireMember?: boolean;
   supabase: TypedSupabaseClient;
   user: { id: string };
 }): Promise<PublicLinkManagerResult> {
@@ -98,6 +105,14 @@ async function requirePublicLinkManager({
   });
 
   if ('error' in access) return access;
+  if (requireMember && access.access.mode !== 'member') {
+    return {
+      error: NextResponse.json(
+        { error: 'Workspace membership required' },
+        { status: 403 }
+      ),
+    };
+  }
 
   const { data: board, error: boardError } = await sbAdmin
     .from('workspace_boards')
@@ -187,6 +202,7 @@ export const POST = withSessionAuth<{ wsId: string; boardId: string }>(
       const manager = await requirePublicLinkManager({
         boardId: params.boardId,
         requiredPermission: 'edit',
+        requireMember: true,
         rawWsId: params.wsId,
         supabase,
         user,
@@ -257,6 +273,7 @@ export const DELETE = withSessionAuth<{ wsId: string; boardId: string }>(
       const manager = await requirePublicLinkManager({
         boardId: params.boardId,
         requiredPermission: 'edit',
+        requireMember: true,
         rawWsId: params.wsId,
         supabase,
         user,

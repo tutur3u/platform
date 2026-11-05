@@ -137,7 +137,8 @@ function googlePlayListing(url: URL, publiclyListed: boolean) {
     : { url: androidTestingUrl(packageId), kind: 'beta' as const };
 }
 
-// desktop-v0.26.0-40215487156 -> 0.26.0 (the suffix is the CI run id).
+// desktop-v0.26.1 -> 0.26.1; legacy desktop-v0.26.0-40215487156 -> 0.26.0
+// (that suffix was the CI run id).
 export function desktopDisplayVersion(tag: string) {
   return tag.replace(/^desktop-v/, '').replace(/-\d+$/, '');
 }

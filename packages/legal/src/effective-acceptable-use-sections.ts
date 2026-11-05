@@ -1,6 +1,7 @@
 import type { LegalSection } from './types';
 export const acceptableUseSections: LegalSection[] = [
   {
+    id: 'community-ecc7d8a51ffe',
     title: 'Purpose & Scope',
     icon: 'shield',
     tone: 'blue',
@@ -16,6 +17,7 @@ This policy applies to:
 This AUP supplements our [Terms of Service](/terms) and [Community Guidelines](/community-guidelines). Violations of this policy may result in enforcement actions as described in those documents.`,
   },
   {
+    id: 'community-51eb4636066e',
     title: 'Permitted Uses',
     icon: 'shield',
     tone: 'blue',
@@ -31,6 +33,7 @@ This AUP supplements our [Terms of Service](/terms) and [Community Guidelines](/
 * **API Integration** — building integrations using our APIs in accordance with documentation and rate limits`,
   },
   {
+    id: 'community-fe13d8e358bd',
     title: 'Prohibited Activities',
     icon: 'shield',
     tone: 'blue',
@@ -63,6 +66,7 @@ This AUP supplements our [Terms of Service](/terms) and [Community Guidelines](/
    * Non-consensual intimate imagery`,
   },
   {
+    id: 'community-0ead521bba9a',
     title: 'Account Usage Rules',
     icon: 'shield',
     tone: 'blue',
@@ -84,6 +88,7 @@ This AUP supplements our [Terms of Service](/terms) and [Community Guidelines](/
    * Respect the access levels assigned to your role within a workspace`,
   },
   {
+    id: 'community-226d2cb10f52',
     title: 'API & Automation Guidelines',
     icon: 'shield',
     tone: 'blue',
@@ -110,6 +115,7 @@ This AUP supplements our [Terms of Service](/terms) and [Community Guidelines](/
    * Implement appropriate security measures for any data accessed through APIs`,
   },
   {
+    id: 'community-f0668c1da970',
     title: 'Resource Usage & Fair Use',
     icon: 'shield',
     tone: 'blue',
@@ -131,6 +137,7 @@ This AUP supplements our [Terms of Service](/terms) and [Community Guidelines](/
    * We reserve the right to set and adjust usage limits to maintain platform stability`,
   },
   {
+    id: 'community-4823da254e67',
     title: 'Security Requirements',
     icon: 'shield',
     tone: 'blue',
@@ -152,6 +159,7 @@ This AUP supplements our [Terms of Service](/terms) and [Community Guidelines](/
    * Handle any personal data you encounter in accordance with applicable privacy laws`,
   },
   {
+    id: 'community-6f20be880500',
     title: 'Intellectual Property',
     icon: 'shield',
     tone: 'blue',
@@ -173,6 +181,7 @@ This AUP supplements our [Terms of Service](/terms) and [Community Guidelines](/
    * Open-source use of the codebase does not grant trademark rights`,
   },
   {
+    id: 'community-840e68f88391',
     title: 'Compliance & Monitoring',
     icon: 'shield',
     tone: 'blue',
@@ -194,6 +203,7 @@ This AUP supplements our [Terms of Service](/terms) and [Community Guidelines](/
    * We may preserve account data when required by law or for ongoing investigations`,
   },
   {
+    id: 'community-4cdfb116ee09',
     title: 'Enforcement & Consequences',
     icon: 'shield',
     tone: 'blue',
@@ -215,6 +225,7 @@ This AUP supplements our [Terms of Service](/terms) and [Community Guidelines](/
    * We aim to respond to appeals within 10 business days`,
   },
   {
+    id: 'community-3af2c8df2825',
     title: 'Contact Information',
     icon: 'shield',
     tone: 'blue',

@@ -90,7 +90,9 @@ export async function GET(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const auth = await authorizeInfrastructureAdminRequest('view_infrastructure');
+  const auth = await authorizeInfrastructureAdminRequest(
+    'manage_workspace_roles'
+  );
   if (!auth.ok) return auth.response;
 
   try {
@@ -124,7 +126,9 @@ export async function DELETE(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = await authorizeInfrastructureAdminRequest('view_infrastructure');
+  const auth = await authorizeInfrastructureAdminRequest(
+    'manage_workspace_roles'
+  );
   if (!auth.ok) return auth.response;
 
   try {

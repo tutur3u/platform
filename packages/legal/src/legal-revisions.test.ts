@@ -95,6 +95,14 @@ describe('effective legal publications', () => {
         );
       });
     }
+    it(`${locale} proposed safety policies retain all sections`, () => {
+      expect(
+        getProposedLegalDocument('acceptable-use', locale).sections
+      ).toHaveLength(8);
+      expect(
+        getProposedLegalDocument('community-guidelines', locale).sections
+      ).toHaveLength(7);
+    });
     it(`${locale} proposals have no effective date`, () => {
       for (const kind of [
         'privacy',
@@ -108,7 +116,7 @@ describe('effective legal publications', () => {
         const d = getProposedLegalDocument(kind, locale);
         expect(d).not.toHaveProperty('effectiveDate');
         expect(d.badge).toBe(locale === 'vi' ? 'Dự kiến' : 'Proposed');
-        expect(d.version).toBe('2026-09-13-draft');
+        expect(d.version).toBe('2026-11-02');
       }
     });
   }

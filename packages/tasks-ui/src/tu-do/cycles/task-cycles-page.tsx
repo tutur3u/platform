@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
@@ -32,7 +32,9 @@ export default async function TaskCyclesPage({ params }: Props) {
   const { withoutPermission } = permissions;
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-  const cycles = await loadTaskCycles(await createClient(), wsId);
+  // task_cycles is service-role only; the read is scoped to the workspace
+  // resolved and permission-checked above.
+  const cycles = await loadTaskCycles(await createAdminClient(), wsId);
   if (!cycles) notFound();
 
   return <TaskCyclesView wsId={wsId} initialCycles={cycles} />;

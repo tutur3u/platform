@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(21);
+select plan(22);
 
 select ok(
   not exists (
@@ -184,6 +184,11 @@ select ok(
     'execute'
   ),
   'cross-app token validation remains callable through the existing public RPC'
+);
+
+select ok(
+  not has_function_privilege('anon', 'public.validate_cross_app_token(text,text)', 'execute'),
+  'legacy token validation is not callable by anon'
 );
 
 select ok(

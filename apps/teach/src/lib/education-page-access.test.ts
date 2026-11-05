@@ -9,6 +9,9 @@ vi.mock('@tuturuuu/satellite/workspace-access', () => ({
   getSatelliteWorkspace: mocks.workspace,
   getSatelliteWorkspacePermissions: mocks.permissions,
 }));
+vi.mock('./require-teach-workspace-member', () => ({
+  requireTeachWorkspaceMember: vi.fn(async (wsId: string) => ({ wsId })),
+}));
 vi.mock('next/navigation', () => ({
   notFound: () => {
     throw new Error('NEXT_NOT_FOUND');

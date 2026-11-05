@@ -26,6 +26,7 @@ import {
   setActiveBoardRefresh,
   setActiveBroadcast,
 } from './board-broadcast-context';
+import { getBoardSprintsQueryKey } from './board-sprints/use-board-sprints';
 import { BoardViews, type ViewType } from './board-views';
 import { ProgressiveLoaderProvider } from './progressive-loader-context';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
@@ -235,7 +236,10 @@ export function BoardClient({
       if (invalidateTasks) {
         refreshes.push(
           queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
-          queryClient.invalidateQueries({ queryKey: ['tasks-full', boardId] })
+          queryClient.invalidateQueries({ queryKey: ['tasks-full', boardId] }),
+          queryClient.invalidateQueries({
+            queryKey: getBoardSprintsQueryKey(boardId),
+          })
         );
       }
 

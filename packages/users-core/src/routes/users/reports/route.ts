@@ -6,6 +6,10 @@ import {
   MAX_MONTHLY_REPORT_TEXT_LENGTH,
   MAX_MONTHLY_REPORT_TITLE_LENGTH,
 } from '../../../features/reports/report-limits';
+import {
+  isReportMonth,
+  resolveReportMonth,
+} from '../../../features/reports/report-month';
 import { getUserGroupMembershipsForActor } from '../../../lib/user-groups/groups-utils';
 import { getUserGroupRoutePermissions } from '../../../lib/user-groups/route-auth';
 import {
@@ -23,6 +27,11 @@ import {
   sortReportList,
   summarizeReportList,
 } from './report-list-query';
+import {
+  buildReportMonthFilter,
+  buildReportPeriodFilter,
+  resolveReportPeriodTimezone,
+} from './report-period-filter';
 import {
   buildPeriodicReportFallbackFilter,
   isMissingReportSearchRpc,
@@ -62,6 +71,8 @@ const ListReportsSchema = z.object({
     .optional(),
   periodStart: z.iso.date().optional(),
   periodEnd: z.iso.date().optional(),
+  // The month reports cover: saved period, else estimated from created_at.
+  month: z.string().refine(isReportMonth).optional(),
   cadence: z
     .enum(['all', 'weekly', 'monthly', 'quarterly', 'yearly'])
     .default('monthly'),
@@ -82,7 +93,13 @@ const ListReportsSchema = z.object({
   q: z.string().trim().max(120).optional(),
   sortBy: z.enum(['period', 'title', 'updated', 'user']).default('period'),
   sortDirection: z.enum(['asc', 'desc']).default('desc'),
+  // Viewer timezone, used for the period range only when the workspace has none.
+  timezone: z.string().trim().max(64).optional(),
 });
+
+// Columns needed to summarize the stage cards and delivery categories.
+const SUMMARY_COLUMNS =
+  'id,report_stage,delivery_status,user_email,last_delivery_error,report_approval_status,generation_status,delivered_at';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -97,7 +114,9 @@ export async function GET(request: Request, { params }: Params) {
       !parsed.success ||
       (parsed.data.periodStart &&
         parsed.data.periodEnd &&
-        parsed.data.periodStart > parsed.data.periodEnd)
+        parsed.data.periodStart > parsed.data.periodEnd) ||
+      // A month and a custom range are alternatives, never combined.
+      (parsed.data.month && (parsed.data.periodStart || parsed.data.periodEnd))
     ) {
       return NextResponse.json(
         {
@@ -142,6 +161,7 @@ export async function GET(request: Request, { params }: Params) {
         data: [],
         page: parsed.data.page,
         pageSize: parsed.data.pageSize,
+        summaryPartial: false,
         total: 0,
         workspace: { id: wsId, timezone: null },
       });
@@ -151,12 +171,43 @@ export async function GET(request: Request, { params }: Params) {
     const privateDb = sbAdmin.schema('private');
     const from = (parsed.data.page - 1) * parsed.data.pageSize;
 
+    const workspacePromise = sbAdmin
+      .from('workspaces')
+      .select('id, timezone')
+      .eq('id', wsId)
+      .single()
+      .then((result) => result);
+    const timezonePromise = Promise.resolve(workspacePromise).then((result) => {
+      if (result.error) throw result.error;
+      return resolveReportPeriodTimezone(
+        result.data?.timezone,
+        parsed.data.timezone
+      );
+    });
+    // Awaited below; never an unhandled rejection if the list fails first.
+    timezonePromise.catch(() => {});
+    const periodFilter = parsed.data.month
+      ? buildReportMonthFilter({
+          month: parsed.data.month,
+          timezone: await timezonePromise,
+        })
+      : parsed.data.periodStart || parsed.data.periodEnd
+        ? buildReportPeriodFilter({
+            periodStart: parsed.data.periodStart,
+            periodEnd: parsed.data.periodEnd,
+            timezone: await timezonePromise,
+          })
+        : null;
+
     const sortColumn = getPeriodicReportSortColumn(parsed.data.sortBy);
+    // `summary` rows feed the stage cards, which must not be narrowed to the
+    // stage being listed; otherwise every other card reads 0.
     const buildListQuery = (
       useSmartSearch: boolean,
       offset: number,
       limit: number,
-      cadence = parsed.data.cadence
+      cadence = parsed.data.cadence,
+      scope: 'list' | 'summary' = 'list'
     ) => {
       const fallbackSource = privateDb.from(
         'external_user_monthly_reports_workspace_view'
@@ -187,7 +238,11 @@ export async function GET(request: Request, { params }: Params) {
           : fallbackSource;
 
       let query = source
-        .select('*', { count: 'exact' })
+        // The cast keeps one row type for both scopes; summary rows are read
+        // only through the SummaryRow fields below.
+        .select((scope === 'summary' ? SUMMARY_COLUMNS : '*') as '*', {
+          count: 'exact',
+        })
         .order(sortColumn, {
           ascending: parsed.data.sortDirection === 'asc',
           nullsFirst: false,
@@ -205,11 +260,8 @@ export async function GET(request: Request, { params }: Params) {
           query = query.in('group_id', accessibleGroupIds);
         }
       }
-      if (parsed.data.periodStart)
-        query = query.gte('period_end', parsed.data.periodStart);
-      if (parsed.data.periodEnd)
-        query = query.lte('period_start', parsed.data.periodEnd);
-      if (parsed.data.stage)
+      if (periodFilter) query = query.or(periodFilter);
+      if (parsed.data.stage && scope === 'list')
         query = query.eq('report_stage', parsed.data.stage);
       if (parsed.data.approvalStatus === 'UNAPPROVED') {
         query = query.or(
@@ -230,16 +282,20 @@ export async function GET(request: Request, { params }: Params) {
       return query;
     };
 
-    const workspacePromise = sbAdmin
-      .from('workspaces')
-      .select('id, timezone')
-      .eq('id', wsId)
-      .single();
     const smartSearch = Boolean(parsed.data.q);
-    const collect = async (useSmartSearch: boolean) => {
+    const collect = async (
+      useSmartSearch: boolean,
+      scope: 'list' | 'summary' = 'list'
+    ) => {
       if (!useSmartSearch || parsed.data.cadence !== 'all') {
         return collectReportList((offset, limit) =>
-          buildListQuery(useSmartSearch, offset, limit)
+          buildListQuery(
+            useSmartSearch,
+            offset,
+            limit,
+            parsed.data.cadence,
+            scope
+          )
         );
       }
       // The deployed search RPC accepts one cadence. All uses the same RPC
@@ -251,7 +307,8 @@ export async function GET(request: Request, { params }: Params) {
       for (const cadence of cadences) {
         rows.push(
           ...(await collectReportList(
-            (offset, limit) => buildListQuery(true, offset, limit, cadence),
+            (offset, limit) =>
+              buildListQuery(true, offset, limit, cadence, scope),
             MAX_REPORT_LIST_ROWS - rows.length
           ))
         );
@@ -265,21 +322,57 @@ export async function GET(request: Request, { params }: Params) {
         parsed.data.sortDirection === 'asc'
       );
     };
-    const rowsPromise = collect(smartSearch).catch((error: unknown) => {
-      if (smartSearch && isMissingReportSearchRpc(error)) return collect(false);
-      throw error;
-    });
-    const [allRows, workspaceResult] = await Promise.all([
-      rowsPromise,
+    const collectScope = (scope: 'list' | 'summary') =>
+      collect(smartSearch, scope).catch((error: unknown) => {
+        if (smartSearch && isMissingReportSearchRpc(error))
+          return collect(false, scope);
+        throw error;
+      });
+    type SummaryRow = Pick<
+      Awaited<ReturnType<typeof collect>>[number],
+      | 'id'
+      | 'report_stage'
+      | 'delivery_status'
+      | 'user_email'
+      | 'last_delivery_error'
+      | 'report_approval_status'
+      | 'generation_status'
+      | 'delivered_at'
+    >;
+    const [allRows, stageSummaryRows, workspaceResult] = await Promise.all([
+      collectScope('list'),
+      parsed.data.stage
+        ? (collectScope('summary') as Promise<SummaryRow[]>).catch(
+            (error: unknown) => {
+              // The all-stage cards are optional: a capped or failed read must
+              // not fail the list, so fall back to the stage-scoped counts.
+              if (!(error instanceof ReportListLimitError))
+                console.error('Error in reports GET stage summary:', error);
+              return null;
+            }
+          )
+        : null,
       workspacePromise,
     ]);
     if (workspaceResult.error) throw workspaceResult.error;
-    const filteredRows = parsed.data.category
-      ? allRows.filter(
-          (row) => periodicDeliveryCategory(row) === parsed.data.category
-        )
-      : allRows;
-    const { counts, categoryCounts } = summarizeReportList(filteredRows);
+    const inCategory = <
+      Row extends Parameters<typeof periodicDeliveryCategory>[0],
+    >(
+      rows: Row[]
+    ) =>
+      parsed.data.category
+        ? rows.filter(
+            (row) => periodicDeliveryCategory(row) === parsed.data.category
+          )
+        : rows;
+    const filteredRows = inCategory(allRows);
+    // Category counts follow the listed rows; stage counts cover every stage
+    // unless the summary read was unavailable (`summaryPartial`).
+    const summaryPartial = Boolean(parsed.data.stage) && !stageSummaryRows;
+    const { categoryCounts } = summarizeReportList(filteredRows);
+    const { counts } = summarizeReportList(
+      stageSummaryRows ? inCategory(stageSummaryRows) : filteredRows
+    );
     const listResult = {
       data: filteredRows.slice(from, from + parsed.data.pageSize),
       count: filteredRows.length,
@@ -300,17 +393,23 @@ export async function GET(request: Request, { params }: Params) {
     const testsByReport = new Map(
       (testDeliveries.data ?? []).map((row) => [row.report_id, row])
     );
-    const data = (listResult.data ?? []).map((row) => ({
-      ...row,
-      test_delivery: row.id ? (testsByReport.get(row.id) ?? null) : null,
-      creator_name:
-        row.creator_display_name ??
-        row.creator_full_name ??
-        row.creator_email ??
-        null,
-      user_name:
-        row.user_display_name ?? row.user_full_name ?? row.user_email ?? null,
-    }));
+    const timezone = await timezonePromise;
+    const data = (listResult.data ?? []).map((row) => {
+      const reportMonth = resolveReportMonth(row, timezone);
+      return {
+        ...row,
+        report_month: reportMonth?.month ?? null,
+        report_month_estimated: reportMonth?.estimated ?? false,
+        test_delivery: row.id ? (testsByReport.get(row.id) ?? null) : null,
+        creator_name:
+          row.creator_display_name ??
+          row.creator_full_name ??
+          row.creator_email ??
+          null,
+        user_name:
+          row.user_display_name ?? row.user_full_name ?? row.user_email ?? null,
+      };
+    });
 
     return NextResponse.json({
       counts,
@@ -318,6 +417,7 @@ export async function GET(request: Request, { params }: Params) {
       data,
       page: parsed.data.page,
       pageSize: parsed.data.pageSize,
+      summaryPartial,
       total: listResult.count,
       workspace: workspaceResult.data,
     });
@@ -423,6 +523,12 @@ export async function POST(request: Request, { params }: Params) {
       })
       .select('id')
       .single();
+    // A concurrent create or a title already used for this student and class.
+    if (result.error?.code === '23505')
+      return NextResponse.json(
+        { message: 'Duplicate report exists' },
+        { status: 409 }
+      );
     if (result.error) throw result.error;
     return NextResponse.json(result.data);
   } catch (error) {

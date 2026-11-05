@@ -236,6 +236,25 @@ export const POST = withSessionAuth(
       );
     }
 
+    const userIds = [...new Set(parsedBody.data.map((entry) => entry.user_id))];
+    const { data: members, error: membersError } = await access.sbAdmin
+      .from('workspace_user_groups_users')
+      .select('user_id')
+      .eq('group_id', parsedParams.data.courseId)
+      .in('user_id', userIds);
+    if (membersError) {
+      return NextResponse.json(
+        { message: 'Failed to validate course members' },
+        { status: 500 }
+      );
+    }
+    if (members?.length !== userIds.length) {
+      return NextResponse.json(
+        { message: 'Course member not found' },
+        { status: 404 }
+      );
+    }
+
     const toDelete = parsedBody.data
       .filter((entry) => entry.status === 'NONE')
       .map((entry) => entry.user_id);

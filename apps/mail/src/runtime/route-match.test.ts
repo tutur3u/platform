@@ -1,5 +1,5 @@
+import { matchRoute, routeParam } from '@tuturuuu/start-bridge/route-match';
 import { describe, expect, it } from 'vitest';
-import { matchRoute, routeParam } from './route-match';
 
 describe('Mail route parameters', () => {
   it('keeps workspace, mailbox, message and attachment identity separate', () => {

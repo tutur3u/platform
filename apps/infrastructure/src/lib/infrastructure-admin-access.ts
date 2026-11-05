@@ -6,8 +6,20 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
-async function getInfrastructureSessionUser() {
-  const user = await getSatelliteAppSessionUser('infra');
+async function getInfrastructureBearerUser(authorization: string) {
+  const token = /^Bearer ([^\s]+)$/i.exec(authorization)?.[1];
+  if (!token) return null;
+  const db = await createAdminClient({ noCookie: true });
+  const { data, error } = await db.auth.getUser(token);
+  return error ? null : data.user;
+}
+
+async function getInfrastructureSessionUser(request?: Request) {
+  const authorization = request?.headers.get('authorization');
+  const user =
+    authorization !== undefined && authorization !== null
+      ? await getInfrastructureBearerUser(authorization)
+      : await getSatelliteAppSessionUser('infra');
 
   if (!user) {
     return {
@@ -20,9 +32,11 @@ async function getInfrastructureSessionUser() {
 }
 
 export async function authorizeInfrastructureAdminRequest(
-  requiredPermission: PermissionId | PermissionId[] = 'view_infrastructure'
+  requiredPermission: PermissionId | PermissionId[] = 'view_infrastructure',
+  requireRootMember = true,
+  request?: Request
 ) {
-  const session = await getInfrastructureSessionUser();
+  const session = await getInfrastructureSessionUser(request);
   if (!session.ok) return session;
 
   const permissions = await getPermissions({
@@ -34,6 +48,7 @@ export async function authorizeInfrastructureAdminRequest(
     : [requiredPermission];
 
   if (
+    (requireRootMember && permissions?.membershipType !== 'MEMBER') ||
     !requiredPermissions.some((permission) =>
       permissions?.containsPermission(permission)
     )
@@ -86,4 +101,10 @@ export async function authorizeInfrastructureWorkspaceRequest(
     user: session.user,
     wsId: permissions.wsId,
   };
+}
+
+export async function authorizeInfrastructureRootMemberRequest(
+  requiredPermission: PermissionId | PermissionId[] = 'view_infrastructure'
+) {
+  return authorizeInfrastructureAdminRequest(requiredPermission, true);
 }

@@ -7,6 +7,7 @@ import {
   createLegacyHeadHandler,
 } from '@/legacy-api-routes/head';
 import {
+  buildTutoringSessionRows,
   buildTutoringSessionSlots,
   listPotentialSchedulingConflicts,
   validateTutoringSessionScope,
@@ -18,15 +19,25 @@ import {
   TutoringSessionListQuerySchema,
   type TutoringSessionSlotInput,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
+import { denyExcludedTutoringGroup } from '@/lib/tutoring/group-exclusion';
 import {
   isLinkedContentSession,
   loadLinkedLessonContent,
 } from '@/lib/tutoring/linked-content';
 import {
+  isTeacherReassignmentAllowed,
+  resolveTutoringReadScope,
+  resolveTutoringWriteScope,
+} from '@/lib/tutoring/read-scope';
+import {
   createTutoringRequestClient,
   resolveTutoringRouteAccess,
 } from '@/lib/tutoring/route-access';
 import { listWorkspaceTeacherIds } from '@/lib/tutoring/teachers';
+import {
+  denyWeakContentEdit,
+  isWeakSupportSession,
+} from '@/lib/tutoring/weak-content-access';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -34,10 +45,8 @@ interface Params {
 
 async function getTutoringData(request: Request, { params }: Params) {
   const { wsId } = await params;
-  const { normalizedWsId, permissions } = await resolveTutoringRouteAccess(
-    request,
-    wsId
-  );
+  const access = await resolveTutoringRouteAccess(request, wsId);
+  const { normalizedWsId, permissions } = access;
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -61,6 +70,15 @@ async function getTutoringData(request: Request, { params }: Params) {
   }
 
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const scope = await resolveTutoringReadScope({
+    request,
+    access,
+    sbAdmin,
+    teacherId: parsed.data.teacherId,
+  });
+  if (!scope.allowed)
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  parsed.data.teacherId = scope.teacherId;
   const tutoringSessionsClient = sbAdmin.schema('private');
   const { page, pageSize } = parsed.data;
   const from = (page - 1) * pageSize;
@@ -203,8 +221,8 @@ async function getTutoringData(request: Request, { params }: Params) {
 
 export async function POST(request: Request, { params }: Params) {
   const { wsId } = await params;
-  const { normalizedWsId, permissions, user } =
-    await resolveTutoringRouteAccess(request, wsId);
+  const access = await resolveTutoringRouteAccess(request, wsId);
+  const { normalizedWsId, permissions, user } = access;
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -235,6 +253,41 @@ export async function POST(request: Request, { params }: Params) {
   const supabase = await createTutoringRequestClient(request, user);
   const sbAdmin = await createAdminClient();
   const tutoringSessionsClient = sbAdmin.schema('private');
+  // Without view_payroll a member may only create sessions they teach
+  // themselves; an omitted teacher defaults to them, never to someone else.
+  // Resolved before any lookup or write, whatever the status asks for.
+  const scope = await resolveTutoringWriteScope({
+    request,
+    access,
+    sbAdmin: sbAdmin as TypedSupabaseClient,
+  });
+  if (!scope.allowed) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+  if (scope.teacherId) {
+    const requestedTeachers = [
+      parsed.data.teacherUserId,
+      ...(parsed.data.sessions ?? []).map((slot) => slot.teacherUserId),
+    ];
+    if (
+      !requestedTeachers.every((teacherUserId) =>
+        isTeacherReassignmentAllowed(scope, teacherUserId ?? undefined)
+      )
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+    parsed.data.teacherUserId = scope.teacherId;
+  }
+  const deniedWeakContent = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent: isWeakSupportSession({
+      reasonType: parsed.data.reasonType,
+      sourceFeedbackId: parsed.data.sourceFeedbackId,
+    }),
+    wsId: normalizedWsId,
+  });
+  if (deniedWeakContent) return deniedWeakContent;
   const actor = user ?? (await resolveAuthenticatedSessionUser(supabase)).user;
 
   if (!actor) {
@@ -250,6 +303,16 @@ export async function POST(request: Request, { params }: Params) {
   if (scopeValidationResponse) {
     return scopeValidationResponse;
   }
+
+  // Classes the workspace excludes from tutoring take no new sessions; the
+  // sessions already booked in them stay listed and editable.
+  const excludedGroupResponse = await denyExcludedTutoringGroup({
+    groupId: payload.groupId,
+    reasonType: payload.reasonType,
+    sbAdmin: sbAdmin as TypedSupabaseClient,
+    wsId: normalizedWsId,
+  });
+  if (excludedGroupResponse) return excludedGroupResponse;
 
   const sessionSlots = buildTutoringSessionSlots(payload);
 
@@ -308,6 +371,7 @@ export async function POST(request: Request, { params }: Params) {
 
   const slotsForConflictCheck: TutoringSessionSlotInput[] = sessionSlots.map(
     (slot) => ({
+      groupId: payload.groupId,
       durationMinutes: slot.durationMinutes,
       sessionDate: slot.sessionDate,
       startTime: slot.startTime,
@@ -364,21 +428,12 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const rows = sessionSlots.map((slot) => ({
-    ws_id: normalizedWsId,
-    group_id: payload.groupId,
-    student_user_id: payload.studentUserId,
-    teacher_user_id: slot.teacherUserId ?? payload.teacherUserId ?? null,
-    session_date: slot.sessionDate,
-    start_time: slot.startTime,
-    duration_minutes: slot.durationMinutes,
-    reason_type: payload.reasonType,
-    reason_detail: payload.reasonDetail,
-    content: payload.content,
-    attendance_status: payload.attendanceStatus,
-    source_feedback_id: payload.sourceFeedbackId ?? null,
-    created_by: actor.id,
-  }));
+  const rows = buildTutoringSessionRows({
+    actorId: actor.id,
+    payload,
+    slots: sessionSlots,
+    wsId: normalizedWsId,
+  });
 
   const { data, error } = await tutoringSessionsClient
     .from('workspace_tutoring_sessions')

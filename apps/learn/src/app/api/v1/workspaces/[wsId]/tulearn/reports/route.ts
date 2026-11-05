@@ -23,6 +23,7 @@ export const GET = withSessionAuth<Params>(
       const reports = await getLearnerReports({
         db: await createAdminClient(),
         studentWorkspaceUserId: subject.studentWorkspaceUserId,
+        viewerRole: subject.role,
         wsId: subject.wsId,
       });
 

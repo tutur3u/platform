@@ -2,6 +2,7 @@ import {
   createTuturuuuNextConfig,
   resolveTuturuuuWebAppUrl,
 } from '@tuturuuu/utils/next-config';
+import { PRIVATE_ROBOTS_HEADER } from '@tuturuuu/utils/seo';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
@@ -9,7 +10,15 @@ const withNextIntl = createNextIntlPlugin();
 const WEB_APP_URL = resolveTuturuuuWebAppUrl();
 
 const nextConfig = createTuturuuuNextConfig({
-  seoApp: 'playground',
+  // Playground is not listed in seo-policy.json: every response stays private.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: PRIVATE_ROBOTS_HEADER }],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

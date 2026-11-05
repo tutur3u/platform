@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   writeVerifiedSessionCacheForSubjects: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/turnstile/server', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile/server', () => ({
   isTurnstileError: () => false,
   verifyTurnstileToken: vi.fn(),
 }));

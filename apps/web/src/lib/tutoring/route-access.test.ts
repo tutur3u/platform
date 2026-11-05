@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
   getAppSessionUserFromRequest: vi.fn(),
   getPermissions: vi.fn(),
+  isTutoringEnabledForWorkspace: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
@@ -19,12 +20,16 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: mocks.getPermissions,
 }));
+vi.mock('./module-gate', () => ({
+  isTutoringEnabledForWorkspace: mocks.isTutoringEnabledForWorkspace,
+}));
 
 const workspaceId = '42529372-c669-4833-bb32-2cab1f4ffd83';
 
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.getPermissions.mockResolvedValue({ wsId: workspaceId });
+  mocks.isTutoringEnabledForWorkspace.mockResolvedValue(true);
 });
 
 describe('tutoring route access', () => {
@@ -90,5 +95,36 @@ describe('tutoring route access', () => {
       supabase
     );
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('hides the module like an unknown workspace when ENABLE_TUTORING is off', async () => {
+    const request = new Request(`https://tuturuuu.com/api/${workspaceId}`);
+    mocks.getAppSessionUserFromRequest.mockReturnValue(null);
+    mocks.isTutoringEnabledForWorkspace.mockResolvedValue(false);
+
+    const { resolveTutoringRouteAccess } = await import('./route-access');
+    const result = await resolveTutoringRouteAccess(request, workspaceId);
+
+    expect(mocks.isTutoringEnabledForWorkspace).toHaveBeenCalledWith(
+      workspaceId
+    );
+    expect(result).toMatchObject({
+      normalizedWsId: workspaceId,
+      permissions: null,
+    });
+  });
+
+  it('does not read the toggle for callers without workspace access', async () => {
+    mocks.getAppSessionUserFromRequest.mockReturnValue(null);
+    mocks.getPermissions.mockResolvedValue(null);
+
+    const { resolveTutoringRouteAccess } = await import('./route-access');
+    const result = await resolveTutoringRouteAccess(
+      new Request(`https://tuturuuu.com/api/${workspaceId}`),
+      workspaceId
+    );
+
+    expect(result.permissions).toBeNull();
+    expect(mocks.isTutoringEnabledForWorkspace).not.toHaveBeenCalled();
   });
 });

@@ -3,7 +3,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
+import { requireQuizSetPageAccess } from '@/lib/quiz-set-page-access';
 import { getQuizSetLinkedModules, getWorkspaceModules } from '../data';
 import { getWorkspaceCourseModuleColumns } from './columns';
 import { QuizsetModuleLinker } from './linker';
@@ -36,7 +36,7 @@ export default async function WorkspaceCoursesPage({
 }: Props) {
   const t = await getTranslations();
   const { wsId: routeWsId, setId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await requireQuizSetPageAccess(routeWsId, setId);
 
   const { data: allModules } = await getWorkspaceModules(
     resolvedWsId,

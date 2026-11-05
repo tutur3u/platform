@@ -17,7 +17,7 @@ export function meetOneOriginConfig(env: object): OneOriginConfig {
     sharedOrigin: text('NEXT_PUBLIC_WEB_APP_URL', 'https://tuturuuu.com'),
     subdomainOrigin: text('NEXT_PUBLIC_APP_URL', 'https://meet.tuturuuu.com'),
     basePathReady: false,
-    machinePathPrefixes: ['/live-connect', '/_meet'],
+    machinePathPrefixes: ['/live-connect', '/_meet', '/_rum'],
     ...readOneOriginEnv(vars, 'meet'),
   };
 }

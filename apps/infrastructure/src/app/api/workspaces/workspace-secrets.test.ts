@@ -48,9 +48,14 @@ const context = {
 const keys = ['STORAGE_LIMIT_BYTES', 'RATE_LIMIT_REQUESTS', 'ENABLE_AI'];
 const methods = ['POST', 'PUT', 'DELETE'] as const;
 
-function grant(rootPermission?: string, email = 'owner@example.com') {
+function grant(
+  rootPermission?: string,
+  email = 'owner@example.com',
+  membershipType: 'MEMBER' | 'GUEST' | null = 'MEMBER'
+) {
   mocks.session.mockResolvedValue({ id: 'workspace-creator', email });
   mocks.permissions.mockImplementation(async ({ wsId }) => ({
+    membershipType,
     containsPermission: (permission: string) =>
       wsId === ROOT_WORKSPACE_ID
         ? permission === rootPermission
@@ -192,6 +197,32 @@ describe('Infrastructure workspace secrets permission boundary', () => {
       expect((await mutate(method, 'MANAGED_CRON_ENABLED')).status).toBe(403);
       expect(mocks.admin).not.toHaveBeenCalled();
     });
+  }
+
+  for (const membershipType of ['GUEST', null] as const) {
+    for (const permission of [
+      'manage_workspace_secrets',
+      'manage_workspace_roles',
+    ]) {
+      it(`denies root ${permission} without MEMBER membership (${membershipType}): every secrets entrypoint`, async () => {
+        grant(permission, 'operator@tuturuuu.com', membershipType);
+        const request = () => new Request('https://infra.example.test');
+        const rateRequest = new Request(
+          'https://infra.example.test?wsId=11111111-1111-4111-8111-111111111111'
+        );
+
+        for (const method of methods) {
+          expect((await mutate(method, 'ENABLE_AI')).status).toBe(403);
+        }
+        expect((await GET(request(), context)).status).toBe(403);
+        expect((await getRateSecrets(rateRequest)).status).toBe(403);
+        expect((await requireExternalAppRegistryAdmin(request())).ok).toBe(
+          false
+        );
+        expect(mocks.admin).not.toHaveBeenCalled();
+        expect(mocks.from).not.toHaveBeenCalled();
+      });
+    }
   }
 
   it('denies secret reads for workspace creators', async () => {

@@ -3,6 +3,7 @@ import { CallShell } from '@tuturuuu/meet-core/features/call/components/device-s
 import { ParticipantNameForm } from '@tuturuuu/meet-core/features/call/components/participant-name-form';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { useTranslations } from 'next-intl';
+import { MeetingNotesSection } from '@/features/meeting-notes/meeting-notes-section';
 import type { MeetPageModel } from './page-model.server';
 import { MeetingPublicInvite } from './public-invite-view';
 
@@ -38,6 +39,16 @@ export function RoomView({
           wsId={meeting.ws_id}
           meetingName={meetingName}
           backHref={canReadWorkspace ? `/${workspaceSlug}/meetings` : '/'}
+          notes={
+            <MeetingNotesSection
+              wsId={meeting.ws_id}
+              meetingId={meeting.id}
+              title={meetingName}
+              isHost={isHost}
+              policy={policy}
+              sharingControl={false}
+            />
+          }
         />
       </WorkspaceVisibilityProvider>
     );

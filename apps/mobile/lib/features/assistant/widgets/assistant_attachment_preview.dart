@@ -338,6 +338,8 @@ String assistantAttachmentFailureMessage(
     context.l10n.assistantAttachmentFailureForbidden,
   AssistantAttachmentFailure.network =>
     context.l10n.assistantAttachmentFailureNetwork,
+  AssistantAttachmentFailure.newChatRequired =>
+    context.l10n.assistantAttachmentFailureNewChatRequired,
   AssistantAttachmentFailure.server ||
   null => context.l10n.assistantAttachmentFailureServer,
 };

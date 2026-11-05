@@ -1,0 +1,33 @@
+{
+  "name": "@tuturuuu/cloudflare",
+  "license": "MIT",
+  "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tutur3u/platform",
+    "directory": "packages/cloudflare"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./turnstile": "./src/turnstile/index.ts",
+    "./turnstile/client": "./src/turnstile/client.ts",
+    "./turnstile/server": "./src/turnstile/server.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --project tsconfig.typecheck.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "packageManager": "bun@1.4.4",
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^26.6.5",
+    "typescript": "7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

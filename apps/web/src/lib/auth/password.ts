@@ -1,11 +1,11 @@
 import {
+  isTurnstileError,
+  resolveTurnstileToken,
+} from '@tuturuuu/cloudflare/turnstile/server';
+import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import {
-  isTurnstileError,
-  resolveTurnstileToken,
-} from '@tuturuuu/turnstile/server';
 import {
   checkPasswordLoginLimit,
   classifyPotentialSpamUserAgent,

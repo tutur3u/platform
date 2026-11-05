@@ -6,7 +6,10 @@ import {
 import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { connection, NextResponse } from 'next/server';
 import {
@@ -38,6 +41,10 @@ export async function GET(request: NextRequest) {
     if (!isRootUser) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+
+    const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
+    if (!permissions?.containsPermission('manage_time_tracking_requests'))
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     // Get query parameters
     const { searchParams } = new URL(request.url);

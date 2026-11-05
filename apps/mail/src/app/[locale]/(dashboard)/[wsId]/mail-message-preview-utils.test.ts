@@ -1,7 +1,21 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildMailMessagePreviewDocument } from './mail-message-preview-utils';
 
 describe('buildMailMessagePreviewDocument', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it.each(['', '/mail'])('mounts supplied CID image src at base %j', (base) => {
+    vi.stubGlobal('__tuturuuuAppBase', base);
+    const path =
+      '/api/v1/workspaces/ws/mail/mailboxes/box/messages/message/attachments/logo';
+    const document = buildMailMessagePreviewDocument(
+      '<img src="cid:logo">',
+      'original',
+      { logo: path }
+    );
+    expect(document).toContain(`src="${base}${path}"`);
+    expect(document).not.toContain('src="cid:logo"');
+    expect(document).toContain("script-src 'none'");
+  });
   it('constrains wide email content in original mode', () => {
     const document = buildMailMessagePreviewDocument(
       '<table style="width:1200px"><tr><td>Mail</td></tr></table>',

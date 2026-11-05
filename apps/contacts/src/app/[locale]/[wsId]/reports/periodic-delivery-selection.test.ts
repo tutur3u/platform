@@ -106,6 +106,6 @@ describe('recorded blocker categories', () => {
         user_email: null,
       })
     ).toBeNull());
-  it('does not label unblocked draft as failure', () =>
-    expect(periodicDeliveryCategory(report)).toBeNull());
+  it('labels an unblocked approved draft as held, not as a failure', () =>
+    expect(periodicDeliveryCategory(report)).toBe('held'));
 });

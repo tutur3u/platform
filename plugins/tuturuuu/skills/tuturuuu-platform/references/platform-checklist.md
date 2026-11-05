@@ -44,6 +44,9 @@ stack for every edit.
   prefer `@tuturuuu/utils/effect` when typed expected errors, dependency
   services/layers, retry/scheduling, or controlled concurrency improve the
   boundary.
+- When protecting a UUID-identified member in JavaScript, validate and canonicalize
+  the target before comparison, then use that same identity in every scoped
+  mutation. Cover uppercase UUIDs and rejected noncanonical syntax in route tests.
 - Do not introduce Effect for client query functions, React UI state, basic pure
   transforms, or validation schemas that are already clearer as TanStack Query,
   React, plain TypeScript, or Zod.

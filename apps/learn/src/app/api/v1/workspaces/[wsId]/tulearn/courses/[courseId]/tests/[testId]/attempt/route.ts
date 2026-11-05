@@ -9,6 +9,7 @@ import {
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
+import { canAccessLearnerTestCourse } from '@/lib/tulearn-test-access';
 
 type Params = {
   courseId: string;
@@ -63,6 +64,14 @@ export const GET = withSessionAuth<Params>(
       });
 
       const sbAdmin = await createAdminClient();
+      if (
+        !(await canAccessLearnerTestCourse({ db: sbAdmin, subject, courseId }))
+      ) {
+        return NextResponse.json(
+          { message: 'Test not found' },
+          { status: 404 }
+        );
+      }
 
       // Verify course and test exist and are published
       const { data: test, error: testErr } = await sbAdmin

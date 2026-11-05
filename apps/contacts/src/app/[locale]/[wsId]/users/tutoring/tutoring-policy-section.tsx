@@ -59,6 +59,15 @@ function PolicySummary({
             <dd className="font-medium">{policy[field]}</dd>
           </div>
         ))}
+        <div>
+          <dt className="text-muted-foreground text-sm">
+            {t('policy_absenceCountFromDate')}
+          </dt>
+          <dd className="font-medium">
+            {policy.absenceCountFromDate ??
+              t('policy_absenceCountFromDate_unset')}
+          </dd>
+        </div>
       </dl>
     );
   if (id === 'exceptions')
@@ -112,6 +121,7 @@ function PolicySummary({
             {policy.groupExclusions.map((rule, index) => (
               <li key={index}>
                 {t(`policy_scope_${rule.scope}`)} ·{' '}
+                {t(`policy_target_${rule.target ?? 'name'}`)} ·{' '}
                 {t(`policy_match_${rule.match}`)} · {rule.value}
               </li>
             ))}
@@ -121,6 +131,18 @@ function PolicySummary({
             {t('policy_no_weak_exclusions')}
           </p>
         )}
+        <p>
+          {t('policy_support_groups')}:{' '}
+          {policy.supportGroupIds.length
+            ? policy.supportGroupIds
+                .map(
+                  (groupId) =>
+                    groups.find((group) => group.id === groupId)?.name ||
+                    groupId
+                )
+                .join(', ')
+            : t('policy_no_support_groups')}
+        </p>
       </div>
     );
   if (id === 'groupShifts')

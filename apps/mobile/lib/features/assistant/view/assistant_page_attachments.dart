@@ -1,8 +1,31 @@
 part of 'assistant_page.dart';
 
 extension _AssistantAttachments on _AssistantPageState {
+  /// An attachment to a new chat creates that chat first. While a prior
+  /// creation outcome is unknown, only the informed New chat flow may create
+  /// one, exactly as a text send does; uploading first could never succeed.
+  /// Callers check the remote guard first, so the local-model lane never
+  /// reaches the New chat flow, which could clear the draft unasked.
+  Future<bool> _readyAttachmentChat(String wsId) async {
+    final chatState = _chatCubit.state;
+    if (!chatState.creationOutcomeUnknown || chatState.storedChatId != null) {
+      return true;
+    }
+    final result = await _startNewConversation(
+      wsId,
+      chatState,
+      _liveCubit.state,
+      preserveDraft: true,
+    );
+    return result == _AssistantNewChatResult.committed &&
+        mounted &&
+        _remoteGuard(wsId).current;
+  }
+
   Future<void> _recordVoiceMessage(String wsId) async {
     if (!_remoteGuard(wsId).current || _voiceCapture.state.visible) return;
+    if (!await _readyAttachmentChat(wsId)) return;
+    if (!mounted || _voiceCapture.state.visible) return;
     final actorId = context.read<AuthCubit?>()?.state.user?.id;
     if (actorId == null || _chatCubit.state.workspaceId != wsId) return;
     _voiceWorkspaceId = wsId;
@@ -43,20 +66,38 @@ extension _AssistantAttachments on _AssistantPageState {
     }
     final timezone = await getCurrentTimezoneIdentifier();
     if (!isCurrent() || _voiceCapture.sessionToken != captureToken) return;
-    await _chatCubit.addComposerAttachments(
+    if (!sendNow) {
+      await _chatCubit.addComposerAttachments(
+        wsId: wsId!,
+        files: [file],
+        modelId: _shellCubit.state.selectedModel.value,
+        timezone: timezone,
+        expectedWorkspaceVersion: scopeVersion,
+        isCurrentActor: isCurrent,
+      );
+      return;
+    }
+    if (!mounted) return;
+    final shell = _shellCubit.state;
+    await _chatCubit.sendVoiceMessage(
       wsId: wsId!,
-      files: [file],
-      modelId: _shellCubit.state.selectedModel.value,
+      file: file,
+      modelId: shell.selectedModel.value,
       timezone: timezone,
-      expectedWorkspaceVersion: scopeVersion,
+      message: context.l10n.assistantVoiceMessagePrompt,
+      thinkingMode: shell.thinkingMode,
+      creditSource: shell.creditSource,
+      workspaceContextId: shell.workspaceContextId,
+      creditWsId: shell.creditSource == AssistantCreditSource.personal
+          ? shell.personalWorkspaceId
+          : wsId,
       isCurrentActor: isCurrent,
     );
-    if (sendNow && isCurrent()) {
-      await _handleSend(wsId);
-    }
   }
 
   Future<void> _pickFiles(String wsId) async {
+    if (!_remoteGuard(wsId).current) return;
+    if (!await _readyAttachmentChat(wsId)) return;
     final guard = _remoteGuard(wsId);
     if (!guard.current) return;
     final scopeVersion = _chatCubit.attachmentScopeVersion;
@@ -78,6 +119,8 @@ extension _AssistantAttachments on _AssistantPageState {
   }
 
   Future<void> _pickGalleryMedia(String wsId) async {
+    if (!_remoteGuard(wsId).current) return;
+    if (!await _readyAttachmentChat(wsId)) return;
     final guard = _remoteGuard(wsId);
     if (!guard.current) return;
     final scopeVersion = _chatCubit.attachmentScopeVersion;
@@ -195,6 +238,8 @@ extension _AssistantAttachments on _AssistantPageState {
   }
 
   Future<void> _captureMedia(String wsId, {required bool video}) async {
+    if (!_remoteGuard(wsId).current) return;
+    if (!await _readyAttachmentChat(wsId)) return;
     final guard = _remoteGuard(wsId);
     if (!guard.current) return;
     final scopeVersion = _chatCubit.attachmentScopeVersion;

@@ -92,6 +92,11 @@ const excluded =
 const runner = async (command, args, cwd) => {
   if (args.includes('test')) {
     const container = `supabase_db_${metadata.projectId}`;
+    execFileSync('docker', [
+      'cp',
+      path.resolve(metadata.disposableRoot, 'supabase/tests/helpers'),
+      `${container}:/tmp/helpers`,
+    ]);
     for (const fixture of fixtures) {
       const target = '/tmp/calendar-generation-contract.sql';
       execFileSync('docker', [
@@ -110,6 +115,8 @@ const runner = async (command, args, cwd) => {
           '-t',
           '-v',
           'ON_ERROR_STOP=1',
+          '-v',
+          'require_dblink=1',
           '-U',
           'supabase_admin',
           '--dbname',

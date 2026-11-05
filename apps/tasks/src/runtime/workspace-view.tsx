@@ -26,7 +26,11 @@ export function WorkspaceView({
   const t = useTranslations();
   const locale = useLocale();
   const { workspace, user, slug } = model;
-  const links = useMemo(() => buildNavigationLinks(t, slug), [t, slug]);
+  const { canManageCycles } = model;
+  const links = useMemo(
+    () => buildNavigationLinks(t, slug, { canManageCycles }),
+    [t, slug, canManageCycles]
+  );
   const userPopover = (
     <UserNavClient user={model.profile} locale={locale} hideMetadata />
   );

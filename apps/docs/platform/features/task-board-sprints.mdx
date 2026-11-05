@@ -1,0 +1,190 @@
+---
+title: "Task board sprints"
+description: "Per-board sprints: turning them on, planning, starting, ending and the derived sprint due date"
+---
+
+## Scope and default
+
+Sprints belong to one task board. A board has sprints off by default and keeps
+today's views. A workspace member who can edit the board turns sprints on from
+Board settings by picking a length of one or two weeks; Off turns them off again
+and keeps every past sprint and report.
+
+Board cycles ship dark. Until verified Tuturuuu staff set the workspace secret
+`ENABLE_BOARD_CYCLES=true`, the Board settings card stays hidden, and turning
+sprints on, editing goals, moving tasks, starting and ending all return 403
+`BOARD_CYCLES_NOT_ENABLED`. Reading sprints and turning them off still work.
+
+A sprint is a task cycle with a `board_id`. A board has at most one running
+sprint and one sprint being planned. Sprints run Monday to Friday of their last
+week, so the next sprint starts the Monday after the current one ends. Changing
+the length applies to the sprint being planned and every later one.
+
+## Membership
+
+Turning sprints on puts every open task on the board into Sprint 1, the sprint
+being planned. After that, a new task, or a task moved onto the board, joins the
+running sprint (marked as added mid-sprint) or, when none is running, the sprint
+being planned. A task sits in one open sprint per board; moving a task to
+another board drops its open sprint. Done tasks stay in the sprint they
+finished in. A task that becomes open again after its sprint ended (moved back
+out of Done, un-closed, or restored from the recycle bin) rejoins the board's
+current sprint the same way, so no open task drops out of the Board view or
+Plan.
+
+Regression coverage: `apps/database/supabase/tests/task-board-sprint-transitions.sql`
+walks every way a task enters, leaves or returns to a board's sprints.
+
+The backlog is not a separate list. It is the unassigned tasks of the sprint
+being planned.
+
+## Due dates
+
+A task with no due date of its own is due when its sprint ends. That date is
+derived and never written into `tasks.end_date`, so moving a sprint or carrying
+a task rewrites nothing. Only an own due date can make a task overdue.
+
+## Starting and ending
+
+Starting and ending a sprint, and changing its length, are limited to workspace
+members who can edit the board; board guests can plan (goals and membership)
+but cannot start or end. Starting the planned sprint opens the next one for
+planning. A sprint started before its planned Monday keeps its length: it
+starts that day and ends on the Friday of its last week (a weekend start counts
+from the next Monday), and the next sprint is planned after it.
+
+Ending is atomic and idempotent. Every open task gets a decision: carry it into
+the next sprint with its owner, or send it to the backlog, which removes its
+assignees. A missing decision carries. The end stores a report: tasks in the
+sprint, done, added mid-sprint, carried in from earlier sprints, carried on,
+sent to the backlog, the same totals in estimation points, and per-person
+totals. Ending twice returns the stored report.
+
+Board sprints change only through the service-role RPCs
+`set_board_sprint_length`, `start_board_sprint`, `end_board_sprint` and
+`move_tasks_to_board_sprint`, called by the tasks API after its board-access
+checks. Anonymous and signed-in sessions cannot execute them; the catalog check
+in `apps/database/supabase/tests/20261027151200_anon-definer-execute.sql` lists
+them as service-only. Direct row writes stay available for workspace-wide cycles
+only, and the older task-cycle edit and delete routes refuse board sprints (404).
+Every sprint writer locks the board row before its sprints, so moves, starts,
+ends and task membership changes on one board run one at a time.
+
+## Board header and Board view
+
+With sprints on, the board header shows the current sprint after the board name:
+a progress ring, the sprint dates and its done count. The current sprint is the
+running one, or the sprint being planned when none runs. Its menu lists every
+sprint in order; members who can edit the board also get Start for the planned
+sprint (only while none runs) and a shortcut to the sprint length in Board
+settings. The Board view (Kanban, List, Timeline) shows only the current
+sprint's tasks. An open task no open sprint holds yet (just created, moved onto
+the board, restored or reopened) shows at once, since the database has put it
+in the current sprint; tasks waiting in the planned sprint and finished work
+from past sprints stay hidden. The board's sprints refresh whenever a task is
+created, moved, finished, reopened or deleted, by this tab, another tab or
+another person, and with the header's Refresh, so the view and the sprint
+progress follow those memberships without a reload. My Tasks, Drafts and the Recycle Bin are unchanged and show no
+sprint. With sprints off, or before the migration reaches a database, the header
+and views look exactly as before.
+
+Regression coverage: `packages/tasks-ui/src/tu-do/shared/__tests__/board-views-sprints.test.tsx`,
+`packages/tasks-ui/src/tu-do/shared/board-sprints/sprint-pill.test.tsx` and
+`packages/tasks-ui/src/tu-do/shared/__tests__/board-header.test.tsx`.
+
+## Plan tab
+
+Boards with sprints on get Plan and Board tabs at the start of the header's
+second row; boards with sprints off show neither. Plan always works on the
+sprint being planned. On the left, the backlog lists its unassigned open tasks,
+with a search field, a priority sort and a Project filter. On the right are the
+sprint name and dates, the sprint goal, and one section per board member with
+the tasks they own in that sprint.
+
+Planning is assigning. Dragging a backlog task onto a person, or picking a
+person from the task's avatar button, makes them its owner. Dragging a task
+between people swaps that owner and keeps co-owners. Dragging it back to the
+backlog removes every owner. Add to backlog creates an unassigned task in the
+sprint being planned, even while another sprint runs. Board guests who can
+edit may plan; Start, shown only while no sprint runs, is for members who can
+edit the board and switches back to Board.
+
+Regression coverage: `packages/tasks-ui/src/tu-do/shared/board-sprints/plan/board-plan-view.test.tsx`
+and `packages/tasks-ui/src/tu-do/shared/__tests__/board-views-sprints.test.tsx`.
+
+## Sprint summary and reports
+
+Ending happens from a summary, opened by End in the sprint menu or by "End
+Sprint N first" on the Plan tab. It shows the goal with Met, Partly or Missed,
+four totals (delivered against committed, tasks done, added mid-sprint and
+carried in), done against assigned per person, and every open task with Carry
+to the next sprint or Backlog. Totals read in estimation points when the
+sprint has any, and in tasks otherwise. The End button stays disabled until
+each open task has a decision; Carry all and All to backlog set them in one
+click, and a task already carried twice is flagged. Ending switches the board
+to Plan. Choosing an ended sprint in the sprint menu opens its stored report
+with the same totals, read-only.
+
+Regression coverage: `packages/tasks-ui/src/tu-do/shared/board-sprints/summary/sprint-summary-dialog.test.tsx`,
+`packages/tasks-ui/src/tu-do/shared/board-sprints/summary/sprint-summary-model.test.ts`
+and `packages/tasks-ui/src/tu-do/shared/board-sprints/sprint-pill.test.tsx`.
+
+## Exceptions
+
+Workspace-wide cycles without a board keep their existing behavior. The
+personal planner still writes `tasks.end_date` for the day it plans, so planner
+tasks count as having their own due date.
+
+Regression coverage: `apps/database/supabase/tests/task-board-sprints.sql`
+(run by the Task board database contract workflow),
+`apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/sprints/route.test.ts`,
+`apps/tasks/src/app/api/v1/workspaces/[wsId]/task-cycles/[cycleId]/route.test.ts`,
+`packages/utils/src/task-helper/sprints.test.ts` and
+`packages/internal-api/src/task-sprints.test.ts`.
+
+## Project ticket keys
+
+Task cards in Kanban and List, Timeline rows and task panel headers show
+`[KEY-N]` for the project the task joined first. Project-less tasks have no
+identifier prefix. My Tasks lists keep showing task names only, as they did
+before project keys. Document cards keep their existing omission of the badge.
+Personal project overlays do not replace the source task's ticket identity.
+
+Each project receives a workspace-unique key from the first three ASCII letters
+or digits of its name, uppercased with leading digits removed. Names producing
+fewer than two usable characters use `PRJ`. Collisions append a number beginning
+with 2 (`PLA`, `PLA2`, `PLA3`). Existing projects are assigned deterministically
+by workspace, creation time and project ID. People with `manage_projects` can
+edit the Key in project configuration: 2–10 uppercase ASCII letters/digits,
+starting with a letter. Editing a key relabels its tasks without changing numbers. Any
+workspace member can create a project and gets the derived key; choosing a key
+at creation needs `manage_projects` too. The Plan tab and the sprint summary show
+the same `[KEY-N]` labels.
+
+Each project allocates task numbers atomically from its own increasing counter.
+Existing links are numbered by link creation time, task creation time, then task
+ID. Missing historical join timestamps use task creation time.
+
+One workspace is excluded from the backfill (`20261104213040`): its existing
+projects keep no key, and their existing links keep no number or join time, so
+those tasks show no identifier and key search skips them. A project without a key
+numbers no new tasks until someone with `manage_projects` sets one; the tasks it
+already had stay unnumbered. Equal project
+join timestamps use project ID to choose the displayed badge. Saving an unchanged
+membership keeps its number and join time. Removing and later rejoining a project
+allocates a fresh number; removed numbers are never reused.
+
+Search accepts any linked project's current key and number, including a secondary
+project. Legacy board prefix/display-number lookups remain supported for every
+task, including project-less tasks. Historical project keys are not aliases after
+a key edit. Workspace and board visibility still apply before pagination/counts.
+
+Regression coverage: `apps/database/supabase/tests/task-project-ticket-keys.sql`,
+`packages/utils/src/task-helper/shared.test.ts`,
+`packages/utils/src/task-project-ticket-key.test.ts`,
+`packages/tasks-ui/src/tu-do/shared/__tests__/board-task-search.test.ts`,
+`packages/tasks-ui/src/tu-do/projects/projectId/components/project-ticket-key-field.test.tsx`
+and `apps/tasks/src/app/api/v1/workspaces/[wsId]/task-projects/ticket-keys.test.ts`.
+The Task board database contract workflow runs the SQL fixture after replaying
+the complete schema. Database execution and exact-commit app builds belong to
+CI or the authorized integration environment; no local build is required.

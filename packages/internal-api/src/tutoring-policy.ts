@@ -1,13 +1,33 @@
 import {
+  getTutoringAbsenceCountFromMax,
+  getTutoringAbsenceCutoff,
+  getTutoringLinkCutoff,
+  parseAbsenceCountFromDate,
+  TUTORING_LINK_HORIZON_DAYS,
+} from './tutoring-absence-count-from';
+import {
   getTutoringCampusChoices,
   parseTutoringCampusOptions,
   TUTORING_CAMPUS_LABEL_MAX_LENGTH,
 } from './tutoring-campus-options';
+import {
+  filterTutoringEligibleGroups,
+  hasTutoringTagExclusions,
+  isTutoringGroupExcluded,
+  parseTutoringGroupExclusions,
+  type TutoringExclusionReason,
+  type TutoringGroupExclusion,
+  tutoringExclusionReason,
+} from './tutoring-group-rules';
 
 export {
+  getTutoringAbsenceCountFromMax,
+  getTutoringAbsenceCutoff,
   getTutoringCampusChoices,
+  getTutoringLinkCutoff,
   parseTutoringCampusOptions,
   TUTORING_CAMPUS_LABEL_MAX_LENGTH,
+  TUTORING_LINK_HORIZON_DAYS,
 };
 
 export const TUTORING_POLICY_CONFIG_ID = 'TUTORING_POLICY';
@@ -27,11 +47,13 @@ export interface TutoringTimeRule {
   label?: string;
 }
 
-export interface TutoringGroupExclusion {
-  scope: 'all' | 'make_up' | 'weak_support';
-  match: 'contains' | 'exact' | 'prefix' | 'suffix';
-  value: string;
-}
+export type { TutoringExclusionReason, TutoringGroupExclusion };
+export {
+  filterTutoringEligibleGroups,
+  hasTutoringTagExclusions,
+  isTutoringGroupExcluded,
+  tutoringExclusionReason,
+};
 
 export interface TutoringPolicy {
   preset: 'standard' | 'easy_center' | 'custom';
@@ -39,6 +61,12 @@ export interface TutoringPolicy {
   leadMinutes: number;
   weakSupportSessions: number;
   absenceLookbackDays: number;
+  /**
+   * Workspace-local `YYYY-MM-DD`. Absences dated before it never feed make-up
+   * suggestions, on top of the rolling lookback; null counts the whole window.
+   * Older absences stay recorded; they are only left out of the queue.
+   */
+  absenceCountFromDate: string | null;
   reassessmentDays: number;
   followUpDays: number;
   weakContentReviewDays: number;
@@ -58,6 +86,11 @@ export interface TutoringPolicy {
    * students, so queues skip them and teachers in them are labelled as tutors.
    */
   tutorGroupIds: string[];
+  /**
+   * Groups listing learners who need tutoring. Each current learner member is
+   * queued for weak support under their current classes; empty by default.
+   */
+  supportGroupIds: string[];
   /** Class group id to the label of the shift rule its classes follow. */
   shiftByGroupId: Record<string, string>;
   parentMessageTemplate: string;
@@ -67,7 +100,7 @@ export const DEFAULT_PARENT_MESSAGE_TEMPLATE =
   'Trung tâm xin gửi lịch kèm {{reason}} của {{student}}: {{time}} ngày {{date}} ({{duration}} phút), lớp {{group}}, giáo viên {{teacher}}. Mong phụ huynh sắp xếp cho con tham gia đúng giờ. Xin cảm ơn.';
 
 export const EASY_CENTER_PARENT_MESSAGE_TEMPLATE =
-  'Trung tâm EASY xin được xếp lịch kèm cho bạn {{student}} như sau:\n• Giờ kèm: {{time}}\n• Ngày: {{date}}\n• Cơ sở: {{campus}}\nMong phụ huynh thu xếp cho con tham gia đúng giờ. Trân trọng.';
+  'Trung tâm EASY xin được xếp lịch kèm cho bạn {{student}} như sau:\n• Giờ kèm: {{time_range}}\n• Ngày: {{date}} {{weekday}}\n• Cơ sở: {{campus}}\nLịch học chính thức: {{class_time}}\nMong phụ huynh thu xếp cho con tham gia đúng giờ. Trân trọng.';
 
 export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
   preset: 'standard',
@@ -75,6 +108,7 @@ export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
   leadMinutes: 45,
   weakSupportSessions: 1,
   absenceLookbackDays: 28,
+  absenceCountFromDate: null,
   reassessmentDays: 14,
   followUpDays: 7,
   weakContentReviewDays: 0,
@@ -85,6 +119,7 @@ export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
   campusByGroupId: {},
   campusOptions: [],
   tutorGroupIds: [],
+  supportGroupIds: [],
   shiftByGroupId: {},
   parentMessageTemplate: DEFAULT_PARENT_MESSAGE_TEMPLATE,
 };
@@ -102,7 +137,7 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
     { scope: 'all', match: 'contains', value: 'Kindergarten' },
   ],
   parentMessageTemplate: EASY_CENTER_PARENT_MESSAGE_TEMPLATE,
-  // The eight class shifts supplied by Easy Center. Shift 4 is after class.
+  // The eight class shifts supplied by a tutoring centre workspace. Shift 4 is after class.
   // Shift 1 classes meet Monday/Wednesday/Friday but tutor Wednesday/Friday.
   timeRules: [
     {
@@ -289,7 +324,10 @@ function parseTutorGroupIds(value: unknown) {
 }
 
 /** Strict validation is shared by settings UI and the API write boundary. */
-export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
+export function parseTutoringPolicy(
+  value: unknown,
+  now = new Date()
+): TutoringPolicy | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const saved = value as Record<string, unknown>;
   const defaults =
@@ -301,6 +339,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     restrictWeakContentEditors: defaults.restrictWeakContentEditors,
     groupExclusions: defaults.groupExclusions,
     tutorGroupIds: [],
+    supportGroupIds: [],
     shiftByGroupId: {},
     ...saved,
   };
@@ -370,29 +409,19 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     Array.isArray(candidate.shiftByGroupId)
   )
     return null;
+  const absenceCountFrom = parseAbsenceCountFromDate(
+    candidate.absenceCountFromDate,
+    now
+  );
+  if (!absenceCountFrom) return null;
   const tutorGroupIds = parseTutorGroupIds(candidate.tutorGroupIds);
-  if (!tutorGroupIds) return null;
+  const supportGroupIds = parseTutorGroupIds(candidate.supportGroupIds);
+  if (!tutorGroupIds || !supportGroupIds) return null;
 
-  const groupExclusions: TutoringGroupExclusion[] = [];
-  for (const raw of candidate.groupExclusions) {
-    if (!raw || typeof raw !== 'object') return null;
-    const exclusion = raw as Record<string, unknown>;
-    if (
-      !['all', 'make_up', 'weak_support'].includes(String(exclusion.scope)) ||
-      !['contains', 'exact', 'prefix', 'suffix'].includes(
-        String(exclusion.match)
-      ) ||
-      typeof exclusion.value !== 'string' ||
-      !exclusion.value.trim() ||
-      exclusion.value.length > 80
-    )
-      return null;
-    groupExclusions.push({
-      scope: exclusion.scope as TutoringGroupExclusion['scope'],
-      match: exclusion.match as TutoringGroupExclusion['match'],
-      value: exclusion.value.trim(),
-    });
-  }
+  const groupExclusions = parseTutoringGroupExclusions(
+    candidate.groupExclusions
+  );
+  if (!groupExclusions) return null;
 
   const campusEntries = Object.entries(candidate.campusByGroupId);
   if (!isGroupLabelMap(campusEntries, TUTORING_CAMPUS_LABEL_MAX_LENGTH))
@@ -453,6 +482,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     leadMinutes: candidate.leadMinutes as number,
     weakSupportSessions: candidate.weakSupportSessions as number,
     absenceLookbackDays: candidate.absenceLookbackDays as number,
+    absenceCountFromDate: absenceCountFrom.date,
     reassessmentDays: candidate.reassessmentDays as number,
     followUpDays: candidate.followUpDays as number,
     weakContentReviewDays: candidate.weakContentReviewDays as number,
@@ -465,35 +495,12 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     ),
     campusOptions,
     tutorGroupIds,
+    supportGroupIds,
     shiftByGroupId: Object.fromEntries(
       shiftEntries.map(([groupId, label]) => [groupId, String(label).trim()])
     ),
     parentMessageTemplate: candidate.parentMessageTemplate,
   };
-}
-
-/**
- * Match groups using the workspace's editable eligibility rules. Tutor groups
- * hold no real students, so they are excluded whatever their name is.
- */
-export function isTutoringGroupExcluded(
-  policy: TutoringPolicy,
-  groupName: string,
-  reason: 'make_up' | 'weak_support',
-  groupId?: string | null
-) {
-  if (groupId && policy.tutorGroupIds.includes(groupId.toLowerCase()))
-    return true;
-  const name = groupName.trim().toLocaleLowerCase();
-  return policy.groupExclusions.some((rule) => {
-    if (rule.scope !== 'all' && rule.scope !== reason) return false;
-    const value = rule.value.trim().toLocaleLowerCase();
-    if (!value) return false;
-    if (rule.match === 'exact') return name === value;
-    if (rule.match === 'prefix') return name.startsWith(value);
-    if (rule.match === 'suffix') return name.endsWith(value);
-    return name.includes(value);
-  });
 }
 
 export function getTutoringShiftLabel(
@@ -571,7 +578,18 @@ export function getTutoringCampus(
 export function readTutoringPolicy(value: string | null | undefined) {
   if (!value) return STANDARD_TUTORING_POLICY;
   try {
-    return parseTutoringPolicy(JSON.parse(value)) ?? STANDARD_TUTORING_POLICY;
+    const saved: unknown = JSON.parse(value);
+    // A bad stored count-from date only clears the date on read; dropping the
+    // whole policy would lose exclusions and shifts. Saves still reject it.
+    const withoutCountFrom =
+      saved && typeof saved === 'object' && !Array.isArray(saved)
+        ? { ...saved, absenceCountFromDate: null }
+        : saved;
+    return (
+      parseTutoringPolicy(saved) ??
+      parseTutoringPolicy(withoutCountFrom) ??
+      STANDARD_TUTORING_POLICY
+    );
   } catch {
     return STANDARD_TUTORING_POLICY;
   }
@@ -640,22 +658,36 @@ export function readTutoringPolicyConfigRows(rows: TutoringPolicyConfigRow[]) {
   return readTutoringPolicy(base);
 }
 
+/** Parent-message fields that every render supplies. */
+type TutoringMessageBaseKey =
+  | 'student'
+  | 'reason'
+  | 'date'
+  | 'time'
+  | 'duration'
+  | 'group'
+  | 'teacher'
+  | 'campus';
+
+/**
+ * Fields added later. A render that omits one shows "Chưa xác định" instead of
+ * leaving the braces in the message.
+ */
+type TutoringMessageDerivedKey = 'time_range' | 'weekday' | 'class_time';
+
+export type TutoringParentMessageValues = Record<
+  TutoringMessageBaseKey,
+  string
+> &
+  Partial<Record<TutoringMessageDerivedKey, string>>;
+
 export function renderTutoringParentMessage(
   template: string,
-  values: Record<
-    | 'student'
-    | 'reason'
-    | 'date'
-    | 'time'
-    | 'duration'
-    | 'group'
-    | 'teacher'
-    | 'campus',
-    string
-  >
+  values: TutoringParentMessageValues
 ) {
   return template.replace(
-    /\{\{(student|reason|date|time|duration|group|teacher|campus)\}\}/g,
-    (_, key: keyof typeof values) => values[key]
+    /\{\{(student|reason|date|time|duration|group|teacher|campus|time_range|weekday|class_time)\}\}/g,
+    (_, key: keyof TutoringParentMessageValues) =>
+      values[key] ?? 'Chưa xác định'
   );
 }

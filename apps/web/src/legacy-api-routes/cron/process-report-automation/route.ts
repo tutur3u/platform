@@ -1,7 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withWebCronLogDrain as withCronLogDrain } from '@/lib/cron/web-cron';
 import { processPeriodicReportAutomation } from '@/lib/user-report-automation/processor';
 
 export async function GET(request: NextRequest) {

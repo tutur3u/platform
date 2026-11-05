@@ -25,6 +25,8 @@ interface ProjectOverviewContextType {
   isEditingDescription: boolean;
   setIsEditingDescription: (value: boolean) => void;
   // Configuration
+  editedTicketKey: string;
+  setEditedTicketKey: (value: string) => void;
   showConfiguration: boolean;
   setShowConfiguration: (value: boolean) => void;
   editedStatus: string | null;

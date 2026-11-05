@@ -120,7 +120,7 @@ jobs:
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24.22.0
       - run: bun install --frozen-lockfile
@@ -131,7 +131,7 @@ jobs:
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Test build identity and workflow ordering
-        run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js scripts/ci/meet-native-source-identity.test.js scripts/ci/meet-native-admission.test.mjs scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs scripts/ci/meet-native-evidence.test.mjs scripts/ci/meet-native-hidden.test.mjs scripts/ci/meet-native-assurance.test.mjs scripts/ci/meet-native-response-diagnostics.test.mjs scripts/ci/meet-ssr-capture.test.mjs
+        run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js scripts/ci/meet-native-source-identity.test.js scripts/ci/meet-native-admission.test.mjs scripts/ci/meet-native-abuse-guard-stub.test.mjs scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs scripts/ci/meet-native-evidence.test.mjs scripts/ci/meet-native-hidden.test.mjs scripts/ci/meet-native-assurance.test.mjs scripts/ci/meet-native-response-diagnostics.test.mjs scripts/ci/meet-ssr-capture.test.mjs
       - name: Test Meet public callback and current account assurance
         working-directory: apps/meet
         run: bun x --no-install vitest run --config vitest.native-auth.config.ts --maxWorkers=1
@@ -396,11 +396,11 @@ jobs:
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24.22.0
       - run: bun install --frozen-lockfile
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: meet-worker-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/meet-worker
@@ -480,11 +480,11 @@ jobs:
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24.22.0
       - run: bun install --frozen-lockfile
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: meet-worker-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/meet-worker
@@ -534,7 +534,7 @@ jobs:
           test -n "$MEET_REALTIME_TOKEN_SECRET" || { echo 'Missing production Meet smoke-test credential'; exit 1; }
           bun x --no-install wrangler secret list --name tuturuuu-meet --format json > "$RUNNER_TEMP/meet-secrets.json"
           bun x --no-install wrangler secret list --name tuturuuu-meet-realtime --format json > "$RUNNER_TEMP/meet-realtime-secrets.json"
-          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY","GOOGLE_GENERATIVE_AI_API_KEY"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null
+          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY","GOOGLE_GENERATIVE_AI_API_KEY","MEET_AI_ENABLED_WORKSPACE_IDS"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null
           jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","CLOUDFLARE_REALTIME_APP_ID","CLOUDFLARE_REALTIME_APP_SECRET","CLOUDFLARE_TURN_KEY_ID","CLOUDFLARE_TURN_API_TOKEN"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-realtime-secrets.json" > /dev/null
       - name: Capture existing frontend and realtime rollback versions
         run: |

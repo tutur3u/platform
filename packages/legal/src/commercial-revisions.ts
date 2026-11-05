@@ -210,7 +210,8 @@ export function reviseLegalDocument(document: LegalDocument): LegalDocument {
     sections: [
       ...sections,
       ...additions.map(
-        ([title, text]): LegalSection => ({
+        ([title, text], index): LegalSection => ({
+          id: `${kind}-proposal-${index + 1}`,
           title,
           content: text,
           icon: 'scale',

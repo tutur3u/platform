@@ -106,7 +106,20 @@ describe('wallet checkpoint reconciliation route', () => {
     });
     mocks.getAccessibleWallet.mockResolvedValue({
       context: {
+        normalizedWsId: 'workspace-1',
         sbAdmin: {
+          from: vi.fn(() => ({
+            select: () => ({
+              eq: () => ({
+                eq: () => ({
+                  maybeSingle: async () => ({
+                    data: { id: '00000000-0000-0000-0000-000000000004' },
+                    error: null,
+                  }),
+                }),
+              }),
+            }),
+          })),
           schema: vi.fn(() => ({ rpc })),
         },
         userId: 'user-1',

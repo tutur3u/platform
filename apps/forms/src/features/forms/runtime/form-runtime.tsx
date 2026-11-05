@@ -1,7 +1,7 @@
 'use client';
 
 import type { TurnstileInstance } from '@marsidev/react-turnstile';
-import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
+import { resolveTurnstileClientState } from '@tuturuuu/cloudflare/turnstile/client';
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';

@@ -24,6 +24,27 @@ const _quotaLabels = [
 ];
 
 void main() {
+  testWidgets('unreadable quota survives the five-row cap without zero', (
+    tester,
+  ) async {
+    await pumpInsights(
+      tester,
+      usageJson(
+        quotas: [
+          for (final label in _quotaLabels)
+            {
+              'instance': label,
+              'remaining_percent': label == 'Codex pool B' ? null : 50,
+              'age_seconds': 1,
+            },
+        ],
+      ),
+    );
+    expect(find.text('Codex pool B'), findsWidgets);
+    expect(find.text('Out of service / unreadable'), findsWidgets);
+    expect(find.text('0%'), findsNothing);
+  });
+
   group('pacing verdict', () {
     testWidgets('SHORT next to a zero burn reads "not measured yet"', (
       tester,
@@ -183,7 +204,7 @@ void main() {
       expect(pools, greaterThan(0));
       expect(find.text('No pacing data'), findsNWidgets(pools));
       expect(find.text('Weekly left'), findsNWidgets(pools));
-      expect(find.textContaining('Not connected'), findsWidgets);
+      expect(find.textContaining('Out of service / unreadable'), findsWidgets);
       expect(find.textContaining('No samples published'), findsOneWidget);
       final words = tester
           .widgetList<Text>(find.byType(Text))

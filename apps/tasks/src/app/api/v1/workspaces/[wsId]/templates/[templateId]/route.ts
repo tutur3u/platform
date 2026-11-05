@@ -1,4 +1,5 @@
 import type { TablesUpdate } from '@tuturuuu/types';
+import { isWorkspaceTemplateBackgroundPath } from '@tuturuuu/utils/template-background-path';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -95,6 +96,15 @@ export const PATCH = withSessionAuth<Params>(
       }
 
       if (backgroundPath !== undefined) {
+        if (
+          backgroundPath !== null &&
+          !isWorkspaceTemplateBackgroundPath(backgroundPath, context.wsId)
+        ) {
+          return NextResponse.json(
+            { error: 'Invalid background path' },
+            { status: 400 }
+          );
+        }
         updateData.background_path = backgroundPath;
       }
 

@@ -8,6 +8,13 @@ vi.mock('@tuturuuu/satellite/workspace-access', () => ({
   resolveSatelliteRequestActor: mocks.actor,
 }));
 
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: vi.fn(async () => ({
+    membershipType: 'MEMBER',
+    containsPermission: () => true,
+  })),
+}));
+
 import { hasAIWhitelistAccess } from './authorization';
 
 describe('AI whitelist verified email', () => {

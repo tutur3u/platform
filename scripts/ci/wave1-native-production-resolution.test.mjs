@@ -5,18 +5,30 @@ import {
   uploadStepName,
 } from './wave1-native-production-history.mjs';
 
-const resolution = {
-  app: 'calendar',
-  worker: 'tuturuuu-calendar',
-  runId: '40413173161',
-  runAttempt: '1',
-  sha: 'ac8beee09e9700b453a55e193db5957985e01956',
-  digest: '2116459bf121f09a7a714889d13d291a9823b451285747602a67eb0e50435b97',
-  baselineDeploymentId: 'e77a63b0-ec5d-46bf-bb89-b1829066ba90',
-  baselineVersionId: '1a7cbbd0-d3a2-415f-8b75-890a1412c3f0',
-};
+const resolutions = [
+  {
+    app: 'calendar',
+    worker: 'tuturuuu-calendar',
+    runId: '40413173161',
+    runAttempt: '1',
+    sha: 'ac8beee09e9700b453a55e193db5957985e01956',
+    digest: '2116459bf121f09a7a714889d13d291a9823b451285747602a67eb0e50435b97',
+    baselineDeploymentId: 'e77a63b0-ec5d-46bf-bb89-b1829066ba90',
+    baselineVersionId: '1a7cbbd0-d3a2-415f-8b75-890a1412c3f0',
+  },
+  {
+    app: 'calendar',
+    worker: 'tuturuuu-calendar',
+    runId: '40428329193',
+    runAttempt: '1',
+    sha: '766c457a4c17797c6b62bb4a8a5c607bdfa0b91b',
+    digest: '6dec01d9d95a94cfe543afddc402ea15cb4b1018d03fd335aaca08463b2ba51b',
+    baselineDeploymentId: 'e77a63b0-ec5d-46bf-bb89-b1829066ba90',
+    baselineVersionId: '1a7cbbd0-d3a2-415f-8b75-890a1412c3f0',
+  },
+];
 const currentSha = 'a'.repeat(40);
-function fixture() {
+function fixture(resolution) {
   const originalId = Number(resolution.runId);
   const currentId = originalId + 2;
   const baseline = {
@@ -129,92 +141,94 @@ function fixture() {
   };
 }
 
-test('reviewed failed-no-write resolution preserves the immutable pending receipt', async () => {
-  const p = fixture();
-  const before = JSON.stringify(p.state.receipt);
-  await p.run();
-  assert.equal(JSON.stringify(p.state.receipt), before);
-  assert.equal(p.state.receipt.state, 'pending');
-});
-
-for (const [name, mutate] of [
-  [
-    'job and receipt disagree about the attempt',
-    (p) => {
-      p.state.jobAttempt = 2;
-    },
-  ],
-  [
-    'artifact and job disagree about the attempt',
-    (p) => {
-      p.state.artifactAttempt = 2;
-    },
-  ],
-  [
-    'job and run disagree about the id',
-    (p) => {
-      p.state.jobOverride = { run_id: p.state.originalId - 1 };
-    },
-  ],
-  [
-    'attempt 2',
-    (p) => {
-      p.state.receipt.runAttempt = '2';
-    },
-  ],
-  [
-    'different digest',
-    (p) => {
-      p.state.receipt.digest = 'c'.repeat(64);
-    },
-  ],
-  [
-    'different run',
-    (p) => {
-      p.state.receipt.runId = String(p.state.originalId + 9);
-    },
-  ],
-  [
-    'different SHA',
-    (p) => {
-      p.state.receipt.sha = 'd'.repeat(40);
-    },
-  ],
-  [
-    'different active baseline',
-    (p) => {
-      p.state.baseline.versions[0].version_id =
-        '22222222-2222-2222-2222-222222222222';
-    },
-  ],
-  [
-    'different receipt baseline',
-    (p) => {
-      p.state.receipt.rollback.versions[0].version_id =
-        '22222222-2222-2222-2222-222222222222';
-    },
-  ],
-  [
-    'an uploaded version',
-    (p) => {
-      p.state.receipt.versionId = resolution.baselineVersionId;
-    },
-  ],
-  [
-    'second pending replay',
-    (p) => {
-      p.state.pendingId = p.state.originalId + 1;
-    },
-  ],
-  [
-    'older pending attempt',
-    (p) => {
-      p.state.pendingId = p.state.originalId - 1;
-    },
-  ],
-])
-  test(`${name} stays fenced`, async () => {
-    const p = fixture();
-    mutate(p);
-    await assert.rejects(p.run(), /never replay|Malformed publication job/u);
+for (const resolution of resolutions) {
+  test(`reviewed failed-no-write resolution preserves the immutable pending receipt (${resolution.runId})`, async () => {
+    const p = fixture(resolution);
+    const before = JSON.stringify(p.state.receipt);
+    await p.run();
+    assert.equal(JSON.stringify(p.state.receipt), before);
+    assert.equal(p.state.receipt.state, 'pending');
   });
+
+  for (const [name, mutate] of [
+    [
+      'job and receipt disagree about the attempt',
+      (p) => {
+        p.state.jobAttempt = 2;
+      },
+    ],
+    [
+      'artifact and job disagree about the attempt',
+      (p) => {
+        p.state.artifactAttempt = 2;
+      },
+    ],
+    [
+      'job and run disagree about the id',
+      (p) => {
+        p.state.jobOverride = { run_id: p.state.originalId - 1 };
+      },
+    ],
+    [
+      'attempt 2',
+      (p) => {
+        p.state.receipt.runAttempt = '2';
+      },
+    ],
+    [
+      'different digest',
+      (p) => {
+        p.state.receipt.digest = 'c'.repeat(64);
+      },
+    ],
+    [
+      'different run',
+      (p) => {
+        p.state.receipt.runId = String(p.state.originalId + 9);
+      },
+    ],
+    [
+      'different SHA',
+      (p) => {
+        p.state.receipt.sha = 'd'.repeat(40);
+      },
+    ],
+    [
+      'different active baseline',
+      (p) => {
+        p.state.baseline.versions[0].version_id =
+          '22222222-2222-2222-2222-222222222222';
+      },
+    ],
+    [
+      'different receipt baseline',
+      (p) => {
+        p.state.receipt.rollback.versions[0].version_id =
+          '22222222-2222-2222-2222-222222222222';
+      },
+    ],
+    [
+      'an uploaded version',
+      (p) => {
+        p.state.receipt.versionId = resolution.baselineVersionId;
+      },
+    ],
+    [
+      'second pending replay',
+      (p) => {
+        p.state.pendingId = p.state.originalId + 1;
+      },
+    ],
+    [
+      'older pending attempt',
+      (p) => {
+        p.state.pendingId = p.state.originalId - 1;
+      },
+    ],
+  ])
+    test(`${name} stays fenced (${resolution.runId})`, async () => {
+      const p = fixture(resolution);
+      mutate(p);
+      await assert.rejects(p.run(), /never replay|Malformed publication job/u);
+    });
+}

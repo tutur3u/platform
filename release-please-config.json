@@ -103,7 +103,13 @@
     "apps/mobile": {
       "component": "mobile",
       "package-name": "mobile",
-      "release-type": "dart"
+      "release-type": "dart",
+      "changelog-sections": [
+        { "type": "feat", "section": "Highlights" },
+        { "type": "fix", "section": "Fixes" },
+        { "type": "perf", "section": "Fixes" },
+        { "type": "revert", "section": "Fixes" }
+      ]
     },
     "apps/nova": {
       "component": "nova",
@@ -188,6 +194,10 @@
     "packages/editor": {
       "component": "editor",
       "package-name": "@tuturuuu/editor"
+    },
+    "packages/feature-flags": {
+      "component": "feature-flags",
+      "package-name": "@tuturuuu/feature-flags"
     },
     "packages/finance-core": {
       "component": "finance-core",
@@ -301,9 +311,9 @@
       "component": "trigger",
       "package-name": "@tuturuuu/trigger"
     },
-    "packages/turnstile": {
-      "component": "turnstile",
-      "package-name": "@tuturuuu/turnstile"
+    "packages/cloudflare": {
+      "component": "cloudflare",
+      "package-name": "@tuturuuu/cloudflare"
     },
     "packages/types": {
       "component": "types",

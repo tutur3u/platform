@@ -4,6 +4,7 @@ import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
 } from '../../request-access';
+import { validateFinanceReferences } from '../../workspace-references';
 
 interface Params {
   params: Promise<{
@@ -109,6 +110,12 @@ export async function PUT(
   }
 
   const body = await req.json();
+  const invalidWallet = await validateFinanceReferences(
+    sbAdmin,
+    normalizedWsId,
+    { wallet_id: body.wallet_id }
+  );
+  if (invalidWallet) return invalidWallet;
 
   // Build the update data - only include fields that are provided
   const updateData: DebtLoanUpdate = {};

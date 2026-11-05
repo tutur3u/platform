@@ -6,7 +6,7 @@ import { requireAiAgentAdmin } from './access';
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   getPermissions: vi.fn(),
-  resolveSessionAuthContext: vi.fn(),
+  resolveSatelliteRequestActor: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -17,9 +17,9 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: (...args: unknown[]) => mocks.getPermissions(...args),
 }));
 
-vi.mock('@/lib/api-auth', () => ({
-  resolveSessionAuthContext: (...args: unknown[]) =>
-    mocks.resolveSessionAuthContext(...args),
+vi.mock('@tuturuuu/satellite/workspace-access', () => ({
+  resolveSatelliteRequestActor: (...args: unknown[]) =>
+    mocks.resolveSatelliteRequestActor(...args),
 }));
 
 function request() {
@@ -32,7 +32,7 @@ describe('requireAiAgentAdmin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.createAdminClient.mockResolvedValue({ id: 'admin-client' });
-    mocks.resolveSessionAuthContext.mockResolvedValue({
+    mocks.resolveSatelliteRequestActor.mockResolvedValue({
       ok: true,
       supabase: { id: 'session-client' },
       user: { email: 'root@example.com', id: 'user-1' },
@@ -42,15 +42,13 @@ describe('requireAiAgentAdmin', () => {
     });
   });
 
-  it('accepts chat app-session auth before checking root AI-agent permissions', async () => {
+  it('accepts infra app-session auth before checking root AI-agent permissions', async () => {
     const result = await requireAiAgentAdmin(request());
 
     expect(result.ok).toBe(true);
-    expect(mocks.resolveSessionAuthContext).toHaveBeenCalledWith(
+    expect(mocks.resolveSatelliteRequestActor).toHaveBeenCalledWith(
       expect.anything(),
-      {
-        allowAppSessionAuth: { targetApp: 'chat' },
-      }
+      'infra'
     );
     expect(mocks.getPermissions).toHaveBeenCalledWith({
       user: { email: 'root@example.com', id: 'user-1' },

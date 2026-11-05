@@ -47,6 +47,15 @@ for roles, independent review, publication, receipts and retirement.
   skips or fails, stop and report the blocker rather than pushing manually.
 - Do not commit secrets, API keys, tokens, credentials, or raw sensitive values.
   Reference environment variables by name only.
+- Keep conversation history out of maintainer-facing text. Code comments, docs,
+  commit messages and PR titles and descriptions describe the code as it is and
+  why. Never record the conversation, prompt, review rounds or iteration history
+  in them: no "as requested", "per the user", "as discussed", "in the previous
+  iteration", "by this lane", or agent names with times. Comments and docs also
+  avoid "previously", "changed from", "now uses" and "used to be"; state the
+  current behavior and its reason. A PR or commit body may describe the diff;
+  the discussion that led to it stays in the PR thread. Agent sessions run a
+  PreToolUse check that refuses such edits: rephrase, never work around it.
 - Do not manually edit `package.json` to add or update dependencies. Use the
   package manager command for the owning workspace.
 - Gradually adopt Oxlint/Oxfmt through explicit owned-file paths with
@@ -67,7 +76,7 @@ for roles, independent review, publication, receipts and retirement.
   Record service-specific cost/stop evidence in the adoption guidance.
 - Put new crons, queues, schedulers and heavy backend work on Cloudflare, not Vercel
   Cron, Next `after()`, pg_cron, Edge Functions or Trigger.dev; see the shrink-only
-  [ownership guard](apps/docs/build/devops/cloudflare-backend-ownership.mdx).
+  [ownership guard](docs-internal/build/devops/cloudflare-backend-ownership.mdx).
 - Maintain first-party domain/service libraries independently of React frameworks.
   Inject request identity, storage, navigation and localization at framework
   adapters; keep portable entrypoints free of Next.js/React Router/Cloudflare
@@ -219,7 +228,7 @@ for roles, independent review, publication, receipts and retirement.
     preserve active app contracts; TanStack Query remains the active client
     library. `apps/web` stays on Next.js until separately scheduled.
   - Target platform is Cloudflare (Workers, Hyperdrive→Postgres, R2, DOs, Queues);
-    Supabase and Vercel are transitional. Follow the [stop-list](apps/docs/build/devops/cloudflare-backend-ownership.mdx#stop-list):
+    Supabase and Vercel are transitional. Follow the [stop-list](docs-internal/build/devops/cloudflare-backend-ownership.mdx#stop-list):
     no new Supabase-only features, Vercel crons/edge config or mobile direct-Supabase calls.
   - New or substantially reworked Web API handlers belong under
     `apps/web/src/app/api/**`, not `legacy-api-routes/**`. Move colocated tests
@@ -321,7 +330,7 @@ Use only the topic relevant to the change under `plugins/tuturuuu/skills/`:
 - Database/API/storage: `tuturuuu-database/references/database-api-patterns.md`.
 - Web release metadata: `tuturuuu-web-release/references/web-release-checklist.md`.
 - CI/root scripts: `tuturuuu-development-tooling/references/ci-tooling-patterns.md`.
-- Docker blue/green: `tuturuuu-ci-docs/references/blue-green-patterns.md`.
+- Docker blue/green (paused; Docker is inactive, see the active runtime policy above): `tuturuuu-ci-docs/references/blue-green-patterns.md`.
 - Mobile: `tuturuuu-mobile-task-board/references/mobile-patterns.md`.
 
 When work reveals a reusable failure or changed operating rule, update the

@@ -3,7 +3,9 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { connection, NextResponse } from 'next/server';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
 
@@ -22,13 +24,24 @@ export async function GET() {
       await resolveAuthenticatedSessionUser(supabase);
     if (sessionSupabase) supabase = sessionSupabase;
 
+    if (!user)
+      return Response.json({ message: 'Unauthorized' }, { status: 401 });
+
+    const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
+    if (!permissions?.containsPermission('ai_lab')) {
+      return Response.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
     const staffUser = user
       ? await getVerifiedAuthUser(
           await createAdminClient({ noCookie: true }),
           user.id
         )
       : null;
-    if (!isVerifiedTuturuuuStaffSession(staffUser, { allowXwf: true })) {
+    if (
+      !user ||
+      !isVerifiedTuturuuuStaffSession(staffUser, { allowXwf: true })
+    ) {
       return NextResponse.json(
         { message: 'Unauthorized - Tuturuuu admin access required' },
         { status: 403 }

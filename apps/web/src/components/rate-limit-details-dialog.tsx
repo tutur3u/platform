@@ -1,11 +1,11 @@
 'use client';
 
 import type { TurnstileInstance } from '@marsidev/react-turnstile';
+import { resolveTurnstileClientState } from '@tuturuuu/cloudflare/turnstile/client';
 import { AlertTriangle } from '@tuturuuu/icons/lucide-static';
 import { submitRateLimitAppeal } from '@tuturuuu/internal-api';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { unblockBlockedIp } from '@tuturuuu/internal-api/infrastructure';
-import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
 import {
   Dialog,
   DialogContent,

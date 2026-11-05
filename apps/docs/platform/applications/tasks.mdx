@@ -1,6 +1,8 @@
 ---
 title: "Tasks - Task Management"
 description: "Hierarchical task management with bucket dump and cross-board coordination"
+updatedAt: "2026-10-31"
+audience: users
 ---
 
 # Tasks - Smart Task Management
@@ -60,8 +62,8 @@ client accesses these tables; mobile continues through the product APIs.
 
 Task-list change subscriptions use Cloudflare, so `task_lists` is excluded from
 `supabase_realtime`. Regression coverage is
-`apps/database/supabase/tests/task-list-assignee-authorization.sql` (SR-337 and
-SR-338), alongside board access and shared-task route tests.
+`apps/database/supabase/tests/task-list-assignee-authorization.sql` (internal security
+reviews), alongside board access and shared-task route tests.
 
 ## Overview
 
@@ -101,6 +103,19 @@ callers receive SQLSTATE `42501`. Signatures, filtering and successful self
 results remain unchanged across Tasks, Calendar, retained Web planning views
 and AI task tools. The database regression packet is
 `apps/database/supabase/tests/time-task-rpc-scoping.sql`.
+
+## Personal placement and template backgrounds
+
+Personal placement in Tasks requires current source-task access, including a
+valid board share where supported. An assignment or personal override alone does
+not authorize placement after source access is lost. Moving a task to a terminal
+status also requires source edit access. The personal-placement route scenario
+tests cover shared-board access and stale assignments or overrides.
+
+Template background keys must belong to the template's workspace under its
+`template-backgrounds` prefix. Tasks, shared template UI and retained Web routes
+apply the same rule before saving or signing a background. The helper regression
+cases live in `packages/utils/src/__tests__/template-background-path.test.ts`.
 
 ## Board And List Name Uniqueness
 
@@ -935,66 +950,99 @@ export async function convertNoteToProject(data: {
 
 ## Task Cycles (Sprints)
 
+Cycles are time-boxed sets of tasks in one workspace. The Tasks app sidebar
+lists **Cycles** (`/{wsId}/cycles`) and **Cycle planning**
+(`/{wsId}/cycles/planning`) under **Tasks**; both are enabled for members with
+`manage_projects`, the permission both pages enforce.
+
 ```sql
-CREATE TABLE task_cycles (
-  id text PRIMARY KEY,
-  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+-- apps/database/supabase/migrations/20250929060000_add_task_cycles.sql
+CREATE TABLE public.task_cycles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ws_id uuid NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
   name text NOT NULL,
-  start_date date NOT NULL,
-  end_date date NOT NULL,
-  created_at timestamptz DEFAULT now()
+  status text DEFAULT 'planned', -- planned | active | completed | cancelled
+  start_date date,
+  end_date date
+  -- plus description, creator_id, archived, deleted, timestamps
 );
 
--- Link tasks to cycles
-ALTER TABLE workspace_tasks
-ADD COLUMN cycle_id text REFERENCES task_cycles(id) ON DELETE SET NULL;
+-- Tasks join cycles through a link table; there is no tasks.cycle_id column.
+CREATE TABLE public.task_cycle_tasks (
+  task_id uuid NOT NULL REFERENCES public.tasks(id) ON DELETE CASCADE,
+  cycle_id uuid NOT NULL REFERENCES public.task_cycles(id) ON DELETE CASCADE,
+  created_at timestamptz DEFAULT now(),
+  PRIMARY KEY (task_id, cycle_id)
+);
 ```
 
-**Usage:**
+### Cycle and backlog rules
 
-```typescript
-"use server";
+| Rule | Default and enforcement |
+|------|-------------------------|
+| Same workspace | A task can join a cycle only when its board's workspace equals the cycle's workspace. The `enforce_task_cycle_task_workspace` trigger rejects other links for every role, including service-role writes. The API validates the cycle and task server-side first and returns `404`. |
+| Fixed workspace | A cycle's `ws_id` cannot change once created (`prevent_task_cycle_workspace_change`). |
+| One cycle per task | Applies to workspace cycles (`task_cycles.board_id IS NULL`). Assigning goes through `public.assign_task_cycle(task, cycle)`, which locks the task row (`FOR NO KEY UPDATE`), checks the cycle and both workspaces, and replaces the task's links to workspace cycles with one, so assigning a task to another cycle moves it. There is no unique index on `task_cycle_tasks.task_id`. Concurrent assigns of one task wait for each other; one that waits longer than 5 s, or hits a deadlock, gets a retryable `409`. |
+| Board sprints | Board sprints (`board_id` set) keep one `task_cycle_tasks` row per sprint as history, plus the open-sprint row, managed by the board sprint functions and trigger. The cycle planning endpoints refuse them with `400` (`code: board_sprint`), and an assign never deletes or changes their rows. A task can be in a workspace cycle and a board sprint at the same time. |
+| Deleted cycles | A deleted cycle (`deleted = true`) is not found (`404`) for planning, and its links do not count as the task's cycle. |
+| Current cycle | A task's cycle is its newest link to a live workspace cycle (latest `created_at`, then the lowest `cycle_id`). The cycle task list shows a task only in that cycle, and cycle task counts count it only there. Board-sprint counts are each sprint's own rows. |
+| Backlog | Open tasks in no live workspace cycle: list status `not_started`, `active` or `review`; task not deleted; list and board not deleted or archived. Board-sprint rows (including past sprints' history) and links to deleted cycles do not take a task out of the backlog. Backlog is derived, not stored. |
+| Excluded | Tasks in `documents` lists cannot join a cycle. |
+| Row cap | The cycle task list and the backlog each return at most 500 tasks, newest first (`?limit=` can lower the backlog cap). There is no pagination yet; larger cycles or backlogs are truncated until pagination ships as a follow-up. |
+| Access | Any workspace member can read cycle tasks and the backlog. Assigning and removing through the Tasks API require `manage_projects`; the API validates the workspace and then writes with the service role. `assign_task_cycle` is executable by `service_role` only. The Data API `authenticated` role does hold table grants on `task_cycles` and `task_cycle_tasks` (from `20250929060000`), limited by RLS to workspace members and, for writes, to workspace cycles, so a direct member write can still add a second link without `manage_projects`; reads then use the current-cycle rule. |
 
-import { createClient } from "@tuturuuu/supabase/next/server";
+Exceptions: rows that existed before the workspace guard are not rewritten.
+Audit them with `apps/database/verification/task-cycle-cross-workspace-links.sql`;
+cleanup needs release-authority approval. Tasks linked to several workspace
+cycles before one-cycle-per-task are not cleaned up either: reads use the
+current-cycle rule above, and the task's next assign replaces all of its
+workspace-cycle links (board-sprint rows stay).
 
-export async function createCycle(data: {
-  wsId: string;
-  name: string;
-  startDate: Date;
-  endDate: Date;
-}) {
-  const supabase = await createClient();
+Regression coverage: `apps/database/supabase/tests/task-cycle-workspace-guard.sql`,
+`apps/database/supabase/tests/task-cycle-one-per-task.sql`, and the route tests
+under `apps/tasks/src/app/api/v1/workspaces/[wsId]/task-cycles/`.
 
-  const { data: cycle, error } = await supabase
-    .from("task_cycles")
-    .insert({
-      ws_id: data.wsId,
-      name: data.name,
-      start_date: data.startDate.toISOString().split("T")[0],
-      end_date: data.endDate.toISOString().split("T")[0],
-    })
-    .select()
-    .single();
+**API and client helpers** (`@tuturuuu/internal-api/task-cycles`). Both reads return
+`{ tasks: TaskCyclePlanningTask[] }`, matching `CyclePlanningTask` in
+`packages/tasks-ui/src/tu-do/cycles/planning/types.ts`: `id`, `name`,
+`display_number`, `ticket_prefix`, `priority`, `status` (list status),
+`board_id`, `cycle_id`, `assignees`, `projects` and `labels`.
 
-  if (error) throw error;
-  return cycle;
-}
+| Helper | Endpoint |
+|--------|----------|
+| `listTaskCycleTasks(wsId, cycleId)` | `GET /api/v1/workspaces/{wsId}/task-cycles/{cycleId}/tasks` |
+| `assignTaskToCycle(wsId, cycleId, taskId)` | `POST …/task-cycles/{cycleId}/tasks` with `{ taskId }` |
+| `unassignTaskFromCycle(wsId, cycleId, taskId)` | `DELETE …/task-cycles/{cycleId}/tasks` with `{ taskId }` |
+| `listWorkspaceTaskBacklog(wsId, { limit })` | `GET …/task-cycles/backlog?limit=` (max 500) |
 
-export async function getActiveCycle(wsId: string) {
-  const supabase = await createClient();
-  const today = new Date().toISOString().split("T")[0];
+Malformed `wsId` or `cycleId` values return `404`.
 
-  const { data: cycle } = await supabase
-    .from("task_cycles")
-    .select("*")
-    .eq("ws_id", wsId)
-    .lte("start_date", today)
-    .gte("end_date", today)
-    .single();
+### Cycle planning view
 
-  return cycle;
-}
-```
+`/{wsId}/cycles/planning` lists one scope at a time: **Current cycle**, **Next**,
+or **Backlog**. It needs `manage_projects`, like the Cycles page.
+
+- **Scopes.** Current is the `active` cycle (the latest started, if several),
+  else a `planned` cycle whose dates include today. Next is the earliest
+  `planned` cycle starting after today. Backlog is every open task with no
+  cycle. The view opens on Current, or on Backlog when no cycle is scheduled.
+  "Today" is the viewer's local calendar day.
+- **Grouping.** Tasks are grouped by list status in the order In progress, In
+  review, Not started, Done, Closed. Closed starts collapsed, empty groups are
+  hidden, and tasks in `documents` lists are not shown.
+- **Filters.** Assignee (Me, Unassigned, people) comes first, then Project and
+  search. Priority and labels are under **More**. Filter choices come from the
+  loaded tasks.
+- **Moving tasks.** Use a row's menu, or drag the row onto a scope. The move
+  shows immediately and is undone, with an error toast, if the write fails.
+  Done and Closed tasks cannot move to the backlog, which lists open tasks only.
+- **Scope changes.** Filter values with no option in the new scope are dropped.
+  A scope at the 500-task cap shows a one-line note.
+- **Empty states.** Each is a single line with one action.
+
+Code: `packages/tasks-ui/src/tu-do/cycles/planning/`. Regression coverage:
+`__tests__/cycle-planning-model.test.ts` and
+`__tests__/cycle-planning-view.test.tsx`.
 
 ## Task Estimation
 

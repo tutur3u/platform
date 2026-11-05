@@ -63,6 +63,7 @@ type PermissionId =
 
 type AdminState = {
   appAdapter?: string;
+  authEmailConfirmed?: boolean;
   bindingEnabled?: boolean;
   canonicalActive?: boolean;
   privateFullName?: string | null;
@@ -87,6 +88,7 @@ function createQueryResult(
 function createAdminClientMock(state: AdminState = {}) {
   const adminState = {
     appAdapter: 'yoola',
+    authEmailConfirmed: true,
     bindingEnabled: true,
     canonicalActive: true,
     pendingDirectInvite: false,
@@ -281,6 +283,9 @@ function createAdminClientMock(state: AdminState = {}) {
             user: {
               id: victimUserId,
               email: 'victim@example.com',
+              email_confirmed_at: adminState.authEmailConfirmed
+                ? '2026-06-01T00:00:00.000Z'
+                : null,
               user_metadata: {
                 avatar_url: 'https://example.com/auth-victim.png',
                 display_name: 'Auth Victim',
@@ -305,12 +310,14 @@ function mockRegisteredApp(
     app: {
       allowedScopes,
       allowedWorkspaceIds,
+      callbackPaths: [],
       createdAt: null,
       createdBy: null,
       displayName: appId,
       enabled: true,
       id: appId,
       origins: [`https://${appId}.example.com`],
+      requirePkce: false,
       secretIssuedAt: null,
       secretLastFour: 'test',
       updatedAt: null,

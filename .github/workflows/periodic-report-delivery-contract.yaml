@@ -75,7 +75,7 @@ jobs:
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - uses: ./.github/actions/cache-supabase-images
       - name: Check bounded race and workflow wiring
-        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/periodic-report-delivery-contract.test.mjs
+        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/periodic-report-delivery-contract.test.mjs apps/database/scripts/periodic-report-delivery-held.test.mjs apps/database/scripts/periodic-report-delivery-resend.test.mjs
       - name: Apply complete schema, run strict pgTAP, generate actual schema types
         run: node apps/database/scripts/verify-periodic-report-delivery-contract.mjs
       - name: Strictly check actual generated periodic delivery types

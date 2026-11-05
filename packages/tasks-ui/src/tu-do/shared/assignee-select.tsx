@@ -9,10 +9,7 @@ import {
   UserX,
   X,
 } from '@tuturuuu/icons';
-import {
-  listWorkspaceTaskBoardViewableMembers,
-  updateWorkspaceTask,
-} from '@tuturuuu/internal-api/tasks';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
@@ -30,6 +27,10 @@ import {
   useState,
 } from 'react';
 import { useBoardBroadcast } from './board-broadcast-context';
+import {
+  fetchBoardMembers,
+  getBoardMembersQueryKey,
+} from './board-members-query';
 import {
   patchTaskInVisibleCaches,
   restoreVisibleTaskCaches,
@@ -118,23 +119,10 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
       enabled: Boolean(wsId) && !shouldFetchBoardMembers,
     });
     const boardMembersQuery = useQuery({
-      queryKey: ['task-board-viewable-members', wsId, boardId],
+      queryKey: getBoardMembersQueryKey(wsId ?? '', boardId ?? ''),
       queryFn: async (): Promise<Member[]> => {
         if (!wsId || !boardId) return [];
-
-        const payload = await listWorkspaceTaskBoardViewableMembers(
-          wsId,
-          boardId
-        );
-        const members = Array.isArray(payload?.members) ? payload.members : [];
-
-        return members.map((member) => ({
-          id: member.user_id,
-          user_id: member.user_id,
-          display_name: member.display_name || member.email || member.user_id,
-          email: member.email ?? undefined,
-          avatar_url: member.avatar_url ?? undefined,
-        }));
+        return fetchBoardMembers(wsId, boardId);
       },
       enabled: shouldFetchBoardMembers,
       staleTime: 5 * 60 * 1000,

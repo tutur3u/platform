@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
 import 'package:mobile/features/tasks/widgets/task_surface.dart';
+import 'package:mobile/features/tasks_boards/widgets/task_priority_visuals.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
@@ -290,12 +291,9 @@ class _PriorityChip extends StatelessWidget {
       theme.colorScheme,
     );
 
-    final label = switch (priority) {
-      'critical' => l10n.tasksPriorityCritical,
-      'high' => l10n.tasksPriorityHigh,
-      'low' => l10n.tasksPriorityLow,
-      _ => l10n.tasksPriorityNormal,
-    };
+    final label =
+        (TaskPriorityLevel.tryParse(priority) ?? TaskPriorityLevel.normal)
+            .label(l10n);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { requireNovaAppSessionUser } from '@/lib/app-session';
+import { canManageNovaChallenge } from '@/lib/challenge-management-auth';
 import SessionClient from './client';
 import type { SessionData, SessionSubmission } from './types';
 
@@ -41,6 +42,10 @@ export default async function SessionPage({ params: futureParams }: Props) {
   if (error || !session) {
     console.error('Error fetching session:', error);
     return notFound();
+  }
+
+  if (!(await canManageNovaChallenge(user, session.challenge_id, sbAdmin))) {
+    notFound();
   }
 
   const { data: sessionUser, error: sessionUserError } = await sbAdmin

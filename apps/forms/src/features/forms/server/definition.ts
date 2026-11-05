@@ -93,7 +93,8 @@ export function buildFormDefinition({
                     storagePath?: string | null;
                     url?: string | null;
                     alt?: string | null;
-                  }
+                  },
+                  form.ws_id
                 )
               : DEFAULT_FORM_MEDIA,
             settings: parseQuestionSettings(question.settings),
@@ -109,7 +110,8 @@ export function buildFormDefinition({
                         storagePath?: string | null;
                         url?: string | null;
                         alt?: string | null;
-                      }
+                      },
+                      form.ws_id
                     )
                   : DEFAULT_FORM_MEDIA,
               })),

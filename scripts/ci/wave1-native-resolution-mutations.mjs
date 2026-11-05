@@ -19,6 +19,9 @@ const root = dirname(fileURLToPath(import.meta.url));
 const moduleName = 'wave1-native-production-resolution.mjs';
 const testName = 'wave1-native-production-resolution-predicates.test.mjs';
 const source = readFileSync(join(root, moduleName), 'utf8');
+const resolvedRunIds = JSON.parse(
+  readFileSync(join(root, 'wave1-native-production-resolutions.json'), 'utf8')
+).map((record) => record.runId);
 const start = source.indexOf(
   '  return (',
   source.indexOf('export function matchesFailedNoWriteResolution')
@@ -80,14 +83,19 @@ try {
       (m) => m[1]
     );
     const expected = `predicate ${String(index + 1).padStart(2, '0')}:`;
-    assert.ok(
-      result.status !== 0 && failures.some((name) => name.startsWith(expected)),
-      `Mutation ${index + 1} survived or failed outside its own negative: ${predicate}`
-    );
+    for (const runId of resolvedRunIds)
+      assert.ok(
+        result.status !== 0 &&
+          failures.some(
+            (name) => name.startsWith(expected) && name.endsWith(`(${runId})`)
+          ),
+        `Mutation ${index + 1} survived for resolved run ${runId}: ${predicate}`
+      );
     rows.push({
       predicate: index + 1,
       expression: predicate.replace(/\s+/gu, ' '),
       result: 'killed',
+      matchedEntries: resolvedRunIds,
       failedTests: failures,
     });
   }

@@ -158,6 +158,7 @@ class _ResetHarness {
   Future<void>? lockWork;
   bool lockCompleted = false;
   Future<void> mount(WidgetTester tester) async {
+    AssistantCreationHoldBanner.resetDismissals();
     SharedPreferences.resetStatic();
     SharedPreferencesStorePlatform.instance = host;
     AssistantResetPreferences.revokeConsent(_envelopeKey);

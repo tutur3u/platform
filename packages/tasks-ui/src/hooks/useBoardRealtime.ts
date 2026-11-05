@@ -5,7 +5,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import type { BoardBroadcastFn } from '../tu-do/shared/board-broadcast-context';
 import {
   type BoardRealtimePayload,
@@ -44,6 +44,11 @@ export function useBoardRealtime(
   const t = useTranslations('common');
 
   // Hold channel ref so the returned broadcast fn always targets the current channel
+  const activeBoardIdRef = useRef(boardId);
+  useLayoutEffect(() => {
+    activeBoardIdRef.current = boardId;
+  }, [boardId]);
+  const channelBoardIdRef = useRef<string | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const localChannelRef = useRef<BroadcastChannel | null>(null);
   const localClientIdRef = useRef<string>(createRealtimeClientId());
@@ -104,7 +109,11 @@ export function useBoardRealtime(
   const postLocalBroadcast = useCallback(
     (event: string, payload: BoardRealtimePayload) => {
       const localChannel = localChannelRef.current;
-      if (!localChannel) return;
+      if (
+        !localChannel ||
+        localChannel.name !== `${LOCAL_BROADCAST_CHANNEL_PREFIX}:${boardId}`
+      )
+        return;
 
       try {
         localChannel.postMessage({ event, payload });
@@ -117,7 +126,7 @@ export function useBoardRealtime(
         }
       }
     },
-    []
+    [boardId]
   );
 
   const handleBoardRealtimeEvent = useBoardRealtimeEventHandler({
@@ -135,16 +144,25 @@ export function useBoardRealtime(
       event: string,
       payload: Record<string, unknown>
     ) => {
+      if (!boardId || activeBoardIdRef.current !== boardId) return;
       const payloadWithMetadata = withEventMetadata(payload);
       handleBoardRealtimeEvent(event, payloadWithMetadata);
       postLocalBroadcast(event, payloadWithMetadata);
-      channel?.send({
+      const targetChannel =
+        enabled && channelBoardIdRef.current === boardId ? channel : null;
+      targetChannel?.send({
         type: 'broadcast',
         event,
         payload: payloadWithMetadata,
       });
     },
-    [handleBoardRealtimeEvent, postLocalBroadcast, withEventMetadata]
+    [
+      boardId,
+      enabled,
+      handleBoardRealtimeEvent,
+      postLocalBroadcast,
+      withEventMetadata,
+    ]
   );
 
   useEffect(() => {
@@ -178,7 +196,7 @@ export function useBoardRealtime(
       clearTimeout(destroyTimerRef.current);
       destroyTimerRef.current = null;
 
-      if (channelRef.current) {
+      if (channelRef.current && channelBoardIdRef.current === boardId) {
         if (DEV_MODE) {
           console.log(
             `[useBoardRealtime] Reusing channel for board ${boardId} (StrictMode)`
@@ -212,6 +230,7 @@ export function useBoardRealtime(
       PRIVATE_TASK_REALTIME_CHANNEL_CONFIG
     );
     channelRef.current = channel;
+    channelBoardIdRef.current = boardId;
 
     channel
       .on('broadcast', { event: 'task:upsert' }, ({ payload }) => {
@@ -400,6 +419,7 @@ export function useBoardRealtime(
 
   const broadcast: BoardBroadcastFn = useCallback(
     (event: string, payload: Record<string, unknown>) => {
+      if (!boardId || activeBoardIdRef.current !== boardId) return;
       const buffer = batchBufferRef.current;
       if (!buffer.has(event)) buffer.set(event, []);
       buffer.get(event)!.push(payload);
@@ -410,11 +430,12 @@ export function useBoardRealtime(
       }
       batchFlushTimerRef.current = setTimeout(flushBroadcastBatch, 50);
     },
-    [flushBroadcastBatch]
+    [boardId, flushBroadcastBatch]
   );
 
-  // Clean up sender batch timer on unmount (safety net)
+  // Buffered payloads belong to the board that queued them.
   useEffect(() => {
+    if (!boardId) return;
     return () => {
       if (batchFlushTimerRef.current) {
         clearTimeout(batchFlushTimerRef.current);
@@ -422,7 +443,7 @@ export function useBoardRealtime(
       }
       batchBufferRef.current.clear();
     };
-  }, []);
+  }, [boardId]);
 
   return { broadcast };
 }

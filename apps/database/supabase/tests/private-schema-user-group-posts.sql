@@ -372,9 +372,24 @@ select ok(
         'merge_workspace_users_phase2',
         'update_workspace_configs_with_approval_transitions'
       )
-      and coalesce(array_to_string(proc_row.proconfig, ','), '') not like '%private%'
+      and not (
+        coalesce(proc_row.proconfig, '{}') @> array['search_path=public, private, pg_temp']
+        or (
+          coalesce(proc_row.proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
+          and (
+            (proc_row.proname in ('merge_workspace_users', 'merge_workspace_users_phase1', 'merge_workspace_users_phase1d')
+              and proc_row.prosrc like '%private.user_group_posts%'
+              and proc_row.prosrc like '%private.user_group_post_logs%')
+            -- Batch wrappers delegate to the helper that keeps the private path.
+            or (proc_row.proname = 'merge_workspace_users_phase1d_batch'
+              and proc_row.prosrc like '%public.merge_workspace_users_batch_update(%')
+            or (proc_row.proname = 'merge_workspace_users_phase2'
+              and proc_row.prosrc like '%private.user_group_post_checks%')
+          )
+        )
+      )
   ),
-  'public merge and approval-config helpers include private in search_path'
+  'public merge and approval-config helpers resolve private post tables'
 );
 
 select ok(

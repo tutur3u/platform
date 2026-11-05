@@ -20,6 +20,10 @@ import {
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/storage/route-auth';
+import {
+  type StorageAccessAuditScope,
+  withStorageAccessAudit,
+} from '@/lib/storage/storage-access-audit';
 
 const listQuerySchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).optional().default(''),
@@ -30,7 +34,13 @@ const listQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
-export async function GET(
+export const GET = withStorageAccessAudit(
+  { action: 'list', route: '/api/v1/workspaces/[wsId]/storage/list' },
+  listWorkspaceStorage
+);
+
+async function listWorkspaceStorage(
+  audit: StorageAccessAuditScope,
   request: Request,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
@@ -44,6 +54,7 @@ export async function GET(
       return auth.response;
     }
     const { normalizedWsId, permissions, supabase, userId } = auth.context;
+    audit.set({ actorId: userId, wsId: normalizedWsId });
 
     const { searchParams } = new URL(request.url);
     const parsed = listQuerySchema.safeParse({
@@ -68,6 +79,7 @@ export async function GET(
       return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
     }
 
+    audit.set({ kind: 'folder', path: sanitizedPath || null });
     if (sanitizedPath && isExcludedDrivePath(normalizedWsId, sanitizedPath)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }

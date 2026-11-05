@@ -21,6 +21,10 @@ vi.mock('../../../lib/user-groups/route-auth', () => ({
 }));
 vi.mock('../../../lib/user-groups/route-helpers', () => ({
   resolveUserGroupRouteWorkspaceId: async () => 'workspace-1',
+  resolveRequestActorAuthUid: async () => 'actor',
+}));
+vi.mock('../../../lib/user-groups/groups-utils', () => ({
+  getUserGroupMembershipsForActor: async () => [],
 }));
 
 import { GET, POST } from './[reportId]/delivery/route';
@@ -81,7 +85,10 @@ describe('periodic report delivery route', () => {
       html: '<html>Branded report</html>',
       recipient: 'user@example.com',
     });
-    mocks.permissions.mockResolvedValue({ containsPermission: () => true });
+    mocks.permissions.mockResolvedValue({
+      wsId: 'workspace-1',
+      containsPermission: () => true,
+    });
     mocks.secret.mockResolvedValue(true);
     mocks.rpc.mockResolvedValue({
       data: { code: 200, queued: true, status: 'queued' },
@@ -124,8 +131,10 @@ describe('periodic report delivery route', () => {
   });
   it('returns the shared email HTML for read-only previews without queueing', async () => {
     mocks.permissions.mockResolvedValue({
+      wsId: 'workspace-1',
       containsPermission: (permission: string) =>
-        permission === 'view_user_groups_reports',
+        permission === 'view_user_groups_reports' ||
+        permission === 'manage_users',
     });
     database();
     const response = await GET(
@@ -139,7 +148,8 @@ describe('periodic report delivery route', () => {
     expect(mocks.preview).toHaveBeenCalledWith(
       expect.anything(),
       'workspace-1',
-      'report-1'
+      'report-1',
+      null
     );
     expect(mocks.rpc).not.toHaveBeenCalled();
   });

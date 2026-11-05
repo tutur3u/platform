@@ -1,7 +1,7 @@
 import { getAssignedCourseIds } from './courses';
 import { getAdmin } from './db';
 import { firstOf } from './helpers';
-import type { Db } from './types';
+import type { Db, TulearnRole } from './types';
 
 interface NamedGroup {
   id: string;
@@ -172,15 +172,32 @@ export async function getLearnerAssignments({
   );
 }
 
+/**
+ * The only periodic report stage a learner or linked parent may read in
+ * Tulearn. `private.periodic_report_stage` returns `sent` only once the email
+ * worker has delivered a `send` (not `test`) to the subject profile email, and
+ * delivery can only be requested for approved reports, so this matches exactly
+ * what a parent has already received by email. Draft, pending, rejected,
+ * approved-but-unsent, queued, processing, failed, blocked and skipped reports
+ * stay hidden. The approval check also hides a sent report whose approval was
+ * later revoked, because revoking approval does not reset `sent`.
+ */
+const LEARNER_VISIBLE_REPORT_STAGE = 'sent';
+
 export async function getLearnerReports({
   db,
   studentWorkspaceUserId,
+  viewerRole,
   wsId,
 }: {
   db?: Db;
   studentWorkspaceUserId: string;
+  viewerRole: TulearnRole;
   wsId: string;
 }) {
+  // Fail closed for any viewer other than the learner or a linked parent.
+  if (viewerRole !== 'student' && viewerRole !== 'parent') return [];
+
   const sbAdmin = await getAdmin(db);
   const courseIds = await getAssignedCourseIds({
     db: sbAdmin,
@@ -198,6 +215,9 @@ export async function getLearnerReports({
     .eq('user_id', studentWorkspaceUserId)
     .in('group_id', courseIds)
     .eq('user_ws_id', wsId)
+    // Released reports only: approved and delivered by email (stage `sent`).
+    .eq('report_stage', LEARNER_VISIBLE_REPORT_STAGE)
+    .eq('report_approval_status', 'APPROVED')
     .order('created_at', { ascending: false })
     .limit(12);
 

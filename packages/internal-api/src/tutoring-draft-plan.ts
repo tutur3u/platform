@@ -13,7 +13,7 @@ type RecordedSession = Pick<
   | 'teacher_user_id'
   | 'student_user_id'
   | 'attendance_status'
->;
+> & { group_id?: string };
 
 function range(date: string, time: string, duration: number) {
   if (
@@ -33,8 +33,8 @@ function range(date: string, time: string, duration: number) {
     duration > 480
   )
     return null;
-  const start =
-    Date.parse(`${date}T00:00:00Z`) / 60_000 + hour * 60 + minute + second / 60;
+  // Seconds are validated but ignored, matching the server's slot comparison.
+  const start = Date.parse(`${date}T00:00:00Z`) / 60_000 + hour * 60 + minute;
   return Number.isFinite(start) &&
     new Date(start * 60_000).toISOString().slice(0, 10) === date
     ? ([start, start + duration] as const)
@@ -94,7 +94,13 @@ export function rankTutoringDraftChoices({
       if (overlaps.some((s) => s.session.student_user_id === studentId))
         return [];
       const choices = catalog.filter(
-        (t) => !overlaps.some((s) => s.session.teacher_user_id === t.id)
+        (t) =>
+          !overlaps.some(
+            (s) =>
+              s.session.teacher_user_id === t.id &&
+              // One teacher tutors many learners in an identical slot.
+              !(s.range?.[0] === slot[0] && s.range?.[1] === slot[1])
+          )
       );
       return choices.length ? [{ ...suggestion, teachers: choices }] : [];
     })

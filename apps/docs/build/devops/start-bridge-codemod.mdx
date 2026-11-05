@@ -1,6 +1,8 @@
 ---
 title: "Start bridge: generic pages and the conversion codemod"
 description: "Render App Router pages generically in Start's RSC environment and convert a Next satellite onto @tuturuuu/start-bridge with one command."
+updatedAt: "2026-10-31"
+audience: developers
 ---
 
 This page extends the [Start bridge](/build/devops/start-bridge) v0 contract
@@ -297,7 +299,7 @@ cutover PR.
 
 `scripts/ci/native-root-browser.mjs` checks what the generated runtime test
 cannot reach: signed-in SSR and client hydration in a real browser. It runs on
-a build host with Chromium (Thanh) against the app's restored, sealed artifact:
+a build host with Chromium against the app's restored, sealed artifact:
 
 ```bash
 python3 scripts/ci/<app>-native-artifact.py restore apps/<app> --archive native.tar.gz --receipt restored.json

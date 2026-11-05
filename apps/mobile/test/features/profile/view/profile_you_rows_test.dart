@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/profile/view/profile_you_rows.dart';
@@ -23,7 +24,7 @@ void main() {
     workspaces = _MockWorkspaceCubit();
     const all = [
       Workspace(id: 'ws-1', name: 'Kallo'),
-      Workspace(id: 'ws-2', name: 'Tuturuuu'),
+      Workspace(id: 'ws-2', name: 'Tuturuuu', deleted: true),
       Workspace(id: 'ws-3', name: 'Personal', personal: true),
     ];
     whenListen(
@@ -32,6 +33,7 @@ void main() {
       initialState: const WorkspaceState(
         status: WorkspaceStatus.loaded,
         workspaces: all,
+        hiddenWorkspaceIds: ['ws-3'],
         currentWorkspace: Workspace(id: 'ws-1', name: 'Kallo'),
       ),
     );
@@ -82,6 +84,14 @@ void main() {
     expect(find.text('Workspaces'), findsOneWidget);
     // A bare count drives nothing, so the row does not show one.
     expect(find.text('3'), findsNothing);
+    expect(
+      tester
+          .widget<AppGroupedRow>(
+            find.byKey(const ValueKey('you-row-workspaces')),
+          )
+          .trailing,
+      isNull,
+    );
     for (final key in ['workspaces', 'timeline', 'settings']) {
       expect(
         tester.getSize(find.byKey(ValueKey('you-row-$key'))).height,

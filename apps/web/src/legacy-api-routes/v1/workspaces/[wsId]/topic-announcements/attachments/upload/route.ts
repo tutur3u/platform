@@ -50,7 +50,7 @@ export async function POST(
     const { wsId } = await params;
     const access = await resolveTopicAnnouncementsAccess(request, wsId, {
       requireManage: true,
-      teacherAccess: 'read',
+      teacherAccess: 'update',
     });
     if (access.response) return access.response;
 

@@ -195,6 +195,14 @@ export async function getGroupLinkedProducts({
   sbAdmin: TypedSupabaseClient;
   groupId: string;
 }): Promise<{ items: LinkedProductRow[]; count: number }> {
+  const { data: group, error: groupError } = await sbAdmin
+    .from('workspace_user_groups')
+    .select('ws_id')
+    .eq('id', groupId)
+    .maybeSingle();
+  if (groupError) throw groupError;
+  if (!group) return { items: [], count: 0 };
+
   const { data, error, count } = await sbAdmin
     .from('user_group_linked_products')
     .select(
@@ -202,6 +210,7 @@ export async function getGroupLinkedProducts({
       { count: 'exact' }
     )
     .eq('group_id', groupId)
+    .eq('workspace_products.ws_id', group.ws_id)
     .order('created_at', { ascending: false });
 
   if (error) throw error;

@@ -14,6 +14,9 @@ const mocks = vi.hoisted(() => ({
   getPermissions: vi.fn(),
 }));
 
+vi.mock('@/lib/tutoring/module-gate', () => ({
+  isTutoringEnabledForWorkspace: async () => true,
+}));
 vi.mock('next/server', () => ({
   NextResponse: { json: Response.json },
 }));

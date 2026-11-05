@@ -1,7 +1,8 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-09-23"
+updatedAt: "2026-10-31"
+audience: developers
 ---
 
 <Note>
@@ -178,7 +179,7 @@ No package version, dependency resolution or published changelog is rewritten.
   `vercel-production-platform.yaml`; self-hosted machines still use the Docker
   release flow below for their own runtime deployment.
 - `apps/apps` production deploys are handled by `vercel-production-apps.yaml`.
-- `apps/qr` production deploys are handled by `vercel-production-qr.yaml`.
+- `apps/tools` (which serves the public QR generator at `/qr`) production deploys are handled by `vercel-production-tools.yaml`.
 - Each production app uses a workflow-and-branch concurrency group whose
   `cancel-in-progress` predicate matches only `production` push events, so the
   newest production SHA remains deployable without letting `main` commits or
@@ -250,6 +251,50 @@ migration job still checks out the verified target commit explicitly before
 running `supabase db push --include-all`. This keeps production schema changes
 behind application deployment, staging validation, and branch promotion
 for the same commit.
+
+## Staging Host Scheme And Login Handoff
+
+Production retains its `.tuturuuu.com` shared cookies and existing host identities.
+Staging apps use exact `https://<app>.tutur3u.com` origins behind Cloudflare Access.
+Staging profiles and routes must not contain wildcard hosts. Credentialed CORS
+uses the exact app-host registry.
+
+<Warning>
+The native-only Web staging publisher serves probes and enabled native legal and
+security pages. Login and auth API paths return a static 404. Cross-app sign-in
+therefore requires a separate issuer auth migration before acceptance. Keep the
+global cookie-scope and cookie-name migration on hold until that flow is available
+and verified. Do not restore an upstream proxy to work around this hold.
+</Warning>
+
+The native Web profile uses `AUTH_COOKIE_PREFIX=__Host-` and leaves
+`AUTH_COOKIE_DOMAIN` unset. Its response boundary rejects every Domain attribute.
+App-session cookie names must start with `__Host-`, and prefixed cookies must use
+Secure and Path=/. Shared Start response boundaries and the Apps, Contacts, and Meet Worker exits
+also reject Domain-bearing cookies on registered staging hosts. These checks do not implement the held
+issuer or migrate global cookie readers.
+
+The native Web profile requires only the Cloudflare Access team domain and AUD.
+The profile does not require an upstream or a Vercel bypass secret.
+
+The existing Next issuer code generates a token valid for 300 seconds, builds a
+return to the registered app origin's `/verify-token`, and redeems the token once
+under a database row lock. Redemption binds the token to an app name. The native
+staging host currently does not serve those issuer endpoints. After the separate
+auth migration, each satellite must keep its own host-only app-session cookies,
+and all cookie readers must use the same prefixed names as the writers. Never
+configure a parent `.tutur3u.com` cookie domain.
+
+Reserved zone names cannot be staging profiles or staging app origins: the apex,
+`www`, `ingest`, `mastermind-hub`, `mastermind-hub-staging`, `iris-relay`,
+`iris-relay-staging`, `cf-bounce`, `_dmarc`, `_vercel`, `docs`, and any
+`*._domainkey` name. The CI reservation test loads native profiles, hosted staging
+profiles, Worker profiles and Start root hosts.
+
+Regression coverage includes the reserved-name CI test, native Web profile and
+seal tests, Web admission and cookie-boundary tests, and the shared staging
+cookie-policy tests. Hosted Access, DNS and sign-in acceptance remain separate
+release checks.
 
 ## Self-Hosted Web Release Flow
 
@@ -352,3 +397,36 @@ and multiplayer auth), Mail, Tasks, Infrastructure, AI, Calendar, Track, Meet,
 Parley, Lettin and Rewise. Examples list the
 name without a value; an unset setting fails closed for Azure-linked staff
 sessions. See [staff authorization](/platform/architecture/authorization#staff-session-verification).
+
+### Managed project branch validation
+
+Infrastructure project creation and updates reject unsafe selected branches with
+HTTP 400. The API and watcher share the same branch allowlist. Stored platform
+branches are validated before Git is invoked; unsafe values stop the poll with a
+value-free error rather than silently deploying the default branch. Missing or
+empty legacy values retain the production default. Whitespace is rejected rather
+than trimmed. This applies to the infrastructure API and blue-green watcher.
+Regression coverage lives in `branch-validation.test.ts`,
+`managed-project-branch.test.ts`, and `watch-blue-green-projects.test.js`.
+
+
+The legacy shared-cookie configuration remains deferred to the issuer migration;
+app Workers reject outgoing Domain cookies. The legacy scope uses one decision
+function in
+`@tuturuuu/supabase/shared-cookie-domains`, shared by utils and Supabase helpers.
+Servers explicitly admit staging with `TUTURUUU_DEPLOY_ENV=staging`. Browser
+bundles use the design's build-time `NEXT_PUBLIC_TUTURUUU_STAGING=1` signal
+when the private deploy environment is unavailable. Both require exactly
+the legacy staging cookie domain after domain normalization; invalid staging
+configuration
+throws rather than falling back to production. Vercel production markers veto the public flag. When the public flag is `1`,
+any defined private deploy environment other than `staging` throws, including
+empty, unknown, preview and production values, preventing divergent server and
+browser decisions. Without the public flag, private production markers reject
+and log an attempted staging cookie override once per process. Without staging admission, staging hosts get host-only cookies.
+Build staging server and browser artifacts with the same public flag and cookie
+domain to preserve refresh and sign-out scope across staging hosts.
+
+Regression coverage: `packages/utils/src/shared-cookie-deploy-env.test.ts` and
+`packages/utils/src/shared-cookie-browser-env.test.ts`. The Web fallback continues
+to reject mismatched upstream cookie domains with 502.

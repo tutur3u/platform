@@ -7,7 +7,9 @@ import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/presentation/what_needs_me.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
+import 'package:mobile/features/mastermind/view/inbox/what_needs_me_header.dart';
 import 'package:mobile/features/mastermind/view/widgets/show_all_row.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -39,6 +41,18 @@ class HomeNeedsYouCard extends StatelessWidget {
                   model.security.isEmpty
                       ? l10n.mastermindAllCaughtUp
                       : l10n.mastermindNothingNeedsReply,
+                ),
+              ),
+            if (hasNormal)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppLayout.rowHorizontalPadding,
+                  AppSpacing.md,
+                  AppLayout.rowHorizontalPadding,
+                  0,
+                ),
+                child: WhatNeedsMeHeader(
+                  counts: WhatNeedsMeCounts.from(model.needsYou),
                 ),
               ),
             for (final item in model.needsYouShown)
@@ -73,8 +87,9 @@ class HomeNeedsYouCard extends StatelessWidget {
   }
 }
 
-/// `<Product> · security fix`, or just "Security fix" with no product.
+/// The fixed "Mastermind · security fix" line (SB-100 S3).
+///
+/// The label is a constant: a security row never names a product, and there is
+/// no product fallback, so the line cannot reveal which product is affected.
 String securityLine(AppLocalizations l10n, SecurityItem item) =>
-    item.product == null
-    ? l10n.mastermindSecurityFix
-    : l10n.mastermindSecurityLine(MastermindLabels.product(item.product!));
+    l10n.mastermindSecurityLine(MastermindLabels.product(Product.mastermind));

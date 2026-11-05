@@ -10,6 +10,7 @@ import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/view/home_needs_you_card.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_list_footer.dart';
+import 'package:mobile/features/mastermind/view/inbox/tier_header.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_surface_slice.dart';
@@ -28,8 +29,16 @@ class InboxListBody extends StatelessWidget {
     required this.paging,
     required this.onClearFilters,
     this.now,
+    this.tierKeys = const {},
+    this.fyiExpanded,
+    this.onToggleFyi,
     super.key,
   });
+
+  /// Whether FYI shows its rows; null when it is short enough to never
+  /// collapse.
+  final bool? fyiExpanded;
+  final VoidCallback? onToggleFyi;
 
   final MastermindInboxModel model;
   final InboxPagingController paging;
@@ -37,6 +46,9 @@ class InboxListBody extends StatelessWidget {
 
   /// The section clock, for resolved ages.
   final DateTime? now;
+
+  /// Scroll targets for the tier headings, for `?tier=`.
+  final Map<InboxTier, GlobalKey> tierKeys;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -69,25 +81,90 @@ class InboxListBody extends StatelessWidget {
         if (!more && model.security.isNotEmpty) _security(l10n),
         if (!more && total > paging.pageSize) const InboxEndMarker(),
       ];
-      return SliverList.builder(
-        itemCount: rows.length + tail.length,
-        itemBuilder: (context, index) {
-          if (index >= rows.length) {
+      // The footer rides in the last section's list, so it is built only
+      // when scrolled near, like the rows.
+      final footer = [
+        for (final widget in tail)
+          (BuildContext _) {
             if (more && !failed) paging.requestMore(total);
-            return tail[index - rows.length];
-          }
-          return switch (rows[index]) {
-            InboxHeaderRow(:final group, :final first) => _header(
-              context,
-              group,
-              first: first,
+            return widget;
+          },
+      ];
+      final sections = _sections(rows);
+      return SliverMainAxisGroup(
+        slivers: [
+          for (final (i, section) in sections.indexed)
+            ..._section(
+              total,
+              section,
+              i == sections.length - 1 ? footer : const [],
             ),
-            final InboxItemRow row => _item(total, row),
-          };
-        },
+        ],
       );
     },
   );
+
+  Widget _row(BuildContext context, int total, InboxRow row) => switch (row) {
+    InboxHeaderRow(:final group, :final first) => _header(
+      context,
+      group,
+      first: first,
+    ),
+    final InboxItemRow item => _item(total, item),
+  };
+
+  /// [rows] cut into runs that each open with their heading.
+  static List<List<InboxRow>> _sections(List<InboxRow> rows) {
+    final sections = <List<InboxRow>>[];
+    for (final row in rows) {
+      if (row is InboxHeaderRow || sections.isEmpty) sections.add([]);
+      sections.last.add(row);
+    }
+    return sections;
+  }
+
+  /// A tier is its own sliver group, so its heading stays pinned only while
+  /// its rows are on screen; collapsed, it shows the heading alone. Kind and
+  /// resolved groups scroll as plain rows.
+  List<Widget> _section(
+    int total,
+    List<InboxRow> section,
+    List<WidgetBuilder> footer,
+  ) {
+    SliverList list(Iterable<InboxRow> rows) {
+      final builders = [
+        for (final row in rows) (BuildContext c) => _row(c, total, row),
+        ...footer,
+      ];
+      return SliverList.builder(
+        itemCount: builders.length,
+        itemBuilder: (context, i) => builders[i](context),
+      );
+    }
+
+    final head = section.first;
+    final tier = head is InboxHeaderRow ? head.group.tier : null;
+    if (head is! InboxHeaderRow || tier == null) return [list(section)];
+    final expanded = tier == InboxTier.fyi ? fyiExpanded : null;
+    return [
+      if (!head.first)
+        const SliverToBoxAdapter(child: SizedBox(height: AppLayout.sectionGap)),
+      SliverMainAxisGroup(
+        slivers: [
+          PinnedHeaderSliver(
+            child: MastermindTierHeader(
+              key: tierKeys[tier],
+              tier: tier,
+              count: head.group.items.length,
+              expanded: expanded,
+              onToggle: onToggleFyi,
+            ),
+          ),
+          list(expanded == false ? const [] : section.skip(1)),
+        ],
+      ),
+    ];
+  }
 
   Widget _header(
     BuildContext context,
@@ -119,6 +196,7 @@ class InboxListBody extends StatelessWidget {
         item: row.item,
         now: now,
         showKind: row.group.resolved,
+        askCard: true,
       ),
     );
   }

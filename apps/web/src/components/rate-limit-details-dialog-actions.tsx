@@ -1,8 +1,8 @@
 'use client';
 
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
+import type { resolveTurnstileClientState } from '@tuturuuu/cloudflare/turnstile/client';
 import { Copy, Loader2, Shield } from '@tuturuuu/icons/lucide-static';
-import type { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
 import { Button } from '@tuturuuu/ui/button';
 import { DialogFooter } from '@tuturuuu/ui/dialog';
 import { Label } from '@tuturuuu/ui/label';

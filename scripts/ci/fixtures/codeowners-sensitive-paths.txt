@@ -11,7 +11,7 @@
 # Authentication, sessions, SSO and request guards
 /packages/auth/                    @vhpx
 /packages/sso/                     @vhpx
-/packages/turnstile/               @vhpx
+/packages/cloudflare/               @vhpx
 /packages/utils/src/api-proxy-guard.ts     @vhpx
 /packages/utils/src/required-mfa*.ts @vhpx
 /packages/satellite/src/auth.ts    @vhpx
@@ -81,6 +81,10 @@
 # Code-execution infrastructure (devbox and Judge runners)
 /apps/devbox-control/              @vhpx
 /packages/devbox/                  @vhpx
+
+# Abuse-protection store (Durable Object Worker and its clients)
+/apps/abuse-guard/                 @vhpx
+/packages/utils/src/abuse-guard/   @vhpx
 
 # Payments
 /packages/payment/                 @vhpx

@@ -45,10 +45,10 @@ vi.mock('@tuturuuu/utils/upstash-rest', () => ({
     mocks.getUpstashRestRedisClient(...args),
 }));
 
-vi.mock('@tuturuuu/turnstile/server', async () => {
+vi.mock('@tuturuuu/cloudflare/turnstile/server', async () => {
   const actual = await vi.importActual<
-    typeof import('@tuturuuu/turnstile/server')
-  >('@tuturuuu/turnstile/server');
+    typeof import('@tuturuuu/cloudflare/turnstile/server')
+  >('@tuturuuu/cloudflare/turnstile/server');
   return {
     ...actual,
     verifyTurnstileToken: (...args: unknown[]) =>

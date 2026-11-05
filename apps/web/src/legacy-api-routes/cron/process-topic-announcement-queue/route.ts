@@ -7,7 +7,7 @@ import {
   getPrivateSchemaClient,
   type TopicAnnouncementsSupabaseClient,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared';
-import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withWebCronLogDrain as withCronLogDrain } from '@/lib/cron/web-cron';
 import {
   failScheduleSendWithoutRecipients,
   failStaleScheduleClaims,
@@ -120,6 +120,19 @@ async function handler(request: NextRequest) {
   ) as TopicAnnouncementsSupabaseClient;
   const nowDate = new Date();
   const now = nowDate.toISOString();
+
+  // First, on its own: it must still run when the stale reset or the queue
+  // load fails, or when a slow batch later times the function out.
+  try {
+    await failStaleScheduleClaims({
+      cutoff: new Date(nowDate.getTime() - PROCESSING_STALE_MS).toISOString(),
+      sbAdmin,
+    });
+  } catch (cause) {
+    console.error(`${LOG_PREFIX} Failed to fail stale schedule claims`, {
+      error: cause instanceof Error ? cause.message : String(cause),
+    });
+  }
 
   try {
     await resetStaleProcessingAnnouncements({ now: nowDate, sbAdmin });
@@ -243,17 +256,6 @@ async function handler(request: NextRequest) {
         wsId: row.ws_id,
       });
     }
-  }
-
-  try {
-    await failStaleScheduleClaims({
-      cutoff: new Date(nowDate.getTime() - PROCESSING_STALE_MS).toISOString(),
-      sbAdmin,
-    });
-  } catch (cause) {
-    console.error(`${LOG_PREFIX} Failed to fail stale schedule claims`, {
-      error: cause instanceof Error ? cause.message : String(cause),
-    });
   }
 
   return NextResponse.json({

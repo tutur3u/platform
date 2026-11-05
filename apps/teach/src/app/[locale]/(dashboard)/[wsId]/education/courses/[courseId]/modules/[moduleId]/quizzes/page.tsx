@@ -28,7 +28,10 @@ export default async function ModuleQuizzesPage({ params }: Props) {
   await connection();
 
   const { wsId: routeWsId, courseId, moduleId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(
+    routeWsId,
+    'update_user_groups'
+  );
   const t = await getTranslations();
   const permissions = await getSatelliteWorkspacePermissions(
     'teach',

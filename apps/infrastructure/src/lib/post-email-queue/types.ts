@@ -76,6 +76,7 @@ export type PrefetchedPost = Pick<
   'id' | 'group_id' | 'title' | 'content' | 'created_at'
 > & {
   group_name?: WorkspaceUserGroupRow['name'] | null;
+  ws_id: WorkspaceUserGroupRow['ws_id'];
 };
 
 export type PrefetchedPostCheck = Pick<
@@ -85,6 +86,7 @@ export type PrefetchedPostCheck = Pick<
   user: Pick<
     WorkspaceUser,
     | 'id'
+    | 'ws_id'
     | 'email'
     | 'full_name'
     | 'display_name'
@@ -219,6 +221,7 @@ export type PrefetchCheckRow = Pick<
   user: Pick<
     WorkspaceUser,
     | 'id'
+    | 'ws_id'
     | 'email'
     | 'full_name'
     | 'display_name'

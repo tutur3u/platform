@@ -26,6 +26,8 @@ describe('auth callback route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearConfiguredWebOrigins();
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN', '');
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS', '');
     mocks.createClient.mockResolvedValue({
       auth: {
         exchangeCodeForSession: vi.fn().mockResolvedValue(undefined),
@@ -169,6 +171,101 @@ describe('auth callback route', () => {
 
     expect(response.headers.get('location')).toBe(
       'https://vc.tuturuuu.com/workspace/personal/plans'
+    );
+  });
+
+  it('does not treat tuturuuu.com returnUrl values as managed from a staging host', async () => {
+    const managedReturnUrl = encodeURIComponent(
+      'https://vc.tuturuuu.com/workspace/personal/plans'
+    );
+    const response = await GET(
+      new NextRequest(
+        `https://web.tutur3u.com/api/auth/callback?returnUrl=${managedReturnUrl}`
+      )
+    );
+
+    expect(response.headers.get('location')).not.toContain('vc.tuturuuu.com');
+  });
+
+  it('never acts on the staging registry when the shared cookie domain is the production default', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
+      'tasks:https://tasks.tutur3u.com'
+    );
+    const satelliteReturnUrl = encodeURIComponent(
+      'https://tasks.tutur3u.com/personal'
+    );
+    const response = await GET(
+      new NextRequest(
+        `https://tuturuuu.com/api/auth/callback?returnUrl=${satelliteReturnUrl}`
+      )
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/personal'
+    );
+  });
+
+  it('routes registered staging satellites through login confirmation for the token handoff', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+      '.staging.tutur3u.com'
+    );
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
+      'tasks:https://tasks.tutur3u.com'
+    );
+    const satelliteReturnUrl = encodeURIComponent(
+      'https://tasks.tutur3u.com/personal'
+    );
+    const response = await GET(
+      new NextRequest(
+        `https://web.tutur3u.com/api/auth/callback?returnUrl=${satelliteReturnUrl}`
+      )
+    );
+    const location = new URL(response.headers.get('location') ?? '');
+
+    expect(location.pathname).toBe('/login');
+    expect(location.searchParams.get('returnUrl')).toBe(
+      'https://tasks.tutur3u.com/personal'
+    );
+  });
+
+  it('rejects a managed legacy staging redirect from the new issuer', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+      '.staging.tutur3u.com'
+    );
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
+    const managedReturnUrl = encodeURIComponent(
+      'https://preview.staging.tutur3u.com/workspace/personal/plans'
+    );
+    const response = await GET(
+      new NextRequest(
+        `https://web.tutur3u.com/api/auth/callback?returnUrl=${managedReturnUrl}`
+      )
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://web.tutur3u.com/personal'
+    );
+  });
+
+  it.each([
+    'https://rewise.me/workspace/personal',
+    'https://www.rewise.me',
+    'https://rewise.school/workspace/personal',
+    'https://app.rewise.school',
+  ])('rejects released Rewise domain returnUrl %s', async (returnUrl) => {
+    const response = await GET(
+      new NextRequest(
+        `https://tuturuuu.com/api/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`
+      )
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/personal'
     );
   });
 

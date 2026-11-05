@@ -14,6 +14,13 @@ const mocks = vi.hoisted(() => ({
 
 function resultFor(table: string, filters: Record<string, unknown>) {
   if (table === 'workspaces') {
+    const ids = filters.id as string[] | string | undefined;
+    if (Array.isArray(ids)) {
+      return {
+        data: ids.map((id) => ({ creator_id: CREATOR_ID, id })),
+        error: null,
+      };
+    }
     return { data: { creator_id: CREATOR_ID, personal: false }, error: null };
   }
   if (table === 'workspace_secrets') return { data: null, error: null };
@@ -22,14 +29,17 @@ function resultFor(table: string, filters: Record<string, unknown>) {
   }
   if (table === 'workspace_roles') {
     const ids = (filters.id as string[]) ?? [];
-    return { data: ids.map((id) => ({ id })), error: null };
+    return {
+      data: ids.map((id) => ({ id, ws_id: 'workspace-1' })),
+      error: null,
+    };
   }
   if (table === 'workspace_role_permissions') {
     const ids = (filters.role_id as string[]) ?? [];
     return {
       data: ids
         .filter((id) => id === BILLING_ROLE_ID)
-        .map((role_id) => ({ role_id })),
+        .map((role_id) => ({ role_id, ws_id: 'workspace-1' })),
       error: null,
     };
   }

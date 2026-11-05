@@ -34,6 +34,12 @@ export async function GET(request: Request, { params }: Params) {
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
+  if (
+    !permissions.containsPermission('view_user_groups_posts') &&
+    !permissions.containsPermission('approve_posts')
+  ) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  }
 
   const sbAdmin = await createAdminClient();
   const privateClient = sbAdmin.schema('private') as unknown as {

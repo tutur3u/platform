@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  EASY_CENTER_PARENT_MESSAGE_TEMPLATE,
   EASY_CENTER_TUTORING_POLICY,
   getTutoringCampus,
   getTutoringShiftLabel,
@@ -394,6 +395,46 @@ describe('tutoring policy storage', () => {
     ).toBe(true);
     expect(readTutoringPolicyConfigRows(rows).parentMessageTemplate).toBe(
       message
+    );
+  });
+});
+
+describe('parent message placeholders', () => {
+  const values = {
+    campus: 'CS1',
+    class_time: '16:00-17:30',
+    date: '31/10/2026',
+    duration: '45',
+    group: 'Class A',
+    reason: 'phụ đạo',
+    student: 'Lê Ngọc Kiến Văn',
+    teacher: 'Cô Lan',
+    time: '15:15',
+    time_range: '15:15-16:00',
+    weekday: 'thứ 7',
+  };
+
+  it('renders the time range, weekday and official class time', () => {
+    expect(
+      renderTutoringParentMessage(
+        '{{time_range}} | {{date}} {{weekday}} | {{class_time}}',
+        values
+      )
+    ).toBe('15:15-16:00 | 31/10/2026 thứ 7 | 16:00-17:30');
+  });
+
+  it('shows Chưa xác định for a field the caller did not supply', () => {
+    const { class_time: _classTime, ...withoutClassTime } = values;
+    expect(
+      renderTutoringParentMessage('Lớp: {{class_time}}', withoutClassTime)
+    ).toBe('Lớp: Chưa xác định');
+  });
+
+  it('renders the Easy Center default as the parent-facing text', () => {
+    expect(
+      renderTutoringParentMessage(EASY_CENTER_PARENT_MESSAGE_TEMPLATE, values)
+    ).toBe(
+      'Trung tâm EASY xin được xếp lịch kèm cho bạn Lê Ngọc Kiến Văn như sau:\n• Giờ kèm: 15:15-16:00\n• Ngày: 31/10/2026 thứ 7\n• Cơ sở: CS1\nLịch học chính thức: 16:00-17:30\nMong phụ huynh thu xếp cho con tham gia đúng giờ. Trân trọng.'
     );
   });
 });

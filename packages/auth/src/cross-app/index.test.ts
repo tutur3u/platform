@@ -133,16 +133,17 @@ describe('mapUrlToApp', () => {
     ).toBe('meet');
   });
 
-  it.each([
-    ['nova', 'https://nova.ai.vn'],
-    ['rewise', 'https://rewise.me'],
-  ])('maps the %s canonical external production origin', (app, origin) => {
-    expect(mapUrlToApp(`${origin}/verify-token?nextUrl=%2Fdashboard`)).toBe(
-      app
-    );
-  });
+  it.each([['nova', 'https://nova.ai.vn']])(
+    'maps the %s canonical external production origin',
+    (app, origin) => {
+      expect(mapUrlToApp(`${origin}/verify-token?nextUrl=%2Fdashboard`)).toBe(
+        app
+      );
+    }
+  );
 
   it.each([
+    'https://rewise.me',
     'https://rewise.me.evil.com',
     'https://nova.ai.vn.evil.com',
     'https://evilrewise.me',
@@ -159,6 +160,10 @@ describe('mapUrlToApp', () => {
     'https://evil.com@nova.ai.vn',
     'https://user:password@rewise.me',
     'https://user:password@nova.ai.vn',
+    'https://rewise.school',
+    'https://www.rewise.school',
+    'http://rewise.school',
+    'https://evil.com@rewise.school',
     'https://cms-tuturuuu.vercel.app',
     'https://rewise-preview.vercel.app',
     'https://nova-preview.vercel.app',

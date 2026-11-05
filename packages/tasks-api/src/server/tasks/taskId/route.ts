@@ -1,9 +1,4 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import {
@@ -11,17 +6,10 @@ import {
   isTaskBoardResolvedStatus,
   isTaskBoardTerminalStatus,
 } from '@tuturuuu/utils/task-list-status';
-import {
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
-import {
-  resolveTaskBoardAccess,
-  type TaskBoardAccess,
-  type TaskBoardGuestPermission,
-} from '../../board-access';
+import { resolveTaskBoardAccess } from '../../board-access';
 import {
   loadTaskCapacityWarnings,
   parseTaskCapacityViolation,
@@ -33,7 +21,12 @@ import {
 } from '../personal-overlays';
 import { publishTaskRealtime } from '../realtime-broadcast';
 import {
-  paramsSchema,
+  requireWorkspaceAccess,
+  type TaskDetailRouteAuthContext,
+  type TaskDetailRouteContext,
+} from './access';
+import { getWorkspaceTask } from './load-workspace-task';
+import {
   restoreTaskSchema,
   type TaskPriority,
   type TaskRecord,
@@ -52,214 +45,7 @@ async function deriveTaskDescriptionYjsState(
   return deriveYjsState(description);
 }
 
-export type TaskDetailRouteAuthContext = {
-  appSession?: boolean;
-  supabase: TypedSupabaseClient;
-  user: SupabaseUser;
-};
-
-type TaskRequestAuth =
-  | {
-      auth: TaskDetailRouteAuthContext;
-    }
-  | {
-      error: NextResponse;
-    };
-
-type TaskWorkspaceAccess =
-  | {
-      supabase: TypedSupabaseClient;
-      taskId: string;
-      access: TaskBoardAccess;
-      user: SupabaseUser;
-      wsId: string;
-    }
-  | {
-      error: NextResponse;
-    };
-
-type TaskDetailRouteContext = {
-  params: Promise<{ wsId: string; taskId: string }>;
-};
-
-async function resolveTaskRequestAuth(
-  request: NextRequest,
-  auth?: TaskDetailRouteAuthContext
-): Promise<TaskRequestAuth> {
-  if (auth) {
-    return {
-      auth: {
-        ...auth,
-        appSession: auth.appSession === true,
-      },
-    };
-  }
-
-  const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return {
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  return { auth: { appSession: false, supabase, user } };
-}
-
-async function requireWorkspaceAccess(
-  request: NextRequest,
-  rawParams: unknown,
-  authContext?: TaskDetailRouteAuthContext,
-  options: {
-    memberOnly?: boolean;
-    requiredPermission?: TaskBoardGuestPermission;
-  } = {}
-): Promise<TaskWorkspaceAccess> {
-  const { wsId: rawWsId, taskId } = paramsSchema.parse(rawParams);
-  const resolvedAuth = await resolveTaskRequestAuth(request, authContext);
-  if ('error' in resolvedAuth) return resolvedAuth;
-
-  const auth = resolvedAuth.auth;
-  const { supabase, user } = auth;
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-
-  const memberCheck = await verifyWorkspaceMembershipType({
-    wsId: wsId,
-    userId: user.id,
-    supabase: supabase,
-  });
-
-  if (memberCheck.error === 'membership_lookup_failed') {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (memberCheck.ok) {
-    return {
-      access: { mode: 'member', permission: 'edit' },
-      supabase,
-      user,
-      wsId,
-      taskId,
-    };
-  }
-
-  if (options.memberOnly) {
-    return {
-      error: NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      ),
-    };
-  }
-
-  const sbAdmin = await createAdminClient();
-  const boardAccess = await resolveTaskBoardAccess({
-    requiredPermission: options.requiredPermission ?? 'view',
-    sbAdmin,
-    supabase,
-    taskId,
-    user,
-    wsId,
-  });
-
-  if ('error' in boardAccess) return boardAccess;
-
-  if (boardAccess.wsId !== wsId) {
-    return {
-      error: NextResponse.json({ error: 'Task not found' }, { status: 404 }),
-    };
-  }
-
-  return {
-    access: boardAccess.access,
-    supabase,
-    user,
-    wsId,
-    taskId,
-  };
-}
-
-async function getWorkspaceTask(
-  supabase: TypedSupabaseClient,
-  wsId: string,
-  taskId: string
-): Promise<{ error: Error | null; task: TaskRecord | null }> {
-  const { data: task, error } = await supabase
-    .from('tasks')
-    .select(
-      `
-      id,
-      display_number,
-      name,
-      description,
-      priority,
-      completed,
-      completed_at,
-      start_date,
-      end_date,
-      estimation_points,
-      sort_key,
-      created_at,
-      closed_at,
-      deleted_at,
-      list_id,
-      task_lists!inner (
-        id,
-        name,
-        status,
-        board_id,
-        workspace_boards!inner (
-          id,
-          ws_id,
-          name,
-          workspace:workspaces (
-            personal
-          )
-        )
-      ),
-      assignees:task_assignees(
-        ...users(
-          id,
-          display_name,
-          avatar_url
-        )
-      ),
-      labels:task_labels(
-        ...workspace_task_labels(
-          id,
-          name,
-          color,
-          created_at
-        )
-      ),
-      projects:task_project_tasks(
-        ...task_projects(
-          id,
-          name,
-          status
-        )
-      )
-    `
-    )
-    .eq('id', taskId)
-    .maybeSingle();
-
-  if (error) {
-    return { error, task: null };
-  }
-
-  if (!task || task.task_lists?.workspace_boards?.ws_id !== wsId) {
-    return { error: null, task: null };
-  }
-
-  return { error: null, task: task as TaskRecord };
-}
+export type { TaskDetailRouteAuthContext } from './access';
 
 function isPersonalOverlayOnlyUpdate(body: Record<string, unknown>) {
   const allowedKeys = new Set(['label_ids', 'project_ids']);
@@ -751,9 +537,7 @@ export async function handleTaskDetailRoutePUT(
   auth?: TaskDetailRouteAuthContext
 ) {
   try {
-    const access = await requireWorkspaceAccess(request, await params, auth, {
-      requiredPermission: 'edit',
-    });
+    const access = await requireWorkspaceAccess(request, await params, auth);
     if ('error' in access) return access.error;
 
     const { user, wsId, taskId } = access;
@@ -863,7 +647,18 @@ export async function handleTaskDetailRoutePUT(
       });
     }
 
-    const isGuestBoardAccess = access.access.mode === 'guest';
+    const editAccess = await resolveTaskBoardAccess({
+      boardId: task.task_lists?.board_id,
+      requiredPermission: 'edit',
+      sbAdmin,
+      supabase: access.supabase,
+      user,
+      wsId,
+    });
+    if ('error' in editAccess) return editAccess.error;
+    if (editAccess.wsId !== wsId)
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    const isGuestBoardAccess = editAccess.access.mode === 'guest';
 
     if (isGuestBoardAccess) {
       if (
@@ -1214,6 +1009,7 @@ export async function handleTaskDetailRouteDELETE(
   try {
     const access = await requireWorkspaceAccess(request, await params, auth, {
       memberOnly: true,
+      requiredPermission: 'edit',
     });
     if ('error' in access) return access.error;
 
@@ -1308,6 +1104,7 @@ export async function handleTaskDetailRoutePATCH(
   try {
     const access = await requireWorkspaceAccess(request, await params, auth, {
       memberOnly: true,
+      requiredPermission: 'edit',
     });
     if ('error' in access) return access.error;
 

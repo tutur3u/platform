@@ -2,6 +2,7 @@
 title: "Mobile"
 description: "Native workspace products, defaults, account controls, and offline behavior."
 updatedAt: '2026-10-29'
+audience: users
 ---
 
 The Flutter app (`apps/mobile`) brings eligible Tuturuuu workspace tools into a
@@ -69,6 +70,37 @@ no access means absent from Home and the customization sheet),
 onboarding mode-slide cases in `test/features/onboarding/onboarding_page_test.dart`,
 and the Home order case in `dashboard_layout_cubit_test.dart`.
 
+## Offline rollout flags
+
+Mobile rollout flags default to false and are cached per account and workspace.
+The app refreshes `/api/v1/mobile/feature-flags?wsId=<workspace>` at startup,
+on login, account/workspace changes, resume, network reconnect, and every server
+`ttlSeconds` while foregrounded, clamped to 15–3600 seconds with a 30-second
+fallback when no payload is known. The boundary cases are covered by
+`mobile_flags_test.dart`. Backgrounding cancels
+polling; resume requests fresh flags. Requests use Bearer authentication
+and the cached `version` as `If-None-Match`; HTTP 304 retains the payload.
+An unreachable server keeps the last known cached values without time expiry;
+a cold cache enables nothing. Logout clears all flag snapshots for that account
+and fences late responses. Workspace snapshots remain isolated. A server kill
+applies on the next successful refresh; losing connectivity does not disable flags.
+Unknown keys are ignored. `mobile_offline` is the master switch: when false,
+every `offline_*` flag is false, including test overrides.
+
+There is zero behaviour change while flags are off for the existing explicit
+Finance, Tasks, Calendar, and Inventory downloads. These register with a null
+flag. New app preparers register once through
+`OfflinePreparationCoordinator.instance.registry.register(appKey, flagKey, preparer)`.
+The coordinator requires both the registered flag and master switch before
+running a flagged preparer. Existing permission and retention checks still apply.
+
+The web app owns `config/feature-flags.json`. From `apps/mobile`, run
+`dart tool/generate_mobile_flags.dart` when that manifest changes, then format
+the generated Dart file. The mobile manifest parity test skips explicitly while
+the manifest is absent. Reader regression coverage lives in
+`test/core/feature_flags/mobile_flags_test.dart`; registry/coordinator gating
+coverage lives in `test/core/cache/offline_preparer_registry_test.dart`.
+
 ## Shell and offline expectations
 
 Screens inherit the app shell's background and single top title/actions bar.
@@ -87,6 +119,18 @@ Offline availability is product-specific. Cached data is not proof that an
 edit reached the server. Review queued/sync states and recover through the
 owning product's documented flow. Optional products should not warm private
 endpoints until access is known to be enabled.
+
+Offline status UI is default OFF behind `offline_status_ui`; the existing
+`mobile_offline` kill switch remains authoritative for offline capability.
+The settings preparation section accepts `offlineStatusUiEnabled` until the
+MobileFlags reader is integrated. With the flag off, its existing UI and behavior
+remain unchanged. With it on, app rows show readiness, indeterminate preparation
+progress (the coordinator has no per-app percentage), Wi-Fi/retry waits, failure,
+unavailability and last sync. Retry and sync timestamps use the device locale and
+local time zone. The compact ready count appears only in the existing offline
+settings section. These labels describe downloaded snapshots, not server
+acknowledgement of queued edits. Regression coverage:
+`apps/mobile/test/features/settings/view/offline_status_ui_test.dart`.
 
 ## Versions and privacy
 
@@ -109,7 +153,6 @@ Developers changing translations regenerate localization before analysis/tests.
 Native app work does not require the paused Rust/TanStack Start runtime or the
 retired Docker cron runner. Database-dependent test fixtures still need an
 appropriate isolated environment; see [Without Docker](/build/development-tools/without-docker).
-
 
 ## Private product feedback
 
@@ -221,6 +264,31 @@ constant glyphs in `core/icons/platform_icon_data.dart`; retain that contract
 when evaluating font subsets. Measure release size and startup timing separately
 in admitted CI/device workflows before claiming a numeric improvement.
 
+### First-frame critical path
+
+Before `runApp`, bootstrap reads the local preferences (haptics, theme mode,
+system chrome, last routes) together with the consent read and gated admission
+in `TelemetryPreference.instance.initialize`, via `initializeBootstrapServices`.
+Both settle before Supabase starts. The overlap never moves Firebase earlier:
+Firebase is initialized only through `FirebaseAdmission` (signed in, and push or
+telemetry allowed), so a signed-out launch initializes no Firebase and no FCM.
+Consent is read before collection is enabled, and unsent Crashlytics reports are
+deleted before it is, in `MobileObservability.initialize`; only the package
+metadata read overlaps the collection switches.
+
+Local-notification setup (`PushNotificationService.initialize`) and the
+signed-in session (`startSession`, which is where FCM and Firebase admission
+happen) start after the first painted frame through `scheduleOptionalStartup`.
+`startPushForCurrentAccount` reads the signed-in account when it runs and skips
+a session an auth change already started before the first frame. Failures are
+logged by type only. A notification that launched the app is delivered once the
+session starts.
+
+Regression coverage: `startup_state_test.dart` and
+`cold_start_firebase_contract_test.dart` (no Firebase/FCM before sign-in, slow
+or failing Firebase, cold-start notification tap). These are orchestration
+fixtures; no device timing is claimed.
+
 ### Independent startup state restoration
 
 After Firebase/observability handlers and Supabase have settled, bootstrap uses
@@ -236,3 +304,98 @@ handler coverage during session restoration.
 concurrency, both completion orders, queue ordering, sync/async cache and queue
 failure reporting, appearance fallback and unexpected-error propagation. These
 are orchestration fixtures, not native-plugin or device latency measurements.
+
+## Pull to refresh
+
+Remote list surfaces support pulling down from the top, including lists shorter
+than the viewport and actionable empty/error states. Refresh awaits the existing
+cubit or repository owner, retains its account/workspace fences and does not start
+a second data layer. The Nova refresh affordance adds clearance for scrollable floating headers;
+fixed headers already pad the body. Only the owning vertical scroll view opts
+into always-scrollable physics, preserving nested horizontal row swipes. Calendar refresh completes only when its event reload completes.
+
+The audit below covers routed lists and remote list overlays. Cold loaders already
+have a request in flight. Editable forms and composers, authentication/MFA forms,
+QR/media viewers, active calls, local preference/static navigation screens, and
+reverse realtime chat/Assistant message timelines retain their existing gestures.
+Apps reads its registry and local preferences; it has no remote feed.
+
+| Screen | Had it | Added or corrected |
+| --- | --- | --- |
+| Home feed | Yes | Indicator clears floating header; short lists scroll |
+| Home personal agenda | Yes | Shared short-list behavior |
+| Inbox and Archive | Yes | Visible indicator; empty/short/error gesture regressions |
+| Apps | Local only | No remote list; local preferences remain immediate |
+| Calendar agenda/day/week/multi-day/year | Partial | Await reload; short/error states refresh |
+| Calendar month | Partial | Parent pull gesture; month grid remains non-scrollable |
+| My Tasks | Partial | Error state refresh |
+| Task boards | Partial | Error state refresh |
+| Board detail list/kanban/timeline | Partial | Error/missing/no-list states; preserve nested canvas predicate |
+| Task planning estimates/labels/projects/initiatives | Yes | Shared short-list behavior |
+| Legacy estimates and labels | Partial | Error state refresh |
+| Portfolio projects/initiatives | Partial | Error state refresh |
+| Project detail tasks | Partial | Error/not-found refresh |
+| Board recycle bin | No | Loaded/empty/error lists use existing guarded reload |
+| Finance overview | Partial | Short/error states |
+| Finance checkpoints | Partial | Short/empty/error states |
+| Transactions | Partial | Empty/error states |
+| Wallets and wallet detail | Yes | Shared short-list behavior |
+| Categories and tags | Yes | Shared short-list behavior |
+| Timer current session | No | Existing cubit force-refresh |
+| Timer history | Partial | Short-list gesture |
+| Timer personal statistics | No | Existing cubit force-refresh |
+| Timer goals | No | Existing goals force-refresh |
+| Timer workspace statistics | Partial | Short/error states |
+| Time requests | Partial | Error state refresh |
+| Timer task-link picker | No | Loaded/empty/error search results |
+| Request comments | No | Existing comments loader |
+| Profile account overview | No | Await identity and personal activity owners |
+| Profile personal timeline | No | Existing scoped repository refresh |
+| Profile editor detail | Partial | Error state refresh |
+| Shared profile activity | No | Existing injected loader |
+| CRM list/overview | Yes | Shared short-list behavior |
+| CRM user feedback | No | Existing feedback loader |
+| CMS overview/collections/entries | Yes | Shared short-list behavior |
+| Documents | Partial | Short-list gesture |
+| Drive files/grid | Yes | Shared short-list behavior |
+| Education overview/courses/library/attempts | Yes | Shared short-list behavior |
+| Habits overview/activity/library | Partial | Error state refresh |
+| Habit tracker Entries/Leaderboard | No | Existing detail refresh owner, including empty tabs |
+| Inventory overview/products/sales/sales periods | Yes | Shared short-list behavior |
+| Inventory catalog management | Partial | Short/error states |
+| Mail inbox/folder messages | Yes | Shared short-list behavior |
+| Mail settings mailboxes | Yes | Shared short-list behavior |
+| Mail mailbox settings | Yes | Shared short-list behavior |
+| Mail labels/folders/members | No | Existing loader, including empty/error lists |
+| Meet meetings | Partial | Short-list gesture |
+| Storefronts | Partial | Short-list gesture |
+| Storefront listings | Yes | Shared short-list behavior |
+| Settings root/workspace | Yes | Shared short-list behavior |
+| Workspace members/invites/roles/secrets | Yes | Shared short-list behavior |
+| Account sessions/security | Partial | Short-list gesture |
+| Internal accounts | Yes | Shared short-list behavior |
+| Mobile version administration | Yes | Shared short-list behavior |
+| Offline stored modules | Yes | Shared short-list behavior |
+| Workspace selection | Partial | Error/empty/all-hidden states |
+| Notes active/archive | Partial | Short-list gesture |
+| Note-link picker | No | Force existing cached read-through; retain empty/error body |
+| Chat conversations | Yes | Shared short-list behavior |
+| Assistant history | No | Existing history cubit refresh |
+| Assistant model favorites | No | Existing favorites repository loader |
+
+Regression evidence: notifications_pull_to_refresh_test.dart exercises Inbox and
+Archive with empty, short and initial-error data, checks the selected cubit tab and refresh flag,
+holds the request to verify the refresh lifetime and then asserts new visible
+content. nova_refresh_indicator_test.dart covers short page physics, error
+viewports, canceled/upward gestures and actual floating-header geometry.
+
+The habit tracker detail Entries and Leaderboard tabs and the note-link picker
+also refresh through their existing owners. Explicit refresh retains empty/error
+presentation instead of restarting a full-page cold loader. Regression coverage
+includes both task-board row-action suites and exact indicator offsets for fixed
+and scrollable headers.
+
+Pull gestures retain the current error message while refreshing. Explicit Retry
+returns to loading feedback. Compact sheet empty/error states use a plain
+indicator with a shrink-wrapped scroll view. Regression coverage includes
+calendar_cubit_test.dart and nova_refresh_indicator_test.dart.

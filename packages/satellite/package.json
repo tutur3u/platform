@@ -21,6 +21,7 @@
     "./create-user-nav": "./src/components/create-user-nav.tsx",
     "./create-user-nav-client": "./src/components/create-user-nav-client.tsx",
     "./command-launcher": "./src/components/command-launcher/index.ts",
+    "./app-switch-tracker": "./src/components/app-switch-tracker.tsx",
     "./create-navbar-actions": "./src/components/create-navbar-actions.tsx",
     "./navbar-actions": "./src/components/navbar-actions.tsx",
     "./sidebar-structure": "./src/components/sidebar-structure.tsx",

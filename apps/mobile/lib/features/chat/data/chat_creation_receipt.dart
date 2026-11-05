@@ -2,7 +2,8 @@ import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
-/// Constructed only from the body of a successful direct creation response.
+/// Validated from a successful creation response body or first-message header.
+/// Both transports must confirm the same actor/workspace/settings receipt.
 /// Offline placeholders never cross this boundary.
 final class AcknowledgedChatConversation {
   const AcknowledgedChatConversation._(this.conversation);

@@ -21,6 +21,12 @@ export {
   type PeriodicReportDeliveryBatchProgress,
   type PeriodicReportDeliveryBatchResult,
 } from './reports-delivery-batch';
+export {
+  getPeriodicReportDeliveryDiagnostics,
+  getPeriodicReportEmailPreview,
+  type PeriodicReportDeliveryDiagnostics,
+  type PeriodicReportEmailPreview,
+} from './reports-delivery-diagnostics';
 
 export interface CreateReportUploadUrlPayload {
   filename: string;
@@ -118,6 +124,8 @@ export const PERIODIC_DELIVERY_CATEGORIES = [
   'unknown',
   'approval',
   'failure',
+  // Approved, never requested for delivery: waits for an explicit admin choice.
+  'held',
 ] as const;
 export type PeriodicReportDeliveryCategory =
   (typeof PERIODIC_DELIVERY_CATEGORIES)[number];
@@ -155,6 +163,9 @@ export interface PeriodicReport {
   created_at: string;
   creator_name?: string | null;
   delivery_status: PeriodicReportDeliveryStatus;
+  delivered_at?: string | null;
+  /** When delivery was last requested; a queued report waits from here. */
+  delivery_requested_at?: string | null;
   test_delivery?: {
     status: PeriodicReportDeliveryStatus;
     sent_at: string | null;
@@ -170,6 +181,8 @@ export interface PeriodicReport {
   period_end: string | null;
   period_start: string | null;
   report_approval_status: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+  report_month?: string | null; // Monthly: YYYY-MM; estimated without a period.
+  report_month_estimated?: boolean;
   score: number | null;
   title: string;
   updated_at: string;
@@ -187,6 +200,8 @@ export interface PeriodicReportCounts {
   failed: number;
   pendingReview: number;
   total: number;
+  /** Approved reports never requested for delivery (all stages in scope). */
+  held?: number;
 }
 
 export interface ListPeriodicReportsParams {
@@ -195,6 +210,8 @@ export interface ListPeriodicReportsParams {
   approvalStatus?: 'UNAPPROVED' | 'PENDING' | 'APPROVED' | 'REJECTED';
   periodStart?: string;
   periodEnd?: string;
+  /** `YYYY-MM`: the month reports cover (saved period, else estimated). */
+  month?: string;
   cadence?: PeriodicReportCadence | 'all';
   category?: PeriodicReportDeliveryCategory;
   deliveryStatus?: PeriodicReportDeliveryStatus;
@@ -203,6 +220,8 @@ export interface ListPeriodicReportsParams {
   query?: string;
   sortBy?: 'period' | 'title' | 'updated' | 'user';
   sortDirection?: 'asc' | 'desc';
+  /** Viewer IANA timezone; the period range uses it when the workspace has none. */
+  timezone?: string;
 }
 
 export interface ListPeriodicReportsResponse {
@@ -211,6 +230,8 @@ export interface ListPeriodicReportsResponse {
   data: PeriodicReport[];
   page: number;
   pageSize: number;
+  /** True when `counts` cover only the selected stage (all-stage read unavailable). */
+  summaryPartial?: boolean;
   total: number;
   workspace: { id: string; timezone: string | null };
 }
@@ -418,6 +439,7 @@ export async function listPeriodicReports(
         approvalStatus: params.approvalStatus,
         periodStart: params.periodStart,
         periodEnd: params.periodEnd,
+        month: params.month,
         cadence: params.cadence,
         category: params.category,
         generationStatus: params.generationStatus,
@@ -428,6 +450,7 @@ export async function listPeriodicReports(
         q: params.query,
         sortBy: params.sortBy,
         sortDirection: params.sortDirection,
+        timezone: params.timezone,
       },
     }
   );
@@ -570,65 +593,158 @@ export function updatePeriodicReportAutoSend(
   );
 }
 
-export interface PeriodicReportDeliveryDiagnostics {
-  report: {
-    user_email: string | null;
-    delivery_status: PeriodicReportDeliveryStatus;
-    delivered_at: string | null;
-    delivery_requested_at: string | null;
-    last_delivery_error: string | null;
-  };
-  queue: {
-    status: PeriodicReportDeliveryStatus;
-    recipient_email: string;
-    delivery_kind: 'send' | 'test';
-    attempt_count: number;
-    next_attempt_at: string;
-    sent_at: string | null;
-    last_error: string | null;
-    provider_message_id: string | null;
-  } | null;
-  attempts: Array<{
-    id: string;
-    status: 'sent' | 'failed' | 'blocked';
-    attempted_at: string;
-    error_message: string | null;
-    provider_message_id: string | null;
-  }>;
+/** A period and/or class. The server derives the held reports itself. */
+export interface HeldPeriodicReportScope {
+  cadence: PeriodicReportCadence;
+  periodStart?: string;
+  periodEnd?: string;
+  groupId?: string;
+  /** Viewer IANA timezone; the period uses it when the workspace has none. */
+  timezone?: string;
 }
 
-export function getPeriodicReportDeliveryDiagnostics(
+export interface HeldPeriodicReportPreview {
+  count: number;
+  sendLimit: number;
+  skipLimit: number;
+}
+
+export interface HeldPeriodicReportActionResult {
+  action: 'send' | 'skip';
+  requested: number;
+  affected: number;
+  replayed: boolean;
+}
+
+const heldPath = (workspaceId: string) =>
+  `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/reports/held`;
+
+/** Counts held reports in a scope. Read-only: never queues or changes them. */
+export function previewHeldPeriodicReports(
   workspaceId: string,
-  reportId: string,
+  scope: HeldPeriodicReportScope,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<PeriodicReportDeliveryDiagnostics>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/reports/${encodePathSegment(reportId)}/delivery`,
-    { cache: 'no-store' }
+  return getInternalApiClient(options).json<HeldPeriodicReportPreview>(
+    heldPath(workspaceId),
+    {
+      cache: 'no-store',
+      query: {
+        cadence: scope.cadence,
+        periodStart: scope.periodStart,
+        periodEnd: scope.periodEnd,
+        groupId: scope.groupId,
+        timezone: scope.timezone,
+      },
+    }
   );
 }
 
-export interface PeriodicReportEmailPreview {
-  html: string;
-  title: string;
-  content: string;
-  feedback: string;
-  recipient: string | null;
-}
-
-export async function getPeriodicReportEmailPreview(
-  wsId: string,
-  reportId: string,
+/**
+ * Admin-only, audited Send now or Skip for the held reports in a scope.
+ * `expectedCount` must match the server's count; one `idempotencyKey` acts
+ * at most once, so a re-click replays the recorded result.
+ */
+export function resolveHeldPeriodicReports(
+  workspaceId: string,
+  payload: HeldPeriodicReportScope & {
+    action: 'send' | 'skip';
+    expectedCount: number;
+    idempotencyKey: string;
+  },
   options?: InternalApiClientOptions
 ) {
-  const preview = await getInternalApiClient(
-    options
-  ).json<PeriodicReportEmailPreview>(
-    `/api/v1/workspaces/${encodePathSegment(wsId)}/users/reports/${encodePathSegment(reportId)}/delivery?preview=true`,
-    { cache: 'no-store' }
+  return getInternalApiClient(options).json<HeldPeriodicReportActionResult>(
+    heldPath(workspaceId),
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
   );
-  if (typeof preview.html !== 'string' || !preview.html.trim()) {
-    throw new Error('Email preview is not available yet.');
-  }
-  return preview;
+}
+
+/**
+ * A queued periodic report counts as stuck after waiting this long for a
+ * worker claim: the existing "waiting more than 1 hour" queue warning, well
+ * past the 15-minute worker lease. The server decides; the UI only mirrors it.
+ */
+export const PERIODIC_RESEND_STUCK_AFTER_MINUTES = 60;
+
+/** Reports to resend: a period and/or class, or up to 100 selected ids. */
+export type ResendPeriodicReportTarget =
+  | ({ target: 'scope' } & HeldPeriodicReportScope)
+  | { target: 'selection'; reportIds: string[] };
+
+export interface ResendPeriodicReportLimits {
+  maxReportsPerAction: number;
+  actionsPerWindow: number;
+  actionWindowMinutes: number;
+  reportsPerHour: number;
+  stuckAfterMinutes: number;
+}
+
+export interface ResendPeriodicReportPreview {
+  count: number;
+  reasons: { failed: number; stuck: number; held: number };
+  limits: ResendPeriodicReportLimits;
+}
+
+export interface ResendPeriodicReportResult {
+  requested: number;
+  affected: number;
+  replayed: boolean;
+}
+
+const resendPath = (workspaceId: string) =>
+  `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/reports/resend`;
+
+/** Counts the failed, stuck or approved-unsent reports in a target. Read-only. */
+export function previewResendPeriodicReports(
+  workspaceId: string,
+  target: ResendPeriodicReportTarget,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<ResendPeriodicReportPreview>(
+    resendPath(workspaceId),
+    {
+      cache: 'no-store',
+      query:
+        target.target === 'selection'
+          ? { target: 'selection', reportIds: target.reportIds.join(',') }
+          : {
+              target: 'scope',
+              cadence: target.cadence,
+              periodStart: target.periodStart,
+              periodEnd: target.periodEnd,
+              groupId: target.groupId,
+              timezone: target.timezone,
+            },
+    }
+  );
+}
+
+/**
+ * Admin-only, audited and rate-limited resend. The server re-derives the
+ * eligible reports; `expectedCount` must match its count, and one
+ * `idempotencyKey` acts at most once.
+ */
+export function resendPeriodicReports(
+  workspaceId: string,
+  payload: ResendPeriodicReportTarget & {
+    expectedCount: number;
+    idempotencyKey: string;
+  },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<ResendPeriodicReportResult>(
+    resendPath(workspaceId),
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
 }

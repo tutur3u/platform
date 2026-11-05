@@ -91,17 +91,22 @@ it('applies period overlap to rows and counts, includes unapproved legacy record
   const reportQueries = urls.filter((url) =>
     url.pathname.endsWith('/external_user_monthly_reports_workspace_view')
   );
-  expect(reportQueries).toHaveLength(1);
-  expect(reportQueries[0]?.searchParams.get('report_stage')).toBe('eq.pending');
+  // One query lists the selected stage; one slim query counts every stage.
+  expect(reportQueries).toHaveLength(2);
+  const [listQuery, summaryQuery] = [
+    reportQueries.find((url) => url.searchParams.get('select') === '*'),
+    reportQueries.find((url) => url.searchParams.get('select') !== '*'),
+  ];
+  expect(listQuery?.searchParams.get('report_stage')).toBe('eq.pending');
+  expect(summaryQuery?.searchParams.get('report_stage')).toBeNull();
   for (const url of reportQueries) {
-    expect(url.searchParams.get('period_end')).toBe('gte.2026-08-01');
-    expect(url.searchParams.get('period_start')).toBe('lte.2026-08-31');
+    expect(url.searchParams.getAll('or')).toEqual([
+      '(and(period_start.lte.2026-08-31,period_end.gte.2026-08-01),and(period_start.is.null,created_at.gte."2026-07-31T17:00:00.000Z",created_at.lt."2026-08-31T17:00:00.000Z"))',
+      '(report_approval_status.neq.APPROVED,report_approval_status.is.null)',
+    ]);
     expect(url.searchParams.get('user_ws_id')).toBe('eq.workspace');
     expect(url.searchParams.get('group_id')).toBe('in.(group-1)');
   }
-  expect(reportQueries[0]?.searchParams.get('or')).toBe(
-    '(report_approval_status.neq.APPROVED,report_approval_status.is.null)'
-  );
   const queue = urls.find((url) =>
     url.pathname.endsWith('/user_report_email_queue')
   )!;

@@ -22,8 +22,14 @@ import {
   NativeUploadError,
   productionFailureMessage,
 } from './wave1-native-upload-error.mjs';
+import { assertUploadLimits } from './wave1-native-upload-limits.mjs';
 
 export function assertRouteFree(config) {
+  assert.equal(
+    config.upload_source_maps,
+    false,
+    'Source map uploads must be disabled'
+  );
   assert.deepEqual(
     Object.keys(config).sort(),
     [
@@ -31,6 +37,7 @@ export function assertRouteFree(config) {
       'account_id',
       'main',
       'no_bundle',
+      'upload_source_maps',
       'compatibility_date',
       'compatibility_flags',
       'rules',
@@ -279,6 +286,30 @@ export async function main({
         rollback,
         fetcher: boundedFetch,
       });
+    record.measurements = await uploadArtifact({
+      env,
+      app,
+      environment: 'production',
+      config,
+      sha,
+      digest,
+      p,
+      exec,
+      dryRun: true,
+      secretNames: names.map((secret) => secret.name),
+    });
+    writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, {
+      mode: 0o600,
+    });
+    try {
+      assertUploadLimits(record.measurements);
+    } catch (error) {
+      record.state = 'refused-before-upload';
+      writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, {
+        mode: 0o600,
+      });
+      throw error;
+    }
     assert.deepEqual(
       await topology(),
       before,
@@ -345,6 +376,7 @@ export async function main({
           cfToken: token,
           p,
           exec,
+          measurements: record.measurements,
         });
       } catch (error) {
         if (error instanceof NativeUploadError) {

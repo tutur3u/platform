@@ -1,8 +1,7 @@
+\ir helpers/local-dblink.inc
 -- Rollback-only actual SQL. Provider effects below are simulations, not GoTrue.
 begin;
 create extension if not exists pgtap with schema extensions;
--- On non-superuser local Postgres, set test.dblink_connstr to a password-authenticated
--- connection to this same disposable database (loopback trust cannot authenticate dblink).
 create extension if not exists dblink with schema extensions;
 set local search_path=public,extensions;
 select plan(41);
@@ -74,7 +73,7 @@ select ok(not exists(select 1 from pg_locks where pid=pg_backend_pid()
   and relation='private.mail_threads'::regclass and mode='ShareRowExclusiveLock' and granted),
   'remote writer starts before a successful inspection retains its table fence');
 do $control$ begin
-  perform dblink_connect('retained_adoption_writer',coalesce(nullif(current_setting('test.dblink_connstr', true), ''), format('dbname=%L user=%L',current_database(),current_user)));
+  perform dblink_connect('retained_adoption_writer',pg_temp.fixture_dblink_connstr());
   perform dblink_exec('retained_adoption_writer','begin; lock table private.mail_threads in row exclusive mode');
 end $control$;
 select ok(exists(select 1 from pg_locks where pid=(select pid from dblink('retained_adoption_writer','select pg_backend_pid()') as remote(pid integer))
@@ -195,3 +194,4 @@ select throws_ok($$update private.employee_address_migrations
 select is((select count(*) from private.mail_mailbox_members where mailbox_id='00000000-0000-4000-8000-000000009973'),1::bigint,'exactly one owner membership without deleting retained rows');
 select * from finish();
 rollback;
+

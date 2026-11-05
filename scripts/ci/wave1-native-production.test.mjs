@@ -143,6 +143,20 @@ test('lost upload response stays pending and is never retried', async (t) => {
   assert.equal(p.state.writes, 1);
 });
 
+test('documented size refusal retains exact measurements before any provider upload', async (t) => {
+  const p = setup(t);
+  p.state.oversized = true;
+  await assert.rejects(p.run(), /Documented upload limits exceeded/u);
+  assert.equal(p.state.writes, 0);
+  assert.equal(p.state.active, oldId);
+  const receipt = JSON.parse(
+    readFileSync(join(p.appRoot, 'calendar-production-publication.json'))
+  );
+  assert.equal(receipt.state, 'refused-before-upload');
+  assert.equal(receipt.measurements.script.bytes, 67108865);
+  assert.equal(receipt.measurements.script.gzipBytes, 1);
+});
+
 test('matching active version reconciles without another upload', async (t) => {
   const p = setup(t);
   p.state.ids = [newId];
@@ -186,6 +200,7 @@ for (const app of ['calendar', 'mail', 'apps']) {
       { route: `${app}.tuturuuu.com/*` },
       { workers_dev: true },
       { preview_urls: true },
+      { upload_source_maps: true },
       { services: [] },
       { unexpected: false },
     ]) {
@@ -270,10 +285,12 @@ test('qualification dry-run uses sealed route-free bytes without a provider cred
     exec: (_command, args, options) => {
       executions++;
       assert.equal(args.includes('--dry-run'), true);
+      const outdir = args[args.indexOf('--outdir') + 1];
       assert.equal(
-        args[args.indexOf('--outdir') + 1],
-        join(p.appRoot, 'calendar-production-dry-run')
+        outdir.startsWith(join(p.appRoot, 'calendar-production-dry-run-')),
+        true
       );
+      p.exec(_command, args, options);
       assert.equal(options.env.CLOUDFLARE_API_TOKEN, undefined);
       assertRouteFree(
         JSON.parse(readFileSync(args[args.indexOf('--config') + 1]))

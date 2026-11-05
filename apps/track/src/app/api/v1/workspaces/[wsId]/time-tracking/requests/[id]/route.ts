@@ -1,3 +1,4 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import {
   createAdminClient,
   createDynamicClient,
@@ -86,6 +87,28 @@ async function removeRequestImagesWithFallback({
     },
     fallbackUsed: true,
   };
+}
+
+// A linked session must belong to the request owner in the request workspace;
+// approving or rejecting a request updates or deletes its linked session.
+async function isOwnedLinkedSession(
+  sbAdmin: TypedSupabaseClient,
+  {
+    sessionId,
+    userId,
+    wsId,
+  }: { sessionId: string; userId: string; wsId: string }
+): Promise<{ error: boolean; ok: boolean }> {
+  const { data, error } = await sbAdmin
+    .from('time_tracking_sessions')
+    .select('id')
+    .eq('id', sessionId)
+    .eq('ws_id', wsId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) return { error: true, ok: false };
+  return { error: false, ok: Boolean(data) };
 }
 
 function validateRequestImagePaths(
@@ -178,6 +201,46 @@ export async function PATCH(
           },
           { status: 403 }
         );
+      }
+    }
+
+    if (actionData.action === 'approve' || actionData.action === 'reject') {
+      const { data: existingRequest, error: existingRequestError } =
+        await sbAdmin
+          .schema('private')
+          .from('time_tracking_requests')
+          .select('user_id, linked_session_id')
+          .eq('id', id)
+          .eq('workspace_id', normalizedWsId)
+          .maybeSingle();
+
+      if (existingRequestError) {
+        return NextResponse.json(
+          { error: 'Failed to load request' },
+          { status: 500 }
+        );
+      }
+
+      if (existingRequest?.linked_session_id) {
+        const linkedSession = await isOwnedLinkedSession(sbAdmin, {
+          sessionId: existingRequest.linked_session_id,
+          userId: existingRequest.user_id,
+          wsId: normalizedWsId,
+        });
+
+        if (linkedSession.error) {
+          return NextResponse.json(
+            { error: 'Failed to verify linked session' },
+            { status: 500 }
+          );
+        }
+
+        if (!linkedSession.ok) {
+          return NextResponse.json(
+            { error: 'Linked session does not belong to this request' },
+            { status: 409 }
+          );
+        }
       }
     }
 

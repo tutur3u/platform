@@ -178,6 +178,36 @@ describe('Send now on a schedule session', () => {
     expect(row(id).status).toBe('failed');
   });
 
+  it('does not claim a session whose status changed after it was read', async () => {
+    const id = await created();
+    // Another writer moves the session draft -> failed between the claim's
+    // read and its update. Both are claimable, so only an exact-status
+    // claim notices; claiming anyway would later "restore" draft.
+    const realFrom = mocks.admin.from.bind(mocks.admin);
+    let raced = false;
+    mocks.admin.from = (table: string) => {
+      const chain = realFrom(table);
+      if (table === 'topic_announcements') {
+        const realUpdate = chain.update;
+        chain.update = (value: { status?: string }) => {
+          if (!raced && value.status === 'processing') {
+            raced = true;
+            row(id).status = 'failed';
+          }
+          return realUpdate(value);
+        };
+      }
+      return chain;
+    };
+    const response = await send(id);
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'SEND_CONFLICT',
+    });
+    expect(mocks.sendTopicAnnouncement).not.toHaveBeenCalled();
+    expect(row(id).status).toBe('failed');
+  });
+
   it('refuses a session already in delivery instead of sending it', async () => {
     const id = await created();
     row(id).status = 'queued';

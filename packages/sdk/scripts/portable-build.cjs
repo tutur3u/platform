@@ -31,6 +31,7 @@ const portableFiles = new Set([
   'internal-api/storage-export-links.ts',
   'internal-api/task-list-options.ts',
   'internal-api/task-media-filename.ts',
+  'internal-api/task-project-mutations.ts',
   'internal-api/tasks-dashboard.ts',
   'internal-api/tasks.ts',
   'internal-api/user-config-types.ts',
@@ -109,7 +110,7 @@ function resolveSource(base) {
   throw new Error(`Missing portable source: ${base}`);
 }
 
-function stagePortableSources({ repoRoot, destination }) {
+function stagePortableSources({ repoRoot, destination, checkOnly = false }) {
   const sdk = path.join(repoRoot, 'packages/sdk');
   const sdkSource = path.join(sdk, 'src');
   const manifest = JSON.parse(
@@ -199,8 +200,13 @@ function stagePortableSources({ repoRoot, destination }) {
         continue;
       }
       if (dependency === path.join(sdk, 'package.json')) {
-        fs.mkdirSync(path.dirname(destination), { recursive: true });
-        fs.copyFileSync(dependency, path.join(destination, '../package.json'));
+        if (!checkOnly) {
+          fs.mkdirSync(path.dirname(destination), { recursive: true });
+          fs.copyFileSync(
+            dependency,
+            path.join(destination, '../package.json')
+          );
+        }
         continue;
       }
       pending.push(dependency);
@@ -221,8 +227,10 @@ function stagePortableSources({ repoRoot, destination }) {
       rewritten =
         rewritten.slice(0, edit.start) + edit.text + rewritten.slice(edit.end);
     }
-    fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.writeFileSync(target, rewritten);
+    if (!checkOnly) {
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, rewritten);
+    }
     if (!file.startsWith(`${sdkSource}${path.sep}`))
       provenance.push(path.relative(repoRoot, file));
   }
@@ -272,5 +280,20 @@ function build() {
   }
 }
 
-if (require.main === module) build();
-module.exports = { moduleSpecifiers, stagePortableSources };
+function checkPortableSources(repoRoot = path.resolve(__dirname, '../../..')) {
+  return stagePortableSources({
+    repoRoot,
+    destination: path.join(repoRoot, 'packages/sdk/.portable-check/src'),
+    checkOnly: true,
+  });
+}
+
+if (require.main === module) {
+  if (process.argv.includes('--check')) checkPortableSources();
+  else build();
+}
+module.exports = {
+  moduleSpecifiers,
+  stagePortableSources,
+  checkPortableSources,
+};

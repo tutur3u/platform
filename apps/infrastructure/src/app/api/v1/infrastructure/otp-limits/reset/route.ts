@@ -29,7 +29,7 @@ const ResetOtpLimitsSchema = z
 
 export async function POST(request: NextRequest) {
   const authorization = await authorizeInfrastructureAdminRequest(
-    'view_infrastructure'
+    'manage_workspace_roles'
   );
   if (!authorization.ok) {
     return authorization.response;

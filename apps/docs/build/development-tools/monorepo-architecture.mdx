@@ -2,6 +2,7 @@
 title: 'Monorepo Architecture'
 description: 'Understanding Tuturuuu monorepo architecture and the benefits of using Turborepo.'
 updatedAt: '2026-06-21'
+audience: developers
 ---
 
 <Info>
@@ -47,6 +48,8 @@ platform/
     ├── supabase/ # Supabase client and utilities
     └── ...       # Other shared packages
 ```
+
+The `@tuturuuu/cloudflare` workspace in `packages/cloudflare` owns shared Cloudflare helpers. Import Turnstile from `@tuturuuu/cloudflare/turnstile`, or use its `/client` and `/server` entrypoints to select the relevant API. The package root also re-exports the Turnstile API. Keep future Cloudflare helpers in their own submodules. Turnstile environment variables and runtime behavior are unchanged.
 
 ### 2. Atomic Changes Across Projects
 

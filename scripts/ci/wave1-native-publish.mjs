@@ -1,9 +1,16 @@
 // biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Direct CI entrypoint; deployment credentials never enter Turbo builds.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import {
+  appendFileSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from 'node:fs';
+import { basename, dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { ingressPreflight } from './wave1-ingress-preflight.mjs';
 import { stagingAdmission } from './wave1-native-admission.mjs';
 import {
   artifactDigest,
@@ -12,7 +19,14 @@ import {
 } from './wave1-native-artifact.mjs';
 import { attemptLedger } from './wave1-native-attempt.mjs';
 import { profileFor, profiles } from './wave1-native-profile.mjs';
-import { NativeUploadError } from './wave1-native-upload-error.mjs';
+import {
+  NativeUploadError,
+  productionFailureMessage,
+} from './wave1-native-upload-error.mjs';
+import {
+  assertUploadLimits,
+  measureUpload,
+} from './wave1-native-upload-limits.mjs';
 
 export function publicationAdmission({
   environment,
@@ -145,7 +159,9 @@ export async function main({
   appRoot,
 } = {}) {
   const [mode, app, environment, sha] = argv;
-  appRoot ??= resolve('apps', app);
+  // The Web issuer candidate builds from its isolated cloudflare/ root.
+  appRoot ??=
+    app === 'web' ? resolve('apps/web/cloudflare') : resolve('apps', app);
   if (mode === 'dry-run') {
     assert.ok(
       !env.CLOUDFLARE_API_TOKEN &&
@@ -154,7 +170,7 @@ export async function main({
       'Provider credentials forbidden in dry-run'
     );
     const { receipt, config } = verify(appRoot, app, environment, sha);
-    await uploadArtifact({
+    const measurements = await uploadArtifact({
       env,
       app,
       environment,
@@ -165,6 +181,8 @@ export async function main({
       exec,
       dryRun: true,
     });
+    console.log(JSON.stringify({ uploadMeasurements: measurements }));
+    assertUploadLimits(measurements);
     return;
   }
   const request = (url, token, body) => boundedJson(url, token, fetcher, body);
@@ -254,6 +272,16 @@ export async function main({
     );
   };
   await assertEnabled();
+  // Ingress-admitted identities (Access-protected Custom Domain) must prove
+  // their topology and the fresh serving intent before any ledger write.
+  await ingressPreflight({
+    app,
+    env,
+    request,
+    cfToken,
+    ghToken,
+    accountId: p.accountId,
+  });
   const ledger = await attemptLedger({
     request,
     base: `https://api.cloudflare.com/client/v4/accounts/${p.accountId}`,
@@ -305,6 +333,26 @@ export async function main({
   const validate = () => verify(appRoot, app, environment, sha);
   const save = () =>
     writeFileSync(recordPath, `${JSON.stringify(record, null, 2)}\n`);
+  record.measurements = await uploadArtifact({
+    env,
+    app,
+    environment,
+    config,
+    sha,
+    digest,
+    p,
+    exec,
+    dryRun: true,
+    secretNames: names,
+  });
+  save();
+  try {
+    assertUploadLimits(record.measurements);
+  } catch (error) {
+    record.state = 'refused-before-upload';
+    save();
+    throw error;
+  }
   const accept = async (versionId) => {
     const active = await request(`${cfBase}/deployments`, cfToken);
     assert.equal(active.success, true);
@@ -406,9 +454,18 @@ export async function main({
       digest,
       cfToken,
       p,
+      measurements: record.measurements,
       exec,
     });
-  record.versionId = await write();
+  try {
+    record.versionId = await write();
+  } catch (error) {
+    if (error instanceof NativeUploadError) {
+      record.uploadFailure = error.uploadFailure;
+      save();
+    }
+    throw error;
+  }
   record.state = 'uploaded';
   save();
   await ledger.save('uploaded', record.versionId);
@@ -431,11 +488,26 @@ export async function uploadArtifact({
   p,
   exec = execFileSync,
   dryRun = false,
+  measurements,
+  secretNames = [],
 }) {
-  const outputFile = resolve(
+  if (dryRun)
+    assert.equal(
+      cfToken,
+      undefined,
+      'Deploy credential forbidden in measurement'
+    );
+  if (!dryRun) assertUploadLimits(measurements);
+  const outdir = dryRun
+    ? realpathSync(
+        mkdtempSync(resolve(env.RUNNER_TEMP, `${app}-${environment}-dry-run-`))
+      )
+    : undefined;
+  let outputFile = resolve(
     env.RUNNER_TEMP,
     `${app}-${environment}-wrangler.ndjson`
   );
+  if (dryRun) outputFile += `.${basename(outdir)}`;
   try {
     exec(
       'bun',
@@ -444,13 +516,7 @@ export async function uploadArtifact({
         '--no-install',
         'wrangler',
         'deploy',
-        ...(dryRun
-          ? [
-              '--dry-run',
-              '--outdir',
-              resolve(env.RUNNER_TEMP, `${app}-${environment}-dry-run`),
-            ]
-          : []),
+        ...(dryRun ? ['--dry-run', '--outdir', outdir] : []),
         '--config',
         config,
         '--message',
@@ -483,14 +549,13 @@ export async function uploadArtifact({
           WRANGLER_WRITE_LOGS: 'false',
         },
         stdio: ['ignore', 'pipe', 'pipe'],
-        timeout: 180000,
+        timeout: dryRun ? 60000 : 180000,
         maxBuffer: 1024 * 1024,
       }
     );
   } catch (error) {
     throw new NativeUploadError(error, [cfToken]);
   }
-  if (dryRun) return;
   const writes = readFileSync(outputFile, 'utf8')
     .split('\n')
     .filter(Boolean)
@@ -498,6 +563,15 @@ export async function uploadArtifact({
     .filter((item) => item.type === 'deploy');
   assert.equal(writes.length, 1, 'Expected one publication receipt');
   assert.equal(writes[0].worker_name, p.name);
+  if (dryRun) {
+    assert.equal(
+      writes[0].version_id,
+      null,
+      'Dry-run must not upload a version'
+    );
+    assert.ok(writes[0].bundle_size, 'Missing exact CLI bundle measurements');
+    return measureUpload(config, outdir, secretNames, writes[0].bundle_size);
+  }
   assert.match(writes[0].version_id, /^[a-f0-9-]{36}$/);
   return writes[0].version_id;
 }
@@ -508,9 +582,11 @@ if (
 ) {
   main().catch((error) => {
     console.error(
-      error instanceof Error
-        ? error.message
-        : 'Unknown native publication failure'
+      error instanceof NativeUploadError
+        ? productionFailureMessage(error)
+        : error instanceof Error
+          ? error.message
+          : 'Unknown native publication failure'
     );
     process.exitCode = 1;
   });

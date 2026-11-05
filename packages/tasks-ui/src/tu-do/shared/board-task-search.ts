@@ -6,6 +6,7 @@ import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import {
   getTaskIdentifierForSearch,
+  getTaskTicketLabel,
   isTicketIdentifierLikeQuery,
 } from '@tuturuuu/utils/task-helper';
 
@@ -57,6 +58,12 @@ export function taskMatchesBoardSearch(
 
   return [
     task.name,
+    getTaskTicketLabel(task),
+    ...(task.ticket_projects ?? task.projects ?? []).map((project) =>
+      project.ticket_key && project.ticket_number
+        ? `${project.ticket_key}-${project.ticket_number}`
+        : null
+    ),
     typeof task.display_number === 'number'
       ? String(task.display_number)
       : null,

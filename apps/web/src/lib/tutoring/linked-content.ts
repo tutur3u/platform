@@ -1,4 +1,5 @@
 import {
+  getTutoringLinkCutoff,
   readTutoringPolicyConfigRows,
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
@@ -100,10 +101,12 @@ export async function loadLinkedLessonContent({
     .eq('ws_id', wsId)
     .like('id', `${TUTORING_POLICY_CONFIG_ID}%`);
   if (policyResult.error) throw policyResult.error;
-  const policy = readTutoringPolicyConfigRows(policyResult.data ?? []);
-  const cutoff = new Date(Date.now() - policy.absenceLookbackDays * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
+  // Its own horizon, not the queue window: shortening the window must not
+  // strip content from a make-up booked earlier. The count-from date still
+  // applies, so a make-up never pairs with an absence it hides.
+  const cutoff = getTutoringLinkCutoff(
+    readTutoringPolicyConfigRows(policyResult.data ?? [])
+  );
 
   const [attendanceResult, reservationResult] = await Promise.all([
     sbAdmin
