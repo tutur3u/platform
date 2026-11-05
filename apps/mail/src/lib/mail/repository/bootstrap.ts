@@ -13,7 +13,7 @@ import {
   getAdminClient,
   getCanonicalUserDisplayName,
   getCanonicalUserDisplayNames,
-  normalizeAddress,
+  getConfirmedOwnerAddress,
   privateTable,
   toLabel,
   toMailbox,
@@ -61,10 +61,8 @@ export async function getMailBootstrap(
   includeUnreadCounts = true
 ): Promise<MailBootstrapResponse> {
   const admin = await getAdminClient();
-  const { displayName, mailbox, memberRows } = await resolvePersonalMailbox(
-    admin,
-    ctx
-  );
+  const { displayName, mailbox, memberRows, ownerAddress } =
+    await resolvePersonalMailbox(admin, ctx);
   const mailboxIds = memberRows.map((row) => row.mailbox_id);
   const [{ data: mailboxRows, error: mailboxError }, labelRows] =
     await Promise.all([
@@ -121,7 +119,7 @@ export async function getMailBootstrap(
   return {
     labels: labels.filter((row) => activeIds.has(row.mailbox_id)).map(toLabel),
     mailboxes,
-    user: { email: ctx.user.email ?? '', id: ctx.user.id },
+    user: { email: ownerAddress, id: ctx.user.id },
   };
 }
 
@@ -182,13 +180,16 @@ export async function requireMailboxAccess(
 
   const groupPolicy = readGroupPolicy(mailbox?.metadata);
   if (groupPolicy) {
+    // SR-926: the personal-mailbox gate keys on the confirmed Auth email.
+    const ownerAddress = await getConfirmedOwnerAddress(admin, ctx.user.id);
+    if (!ownerAddress) return null;
     const { data: personal, error } = await privateTable(
       admin,
       'mail_mailboxes'
     )
       .select('status')
       .eq('created_by', ctx.user.id)
-      .eq('address', normalizeAddress(ctx.user.email ?? ''))
+      .eq('address', ownerAddress)
       .eq('type', 'personal')
       .eq('domain_id', mailbox.domain_id)
       .maybeSingle();
