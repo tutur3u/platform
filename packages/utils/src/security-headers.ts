@@ -11,6 +11,8 @@
  * Portable: no framework or runtime imports.
  */
 
+import { isRetiredAppHostname } from './retired-app-hosts';
+
 export type PermissionFeature =
   | 'autoplay'
   | 'camera'
@@ -78,12 +80,13 @@ export const DEFAULT_PERMISSIONS: PermissionsProfile = {
 
 /**
  * CSP sources for a configured URL: its origin, plus the matching `ws(s):`
- * origin when `websocket` is set. Invalid or missing values yield none.
+ * origin when `websocket` is set. Invalid, missing or retired values yield none.
  */
 export function originSources(value: unknown, websocket = false): string[] {
   if (typeof value !== 'string') return [];
   try {
-    const { origin } = new URL(value);
+    const { hostname, origin } = new URL(value);
+    if (isRetiredAppHostname(hostname)) return [];
     return websocket ? [origin, origin.replace(/^http/u, 'ws')] : [origin];
   } catch {
     return [];

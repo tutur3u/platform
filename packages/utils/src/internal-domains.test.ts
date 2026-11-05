@@ -39,9 +39,30 @@ describe('registered production satellite origins', () => {
     }
   });
 
-  it('no longer trusts the expired rewise.me domain', () => {
-    expect(getAppDomainByUrl('https://rewise.me/verify-token')).toBeNull();
-    expect(getInternalAppDomainByUrl('https://rewise.me')).toBeNull();
+  it.each([
+    'https://rewise.me',
+    'https://www.rewise.me/verify-token',
+    'http://rewise.me/login',
+    'https://rewise.school',
+    'https://app.rewise.school/verify-token',
+  ])('never trusts the released Rewise domain %s', (url) => {
+    expect(getAppDomainByUrl(url)).toBeNull();
+    expect(getInternalAppDomainByUrl(url)).toBeNull();
+  });
+
+  it('ignores released Rewise domains configured as external apps', () => {
+    try {
+      vi.stubEnv(
+        'TUTURUUU_EXTERNAL_APP_DOMAINS',
+        'rewise:https://rewise.me,legacy:https://app.rewise.school'
+      );
+
+      expect(getConfiguredExternalAppDomains()).toEqual([]);
+      expect(getAppDomainByUrl('https://rewise.me/verify-token')).toBeNull();
+      expect(getAppDomainByUrl('https://app.rewise.school')).toBeNull();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('keeps unregistered Vercel deployments blocked', () => {

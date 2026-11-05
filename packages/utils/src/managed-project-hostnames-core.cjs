@@ -35,7 +35,10 @@ const RESERVED_MANAGED_PROJECT_HOSTNAMES = Object.freeze([
     'infrastructure',
   ].map((app) => `${app}.tutur3u.com`),
   'nova.ai.vn',
+  // Released domains: reserved so no customer project can claim them, and
+  // never trusted (see retired-app-hosts.ts).
   'rewise.me',
+  'rewise.school',
 ]);
 
 /** ASCII DNS name: at most 253 characters and 63 per label, no port or path. */
