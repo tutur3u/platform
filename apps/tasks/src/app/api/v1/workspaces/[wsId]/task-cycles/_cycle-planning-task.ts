@@ -55,10 +55,12 @@ export function cyclePlanningTaskSelect(scope: 'cycle' | 'backlog') {
   `;
 }
 
-export function isCycleBoardScopeUnavailable(error: {
-  code?: string;
-  message?: string;
-} | null) {
+export function isCycleBoardScopeUnavailable(
+  error: {
+    code?: string;
+    message?: string;
+  } | null
+) {
   return (
     (error?.code === '42703' || error?.code === 'PGRST204') &&
     error.message?.includes('board_id') === true

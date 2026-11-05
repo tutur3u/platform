@@ -1,7 +1,8 @@
 # PKCE migration transaction contract
 
 `20261101090000_bind_cross_app_handoff_pkce.sql` sets transaction-local lock and
-statement limits (5s and 60s), takes an ACCESS EXCLUSIVE NOWAIT lock before DDL,
+statement limits (5s and 60s) and takes an ACCESS EXCLUSIVE NOWAIT lock inside
+one DO preamble before DDL,
 and checks the resulting catalogs before the CLI records the migration. The 60s
 limit applies to each statement, not to the entire file. Acceptance reads only
 catalogs: two nullable text columns, the validated replacement check constraint,
@@ -57,8 +58,17 @@ The CLI tag `v2.121.0` resolves to immutable commit
    [SET LOCAL](https://www.postgresql.org/docs/18/sql-set.html) expires at its end;
    [LOCK](https://www.postgresql.org/docs/18/sql-lock.html) is held until its end.
 
-This proof applies to this file shape: SET LOCAL, LOCK, ALTER TABLE, CREATE OR
-REPLACE FUNCTION, REVOKE, GRANT and DO, without explicit transaction control,
+The first DO block contains the transaction-local settings followed by the
+NOWAIT lock. PostgreSQL requires a transaction block for a top-level LOCK, even
+when the extended-query protocol keeps several statements in one implicit
+transaction. Its [transaction-block predicate](https://github.com/postgres/postgres/blob/REL_18_STABLE/src/backend/access/transam/xact.c#L3491-L3515)
+also accepts nested function execution. The DO preamble uses that nested path
+without adding a transaction boundary or separating the history insert. The
+static contract checks the exact three-command order, both limits and NOWAIT;
+a fresh CLI replay must qualify the nested path and rollback behavior.
+
+This protocol argument applies to this file shape: DO, ALTER TABLE, CREATE OR
+REPLACE FUNCTION, REVOKE and GRANT, without explicit transaction control,
 `transaction=false`, session resets or pipeline-incompatible commands. PL/pgSQL
 BEGIN/END delimit routine blocks; they are not transaction commands. The static
 test rejects top-level boundaries and incompatible commands.
@@ -103,8 +113,8 @@ final SHA/blob; an existing staging marker cannot prove its new execution path.
 
 The existing anonymous validator exception binds the whole migration's SHA-256.
 Its `sourceDigest` is re-pinned; the reviewed function digest, signature, line,
-roles and reason remain unchanged. The introductory comment is condensed so
-adding the preamble preserves the reviewed definition's line number. The guard's
+roles and reason remain unchanged. The four-line preamble preserves the reviewed
+definition's line number. The guard's
 source-only rebind mechanism still requires independent exact-head attestation
 under `security/definer-record-admission` from the pinned release bot. Local
 checks using the proposed ledger do not grant that admission; no security guard

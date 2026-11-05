@@ -1,7 +1,7 @@
-SET LOCAL lock_timeout = '5s';
-SET LOCAL statement_timeout = '60s';
-LOCK TABLE private.cross_app_tokens IN ACCESS EXCLUSIVE MODE NOWAIT;
-
+DO $pkce_lock$ BEGIN
+  SET LOCAL lock_timeout = '5s'; SET LOCAL statement_timeout = '60s';
+  LOCK TABLE private.cross_app_tokens IN ACCESS EXCLUSIVE MODE NOWAIT;
+END; $pkce_lock$;
 -- Bind login handoff redemption to the initiating browser with RFC 7636 S256 PKCE.
 -- * private.cross_app_tokens stores the optional challenge.
 -- * generate_cross_app_token_pkce mints a token that stores it; the existing

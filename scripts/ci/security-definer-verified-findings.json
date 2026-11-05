@@ -137,7 +137,7 @@
     "rule": "public-execute",
     "line": 210,
     "digest": "3eb6cad8a2f62643a5502e466ac15b36ae36f169e27677fb81d1615492277452",
-    "sourceDigest": "b3776bf98c8039b3d39de59d07e83172d09aa465b9be444f9b4c595af419c21b",
+    "sourceDigest": "fbad061b1f02459bc1ec28661a104a534f2699912a6ddc9128c31fa591c934f8",
     "classification": "verified false positive",
     "effectiveRoles": ["anon", "authenticated", "service_role"],
     "reason": "Redefined anon 2-arg validator passes a NULL verifier to private.redeem_cross_app_token, so it can never redeem a PKCE-bound token; single-use under FOR UPDATE; the verifier variant validate_cross_app_token_with_session_pkce is service_role only (reviewed in #7394)"

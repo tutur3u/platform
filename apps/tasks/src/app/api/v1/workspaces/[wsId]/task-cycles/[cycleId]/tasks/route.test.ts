@@ -74,14 +74,19 @@ function single(data: () => unknown) {
 }
 
 function listQuery() {
-  const builder: Record<string, unknown> = {};
+  const builder: Record<string, unknown> = {
+    then: (
+      resolve: (result: typeof mocks.listResult) => unknown,
+      reject: (reason: unknown) => unknown
+    ) => Promise.resolve(mocks.listResult).then(resolve, reject),
+  };
   for (const method of ['select', 'eq', 'is', 'in', 'not', 'order']) {
     builder[method] = (...args: unknown[]) => {
       mocks.listCalls.push([method, ...args]);
       return builder;
     };
   }
-  builder.limit = async () => mocks.listResult;
+  builder.limit = () => builder;
   return builder;
 }
 

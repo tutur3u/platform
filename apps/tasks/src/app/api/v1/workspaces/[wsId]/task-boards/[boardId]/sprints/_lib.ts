@@ -38,7 +38,15 @@ export async function areBoardCyclesEnabled(
   sbAdmin: TypedSupabaseClient,
   wsId: string
 ) {
-  if (!BOARD_CYCLES_RELEASE_ENABLED || !wsId) return false;
+  if (!BOARD_CYCLES_RELEASE_ENABLED) return false;
+  return readWorkspaceBoardCyclesEnabled(sbAdmin, wsId);
+}
+
+export async function readWorkspaceBoardCyclesEnabled(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string
+) {
+  if (!wsId) return false;
   const { data, error } = await sbAdmin
     .from('workspace_secrets')
     .select('name')
@@ -266,7 +274,20 @@ async function listUnplannedTaskIds(
   return { data: (data ?? []) as string[], error: null };
 }
 
-export async function loadBoardSprints({
+export function boardSprintReadReleaseResponse() {
+  return BOARD_CYCLES_RELEASE_ENABLED ? null : NextResponse.json(UNAVAILABLE);
+}
+
+export async function loadBoardSprints(
+  access: Parameters<typeof loadEnabledBoardSprints>[0]
+): ReturnType<typeof loadEnabledBoardSprints> {
+  if (!BOARD_CYCLES_RELEASE_ENABLED) {
+    return { ok: true, data: UNAVAILABLE };
+  }
+  return loadEnabledBoardSprints(access);
+}
+
+export async function loadEnabledBoardSprints({
   boardId,
   sbAdmin,
   wsId,
@@ -278,11 +299,9 @@ export async function loadBoardSprints({
   | { ok: true; data: BoardSprintsResponse }
   | { ok: false; error: SprintQueryError }
 > {
-  if (!BOARD_CYCLES_RELEASE_ENABLED) {
-    return { ok: true, data: UNAVAILABLE };
-  }
-
-  const cyclesEnabled = areBoardCyclesEnabled(sbAdmin, wsId).catch(() => false);
+  const cyclesEnabled = readWorkspaceBoardCyclesEnabled(sbAdmin, wsId).catch(
+    () => false
+  );
   const [boardResult, sprintsResult, reportsResult, unplannedResult] =
     await Promise.all([
       sbAdmin

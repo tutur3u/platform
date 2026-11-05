@@ -200,7 +200,7 @@ export const DELETE = withSessionAuth<RouteParams>(
       if (invalid) return invalid;
 
       const { error } = await sbAdmin
-          .from('task_cycle_tasks')
+        .from('task_cycle_tasks')
         .delete()
         .eq('cycle_id', cycleId)
         .eq('task_id', body.taskId);

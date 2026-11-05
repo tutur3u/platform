@@ -34,19 +34,53 @@ function assertBatchShape(source) {
   }
 }
 
+function assertLockPreamble(source) {
+  const batch = statements(source);
+  assert.equal(batch[0][0].value, 'do');
+  const body = batch[0].find((token) => token.kind === 'body').value;
+  assert.match(body, /^\s*BEGIN\s/i);
+  assert.match(body, /END;\s*$/i);
+  const commands = statements(
+    body.replace(/^\s*BEGIN\s*/i, '').replace(/END;\s*$/i, '')
+  );
+  assert.deepEqual(commands.map(values), [
+    'set local lock_timeout = 5s',
+    'set local statement_timeout = 60s',
+    'lock table private . cross_app_tokens in access exclusive mode nowait',
+  ]);
+  assert.equal(batch[1][0].value, 'alter');
+  assert.equal(batch.at(-1)[0].value, 'do');
+  assert.equal(
+    batch.filter((statement) => ['set', 'lock'].includes(statement[0].value))
+      .length,
+    0
+  );
+}
+
 test('PKCE migration keeps the CLI implicit batch and acquires its lock before DDL', () => {
   assertBatchShape(sql);
-  assert.ok(
-    sql.startsWith(
-      "SET LOCAL lock_timeout = '5s';\nSET LOCAL statement_timeout = '60s';\n"
-    )
+  assertLockPreamble(sql);
+});
+
+test('lock preamble rejects top-level locking, weaker limits and changed order', () => {
+  const topLevel = sql.replace(
+    /DO \$pkce_lock\$ BEGIN[\s\S]*?END; \$pkce_lock\$;/,
+    "SET LOCAL lock_timeout = '5s';\nSET LOCAL statement_timeout = '60s';\nLOCK TABLE private.cross_app_tokens IN ACCESS EXCLUSIVE MODE NOWAIT;"
   );
-  assert.equal(
-    values(parsed[2]),
-    'lock table private . cross_app_tokens in access exclusive mode nowait'
-  );
-  assert.equal(parsed[3][0].value, 'alter');
-  assert.equal(parsed.at(-1)[0].value, 'do');
+  assert.throws(() => assertLockPreamble(topLevel));
+  for (const changed of [
+    sql.replace("lock_timeout = '5s'", "lock_timeout = '30s'"),
+    sql.replace("statement_timeout = '60s'", "statement_timeout = '600s'"),
+    sql.replace(' MODE NOWAIT', ' MODE'),
+    sql.replace('ACCESS EXCLUSIVE', 'ACCESS SHARE'),
+    sql.replace(
+      "SET LOCAL lock_timeout = '5s'; SET LOCAL statement_timeout = '60s';",
+      "SET LOCAL statement_timeout = '60s'; SET LOCAL lock_timeout = '5s';"
+    ),
+  ]) {
+    assert.notEqual(changed, sql);
+    assert.throws(() => assertLockPreamble(changed));
+  }
 });
 
 test('batch shape rejects explicit boundaries and standalone commands', () => {
