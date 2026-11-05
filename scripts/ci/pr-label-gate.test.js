@@ -70,7 +70,7 @@ const PROTECTED_TRIGGERS = {
   'nova-cloudflare.yaml': 'a2d9cd99b1329afe',
   'ops-hub-cloudflare.yaml': '0a3cc2c97958f5cd',
   'parley-cloudflare.yaml': 'f1777123fb48e37c',
-  'pay-cloudflare.yaml': '8037389e72881e88',
+  'pay-cloudflare.yaml': 'a31b0975203c9817',
   'periodic-report-delivery-contract.yaml': 'dc372af9059d0c07',
   'playground-cloudflare.yaml': '7c22fc6d616e6d01',
   'playground-runtime-acceptance.yaml': '0a3cc2c97958f5cd',
