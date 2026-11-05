@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { copyFileSync, mkdtempSync, mkdirSync, realpathSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, mkdirSync, realpathSync, writeFileSync, rmSync, readFileSync, readdirSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -25,6 +25,15 @@ test('app names are matched exactly, not by prefix', () => {
 });
 test('mode=all always runs', () => {
   assert.equal(decide({ eventName: 'pull_request', apps: 'cms', result: { mode: 'all', apps: [], reason: 'x' } }).run, true);
+});
+test('mode all returns run=true for every app', () => {
+  const result = { mode: 'all', apps: [], reason: 'changed path requires all apps' };
+  const apps = readdirSync(path.resolve(import.meta.dirname, '../../apps'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+    .map((entry) => entry.name);
+  assert.ok(apps.length > 20);
+  for (const app of apps) assert.equal(decide({ eventName: 'pull_request', apps: app, result }).run, true, app);
+  assert.equal(decide({ eventName: 'pull_request', apps: apps.join(','), result }).run, true);
 });
 test('comma list runs when any app is affected', () => {
   assert.equal(decide({ eventName: 'pull_request', apps: 'mail, calendar', result: affected(['apps/calendar']) }).run, true);
