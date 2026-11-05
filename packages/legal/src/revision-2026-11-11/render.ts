@@ -147,6 +147,9 @@ export function renderRevisionDocumentWithReport(
 ): RevisionDocumentReport {
   const source = revisionSource.documents[kind][locale];
   const released = releasedHoldSet(options);
+  // Released mobile text carries `{D}`; never render it without a real date.
+  if (released.has('mobile') && !options.mobileDate)
+    throw new Error('Releasing the mobile items requires the pinned date D');
   const removedSections: string[] = [];
   const sections: LegalSection[] = [];
   for (const section of source.sections) {

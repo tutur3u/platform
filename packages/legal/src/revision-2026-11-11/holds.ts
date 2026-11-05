@@ -36,7 +36,7 @@ export const HOLD_UNITS = {
   // --- Mobile release date D ------------------------------------------------
   mobile: {
     condition:
-      'released automatically when the notice config pins mobilePrivacyEffectiveDate on or before the notice date; otherwise add it here on D',
+      'released automatically when the notice config pins mobilePrivacyEffectiveDate on or before the notice date; stays held while it is unset (never use a placeholder date); otherwise add it here on D',
     where: 'Privacy P12 (whole section); the two Firebase registry rows',
   },
   // --- Sentence-level gates (tag rule: publish only if true, else delete) ---
