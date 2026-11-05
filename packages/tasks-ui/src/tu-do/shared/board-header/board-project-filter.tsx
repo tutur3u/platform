@@ -55,10 +55,16 @@ export function BoardProjectFilter({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <ToneButton active={filters.projects.length > 0} tone="blue">
+        <ToneButton
+          active={filters.projects.length > 0}
+          aria-label={label}
+          tone="neutral"
+        >
           <Box />
-          <span className="max-w-40 truncate">{label}</span>
-          <ChevronDown className="opacity-60" />
+          <span className="@2xl/board-header:inline hidden max-w-40 truncate">
+            {label}
+          </span>
+          <ChevronDown className="@sm/board-header:block hidden opacity-60" />
         </ToneButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">

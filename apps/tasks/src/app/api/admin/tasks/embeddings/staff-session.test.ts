@@ -5,9 +5,13 @@ const f = vi.hoisted(() => ({
   resolve: vi.fn(),
   from: vi.fn(),
   getUserById: vi.fn(),
+  getPermissions: vi.fn(),
 }));
 vi.mock('@/lib/app-session-user', () => ({
   resolveAuthenticatedSessionUser: f.resolve,
+}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: f.getPermissions,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: async () => ({}),
@@ -77,6 +81,7 @@ const cases = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  f.getPermissions.mockResolvedValue({ containsPermission: () => true });
   const query = Object.assign(
     Promise.resolve({ data: [], count: 0, error: null }),
     {
@@ -104,6 +109,18 @@ for (const [name, handler] of [
   ],
 ] as const) {
   describe(name, () => {
+    it('refuses a staff session without the AI lab permission', async () => {
+      f.resolve.mockResolvedValue({
+        user: { id: staff.id, email: staff.email },
+        authError: null,
+      });
+      f.getPermissions.mockResolvedValue({ containsPermission: () => false });
+      f.getUserById.mockResolvedValue({ data: { user: staff }, error: null });
+      const response = await handler();
+      expect(response.status).toBe(403);
+      expect(f.from).not.toHaveBeenCalled();
+    });
+
     it.each(cases)('%s', async (_name, user, configured, allowed) => {
       vi.stubEnv('TUTURUUU_AZURE_TENANT_ID', configured);
       f.resolve.mockResolvedValue({

@@ -13,6 +13,39 @@ export function getTicketIdentifier(
   return `${effectivePrefix}-${displayNumber}`.toUpperCase();
 }
 
+/**
+ * The project a task's ticket comes from: the one it joined first (project id
+ * breaks timestamp ties). Personal overlays keep the source projects in
+ * `ticket_projects`, so their ticket stays the source one.
+ */
+export function getTaskTicketProject(task: {
+  projects?: Task['projects'] | null;
+  ticket_projects?: Task['projects'] | null;
+}): NonNullable<Task['projects']>[number] | undefined {
+  return [...(task.ticket_projects ?? task.projects ?? [])].sort((a, b) => {
+    const time = (value?: string | null) => {
+      const parsed = value ? Date.parse(value) : Number.NaN;
+      return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
+    };
+    return time(a.created_at) - time(b.created_at) || a.id.localeCompare(b.id);
+  })[0];
+}
+
+export function getTaskTicketLabel(task: {
+  projects?: Task['projects'] | null;
+  ticket_projects?: Task['projects'] | null;
+}): string | null {
+  const first = getTaskTicketProject(task);
+  if (
+    !first?.ticket_key ||
+    !/^[A-Z][A-Z0-9]{1,9}$/.test(first.ticket_key) ||
+    !Number.isSafeInteger(first.ticket_number) ||
+    (first.ticket_number ?? 0) < 1
+  )
+    return null;
+  return `${first.ticket_key}-${first.ticket_number}`;
+}
+
 export function normalizeTaskSearchValue(value: string) {
   return value.trim().toLowerCase();
 }

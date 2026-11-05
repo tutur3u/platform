@@ -83,6 +83,60 @@ describe('legacy task cycle routes', () => {
     ).toBe(200);
   });
 
+  it('counts only tasks whose newest workspace-cycle link is this cycle', async () => {
+    const plain = { board_id: null, deleted: false };
+    state.rows = [
+      {
+        id: 'cycle-1',
+        name: 'Cycle',
+        deleted: false,
+        task_cycle_tasks: [
+          // Newer link to another workspace cycle: counted there, not here.
+          {
+            task_id: 'moved-on',
+            task: {
+              cycle_links: [
+                {
+                  cycle_id: 'cycle-1',
+                  created_at: '2026-01-01T00:00:00Z',
+                  cycle: plain,
+                },
+                {
+                  cycle_id: 'cycle-2',
+                  created_at: '2026-02-01T00:00:00Z',
+                  cycle: plain,
+                },
+              ],
+            },
+          },
+          // A newer board-sprint row does not move the task out of here.
+          {
+            task_id: 'here',
+            task: {
+              cycle_links: [
+                {
+                  cycle_id: 'cycle-1',
+                  created_at: '2026-01-01T00:00:00Z',
+                  cycle: plain,
+                },
+                {
+                  cycle_id: 'sprint-9',
+                  created_at: '2026-03-01T00:00:00Z',
+                  cycle: { board_id: 'board-1', deleted: false },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ];
+
+    const response = await PUT(putRequest(), { params });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ tasksCount: 1 });
+  });
+
   it('keeps workspace cycles editable before the sprint migration lands', async () => {
     state.boardIdMissing = true;
     state.rows = [{ id: 'cycle-1', name: 'Cycle', task_cycle_tasks: [] }];
