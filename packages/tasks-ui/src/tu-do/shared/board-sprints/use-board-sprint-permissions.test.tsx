@@ -2,7 +2,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useBoardSprintPermissions } from './use-board-sprint-permissions';
+import {
+  useBoardEditPermission,
+  useBoardSprintPermissions,
+} from './use-board-sprint-permissions';
 
 const state = vi.hoisted(() => ({
   actor: null as {
@@ -128,4 +131,40 @@ describe('useBoardSprintPermissions', () => {
     });
     expect(state.check).not.toHaveBeenCalled();
   });
+});
+
+describe('useBoardEditPermission', () => {
+  it.each([
+    { hasPermission: true, membershipType: 'MEMBER', expected: true },
+    { hasPermission: false, membershipType: 'MEMBER', expected: false },
+    { hasPermission: true, membershipType: 'GUEST', expected: false },
+    { hasPermission: true, membershipType: undefined, expected: false },
+  ])(
+    'uses real member board-edit access: $membershipType/$hasPermission',
+    async (testCase) => {
+      state.check.mockResolvedValue(testCase);
+      const client = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      );
+      const { result } = renderHook(
+        () => useBoardEditPermission({ enabled: true, wsId: 'ws-1' }),
+        { wrapper }
+      );
+      await waitFor(() =>
+        expect(
+          client.getQueryState([
+            'workspace-permission',
+            'ws-1',
+            'manage_projects',
+            'actor-a',
+          ])?.status
+        ).toBe('success')
+      );
+      expect(state.check).toHaveBeenCalledWith('ws-1', 'manage_projects');
+      expect(result.current).toBe(testCase.expected);
+    }
+  );
 });

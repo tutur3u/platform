@@ -17,7 +17,10 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { SprintMoveItems } from '../../board-sprints/sprint-move-items';
-import { useBoardSprintPermissions } from '../../board-sprints/use-board-sprint-permissions';
+import {
+  useBoardEditPermission,
+  useBoardSprintPermissions,
+} from '../../board-sprints/use-board-sprint-permissions';
 import {
   NEW_SPRINT,
   type SprintMoveTarget,
@@ -52,8 +55,12 @@ export function TaskSprintRow({
     enabled: Boolean(task?.id && boardId),
     wsId,
   });
+  const canEditBoard = useBoardEditPermission({
+    enabled: canEdit && Boolean(task?.id && boardId && sprints.sprintsOn),
+    wsId,
+  });
   const { canCreate } = useBoardSprintPermissions({
-    canEdit,
+    canEdit: canEdit && canEditBoard,
     enabled: Boolean(task?.id && sprints.sprintsOn),
     wsId,
   });

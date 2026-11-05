@@ -50,3 +50,36 @@ export function useBoardSprintPermissions({
       remove.data === true,
   };
 }
+
+/** Resolve the member board-edit capability independently of UI readiness. */
+export function useBoardEditPermission({
+  enabled,
+  wsId,
+}: {
+  enabled: boolean;
+  wsId: string;
+}) {
+  const actor = useWorkspaceActor();
+  const canRequest =
+    enabled && Boolean(wsId) && actor?.lifetime.active === true;
+  const permission = useQuery({
+    queryKey: ['workspace-permission', wsId, 'manage_projects', actor?.actorId],
+    queryFn: async () => {
+      if (!actor) throw new Error('Workspace actor is unavailable');
+      actor.assertActive();
+      const result = await checkWorkspacePermission(wsId, 'manage_projects');
+      actor.assertActive();
+      return result.hasPermission && result.membershipType === 'MEMBER';
+    },
+    enabled: canRequest,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+  return (
+    canRequest &&
+    permission.isSuccess &&
+    !permission.isFetching &&
+    !permission.error &&
+    permission.data === true
+  );
+}
