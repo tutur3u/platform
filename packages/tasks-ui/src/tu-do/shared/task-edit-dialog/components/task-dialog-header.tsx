@@ -16,7 +16,6 @@ import { DialogDescription, DialogTitle } from '@tuturuuu/ui/dialog';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { getTicketIdentifier } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import type { TaskDialogPresentation } from '../../task-dialog-presentation';
@@ -202,9 +201,8 @@ interface TaskDialogHeaderProps {
   /** Current task name from the form */
   taskName?: string;
   /** Board ticket prefix for building the identifier */
-  ticketPrefix?: string | null;
+  ticketLabel?: string | null;
   /** Task display number for building the identifier */
-  displayNumber?: number;
   createMultiple: boolean;
   hasDraft: boolean;
   wsId: string;
@@ -254,8 +252,7 @@ export function TaskDialogHeader({
   draftId,
   isTitleVisible = true,
   taskName,
-  ticketPrefix,
-  displayNumber,
+  ticketLabel,
   createMultiple,
   hasDraft,
   wsId,
@@ -324,10 +321,7 @@ export function TaskDialogHeader({
   // When the title input scrolls out of view, show ticket ID badge + task name in the header
   const trimmedTaskName = taskName?.trim();
   const showScrollTitle = !isTitleVisible && !!trimmedTaskName;
-  const ticketId =
-    !isCreateMode && displayNumber
-      ? getTicketIdentifier(ticketPrefix, displayNumber)
-      : null;
+  const ticketId = !isCreateMode ? ticketLabel : null;
 
   // The side panel is narrow at any viewport, so its actions wrap under the title.
   const isPanel = presentation === 'panel';

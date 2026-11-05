@@ -28,7 +28,7 @@ export function useBoardSprintSurface({
   tasks,
   wsId,
 }: {
-  board: Pick<WorkspaceTaskBoard, 'id' | 'default_list_id' | 'ticket_prefix'>;
+  board: Pick<WorkspaceTaskBoard, 'id' | 'default_list_id'>;
   canManage: boolean;
   canPlan: boolean;
   currentUserId?: string;
@@ -84,7 +84,6 @@ export function useBoardSprintSurface({
       }
       onStarted={() => setBoardTab('board')}
       sprints={sprints}
-      ticketPrefix={board.ticket_prefix}
       wsId={wsId}
     />
   ) : null;
@@ -104,7 +103,6 @@ export function useBoardSprintSurface({
         null
       }
       target={summary}
-      ticketPrefix={board.ticket_prefix}
       wsId={wsId}
     />
   ) : null;

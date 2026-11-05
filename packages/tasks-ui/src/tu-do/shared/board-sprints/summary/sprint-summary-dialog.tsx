@@ -74,7 +74,6 @@ export function SprintSummaryDialog({
   onOpenChange,
   sprint,
   target,
-  ticketPrefix,
   wsId,
 }: {
   boardId: string;
@@ -85,7 +84,6 @@ export function SprintSummaryDialog({
   onOpenChange: (open: boolean) => void;
   sprint: BoardSprint | null;
   target: SprintSummaryTarget | null;
-  ticketPrefix?: string | null;
   wsId: string;
 }) {
   const open = Boolean(target && sprint);
@@ -103,7 +101,6 @@ export function SprintSummaryDialog({
             onClose={() => onOpenChange(false)}
             onEnded={onEnded}
             sprint={sprint}
-            ticketPrefix={ticketPrefix}
             wsId={wsId}
           />
         ) : null}
@@ -121,7 +118,6 @@ function SummaryBody({
   onClose,
   onEnded,
   sprint,
-  ticketPrefix,
   wsId,
 }: {
   boardId: string;
@@ -132,7 +128,6 @@ function SummaryBody({
   onClose: () => void;
   onEnded?: () => void;
   sprint: BoardSprint;
-  ticketPrefix?: string | null;
   wsId: string;
 }) {
   const t = useTranslations('ws-task-boards.sprints');
@@ -268,7 +263,6 @@ function SummaryBody({
             listsById={listsById}
             nextSprintName={nextName}
             onChange={setDecisions}
-            ticketPrefix={ticketPrefix}
             unfinished={unfinished}
           />
         ) : (

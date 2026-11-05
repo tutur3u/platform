@@ -123,7 +123,6 @@ function renderSummary(props: {
         onOpenChange={vi.fn()}
         sprint={props.shown}
         target={{ mode: props.mode, sprintId: props.shown.id }}
-        ticketPrefix="DEV"
         wsId="ws-1"
       />
     </QueryClientProvider>
