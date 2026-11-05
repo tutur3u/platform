@@ -141,5 +141,16 @@
     "classification": "verified false positive",
     "effectiveRoles": ["anon", "authenticated", "service_role"],
     "reason": "Redefined anon 2-arg validator passes a NULL verifier to private.redeem_cross_app_token, so it can never redeem a PKCE-bound token; single-use under FOR UPDATE; the verifier variant validate_cross_app_token_with_session_pkce is service_role only (reviewed in #7394)"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261104213040_project_ticket_keys.sql",
+    "line": 189,
+    "sourceDigest": "f85dbb25cf33e0d10314fe1730f318d5b5834817695b0090f80d031903e8df64",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "5f82b696cb3bdb05effeb39bfd2419a0e4d473e44ff18a970704362edd4788f0",
+    "classification": "verified false positive",
+    "effectiveRoles": [],
+    "reason": "Migration-only DO block reads pg_get_functiondef for exactly two fixed regprocedure signatures, applies fixed relation-preservation replacements, and aborts on contract drift. No caller-controlled SQL, role, signature or ACL text. CREATE OR REPLACE preserves the existing routine owner and privileges; the fixed patch does not change function settings or ACLs."
   }
 ]

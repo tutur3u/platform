@@ -379,6 +379,40 @@ describe('tutoring support queue', () => {
     expect(body.summary).toMatchObject({ absent: 1, weak: 0 });
   });
 
+  it('lists a learner in a DDT and an ordinary class only under the ordinary class', async () => {
+    configRows = serializeTutoringPolicyConfigRows(EASY_CENTER_TUTORING_POLICY);
+    const today = new Date().toISOString().slice(0, 10);
+    const row = (groupId: string, name: string) => ({
+      group_id: groupId,
+      user_id: 'student',
+      date: today,
+      group: { name },
+      user: { full_name: 'Lan' },
+    });
+    attendanceRows = [
+      row('ddt-group', 'starters ddt 2'),
+      row('english-group', 'English A1'),
+    ];
+    feedbackRows = [
+      {
+        ...row('ddt-group', 'starters ddt 2'),
+        id: 'ddt-feedback',
+        content: 'Needs practice',
+        created_at: new Date().toISOString(),
+      },
+    ];
+    const body = await (await listQueue()).json();
+    expect(body.count).toBe(1);
+    expect(body.data).toMatchObject([
+      {
+        group_id: 'english-group',
+        group_name: 'English A1',
+        reason_type: 'ABSENT_RECOVERY',
+        student_user_id: 'student',
+      },
+    ]);
+  });
+
   it('leaves tutor groups out of the make-up and weak-support queues', async () => {
     const tutorGroupId = '22222222-2222-4222-8222-222222222222';
     const today = new Date().toISOString().slice(0, 10);

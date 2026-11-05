@@ -196,3 +196,16 @@ test('credential check flags a write-token job that persists credentials', () =>
     ['vercel-production-ai.yaml:Deploy-Production']
   );
 });
+
+test('CI configuration check never persists checkout credentials on any runner', () => {
+  const checkouts = workflows['ci-check.yml'].jobs.check.steps.filter((step) =>
+    step.uses?.startsWith('actions/checkout@')
+  );
+  assert.ok(
+    checkouts.length > 0,
+    'CI configuration check must check out source'
+  );
+  for (const checkout of checkouts) {
+    assert.equal(checkout.with?.['persist-credentials'], false);
+  }
+});
