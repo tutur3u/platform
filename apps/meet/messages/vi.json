@@ -4387,6 +4387,8 @@
       "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",
       "checkpoint_deferred": "Bản lưu tại không gian làm việc đang bị chậm. Nội dung cộng tác vẫn được giữ trong phòng trong khi hệ thống thử lưu lại.",
       "connecting": "Đang kết nối tài liệu chung…",
+      "doc_generation_changed": "Tài liệu đã thay đổi sau khi xóa. Các chỉnh sửa ngoại tuyến chưa đồng bộ và lịch sử hoàn tác đã được loại bỏ.",
+      "doc_locked": "Tài liệu đang được xóa. Bạn có thể chỉnh sửa khi các bản sao đã sẵn sàng.",
       "document": "Tài liệu chung",
       "document_presence": "{count} người trong tài liệu này",
       "live": "Trực tiếp · đồng bộ tự động",

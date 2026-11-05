@@ -193,3 +193,24 @@ describe('shared Cloudflare document provider', () => {
     expect(first.peer.sent).toHaveLength(count);
   });
 });
+
+describe('erase generation disposal', () => {
+  it('discards queued offline state without flushing it on teardown or reconnect', async () => {
+    const room = new Room();
+    const peer = room.peer();
+    const doc = new Y.Doc();
+    const provider = new CloudflareDocumentProvider(
+      doc,
+      peer as unknown as RealtimeChannel
+    );
+    doc.getText('content').insert(0, 'stale offline undo');
+    provider.discard();
+    peer.reconnect();
+    await provider.flush();
+    await provider.destroy();
+    expect(peer.sent).toEqual([]);
+    expect(room.document.getText('content').toString()).toBe('');
+    doc.destroy();
+    room.document.destroy();
+  });
+});

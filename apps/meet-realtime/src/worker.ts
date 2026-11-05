@@ -27,9 +27,12 @@ export default {
   ): Promise<Response> {
     const url = new URL(request.url);
     if (
-      ['/channels', '/channels/publish', '/channels/document'].includes(
-        url.pathname
-      )
+      [
+        '/channels',
+        '/channels/publish',
+        '/channels/document',
+        '/channels/erase',
+      ].includes(url.pathname)
     )
       return channelRequest(request, env);
 

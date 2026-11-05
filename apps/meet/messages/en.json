@@ -4387,6 +4387,8 @@
       "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",
       "checkpoint_deferred": "Workspace backup is delayed. Live edits remain in this room while saving is retried.",
       "connecting": "Connecting to the shared document…",
+      "doc_generation_changed": "The document changed after an erase. Unsynced offline edits and undo history were discarded.",
+      "doc_locked": "This document is being erased. Editing will resume when its copies are ready.",
       "document": "Shared document",
       "document_presence": "{count, plural, one {# person in this document} other {# people in this document}}",
       "live": "Live · automatic sync",

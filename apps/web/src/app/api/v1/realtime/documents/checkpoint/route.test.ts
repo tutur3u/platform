@@ -54,6 +54,7 @@ function request(kind = 'document-checkpoint') {
 describe('meeting document checkpoint route', () => {
   beforeEach(() => {
     vi.stubEnv('MEET_REALTIME_TOKEN_SECRET', secret);
+    vi.stubEnv('MEET_ERASE_DO_PROTOCOL', 'false');
     rpc.mockReset();
   });
   afterEach(() => vi.unstubAllEnvs());
@@ -68,6 +69,20 @@ describe('meeting document checkpoint route', () => {
       'checkpoint_meeting_document',
       expect.objectContaining({ p_meeting_id: meetingId, p_version: 3 })
     );
+  });
+
+  it('uses the legacy checkpoint arity until V4 is enabled', async () => {
+    rpc.mockResolvedValue(3);
+    const { POST } = await import('./route');
+    await POST(request());
+    const legacyCall = rpc.mock.calls[0];
+    if (!legacyCall) throw new Error('Missing legacy checkpoint RPC');
+    expect(legacyCall[1]).not.toHaveProperty('p_doc_generation');
+    vi.stubEnv('MEET_ERASE_DO_PROTOCOL', 'true');
+    await POST(request());
+    const generationCall = rpc.mock.calls[1];
+    if (!generationCall) throw new Error('Missing generation checkpoint RPC');
+    expect(generationCall[1]).toHaveProperty('p_doc_generation', 0);
   });
 
   it('surfaces a workspace conflict as 409 so the room can report it instead of retrying as deferred', async () => {

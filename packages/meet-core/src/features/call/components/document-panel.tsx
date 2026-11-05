@@ -28,33 +28,50 @@ export function DocumentPanel({
   accountId: string;
 }) {
   const t = useTranslations('meet.collaboration');
+  const [epoch, setEpoch] = useState(0);
   const query = useQuery({
-    queryKey: ['meeting-document', meetingId, accountId],
+    queryKey: ['meeting-document', meetingId, accountId, epoch],
     queryFn: () => getMeetDocument(meetingId),
     retry: false,
   });
   if (!query.data)
     return (
       <div className="p-4 text-muted-foreground text-sm">
-        {query.isError ? t('unavailable') : t('connecting')}
+        {query.isError
+          ? query.error &&
+            'status' in query.error &&
+            [409, 423].includes(Number(query.error.status))
+            ? t('doc_locked')
+            : t('unavailable')
+          : t('connecting')}
       </div>
     );
   return (
-    <DocumentEditor
-      key={`${query.data.documentId}:${accountId}`}
-      meetingId={meetingId}
-      initial={query.data}
-    />
+    <>
+      {epoch > 0 && (
+        <output className="px-6 py-2 text-muted-foreground text-sm">
+          {t('doc_generation_changed')}
+        </output>
+      )}
+      <DocumentEditor
+        key={`${query.data.documentId}:${accountId}:${query.data.docGeneration}:${epoch}`}
+        meetingId={meetingId}
+        initial={query.data}
+        onGenerationChange={() => setEpoch((value) => value + 1)}
+      />
+    </>
   );
 }
 export function DocumentEditor({
   meetingId,
   initial,
   join = getMeetDocument,
+  onGenerationChange,
 }: {
   meetingId: string;
   initial: MeetingDocumentJoin;
   join?: typeof getMeetDocument;
+  onGenerationChange?: () => void;
 }) {
   const t = useTranslations('meet.collaboration');
   const [doc] = useState(() => {
@@ -87,7 +104,13 @@ export function DocumentEditor({
             first = false;
             return initial;
           }
-          return join(meetingId);
+          const next = await join(meetingId);
+          if (next.docGeneration !== initial.docGeneration) {
+            current.current?.discard();
+            onGenerationChange?.();
+            throw new Error('doc_locked');
+          }
+          return next;
         }
       );
       const next = new CloudflareDocumentProvider(
@@ -114,7 +137,7 @@ export function DocumentEditor({
         }
       }, 100);
     };
-  }, [doc, initial, join, meetingId]);
+  }, [doc, initial, join, meetingId, onGenerationChange]);
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
       <div className="min-h-0 flex-1 overflow-auto">
@@ -123,6 +146,7 @@ export function DocumentEditor({
             // The surface itself is the panel: no inner frame, padding instead of
             // a border, and no focus ring (the caret and toolbar show focus).
             className={DOCUMENT_SURFACE_CLASS_NAME}
+            readOnly={initial.role !== 'editor'}
             fillHeight
             content={null}
             toolbarLeadingContent={

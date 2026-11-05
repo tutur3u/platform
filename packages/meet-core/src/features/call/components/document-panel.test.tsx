@@ -8,8 +8,24 @@ import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import { DOCUMENT_SURFACE_CLASS_NAME, DocumentEditor } from './document-panel';
 
-vi.mock('@tuturuuu/realtime/channels', () => ({ RealtimeChannel: class {} }));
-const providers = vi.hoisted(() => ({ awareness: [] as Awareness[] }));
+const channels = vi.hoisted(() => ({
+  joins: [] as Array<() => Promise<unknown>>,
+}));
+vi.mock('@tuturuuu/realtime/channels', () => ({
+  RealtimeChannel: class {
+    constructor(
+      _topic: unknown,
+      _options: unknown,
+      join: () => Promise<unknown>
+    ) {
+      channels.joins.push(join);
+    }
+  },
+}));
+const providers = vi.hoisted(() => ({
+  awareness: [] as Awareness[],
+  discard: vi.fn(),
+}));
 vi.mock('@tuturuuu/realtime/documents', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('@tuturuuu/realtime/documents')>();
@@ -27,6 +43,9 @@ vi.mock('@tuturuuu/realtime/documents', async (importOriginal) => {
         providers.awareness.push(this.awareness);
         connected(true);
         checkpoint('deferred');
+      }
+      discard() {
+        providers.discard();
       }
       async destroy() {
         this.awareness.destroy();
@@ -69,12 +88,15 @@ vi.mock('@tuturuuu/ui/text-editor/editor', () => ({
 }));
 afterEach(() => {
   cleanup();
+  channels.joins = [];
+  providers.discard.mockClear();
   for (const state of providers.awareness.splice(0)) state.destroy();
 });
 
 it('places backup feedback in the editor toolbar without a padded title wrapper', () => {
   const initial: Parameters<typeof DocumentEditor>[0]['initial'] = {
     documentId: 'synthetic-document',
+    docGeneration: 0,
     revision: 0,
     endpoint: 'https://realtime.example.invalid',
     token: 'synthetic-test-token',
@@ -112,6 +134,7 @@ it('places backup feedback in the editor toolbar without a padded title wrapper'
 it('pads the writing surface itself, fills the panel and drops the focus ring', () => {
   const initial: Parameters<typeof DocumentEditor>[0]['initial'] = {
     documentId: 'synthetic-document',
+    docGeneration: 0,
     revision: 0,
     endpoint: 'https://realtime.example.invalid',
     token: 'synthetic-test-token',
@@ -137,4 +160,41 @@ it('pads the writing surface itself, fills the panel and drops the focus ring', 
   expect(DOCUMENT_SURFACE_CLASS_NAME).toMatch(/\bpb-\d+\b/);
   expect(DOCUMENT_SURFACE_CLASS_NAME).toMatch(/\boutline-none\b/);
   expect(DOCUMENT_SURFACE_CLASS_NAME).toMatch(/\bborder-0!/);
+});
+
+it('discards the old provider and requests a fresh editor before a changed-generation join can reconnect', async () => {
+  const initial: Parameters<typeof DocumentEditor>[0]['initial'] = {
+    documentId: 'fixture-document',
+    docGeneration: 0,
+    revision: 0,
+    endpoint: 'https://fixture.invalid',
+    token: 'fixture-only',
+    role: 'editor',
+    state: [],
+    user: {
+      id: 'fixture-user',
+      user_metadata: { display_name: 'Participant' },
+    },
+  };
+  const remount = vi.fn();
+  const join = vi.fn().mockResolvedValue({ ...initial, docGeneration: 1 });
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <TooltipProvider>
+        <DocumentEditor
+          meetingId="fixture-room"
+          initial={initial}
+          join={join}
+          onGenerationChange={remount}
+        />
+      </TooltipProvider>
+    </NextIntlClientProvider>
+  );
+  const reconnect = channels.joins[0];
+  expect(reconnect).toBeDefined();
+  if (!reconnect) throw new Error('Missing join');
+  expect(await reconnect()).toBe(initial);
+  await expect(reconnect()).rejects.toThrow('doc_locked');
+  expect(providers.discard).toHaveBeenCalledOnce();
+  expect(remount).toHaveBeenCalledOnce();
 });

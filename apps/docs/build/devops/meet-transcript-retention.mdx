@@ -167,3 +167,43 @@ run and a separate approval.
 - `apps/cron-control/src/meet-transcript-retention.test.ts`: default off,
   both fences mid-run, batch and run bounds, time reserve, lost-Worker
   resumption, bounded retries, terminal states and five-day durable stop.
+
+
+## Document erasure protocol rollout
+
+`MEET_ERASE_DO_PROTOCOL` defaults to `false` on meet-realtime and web. While off,
+ordinary documents use the existing checkpoint RPC without `p_doc_generation`,
+and erase commands are refused. Once any document is frozen or its generation
+advances, disabling the flag cannot reopen that document. Keep both environments
+in sync; V12 must refuse to sign until every participating environment is enabled.
+
+Apply migrations in order V4 → V2 → V10. Deploy V4 before the callback RPC and
+web route, then provision secrets, then deploy meet-realtime. Keep the protocol
+off until the callback integration is independently accepted. Never enable it
+against an unknown callback implementation. The callback must bind the document,
+meeting and topic, refuse protected workspaces first, report holds from freeze
+issuance, return both copy states, quarantine expired unacknowledged leases, and
+support recovery after the saved copy is rewritten. Unknown operation status
+must fail closed. Leave and self operations must retain the current generation.
+
+Provision `MEET_ERASE_CALLBACK_KEY_V1` separately for each environment on web and
+meet-realtime. It must differ from `MEET_REALTIME_TOKEN_SECRET`. Rotate the secret
+and the positive integer `MEET_ERASE_CALLBACK_KEY_VERSION` together on both sides
+without changing code, while the protocol is quiesced. Callback claims use a fresh
+`nonce` on every call and a separate `command_nonce` for the signed apply ticket.
+Recovery reuses its single admission lease. The callback response's `nonce`
+echoes the command nonce; durable callback replay consumption uses the fresh nonce.
+
+Provision `MEET_ERASE_DO_PUBLIC_KEYS` as a Worker secret containing a JSON map of
+version to Ed25519 public key. Deploys do not overwrite it through vars. Private
+signing keys remain in the erase runtime. `PLATFORM_API_BASE_URL` must use HTTPS.
+The workers.dev endpoint is disabled. Keep `MEET_AI_DISABLED="true"` and
+`MEET_AI_ENABLED_WORKSPACE_IDS=""` throughout containment.
+
+Gate decisions are cached for 30 seconds and invalidated by erase commands.
+WebSocket frames use only the local decision, freeze and generation. Gate
+refusals emit content-free `code` and `count` fields. Check Worker egress health
+and refusal codes after rollout. Run the protocol unit suite through Vitest and
+`node --test apps/meet-realtime/src/channel-room-erase.runtime.test.mjs` for the
+SQLite recovery and callback-nonce contract; `bun check:changed` selects both.
+These fixtures do not prove the hosted callback RPC or production deployment.
