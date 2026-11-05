@@ -355,6 +355,8 @@ function createSupabaseBackedAppSessionResponse(
   const secondsUntilExpiry = claims.exp - nowSeconds;
   const { token } = createAppSessionToken(
     {
+      // SR-926: claims.email was re-read from confirmed Auth for this mint by
+      // createAppSessionClaimsFromSupabaseClaims; it is never a provider claim.
       email: claims.email ?? undefined,
       mfa: claims.mfa,
       expiresInSeconds: Math.max(1, secondsUntilExpiry),

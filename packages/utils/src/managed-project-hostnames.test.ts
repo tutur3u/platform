@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { getAppDomainByUrl } from './internal-domains';
 import {
   isReservedManagedProjectHostname,
   isSafeManagedProjectHostname,
   normalizeManagedProjectHostname,
 } from './managed-project-hostnames';
+import { isRetiredAppHostname } from './retired-app-hosts';
 
 // Former staging and cutover hosts that sat inside the production cookie zone.
 const FORMER_STAGING_HOSTS = [
@@ -43,10 +45,18 @@ describe('managed project hostname reservation', () => {
     'staging.tutur3u.com',
     'localhost',
     'nova.ai.vn',
-    'rewise.me',
   ])('reserves platform hostname %s', (host) => {
     expect(isReservedManagedProjectHostname(host)).toBe(true);
   });
+
+  it.each(['rewise.me', 'rewise.school'])(
+    'keeps released domain %s reserved while rejecting it as a trusted origin',
+    (host) => {
+      expect(isReservedManagedProjectHostname(host)).toBe(true);
+      expect(isRetiredAppHostname(host)).toBe(true);
+      expect(getAppDomainByUrl(`https://${host}`)).toBeNull();
+    }
+  );
 
   it.each([
     'Forms.Tuturuuu.COM',

@@ -47,6 +47,15 @@ for roles, independent review, publication, receipts and retirement.
   skips or fails, stop and report the blocker rather than pushing manually.
 - Do not commit secrets, API keys, tokens, credentials, or raw sensitive values.
   Reference environment variables by name only.
+- Keep conversation history out of maintainer-facing text. Code comments, docs,
+  commit messages and PR titles and descriptions describe the code as it is and
+  why. Never record the conversation, prompt, review rounds or iteration history
+  in them: no "as requested", "per the user", "as discussed", "in the previous
+  iteration", "by this lane", or agent names with times. Comments and docs also
+  avoid "previously", "changed from", "now uses" and "used to be"; state the
+  current behavior and its reason. A PR or commit body may describe the diff;
+  the discussion that led to it stays in the PR thread. Agent sessions run a
+  PreToolUse check that refuses such edits: rephrase, never work around it.
 - Do not manually edit `package.json` to add or update dependencies. Use the
   package manager command for the owning workspace.
 - Gradually adopt Oxlint/Oxfmt through explicit owned-file paths with

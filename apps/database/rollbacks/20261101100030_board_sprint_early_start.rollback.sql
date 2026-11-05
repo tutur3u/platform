@@ -1,6 +1,6 @@
 -- Manual rollback only: restores the 20261101100000 start_board_sprint, which
 -- pulls only the start date back when a sprint starts early. Run the
--- 20261101100060 rollback first (it restores this migration's version), then
+-- 20261105082000 rollback first (it restores this migration's version), then
 -- this one. No data changes.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
