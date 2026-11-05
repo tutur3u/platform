@@ -25,13 +25,25 @@ export function BoardPlanTabs({
   return (
     <Tabs onValueChange={(value) => onTabChange(value as BoardTab)} value={tab}>
       <TabsList aria-label={t('tabs_label')} className="h-8 p-0.5">
-        <TabsTrigger className="h-7 px-2.5 text-xs" value="plan">
+        <TabsTrigger
+          aria-label={t('plan_tab')}
+          className="h-7 px-2.5 text-xs"
+          value="plan"
+        >
           <ListChecks className="size-3.5" />
-          {t('plan_tab')}
+          <span className="@md/board-header:inline hidden">
+            {t('plan_tab')}
+          </span>
         </TabsTrigger>
-        <TabsTrigger className="h-7 px-2.5 text-xs" value="board">
+        <TabsTrigger
+          aria-label={t('board_tab')}
+          className="h-7 px-2.5 text-xs"
+          value="board"
+        >
           <KanbanSquare className="size-3.5" />
-          {t('board_tab')}
+          <span className="@md/board-header:inline hidden">
+            {t('board_tab')}
+          </span>
         </TabsTrigger>
       </TabsList>
     </Tabs>

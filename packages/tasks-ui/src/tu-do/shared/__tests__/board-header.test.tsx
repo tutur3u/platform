@@ -249,7 +249,7 @@ describe('BoardHeader', () => {
     });
   });
 
-  it('keeps search, Share, New task and More in the first row', () => {
+  it('keeps search with the filters and Share, New task and More in the header', () => {
     const onCreateTask = vi.fn();
     renderBoardHeader({ onCreateTask });
 

@@ -121,11 +121,11 @@ export function SprintPill({
             />
           </span>
           <span className="font-medium">{currentSprint.name}</span>
-          <span className="inline-flex h-6 items-center gap-1 rounded-md bg-muted px-2 font-normal text-muted-foreground text-xs">
+          <span className="@3xl/board-header:inline-flex hidden h-6 items-center gap-1 rounded-md bg-muted px-2 font-normal text-muted-foreground text-xs">
             <CalendarDays className="size-3" />
             {formatSprintDateRange(currentSprint, locale)}
           </span>
-          <span className="font-normal text-muted-foreground">
+          <span className="@md/board-header:inline hidden font-normal text-muted-foreground">
             {isActive
               ? t('done_count', { done: progress.done, total: progress.total })
               : t('task_count', { count: progress.total })}
