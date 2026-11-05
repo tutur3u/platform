@@ -49,6 +49,31 @@ test('verdict blocks skip-to-green and any non-success app result', () => {
   assert.equal(verdict({ mode: 'affected', apps: ['apps/a'], codeChanged: true, results: { 'apps/a': 'failure' } }).pass, false);
   assert.equal(verdict({ mode: 'affected', apps: ['apps/a'], codeChanged: true, results: { 'apps/a': 'success' } }).pass, true);
 });
+test('mode all requires at least one success and every result must succeed', () => {
+  assert.deepEqual(verdict({ mode: 'all', apps: [], codeChanged: true, results: {} }), { pass: false, reason: 'fail-safe all but nothing ran' });
+  assert.equal(verdict({ mode: 'all', apps: [], codeChanged: true, results: { a: 'success', b: 'success' } }).pass, true);
+  assert.equal(verdict({ mode: 'all', apps: [], codeChanged: true, results: { a: 'success', b: 'failure' } }).pass, false);
+});
+test('docs-only classification is based on documentation extensions', () => {
+  const f = fixture(); try {
+    const markdown = calculate({ extraEdges: {}, cwd: f.cwd, base: f.initial, head: f.change('docs/a.md') });
+    assert.equal(markdown.mode, 'affected');
+    assert.deepEqual(markdown.apps, []);
+    assert.equal(calculate({ extraEdges: {}, cwd: f.cwd, base: f.initial, head: f.change('docs/build.mjs') }).mode, 'all');
+  } finally { f.close(); }
+});
+test('base graph dependents survive removing their shared package at head', () => {
+  const f = fixture(); try {
+    f.git('rm', '-qr', 'packages/core'); const head = f.commit('remove core');
+    assert.deepEqual(run(f, head).apps, ['apps/alpha', 'apps/beta']);
+  } finally { f.close(); }
+});
+test('base graph dependents survive renaming their shared package at head', () => {
+  const f = fixture(); try {
+    f.git('mv', 'packages/core', 'packages/kernel'); const head = f.commit('rename core');
+    assert.deepEqual(run(f, head).apps, ['apps/alpha', 'apps/beta']);
+  } finally { f.close(); }
+});
 
 const run = (f, head, extraEdges = {}, base = f.initial) => calculate({ cwd: f.cwd, base, head, extraEdges });
 
@@ -117,16 +142,34 @@ test('scanner finds a new undeclared relative import and the extra-edges check r
     f.change('apps/alpha/src/declared.ts', "import { x } from '../../../packages/ui/index.js';\n");
     const found = scanCrossWorkspaceImports(f.cwd);
     const missing = undeclaredImports(found, loadGraph(f.cwd).declares);
-    assert.deepEqual(missing.map((m) => [m.importer, m.workspace, m.file]), [['apps/alpha', 'packages/core', 'apps/alpha/src/uses-core.ts']]);
+    assert.deepEqual(missing.map((m) => [m.importer, m.workspace, m.file]).sort((a, b) => a[2].localeCompare(b[2])), [
+      ['apps/alpha', 'packages/core', 'apps/alpha/src/uses-core.test.ts'],
+      ['apps/alpha', 'packages/core', 'apps/alpha/src/uses-core.ts'],
+    ]);
     const suggestion = suggestEdges(missing);
     assert.deepEqual(suggestion, { 'packages/core/': ['apps/alpha'] });
     assert.equal(coveredByExtraEdges({}, missing[0].target, 'apps/alpha'), false);
     assert.equal(coveredByExtraEdges(suggestion, missing[0].target, 'apps/alpha'), true);
   } finally { f.close(); }
 });
-test('test-only importers are not dependency edges', () => {
-  for (const file of ['a/b.test.ts', 'a/b.spec.tsx', 'a/__tests__/x.ts', 'a/tests/x.ts', 'apps/x/e2e/fixtures/y.ts', 'apps/x/e2e-staging/y.ts', 'a/vitest.config.ts', 'a/playwright.config.ts']) assert.equal(isTestOnlyFile(file), true, file);
-  for (const file of ['a/src/runtime.ts', 'a/vite.config.ts', 'apps/finance/cloudflare/native-built-worker.runtime.mjs', 'a/src/latest.ts']) assert.equal(isTestOnlyFile(file), false, file);
+test('isTestOnlyFile matches test filenames and runner configs, never a test directory', () => {
+  for (const file of ['a/b.test.ts', 'a/b.spec.tsx', 'a/b.e2e.ts', 'a/vitest.config.ts', 'a/playwright.config.ts', 'a/jest.config.ts']) assert.equal(isTestOnlyFile(file), true, file);
+  for (const file of ['a/__tests__/x.ts', 'a/tests/x.ts', 'a/test/helper.ts', 'apps/x/e2e/fixtures/y.ts', 'apps/x/e2e-staging/y.ts', 'a/src/runtime.ts', 'a/tests/runtime.ts', 'a/e2e/runtime.ts', 'a/vite.config.ts', 'apps/finance/cloudflare/native-built-worker.runtime.mjs', 'a/src/latest.ts']) assert.equal(isTestOnlyFile(file), false, file);
+});
+test('a test file in apps/x importing packages/utils marks x affected', () => {
+  const f = fixture(); try {
+    f.pkg('packages/utils', '@x/utils');
+    f.pkg('apps/x', '@x/x');
+    f.change('apps/x/e2e/helper.ts', "import { y } from '../../../packages/utils/index.js';\n");
+    const base = f.change('apps/x/import.test.ts', "import { y } from '../../packages/utils/index.js';\n");
+    const head = f.change('packages/utils/index.js', 'export const y = 1;\n');
+    const missing = undeclaredImports(scanCrossWorkspaceImports(f.cwd), loadGraph(f.cwd).declares);
+    assert.ok(missing.some(({ importer, workspace, file }) => importer === 'apps/x' && workspace === 'packages/utils' && file === 'apps/x/import.test.ts'));
+    assert.ok(missing.some(({ importer, file }) => importer === 'apps/x' && file === 'apps/x/e2e/helper.ts'));
+    const edges = suggestEdges(missing);
+    assert.deepEqual(run(f, head, {}, base).apps, []);
+    assert.deepEqual(run(f, head, edges, base).apps, ['apps/x']);
+  } finally { f.close(); }
 });
 test('every undeclared cross-workspace relative import in the repo is listed in affected-apps.extra-edges.json', () => {
   const edges = loadExtraEdges();

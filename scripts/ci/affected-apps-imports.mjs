@@ -12,12 +12,11 @@ const SOURCE_FILE = /\.(?:ts|tsx|js|jsx|mjs|cjs|mts|cts)$/;
 // import(), vi.mock(), config files and fixture paths without parsing syntax.
 const RELATIVE_LITERAL = /(['"`])(\.{1,2}\/[^'"`\n]*)\1/g;
 
-// Test-only importers (unit/e2e specs, fixtures, vitest/playwright configs) do not ship in the importer's
-// build or deploy, so they are not dependency edges; a test that reads another workspace's source is
-// re-run by that workspace's own test jobs. Everything else (runtime code, build/vite/next configs) counts.
+// Filename and runner-config matcher only. The scanner does not drop these files:
+// a test importer is an edge, and a directory named test/, tests/ or e2e/ is not.
 export const isTestOnlyFile = (file) =>
-  /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(file) || /(?:^|\/)(?:__tests__|tests?|e2e[^/]*)\//.test(file) ||
-  /(?:^|\/)(?:vitest|playwright)[^/]*\.config\.[cm]?[jt]s$/.test(file);
+  /\.(?:test|spec|e2e)\.[cm]?[jt]sx?$/.test(file) ||
+  /(?:^|\/)(?:vitest|playwright|jest)\.config\.[cm]?[jt]s$/.test(file);
 
 export function listWorkspaceDirs(cwd) {
   const out = execFileSync('git', ['-C', cwd, 'ls-files', '-z', 'apps', 'packages'], { encoding: 'utf8', maxBuffer: 1 << 28 });
@@ -33,7 +32,7 @@ export function scanCrossWorkspaceImports(cwd) {
   };
   const found = [];
   for (const file of files) {
-    if (!SOURCE_FILE.test(file) || isTestOnlyFile(file) || !existsSync(path.join(cwd, file))) continue;
+    if (!SOURCE_FILE.test(file) || !existsSync(path.join(cwd, file))) continue;
     const importer = ownerOf(file);
     const source = readFileSync(path.join(cwd, file), 'utf8');
     if (!source.includes('./')) continue;

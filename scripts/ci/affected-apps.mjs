@@ -10,8 +10,8 @@
 //   apps/coordination) are invisible to package.json, so they are listed in
 //   affected-apps.extra-edges.json: { "<changed path prefix>/": ["<dependent workspace dir>", ...] }.
 //   affected-apps.test.mjs scans the repo and FAILS when a new undeclared import is not covered; add the
-//   suggested entry printed by `node scripts/ci/affected-apps-imports.mjs`. Test-only importers (specs,
-//   e2e, fixtures, vitest/playwright configs) are deliberately not edges, see affected-apps-imports.mjs.
+//   suggested entry printed by `node scripts/ci/affected-apps-imports.mjs`. Test importers count: a
+//   per-app test job is gated, so a test file that imports another workspace is an edge.
 // - Renames are diffed with --no-renames so both the moved-from and moved-to paths count.
 // - Anything unexpected (bad ref, unreadable graph, root/CI/config files) fails safe to mode "all".
 
@@ -25,6 +25,7 @@ const runGit = (...args) => execFileSync('git', args, { encoding: 'utf8', stdio:
 const EXTRA_EDGES_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'affected-apps.extra-edges.json');
 
 export function verdict({ mode, apps, codeChanged, results }) {
+  if (mode === 'all' && (Object.values(results).length === 0 || Object.values(results).some((result) => result !== 'success'))) return { pass: false, reason: 'fail-safe all but nothing ran' };
   if (mode === 'affected' && codeChanged && apps.length === 0) return { pass: false, reason: 'code changed but no apps were selected' };
   const failed = apps.find((app) => results[app] !== 'success');
   if (failed) return { pass: false, reason: `${failed} result was ${results[failed] ?? 'missing'}` };
@@ -63,8 +64,10 @@ export function loadExtraEdges(file = EXTRA_EDGES_PATH) {
   return edges;
 }
 
+const matchesPrefix = (file, prefix) => file.startsWith(prefix) || (prefix.endsWith('/') && file === prefix.slice(0, -1));
+
 export function coveredByExtraEdges(extraEdges, file, dependent) {
-  return Object.entries(extraEdges).some(([prefix, dependents]) => file.startsWith(prefix) && dependents.includes(dependent));
+  return Object.entries(extraEdges).some(([prefix, dependents]) => matchesPrefix(file, prefix) && dependents.includes(dependent));
 }
 
 // Workspace graph. Every folder under apps/ and packages/ is a unit; folders without a package.json
@@ -91,6 +94,27 @@ export function loadGraph(cwd, ref) {
   return { dirs, dependents, declares };
 }
 
+function loadGraphAtTree(cwd, ref) {
+  const out = execFileSync('git', ['-C', cwd, 'ls-tree', '-r', '--name-only', ref, '--', 'apps', 'packages'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 24 });
+  const manifests = new Set(out.split('\n').filter((file) => /^(apps|packages)\/[^/]+\/package\.json$/.test(file)));
+  const dirs = [...workspaceDirs(cwd, 'apps', ref), ...workspaceDirs(cwd, 'packages', ref)];
+  const names = new Map(); const dependencies = new Map();
+  for (const dir of dirs) {
+    const file = `${dir}/package.json`;
+    if (!manifests.has(file)) { dependencies.set(dir, []); continue; }
+    const pkg = JSON.parse(execFileSync('git', ['-C', cwd, 'show', `${ref}:${file}`], { encoding: 'utf8' }));
+    if (!pkg.name) throw new Error(`workspace missing name: ${dir}`);
+    names.set(pkg.name, dir);
+    dependencies.set(dir, Object.keys({ ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies, ...pkg.optionalDependencies }));
+  }
+  const dependents = new Map(dirs.map((dir) => [dir, new Set()]));
+  for (const [dir, deps] of dependencies) for (const dep of deps) { const target = names.get(dep); if (target) dependents.get(target).add(dir); }
+  return { dirs, dependents };
+}
+
+const DOC_EXTENSIONS = new Set(['.md', '.mdx', '.txt', '.rst', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp']);
+const isDocumentation = (file) => DOC_EXTENSIONS.has(path.posix.extname(file).toLowerCase());
+
 export function calculate({ base, head = 'HEAD', cwd = process.cwd(), extraEdges }) {
   try {
     const mergeBase = runGit('-C', cwd, 'merge-base', base, head);
@@ -101,7 +125,10 @@ export function calculate({ base, head = 'HEAD', cwd = process.cwd(), extraEdges
     if (files.some(failSafePath)) return { mode: 'all', apps: [], reason: 'changed path requires all apps' };
 
     const edges = extraEdges ?? loadExtraEdges();
-    const { dirs, dependents } = loadGraph(cwd, head);
+    const headGraph = loadGraph(cwd, head);
+    const baseGraph = loadGraphAtTree(cwd, mergeBase);
+    const dirs = [...new Set([...headGraph.dirs, ...baseGraph.dirs])];
+    const dependents = new Map(dirs.map((dir) => [dir, new Set([...(headGraph.dependents.get(dir) ?? []), ...(baseGraph.dependents.get(dir) ?? [])])]));
     for (const [prefix, list] of Object.entries(edges)) for (const dep of list) {
       if (!dirs.includes(dep)) throw new Error(`extra edge "${prefix}" names unknown workspace ${dep}`);
     }
@@ -111,8 +138,8 @@ export function calculate({ base, head = 'HEAD', cwd = process.cwd(), extraEdges
     for (const file of files) {
       const owner = owners(file);
       if (owner) seeds.add(owner);
-      else if (!(file.endsWith('.md') || file.startsWith('docs/'))) return { mode: 'all', apps: [], reason: `changed file outside workspace: ${file}` };
-      for (const [prefix, list] of Object.entries(edges)) if (file.startsWith(prefix)) for (const dep of list) seeds.add(dep);
+      else if (!isDocumentation(file)) return { mode: 'all', apps: [], reason: `changed file outside workspace: ${file}` };
+      for (const [prefix, list] of Object.entries(edges)) if (matchesPrefix(file, prefix)) for (const dep of list) seeds.add(dep);
     }
     const affected = new Set(seeds);
     const queue = [...seeds];

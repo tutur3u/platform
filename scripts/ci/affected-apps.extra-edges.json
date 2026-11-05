@@ -3,20 +3,96 @@
     "apps/finance",
     "apps/pay"
   ],
+  "apps/calendar/src/lib/calendar/": [
+    "apps/cron-control"
+  ],
+  "apps/contacts/messages/": [
+    "packages/ui"
+  ],
+  "apps/contacts/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/": [
+    "packages/users-core"
+  ],
+  "apps/database/": [
+    "apps/infrastructure"
+  ],
+  "apps/database/scripts/": [
+    "apps/web"
+  ],
+  "apps/database/supabase/": [
+    "packages/utils"
+  ],
   "apps/database/supabase/migrations/": [
     "apps/web"
   ],
+  "apps/devbox-control/src/": [
+    "packages/sdk"
+  ],
+  "apps/finance/messages/": [
+    "packages/ui"
+  ],
+  "apps/infrastructure/e2e/fixtures/": [
+    "apps/database"
+  ],
+  "apps/infrastructure/src/lib/mobile-calendar/": [
+    "apps/calendar"
+  ],
+  "apps/inventory/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/": [
+    "packages/users-core"
+  ],
+  "apps/meet-realtime/src/": [
+    "apps/meet",
+    "packages/realtime"
+  ],
   "apps/meet/": [
-    "apps/meet-realtime"
+    "apps/meet-realtime",
+    "packages/meet-core"
+  ],
+  "apps/meet/messages/": [
+    "packages/programming-ui"
+  ],
+  "apps/nova/src/lib/": [
+    "apps/web"
+  ],
+  "apps/rewise/src/lib/": [
+    "apps/web"
+  ],
+  "apps/storefront/": [
+    "apps/inventory"
   ],
   "apps/teach/": [
     "apps/database"
   ],
+  "apps/teach/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/members/": [
+    "apps/web"
+  ],
   "apps/web/": [
-    "apps/database"
+    "apps/cron-control",
+    "apps/database",
+    "apps/infrastructure",
+    "packages/offline",
+    "packages/sdk"
+  ],
+  "apps/web/e2e/helpers/": [
+    "apps/inventory",
+    "apps/lettin"
   ],
   "apps/web/messages/": [
-    "apps/tanstack-web"
+    "apps/contacts",
+    "apps/tanstack-web",
+    "packages/ui"
+  ],
+  "apps/web/src/": [
+    "packages/users-core"
+  ],
+  "apps/web/src/lib/seo/": [
+    "packages/utils"
+  ],
+  "packages/internal-api/src/": [
+    "packages/apis",
+    "packages/education-core"
+  ],
+  "packages/inventory-core/": [
+    "apps/database"
   ],
   "packages/inventory-core/src/lib/infrastructure/employee-sql/": [
     "apps/infrastructure"
@@ -24,11 +100,26 @@
   "packages/realtime/src/": [
     "apps/chat-realtime"
   ],
+  "packages/satellite/src/": [
+    "packages/users-core"
+  ],
+  "packages/sdk/src/cli/": [
+    "packages/education-core"
+  ],
+  "packages/start-bridge/src/": [
+    "packages/internal-api"
+  ],
   "packages/supabase/src/next/": [
     "apps/tanstack-web"
   ],
   "packages/types/src/": [
     "apps/database"
+  ],
+  "packages/typescript-config/": [
+    "apps/database"
+  ],
+  "packages/utils/": [
+    "packages/internal-api"
   ],
   "packages/utils/src/": [
     "apps/coordination",
