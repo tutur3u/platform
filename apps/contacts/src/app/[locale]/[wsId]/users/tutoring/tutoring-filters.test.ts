@@ -1,4 +1,8 @@
 import type { TutoringSessionRecord } from '@tuturuuu/internal-api';
+import {
+  EASY_CENTER_TUTORING_POLICY,
+  STANDARD_TUTORING_POLICY,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import { describe, expect, it } from 'vitest';
 import {
   addDaysToIsoDate,
@@ -16,6 +20,7 @@ import {
   resolveTutoringSortOrder,
   startOfMonthIsoDate,
   toIsoDate,
+  tutoringQueueFilterGroups,
 } from './tutoring-filters';
 
 describe('iso date helpers', () => {
@@ -283,5 +288,63 @@ describe('canExportTutoringFormat', () => {
         'payroll'
       )
     ).toBe(false);
+  });
+});
+
+describe('support queue class filter', () => {
+  // Synthetic classes only.
+  const groups = [
+    { id: 'ddt', name: 'Starters DDT 2' },
+    { id: 'kg', name: 'Kindergarten K1' },
+    { id: 'english', name: 'English A1' },
+  ];
+
+  it('offers no class the policy excludes from all tutoring', () => {
+    expect(
+      tutoringQueueFilterGroups(EASY_CENTER_TUTORING_POLICY, groups, 'all').map(
+        (group) => group.id
+      )
+    ).toEqual(['english']);
+  });
+
+  it('keeps a class still eligible for one reason, and the current filter', () => {
+    const scoped = {
+      ...STANDARD_TUTORING_POLICY,
+      groupExclusions: [
+        {
+          scope: 'weak_support' as const,
+          match: 'contains' as const,
+          value: 'ddt',
+        },
+      ],
+    };
+    expect(tutoringQueueFilterGroups(scoped, groups, 'all')).toHaveLength(3);
+    expect(
+      tutoringQueueFilterGroups(EASY_CENTER_TUTORING_POLICY, groups, 'ddt').map(
+        (group) => group.id
+      )
+    ).toEqual(['ddt', 'english']);
+  });
+
+  it('reads class tags for tag rules', () => {
+    const tagPolicy = {
+      ...STANDARD_TUTORING_POLICY,
+      groupExclusions: [
+        {
+          scope: 'all' as const,
+          match: 'exact' as const,
+          value: 'DDT',
+          target: 'tag' as const,
+        },
+      ],
+    };
+    expect(
+      tutoringQueueFilterGroups(
+        tagPolicy,
+        groups,
+        'all',
+        new Map([['english', ['DDT']]])
+      ).map((group) => group.id)
+    ).toEqual(['ddt', 'kg']);
   });
 });
