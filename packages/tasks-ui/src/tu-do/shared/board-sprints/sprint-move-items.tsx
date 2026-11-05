@@ -35,12 +35,13 @@ export interface SprintMoveOption {
  */
 export function getSprintMoveOptions(
   openSprints: BoardSprint[],
-  current: BoardSprint | null
+  current: BoardSprint | null,
+  canCreate: boolean
 ): SprintMoveOption[] {
   const ordered = [...openSprints].sort(
     (a, b) => a.sequence_number - b.sequence_number
   );
-  const canAdd = ordered.length < MAX_OPEN_BOARD_SPRINTS;
+  const canAdd = canCreate && ordered.length < MAX_OPEN_BOARD_SPRINTS;
   const after = (sprint: BoardSprint): SprintMoveTarget | undefined =>
     ordered.find((other) => other.sequence_number > sprint.sequence_number) ??
     (canAdd ? NEW_SPRINT : undefined);
@@ -84,10 +85,12 @@ export function getSprintMoveOptions(
  * the open-sprint limit, a new one unless Next sprint already adds it.
  */
 export function SprintMoveItems({
+  canCreate,
   current,
   onMove,
   openSprints,
 }: {
+  canCreate: boolean;
   current: BoardSprint | null;
   onMove: (target: SprintMoveTarget) => void;
   openSprints: BoardSprint[];
@@ -96,9 +99,10 @@ export function SprintMoveItems({
   const others = openSprints
     .filter((sprint) => sprint.id !== current?.id)
     .sort((a, b) => a.sequence_number - b.sequence_number);
-  const quick = getSprintMoveOptions(openSprints, current);
+  const quick = getSprintMoveOptions(openSprints, current, canCreate);
   // Next sprint already adds one when the task is in the last sprint.
   const canAdd =
+    canCreate &&
     openSprints.length < MAX_OPEN_BOARD_SPRINTS &&
     !quick.some((option) => option.target === NEW_SPRINT);
 

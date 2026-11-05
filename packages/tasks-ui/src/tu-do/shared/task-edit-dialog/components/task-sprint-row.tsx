@@ -17,6 +17,7 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { SprintMoveItems } from '../../board-sprints/sprint-move-items';
+import { useBoardSprintPermissions } from '../../board-sprints/use-board-sprint-permissions';
 import {
   NEW_SPRINT,
   type SprintMoveTarget,
@@ -51,6 +52,11 @@ export function TaskSprintRow({
     enabled: Boolean(task?.id && boardId),
     wsId,
   });
+  const { canCreate } = useBoardSprintPermissions({
+    canEdit,
+    enabled: Boolean(task?.id && sprints.sprintsOn),
+    wsId,
+  });
   const { moveTasks } = useBoardSprintMutations({ boardId, wsId });
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -76,6 +82,7 @@ export function TaskSprintRow({
     : t('not_in_sprint');
   // null takes the task out of every sprint, into Plan's backlog.
   const moveTo = (target: SprintMoveTarget) => {
+    if (target === NEW_SPRINT && !canCreate) return;
     // The move swaps this item out of the menu, so close first.
     setMenuOpen(false);
     requestAnimationFrame(() =>
@@ -118,6 +125,7 @@ export function TaskSprintRow({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-64">
               <SprintMoveItems
+                canCreate={canCreate}
                 current={current}
                 onMove={moveTo}
                 openSprints={openSprints}

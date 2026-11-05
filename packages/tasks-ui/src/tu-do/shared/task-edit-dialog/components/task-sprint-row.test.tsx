@@ -9,7 +9,15 @@ import { TaskSprintRow } from './task-sprint-row';
 const state = vi.hoisted(() => ({
   mutate: vi.fn(),
   pending: false,
+  canCreate: true,
   sprints: null as unknown,
+}));
+
+vi.mock('../../board-sprints/use-board-sprint-permissions', () => ({
+  useBoardSprintPermissions: () => ({
+    canCreate: state.canCreate,
+    canDelete: false,
+  }),
 }));
 
 vi.mock('next-intl', () => ({
@@ -121,6 +129,7 @@ const task = (extra: Partial<Task> = {}) =>
 beforeEach(() => {
   vi.clearAllMocks();
   state.pending = false;
+  state.canCreate = true;
   setSprints([done, running, next]);
 });
 
@@ -255,5 +264,27 @@ describe('TaskSprintRow', () => {
       />
     );
     expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
+  });
+});
+
+describe('TaskSprintRow dedicated sprint creation permission', () => {
+  it('keeps moves to existing sprints and out of sprints when creation is denied', () => {
+    state.canCreate = false;
+    render(
+      <TaskSprintRow
+        boardId="b"
+        canEdit
+        endDate={undefined}
+        task={task()}
+        wsId="w"
+      />
+    );
+    expect(
+      screen.getByRole('menuitem', { name: 'remove_from_sprint' })
+    ).toBeEnabled();
+    expect(
+      screen.getByRole('menuitem', { name: 'move_to_next_sprint' })
+    ).toBeEnabled();
+    expect(screen.queryByRole('menuitem', { name: 'new_sprint' })).toBeNull();
   });
 });

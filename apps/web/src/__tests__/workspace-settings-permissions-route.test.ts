@@ -278,6 +278,24 @@ describe('workspace settings permissions route', () => {
     await expect(response.json()).resolves.toEqual({ hasPermission: false });
   });
 
+  it.each(['MEMBER', 'GUEST'] as const)(
+    'returns verified membership type %s alongside a granted permission',
+    async (membershipType) => {
+      mocks.getPermissions.mockImplementation(({ wsId }: { wsId: string }) =>
+        Promise.resolve({
+          ...permissionsResult(wsId, ['create_task_sprints']),
+          membershipType,
+        })
+      );
+      const response = await callCheckRoute('create_task_sprints');
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({
+        hasPermission: true,
+        membershipType,
+      });
+    }
+  );
+
   it('threads the authenticated app-session principal through settings permission reads', async () => {
     const response = await callRoute();
 

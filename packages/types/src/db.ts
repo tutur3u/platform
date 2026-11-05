@@ -784,7 +784,9 @@ export type PermissionId =
   | 'create_chat'
   | 'manage_chat'
   | 'moderate_chat'
-  | 'set_finance_wallets_on_create';
+  | 'set_finance_wallets_on_create'
+  | 'create_task_sprints'
+  | 'delete_task_sprints';
 
 export type WorkspaceExternalProjectBinding = {
   enabled: boolean;

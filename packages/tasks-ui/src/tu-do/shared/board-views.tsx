@@ -52,6 +52,7 @@ import {
   sanitizeSavedBoardFilters,
 } from './board-header/board-filter-state';
 import { useBoardHeaderData } from './board-header/use-board-header-data';
+import { useBoardSprintPermissions } from './board-sprints/use-board-sprint-permissions';
 import { useBoardSprintSurface } from './board-sprints/use-board-sprint-surface';
 import { useBoardSprints } from './board-sprints/use-board-sprints';
 import { sortLocalTasks } from './board-task-filtering';
@@ -495,7 +496,14 @@ export function BoardViews({
     enabled: !localTaskState,
     wsId: effectiveWorkspaceId,
   });
+  const sprintPermissions = useBoardSprintPermissions({
+    canEdit: canManageBoard && !localTaskState && board.access_type !== 'guest',
+    enabled: boardSprints.sprintsOn,
+    wsId: effectiveWorkspaceId,
+  });
   const sprintSurface = useBoardSprintSurface({
+    canCreate: sprintPermissions.canCreate,
+    canDelete: sprintPermissions.canDelete,
     board,
     boardCard: {
       assigneeMemberSource,

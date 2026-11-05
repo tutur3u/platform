@@ -38,6 +38,8 @@ const BACKLOG_DROP = 'backlog';
 export function BoardPlanView({
   boardCard,
   boardId,
+  canCreate,
+  canDelete,
   canManage,
   canPlan,
   currentUserId,
@@ -53,6 +55,8 @@ export function BoardPlanView({
 }: {
   boardCard?: PlanBoardCardProps;
   boardId: string;
+  canCreate: boolean;
+  canDelete: boolean;
   canManage: boolean;
   canPlan: boolean;
   currentUserId?: string;
@@ -179,7 +183,8 @@ export function BoardPlanView({
     const sprint = sprintOf(task);
     return sprint && (wide || sprint.id !== selectedOpen?.id) ? sprint : null;
   };
-  const moveToSprint = (task: Task, target: SprintMoveTarget) =>
+  const moveToSprint = (task: Task, target: SprintMoveTarget) => {
+    if (target === NEW_SPRINT && !canCreate) return;
     moveTasks.mutate(
       {
         sprintId: target === NEW_SPRINT ? NEW_SPRINT : (target?.id ?? null),
@@ -195,9 +200,11 @@ export function BoardPlanView({
         onError: () => toast.error(t('move_failed')),
       }
     );
+  };
   const renderSprintMenu = canPlan
     ? (task: Task) => (
         <PlanSprintMenu
+          canCreate={canCreate}
           current={sprints.openSprintByTaskId.get(task.id) ?? null}
           disabled={moveTasks.isPending}
           onMove={(target) => moveToSprint(task, target)}
@@ -281,7 +288,8 @@ export function BoardPlanView({
           onEndActive={onEndActive}
           picker={
             <PlanSprintPicker
-              canPlan={canPlan}
+              canCreate={canCreate}
+              canDelete={canDelete}
               onAdd={() =>
                 addSprint.mutate(undefined, {
                   onError: () => toast.error(t('add_sprint_failed')),

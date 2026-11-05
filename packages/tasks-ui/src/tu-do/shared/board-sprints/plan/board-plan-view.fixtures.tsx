@@ -228,6 +228,8 @@ export function sprintsState(sprints: BoardSprint[], unplanned: string[] = []) {
 }
 
 export function renderPlan({
+  canCreate = true,
+  canDelete = true,
   canManage = true,
   defaultListId = 'list-todo',
   queryClient = new QueryClient({
@@ -237,6 +239,8 @@ export function renderPlan({
   sprints,
   unplanned,
 }: {
+  canCreate?: boolean;
+  canDelete?: boolean;
   canManage?: boolean;
   defaultListId?: string;
   queryClient?: QueryClient;
@@ -248,6 +252,8 @@ export function renderPlan({
     <QueryClientProvider client={queryClient}>
       <BoardPlanView
         boardId="board-1"
+        canCreate={canCreate}
+        canDelete={canDelete}
         canManage={canManage}
         canPlan
         defaultListId={defaultListId}

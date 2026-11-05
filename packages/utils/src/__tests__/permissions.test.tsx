@@ -59,6 +59,53 @@ describe('workspace permission catalog', () => {
     }
   });
 
+  it('exposes separate task sprint creation and deletion permissions', () => {
+    const permissionIds = permissions({
+      wsId: workspaceId,
+      user: null,
+    }).map((permission) => permission.id);
+
+    for (const permissionId of ['create_task_sprints', 'delete_task_sprints']) {
+      expect(permissionIds).toContain(permissionId);
+    }
+    for (const app of [
+      'ai',
+      'calendar',
+      'cms',
+      'drive',
+      'finance',
+      'infrastructure',
+      'inventory',
+      'meet',
+      'nova',
+      'parley',
+      'rewise',
+      'tanstack-web',
+      'tasks',
+      'track',
+      'web',
+    ]) {
+      const directory = app === 'tanstack-web' ? 'src/messages' : 'messages';
+      for (const locale of ['en', 'vi']) {
+        const messages = JSON.parse(
+          readFileSync(
+            resolve(repoRoot, `apps/${app}/${directory}/${locale}.json`),
+            'utf8'
+          )
+        );
+        for (const permissionId of [
+          'create_task_sprints',
+          'delete_task_sprints',
+        ]) {
+          expect(messages['ws-roles'][permissionId]).toBeTruthy();
+          expect(
+            messages['ws-roles'][`${permissionId}_description`]
+          ).toBeTruthy();
+        }
+      }
+    }
+  });
+
   it('keeps workspace role forms scoped by default', () => {
     const permissionIds = permissions({
       wsId: workspaceId,

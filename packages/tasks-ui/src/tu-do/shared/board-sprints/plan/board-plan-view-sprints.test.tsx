@@ -310,3 +310,52 @@ describe('BoardPlanView sprints', () => {
     expect(screen.getByRole('menuitem', { name: /add_sprint/ })).toBeDisabled();
   });
 });
+
+describe('BoardPlanView dedicated sprint permissions', () => {
+  const planned = sprint(15, 'planned', ['t1', 't2', 't3']);
+  const later = sprint(16, 'planned', []);
+
+  it('keeps planning and existing-sprint moves while hiding add and remove', async () => {
+    renderPlan({
+      canCreate: false,
+      canDelete: false,
+      sprints: [planned, later],
+    });
+    await screen.findByText('Task t1');
+    expect(screen.queryByRole('menuitem', { name: /add_sprint/ })).toBeNull();
+    expect(
+      screen.queryByRole('menuitem', { name: 'remove_sprint:Sprint 16' })
+    ).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'add_to_backlog' })
+    ).toBeEnabled();
+    expect(
+      screen.getAllByRole('menuitem', { name: 'move_to_next_sprint' }).length
+    ).toBeGreaterThan(0);
+    expect(screen.queryByRole('menuitem', { name: 'new_sprint' })).toBeNull();
+  });
+
+  it('treats create and delete as independent grants', async () => {
+    const first = renderPlan({
+      canCreate: true,
+      canDelete: false,
+      sprints: [planned, later],
+    });
+    await screen.findByText('Task t1');
+    expect(screen.getByRole('menuitem', { name: /add_sprint/ })).toBeEnabled();
+    expect(
+      screen.queryByRole('menuitem', { name: 'remove_sprint:Sprint 16' })
+    ).toBeNull();
+    first.unmount();
+    renderPlan({
+      canCreate: false,
+      canDelete: true,
+      sprints: [planned, later],
+    });
+    await screen.findByText('Task t1');
+    expect(screen.queryByRole('menuitem', { name: /add_sprint/ })).toBeNull();
+    expect(
+      screen.getByRole('menuitem', { name: 'remove_sprint:Sprint 16' })
+    ).toBeEnabled();
+  });
+});

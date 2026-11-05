@@ -6,6 +6,7 @@ import type {
   BoardSprintsResponse,
 } from '@tuturuuu/internal-api/task-sprints';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { SessionAuthContext } from '@/lib/api-auth';
@@ -26,7 +27,13 @@ export const goalResultSchema = z.enum(['met', 'partly', 'missed']);
 
 // view: read sprints. plan: change goals and sprint membership (board editors).
 // manage: turn sprints on, start and end them (workspace members who can edit).
-export type SprintAccessLevel = 'view' | 'plan' | 'manage';
+// create/delete: change sprint structure with a dedicated workspace permission.
+export type SprintAccessLevel =
+  | 'view'
+  | 'plan'
+  | 'manage'
+  | 'create'
+  | 'delete';
 
 // Board cycles ship dark until the rework lands: every write needs this
 // workspace secret, which only verified Tuturuuu staff can set.
@@ -76,6 +83,49 @@ export async function requireSprintAccess(
         { status: 403 }
       ),
     };
+  }
+
+  const requiredPermission =
+    level === 'create'
+      ? 'create_task_sprints'
+      : level === 'delete'
+        ? 'delete_task_sprints'
+        : null;
+
+  if (requiredPermission) {
+    if (access.access.mode !== 'member') {
+      return {
+        error: NextResponse.json(
+          { error: 'Workspace membership required to add or remove sprints' },
+          { status: 403 }
+        ),
+      };
+    }
+
+    const permissions = await getPermissions({
+      request,
+      user: auth.user,
+      wsId: access.wsId,
+    });
+    if (!permissions) {
+      return {
+        error: NextResponse.json(
+          { error: 'Failed to verify sprint permissions' },
+          { status: 500 }
+        ),
+      };
+    }
+    if (
+      permissions.membershipType !== 'MEMBER' ||
+      !permissions.containsPermission(requiredPermission)
+    ) {
+      return {
+        error: NextResponse.json(
+          { error: 'Sprint permission required' },
+          { status: 403 }
+        ),
+      };
+    }
   }
 
   if (
