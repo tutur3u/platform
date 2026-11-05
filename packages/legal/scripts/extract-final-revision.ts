@@ -19,7 +19,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const FINAL_SHA256 =
-  '1234b293dfb5b83c4cc94ff6716a3a10df6bcd284263e394241ef38e8838a8f6';
+  'a42bc6135831e94eaf0e872f3bced491143c666024dcea03b0e9f07921da7006';
 const REVISION_DATE = '2026-11-11';
 const EFFECTIVE_DATE_TEXT = {
   en: '11 November 2026',

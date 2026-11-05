@@ -176,14 +176,7 @@ export const privacySource: Record<'en' | 'vi', RevisionDocumentSource> = {
             holds: ['ks'],
           },
           {
-            text: '\nGoogle may keep prompts and responses sent to its Gemini API for a limited time to detect abuse of its service, and may process or briefly store this data in any country where it has facilities.',
-          },
-          {
-            text: " For Tuturuuu's Gemini project, request logging is currently enabled: Google stores prompts and responses for up to 55 days, and our authorised staff can view them in Google AI Studio.\n",
-            holds: ['gemini-request-logging'],
-          },
-          {
-            text: '\n**Automated decisions.** We do not make decisions about you based solely on automated processing that have legal effects on you or similarly significantly affect you. Our AI features produce transcripts, notes, summaries and suggestions for people to review and decide on. AI output can be inaccurate, incomplete or biased; customers remain responsible for consequential decisions and appropriate human review.\n\n',
+            text: "\nGoogle may keep prompts and responses sent to its Gemini API for a limited time to detect abuse of its service, and may process or briefly store this data in any country where it has facilities. Tuturuuu's own Gemini project settings may also keep request logs for a limited period.\n\n**Automated decisions.** We do not make decisions about you based solely on automated processing that have legal effects on you or similarly significantly affect you. Our AI features produce transcripts, notes, summaries and suggestions for people to review and decide on. AI output can be inaccurate, incomplete or biased; customers remain responsible for consequential decisions and appropriate human review.\n\n",
           },
           {
             text: ' We do not sell personal information or share it for cross-context behavioural advertising.\n',
@@ -407,14 +400,7 @@ export const privacySource: Record<'en' | 'vi', RevisionDocumentSource> = {
             holds: ['ks'],
           },
           {
-            text: '\nGoogle có thể lưu lời nhắc và câu trả lời gửi đến Gemini API trong một thời gian giới hạn để phát hiện hành vi lạm dụng dịch vụ, và có thể xử lý hoặc lưu tạm dữ liệu này tại bất kỳ quốc gia nào Google có cơ sở.',
-          },
-          {
-            text: ' Đối với dự án Gemini của Tuturuuu, tính năng ghi nhật ký yêu cầu hiện đang được bật: Google lưu lời nhắc và câu trả lời tối đa 55 ngày, và nhân sự được ủy quyền của chúng tôi có thể xem các nội dung này trong Google AI Studio.\n',
-            holds: ['gemini-request-logging'],
-          },
-          {
-            text: '\n**Quyết định tự động.** Chúng tôi không đưa ra quyết định về bạn chỉ dựa trên xử lý tự động mà có hệ quả pháp lý hoặc ảnh hưởng đáng kể tương tự đối với bạn. Các tính năng AI của chúng tôi tạo bản chép lời, ghi chú, bản tóm tắt và gợi ý để con người xem xét và quyết định. Đầu ra AI có thể sai, thiếu hoặc thiên lệch; khách hàng vẫn chịu trách nhiệm về các quyết định quan trọng và việc xem xét phù hợp của con người.\n\n',
+            text: '\nGoogle có thể lưu lời nhắc và câu trả lời gửi đến Gemini API trong một thời gian giới hạn để phát hiện hành vi lạm dụng dịch vụ, và có thể xử lý hoặc lưu tạm dữ liệu này tại bất kỳ quốc gia nào Google có cơ sở. Cài đặt dự án Gemini của Tuturuuu cũng có thể lưu nhật ký yêu cầu trong một khoảng thời gian giới hạn.\n\n**Quyết định tự động.** Chúng tôi không đưa ra quyết định về bạn chỉ dựa trên xử lý tự động mà có hệ quả pháp lý hoặc ảnh hưởng đáng kể tương tự đối với bạn. Các tính năng AI của chúng tôi tạo bản chép lời, ghi chú, bản tóm tắt và gợi ý để con người xem xét và quyết định. Đầu ra AI có thể sai, thiếu hoặc thiên lệch; khách hàng vẫn chịu trách nhiệm về các quyết định quan trọng và việc xem xét phù hợp của con người.\n\n',
           },
           {
             text: ' Chúng tôi không bán thông tin cá nhân và không chia sẻ thông tin cá nhân cho quảng cáo hành vi xuyên bối cảnh.\n',
