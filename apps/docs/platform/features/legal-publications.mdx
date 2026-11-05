@@ -130,8 +130,11 @@ documents only while `legalNotice.published` is true, so the notice and the in-f
 pages switch together; publishing also hides the "Proposed updates" line on canonical
 pages, labels the full-text page as in force, and diffs against the archive. Only the
 release owner flips it, with `noticeDate: '2026-11-11'`, `laterDate: '2026-12-11'`,
-the real mobile release date D as `mobilePrivacyEffectiveDate`, and the Lex-approved
-`archiveLinks`. A notice date other than the revision date throws. SLA, Acceptable Use
+the real mobile release date D as `mobilePrivacyEffectiveDate` once it is pinned
+(leave it unset until then, never a placeholder date: the mobile section and Firebase
+rows stay out and the changes page shows the pending-date line; an invalid date string
+throws), and the Lex-approved `archiveLinks`. A notice date other than the revision
+date throws. SLA, Acceptable Use
 and Community Guidelines are not part of this text and stay as they are.
 
 **Hold units.** Text that the FINAL marks `[HOLD …]`, `[GATE …]`, `[verify …]` or

@@ -94,16 +94,32 @@ describe('upcoming legal changes', () => {
         }
       }
     });
-    it(`${locale} never renders a pending mobile date on a published changes page`, () => {
+    it(`${locale} shows the pending line only while D is unset on a published changes page`, () => {
       const config = {
         published: true as const,
         noticeDate: '2026-11-11',
         laterDate: '2026-12-11',
         archiveLinks: { [locale]: 'ARCHIVE' },
       };
-      expect(() =>
+      const unset = new DOMParser().parseFromString(
         renderToStaticMarkup(
           <LegalChanges locale={locale} noticeConfig={config} />
+        ),
+        'text/html'
+      );
+      const entry = unset.querySelector(
+        `[data-legal-revision="${upcomingMobilePrivacyRevision.version}"]`
+      );
+      expect(entry?.querySelector('time')).toBeNull();
+      expect(entry?.textContent).toContain(
+        legalRevisionChangesCopy[locale].pendingDate
+      );
+      expect(() =>
+        renderToStaticMarkup(
+          <LegalChanges
+            locale={locale}
+            noticeConfig={{ ...config, mobilePrivacyEffectiveDate: 'pending' }}
+          />
         )
       ).toThrow('requires a pinned release date');
       const page = new DOMParser().parseFromString(

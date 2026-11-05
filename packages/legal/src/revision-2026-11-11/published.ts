@@ -9,8 +9,9 @@ import {
 
 /**
  * Renders the in-force 2026-11-11 text for a published notice. The notice
- * date must equal the revision date, and the mobile release date D must be
- * pinned (it fills `{D}` and releases the mobile items when D <= N).
+ * date must equal the revision date. The mobile release date D may be unset:
+ * the mobile items then stay held and no date is shown. When D is set it is
+ * validated, fills `{D}` and releases the mobile items when D <= N.
  */
 export function renderPublishedRevision(
   kind: RevisionKind,
@@ -21,11 +22,12 @@ export function renderPublishedRevision(
     throw new Error(
       `The published notice date must be the revision date ${REVISION_DATE}`
     );
-  const mobileDate = requireMobilePrivacyReleaseDate(
-    notice.mobilePrivacyEffectiveDate
-  );
+  const mobileDate =
+    notice.mobilePrivacyEffectiveDate == null
+      ? null
+      : requireMobilePrivacyReleaseDate(notice.mobilePrivacyEffectiveDate);
   return renderRevisionDocument(kind, locale, {
     mobileDate,
-    mobileReleased: mobileDate <= notice.noticeDate,
+    mobileReleased: mobileDate !== null && mobileDate <= notice.noticeDate,
   });
 }
