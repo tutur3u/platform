@@ -24,8 +24,14 @@ const runGit = (...args) => execFileSync('git', args, { encoding: 'utf8', stdio:
 
 const EXTRA_EDGES_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'affected-apps.extra-edges.json');
 
+// In mode "all", `apps` must be the full list the caller built; every listed app must succeed, so
+// results covering only a subset of apps cannot pass.
 export function verdict({ mode, apps, codeChanged, results }) {
-  if (mode === 'all' && (Object.values(results).length === 0 || Object.values(results).some((result) => result !== 'success'))) return { pass: false, reason: 'fail-safe all but nothing ran' };
+  if (mode === 'all') {
+    if (apps.length === 0) return { pass: false, reason: 'fail-safe all needs the full app list' };
+    const bad = Object.entries(results).find(([, result]) => result !== 'success');
+    if (bad) return { pass: false, reason: `${bad[0]} result was ${bad[1]}` };
+  }
   if (mode === 'affected' && codeChanged && apps.length === 0) return { pass: false, reason: 'code changed but no apps were selected' };
   const failed = apps.find((app) => results[app] !== 'success');
   if (failed) return { pass: false, reason: `${failed} result was ${results[failed] ?? 'missing'}` };
@@ -73,7 +79,10 @@ export function coveredByExtraEdges(extraEdges, file, dependent) {
 // Workspace graph. Every folder under apps/ and packages/ is a unit; folders without a package.json
 // (apps/backend, apps/docs, ...) are standalone units with no declared dependencies, affected only by
 // changes under them (plus extra edges) and by changes in anything listed in extra-edges.
+// With a ref, folders and manifests both come from that commit's tree, so --head never mixes the
+// working copy with another commit.
 export function loadGraph(cwd, ref) {
+  if (ref) return loadGraphAtTree(cwd, ref);
   const dirs = [...workspaceDirs(cwd, 'apps', ref), ...workspaceDirs(cwd, 'packages', ref)];
   const byName = new Map();
   const dependencies = new Map();
@@ -109,7 +118,8 @@ function loadGraphAtTree(cwd, ref) {
   }
   const dependents = new Map(dirs.map((dir) => [dir, new Set()]));
   for (const [dir, deps] of dependencies) for (const dep of deps) { const target = names.get(dep); if (target) dependents.get(target).add(dir); }
-  return { dirs, dependents };
+  const declares = (dependent, dependency) => (dependencies.get(dependent) ?? []).some((name) => names.get(name) === dependency);
+  return { dirs, dependents, declares };
 }
 
 const DOC_EXTENSIONS = new Set(['.md', '.mdx', '.txt', '.rst', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp']);
