@@ -4,6 +4,7 @@ import {
   verifyCliRefreshToken,
 } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getConfirmedAuthEmail } from '@tuturuuu/supabase/next/user';
 import {
   isKnownReplay,
   preLimitReplayAttempt,
@@ -77,6 +78,16 @@ async function consumeRefreshTokenOnce({
   }
 }
 
+/** Current Auth state for the subject; null when Auth cannot be reached. */
+async function readAuthUser(userId: string) {
+  try {
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    return await sbAdmin.auth.admin.getUserById(userId);
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const parsed = refreshSchema.safeParse(body);
@@ -127,12 +138,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data, error } = await sbAdmin.auth.admin.getUserById(
-    verification.claims.sub
-  );
+  // SR-926: every refresh re-reads Auth for this subject. The new session's
+  // email is the confirmed Auth email only, never the old token's claim.
+  const authLookup = await readAuthUser(verification.claims.sub);
 
-  if (error || !data.user) {
+  if (!authLookup || authLookup.error) {
+    return NextResponse.json(
+      {
+        code: 'AUTH_IDENTITY_UNAVAILABLE',
+        error: 'Unable to verify account identity',
+      },
+      { status: 503, headers: { 'Retry-After': '30' } }
+    );
+  }
+
+  const { data } = authLookup;
+  if (!data.user || data.user.id !== verification.claims.sub) {
     return NextResponse.json(
       { error: 'Invalid or expired refresh token' },
       { status: 401 }
@@ -153,7 +174,7 @@ export async function POST(request: NextRequest) {
   const policy = await getCliAppSessionPolicy();
   const session = createCliAppSession({
     accessExpiresInSeconds: policy.cliAccessTtlSeconds,
-    email: data.user.email ?? verification.claims.email,
+    email: getConfirmedAuthEmail(data.user),
     mfa: verification.claims.mfa,
     refreshExpiresInSeconds: policy.cliRefreshTtlSeconds,
     userId: verification.claims.sub,

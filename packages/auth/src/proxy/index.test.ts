@@ -1,6 +1,7 @@
 import './required-mfa-test-fixture';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { verifyAppCoordinationToken } from '../app-coordination';
 import {
   APP_SESSION_COOKIE_NAME,
   APP_SESSION_REFRESH_COOKIE_NAME,
@@ -43,6 +44,18 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     mocks.createClient(...args),
 }));
 
+// SR-926: re-mints read the confirmed Auth email for the subject.
+const authUserById = vi.fn(async (id: string) => ({
+  data: {
+    user: {
+      email: 'user@tuturuuu.com',
+      email_confirmed_at: '2026-06-01T00:00:00.000Z',
+      id,
+    },
+  },
+  error: null as { message: string } | null,
+}));
+
 describe('auth proxy redirect helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -61,6 +74,7 @@ describe('auth proxy redirect helpers', () => {
       },
     });
     mocks.createAdminClient.mockResolvedValue({
+      auth: { admin: { getUserById: authUserById } },
       from: vi.fn(),
     });
   });
@@ -845,6 +859,97 @@ describe('auth proxy redirect helpers', () => {
 
     expect(result).toMatchObject({
       error: 'MFA required',
+      ok: false,
+    });
+  });
+
+  it('re-mints a supabase-first session with the Auth email, not the provider claim (SR-926)', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://nzamlzqfdwaaxdefwraj.supabase.co'
+    );
+    vi.stubGlobal('fetch', vi.fn());
+    authUserById.mockImplementationOnce(async (id: string) => ({
+      data: {
+        user: {
+          email: 'Owner@Tuturuuu.com',
+          email_confirmed_at: '2026-06-01T00:00:00.000Z',
+          id,
+        },
+      },
+      error: null,
+    }));
+    mocks.updateSession.mockResolvedValueOnce({
+      claims: {
+        email: 'sr926-forged@attacker.example',
+        exp: 1_767_225_600,
+        iat: 1_767_222_000,
+        session_id: 'session-1',
+        sub: 'user-1',
+      },
+      res: NextResponse.next(),
+    });
+    const request = new NextRequest('https://mail.tuturuuu.com/api/messages', {
+      headers: {
+        cookie: 'sb-nzamlzqfdwaaxdefwraj-auth-token.0=shared-session',
+      },
+    });
+
+    const result = await refreshAppSessionForRequest(request, {
+      sessionMode: 'supabase-first',
+      targetApp: 'mail',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.claims.email).toBe('owner@tuturuuu.com');
+    const bearer = result.ok
+      ? (result.requestHeaders?.get('authorization') ?? '').replace(
+          /^Bearer /u,
+          ''
+        )
+      : '';
+    const verification = verifyAppCoordinationToken(bearer, {
+      secret: 'test-secret',
+    });
+    expect(verification.ok && verification.claims.email).toBe(
+      'owner@tuturuuu.com'
+    );
+    expect(authUserById).toHaveBeenCalledWith('user-1');
+  });
+
+  it('refuses a supabase-first re-mint when Auth cannot be read (SR-926)', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://nzamlzqfdwaaxdefwraj.supabase.co'
+    );
+    vi.stubGlobal('fetch', vi.fn());
+    authUserById.mockImplementationOnce(async () => ({
+      data: { user: null as never },
+      error: { message: 'down' },
+    }));
+    mocks.updateSession.mockResolvedValueOnce({
+      claims: {
+        email: 'sr926-forged@attacker.example',
+        exp: 1_767_225_600,
+        iat: 1_767_222_000,
+        session_id: 'session-1',
+        sub: 'user-1',
+      },
+      res: NextResponse.next(),
+    });
+    const request = new NextRequest('https://mail.tuturuuu.com/api/messages', {
+      headers: {
+        cookie: 'sb-nzamlzqfdwaaxdefwraj-auth-token.0=shared-session',
+      },
+    });
+
+    const result = await refreshAppSessionForRequest(request, {
+      sessionMode: 'supabase-first',
+      targetApp: 'mail',
+    });
+
+    expect(result).toMatchObject({
+      error: 'Account assurance unavailable',
       ok: false,
     });
   });
