@@ -12,7 +12,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type DragEvent, useMemo, useState } from 'react';
+import { type DragEvent, type ReactNode, useMemo, useState } from 'react';
 import { getPriorityIndicator } from '../../../utils/taskPriorityUtils';
 import { DEFAULT_BOARD_FILTERS } from '../../board-header/board-filter-state';
 import { BoardProjectFilter } from '../../board-header/board-project-filter';
@@ -30,6 +30,8 @@ import {
 interface PlanBacklogProps {
   canEdit: boolean;
   dropActive: boolean;
+  /** Open tasks parked outside every sprint, shown as ghosts. */
+  isGhost: (task: Task) => boolean;
   members: BoardMember[];
   onAssign: (task: Task, memberId: string) => void;
   onCreate?: (name: string) => Promise<unknown>;
@@ -37,14 +39,21 @@ interface PlanBacklogProps {
   onDragOver: (event: DragEvent) => void;
   onDrop: (event: DragEvent) => void;
   onOpen: (task: Task) => void;
+  renderSprintMenu?: (task: Task) => ReactNode;
+  /** The task's sprint, when several sprints show at once. */
+  sprintTag: (task: Task) => string | null;
   tasks: Task[];
   workspaceId: string;
 }
 
-/** Unassigned open tasks of the sprint being planned, with priority sort and a Project filter. */
+/**
+ * Unassigned open tasks of the shown sprint and open tasks in no sprint, with
+ * priority sort and a Project filter.
+ */
 export function PlanBacklog({
   canEdit,
   dropActive,
+  isGhost,
   members,
   onAssign,
   onCreate,
@@ -52,6 +61,8 @@ export function PlanBacklog({
   onDragOver,
   onDrop,
   onOpen,
+  renderSprintMenu,
+  sprintTag,
   tasks,
   workspaceId,
 }: PlanBacklogProps) {
@@ -167,11 +178,14 @@ export function PlanBacklog({
         {visible.map((task) => (
           <BacklogCard
             canEdit={canEdit}
+            ghost={isGhost(task)}
             key={task.id}
             members={members}
             onAssign={(memberId) => onAssign(task, memberId)}
             onDragEnd={onDragEnd}
             onOpen={() => onOpen(task)}
+            sprintMenu={renderSprintMenu?.(task)}
+            sprintTag={sprintTag(task)}
             task={task}
           />
         ))}
@@ -199,17 +213,23 @@ export function PlanBacklog({
 
 function BacklogCard({
   canEdit,
+  ghost,
   members,
   onAssign,
   onDragEnd,
   onOpen,
+  sprintMenu,
+  sprintTag,
   task,
 }: {
   canEdit: boolean;
+  ghost: boolean;
   members: BoardMember[];
   onAssign: (memberId: string) => void;
   onDragEnd: () => void;
   onOpen: () => void;
+  sprintMenu?: ReactNode;
+  sprintTag: string | null;
   task: Task;
 }) {
   const t = useTranslations('ws-task-boards.sprints');
@@ -218,7 +238,13 @@ function BacklogCard({
   return (
     <article
       aria-label={task.name}
-      className="relative rounded-lg border bg-background p-3 shadow-xs transition-shadow focus-within:ring-2 focus-within:ring-ring hover:shadow-sm"
+      className={cn(
+        'relative rounded-lg border bg-background p-3 shadow-xs transition-shadow focus-within:ring-2 focus-within:ring-ring hover:shadow-sm',
+        // In no sprint yet: a ghost until someone plans it.
+        ghost &&
+          'border-dashed bg-background/40 text-muted-foreground shadow-none'
+      )}
+      data-plan-ghost={ghost || undefined}
       data-plan-task-id={task.id}
       draggable={canEdit}
       onDragEnd={onDragEnd}
@@ -233,6 +259,7 @@ function BacklogCard({
         >
           <PlanTaskTitle task={task} />
         </button>
+        {sprintMenu}
         {canEdit ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -262,8 +289,13 @@ function BacklogCard({
           </DropdownMenu>
         ) : null}
       </div>
-      {task.priority || project || task.end_date ? (
+      {task.priority || project || task.end_date || ghost || sprintTag ? (
         <div className="mt-2 flex flex-wrap items-center gap-2">
+          {ghost || sprintTag ? (
+            <span className="inline-flex h-5 items-center rounded-md border border-dashed px-1.5 text-muted-foreground text-xs">
+              {ghost ? t('not_in_sprint') : sprintTag}
+            </span>
+          ) : null}
           {getPriorityIndicator(task.priority)}
           {project ? (
             <span className="inline-flex h-5 max-w-40 items-center gap-1 rounded-md border border-dynamic-sky/30 bg-dynamic-sky/10 px-1.5 text-dynamic-sky text-xs">

@@ -22113,7 +22113,7 @@
       "length_saved": "Đã lưu độ dài sprint",
       "next": "Kế tiếp",
       "off": "Tắt",
-      "settings_description": "Lên kế hoạch từng sprint trên bảng này. Công việc chưa có hạn riêng sẽ đến hạn khi sprint kết thúc.",
+      "settings_description": "Lên kế hoạch tối đa năm sprint cùng lúc trên bảng này. Công việc chưa có hạn riêng sẽ đến hạn khi sprint của nó kết thúc.",
       "settings_title": "Sprint",
       "sprint_length": "Độ dài sprint",
       "sprints": "Sprint",
@@ -22206,7 +22206,17 @@
       "moved_to_sprint": "Đã chuyển sang {name}",
       "not_in_sprint": "Không thuộc sprint nào",
       "sprint_field": "Sprint",
-      "sprint_history": "Các sprint {list}"
+      "sprint_history": "Các sprint {list}",
+      "add_sprint": "Thêm sprint",
+      "add_sprint_failed": "Không thể thêm sprint",
+      "all_sprints": "Tất cả sprint",
+      "ended_sprints": "Đã kết thúc",
+      "moved_out_of_sprints": "Đã đưa ra khỏi sprint",
+      "no_sprint": "Không thuộc sprint nào",
+      "remove_sprint": "Xóa {name}",
+      "remove_sprint_failed": "Không thể xóa sprint",
+      "sprint_limit": "Tối đa {count}",
+      "sprint_menu": "Chuyển {name} sang sprint khác"
     },
     "stats": {
       "lists": "cột",
