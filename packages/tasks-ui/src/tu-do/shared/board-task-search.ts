@@ -140,39 +140,66 @@ export function mergeListCountsByListId(
   return [...merged.entries()].map(([list_id, count]) => ({ list_id, count }));
 }
 
+/** Pages fetched at once when loading every page of a board. */
+const PARALLEL_PAGES = 4;
+
 /** Sorted and filtered boards must not treat one page as the full task set. */
 async function listAllBoardTaskPages(
   workspaceId: string,
   options: ListWorkspaceTasksOptions
 ): Promise<Task[]> {
   const limit = Math.min(200, Math.max(1, options.limit ?? 200));
-  let offset = options.offset ?? 0;
-  const tasks: Task[] = [];
-
-  while (true) {
-    const response = await listWorkspaceTasks(workspaceId, {
+  const start = options.offset ?? 0;
+  const page = (offset: number) =>
+    listWorkspaceTasks(workspaceId, {
       ...options,
       includeCount: true,
       limit,
       offset,
     });
-    tasks.push(...response.tasks);
-    offset += response.tasks.length;
 
-    if (response.tasks.length === 0) break;
-    if (
-      typeof response.count === 'number'
-        ? offset >= response.count
-        : response.tasks.length < limit
-    ) {
-      break;
+  // A personal board's page holds up to `limit` board tasks plus up to
+  // `limit` external ones, both paged by the same offset, so pages step by
+  // `limit` and loading continues while a page comes back at least full.
+  const first = await page(start);
+  const tasks: Task[] = [...first.tasks];
+  let offset = start + limit;
+  let last = first.tasks.length;
+  let total = first.count;
+
+  if (typeof total === 'number') {
+    // The total is known, so its pages load a few at a time. Tasks added
+    // while loading raise the total, which adds pages.
+    while (last >= limit && offset < total) {
+      const offsets: number[] = [];
+      for (
+        ;
+        offsets.length < PARALLEL_PAGES && offset < total;
+        offset += limit
+      ) {
+        offsets.push(offset);
+      }
+      for (const response of await Promise.all(offsets.map(page))) {
+        tasks.push(...response.tasks);
+        last = response.tasks.length;
+        if (typeof response.count === 'number') {
+          total = Math.max(total, response.count);
+        }
+      }
     }
+    return mergeTasksById(tasks, []);
+  }
+
+  while (last >= limit) {
+    const response = await page(offset);
+    tasks.push(...response.tasks);
+    offset += limit;
+    last = response.tasks.length;
   }
 
   return mergeTasksById(tasks, []);
 }
 
-/** Loads every name-search page and merges exact-identifier hits first. */
 export async function listBoardTasksForSearch(
   workspaceId: string,
   options: ListWorkspaceTasksOptions

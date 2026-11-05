@@ -33,6 +33,15 @@ const TASK_DIALOG_COMPACT_CONTENT_CLASS_NAME =
 const TASK_PANEL_CONTENT_CLASS_NAME =
   'transition-none sm:w-[var(--task-panel-width,36rem)]';
 
+/** The shared dialog's layout: fullscreen, the side panel, or centred. */
+export function getTaskDialogContentPresentation(
+  presentation: TaskDialogPresentation,
+  panel: boolean
+) {
+  if (presentation === 'fullscreen') return 'fullscreen';
+  return panel ? 'panel' : 'default';
+}
+
 /** The dialog content's classes for each presentation. */
 export function getTaskDialogContentClassName({
   compact,

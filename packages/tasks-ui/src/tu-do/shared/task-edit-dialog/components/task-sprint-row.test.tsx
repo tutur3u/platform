@@ -42,6 +42,15 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
     </button>
   ),
   DropdownMenuSeparator: () => <hr />,
+  DropdownMenuSub: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuSubContent: ({ children }: { children: React.ReactNode }) => (
+    <div role="menu">{children}</div>
+  ),
+  DropdownMenuSubTrigger: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
   DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
@@ -52,6 +61,7 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
 }));
 
 vi.mock('../../board-sprints/use-board-sprints', () => ({
+  NEW_SPRINT: 'new',
   useBoardSprints: () => state.sprints,
   useBoardSprintMutations: () => ({
     moveTasks: { isPending: state.pending, mutate: state.mutate },
@@ -168,7 +178,7 @@ describe('TaskSprintRow', () => {
     expect(screen.getByRole('button', { name: /^Sprint 2 · / })).toBeDisabled();
   });
 
-  it('closes the menu, then moves the task to another open sprint', async () => {
+  it('closes the menu, then moves the task on to the next sprint', async () => {
     const { container } = render(
       <TaskSprintRow
         boardId="b"
@@ -179,7 +189,7 @@ describe('TaskSprintRow', () => {
       />
     );
     fireEvent.click(
-      screen.getByRole('menuitem', { name: 'move_to_sprint:Sprint 3' })
+      screen.getByRole('menuitem', { name: /move_to_next_sprint/ })
     );
     expect(container.querySelector('[data-open]')).toHaveAttribute(
       'data-open',
@@ -204,7 +214,9 @@ describe('TaskSprintRow', () => {
         wsId="w"
       />
     );
-    fireEvent.click(screen.getByRole('menuitem', { name: 'no_sprint' }));
+    fireEvent.click(
+      screen.getByRole('menuitem', { name: 'remove_from_sprint' })
+    );
     await waitFor(() =>
       expect(state.mutate).toHaveBeenCalledWith(
         { sprintId: null, taskIds: ['t1'] },

@@ -452,9 +452,16 @@ describe('board sprint routes', () => {
       task_sprint_reports: { data: [], error: null },
     });
     grantAccess(sbAdmin, 'guest');
+    sbAdmin.rpc.mockReturnValueOnce(
+      rpcResult({
+        data: { id: SPRINT_ID },
+        error: null,
+      } as TableResult)
+    );
 
     const added = await ADD(request('POST', {}), params());
     expect(added.status).toBe(200);
+    expect((await added.json()).addedSprintId).toBe(SPRINT_ID);
     expect(sbAdmin.rpc).toHaveBeenCalledWith('add_board_sprint', {
       p_actor_id: 'user-1',
       p_board_id: BOARD_ID,

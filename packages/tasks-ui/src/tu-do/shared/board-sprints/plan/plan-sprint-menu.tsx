@@ -6,16 +6,16 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { SprintMoveItems } from '../sprint-move-items';
+import type { SprintMoveTarget } from '../use-board-sprints';
 
-/** Moves one task to any open sprint, or out of every sprint. */
+/** Moves one task to another open sprint, a new one, or out of every sprint. */
 export function PlanSprintMenu({
   className,
   current,
@@ -29,17 +29,16 @@ export function PlanSprintMenu({
   current: BoardSprint | null;
   /** One move at a time, so a later pick cannot finish first. */
   disabled?: boolean;
-  onMove: (sprintId: string | null) => void;
+  onMove: (target: SprintMoveTarget) => void;
   openSprints: BoardSprint[];
   task: Task;
 }) {
   const t = useTranslations('ws-task-boards.sprints');
-  const targets = openSprints.filter((sprint) => sprint.id !== current?.id);
   const [open, setOpen] = useState(false);
   // The move swaps the picked item out of the menu, so close first.
-  const move = (sprintId: string | null) => {
+  const move = (target: SprintMoveTarget) => {
     setOpen(false);
-    requestAnimationFrame(() => onMove(sprintId));
+    requestAnimationFrame(() => onMove(target));
   };
 
   return (
@@ -61,19 +60,11 @@ export function PlanSprintMenu({
         <DropdownMenuLabel className="text-muted-foreground text-xs">
           {current?.name ?? t('not_in_sprint')}
         </DropdownMenuLabel>
-        {targets.map((sprint) => (
-          <DropdownMenuItem key={sprint.id} onSelect={() => move(sprint.id)}>
-            {t('move_to_sprint', { name: sprint.name })}
-          </DropdownMenuItem>
-        ))}
-        {current ? (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => move(null)}>
-              {t('no_sprint')}
-            </DropdownMenuItem>
-          </>
-        ) : null}
+        <SprintMoveItems
+          current={current}
+          onMove={move}
+          openSprints={openSprints}
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   );

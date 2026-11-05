@@ -121,6 +121,33 @@ export function writePlanDrag(
   event.dataTransfer.setData(PLAN_DRAG_TYPE, JSON.stringify({ from, taskId }));
 }
 
+/**
+ * Drags a backlog card as the Board drags one: the card alone, raised with a
+ * ring, rather than a snapshot of the row around it.
+ */
+export function setPlanCardDragImage(event: React.DragEvent<HTMLElement>) {
+  const card = event.currentTarget.querySelector<HTMLElement>('[data-task-id]');
+  if (!card || !event.dataTransfer.setDragImage) return;
+  const rect = card.getBoundingClientRect();
+  const image = card.cloneNode(true) as HTMLElement;
+  image.classList.add('shadow-lg', 'ring-2', 'ring-primary/50');
+  Object.assign(image.style, {
+    background: 'var(--card)',
+    left: '-10000px',
+    position: 'fixed',
+    top: '0',
+    width: `${rect.width}px`,
+  });
+  document.body.append(image);
+  event.dataTransfer.setDragImage(
+    image,
+    event.clientX - rect.left,
+    event.clientY - rect.top
+  );
+  // The browser copies the image when the drag starts.
+  requestAnimationFrame(() => image.remove());
+}
+
 export function readPlanDrag(
   event: React.DragEvent
 ): { from: string | null; taskId: string } | null {

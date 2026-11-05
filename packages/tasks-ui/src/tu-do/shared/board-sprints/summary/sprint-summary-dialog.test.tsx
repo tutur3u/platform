@@ -23,7 +23,7 @@ vi.mock('next-intl', () => ({
 
 vi.mock('@tuturuuu/ui/dialog', () => ({
   Dialog: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
-    open ? <div role="dialog">{children}</div> : null,
+    open ? <dialog open>{children}</dialog> : null,
   DialogContent: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
@@ -45,20 +45,11 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: { error: vi.fn(), success: api.toastSuccess },
 }));
 
-vi.mock('@tuturuuu/internal-api/tasks', () => ({
-  listWorkspaceTaskBoardViewableMembers: async () => ({
-    members: [
-      { user_id: 'u-ana', display_name: 'Ana', email: null, avatar_url: null },
-    ],
-  }),
-}));
-
 vi.mock('@tuturuuu/internal-api/task-sprints', () => ({
   endWorkspaceTaskBoardSprint: api.end,
   listWorkspaceTaskBoardSprints: vi.fn(),
   moveTasksToWorkspaceTaskBoardSprint: vi.fn(),
   startWorkspaceTaskBoardSprint: vi.fn(),
-  updateWorkspaceTaskBoardSprint: vi.fn(),
   updateWorkspaceTaskBoardSprintLength: vi.fn(),
 }));
 
@@ -102,7 +93,10 @@ const task = (id: string, extra: Partial<Task> = {}) =>
     ...extra,
   }) as Task;
 
-const lists = [{ id: 'list-todo', name: 'To Do' }] as TaskList[];
+const lists = [
+  { id: 'list-todo', name: 'To Do', status: 'not_started' },
+  { id: 'list-doing', name: 'In Progress', status: 'active' },
+] as TaskList[];
 
 function renderSummary(props: {
   mode: 'live' | 'report';
@@ -134,14 +128,14 @@ beforeEach(() => {
   api.listBoardTasksForSearch.mockResolvedValue([
     task('t1', { completed_at: '2026-10-22T10:00:00Z' }),
     task('t2'),
-    task('t3', { assignees: [] }),
+    task('t3', { assignees: [], list_id: 'list-doing' }),
   ]);
 });
 
 describe('SprintSummaryDialog', () => {
-  it('asks for a decision on every open task before ending', async () => {
+  it('counts open tasks per status and moves them all on End', async () => {
     api.end.mockResolvedValue({
-      report: { carried_tasks: 1, backlog_tasks: 1 },
+      report: { carried_tasks: 2, backlog_tasks: 0 },
       schemaAvailable: true,
       sprintLengthWeeks: 2,
       sprints: [],
@@ -151,36 +145,23 @@ describe('SprintSummaryDialog', () => {
 
     expect(await screen.findByText('Task t2')).toBeInTheDocument();
     expect(screen.queryByText('Task t1')).not.toBeInTheDocument();
-    expect(screen.getByText(/carried_twice/)).toBeInTheDocument();
-    const endButton = screen.getByRole('button', {
-      name: 'end_and_plan:Sprint 15',
-    });
-    expect(endButton).toBeDisabled();
-    expect(screen.getByText('needs_decision:2')).toBeInTheDocument();
+    expect(screen.getByText('1 / 3')).toBeInTheDocument();
+    const doing = screen.getByText('In Progress').parentElement!;
+    expect(doing).toHaveTextContent('In Progress1');
+    expect(screen.getByText('To Do').parentElement).toHaveTextContent('To Do1');
+    expect(screen.getByText('end_moves:2/Sprint 15')).toBeInTheDocument();
+    expect(screen.queryByText(/goal/)).not.toBeInTheDocument();
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'carry_all:Sprint 15' })
+      screen.getByRole('button', { name: 'end_and_plan:Sprint 15' })
     );
-    const t3 = screen.getByRole('group', { name: 'decision_label:Task t3' });
-    fireEvent.click(
-      Array.from(t3.querySelectorAll('button')).find(
-        (button) => button.textContent === 'to_backlog'
-      )!
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'goal_partly' }));
-
-    expect(endButton).toBeEnabled();
-    fireEvent.click(endButton);
 
     await waitFor(() =>
-      expect(api.end).toHaveBeenCalledWith('ws-1', 'board-1', 'sprint-14', {
-        decisions: { t2: 'carry', t3: 'backlog' },
-        goal_result: 'partly',
-      })
+      expect(api.end).toHaveBeenCalledWith('ws-1', 'board-1', 'sprint-14', {})
     );
     await waitFor(() => expect(onEnded).toHaveBeenCalled());
     expect(api.toastSuccess).toHaveBeenCalledWith(
-      'ended_toast:1/1/Sprint 14/Sprint 15'
+      'ended_toast:2/Sprint 14/Sprint 15'
     );
   });
 
@@ -192,7 +173,6 @@ describe('SprintSummaryDialog', () => {
     expect(
       screen.getByRole('button', { name: 'end_and_plan:Sprint 15' })
     ).toBeDisabled();
-    expect(screen.queryByText('ready_to_end')).not.toBeInTheDocument();
   });
 
   it('offers a retry and keeps End disabled when the tasks fail to load', async () => {
@@ -236,10 +216,10 @@ describe('SprintSummaryDialog', () => {
     });
 
     expect(screen.getByText('report_title:Sprint 14')).toBeInTheDocument();
-    expect(screen.getByText('points_of:31/34')).toBeInTheDocument();
     expect(screen.getByText('12 / 14')).toBeInTheDocument();
-    expect(screen.getByText('goal_status_met')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'goal_met' })).toBeDisabled();
+    expect(screen.getByText('carried_next').parentElement).toHaveTextContent(
+      'carried_next2'
+    );
     expect(
       screen.queryByRole('button', { name: /end_and_plan/ })
     ).not.toBeInTheDocument();

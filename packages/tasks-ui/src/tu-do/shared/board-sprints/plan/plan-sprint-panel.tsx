@@ -1,19 +1,16 @@
 'use client';
 
-import { CalendarDays, Ellipsis, Flag, Play } from '@tuturuuu/icons';
+import { CalendarDays, Flag, Play } from '@tuturuuu/icons';
 import type { BoardSprint } from '@tuturuuu/internal-api/task-sprints';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
-import {
-  formatSprintDateRange,
-  isBoardSprintOpen,
-} from '@tuturuuu/utils/task-helper/sprints';
+import { formatSprintDateRange } from '@tuturuuu/utils/task-helper/sprints';
 import { useLocale, useTranslations } from 'next-intl';
-import { type DragEvent, type ReactNode, useState } from 'react';
+import type { DragEvent, ReactNode } from 'react';
 import { ToneButton } from '../../board-header/tone-button';
+import { SprintLabel } from '../sprint-label';
 import {
   MemberAvatar,
   PlanOwnDueDate,
@@ -22,14 +19,12 @@ import {
 } from './plan-parts';
 import type { PlanOwner } from './use-sprint-plan-data';
 
-/** The sprint picker, dates, the one sprint action, and the goal. */
+/** The sprint picker, dates, and the one sprint action. */
 export function PlanSprintHeader({
   activeSprint,
   canManage,
-  canPlan,
   isNext,
   onEndActive,
-  onSaveGoal,
   onStart,
   picker,
   sprint,
@@ -37,11 +32,9 @@ export function PlanSprintHeader({
 }: {
   activeSprint: BoardSprint | null;
   canManage: boolean;
-  canPlan: boolean;
   /** The shown sprint is the next one to start. */
   isNext: boolean;
   onEndActive?: () => void;
-  onSaveGoal: (goal: string) => void;
   onStart: () => void;
   picker: ReactNode;
   /** null while every sprint shows at once. */
@@ -53,81 +46,30 @@ export function PlanSprintHeader({
   const showsActive = Boolean(activeSprint && sprint?.id === activeSprint.id);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        {picker}
-        {sprint ? (
-          <span className="inline-flex h-6 items-center gap-1 rounded-md bg-muted px-2 text-muted-foreground text-xs">
-            <CalendarDays className="size-3" />
-            {formatSprintDateRange(sprint, locale)}
-          </span>
-        ) : null}
-        <span className="flex-1" />
-        {canManage && !activeSprint && isNext && sprint ? (
-          <Button
-            className="h-8"
-            disabled={starting}
-            onClick={onStart}
-            size="sm"
-          >
-            <Play />
-            {t('start', { name: sprint.name })}
-          </Button>
-        ) : null}
-        {canManage && activeSprint && onEndActive && (isNext || showsActive) ? (
-          <ToneButton onClick={onEndActive} tone="green">
-            <Flag />
-            {showsActive
-              ? t('end_sprint', { name: activeSprint.name })
-              : t('end_first', { name: activeSprint.name })}
-          </ToneButton>
-        ) : null}
-      </div>
+    <div className="flex flex-wrap items-center gap-2">
+      {picker}
       {sprint ? (
-        <SprintGoalInput
-          disabled={!canPlan || !isBoardSprintOpen(sprint)}
-          key={`${sprint.id}:${sprint.goal ?? ''}`}
-          onSave={onSaveGoal}
-          value={sprint.goal ?? ''}
-        />
+        <span className="inline-flex h-6 items-center gap-1 rounded-md bg-muted px-2 text-muted-foreground text-xs">
+          <CalendarDays className="size-3" />
+          {formatSprintDateRange(sprint, locale)}
+        </span>
+      ) : null}
+      <span className="flex-1" />
+      {canManage && !activeSprint && isNext && sprint ? (
+        <Button className="h-8" disabled={starting} onClick={onStart} size="sm">
+          <Play />
+          {t('start', { name: sprint.name })}
+        </Button>
+      ) : null}
+      {canManage && activeSprint && onEndActive && (isNext || showsActive) ? (
+        <ToneButton onClick={onEndActive} tone="green">
+          <Flag />
+          {showsActive
+            ? t('end_sprint', { name: activeSprint.name })
+            : t('end_first', { name: activeSprint.name })}
+        </ToneButton>
       ) : null}
     </div>
-  );
-}
-
-function SprintGoalInput({
-  disabled,
-  onSave,
-  value,
-}: {
-  disabled: boolean;
-  onSave: (goal: string) => void;
-  value: string;
-}) {
-  const t = useTranslations('ws-task-boards.sprints');
-  const [draft, setDraft] = useState(value);
-  const commit = () => {
-    if (draft.trim() !== value.trim()) onSave(draft.trim());
-  };
-
-  return (
-    <label className="flex h-8 items-center gap-2 rounded-md border bg-background px-2 text-sm focus-within:ring-2 focus-within:ring-ring">
-      <Flag className="size-3.5 shrink-0 text-muted-foreground" />
-      <input
-        aria-label={t('goal')}
-        className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
-        disabled={disabled}
-        maxLength={280}
-        onBlur={commit}
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') event.currentTarget.blur();
-          if (event.key === 'Escape') setDraft(value);
-        }}
-        placeholder={t('goal_placeholder')}
-        value={draft}
-      />
-    </label>
   );
 }
 
@@ -154,12 +96,13 @@ export function PlanOwnerSection({
   owner: PlanOwner;
   renderSprintMenu?: (task: Task) => ReactNode;
   /** The task's sprint, when several sprints show at once. */
-  sprintTag: (task: Task) => string | null;
+  sprintTag: (task: Task) => BoardSprint | null;
 }) {
   const t = useTranslations('ws-task-boards.sprints');
   const { member, tasks } = owner;
 
   return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a drop zone; the row menus plan without a mouse
     <section
       aria-label={member.display_name}
       className={cn(
@@ -175,9 +118,6 @@ export function PlanOwnerSection({
         <span className="truncate font-medium text-sm">
           {member.display_name}
         </span>
-        <Badge className="px-2 py-0.5 font-medium text-xs" variant="secondary">
-          {tasks.length}
-        </Badge>
       </div>
       {tasks.map((task) => (
         <div
@@ -187,32 +127,22 @@ export function PlanOwnerSection({
           onDragEnd={onDragEnd}
           onDragStart={(event) => writePlanDrag(event, task.id, member.id)}
         >
-          <PlanTaskTitle className="flex-1 text-sm" task={task} />
-          {sprintTag(task) ? (
-            <span className="whitespace-nowrap rounded-md border border-dashed px-1.5 text-muted-foreground text-xs">
-              {sprintTag(task)}
-            </span>
-          ) : null}
+          <button
+            aria-label={t('open_task', { name: task.name })}
+            className="min-w-0 flex-1 cursor-pointer text-left"
+            onClick={() => onOpen(task)}
+            type="button"
+          >
+            <PlanTaskTitle className="text-sm" task={task} />
+          </button>
+          <SprintLabel chip sprint={sprintTag(task)} />
           <span className="whitespace-nowrap text-muted-foreground text-xs">
             {listsById.get(task.list_id)?.name}
           </span>
           <PlanOwnDueDate task={task} />
           {renderSprintMenu?.(task)}
-          <button
-            aria-label={t('open_task', { name: task.name })}
-            className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-background hover:text-foreground"
-            onClick={() => onOpen(task)}
-            type="button"
-          >
-            <Ellipsis className="size-3.5" />
-          </button>
         </div>
       ))}
-      {tasks.length === 0 ? (
-        <p className="px-2 py-1 text-muted-foreground text-xs">
-          {t('owner_empty')}
-        </p>
-      ) : null}
     </section>
   );
 }

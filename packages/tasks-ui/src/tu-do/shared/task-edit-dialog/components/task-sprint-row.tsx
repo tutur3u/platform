@@ -5,8 +5,6 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -18,7 +16,10 @@ import {
 } from '@tuturuuu/utils/task-helper/sprints';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { SprintMoveItems } from '../../board-sprints/sprint-move-items';
 import {
+  NEW_SPRINT,
+  type SprintMoveTarget,
   useBoardSprintMutations,
   useBoardSprints,
 } from '../../board-sprints/use-board-sprints';
@@ -27,7 +28,7 @@ import { TaskPropertyRow } from '../task-property-row';
 /**
  * The task's sprint in the task panel: which open sprint it is in, the sprint
  * end as its due date when it has none of its own, its sprint history, and a
- * menu to move it to the running or planned sprint. Hidden with sprints off
+ * menu to move it on to the next sprint or out of its sprint. Hidden with sprints off
  * and for tasks not saved yet. `endDate` is the due date being edited.
  */
 export function TaskSprintRow({
@@ -61,9 +62,7 @@ export function TaskSprintRow({
     current
   );
   const history = getTaskSprintHistory(sprints.sprints, task.id);
-  const targets = sprints.sprints.filter(
-    (sprint) => isBoardSprintOpen(sprint) && sprint.id !== current?.id
-  );
+  const openSprints = sprints.sprints.filter(isBoardSprintOpen);
   const formatDay = (value: string) =>
     new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : locale, {
       day: 'numeric',
@@ -76,17 +75,22 @@ export function TaskSprintRow({
     ? `${current.name} · ${formatSprintDateRange(current, locale)}`
     : t('not_in_sprint');
   // null takes the task out of every sprint, into Plan's backlog.
-  const moveTo = (sprintId: string | null, name?: string) => {
+  const moveTo = (target: SprintMoveTarget) => {
     // The move swaps this item out of the menu, so close first.
     setMenuOpen(false);
     requestAnimationFrame(() =>
       moveTasks.mutate(
-        { sprintId, taskIds: [task.id] },
         {
-          onSuccess: () =>
+          sprintId: target === NEW_SPRINT ? NEW_SPRINT : (target?.id ?? null),
+          taskIds: [task.id],
+        },
+        {
+          onSuccess: (data) => {
+            const name = target === NEW_SPRINT ? data.sprintName : target?.name;
             toast.success(
               name ? t('moved_to_sprint', { name }) : t('moved_out_of_sprints')
-            ),
+            );
+          },
           onError: () => toast.error(t('move_failed')),
         }
       )
@@ -99,7 +103,7 @@ export function TaskSprintRow({
       className="mb-2 border-b pb-2 text-sm"
     >
       <TaskPropertyRow icon={Flag} label={t('sprint_field')}>
-        {canEdit && (targets.length || current) ? (
+        {canEdit ? (
           <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
             <DropdownMenuTrigger asChild>
               <button
@@ -113,22 +117,11 @@ export function TaskSprintRow({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-64">
-              {targets.map((sprint) => (
-                <DropdownMenuItem
-                  key={sprint.id}
-                  onSelect={() => moveTo(sprint.id, sprint.name)}
-                >
-                  {t('move_to_sprint', { name: sprint.name })}
-                </DropdownMenuItem>
-              ))}
-              {current ? (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => moveTo(null)}>
-                    {t('no_sprint')}
-                  </DropdownMenuItem>
-                </>
-              ) : null}
+              <SprintMoveItems
+                current={current}
+                onMove={moveTo}
+                openSprints={openSprints}
+              />
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
