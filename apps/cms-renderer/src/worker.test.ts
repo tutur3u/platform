@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../fixtures/first-site.json';
 import { cacheRequest, serve, type Environment } from './worker';
+import { assertProductionMode } from './production-mode';
 
 const environment: Environment = {
   CMS_SITES: JSON.stringify({ 'first.invalid': { id: 'site-one', workspaceId: '00000000-0000-4000-8000-000000000001', defaultLocale: 'vi' } }),
@@ -29,6 +30,12 @@ function harness() {
   };
 }
 describe('tenant published renderer', () => {
+  it('refuses non-production startup before loading the server handler', () => {
+    expect(() => assertProductionMode('production')).not.toThrow();
+    for (const mode of [undefined, '', 'development', 'test']) {
+      expect(() => assertProductionMode(mode)).toThrow('production server bundle');
+    }
+  });
   it('caches a snapshot and renders a newly published version separately', async () => {
     const h = harness();
     expect(await (await h.run('/')).text()).toContain('First site');
