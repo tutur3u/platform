@@ -9537,6 +9537,7 @@
     "export_failed": "Xuất dữ liệu thất bại",
     "export_payroll_csv": "CSV bảng lương",
     "export_payroll_xlsx": "XLSX bảng lương",
+    "export_range_required": "Chọn khoảng ngày để xuất",
     "export_ready": "Đã xuất {count} dòng",
     "export_scope": "Xuất theo bộ lọc hiện tại",
     "feature_disabled_description": "Bật phụ đạo để lên lịch buổi học bù và phụ đạo cho không gian làm việc này.",

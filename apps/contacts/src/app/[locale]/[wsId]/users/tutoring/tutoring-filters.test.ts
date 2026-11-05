@@ -252,15 +252,67 @@ it('supports previous month and inclusive custom bounds', () => {
 describe('canExportTutoringFormat', () => {
   const today = '2026-11-04';
 
-  it('exports the detailed sheet for every schedule range, open-ended ones included', () => {
+  it('blocks the detailed sheet on open-ended ranges with no dates', () => {
     for (const dateRange of ['upcoming', 'past', 'all'] as const) {
       const query = buildTutoringSessionQuery(
         { ...DEFAULT_SESSION_FILTERS, dateRange },
         today
       );
-      expect(canExportTutoringFormat(query, 'detailed')).toBe(true);
+      expect(canExportTutoringFormat(query, 'detailed')).toBe(false);
     }
-    expect(canExportTutoringFormat({ fromDate: today }, 'detailed')).toBe(true);
+    expect(canExportTutoringFormat({ fromDate: today }, 'detailed')).toBe(
+      false
+    );
+    expect(canExportTutoringFormat({ toDate: today }, 'detailed')).toBe(false);
+  });
+
+  it('exports the detailed sheet for a closed range of at most 366 days', () => {
+    expect(
+      canExportTutoringFormat(
+        { fromDate: '2026-11-01', toDate: '2026-11-30' },
+        'detailed'
+      )
+    ).toBe(true);
+    expect(
+      canExportTutoringFormat({ fromDate: today, toDate: today }, 'detailed')
+    ).toBe(true);
+    // 2025-11-05 .. 2026-11-05 spans 366 days inclusive.
+    expect(
+      canExportTutoringFormat(
+        { fromDate: '2025-11-05', toDate: '2026-11-05' },
+        'detailed'
+      )
+    ).toBe(true);
+    // One day more is 367 days inclusive.
+    expect(
+      canExportTutoringFormat(
+        { fromDate: '2025-11-04', toDate: '2026-11-05' },
+        'detailed'
+      )
+    ).toBe(false);
+    expect(
+      canExportTutoringFormat(
+        { fromDate: '2026-11-30', toDate: '2026-11-01' },
+        'detailed'
+      )
+    ).toBe(false);
+  });
+
+  it('applies the same 366-day bound to both formats', () => {
+    for (const format of ['detailed', 'payroll'] as const) {
+      expect(
+        canExportTutoringFormat(
+          { fromDate: '2025-11-05', toDate: '2026-11-05' },
+          format
+        )
+      ).toBe(true);
+      expect(
+        canExportTutoringFormat(
+          { fromDate: '2025-11-04', toDate: '2026-11-05' },
+          format
+        )
+      ).toBe(false);
+    }
   });
 
   it('keeps payroll to a closed range of at most 366 days', () => {
