@@ -128,4 +128,13 @@ export const registry = [
     default: false,
     removeBy: '2027-01-31',
   },
+  {
+    key: 'tutoring_picker_tutors_only',
+    description:
+      'Restrict the tutoring picker to configured tutor groups and hide its all-teacher toggle.',
+    owner: 'pax',
+    class: 'kill',
+    default: false,
+    removeBy: '2027-01-31',
+  },
 ] as const;

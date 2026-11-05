@@ -137,3 +137,35 @@ describe('complete bounded planning reads', () => {
     ).rejects.toThrow('synthetic failure');
   });
 });
+
+it('uses only tutors for plan choices while keeping the label catalog when locked', async () => {
+  const teacher = { id: 'class', isTutor: false };
+  const tutor = { id: 'tutor', isTutor: true };
+  api.teachers.mockImplementation(async (_ws, options) => ({
+    page: 1,
+    pageSize: 100,
+    count: options.tutorsOnly ? 1 : 2,
+    totalPages: 1,
+    tutorsOnlyLocked: true,
+    data: options.tutorsOnly ? [tutor] : [teacher, tutor],
+  }));
+  api.sessions.mockResolvedValue({
+    page: 1,
+    pageSize: 100,
+    count: 0,
+    totalPages: 1,
+    data: [],
+  });
+  const result = await loadTutoringPlanData(
+    'center',
+    '2026-10-01',
+    '2026-10-31',
+    () => true
+  );
+  expect(result.teachers).toEqual([tutor]);
+  expect(result.labelTeachers).toEqual([teacher, tutor]);
+  expect(api.teachers).toHaveBeenLastCalledWith(
+    'center',
+    expect.objectContaining({ tutorsOnly: true })
+  );
+});

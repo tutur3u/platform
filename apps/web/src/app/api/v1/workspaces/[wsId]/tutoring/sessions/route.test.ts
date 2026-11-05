@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
   resolveActor: vi.fn(),
   scope: vi.fn(),
   teachers: vi.fn(),
+  flag: vi.fn(),
+  eligibility: vi.fn(),
 }));
 
 const state = {
@@ -57,6 +59,12 @@ function fakeAdmin() {
   };
 }
 
+vi.mock('@tuturuuu/utils/feature-flags/core', () => ({
+  getFeatureFlag: mocks.flag,
+}));
+vi.mock('@/lib/tutoring/tutor-assignment', () => ({
+  validateTutorAssignment: mocks.eligibility,
+}));
 vi.mock('next/server', () => ({
   connection: async () => {},
   NextResponse: { json: Response.json },
@@ -143,6 +151,8 @@ const slotBody = (extra: Record<string, unknown> = {}) => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.flag.mockResolvedValue(false);
+  mocks.eligibility.mockResolvedValue(null);
   vi.spyOn(console, 'error').mockImplementation(() => {});
   state.filters = [];
   state.groups = { data: [], error: null };
@@ -535,4 +545,22 @@ describe('POST /tutoring/sessions', () => {
       ids: [],
     });
   });
+});
+
+it('rejects a non-tutor before insertion when the workspace flag is ON', async () => {
+  mocks.flag.mockResolvedValue(true);
+  mocks.eligibility.mockResolvedValue(
+    Response.json({ message: 'Chỉ được chọn gia sư.' }, { status: 400 })
+  );
+  const response = await create(slotBody());
+  expect(response.status).toBe(400);
+  expect(await response.json()).toEqual({ message: 'Chỉ được chọn gia sư.' });
+  expect(state.inserted).toBeNull();
+  expect(mocks.eligibility).toHaveBeenCalledWith(
+    expect.objectContaining({ teacherIds: [teacherId], normalizedWsId: wsId })
+  );
+});
+it('does not consult tutor assignment policy with the flag OFF', async () => {
+  await create(slotBody());
+  expect(mocks.eligibility).not.toHaveBeenCalled();
 });

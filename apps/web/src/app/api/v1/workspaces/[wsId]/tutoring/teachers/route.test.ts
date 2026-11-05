@@ -8,7 +8,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const tutorGroup = '22222222-2222-4222-8222-222222222222';
 const classGroup = '33333333-3333-4333-8333-333333333333';
 
-const mocks = vi.hoisted(() => ({ access: vi.fn(), admin: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  access: vi.fn(),
+  admin: vi.fn(),
+  flag: vi.fn(),
+}));
+vi.mock('@tuturuuu/utils/feature-flags/core', () => ({
+  getFeatureFlag: mocks.flag,
+}));
 vi.mock('next/server', () => ({
   NextResponse: { json: Response.json },
   connection: async () => {},
@@ -62,6 +69,7 @@ const tutorQuery = {
 };
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.flag.mockResolvedValue(false);
   policyRows = [];
   policyError = null;
   tutorRows = [];
@@ -99,6 +107,8 @@ describe('center teacher catalog', () => {
         },
       ],
       count: 25,
+      tutorsOnlyLocked: false,
+      tutorGroupConfigMissing: false,
       page: 2,
       pageSize: 20,
       totalPages: 2,
@@ -222,6 +232,51 @@ describe('center teacher catalog', () => {
     ]);
     expect(tutorQuery.in).toHaveBeenCalledWith('group_id', [tutorGroup]);
   });
+  it.each(['', '?tutorsOnly=true'])(
+    'locks the picker to configured tutors when the workspace flag is ON (%s)',
+    async (search) => {
+      mocks.flag.mockResolvedValue(true);
+      policyRows = serializeTutoringPolicyConfigRows({
+        ...STANDARD_TUTORING_POLICY,
+        tutorGroupIds: [tutorGroup],
+      });
+      tutorRows = [{ user_id: 'tutor' }];
+      const body = await (await get(search)).json();
+      expect(body.tutorsOnlyLocked).toBe(true);
+      expect(query.in).toHaveBeenCalledWith('id', ['tutor']);
+      expect(mocks.flag).toHaveBeenCalledWith(
+        'verified-center',
+        'tutoring_picker_tutors_only'
+      );
+    }
+  );
+  it.each([false, true])(
+    'flag %s retains the explicit all-teacher catalog for plan labels',
+    async (enabled) => {
+      mocks.flag.mockResolvedValue(enabled);
+      policyRows = serializeTutoringPolicyConfigRows({
+        ...STANDARD_TUTORING_POLICY,
+        tutorGroupIds: [tutorGroup],
+      });
+      await get('?tutorsOnly=false');
+      expect(query.in).not.toHaveBeenCalled();
+    }
+  );
+  it.each(['unset', 'empty'])(
+    'flag ON with %s tutor groups falls back to the teacher catalog',
+    async (config) => {
+      mocks.flag.mockResolvedValue(true);
+      if (config === 'empty')
+        policyRows = serializeTutoringPolicyConfigRows(
+          STANDARD_TUTORING_POLICY
+        );
+      const body = await (await get('?tutorsOnly=true')).json();
+      expect(body.tutorsOnlyLocked).toBe(false);
+      expect(body.tutorGroupConfigMissing).toBe(true);
+      expect(body.data).toHaveLength(1);
+      expect(query.in).not.toHaveBeenCalled();
+    }
+  );
   it('returns no tutors when no tutor group is configured', async () => {
     query.range.mockResolvedValueOnce({ data: [], count: 0, error: null });
     const body = await (await get('?tutorsOnly=true')).json();
@@ -271,4 +326,12 @@ describe('center teacher catalog', () => {
     });
     expect((await get()).status).toBe(500);
   });
+});
+
+it('filters a selected teacher by id before pagination', async () => {
+  await get('?teacherId=11111111-1111-4111-8111-111111111111&tutorsOnly=true');
+  expect(query.eq).toHaveBeenCalledWith(
+    'id',
+    '11111111-1111-4111-8111-111111111111'
+  );
 });

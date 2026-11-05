@@ -3,6 +3,7 @@ import {
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getFeatureFlag } from '@tuturuuu/utils/feature-flags/core';
 import { buildPostgrestIlikeOrFilter } from '@tuturuuu/utils/postgrest-filter';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -18,6 +19,7 @@ const querySchema = z.object({
   page: z.coerce.number().int().min(1).max(1000000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   q: z.string().trim().max(200).default(''),
+  teacherId: z.uuid().optional(),
   tutorsOnly: z
     .enum(['true', 'false'])
     .optional()
@@ -44,7 +46,7 @@ export async function GET(
   );
   if (!parsed.success)
     return NextResponse.json({ message: 'Invalid query' }, { status: 400 });
-  const { page, pageSize, q, tutorsOnly } = parsed.data;
+  const { page, pageSize, q, tutorsOnly, teacherId } = parsed.data;
   const sbAdmin = await createAdminClient();
   const scope = await resolveTutoringReadScope({ request, access, sbAdmin });
   if (!scope.allowed)
@@ -69,9 +71,18 @@ export async function GET(
   const { tutorGroupIds } = readTutoringPolicyConfigRows(
     policyError ? [] : (policyRows ?? [])
   );
+  const tutorsOnlyEnabled = await getFeatureFlag(
+    normalizedWsId,
+    'tutoring_picker_tutors_only'
+  );
+  const tutorsOnlyLocked = tutorsOnlyEnabled && tutorGroupIds.length > 0;
   let query = workspaceTeachersQuery(sbAdmin, normalizedWsId);
   if (scope.teacherId) query = query.eq('id', scope.teacherId);
-  if (tutorsOnly ?? tutorGroupIds.length > 0) {
+  if (teacherId) query = query.eq('id', teacherId);
+  if (
+    (tutorsOnly ?? tutorGroupIds.length > 0) &&
+    !(tutorsOnlyEnabled && tutorGroupIds.length === 0)
+  ) {
     const { tutorIds, error } = await listWorkspaceTutorIds({
       normalizedWsId,
       sbAdmin,
@@ -121,6 +132,8 @@ export async function GET(
           ...classifyWorkspaceTeacher(memberships ?? [], tutorGroupIds),
         })
       ),
+      tutorsOnlyLocked,
+      tutorGroupConfigMissing: tutorsOnlyEnabled && tutorGroupIds.length === 0,
       count: count ?? 0,
       page,
       pageSize,

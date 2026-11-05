@@ -1,6 +1,7 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { getFeatureFlag } from '@tuturuuu/utils/feature-flags/core';
 import { NextResponse } from 'next/server';
 import {
   createLegacyGetHandler,
@@ -33,6 +34,7 @@ import {
   resolveTutoringRouteAccess,
 } from '@/lib/tutoring/route-access';
 import { listWorkspaceTeacherIds } from '@/lib/tutoring/teachers';
+import { validateTutorAssignment } from '@/lib/tutoring/tutor-assignment';
 import {
   denyWeakContentEdit,
   isWeakSupportSession,
@@ -325,6 +327,17 @@ export async function POST(request: Request, { params }: Params) {
     ),
   ];
 
+  if (
+    teacherIdsToValidate.length > 0 &&
+    (await getFeatureFlag(normalizedWsId, 'tutoring_picker_tutors_only'))
+  ) {
+    const rejection = await validateTutorAssignment({
+      normalizedWsId,
+      sbAdmin,
+      teacherIds: teacherIdsToValidate,
+    });
+    if (rejection) return rejection;
+  }
   if (teacherIdsToValidate.length > 0) {
     const teacherCheck = await listWorkspaceTeacherIds({
       normalizedWsId,

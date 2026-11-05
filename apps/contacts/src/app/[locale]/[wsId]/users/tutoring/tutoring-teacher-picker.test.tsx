@@ -1,8 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TutoringCreateSlots } from './tutoring-create-slots';
 import { TutoringTeacherPicker } from './tutoring-teacher-picker';
+import { DEFAULT_FORM } from './tutoring-types';
 
 const state = vi.hoisted(() => ({
+  locked: false,
+  needsConfig: false,
+  eligible: false,
   config: null as any,
   props: null as any,
   next: vi.fn(),
@@ -38,10 +44,19 @@ const state = vi.hoisted(() => ({
   ],
 }));
 vi.mock('@tanstack/react-query', () => ({
+  useQuery: () => ({
+    data: { data: state.eligible ? [{ id: 'tutor', isTutor: true }] : [] },
+  }),
   useInfiniteQuery: (config: unknown) => {
     state.config = config;
     return {
-      data: { pages: state.pages },
+      data: {
+        pages: state.pages.map((page) => ({
+          ...page,
+          tutorsOnlyLocked: state.locked,
+          tutorGroupConfigMissing: state.needsConfig,
+        })),
+      },
       hasNextPage: true,
       isFetchingNextPage: false,
       fetchNextPage: state.next,
@@ -86,7 +101,12 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
 }));
 
 describe('center teacher picker', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    state.locked = false;
+    state.needsConfig = false;
+    state.eligible = false;
+  });
   it('uses the eligible teacher catalog, paginates, and clears search after selection', () => {
     const change = vi.fn();
     render(
@@ -166,6 +186,68 @@ describe('center teacher picker', () => {
     });
   });
 
+  it('flag ON hides the toggle and excludes other teachers including a saved selection', () => {
+    state.locked = true;
+    const change = vi.fn();
+    render(
+      <TutoringTeacherPicker
+        onChange={change}
+        value="other-class-teacher"
+        knownOptions={[
+          { value: 'other-class-teacher', label: 'Saved teacher' },
+        ]}
+        wsId="center"
+      />
+    );
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Center Teacher [teacher]')
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Saved teacher')).not.toBeInTheDocument();
+    expect(change).toHaveBeenCalledWith('');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'non_tutor_selection_cleared'
+    );
+    expect(screen.getByText('Student Tutor [tutor]')).toBeInTheDocument();
+    expect(
+      screen.getByText('Lecturer Tutor [tutor · teacher]')
+    ).toBeInTheDocument();
+  });
+  it('locks an already toggled all-teacher picker when flag metadata changes', () => {
+    const { rerender } = render(
+      <TutoringTeacherPicker onChange={vi.fn()} value="" wsId="center" />
+    );
+    fireEvent.click(screen.getByRole('switch'));
+    state.locked = true;
+    rerender(
+      <TutoringTeacherPicker onChange={vi.fn()} value="" wsId="center" />
+    );
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Center Teacher [teacher]')
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Student Tutor [tutor]')).toBeInTheDocument();
+    void state.config.queryFn({ pageParam: 1 });
+    expect(state.request).toHaveBeenLastCalledWith(
+      'center',
+      expect.objectContaining({ tutorsOnly: true })
+    );
+  });
+  it('hides the toggle and offers a configuration hint when groups are unset', () => {
+    state.needsConfig = true;
+    render(<TutoringTeacherPicker onChange={vi.fn()} value="" wsId="center" />);
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    expect(screen.getByText('configure_tutor_group')).toBeInTheDocument();
+  });
+  it('preserves an eligible tutor selected outside the visible search page', () => {
+    state.locked = true;
+    state.eligible = true;
+    const change = vi.fn();
+    render(
+      <TutoringTeacherPicker onChange={change} value="tutor" wsId="center" />
+    );
+    expect(change).not.toHaveBeenCalled();
+  });
   it('keeps each slot picker toggle independent when several render', () => {
     render(
       <>
@@ -181,3 +263,74 @@ describe('center teacher picker', () => {
     expect(toggles[0]).toBeChecked();
   });
 });
+
+it.each(['plan button', 'add-slot prefill', 'weekly-slot prefill'])(
+  'clears a non-tutor from %s and disables submit',
+  (source) => {
+    state.locked = true;
+    function Form() {
+      const [value, setValue] = useState('other-class-teacher');
+      return (
+        <>
+          <TutoringTeacherPicker
+            value={value}
+            onChange={setValue}
+            wsId="center"
+          />
+          <button type="submit" disabled={!value}>
+            {source}
+          </button>
+        </>
+      );
+    }
+    render(<Form />);
+    expect(screen.getByRole('button', { name: source })).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'non_tutor_selection_cleared'
+    );
+  }
+);
+
+it.each(['add_session_slot', 'add_weekly_slot'])(
+  'clears the sole class-manager prefill from %s',
+  (action) => {
+    state.locked = true;
+    function Form() {
+      const [form, setForm] = useState({
+        ...DEFAULT_FORM,
+        groupId: 'class',
+        sessionSlots: [
+          {
+            sessionDate: '2026-11-03',
+            startTime: '18:00',
+            durationMinutes: 45,
+            teacherUserId: '',
+          },
+        ],
+      });
+      return (
+        <>
+          <TutoringCreateSlots
+            conflictingIndexes={new Set()}
+            form={form}
+            onChange={setForm}
+            singleTeacherId="other-class-teacher"
+            teacherOptions={[]}
+            wsId="center"
+          />
+          <div data-testid="assignments">
+            {JSON.stringify(
+              form.sessionSlots.map((slot) => slot.teacherUserId)
+            )}
+          </div>
+        </>
+      );
+    }
+    render(<Form />);
+    fireEvent.click(screen.getByRole('button', { name: action }));
+    expect(screen.getByTestId('assignments')).toHaveTextContent('["",""]');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'non_tutor_selection_cleared'
+    );
+  }
+);

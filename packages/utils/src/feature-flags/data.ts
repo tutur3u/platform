@@ -1,4 +1,5 @@
 export const FEATURE_FLAGS = {
+  tutoring_picker_tutors_only: 'tutoring_picker_tutors_only',
   ENABLE_AI: 'ENABLE_AI',
   ENABLE_EDUCATION: 'ENABLE_EDUCATION',
   ENABLE_QUIZZES: 'ENABLE_QUIZZES',

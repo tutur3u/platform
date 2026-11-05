@@ -60,11 +60,23 @@ export async function loadTutoringPlanData(
   toDate: string,
   current: () => boolean
 ) {
-  const teachers = await completeTutoringPages(
-    (page) =>
-      listTutoringTeachers(wsId, { page, pageSize: 100, tutorsOnly: false }),
-    current
-  );
+  let tutorsOnlyLocked = false;
+  const labelTeachers = await completeTutoringPages(async (page) => {
+    const response = await listTutoringTeachers(wsId, {
+      page,
+      pageSize: 100,
+      tutorsOnly: false,
+    });
+    tutorsOnlyLocked = response.tutorsOnlyLocked;
+    return response;
+  }, current);
+  const teachers = tutorsOnlyLocked
+    ? await completeTutoringPages(
+        (page) =>
+          listTutoringTeachers(wsId, { page, pageSize: 100, tutorsOnly: true }),
+        current
+      )
+    : labelTeachers;
   const sessions = await completeTutoringPages(
     (page) =>
       listTutoringSessions(wsId, {
@@ -76,5 +88,5 @@ export async function loadTutoringPlanData(
       }),
     current
   );
-  return { teachers, sessions };
+  return { teachers, labelTeachers, sessions };
 }
