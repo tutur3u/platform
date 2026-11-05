@@ -204,6 +204,36 @@ describe('resolveInternalAppUrl', () => {
     ).toBe('https://cms-preview.example.com');
   });
 
+  it('resolves Rewise to rewise.tuturuuu.com when env still names a released domain', () => {
+    expect(
+      resolveInternalAppUrl({
+        appName: 'rewise',
+        candidates: [
+          'https://rewise.me',
+          'https://www.rewise.me/',
+          'https://rewise.school',
+        ],
+        fallback: 'https://rewise.tuturuuu.com',
+      })
+    ).toBe('https://rewise.tuturuuu.com');
+    expect(
+      resolveAppUrl({
+        candidates: ['https://rewise.school/'],
+        fallback: 'https://rewise.tuturuuu.com',
+      })
+    ).toBe('https://rewise.tuturuuu.com');
+  });
+
+  it('canonicalizes a configured Rewise production URL to HTTPS', () => {
+    expect(
+      resolveInternalAppUrl({
+        appName: 'rewise',
+        candidates: ['http://rewise.tuturuuu.com/'],
+        fallback: 'https://rewise.tuturuuu.com',
+      })
+    ).toBe('https://rewise.tuturuuu.com');
+  });
+
   it('skips wildcard listener origins before resolving an internal app URL', () => {
     expect(
       resolveInternalAppUrl({
