@@ -90,7 +90,8 @@ describe('playground API route contracts', () => {
       PLATFORM_BUILD_ENVIRONMENT: 'test',
       PLATFORM_BUILD_REF_NAME: 'fixture-ref',
     };
-    for (const [name, value] of Object.entries(metadata)) vi.stubEnv(name, value);
+    for (const [name, value] of Object.entries(metadata))
+      vi.stubEnv(name, value);
     const privateValue = 'fixture-private-value-never-public';
     vi.stubEnv('SUPABASE_SECRET_KEY', privateValue);
     vi.stubEnv('PRIVATE_KEY', privateValue);
