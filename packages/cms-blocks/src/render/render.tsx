@@ -9,7 +9,7 @@ import type {
 
 /** Allows http(s), mailto, tel, root-relative and hash links; drops `javascript:` and friends. */
 export function safeUrl(value: string | undefined) {
-  if (!value) return undefined;
+  if (!value || /[\u0000-\u0020\u007f\\]/.test(value)) return undefined;
   const trimmed = value.trim();
   return /^(https?:|mailto:|tel:|\/(?!\/)|#)/i.test(trimmed)
     ? trimmed
