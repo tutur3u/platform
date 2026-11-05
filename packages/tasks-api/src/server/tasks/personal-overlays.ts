@@ -22,6 +22,7 @@ export function applyPersonalTaskMetadata<T extends Task>(
   return {
     ...task,
     labels: resolvedMetadata.labels,
+    ticket_projects: task.ticket_projects ?? task.projects ?? [],
     projects: resolvedMetadata.projects,
     label_ids: resolvedMetadata.labels.map((label) => label.id),
     project_ids: resolvedMetadata.projects.map((project) => project.id),

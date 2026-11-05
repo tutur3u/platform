@@ -6,7 +6,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import { Plus, RefreshCw } from '@tuturuuu/icons';
+import { Plus } from '@tuturuuu/icons';
 import { InternalApiError } from '@tuturuuu/internal-api';
 import {
   listPeriodicReports,
@@ -27,10 +27,10 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toast } from '@tuturuuu/ui/sonner';
-import { getBrowserTimezone } from '@tuturuuu/utils/timezone';
 import { useTranslations } from 'next-intl';
 import { useQueryStates } from 'nuqs';
 import { useEffect, useRef, useState } from 'react';
+import { useSetReportMonth } from '../users/reports/[reportId]/hooks/use-set-report-month';
 import GroupReportsSelector from '../users/reports/group-reports-selector';
 import {
   type PeriodicBatchIntent,
@@ -56,6 +56,7 @@ import {
   normalizePeriodicReportPeriod,
   periodicReportFilterKeys,
   periodicReportFilters,
+  periodicReportMonthScope,
 } from './periodic-report-filters';
 import {
   type PeriodicEmailPreview,
@@ -69,6 +70,7 @@ import {
   PeriodicReportsLoading,
   PeriodicReportsRowsLoading,
 } from './periodic-reports-loading';
+import { PeriodicReportsScopeHeader } from './periodic-reports-scope-header';
 import { PeriodicReportsToolbar } from './periodic-reports-toolbar';
 import { periodicResendReason } from './periodic-resend';
 import {
@@ -129,7 +131,9 @@ export default function PeriodicReportsPanel({
     rawPeriodStart,
     rawPeriodEnd
   );
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  // Monthly: reports for one month (their period, else the estimated month).
+  const month = periodicReportMonthScope({ ...filters, cadence });
+  const { reportMonth, timeZone } = month;
   const [debouncedQuery] = useDebounce(query.trim(), 300);
   const actor = useWorkspaceActor();
   const [queryInstance] = useState(() => crypto.randomUUID());
@@ -207,6 +211,7 @@ export default function PeriodicReportsPanel({
       sortDirection,
       periodStart,
       periodEnd,
+      reportMonth,
     ],
     enabled: Boolean(actor),
     queryFn: async ({ pageParam }) => {
@@ -219,6 +224,7 @@ export default function PeriodicReportsPanel({
         cadence,
         periodStart: periodStart || undefined,
         periodEnd: periodEnd || undefined,
+        month: reportMonth ?? undefined,
         generationStatus:
           generationStatus === 'all' ? undefined : generationStatus,
         deliveryStatus: deliveryStatus === 'all' ? undefined : deliveryStatus,
@@ -227,7 +233,8 @@ export default function PeriodicReportsPanel({
         query: debouncedQuery || undefined,
         sortBy,
         sortDirection,
-        timezone: periodStart || periodEnd ? getBrowserTimezone() : undefined,
+        timezone:
+          periodStart || periodEnd || reportMonth ? timeZone : undefined,
       });
       actor.assertActive();
       return { ...page, queryScope };
@@ -334,6 +341,7 @@ export default function PeriodicReportsPanel({
     },
     onError: (error) => toast.error(error.message),
   });
+  const setMonthMutation = useSetReportMonth(wsId);
   const approvalMutation = useMutation({
     mutationFn: (reportId: string) =>
       updateWorkspaceUserApproval(wsId, {
@@ -420,36 +428,12 @@ export default function PeriodicReportsPanel({
         }
         toolbar={
           <div className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-muted-foreground text-xs">
-                {periodStart || periodEnd
-                  ? t('period_scope', {
-                      start: periodStart || t('all_time_start'),
-                      end: periodEnd || t('all_time_end'),
-                    })
-                  : t('all_periods')}
-              </p>
-              <Button
-                size="icon"
-                className="size-8"
-                variant="ghost"
-                aria-label={t('refresh')}
-                title={t('refresh')}
-                disabled={isRefreshing}
-                onClick={async () => {
-                  setIsRefreshing(true);
-                  try {
-                    await reportsQuery.refetch();
-                  } finally {
-                    setIsRefreshing(false);
-                  }
-                }}
-              >
-                <RefreshCw
-                  className={`size-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
-                />
-              </Button>
-            </div>
+            <PeriodicReportsScopeHeader
+              month={reportMonth}
+              periodStart={periodStart}
+              periodEnd={periodEnd}
+              onRefresh={() => reportsQuery.refetch()}
+            />
 
             <PeriodicReportsToolbar
               stageChanged={stage !== 'pending'}
@@ -479,6 +463,7 @@ export default function PeriodicReportsPanel({
                   generation: 'all',
                   start: '',
                   end: '',
+                  month: '',
                   query: '',
                   sort: 'period',
                   direction: 'desc',
@@ -490,6 +475,11 @@ export default function PeriodicReportsPanel({
               periodStart={periodStart}
               periodEnd={periodEnd}
               onPeriodChange={(start, end) => void setFilters({ start, end })}
+              reportMonth={month.pickerValue}
+              defaultMonth={month.defaultMonth}
+              onMonthChange={(value) =>
+                void setFilters({ month: value, start: '', end: '' })
+              }
               query={query}
               isSearching={
                 !reportsQuery.isError &&
@@ -628,6 +618,7 @@ export default function PeriodicReportsPanel({
                     query: '',
                     start: '',
                     end: '',
+                    month: 'all',
                   });
                 }}
               >
@@ -649,6 +640,12 @@ export default function PeriodicReportsPanel({
                 (candidate) => candidate.id === report.id
               )}
               onToggleSelection={() => toggleSelection(report.id)}
+              onSetMonth={
+                permissions.canUpdateReports
+                  ? (month) =>
+                      setMonthMutation.mutate({ reportId: report.id, month })
+                  : undefined
+              }
               onResend={
                 canResend
                   ? () =>

@@ -1,4 +1,8 @@
 import {
+  isTutoringGroupExcluded,
+  type TutoringExclusionReason,
+} from './tutoring-group-rules';
+import {
   getAssignedTutoringShift,
   STANDARD_TUTORING_POLICY,
   type TutoringPolicy,
@@ -81,6 +85,17 @@ function weekdayOf(date: string) {
   return new Date(`${date}T12:00:00Z`).getUTCDay();
 }
 
+/**
+ * The class a suggestion is for. `reason` adds rules scoped to that reason;
+ * without it only `all` rules apply. `groupName` and `groupTags` stand in when
+ * the calendar rows carry no class name (shift-implied classes) or tags.
+ */
+export interface TutoringSuggestionExclusion {
+  reason?: TutoringExclusionReason | null;
+  groupName?: string | null;
+  groupTags?: readonly string[];
+}
+
 /** Build editable suggestions, never persisted sessions. */
 export function suggestTutoringSlots(
   sessions: WorkspaceUserGroupSession[],
@@ -88,12 +103,25 @@ export function suggestTutoringSlots(
   count: number,
   policy: TutoringPolicy = STANDARD_TUTORING_POLICY,
   mode: 'separate' | 'consecutive' = 'separate',
-  now = new Date()
+  now = new Date(),
+  exclusion: TutoringSuggestionExclusion = {}
 ): TutoringSuggestion[] {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(missedDate) || count < 1) return [];
 
+  // Classes the workspace excludes from tutoring are never suggested; a
+  // schedule mixing classes keeps the others.
   const candidates = sessions
     .filter((session) => session.status === 'scheduled')
+    .filter(
+      (session) =>
+        !isTutoringGroupExcluded(
+          policy,
+          exclusion.groupName ?? session.groupName ?? '',
+          exclusion.reason ?? null,
+          session.groupId,
+          exclusion.groupTags
+        )
+    )
     .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
   const suggestions: TutoringSuggestion[] = [];
   const seen = new Set<string>();
@@ -196,17 +224,29 @@ export function buildShiftRuleSessions({
   days,
   fromDate,
   groupId,
+  groupName = null,
+  groupTags,
   policy,
+  reason = null,
   timeZone = 'Asia/Ho_Chi_Minh',
 }: {
   days: number;
   fromDate: string;
   groupId: string;
+  /** Read by the exclusion rules and kept on the derived classes. */
+  groupName?: string | null;
+  groupTags?: readonly string[];
   policy: TutoringPolicy;
+  reason?: TutoringExclusionReason | null;
   timeZone?: string;
 }): WorkspaceUserGroupSession[] {
   const rule = getAssignedTutoringShift(policy, groupId);
   if (!rule || !/^\d{4}-\d{2}-\d{2}$/.test(fromDate)) return [];
+  // An excluded class needs no tutoring, so its shift implies no classes.
+  if (
+    isTutoringGroupExcluded(policy, groupName ?? '', reason, groupId, groupTags)
+  )
+    return [];
   const sessions: WorkspaceUserGroupSession[] = [];
   const start = Date.parse(`${fromDate}T12:00:00Z`);
   for (let offset = 0; offset <= Math.min(days, 180); offset += 1) {
@@ -228,7 +268,7 @@ export function buildShiftRuleSessions({
         endsAt: endsAt.toISOString(),
         files: [],
         groupId,
-        groupName: null,
+        groupName,
         id: `shift-rule:${date}`,
         recurrenceInstanceDate: null,
         seriesId: null,

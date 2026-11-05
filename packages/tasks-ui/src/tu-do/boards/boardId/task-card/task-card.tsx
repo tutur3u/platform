@@ -66,7 +66,7 @@ import { cn } from '@tuturuuu/utils/format';
 import {
   createTask,
   getPersonalExternalStagingListId,
-  getTicketIdentifier,
+  getTaskTicketLabel,
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
@@ -207,12 +207,7 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
   const priorityT = useTranslations('ws-task-boards.dialog.priority');
   const locale = useLocale();
   const dateLocale = locale === 'vi' ? vi : enUS;
-  const ticketPrefix = (task as Task & { ticket_prefix?: string | null })
-    .ticket_prefix;
-  const ticketIdentifier =
-    typeof task.display_number === 'number' && task.display_number > 0
-      ? getTicketIdentifier(ticketPrefix, task.display_number)
-      : null;
+  const ticketIdentifier = getTaskTicketLabel(task);
   const dueDate = task.end_date
     ? format(new Date(task.end_date), 'MMM d, yyyy', { locale: dateLocale })
     : null;

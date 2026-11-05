@@ -113,3 +113,82 @@ describe('applying make-up suggestions', () => {
     ).toBe(calendar);
   });
 });
+
+describe('excluded classes', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-26T11:00:00Z'));
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('fills no slot for a DDT class and says why', () => {
+    const result = applyTutoringSuggestions({
+      form,
+      fromDate: '2026-10-05',
+      groupName: 'Starters DDT 2',
+      policy: EASY_CENTER_TUTORING_POLICY,
+      schedule: [classAt('2026-10-28T11:00:00Z')],
+    });
+    expect(result).toEqual({
+      form: null,
+      message: { key: 'suggestion_excluded', values: {} },
+    });
+  });
+
+  it('derives no shift classes for an excluded class', () => {
+    const policy = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      shiftByGroupId: { [GROUP]: 'Shift 2' },
+    };
+    const args = {
+      calendar: [],
+      groupId: GROUP,
+      loaded: true,
+      policy,
+      today: '2026-10-26',
+    };
+    expect(
+      resolveTutoringClassSchedule({ ...args, groupName: 'Mẫu giáo A' })
+    ).toEqual([]);
+    expect(
+      resolveTutoringClassSchedule({ ...args, groupName: 'English A1' }).length
+    ).toBeGreaterThan(0);
+  });
+});
+
+describe('tag-excluded classes', () => {
+  it('fills no slot for a class excluded by its tag', () => {
+    const policy = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      groupExclusions: [
+        {
+          scope: 'all' as const,
+          match: 'exact' as const,
+          value: 'DDT',
+          target: 'tag' as const,
+        },
+      ],
+    };
+    expect(
+      applyTutoringSuggestions({
+        form,
+        fromDate: '2026-10-05',
+        groupName: 'English A1',
+        groupTags: ['ddt'],
+        policy,
+        schedule: [classAt('2026-10-28T11:00:00Z')],
+      }).message
+    ).toEqual({ key: 'suggestion_excluded', values: {} });
+    expect(
+      resolveTutoringClassSchedule({
+        calendar: [],
+        groupId: GROUP,
+        groupName: 'English A1',
+        groupTags: ['DDT'],
+        loaded: true,
+        policy: { ...policy, shiftByGroupId: { [GROUP]: 'Shift 2' } },
+        today: '2026-10-26',
+      })
+    ).toEqual([]);
+  });
+});

@@ -58,6 +58,7 @@ import {
   shouldBlockReportExport,
   shouldShowPendingWatermark,
 } from './report-feature-flags';
+import { ReportMonthField, useNewReportMonth } from './report-month-field';
 
 export default function EditableReportPreview({
   wsId,
@@ -126,6 +127,8 @@ export default function EditableReportPreview({
     'AVERAGE' | 'LATEST'
   >('scoreCalculationMethod', 'LATEST');
 
+  const { getConfig } = useConfigMap(configs);
+  const newMonth = useNewReportMonth(isNew, getConfig('REPORT_DEFAULT_TITLE'));
   const {
     createMutation,
     updateMutation,
@@ -141,26 +144,14 @@ export default function EditableReportPreview({
     factorEnabled,
     scoreCalculationMethod,
     canApproveReports,
+    reportMonth: isNew ? newMonth.month : undefined,
   });
-
-  const { getConfig } = useConfigMap(configs);
-
-  const getDefaultReportTitle = () => {
-    const baseTitle = getConfig('REPORT_DEFAULT_TITLE')?.trim();
-    if (!baseTitle) return '';
-    const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = String(now.getFullYear());
-    return `${baseTitle} ${month}/${year}`;
-  };
-
-  const defaultReportTitle = isNew ? getDefaultReportTitle() : '';
 
   const { form, title, content, feedback, approvalBlockedReason } =
     useReportReviewForm({
       wsId,
       report,
-      defaultReportTitle,
+      defaultReportTitle: newMonth.defaultTitle,
       historical: Boolean(selectedLog),
       saving: createMutation.isPending || updateMutation.isPending,
     });
@@ -477,6 +468,11 @@ export default function EditableReportPreview({
               </CollapsibleTrigger>
             ) : null}
             <CollapsibleContent className={cn(!isNew && 'px-4 pb-4')}>
+              <ReportMonthField
+                {...{ form, isNew, newMonth, report, wsId }}
+                canApprove={canApproveReports}
+                canUpdate={canUpdateReports}
+              />
               <ReportBasicInfoDialog
                 isNew={isNew}
                 form={form}

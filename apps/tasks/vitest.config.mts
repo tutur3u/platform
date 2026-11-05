@@ -14,6 +14,13 @@ export default defineConfig({
         ),
       },
       {
+        find: '@tuturuuu/internal-api/tasks',
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/tasks.ts'
+        ),
+      },
+      {
         find: /^@tuturuuu\/types\/primitives\/(.+)$/,
         replacement: resolve(
           __dirname,

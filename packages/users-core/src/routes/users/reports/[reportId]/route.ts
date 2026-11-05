@@ -7,6 +7,7 @@ import {
   MAX_MONTHLY_REPORT_TEXT_LENGTH,
   MAX_MONTHLY_REPORT_TITLE_LENGTH,
 } from '../../../../features/reports/report-limits';
+import { isReportSent } from '../../../../features/reports/report-month';
 import { getUserGroupRoutePermissions } from '../../../../lib/user-groups/route-auth';
 import {
   resolveRequestActorAuthUid,
@@ -92,15 +93,30 @@ export async function PUT(request: Request, context: Params) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
+    // Only a month change reads the delivery state (for the sent-report gate
+    // below); ordinary draft saves keep their original tenant read.
+    const periodChanged =
+      parsed.data.period_start !== undefined ||
+      parsed.data.period_end !== undefined;
     const sbAdmin = await createAdminClient();
     const privateDb = sbAdmin.schema('private');
+    const reportView = privateDb.from(
+      'external_user_monthly_reports_workspace_view'
+    );
     const [existing, configResult] = await Promise.all([
-      privateDb
-        .from('external_user_monthly_reports_workspace_view')
-        .select('id, user_id, group_id, generation_mode')
-        .eq('id', reportId)
-        .eq('user_ws_id', wsId)
-        .maybeSingle(),
+      periodChanged
+        ? reportView
+            .select(
+              'id, user_id, group_id, generation_mode, delivery_status, delivered_at'
+            )
+            .eq('id', reportId)
+            .eq('user_ws_id', wsId)
+            .maybeSingle()
+        : reportView
+            .select('id, user_id, group_id, generation_mode')
+            .eq('id', reportId)
+            .eq('user_ws_id', wsId)
+            .maybeSingle(),
       sbAdmin
         .from('workspace_configs')
         .select('value')
@@ -120,11 +136,34 @@ export async function PUT(request: Request, context: Params) {
         { status: 500 }
       );
     }
+    // Both reads share one shape: the delivery fields are only present when
+    // the month changed (ordinary draft saves never select them).
+    const existingReport: {
+      generation_mode: string | null;
+      delivered_at?: string | null;
+      delivery_status?: string | null;
+    } = existing.data;
+
+    // Moving a report parents already received to another month is an
+    // approver decision; unsent reports can be moved by any editor.
+    if (
+      periodChanged &&
+      isReportSent(existingReport) &&
+      !permissions.containsPermission('approve_reports')
+    ) {
+      return NextResponse.json(
+        { message: 'Only approvers can change the month of a sent report' },
+        { status: 403 }
+      );
+    }
 
     const updatePayload: TablesUpdate<
       { schema: 'private' },
       'external_user_monthly_reports'
     > = { ...parsed.data, updated_at: new Date().toISOString() };
+    // The report month (period_start/period_end) is filing metadata: it is
+    // not in the email parents receive, so moving a report to another month
+    // keeps its review decision. Cadence and content still need re-review.
     const reviewableFieldsChanged =
       parsed.data.title !== undefined ||
       parsed.data.content !== undefined ||
@@ -133,13 +172,11 @@ export async function PUT(request: Request, context: Params) {
       parsed.data.score !== undefined ||
       parsed.data.scores !== undefined ||
       parsed.data.cadence !== undefined ||
-      parsed.data.period_start !== undefined ||
-      parsed.data.period_end !== undefined ||
       parsed.data.generation_mode !== undefined ||
       parsed.data.generation_status !== undefined;
     const isAiReport =
       parsed.data.generation_mode === 'ai' ||
-      existing.data.generation_mode === 'ai';
+      existingReport.generation_mode === 'ai';
     const approvalEnabled = (configResult.data?.value ?? 'true') === 'true';
     const reviewTransition = resolveReportReviewTransition({
       approvalEnabled,
@@ -159,7 +196,10 @@ export async function PUT(request: Request, context: Params) {
       });
     }
     let reviewActorId: string | null = null;
-    if (approvalTouched) {
+    // Approval and month changes are attributed to the acting staff member.
+    // audit.record_version keeps the old and new row of every update, and the
+    // activity log falls back to updated_by for these service-role writes.
+    if (approvalTouched || periodChanged) {
       const actorAuthUid = await resolveRequestActorAuthUid(request);
       const actorLink = actorAuthUid
         ? await getWorkspaceUserLinkForUser(wsId, actorAuthUid, {
@@ -173,6 +213,7 @@ export async function PUT(request: Request, context: Params) {
         );
       }
       reviewActorId = actorLink.virtual_user_id;
+      if (periodChanged) updatePayload.updated_by = reviewActorId;
     }
     if (approvalTouched) {
       if (
