@@ -40,11 +40,6 @@ export const HOLD_UNITS = {
     where: 'Privacy P12 (whole section); the two Firebase registry rows',
   },
   // --- Sentence-level gates (tag rule: publish only if true, else delete) ---
-  'gemini-request-logging': {
-    condition:
-      'published by default: the tag says to remove the sentence only if Gemini request logging is turned off before publication; remove from RELEASED_HOLDS if it is',
-    where: 'Privacy P10 Gemini request-logging sentence',
-  },
   'privacy/privacy-section-5#1': {
     condition: 'the advertising-ID check is closed',
     where: 'Privacy P10 "We do not sell personal information" sentence',
@@ -81,7 +76,7 @@ export type HoldId = keyof typeof HOLD_UNITS;
 export const KS_RELEASED = false;
 
 /** Other released hold units. */
-export const RELEASED_HOLDS: readonly HoldId[] = ['gemini-request-logging'];
+export const RELEASED_HOLDS: readonly HoldId[] = [];
 
 export interface HoldContext {
   mobileReleased?: boolean;

@@ -92,7 +92,7 @@ describe('2026-11-11 revision source', () => {
 describe('2026-11-11 revision: shipped hold state', () => {
   it('ships with every HOLD unit held, including the KS group', () => {
     expect(KS_RELEASED).toBe(false);
-    expect(RELEASED_HOLDS).toEqual(['gemini-request-logging']);
+    expect(RELEASED_HOLDS).toEqual([]);
   });
 
   for (const locale of locales)
@@ -187,7 +187,7 @@ describe('2026-11-11 revision: shipped hold state', () => {
 
 describe('2026-11-11 revision: release', () => {
   it('the single KS switch releases the KS items everywhere', () => {
-    const released = ['gemini-request-logging', 'ks'];
+    const released = ['ks'];
     const ks = (locale: LegalLocale) =>
       REVISION_KINDS.map((kind) =>
         renderRevisionDocument(kind, locale, { released })
