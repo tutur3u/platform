@@ -1,0 +1,61 @@
+name: CMS renderer artifact
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths: ['apps/cms-renderer/**', 'packages/cms-blocks/**', 'packages/sdk/src/cms-site*', 'apps/backend/src/workspaces_external_projects_delivery*', '.github/workflows/cms-renderer.yaml', 'bun.lock']
+  push:
+    branches: [main]
+    paths: ['apps/cms-renderer/**', 'packages/cms-blocks/**', '.github/workflows/cms-renderer.yaml', 'bun.lock']
+permissions:
+  contents: read
+concurrency:
+  group: cms-renderer-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  artifact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+      # The new workspace entry is resolved in CI; no M4 install is permitted.
+      - run: bun install --ignore-scripts
+      - name: Shared render and delivery checks
+        run: bun test packages/cms-blocks/src/render packages/sdk/src/cms-site.test.ts apps/cms-renderer/src/worker.test.ts
+      - name: Build Worker and generated routes
+        working-directory: apps/cms-renderer
+        run: bun run build
+      - name: Check generated app types
+        working-directory: apps/cms-renderer
+        run: bun run type-check
+      - name: Validate emitted deployable Worker without publishing
+        run: bun x --no-install wrangler deploy --dry-run --config apps/cms-renderer/dist/server/wrangler.json --outdir /tmp/cms-renderer-dry-run
+      - name: Seal exact source and package output
+        run: |
+          git rev-parse HEAD > apps/cms-renderer/dist/source-sha.txt
+          tar -czf cms-renderer.tar.gz -C apps/cms-renderer dist
+          sha256sum cms-renderer.tar.gz > cms-renderer.sha256
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: cms-renderer-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            cms-renderer.tar.gz
+            cms-renderer.sha256
+          if-no-files-found: error
+          retention-days: 7
+  delivery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Install repository Rust compiler
+        run: rustup toolchain install 1.95.0 --profile minimal
+      - name: Verify published snapshot isolation and legacy delivery
+        run: cargo +1.95.0 test --manifest-path apps/backend/Cargo.toml --lib workspaces_external_projects_delivery --jobs 2
