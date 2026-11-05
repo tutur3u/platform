@@ -152,3 +152,23 @@ test('both native jobs retain bounded setup and mandatory runtime acceptance', (
     );
   }
 });
+
+test('Pay keeps browser setup outside runtime acceptance', () => {
+  const pay = readWorkflow('pay-cloudflare.yaml');
+  assert.equal(
+    pay.jobs.native.with['runtime-setup-command'],
+    'cd ../web && bun x --no-install playwright install --with-deps chromium'
+  );
+  assert.equal(
+    pay.jobs.native.with['runtime-command'],
+    'node --test --test-concurrency=1 cloudflare/*.runtime.mjs'
+  );
+  for (const event of ['pull_request', 'push']) {
+    assert.ok(pay.on[event].paths.includes(`${actionPath}/**`));
+    assert.ok(
+      pay.on[event].paths.includes(
+        'scripts/ci/native-runtime-prerequisites.test.js'
+      )
+    );
+  }
+});
