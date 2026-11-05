@@ -9,7 +9,7 @@ import { subprocessorsSource } from './subprocessors.generated';
 import { termsSource } from './terms.generated';
 
 export const FINAL_SOURCE_SHA256 =
-  'ee52b10d69cc1aed56fe1dd2df6a7cbfd4f59fa64fb4025e87987f2597eb9cfb';
+  '1234b293dfb5b83c4cc94ff6716a3a10df6bcd284263e394241ef38e8838a8f6';
 export const REVISION_DATE = '2026-11-11';
 
 export const revisionSource: RevisionSource = {

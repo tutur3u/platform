@@ -1,15 +1,14 @@
 # Approved change notice (2026-11-11 revision)
 
-<!-- Verbatim from the frozen FINAL §2 (sha256 ee52b10d69cc1aed56fe1dd2df6a7cbfd4f59fa64fb4025e87987f2597eb9cfb); [INTERNAL] notes and the archiveLinks drafting lines omitted. [HOLD …] blocks stay out of the rendered notice until released in revision-2026-11-11/holds.ts. -->
+<!-- Verbatim from the frozen FINAL §2 (sha256 1234b293dfb5b83c4cc94ff6716a3a10df6bcd284263e394241ef38e8838a8f6); [INTERNAL] notes and the archiveLinks drafting lines omitted. [HOLD …] blocks stay out of the rendered notice until released in revision-2026-11-11/holds.ts. -->
 
 ## EN
-
 
 **title:** What changed in Tuturuuu's legal documents
 
 **binding:**
 
-On {N} we updated our Terms of Service, Privacy Policy, Data Processing Addendum, Subprocessor list, Service Level terms, Acceptable Use Policy and Community Guidelines. This version replaces the version in force since 15 August 2026 and the proposal we prepared for 2 November 2026, which never took effect.
+On {N} we updated our Terms of Service, Privacy Policy, Data Processing Addendum and Subprocessor list. This version replaces the version in force since 15 August 2026 and the proposal we prepared for 2 November 2026, which never took effect.
 
 **When the changes apply to you**
 - **New accounts (created on or after {N}):** all changes apply from {N}.
@@ -42,9 +41,6 @@ We are sending this notice by email to workspace owners and administrators. You 
 | Seats and renewals | An invitation alone does not create an undisclosed charge. Price changes do not alter an existing subscription without the notice the law and your plan require. | Clarifies | {N} |
 | Cancelling | Cancel through the billing portal. Leaving a workspace or deleting an app does not cancel a subscription. | Applies later (existing paid) | {N30} or next renewal, whichever is later |
 | AI credits and usage allowances | Allowances belong to the purchasing account or workspace. AI credits are service units, not money, and may expire under rules shown before purchase. If your allowance goes down, new use is limited but your data stays accessible and exportable where possible. | Credit expiry: Applies later (existing paid). The rest: Clarifies | Expiry: {N30} or next renewal; rest {N} |
-| Service levels (SLA) | A service-level commitment applies only where a signed order states it, with its own targets, exclusions and claims process. The public SLA page does not by itself create a commitment. | Applies later (existing paid) | {N30} or next renewal, whichever is later |
-| Mobile app | New Privacy Policy section. Firebase Analytics and Crashlytics start only after you choose Allow; push notifications use Firebase only after you sign in and turn push on. | Clarifies | The mobile release date |
-| Acceptable Use Policy and Community Guidelines | Both are rewritten in clearer form, as in the proposal published for 2 November 2026; the core safety rules, AI features for adults (18+) only, the graduated enforcement steps and the 30-day appeal right are kept. Vietnamese versions are provided for the first time. | Clarifies; safety rules kept | {N} |
 
 [HOLD R33/R34: publish only once Pax's cleanup jobs are scheduled and have run]
 
@@ -73,12 +69,11 @@ We are sending this notice by email to workspace owners and administrators. You 
 
 ## VI
 
-
 **title:** Những thay đổi trong các văn bản pháp lý của Tuturuuu
 
 **binding:**
 
-Vào ngày {N}, chúng tôi đã cập nhật Điều khoản dịch vụ, Chính sách quyền riêng tư, Phụ lục xử lý dữ liệu, Danh mục bên xử lý phụ, Thỏa thuận mức dịch vụ, Chính sách sử dụng chấp nhận được và Nguyên tắc cộng đồng. Phiên bản này thay thế phiên bản có hiệu lực từ ngày 15 tháng 8 năm 2026 và bản dự thảo chuẩn bị cho ngày 2 tháng 11 năm 2026, vốn chưa từng có hiệu lực.
+Vào ngày {N}, chúng tôi đã cập nhật Điều khoản dịch vụ, Chính sách quyền riêng tư, Phụ lục xử lý dữ liệu và Danh mục bên xử lý phụ. Phiên bản này thay thế phiên bản có hiệu lực từ ngày 15 tháng 8 năm 2026 và bản dự thảo chuẩn bị cho ngày 2 tháng 11 năm 2026, vốn chưa từng có hiệu lực.
 
 **Khi nào các thay đổi áp dụng với bạn**
 - **Tài khoản mới (tạo từ ngày {N}):** mọi thay đổi áp dụng từ {N}.
@@ -111,9 +106,6 @@ Chúng tôi gửi thông báo này qua email cho chủ sở hữu và quản tr�
 | Thành viên và gia hạn | Lời mời không tự tạo ra khoản phí không được nêu rõ. Thay đổi giá không làm thay đổi gói hiện có nếu chưa có thông báo theo luật và theo gói của bạn. | Làm rõ | {N} |
 | Hủy gói | Hủy qua cổng thanh toán. Rời không gian làm việc hoặc xóa ứng dụng không phải là hủy gói. | Áp dụng sau (gói trả phí hiện có) | {N30} hoặc kỳ gia hạn tiếp theo, tùy ngày nào muộn hơn |
 | Tín dụng AI và hạn mức sử dụng | Hạn mức thuộc tài khoản hoặc không gian làm việc đã mua. Tín dụng AI là đơn vị dịch vụ, không phải tiền, và có thể hết hạn theo quy định được nêu trước khi mua. Nếu hạn mức của bạn giảm, việc dùng mới bị giới hạn nhưng dữ liệu của bạn vẫn truy cập và xuất được khi có thể. | Hết hạn tín dụng: Áp dụng sau (gói trả phí hiện có). Phần còn lại: Làm rõ | Hết hạn: {N30} hoặc kỳ gia hạn tiếp theo; phần còn lại {N} |
-| Mức dịch vụ (SLA) | Cam kết mức dịch vụ chỉ áp dụng khi đơn đặt hàng đã ký nêu rõ, kèm mục tiêu, ngoại lệ và quy trình khiếu nại riêng. Trang SLA công khai tự nó không tạo ra cam kết. | Áp dụng sau (gói trả phí hiện có) | {N30} hoặc kỳ gia hạn tiếp theo, tùy ngày nào muộn hơn |
-| Ứng dụng di động | Mục mới trong Chính sách quyền riêng tư. Firebase Analytics và Crashlytics chỉ bắt đầu sau khi bạn chọn Cho phép; thông báo đẩy chỉ dùng Firebase sau khi bạn đăng nhập và bật thông báo đẩy. | Làm rõ | Ngày phát hành bản di động |
-| Chính sách sử dụng chấp nhận được và Nguyên tắc cộng đồng | Cả hai được viết lại rõ ràng hơn, như bản dự thảo công bố cho ngày 2 tháng 11 năm 2026; vẫn giữ các quy tắc an toàn cốt lõi, tính năng AI chỉ dành cho người từ đủ 18 tuổi, các bước xử lý theo mức độ và quyền kháng nghị trong 30 ngày. Lần đầu có bản tiếng Việt. | Làm rõ; giữ các quy tắc an toàn | {N} |
 
 [HOLD R33/R34: publish only once Pax's cleanup jobs are scheduled and have run]
 
@@ -139,3 +131,5 @@ Chúng tôi gửi thông báo này qua email cho chủ sở hữu và quản tr�
 - Toàn văn bản mới: /vi/legal/changes/full
 - Văn bản trước đây (có hiệu lực đến {N}): {ARCHIVE_LINKS}
 - Điều khoản dịch vụ · Chính sách quyền riêng tư · Phụ lục xử lý dữ liệu · Mức dịch vụ · Bên xử lý phụ
+
+---

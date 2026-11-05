@@ -77,8 +77,8 @@ describe('legal notice presentation', () => {
               const summary = page.querySelector(
                 '.change-layout > div > .change-summary'
               );
-              // 20 rows; the held KS row and R33/R34 row stay out.
-              expect(summary?.querySelectorAll('tbody tr')).toHaveLength(20);
+              // 17 rows; the held KS row and R33/R34 row stay out.
+              expect(summary?.querySelectorAll('tbody tr')).toHaveLength(17);
               expect(summary?.textContent).toContain(
                 getLegalNotice(locale, noticeConfig)?.nonbinding
               );
