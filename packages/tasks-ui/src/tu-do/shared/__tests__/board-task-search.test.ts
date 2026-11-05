@@ -94,6 +94,36 @@ describe('getBoardTaskIdentifier', () => {
 });
 
 describe('taskMatchesBoardSearch', () => {
+  it('finds current and secondary project keys while retaining legacy board lookup', () => {
+    const task = buildTask({
+      id: 'task-project',
+      display_number: 248,
+      projects: [
+        {
+          id: 'a',
+          name: 'Platform',
+          status: 'active',
+          ticket_key: 'PLA',
+          ticket_number: 12,
+          created_at: '2026-01-01',
+        },
+        {
+          id: 'b',
+          name: 'Mobile',
+          status: 'active',
+          ticket_key: 'MOB',
+          ticket_number: 9,
+          created_at: '2026-02-01',
+        },
+      ],
+    });
+    expect(getTicketIdentifierSearchQuery('PLA-12')).toBe('PLA-12');
+    expect(taskMatchesBoardSearch(task, 'pla-12', 'DEV')).toBe(true);
+    expect(taskMatchesBoardSearch(task, 'mob-9', 'DEV')).toBe(true);
+    expect(taskMatchesBoardSearch(task, 'dev-248', 'DEV')).toBe(true);
+    expect(taskMatchesBoardSearch(task, 'pla-248', 'DEV')).toBe(false);
+  });
+
   it('matches names, display numbers, and board ticket identifiers', () => {
     const task = buildTask({ display_number: 115, id: 'task-1' });
 

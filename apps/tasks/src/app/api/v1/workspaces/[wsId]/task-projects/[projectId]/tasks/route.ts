@@ -36,10 +36,13 @@ interface TaskLabelEntry {
 }
 
 interface TaskProjectEntry {
+  ticket_number: number;
+  created_at: string;
   project: {
     id: string;
     name: string;
     status: string | null;
+    ticket_key: string;
   } | null;
 }
 
@@ -120,7 +123,7 @@ export const GET = withSessionAuth<RouteParams>(
           ),
           assignees:task_assignees(user:users(id, display_name, avatar_url)),
           labels:task_labels(label:workspace_task_labels(id, name, color, created_at)),
-          projects:task_project_tasks(project:task_projects(id, name, status))
+          projects:task_project_tasks(ticket_number, created_at, project:task_projects(id, name, status, ticket_key))
         )
       `
         )
@@ -203,11 +206,19 @@ export const GET = withSessionAuth<RouteParams>(
             ) ?? [];
 
         const normalizedProjects =
-          (task.projects as TaskProjectEntry[] | null | undefined)
-            ?.map((entry) => entry.project)
-            .filter((proj): proj is NonNullable<Task['projects']>[number] =>
-              Boolean(proj)
-            ) ?? [];
+          (task.projects as TaskProjectEntry[] | null | undefined)?.flatMap(
+            (entry) =>
+              entry.project
+                ? [
+                    {
+                      ...entry.project,
+                      status: entry.project.status ?? '',
+                      ticket_number: entry.ticket_number,
+                      created_at: entry.created_at,
+                    },
+                  ]
+                : []
+          ) ?? [];
 
         const normalizedAssignees =
           (task.assignees as TaskAssigneeEntry[] | null | undefined)?.map(

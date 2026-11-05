@@ -110,6 +110,57 @@ when it was created inside the range, counted in whole days in the workspace
 timezone, or the viewer's browser timezone when the workspace has none
 (`report-summary-scope.test.ts`, `periodic-reports-panel-counts.test.tsx`).
 
+### Report month (monthly cadence)
+
+Monthly reports are chosen and grouped by the month they cover, not by the day
+they were written. Teachers often write a month's report in the last days of
+that month or the first days of the next one.
+
+- **Default month.** `REPORT_MONTH_GRACE_DAYS = 10`
+  (`packages/users-core/src/features/reports/report-month.ts`): from day 1 to day
+  10 of a month, the default is the previous month; from day 11, the current
+  month. The worklist's Month picker and the new-report month picker both use it,
+  reading "today" in the viewer's timezone.
+- **Worklist.** The Monthly view shows a **Month** picker ("Tháng 10/2026") with
+  an **All months** option, kept in the `reportMonth` URL key. The from/to range
+  stays available as **Custom date range**; a range replaces the month, and the
+  API rejects both together. The stage cards and category counts come from the
+  same month-scoped response as the list.
+- **Matching.** `GET /users/reports?month=YYYY-MM` matches a saved period that
+  starts in that month. A report without a saved period matches by its
+  estimated month: created after day 10 of the month and up to day 10 of the next
+  month, in the workspace timezone (else the viewer's, else UTC). A report written
+  on 28 Oct or on 2 Nov is therefore listed under October.
+- **New reports** save `period_start`/`period_end` as the chosen month's calendar
+  bounds with `cadence: monthly`. The workspace default title (`<title> MM/YYYY`)
+  follows the chosen month until the teacher edits the title.
+- **Older reports without a saved period** are not migrated or backfilled. They
+  show under the estimated month with an "estimated month" mark and a one-click
+  **Set month** action (edit permission) that saves that month as the period.
+  Staff can change the month of any monthly report from the report page.
+- **Approval.** A period-only edit keeps the report's review decision: the period
+  is not part of the email parents receive. Cadence and content edits still
+  return the report to review. The database `review_revision` still advances.
+- **Sent reports.** Moving a report parents already received (`delivered_at`
+  set or `delivery_status = 'sent'`) to another month needs `approve_reports`;
+  the API returns 403 otherwise, and Contacts hides the action. Unsent reports
+  can be moved by anyone with the edit permission.
+- **Audit.** Every period change sets `updated_by` to the acting staff member.
+  The existing supa_audit trigger on `private.external_user_monthly_reports`
+  writes an `audit.record_version` row per update (`record_id` = report id,
+  `old_record`/`record` with the old and new `period_start`/`period_end`, `ts`),
+  which `private.list_user_group_activity_logs` attributes through `updated_by`
+  for these service-role writes. No new table or migration.
+- **One report per month.** A create for a student, class and month that
+  already has a report returns 409; so does a unique-constraint race on insert.
+
+Regression coverage: `report-month.test.ts`, `report-period-filter.test.ts`,
+`report-month-scope.test.ts`, `report-month-edit.test.ts`,
+`explicit-approval.test.ts` (users-core);
+`periodic-report-filters.test.ts`, `periodic-reports-panel-counts.test.tsx`,
+`periodic-report-row-month.test.tsx`, `report-month.test.tsx`,
+`editable-report-preview-reset.test.tsx` (contacts).
+
 Manual schedules create an editable draft at the start of the period. AI
 schedules generate after the period closes. The default delivery target is
 09:00 on the first day after close. Automation remains disabled until a valid
@@ -142,8 +193,8 @@ Ordinary manual report creation and edits through the shared report API remain
 pending even when the legacy approval setting is disabled or the author can
 approve reports. Contacts Save and score recalculation do not submit approval
 markers; an explicit permitted approval action remains separate. Narrative,
-feedback, title, score, cadence, period, manager instruction and generation changes invalidate the API
-review state. Subject and group cannot be changed through this update API.
+feedback, title, score, cadence, manager instruction and generation changes invalidate the API
+review state. A period-only change (the report month) keeps it. Subject and group cannot be changed through this update API.
 Approval timestamps and actor attribution are server-owned.
 
 This API/client safeguard alone does not establish dispatch authorization:
