@@ -3,18 +3,14 @@ import type {
   CmsBlock,
   CmsBlockPropsOf,
   CmsBlockType,
-  CmsPage,
   TipTapNode,
 } from '../schema/schema';
+import { cmsPageSchema } from '../schema/schema';
+import { Divider, Embed, Gallery, Heading } from './contract-blocks';
+import { safeUrl } from './safe-url';
 
-/** Allows http(s), mailto, tel, root-relative and hash links; drops `javascript:` and friends. */
-export function safeUrl(value: string | undefined) {
-  if (!value) return undefined;
-  const trimmed = value.trim();
-  return /^(https?:|mailto:|tel:|\/(?!\/)|#)/i.test(trimmed)
-    ? trimmed
-    : undefined;
-}
+export { Divider, Embed, Gallery, Heading } from './contract-blocks';
+export { safeUrl } from './safe-url';
 
 const NODE_TAGS: Record<string, string> = {
   blockquote: 'blockquote',
@@ -44,7 +40,9 @@ function renderTipTapNode(node: TipTapNode, key: number): ReactNode {
           child
         );
       }
-      const Tag = MARK_TAGS[mark.type] as 'strong' | undefined;
+      const Tag = (
+        Object.hasOwn(MARK_TAGS, mark.type) ? MARK_TAGS[mark.type] : undefined
+      ) as 'strong' | undefined;
       return Tag ? <Tag key={mark.type}>{child}</Tag> : child;
     }, node.text ?? '');
     return <Fragment key={key}>{marked}</Fragment>;
@@ -56,7 +54,9 @@ function renderTipTapNode(node: TipTapNode, key: number): ReactNode {
   const Tag = (
     node.type === 'heading'
       ? `h${level >= 1 && level <= 6 ? level : 2}`
-      : NODE_TAGS[node.type]
+      : Object.hasOwn(NODE_TAGS, node.type)
+        ? NODE_TAGS[node.type]
+        : undefined
   ) as 'p' | undefined;
   return Tag ? (
     <Tag key={key}>{children}</Tag>
@@ -221,11 +221,67 @@ export function TwoColumnLayout(props: {
   );
 }
 
+export function Section({
+  anchor,
+  background,
+  children,
+  padding,
+  width,
+}: Props<'Section'>) {
+  const widths = {
+    narrow: '40rem',
+    default: '64rem',
+    wide: '76rem',
+    full: 'none',
+  };
+  const spacing = { none: 0, sm: '1rem', md: '2rem', lg: '4rem' };
+  const backgrounds = {
+    none: 'transparent',
+    muted: 'var(--cms-muted, var(--muted, transparent))',
+    accent: 'var(--cms-accent, var(--accent, transparent))',
+  };
+  return (
+    <section
+      id={anchor || undefined}
+      data-block="Section"
+      data-background={background}
+      className="cms-section"
+      style={{
+        background: backgrounds[background],
+        paddingBlock: spacing[padding],
+      }}
+    >
+      <div style={{ maxWidth: widths[width], marginInline: 'auto' }}>
+        {children.map(renderCmsBlock)}
+      </div>
+    </section>
+  );
+}
+
+export function Accordion({ heading, items }: Props<'Accordion'>) {
+  return (
+    <section data-block="Accordion" className="cms-accordion">
+      {heading && <h2>{heading}</h2>}
+      {items.map((item, index) => (
+        <details key={index}>
+          <summary>{item.question}</summary>
+          <TipTapContent doc={item.answer} />
+        </details>
+      ))}
+    </section>
+  );
+}
+
 export const cmsLeafRenderers = {
+  Accordion,
   CardGrid,
   CtaButton,
+  Divider,
+  Embed,
   EventDetails,
   EventList,
+  Gallery,
+  Heading,
   Hero,
   Image,
   RichText,
@@ -234,6 +290,8 @@ export const cmsLeafRenderers = {
 
 /** Pure, SSR-safe block renderer shared by the editor preview and the public site renderer. */
 export function renderCmsBlock(block: CmsBlock): ReactNode {
+  if (block.type === 'Section')
+    return <Section key={block.props.id} {...block.props} />;
   if (block.type === 'TwoColumn') {
     const { left, ratio, right } = block.props;
     return (
@@ -245,12 +303,45 @@ export function renderCmsBlock(block: CmsBlock): ReactNode {
       />
     );
   }
-  const Component = cmsLeafRenderers[block.type] as (
-    props: typeof block.props
-  ) => ReactNode;
-  return <Component key={block.props.id} {...block.props} />;
+  switch (block.type) {
+    case 'Accordion':
+      return <Accordion key={block.props.id} {...block.props} />;
+    case 'CardGrid':
+      return <CardGrid key={block.props.id} {...block.props} />;
+    case 'CtaButton':
+      return <CtaButton key={block.props.id} {...block.props} />;
+    case 'Divider':
+      return <Divider key={block.props.id} {...block.props} />;
+    case 'Embed':
+      return <Embed key={block.props.id} {...block.props} />;
+    case 'EventDetails':
+      return <EventDetails key={block.props.id} {...block.props} />;
+    case 'EventList':
+      return <EventList key={block.props.id} {...block.props} />;
+    case 'Gallery':
+      return <Gallery key={block.props.id} {...block.props} />;
+    case 'Heading':
+      return <Heading key={block.props.id} {...block.props} />;
+    case 'Hero':
+      return <Hero key={block.props.id} {...block.props} />;
+    case 'Image':
+      return <Image key={block.props.id} {...block.props} />;
+    case 'RichText':
+      return <RichText key={block.props.id} {...block.props} />;
+    case 'Spacer':
+      return <Spacer key={block.props.id} {...block.props} />;
+    default: {
+      const unreachable: never = block;
+      void unreachable;
+      return null;
+    }
+  }
 }
 
-export function CmsPageRenderer({ page }: { page: CmsPage }) {
-  return <main className="cms-page">{page.content.map(renderCmsBlock)}</main>;
+export function CmsPageRenderer({ page }: { page: unknown }) {
+  const parsed = cmsPageSchema.safeParse(page);
+  if (!parsed.success) return null;
+  return (
+    <main className="cms-page">{parsed.data.content.map(renderCmsBlock)}</main>
+  );
 }
