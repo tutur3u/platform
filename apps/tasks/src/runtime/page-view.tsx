@@ -2,6 +2,7 @@ import VerifyTokenPage from '@tuturuuu/satellite/verify-token-page';
 import { SatelliteWorkspaceInvitationCard } from '@tuturuuu/satellite/workspace-invitation/card';
 import { TaskCalendarPageShell } from '@tuturuuu/tasks-ui/calendar/task-calendar-page-shell';
 import { TaskProgressPage } from '@tuturuuu/tasks-ui/progress/task-progress-page';
+import { CyclePlanningView } from '@tuturuuu/tasks-ui/tu-do/cycles/planning/cycle-planning-view';
 import { TaskCyclesView } from '@tuturuuu/tasks-ui/tu-do/cycles/task-cycles-view';
 import { BoardClient } from '@tuturuuu/tasks-ui/tu-do/shared/board-client';
 import { TaskLegacyRouteRecovery } from '@tuturuuu/tasks-ui/tu-do/shared/task-legacy-route-recovery';
@@ -81,6 +82,14 @@ function WorkspacePageView({ page }: { page: WorkspacePage }) {
       );
     case 'cycles':
       return <TaskCyclesView wsId={page.wsId} initialCycles={page.cycles} />;
+    case 'cycle-planning':
+      return (
+        <CyclePlanningView
+          wsId={page.wsId}
+          currentUserId={page.userId}
+          cycles={page.cycles}
+        />
+      );
     case 'task-detail':
       return (
         <TaskLegacyRouteRecovery
