@@ -31,7 +31,8 @@ function renderTipTapNode(node: TipTapNode, key: number): ReactNode {
   if (node.type === 'text') {
     const marked = (node.marks ?? []).reduce<ReactNode>((child, mark) => {
       if (mark.type === 'link') {
-        const href = safeUrl(String(mark.attrs?.href ?? ''));
+        const rawHref = mark.attrs?.href;
+        const href = typeof rawHref === 'string' ? safeUrl(rawHref) : undefined;
         return href ? (
           <a href={href} key={mark.type} rel="noopener noreferrer">
             {child}
@@ -50,10 +51,10 @@ function renderTipTapNode(node: TipTapNode, key: number): ReactNode {
   if (node.type === 'hardBreak') return <br key={key} />;
   if (node.type === 'horizontalRule') return <hr key={key} />;
   const children = node.content?.map(renderTipTapNode);
-  const level = Number(node.attrs?.level);
+  const level = node.type === 'heading' ? node.attrs?.level : undefined;
   const Tag = (
     node.type === 'heading'
-      ? `h${level >= 1 && level <= 6 ? level : 2}`
+      ? `h${typeof level === 'number' && Number.isInteger(level) && level >= 1 && level <= 6 ? level : 2}`
       : Object.hasOwn(NODE_TAGS, node.type)
         ? NODE_TAGS[node.type]
         : undefined

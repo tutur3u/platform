@@ -95,6 +95,7 @@
     "../../packages/utils/src/app-switch-rum-ingest.ts",
     "../../packages/utils/src/one-origin-routing.ts",
     "../../packages/utils/src/playground-schema.ts",
+    "../../packages/utils/src/retired-app-hosts.ts",
     "../../packages/utils/src/security-headers.ts"
   ],
   "exclude": ["node_modules", "dist", ".turbo"]

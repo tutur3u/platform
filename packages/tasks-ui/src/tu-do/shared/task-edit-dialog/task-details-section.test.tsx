@@ -40,12 +40,16 @@ describe('TaskDetailsSection', () => {
     mocks.selfManaged = true;
   });
 
-  it('collapses everything behind a single disclosure', () => {
+  it('opens expanded and collapses everything behind a single disclosure', () => {
     renderSection();
 
-    const toggles = screen.getAllByRole('button', { expanded: false });
+    expect(screen.getByTestId('properties-panel')).toBeInTheDocument();
+    const toggles = screen.getAllByRole('button', { expanded: true });
     expect(toggles).toHaveLength(1);
     expect(toggles[0]).toHaveTextContent('ws-task-boards.dialog.details');
+
+    fireEvent.click(toggles[0]!);
+
     expect(screen.queryByTestId('properties-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('personal-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('relationships-panel')).not.toBeInTheDocument();
@@ -60,6 +64,7 @@ describe('TaskDetailsSection', () => {
       priority: 'high',
       relationshipCount: 4,
     });
+    fireEvent.click(screen.getByRole('button', { expanded: true }));
 
     const header = screen.getByRole('button', { expanded: false });
     expect(header).toHaveTextContent('tasks.priority_high');
@@ -74,6 +79,7 @@ describe('TaskDetailsSection', () => {
   it('tells the user when there is nothing to summarize', () => {
     mocks.selfManaged = false;
     renderSection();
+    fireEvent.click(screen.getByRole('button', { expanded: true }));
 
     expect(
       screen.getByText('ws-task-boards.dialog.details_empty')
@@ -82,8 +88,6 @@ describe('TaskDetailsSection', () => {
 
   it('opens on the properties tab and switches between groups', () => {
     renderSection();
-
-    fireEvent.click(screen.getByRole('button', { expanded: false }));
 
     expect(screen.getByTestId('properties-panel')).toBeInTheDocument();
     expect(screen.queryByTestId('relationships-panel')).not.toBeInTheDocument();
@@ -112,8 +116,6 @@ describe('TaskDetailsSection', () => {
   it('opens straight to relationships when one is being seeded', () => {
     renderSection({ defaultTab: 'relationships' });
 
-    fireEvent.click(screen.getByRole('button', { expanded: false }));
-
     expect(screen.getByTestId('relationships-panel')).toBeInTheDocument();
   });
 
@@ -123,8 +125,6 @@ describe('TaskDetailsSection', () => {
       personal: undefined,
       relationships: undefined,
     });
-
-    fireEvent.click(screen.getByRole('button', { expanded: false }));
 
     expect(screen.queryAllByRole('tab')).toHaveLength(0);
     expect(screen.getByTestId('properties-panel')).toBeInTheDocument();

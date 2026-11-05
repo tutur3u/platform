@@ -1,4 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { isRetiredAppHostname } from '@tuturuuu/utils/retired-app-hosts';
 
 export const EXTERNAL_APP_SECRET_PREFIX = 'EXTERNAL_APP_REGISTRY';
 
@@ -70,7 +71,10 @@ export function normalizeOrigin(value: string) {
   try {
     const url = new URL(trimmed);
 
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    if (
+      (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+      isRetiredAppHostname(url.hostname)
+    ) {
       return null;
     }
 

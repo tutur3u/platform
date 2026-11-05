@@ -88,6 +88,16 @@ describe('shared Tuturuuu cookie helpers', () => {
       path: '/',
       sameSite: 'lax',
     });
+    expect(
+      getTuturuuuSharedCookieOptions(
+        { maxAge: 60, path: '/', sameSite: 'lax' as const },
+        'https://rewise.school'
+      )
+    ).toEqual({
+      maxAge: 60,
+      path: '/',
+      sameSite: 'lax',
+    });
   });
 
   it('returns host-only and shared delete options when a shared domain exists', () => {
