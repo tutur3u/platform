@@ -544,7 +544,7 @@ sets running work to `cancel_requested`; it does not prove that an OS process st
 Keep SECURITY DEFINER helpers on `pg_catalog, pg_temp` with qualified object names,
 revoke PUBLIC/anon/authenticated EXECUTE, and grant only service_role.
 
-Run the actor-fence pgTAP tests RED on main and GREEN after applying the migration;
+The actor-fence pgTAP tests fail without the migration and pass with it;
 compare full-suite failure names and round-trip the rollback. A lease ownership
 check must cover both direct run pins and inherited lease pins. Preserve dedicated
 learner Judge/playground enqueue paths. The separate 20261104031050 migration owns
