@@ -59,7 +59,8 @@ function utf8Bytes(value: string) {
 function createBudget() {
   let bytes = 0;
   return (value: string) => {
-    if (value.length > MAX_ACTION_BYTES - bytes) throw new ActionTooLargeError();
+    if (value.length > MAX_ACTION_BYTES - bytes)
+      throw new ActionTooLargeError();
     bytes += utf8Bytes(value);
     if (bytes > MAX_ACTION_BYTES) throw new ActionTooLargeError();
   };
