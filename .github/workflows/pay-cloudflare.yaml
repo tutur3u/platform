@@ -39,6 +39,8 @@ on:
         'scripts/start-bridge-codemod/runtime-outcome.mjs',
         'bun.lock',
         '.github/workflows/native-start-app.yaml',
+        '.github/actions/install-native-runtime-prerequisites/**',
+        'scripts/ci/native-runtime-prerequisites.test.js',
         '.github/workflows/ci-check.yml',
         '.github/actions/setup-bun-with-retry/action.yml',
         '.github/actions/run-with-turbo-remote-cache/action.yml',
@@ -89,6 +91,8 @@ on:
         'scripts/start-bridge-codemod/runtime-outcome.mjs',
         'bun.lock',
         '.github/workflows/native-start-app.yaml',
+        '.github/actions/install-native-runtime-prerequisites/**',
+        'scripts/ci/native-runtime-prerequisites.test.js',
         '.github/workflows/ci-check.yml',
         '.github/actions/setup-bun-with-retry/action.yml',
         '.github/actions/run-with-turbo-remote-cache/action.yml',
@@ -132,9 +136,8 @@ jobs:
       worker-environment-type: PayEnvironment
       helper-tests: python3 scripts/ci/pay-native-artifact.test.py
       unit-command: bun run test && bun run type-check:cloudflare
-      runtime-command: >-
-        (cd ../web && bun x --no-install playwright install --with-deps chromium) &&
-        node --test --test-concurrency=1 cloudflare/*.runtime.mjs
+      runtime-setup-command: cd ../web && bun x --no-install playwright install --with-deps chromium
+      runtime-command: node --test --test-concurrency=1 cloudflare/*.runtime.mjs
       # Public staging values from repository variables for same-repository
       # events; fork pull requests (and unset variables) build with fixtures.
       public-env: |
