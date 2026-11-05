@@ -31,6 +31,8 @@ on:
       - 'bun.lock'
       - 'package.json'
   workflow_dispatch:
+    needs: [affected-gate]
+    if: needs.affected-gate.outputs.run == 'true'
 permissions:
   contents: read
   deployments: read
@@ -38,6 +40,22 @@ concurrency:
   group: turbo-cache-cloudflare-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
+  affected-gate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.app.outputs.run }}
+      reason: ${{ steps.app.outputs.reason }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: app
+        uses: ./.github/actions/affected-gate
+        with:
+          app: turbo-cache
   check-ci:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     uses: ./.github/workflows/ci-check.yml
@@ -47,9 +65,10 @@ jobs:
     with:
       workflow_name: turbo-cache-cloudflare.yaml
   build-acceptance:
+    needs: [affected-gate]
     name: Build and accept Turbo Cache Worker
     needs: check-ci
-    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: ${{ needs.affected-gate.outputs.run == 'true' && ((needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

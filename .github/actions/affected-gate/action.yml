@@ -1,0 +1,49 @@
+name: Affected app gate
+description: Run a workflow unless its app is unaffected by a pull request
+inputs:
+  app:
+    description: App directory name under apps/
+    required: true
+outputs:
+  run:
+    description: Whether heavy jobs should run
+    value: ${{ steps.gate.outputs.run }}
+  reason:
+    description: Gate decision reason
+    value: ${{ steps.gate.outputs.reason }}
+runs:
+  using: composite
+  steps:
+    - id: gate
+      shell: bash
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        BASE_REF: ${{ github.base_ref }}
+        APP: ${{ inputs.app }}
+      run: |
+        set +e
+        if [[ "$EVENT_NAME" != pull_request ]]; then
+          echo 'run=true' >> "$GITHUB_OUTPUT"
+          echo 'reason=not a pull request' >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        git fetch --no-tags origin "${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+        if [[ $? -ne 0 ]]; then
+          echo 'run=true' >> "$GITHUB_OUTPUT"
+          echo 'reason=base fetch failed' >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        result=$(node scripts/ci/affected-apps.mjs --base "origin/${BASE_REF}" 2>/dev/null)
+        if [[ $? -ne 0 ]] || ! echo "$result" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{JSON.parse(s)}catch{process.exit(1)}})'; then
+          echo 'run=true' >> "$GITHUB_OUTPUT"
+          echo 'reason=affected app calculation failed' >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        mode=$(echo "$result" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).mode')
+        if [[ "$mode" == all ]] || echo "$result" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.exit(JSON.parse(s).apps.includes("apps/"+process.env.APP)?0:1))'; then
+          echo 'run=true' >> "$GITHUB_OUTPUT"
+          echo 'reason=app affected or calculation requires all' >> "$GITHUB_OUTPUT"
+        else
+          echo 'run=false' >> "$GITHUB_OUTPUT"
+          echo 'reason=app not affected' >> "$GITHUB_OUTPUT"
+        fi
