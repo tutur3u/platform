@@ -5,6 +5,7 @@ import {
   endTutoringWeakSupport,
   exportTutoringSessions,
   generateTutoringMessagePreview,
+  getTutoringPayroll,
   getTutoringPolicy,
   listTutoringQueue,
   listTutoringSessions,
@@ -284,6 +285,40 @@ describe('tutoring internal-api helpers', () => {
       page: '1',
       q: 'lan',
       tutorsOnly: 'true',
+    });
+  });
+
+  it('fetches tutoring payroll with query parameters and no-store cache', async () => {
+    const payload = {
+      data: [
+        {
+          completed_sessions: 2,
+          teacher_name: 'Teacher A',
+          total_cong: 2,
+          total_minutes: 90,
+        },
+      ],
+    };
+    const { fetchMock, options } = setup(payload);
+
+    const result = await getTutoringPayroll(
+      'ws 1/x',
+      { fromDate: '2026-10-01', toDate: '2026-10-31', teacherId: 't-1' },
+      options
+    );
+
+    expect(result).toEqual(payload);
+    const { cache, method, url } = call(fetchMock);
+    const parsed = new URL(url);
+    expect(method).toBe('GET');
+    expect(cache).toBe('no-store');
+    expect(parsed.pathname).toBe(
+      '/api/v1/workspaces/ws%201%2Fx/tutoring/payroll'
+    );
+    expect(Object.fromEntries(parsed.searchParams)).toEqual({
+      fromDate: '2026-10-01',
+      toDate: '2026-10-31',
+      teacherId: 't-1',
     });
   });
 });
