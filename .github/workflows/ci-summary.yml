@@ -1,0 +1,190 @@
+name: CI summary
+
+# Posts the "CI summary" check-run for pull request head shas. Every trigger below runs the workflow file from the
+# default branch (pull_request_target, workflow_run), so a pull request cannot change this logic. No job checks out
+# or executes pull request code; the job only reads the GitHub API and writes one check-run.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled, edited]
+  workflow_run:
+    types: [completed]
+    # Every workflow with a pull_request trigger. A workflow missing here only delays the summary until another listed
+    # workflow completes; the expected-set check below still waits for it, so it cannot turn the summary green early.
+    workflows:
+      - "Ai Cloudflare Source"
+      - "Apps Cloudflare Source"
+      - "Calendar generation database contract"
+      - "Cheap PR Checks"
+      - "Cms Cloudflare Source"
+      - "CodeQL Manual Fallback"
+      - "Colab Cloudflare"
+      - "Connected Mail database contract"
+      - "Contacts Start Candidate"
+      - "Coordination Cloudflare"
+      - "Creator identity database contract"
+      - "Cron Control Cloudflare"
+      - "Desktop Beta Distribution"
+      - "Devbox Control Cloudflare"
+      - "Discord Python CI"
+      - "Docker Setup Check"
+      - "External project storage analytics contract"
+      - "Fee lock database contract"
+      - "Finance Cloudflare Source"
+      - "Forms Cloudflare Source"
+      - "Internal Packages in External App"
+      - "Inventory Cloudflare Source"
+      - "Inventory offline create database contract"
+      - "Lettin Cloudflare"
+      - "Mail Calendar Tasks builds"
+      - "Mail profile application runtime contract"
+      - "Mastermind Cloudflare Source"
+      - "Meet Cloudflare"
+      - "Mobile Build Android"
+      - "Mobile Build Linux"
+      - "Mobile Build iOS"
+      - "Mobile Build macOS"
+      - "Native Calendar Cloudflare"
+      - "Native Mail Cloudflare"
+      - "Nova Cloudflare Source"
+      - "Ops Hub Cloudflare"
+      - "Parley Cloudflare"
+      - "Pay Cloudflare Source"
+      - "Periodic report delivery database contract"
+      - "Playground Cloudflare Source"
+      - "Playground real gVisor acceptance"
+      - "Programming application builds"
+      - "Programming database contract"
+      - "Report review receipt foundation"
+      - "Required account MFA database contract"
+      - "SDK package qualification"
+      - "SSO persistence database contract"
+      - "Security Checks"
+      - "Security egress database contract"
+      - "Shortener Cloudflare Source"
+      - "Standalone API Worker"
+      - "Storefront Cloudflare Source"
+      - "Supabase baseline contract"
+      - "TanStack And Rust Cloudflare CI/CD"
+      - "Tanstack Route Manifest"
+      - "Task board database contract"
+      - "Test"
+      - "Time tracker control foundation"
+      - "Tools Cloudflare Source"
+      - "Topic delivery inert foundation"
+      - "Track Cloudflare Source"
+      - "Turbo Cache Cloudflare"
+      - "Tutoring absence credit foundation"
+      - "Tutoring teacher hours foundation"
+      - "TypeScript Type Check"
+      - "Web Start Candidate"
+      - "Workspace permission scope database contract"
+      - "mobile"
+      - "tsrs Shadow Type Check"
+
+permissions:
+  actions: read
+  checks: write
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-summary-${{ github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  summary:
+    name: CI summary (poster)
+    if: github.event_name == 'pull_request_target' || github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Compute and post
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number }}
+          SELF_RUN: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import fnmatch, json, os, subprocess, sys
+          R, PRN, SELF = os.environ["REPO"], os.environ.get("PR_NUMBER") or "", int(os.environ["SELF_RUN"])
+          def api(path, paginate=False):
+              args = ["gh", "api", path] + (["--paginate", "--slurp"] if paginate else [])
+              out = json.loads(subprocess.run(args, check=True, capture_output=True, text=True).stdout)
+              return out
+          if not PRN.isdigit():
+              print("no PR number on this event; nothing to post"); sys.exit(0)
+          pr = api(f"repos/{R}/pulls/{PRN}")
+          sha, base, draft = pr["head"]["sha"], pr["base"]["ref"], pr["draft"]
+          labels = {l["name"] for l in pr["labels"]}
+          files = [f["filename"] for page in api(f"repos/{R}/pulls/{PRN}/files?per_page=100", True) for f in page]
+          truncated = len(files) >= 3000   # the files API stops at 3000; treat as "every path filter matches"
+
+          # 1) Expected workflows: every default-branch workflow whose pull_request trigger matches this PR.
+          #    Read from the DEFAULT branch, never from the PR. An unreadable trigger counts as expected (fail-safe).
+          wfs = [w for page in api(f"repos/{R}/actions/workflows?per_page=100", True) for w in page["workflows"] if w["state"] == "active"]
+          expected, unknown = {}, []
+          for w in wfs:
+              if w["path"].endswith("/ci-summary.yml"):
+                  continue
+              raw = subprocess.run(["gh", "api", f"repos/{R}/contents/{w['path']}?ref={os.environ['DEFAULT_BRANCH']}",
+                                    "-H", "Accept: application/vnd.github.raw"], capture_output=True, text=True)
+              if raw.returncode:
+                  unknown.append(w["name"]); expected[w["name"]] = w["id"]; continue
+              y = subprocess.run(["yq", "-o=json", "."], input=raw.stdout, capture_output=True, text=True)
+              try:
+                  doc = json.loads(y.stdout); on = doc.get("on", doc.get(True))
+              except Exception:
+                  unknown.append(w["name"]); expected[w["name"]] = w["id"]; continue
+              if isinstance(on, str): on = {on: None}
+              if isinstance(on, list): on = {k: None for k in on}
+              if not isinstance(on, dict) or "pull_request" not in on:
+                  continue
+              t = on["pull_request"] or {}
+              types = t.get("types") or ["opened", "synchronize", "reopened"]
+              if not ({"opened", "synchronize", "reopened"} & set(types) or ("labeled" in types and labels)):
+                  continue
+              br, bri = t.get("branches"), t.get("branches-ignore")
+              if br and not any(fnmatch.fnmatch(base, p) for p in br): continue
+              if bri and any(fnmatch.fnmatch(base, p) for p in bri): continue
+              paths, pign = t.get("paths"), t.get("paths-ignore")
+              # fnmatch "*" also crosses "/", so it over-matches (safe: more workflows expected). A leading "**/" in
+              # GitHub globs also matches files at the root, so try the pattern with that prefix removed as well.
+              m = lambda f, ps: any(fnmatch.fnmatch(f, q) for p in ps if not p.startswith("!") for q in (p, p[3:] if p.startswith("**/") else p))
+              if not truncated and paths and not any(m(f, paths) for f in files): continue
+              if not truncated and pign and all(m(f, pign) for f in files): continue
+              expected[w["name"]] = w["id"]
+
+          # 2) Runs on the head sha (latest attempt per workflow).
+          runs = [r for page in api(f"repos/{R}/actions/runs?head_sha={sha}&per_page=100", True) for r in page["workflow_runs"]
+                  if r["id"] != SELF and r["name"] != "CI summary"]
+          latest = {}
+          for r in runs:
+              k = r["workflow_id"]
+              if k not in latest or (r["run_attempt"], r["id"]) > (latest[k]["run_attempt"], latest[k]["id"]):
+                  latest[k] = r
+          missing = [n for n, i in expected.items() if i not in latest]
+          open_ = [r["name"] for r in latest.values() if r["status"] != "completed"]
+          # A workflow-level "skipped" or "neutral" is NOT green. Job-level skips inside a successful run are the
+          # workflow's own path or label scoping and are accepted only because the run itself concluded success.
+          notgreen = [f'{r["name"]}={r["conclusion"]}' for r in latest.values() if r["status"] == "completed" and r["conclusion"] != "success"]
+          checks = [c for page in api(f"repos/{R}/commits/{sha}/check-runs?per_page=100&filter=latest", True) for c in page["check_runs"]
+                    if not c["name"].startswith("CI summary")]
+          badc = [f'{c["name"]}={c["conclusion"]}' for c in checks if c["status"] == "completed" and c["conclusion"] not in ("success", "skipped", "neutral")]
+          openc = [c["name"] for c in checks if c["status"] != "completed"]
+
+          if notgreen or badc:
+              conclusion, title = "failure", f"{len(notgreen)} run(s), {len(badc)} check(s) not green"
+          elif draft or missing or open_ or openc or not latest:
+              conclusion, title = None, f"waiting: {len(missing)} expected run(s) not started, {len(open_)+len(openc)} open" + (" (draft)" if draft else "")
+          else:
+              conclusion, title = "success", f"{len(latest)} expected run(s) green ({len(expected)} expected, {len(unknown)} unreadable)"
+          summary = json.dumps({"missing": missing, "open": open_ + openc, "not_green": notgreen + badc, "unreadable": unknown}, indent=1)[:60000]
+          body = {"name": "CI summary", "head_sha": sha, "output": {"title": title[:250], "summary": summary}}
+          if conclusion: body.update(status="completed", conclusion=conclusion)
+          else: body.update(status="in_progress")
+          subprocess.run(["gh", "api", "-X", "POST", f"repos/{R}/check-runs", "--input", "-"], input=json.dumps(body), check=True, capture_output=True, text=True)
+          print(conclusion or "in_progress", "-", title)
+          PY

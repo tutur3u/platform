@@ -100,6 +100,7 @@ const HEAVY_PR_WORKFLOWS = [
 
 // Sub-minute, script-only or security checks that stay on for every PR push.
 const ALWAYS_ON_PR_WORKFLOWS = [
+  'ci-summary.yml',
   'security-checks.yaml',
   'security-review-classifier.yaml',
 ];
