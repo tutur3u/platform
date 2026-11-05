@@ -103,7 +103,7 @@
 /.github/CODEOWNERS                @vhpx
 
 # Merge-gate summary check posted from the default branch
-/.github/workflows/ci-summary.yml  @vhpx
+/.github/workflows/ci-summary.yml @vhpx @tuturuuu-release-bot
 
 /apps/database/rollbacks/ @vhpx @tuturuuu-release-bot
 
