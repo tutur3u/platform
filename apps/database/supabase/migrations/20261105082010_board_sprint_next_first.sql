@@ -1,10 +1,13 @@
--- Manual rollback only: restores the 20261101100010 end_board_sprint and the
--- 20261101100020 membership sync, which assume one planned sprint per board.
--- Run before the 20261101100060 rollback.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
-SET LOCAL statement_timeout = '30s';
+SET LOCAL statement_timeout = '60s';
 
+-- Board sprints: with several planned sprints (see
+-- 20261105082000_board_sprint_horizon.sql), work that moves on goes to the
+-- earliest planned one. Ending a sprint carries its open tasks there, and a new,
+-- moved or reopened task joins the running sprint, else that next sprint.
+
+-- 1. Ending carries work into the earliest planned sprint.
 CREATE OR REPLACE FUNCTION public.end_board_sprint(
   p_cycle_id UUID,
   p_actor_id UUID DEFAULT NULL,
@@ -62,9 +65,12 @@ BEGIN
     RAISE EXCEPTION 'SPRINT_NOT_ACTIVE' USING ERRCODE = '55000';
   END IF;
 
+  -- Carried work goes to the next sprint: the earliest planned one.
   SELECT * INTO v_next
   FROM public.task_cycles
   WHERE board_id = v_cycle.board_id AND status = 'planned' AND deleted IS NOT TRUE
+  ORDER BY sequence_number
+  LIMIT 1
   FOR UPDATE;
 
   IF v_next.id IS NULL THEN
@@ -214,6 +220,8 @@ BEGIN
 END;
 $$;
 
+-- 2. New, moved and reopened tasks join the running sprint, else the
+-- earliest planned one.
 CREATE OR REPLACE FUNCTION private.sync_task_board_sprint_membership()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -297,7 +305,7 @@ BEGIN
     AND wb.sprint_length_weeks IS NOT NULL
     AND c.status IN ('active', 'planned')
     AND c.deleted IS NOT TRUE
-  ORDER BY (c.status = 'active') DESC
+  ORDER BY (c.status = 'active') DESC, c.sequence_number
   LIMIT 1;
 
   IF v_cycle.id IS NULL THEN
