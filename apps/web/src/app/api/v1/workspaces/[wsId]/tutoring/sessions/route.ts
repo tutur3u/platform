@@ -180,6 +180,7 @@ async function getTutoringData(request: Request, { params }: Params) {
 
   // Linked make-up content is display-only: a lookup failure keeps the list.
   const linkedContent = await loadLinkedLessonContent({
+    includePosts: !permissions.withoutPermission('view_user_groups_posts'),
     sbAdmin,
     sessions,
     wsId: normalizedWsId,

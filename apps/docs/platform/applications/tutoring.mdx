@@ -349,11 +349,20 @@ always on, no setting):
 
 - **Kèm nghỉ (absent make-up)** teaches what the class covered on the day the
   learner was absent: the class session's notes for that date, then the class's
-  **posts** (bài viết) created that day. When both exist the draft labels
-  them "Lesson notes" and "Class posts". Posts have no date field of their own,
-  so a post belongs to the missed date it was created on, in the class's time
-  zone (the class session's own zone, falling back to Asia/Ho_Chi_Minh when the
-  group has no session in range). Rejected posts are skipped, and only the
+  **posts** (bài viết, such as the daily report) about that lesson. When both
+  exist the draft labels them "Lesson notes" and "Class posts". Posts have no
+  lesson date of their own, so a post belongs to the latest scheduled class
+  session that had **started** when the post was written, within two days of
+  the day it was written; with no such session it belongs to the day it was
+  written. A daily report written the next morning, before that day's lesson
+  starts, therefore belongs to the previous lesson, even when the class meets
+  on consecutive days; one written after a lesson starts belongs to that
+  lesson. An announcement posted before class on a lesson day moves to the
+  previous lesson too: daily reports are the common case.
+  Days are read in the class's time zone (the class session's own zone,
+  falling back to Asia/Ho_Chi_Minh when the group has no session in range).
+  Approval does not gate a post: pending posts count, rejected posts are
+  skipped, and only the
   post's title and content are read, not its internal notes. Post text is
   included only for viewers who may read group posts
   (`view_user_groups_posts`).
@@ -373,9 +382,10 @@ always on, no setting):
 - A missed date with neither session notes nor a post shows the inline hint "No
   lesson notes recorded for {dates}" in the queue and the draft, instead of an
   empty field.
-- A make-up draft that is only session notes still follows the class notes while
-  pending ([linked content](#make-up-content-follows-the-missed-lessons-notes)).
-  A draft that includes a post, or a homeroom note, is saved as written.
+- A make-up draft that is only session notes still follows the class notes and
+  posts while pending
+  ([linked content](#make-up-content-follows-the-missed-lessons-notes)). A
+  draft that already includes a post, or a homeroom note, is saved as written.
 
 Existing sessions are not rewritten; only new drafts use this rule.
 
@@ -524,6 +534,17 @@ on, no setting):
   recorded for the missed class session. Notes a teacher adds or edits after
   scheduling appear in the schedule automatically. The schedule marks such
   sessions with "Follows the missed lesson notes".
+- The followed content includes the missed lesson's class **posts** (the
+  daily report), attributed and labelled as in the
+  [scheduling draft](#content-to-teach-follows-the-reason), so a report written
+  after the make-up was booked still appears. Posts are shown only to viewers
+  with `view_user_groups_posts`. Completion never copies post text by itself:
+  it stores the session notes only. Post text is saved only as content the
+  completing user, holding that permission, sends with the completion, and
+  stored content follows the normal release rules before learners or parents
+  see it. Once stored, the text is plain content readable by anyone who can
+  read the session. The server composes the labels in Vietnamese ("Ghi chú
+  buổi học" / "Bài viết của lớp").
 - When the session is **marked done** (row action or session edit), the notes as
   they stand are stored on the session and are **frozen**. Later edits to the
   class notes no longer change it.
@@ -562,7 +583,9 @@ blank content, still stores the notes; only real text sent with the completion
 counts as a manual edit. If the lookup fails, the list shows the stored content
 and completion still succeeds. Regression coverage:
 [`linked-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/linked-content.test.ts)
-(notes filled after scheduling, frozen after completion, manual edit kept,
+(notes and posts filled after scheduling, post permission, rejected posts,
+posts never copied on completion, row limit, workspace scope,
+frozen after completion, manual edit kept,
 lookup failure, whitespace-only content, bounded wait, pairing order),
 [`sessions/[id]/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/%5Bid%5D/route.test.ts)
 (completion with absent, empty or blank content, and the completion warning) and

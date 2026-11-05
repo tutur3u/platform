@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  composeMissedClassText,
   getMissedClassNotes,
   getMissedLessonContent,
   getMissedLessonNotes,
@@ -286,5 +287,83 @@ describe('getMissedClassNotes', () => {
     expect(
       getMissedClassNotes([], [lateUtc], ['2026-10-05'], 'UTC').postContent
     ).toBe('2026-10-05: Written after midnight local time');
+  });
+
+  it('attaches a report written the next morning to the previous lesson', () => {
+    // Lesson on Mon 10-05 (HCM); the report lands Tue 10-06 08:00 local.
+    const report = post({
+      content: 'Daily report',
+      createdAt: '2026-10-06T01:00:00.000Z',
+      title: null,
+    });
+    const lessons = [
+      lesson(),
+      lesson({ startsAt: '2026-10-07T11:00:00.000Z' }),
+    ];
+
+    const result = getMissedClassNotes(lessons, [report], ['2026-10-05'], HCM);
+    expect(result.postContent).toBe('2026-10-05: Daily report');
+    expect(result.missingDates).toEqual([]);
+    expect(
+      getMissedClassNotes(lessons, [report], ['2026-10-06'], HCM).postContent
+    ).toBe('');
+  });
+
+  it('attributes by start time when classes meet on consecutive days', () => {
+    // Mon 10-05 and Tue 10-06, both 18:00 local.
+    const lessons = [
+      lesson(),
+      lesson({ startsAt: '2026-10-06T11:00:00.000Z' }),
+    ];
+    const at = (createdAt: string, dates: string[]) =>
+      getMissedClassNotes(
+        lessons,
+        [post({ content: 'Report', createdAt, title: null })],
+        dates,
+        HCM
+      ).postContent;
+
+    // Tue 10:00 local, before Tuesday's lesson starts: Monday's report.
+    expect(at('2026-10-06T03:00:00.000Z', ['2026-10-05'])).toBe(
+      '2026-10-05: Report'
+    );
+    expect(at('2026-10-06T03:00:00.000Z', ['2026-10-06'])).toBe('');
+    // Tue 20:00 local, after Tuesday's lesson: Tuesday's report.
+    expect(at('2026-10-06T13:00:00.000Z', ['2026-10-06'])).toBe(
+      '2026-10-06: Report'
+    );
+    expect(at('2026-10-06T13:00:00.000Z', ['2026-10-05'])).toBe('');
+    // Tue 00:30 local, just after midnight: still Monday's.
+    expect(at('2026-10-05T17:30:00.000Z', ['2026-10-05'])).toBe(
+      '2026-10-05: Report'
+    );
+  });
+
+  it('falls back to the created date beyond the lesson window', () => {
+    const report = post({
+      content: 'Late report',
+      createdAt: '2026-10-09T01:00:00.000Z',
+      title: null,
+    });
+
+    expect(
+      getMissedClassNotes([lesson()], [report], ['2026-10-05'], HCM).postContent
+    ).toBe('');
+    expect(
+      getMissedClassNotes([lesson()], [report], ['2026-10-09'], HCM).postContent
+    ).toBe('2026-10-09: Late report');
+  });
+});
+
+describe('composeMissedClassText', () => {
+  const labels = { lessonNotes: 'Ghi chú buổi học', posts: 'Bài viết của lớp' };
+
+  it('labels both sources only when both exist', () => {
+    expect(
+      composeMissedClassText({ content: 'a', postContent: 'b' }, labels)
+    ).toBe('Ghi chú buổi học:\na\n\nBài viết của lớp:\nb');
+    expect(
+      composeMissedClassText({ content: '', postContent: 'b' }, labels)
+    ).toBe('b');
   });
 });

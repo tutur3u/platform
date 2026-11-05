@@ -290,6 +290,26 @@ describe('GET /tutoring/sessions', () => {
     });
   });
 
+  it('asks for class posts only with view_user_groups_posts', async () => {
+    await list();
+    expect(mocks.linked).toHaveBeenLastCalledWith(
+      expect.objectContaining({ includePosts: true })
+    );
+
+    mocks.access.mockResolvedValue({
+      normalizedWsId: wsId,
+      permissions: {
+        withoutPermission: (permission: string) =>
+          permission === 'view_user_groups_posts',
+      },
+      user: { id: 'actor' },
+    });
+    await list();
+    expect(mocks.linked).toHaveBeenLastCalledWith(
+      expect.objectContaining({ includePosts: false })
+    );
+  });
+
   it('keeps the list when the linked content lookup fails', async () => {
     state.sessions = { count: 1, data: [sessionRow()], error: null };
     mocks.linked.mockRejectedValue(new Error('boom'));

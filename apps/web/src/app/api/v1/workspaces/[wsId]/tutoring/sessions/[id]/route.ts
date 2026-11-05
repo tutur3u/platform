@@ -315,7 +315,9 @@ export async function PUT(request: Request, { params }: Params) {
   if (parsed.data.attendanceStatus === 'DONE') {
     const frozen = parsed.data.content?.trim()
       ? 'skipped'
-      : await freezeLinkedLessonContent({
+      : // Session notes only: class posts are saved only as text the
+        // completer confirmed and sent as content.
+        await freezeLinkedLessonContent({
           sbAdmin,
           sessionId: id,
           wsId: normalizedWsId,

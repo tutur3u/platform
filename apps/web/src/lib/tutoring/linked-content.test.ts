@@ -26,6 +26,7 @@ function matches(row: Row, filters: Filter[]) {
   return filters.every(([op, column, value]) => {
     const cell = row[column] as string;
     if (op === 'eq') return cell === value;
+    if (op === 'neq') return cell !== value;
     if (op === 'in') return (value as unknown[]).includes(cell);
     if (op === 'gte') return cell >= (value as string);
     if (op === 'lt') return cell < (value as string);
@@ -37,6 +38,7 @@ function matches(row: Row, filters: Filter[]) {
 function query(table: string) {
   const filters: Filter[] = [];
   let updateValues: Row | null = null;
+  let limit = Number.POSITIVE_INFINITY;
   const builder = {
     select: () => builder,
     update: (values: Row) => {
@@ -45,6 +47,10 @@ function query(table: string) {
     },
     eq: (column: string, value: unknown) => {
       filters.push(['eq', column, value]);
+      return builder;
+    },
+    neq: (column: string, value: unknown) => {
+      filters.push(['neq', column, value]);
       return builder;
     },
     in: (column: string, value: unknown) => {
@@ -63,6 +69,11 @@ function query(table: string) {
       filters.push(['like', column, value]);
       return builder;
     },
+    order: () => builder,
+    limit: (count: number) => {
+      limit = count;
+      return builder;
+    },
     maybeSingle: async () => ({
       data: (tables[table] ?? []).find((row) => matches(row, filters)) ?? null,
       error: null,
@@ -77,7 +88,9 @@ function query(table: string) {
         return resolve({ data: null, error: null });
       }
       return resolve({
-        data: (tables[table] ?? []).filter((row) => matches(row, filters)),
+        data: (tables[table] ?? [])
+          .filter((row) => matches(row, filters))
+          .slice(0, limit),
         error: null,
       });
     },
@@ -124,10 +137,25 @@ function lesson(description: string | null) {
   };
 }
 
+/** Created the morning after the missed lesson, in the class's zone. */
+function report(content: string, status = 'APPROVED') {
+  return {
+    group_id: 'group-1',
+    title: null,
+    content,
+    created_at: `${recent(4)}T01:00:00Z`,
+    post_approval_status: status,
+  };
+}
+
+const withPosts = (notes: string) =>
+  `Ghi chú buổi học:\n${notes}\n\nBài viết của lớp:\n${missedDate}: Daily report`;
+
 beforeEach(() => {
   for (const key of Object.keys(tables)) delete tables[key];
   updates.length = 0;
   tables.workspace_configs = [];
+  tables.workspace_user_groups = [{ id: 'group-1', ws_id: wsId }];
   tables.user_group_attendance = [
     {
       group_id: 'group-1',
@@ -422,5 +450,135 @@ describe('linked make-up content', () => {
     expect(consoleWarn).toHaveBeenCalled();
     consoleWarn.mockRestore();
     vi.useRealTimers();
+  });
+
+  it('shows a class report written after booking, labelled like the draft', async () => {
+    const pending = session();
+    tables.workspace_tutoring_sessions = [pending];
+    tables.workspace_user_group_sessions = [lesson('Unit 4: past tense')];
+    tables.user_group_posts = [];
+    const load = () =>
+      loadLinkedLessonContent({
+        includePosts: true,
+        sbAdmin,
+        sessions: [pending],
+        wsId,
+      });
+
+    expect((await load()).get(pending.id)).toBe(
+      `${missedDate}: Unit 4: past tense`
+    );
+    tables.user_group_posts = [report('Daily report')];
+    expect((await load()).get(pending.id)).toBe(
+      withPosts(`${missedDate}: Unit 4: past tense`)
+    );
+  });
+
+  it('includes pending-approval reports and excludes rejected ones', async () => {
+    const pending = session();
+    tables.workspace_tutoring_sessions = [pending];
+    tables.workspace_user_group_sessions = [lesson(null)];
+    tables.user_group_posts = [
+      report('Daily report', 'PENDING'),
+      report('Rejected draft', 'REJECTED'),
+    ];
+
+    const linked = await loadLinkedLessonContent({
+      includePosts: true,
+      sbAdmin,
+      sessions: [pending],
+      wsId,
+    });
+    expect(linked.get(pending.id)).toBe(`${missedDate}: Daily report`);
+  });
+
+  it('leaves out reports for viewers without post access', async () => {
+    const pending = session();
+    tables.workspace_tutoring_sessions = [pending];
+    tables.workspace_user_group_sessions = [lesson(null)];
+    tables.user_group_posts = [report('Daily report')];
+
+    const linked = await loadLinkedLessonContent({
+      sbAdmin,
+      sessions: [pending],
+      wsId,
+    });
+    expect(linked.get(pending.id)).toBe('');
+  });
+
+  it('never copies reports into content on completion', async () => {
+    const completed = session({ attendance_status: 'DONE' });
+    tables.workspace_tutoring_sessions = [completed];
+    tables.workspace_user_group_sessions = [lesson('Unit 4: past tense')];
+    tables.user_group_posts = [report('Daily report')];
+
+    await expect(
+      freezeLinkedLessonContent({ sbAdmin, sessionId: completed.id, wsId })
+    ).resolves.toBe('stored');
+    expect(completed.content).toBe(`${missedDate}: Unit 4: past tense`);
+
+    tables.user_group_posts = [report('Edited later')];
+    const linked = await loadLinkedLessonContent({
+      includePosts: true,
+      sbAdmin,
+      sessions: [completed],
+      wsId,
+    });
+    expect(linked.has(completed.id)).toBe(false);
+    expect(completed.content).toBe(`${missedDate}: Unit 4: past tense`);
+  });
+
+  it('reads every lesson a report could belong to, whatever the batch', async () => {
+    // No lesson on the missed date; one two days earlier claims the report.
+    const pending = session();
+    tables.workspace_tutoring_sessions = [pending];
+    tables.workspace_user_group_sessions = [
+      { ...lesson(null), starts_at: `${recent(7)}T11:00:00Z` },
+    ];
+    tables.user_group_posts = [
+      { ...report('Daily report'), created_at: `${missedDate}T01:00:00Z` },
+    ];
+
+    const linked = await loadLinkedLessonContent({
+      includePosts: true,
+      sbAdmin,
+      sessions: [pending],
+      wsId,
+    });
+    expect(linked.get(pending.id)).toBe('');
+  });
+
+  it('fails instead of composing from a truncated post list', async () => {
+    const pending = session();
+    tables.workspace_tutoring_sessions = [pending];
+    tables.workspace_user_group_sessions = [lesson(null)];
+    tables.user_group_posts = Array.from({ length: 1000 }, (_, index) =>
+      report(`Report ${index}`)
+    );
+
+    await expect(
+      loadLinkedLessonContent({
+        includePosts: true,
+        sbAdmin,
+        sessions: [pending],
+        wsId,
+      })
+    ).rejects.toThrow('row limit');
+  });
+
+  it('reads posts only for groups in the workspace', async () => {
+    const pending = session();
+    tables.workspace_tutoring_sessions = [pending];
+    tables.workspace_user_group_sessions = [lesson(null)];
+    tables.workspace_user_groups = [{ id: 'group-1', ws_id: 'ws-other' }];
+    tables.user_group_posts = [report('Daily report')];
+
+    const linked = await loadLinkedLessonContent({
+      includePosts: true,
+      sbAdmin,
+      sessions: [pending],
+      wsId,
+    });
+    expect(linked.get(pending.id)).toBe('');
   });
 });

@@ -103,7 +103,11 @@ describe('missed class posts', () => {
   });
 
   it('keeps session notes and posts apart and reports dates with neither', () => {
-    const sessions = [lesson('2026-10-22T11:00:00Z', 'Unit 3')];
+    // Written 23/10 10:00, before that day's 18:00 lesson: 22/10's report.
+    const sessions = [
+      lesson('2026-10-22T11:00:00Z', 'Unit 3'),
+      lesson('2026-10-23T11:00:00Z', null),
+    ];
     const posts = [post('2026-10-23T03:00:00Z', null, 'Ôn tập')];
     expect(
       getMissedClassNotes(
@@ -115,9 +119,9 @@ describe('missed class posts', () => {
     ).toEqual({
       content: '2026-10-22: Unit 3',
       contentByDate: { '2026-10-22': '2026-10-22: Unit 3' },
-      postContent: '2026-10-23: Ôn tập',
-      postContentByDate: { '2026-10-23': '2026-10-23: Ôn tập' },
-      missingDates: ['2026-10-24'],
+      postContent: '2026-10-22: Ôn tập',
+      postContentByDate: { '2026-10-22': '2026-10-22: Ôn tập' },
+      missingDates: ['2026-10-23', '2026-10-24'],
     });
   });
 
@@ -386,7 +390,10 @@ describe('per-session content split', () => {
       '2026-10-22': '2026-10-22: Unit 5',
     });
     const withPosts = getMissedClassNotes(
-      [lesson('2026-10-20T01:00:00Z', 'Unit 4')],
+      [
+        lesson('2026-10-20T01:00:00Z', 'Unit 4'),
+        lesson('2026-10-22T01:00:00Z', null),
+      ],
       [
         {
           content: 'Body',
