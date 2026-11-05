@@ -5,8 +5,8 @@
 # apps/docs/build/devops/code-owners.mdx for the review policy.
 
 # CI, workflow and repository automation
-/.github/                          @vhpx
-/scripts/ci/                       @vhpx
+/.github/                          @vhpx @tuturuuu-release-bot
+/scripts/ci/                       @vhpx @tuturuuu-release-bot
 # Owns the reviewed out-of-order migration exemption list read by both order checks
 /scripts/check-migration-timestamps.js @vhpx
 
@@ -79,7 +79,7 @@
 /apps/mail/src/lib/mail/inbound/   @vhpx
 
 # Database schema, migrations and RLS
-/apps/database/supabase/migrations/ @vhpx
+/apps/database/supabase/migrations/ @vhpx @tuturuuu-release-bot
 /apps/database/supabase/config.toml @vhpx
 /apps/database/supabase/tests/required-account-mfa.sql @vhpx
 /apps/database/scripts/verify-required-account-mfa-contract.mjs @vhpx
@@ -102,6 +102,6 @@
 # Code ownership itself
 /.github/CODEOWNERS                @vhpx
 
-/apps/database/rollbacks/ @vhpx
+/apps/database/rollbacks/ @vhpx @tuturuuu-release-bot
 
 /apps/database/supabase/schemas/ @vhpx
