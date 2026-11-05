@@ -150,6 +150,14 @@ test('folders without package.json never force mode all for other changes', () =
 test('a package.json-less folder imported by another workspace propagates via extra edges', () => {
   const f = fixture(); try { assert.deepEqual(run(f, f.change('apps/docs/index.mdx'), { 'apps/docs/': ['apps/alpha'] }).apps, ['apps/alpha', 'apps/docs']); } finally { f.close(); }
 });
+test('package.json-less folders are still units in a sparse checkout that omits them', () => {
+  const f = fixture(); try {
+    const head = f.change('apps/docs/index.mdx');
+    rmSync(path.join(f.cwd, 'apps/docs'), { recursive: true, force: true });
+    assert.deepEqual(run(f, head).apps, ['apps/docs']);
+    assert.deepEqual(run(f, head, { 'apps/docs/': ['apps/alpha'] }).apps, ['apps/alpha', 'apps/docs']);
+  } finally { f.close(); }
+});
 test('the real repo graph treats package.json-less app folders as standalone units', () => {
   const { dirs, dependents } = loadGraph(repoRoot);
   for (const dir of ['apps/backend', 'apps/chat-realtime', 'apps/discord', 'apps/docs']) assert.ok(dirs.includes(dir), dir);

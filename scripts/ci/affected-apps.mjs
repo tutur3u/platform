@@ -38,7 +38,13 @@ function failSafePath(file) {
     /(^|\/)[^/]*\.env\.example$/.test(file) || file.startsWith('scripts/');
 }
 
-function workspaceDirs(root, group) {
+function workspaceDirs(root, group, ref) {
+  if (ref) {
+    // Read the tree rather than the working copy: CI gate jobs use a sparse checkout that only
+    // materializes package.json files, so package.json-less folders would otherwise be invisible.
+    const out = execFileSync('git', ['-C', root, 'ls-tree', '-d', '--name-only', '-z', ref, `${group}/`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 24 });
+    return out.split('\0').filter((dir) => dir && !path.posix.basename(dir).startsWith('.'));
+  }
   const base = path.join(root, group);
   if (!statSync(base, { throwIfNoEntry: false })?.isDirectory()) return [];
   return readdirSync(base, { withFileTypes: true })
@@ -64,8 +70,8 @@ export function coveredByExtraEdges(extraEdges, file, dependent) {
 // Workspace graph. Every folder under apps/ and packages/ is a unit; folders without a package.json
 // (apps/backend, apps/docs, ...) are standalone units with no declared dependencies, affected only by
 // changes under them (plus extra edges) and by changes in anything listed in extra-edges.
-export function loadGraph(cwd) {
-  const dirs = [...workspaceDirs(cwd, 'apps'), ...workspaceDirs(cwd, 'packages')];
+export function loadGraph(cwd, ref) {
+  const dirs = [...workspaceDirs(cwd, 'apps', ref), ...workspaceDirs(cwd, 'packages', ref)];
   const byName = new Map();
   const dependencies = new Map();
   for (const dir of dirs) {
@@ -95,7 +101,7 @@ export function calculate({ base, head = 'HEAD', cwd = process.cwd(), extraEdges
     if (files.some(failSafePath)) return { mode: 'all', apps: [], reason: 'changed path requires all apps' };
 
     const edges = extraEdges ?? loadExtraEdges();
-    const { dirs, dependents } = loadGraph(cwd);
+    const { dirs, dependents } = loadGraph(cwd, head);
     for (const [prefix, list] of Object.entries(edges)) for (const dep of list) {
       if (!dirs.includes(dep)) throw new Error(`extra edge "${prefix}" names unknown workspace ${dep}`);
     }
