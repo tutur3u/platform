@@ -52,7 +52,7 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           clean: true
-          persist-credentials: ${{ runner.environment != 'self-hosted' }}
+          persist-credentials: false
           sparse-checkout: |
             .github/actions/pr-runner-hygiene/*
             .github/workflows/*
