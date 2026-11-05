@@ -90,7 +90,7 @@ const getMessageUsers = async (messages: any[]) => {
   ].filter(Boolean);
   const { data: users, error: usersError } = await sbAdmin
     .from('users')
-    .select('id, display_name, avatar_url, user_private_details(email)')
+    .select('id, display_name, avatar_url')
     .in('id', uniqueCreatorIds);
 
   if (usersError) {
@@ -104,7 +104,6 @@ const getMessageUsers = async (messages: any[]) => {
       user.id,
       {
         id: user.id,
-        email: user.user_private_details?.email,
         display_name: user.display_name,
         avatar_url: user.avatar_url,
       },
