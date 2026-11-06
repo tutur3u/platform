@@ -21,7 +21,9 @@ test('snapshot signs the exact GET target and sends no bearer', async () => {
       },
     },
   };
-  expect((await createDataClients(env, owner).agentSnapshot()).status).toBe(200);
+  expect((await createDataClients(env, owner).agentSnapshot()).status).toBe(
+    200
+  );
   expect(captured).toBeDefined();
   if (!captured) throw new Error('Missing request');
   expect(captured.headers.has('Authorization')).toBe(false);
