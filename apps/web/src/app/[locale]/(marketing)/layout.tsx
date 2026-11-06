@@ -1,6 +1,8 @@
 import { cn } from '@tuturuuu/utils/format';
 import type React from 'react';
 import Footer from '@/components/layouts/Footer';
+import { marketingFontPreloads } from '@/fonts/preload-sets';
+import { FontPreloads } from '@/fonts/preloads';
 import MarketingNavbar from '../marketing-navbar';
 import { marketingFontVariables } from './marketing-fonts';
 import { ScrollToTop } from './scroll-to-top';
@@ -14,6 +16,7 @@ export default function Layout({ children }: LayoutProps) {
     // Display + mono faces are scoped to marketing so product surfaces keep
     // the app font untouched.
     <div className={cn('contents', marketingFontVariables)}>
+      <FontPreloads names={marketingFontPreloads} />
       <ScrollToTop />
       <MarketingNavbar />
       {/* pt clears the floating pill navbar (top offset + 3.5rem bar) */}

@@ -122,6 +122,30 @@ const cases = {
     'apps/docs/docs.json': ['apps/docs/docs.json'],
     'tuturuuu*.ts': ['tuturuuu.ts', 'tuturuuu.ci.ts'],
   },
+  fonts: {
+    '.github/**': common['.github/**'],
+    'scripts/fonts/**': [
+      'scripts/fonts/test_web_fonts.py',
+      'scripts/fonts/requirements.lock',
+      'scripts/fonts/sources/noto-sans-latin.woff2',
+    ],
+    'apps/web/public/fonts/**': [
+      'apps/web/public/fonts/subsets/manifest.json',
+      'apps/web/public/fonts/subsets/inter-core.c39dcfb554.woff2',
+    ],
+    'apps/web/src/fonts/**': [
+      'apps/web/src/fonts/root.css',
+      'apps/web/src/fonts/subset-files.ts',
+    ],
+    'apps/web/src/app/*/layout.tsx': ['apps/web/src/app/[locale]/layout.tsx'],
+    'apps/web/src/app/*/*/layout.tsx': [
+      'apps/web/src/app/[locale]/(marketing)/layout.tsx',
+      'apps/web/src/app/[locale]/(dashboard)/layout.tsx',
+    ],
+    'apps/web/src/app/*/*/fonts/**': [
+      'apps/web/src/app/[locale]/(marketing)/fonts/jetbrains-mono-variable.woff2',
+    ],
+  },
 };
 
 for (const [category, patterns] of Object.entries(cases)) {
@@ -159,4 +183,11 @@ test('unrelated prose and mobile screen edits do not select unrelated checks', (
       category
     );
   assert.equal(matches(filters.biome, 'README.md'), false);
+  for (const file of [
+    'apps/docs/platform/overview.mdx',
+    'apps/web/src/app/[locale]/(dashboard)/[wsId]/page.tsx',
+    'apps/web/public/robots.txt',
+    'apps/colab/src/client/assets/fonts/noto-sans-latin.woff2',
+  ])
+    assert.equal(matches(filters.fonts, file), false, file);
 });

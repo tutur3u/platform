@@ -175,7 +175,13 @@ test('gated callers stay deferred until ready while script-only checks remain el
       name
     );
   }
-  for (const name of ['migration-timestamps', 'migrations', 'mobile', 'plugin'])
+  for (const name of [
+    'migration-timestamps',
+    'migrations',
+    'mobile',
+    'plugin',
+    'web-fonts',
+  ])
     assert.equal(
       Boolean(evaluateExpression(workflow.jobs[name].if, scope(false))),
       true,
@@ -310,4 +316,34 @@ test('the staging host guard runs on every full PR run and fails the aggregate',
       1,
       `staging-hosts ${status}`
     );
+});
+
+test('the web font subset check validates committed assets with hash-pinned tools', () => {
+  const job = workflow.jobs['web-fonts'];
+  assert.equal(job.name, 'Web font subsets');
+  assert.deepEqual(job.needs, 'scope');
+  assert.deepEqual(job.permissions, { contents: 'read' });
+  assert.match(job.steps[0].uses, /^actions\/checkout@[a-f0-9]{40}$/u);
+  assert.equal(job.steps[0].with['persist-credentials'], false);
+  assert.match(job.steps[1].uses, /^actions\/setup-python@[a-f0-9]{40}$/u);
+  assert.equal(
+    job.steps[2].run,
+    'python3 -m pip install --require-hashes -r scripts/fonts/requirements.lock'
+  );
+  assert.equal(
+    job.steps.at(-1).run,
+    'python3 -m unittest scripts/fonts/test_web_fonts.py'
+  );
+  assert.ok(workflow.jobs.gate.needs.includes('web-fonts'));
+  assert.equal(gate(resultSet()).status, 0);
+  for (const status of ['failure', 'cancelled', 'skipped'])
+    assert.equal(
+      gate(resultSet({ 'web-fonts': status }, { fonts: true })).status,
+      1,
+      `web-fonts ${status}`
+    );
+  assert.equal(
+    gate(resultSet({ 'web-fonts': 'success' }, { fonts: true })).status,
+    0
+  );
 });

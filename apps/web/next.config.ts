@@ -38,6 +38,14 @@ const CALENDAR_APP_URL = resolveInternalAppUrl({
 const isDockerStandaloneBuild = process.env.DOCKER_WEB_STANDALONE === '1';
 const isNativeDockerStandaloneBuild =
   isDockerStandaloneBuild && process.env.DOCKER_WEB_NATIVE_BUILD === '1';
+// scripts/fonts/subset_web_fonts.py names every served subset
+// `<name>.<sha256 prefix>.woff2`, so one URL never changes bytes and repeat
+// visits can skip revalidation. Unhashed neighbours (manifest, licenses) and
+// any unhashed WOFF2 keep the platform default.
+export const FONT_SUBSET_CACHE_SOURCE =
+  '/fonts/subsets/:file([a-z0-9-]+\\.[0-9a-f]{10}\\.woff2)';
+export const FONT_SUBSET_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+
 const authShellHeaders = [
   {
     key: 'Cache-Control',
@@ -144,6 +152,10 @@ const nextConfig = createTuturuuuNextConfig({
   },
   async headers() {
     return [
+      {
+        source: FONT_SUBSET_CACHE_SOURCE,
+        headers: [{ key: 'Cache-Control', value: FONT_SUBSET_CACHE_CONTROL }],
+      },
       {
         source: '/.well-known/apple-app-site-association',
         headers: [{ key: 'Content-Type', value: 'application/json' }],

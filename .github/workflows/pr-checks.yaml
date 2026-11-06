@@ -27,6 +27,7 @@ jobs:
       migrations: ${{ steps.paths.outputs.migrations }}
       mobile: ${{ steps.paths.outputs.mobile }}
       plugin: ${{ steps.paths.outputs.plugin }}
+      fonts: ${{ steps.paths.outputs.fonts }}
     steps:
       - name: Select affected checks
         id: paths
@@ -104,6 +105,14 @@ jobs:
               - 'AGENTS.md'
               - 'apps/docs/docs.json'
               - 'tuturuuu*.ts'
+            fonts:
+              - *control
+              - 'scripts/fonts/**'
+              - 'apps/web/public/fonts/**'
+              - 'apps/web/src/fonts/**'
+              - 'apps/web/src/app/*/layout.tsx'
+              - 'apps/web/src/app/*/*/layout.tsx'
+              - 'apps/web/src/app/*/*/fonts/**'
 
   branch-name:
     name: Check branch name
@@ -209,10 +218,35 @@ jobs:
       contents: read
       deployments: read
 
+  web-fonts:
+    name: Web font subsets
+    needs: scope
+    if: needs.scope.outputs.fonts == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+
+      - name: Install hash-pinned font tooling
+        run: python3 -m pip install --require-hashes -r scripts/fonts/requirements.lock
+
+      - name: Validate committed font subsets
+        run: python3 -m unittest scripts/fonts/test_web_fonts.py
+
   gate:
     name: ${{ (github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'ready-for-ci') && 'Cheap PR Checks (label event)' || 'Cheap PR Checks' }}
     if: '!cancelled()'
-    needs: [scope, branch-name, staging-hosts, admitted, biome, i18n, docs, migration-timestamps, migrations, mobile, plugin]
+    needs: [scope, branch-name, staging-hosts, admitted, biome, i18n, docs, migration-timestamps, migrations, mobile, plugin, web-fonts]
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions: {}
@@ -240,6 +274,7 @@ jobs:
             migrations: full && scope.migrations === 'true',
             mobile: full && scope.mobile === 'true' && process.env.BASE_BRANCH === 'main',
             plugin: full && scope.plugin === 'true',
+            'web-fonts': full && scope.fonts === 'true',
           };
           for (const [name, job] of Object.entries(results)) {
             if (job.result === 'success') continue;
