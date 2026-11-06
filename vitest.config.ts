@@ -13,6 +13,6 @@ const apps = readdirSync(new URL('./apps', import.meta.url), {
 
 export default defineConfig({
   test: {
-    projects: ['packages/*', ...apps],
+    projects: ['packages/*', ...apps, 'apps/web/e2e/fixtures/vitest.config.ts'],
   },
 });

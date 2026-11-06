@@ -48,13 +48,11 @@ extension _CmsPageLayout on _CmsPageState {
             onResetSection: _resetSearch,
             actions: [
               if (_section == 1 && !_denied)
-                ShellActionSpec(
+                ShellActionSpec.search(
                   id: 'cms-search',
-                  icon: LucideIcons.search,
+                  active: _searching,
                   tooltip: l10n.cmsSearchHint,
-                  inDock: true,
-                  callbackToken: _searching,
-                  searchController: _searching ? _searchController : null,
+                  controller: _searchController,
                   searchHint: l10n.cmsSearchHint,
                   onSearchChanged: (_) => _updateState(() {}),
                   onCloseSearch: _resetSearch,

@@ -108,12 +108,16 @@ extension NotesPageLinks on NotesPageState {
             TextField(
               controller: label,
               decoration: InputDecoration(
+                hintText: context.l10n.inputPlaceholderLinkText,
                 labelText: context.l10n.notesLinkText,
               ),
             ),
             TextField(
               controller: url,
-              decoration: InputDecoration(labelText: context.l10n.notesLinkUrl),
+              decoration: InputDecoration(
+                hintText: context.l10n.inputPlaceholderLinkUrl,
+                labelText: context.l10n.notesLinkUrl,
+              ),
             ),
             const SizedBox(height: 12),
             FilledButton(
@@ -244,6 +248,7 @@ extension NotesPageLinks on NotesPageState {
               TextField(
                 controller: label,
                 decoration: InputDecoration(
+                  hintText: sheetContext.l10n.inputPlaceholderLinkText,
                   labelText: sheetContext.l10n.notesLinkText,
                 ),
               ),
@@ -252,6 +257,7 @@ extension NotesPageLinks on NotesPageState {
                 controller: url,
                 keyboardType: TextInputType.url,
                 decoration: InputDecoration(
+                  hintText: sheetContext.l10n.inputPlaceholderLinkUrl,
                   labelText: sheetContext.l10n.notesLinkUrl,
                 ),
               ),

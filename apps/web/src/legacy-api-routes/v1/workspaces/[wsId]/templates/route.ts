@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { isWorkspaceTemplateBackgroundPath } from '@tuturuuu/utils/template-background-path';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -78,7 +79,12 @@ export async function GET(_request: Request, { params }: Params) {
         const content = (template.content ?? {}) as TemplateContent;
         let backgroundUrl: string | null = null;
 
-        if (template.background_path) {
+        if (
+          isWorkspaceTemplateBackgroundPath(
+            template.background_path,
+            template.ws_id
+          )
+        ) {
           const { data: signedUrlData, error: signedUrlError } =
             await sbAdmin.storage
               .from('workspaces')

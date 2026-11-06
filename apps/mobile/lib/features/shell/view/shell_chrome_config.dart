@@ -48,8 +48,8 @@ class ShellChromeConfig {
     final title = switch (matchedLocation) {
       Routes.home => l10n.navHome,
       Routes.apps => l10n.navApps,
-      Routes.assistant => l10n.navAssistant,
-      Routes.notifications => l10n.notificationsTitle,
+      Routes.assistant => l10n.navMira,
+      Routes.notifications => l10n.navInbox,
       Routes.calendar => l10n.calendarTitle,
       Routes.finance => l10n.financeTitle,
       Routes.inventory => l10n.inventoryTitle,
@@ -75,7 +75,7 @@ class ShellChromeConfig {
       Routes.taskPlanning => l10n.taskPlanningTitle,
       Routes.taskEstimates => l10n.taskPlanningTitle,
       Routes.taskPortfolio => l10n.taskPlanningTitle,
-      Routes.profileRoot => l10n.profileTitle,
+      Routes.profileRoot => l10n.navYou,
       Routes.profileEdit || Routes.settingsProfile => l10n.settingsProfileEdit,
       Routes.profileAccounts ||
       Routes.settingsAccounts => l10n.authManageAccounts,

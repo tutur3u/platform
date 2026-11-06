@@ -7,11 +7,29 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: '@tuturuuu/types/primitives/Priority',
+        find: '@tuturuuu/internal-api/users',
         replacement: resolve(
           __dirname,
-          '../../packages/types/src/primitives/Priority.ts'
+          '../../packages/internal-api/src/users.ts'
         ),
+      },
+      {
+        find: '@tuturuuu/internal-api/tasks',
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/tasks.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/types\/primitives\/(.+)$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/types/src/primitives/$1.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/supabase\/(.*)$/,
+        replacement: resolve(__dirname, '../../packages/supabase/src/$1.ts'),
       },
       {
         find: /^@tuturuuu\/internal-api$/,

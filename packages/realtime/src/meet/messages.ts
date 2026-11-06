@@ -18,6 +18,7 @@ import {
   meetRealtimeStreamStateSchema,
   meetRealtimeTrackKindSchema,
 } from './primitives';
+import { normalizeDisplayNameText } from './room-display-name';
 import {
   type MeetApprovedParticipant,
   type MeetReaction,
@@ -25,11 +26,19 @@ import {
   meetReactionSchema,
   meetRoomSettingsPatchSchema,
 } from './room-options';
+import {
+  type TranscriptionConsentMessage,
+  type TranscriptionStateMessage,
+  transcriptionConsentMessageSchema,
+  transcriptionStateMessageSchema,
+} from './transcription';
 
 const requestId = z.string().trim().min(1).max(120).optional();
 const participantId = z.string().uuid();
 
 export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
+  transcriptionStateMessageSchema,
+  transcriptionConsentMessageSchema,
   z.object({
     type: z.literal('usage.report'),
     reportId: z.uuid(),
@@ -57,7 +66,11 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     requestId,
   }),
   z.object({
-    displayName: z.string().trim().min(1).max(120).optional(),
+    displayName: z
+      .string()
+      .transform(normalizeDisplayNameText)
+      .pipe(z.string().min(1).max(120))
+      .optional(),
     media: meetMediaStateSchema.optional(),
     type: z.literal('presence.join'),
   }),
@@ -173,6 +186,8 @@ export type MeetRealtimeRoomTrack = {
 };
 
 export type MeetRealtimeServerMessage =
+  | TranscriptionStateMessage
+  | TranscriptionConsentMessage
   | {
       type: 'assistant.live';
       sessionId: string;

@@ -177,13 +177,19 @@ class _ListingEditorState extends State<_ListingEditor> {
           TextField(
             controller: _title,
             textInputAction: TextInputAction.next,
-            decoration: InputDecoration(labelText: l10n.storefrontListingTitle),
+            decoration: InputDecoration(
+              hintText: context.l10n.inputPlaceholderListingTitle,
+              labelText: l10n.storefrontListingTitle,
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _description,
             maxLines: 3,
-            decoration: InputDecoration(labelText: l10n.storefrontDescription),
+            decoration: InputDecoration(
+              hintText: context.l10n.inputPlaceholderStorefrontDescription,
+              labelText: l10n.storefrontDescription,
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -194,7 +200,10 @@ class _ListingEditorState extends State<_ListingEditor> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: InputDecoration(labelText: l10n.storefrontPrice),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.inputPlaceholderPrice,
+                    labelText: l10n.storefrontPrice,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -205,6 +214,7 @@ class _ListingEditorState extends State<_ListingEditor> {
                     decimal: true,
                   ),
                   decoration: InputDecoration(
+                    hintText: context.l10n.inputPlaceholderPrice,
                     labelText: l10n.storefrontCompareAtPrice,
                   ),
                 ),
@@ -237,6 +247,7 @@ class _ListingEditorState extends State<_ListingEditor> {
                   controller: _maxPerOrder,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
+                    hintText: context.l10n.inputPlaceholderQuantity,
                     labelText: l10n.storefrontMaxPerOrder,
                   ),
                 ),

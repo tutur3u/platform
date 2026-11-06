@@ -144,6 +144,7 @@ describe('Nova challenge password verification', () => {
       scope: 'nova-challenge',
       target: `${CHALLENGE_ID}:user-1`,
       userId: 'user-1',
+      ip: 'unknown',
     });
   });
 

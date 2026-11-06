@@ -2,14 +2,15 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { basename } from 'node:path';
+import { createAbuseGuardStub } from './meet-native-abuse-guard-stub.mjs';
 import {
   assertMeetCopy,
   readMeetRegistry,
 } from './meet-native-graph-files.mjs';
 import { admitMeetPolicies } from './meet-native-policy.mjs';
 import {
+  appBindings,
   assertMeetOriginal,
-  fixtureBindings,
   SUPPLIER,
 } from './meet-native-profile.mjs';
 import { projectMeetRegistry } from './meet-native-registry-facts.mjs';
@@ -254,6 +255,7 @@ export async function createMeetGraph(
   await assertMeetOriginal(plan);
   await assertMeetCopy(plan, prepared, true);
   admitMeetPolicies(policies);
+  const abuseGuard = createAbuseGuardStub();
   const inputs = Object.fromEntries(
     ['app', 'probe'].map((role) => [
       role,
@@ -263,7 +265,7 @@ export async function createMeetGraph(
         sendMetrics: false,
         bindings:
           role === 'app'
-            ? fixtureBindings(secret)
+            ? appBindings(secret, abuseGuard.binding)
             : { PROBE_TOKEN: { type: 'secret_text', value: probeToken } },
         build: { bundle: false, processEntrypoint: false },
         dev: {

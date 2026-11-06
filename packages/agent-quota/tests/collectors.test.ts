@@ -198,6 +198,34 @@ describe('local collectors', () => {
     ]);
   });
 
+  it('retains monthly Codex telemetry but leaves model-gating scope unknown', async () => {
+    const root = await tempDir();
+    const command = join(root, 'codex-app-server-monthly-fixture');
+    await writeFile(
+      command,
+      `#!/bin/sh\nwhile IFS= read -r line; do\n  case "$line" in\n    *'"id":1'*) printf '%s\\n' '{"jsonrpc":"2.0","id":1,"result":{}}' ;;\n    *'account/rateLimits/read'*) printf '%s\\n' '{"jsonrpc":"2.0","id":2,"result":{"rateLimits":{"primary":{"usedPercent":100,"windowDurationMins":43200,"resetsAt":"2026-11-19T07:28:47Z"}}}}'; break ;;\n  esac\ndone\n`
+    );
+    await chmod(command, 0o755);
+    const result = await collectCodex('codex', 'test-account', [root], {
+      command,
+      timeoutMs: 1000,
+      now: () => new Date('2026-10-25T04:08:45Z'),
+    });
+    expect(result.windows[0]).toMatchObject({
+      providerWindowKind: 'monthly',
+      usedPercent: 100,
+      resetsAt: '2026-11-19T07:28:47.000Z',
+      scope: { kind: 'unknown' },
+    });
+    const ranked = recommend({
+      accounts: [result],
+      active: [],
+      task: { model: 'gpt-6-luna' },
+      now: new Date('2026-10-25T04:08:45Z'),
+    }).ranked[0];
+    expect(ranked).toMatchObject({ state: 'UNKNOWN', eligible: false });
+  });
+
   it('estimates Claude token totals without fabricating a quota percentage', async () => {
     const root = await tempDir();
     const project = join(root, 'project');

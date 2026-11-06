@@ -203,9 +203,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                         if (state.isArchivingAll)
                           const SizedBox.square(
                             dimension: 44,
-                            child: Center(
-                              child: NovaLoadingIndicator(size: 20),
-                            ),
+                            child: AppLoadingIndicator.inline(),
                           )
                         else
                           AppIconButton(

@@ -97,6 +97,7 @@ class _CourseSheetState extends State<_CourseSheet> {
           TextField(
             controller: _nameController,
             decoration: InputDecoration(
+              hintText: context.l10n.inputPlaceholderCourseName,
               labelText: context.l10n.educationCourseNameLabel,
             ),
           ),
@@ -106,6 +107,7 @@ class _CourseSheetState extends State<_CourseSheet> {
             minLines: 3,
             maxLines: 5,
             decoration: InputDecoration(
+              hintText: context.l10n.inputPlaceholderCourseDescription,
               labelText: context.l10n.educationCourseDescriptionLabel,
             ),
           ),
@@ -239,7 +241,12 @@ class _SimpleEducationSheetState extends State<_SimpleEducationSheet> {
             controller: _primaryController,
             minLines: widget.secondaryLabel == null ? 1 : 2,
             maxLines: widget.secondaryLabel == null ? 1 : 4,
-            decoration: InputDecoration(labelText: widget.fieldLabel),
+            decoration: InputDecoration(
+              hintText: widget.secondaryLabel == null
+                  ? context.l10n.inputPlaceholderQuizSetName
+                  : context.l10n.inputPlaceholderFlashcardFront,
+              labelText: widget.fieldLabel,
+            ),
           ),
           if (widget.secondaryLabel != null) ...[
             const SizedBox(height: 12),
@@ -247,7 +254,10 @@ class _SimpleEducationSheetState extends State<_SimpleEducationSheet> {
               controller: _secondaryController,
               minLines: 2,
               maxLines: 4,
-              decoration: InputDecoration(labelText: widget.secondaryLabel),
+              decoration: InputDecoration(
+                hintText: context.l10n.inputPlaceholderFlashcardBack,
+                labelText: widget.secondaryLabel,
+              ),
             ),
           ],
           const SizedBox(height: 16),

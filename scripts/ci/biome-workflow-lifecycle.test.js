@@ -25,7 +25,11 @@ test('overflow notes cannot attach cancelled Biome checks to a release SHA', () 
     )
   );
   // Parse the entire node so extra branches cannot hide behind YAML quoting.
-  assert.equal(triggers.push, null);
+  // Protected and generated refs (including overflow notes) still validate on
+  // push; other branches validate through the ready-for-ci pull request gate.
+  assert.deepEqual(triggers.push, {
+    branches: ['main', 'production', 'release-please--branches--**'],
+  });
   assert.ok(Object.hasOwn(triggers, 'workflow_dispatch'));
 });
 

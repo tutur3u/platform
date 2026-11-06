@@ -1,7 +1,17 @@
 name: Supabase baseline contract
 on:
   push:
-    branches-ignore: [production]
+    branches: [main, 'release-please--branches--**']
+    paths:
+      - scripts/ci/supabase-registry.test.js
+      - scripts/ci/supabase-baseline*
+      - apps/database/scripts/run-supabase*.js
+      - '.github/actions/cache-supabase-images/**'
+      - 'scripts/ci/supabase-image-cache*'
+      - .github/actions/setup-supabase-baseline/**
+      - .github/workflows/supabase-baseline.yaml
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
       - scripts/ci/supabase-registry.test.js
       - scripts/ci/supabase-baseline*
@@ -26,11 +36,11 @@ env:
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   seed-images:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.seed_images_only == true
+    if: (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.seed_images_only == true) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -55,7 +65,7 @@ jobs:
           pull-budget-seconds: "600"
           seed-image-catalog: ${{ inputs.seed_image_catalog || 'current' }}
   cold-warm-corrupt:
-    if: inputs.seed_images_only != true
+    if: (inputs.seed_images_only != true) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -112,6 +122,7 @@ jobs:
         run: node apps/database/scripts/run-supabase.js stop --no-backup
 
   cross-runner-restore:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     needs: cold-warm-corrupt
     permissions:
       contents: read

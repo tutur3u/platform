@@ -92,6 +92,8 @@ extension _CmsCollectionEditor on _CmsPageState {
                 l10n.cmsDetailsSection,
                 [
                   AppTextField(
+                    placeholder:
+                        context.l10n.inputPlaceholderCmsCollectionTitle,
                     controller: titleController,
                     autofocus: true,
                     label: l10n.cmsTitle,
@@ -101,12 +103,19 @@ extension _CmsCollectionEditor on _CmsPageState {
                       }
                     },
                   ),
-                  AppTextField(controller: slugController, label: l10n.cmsSlug),
                   AppTextField(
+                    placeholder: context.l10n.inputPlaceholderCmsSlug,
+                    controller: slugController,
+                    label: l10n.cmsSlug,
+                  ),
+                  AppTextField(
+                    placeholder: context.l10n.inputPlaceholderCmsCollectionType,
                     controller: typeController,
                     label: l10n.cmsCollectionType,
                   ),
                   AppTextField(
+                    placeholder:
+                        context.l10n.inputPlaceholderCmsCollectionDescription,
                     controller: descriptionController,
                     label: l10n.cmsDescription,
                     minLines: 2,

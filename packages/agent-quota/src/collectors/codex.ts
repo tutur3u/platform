@@ -1,10 +1,15 @@
 import { join } from 'node:path';
 import type { AccountUsage, UsageWindow, WindowKind } from '../types';
+import { providerWindowScope } from '../window-scope';
 import {
   type CodexAppServerOptions,
   readCodexAppServerLimits,
 } from './codex-app-server';
-import { resetTimestamp, windowKind } from './codex-rate-limits';
+import {
+  providerWindowKind,
+  resetTimestamp,
+  windowKind,
+} from './codex-rate-limits';
 import { listJsonlFiles, readJsonlSnapshot } from './files';
 import { allowedSessionFile, codexRoot, codexRoots } from './paths';
 
@@ -170,7 +175,16 @@ export async function collectCodex(
   }
   const sessionWindows: UsageWindow[] = [...latest.entries()].map(
     ([kind, sample]) => ({
+      id: sample.windowMinutes ? `${sample.windowMinutes}m` : kind,
+      scope: providerWindowScope(
+        'codex',
+        sample.windowMinutes ? `${sample.windowMinutes}m` : kind,
+        '',
+        providerWindowKind(sample.windowMinutes)
+      ),
       kind,
+      providerWindowKind: providerWindowKind(sample.windowMinutes),
+      windowDurationMins: sample.windowMinutes,
       usedPercent: sample.usedPercent,
       resetsAt: sample.resetsAt,
       source: 'Codex local token_count rate_limits',

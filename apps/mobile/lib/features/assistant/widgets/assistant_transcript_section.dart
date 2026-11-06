@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -147,6 +148,9 @@ class _AssistantTranscriptSectionState
                             ? context.l10n.assistantReplyUnavailable
                             : _messageText(reply),
                       ),
+                onRetryAttachment: () => context
+                    .read<AssistantChatCubit>()
+                    .retryVoiceMessage(message.id),
                 activityActive: message.id == activeMessageId,
                 label: message.role == 'user'
                     ? context.l10n.assistantYouLabel

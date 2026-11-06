@@ -294,6 +294,8 @@ export interface HabitTrackerInput {
   composer_config?: HabitTrackerComposerConfig | null;
   start_date?: string;
   is_active?: boolean;
+  /** Optional key that makes creation idempotent per workspace creator. */
+  creation_key?: string;
 }
 
 export interface HabitTrackerEntryInput {
@@ -305,6 +307,8 @@ export interface HabitTrackerEntryInput {
   note?: string | null;
   tags?: string[];
   user_id?: string;
+  /** Optional operation key; a repeat returns the stored entry. */
+  idempotency_key?: string;
 }
 
 export interface HabitTrackerStreakActionInput {

@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/download_network_consent.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
@@ -111,154 +112,171 @@ class _AssistantLocalModelsSectionState
       final l10n = context.l10n;
       final enabled =
           state.loaded && state.supported && !state.busy && !_picking;
-      return Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      final models = assistantLocalModelsForSettings(
+        targetSupported: state.supported,
+        installed: state.installed,
+        activeModelId: state.busy ? state.modelId : null,
+      );
+      final selectedModel = assistantLocalModels
+          .where((model) => model.id == state.selected)
+          .firstOrNull;
+      final firstInstalled = models
+          .where((model) => state.installed.contains(model.id))
+          .firstOrNull;
+      final remote = state.loaded && state.selected == null;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppGroupedSection.spaced(
+            caption: l10n.assistantModelSourceTitle,
+            captionTrailing: AssistantSettingsInfo(
+              title: l10n.assistantLocalTitle,
+              description: [
+                l10n.assistantLocalBudgetDescription,
+                l10n.assistantLocalHardware,
+                if (_models.supportsBackgroundDownloads)
+                  l10n.assistantDownloadBackgroundNotice,
+                l10n.assistantLocalModeSwitch,
+                l10n.assistantLocalHistoryNotice,
+              ].join('\n\n'),
+            ),
+            footer: l10n.assistantLocalHelp,
+            children: [
+              _SourceRow(
+                key: const ValueKey('assistant-model-source-remote'),
+                icon: LucideIcons.cloud,
+                title: l10n.assistantLocalRemote,
+                subtitle: l10n.assistantLocalRemoteHint,
+                selected: remote,
+                onTap: state.loaded && !state.busy
+                    ? () => unawaited(_models.select(null))
+                    : null,
+              ),
+              _SourceRow(
+                key: const ValueKey('assistant-model-source-local'),
+                icon: LucideIcons.cpu,
+                title: l10n.assistantLocalHeaderReady,
+                subtitle: switch ((selectedModel, state.selected)) {
+                  (final model?, _) => model.name,
+                  (null, final _?) => l10n.assistantLocalSelectionUnknown,
+                  _ when !state.supported && state.loaded =>
+                    l10n.assistantLocalUnsupported,
+                  _ => l10n.assistantLocalSourceEmpty,
+                },
+                selected: state.selected != null,
+                onTap:
+                    enabled && state.selected == null && firstInstalled != null
+                    ? () => unawaited(_models.select(firstInstalled.id))
+                    : null,
+              ),
+            ],
+          ),
+          if (models.isNotEmpty || state.error != null)
+            AppGroupedSection.spaced(
+              caption: l10n.assistantLocalTitle,
               children: [
-                Expanded(
-                  child: Text(
-                    l10n.assistantLocalTitle,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                AssistantSettingsInfo(
-                  title: l10n.assistantLocalTitle,
-                  description: [
-                    l10n.assistantLocalHelp,
-                    l10n.assistantLocalBudgetDescription,
-                    l10n.assistantLocalHardware,
-                    if (_models.supportsBackgroundDownloads)
-                      l10n.assistantDownloadBackgroundNotice,
-                    l10n.assistantLocalModeSwitch,
-                    l10n.assistantLocalHistoryNotice,
-                  ].join('\n\n'),
-                ),
-              ],
-            ),
-            if (state.loaded && !state.supported) ...[
-              const SizedBox(height: 12),
-              Text(l10n.assistantLocalUnsupported),
-            ],
-            AppListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(LucideIcons.cloud),
-              title: Text(l10n.assistantLocalRemote),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (state.loaded && state.selected == null)
-                    const SizedBox.square(
-                      dimension: 44,
-                      child: Icon(LucideIcons.circleCheck),
-                    ),
-                  AssistantSettingsInfo(
-                    title: l10n.assistantLocalRemote,
-                    description: l10n.assistantLocalRemoteHint,
-                  ),
-                ],
-              ),
-              selected: state.loaded && state.selected == null,
-              onTap: state.loaded && !state.busy
-                  ? () => unawaited(_models.select(null))
-                  : null,
-            ),
-            if (state.selected != null &&
-                !assistantLocalModels.any(
-                  (model) => model.id == state.selected,
-                ))
-              Text(l10n.assistantLocalSelectionUnknown),
-            for (final model in assistantLocalModelsForSettings(
-              targetSupported: state.supported,
-              installed: state.installed,
-              activeModelId: state.busy ? state.modelId : null,
-            )) ...[
-              const Divider(),
-              AssistantLocalModelTile(
-                model: model,
-                installed: state.installed.contains(model.id),
-                selected: state.selected == model.id,
-                enabled: enabled,
-                canRemove: state.loaded && !state.busy && !_picking,
-                onInstall: () => unawaited(_install(model)),
-                onSelect: () => unawaited(_models.select(model.id)),
-                onRemove: () => unawaited(_models.remove(model)),
-                onLicense: () => unawaited(_open(Uri.parse(model.licenseUrl))),
-                onSource: () => unawaited(
-                  _open(
-                    Uri.https(
-                      'huggingface.co',
-                      '/${model.repository}/blob/${model.revision}/${model.filename}',
-                    ),
-                  ),
-                ),
-              ),
-              if (state.busy && state.modelId == model.id) ...[
-                if (state.operation == LocalModelsOperation.downloading &&
-                    _models.supportsBackgroundDownloads)
-                  Text(switch (state.downloadPhase) {
-                    ModelDownloadPhase.pending =>
-                      l10n.assistantDownloadPhasePending,
-                    ModelDownloadPhase.queued =>
-                      l10n.assistantDownloadPhaseQueued,
-                    ModelDownloadPhase.transferring =>
-                      l10n.assistantDownloadPhaseTransferring,
-                    ModelDownloadPhase.retryWait =>
-                      l10n.assistantDownloadPhaseRetryWait,
-                    ModelDownloadPhase.paused =>
-                      l10n.assistantDownloadPhasePaused,
-                    ModelDownloadPhase.verifying =>
-                      l10n.assistantDownloadPhaseVerifying,
-                  }),
-                Semantics(
-                  label: l10n.assistantLocalLoading,
-                  child: LinearProgressIndicator(
-                    value: state.total > 0
-                        ? (state.received / state.total).clamp(0, 1)
+                for (final model in models)
+                  AssistantLocalModelTile(
+                    model: model,
+                    installed: state.installed.contains(model.id),
+                    selected: state.selected == model.id,
+                    enabled: enabled,
+                    canRemove: state.loaded && !state.busy && !_picking,
+                    progress: state.busy && state.modelId == model.id
+                        ? _progress(context, state)
                         : null,
-                  ),
-                ),
-                if (state.operation == LocalModelsOperation.downloading &&
-                    _models.supportsBackgroundDownloads)
-                  AppButton.ghost(
-                    onPressed: () => unawaited(
-                      state.paused ? _models.resume() : _models.pause(),
+                    onInstall: () => unawaited(_install(model)),
+                    onSelect: () => unawaited(_models.select(model.id)),
+                    onRemove: () => unawaited(_models.remove(model)),
+                    onLicense: () =>
+                        unawaited(_open(Uri.parse(model.licenseUrl))),
+                    onSource: () => unawaited(
+                      _open(
+                        Uri.https(
+                          'huggingface.co',
+                          '/${model.repository}/blob/${model.revision}/${model.filename}',
+                        ),
+                      ),
                     ),
-                    child: Text(
-                      state.paused
-                          ? l10n.assistantDownloadResume
-                          : l10n.assistantDownloadPause,
+                  ),
+                if (state.busy && state.modelId == null)
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Semantics(
+                      label: l10n.commonLoading,
+                      child: const LinearProgressIndicator(),
                     ),
                   ),
-                if (state.operation == LocalModelsOperation.downloading ||
-                    state.operation == LocalModelsOperation.importing)
-                  AppButton.ghost(
-                    onPressed: _models.cancel,
-                    child: Text(l10n.commonCancel),
+                if (state.error case final error?)
+                  AppStateMessage.inline(
+                    icon: LucideIcons.triangleAlert,
+                    tone: AppTone.destructive,
+                    title: _error(context, error),
+                    actionLabel: state.loaded ? null : l10n.commonRetry,
+                    onAction: state.loaded
+                        ? null
+                        : () => unawaited(_models.load()),
                   ),
               ],
-            ],
-            if (state.busy && state.modelId == null)
-              Semantics(
-                label: l10n.commonLoading,
-                child: const LinearProgressIndicator(),
-              ),
-            if (state.error != null) ...[
-              const SizedBox(height: 12),
-              Text(_error(context, state.error!)),
-              if (!state.loaded)
-                AppButton.ghost(
-                  onPressed: () => unawaited(_models.load()),
-                  child: Text(l10n.commonRetry),
-                ),
-            ],
-          ],
-        ),
+            ),
+        ],
       );
     },
   );
+
+  Widget _progress(BuildContext context, AssistantLocalModelsState state) {
+    final l10n = context.l10n;
+    final downloading = state.operation == LocalModelsOperation.downloading;
+    final background = downloading && _models.supportsBackgroundDownloads;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (background)
+          Text(switch (state.downloadPhase) {
+            ModelDownloadPhase.pending => l10n.assistantDownloadPhasePending,
+            ModelDownloadPhase.queued => l10n.assistantDownloadPhaseQueued,
+            ModelDownloadPhase.transferring =>
+              l10n.assistantDownloadPhaseTransferring,
+            ModelDownloadPhase.retryWait =>
+              l10n.assistantDownloadPhaseRetryWait,
+            ModelDownloadPhase.paused => l10n.assistantDownloadPhasePaused,
+            ModelDownloadPhase.verifying =>
+              l10n.assistantDownloadPhaseVerifying,
+          }),
+        const SizedBox(height: AppSpacing.xs),
+        Semantics(
+          label: l10n.assistantLocalLoading,
+          child: LinearProgressIndicator(
+            value: state.total > 0
+                ? (state.received / state.total).clamp(0, 1)
+                : null,
+          ),
+        ),
+        Wrap(
+          spacing: AppSpacing.sm,
+          children: [
+            if (background)
+              AppButton.ghost(
+                onPressed: () => unawaited(
+                  state.paused ? _models.resume() : _models.pause(),
+                ),
+                child: Text(
+                  state.paused
+                      ? l10n.assistantDownloadResume
+                      : l10n.assistantDownloadPause,
+                ),
+              ),
+            if (downloading ||
+                state.operation == LocalModelsOperation.importing)
+              AppButton.ghost(
+                onPressed: _models.cancel,
+                child: Text(l10n.commonCancel),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
 
   String _error(
     BuildContext context,
@@ -273,4 +291,43 @@ class _AssistantLocalModelsSectionState
       context.l10n.assistantDownloadAdmissionFailure,
     _ => context.l10n.assistantLocalUnavailable,
   };
+}
+
+/// One choice of the model source: remote providers or this device.
+class _SourceRow extends StatelessWidget {
+  const _SourceRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+    super.key,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context).colorScheme;
+    return Semantics(
+      selected: selected,
+      inMutuallyExclusiveGroup: true,
+      child: AppGroupedRow(
+        leading: AppIconTile(
+          icon: icon,
+          tone: selected ? AppTone.primary : AppTone.neutral,
+        ),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: selected
+            ? Icon(LucideIcons.check, size: 20, color: c.primary)
+            : null,
+        onTap: selected ? null : onTap,
+      ),
+    );
+  }
 }

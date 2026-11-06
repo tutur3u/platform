@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 
+const { spawnSync } = require('node:child_process');
 const { existsSync } = require('node:fs');
 const { join } = require('node:path');
 
@@ -9,5 +10,21 @@ if (existsSync(join(__dirname, '../src/cli/index.ts'))) {
   );
   process.exitCode = 1;
 } else {
-  require(join(__dirname, '../dist/cli/index.js'));
+  const entry = join(__dirname, '../dist/cli/index.js');
+  // Controller locks need native APIs that Bun's libuv compatibility omits.
+  if (process.versions.bun && process.argv[2] === 'balancer') {
+    const child = spawnSync('node', [entry, ...process.argv.slice(2)], {
+      stdio: 'inherit',
+    });
+    if (child.error) {
+      console.error('ttr balancer requires Node.js on PATH.');
+      process.exitCode = 1;
+    } else if (child.signal) {
+      process.kill(process.pid, child.signal);
+    } else {
+      process.exitCode = child.status ?? 1;
+    }
+  } else {
+    require(entry);
+  }
 }

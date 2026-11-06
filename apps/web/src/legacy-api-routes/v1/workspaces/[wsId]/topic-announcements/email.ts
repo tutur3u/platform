@@ -1,7 +1,7 @@
 import { getContactVerificationStatuses } from '@tuturuuu/users-core/routes/topic-announcements';
 import {
+  getTopicAnnouncementSendFlags,
   hasUnavailableTopicAnnouncementRecipient,
-  isTopicAnnouncementSendingEnabled,
 } from '@/lib/topic-announcement-send-admission';
 
 export { getContactVerificationStatuses } from '@tuturuuu/users-core/routes/topic-announcements';
@@ -101,9 +101,16 @@ export function renderAnnouncementEmail({
   });
 }
 
+export type TopicAnnouncementUnverifiedContact = {
+  email: string;
+  id: string;
+  name: string;
+};
+
 export async function sendTopicAnnouncement({
   actorUserId,
   announcementId,
+  markSkippedWhenUnverified = false,
   normalizedWsId,
   request,
   resend,
@@ -111,6 +118,9 @@ export async function sendTopicAnnouncement({
 }: {
   actorUserId: string;
   announcementId: string;
+  /** Queue sends have no one to tell, so they record the skip on the row.
+   * Interactive sends leave the row unchanged and return the contacts. */
+  markSkippedWhenUnverified?: boolean;
   normalizedWsId: string;
   request: Request;
   resend: boolean;
@@ -125,11 +135,15 @@ export async function sendTopicAnnouncement({
 
   if (announcementError) throw announcementError;
   if (!announcement) return { error: 'ANNOUNCEMENT_NOT_FOUND', status: 404 };
+  if (!announcement.topic?.trim()) {
+    return { error: 'TOPIC_REQUIRED', status: 409 };
+  }
   if (announcement.status === 'sent' && !resend) {
     return { error: 'ALREADY_SENT', status: 409 };
   }
 
-  if (!(await isTopicAnnouncementSendingEnabled(normalizedWsId))) {
+  const sendFlags = await getTopicAnnouncementSendFlags(normalizedWsId);
+  if (!sendFlags.sending) {
     return { error: 'TOPIC_ANNOUNCEMENTS_DISABLED', status: 409 };
   }
 
@@ -163,16 +177,28 @@ export async function sendTopicAnnouncement({
   });
 
   if (unverified.length > 0) {
-    await sbAdmin
-      .from('topic_announcements')
-      .update({
-        last_error: `EMAIL_NOT_VERIFIED: ${unverified.map((contact: any) => contact.email).join(', ')}`,
-        status: 'skipped',
-        updated_by: actorUserId,
-      })
-      .eq('id', announcementId)
-      .eq('ws_id', normalizedWsId);
-    return { error: 'EMAIL_NOT_VERIFIED', status: 409 };
+    if (markSkippedWhenUnverified) {
+      await sbAdmin
+        .from('topic_announcements')
+        .update({
+          last_error: `EMAIL_NOT_VERIFIED: ${unverified.map((contact: any) => contact.email).join(', ')}`,
+          status: 'skipped',
+          updated_by: actorUserId,
+        })
+        .eq('id', announcementId)
+        .eq('ws_id', normalizedWsId);
+    }
+    return {
+      error: 'EMAIL_NOT_VERIFIED',
+      status: 409,
+      unverifiedContacts: unverified.map(
+        (contact: any): TopicAnnouncementUnverifiedContact => ({
+          email: contact.email,
+          id: contact.id,
+          name: contact.name,
+        })
+      ),
+    };
   }
 
   const { data: attachmentRows, error: attachmentError } = await sbAdmin
@@ -280,7 +306,12 @@ export async function sendTopicAnnouncement({
     .from('topic_announcements')
     .update({
       last_error: null,
-      sent_at: new Date().toISOString(),
+      // With teacher assignments on, keep the first send time so a resend
+      // never changes on-time status; otherwise behave as before.
+      sent_at:
+        sendFlags.teacherAssignments && announcement.sent_at
+          ? announcement.sent_at
+          : new Date().toISOString(),
       sent_email_audit_id: result.auditId ?? null,
       status: 'sent',
       updated_by: actorUserId,

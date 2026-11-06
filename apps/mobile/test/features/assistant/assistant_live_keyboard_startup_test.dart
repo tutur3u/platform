@@ -365,4 +365,28 @@ void main() {
     expect(h.live.state.status, AssistantLiveConnectionStatus.disconnected);
     expect(tester.takeException(), isNull);
   });
+
+  startupTest('Retry refuses a token answered across a workspace switch', (
+    tester,
+    cleanup,
+  ) async {
+    final h = _KeyboardHarness();
+    await h.mount(tester, grantFirstPermission: false);
+    cleanup(() => h.dispose(tester));
+    await h.startMicrophone(tester);
+    h.tokens.requests.single.completeError(Exception('startup token failure'));
+    await h.renderLiveStatus(tester, AssistantLiveConnectionStatus.error);
+    await h.retry(tester);
+    expect(h.tokens.requests, hasLength(2));
+    expect(h.live.state.status, AssistantLiveConnectionStatus.preparing);
+    // The token answers before the page's next build applies the switch.
+    h.workspace.change('44444444-4444-4444-8444-444444444444');
+    await settleDisconnect(tester, h);
+    expect(h.live.state.status, AssistantLiveConnectionStatus.disconnected);
+    expect(
+      h.live.state.workspaceId,
+      isNot('44444444-4444-4444-8444-444444444444'),
+    );
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -6,6 +6,7 @@ import {
   queryClients,
   renderLoginForm,
   renderLoginFormSearch,
+  resetReturnUrlLoginMocks,
 } from './login-form-test-support';
 
 const platformVerifyTokenReturnUrl =
@@ -14,73 +15,7 @@ const localPortlessPlatformVerifyTokenReturnUrl =
   'https://tuturuuu.localhost:1355/verify-token?nextUrl=%2Fen%2Fpersonal%2Ftasks';
 
 describe('LoginForm returnUrl navigation', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mocks.currentUserProfile = {
-      avatar_url: null,
-      display_name: 'Person Example',
-      email: 'person@example.com',
-      full_name: null,
-      id: 'user-1',
-    };
-    mocks.getOtpSettings.mockResolvedValue({ otpEnabled: true });
-    mocks.getUser.mockResolvedValue({
-      data: {
-        user: {
-          email: 'person@example.com',
-          id: 'user-1',
-        },
-      },
-    });
-    mocks.getClaims.mockResolvedValue({
-      data: { claims: { sub: 'user-1' } },
-      error: null,
-    });
-    mocks.mfaAssuranceLevel.mockResolvedValue({
-      data: {
-        currentLevel: 'aal1',
-        nextLevel: 'aal1',
-      },
-    });
-    mocks.mfaListFactors.mockResolvedValue({
-      data: {
-        totp: [
-          {
-            id: 'factor-1',
-            status: 'verified',
-          },
-        ],
-      },
-      error: null,
-    });
-    mocks.mfaChallenge.mockResolvedValue({
-      data: {
-        id: 'challenge-1',
-      },
-      error: null,
-    });
-    mocks.mfaVerify.mockResolvedValue({ error: null });
-    mocks.resolveCrossAppReturnUrlWithInternalApi.mockResolvedValue({
-      error: 'Invalid returnUrl',
-    });
-    mocks.createMfaMobileApprovalChallengeWithInternalApi.mockResolvedValue({
-      challenge: {
-        expiresAt: '2026-06-11T03:10:00.000Z',
-        id: 'mobile-challenge-1',
-        pairCode: '123456',
-      },
-      secret: 'mobile-secret',
-    });
-    mocks.pollMfaMobileApprovalChallengeWithInternalApi.mockResolvedValue({
-      mobileMfaVerified: false,
-      status: 'pending',
-    });
-    mocks.passwordLoginWithInternalApi.mockResolvedValue({ success: true });
-    mocks.refreshSession.mockResolvedValue({ error: null });
-    mocks.sendOtpWithInternalApi.mockResolvedValue({});
-    mocks.signInWithOAuth.mockResolvedValue({ error: null });
-    mocks.verifyOtpWithInternalApi.mockResolvedValue({});
-  });
+  beforeEach(resetReturnUrlLoginMocks);
 
   afterEach(() => {
     for (const queryClient of queryClients) queryClient.clear();
@@ -268,7 +203,7 @@ describe('LoginForm returnUrl navigation', () => {
     });
   });
 
-  it('offers Microsoft OAuth on the login form', async () => {
+  it('offers a labelled staff Microsoft entry with email recovery', async () => {
     mocks.currentUserProfile = null;
     mocks.getUser.mockReturnValue(new Promise(() => undefined));
 
@@ -276,27 +211,22 @@ describe('LoginForm returnUrl navigation', () => {
 
     expect(
       await screen.findByRole('button', {
-        name: /login\.continue_with_microsoft/u,
+        name: /login\.staff_microsoft/u,
       })
     ).toBeInTheDocument();
   });
 
-  // `?provider=azure` is how another app hands a Microsoft sign-in over to us,
-  // so the deep link has to start the flow rather than land on a bare form.
-  it('starts Microsoft OAuth from a provider deep link', async () => {
+  it('does not automatically start Microsoft OAuth from a provider hint', async () => {
     mocks.currentUserProfile = null;
     mocks.getUser.mockResolvedValue({ data: { user: null } });
-
     renderLoginFormSearch('?provider=azure');
-
-    await waitFor(() => {
-      expect(mocks.signInWithOAuth).toHaveBeenCalledWith(
-        expect.objectContaining({
-          options: expect.objectContaining({ scopes: 'email' }),
-          provider: 'azure',
-        })
-      );
+    await screen.findByRole('button', {
+      name: 'Microsoft login.staff_microsoft',
     });
+    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
+    expect(
+      screen.getByText('login.microsoft_email_recovery')
+    ).toBeInTheDocument();
   });
 
   it('navigates home after password login without a returnUrl', async () => {

@@ -98,5 +98,6 @@ bun i18n:sort
 bun i18n:check
 ```
 
-Run `bun validate` for TypeScript, JavaScript, messages, or repo config changes
-unless an unrelated pre-existing blocker prevents it.
+Run `bun check:changed` before pushing TypeScript, JavaScript, messages, or repo
+config changes, and require `bun validate` to pass in CI for the exact commit. Do
+not run `bun validate` on agent machines; it can build workspace dependencies.

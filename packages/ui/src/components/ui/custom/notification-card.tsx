@@ -35,6 +35,10 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useState } from 'react';
 
+import {
+  type NotificationCodeText,
+  notificationDisplayText,
+} from './notification-code-text';
 import { useNotificationRuntime } from './notification-runtime';
 
 dayjs.extend(relativeTime);
@@ -50,6 +54,7 @@ interface NotificationCardProps {
   declineText: string;
   acceptedText: string;
   declinedText: string;
+  codeText?: NotificationCodeText;
 }
 
 function getWorkspaceInviteWorkspaceId(notification: Notification) {
@@ -79,7 +84,9 @@ export function NotificationCard({
   declineText,
   acceptedText,
   declinedText,
+  codeText,
 }: NotificationCardProps) {
+  const displayText = notificationDisplayText(notification, codeText);
   const isUnread = !notification.read_at;
   const [processingAction, setProcessingAction] = useState<string | null>(null);
   const { router, params, pathname, Link } = useNotificationRuntime();
@@ -174,12 +181,12 @@ export function NotificationCard({
         {/* Content */}
         <div className="min-w-0 flex-1">
           <div className="mb-1 font-medium text-sm leading-snug">
-            {notification.title}
+            {displayText.title}
           </div>
 
-          {notification.description && (
+          {displayText.description && (
             <div className="mb-1.5 line-clamp-2 text-foreground/70 text-xs leading-relaxed">
-              {notification.description}
+              {displayText.description}
             </div>
           )}
 

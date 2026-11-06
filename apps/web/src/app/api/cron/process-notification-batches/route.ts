@@ -6,8 +6,8 @@ import NotificationDigestEmail, {
 } from '@tuturuuu/transactional/emails/notification-digest';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { withWebCronLogDrain as withCronLogDrain } from '@/lib/cron/web-cron';
 import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
-import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 import {
   beginBatchDeliveryAttempt,
   fetchNotificationBatchReconciliation,

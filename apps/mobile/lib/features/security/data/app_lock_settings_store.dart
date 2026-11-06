@@ -1,4 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobile/data/sources/device_secure_storage.dart';
 
 enum AppLockDelay {
   immediately(Duration.zero),
@@ -22,9 +23,8 @@ abstract interface class AppLockSettingsStore {
 }
 
 class SecureStorageAppLockSettingsStore implements AppLockSettingsStore {
-  SecureStorageAppLockSettingsStore({
-    FlutterSecureStorage secureStorage = const FlutterSecureStorage(),
-  }) : _secureStorage = secureStorage;
+  SecureStorageAppLockSettingsStore({FlutterSecureStorage? secureStorage})
+    : _secureStorage = secureStorage ?? deviceSecureStorage;
 
   static const _enabledKey = 'app-lock-enabled';
   static const _delayKey = 'app-lock-delay';

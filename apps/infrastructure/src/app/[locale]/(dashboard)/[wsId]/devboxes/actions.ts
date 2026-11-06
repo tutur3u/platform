@@ -9,6 +9,7 @@ import {
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import { setDevboxRunnerDrain } from '@/lib/devboxes/admin-runner-control';
 import {
   type DevboxRunnerFeature,
   revokeDevboxRunner,
@@ -29,7 +30,7 @@ async function requireDevboxInfrastructureAdmin(wsId: string) {
     redirectTo: `/${wsId}/settings`,
   });
 
-  const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
+  const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
   if (
     !permissions ||
     (permissions.withoutPermission('manage_workspace_secrets') &&
@@ -42,6 +43,7 @@ async function requireDevboxInfrastructureAdmin(wsId: string) {
 
 function revalidateDevboxPage(wsId: string) {
   revalidatePath(`/${wsId}/devboxes`);
+  revalidatePath(`/${wsId}/fleet`, 'layout');
 }
 
 export async function releaseDevboxLeaseAction(wsId: string, leaseId: string) {
@@ -141,5 +143,18 @@ export async function restartDevboxRunnerAction(
 export async function stopDevboxRunAction(wsId: string, runId: string) {
   await requireDevboxInfrastructureAdmin(wsId);
   await stopDevboxRun(runId);
+  revalidateDevboxPage(wsId);
+}
+
+export async function setDevboxRunnerDrainAction(
+  wsId: string,
+  runnerId: string,
+  draining: boolean
+) {
+  await requireDevboxInfrastructureAdmin(wsId);
+  await setDevboxRunnerDrain(
+    z.string().uuid().parse(runnerId),
+    draining === true
+  );
   revalidateDevboxPage(wsId);
 }

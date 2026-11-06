@@ -56,7 +56,7 @@ async function runParent() {
     config: configPath,
     main,
     sourceSHA,
-    canonicalHost: 'calendar-ci.invalid',
+    canonicalHost: 'calendar.tuturuuu.com',
     ownerPackage: resolve(app, 'package.json'),
     seal: await sealArtifact(root, 'calendar'),
     outbound: denyCalendarOutbound([]),
@@ -204,7 +204,7 @@ async function runChild() {
     });
   }
   const fetchWorker = (path, headers = {}) =>
-    runtime.worker.fetch(`https://calendar-ci.invalid${path}`, {
+    runtime.worker.fetch(`https://calendar.tuturuuu.com${path}`, {
       headers,
       redirect: 'manual',
     });
@@ -225,7 +225,7 @@ async function runChild() {
           assert.equal(
             response.status,
             200,
-            `Calendar request=https://calendar-ci.invalid${path.slice(0, 160)} location=${(response.headers.get('location') ?? '<absent>').split(/[?#]/, 1)[0].slice(0, 240)}`
+            `Calendar request=https://calendar.tuturuuu.com${path.slice(0, 160)} location=${(response.headers.get('location') ?? '<absent>').split(/[?#]/, 1)[0].slice(0, 240)}`
           );
         } catch (error) {
           primary = error;
@@ -245,6 +245,25 @@ async function runChild() {
         const asset = await fetchWorker(module);
         assert.equal(asset.status, 200);
         assert.match(asset.headers.get('content-type') ?? '', /javascript/);
+      }
+      assert.deepEqual(unexpected, []);
+    }
+  );
+  checkedTest(
+    'native offline fallback and stylesheet keep their exact public URLs',
+    async () => {
+      for (const [path, type] of [
+        ['/offline.html', /text\/html/],
+        ['/offline.css', /text\/css/],
+      ]) {
+        const response = await fetchWorker(path);
+        assert.equal(response.status, 200, `${path} must not redirect`);
+        assert.equal(response.headers.get('location'), null);
+        assert.match(response.headers.get('content-type') ?? '', type);
+        assert.equal(
+          await response.text(),
+          readFileSync(resolve(app, `dist/client${path}`), 'utf8')
+        );
       }
       assert.deepEqual(unexpected, []);
     }

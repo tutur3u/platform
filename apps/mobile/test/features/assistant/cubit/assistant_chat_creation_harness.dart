@@ -108,6 +108,7 @@ class CreationRepository extends AssistantRepository {
     required String wsId,
     required AssistantFilePickerResult file,
     String? chatId,
+    void Function(double progress)? onProgress,
   }) async {
     uploads.add(chatId!);
     return AssistantAttachment(

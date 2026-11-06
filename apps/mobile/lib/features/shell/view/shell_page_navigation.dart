@@ -32,7 +32,7 @@ extension _ShellPageNavigation on _ShellPageState {
           repeat: false,
           play: widget.matchedLocation == Routes.assistant,
         ),
-        semanticLabel: l10n.navAssistant,
+        semanticLabel: l10n.navMira,
         itemIndex: 1,
       ),
     ),
@@ -41,7 +41,7 @@ extension _ShellPageNavigation on _ShellPageState {
       key: _ShellPageState._notificationsKey,
       child: _buildCompactNavIcon(
         icon: Icons.notifications_outlined,
-        semanticLabel: l10n.notificationsTitle,
+        semanticLabel: l10n.navInbox,
         itemIndex: 3,
       ),
     ),
@@ -50,7 +50,7 @@ extension _ShellPageNavigation on _ShellPageState {
       child: _buildCompactNavIcon(
         icon: Icons.person_outline_rounded,
         image: const ProfileNavigationAvatar(),
-        semanticLabel: l10n.profileTitle,
+        semanticLabel: l10n.navYou,
         itemIndex: 4,
       ),
     ),
@@ -176,40 +176,8 @@ extension _ShellPageNavigation on _ShellPageState {
         .toList(growable: false);
   }
 
-  int _miniSelectedIndex(String location, List<MiniAppNavItem> items) {
-    if (items.isEmpty) {
-      return 0;
-    }
-
-    String normalize(String value) {
-      var normalized = value;
-      while (normalized.length > 1 && normalized.endsWith('/')) {
-        normalized = normalized.substring(0, normalized.length - 1);
-      }
-      return normalized;
-    }
-
-    final normalizedLocation = normalize(location);
-    var bestIndex = 0;
-    var bestMatchLength = -1;
-
-    for (var index = 0; index < items.length; index++) {
-      final route = normalize(items[index].route);
-      final isMatch =
-          normalizedLocation == route ||
-          normalizedLocation.startsWith('$route/');
-      if (!isMatch) {
-        continue;
-      }
-
-      if (route.length > bestMatchLength) {
-        bestMatchLength = route.length;
-        bestIndex = index;
-      }
-    }
-
-    return bestMatchLength >= 0 ? bestIndex : 0;
-  }
+  int _miniSelectedIndex(String location, List<MiniAppNavItem> items) =>
+      miniNavSelectedIndex(location, items);
 
   Key? _selectedKeyForLocation(String location) {
     if (location == Routes.home) {

@@ -1,18 +1,15 @@
 import { getWorkspaceStorageRolloutState } from '@tuturuuu/storage-core/workspace-storage-migration';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import {
-  getPermissions,
-  getWorkspace,
-  verifySecret,
-} from '@tuturuuu/utils/workspace-helper';
+import { getWorkspace, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { getWorkspaceSecretsAccess } from '@/legacy-api-routes/workspaces/[wsId]/secrets/access';
 import { secretColumns } from './columns';
 import SecretForm from './form';
 import { PeriodicReportDeliveryReadiness } from './periodic-report-delivery-readiness';
@@ -39,23 +36,21 @@ export default async function WorkspaceSecretsPage({
   params,
   searchParams,
 }: Props) {
+  await connection();
+
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
   if (!workspace) notFound();
   const wsId = workspace?.id;
 
-  // Enforce permission check - only users with manage_workspace_secrets can access
-  const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
-  if (!permissions) notFound();
-  const { withoutPermission } = permissions;
+  const access = await getWorkspaceSecretsAccess(wsId);
+  if (!access.allowed) notFound();
 
-  if (withoutPermission('manage_workspace_secrets')) {
-    throw new Error(
-      'Unauthorized: manage_workspace_secrets permission required'
-    );
-  }
-
-  const { data: secrets, count } = await getSecrets(wsId, await searchParams);
+  const { data: secrets, count } = await getSecrets(
+    access.db,
+    wsId,
+    await searchParams
+  );
   const [rolloutState, globalGateEnabled, periodicGateEnabled, senderResult] =
     await Promise.all([
       getWorkspaceStorageRolloutState(wsId),
@@ -122,6 +117,7 @@ export default async function WorkspaceSecretsPage({
 }
 
 async function getSecrets(
+  supabase: TypedSupabaseClient,
   wsId: string,
   {
     q,
@@ -129,8 +125,6 @@ async function getSecrets(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = await createClient();
-
   const queryBuilder = supabase
     .from('workspace_secrets')
     .select('*', {
@@ -152,5 +146,5 @@ async function getSecrets(
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  return { data, count } as { data: WorkspaceSecret[]; count: number };
+  return { data: data ?? [], count: count ?? 0 };
 }

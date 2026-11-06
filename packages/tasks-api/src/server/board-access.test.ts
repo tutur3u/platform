@@ -45,6 +45,20 @@ function createQuery(result: QueryResult) {
 
 function createSupabaseMock(results: Record<string, QueryResult[]>) {
   return {
+    auth: {
+      admin: {
+        getUserById: async (id: string) => ({
+          data: {
+            user: {
+              id,
+              email: 'guest@example.com',
+              email_confirmed_at: '2026-01-01',
+            },
+          },
+          error: null,
+        }),
+      },
+    },
     from: vi.fn((table: string) => {
       const result = results[table]?.shift() ?? { data: [], error: null };
       return createQuery(result);

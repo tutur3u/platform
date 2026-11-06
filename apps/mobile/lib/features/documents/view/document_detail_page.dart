@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -14,7 +15,6 @@ import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class DocumentDetailPage extends StatefulWidget {
@@ -140,17 +140,17 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     final wsId = _wsId;
     if (wsId == null || wsId.isEmpty) return;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.documentsDelete),
+      builder: (context) => AppDialog(
+        title: context.l10n.documentsDelete,
         content: Text(context.l10n.documentsDeleteConfirm),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.primary(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonDelete),
           ),
@@ -252,7 +252,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
               child: Material(
                 type: MaterialType.transparency,
                 child: _isLoading
-                    ? const Center(child: NovaLoadingIndicator())
+                    ? const AppLoadingIndicator.page()
                     : _error != null
                     ? Center(child: Text(_error!))
                     : Column(
@@ -279,14 +279,16 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                                 TextField(
                                   controller: _titleController,
                                   decoration: InputDecoration(
+                                    hintText: context
+                                        .l10n
+                                        .inputPlaceholderDocumentName,
                                     labelText:
                                         context.l10n.documentsDocumentName,
                                   ),
                                   onChanged: (_) => setState(() {}),
                                 ),
                                 const SizedBox(height: 10),
-                                SwitchListTile(
-                                  contentPadding: EdgeInsets.zero,
+                                AppToggleRow(
                                   title: Text(context.l10n.documentsPublic),
                                   value: _isPublic,
                                   onChanged: (value) {

@@ -21,6 +21,7 @@ void main() {
               onPressed: () async {
                 saved = await showEventFormSheet(
                   context,
+                  isCurrentScope: () => true,
                   event: missingEventTime
                       ? const CalendarEvent(
                           id: 'missing-time',
@@ -77,6 +78,7 @@ void main() {
               onPressed: () async {
                 saved = await showEventFormSheet(
                   context,
+                  isCurrentScope: () => true,
                   event: event,
                   timezone: sample.$3,
                 );
@@ -123,6 +125,7 @@ void main() {
               onPressed: () async {
                 saved = await showEventFormSheet(
                   context,
+                  isCurrentScope: () => true,
                   event: event,
                   timezone: zone,
                 );
@@ -172,6 +175,7 @@ void main() {
             onPressed: () async {
               saved = await showEventFormSheet(
                 context,
+                isCurrentScope: () => true,
                 initialStartTime: calendarDate(2026, 3, 8, 2, 30),
                 timezone: 'America/New_York',
               );

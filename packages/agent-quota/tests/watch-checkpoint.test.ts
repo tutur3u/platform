@@ -89,7 +89,7 @@ describe('quota turn-boundary watch', () => {
     expect(watchVerdict(remaining)).toBe('switch-now');
   });
 
-  it('watches Codex monthly-only usage and immediately switches on an exhausted window', () => {
+  it('warns on Codex monthly-only usage because model-gating scope is unknown', () => {
     const status = ownerWatchStatus(
       {
         ...pool('codex', 'codex'),
@@ -97,6 +97,8 @@ describe('quota turn-boundary watch', () => {
         windows: [
           {
             kind: 'long',
+            providerWindowKind: 'monthly',
+            scope: { kind: 'unknown' },
             usedPercent: 100,
             source: 'fixture',
             observedAt: at.toISOString(),
@@ -111,7 +113,7 @@ describe('quota turn-boundary watch', () => {
     );
     expect(status).toMatchObject({
       remaining: undefined,
-      verdict: 'switch-now',
+      verdict: 'warn',
     });
   });
 

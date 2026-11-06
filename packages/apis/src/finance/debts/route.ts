@@ -14,6 +14,7 @@ import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
 } from '../request-access';
+import { validateFinanceReferences } from '../workspace-references';
 
 type DebtLoanInsert =
   Database['private']['Tables']['workspace_debt_loans']['Insert'];
@@ -95,6 +96,12 @@ export async function POST(
   }
 
   const body = await req.json();
+  const invalidWallet = await validateFinanceReferences(
+    sbAdmin,
+    normalizedWsId,
+    { wallet_id: body.wallet_id }
+  );
+  if (invalidWallet) return invalidWallet;
 
   // Validate required fields
   if (!body.name || !body.type || !body.principal_amount) {

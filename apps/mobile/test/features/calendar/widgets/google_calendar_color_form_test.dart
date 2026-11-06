@@ -91,6 +91,7 @@ void main() {
             child: TextButton(
               onPressed: () => showEventFormSheet(
                 context,
+                isCurrentScope: () => true,
                 event: CalendarEvent.fromJson({
                   'id': 'event',
                   'title': 'Meeting',
@@ -137,6 +138,7 @@ void main() {
               onPressed: () async {
                 saved = await showEventFormSheet(
                   context,
+                  isCurrentScope: () => true,
                   event: event,
                   timezone: 'America/New_York',
                   providerColors: _options(),

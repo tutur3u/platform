@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 
 REQUIRED = (
-    "CLIENT_ID", "REVERSED_CLIENT_ID", "API_KEY", "GCM_SENDER_ID",
+    "API_KEY", "GCM_SENDER_ID",
     "GOOGLE_APP_ID", "BUNDLE_ID", "PROJECT_ID",
 )
 
@@ -17,9 +17,12 @@ def load_config(path):
         config = plistlib.loads(path.read_bytes())
     except (OSError, ValueError, plistlib.InvalidFileException):
         raise ValueError("Missing or invalid Firebase service plist") from None
-    if not isinstance(config, dict) or any(
+    if not isinstance(config, dict):
+        raise ValueError("Firebase service plist must be a dictionary")
+    optional = tuple(key for key in ("CLIENT_ID", "REVERSED_CLIENT_ID") if key in config)
+    if any(
         not isinstance(config.get(key), str) or not config[key].strip()
-        or "dummy" in config[key].lower() for key in REQUIRED
+        or "dummy" in config[key].lower() for key in (*REQUIRED, *optional)
     ):
         raise ValueError("Firebase service plist lacks valid required fields")
     return config

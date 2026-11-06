@@ -47,6 +47,13 @@ extension _AssistantPageLiveActions on _AssistantPageState {
     );
   }
 
+  /// The page syncs a workspace switch on its next build; Live starts also
+  /// read the live selection, so a token answered in between cannot open a
+  /// call for the previous workspace.
+  bool _isWorkspaceSelected(String wsId) =>
+      mounted &&
+      context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId;
+
   Future<void> _handleLiveRetry(
     String wsId,
     AssistantChatState chatState,
@@ -65,6 +72,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
         wsId: wsId,
         chatId: chatState.chat?.id ?? chatState.storedChatId,
         reconnect: _liveCubit.state.chatId != null,
+        isCurrent: () => _isWorkspaceSelected(wsId),
       );
     } finally {
       _liveStartGate.finish(attempt);
@@ -116,12 +124,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
       if (!isVisibleLiveSession || liveState.status.isDisconnectedOrErrored) {
         unawaited(_presentLiveCall(wsId, startAttempt: startSettled.future));
       }
-      // The page syncs a workspace switch on its next build; read the live
-      // selection too, so a token answered in between cannot open a call for
-      // the previous workspace.
-      bool workspaceSelected() =>
-          mounted &&
-          context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId;
+      bool workspaceSelected() => _isWorkspaceSelected(wsId);
       await enableAssistantLiveMicrophone(
         liveCubit: _liveCubit,
         prepareSession:

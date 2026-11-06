@@ -59,7 +59,7 @@ void registerShellViewportChecks(
           findsNothing,
         );
         expect(find.bySemanticsLabel('Home'), findsOneWidget);
-        expect(find.bySemanticsLabel('Assistant'), findsOneWidget);
+        expect(find.bySemanticsLabel('Mira'), findsOneWidget);
         expect(
           find.descendant(
             of: find.byType(MorphingNavigationBar),
@@ -219,7 +219,7 @@ Future<void> _expectRailViewport(WidgetTester tester, Size size) async {
     ),
     findsOneWidget,
   );
-  expect(find.bySemanticsLabel('Assistant'), findsOneWidget);
+  expect(find.bySemanticsLabel('Mira'), findsOneWidget);
   // The idle dock paints no second navigation surface beside the rail.
   expect(
     find.descendant(

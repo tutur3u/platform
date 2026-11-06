@@ -47,10 +47,7 @@ export function hasRootExternalProjectsAdminPermission(
 ) {
   if (!permissions) return false;
 
-  return (
-    permissions.containsPermission('manage_external_projects') ||
-    permissions.containsPermission('manage_workspace_roles')
-  );
+  return permissions.containsPermission('manage_external_projects');
 }
 
 function hasWorkspaceExternalProjectPermission(

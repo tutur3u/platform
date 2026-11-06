@@ -5,6 +5,9 @@ import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 /// Short alert body for [showAppDialog]. Replaces `shad.AlertDialog`.
+///
+/// Opened by a launcher without a surface, it draws the shared dialog frame
+/// itself; prefer [showAppDialog] for the modal Back binding.
 class AppDialog extends StatelessWidget {
   const AppDialog({
     required this.title,
@@ -19,6 +22,30 @@ class AppDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final body = _body(context);
+    if (AppSheetSurface.hosts(context)) return body;
+    // A legacy launcher (Material or shadcn showDialog) gives no surface:
+    // draw the same centred, width-capped, keyboard-safe dialog frame that
+    // showAppDialog uses so the controls never float over the page.
+    return AppSheetKeyboardInset(
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 440,
+                maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+              ),
+              child: AppSheetSurface(dialog: true, child: body),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _body(BuildContext context) {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
     return Semantics(

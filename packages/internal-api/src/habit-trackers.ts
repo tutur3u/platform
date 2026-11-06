@@ -59,6 +59,32 @@ export async function createWorkspaceHabitTracker(
   return payload.tracker;
 }
 
+/**
+ * Creates a tracker and reports whether it is new. With `creation_key`, a
+ * repeat returns the existing active tracker with `created: false`.
+ */
+export async function createWorkspaceHabitTrackerWithStatus(
+  wsId: string,
+  input: HabitTrackerInput,
+  options?: InternalApiClientOptions
+) {
+  const client = getTaskApiClient(options);
+  const payload = await client.json<{
+    tracker: HabitTracker;
+    created?: boolean;
+  }>(`/api/v1/workspaces/${encodePathSegment(wsId)}/habit-trackers`, {
+    method: 'POST',
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  });
+
+  // Servers without idempotent creation always create.
+  return { tracker: payload.tracker, created: payload.created !== false };
+}
+
 export async function getWorkspaceHabitTracker(
   wsId: string,
   trackerId: string,
@@ -157,6 +183,34 @@ export async function createWorkspaceHabitTrackerEntry(
   );
 
   return payload.entry;
+}
+
+/**
+ * Creates an entry and reports whether `idempotency_key` replayed a stored one.
+ */
+export async function createWorkspaceHabitTrackerEntryWithStatus(
+  wsId: string,
+  trackerId: string,
+  input: HabitTrackerEntryInput,
+  options?: InternalApiClientOptions
+) {
+  const client = getTaskApiClient(options);
+  const payload = await client.json<{
+    entry: HabitTrackerEntry;
+    replayed?: boolean;
+  }>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/habit-trackers/${encodePathSegment(trackerId)}/entries`,
+    {
+      method: 'POST',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    }
+  );
+
+  return { entry: payload.entry, replayed: payload.replayed === true };
 }
 
 export async function updateWorkspaceHabitTrackerEntry(

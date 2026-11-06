@@ -3,6 +3,7 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/glass_effects.dart';
 import 'package:mobile/core/ui/overlays/app_modal_scope.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
@@ -11,8 +12,9 @@ import 'package:mobile/widgets/app_dialog_scaffold.dart';
 ///
 /// The dialog variant is constrained to [maxDialogWidth] (default 560).
 ///
-/// Uses the app surface by default. Callers with their own shaped surface can
-/// explicitly opt into a transparent background.
+/// Compact sheets use the shared `AppSheetSurface` (drag handle, popover
+/// fill, keyboard inset), the same surface as `showAppSheet`. Callers with
+/// their own shaped surface can explicitly opt into a transparent background.
 ///
 /// Wraps overlay content with an [AppModalBinding] so system Back and the
 /// shell's floating-dock Back close the overlay instead of popping the page
@@ -42,9 +44,31 @@ Future<T?> showAdaptiveSheet<T>({
       useSafeArea: useSafeArea,
       isDismissible: isDismissible,
       enableDrag: enableDrag,
-      builder: (sheetContext) => AppModalBinding(
-        dismissible: isDismissible || enableDrag,
-        child: _sheetSurface(sheetContext, builder(sheetContext), surface),
+      // The caller's builder runs below the consumed keyboard inset, so a
+      // body that still pads for the keyboard does not reserve it twice.
+      builder: (sheetContext) => AppSheetKeyboardInset(
+        child: Builder(
+          builder: (bodyContext) {
+            final child = builder(bodyContext);
+            // Bodies that bring their own card keep it; everything else
+            // gets the shared sheet surface and handle.
+            if (child is AppDialogScaffold || surface.a == 0) {
+              return AppModalBinding(
+                dismissible: isDismissible || enableDrag,
+                child: AppearanceScope.opaqueScaffolds(child),
+              );
+            }
+            return ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.94,
+              ),
+              child: AppModalBinding(
+                dismissible: isDismissible || enableDrag,
+                child: AppSheetSurface(showHandle: enableDrag, child: child),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -85,80 +109,31 @@ Widget _sheetSurface(BuildContext context, Widget child, Color surface) {
       sigma: 20,
       child: Material(
         color: surface.withValues(alpha: GlassEffects.fillAlpha(context, 0.88)),
-        child: AppearanceScope.opaqueScaffolds(child),
-      ),
-    ),
-  );
-}
-
-/// Opens a shadcn bottom drawer on compact screens and a centered dialog on
-/// medium / expanded screens.
-///
-/// Returns a [Future] that completes when the overlay is dismissed, so callers
-/// can optionally `await` it to run logic after the overlay closes.
-///
-/// Wraps overlay content with a [BackButtonListener] so the Android hardware
-/// back button dismisses the overlay instead of triggering shell navigation.
-Future<void> showAdaptiveDrawer({
-  required BuildContext context,
-  required Widget Function(BuildContext) builder,
-  double maxDialogWidth = 560,
-}) async {
-  final rootNavigatorContext = Navigator.of(
-    context,
-    rootNavigator: true,
-  ).context;
-
-  if (context.isCompact) {
-    await shad.openDrawer<void>(
-      context: rootNavigatorContext,
-      position: shad.OverlayPosition.bottom,
-      builder: (drawerContext) => BackButtonListener(
-        onBackButtonPressed: () async {
-          if (drawerContext.mounted) {
-            await shad.closeOverlay<void>(drawerContext);
-          }
-          return true;
-        },
-        child: AppearanceScope.opaqueScaffolds(builder(drawerContext)),
-      ),
-    );
-    return;
-  }
-
-  await showDialog<void>(
-    context: context,
-    barrierColor: Colors.black.withValues(alpha: 0.48),
-    builder: (dialogContext) => BackButtonListener(
-      onBackButtonPressed: () async {
-        if (dialogContext.mounted) {
-          await Navigator.maybePop(dialogContext);
-        }
-        return true;
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxDialogWidth),
-            child: Material(
-              color: shad.Theme.of(dialogContext).colorScheme.background,
-              borderRadius: BorderRadius.circular(12),
-              clipBehavior: Clip.antiAlias,
-              child: AppearanceScope.opaqueScaffolds(builder(dialogContext)),
-            ),
-          ),
+        child: AppSheetSurface.markHosted(
+          AppearanceScope.opaqueScaffolds(child),
         ),
       ),
     ),
   );
 }
 
-Future<void> dismissAdaptiveDrawerOverlay(BuildContext context) async {
-  if (context.isCompact) {
-    await shad.closeOverlay<void>(context);
-    return;
-  }
+/// Opens a bottom sheet on compact screens and a centered dialog on
+/// medium / expanded screens, above the shell chrome (root navigator).
+///
+/// Uses the shared `showAppSheet` / `showAppDialog` host, so drawers share
+/// the sheet surface, drag handle, keyboard inset and modal Back binding.
+/// Close it with [dismissAdaptiveDrawerOverlay] or a Navigator pop.
+Future<void> showAdaptiveDrawer({
+  required BuildContext context,
+  required Widget Function(BuildContext) builder,
+  double maxDialogWidth = 560,
+}) => showAppSheet<void>(
+  context: context,
+  useRootNavigator: true,
+  maxDialogWidth: maxDialogWidth,
+  builder: builder,
+);
 
-  await Navigator.maybePop(context);
-}
+/// Closes the drawer that [context] belongs to.
+Future<void> dismissAdaptiveDrawerOverlay(BuildContext context) =>
+    Navigator.maybePop(context);

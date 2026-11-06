@@ -1,5 +1,6 @@
 import { calendarToolDefinitions } from './definitions/calendar';
 import { financeToolDefinitions } from './definitions/finance';
+import { habitToolDefinitions } from './definitions/habits';
 import { imageToolDefinitions } from './definitions/image';
 import { mailToolDefinitions } from './definitions/mail';
 import { memoryToolDefinitions } from './definitions/memory';
@@ -17,6 +18,7 @@ type MiraToolDefinitions = typeof metaToolDefinitions &
   typeof mailToolDefinitions &
   typeof financeToolDefinitions &
   typeof timeTrackingToolDefinitions &
+  typeof habitToolDefinitions &
   typeof memoryToolDefinitions &
   typeof imageToolDefinitions &
   typeof workspaceContextToolDefinitions &
@@ -48,6 +50,7 @@ export const miraToolDefinitions = mergeUniqueToolDefinitions(
   mailToolDefinitions,
   financeToolDefinitions,
   timeTrackingToolDefinitions,
+  habitToolDefinitions,
   memoryToolDefinitions,
   imageToolDefinitions,
   workspaceContextToolDefinitions,

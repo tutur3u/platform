@@ -3,17 +3,28 @@ const test = require('node:test');
 
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 const { DEFAULT_MATRIX } = require('./e2e-result-plan');
+const { UNADMITTED_GROUP_SUFFIX } = require('./pr-label-gate');
 
 test('translation checks run once per PR update and still cover both protected branches and forks', () => {
   const workflow = readWorkflow('i18n-check.yaml');
   assert.deepEqual(workflow.on.push.branches, ['main', 'production']);
-  assert.equal(workflow.on.pull_request, null);
+  // PR updates reach this workflow only through the consolidated Cheap PR
+  // Checks caller, so a PR update never starts a second translation run.
+  assert.ok(Object.hasOwn(workflow.on, 'workflow_call'));
+  assert.equal(Object.hasOwn(workflow.on, 'pull_request'), false);
+  const caller = readWorkflow('pr-checks.yaml');
+  assert.ok(caller.on.pull_request, 'Cheap PR Checks must run on pull_request');
+  assert.equal(caller.jobs.i18n.uses, './.github/workflows/i18n-check.yaml');
+  // pull_request (not a head-repository filter) keeps fork PRs covered.
+  assert.doesNotMatch(caller.jobs.i18n.if, /head\.repo|fork/u);
   assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
   // PR and main runs coalesce; production and manual attempts retain exact evidence.
   assert.equal(
     workflow.concurrency.group,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-    "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}"
+    'i18n-check-' +
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
+      "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}" +
+      UNADMITTED_GROUP_SUFFIX
   );
   for (const id of [
     'i18n-sort-check',
@@ -85,8 +96,12 @@ test('superseded PR runs cancel, production release evidence does not', () => {
     );
     assert.equal(
       concurrency.group,
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
-      "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}"
+      // Reusable callees carry a workflow prefix so their groups cannot collide
+      // with the caller's group.
+      (name === 'i18n-check.yaml' ? 'i18n-check-' : '') +
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
+        "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}" +
+        (name === 'i18n-check.yaml' ? UNADMITTED_GROUP_SUFFIX : '')
     );
   }
 });

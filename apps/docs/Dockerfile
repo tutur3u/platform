@@ -1,6 +1,6 @@
 FROM node:24-bookworm-slim AS deps
 
-ARG MINTLIFY_VERSION=4.2.520
+ARG MINTLIFY_VERSION=4.2.1184
 
 RUN npm install --global --prefix /opt/mintlify "mintlify@${MINTLIFY_VERSION}"
 

@@ -392,7 +392,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
                     ),
                   Expanded(
                     child: _checkingRoom
-                        ? const Center(child: NovaLoadingIndicator(size: 28))
+                        ? const AppLoadingIndicator.page()
                         : _endedReview != null
                         ? MeetEndedReview(
                             review: _endedReview!,
@@ -421,9 +421,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
                         : _call.requiresDeviceChoice
                         ? buildMeetDeviceChoice(context, _call)
                         : switch ((_call.ended, _call.admission)) {
-                            (true, _) => const Center(
-                              child: NovaLoadingIndicator(size: 28),
-                            ),
+                            (true, _) => const AppLoadingIndicator.page(),
                             _
                                 when _call.error != null &&
                                     _call.status != 'open' =>

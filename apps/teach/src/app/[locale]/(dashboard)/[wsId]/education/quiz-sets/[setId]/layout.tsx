@@ -1,13 +1,13 @@
 import { Box, Eye, Paperclip } from '@tuturuuu/icons';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceQuizSet } from '@tuturuuu/types';
 import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { requireQuizSetPageAccess } from '@/lib/quiz-set-page-access';
+import { requireTeachWorkspaceMember } from '@/lib/require-teach-workspace-member';
+import { getQuizSetSummary } from './data';
 
 interface Props {
   children: ReactNode;
@@ -26,11 +26,15 @@ export default async function QuizSetDetailsLayout({
 
   const t = await getTranslations();
   const { wsId, setId } = await params;
+  await requireTeachWorkspaceMember(wsId, 'ai_lab');
   const commonHref = `/${wsId}/education/quiz-sets/${setId}`;
 
-  const data = await getData(setId);
-  const linkedQuizzes = await getLinkedQuizzes(setId);
-  const linkedModules = await getLinkedModules(setId);
+  const { resolvedWsId } = await requireQuizSetPageAccess(wsId, setId);
+  const {
+    set: data,
+    linkedQuizzes,
+    linkedModules,
+  } = await getQuizSetSummary(resolvedWsId, setId);
 
   return (
     <>
@@ -70,43 +74,4 @@ export default async function QuizSetDetailsLayout({
       {children}
     </>
   );
-}
-
-async function getData(setId: string) {
-  const supabase = await createAdminClient();
-
-  const { data, error } = await supabase
-    .from('workspace_quiz_sets')
-    .select('*')
-    .eq('id', setId)
-    .maybeSingle();
-
-  if (error) throw error;
-  if (!data) notFound();
-
-  return data as WorkspaceQuizSet;
-}
-
-async function getLinkedQuizzes(setId: string) {
-  const supabase = await createAdminClient();
-
-  const { count, error } = await supabase
-    .from('quiz_set_quizzes')
-    .select('*', { count: 'exact', head: true })
-    .eq('set_id', setId);
-  if (error) throw error;
-
-  return count;
-}
-
-async function getLinkedModules(setId: string) {
-  const supabase = await createAdminClient();
-
-  const { count, error } = await supabase
-    .from('course_module_quiz_sets')
-    .select('*', { count: 'exact', head: true })
-    .eq('set_id', setId);
-  if (error) throw error;
-
-  return count;
 }

@@ -2,6 +2,7 @@
 
 import {
   BookOpenCheck,
+  CalendarDays,
   type LucideIcon,
   Megaphone,
   Send,
@@ -17,6 +18,7 @@ import { useTopicAnnouncements } from './topic-announcements-context';
 
 type TabSegment =
   | 'announcements'
+  | 'schedule'
   | 'delivery'
   | 'contacts'
   | 'templates'
@@ -24,6 +26,7 @@ type TabSegment =
 
 type TabLabelKey =
   | 'nav_announcements'
+  | 'nav_schedule'
   | 'nav_delivery'
   | 'nav_contacts'
   | 'nav_templates'
@@ -45,6 +48,7 @@ function getActiveSegment(pathname: string): TabSegment {
   const rest = pathname.slice(index + marker.length).replace(/^\/+/, '');
   const segment = rest.split('/')[0];
   if (
+    segment === 'schedule' ||
     segment === 'delivery' ||
     segment === 'contacts' ||
     segment === 'templates' ||
@@ -59,7 +63,7 @@ export function TopicAnnouncementsTabNav() {
   const t = useTranslations('ws-topic-announcements');
   const pathname = usePathname();
   const params = useParams<{ wsId: string }>();
-  const { overview } = useTopicAnnouncements();
+  const { overview, teacherAssignmentsEnabled } = useTopicAnnouncements();
   const wsId = params?.wsId;
   const active = getActiveSegment(pathname ?? '');
 
@@ -72,6 +76,16 @@ export function TopicAnnouncementsTabNav() {
           labelKey: 'nav_announcements',
           icon: Megaphone,
         },
+        // The monthly GVNN schedule exists only with teacher assignments on.
+        ...(teacherAssignmentsEnabled
+          ? [
+              {
+                segment: 'schedule' as const,
+                labelKey: 'nav_schedule' as const,
+                icon: CalendarDays,
+              },
+            ]
+          : []),
         {
           segment: 'delivery',
           labelKey: 'nav_delivery',

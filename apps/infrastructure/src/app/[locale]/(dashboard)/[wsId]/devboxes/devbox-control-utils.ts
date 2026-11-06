@@ -1,41 +1,14 @@
+import { type OpsToneClasses, opsToneClasses } from '@tuturuuu/ui/custom/ops';
 import type { DevboxAdminRunner } from '@/lib/devboxes/admin-store';
 
 export type DevboxTone = 'amber' | 'blue' | 'green' | 'muted' | 'red';
 
-export const devboxToneClasses: Record<
-  DevboxTone,
-  { border: string; dot: string; soft: string; text: string }
-> = {
-  amber: {
-    border: 'border-dynamic-yellow/40',
-    dot: 'bg-dynamic-yellow',
-    soft: 'border-dynamic-yellow/30 bg-dynamic-yellow/10',
-    text: 'text-dynamic-yellow',
-  },
-  blue: {
-    border: 'border-dynamic-blue/40',
-    dot: 'bg-dynamic-blue',
-    soft: 'border-dynamic-blue/30 bg-dynamic-blue/10',
-    text: 'text-dynamic-blue',
-  },
-  green: {
-    border: 'border-dynamic-green/40',
-    dot: 'bg-dynamic-green',
-    soft: 'border-dynamic-green/30 bg-dynamic-green/10',
-    text: 'text-dynamic-green',
-  },
-  muted: {
-    border: 'border-border',
-    dot: 'bg-muted-foreground',
-    soft: 'border-border bg-muted/30',
-    text: 'text-muted-foreground',
-  },
-  red: {
-    border: 'border-dynamic-red/40',
-    dot: 'bg-dynamic-red',
-    soft: 'border-dynamic-red/30 bg-dynamic-red/10',
-    text: 'text-dynamic-red',
-  },
+export const devboxToneClasses: Record<DevboxTone, OpsToneClasses> = {
+  amber: opsToneClasses.warning,
+  blue: opsToneClasses.info,
+  green: opsToneClasses.positive,
+  muted: opsToneClasses.neutral,
+  red: opsToneClasses.critical,
 };
 
 export const ONLINE_HEARTBEAT_MS = 2 * 60 * 1000;

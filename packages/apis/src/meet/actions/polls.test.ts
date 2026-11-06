@@ -92,6 +92,7 @@ const mocks = vi.hoisted(() => {
     createAdminClient: vi.fn(),
     createClient: vi.fn(),
     from,
+    getPlan: vi.fn(),
     mutations,
     queue(
       table: string,
@@ -122,6 +123,8 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: (...args: unknown[]) => mocks.createClient(...args),
 }));
 
+vi.mock('@tuturuuu/utils/plan-helpers', () => ({ getPlan: mocks.getPlan }));
+
 vi.mock('next/cache', () => ({
   revalidatePath: (...args: unknown[]) => mocks.revalidatePath(...args),
 }));
@@ -131,12 +134,55 @@ describe('Meet poll mutation authorization', () => {
     vi.resetModules();
     vi.clearAllMocks();
     mocks.resetDatabase();
+    mocks.getPlan.mockResolvedValue({
+      id: 'plan-1',
+      is_public: true,
+      ws_id: null,
+    });
     mocks.createAdminClient.mockResolvedValue({ from: mocks.from });
     mocks.createClient.mockResolvedValue({ session: true });
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       authError: null,
       user: { id: 'platform-user-1' },
     });
+  });
+
+  it('denies an inaccessible plan before a platform actor reads polls', async () => {
+    mocks.getPlan.mockResolvedValue(null);
+    const { submitVote } = await import('./polls.js');
+    expect(
+      await submitVote('private-plan', {
+        pollId: 'poll-1',
+        optionIds: ['option-1'],
+        userType: 'PLATFORM',
+      })
+    ).toEqual({ error: 'Unauthorized' });
+    expect(mocks.getPlan).toHaveBeenCalledWith('private-plan', {
+      actorUserId: 'platform-user-1',
+    });
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it('denies an inaccessible plan even with a valid guest session', async () => {
+    mocks.getPlan.mockResolvedValue(null);
+    const planId = '0b6f8a52-3c1e-4f7a-9d2b-5e8c7a6b4d3f';
+    const session = createMeetGuestSession({ guestId: 'guest-1', planId });
+    mocks.queue('meet_together_guests', 'select', 'maybeSingle', {
+      data: { id: 'guest-1', plan_id: planId },
+      error: null,
+    });
+    const { addPollOption } = await import('./polls.js');
+    expect(
+      await addPollOption(planId, {
+        guestId: 'guest-1',
+        guestSession: session.token,
+        pollId: 'poll-1',
+        userType: 'GUEST',
+        value: 'Cafe',
+      })
+    ).toEqual({ error: 'Unauthorized' });
+    expect(mocks.getPlan).toHaveBeenCalledWith(planId, { actorUserId: null });
+    expect(mocks.from).not.toHaveBeenCalled();
   });
 
   it('rejects an impersonated guest before any admin mutation', async () => {

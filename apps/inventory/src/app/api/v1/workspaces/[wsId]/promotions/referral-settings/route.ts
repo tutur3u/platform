@@ -65,6 +65,26 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   const nextValues = parsed.data;
+  if (nextValues.referral_promotion_id) {
+    const { data: promotion, error: promotionError } = await sbAdmin
+      .schema('private')
+      .from('workspace_promotions')
+      .select('id')
+      .eq('ws_id', wsId)
+      .eq('id', nextValues.referral_promotion_id)
+      .maybeSingle();
+    if (promotionError)
+      return NextResponse.json(
+        { message: 'Failed to verify promotion' },
+        { status: 500 }
+      );
+    if (!promotion)
+      return NextResponse.json(
+        { message: 'Promotion not found' },
+        { status: 404 }
+      );
+  }
+
   const { data: existingSettings } = await sbAdmin
     .from('workspace_settings')
     .select('referral_promotion_id')

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/ui.dart' show AppSheetSurface;
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
 import '../../helpers/helpers.dart';
@@ -82,50 +83,82 @@ void main() {
       },
     );
   }
-  for (final width in [390.0, 1032.0]) {
-    testWidgets('sheet glass follows the platform at width $width', (
-      tester,
-    ) async {
-      // Android draws a near-opaque fill instead of a live backdrop blur.
-      final blurred = defaultTargetPlatform != TargetPlatform.android;
-      tester.view.physicalSize = Size(width, 1376);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpApp(
-        Builder(
-          builder: (context) => TextButton(
-            onPressed: () => showAdaptiveSheet<void>(
-              context: context,
-              builder: (_) =>
-                  const SizedBox(height: 200, child: Text('Task form')),
-            ),
-            child: const Text('Open'),
+  testWidgets('compact sheets use the shared sheet surface and handle', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 1376);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpApp(
+      Builder(
+        builder: (context) => TextButton(
+          onPressed: () => showAdaptiveSheet<void>(
+            context: context,
+            builder: (_) =>
+                const SizedBox(height: 200, child: Text('Task form')),
           ),
+          child: const Text('Open'),
         ),
-      );
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
-      final materials = tester.widgetList<Material>(
-        find.ancestor(
-          of: find.text('Task form'),
-          matching: find.byType(Material),
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(
+      find.ancestor(
+        of: find.text('Task form'),
+        matching: find.byType(AppSheetSurface),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('app-sheet-handle')), findsOneWidget);
+    expect(find.byKey(const ValueKey('adaptive-sheet-glass')), findsNothing);
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    expect(find.text('Task form'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('tablet dialog glass follows the platform', (tester) async {
+    // Android draws a near-opaque fill instead of a live backdrop blur.
+    final blurred = defaultTargetPlatform != TargetPlatform.android;
+    tester.view.physicalSize = const Size(1032, 1376);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpApp(
+      Builder(
+        builder: (context) => TextButton(
+          onPressed: () => showAdaptiveSheet<void>(
+            context: context,
+            builder: (_) =>
+                const SizedBox(height: 200, child: Text('Task form')),
+          ),
+          child: const Text('Open'),
         ),
-      );
-      expect(materials.first.color?.a, closeTo(blurred ? 0.88 : 0.97, 0.01));
-      expect(
-        find.descendant(
-          of: find.byKey(const ValueKey('adaptive-sheet-glass')),
-          matching: find.byType(BackdropFilter),
-        ),
-        blurred ? findsOneWidget : findsNothing,
-      );
-      await tester.tapAt(const Offset(5, 5));
-      await tester.pumpAndSettle();
-      expect(find.text('Task form'), findsNothing);
-      expect(tester.takeException(), isNull);
-    }, variant: _glassPlatforms);
-  }
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    final materials = tester.widgetList<Material>(
+      find.ancestor(
+        of: find.text('Task form'),
+        matching: find.byType(Material),
+      ),
+    );
+    expect(materials.first.color?.a, closeTo(blurred ? 0.88 : 0.97, 0.01));
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('adaptive-sheet-glass')),
+        matching: find.byType(BackdropFilter),
+      ),
+      blurred ? findsOneWidget : findsNothing,
+    );
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    expect(find.text('Task form'), findsNothing);
+    expect(tester.takeException(), isNull);
+  }, variant: _glassPlatforms);
 }
 
 const _glassPlatforms = TargetPlatformVariant({

@@ -349,6 +349,7 @@ class _AuditFilterSheetState extends State<_AuditFilterSheet> {
             TextField(
               controller: _affectedController,
               decoration: InputDecoration(
+                hintText: context.l10n.inputPlaceholderUserId,
                 labelText: context.l10n.crmAuditAffectedUser,
               ),
             ),
@@ -356,6 +357,7 @@ class _AuditFilterSheetState extends State<_AuditFilterSheet> {
             TextField(
               controller: _actorController,
               decoration: InputDecoration(
+                hintText: context.l10n.inputPlaceholderUserId,
                 labelText: context.l10n.crmAuditActor,
               ),
             ),

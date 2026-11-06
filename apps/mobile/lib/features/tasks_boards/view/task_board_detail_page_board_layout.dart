@@ -60,7 +60,7 @@ extension on _TaskBoardDetailPageViewState {
                       Positioned.fill(
                         child: ColoredBox(
                           color: Colors.black.withValues(alpha: 0.3),
-                          child: const Center(child: NovaLoadingIndicator()),
+                          child: const AppLoadingIndicator.page(),
                         ),
                       ),
                   ],

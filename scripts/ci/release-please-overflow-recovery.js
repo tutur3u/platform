@@ -5,7 +5,10 @@ const {
   extractChangelogEntry,
   extractOverflowBranchName,
   findMergedPendingOverflowPullRequest,
+  findOpenOverflowPullRequest,
   getChangelogPath,
+  notesBranchFor,
+  overflowRecoveryTarget,
   getComponent,
   parseManifestVersionChanges,
   recoverReleasePleaseOverflowNotes,
@@ -78,6 +81,12 @@ class GitHubClient {
     });
   }
 
+  async listOpenPullRequests(targetBranch) {
+    return this.request('GET', '/pulls', {
+      query: { base: targetBranch, per_page: 25, state: 'open' },
+    });
+  }
+
   async getIssueLabels(number) {
     const issue = await this.request('GET', `/issues/${number}`);
 
@@ -120,7 +129,14 @@ class GitHubClient {
       throw new Error(`${filePath} is not a file on ${ref}`);
     }
 
-    return Buffer.from(file.content, file.encoding || 'base64').toString(
+    // The contents API omits content above 1 MB (`encoding: none`), which the
+    // root changelog exceeds; the blob API returns it in full.
+    const source =
+      file.encoding === 'none'
+        ? await this.request('GET', `/git/blobs/${file.sha}`)
+        : file;
+
+    return Buffer.from(source.content, source.encoding || 'base64').toString(
       'utf8'
     );
   }
@@ -259,7 +275,10 @@ module.exports = {
   extractChangelogEntry,
   extractOverflowBranchName,
   findMergedPendingOverflowPullRequest,
+  findOpenOverflowPullRequest,
   getChangelogPath,
+  notesBranchFor,
+  overflowRecoveryTarget,
   getComponent,
   parseManifestVersionChanges,
   recoverReleasePleaseOverflowNotes,

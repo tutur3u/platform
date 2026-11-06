@@ -14,8 +14,9 @@ an occupied branch or reset another worktree.
 
 Create the worktree from the intended base with `git worktree add <path> -b <branch>
 <base>`. Run the repository's documented setup; do not infer a build of every ecosystem
-from the presence of a manifest. For Tuturuuu use `SKIP_PORTLESS_SETUP=1 bun setup`
-in non-interactive shells. Validate the relevant baseline when needed to distinguish
+from the presence of a manifest. For Tuturuuu run `bun install` immediately after
+creating the worktree; do not run `bun setup` on agent machines because it includes
+local builds (see the root AGENTS.md). Validate the relevant baseline when needed to distinguish
 pre-existing failures from the requested change, and continue disjoint authorized work.
 
 Track the worktree's branch, owned changes, and validation. Integrate through the

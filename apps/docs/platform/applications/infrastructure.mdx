@@ -1,13 +1,67 @@
 ---
 title: 'Infrastructure'
 description: 'Privileged operations, diagnostics, configuration, and hosted scheduler ownership.'
-updatedAt: '2026-10-08'
+updatedAt: '2026-10-25'
+audience: users
 ---
 
 Infrastructure (`infrastructure.tuturuuu.com`, `apps/infrastructure`) is the
 privileged operational console. It exposes workspace/account controls,
 monitoring, configuration, and selected provider gateways. The existence of a
 console route never bypasses its operator eligibility and permission checks.
+
+## Workspace secret permissions
+
+Infrastructure workspace-secret reads and writes require either
+`manage_workspace_secrets` or `manage_workspace_roles` in the root workspace,
+checked server-side. This includes rate-limit secrets, AI-agent secret operations
+and external-app registry secrets. Workspace ownership alone does not grant
+this access.
+
+Creating, updating, renaming or deleting `MANAGED_CRON_ENABLED` also requires
+a verified Tuturuuu staff identity, checked against current Auth state, matching
+Web. Updates check both the existing and proposed secret names, and the route
+then writes the secret with the service role. The database enforces the same
+boundary: a `workspace_secrets` trigger rejects direct `anon`/`authenticated`
+writes whose old or new name is `MANAGED_CRON_ENABLED`, so root permissions
+alone cannot change it over PostgREST. Other secret names retain the root
+permission requirement without this additional restriction. Workspace role
+catalogs do not expand based on email domain.
+
+Web workspace-secret POST and PUT requests accept only nonempty string `name`
+and `value` fields. Unknown fields, including `ws_id`, `id`, and `created_at`,
+return HTTP 400 before either client writes. The workspace comes from the
+authorized route context and the secret id comes from the URL; the editor sends
+only the editable fields. This applies to ordinary and reserved secrets alike.
+
+Regression coverage lives in Infrastructure's `workspace-secrets.test.ts`,
+`infrastructure-admin-access.test.ts`, AI-agent and external-app access tests,
+Web's workspace-secrets route tests, Utils' `permissions.test.tsx`, and the
+`workspace-reserved-secrets-guard.sql` pgTAP suite.
+
+## Export and request identity boundaries
+
+Migration exports require `manage_external_migrations` in the requested workspace,
+normalize workspace aliases before querying, and return at most 1,000 rows per
+page. Root `view_infrastructure` alone does not authorize tenant migration data.
+Wallet transaction exports retain their SQL-enforced transaction permissions.
+
+AI-agent, suspension and calendar-sync handlers resolve the Infrastructure actor
+through the canonical satellite helpers with the `infra` audience. The helpers
+retain their supported Supabase session fallback when no app-session token is
+present; a token for another app cannot select that fallback. Calendar metrics
+and logs verify target workspace membership before admin-backed reads. STT
+requires root `manage_workspace_roles` before calling its provider.
+
+Global task-embedding statistics require root `ai_lab`; generation requires root
+`manage_workspace_roles`. Employee email alone does not grant either operation.
+The external SDK storage demo is development-only; production requests are denied
+by its API proxy before SDK access. Hosted integrations must supply their own
+user authorization.
+
+Regression coverage includes the migration export boundary tests, Infrastructure
+session boundary tests, Tasks embedding admin-access tests, and External proxy
+admission tests in their owning apps.
 
 ## Operational areas
 
@@ -21,16 +75,67 @@ console route never bypasses its operator eligibility and permission checks.
 - Monitoring for requests, logs, analytics, projects, deployments, rollouts,
   resources, and retained cron/control surfaces.
 
+The sidebar groups these areas into labelled sections, matching the Tuturuuu
+web dashboard: **Fleet** (machines, jobs and resources), **Operate**
+(monitoring, delivery and integrations) and **Govern** (security, AI
+operations, communications and platform administration). Add a new route to
+the section that owns its operator task in `navigation.tsx`.
+
 The [route reference](/reference/repository/catalog) lists every current
 Infrastructure entry point in its numbered source pages. Feature-specific
 operating rules remain in [DevOps](/build/devops/overview) and
 [Commercial controls](/platform/features/commercial-controls).
 
+## Fleet machine states
+
+Infrastructure > Fleet (`/[wsId]/fleet`) reads the devbox runner snapshot and
+shows one state per machine. The first matching state wins:
+
+| State | Rule |
+| --- | --- |
+| Revoked | The runner was revoked. |
+| No credential | No active runner token, whatever the heartbeat says. |
+| Setup incomplete | Registered but no heartbeat has ever arrived. |
+| Heartbeat off | An administrator turned heartbeats off. |
+| Disconnected | The last heartbeat is older than 15 minutes. |
+| Heartbeat late | The last heartbeat is older than 60 seconds, the SDK's placement freshness window, or the status is not `online`. |
+| Draining | A drain was requested. |
+| Online | A fresh heartbeat, an active token and `online` status. |
+
+Resource readings (load per core, memory, disk) are shown only while the
+heartbeat is fresh and the runner's `reportedAt` is within five minutes.
+Otherwise they read **Unknown** or **Not reported**, never as zero or as the last
+value. A queued, claimed or running run on a late, disconnected, untrusted or
+revoked machine shows **Outcome unknown**. It is neither counted as running nor
+assumed failed, and this view never reschedules it.
+
+Judge sandbox limits (`resource_limits`) do not constrain trusted commands. They
+are not lane ceilings, so Fleet reports the lane ceiling as not reported until
+the balancer publishes host lanes. Run counts cover only the latest snapshot
+window, and the tiles say so.
+
+Infrastructure > Fleet > Runs (`/[wsId]/fleet/jobs`) lists the snapshot's devbox
+runs. Filters: all, running, queued, outcome unknown, and failed (including timed
+out). A run page shows its source and the tail of its event log (the last 500
+events). For a commit run, the source is the decoded `__ttr_commit_run_v1__`
+envelope: SHA, directory and argv. The decoding is display only; runners remain
+the authority. The run page never selects `env` or `env_files`. Administrators can
+request a stop, which sets `cancel_requested` on running work; a stop request is
+not proof that the process ended. Balancer runs (`@tuturuuu/devbox/balancer`)
+use their own identities. They link here through `balancer_runs.devbox_run_id`
+once that table ships.
+
+Regression coverage: `src/lib/fleet/fleet-model.test.ts` (state precedence,
+freshness, unknown run outcomes, telemetry parsing) and
+`fleet/_components/machine-card.test.tsx` (fresh versus disconnected rendering),
+`src/lib/fleet/run-source.test.ts` (envelope decoding and rejection) and
+`fleet/jobs/[runId]/page.test.tsx` (unknown outcome, logs, stop permission).
+
 ## Current schedulers
 
 Hosted Calendar provider sync and smart scheduling run through Infrastructure's
 Vercel schedule and authenticated Calendar gateway. The
-[Cloudflare Cron Control Worker](/build/devops/cloudflare-cron-control) owns
+Cloudflare Cron Control Worker owns
 immediate notification recovery. The Docker cron runner is retired. Retained
 Docker controls and stale local heartbeat records do not establish the health
 of either hosted scheduler.
@@ -663,3 +768,29 @@ Regression coverage: `employee-managed-profile.sql`,
 `employee-admin-profile-usernames.sql`, managed-profile transport
 checks, and read-only CREATE observation/client negative controls. Hosted
 qualification and production acceptance are separate delivery gates.
+
+## Platform administration permissions
+
+Infrastructure API handlers and server actions enforce the same root-workspace
+permissions as their corresponding administrative operations. An employee email
+or root membership alone does not grant platform administration.
+
+- AI whitelist changes require `manage_workspace_roles` in the root workspace.
+- Managed-cron domain administration requires root `manage_workspace_roles` or
+  `manage_workspace_secrets`.
+- AI-credit configuration, grants, abuse-control mutations, entity-limit changes,
+  manual post-email queue drains, and project GitHub synchronization require root
+  `manage_workspace_roles`.
+- Queue inspection and entity-limit reads retain `view_infrastructure`. Devbox
+  control snapshots require root membership and `view_infrastructure`.
+
+These rules apply to the Infrastructure app, including direct API requests and
+server-action calls. Existing CLI identity support for devbox reads is retained;
+it still requires the viewer permission. Regression coverage lives in
+`apps/infrastructure/src/lib/platform-admin-boundaries.test.ts`.
+
+Entity-limit reads and all four entity-limit server actions additionally require
+root-workspace `MEMBER` membership. Root guests are denied even when guest-default
+permissions grant the corresponding read or mutation permission. This preserves
+the previous membership fence without changing other administration endpoints.
+Regression coverage: `apps/infrastructure/src/lib/entity-limit-membership.test.ts`.

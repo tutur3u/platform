@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
@@ -142,7 +143,8 @@ class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
                 const SizedBox(height: 14),
                 _LabeledField(
                   label: context.l10n.habitsEntryNoteLabel,
-                  child: TextField(
+                  child: AppTextField(
+                    placeholder: context.l10n.inputPlaceholderNote,
                     controller: _noteController,
                     minLines: 3,
                     maxLines: 5,
@@ -470,13 +472,12 @@ class _DateField extends StatelessWidget {
   Widget build(BuildContext context) {
     return _LabeledField(
       label: context.l10n.habitsEntryDateLabel,
-      child: TextField(
+      child: AppTextField(
         controller: controller,
         readOnly: true,
         onTap: onTap,
-        decoration: const InputDecoration(
-          suffixIcon: Icon(Icons.calendar_today_outlined),
-        ),
+        placeholder: context.l10n.inputPlaceholderDate,
+        trailing: const Icon(Icons.calendar_today_outlined),
       ),
     );
   }
@@ -807,11 +808,10 @@ class _WorkoutBlockCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          TextFormField(
+          AppTextFormField(
             initialValue: block.exerciseName,
-            decoration: InputDecoration(
-              labelText: context.l10n.habitsWorkoutExerciseName,
-            ),
+            placeholder: context.l10n.inputPlaceholderWorkoutExercise,
+            label: context.l10n.habitsWorkoutExerciseName,
             onChanged: (value) {
               block.exerciseName = value;
               onChanged();
@@ -821,11 +821,10 @@ class _WorkoutBlockCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: TextFormField(
+                child: AppTextFormField(
                   initialValue: '${block.sets}',
-                  decoration: InputDecoration(
-                    labelText: context.l10n.habitsWorkoutSets,
-                  ),
+                  placeholder: context.l10n.inputPlaceholderWorkoutSets,
+                  label: context.l10n.habitsWorkoutSets,
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
                     block.sets = int.tryParse(value) ?? block.sets;
@@ -835,11 +834,10 @@ class _WorkoutBlockCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: TextFormField(
+                child: AppTextFormField(
                   initialValue: '${block.reps}',
-                  decoration: InputDecoration(
-                    labelText: context.l10n.habitsWorkoutReps,
-                  ),
+                  placeholder: context.l10n.inputPlaceholderWorkoutReps,
+                  label: context.l10n.habitsWorkoutReps,
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
                     block.reps = int.tryParse(value) ?? block.reps;
@@ -853,11 +851,10 @@ class _WorkoutBlockCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: TextFormField(
+                child: AppTextFormField(
                   initialValue: block.weight,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.habitsWorkoutWeight,
-                  ),
+                  placeholder: context.l10n.inputPlaceholderWorkoutWeight,
+                  label: context.l10n.habitsWorkoutWeight,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),

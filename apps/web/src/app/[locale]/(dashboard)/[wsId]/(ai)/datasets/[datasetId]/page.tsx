@@ -1,5 +1,4 @@
 import { BarChart, FileText, RefreshCw, Upload } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -13,6 +12,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { requireDatasetAccess } from '@/lib/datasets/page-access';
 import { DuplicateHandler } from './components/duplicate-handler';
 import { DatasetCrawler } from './explore/dataset-crawler';
 import { getDatasetMetrics } from './utils';
@@ -32,24 +32,17 @@ interface Props {
 }
 
 export default async function DatasetDetailsPage({ params }: Props) {
+  const scope = await params;
+  await requireDatasetAccess(scope.wsId, scope.datasetId);
   await connection();
 
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, datasetId }) => {
-        const supabase = await createClient();
-        const { data: dataset } = await supabase
-          .from('workspace_datasets')
-          .select('*')
-          .eq('id', datasetId)
-          .single();
-
-        if (!dataset) {
-          return <div>Dataset not found</div>;
-        }
-
+        const access = await requireDatasetAccess(wsId, datasetId);
+        const { dataset } = access;
         const { totalColumns, totalRows, lastUpdated } =
-          await getDatasetMetrics(datasetId);
+          await getDatasetMetrics(access);
 
         return (
           <div className="space-y-6">

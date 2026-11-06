@@ -2,9 +2,19 @@ import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
 } from '@tuturuuu/education-core/teach/api';
+import type { Tables } from '@tuturuuu/types';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+
+type CourseMemberUser = Pick<
+  Tables<'workspace_users'>,
+  'id' | 'display_name' | 'full_name' | 'email' | 'avatar_url' | 'archived'
+>;
+type CourseMemberRow = Pick<Tables<'workspace_user_groups_users'>, 'role'> & {
+  workspace_users: CourseMemberUser | CourseMemberUser[] | null;
+};
 
 const RouteParamsSchema = z.object({
   courseId: z.guid(),
@@ -67,11 +77,19 @@ export const GET = withSessionAuth(
       );
     }
 
+    const permissions = await getPermissions({
+      wsId: access.normalizedWsId,
+      user: context.user,
+    });
+    const canViewPrivateInfo =
+      permissions?.containsPermission('view_users_private_info') ?? false;
+
     return NextResponse.json({
-      data: (data ?? []).map((row) => ({
+      data: (data ?? []).map((row: CourseMemberRow) => ({
         ...(Array.isArray(row.workspace_users)
           ? row.workspace_users[0]
           : row.workspace_users),
+        ...(!canViewPrivateInfo ? { email: null } : {}),
         role: row.role,
       })),
     });

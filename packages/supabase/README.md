@@ -298,3 +298,12 @@ MIT © [Tuturuuu](https://github.com/tutur3u)
 - [npm Package](https://www.npmjs.com/package/@tuturuuu/supabase)
 - [Issue Tracker](https://github.com/tutur3u/platform/issues)
 - [Supabase Documentation](https://supabase.com/docs)
+
+
+The dependency-free `@tuturuuu/supabase/shared-cookie-domains` subpath resolves
+its types, ESM import, Bun and default conditions directly to TypeScript source.
+It is safe for Next, Vite and native Worker consumers before package dist exists;
+other Supabase entrypoints retain their existing build requirements. Keep this
+leaf portable and free of framework or request-runtime imports. Run
+`node --test scripts/shared-cookie-source-resolution.test.mjs` from the repo root
+to verify Node and Vite resolution without a release build.

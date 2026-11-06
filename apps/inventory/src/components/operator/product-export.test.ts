@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildProductExportRows,
@@ -7,10 +8,7 @@ import {
   serializeProductExportCsv,
 } from './product-export';
 
-const operatorDirectory = resolve(
-  process.cwd(),
-  'apps/inventory/src/components/operator'
-);
+const operatorDirectory = dirname(fileURLToPath(import.meta.url));
 
 describe('product export', () => {
   it('loads every server page and keeps owner and warehouse filters', async () => {

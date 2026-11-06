@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'package:mobile/data/sources/device_secure_storage.dart';
 
 /// Independent of cache eviction, logout and the automatic offline queue.
 class InventorySaleJournal {
@@ -13,7 +14,7 @@ class InventorySaleJournal {
            write ?? ((key, value) => _storage.write(key: key, value: value)),
        _remove = remove ?? ((key) => _storage.delete(key: key));
 
-  static const _storage = FlutterSecureStorage();
+  static final DeviceSecureStorage _storage = deviceSecureStorage;
   static final instance = InventorySaleJournal();
   static final _locks = <String, Future<void>>{};
   final Future<String?> Function(String) _read;

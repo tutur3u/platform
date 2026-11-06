@@ -50,6 +50,7 @@ void main() {
         builder: (context) => AppButton.primary(
           onPressed: () => showEventFormSheet(
             context,
+            isCurrentScope: () => true,
             initialStartTime: DateTime(2026, 10, 24, 9),
           ),
           child: const Text('Open calendar editor'),

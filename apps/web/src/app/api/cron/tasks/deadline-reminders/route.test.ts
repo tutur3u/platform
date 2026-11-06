@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn() }));
@@ -316,4 +317,115 @@ describe('equivalent deadline interval receipts', () => {
     await run();
     expect(created()).toHaveLength(2);
   });
+});
+
+it('fails before creating any reminder when the Cloudflare recipient budget is exceeded', async () => {
+  const { withWebCronBudget } = await import('@/lib/cron/web-cron-budget');
+  mocks.from.mockImplementation((table: string) => {
+    const query = {
+      select() {
+        return this;
+      },
+      not() {
+        return this;
+      },
+      is() {
+        return this;
+      },
+      gte() {
+        return this;
+      },
+      or() {
+        return this;
+      },
+      order() {
+        return this;
+      },
+      range: async () => ({
+        data:
+          table === 'tasks'
+            ? [{ task_watchers: Array(1001).fill({ user_id: 'watcher' }) }]
+            : [],
+        error: null,
+      }),
+    };
+    return query;
+  });
+  const response = await withWebCronBudget(() =>
+    GET(
+      new NextRequest('https://web.test/api/cron/tasks/deadline-reminders', {
+        headers: { Authorization: 'Bearer test-secret' },
+      })
+    )
+  );
+  expect(response.status).toBe(500);
+  expect(mocks.rpc).not.toHaveBeenCalled();
+});
+
+it('Cloudflare retains an unknown reminder write when receipt persistence fails', async () => {
+  const { withWebCronBudget } = await import('@/lib/cron/web-cron-budget');
+  const task = {
+    id: 'task-id',
+    name: 'Review',
+    end_date: new Date(Date.now() + 60 * 60_000).toISOString(),
+    closed_at: null,
+    completed_at: null,
+    task_lists: {
+      status: 'todo',
+      workspace_boards: {
+        id: 'board-id',
+        ws_id: 'workspace-id',
+        name: 'Board',
+      },
+    },
+    task_watchers: [{ user_id: 'watcher-id' }],
+  };
+  mocks.from.mockImplementation((table: string) => {
+    return {
+      select() {
+        return this;
+      },
+      not() {
+        return this;
+      },
+      is() {
+        return this;
+      },
+      gte() {
+        return this;
+      },
+      or() {
+        return this;
+      },
+      order() {
+        return this;
+      },
+      range: async () => ({
+        data: table === 'tasks' ? [task] : [],
+        error: null,
+      }),
+    };
+  });
+  mocks.rpc.mockImplementation(async (name: string) =>
+    name === 'record_task_reminder_sent'
+      ? { data: null, error: new Error('receipt acknowledgement lost') }
+      : {
+          data:
+            name === 'task_reminder_already_sent' ? false : 'notification-id',
+          error: null,
+        }
+  );
+  const response = await withWebCronBudget(() =>
+    GET(
+      new NextRequest('https://web.test/api/cron/tasks/deadline-reminders', {
+        headers: { Authorization: 'Bearer test-secret' },
+      })
+    )
+  );
+  expect(response.status).toBe(500);
+  expect(mocks.rpc.mock.calls.map(([name]) => name)).toEqual([
+    'task_reminder_already_sent',
+    'create_notification',
+    'record_task_reminder_sent',
+  ]);
 });

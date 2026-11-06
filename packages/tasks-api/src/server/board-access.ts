@@ -1,4 +1,7 @@
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import {
+  getVerifiedAuthEmail,
+  type SupabaseUser,
+} from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   getPermissions,
@@ -153,24 +156,6 @@ function normalizeShareRow(row: RawTaskBoardShareRow) {
   } satisfies TaskBoardGuestShare;
 }
 
-async function getUserPrivateEmail(
-  sbAdmin: TypedSupabaseClient,
-  user: Pick<SupabaseUser, 'email' | 'id'>
-) {
-  const authEmail = normalizeTaskBoardShareEmail(user.email);
-  if (authEmail) return authEmail;
-
-  const { data } = await sbAdmin
-    .from('user_private_details')
-    .select('email')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  return normalizeTaskBoardShareEmail(
-    (data as { email?: string | null } | null)?.email
-  );
-}
-
 async function queryTaskBoardShares({
   boardIds,
   email,
@@ -259,7 +244,6 @@ async function queryTaskBoardShares({
 }
 
 export async function loadTaskBoardGuestSharesForWorkspace({
-  email,
   sbAdmin,
   user,
   workspaceId,
@@ -269,9 +253,7 @@ export async function loadTaskBoardGuestSharesForWorkspace({
   user: Pick<SupabaseUser, 'email' | 'id'>;
   workspaceId: string;
 }) {
-  const recipientEmail =
-    normalizeTaskBoardShareEmail(email) ??
-    (await getUserPrivateEmail(sbAdmin, user));
+  const recipientEmail = await getVerifiedAuthEmail(sbAdmin, user.id);
 
   return queryTaskBoardShares({
     email: recipientEmail,
@@ -283,7 +265,6 @@ export async function loadTaskBoardGuestSharesForWorkspace({
 
 export async function loadTaskBoardGuestSharesForBoard({
   boardId,
-  email,
   sbAdmin,
   user,
   workspaceId,
@@ -294,9 +275,7 @@ export async function loadTaskBoardGuestSharesForBoard({
   user: Pick<SupabaseUser, 'email' | 'id'>;
   workspaceId: string;
 }) {
-  const recipientEmail =
-    normalizeTaskBoardShareEmail(email) ??
-    (await getUserPrivateEmail(sbAdmin, user));
+  const recipientEmail = await getVerifiedAuthEmail(sbAdmin, user.id);
 
   return queryTaskBoardShares({
     boardIds: [boardId],

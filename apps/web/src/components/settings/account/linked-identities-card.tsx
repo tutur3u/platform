@@ -37,6 +37,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '@/lib/api-fetch';
 import {
   AUTH_OAUTH_PROVIDER_OPTIONS,
+  AUTH_OAUTH_PROVIDERS,
   type AuthOAuthProvider,
 } from '@/lib/auth/oauth-providers';
 import { useLinkedProviderConfirmation } from './use-linked-provider-confirmation';
@@ -85,12 +86,10 @@ function SocialLogoMask({
   );
 }
 
-const AVAILABLE_PROVIDERS = Object.entries(AUTH_OAUTH_PROVIDER_OPTIONS).map(
-  ([id, provider]) => ({
-    id: id as AuthOAuthProvider,
-    name: provider.name,
-  })
-);
+const AVAILABLE_PROVIDERS = AUTH_OAUTH_PROVIDERS.map((id) => ({
+  id: id as AuthOAuthProvider,
+  name: AUTH_OAUTH_PROVIDER_OPTIONS[id].name,
+}));
 
 function fetchLinkedIdentities() {
   return apiFetch<LinkedIdentitiesResponse>('/api/v1/users/me/identities', {

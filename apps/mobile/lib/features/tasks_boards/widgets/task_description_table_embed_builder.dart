@@ -309,6 +309,11 @@ class TaskDescriptionTableEditorSheetState
                                     Padding(
                                       padding: const EdgeInsets.all(6),
                                       child: shad.TextField(
+                                        placeholder: Text(
+                                          context
+                                              .l10n
+                                              .inputPlaceholderTableCell,
+                                        ),
                                         selectionControls:
                                             platformTextSelectionControls(),
                                         contextMenuBuilder:

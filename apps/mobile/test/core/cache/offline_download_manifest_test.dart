@@ -296,7 +296,8 @@ void main() {
           key: 'shared-permission-key',
           namespace: 'workspace.permissions',
         ),
-        {'finance', 'inventory', 'tasks', 'calendar'},
+        // Home prepares with workspace permissions too.
+        {'finance', 'inventory', 'tasks', 'calendar', 'home'},
       );
     },
   );

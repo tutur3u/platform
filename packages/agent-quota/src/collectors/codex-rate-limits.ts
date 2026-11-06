@@ -1,4 +1,4 @@
-import type { WindowKind } from '../types';
+import type { UsageWindow, WindowKind } from '../types';
 
 export function resetTimestamp(value: unknown): string | undefined {
   if (typeof value === 'string') {
@@ -18,4 +18,15 @@ export function windowKind(
 ): WindowKind {
   if (typeof minutes === 'number') return minutes <= 1440 ? 'short' : 'long';
   return index === 0 ? 'short' : 'long';
+}
+
+export function providerWindowKind(
+  minutes: number | undefined
+): UsageWindow['providerWindowKind'] {
+  if (typeof minutes !== 'number' || !Number.isFinite(minutes) || minutes <= 0)
+    return undefined;
+  if (minutes <= 24 * 60) return 'session';
+  if (minutes <= 8 * 24 * 60) return 'weekly';
+  if (minutes >= 28 * 24 * 60 && minutes <= 366 * 24 * 60) return 'monthly';
+  return 'other';
 }

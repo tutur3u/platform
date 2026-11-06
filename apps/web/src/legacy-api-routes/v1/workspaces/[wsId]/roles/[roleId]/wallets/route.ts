@@ -34,6 +34,20 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
+  const { data: role, error: roleError } = await sbAdmin
+    .from('workspace_roles')
+    .select('id')
+    .eq('id', roleId)
+    .eq('ws_id', permissions.wsId)
+    .maybeSingle();
+  if (roleError)
+    return NextResponse.json(
+      { message: 'Error loading role' },
+      { status: 500 }
+    );
+  if (!role)
+    return NextResponse.json({ message: 'Role not found' }, { status: 404 });
+
   const { data, error } = await sbAdmin
     .from('workspace_role_wallet_whitelist')
     .select(`
@@ -68,6 +82,7 @@ export async function GET(req: Request, { params }: Params) {
           .from('workspace_wallets')
           .select('id, name, balance, currency, type')
           .in('id', walletIds)
+          .eq('ws_id', permissions.wsId)
       : { data: [], error: null };
 
   if (walletsError) {
@@ -175,7 +190,7 @@ export async function POST(req: Request, { params }: Params) {
     .from('workspace_wallets')
     .select('id, ws_id')
     .eq('id', wallet_id)
-    .eq('ws_id', wsId)
+    .eq('ws_id', permissions.wsId)
     .maybeSingle();
 
   if (walletError || !wallet) {
@@ -190,7 +205,7 @@ export async function POST(req: Request, { params }: Params) {
     .from('workspace_roles')
     .select('id, ws_id')
     .eq('id', roleId)
-    .eq('ws_id', wsId)
+    .eq('ws_id', permissions.wsId)
     .single();
 
   if (roleError || !role) {

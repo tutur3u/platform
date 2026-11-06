@@ -7,6 +7,7 @@ class AppTextFormField extends StatefulWidget {
     this.initialValue,
     this.label,
     this.placeholder,
+    this.helperText,
     this.validator,
     this.onChanged,
     this.onSaved,
@@ -18,12 +19,14 @@ class AppTextFormField extends StatefulWidget {
     this.keyboardType,
     this.textCapitalization = TextCapitalization.none,
     this.autovalidateMode,
+    this.textInputAction,
     super.key,
   });
   final TextEditingController? controller;
   final String? initialValue;
   final String? label;
   final String? placeholder;
+  final String? helperText;
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onChanged;
   final FormFieldSetter<String>? onSaved;
@@ -35,6 +38,7 @@ class AppTextFormField extends StatefulWidget {
   final TextInputType? keyboardType;
   final TextCapitalization textCapitalization;
   final AutovalidateMode? autovalidateMode;
+  final TextInputAction? textInputAction;
 
   @override
   State<AppTextFormField> createState() => _AppTextFormFieldState();
@@ -90,6 +94,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
       controller: _controller,
       label: widget.label,
       placeholder: widget.placeholder,
+      helperText: widget.helperText,
       errorText: field.errorText,
       enabled: widget.enabled,
       autofocus: widget.autofocus,
@@ -98,6 +103,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
       maxLength: widget.maxLength,
       keyboardType: widget.keyboardType,
       textCapitalization: widget.textCapitalization,
+      textInputAction: widget.textInputAction,
       onChanged: widget.onChanged,
     ),
   );

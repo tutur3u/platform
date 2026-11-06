@@ -34,7 +34,7 @@ vi.mock('@tuturuuu/icons', () => {
   );
 });
 
-vi.mock('@tuturuuu/turnstile/client', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile/client', () => ({
   resolveTurnstileClientState: () => ({
     siteKey: undefined,
     isRequired: false,

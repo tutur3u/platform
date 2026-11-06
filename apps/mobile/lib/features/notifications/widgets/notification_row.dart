@@ -5,7 +5,6 @@ import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/features/notifications/notification_display_copy.dart';
 import 'package:mobile/features/notifications/widgets/notifications_relative_time.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 /// Leading tile size of a notification row.
 const double notificationLeadingSize = 40;
@@ -149,7 +148,7 @@ class NotificationRow extends StatelessWidget {
           if (isPending)
             const SizedBox.square(
               dimension: 44,
-              child: Center(child: NovaLoadingIndicator(size: 20)),
+              child: AppLoadingIndicator.inline(),
             )
           else
             AppIconButton(

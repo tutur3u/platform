@@ -1,38 +1,5 @@
 part of 'task_board_detail_page.dart';
 
-class _TaskBoardTaskDetailRow extends StatelessWidget {
-  const _TaskBoardTaskDetailRow({required this.label, this.value, this.child});
-
-  final String label;
-  final String? value;
-  final Widget? child;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final resolvedChild =
-        child ?? Text(value ?? '', style: theme.typography.base);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 116,
-          child: Text(
-            label,
-            style: theme.typography.small.copyWith(
-              color: theme.colorScheme.mutedForeground,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const shad.Gap(10),
-        Expanded(child: resolvedChild),
-      ],
-    );
-  }
-}
-
 class _AssigneeChip extends StatelessWidget {
   const _AssigneeChip({required this.label, this.avatarUrl});
 

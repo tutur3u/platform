@@ -79,6 +79,7 @@ describe('passive T3 Usage registry parity import', () => {
       providerWindowKind: 'monthly',
       windowDurationMins: 43_200,
       resetsAt: '2026-11-19T07:28:47.000Z',
+      scope: { kind: 'unknown' },
     });
     expect(byId.get('antigravity')?.windows).toEqual(
       expect.arrayContaining([
@@ -332,5 +333,51 @@ describe('passive T3 Usage registry parity import', () => {
       now,
     }).ranked[0];
     expect(ranked).toMatchObject({ state: 'UNKNOWN', eligible: false });
+  });
+
+  it('keeps Opus weekly UNKNOWN across all five accounts when only Fable is reported', () => {
+    const imported = applyImportedUsage(accounts, registry).filter(
+      (account) => account.provider === 'claude'
+    );
+    expect(imported).toHaveLength(5);
+    for (const account of imported) {
+      expect(
+        account.windows.some(
+          (window) =>
+            window.providerWindowKind === 'weekly' &&
+            coversModel(window, 'claude-opus-5-5')
+        )
+      ).toBe(false);
+      expect(
+        recommend({
+          accounts: [account],
+          active: [],
+          task: { model: 'claude-opus-5-5' },
+          now,
+        }).ranked[0]
+      ).toMatchObject({ state: 'UNKNOWN', eligible: false });
+    }
+  });
+
+  it('retains a zero-used monthly Codex reading without calling it task headroom', () => {
+    const imported = applyImportedUsage(accounts, registry).find(
+      (account) => account.instanceId === 'codex'
+    )!;
+    const monthly = imported.windows[0]!;
+    expect(monthly).toMatchObject({
+      providerWindowKind: 'monthly',
+      usedPercent: 100,
+      scope: { kind: 'unknown' },
+    });
+    const ranked = recommend({
+      accounts: [imported],
+      active: [],
+      task: { model: 'gpt-6-luna' },
+      now: new Date('2026-10-23T20:28:30Z'),
+    }).ranked[0];
+    expect(ranked).toMatchObject({ state: 'UNKNOWN', eligible: false });
+    expect(ranked?.reasons.map((reason) => reason.code)).toContain(
+      'scope-unverified'
+    );
   });
 });

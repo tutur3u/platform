@@ -155,16 +155,18 @@ export async function handleGetApprovalsRequest(
     let countQuery = privateDb
       .from('user_group_post_checks')
       .select(
-        'post_id, user_id, user_group_posts!inner(group_id, workspace_user_groups!inner(ws_id))',
+        'post_id, user_id, user:workspace_users!user_id!inner(ws_id), user_group_posts!inner(group_id, workspace_user_groups!inner(ws_id))',
         { count: 'exact', head: true }
       )
-      .eq('user_group_posts.workspace_user_groups.ws_id', wsId);
+      .eq('user_group_posts.workspace_user_groups.ws_id', wsId)
+      .eq('user.ws_id', wsId);
     let dataQuery = privateDb
       .from('user_group_post_checks')
       .select(
         'post_id, user_id, notes, is_completed, approval_status, rejection_reason, approved_at, rejected_at, approved_by, post:user_group_posts!inner(id, title, content, notes, created_at, updated_by, group_id, modifier:workspace_users!updated_by(display_name, full_name, email), workspace_user_groups!inner(name, ws_id)), user:workspace_users!user_id!inner(full_name, display_name, email)'
       )
-      .eq('post.workspace_user_groups.ws_id', wsId);
+      .eq('post.workspace_user_groups.ws_id', wsId)
+      .eq('user.ws_id', wsId);
 
     if (groupId) {
       countQuery = countQuery.eq('user_group_posts.group_id', groupId);

@@ -24,6 +24,7 @@ import { useTranslations } from 'next-intl';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { type ReactNode, useState } from 'react';
 import { isMailFolder } from './mail-folders';
+import { resolveActiveMailboxId, useMailboxHint } from './mail-mailbox-hint';
 import { MailSettingsDialog } from './mail-settings-dialog';
 import {
   getMailThreadsQueryKey,
@@ -59,10 +60,11 @@ export function MailSidebarPanel({
       .includes(mailboxSearch.trim().toLowerCase())
   );
   const selectedMailboxId = searchParams.get('mailbox');
-  const activeMailboxId =
-    mailboxes.find((mailbox) => mailbox.id === selectedMailboxId)?.id ??
-    mailboxes[0]?.id ??
-    null;
+  const activeMailboxId = resolveActiveMailboxId({
+    hint: useMailboxHint(workspaceId),
+    mailboxes: bootstrapQuery.data?.mailboxes,
+    requested: selectedMailboxId,
+  });
   const organizationQuery = useQuery({
     enabled: Boolean(activeMailboxId),
     queryFn: () => getMailboxOrganization(workspaceId, activeMailboxId ?? ''),

@@ -36,6 +36,7 @@ import {
   formatFieldName,
   formatValue,
   getEntityLink,
+  localizedNotificationText,
   type TranslationFn,
 } from './notification-utils';
 
@@ -74,6 +75,7 @@ export function NotificationCard({
   index = 0,
 }: NotificationCardProps) {
   const isUnread = !notification.read_at;
+  const displayText = localizedNotificationText(notification, t);
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
@@ -229,13 +231,13 @@ export function NotificationCard({
               isUnread ? 'text-foreground' : 'text-foreground/80'
             )}
           >
-            {notification.title}
+            {displayText.title}
           </h3>
 
           {/* Description */}
-          {notification.description && (
+          {displayText.description && (
             <p className="mb-2 text-foreground/60 text-sm leading-relaxed">
-              {notification.description}
+              {displayText.description}
             </p>
           )}
 

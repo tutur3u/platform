@@ -11,6 +11,7 @@ extension _AssistantLiveTools on AssistantLiveCubit {
     final conversationVersion = _conversationVersion;
     final actorScope = _sessionScopeToken;
     final actor = _sessionUserId;
+    final turnGeneration = _turnGeneration;
     bool staleTurn() =>
         isClosed ||
         conversationVersion != _conversationVersion ||
@@ -57,6 +58,15 @@ extension _AssistantLiveTools on AssistantLiveCubit {
             result = {'error': 'live_tool_execution_failed'};
           }
         }
+        if (staleTurn()) return;
+        result = await applyAssistantLiveClientMarker(
+          functionName: call.name,
+          args: call.args,
+          result: result,
+          // An interrupted or replaced turn cancels its pending UI actions;
+          // the bridge re-checks this immediately before the effect.
+          isCurrent: () => !staleTurn() && turnGeneration == _turnGeneration,
+        );
         if (staleTurn()) return;
         turnParts.completeTool(parts[index], result);
         if (_sealedParts.contains(turnParts)) {

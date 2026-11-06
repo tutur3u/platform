@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
@@ -87,20 +88,73 @@ class _AssistantLiveCallButtonState extends State<AssistantLiveCallButton> {
               ),
             ),
             const SizedBox(height: 8),
-            SizedBox(
+            _CallButtonLabel(
+              text: widget.label,
               width: widget.diameter + 24,
-              child: Text(
-                widget.label,
-                maxLines: 2,
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelMedium?.copyWith(color: colors.onSurface),
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: colors.onSurface),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Wraps only between words: when the longest word would not fit [width] at
+/// the current text scale, the label scales down instead of splitting it.
+class _CallButtonLabel extends StatelessWidget {
+  const _CallButtonLabel({
+    required this.text,
+    required this.width,
+    required this.style,
+  });
+
+  final String text;
+  final double width;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    // Measure with the exact style the Text renders (merged with defaults).
+    final resolved = DefaultTextStyle.of(context).style.merge(style);
+    final direction = Directionality.of(context);
+    double widestAt(TextScaler scaler) {
+      var widest = 0.0;
+      for (final word in text.split(RegExp(r'\s+'))) {
+        final painter = TextPainter(
+          text: TextSpan(text: word, style: resolved),
+          textScaler: scaler,
+          textDirection: direction,
+          maxLines: 1,
+        )..layout();
+        widest = math.max(widest, painter.width);
+        painter.dispose();
+      }
+      return widest;
+    }
+
+    final available = width - 1;
+    final fontSize = resolved.fontSize ?? 14;
+    var scaler = MediaQuery.textScalerOf(context);
+    // Letter spacing does not scale with text, so shrink toward the fit in a
+    // few measured steps rather than by one ratio.
+    for (var step = 0; step < 4; step++) {
+      final widest = widestAt(scaler);
+      if (widest <= available) break;
+      final factor = scaler.scale(fontSize) / fontSize;
+      scaler = TextScaler.linear(factor * available / widest * .98);
+    }
+    return SizedBox(
+      width: width,
+      child: Text(
+        text,
+        maxLines: 2,
+        textAlign: TextAlign.center,
+        overflow: TextOverflow.ellipsis,
+        style: resolved,
+        textScaler: scaler,
       ),
     );
   }

@@ -6,7 +6,7 @@ import { NotesSharingControl } from '@tuturuuu/meet-core/features/meeting-ai/not
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useEndedRoom } from '../hooks/use-ended-room';
 import { EndedMeetingSettings } from './ended-meeting-settings';
 import { RestoreRoomButton } from './restore-room-button';
@@ -23,6 +23,7 @@ export function CallEnded({
   meetingName,
   backHref,
   saving = false,
+  notes,
 }: {
   accountId: string;
   ended?: boolean;
@@ -35,6 +36,8 @@ export function CallEnded({
   meetingName: string;
   backHref: string;
   saving?: boolean;
+  /** Replaces the default notes overview, e.g. with the meeting page reader. */
+  notes?: ReactNode;
 }) {
   useEndedRoom(accountId, meetingId, ended);
   const queryClient = useQueryClient();
@@ -125,9 +128,9 @@ export function CallEnded({
             </div>
           )}
         </section>
-        {showNotes && (canManage || canReadNotes) && (
-          <MeetingAiOverview wsId={wsId} meetingId={meetingId} />
-        )}
+        {showNotes &&
+          (canManage || canReadNotes) &&
+          (notes ?? <MeetingAiOverview wsId={wsId} meetingId={meetingId} />)}
       </div>
     </main>
   );

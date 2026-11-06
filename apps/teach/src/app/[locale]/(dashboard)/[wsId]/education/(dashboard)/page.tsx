@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
-import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
+import { requireTeachWorkspaceMember } from '@/lib/require-teach-workspace-member';
 import CoursesStatistics from '../../(dashboard)/statistics/courses';
 import FlashcardsStatistics from '../../(dashboard)/statistics/flashcards';
 import QuizzesStatistics from '../../(dashboard)/statistics/quizzes';
@@ -23,7 +23,7 @@ interface Props {
 export default async function WorkspaceEducationPage({ params }: Props) {
   const t = await getTranslations();
   const { wsId: routeWsId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const permissions = await requireTeachWorkspaceMember(routeWsId, 'ai_lab');
 
   return (
     <div className="flex min-h-full w-full flex-col gap-5 p-4">
@@ -37,15 +37,25 @@ export default async function WorkspaceEducationPage({ params }: Props) {
           <Suspense
             fallback={<LoadingStatisticCard className="md:col-span-2" />}
           >
-            <CoursesStatistics wsId={resolvedWsId} className="md:col-span-2" />
+            <CoursesStatistics
+              wsId={permissions.wsId}
+              permissions={permissions}
+              className="md:col-span-2"
+            />
           </Suspense>
 
           <Suspense fallback={<LoadingStatisticCard />}>
-            <FlashcardsStatistics wsId={resolvedWsId} />
+            <FlashcardsStatistics
+              wsId={permissions.wsId}
+              permissions={permissions}
+            />
           </Suspense>
 
           <Suspense fallback={<LoadingStatisticCard />}>
-            <QuizzesStatistics wsId={resolvedWsId} />
+            <QuizzesStatistics
+              wsId={permissions.wsId}
+              permissions={permissions}
+            />
           </Suspense>
         </div>
       </EducationContentSurface>

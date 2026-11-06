@@ -58,6 +58,6 @@ select is((select count(*) from get_wallet_transactions_with_permissions(
  p_ws_id=>'40000000-0000-0000-0000-000000000010',p_order_by=>'created_at',p_created_at_until=>'2026-09-02')),0::bigint,'boundary never grants unrelated actor wallet visibility');
 select throws_ok($$select * from get_wallet_transactions_with_permissions(
  p_ws_id=>'40000000-0000-0000-0000-000000000010',p_user_id=>'40000000-0000-0000-0000-000000000001',p_created_at_until=>'2026-09-02')$$,
- 'P0001','Permission denied','actor impersonation remains denied');
+ '42501','Permission denied','actor impersonation remains denied');
 select * from finish();
 rollback;

@@ -89,7 +89,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   ) => mocks.createDetachedClient(...args),
 }));
 
-vi.mock('@tuturuuu/turnstile/server', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile/server', () => ({
   isTurnstileError: (...args: Parameters<typeof mocks.isTurnstileError>) =>
     mocks.isTurnstileError(...args),
   resolveTurnstileToken: (
@@ -483,6 +483,100 @@ describe('otp auth service', () => {
         locale: 'vi',
         origin: 'TUTURUUU',
       },
+    });
+  });
+
+  describe('mobile session tokens', () => {
+    const mobileInput = {
+      client: 'mobile' as const,
+      email: 'person@example.com',
+      otp: '123456',
+      platform: 'ios' as const,
+    };
+
+    beforeEach(() => {
+      mocks.detachedVerifyOtp.mockResolvedValue({
+        data: {
+          session: {
+            access_token: 'access',
+            expires_at: 123,
+            expires_in: 3600,
+            refresh_token: 'refresh',
+            token_type: 'bearer',
+            user: { id: 'user-1' },
+          },
+          user: { id: 'user-1' },
+        },
+        error: null,
+      });
+    });
+
+    it('returns the token pair to the native app, which sends no browser headers', async () => {
+      const { verifyOtp } = await import('./otp');
+
+      const result = await verifyOtp(mobileInput, {
+        client: 'mobile',
+        endpoint: '/api/v1/auth/otp/verify',
+        headers: new Headers({
+          accept: 'application/json',
+          'content-type': 'application/json',
+          'user-agent': 'Dart/3.9 (dart:io)',
+        }),
+        platform: 'ios',
+      });
+
+      expect(result.status).toBe(200);
+      expect(result.body).toMatchObject({
+        session: { access_token: 'access', refresh_token: 'refresh' },
+      });
+    });
+
+    it.each([
+      ['an Origin header', { origin: 'https://tuturuuu.com' }],
+      ['a null Origin', { origin: 'null' }],
+      ['Fetch Metadata only', { 'sec-fetch-site': 'same-origin' }],
+    ])(
+      'refuses browser requests carrying %s before verifying the code',
+      async (_label, browserHeaders) => {
+        const { verifyOtp } = await import('./otp');
+
+        const result = await verifyOtp(mobileInput, {
+          client: 'mobile',
+          endpoint: '/api/v1/auth/otp/verify',
+          headers: new Headers(browserHeaders),
+          platform: 'ios',
+        });
+
+        expect(result).toEqual({
+          body: {
+            code: 'MOBILE_SESSION_BROWSER_REFUSED',
+            error: 'Mobile sessions are not available to browser requests',
+          },
+          status: 403,
+        });
+        expect(JSON.stringify(result.body)).not.toContain('refresh');
+        expect(mocks.detachedVerifyOtp).not.toHaveBeenCalled();
+        expect(mocks.requestVerifyOtp).not.toHaveBeenCalled();
+        expect(mocks.checkOTPVerifyLimit).not.toHaveBeenCalled();
+      }
+    );
+
+    it('still verifies browser web-client codes into the cookie session', async () => {
+      const { verifyOtp } = await import('./otp');
+
+      const result = await verifyOtp(
+        { client: 'web', email: 'person@example.com', otp: '123456' },
+        {
+          client: 'web',
+          endpoint: '/api/v1/auth/otp/verify',
+          headers: new Headers({
+            origin: 'https://tuturuuu.com',
+            'sec-fetch-site': 'same-origin',
+          }),
+        }
+      );
+
+      expect(result).toEqual({ body: { success: true }, status: 200 });
     });
   });
 });

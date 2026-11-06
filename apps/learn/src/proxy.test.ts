@@ -188,6 +188,35 @@ describe('Learn proxy local auth API guard', () => {
       targetApp: 'learn',
     });
   });
+  it('sends no Referer on the login redirect for a parent invite link', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      error: 'No session',
+      ok: false,
+    });
+
+    const response = await proxy(
+      new NextRequest(
+        `https://learn.tuturuuu.com/parent-invite?workspace=ws&token=${'a'.repeat(64)}`
+      )
+    );
+
+    expect(response.headers.get('location')).toContain('/login?next=');
+    expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+  });
+
+  it('leaves the Referrer-Policy untouched for other login redirects', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      error: 'No session',
+      ok: false,
+    });
+
+    const response = await proxy(
+      new NextRequest('https://learn.tuturuuu.com/dashboard')
+    );
+
+    expect(response.headers.get('referrer-policy')).toBeNull();
+  });
+
   it.each([
     'App session refresh unavailable',
     'MFA required',

@@ -1,4 +1,7 @@
-import { TOPIC_ANNOUNCEMENTS_SECRET } from '@tuturuuu/utils/topic-announcements';
+import {
+  TOPIC_ANNOUNCEMENTS_SECRET,
+  TOPIC_TEACHER_ASSIGNMENTS_SECRET,
+} from '@tuturuuu/utils/topic-announcements';
 
 /**
  * Workspace *secrets* (not configs) that act purely as module on/off switches
@@ -13,6 +16,7 @@ export const REPORT_EMAIL_SENDING_SECRET = 'ENABLE_REPORT_EMAIL_SENDING';
 
 export const CONTACTS_FEATURE_SECRET_NAMES = new Set<string>([
   TOPIC_ANNOUNCEMENTS_SECRET,
+  TOPIC_TEACHER_ASSIGNMENTS_SECRET,
   REPORT_EMAIL_SENDING_SECRET,
 ]);
 

@@ -74,7 +74,10 @@ vi.mock('@/lib/chat/private-rpc', () => ({
   chatRpcErrorResponse: (error: { code?: string }, fallback: string) =>
     Response.json(
       { message: fallback },
-      { status: error.code === '22023' ? 400 : 500 }
+      {
+        status:
+          error.code === '22023' ? 400 : error.code === '42501' ? 403 : 500,
+      }
     ),
   resolveChatRouteContext: (
     ...args: Parameters<typeof mocks.resolveChatRouteContext>
@@ -230,6 +233,21 @@ export function createAdminClientMock(settingsError: unknown = null) {
   };
 
   return {
+    auth: {
+      admin: {
+        getUserById: async (id: string) => ({
+          data: {
+            user: {
+              id,
+              email: mocks.auth.user.email,
+              email_confirmed_at: '2026-01-01',
+              identities: [{ provider: 'email', identity_data: {} }],
+            },
+          },
+          error: null,
+        }),
+      },
+    },
     from: vi.fn(() => {
       const deleteQuery = {
         eq: vi.fn(async () => ({ error: null })),

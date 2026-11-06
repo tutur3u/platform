@@ -77,6 +77,22 @@ export function windowScope(
   }
   return { kind: 'account' };
 }
+
+/**
+ * Codex monthly usage is retained as reported telemetry, but its account-level
+ * monthly bucket has not been shown to gate model execution. Keep its scope
+ * unknown so it cannot be treated as either model headroom or exhaustion.
+ */
+export function providerWindowScope(
+  provider: Provider,
+  id: string,
+  label: string,
+  kind: UsageWindow['providerWindowKind']
+): NonNullable<UsageWindow['scope']> {
+  if (provider === 'codex' && kind === 'monthly') return { kind: 'unknown' };
+  return windowScope(provider, id, label);
+}
+
 export function coversModel(window: UsageWindow, model?: string): boolean {
   if (!window.scope || window.scope.kind === 'account') return true;
   if (!model) return false;

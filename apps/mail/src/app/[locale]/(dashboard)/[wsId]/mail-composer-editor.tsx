@@ -1,6 +1,5 @@
 'use client';
 
-import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { EditorContent, useEditor } from '@tiptap/react';
@@ -22,6 +21,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import {
+  MailComposerImage,
+  rawMailDraftImageSource,
+} from './mail-composer-image';
 import { splitComposerQuote } from './mail-composer-quote';
 import {
   type ComposerSelection,
@@ -58,7 +61,7 @@ export function MailComposerEditor({
     extensions: [
       StarterKit,
       Link.configure({ openOnClick: false }),
-      Image.configure({ allowBase64: false }),
+      MailComposerImage.configure({ allowBase64: false }),
       Placeholder.configure({ placeholder: t('write_message') }),
     ],
     immediatelyRender: false,
@@ -86,7 +89,11 @@ export function MailComposerEditor({
 
   useEffect(() => {
     if (!editor || !imageUrlToInsert) return;
-    editor.chain().focus().setImage({ src: imageUrlToInsert }).run();
+    editor
+      .chain()
+      .focus()
+      .setImage({ src: rawMailDraftImageSource(imageUrlToInsert) })
+      .run();
     onImageInserted?.();
   }, [editor, imageUrlToInsert, onImageInserted]);
 

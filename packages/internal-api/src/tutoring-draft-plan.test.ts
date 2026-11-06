@@ -123,3 +123,48 @@ describe('bounded tutoring draft choices', () => {
     ).toEqual([]);
   });
 });
+
+describe('shared tutoring slot choices', () => {
+  const session = {
+    ...busy,
+    group_id: 'group-a',
+    start_time: '17:15:00',
+    duration_minutes: 45,
+  };
+  it('offers the teacher for recorded learners from several groups in one slot', () => {
+    expect(
+      rankTutoringDraftChoices({
+        ...input,
+        sessions: [
+          session,
+          { ...session, student_user_id: 'another' },
+          { ...session, group_id: 'group-b', student_user_id: 'third' },
+        ],
+      })[0]?.teachers.map((t) => t.id)
+    ).toEqual(['a', 'b']);
+  });
+  it('excludes a teacher booked for an overlapping different interval', () => {
+    expect(
+      rankTutoringDraftChoices({
+        ...input,
+        sessions: [{ ...session, start_time: '17:30:00' }],
+      })[0]?.teachers.map((t) => t.id)
+    ).toEqual(['b']);
+  });
+  it('still excludes the learner from a slot they already hold', () => {
+    expect(
+      rankTutoringDraftChoices({
+        ...input,
+        sessions: [{ ...session, student_user_id: 'learner' }],
+      })
+    ).toEqual([]);
+  });
+  it('ignores seconds when matching a recorded slot', () => {
+    expect(
+      rankTutoringDraftChoices({
+        ...input,
+        sessions: [{ ...session, start_time: '17:15:30' }],
+      })[0]?.teachers.map((t) => t.id)
+    ).toEqual(['a', 'b']);
+  });
+});

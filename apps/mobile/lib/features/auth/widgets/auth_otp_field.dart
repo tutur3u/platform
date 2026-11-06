@@ -182,6 +182,7 @@ class _AuthOtpFieldState extends State<AuthOtpField> {
             ),
             Positioned.fill(
               child: TextField(
+                // input-placeholder: exempt hidden OTP capture
                 key: const ValueKey('auth-otp-input'),
                 controller: widget.controller,
                 focusNode: widget.focusNode,

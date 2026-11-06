@@ -10,6 +10,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:mobile/widgets/staggered_entry.dart';
 
+export 'package:mobile/features/settings/view/settings_form_rows.dart';
 export 'package:mobile/features/settings/view/settings_group.dart';
 export 'package:mobile/features/settings/view/settings_tile.dart';
 
@@ -156,6 +157,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
           playOnceKey: 'settings-workspace-context',
           child: SettingsSection(
             title: '',
+            grouped: true,
             children: [
               PendingSyncFrame(
                 workspaceId: currentWorkspace?.id ?? 'personal',
@@ -235,6 +237,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
             playOnceKey: 'settings-workspace-access',
             child: SettingsSection(
               title: l10n.settingsWorkspaceAccessTitle,
+              grouped: true,
               children: [
                 SettingsTile(
                   icon: LucideIcons.group,

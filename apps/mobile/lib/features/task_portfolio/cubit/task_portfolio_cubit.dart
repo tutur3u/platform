@@ -92,9 +92,21 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
     );
   }
 
-  Future<void> load(String wsId, {bool forceRefresh = false}) async {
+  /// [retainError] keeps a visible error state and its message while the
+  /// pull-to-refresh gesture reloads; an explicit Retry leaves it false so
+  /// the page re-enters its loading state.
+  Future<void> load(
+    String wsId, {
+    bool forceRefresh = false,
+    bool retainError = false,
+  }) async {
     final requestToken = ++_loadRequestToken;
     final workspaceChanged = state.workspaceId != wsId;
+    final keepError =
+        retainError &&
+        forceRefresh &&
+        !workspaceChanged &&
+        state.status == TaskPortfolioStatus.error;
     final cacheKey = _cacheKey(wsId);
     var hasCachedData = false;
     if (!forceRefresh) {
@@ -130,6 +142,11 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
       state.copyWith(
         status: hasCachedData
             ? TaskPortfolioStatus.loaded
+            : keepError ||
+                  (!workspaceChanged &&
+                      state.status != TaskPortfolioStatus.initial &&
+                      state.status != TaskPortfolioStatus.error)
+            ? state.status
             : TaskPortfolioStatus.loading,
         workspaceId: wsId,
         projects: workspaceChanged && !hasCachedData
@@ -139,7 +156,7 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
             ? const []
             : state.initiatives,
         isMutating: !workspaceChanged && state.isMutating,
-        clearError: true,
+        clearError: !keepError,
       ),
     );
 

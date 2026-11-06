@@ -1,9 +1,14 @@
-import { afterEach, expect, it, type Mock, vi } from 'vitest';
+import { createHash } from 'node:crypto';
+import { afterEach, beforeEach, expect, it, type Mock, vi } from 'vitest';
 
-const { sync } = vi.hoisted(() => ({ sync: vi.fn() }));
+const { sync, refresh } = vi.hoisted(() => ({
+  sync: vi.fn(),
+  refresh: vi.fn(),
+}));
 vi.mock('./incremental-active-sync', () => ({
   performIncrementalActiveSync: sync,
 }));
+vi.mock('./token-refresh', () => ({ ensureValidToken: refresh }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(),
 }));
@@ -16,32 +21,30 @@ const connections = [
   { id: 'b', calendar_name: 'B', calendar_id: 'b', auth_token_id: 'revoked' },
   { id: 'c', calendar_name: 'C', calendar_id: 'c', auth_token_id: 'healthy' },
 ];
+const fingerprint = (value: string) =>
+  createHash('sha256').update(value).digest('hex');
 
 type Row = Record<string, unknown>;
 type Query = Promise<{ data: Row[]; error: null }> & {
   select: () => Query;
   eq: Mock<(column: string, value: unknown) => Query>;
+  gte: (column: string, value: string) => Query;
   in: (column: string, values: string[]) => Query;
+  limit: () => Query;
 };
 function database() {
-  const tokens = [
-    {
-      id: 'revoked',
-      refresh_token: 'test-revoked',
-      is_active: true,
-      ws_id: 'workspace',
-      provider: 'google',
-    },
-    {
-      id: 'healthy',
-      refresh_token: 'test-healthy',
-      is_active: true,
-      ws_id: 'workspace',
-      provider: 'google',
-    },
-  ];
-  const updateQueries: Query[] = [];
-  function builder(rows: Row[], patch?: Row): Query {
+  const tokens: Row[] = ['revoked', 'healthy'].map((id) => ({
+    id,
+    refresh_token: `test-${id}`,
+    access_token: `access-${id}`,
+    is_active: true,
+    ws_id: 'workspace',
+    provider: 'google',
+    created_at: '2026-10-26T00:00:00.000001+00:00',
+    expires_at: '2099-01-01T00:00:00Z',
+  }));
+  const filtersSeen: string[] = [];
+  function builder(rows: Row[]): Query {
     const filters = new Map<string, unknown>();
     const matches = (row: Row) =>
       [...filters].every(([key, value]) => row[key] === value);
@@ -49,39 +52,53 @@ function database() {
       get data() {
         return rows.filter(matches).map((row) => ({ ...row }));
       },
-      get error(): null {
-        if (patch)
-          rows.filter(matches).forEach((row) => {
-            Object.assign(row, patch);
-          });
-        return null;
-      },
+      error: null,
     };
     const query: Query = Object.assign(Promise.resolve(result), {
       select: () => query,
       eq: vi.fn((column: string, value: unknown) => {
+        filtersSeen.push(column);
         filters.set(column, value);
         return query;
       }),
-      in: (column: string, values: string[]) => {
-        const matching = rows.filter((row) =>
-          values.includes(String(row[column]))
-        );
-        rows = matching;
+      gte: (column: string, value: string) => {
+        rows = rows.filter((row) => String(row[column] ?? '') >= value);
         return query;
       },
+      in: (column: string, values: string[]) => {
+        rows = rows.filter((row) => values.includes(String(row[column])));
+        return query;
+      },
+      limit: () => query,
     });
     return query;
   }
-  const update = vi.fn((patch: Row) => {
-    const query = builder(tokens, patch);
-    updateQueries.push(query);
-    return query;
+  // Mirrors public.quarantine_calendar_auth_token.
+  const rpc = vi.fn(async (_fn: string, args: Record<string, unknown>) => {
+    const row = tokens.find(
+      (token) => token.id === args.p_token_id && token.ws_id === args.p_ws_id
+    );
+    if (
+      row?.is_active &&
+      row.created_at === args.p_observed_created_at &&
+      fingerprint(String(row.refresh_token)) === args.p_credential_fingerprint
+    ) {
+      Object.assign(row, {
+        is_active: false,
+        deactivated_reason: args.p_reason,
+        deactivated_at: new Date().toISOString(),
+      });
+      return { data: 'deactivated', error: null };
+    }
+    return {
+      data: row && !row.is_active ? 'already_inactive' : 'fenced',
+      error: null,
+    };
   });
   return {
     from: vi.fn((table: string) =>
       table === 'calendar_auth_tokens'
-        ? Object.assign(builder(tokens), { update })
+        ? builder(tokens)
         : builder(
             connections.map((row) => ({
               ws_id: 'workspace',
@@ -90,114 +107,185 @@ function database() {
             }))
           )
     ),
-    update,
-    updateQueries,
+    rpc,
     tokens,
+    filtersSeen,
   };
 }
+const args = (db: ReturnType<typeof database>) => ({
+  sbAdmin: db as never,
+  wsId: 'workspace',
+  rangeStart: '2026-10-01',
+  rangeEnd: '2026-11-01',
+  userIdForFallback: 'actor',
+  settingsAvailable: true,
+});
+const synced = { eventsInserted: 1, eventsUpdated: 0, eventsDeleted: 0 };
+const invalidGrant = () =>
+  Object.assign(new Error('invalid_grant'), {
+    response: { status: 400, data: { error: 'invalid_grant' } },
+  });
 
+beforeEach(() => {
+  refresh.mockImplementation(async (_db, token) => ({
+    accessToken: token.access_token,
+    expiresAt: null,
+    refreshed: false,
+  }));
+});
 afterEach(() => {
   vi.resetAllMocks();
   vi.restoreAllMocks();
 });
-it('stops revoked consent durably and skips sibling calendars while syncing healthy accounts', async () => {
+
+it('quarantines a revoked account through the fenced RPC and keeps syncing healthy accounts', async () => {
   const db = database();
-  sync.mockRejectedValueOnce(new Error('invalid_grant')).mockResolvedValue({
-    eventsInserted: 1,
-    eventsUpdated: 0,
-    eventsDeleted: 0,
-  });
-  const result = await syncGoogleInbound({
-    sbAdmin: db as never,
-    wsId: 'workspace',
-    rangeStart: '2026-10-01',
-    rangeEnd: '2026-11-01',
-    userIdForFallback: 'actor',
-    settingsAvailable: true,
-  });
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  sync.mockRejectedValueOnce(invalidGrant()).mockResolvedValue(synced);
+  const result = await syncGoogleInbound(args(db));
   expect(sync).toHaveBeenCalledTimes(2);
-  expect(db.update).toHaveBeenCalledWith({ is_active: false });
-  expect(db.updateQueries[0]?.eq).toHaveBeenCalledWith('id', 'revoked');
-  expect(db.updateQueries[0]?.eq).toHaveBeenCalledWith('ws_id', 'workspace');
-  expect(db.updateQueries[0]?.eq).toHaveBeenCalledWith(
-    'refresh_token',
-    'test-revoked'
-  );
-  expect(db.tokens[0]?.is_active).toBe(false);
+  expect(db.rpc).toHaveBeenCalledWith('quarantine_calendar_auth_token', {
+    p_token_id: 'revoked',
+    p_ws_id: 'workspace',
+    p_credential_fingerprint: fingerprint('test-revoked'),
+    p_observed_created_at: '2026-10-26T00:00:00.000001+00:00',
+    p_reason: 'google_invalid_grant',
+  });
+  expect(JSON.stringify(db.rpc.mock.calls)).not.toContain('test-revoked"');
+  expect(db.filtersSeen).not.toContain('refresh_token');
+  expect(db.tokens[0]).toMatchObject({
+    is_active: false,
+    deactivated_reason: 'google_invalid_grant',
+  });
   expect(result).toMatchObject({
     inserted: 1,
     failedConnections: 2,
     processedConnections: 1,
     failureType: 'auth',
   });
+  expect(result.tokenOutcomes).toEqual([
+    expect.objectContaining({
+      provider: 'google',
+      outcome: 'deactivated',
+      reason: 'google_invalid_grant',
+    }),
+    expect.objectContaining({ provider: 'google', outcome: 'ok' }),
+  ]);
 });
 
-it('does not retry revoked consent after a fresh invocation reads durable state', async () => {
+it('does not retry a quarantined account on the next invocation', async () => {
   const db = database();
-  sync.mockRejectedValueOnce(new Error('invalid_grant')).mockResolvedValue({
-    eventsInserted: 0,
-    eventsUpdated: 0,
-    eventsDeleted: 0,
-  });
-  const args = {
-    sbAdmin: db as never,
-    wsId: 'workspace',
-    rangeStart: '2026-10-01',
-    rangeEnd: '2026-11-01',
-    userIdForFallback: 'actor',
-    settingsAvailable: true,
-  };
-  await syncGoogleInbound(args);
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  sync.mockRejectedValueOnce(invalidGrant()).mockResolvedValue(synced);
+  await syncGoogleInbound(args(db));
   sync.mockClear();
-  await syncGoogleInbound(args);
+  await syncGoogleInbound(args(db));
   expect(sync).toHaveBeenCalledTimes(1);
   expect(sync.mock.calls[0]?.[6]).toBe('healthy');
 });
-it('does not disable a credential replaced while the rejected request was in flight', async () => {
+
+it('never clobbers a concurrent reconnect', async () => {
   const db = database();
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
   sync
     .mockImplementationOnce(async () => {
-      db.tokens[0]!.refresh_token = 'replacement-test';
-      throw new Error('invalid_grant');
+      Object.assign(db.tokens[0]!, {
+        refresh_token: 'replacement-test',
+        created_at: '2026-10-26T01:00:00+00:00',
+      });
+      throw invalidGrant();
     })
-    .mockResolvedValue({
-      eventsInserted: 0,
-      eventsUpdated: 0,
-      eventsDeleted: 0,
-    });
-  await syncGoogleInbound({
-    sbAdmin: db as never,
-    wsId: 'workspace',
-    rangeStart: '2026-10-01',
-    rangeEnd: '2026-11-01',
-    userIdForFallback: 'actor',
-    settingsAvailable: true,
-  });
+    .mockResolvedValue(synced);
+  const result = await syncGoogleInbound(args(db));
   expect(db.tokens[0]?.is_active).toBe(true);
+  expect(result.tokenOutcomes[0]).toMatchObject({ outcome: 'fenced' });
 });
-it('keeps a transient provider failure retryable and logs no raw provider payload', async () => {
+
+it.each([
+  ['a 5xx', { response: { status: 503 } }],
+  ['a timeout', { code: 'ETIMEDOUT', message: 'ETIMEDOUT private-secret' }],
+  ['rate limiting', { response: { status: 429 } }],
+])('keeps %s mid-sync retryable without deactivating', async (_label, raw) => {
   const db = database();
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
   sync
-    .mockRejectedValueOnce(new Error('ETIMEDOUT private-provider-secret'))
-    .mockResolvedValue({
-      eventsInserted: 0,
-      eventsUpdated: 0,
-      eventsDeleted: 0,
-    });
-  await syncGoogleInbound({
-    sbAdmin: db as never,
-    wsId: 'workspace',
-    rangeStart: '2026-10-01',
-    rangeEnd: '2026-11-01',
-    userIdForFallback: 'actor',
-    settingsAvailable: true,
-  });
+    .mockRejectedValueOnce(Object.assign(new Error('provider failed'), raw))
+    .mockResolvedValue(synced);
+  await syncGoogleInbound(args(db));
   expect(sync).toHaveBeenCalledTimes(3);
-  expect(db.update).not.toHaveBeenCalled();
-  expect(JSON.stringify(warn.mock.calls)).not.toContain(
-    'private-provider-secret'
+  expect(db.rpc).not.toHaveBeenCalled();
+  expect(db.tokens.every((token) => token.is_active)).toBe(true);
+  expect(JSON.stringify(warn.mock.calls)).not.toContain('private-secret');
+});
+
+it('records a mid-sync OAuth client failure as systemic without writing', async () => {
+  const db = database();
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  sync
+    .mockRejectedValueOnce(
+      Object.assign(new Error('invalid_client'), {
+        response: { status: 401, data: { error: 'invalid_client' } },
+      })
+    )
+    .mockResolvedValue(synced);
+  const result = await syncGoogleInbound(args(db));
+  expect(db.rpc).not.toHaveBeenCalled();
+  expect(db.tokens.every((token) => token.is_active)).toBe(true);
+  expect(result.tokenOutcomes[0]).toMatchObject({
+    outcome: 'systemic',
+    providerCode: 'invalid_client/http_401',
+  });
+});
+
+it('reports a mid-sync credential rejection as auth whatever its status', async () => {
+  const db = database();
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  sync
+    .mockRejectedValueOnce(
+      Object.assign(new Error('unauthorized_client'), {
+        response: { status: 400, data: { error: 'unauthorized_client' } },
+      })
+    )
+    .mockResolvedValue(synced);
+  const result = await syncGoogleInbound(args(db));
+  expect(result.failureType).toBe('auth');
+  expect(result.failedCalendars).toContainEqual(
+    expect.objectContaining({ connectionId: 'a', code: 'auth' })
   );
+  expect(result.tokenOutcomes[0]).toMatchObject({
+    outcome: 'deactivated',
+    reason: 'google_unauthorized_client',
+  });
+});
+
+it('skips every calendar of an account whose credential check failed', async () => {
+  const db = database();
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  refresh.mockImplementation(async (_db, token) =>
+    token.id === 'revoked'
+      ? {
+          accessToken: '',
+          expiresAt: null,
+          refreshed: false,
+          error: 'invalid_grant',
+          failure: {
+            kind: 'permanent',
+            reason: 'google_invalid_grant',
+            providerCode: 'invalid_grant/http_400',
+          },
+          quarantine: 'deactivated',
+        }
+      : { accessToken: 'ok', expiresAt: null, refreshed: false }
+  );
+  sync.mockResolvedValue(synced);
+  const result = await syncGoogleInbound(args(db));
+  expect(refresh).toHaveBeenCalledTimes(2);
+  expect(sync).toHaveBeenCalledTimes(1);
+  expect(result).toMatchObject({ failedConnections: 2, failureType: 'auth' });
+  expect(result.tokenOutcomes[0]).toMatchObject({
+    outcome: 'deactivated',
+    providerCode: 'invalid_grant/http_400',
+  });
 });
 
 it.each([false, true])(

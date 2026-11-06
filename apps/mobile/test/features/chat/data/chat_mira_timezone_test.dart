@@ -38,7 +38,11 @@ Future<Map<String, dynamic>> _sentPayload({
     );
   });
 
-  await ChatRepository(apiClient: api, deviceTimezone: deviceTimezone)
+  await ChatRepository(
+        apiClient: api,
+        deviceTimezone: deviceTimezone,
+        miraClientCapabilities: () => const ['theme', 'immersive', 'navigate'],
+      )
       .sendMessageStream(
         'ws',
         'chat',
@@ -58,6 +62,7 @@ void main() {
 
     expect(payload['miraMode'], isTrue);
     expect(payload['timezone'], 'Asia/Ho_Chi_Minh');
+    expect(payload['clientCapabilities'], ['theme', 'immersive', 'navigate']);
   });
 
   test('an unavailable device timezone is omitted, not sent as UTC', () async {
@@ -81,5 +86,6 @@ void main() {
 
     expect(reads, 0);
     expect(payload.containsKey('timezone'), isFalse);
+    expect(payload.containsKey('clientCapabilities'), isFalse);
   });
 }

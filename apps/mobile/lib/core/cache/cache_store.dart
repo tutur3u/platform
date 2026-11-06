@@ -18,6 +18,7 @@ import 'package:mobile/core/cache/offline_cache_inventory.dart';
 import 'package:mobile/core/cache/offline_resource_reference.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/cache/replica_entity_record.dart';
+import 'package:mobile/data/sources/device_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 
 part 'cache_store_refresh.dart';
@@ -39,7 +40,7 @@ class CacheStore {
     FlutterSecureStorage? secureStorage,
     CacheDirectoryResolver? directoryResolver,
   }) : persistenceCheckpoint = null,
-       _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+       _secureStorage = secureStorage ?? deviceSecureStorage,
        _directoryResolver = directoryResolver;
 
   @visibleForTesting

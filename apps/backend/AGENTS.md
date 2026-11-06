@@ -62,17 +62,18 @@ The extraction pattern (use it for any further families): move the items into
 `src/<mod>.rs`, header it with `use crate::*;` (+ any external `use serde…`),
 give moved items `pub(crate)` visibility, then add `mod <mod>; pub(crate) use
 <mod>::*;` to `lib.rs`. Keep cohesive groups together so struct fields can stay
-`pub(crate)` only where a cross-module reader (often `src/tests.rs`) needs them.
+`pub(crate)` only where a cross-module reader (often the `src/tests/` modules) needs them.
 
 Still **do not** bulk-restructure `lib.rs`/`dispatch/` ad hoc while batches are
 appending — it collides with in-flight work. Restructure only under a
 `tmp/agent-coordination/` claim in a quiet window. Adding your own `mod x;` +
 route arm for a new handler is normal and fine.
 
-The unit-test suite lives in a sibling `mod tests;` file at `src/tests.rs` (it
-does `use super::*` and sees every `pub(crate)`/private item). Keep new
-dispatcher-level tests there, and split `src/tests.rs` by area so no single test
-file crosses the 700-LOC ceiling.
+The unit-test suite lives in the `mod tests;` module directory `src/tests/`
+(`g00.rs`, `g01.rs`, …; it does `use super::*` and sees every
+`pub(crate)`/private item), alongside per-handler `src/*_test.rs` siblings. Keep
+new dispatcher-level tests there, and split by area so no single test file
+crosses the 700-LOC ceiling.
 
 ## Path-guard pitfalls (handlers run in the SHARED dispatch chain)
 
@@ -107,7 +108,7 @@ search — both over- and under-count. The ground truth is the runtime dispatche
   401/403 when called with no auth). An unmigrated path falls through to
   `route_request`'s `_ => json_response(404, {"error":"not found"})` sentinel.
 - To map a candidate list precisely, temporarily insert a `#[tokio::test]` into
-  the `mod tests` block — now at `src/tests.rs` (it has the private `request()` /
+  the `mod tests` block — now the `src/tests/` module directory (it has the private `request()` /
   `RecordingOutboundClient` / `backend_config_with_contact_data()` helpers). For
   each candidate GET path (substitute dynamic `:seg`/`*seg` with a concrete value
   like `x`), call

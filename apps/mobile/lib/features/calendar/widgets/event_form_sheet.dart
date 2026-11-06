@@ -1,9 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/google_calendar_color.dart';
+import 'package:mobile/features/assistant/bridge/assistant_screen_context.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/widgets/google_calendar_color_picker.dart';
@@ -13,14 +15,18 @@ import 'package:mobile/l10n/l10n.dart';
 /// a calendar event.
 ///
 /// Returns the event data as a [Map] if saved, or `null` if dismissed.
+///
+/// [isCurrentScope] must return false once the workspace or account the form
+/// was opened for is no longer current; the form then stops sharing screen
+/// context with Mira and refuses to save.
 Future<Map<String, dynamic>?> showEventFormSheet(
   BuildContext context, {
+  required bool Function() isCurrentScope,
   CalendarEvent? event,
   DateTime? initialStartTime,
   String? timezone,
   GoogleCalendarColorOptions? providerColors,
   Future<GoogleCalendarColorOptions?>? providerColorsFuture,
-  bool Function()? isCurrentScope,
 }) {
   return showAppSheet<Map<String, dynamic>>(
     context: context,
@@ -37,12 +43,12 @@ Future<Map<String, dynamic>?> showEventFormSheet(
 
 class _EventFormContent extends StatefulWidget {
   const _EventFormContent({
+    required this.isCurrentScope,
     this.event,
     this.initialStartTime,
     this.timezone,
     this.providerColors,
     this.providerColorsFuture,
-    this.isCurrentScope,
   });
 
   final CalendarEvent? event;
@@ -50,7 +56,7 @@ class _EventFormContent extends StatefulWidget {
   final String? timezone;
   final GoogleCalendarColorOptions? providerColors;
   final Future<GoogleCalendarColorOptions?>? providerColorsFuture;
-  final bool Function()? isCurrentScope;
+  final bool Function() isCurrentScope;
 
   @override
   State<_EventFormContent> createState() => _EventFormContentState();
@@ -89,7 +95,7 @@ class _EventFormContentState extends State<_EventFormContent> {
     _initialProviderColor = _storedProviderColor(_providerColors);
     unawaited(
       widget.providerColorsFuture?.then((colors) {
-        if (!mounted || widget.isCurrentScope?.call() == false) return;
+        if (!mounted || !widget.isCurrentScope()) return;
         setState(() {
           _providerColors = colors;
           _initialProviderColor = _storedProviderColor(colors);
@@ -191,7 +197,7 @@ class _EventFormContentState extends State<_EventFormContent> {
       initial.minute == selected.minute;
 
   void _save() {
-    if (widget.isCurrentScope?.call() == false) {
+    if (!widget.isCurrentScope()) {
       setState(() => _dateTimeError = context.l10n.calendarEventUnavailable);
       return;
     }
@@ -289,8 +295,58 @@ class _EventFormContentState extends State<_EventFormContent> {
     });
   }
 
+  // Lets Mira Live read this form when the user enabled Live while browsing.
+  AssistantScreenContextEntry _assistantContext(AppLocalizations l10n) {
+    String when(DateTime date, TimeOfDay time) => _isAllDay
+        ? DateFormat('yyyy-MM-dd').format(date)
+        : calendarWallIso8601(_combineDateAndTime(date, time), widget.timezone);
+    return AssistantScreenContextEntry(
+      entities: [
+        if (widget.event case final event?)
+          AssistantScreenEntity(type: 'calendar_event', id: event.id),
+      ],
+      formTitle: _isEditing ? 'edit_calendar_event' : 'new_calendar_event',
+      fields: [
+        AssistantFormFieldContext.text(
+          key: 'title',
+          label: l10n.calendarEventTitle,
+          controller: _titleController,
+        ),
+        AssistantFormFieldContext.text(
+          key: 'description',
+          label: l10n.calendarEventDescription,
+          controller: _descriptionController,
+        ),
+        AssistantFormFieldContext(
+          key: 'all_day',
+          label: l10n.calendarEventAllDay,
+          type: 'boolean',
+          value: () => '$_isAllDay',
+        ),
+        AssistantFormFieldContext(
+          key: 'start',
+          label: l10n.calendarEventStartDate,
+          type: 'datetime',
+          value: () => when(_startDate, _startTime),
+        ),
+        AssistantFormFieldContext(
+          key: 'end',
+          label: l10n.calendarEventEndDate,
+          type: 'datetime',
+          value: () => when(_endDate, _endTime),
+        ),
+      ],
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => AssistantScreenContextScope(
+    entry: _assistantContext(context.l10n),
+    isCurrentScope: widget.isCurrentScope,
+    child: _buildSheet(context),
+  );
+
+  Widget _buildSheet(BuildContext context) {
     final l10n = context.l10n;
     final colorScheme = Theme.of(context).colorScheme;
     final dateFormat = DateFormat.yMMMd();

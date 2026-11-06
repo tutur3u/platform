@@ -1,4 +1,7 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { connection, NextResponse } from 'next/server';
@@ -14,7 +17,13 @@ export const GET = withSessionAuth(
 
     try {
       // Check if user is root user
-      const isRootUser = user.email?.endsWith('@tuturuuu.com');
+      const isRootUser = isVerifiedTuturuuuStaffSession(
+        user &&
+          (await getVerifiedAuthUser(
+            await createAdminClient({ noCookie: true }),
+            user.id
+          ))
+      );
       if (!isRootUser) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }

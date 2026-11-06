@@ -12,6 +12,7 @@ const {
 const {
   buildReleaseNotesDocument,
 } = require('./release-please-overflow-recovery-core');
+const { labelExpressionToJs } = require('./pr-label-gate');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 // These policy expressions use the shared JavaScript/GitHub boolean subset.
@@ -19,7 +20,7 @@ const { readWorkflow } = require('./workflow-yaml-test-helper');
 function evaluatePolicy(value, github) {
   const expression = value.replace(/^\$\{\{([\s\S]*)\}\}$/u, '$1').trim();
   return runInNewContext(
-    expression,
+    labelExpressionToJs(expression),
     {
       github,
       startsWith: (value, prefix) => value.startsWith(prefix),
@@ -127,7 +128,10 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
   ]) {
     const workflow = readWorkflow(name);
     const policy = workflow.concurrency || workflow.jobs.format.concurrency;
-    const policyName = name === 'biome-check.yaml' ? `${name}-format` : name;
+    // Reusable callees carry a workflow prefix so their groups cannot collide
+    // with the caller's group; Biome validates in per-job groups.
+    const policyName =
+      name === 'biome-check.yaml' ? `biome-check-${name}-format` : name;
     const base = {
       workflow: name,
       event: { pull_request: {} },
@@ -183,5 +187,7 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
       )
     );
   }
-  assert.equal(readWorkflow('biome-check.yaml').on.push, null);
+  assert.deepEqual(readWorkflow('biome-check.yaml').on.push, {
+    branches: ['main', 'production', 'release-please--branches--**'],
+  });
 });

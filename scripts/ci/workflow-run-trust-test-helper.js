@@ -166,6 +166,7 @@ function runGate(
       GITHUB_EVENT_PATH: eventPath,
       GITHUB_OUTPUT: outputPath,
       GITHUB_REF: text(github.ref),
+      GITHUB_REF_PROTECTED: text(github.ref_protected),
       GITHUB_REPOSITORY: text(github.repository),
       GITHUB_REPOSITORY_ID: text(github.repository_id),
       GITHUB_SHA: text(github.sha),

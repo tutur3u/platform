@@ -53,14 +53,15 @@ select ok(
   'API roles cannot read MFA failure counters'
 );
 
+-- security-definer-search-paths.sql defines the definer search_path contract.
 select is(
   (
     select proconfig
     from pg_proc
     where oid = 'public.hook_mfa_verification_attempt(jsonb)'::regprocedure
   ),
-  array['search_path=""']::text[],
-  'The hook pins an empty search_path'
+  array['search_path=pg_catalog, pg_temp']::text[],
+  'The hook pins the hardened pg_catalog, pg_temp search_path'
 );
 
 insert into auth.users (id, email, email_confirmed_at) values

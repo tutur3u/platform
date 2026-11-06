@@ -3,6 +3,7 @@ import 'server-only';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { encodeStoragePath } from '@tuturuuu/utils/storage-path';
 import { isSecurityEgressEnforcementEnabled } from './security-budget';
+import { clampSignedUrlTtl } from './signed-url-policy';
 import {
   createStorageDownloadUrl,
   StorageDownloadError,
@@ -12,9 +13,11 @@ export async function createGuardedSupabaseStorageReadUrl(
   supabase: TypedSupabaseClient,
   wsId: string,
   path: string,
-  expiresIn = 3600,
+  requestedExpiresIn?: number,
   transform?: unknown
 ) {
+  // Bearer URLs cannot be revoked: never sign for more than 7 days.
+  const expiresIn = clampSignedUrlTtl(requestedExpiresIn);
   if (process.env.STORAGE_DOWNLOADS_DISABLED === 'true') {
     throw new StorageDownloadError(
       'Storage downloads are temporarily disabled',

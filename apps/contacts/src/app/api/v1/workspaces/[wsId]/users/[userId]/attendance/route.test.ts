@@ -40,6 +40,10 @@ function createAttendanceQuery(result: {
     in: vi.fn(() => query),
     lt: vi.fn(() => query),
     select: vi.fn(() => query),
+    maybeSingle: vi.fn(async () => ({
+      data: result.data?.[0] ?? null,
+      error: result.error,
+    })),
     // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     then: (
       resolve: (value: typeof result) => unknown,
@@ -70,8 +74,21 @@ describe('Contacts user attendance route', () => {
       },
     ];
     const query = createAttendanceQuery({ data: attendance, error: null });
+    const userQuery = createAttendanceQuery({
+      data: [{ id: 'user-1' }],
+      error: null,
+    });
+    const groupsQuery = createAttendanceQuery({
+      data: [{ id: 'group-1' }, { id: 'group-2' }],
+      error: null,
+    });
     mocks.createAdminClient.mockResolvedValue({
-      from: vi.fn(() => query),
+      from: vi.fn((table: string) => {
+        if (table === 'workspace_users') return userQuery;
+        if (table === 'workspace_user_groups') return groupsQuery;
+        if (table === 'user_group_attendance') return query;
+        throw new Error(`Unexpected table ${table}`);
+      }),
     });
     const request = new Request(
       'https://contacts.tuturuuu.com/api/v1/workspaces/workspace-1/users/user-1/attendance?month=2026-07&groupIds=group-1&groupIds=group-2'
@@ -87,6 +104,13 @@ describe('Contacts user attendance route', () => {
       user: actor,
       wsId: 'workspace-1',
     });
+    expect(userQuery.eq).toHaveBeenCalledWith('ws_id', 'resolved-workspace-1');
+    expect(userQuery.eq).toHaveBeenCalledWith('id', 'user-1');
+    expect(groupsQuery.eq).toHaveBeenCalledWith(
+      'ws_id',
+      'resolved-workspace-1'
+    );
+    expect(groupsQuery.in).toHaveBeenCalledWith('id', ['group-1', 'group-2']);
     expect(query.eq).toHaveBeenCalledWith('user_id', 'user-1');
     expect(query.eq).toHaveBeenCalledWith(
       'groups.ws_id',

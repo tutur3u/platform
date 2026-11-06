@@ -28,7 +28,8 @@ class Win32Window {
   Win32Window();
   virtual ~Win32Window();
 
-  // Creates and shows a win32 window with |title| and position and size using
+  // Creates a hidden win32 window; subclasses show it when content is ready.
+  // Sets |title| and position and size using
   // |origin| and |size|. New windows are created on the default monitor. Window
   // sizes are specified to the OS in physical pixels, hence to ensure a
   // consistent size to will treat the width height passed in to this function

@@ -9,6 +9,18 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:video_player/video_player.dart';
 
+/// Speech-optimal capture: AAC-LC is encoded natively on iOS and Android (no
+/// MP3 encoder ships with either), and 16 kHz mono at 32 kbps keeps a
+/// two-minute note near 480 KB, a quarter of the 128 kbps default.
+const assistantVoiceRecordConfig = RecordConfig(
+  // The codec is the contract (native on both platforms), so state it.
+  // ignore: avoid_redundant_argument_values
+  encoder: AudioEncoder.aacLc,
+  numChannels: 1,
+  sampleRate: 16000,
+  bitRate: 32000,
+);
+
 class AssistantVoiceMessageResult {
   const AssistantVoiceMessageResult({
     required this.file,
@@ -94,7 +106,7 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
       final path =
           '${directory.path}/mira-voice-${DateTime.now().microsecondsSinceEpoch}.m4a';
       _path = path;
-      await _recorder.start(const RecordConfig(numChannels: 1), path: path);
+      await _recorder.start(assistantVoiceRecordConfig, path: path);
       if (!isCurrent()) {
         try {
           await _recorder.stop();

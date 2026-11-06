@@ -38,16 +38,14 @@ extension _AssistantPageLiveCall on _AssistantPageState {
   void _dismissLiveCall() {
     final route = _liveCallRoutes[this];
     if (route == null) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (route.mounted) unawaited(Navigator.of(route).maybePop());
-    });
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => dismissAssistantLiveCallRoute(route),
+    );
   }
 
   AssistantLiveCallActions _liveCallActions(String wsId, BuildContext route) {
     _liveCallRoutes[this] = route;
-    Future<void> close() async {
-      if (route.mounted) await Navigator.of(route).maybePop();
-    }
+    Future<void> close() async => dismissAssistantLiveCallRoute(route);
 
     return AssistantLiveCallActions(
       toggleMicrophone: () =>

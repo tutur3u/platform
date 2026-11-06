@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { requireDatasetAccess } from '@/lib/datasets/page-access';
 import EnvironmentSetup from './environment-setup';
 
 export const metadata: Metadata = {
@@ -39,6 +40,8 @@ async function getApiKeys(wsId: string): Promise<WorkspaceApiKey[]> {
 }
 
 export default async function ApiReferencesPage({ params }: Props) {
+  const scope = await params;
+  await requireDatasetAccess(scope.wsId, scope.datasetId);
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, datasetId }) => {

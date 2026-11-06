@@ -103,6 +103,15 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
   delete_time_tracking_session: 'Delete a time tracking history session',
   move_time_tracking_session:
     'Move a session to another workspace if you are a member of both',
+  log_body_weight:
+    'Log body weight (kg or lb); creates a private Body Weight habit tracker on first use',
+  get_body_weight_history:
+    'Body weight history with latest, change, min and max',
+  list_habit_trackers:
+    'List habit trackers with targets, units and current progress',
+  log_habit_entry: 'Log an entry for any habit tracker',
+  get_day_overview:
+    'Plan my day: tasks due or overdue, calendar events, habit progress and running timer for one date',
   remember: 'Save a fact/preference about the user',
   recall: 'Search saved memories',
   list_memories: 'List saved memories with filters/pagination',

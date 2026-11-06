@@ -18,6 +18,7 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: mocks.guard,
   hasSupabaseSessionCookie: () => false,
   isTrustedProxyBypassRequest: () => false,
+  isTrustedProxyBypassForRequest: () => false,
 }));
 vi.mock('@tuturuuu/utils/required-mfa-api-session', () => ({
   guardBrowserApiSession: async (

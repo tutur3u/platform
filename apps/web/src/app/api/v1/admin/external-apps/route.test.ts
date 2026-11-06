@@ -88,6 +88,22 @@ describe('CLI external registry authorization', () => {
       expect.objectContaining({ actorUserId: 'owner' })
     );
   });
+  it('forwards root-edited PKCE fields and rejects malformed ones', async () => {
+    const pkce = { requirePkce: true, callbackPaths: ['/auth/callback'] };
+    expect((await POST(request({ ...app, ...pkce }))).status).toBe(200);
+    expect(mocks.save).toHaveBeenCalledWith({
+      actorUserId: 'owner',
+      payload: expect.objectContaining(pkce),
+    });
+    mocks.save.mockClear();
+    expect((await POST(request({ ...app, requirePkce: 'yes' }))).status).toBe(
+      400
+    );
+    expect(
+      (await POST(request({ ...app, callbackPaths: '/auth/callback' }))).status
+    ).toBe(400);
+    expect(mocks.save).not.toHaveBeenCalled();
+  });
   it('only returns a new secret for an explicit rotation action', async () => {
     mocks.rotate.mockResolvedValue({ app, secret: 'test-only-secret' });
     const response = await POST(

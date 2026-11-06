@@ -13,6 +13,11 @@ extension _CalendarPageActions on _CalendarViewState {
       context,
       initialStartTime: startTime,
       timezone: cubit.state.timezone,
+      isCurrentScope: () =>
+          mounted &&
+          context.mounted &&
+          currentCacheUserId() == userId &&
+          context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId,
     );
     if (result == null ||
         !context.mounted ||

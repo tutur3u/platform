@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
@@ -62,21 +63,30 @@ void main() {
         expect(find.byType(AppSheetScaffold), findsNothing);
         expect(find.text('Assistant Settings'), findsOneWidget);
         final header = tester.getRect(find.byType(MobileSectionAppBar));
-        final setting = tester.getRect(find.byType(AppToggleRow));
+        final firstSection = tester.getRect(
+          find.byType(AppSectionCaption).first,
+        );
+        final firstCard = tester.getRect(find.byType(AppGroupedCard).first);
         expect(header.top, greaterThanOrEqualTo(47));
-        expect(setting.top - header.bottom, inInclusiveRange(0, AppSpacing.xl));
-        expect(setting.left, 16);
-        expect(setting.right, width - 16);
+        expect(
+          firstSection.top - header.bottom,
+          inInclusiveRange(0, AppSpacing.xl),
+        );
+        expect(firstCard.left, 16);
+        expect(firstCard.right, width - 16);
 
         final scroll = find.byType(ListView).first;
         await tester.scrollUntilVisible(
-          find.text('On-device models'),
+          find.text('Model source'),
           300,
           scrollable: find
               .descendant(of: scroll, matching: find.byType(Scrollable))
               .first,
         );
-        expect(tester.getTopLeft(find.text('On-device models')).dx, 16);
+        expect(
+          tester.getTopLeft(find.text('Model source')).dx,
+          16 + AppLayout.sectionCaptionInset,
+        );
         tester
             .state<ScrollableState>(
               find
@@ -101,11 +111,12 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.text('License'), findsNothing);
         final l = tester.element(find.byType(AssistantSettingsHub)).l10n;
-        // Remote is the last control in this unsupported-platform fixture.
-        final finalControl = find.widgetWithText(
-          AppListTile,
-          l.assistantLocalRemote,
+        // On device is the last control in this unsupported-platform
+        // fixture; it says why it cannot be chosen.
+        final finalControl = find.byKey(
+          const ValueKey('assistant-model-source-local'),
         );
+        expect(find.text(l.assistantLocalUnsupported), findsOneWidget);
         expect(finalControl, findsOneWidget);
         expect(
           844 - 34 - tester.getRect(finalControl).bottom,

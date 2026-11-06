@@ -68,7 +68,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(tester.takeException(), isNull);
 
-    final save = find.widgetWithText(FilledButton, 'Save');
+    final save = find.byKey(const ValueKey('meet-editor-save'));
     await tester.ensureVisible(save);
     await tester.pump();
     expect(save.hitTestable(), findsOneWidget);

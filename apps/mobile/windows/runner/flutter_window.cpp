@@ -26,6 +26,11 @@ bool FlutterWindow::OnCreate() {
   }
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
+  flutter_controller_->engine()->SetNextFrameCallback([this]() {
+    ShowWindow(GetHandle(), SW_SHOWNORMAL);
+  });
+  // Request a frame if Flutter rendered before the callback was registered.
+  flutter_controller_->ForceRedraw();
   return true;
 }
 

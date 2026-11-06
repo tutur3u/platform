@@ -1,6 +1,11 @@
 import { spawn } from 'node:child_process';
 import type { UsageWindow } from '../types';
-import { resetTimestamp, windowKind } from './codex-rate-limits';
+import { providerWindowScope } from '../window-scope';
+import {
+  providerWindowKind,
+  resetTimestamp,
+  windowKind,
+} from './codex-rate-limits';
 
 interface RateLimitWindow {
   usedPercent: number;
@@ -36,7 +41,16 @@ function toWindows(response: RateLimitsResponse, now: Date): UsageWindow[] {
     )
       continue;
     windows.push({
+      id: key,
+      scope: providerWindowScope(
+        'codex',
+        key,
+        '',
+        providerWindowKind(limit.windowDurationMins)
+      ),
       kind: windowKind(limit.windowDurationMins, index),
+      providerWindowKind: providerWindowKind(limit.windowDurationMins),
+      windowDurationMins: limit.windowDurationMins,
       usedPercent: Math.max(0, Math.min(100, limit.usedPercent)),
       resetsAt: resetTimestamp(limit.resetsAt),
       source: 'Codex app-server account/rateLimits/read',

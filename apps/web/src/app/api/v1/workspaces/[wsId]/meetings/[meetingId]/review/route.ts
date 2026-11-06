@@ -2,6 +2,7 @@ import {
   readTranscriptSegments,
   readTranscriptSpeaker,
 } from '@tuturuuu/ai/meetings/transcript';
+import { isMeetingNotesAdmin } from '@tuturuuu/meet-core/features/meeting-ai/server/notes-admin';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
@@ -92,15 +93,26 @@ export async function GET(request: Request, { params }: Params) {
       ended: boolean;
       canReadNotes: boolean;
     };
-    if (!room.ended || !room.canReadNotes) {
+    // Notes are readable only by call participants (room policy, narrowed by
+    // the host's sharing settings) and workspace admins of this workspace.
+    const canReadNotes =
+      room.canReadNotes ||
+      canManage ||
+      (await isMeetingNotesAdmin({
+        supabase: auth.supabase,
+        wsId,
+        userId: auth.user.id,
+      }));
+    if (!room.ended || !canReadNotes) {
       return NextResponse.json(
-        { ended: room.ended, canReadNotes: room.canReadNotes, canManage },
+        { ended: room.ended, canReadNotes, canManage },
         { headers }
       );
     }
 
-    // Room policy has already authorized notes visibility. User-scoped RLS is
-    // intentionally narrower, so read the permitted snapshot server-side.
+    // Participation or admin access has already authorized notes visibility.
+    // User-scoped RLS is intentionally narrower, so read the permitted snapshot
+    // server-side.
     const admin = await createAdminClient({ noCookie: true });
     const { data: sessions, error: sessionsError } = await admin
       .from('meet_ai_sessions')

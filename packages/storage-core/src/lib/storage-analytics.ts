@@ -1,7 +1,7 @@
 import { posix } from 'node:path';
 import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@tuturuuu/types/primitives/StorageObject';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
-import { isReservedMobileDeploymentDrivePath } from './mobile-deployment/storage-policy';
+import { isExcludedDrivePath } from './drive-path-policy';
 import { readStorageUsageBytes } from './storage-quota';
 
 const STORAGE_ANALYTICS_PAGE_SIZE = 1000;
@@ -128,10 +128,7 @@ export async function getWorkspaceStorageMetrics(
         ? fullPath.slice(wsId.length + 1)
         : fullPath;
 
-      if (
-        !includeReservedForQuota &&
-        isReservedMobileDeploymentDrivePath(wsId, relativePath)
-      ) {
+      if (!includeReservedForQuota && isExcludedDrivePath(wsId, relativePath)) {
         return;
       }
 
@@ -179,7 +176,7 @@ export async function countWorkspaceStorageObjects(
       ? fullPath.slice(wsId.length + 1)
       : fullPath;
 
-    if (isReservedMobileDeploymentDrivePath(wsId, relativePath)) {
+    if (isExcludedDrivePath(wsId, relativePath)) {
       return;
     }
 

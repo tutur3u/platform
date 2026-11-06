@@ -970,6 +970,9 @@ test('Release Please manifest tracks platform and workspace releases safely', ()
   assert.equal(config.packages['.'].component, 'platform');
   assert.equal(config.packages['.']['release-type'], 'simple');
   assert.equal(config.packages['.']['version-file'], 'platform-version.txt');
+  // Keep platform on 0.x: breaking changes bump the minor, not to 1.0.0.
+  assert.equal(config.packages['.']['bump-minor-pre-major'], true);
+  assert.equal(config.packages['.']['bump-patch-for-minor-pre-major'], false);
   assert.deepEqual(
     config.packages['.']['extra-files'].map((entry) => entry.path).sort(),
     [
@@ -1635,6 +1638,36 @@ const packageReleaseWorkflows = [
     workflowName: 'release-utils-package.yaml',
   },
   {
+    artifactDir: 'realtime-package',
+    artifactName: 'tuturuuu-realtime-npm-package',
+    environment: 'realtime-release-production',
+    packageName: '@tuturuuu/realtime',
+    packagePath: 'packages/realtime',
+    rejectMessagePattern:
+      /@tuturuuu\/realtime releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /working-directory: packages\/realtime/,
+      /bun turbo:local run type-check --concurrency=4 --filter=@tuturuuu\/realtime/,
+      /bun turbo:local run test --concurrency=4 --filter=@tuturuuu\/realtime/,
+    ],
+    workflowName: 'release-realtime-package.yaml',
+  },
+  {
+    artifactDir: 'cloudflare-package',
+    artifactName: 'tuturuuu-cloudflare-npm-package',
+    environment: 'cloudflare-release-production',
+    packageName: '@tuturuuu/cloudflare',
+    packagePath: 'packages/cloudflare',
+    rejectMessagePattern:
+      /@tuturuuu\/cloudflare releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /working-directory: packages\/cloudflare/,
+      /bun turbo:local run type-check --concurrency=4 --filter=@tuturuuu\/cloudflare/,
+      /bun turbo:local run test --concurrency=4 --filter=@tuturuuu\/cloudflare/,
+    ],
+    workflowName: 'release-cloudflare-package.yaml',
+  },
+  {
     artifactDir: 'sdk-package',
     artifactName: 'tuturuuu-sdk-npm-package',
     environment: 'sdk-release-production',
@@ -1942,11 +1975,22 @@ test('package trusted publishing avoids secret-redacted metadata outputs', () =>
       publishJob,
       /echo "path=\.\/\$\{PACKAGE_TARBALL\}" >> "\$GITHUB_OUTPUT"/
     );
-    assert.match(
-      publishJob,
+    // The artifact path reaches the publish script through env, never through
+    // direct `${{ }}` interpolation inside `run:` (trust boundary).
+    const publishPattern =
       packagePath === 'packages/sdk'
         ? /npm publish "\$\{PACKAGE_TARBALL\}" --ignore-scripts/
-        : /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}" --ignore-scripts/
+        : /npm publish "\$ARTIFACT_PATH" --ignore-scripts/;
+    assert.match(publishJob, publishPattern);
+    if (packagePath !== 'packages/sdk') {
+      assert.match(
+        publishJob,
+        /ARTIFACT_PATH: \$\{\{ steps\.artifact\.outputs\.path \}\}/
+      );
+    }
+    assert.doesNotMatch(
+      publishJob,
+      /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}"/
     );
     assert.match(publishJob, /trusted publisher is configured/);
     assert.match(publishJob, /Wait for npm publication/);

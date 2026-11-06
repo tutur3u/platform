@@ -1,3 +1,4 @@
+import { assertMeetAiRoom } from '@tuturuuu/meet-core/features/meeting-ai/server/room-gate';
 import { getScenarioPrompt } from '@tuturuuu/meet-core/parley/repository';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { meetingProviderTransport } from '../../meeting-ai/server/provider-transport';
@@ -60,6 +61,7 @@ export async function generateMeetAssistant(
     resume?: { revision: number; approved: boolean };
   }
 ) {
+  await assertMeetAiRoom(access);
   const wsId = await personalWorkspace(access.user.id);
   const existing = input.resume
     ? await callRoomService<PrivateAssistantReview>(access, {

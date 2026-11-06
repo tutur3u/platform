@@ -61,12 +61,13 @@ select ok(
     from pg_policies
     where schemaname = 'public'
       and tablename = 'abuse_trust_overrides'
+      and permissive = 'PERMISSIVE'
       and (
         'anon' = any(roles)
         or 'authenticated' = any(roles)
       )
   ),
-  'abuse trust overrides have no anon or authenticated RLS policies'
+  'abuse trust overrides have no permissive anon or authenticated RLS policies'
 );
 
 select ok(

@@ -452,7 +452,7 @@ class _RequestsViewState extends State<_RequestsView> {
               builder: (context) {
                 if (workspaceState.status == WorkspaceStatus.initial ||
                     workspaceState.status == WorkspaceStatus.loading) {
-                  return const Center(child: NovaLoadingIndicator());
+                  return const AppLoadingIndicator.page();
                 }
 
                 if (workspaceState.currentWorkspace == null) {
@@ -473,31 +473,34 @@ class _RequestsViewState extends State<_RequestsView> {
                             state.status ==
                                 TimeTrackerRequestsStatus.loading) &&
                         state.requests.isEmpty) {
-                      return const Center(child: NovaLoadingIndicator());
+                      return const AppLoadingIndicator.page();
                     }
 
                     if (state.status == TimeTrackerRequestsStatus.error &&
                         state.requests.isEmpty) {
-                      return AppPageBody(
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                LucideIcons.circleAlert,
-                                size: 48,
-                                color: AppTokens.of(
-                                  context,
-                                ).colorScheme.destructive,
-                              ),
-                              const AppGap(16),
-                              Text(state.error ?? 'Error'),
-                              const AppGap(16),
-                              shad.SecondaryButton(
-                                onPressed: () => unawaited(_loadRequests()),
-                                child: Text(l10n.commonRetry),
-                              ),
-                            ],
+                      return NovaRefreshIndicator.state(
+                        onRefresh: () => _loadRequests(forceRefresh: true),
+                        child: AppPageBody(
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  LucideIcons.circleAlert,
+                                  size: 48,
+                                  color: AppTokens.of(
+                                    context,
+                                  ).colorScheme.destructive,
+                                ),
+                                const AppGap(16),
+                                Text(state.error ?? 'Error'),
+                                const AppGap(16),
+                                shad.SecondaryButton(
+                                  onPressed: () => unawaited(_loadRequests()),
+                                  child: Text(l10n.commonRetry),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -543,6 +546,7 @@ class _RequestsViewState extends State<_RequestsView> {
                               ],
                             )
                           : AppPageListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
                               itemCount:
                                   state.requests.length +
                                   (_showMetaRow(state) ? 1 : 0),

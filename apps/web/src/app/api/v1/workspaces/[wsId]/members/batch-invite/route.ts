@@ -1,11 +1,9 @@
 import { getEffectiveAvailableSeats } from '@tuturuuu/payment-core/seat-limits';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_COLOR_LENGTH, MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
   params: Promise<{
@@ -49,36 +47,69 @@ async function triggerImmediateNotification() {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const { wsId } = await params;
+  const { wsId: requestedWsId } = await params;
 
   // Satellite apps proxy this route to web with an app-session token rather
-  // than a Supabase auth cookie, so resolve the actor through the
-  // app-session-aware helper instead of reading Supabase auth directly.
-  const session = await resolveSessionAuthContext(req, {
-    allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
-  });
+  // than a Supabase auth cookie, so resolve the actor, the `personal` alias and
+  // the membership through the app-session-aware helper (same as the single
+  // invite route) instead of reading Supabase auth directly.
+  const access = await resolveWorkspaceRouteAccess(req, requestedWsId);
+  if (!access.ok) return access.response;
 
-  if (!session.ok) return session.response;
+  const { permissions, supabase, user } = access;
 
-  const { supabase, user } = session;
+  if (
+    permissions.membershipType !== 'MEMBER' ||
+    permissions.withoutPermission('manage_workspace_members')
+  ) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  }
 
-  // Verify user is a member of the workspace
-  const membership = await verifyWorkspaceMembershipType({
-    wsId: wsId,
-    userId: user.id,
-    supabase: supabase,
-  });
+  const wsId = permissions.wsId;
+  const sbAdmin = await createAdminClient();
 
-  if (membership.error === 'membership_lookup_failed') {
+  // Block invitations to personal workspaces
+  const { data: wsData, error: workspaceError } = await sbAdmin
+    .from('workspaces')
+    .select('personal')
+    .eq('id', wsId)
+    .maybeSingle();
+  if (workspaceError) {
+    console.error('Failed to verify workspace before batch inviting members', {
+      error: workspaceError,
+      wsId,
+    });
     return NextResponse.json(
-      { error: 'Failed to verify workspace membership' },
+      { message: 'Error inviting workspace member.' },
       { status: 500 }
     );
   }
-
-  if (!membership.ok) {
+  if (wsData?.personal) {
     return NextResponse.json(
-      { message: 'Not a member of this workspace' },
+      { message: 'Cannot invite members to a personal workspace.' },
+      { status: 403 }
+    );
+  }
+
+  const { data: disableInvite, error: settingsError } = await sbAdmin
+    .from('workspace_secrets')
+    .select('value')
+    .eq('ws_id', wsId)
+    .eq('name', 'DISABLE_INVITE')
+    .maybeSingle();
+  if (settingsError) {
+    console.error('Failed to verify workspace invite settings', {
+      error: settingsError,
+      wsId,
+    });
+    return NextResponse.json(
+      { message: 'Unable to verify invite settings' },
+      { status: 500 }
+    );
+  }
+  if (disableInvite) {
+    return NextResponse.json(
+      { message: 'Invitations are disabled' },
       { status: 403 }
     );
   }
@@ -99,7 +130,6 @@ export async function POST(req: Request, { params }: Params) {
   const uniqueEmails = [...new Set(body.emails.map((e) => e.toLowerCase()))];
 
   // Pre-flight seat check: reject entire batch if insufficient seats
-  const sbAdmin = await createAdminClient();
   const { status: seatStatus, effectiveAvailable } =
     await getEffectiveAvailableSeats(sbAdmin, wsId);
 
@@ -126,10 +156,6 @@ export async function POST(req: Request, { params }: Params) {
 
   // Insert one by one to handle individual failures gracefully
   for (const invite of invites) {
-    // Authentication, workspace membership, and seat availability have already
-    // been verified above. Use the admin client for the write so a freshly
-    // created workspace is not blocked by permission rows that are still being
-    // initialized during onboarding.
     const { error } = await sbAdmin
       .from('workspace_email_invites')
       .insert(invite);

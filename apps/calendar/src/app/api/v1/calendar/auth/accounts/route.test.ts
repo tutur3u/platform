@@ -22,7 +22,7 @@ vi.mock('@/lib/workspace-helper', () => ({
   normalizeWorkspaceId: normalizeWorkspaceIdMock,
 }));
 
-import { DELETE } from './route';
+import { DELETE, GET } from './route';
 
 function createAccountLookupClient() {
   return {
@@ -122,5 +122,98 @@ describe('calendar auth accounts route', () => {
       refresh_token: '',
     });
     expect(connectionUpdate).toHaveBeenCalledWith({ is_enabled: false });
+  });
+});
+
+describe('calendar accounts list', () => {
+  // Two reads: active accounts, then quarantined accounts needing reconnect.
+  function listClient(quarantine: { data: unknown[] | null; error: unknown }) {
+    const reads: Array<Array<[string, unknown]>> = [];
+    return {
+      reads,
+      client: {
+        from: vi.fn(() => {
+          const filters: Array<[string, unknown]> = [];
+          reads.push(filters);
+          const query = {
+            select: () => query,
+            eq: (column: string, value: unknown) => {
+              filters.push([column, value]);
+              return query;
+            },
+            not: (column: string, operator: string, value: unknown) => {
+              filters.push([`not.${column}.${operator}`, value]);
+              return query;
+            },
+            order: async () =>
+              reads.length === 1
+                ? {
+                    data: [{ id: 'active', provider: 'google' }],
+                    error: null,
+                  }
+                : quarantine,
+          };
+          return query;
+        }),
+      },
+    };
+  }
+
+  beforeEach(() => {
+    normalizeWorkspaceIdMock.mockResolvedValue('workspace-id');
+  });
+
+  it('returns the caller’s quarantined accounts beside the active ones', async () => {
+    const quarantined = {
+      id: 'quarantined',
+      provider: 'microsoft',
+      account_email: 'person@example.com',
+      account_name: null,
+      deactivated_reason: 'microsoft_consent_revoked',
+      deactivated_at: '2026-10-26T03:00:00Z',
+    };
+    const { client, reads } = listClient({ data: [quarantined], error: null });
+    resolveSessionAuthContextMock.mockResolvedValue({
+      ok: true,
+      supabase: client,
+      user: { id: 'user-id' },
+    });
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/calendar/auth/accounts?wsId=personal'
+      )
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.total).toBe(1);
+    expect(body.needsReconnect).toEqual([quarantined]);
+    expect(reads[1]).toEqual([
+      ['user_id', 'user-id'],
+      ['ws_id', 'workspace-id'],
+      ['is_active', false],
+      ['not.deactivated_reason.is', null],
+    ]);
+  });
+
+  it('keeps listing active accounts while the quarantine columns are pending', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { client } = listClient({ data: null, error: { code: '42703' } });
+    resolveSessionAuthContextMock.mockResolvedValue({
+      ok: true,
+      supabase: client,
+      user: { id: 'user-id' },
+    });
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/calendar/auth/accounts?wsId=personal'
+      )
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      total: 1,
+      needsReconnect: [],
+    });
   });
 });

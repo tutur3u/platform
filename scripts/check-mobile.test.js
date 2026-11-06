@@ -118,6 +118,24 @@ test('mobile checks include project validators before Flutter checks', () => {
   assert.deepEqual(checks[0].args, ['scripts/check-mobile-ios-project.js']);
 });
 
+test('mobile checks verify the Mira compatibility fold table', () => {
+  const foldCheck = checks.find(
+    (check) => check.name === 'mira-compat-fold-table'
+  );
+
+  assert.ok(foldCheck);
+  assert.equal(foldCheck.command, 'node');
+  assert.deepEqual(foldCheck.args, [
+    'apps/mobile/tool/generate_assistant_compat_fold.mjs',
+    '--check',
+  ]);
+  assert.ok(
+    checks.indexOf(foldCheck) <
+      checks.findIndex((check) => check.name === 'flutter-test')
+  );
+  assert.equal(foldCheck.parseOutput('ok (28 folds)\n'), '28 folds current');
+});
+
 test('resolvePubCache prefers explicit PUB_CACHE', () => {
   const value = resolvePubCache({ PUB_CACHE: 'C:/custom/pub-cache' });
   assert.equal(value, 'C:/custom/pub-cache');

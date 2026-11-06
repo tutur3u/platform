@@ -83,3 +83,19 @@ test('Linux restart waits for the previous process to exit', {
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test('Windows installer smoke script parses before native execution', {
+  skip: process.platform !== 'win32',
+}, () => {
+  const result = spawnSync(
+    'pwsh',
+    [
+      '-NoProfile',
+      '-NonInteractive',
+      '-Command',
+      '$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path scripts/desktop-deployment/smoke-windows.ps1),[ref]$tokens,[ref]$errors) > $null; if ($errors.Count -gt 0) { $errors | ForEach-Object { $_.Message }; exit 1 }',
+    ],
+    { encoding: 'utf8' }
+  );
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+});

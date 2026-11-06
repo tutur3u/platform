@@ -22,7 +22,10 @@ export default async function CourseBuilderPage({ params }: Props) {
   await connection();
 
   const { wsId: routeWsId, courseId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(
+    routeWsId,
+    'update_user_groups'
+  );
   const sbAdmin = await createAdminClient();
 
   const { data: course, error: courseError } = await sbAdmin

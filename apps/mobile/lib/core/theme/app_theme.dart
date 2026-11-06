@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/colors.dart';
 import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
+import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Material 3 theme data for light and dark modes.
@@ -32,6 +33,47 @@ abstract final class AppTheme {
       ),
     },
   );
+
+  // Every platform slides like iOS. Platforms without a system edge-swipe
+  // Back drop the slide under reduce motion; iOS and macOS keep the
+  // Cupertino route, which owns that gesture.
+  static final _iosLikeTransitions = PageTransitionsTheme(
+    builders: {
+      for (final platform in TargetPlatform.values)
+        platform:
+            platform == TargetPlatform.iOS || platform == TargetPlatform.macOS
+            ? const _AppearancePageTransitionsBuilder(
+                CupertinoPageTransitionsBuilder(),
+              )
+            : const _AppearancePageTransitionsBuilder(
+                _ReducibleCupertinoTransitionsBuilder(),
+              ),
+    },
+  );
+
+  // Every platform zooms like Android, except iOS and macOS, whose edge-swipe
+  // Back is system-owned and needs the Cupertino route gesture.
+  static final _materialLikeTransitions = PageTransitionsTheme(
+    builders: {
+      for (final platform in TargetPlatform.values)
+        platform:
+            platform == TargetPlatform.iOS || platform == TargetPlatform.macOS
+            ? const _AppearancePageTransitionsBuilder(
+                CupertinoPageTransitionsBuilder(),
+              )
+            : const _AppearancePageTransitionsBuilder(
+                _SmoothPageTransitionsBuilder(),
+              ),
+    },
+  );
+
+  /// Page transitions for an Appearance interface style.
+  static PageTransitionsTheme pageTransitionsFor(AppInterfaceStyle style) =>
+      switch (style) {
+        AppInterfaceStyle.tuturuuu => _pageTransitions,
+        AppInterfaceStyle.ios => _iosLikeTransitions,
+        AppInterfaceStyle.material => _materialLikeTransitions,
+      };
 
   static Brightness resolveBrightness(
     shad.ThemeMode themeMode,
@@ -232,6 +274,52 @@ class _AppearancePageTransitionsBuilder extends PageTransitionsBuilder {
     secondaryAnimation,
     route.opaque ? AppearanceRouteBackground(child: child) : child,
   );
+}
+
+/// The Cupertino slide, replaced by an instant change when animations are
+/// disabled (system Reduce motion or the Appearance choice). Used where Back
+/// is system-owned rather than an edge swipe.
+class _ReducibleCupertinoTransitionsBuilder extends PageTransitionsBuilder {
+  const _ReducibleCupertinoTransitionsBuilder();
+
+  static const _cupertino = CupertinoPageTransitionsBuilder();
+
+  @override
+  DelegatedTransitionBuilder? get delegatedTransition =>
+      (context, animation, secondaryAnimation, allowSnapshotting, child) =>
+          MediaQuery.disableAnimationsOf(context)
+          ? child
+          : _cupertino.delegatedTransition?.call(
+              context,
+              animation,
+              secondaryAnimation,
+              allowSnapshotting,
+              child,
+            );
+
+  @override
+  Duration get transitionDuration => _cupertino.transitionDuration;
+
+  @override
+  Duration get reverseTransitionDuration =>
+      _cupertino.reverseTransitionDuration;
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => MediaQuery.disableAnimationsOf(context)
+      ? child
+      : _cupertino.buildTransitions(
+          route,
+          context,
+          animation,
+          secondaryAnimation,
+          child,
+        );
 }
 
 class _SmoothPageTransitionsBuilder extends PageTransitionsBuilder {

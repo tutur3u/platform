@@ -1,0 +1,29 @@
+{
+  "name": "@tuturuuu/ops-hub",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.4",
+  "exports": {
+    "./protocol": "./src/protocol.ts"
+  },
+  "scripts": {
+    "build": "vp build",
+    "test": "vitest run",
+    "test:runtime": "node --test scripts/verify-worker-runtime.mjs",
+    "type-check": "cf workers types && tsc --project tsconfig.json",
+    "lint": "vp lint --config .oxlintrc.json src cloudflare.config.ts vite.config.ts vitest.config.ts --deny-warnings"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.64.0",
+    "@cloudflare/workers-types": "5.20261022.1",
+    "@types/node": "^26.6.5",
+    "cf": "1.0.0-beta.20",
+    "typescript": "7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
+    "vite-plus": "1.3.0",
+    "vitest": "5.0.5"
+  }
+}

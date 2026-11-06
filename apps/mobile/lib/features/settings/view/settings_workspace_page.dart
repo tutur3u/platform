@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/supported_currencies.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -17,7 +15,7 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart'
         manageWorkspaceSettingsPermission;
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
-import 'package:mobile/features/settings/view/settings_row_layout.dart';
+import 'package:mobile/features/settings/view/settings_audience_mode_section.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/workspace_properties_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -61,7 +59,6 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
 
   @override
   Widget build(BuildContext context) {
-    final horizontalPadding = ResponsivePadding.horizontal(context.deviceClass);
     return MultiBlocListener(
       listeners: [
         BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -73,56 +70,58 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
           },
         ),
       ],
-      child: shad.Scaffold(
-        child: NovaRefreshIndicator(
-          onRefresh: () => _refresh(context),
-          child: ResponsiveWrapper(
-            maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              padding: SettingsRowLayout.scrollPadding(
-                context,
-                horizontalPadding,
-              ),
-              children: [
-                SettingsWorkspaceSection(
-                  onSelectCurrentWorkspace: () =>
-                      showWorkspacePickerSheet(context),
-                  onSelectDefaultWorkspace: () => showWorkspacePickerSheet(
-                    context,
-                    mode: WorkspacePickerMode.defaultWorkspace,
-                  ),
-                  canEditWorkspaceProperties: _canManageWorkspaceSettings,
-                  isWorkspacePermissionLoading: _isWorkspacePermissionLoading,
-                  onEditWorkspaceProperties: (workspace) =>
-                      unawaited(_showWorkspacePropertiesDialog(workspace)),
-                  defaultCurrency: _workspaceDefaultCurrency,
-                  canEditWorkspaceDefaultCurrency: _canManageWorkspaceSettings,
-                  isWorkspaceCurrencyLoading: _isWorkspaceCurrencyLoading,
-                  onEditWorkspaceDefaultCurrency: () =>
-                      unawaited(_showWorkspaceDefaultCurrencyEditor()),
-                  canManageWorkspaceMembers: _canManageWorkspaceMembers,
-                  canManageWorkspaceSecrets: _canManageWorkspaceSecrets,
-                  canManageWorkspaceRoles: _canManageWorkspaceRoles,
-                  onOpenWorkspaceSecrets: () =>
-                      context.push(Routes.settingsWorkspaceSecrets),
-                  onOpenWorkspaceMembers: () =>
-                      context.push(Routes.settingsWorkspaceMembers),
-                  onOpenWorkspaceRoles: () =>
-                      context.push(Routes.settingsWorkspaceRoles),
-                  showWorkspaceAccess:
-                      !(context
-                              .read<WorkspaceCubit>()
-                              .state
-                              .currentWorkspace
-                              ?.personal ??
-                          false),
-                ),
-              ],
-            ),
+      child: NovaRefreshIndicator(
+        onRefresh: () => _refresh(context),
+        child: AppPageListView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
           ),
+          children: [
+            SettingsWorkspaceSection(
+              onSelectCurrentWorkspace: () => showWorkspacePickerSheet(context),
+              onSelectDefaultWorkspace: () => showWorkspacePickerSheet(
+                context,
+                mode: WorkspacePickerMode.defaultWorkspace,
+              ),
+              canEditWorkspaceProperties: _canManageWorkspaceSettings,
+              isWorkspacePermissionLoading: _isWorkspacePermissionLoading,
+              onEditWorkspaceProperties: (workspace) =>
+                  unawaited(_showWorkspacePropertiesDialog(workspace)),
+              defaultCurrency: _workspaceDefaultCurrency,
+              canEditWorkspaceDefaultCurrency: _canManageWorkspaceSettings,
+              isWorkspaceCurrencyLoading: _isWorkspaceCurrencyLoading,
+              onEditWorkspaceDefaultCurrency: () =>
+                  unawaited(_showWorkspaceDefaultCurrencyEditor()),
+              canManageWorkspaceMembers: _canManageWorkspaceMembers,
+              canManageWorkspaceSecrets: _canManageWorkspaceSecrets,
+              canManageWorkspaceRoles: _canManageWorkspaceRoles,
+              onOpenWorkspaceSecrets: () =>
+                  context.push(Routes.settingsWorkspaceSecrets),
+              onOpenWorkspaceMembers: () =>
+                  context.push(Routes.settingsWorkspaceMembers),
+              onOpenWorkspaceRoles: () =>
+                  context.push(Routes.settingsWorkspaceRoles),
+              showWorkspaceAccess:
+                  !(context
+                          .read<WorkspaceCubit>()
+                          .state
+                          .currentWorkspace
+                          ?.personal ??
+                      false),
+            ),
+            const SizedBox(height: 18),
+            SettingsAudienceModeSection(
+              canManageWorkspaceSettings:
+                  _canManageWorkspaceSettings && !_isWorkspacePermissionLoading,
+              isPersonalWorkspace:
+                  context
+                      .read<WorkspaceCubit>()
+                      .state
+                      .currentWorkspace
+                      ?.personal ??
+                  false,
+            ),
+          ],
         ),
       ),
     );

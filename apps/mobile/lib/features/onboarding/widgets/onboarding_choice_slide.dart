@@ -10,6 +10,7 @@ class OnboardingChoiceSlide extends StatelessWidget {
     required this.options,
     required this.selected,
     required this.onToggle,
+    this.descriptions,
     super.key,
   });
 
@@ -18,6 +19,9 @@ class OnboardingChoiceSlide extends StatelessWidget {
   final List<String> options;
   final Set<int> selected;
   final ValueChanged<int> onToggle;
+
+  /// Optional second line per option, in the same order as [options].
+  final List<String>? descriptions;
 
   @override
   Widget build(BuildContext context) {
@@ -82,11 +86,25 @@ class OnboardingChoiceSlide extends StatelessWidget {
                               ),
                               const SizedBox(width: 14),
                               Expanded(
-                                child: Text(
-                                  options[index],
-                                  style: theme.typography.base.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      options[index],
+                                      style: theme.typography.base.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    if (descriptions?.elementAtOrNull(index)
+                                        case final description?)
+                                      Text(
+                                        description,
+                                        style: theme.typography.small.copyWith(
+                                          color:
+                                              theme.colorScheme.mutedForeground,
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             ],

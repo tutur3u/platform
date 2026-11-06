@@ -21,6 +21,15 @@ export const baseUser = Object.freeze({
   email,
   aud: 'authenticated',
   created_at: '2026-01-01',
+  identities: [
+    {
+      id: 'fixture-identity',
+      identity_id: 'fixture-identity',
+      user_id: id,
+      provider: 'email',
+      identity_data: {},
+    },
+  ],
   email_confirmed_at: '2026-01-01',
   banned_until: '2126-01-01',
   app_metadata: { employee_onboarding: true },

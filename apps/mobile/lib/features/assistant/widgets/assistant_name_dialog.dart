@@ -95,6 +95,7 @@ class _AssistantNameDialogState extends State<AssistantNameDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             AppTextField(
+              placeholder: context.l10n.inputPlaceholderAssistantName,
               key: const ValueKey('assistant-name-input'),
               controller: _controller,
               focusNode: _focus,

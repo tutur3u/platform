@@ -1,4 +1,4 @@
-import { CheckLine, ExternalLink, NotebookPen } from '@tuturuuu/icons';
+import { ExternalLink, NotebookPen } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Breadcrumb,
@@ -31,9 +31,6 @@ interface TaskCardIdentifierRowProps {
   selectTaskTooltipLabel?: string;
   selectionCheckboxClassName?: string;
   taskListStatus?: string | null;
-  ticketBadgeClassName?: string;
-  ticketIdentifier: string | null;
-  ticketTitle: string;
 }
 
 export function TaskCardIdentifierRow({
@@ -50,10 +47,16 @@ export function TaskCardIdentifierRow({
   selectTaskTooltipLabel,
   selectionCheckboxClassName,
   taskListStatus,
-  ticketBadgeClassName,
-  ticketIdentifier,
-  ticketTitle,
 }: TaskCardIdentifierRowProps) {
+  // The ticket ID now prefixes the title, so this row only renders badges.
+  if (
+    !isMultiSelectMode &&
+    taskListStatus !== 'documents' &&
+    !isPersonalExternalTask
+  ) {
+    return null;
+  }
+
   return (
     <div
       className={cn(
@@ -163,25 +166,6 @@ export function TaskCardIdentifierRow({
               externalSourceTitle || externalSourceLabel
             )}
           </TooltipContent>
-        </Tooltip>
-      )}
-      {ticketIdentifier && taskListStatus !== 'documents' && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge
-              aria-label={ticketTitle}
-              variant="outline"
-              className={cn(
-                'h-4 w-fit gap-0.5 px-1 py-0 font-mono text-[9px]',
-                ticketBadgeClassName
-              )}
-              data-testid="task-card-ticket-identifier"
-            >
-              <CheckLine className="h-2.5 w-2.5 shrink-0" />
-              {ticketIdentifier}
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent side="top">{ticketTitle}</TooltipContent>
         </Tooltip>
       )}
     </div>

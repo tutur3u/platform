@@ -1,9 +1,11 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { BookOpen } from '@tuturuuu/icons';
+import { getTulearnModuleVocabulary } from '@tuturuuu/internal-api/tulearn';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ContentCard } from './content-card';
@@ -22,7 +24,6 @@ import {
   type MatchCard,
   normalizeVocabulary,
   type PronunciationFeedback,
-  type VocabularyEntry,
 } from './learner-vocabulary-utils';
 import { useVocabularySpeech } from './use-vocabulary-speech';
 
@@ -30,8 +31,16 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
   const t = useTranslations('learnerVocabulary');
   const params = useParams<{ wsId?: string }>();
   const wsId = params?.wsId;
-  const [vocabulary, setVocabulary] = useState<VocabularyEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const studentId = useSearchParams().get('studentId');
+  const { data: vocabularyPayload, isLoading } = useQuery({
+    queryKey: ['learner-vocabulary', wsId, moduleId, studentId],
+    queryFn: () => getTulearnModuleVocabulary(wsId ?? '', moduleId, studentId),
+    enabled: Boolean(wsId),
+  });
+  const vocabulary = useMemo(
+    () => normalizeVocabulary(vocabularyPayload?.vocabulary),
+    [vocabularyPayload]
+  );
   const [started, setStarted] = useState(false);
   const [cards, setCards] = useState<MatchCard[]>([]);
   const [selected, setSelected] = useState<MatchCard | null>(null);
@@ -68,49 +77,6 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
 
   const matchedSet = useMemo(() => new Set(matchedIds), [matchedIds]);
   const finished = cards.length > 0 && matchedIds.length === cards.length;
-
-  useEffect(() => {
-    if (!wsId) return;
-
-    let cancelled = false;
-
-    async function loadVocabulary() {
-      try {
-        setIsLoading(true);
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/course-modules/${moduleId}/vocabulary`,
-          {
-            credentials: 'include',
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to load vocabulary.');
-        }
-
-        const payload = (await response.json()) as { vocabulary?: unknown };
-
-        if (!cancelled) {
-          setVocabulary(normalizeVocabulary(payload.vocabulary));
-        }
-      } catch (error) {
-        console.error('Failed to load learner vocabulary', error);
-        if (!cancelled) {
-          setVocabulary([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    loadVocabulary();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [moduleId, wsId]);
 
   const pronunciationItems = useMemo(
     () =>

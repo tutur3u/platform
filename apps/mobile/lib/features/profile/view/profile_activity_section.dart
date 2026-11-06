@@ -29,21 +29,43 @@ class ProfileActivitySection extends StatefulWidget {
   const ProfileActivitySection({
     this.replayToken = 0,
     this.statsLoader,
+    this.tag,
+    this.taskLinked = false,
+    this.showHeader = true,
     this.cacheUserId,
     this.timezoneLoader,
     super.key,
   });
 
+  final bool showHeader;
   final int replayToken;
   final String? Function()? cacheUserId;
   final ProfileStatsLoader? statsLoader;
+
+  /// Counts only sessions with this tag (for example `pomodoro`).
+  final String? tag;
+
+  /// Counts only sessions linked to a task; Focus Time sets it.
+  final bool taskLinked;
   final Future<String> Function()? timezoneLoader;
 
   @override
-  State<ProfileActivitySection> createState() => _ProfileActivitySectionState();
+  State<ProfileActivitySection> createState() => ProfileActivitySectionState();
 }
 
-class _ProfileActivitySectionState extends State<ProfileActivitySection> {
+class ProfileActivitySectionState extends State<ProfileActivitySection> {
+  Future<void> refresh() async {
+    final user = context.read<AuthCubit>().state.user;
+    final workspace = verifiedPersonalProfileWorkspace(
+      userId: user?.id,
+      cacheUserId: (widget.cacheUserId ?? currentPersonalProfileUserId)(),
+      workspaces: context.read<WorkspaceCubit>(),
+    );
+    if (user != null && workspace != null) {
+      await _load(workspace.id, user.id, workspace.personal);
+    }
+  }
+
   final _api = ApiClient();
   final _http = http.Client();
   late final _repository = TimeTrackerRepository(
@@ -112,6 +134,8 @@ class _ProfileActivitySectionState extends State<ProfileActivitySection> {
                 userId,
                 isPersonal: personal,
                 timezone: timezone,
+                tag: widget.tag,
+                taskLinked: widget.taskLinked,
               ),
             );
       if (!mounted || request != _request) return;
@@ -181,10 +205,11 @@ class _ProfileActivitySectionState extends State<ProfileActivitySection> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        AppSectionHeader(
-          title: l10n.profilePrivateActivity,
-          icon: LucideIcons.lock,
-        ),
+        if (widget.showHeader)
+          AppSectionHeader(
+            title: l10n.profilePrivateActivity,
+            icon: LucideIcons.lock,
+          ),
         body,
       ],
     );

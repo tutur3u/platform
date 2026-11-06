@@ -97,9 +97,9 @@
     "mobile:firebase:configure": "node scripts/mobile-firebase-config.js",
     "build:android": "bun mobile:firebase:configure --environment production --platform android && node scripts/mobile-build-android.js",
     "build:android:dev": "bun mobile:firebase:configure --environment development --platform android && cd apps/mobile && flutter build aab --dart-define-from-file=.env --flavor development --target lib/main_development.dart",
-    "build:ios": "bun mobile:firebase:configure --environment production --platform ios && flutter config --no-enable-swift-package-manager && cd apps/mobile && flutter build ipa --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
+    "build:ios": "node scripts/mobile-validate-dart-defines.js apps/mobile/.env.production && bun mobile:firebase:configure --environment production --platform ios && flutter config --no-enable-swift-package-manager && cd apps/mobile && flutter build ipa --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
     "build:ios:ipa": "bun build:ios",
-    "build:ios:unsigned": "bun mobile:firebase:configure --environment production --platform ios && flutter config --no-enable-swift-package-manager && cd apps/mobile && flutter build ios --release --no-codesign --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
+    "build:ios:unsigned": "node scripts/mobile-validate-dart-defines.js apps/mobile/.env.production && bun mobile:firebase:configure --environment production --platform ios && flutter config --no-enable-swift-package-manager && cd apps/mobile && flutter build ios --release --no-codesign --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
     "build:ios:dev": "bun mobile:firebase:configure --environment development --platform ios && flutter config --no-enable-swift-package-manager && cd apps/mobile && flutter build ios --dart-define-from-file=.env --flavor development --target lib/main_development.dart",
     "build:web": "bun turbo:local run build -F @tuturuuu/web",
     "build:web:docker": "node scripts/paused-runtimes.js docker",
@@ -354,6 +354,7 @@
   "patchedDependencies": {
     "@opennextjs/cloudflare@1.20.6": "patches/@opennextjs%2Fcloudflare@1.20.6.patch",
     "@opennextjs/cloudflare@https://registry.npmjs.org/@opennextjs/cloudflare/-/cloudflare-1.20.6.tgz": "patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch",
-    "@supabase/auth-js@2.117.1": "patches/@supabase%2Fauth-js@2.117.1.patch"
+    "@supabase/auth-js@2.117.1": "patches/@supabase%2Fauth-js@2.117.1.patch",
+    "@cloudflare/config@0.27.0": "patches/@cloudflare%2Fconfig@0.27.0.patch"
   }
 }

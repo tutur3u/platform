@@ -37,6 +37,11 @@ const habitTrackerComposerModes = [
 
 const habitTrackerProgressVariants = ['ring', 'bar', 'check'] as const;
 
+/** Client-chosen operation key, as enforced by the database check. */
+export const habitTrackerOperationKeySchema = z
+  .string()
+  .regex(/^[A-Za-z0-9:_-]{8,128}$/);
+
 export const habitTrackerFieldSchema = z.object({
   key: z
     .string()
@@ -89,9 +94,12 @@ export const habitTrackerInputSchema = z.object({
   composer_config: habitTrackerComposerConfigSchema.default({}),
   start_date: z.string().date().optional(),
   is_active: z.boolean().optional(),
+  creation_key: habitTrackerOperationKeySchema.optional(),
 });
 
-export const habitTrackerUpdateSchema = habitTrackerInputSchema.partial();
+export const habitTrackerUpdateSchema = habitTrackerInputSchema
+  .omit({ creation_key: true })
+  .partial();
 
 export const habitTrackerExerciseBlockSchema = z.object({
   exercise_name: z.string().trim().min(1).max(120),
@@ -118,10 +126,12 @@ export const habitTrackerEntryInputSchema = z.object({
   primary_value: z.number().nullable().optional(),
   note: z.string().trim().max(500).nullish(),
   tags: z.array(z.string().trim().min(1).max(40)).max(8).optional(),
+  idempotency_key: habitTrackerOperationKeySchema.optional(),
 });
 
-export const habitTrackerEntryUpdateSchema =
-  habitTrackerEntryInputSchema.partial();
+export const habitTrackerEntryUpdateSchema = habitTrackerEntryInputSchema
+  .omit({ idempotency_key: true })
+  .partial();
 
 export const habitTrackerStreakActionInputSchema = z.object({
   action_type: z.enum(HabitTrackerStreakActionTypes),

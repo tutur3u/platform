@@ -373,8 +373,15 @@ void main() {
           tester.widget<AppTextField>(find.byType(AppTextField).first).enabled,
           isTrue,
         );
-        final instructions = find.byType(AppTextField).at(2);
-        await tester.ensureVisible(instructions);
+        final instructions = find.byKey(
+          const ValueKey('mail-settings-instructions'),
+        );
+        await tester.scrollUntilVisible(
+          instructions,
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
         await tester.enterText(
           find.descendant(of: instructions, matching: find.byType(TextField)),
           'New instructions',

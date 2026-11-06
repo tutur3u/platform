@@ -73,6 +73,7 @@ const querySchema = z.object({
       'time_tracking_request_approved',
       'time_tracking_request_rejected',
       'time_tracking_request_needs_info',
+      'topic_assigned',
     ])
     .nullable()
     .optional()

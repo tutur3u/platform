@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/models/time_tracking/request_activity.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/time_tracker/widgets/request_detail_shared.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class RequestActivitySection extends StatefulWidget {
@@ -100,7 +100,7 @@ class _RequestActivitySectionState extends State<RequestActivitySection> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_isLoading && _response.data.isEmpty)
-          const Center(child: NovaLoadingIndicator())
+          const AppLoadingIndicator()
         else if (_error != null)
           _ActivityErrorState(
             message: _error!,

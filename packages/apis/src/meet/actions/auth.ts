@@ -17,6 +17,7 @@ import {
   createMeetGuestSession,
   normalizeMeetPlanId,
 } from '@tuturuuu/utils/meet-guest-session';
+import { getPlan } from '@tuturuuu/utils/plan-helpers';
 import { headers } from 'next/headers';
 
 export interface GuestLoginInput {
@@ -73,6 +74,10 @@ export async function guestLogin(rawPlanId: string, input: GuestLoginInput) {
     typeof password !== 'string' ||
     password.length > MAX_PASSWORD_LENGTH
   ) {
+    return { error: 'Invalid request' };
+  }
+
+  if (!(await getPlan(planId, { actorUserId: null }))) {
     return { error: 'Invalid request' };
   }
 

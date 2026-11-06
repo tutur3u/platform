@@ -12,14 +12,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type {
-  CanonicalExternalProject,
-  ExternalProjectAdapterKind,
-  ExternalProjectSyncManifest,
-  ExternalProjectSyncSchema,
-  Json,
-  WorkspaceExternalProjectBinding,
-} from '@tuturuuu/types';
+import type { WorkspaceExternalProjectBinding } from '@tuturuuu/types';
 import {
   PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
@@ -42,478 +35,27 @@ import {
   authorizeExternalAppRequest,
   readExternalAppCredentials,
 } from './app-credentials';
-import { setWorkspaceCmsSiteTemplate } from './binding-settings';
+import { resolveWorkspaceExternalProjectBinding } from './binding-state';
 import {
   hasRootExternalProjectsAdminPermission,
   verifyCmsOrCliSession,
 } from './root-access';
 
 export {
+  getDefaultCanonicalExternalProjectId,
+  resolveWorkspaceExternalProjectBinding,
+} from './binding-state';
+export {
   hasRootExternalProjectsAdminPermission,
   requireRootExternalProjectsAdmin,
 } from './root-access';
-
-import {
-  DEFAULT_EXTERNAL_PROJECT_COLLECTIONS,
-  EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
-  EXTERNAL_PROJECT_DISPLAY_NAMES,
-  EXTERNAL_PROJECT_ENABLED_SECRET,
-} from './constants';
+export {
+  ExternalProjectSetupForbiddenError,
+  type ExternalProjectSetupScope,
+  ensureWorkspaceExternalProjectStudio,
+} from './studio-setup';
 
 type AdminDb = TypedSupabaseClient;
-
-export function getDefaultCanonicalExternalProjectId(
-  adapter: ExternalProjectAdapterKind
-) {
-  return `${adapter}-main`;
-}
-
-/**
- * Read the enabled flag + canonical id for a workspace.
- *
- * Dual-read rollout: prefer the first-class
- * `workspace_external_project_bindings` table (introduced by the CMS redesign).
- * Fall back to the legacy `workspace_secrets` pattern when no binding row exists
- * yet (e.g. a workspace that has not been backfilled, or before the migration is
- * applied). This keeps delivery working for every workspace regardless of
- * rollout state. The binding table is missing entirely until the migration runs,
- * in which case the query errors and we silently fall back to secrets.
- */
-async function readWorkspaceExternalProjectBindingState(
-  admin: AdminDb,
-  workspaceId: string
-): Promise<{
-  canonicalId: string | null;
-  enabled: boolean;
-  settings: Json | null;
-}> {
-  try {
-    const { data: binding, error: bindingError } = await admin
-      .from('workspace_external_project_bindings')
-      .select('canonical_project_id, is_enabled, settings')
-      .eq('ws_id', workspaceId)
-      .maybeSingle();
-
-    if (!bindingError && binding) {
-      return {
-        canonicalId: binding.canonical_project_id ?? null,
-        enabled: binding.is_enabled === true,
-        settings: binding.settings,
-      };
-    }
-  } catch {
-    // Table not present yet (migration not applied) — fall through to secrets.
-  }
-
-  const { data: secrets, error: secretsError } = await admin
-    .from('workspace_secrets')
-    .select('name, value')
-    .eq('ws_id', workspaceId)
-    .in('name', [
-      EXTERNAL_PROJECT_ENABLED_SECRET,
-      EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
-    ]);
-
-  if (secretsError) {
-    throw new Error(secretsError.message);
-  }
-
-  return {
-    canonicalId:
-      secrets?.find(
-        (secret) => secret.name === EXTERNAL_PROJECT_CANONICAL_ID_SECRET
-      )?.value ?? null,
-    enabled:
-      secrets?.some(
-        (secret) =>
-          secret.name === EXTERNAL_PROJECT_ENABLED_SECRET &&
-          secret.value === 'true'
-      ) ?? false,
-    settings: null,
-  };
-}
-
-export async function resolveWorkspaceExternalProjectBinding(
-  workspaceId: string,
-  db?: AdminDb
-): Promise<WorkspaceExternalProjectBinding> {
-  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
-
-  const { canonicalId, enabled, settings } =
-    await readWorkspaceExternalProjectBindingState(admin, workspaceId);
-
-  let canonicalProject: CanonicalExternalProject | null = null;
-
-  if (canonicalId) {
-    const { data } = await admin
-      .from('canonical_external_projects')
-      .select('*')
-      .eq('id', canonicalId)
-      .maybeSingle();
-
-    canonicalProject = data;
-  }
-
-  return {
-    adapter: canonicalProject?.adapter ?? null,
-    canonical_id: canonicalId,
-    canonical_project:
-      enabled && canonicalProject?.is_active ? canonicalProject : null,
-    enabled:
-      enabled && Boolean(canonicalId) && Boolean(canonicalProject?.is_active),
-    settings,
-    workspace_id: workspaceId,
-  };
-}
-
-function getExternalProjectSchemaCollectionSlugs(
-  schema?: ExternalProjectSyncSchema
-) {
-  return schema?.collections.map((collection) => collection.slug) ?? [];
-}
-
-function buildExternalProjectDeliveryProfile(
-  schema?: ExternalProjectSyncSchema,
-  template?: ExternalProjectSyncManifest['template']
-) {
-  return {
-    schema: schema ?? { collections: [] },
-    ...(template ? { template } : {}),
-  } as Json;
-}
-
-async function ensureCanonicalExternalProject({
-  adapter,
-  admin,
-  actorId,
-  canonicalProjectId = getDefaultCanonicalExternalProjectId(adapter),
-  schema,
-  template,
-}: {
-  adapter: ExternalProjectAdapterKind;
-  admin: AdminDb;
-  actorId: string | null;
-  canonicalProjectId?: string;
-  schema?: ExternalProjectSyncSchema;
-  template?: ExternalProjectSyncManifest['template'];
-}) {
-  const { data: existingProject, error: existingProjectError } = await admin
-    .from('canonical_external_projects')
-    .select('*')
-    .eq('id', canonicalProjectId)
-    .maybeSingle();
-
-  if (existingProjectError) {
-    throw new Error(existingProjectError.message);
-  }
-
-  if (existingProject) {
-    if (existingProject.adapter !== adapter) {
-      throw new Error(
-        `Canonical external project ${canonicalProjectId} already uses the ${existingProject.adapter} adapter`
-      );
-    }
-
-    if (!existingProject.is_active) {
-      throw new Error(
-        `Canonical external project ${canonicalProjectId} is inactive`
-      );
-    }
-
-    if (
-      adapter === 'custom' &&
-      !existingProject.allowed_features.includes('chat')
-    ) {
-      const { data: upgradedProject, error: upgradeError } = await admin
-        .from('canonical_external_projects')
-        .update({
-          allowed_features: [...existingProject.allowed_features, 'chat'],
-          updated_by: actorId,
-        })
-        .eq('id', canonicalProjectId)
-        .select('*')
-        .single();
-      if (upgradeError) throw new Error(upgradeError.message);
-      return {
-        canonicalProject: upgradedProject,
-        created: false,
-        id: canonicalProjectId,
-      };
-    }
-
-    return {
-      canonicalProject: existingProject,
-      created: false,
-      id: canonicalProjectId,
-    };
-  }
-
-  const schemaCollectionSlugs = getExternalProjectSchemaCollectionSlugs(schema);
-  const allowedCollections =
-    schemaCollectionSlugs.length > 0
-      ? schemaCollectionSlugs
-      : DEFAULT_EXTERNAL_PROJECT_COLLECTIONS[adapter];
-
-  const { data: canonicalProject, error: insertError } = await admin
-    .from('canonical_external_projects')
-    .insert({
-      adapter,
-      allowed_collections: allowedCollections,
-      allowed_features:
-        adapter === 'custom'
-          ? ['sync', 'assets', 'delivery', 'chat']
-          : ['sync', 'assets', 'delivery'],
-      created_by: actorId,
-      delivery_profile: buildExternalProjectDeliveryProfile(schema, template),
-      display_name: EXTERNAL_PROJECT_DISPLAY_NAMES[adapter],
-      id: canonicalProjectId,
-      is_active: true,
-      metadata: {
-        autoSetup: true,
-        adapter,
-        ...(template ? { template } : {}),
-      },
-      updated_by: actorId,
-    })
-    .select('*')
-    .single();
-
-  if (insertError) {
-    throw new Error(insertError.message);
-  }
-
-  return {
-    canonicalProject,
-    created: true,
-    id: canonicalProjectId,
-  };
-}
-
-async function bindWorkspaceExternalProject({
-  actorId,
-  admin,
-  canonicalProjectId,
-  previousCanonicalId,
-  workspaceId,
-}: {
-  actorId: string | null;
-  admin: AdminDb;
-  canonicalProjectId: string;
-  previousCanonicalId: string | null;
-  workspaceId: string;
-}) {
-  if (workspaceId === ROOT_WORKSPACE_ID) {
-    throw new Error(
-      'Root workspace cannot be used as a destination external project workspace'
-    );
-  }
-
-  const { error: bindingError } = await admin
-    .from('workspace_external_project_bindings')
-    .upsert(
-      {
-        canonical_project_id: canonicalProjectId,
-        is_enabled: true,
-        updated_by: actorId,
-        ws_id: workspaceId,
-      },
-      { onConflict: 'ws_id' }
-    );
-  if (bindingError) throw new Error(bindingError.message);
-
-  const { error: deleteError } = await admin
-    .from('workspace_secrets')
-    .delete()
-    .eq('ws_id', workspaceId)
-    .in('name', [
-      EXTERNAL_PROJECT_ENABLED_SECRET,
-      EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
-    ]);
-
-  if (deleteError) {
-    throw new Error(deleteError.message);
-  }
-
-  const { error: insertError } = await admin.from('workspace_secrets').insert([
-    {
-      name: EXTERNAL_PROJECT_ENABLED_SECRET,
-      value: 'true',
-      ws_id: workspaceId,
-    },
-    {
-      name: EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
-      value: canonicalProjectId,
-      ws_id: workspaceId,
-    },
-  ]);
-
-  if (insertError) {
-    throw new Error(insertError.message);
-  }
-
-  const { error: auditError } = await admin
-    .from('workspace_external_project_binding_audits')
-    .insert({
-      actor_user_id: actorId,
-      destination_ws_id: workspaceId,
-      next_canonical_id: canonicalProjectId,
-      previous_canonical_id: previousCanonicalId,
-      source_ws_id: ROOT_WORKSPACE_ID,
-    });
-
-  if (auditError) {
-    throw new Error(auditError.message);
-  }
-}
-
-async function importExternalProjectFieldDefinitions({
-  actorId,
-  admin,
-  schema,
-  workspaceId,
-}: {
-  actorId: string | null;
-  admin: AdminDb;
-  schema?: ExternalProjectSyncSchema;
-  workspaceId: string;
-}) {
-  if (!schema) {
-    return;
-  }
-
-  const { upsertWorkspaceExternalProjectFieldDefinitionsFromSchema } =
-    await import('./store');
-
-  await upsertWorkspaceExternalProjectFieldDefinitionsFromSchema(
-    {
-      actorId,
-      schema,
-      workspaceId,
-    },
-    admin
-  );
-}
-
-async function storeWorkspaceExternalProjectTemplate({
-  actorId,
-  admin,
-  template,
-  workspaceId,
-}: {
-  actorId: string | null;
-  admin: AdminDb;
-  template?: ExternalProjectSyncManifest['template'];
-  workspaceId: string;
-}) {
-  if (!template) return;
-  await setWorkspaceCmsSiteTemplate({
-    actorId,
-    admin,
-    template,
-    workspaceId,
-  });
-}
-
-export async function ensureWorkspaceExternalProjectStudio({
-  actorId,
-  adapter,
-  admin,
-  schema,
-  template,
-  workspaceId,
-}: {
-  /** Null when a linked app provisions its own schema, with no user acting. */
-  actorId: string | null;
-  adapter: ExternalProjectAdapterKind;
-  admin: AdminDb;
-  schema?: ExternalProjectSyncSchema;
-  template?: ExternalProjectSyncManifest['template'];
-  workspaceId: string;
-}) {
-  const canonicalProjectId = getDefaultCanonicalExternalProjectId(adapter);
-  const currentBinding = await resolveWorkspaceExternalProjectBinding(
-    workspaceId,
-    admin
-  );
-
-  if (
-    currentBinding.enabled &&
-    currentBinding.canonical_project &&
-    currentBinding.adapter === adapter &&
-    currentBinding.canonical_id
-  ) {
-    const { created: createdCanonicalProject } =
-      await ensureCanonicalExternalProject({
-        actorId,
-        adapter,
-        admin,
-        canonicalProjectId: currentBinding.canonical_id,
-        schema,
-        template: undefined,
-      });
-
-    await importExternalProjectFieldDefinitions({
-      actorId,
-      admin,
-      schema,
-      workspaceId,
-    });
-    await storeWorkspaceExternalProjectTemplate({
-      actorId,
-      admin,
-      template,
-      workspaceId,
-    });
-
-    return {
-      binding: await resolveWorkspaceExternalProjectBinding(workspaceId, admin),
-      createdBinding: false,
-      createdCanonicalProject,
-    };
-  }
-
-  if (currentBinding.canonical_id) {
-    throw new Error(
-      `Workspace is already configured for ${currentBinding.canonical_id}`
-    );
-  }
-
-  const { created: createdCanonicalProject } =
-    await ensureCanonicalExternalProject({
-      actorId,
-      adapter,
-      admin,
-      schema,
-      template: undefined,
-    });
-
-  await bindWorkspaceExternalProject({
-    actorId,
-    admin,
-    canonicalProjectId,
-    previousCanonicalId: currentBinding.canonical_id,
-    workspaceId,
-  });
-
-  await importExternalProjectFieldDefinitions({
-    actorId,
-    admin,
-    schema,
-    workspaceId,
-  });
-  await storeWorkspaceExternalProjectTemplate({
-    actorId,
-    admin,
-    template,
-    workspaceId,
-  });
-
-  return {
-    binding: await resolveWorkspaceExternalProjectBinding(workspaceId, admin),
-    createdBinding: true,
-    createdCanonicalProject,
-  };
-}
 
 export type WorkspaceExternalProjectMode = 'read' | 'manage' | 'publish';
 
@@ -926,24 +468,16 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppToken({
     };
   }
 
-  const [workspacePermissions, rootPermissions] = await Promise.all([
-    getPermissionsForUserId({
-      admin,
-      userId: verification.claims.sub,
-      wsId: normalizedWorkspaceId,
-    }),
-    getPermissionsForUserId({
-      admin,
-      userId: verification.claims.sub,
-      wsId: ROOT_WORKSPACE_ID,
-    }),
-  ]);
+  // Setup enables the studio and may provision shared canonical projects, so
+  // only root external-project admins may run it; workspace manage access is
+  // not enough (see apps/docs/platform/applications/cms.mdx).
+  const rootPermissions = await getPermissionsForUserId({
+    admin,
+    userId: verification.claims.sub,
+    wsId: ROOT_WORKSPACE_ID,
+  });
 
-  const allowed =
-    hasWorkspaceExternalProjectPermission(workspacePermissions, 'manage') ||
-    hasRootExternalProjectsAdminPermission(rootPermissions);
-
-  if (!allowed) {
+  if (!hasRootExternalProjectsAdminPermission(rootPermissions)) {
     return {
       ok: false as const,
       response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
@@ -955,12 +489,12 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppToken({
     admin,
     normalizedWorkspaceId,
     rootPermissions,
+    setupScope: 'root' as const,
     user: {
       app: verification.claims.target_app,
       email: verification.claims.email,
       id: verification.claims.sub,
     },
-    workspacePermissions,
   };
 }
 
@@ -1011,24 +545,16 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppSession({
     };
   }
 
-  const [workspacePermissions, rootPermissions] = await Promise.all([
-    getPermissionsForUserId({
-      admin,
-      userId: verification.claims.sub,
-      wsId: normalizedWorkspaceId,
-    }),
-    getPermissionsForUserId({
-      admin,
-      userId: verification.claims.sub,
-      wsId: ROOT_WORKSPACE_ID,
-    }),
-  ]);
+  // Setup enables the studio and may provision shared canonical projects, so
+  // only root external-project admins may run it; workspace manage access is
+  // not enough (see apps/docs/platform/applications/cms.mdx).
+  const rootPermissions = await getPermissionsForUserId({
+    admin,
+    userId: verification.claims.sub,
+    wsId: ROOT_WORKSPACE_ID,
+  });
 
-  const allowed =
-    hasWorkspaceExternalProjectPermission(workspacePermissions, 'manage') ||
-    hasRootExternalProjectsAdminPermission(rootPermissions);
-
-  if (!allowed) {
+  if (!hasRootExternalProjectsAdminPermission(rootPermissions)) {
     return {
       ok: false as const,
       response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
@@ -1040,12 +566,12 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppSession({
     admin,
     normalizedWorkspaceId,
     rootPermissions,
+    setupScope: 'root' as const,
     user: {
       app: verification.claims.target_app,
       email: verification.claims.email,
       id: verification.claims.sub,
     },
-    workspacePermissions,
   };
 }
 
@@ -1317,6 +843,7 @@ export async function requireWorkspaceExternalProjectSetupAccess({
       ok: true as const,
       admin,
       normalizedWorkspaceId: wsId,
+      setupScope: 'workspace' as const,
       user: null,
     };
   }
@@ -1361,17 +888,12 @@ export async function requireWorkspaceExternalProjectSetupAccess({
     };
   }
 
-  const admin = (await createAdminClient()) as TypedSupabaseClient;
-  const [workspacePermissions, rootPermissions] = await Promise.all([
-    getPermissions({ wsId: normalizedWorkspaceId, request }),
-    getPermissions({ wsId: ROOT_WORKSPACE_ID, request }),
-  ]);
+  const rootPermissions = await getPermissions({
+    wsId: ROOT_WORKSPACE_ID,
+    request,
+  });
 
-  const allowed =
-    hasWorkspaceExternalProjectPermission(workspacePermissions, 'manage') ||
-    hasRootExternalProjectsAdminPermission(rootPermissions);
-
-  if (!allowed) {
+  if (!hasRootExternalProjectsAdminPermission(rootPermissions)) {
     return {
       ok: false as const,
       response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
@@ -1380,12 +902,12 @@ export async function requireWorkspaceExternalProjectSetupAccess({
 
   return {
     ok: true as const,
-    admin,
+    admin: (await createAdminClient()) as TypedSupabaseClient,
     normalizedWorkspaceId,
     rootPermissions,
+    setupScope: 'root' as const,
     supabase,
     user,
-    workspacePermissions,
   };
 }
 

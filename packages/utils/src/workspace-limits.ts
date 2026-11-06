@@ -1,5 +1,7 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { MAX_WORKSPACES_FOR_FREE_USERS } from './constants';
-import { isValidTuturuuuEmail } from './email/client';
 
 export const WORKSPACE_LIMIT_ERROR_CODE = 'WORKSPACE_LIMIT_REACHED';
 
@@ -22,10 +24,26 @@ export async function checkWorkspaceCreationLimit(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   userId: string,
-  userEmail: string | null | undefined
+  _userEmail: string | null | undefined
 ): Promise<WorkspaceLimitCheckResult> {
   // Tuturuuu emails have unlimited workspace creation
-  if (isValidTuturuuuEmail(userEmail)) {
+  let isTuturuuuMember = false;
+  try {
+    isTuturuuuMember = isVerifiedTuturuuuStaffSession(
+      await getVerifiedAuthUser(
+        await createAdminClient({ noCookie: true }),
+        userId
+      ),
+      { allowXwf: true }
+    );
+  } catch (error) {
+    console.error(
+      'Failed to resolve staff status for workspace creation limit',
+      error
+    );
+  }
+
+  if (isTuturuuuMember) {
     return {
       canCreate: true,
     };

@@ -240,13 +240,6 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  Future<void> signInWithMicrosoft() async {
-    await _signInWithExternalProvider(
-      action: _repo.signInWithMicrosoft,
-      fallbackErrorCode: AuthErrorCode.microsoftBrowserLaunchFailed,
-    );
-  }
-
   Future<void> signInWithApple() async {
     await _signInWithExternalProvider(
       action: _repo.signInWithApple,

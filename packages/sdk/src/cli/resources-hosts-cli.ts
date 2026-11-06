@@ -15,6 +15,7 @@ import {
 } from './resources-hosts-config';
 import type { HostDispatchDeps } from './resources-hosts-dispatch';
 import { hostLedger } from './resources-hosts-ledger';
+import { probeAutomaticHosts } from './resources-hosts-probe';
 import {
   compareWithCurrent,
   preferenceScenarios,
@@ -61,6 +62,7 @@ export function hostsDependencies({
     return { module, client };
   };
   return {
+    probeHosts: probeAutomaticHosts,
     fleet: async () => {
       const { module, client } = await session();
       return module.offloadRequest((signal) =>
@@ -101,7 +103,7 @@ export function hostsDependencies({
         onChild
       );
     },
-    runRemote: async ({ host, sha, prefix }) => {
+    runRemote: async ({ host, sha, prefix, operationId }) => {
       const { module, client } = await session();
       try {
         return await module.runBoxOffload({
@@ -109,6 +111,7 @@ export function hostsDependencies({
           runnerId: host.runnerId!,
           sha,
           prefix,
+          operationId,
           argv: [name, ...command],
           timeoutSeconds: timeoutSeconds || module.defaultOffloadTimeoutSeconds,
         });

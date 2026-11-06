@@ -75,6 +75,16 @@ extension _AssistantChatToolEffects on AssistantChatCubit {
         await _onWorkspaceContextChanged(contextId);
       }
     }
+    if (retainedName == 'open_app') {
+      if (handled.add(callId)) {
+        await applyAssistantClientMarker(
+          retainedName,
+          output,
+          isCurrent: isCurrent,
+        );
+      }
+      return;
+    }
     if (retainedName == 'set_immersive_mode') {
       final enabled = output['enabled'];
       if (enabled is bool && handled.add(callId)) {

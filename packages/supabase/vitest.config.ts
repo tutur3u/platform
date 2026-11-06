@@ -4,6 +4,7 @@ import { defineConfig } from 'vitest/config';
 const silent = process.env.CHECK_DETAILS === '1' ? false : 'passed-only';
 
 export default defineConfig({
+  oxc: { tsconfig: new URL('./tsconfig.json', import.meta.url).pathname },
   test: {
     globals: true,
     environment: 'node',

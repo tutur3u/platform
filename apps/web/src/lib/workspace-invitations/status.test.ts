@@ -26,6 +26,8 @@ type TestState = {
   }>;
   members?: Array<{ user_id: string; ws_id: string }>;
   privateEmail?: string | null;
+  verifiedEmail?: string | null;
+  confirmed?: boolean;
   workspaces?: Array<{
     avatar_url: string | null;
     handle: string | null;
@@ -154,13 +156,32 @@ function createAdminClientMock(state: TestState = {}) {
   }
 
   return {
+    auth: {
+      admin: {
+        getUserById: vi.fn(async (id: string) => ({
+          data: {
+            user: {
+              id,
+              email:
+                state.verifiedEmail === undefined
+                  ? 'user@example.com'
+                  : state.verifiedEmail,
+              email_confirmed_at:
+                state.confirmed === false ? null : '2026-01-01',
+            },
+          },
+          error: null,
+        })),
+      },
+    },
     from: vi.fn((table: string) => createBuilder(table)),
   };
 }
 
 describe('workspace invitation status helpers', () => {
-  it('returns a direct pending invite for a non-member', async () => {
+  it('returns a direct pending invite without confirmed email', async () => {
     const admin = createAdminClientMock({
+      confirmed: false,
       directInvites: [
         {
           created_at: '2026-06-01T00:00:00.000Z',
@@ -212,7 +233,7 @@ describe('workspace invitation status helpers', () => {
     }
   });
 
-  it('matches pending email invites against the private email', async () => {
+  it('rejects an invite matched only by editable private email', async () => {
     const admin = createAdminClientMock({
       emailInvites: [
         {
@@ -231,10 +252,7 @@ describe('workspace invitation status helpers', () => {
       workspaceId,
     });
 
-    expect(result.status).toBe('pending_invite');
-    if (result.status === 'pending_invite') {
-      expect(result.invitation.matchedEmail).toBe('private@example.com');
-    }
+    expect(result.status).toBe('none');
   });
 
   it('prefers the authenticated email role when multiple email invites match', async () => {
@@ -256,6 +274,7 @@ describe('workspace invitation status helpers', () => {
         },
       ],
       privateEmail: 'private@example.com',
+      verifiedEmail: 'auth@example.com',
     });
 
     const result = await getWorkspaceInviteStatus(admin as never, {
@@ -270,6 +289,34 @@ describe('workspace invitation status helpers', () => {
       expect(result.invitation.roleId).toBe('role-auth');
     }
   });
+
+  it.each([
+    ['caller email', 'other@example.com', true],
+    ['unconfirmed auth email', 'recipient@example.com', false],
+  ])(
+    'rejects an email invitation based on %s',
+    async (_label, verifiedEmail, confirmed) => {
+      const admin = createAdminClientMock({
+        verifiedEmail,
+        confirmed,
+        privateEmail: 'recipient@example.com',
+        emailInvites: [
+          {
+            created_at: null,
+            email: 'recipient@example.com',
+            type: 'MEMBER',
+            ws_id: workspaceId,
+          },
+        ],
+      });
+      const result = await getWorkspaceInviteStatus(admin as never, {
+        authEmail: 'recipient@example.com',
+        userId,
+        workspaceId,
+      });
+      expect(result.status).toBe('none');
+    }
+  );
 
   it('returns member before pending invite when membership already exists', async () => {
     const admin = createAdminClientMock({
@@ -430,7 +477,7 @@ describe('workspace invitation status helpers', () => {
     });
   });
 
-  it('detects pending invitations across direct and email invite rows', async () => {
+  it('ignores pending invitations addressed only to an editable profile email', async () => {
     const admin = createAdminClientMock({
       emailInvites: [
         {
@@ -448,7 +495,7 @@ describe('workspace invitation status helpers', () => {
         authEmail: null,
         userId,
       })
-    ).resolves.toBe(true);
+    ).resolves.toBe(false);
   });
 
   it('does not treat existing memberships as pending invitations', async () => {

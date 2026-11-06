@@ -177,21 +177,22 @@ export async function queryMailMessageRows({
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(Math.max(1, params.pageSize ?? 40), 100);
   const parsed = parseMailSearch(params.query);
-  const threadPreferences = ['inbox', 'snoozed', 'muted'].includes(
-    params.folder ?? 'inbox'
-  )
-    ? await loadThreadPreferences(admin, mailboxId, userId)
-    : new Map<string, AnyRecord>();
-  const states = await loadAllRows(
-    () =>
-      privateTable(admin, 'mail_message_user_state')
-        .select('message_id, read_at, starred_at, archived_at, trashed_at')
-        .eq('mailbox_id', mailboxId)
-        .eq('user_id', userId)
-        .or(mailStateFilter(params))
-        .order('message_id'),
-    'Failed to search mail state'
-  );
+  // Thread preferences and message state are independent reads.
+  const [threadPreferences, states] = await Promise.all([
+    ['inbox', 'snoozed', 'muted'].includes(params.folder ?? 'inbox')
+      ? loadThreadPreferences(admin, mailboxId, userId)
+      : Promise.resolve(new Map<string, AnyRecord>()),
+    loadAllRows(
+      () =>
+        privateTable(admin, 'mail_message_user_state')
+          .select('message_id, read_at, starred_at, archived_at, trashed_at')
+          .eq('mailbox_id', mailboxId)
+          .eq('user_id', userId)
+          .or(mailStateFilter(params))
+          .order('message_id'),
+      'Failed to search mail state'
+    ),
+  ]);
   const readIds = idsWithTimestamp(states, 'read_at');
   const starredIds = idsWithTimestamp(states, 'starred_at');
   const archivedIds = idsWithTimestamp(states, 'archived_at');

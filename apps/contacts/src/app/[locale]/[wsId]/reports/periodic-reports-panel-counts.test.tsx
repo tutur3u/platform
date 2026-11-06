@@ -1,10 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PeriodicReportsPanel from './periodic-reports-panel';
 
 type QueryPage = {
   queryScope: string;
+  summaryPartial?: boolean;
   data: { id: string }[];
   counts: typeof counts;
   categoryCounts: typeof categoryCounts;
@@ -28,8 +29,12 @@ const state = vi.hoisted(() => ({
   actor: { assertActive: vi.fn() },
   summary: vi.fn(),
   worklist: vi.fn(),
+  held: vi.fn(),
+  row: vi.fn(),
+  resend: vi.fn(),
   list: vi.fn(),
   setFilters: vi.fn(),
+  toolbar: vi.fn(),
 }));
 vi.mock('@tanstack/react-query', () => ({
   keepPreviousData: (data: unknown) => data,
@@ -61,6 +66,9 @@ vi.mock('@tuturuuu/internal-api/reports', () => ({
     'rejected',
   ],
 }));
+vi.mock('@tuturuuu/utils/timezone', () => ({
+  getBrowserTimezone: () => 'Asia/Ho_Chi_Minh',
+}));
 vi.mock('@tuturuuu/ui/hooks/use-workspace-visibility', () => ({
   useWorkspaceActor: () => state.actor,
 }));
@@ -79,10 +87,33 @@ vi.mock('./periodic-email-readiness', () => ({
   PeriodicEmailReadiness: () => null,
 }));
 vi.mock('./periodic-report-row', () => ({
-  PeriodicReportRow: () => <button type="button">Row action</button>,
+  PeriodicReportRow: (props: Record<string, unknown>) => {
+    state.row(props);
+    return <button type="button">Row action</button>;
+  },
+}));
+vi.mock('./periodic-resend-dialog', () => ({
+  PeriodicResendDialog: (props: Record<string, unknown>) => {
+    state.resend(props);
+    return null;
+  },
 }));
 vi.mock('./periodic-recipient-remediation', () => ({
   PeriodicRecipientRemediation: () => null,
+}));
+vi.mock('./periodic-held-reports', () => ({
+  PeriodicHeldReports: (props: {
+    heldCount?: number;
+    canResolve: boolean;
+    onReview: () => void;
+  }) => {
+    state.held(props);
+    return (
+      <button type="button" onClick={props.onReview}>
+        Review held
+      </button>
+    );
+  },
 }));
 vi.mock('./periodic-delivery-batch-dialog', () => ({
   PeriodicDeliveryBatchDialog: () => null,
@@ -105,7 +136,10 @@ vi.mock('./periodic-status-summary', () => ({
   },
 }));
 vi.mock('./periodic-reports-toolbar', () => ({
-  PeriodicReportsToolbar: () => null,
+  PeriodicReportsToolbar: (props: Record<string, unknown>) => {
+    state.toolbar(props);
+    return null;
+  },
 }));
 vi.mock('./periodic-delivery-worklist', () => ({
   PeriodicDeliveryWorklist: (props: {
@@ -245,4 +279,207 @@ it('retains current rows and totals during same-scope background refresh', async
     screen.getByRole('button', { name: 'Row action' })
   ).toBeInTheDocument();
   expect(state.summary.mock.lastCall?.[0].counts).toEqual(counts);
+});
+
+it('sends the viewer timezone only with a month or a period range, including a cross-month one', async () => {
+  state.filters = { ...state.filters, cadence: 'weekly' };
+  render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+  await state.options.queryFn({ pageParam: 1 });
+  expect(state.list.mock.lastCall?.[1].timezone).toBeUndefined();
+  expect(state.list.mock.lastCall?.[1].month).toBeUndefined();
+
+  state.filters = {
+    ...state.filters,
+    cadence: 'monthly',
+    start: '2026-10-01',
+    end: '2026-11-03',
+  };
+  render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+  await state.options.queryFn({ pageParam: 1 });
+  expect(state.list.mock.lastCall?.[1]).toMatchObject({
+    periodStart: '2026-10-01',
+    periodEnd: '2026-11-03',
+    timezone: 'Asia/Ho_Chi_Minh',
+  });
+  // The advanced range replaces the month; they are never sent together.
+  expect(state.list.mock.lastCall?.[1].month).toBeUndefined();
+});
+
+describe('monthly worklist month', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it.each([
+    ['2026-11-02T09:00:00+07:00', '2026-10'],
+    ['2026-11-11T09:00:00+07:00', '2026-11'],
+  ])('on %s opens on report month %s by default', async (now, month) => {
+    vi.setSystemTime(new Date(now));
+    render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+    await state.options.queryFn({ pageParam: 1 });
+    expect(state.list.mock.lastCall?.[1]).toMatchObject({
+      cadence: 'monthly',
+      month,
+      timezone: 'Asia/Ho_Chi_Minh',
+    });
+    expect(state.list.mock.lastCall?.[1].periodStart).toBeUndefined();
+  });
+
+  it('reads the month from the URL and lists every month for All months', async () => {
+    vi.setSystemTime(new Date('2026-11-02T09:00:00+07:00'));
+    state.filters = { ...state.filters, month: '2026-09' };
+    render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+    await state.options.queryFn({ pageParam: 1 });
+    expect(state.list.mock.lastCall?.[1].month).toBe('2026-09');
+
+    state.filters = { ...state.filters, month: 'all' };
+    render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+    await state.options.queryFn({ pageParam: 1 });
+    expect(state.list.mock.lastCall?.[1].month).toBeUndefined();
+  });
+
+  it('writes a picked month to the URL and clears any custom range', () => {
+    vi.setSystemTime(new Date('2026-11-02T09:00:00+07:00'));
+    render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+    const toolbar = state.toolbar.mock.lastCall?.[0];
+    expect(toolbar).toMatchObject({ reportMonth: '2026-10' });
+    toolbar.onMonthChange('2026-09');
+    expect(state.setFilters).toHaveBeenLastCalledWith({
+      month: '2026-09',
+      start: '',
+      end: '',
+    });
+  });
+
+  it('shows the selected month counts on the status cards', async () => {
+    vi.setSystemTime(new Date('2026-11-02T09:00:00+07:00'));
+    const { rerender } = render(
+      <PeriodicReportsPanel wsId="workspace" permissions={permissions} />
+    );
+    await ownedResult();
+    rerender(
+      <PeriodicReportsPanel wsId="workspace" permissions={permissions} />
+    );
+    // The counts come from the same month-scoped response as the list.
+    expect(state.list.mock.lastCall?.[1].month).toBe('2026-10');
+    expect(state.summary.mock.lastCall?.[0].counts).toEqual(counts);
+  });
+});
+
+it('passes the partial-summary flag from the server to the status cards', async () => {
+  const { rerender } = render(
+    <PeriodicReportsPanel wsId="workspace" permissions={permissions} />
+  );
+  await ownedResult();
+  rerender(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+  expect(state.summary.mock.lastCall?.[0].partial).toBe(false);
+  const firstPage = state.query.data?.pages[0];
+  if (!firstPage) throw new Error('missing page');
+  state.query.data = { pages: [{ ...firstPage, summaryPartial: true }] };
+  rerender(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+  expect(state.summary.mock.lastCall?.[0].partial).toBe(true);
+});
+
+it('keeps the held group visible from the default view and opens it on the approved stage', async () => {
+  const heldPage = (queryScope: string) => ({
+    ...page(queryScope),
+    counts: { ...counts, held: 3 },
+  });
+  const { rerender } = render(
+    <PeriodicReportsPanel
+      wsId="workspace"
+      permissions={permissions}
+      canResolveHeld
+    />
+  );
+  const result = await state.options.queryFn({ pageParam: 1 });
+  state.query.data = {
+    pages: [heldPage(result.queryScope) as unknown as QueryPage],
+  };
+  rerender(
+    <PeriodicReportsPanel
+      wsId="workspace"
+      permissions={permissions}
+      canResolveHeld
+    />
+  );
+  expect(state.worklist.mock.lastCall?.[0]).toMatchObject({ heldCount: 3 });
+  expect(state.held.mock.lastCall?.[0]).toMatchObject({
+    heldCount: 3,
+    canResolve: true,
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Review held' }));
+  expect(state.setFilters).toHaveBeenCalledWith(
+    expect.objectContaining({ stage: 'approved' })
+  );
+  await state.options.queryFn({ pageParam: 1 });
+  expect(state.list.mock.lastCall?.[1]).toMatchObject({ category: 'held' });
+});
+
+it('never offers the held actions without the admin permission', async () => {
+  render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+  expect(state.held.mock.lastCall?.[0]).toMatchObject({ canResolve: false });
+});
+
+it('offers per-row and bulk resend only to admins, for resendable rows', async () => {
+  const failed = {
+    id: 'failed-one',
+    report_approval_status: 'APPROVED',
+    generation_status: 'ready',
+    delivery_status: 'failed',
+    last_delivery_error: 'Email provider rejected the delivery.',
+    user_email: 'learner@example.com',
+  };
+  const failedPage = (queryScope: string) =>
+    ({ ...page(queryScope), data: [failed] }) as unknown as QueryPage;
+  const show = async (canResolveHeld: boolean) => {
+    state.row.mockClear();
+    const view = render(
+      <PeriodicReportsPanel
+        wsId="workspace"
+        permissions={permissions}
+        canResolveHeld={canResolveHeld}
+      />
+    );
+    const result = await state.options.queryFn({ pageParam: 1 });
+    state.query.data = { pages: [failedPage(result.queryScope)] };
+    view.rerender(
+      <PeriodicReportsPanel
+        wsId="workspace"
+        permissions={permissions}
+        canResolveHeld={canResolveHeld}
+      />
+    );
+    return view;
+  };
+
+  const viewer = await show(false);
+  expect(state.worklist.mock.lastCall?.[0]).toMatchObject({
+    canResend: false,
+    eligibleCount: 0,
+  });
+  expect(state.row.mock.lastCall?.[0].onResend).toBeUndefined();
+  viewer.unmount();
+
+  await show(true);
+  expect(state.worklist.mock.lastCall?.[0]).toMatchObject({
+    canResend: true,
+    eligibleCount: 1,
+    resendSelectedCount: 0,
+  });
+  const row = state.row.mock.lastCall?.[0] as { onResend: () => void };
+  act(() => row.onResend());
+  expect(state.resend.mock.lastCall?.[0]).toMatchObject({
+    intent: { kind: 'selection', reportIds: ['failed-one'] },
+  });
+  const worklist = state.worklist.mock.lastCall?.[0] as {
+    onResendScope: () => void;
+  };
+  act(() => worklist.onResendScope());
+  expect(state.resend.mock.lastCall?.[0]).toMatchObject({
+    intent: { kind: 'scope', cadence: 'monthly' },
+  });
 });

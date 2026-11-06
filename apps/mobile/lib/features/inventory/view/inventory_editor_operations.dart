@@ -354,6 +354,9 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TextField(
+              decoration: InputDecoration(
+                hintText: context.l10n.inputPlaceholderInventoryManufacturer,
+              ),
               controller: controller,
               autofocus: true,
               onSubmitted: (_) =>

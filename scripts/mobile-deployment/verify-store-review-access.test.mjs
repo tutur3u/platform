@@ -222,6 +222,7 @@ test('metadata deferral preserves verified internal and external group assignmen
     await distributeTestFlightBuild(apple, 'app', 'build', {
       enabled: 'true',
       groups: 'all',
+      externalGroups: 'external',
       whatsNew: 'Test latest',
     }),
     groups

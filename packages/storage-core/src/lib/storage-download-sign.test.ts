@@ -45,6 +45,27 @@ describe('private Storage URL issuance', () => {
     expect(ticket.expiresAt - ticket.issuedAt).toBe(60);
   });
 
+  it.each([
+    [31_536_000, 604_800],
+    [604_800, 604_800],
+    [10, 60],
+  ])(
+    'clamps a requested %i second lifetime to %i seconds',
+    async (requested, expected) => {
+      const url = await createGuardedSupabaseStorageReadUrl(
+        supabase,
+        'ws-1',
+        'ws-1/file.zip',
+        requested
+      );
+      expect(sign).toHaveBeenCalledWith('ws-1/file.zip', expected, {
+        transform: undefined,
+      });
+      const ticket = readStorageDownloadTicket(url.split('/').pop() as string);
+      expect(ticket.expiresAt - ticket.issuedAt).toBe(expected);
+    }
+  );
+
   it('encodes URL delimiters in a legacy object key before signing', async () => {
     await createGuardedSupabaseStorageReadUrl(
       supabase,

@@ -27,6 +27,7 @@ Read only the section relevant to the current feature; paths are repository-rela
 - **Widget Consistency**: Preserve per-field validation when refactoring into shared editable widgets.
 - **Mobile API Error Surfacing**: In mobile form submit handlers, catch `ApiException` separately and surface `e.message` (with safe fallback) instead of only a generic toast.
 - **Spreadsheet Export Sanitization**: For CSV/TSV exports that include user-controlled fields, prefix values whose left-trimmed content starts with `=`, `+`, `-`, or `@` with an apostrophe before quote escaping so spreadsheet apps do not interpret exported cells as formulas.
+- **Offline Preparation Publication**: Fetch-only preparers must reuse the owning reader's genuine denial cleanup, including its MFA/verification exceptions. Capture destination `resourceRevisionFor` values before requests, pass `expectedRevision`, `requirePublication: true` and scope checks through durable writes, and verify again before retaining readiness. Actor equality alone cannot fence a completed purge. Regress a fresh denial after an old download and a held response released after a completed normal-reader purge.
 - **Sensitive Cache Denylist**: Do not persist workspace secrets, credentials, access tokens, or raw secret values in `CacheStore`, SharedPreferences, Hive, or other mobile disk caches. Use in-memory state only unless the storage path is explicitly encrypted and reviewed for that secret class.
 - **Auth Account State Redaction**: Secret-bearing auth account models exposed through Cubit/Bloc state must exclude raw refresh tokens and session JSON from `Equatable.props` and `toString`/debug summaries. Keep secure-storage serialization separate from loggable equality and state output.
 - **Supabase Logout Required For Account Cleanup**: Multi-account removal and all-account logout must not clear secure account stores or emit unauthenticated auth state unless Supabase `auth.signOut()` succeeds. Treat Google/provider logout and stored refresh-token revocation as best-effort only; surface Supabase logout failures and keep the local account visible for retry.
@@ -157,12 +158,17 @@ when the local checkout lacks package configuration.
 
 - **Mira Composer Geometry**: Enter inserts a newline and only the side primary action sends typed text. There is no fullscreen/expand draft action. Keep bounded media/audio previews, upload/removal callbacks and text selection in the inline composer. Limit dock growth to five lines and report rendered composer height for transcript padding and scroll-to-bottom clearance. The side action stays 52dp tall. Validate inside `PersistentShellDock` with wrapped drafts, text scale, IME and safe-area variants; a fixed one-line estimate is insufficient.
 - **Atomic Assistant Widgets**: In `features/assistant`, default to reusable stateless widgets under `widgets/` before adding more `part` files or growing a page-level state class. Keep the page/view focused on orchestration only.
+- **Mira Screen Context Scope**: `AssistantScreenContextScope` requires `isCurrentScope` for the captured actor and workspace; only screens not tied to any workspace or account opt out with `AssistantScreenContextScope.unscoped`. Never default a missing predicate to current. The registry evaluates it on every snapshot before reading fields; mounted and TickerMode checks alone do not fence a modal across workspace switches. Cover both create and edit paths with a mounted-form switch regression (`event_form_assistant_context_test.dart`).
 - **Assistant Send Recovery**: Distinguish an untouched actor/workspace scope from uncertain creation. Bootstrap a clear envelope under the scope lock only when the envelope, legacy selection/context, creation marker and process authority are all absent; require host acknowledgement before creation. Preserve informed recovery for legacy/pending/held state and retain drafts until a real USER receipt. Exercise first Send, rapid Sends, held ACKs and the first navbar frame (`assistant_send_recovery_test.dart`, `assistant_fresh_scope_test.dart`).
 - **Assistant Reaction Operations**: Use idempotent desired-state PUT with a stable persisted operation ID; never fall back to the legacy POST toggle. Clean exact unsent/acknowledged markers independently of page scope. Logout clears journal metadata but retains operation IDs until server retirement prevents delayed writes; scope admission captures the retirement epoch. Exact-message refresh safely replays the retained intent, then reads its target. See [native reaction decisions](../../../../../apps/docs/platform/features/assistant-live.mdx#native-mobile-reaction-operations) and lifecycle/transport regression suites.
 - **Assistant Message Actions**: Private Chat reactions/replies require a native conversation and an authoritative saved-message receipt; a UUID-shaped optimistic row is insufficient. Use the native reaction operation contract for uncertainty recovery and preserve message content when applying receipts. Reply jumps suspend bottom-follow and retain bubble keys through acknowledgment ID relocation. See [mobile message actions and appearance](../../../../../apps/docs/platform/features/assistant-live.mdx#mobile-message-actions-and-appearance) for supported scopes and regression targets.
 - **Small File Bias**: Treat ~200 LOC for Flutter widgets and ~300 LOC for pages/views as guidance for identifying cohesive extractions. Extract shared badges, bubbles, banners, sheets, and cards into dedicated widget files early.
 
 ### Offline downloads
+
+For MobileFlags polling, reconnect, logout, cache retention, and flag-gated
+preparer registration, use the [mobile rollout contract](../../../../../apps/docs/platform/applications/mobile.mdx#offline-rollout-flags).
+Its linked reader tests cover scoped deletion, late responses, and disk retention.
 
 Use the product decisions in
 `apps/docs/platform/features/mobile-workspace-tools.mdx` for offline preparation,
@@ -174,6 +180,13 @@ challenges, and leave uncertain writes in review. Reuse ApiClient's preparation
 Zone so background work does not open captcha modals. Full downloads must use
 the same cache keys and payload shapes as normal reads; test first offline visits
 with normal UI page sizes rather than only the prepared request parameters.
+Notes uses dedicated list/archive keys without path parameters; share that key
+factory with its repository. Its list already includes bodies, so budget inbox
+and archive together before publishing either snapshot.
+
+For Documents, prepare the default 30-row path and whitelist metadata fields;
+never retain list-response content as a substitute for a detail download.
+The preparer regression must reopen its snapshot through readThroughJson.
 
 Use shell titles rather than duplicate body titles. Put grouped section switches
 rightmost and auxiliary actions before them. Profile sections should adapt to
@@ -308,6 +321,13 @@ admission and manage_chat for later explicit edits. Credit scope must follow the
 existing actor-personal/active-workspace billing rules, not arbitrary client IDs.
 Do not substitute model defaults for a rejected explicit selection.
 
+Empty-state Send bypasses only the follow-up queue debounce. `AssistantCreatedChat`
+is returned only after the repository durably saves the creation selection; the
+Cubit skips a duplicate selection write for that result. History/cache decoding
+must not recreate this marker. Keep origin checks before reply dispatch and retain
+explicit attachment-driven creation. `assistant_first_send_pipeline_test.dart`
+and `assistant_created_chat_test.dart` cover this boundary.
+
 A source fixture passing is not atomic SQL proof: retain migration execution under
 an admitted isolated exact-commit workflow as a separate gate. Malformed/stale or
 unknown sent outcomes retain the original creation hold and draft. Regression
@@ -329,3 +349,39 @@ Normalize validated PostgreSQL timestamptz receipts at active API boundaries bef
 strict mobile parsers. Preserve microseconds separately from Date milliseconds and
 validate calendar/offset/fraction before conversion. Cover actual creation and
 message handlers plus JSON/NDJSON adapters, not only hand-authored ISO fixtures.
+
+### Secure-storage accessibility upgrades
+
+Use `deviceSecureStorage` for device-bound cache keys and metadata that must
+remain readable after first unlock. Its per-key staged migration reads old iOS
+`unlocked` items before rewriting them, including dynamic scope keys. Explicit
+removal must delete staging as well. Keep unlock-only device MFA and note-lock
+secrets on `unlocked_this_device`. Exercise class-filtered reads, duplicate writes,
+locked reads and interruption recovery with
+`test/data/sources/keychain_accessibility_migration_test.dart`; a plain map fake
+cannot reproduce the native accessibility conflict.
+
+### Mastermind ask context and option replies
+
+Keep Home and Inbox on the shared `InboxItemTile` and `openAsks` projection so
+resolved identities and duplicate ids cannot reappear on Home. Preserve optional
+`created_at` when adapting v1 asks and copying resolved history. Display real
+titles or the first ask line through `itemDisplayTitle`; do not invent content
+when the hub only publishes a Mac pointer. Option buttons call the existing
+reply cubit's `submit` with the original option index; retry the stored entry
+rather than creating a new key. Keep capability and actor fences intact.
+`mastermind_ask_context_test.dart` covers the v1 fixture, real options, retries,
+metadata, previews, open-only deduplication and Needs-you navigation. See the
+[Mastermind product rules](../../../../../apps/docs/platform/features/mobile-mastermind.mdx).
+
+- **Firebase startup admission**: iOS FlutterFire Core registration can configure
+  the default app before Dart, and FirebaseCore can start Analytics even with
+  collection disabled. Keep generated SDK/plugin overlays worktree-local and
+  fail closed on changed upstream source. Admit Firebase only after sign-in with
+  authorized push or current telemetry Allow; keep Messaging and Analytics lazy
+  behind their separate choices. Stop Analytics hostname reachability monitors
+  on withdrawal and drain token/server unregister before best-effort FID deletion.
+  Recheck native fixtures after SDK updates, then verify fresh/upgrade requests
+  and app-attributed DNS on devices. The canonical policy, copy keys and evidence
+  boundaries live in
+  [mobile telemetry privacy](../../../../../apps/docs/platform/features/mobile-telemetry-privacy.mdx).

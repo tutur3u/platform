@@ -28,6 +28,10 @@ export async function handleGetUserEmailsRequest(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!permissions.containsPermission('view_users_private_info')) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  }
+
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get('page') || '0', 10);
   const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
@@ -38,7 +42,7 @@ export async function handleGetUserEmailsRequest(
   const { data, error, count } = await sbAdmin
     .from('sent_emails')
     .select('*', { count: 'exact' })
-    .eq('ws_id', wsId)
+    .eq('ws_id', permissions.wsId)
     .eq('receiver_id', userId)
     .order('created_at', { ascending: false })
     .range(start, end);

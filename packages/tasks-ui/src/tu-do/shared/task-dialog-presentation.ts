@@ -9,7 +9,12 @@ export const TASK_DOCUMENT_CREATE_PRESENTATION_CONFIG_ID =
 export const TASK_DOCUMENT_EDIT_PRESENTATION_CONFIG_ID =
   'TASK_DOCUMENT_EDIT_PRESENTATION';
 
-export type TaskDialogPresentation = 'compact' | 'focused' | 'fullscreen';
+/** `panel` is the board's right side panel; it is not a saved preference. */
+export type TaskDialogPresentation =
+  | 'compact'
+  | 'focused'
+  | 'fullscreen'
+  | 'panel';
 export type TaskDialogMode = 'edit' | 'create';
 
 export interface TaskDialogPresentationPreferences {
@@ -21,6 +26,36 @@ export interface TaskDialogPresentationPreferences {
 
 export const TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME =
   'h-[min(92dvh,60rem)] w-[min(calc(100vw-1.5rem),92rem)] max-w-[92rem] gap-0 overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-5xl';
+
+const TASK_DIALOG_COMPACT_CONTENT_CLASS_NAME =
+  'w-[min(calc(100vw-2rem),30rem)] max-w-[30rem] gap-0 overflow-visible rounded-lg border p-0 shadow-xl';
+// The side panel's width follows the drag exactly; the slide-in is an animation.
+const TASK_PANEL_CONTENT_CLASS_NAME =
+  'transition-none sm:w-[var(--task-panel-width,36rem)]';
+
+/** The shared dialog's layout: fullscreen, the side panel, or centred. */
+export function getTaskDialogContentPresentation(
+  presentation: TaskDialogPresentation,
+  panel: boolean
+) {
+  if (presentation === 'fullscreen') return 'fullscreen';
+  return panel ? 'panel' : 'default';
+}
+
+/** The dialog content's classes for each presentation. */
+export function getTaskDialogContentClassName({
+  compact,
+  focused,
+  panel,
+}: {
+  compact: boolean;
+  focused: boolean;
+  panel: boolean;
+}) {
+  if (compact) return TASK_DIALOG_COMPACT_CONTENT_CLASS_NAME;
+  if (focused) return TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME;
+  return panel ? TASK_PANEL_CONTENT_CLASS_NAME : undefined;
+}
 
 /**
  * The dialog's content column, which owns its own scrolling.
@@ -50,15 +85,20 @@ export function resolveTaskDialogOpeningPresentation({
   preferences,
   draftId,
   mode = 'edit',
+  panelSurface = false,
   selectedListStatus,
 }: {
   preferences: TaskDialogPresentationPreferences;
   draftId?: string;
   mode?: TaskDialogMode;
+  /** True while a board asks for task edits in its side panel. */
+  panelSurface?: boolean;
   selectedListStatus?: string | null;
 }): TaskDialogPresentation {
   if (draftId) return 'fullscreen';
   const isDocument = selectedListStatus === 'documents';
+  // Documents keep their own preference; tasks open beside the board.
+  if (panelSurface && mode === 'edit' && !isDocument) return 'panel';
   if (mode === 'create') {
     return isDocument ? preferences.documentCreate : preferences.taskCreate;
   }

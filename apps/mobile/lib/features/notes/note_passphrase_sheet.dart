@@ -131,6 +131,9 @@ class _NoteLockSheetState extends State<_NoteLockSheet> {
                 : null,
             textInputAction: TextInputAction.next,
             decoration: InputDecoration(
+              hintText: _method == NoteLockMethod.pin
+                  ? context.l10n.inputPlaceholderPin
+                  : context.l10n.inputPlaceholderPassphrase,
               labelText: _method == NoteLockMethod.pin
                   ? context.l10n.notesPin
                   : context.l10n.notesPassphrase,
@@ -151,6 +154,9 @@ class _NoteLockSheetState extends State<_NoteLockSheet> {
                 : null,
             textInputAction: TextInputAction.done,
             decoration: InputDecoration(
+              hintText: _method == NoteLockMethod.pin
+                  ? context.l10n.inputPlaceholderPinConfirmation
+                  : context.l10n.inputPlaceholderPassphraseConfirmation,
               labelText: _method == NoteLockMethod.pin
                   ? context.l10n.notesConfirmPin
                   : context.l10n.notesConfirmPassphrase,
@@ -234,7 +240,10 @@ class _NotePinSheetState extends State<_NotePinSheet> {
             LengthLimitingTextInputFormatter(6),
           ],
           textInputAction: TextInputAction.done,
-          decoration: InputDecoration(labelText: context.l10n.notesPin),
+          decoration: InputDecoration(
+            hintText: context.l10n.inputPlaceholderPin,
+            labelText: context.l10n.notesPin,
+          ),
           onSubmitted: (_) => _submit(),
         ),
         const SizedBox(height: 16),
@@ -320,7 +329,12 @@ class _NotePassphraseSheetState extends State<_NotePassphraseSheet> {
           textInputAction: widget.create
               ? TextInputAction.next
               : TextInputAction.done,
-          decoration: InputDecoration(labelText: context.l10n.notesPassphrase),
+          decoration: InputDecoration(
+            hintText: widget.create
+                ? context.l10n.inputPlaceholderPassphrase
+                : context.l10n.inputPlaceholderPassphraseUnlock,
+            labelText: context.l10n.notesPassphrase,
+          ),
           onSubmitted: widget.create ? null : (_) => _submit(),
         ),
         if (widget.create) ...[
@@ -330,6 +344,7 @@ class _NotePassphraseSheetState extends State<_NotePassphraseSheet> {
             obscureText: true,
             textInputAction: TextInputAction.done,
             decoration: InputDecoration(
+              hintText: context.l10n.inputPlaceholderPassphraseConfirmation,
               labelText: context.l10n.notesConfirmPassphrase,
             ),
             onSubmitted: (_) => _submit(),

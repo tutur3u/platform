@@ -3,14 +3,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
+  stream: vi.fn(),
+  waitUntil: vi.fn(),
   summaries: vi.fn(),
   prepare: vi.fn(),
   settle: vi.fn(),
   capture: vi.fn(),
 }));
+vi.mock('@tuturuuu/start-bridge/request-context/core', () => ({
+  maybeBridgeRequest: () => ({ waitUntil: mocks.waitUntil }),
+}));
 vi.mock('./observed-text-agent', () => ({
   createObservedTextAgent: () => ({
-    agent: { generate: mocks.generate },
+    agent: { generate: mocks.generate, stream: mocks.stream },
     summaries: mocks.summaries,
   }),
 }));
@@ -186,6 +191,56 @@ describe('AI execution usage settlement', () => {
       expect.objectContaining({
         status: 'failed',
         metadata: { usage_source: 'unavailable' },
+      })
+    );
+  });
+});
+
+describe('interrupted AI streaming settlement', () => {
+  it('settles one aborted execution with partial usage after a client disconnect', async () => {
+    const abort = new AbortController();
+    const request = new Request('https://ai.tuturuuu.com/v1/chat/completions', {
+      signal: abort.signal,
+    });
+    mocks.stream.mockImplementation(async ({ abortSignal }) => ({
+      textStream: (async function* () {
+        yield 'partial output';
+        await new Promise((_, reject) => {
+          abortSignal.addEventListener(
+            'abort',
+            () => reject(new DOMException('Disconnected', 'AbortError')),
+            { once: true }
+          );
+        });
+      })(),
+    }));
+    const response = await executeTextRequest(
+      request,
+      { ...input(), stream: true },
+      { feature: 'chat_completions', responseShape: 'chat' }
+    );
+    expect(response.headers.get('Content-Type')).toContain('text/event-stream');
+    if (!response.body) throw new Error('Streaming response requires a body');
+    const reader = response.body.getReader();
+    expect(new TextDecoder().decode((await reader.read()).value)).toContain(
+      'partial output'
+    );
+    expect(mocks.waitUntil).toHaveBeenCalledTimes(1);
+    const completion = mocks.waitUntil.mock.calls[0]?.[0];
+    expect(completion).toBeInstanceOf(Promise);
+    abort.abort();
+    await expect(reader.read()).rejects.toThrow('Disconnected');
+    await completion;
+    expect(mocks.stream).toHaveBeenCalledWith(
+      expect.objectContaining({ abortSignal: request.signal })
+    );
+    expect(mocks.settle).toHaveBeenCalledTimes(1);
+    expect(mocks.settle).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        status: 'aborted',
+        usage: { outputTokens: 1 },
+        metadata: { usage_source: 'estimated_partial' },
       })
     );
   });

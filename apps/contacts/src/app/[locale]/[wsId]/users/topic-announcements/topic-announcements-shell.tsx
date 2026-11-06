@@ -13,14 +13,20 @@ export { useTopicAnnouncements } from './topic-announcements-context';
 export function TopicAnnouncementsShell({
   canSend,
   children,
+  teacherAssignmentsEnabled = false,
   wsId,
 }: {
   canSend: boolean;
   children: ReactNode;
+  teacherAssignmentsEnabled?: boolean;
   wsId: string;
 }) {
   return (
-    <TopicAnnouncementsProvider canSend={canSend} wsId={wsId}>
+    <TopicAnnouncementsProvider
+      canSend={canSend}
+      teacherAssignmentsEnabled={teacherAssignmentsEnabled}
+      wsId={wsId}
+    >
       <TopicAnnouncementsChrome>{children}</TopicAnnouncementsChrome>
     </TopicAnnouncementsProvider>
   );

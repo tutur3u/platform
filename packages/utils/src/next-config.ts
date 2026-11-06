@@ -1,5 +1,8 @@
 import type { NextConfig } from 'next';
 import { resolveInternalAppUrl } from './app-url';
+// Paths every app excludes from the anti-framing headers (shared with the
+// start-bridge Worker).
+import { TUTURUUU_DEFAULT_FRAMABLE_PATTERNS } from './framable-paths';
 import { getLocalInternalAppUrl } from './internal-domains';
 import { getTuturuuuPortlessAllowedDevOrigins } from './portless';
 import { createSeoHeaders, type SeoApp } from './seo';
@@ -41,16 +44,6 @@ export const TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS = [
 ] satisfies NextImageRemotePattern[];
 
 export const TUTURUUU_NEXT_IMAGE_MINIMUM_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60;
-
-/**
- * Paths every app excludes from the anti-framing headers.
- *
- * Framing is denied by default across the platform; anything listed here has
- * been deliberately designed to be embedded in a third-party page.
- */
-const TUTURUUU_DEFAULT_FRAMABLE_PATTERNS = [
-  'api/v1/workspaces/[^/]+/external-projects/assets/[^/]+/webgl',
-];
 
 /**
  * Builds the anti-framing `source` as a negative lookahead over every framable

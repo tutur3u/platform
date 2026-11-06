@@ -52,7 +52,7 @@ vi.mock('@/lib/rate-limit', () => ({
     mocks.checkRateLimit(...args),
 }));
 
-vi.mock('@tuturuuu/turnstile/server', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile/server', () => ({
   isTurnstileError: (error: unknown) =>
     error instanceof Error && error.name === 'TurnstileError',
   verifyTurnstileToken: (

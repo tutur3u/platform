@@ -296,6 +296,35 @@ describe('task board boardId route PUT', () => {
     });
   });
 
+  it('returns a stable error when the ticket prefix is a project key', async () => {
+    updateEqWorkspaceMock.mockResolvedValueOnce({
+      error: { code: '23505', message: 'TASK_BOARD_TICKET_PREFIX_PROJECT_KEY' },
+    });
+
+    const response = await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/task-boards/00000000-0000-4000-8000-000000000456',
+        {
+          method: 'PUT',
+          body: JSON.stringify({ ticket_prefix: 'PLA' }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+          boardId: '00000000-0000-4000-8000-000000000456',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      code: 'TASK_BOARD_TICKET_PREFIX_TAKEN',
+      error: 'Ticket prefix is already used by a project in this workspace',
+    });
+  });
+
   it('maps mobile archive, restore, and soft-delete flags onto board metadata', async () => {
     const response = await PUT(
       new NextRequest(

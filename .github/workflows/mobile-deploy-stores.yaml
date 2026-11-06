@@ -63,7 +63,7 @@ jobs:
         working-directory: apps/mobile
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -132,7 +132,7 @@ jobs:
         run: node ../../scripts/mobile-deployment/release-history.mjs
 
       - name: Share beta release history with both stores
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mobile-beta-release-history
           path: apps/mobile/assets/release_history.json
@@ -167,12 +167,12 @@ jobs:
         working-directory: apps/mobile
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Use prepared beta release history
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: mobile-beta-release-history
           path: apps/mobile/assets
@@ -255,7 +255,7 @@ jobs:
           command: bun build:android --build-name=${{ needs.mobile-credentials-preflight.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }}
 
       - name: Upload Android App Bundle artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: android-production-aab
           path: apps/mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab
@@ -315,12 +315,12 @@ jobs:
         working-directory: apps/mobile
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Use prepared beta release history
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: mobile-beta-release-history
           path: apps/mobile/assets
@@ -452,6 +452,9 @@ jobs:
       - name: Omit Live screen broadcast from TestFlight beta
         run: ruby ../../scripts/mobile-deployment/omit-broadcast-extension.rb ios/Runner.xcodeproj
 
+      - name: Verify release backend URLs are https
+        run: node ../../scripts/mobile-validate-dart-defines.js .env.github
+
       - name: Build iOS IPA
         run: flutter build ipa --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github --dart-define=IOS_LIVE_SCREEN_BROADCAST_ENABLED=false --build-name=${{ needs.mobile-credentials-preflight.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }} --export-options-plist=ios/ExportOptions.plist
 
@@ -504,7 +507,7 @@ jobs:
       - name: Preserve iOS dSYM artifact
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ios-production-dsyms
           path: apps/mobile/build/ios/archive/Runner.xcarchive/dSYMs
@@ -516,7 +519,7 @@ jobs:
         # TestFlight uses the verified local IPA. GitHub artifact storage is
         # diagnostic only and must not block distribution when it times out.
         continue-on-error: true
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ios-production-ipa
           path: ${{ steps.ios-ipa.outputs.path }}
@@ -540,7 +543,8 @@ jobs:
         env:
           MOBILE_BUILD_NAME: ${{ needs.mobile-credentials-preflight.outputs.build_name }}
           TESTFLIGHT_BETA_ENABLED: ${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}
-          TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}
+          TESTFLIGHT_EXTERNAL_BETA_GROUPS: ${{ vars.TESTFLIGHT_EXTERNAL_BETA_GROUPS || '' }}
+          TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || '' }}
           GITHUB_TOKEN: ${{ github.token }}
         run: node ../../scripts/mobile-deployment/verify-store.mjs ios "${{ needs.mobile-credentials-preflight.outputs.build_number }}"
 
@@ -582,7 +586,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout production code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -613,7 +617,8 @@ jobs:
       - name: Retry newest eligible build
         env:
           TESTFLIGHT_BETA_ENABLED: ${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}
-          TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}
+          TESTFLIGHT_EXTERNAL_BETA_GROUPS: ${{ vars.TESTFLIGHT_EXTERNAL_BETA_GROUPS || '' }}
+          TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || '' }}
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/mobile-deployment/verify-store.mjs ios-pending
 

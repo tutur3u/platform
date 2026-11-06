@@ -1,4 +1,5 @@
 import { Activity, Building2, Lock, TrendingUp, Users } from '@tuturuuu/icons';
+import { OpsPageHeader } from '@tuturuuu/ui/custom/ops';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import type { Metadata } from 'next';
@@ -100,16 +101,10 @@ export default async function InfrastructureOverviewPage({ params }: Props) {
 
   return (
     <>
-      <div className="flex flex-col gap-4 rounded-lg border border-border bg-foreground/5 p-4">
-        <div>
-          <h1 className="font-bold text-2xl">
-            {t('workspace-settings-layout.infrastructure')}
-          </h1>
-          <p className="text-foreground/80">
-            {t('infrastructure-analytics.page-description')}
-          </p>
-        </div>
-      </div>
+      <OpsPageHeader
+        description={t('infrastructure-analytics.page-description')}
+        title={t('workspace-settings-layout.infrastructure')}
+      />
 
       <Separator className="my-4" />
 

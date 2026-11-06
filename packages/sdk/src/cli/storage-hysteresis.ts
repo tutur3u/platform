@@ -36,12 +36,17 @@ export const hostId = (env: NodeJS.ProcessEnv = process.env) =>
 export const orchestratorId = (env: NodeJS.ProcessEnv = process.env) =>
   env.TTR_ORCHESTRATOR_ID?.trim() || env.T3_THREAD_ID?.trim() || null;
 
-/** Documented defaults: recover at twice each low threshold. */
+type RecoveryThresholds = StorageThresholds & {
+  percentRecoveryLow?: number;
+};
+
+/** Default percentage recovery is capped at 100 GiB above the low watermark. */
 export function recoverThresholds(
   low: StorageThresholds,
   env: NodeJS.ProcessEnv = process.env
-): { thresholds: StorageThresholds; warnings: string[] } {
-  const thresholds = {
+): { thresholds: RecoveryThresholds; warnings: string[] } {
+  const thresholds: RecoveryThresholds = {
+    percentRecoveryLow: low.minFreePercent,
     minFreeBytes: low.minFreeBytes * 2,
     minFreePercent: Math.min(100, low.minFreePercent * 2),
     minFreeInodePercent: Math.min(100, low.minFreeInodePercent * 2),
@@ -66,13 +71,20 @@ export function recoverThresholds(
     thresholds.minFreeBytes = parseByteSize(value);
   });
   read('TTR_STORAGE_RECOVER_FREE_PERCENT', (value) => {
-    thresholds.minFreePercent = percent(value);
+    thresholds.minFreePercent = Math.max(
+      percent(value),
+      Math.min(100, low.minFreePercent + 0.1)
+    );
+    delete thresholds.percentRecoveryLow;
   });
   read('TTR_STORAGE_RECOVER_FREE_INODE_PERCENT', (value) => {
     thresholds.minFreeInodePercent = percent(value);
   });
   // Recover can never sit below low, or the state could not settle.
-  thresholds.minFreeBytes = Math.max(thresholds.minFreeBytes, low.minFreeBytes);
+  thresholds.minFreeBytes = Math.max(
+    thresholds.minFreeBytes,
+    low.minFreeBytes + 1024 ** 3
+  );
   thresholds.minFreePercent = Math.max(
     thresholds.minFreePercent,
     low.minFreePercent
@@ -98,6 +110,23 @@ type Probe = Pick<
   VolumeProbe,
   'freeBytes' | 'freePercent' | 'inodeFreePercent'
 >;
+
+export function volumeRecoveryThresholds(
+  probe: Probe,
+  recover: RecoveryThresholds
+): StorageThresholds {
+  if (recover.percentRecoveryLow === undefined || probe.freePercent <= 0)
+    return recover;
+  const totalBytes = probe.freeBytes / (probe.freePercent / 100);
+  if (!Number.isFinite(totalBytes) || totalBytes <= 0) return recover;
+  return {
+    ...recover,
+    minFreePercent: Math.min(
+      recover.minFreePercent,
+      recover.percentRecoveryLow + ((100 * 1024 ** 3) / totalBytes) * 100
+    ),
+  };
+}
 
 function below(probe: Probe, thresholds: StorageThresholds) {
   const reasons: string[] = [];
@@ -127,7 +156,10 @@ export function nextVolumeState(
 ): { state: VolumeState; reasons: string[] } {
   const low = below(probe, thresholds.low);
   if (low.length) return { state: 'low', reasons: low };
-  const recover = below(probe, thresholds.recover);
+  const recover = below(
+    probe,
+    volumeRecoveryThresholds(probe, thresholds.recover)
+  );
   if (previous === 'low' && recover.length)
     return {
       state: 'low',
@@ -136,8 +168,8 @@ export function nextVolumeState(
   return { state: 'ok', reasons: [] };
 }
 
-export function belowRecover(probe: Probe, recover: StorageThresholds) {
-  return below(probe, recover).length > 0;
+export function belowRecover(probe: Probe, recover: RecoveryThresholds) {
+  return below(probe, volumeRecoveryThresholds(probe, recover)).length > 0;
 }
 
 interface VolumeRecord {
