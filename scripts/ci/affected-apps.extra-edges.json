@@ -50,6 +50,9 @@
   "apps/meet/messages/": [
     "packages/programming-ui"
   ],
+  "apps/mobile/lib/core/feature_flags/": [
+    "packages/feature-flags"
+  ],
   "apps/nova/src/lib/": [
     "apps/web"
   ],
