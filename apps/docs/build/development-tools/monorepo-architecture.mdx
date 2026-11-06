@@ -49,6 +49,8 @@ platform/
     └── ...       # Other shared packages
 ```
 
+The `@tuturuuu/cloudflare` workspace in `packages/cloudflare` owns shared Cloudflare helpers. Import Turnstile from `@tuturuuu/cloudflare/turnstile`, or use its `/client` and `/server` entrypoints to select the relevant API. The package root also re-exports the Turnstile API. Keep future Cloudflare helpers in their own submodules. Turnstile environment variables and runtime behavior are unchanged.
+
 ### 2. Atomic Changes Across Projects
 
 When making changes that affect multiple parts of the platform, we can make those changes in a single commit. This ensures that all parts of the system remain compatible with each other, reducing integration issues.

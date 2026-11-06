@@ -56,6 +56,8 @@ const identity = {
     NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
     MEET_REALTIME_URL: 'wss://meet-realtime.tuturuuu.com/realtime',
     PARLEY_APP_URL: 'https://parley.tuturuuu.com',
+    MEET_AI_DISABLED: 'true',
+    MEET_AI_ENABLED_WORKSPACE_IDS: '',
   },
 };
 

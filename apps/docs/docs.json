@@ -240,6 +240,7 @@
               "build/development-tools/stacked-pull-requests",
               "build/development-tools/local-supabase-development",
               "build/development-tools/local-e2e",
+              "build/development-tools/hosted-dev-supabase-preview",
               "build/development-tools/notification-email-freshness",
               "build/development-tools/ci-cd-pipelines",
               "build/development-tools/ci-cd-optimization",

@@ -8,6 +8,8 @@ export * from './task-helper/recycle-bin';
 export * from './task-helper/relationships';
 export {
   getTaskIdentifierForSearch,
+  getTaskTicketLabel,
+  getTaskTicketProject,
   getTicketIdentifier,
   isTicketIdentifierLikeQuery,
   normalizeTaskSearchValue,

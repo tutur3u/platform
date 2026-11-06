@@ -28,11 +28,41 @@ export const goalResultSchema = z.enum(['met', 'partly', 'missed']);
 // manage: turn sprints on, start and end them (workspace members who can edit).
 export type SprintAccessLevel = 'view' | 'plan' | 'manage';
 
+// Board cycles ship dark until the rework lands: every write needs this
+// workspace secret, which only verified Tuturuuu staff can set.
+export const BOARD_CYCLES_ENABLED_SECRET = 'ENABLE_BOARD_CYCLES';
+
+export async function areBoardCyclesEnabled(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string
+) {
+  if (!wsId) return false;
+  const { data, error } = await sbAdmin
+    .from('workspace_secrets')
+    .select('name')
+    .eq('ws_id', wsId)
+    .eq('name', BOARD_CYCLES_ENABLED_SECRET)
+    .eq('value', 'true');
+  return !error && (data?.length ?? 0) > 0;
+}
+
+export function boardCyclesNotEnabledResponse() {
+  return NextResponse.json(
+    {
+      code: 'BOARD_CYCLES_NOT_ENABLED',
+      error: 'Board cycles are not enabled for this workspace',
+    },
+    { status: 403 }
+  );
+}
+
 export async function requireSprintAccess(
   request: Request,
   params: SprintRouteParams,
   auth: SessionAuthContext,
-  level: SprintAccessLevel
+  level: SprintAccessLevel,
+  // Only turning cycles off may skip the flag.
+  { allowWhenNotEnabled = false } = {}
 ) {
   const access = await requireBoardAccess(request, params, auth, {
     requiredPermission: level === 'view' ? 'view' : 'edit',
@@ -46,6 +76,14 @@ export async function requireSprintAccess(
         { status: 403 }
       ),
     };
+  }
+
+  if (
+    level !== 'view' &&
+    !allowWhenNotEnabled &&
+    !(await areBoardCyclesEnabled(access.sbAdmin, access.wsId))
+  ) {
+    return { error: boardCyclesNotEnabledResponse() };
   }
 
   return access;
@@ -75,6 +113,8 @@ export function isSprintSchemaUnavailable(error: SprintQueryError | null) {
 }
 
 const RPC_ERROR_STATUS: Record<string, number> = {
+  // Before BOARD_NOT_FOUND, which its name contains.
+  SPRINT_BOARD_NOT_FOUND: 404,
   BOARD_NOT_FOUND: 404,
   SPRINT_NOT_FOUND: 404,
   SPRINT_NOT_PLANNED: 409,
@@ -86,6 +126,11 @@ const RPC_ERROR_STATUS: Record<string, number> = {
   SPRINT_GOAL_RESULT_INVALID: 400,
   SPRINT_TASK_NOT_ON_BOARD: 400,
   SPRINT_TOO_MANY_TASKS: 400,
+  SPRINT_NOT_NEXT: 409,
+  SPRINT_NOT_LAST: 409,
+  SPRINT_ONLY_PLANNED: 409,
+  SPRINT_LIMIT_REACHED: 409,
+  SPRINTS_OFF: 409,
 };
 
 export function sprintRpcErrorResponse(
@@ -192,34 +237,65 @@ export function serializeSprint(
 }
 
 const UNAVAILABLE: BoardSprintsResponse = {
+  cyclesEnabled: false,
   schemaAvailable: false,
   sprintLengthWeeks: null,
   sprints: [],
+  unplannedTaskIds: [],
 };
 
-export async function loadBoardSprints(
+/**
+ * Every parked task id. The RPC returns one array, a consistent snapshot that
+ * the API's row cap cannot split into pages.
+ */
+async function listUnplannedTaskIds(
   sbAdmin: TypedSupabaseClient,
-  boardId: string
-): Promise<
+  { boardId, wsId }: { boardId: string; wsId: string }
+): Promise<{ data: string[] | null; error: SprintQueryError | null }> {
+  const { data, error } = await sbAdmin.rpc('list_board_unplanned_task_ids', {
+    p_board_id: boardId,
+    p_ws_id: wsId,
+  });
+  if (error) return { data: null, error };
+  return { data: (data ?? []) as string[], error: null };
+}
+
+export async function loadBoardSprints({
+  boardId,
+  sbAdmin,
+  wsId,
+}: {
+  boardId: string;
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+}): Promise<
   | { ok: true; data: BoardSprintsResponse }
   | { ok: false; error: SprintQueryError }
 > {
-  const [boardResult, sprintsResult, reportsResult] = await Promise.all([
-    sbAdmin
-      .from('workspace_boards')
-      .select('sprint_length_weeks')
-      .eq('id', boardId)
-      .maybeSingle(),
-    sbAdmin
-      .from('task_cycles')
-      .select(SPRINT_SELECT)
-      .eq('board_id', boardId)
-      .not('deleted', 'is', true)
-      .order('sequence_number', { ascending: true }),
-    sbAdmin.from('task_sprint_reports').select('*').eq('board_id', boardId),
-  ]);
+  const cyclesEnabled = areBoardCyclesEnabled(sbAdmin, wsId).catch(() => false);
+  const [boardResult, sprintsResult, reportsResult, unplannedResult] =
+    await Promise.all([
+      sbAdmin
+        .from('workspace_boards')
+        .select('sprint_length_weeks')
+        .eq('id', boardId)
+        .maybeSingle(),
+      sbAdmin
+        .from('task_cycles')
+        .select(SPRINT_SELECT)
+        .eq('board_id', boardId)
+        .not('deleted', 'is', true)
+        .order('sequence_number', { ascending: true }),
+      sbAdmin.from('task_sprint_reports').select('*').eq('board_id', boardId),
+      listUnplannedTaskIds(sbAdmin, { boardId, wsId }),
+    ]);
 
-  for (const result of [boardResult, sprintsResult, reportsResult]) {
+  for (const result of [
+    boardResult,
+    sprintsResult,
+    reportsResult,
+    unplannedResult,
+  ]) {
     if (result.error) {
       if (isSprintSchemaUnavailable(result.error)) {
         return { ok: true, data: UNAVAILABLE };
@@ -238,12 +314,15 @@ export async function loadBoardSprints(
   return {
     ok: true,
     data: {
+      cyclesEnabled: await cyclesEnabled,
       schemaAvailable: true,
       sprintLengthWeeks:
         weeks === 1 || weeks === 2 ? (weeks as BoardSprintLengthWeeks) : null,
       sprints: ((sprintsResult.data ?? []) as unknown as SprintRow[]).map(
         (row) => serializeSprint(row, reportsByCycleId.get(row.id))
       ),
+      // Open tasks parked outside every sprint, for Plan's backlog.
+      unplannedTaskIds: weeks ? ((unplannedResult.data ?? []) as string[]) : [],
     },
   };
 }

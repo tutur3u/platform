@@ -4214,17 +4214,20 @@ export type Database = {
       devbox_control_settings: {
         Row: {
           id: boolean;
+          personal_pools_enabled: boolean;
           require_reported_execution_mode: boolean;
           updated_at: string;
         };
         ComputedFields: never;
         Insert: {
           id?: boolean;
+          personal_pools_enabled?: boolean;
           require_reported_execution_mode?: boolean;
           updated_at?: string;
         };
         Update: {
           id?: boolean;
+          personal_pools_enabled?: boolean;
           require_reported_execution_mode?: boolean;
           updated_at?: string;
         };
@@ -4344,6 +4347,31 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      devbox_personal_pool_grants: {
+        Row: {
+          accepted_at: string | null;
+          expires_at: string;
+          status: string;
+          suspended: boolean;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          accepted_at?: string | null;
+          expires_at: string;
+          status?: string;
+          suspended?: boolean;
+          user_id: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          expires_at?: string;
+          status?: string;
+          suspended?: boolean;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       devbox_preview_requests: {
         Row: {
@@ -22509,6 +22537,10 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
+      devbox_identity_grant_active: {
+        Args: { p_user_id: string };
+        Returns: boolean;
+      };
       devbox_reports_fresh_trusted: {
         Args: { p_capabilities: Json; p_capabilities_updated_at: string };
         Returns: boolean;
@@ -36310,17 +36342,20 @@ export type Database = {
           created_at: string | null;
           project_id: string;
           task_id: string;
+          ticket_number: number | null;
         };
         ComputedFields: never;
         Insert: {
           created_at?: string | null;
           project_id: string;
           task_id: string;
+          ticket_number?: number | null;
         };
         Update: {
           created_at?: string | null;
           project_id?: string;
           task_id?: string;
+          ticket_number?: number | null;
         };
         Relationships: [
           {
@@ -36581,9 +36616,11 @@ export type Database = {
           id: string;
           lead_id: string | null;
           name: string;
+          next_ticket_number: number;
           priority: Database['public']['Enums']['task_priority'] | null;
           start_date: string | null;
           status: string | null;
+          ticket_key: string | null;
           updated_at: string | null;
           ws_id: string;
         };
@@ -36600,9 +36637,11 @@ export type Database = {
           id?: string;
           lead_id?: string | null;
           name: string;
+          next_ticket_number?: number;
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           status?: string | null;
+          ticket_key?: string | null;
           updated_at?: string | null;
           ws_id: string;
         };
@@ -36618,9 +36657,11 @@ export type Database = {
           id?: string;
           lead_id?: string | null;
           name?: string;
+          next_ticket_number?: number;
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           status?: string | null;
+          ticket_key?: string | null;
           updated_at?: string | null;
           ws_id?: string;
         };
@@ -49018,6 +49059,16 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      add_board_sprint: {
+        Args: { p_actor_id?: string; p_board_id: string; p_ws_id: string };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       add_platform_entity_creation_limit_table: {
         Args: {
           p_notes?: string;
@@ -49262,6 +49313,10 @@ export type Database = {
       archive_old_notifications: {
         Args: { p_days_threshold?: number };
         Returns: number;
+      };
+      assign_task_cycle: {
+        Args: { p_cycle_id: string; p_task_id: string };
+        Returns: undefined;
       };
       atomic_sync_token_operation: {
         Args: {
@@ -52323,6 +52378,10 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      list_board_unplanned_task_ids: {
+        Args: { p_board_id: string; p_ws_id: string };
+        Returns: string[];
+      };
       list_deferred_calendar_google_imports: {
         Args: {
           p_auth_token_id?: string;
@@ -52777,6 +52836,21 @@ export type Database = {
           remaining_credits: number;
           success: boolean;
         }[];
+      };
+      remove_board_sprint: {
+        Args: {
+          p_actor_id?: string;
+          p_board_id: string;
+          p_cycle_id: string;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       remove_task_label_with_actor: {
         Args: {

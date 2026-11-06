@@ -44,7 +44,7 @@
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/start-bridge": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
-    "@tuturuuu/turnstile": "workspace:*",
+    "@tuturuuu/cloudflare": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",

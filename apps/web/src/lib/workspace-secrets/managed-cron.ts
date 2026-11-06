@@ -10,8 +10,15 @@ import {
 
 export const MANAGED_CRON_ENABLED_SECRET = 'MANAGED_CRON_ENABLED';
 
+// Workspace secrets that only verified Tuturuuu staff may change.
+// ENABLE_BOARD_CYCLES turns on board cycles in the tasks app.
+const STAFF_ONLY_SECRET_NAMES = new Set([
+  MANAGED_CRON_ENABLED_SECRET,
+  'ENABLE_BOARD_CYCLES',
+]);
+
 export function isManagedCronEnableSecretName(name?: string | null) {
-  return name?.trim().toUpperCase() === MANAGED_CRON_ENABLED_SECRET;
+  return STAFF_ONLY_SECRET_NAMES.has(name?.trim().toUpperCase() ?? '');
 }
 
 export async function canMutateManagedCronEnableSecret(request: Request) {
