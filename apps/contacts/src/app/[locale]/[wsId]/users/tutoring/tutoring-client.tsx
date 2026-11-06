@@ -16,7 +16,11 @@ import {
   type TutoringQueueItem,
 } from '@tuturuuu/internal-api';
 import { getTutoringPolicy } from '@tuturuuu/internal-api/tutoring';
-import { STANDARD_TUTORING_POLICY } from '@tuturuuu/internal-api/tutoring-policy';
+import {
+  hasTutoringTagExclusions,
+  STANDARD_TUTORING_POLICY,
+  tutoringExclusionReason,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import { suggestTutoringSlots } from '@tuturuuu/internal-api/tutoring-suggestion';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -41,6 +45,7 @@ import {
   type TutoringSessionFilters,
   toIsoDate,
 } from './tutoring-filters';
+import { loadTutoringGroupTags } from './tutoring-group-tags';
 import { TutoringOverview } from './tutoring-overview';
 import { TutoringPayroll } from './tutoring-payroll';
 import { TutoringPolicyCard } from './tutoring-policy-card';
@@ -244,6 +249,20 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
     staleTime: 5 * 60_000,
   });
 
+  // Tag exclusion rules read class tags; load them only when such a rule
+  // exists, so the class picker and queue filter match what the server refuses.
+  const groupTagsQuery = useQuery({
+    enabled:
+      hasTutoringTagExclusions(policy) &&
+      (createDialogOpen || tab === 'queue' || sessionsQuery.isFetched),
+    queryKey: ['tutoring-group-tags', wsId],
+    queryFn: () => loadTutoringGroupTags(wsId),
+    staleTime: 5 * 60_000,
+  });
+  const groupTags = hasTutoringTagExclusions(policy)
+    ? groupTagsQuery.data
+    : undefined;
+
   const invalidateTutoring = () => {
     for (const key of [
       'tutoring-sessions',
@@ -353,12 +372,23 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
     ]);
     if (!current()) return;
     if (futureSchedule.status === 'fulfilled') {
+      // The queue already leaves out excluded classes; the suggestion reads the
+      // same rules so a stale row can never be offered times.
       suggestions = suggestTutoringSlots(
         futureSchedule.value.data ?? [],
         addDaysToIsoDate(today, -1),
         count,
         policy,
-        item.reason_type === 'WEAK_SUPPORT' ? 'consecutive' : 'separate'
+        item.reason_type === 'WEAK_SUPPORT' ? 'consecutive' : 'separate',
+        new Date(),
+        {
+          groupName: item.group_name,
+          reason: tutoringExclusionReason(
+            item.reason_type === 'WEAK_SUPPORT'
+              ? 'WEAK_SUPPORT'
+              : 'ABSENT_RECOVERY'
+          ),
+        }
       );
     }
     if (missedLessons.status === 'fulfilled' && missedLessons.value) {
@@ -510,6 +540,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
             exportQuery={sessionQuery}
             filters={filters}
             groups={groupsQuery.data ?? []}
+            groupTags={groupTags}
             isLoading={sessionsQuery.isLoading}
             isRefreshing={sessionsQuery.isFetching && !sessionsQuery.isLoading}
             error={sessionsQuery.isError ? t('sessions_load_failed') : null}
@@ -573,6 +604,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
               studentUserId: queueStudentId,
             }}
             groups={groupsQuery.data ?? []}
+            groupTags={groupTags}
             pagination={{ page: queuePage, pageSize: queuePageSize }}
             policy={policy}
             wsId={wsId}

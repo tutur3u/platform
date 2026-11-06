@@ -80,28 +80,52 @@ export interface PlanOwner {
 }
 
 /**
- * Splits the sprint being planned into the backlog (unassigned, open) and one
- * section per board member. A task with several assignees shows under each.
+ * Splits the shown sprints into the backlog and one section per board member.
+ * The backlog holds every open task nobody owns, whichever open sprint it is
+ * in, plus open tasks parked outside every sprint. A task with several
+ * assignees shows under each.
  */
 export function useSprintPlanGroups({
   currentUserId,
   members,
+  openSprintTaskIds,
   sprint,
   tasks,
+  unfinishedOnly = false,
+  unplannedTaskIds,
 }: {
   currentUserId?: string;
   members: BoardMember[];
+  /** Tasks in any open sprint; their unowned ones join the backlog too. */
+  openSprintTaskIds?: { has: (taskId: string) => boolean };
   sprint: Pick<BoardSprint, 'tasks'> | null;
   tasks: Task[];
+  /** All sprints at once lists only work still to do. */
+  unfinishedOnly?: boolean;
+  unplannedTaskIds?: ReadonlySet<string>;
 }) {
   return useMemo(() => {
     const ids = new Set(sprint?.tasks.map((task) => task.task_id));
     const sprintTasks = tasks.filter(
-      (task) => ids.has(task.id) && !task.deleted_at
+      (task) =>
+        ids.has(task.id) &&
+        !task.deleted_at &&
+        !(unfinishedOnly && isTaskFinished(task))
     );
-    const backlog = sprintTasks.filter(
-      (task) => !task.assignees?.length && !isTaskFinished(task)
+    const elsewhere = tasks.filter(
+      (task) =>
+        !ids.has(task.id) &&
+        !task.deleted_at &&
+        !isTaskFinished(task) &&
+        (unplannedTaskIds?.has(task.id) ||
+          (openSprintTaskIds?.has(task.id) && !task.assignees?.length))
     );
+    const backlog = [
+      ...sprintTasks.filter(
+        (task) => !task.assignees?.length && !isTaskFinished(task)
+      ),
+      ...elsewhere,
+    ];
 
     const byMember = new Map<string, Task[]>();
     for (const task of sprintTasks) {
@@ -138,5 +162,13 @@ export function useSprintPlanGroups({
       });
 
     return { backlog, owners, sprintTasks };
-  }, [currentUserId, members, sprint, tasks]);
+  }, [
+    currentUserId,
+    members,
+    openSprintTaskIds,
+    sprint,
+    tasks,
+    unfinishedOnly,
+    unplannedTaskIds,
+  ]);
 }

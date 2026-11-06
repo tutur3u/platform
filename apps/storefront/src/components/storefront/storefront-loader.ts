@@ -25,7 +25,7 @@ export function isNotFoundError(error: unknown) {
     typeof error === 'object' &&
     error !== null &&
     'status' in error &&
-    (error as { status?: unknown }).status === 404
+    error.status === 404
   );
 }
 
@@ -33,8 +33,14 @@ function isPublicStorefrontResponse<T>(value: T): value is NonNullable<T> {
   return (
     typeof value === 'object' &&
     value !== null &&
+    !Array.isArray(value) &&
     'storefront' in value &&
-    typeof (value as { storefront?: unknown }).storefront === 'object' &&
-    (value as { storefront?: unknown }).storefront !== null
+    typeof value.storefront === 'object' &&
+    value.storefront !== null &&
+    !Array.isArray(value.storefront) &&
+    'listings' in value &&
+    Array.isArray(value.listings) &&
+    'bundles' in value &&
+    Array.isArray(value.bundles)
   );
 }

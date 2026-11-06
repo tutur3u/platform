@@ -52,6 +52,33 @@ describe('getOptionalInventoryPublicStorefront', () => {
     ).resolves.toBe(null);
   });
 
+  it.each([
+    null,
+    undefined,
+    'upstream error page',
+    [],
+    { storefront: null },
+    { storefront: [], listings: [], bundles: [] },
+    { storefront: {}, listings: {}, bundles: [] },
+    { storefront: {}, listings: [], bundles: {} },
+    { storefront: {} },
+  ])('returns null for a malformed successful body: %j', async (body) => {
+    getInventoryPublicStorefrontMock.mockResolvedValue(body);
+
+    await expect(getOptionalInventoryPublicStorefront('demo')).resolves.toBe(
+      null
+    );
+  });
+
+  it.each([401, 403, 429])('preserves a %i API rejection', async (status) => {
+    const error = Object.assign(new Error('Request rejected'), { status });
+    getInventoryPublicStorefrontMock.mockRejectedValue(error);
+
+    await expect(getOptionalInventoryPublicStorefront('demo')).rejects.toBe(
+      error
+    );
+  });
+
   it('returns a real demo storefront response when the public API succeeds', async () => {
     const realPayload = {
       bundles: [],

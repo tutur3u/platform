@@ -226,7 +226,9 @@ and its focused regression coverage before adding a reason or changing middlewar
   not the infrastructure project's reserved-host list or shared-cookie domains.
   Nova (`https://nova.ai.vn`) is an internal satellite with an exact HTTPS
   production origin outside `tuturuuu.com`. Rewise is served only at
-  `https://rewise.tuturuuu.com`; the expired `rewise.me` must never be trusted.
+  `https://rewise.tuturuuu.com`; the released `rewise.me` and `rewise.school`
+  domains are rejected by `@tuturuuu/utils/retired-app-hosts` and must never
+  be trusted.
   Preserve their registrations when changing canonical SEO hosts; verify the
   domain, cross-app mapping, and web return-validation regression suites.
 - **Never copy the multi-account vault into another app.**

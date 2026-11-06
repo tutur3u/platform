@@ -113,9 +113,13 @@ test('latest time-tracking update guard ignores the actor override for end users
   );
 });
 
+const INVENTORY_ENTRY = /^--\s{2,}((?:public|private)\.\w+)\(\)/gmu;
+
 // Trigger calls are exempt from the caller binding, so every trigger that
 // evaluates permissions must be reviewed and listed in the inventory carried
-// by the migration that last defines the helper.
+// by the migration that last defines the helper. Applied migrations keep their
+// bytes, so a later migration that adds a trigger caller lists it in its own
+// "-- Trigger inventory addendum" block instead.
 test('trigger callers of has_workspace_permission match the reviewed inventory', () => {
   const { filename, sql } = latest(HELPER);
   const block = sql.match(/^-- Trigger inventory\b[^\n]*\n((?:--[^\n]*\n)+)/mu);
@@ -124,11 +128,17 @@ test('trigger callers of has_workspace_permission match the reviewed inventory',
     `${filename}: missing the "-- Trigger inventory" header block`
   );
 
-  const inventory = [
-    ...block[1].matchAll(/^--\s{2,}((?:public|private)\.\w+)\(\)/gmu),
-  ]
-    .map((match) => match[1].toLowerCase())
-    .sort();
+  const listed = [...block[1].matchAll(INVENTORY_ENTRY)];
+  for (const later of fs.readdirSync(MIGRATIONS_DIR).sort()) {
+    if (!later.endsWith('.sql') || later <= filename) continue;
+    const laterSql = fs.readFileSync(path.join(MIGRATIONS_DIR, later), 'utf8');
+    for (const addendum of laterSql.matchAll(
+      /^-- Trigger inventory addendum\b[^\n]*\n((?:--[^\n]*\n)+)/gmu
+    )) {
+      listed.push(...addendum[1].matchAll(INVENTORY_ENTRY));
+    }
+  }
+  const inventory = listed.map((match) => match[1].toLowerCase()).sort();
   assert.ok(
     inventory.length > 0,
     `${filename}: the trigger inventory is empty`

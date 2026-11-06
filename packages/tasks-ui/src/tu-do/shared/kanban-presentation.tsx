@@ -18,6 +18,7 @@ import {
 import type { ViewType } from './board-views';
 import { TaskBoardHeaderSkeleton } from './task-board-loading-state';
 import { useIsTaskPanelOpen, useTaskPanelSurface } from './task-panel-surface';
+import { useTaskPanelWidthVariable } from './task-panel-width';
 
 interface KanbanPresentationProps {
   boardId: string;
@@ -121,11 +122,12 @@ export function BoardPanelFrame({
 }) {
   useTaskPanelSurface(panelSurface);
   const panelOpen = useIsTaskPanelOpen() && panelSurface;
+  useTaskPanelWidthVariable(panelSurface);
   return (
     <div
       className={cn(
-        '-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] flex-1 flex-col transition-[padding] duration-200 md:-mx-4',
-        panelOpen && 'sm:pr-[28rem]'
+        '-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] flex-1 flex-col transition-[padding] [transition-duration:var(--task-board-panel-transition,200ms)] md:-mx-4',
+        panelOpen && 'sm:pr-[var(--task-panel-width,36rem)]'
       )}
     >
       {children}

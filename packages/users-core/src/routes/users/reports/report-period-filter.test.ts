@@ -1,5 +1,6 @@
-import { expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
+  buildReportMonthFilter,
   buildReportPeriodFilter,
   resolveReportPeriodTimezone,
 } from './report-period-filter';
@@ -53,4 +54,23 @@ it.each([
   [null, undefined, 'UTC'],
 ])('resolves workspace %s / viewer %s to %s', (workspace, viewer, expected) => {
   expect(resolveReportPeriodTimezone(workspace, viewer)).toBe(expected);
+});
+
+describe('month filter', () => {
+  it('matches October by saved period, and legacy reports by estimated month in GMT+7', () => {
+    // Saved period: period_start inside October. No saved period: created
+    // from 11 Oct 00:00 to 10 Nov 23:59:59 in Asia/Ho_Chi_Minh, so a report
+    // written on 28 Oct or on 2 Nov both file under October.
+    expect(
+      buildReportMonthFilter({ month: '2026-10', timezone: 'Asia/Ho_Chi_Minh' })
+    ).toBe(
+      'and(period_start.gte.2026-10-01,period_start.lte.2026-10-31),and(period_start.is.null,created_at.gte."2026-10-10T17:00:00.000Z",created_at.lt."2026-11-10T17:00:00.000Z")'
+    );
+  });
+
+  it('rolls the legacy window into the next year for December', () => {
+    expect(buildReportMonthFilter({ month: '2026-12', timezone: 'UTC' })).toBe(
+      'and(period_start.gte.2026-12-01,period_start.lte.2026-12-31),and(period_start.is.null,created_at.gte."2026-12-11T00:00:00.000Z",created_at.lt."2027-01-11T00:00:00.000Z")'
+    );
+  });
 });
