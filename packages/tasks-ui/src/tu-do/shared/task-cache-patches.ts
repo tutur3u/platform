@@ -306,6 +306,29 @@ export function patchTaskInVisibleCaches({
   });
 }
 
+/**
+ * Writes a saved task's project links into the caches. The server numbers a
+ * new link, so only its copy carries the ticket key and number.
+ */
+export function patchSavedTaskProjects({
+  queryClient,
+  boardId,
+  task,
+}: {
+  queryClient: QueryClient;
+  boardId: string;
+  task: Pick<Task, 'id' | 'projects'>;
+}) {
+  const projects = task.projects;
+  if (!projects) return;
+  patchTaskInVisibleCaches({
+    queryClient,
+    boardId,
+    taskId: task.id,
+    updater: (cached) => ({ ...cached, projects }),
+  });
+}
+
 export function isTaskMutationPending(task?: Task): boolean {
   return Boolean(
     (task as OptimisticallyMutatedTask | undefined)?._optimisticMutationIds

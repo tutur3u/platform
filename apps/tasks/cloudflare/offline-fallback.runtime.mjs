@@ -112,6 +112,13 @@ test('emitted Tasks Worker serves the exact offline fallback URLs', {
     const worker = await require('wrangler').unstable_startWorker({
       config,
       envFiles: [envFile],
+      bindings: {
+        SUPABASE_SECRET_KEY: { type: 'plain_text', value: 'fixture' },
+        TUTURUUU_APP_COORDINATION_SECRET: {
+          type: 'plain_text',
+          value: 'fixture',
+        },
+      },
       sendMetrics: false,
       build: { bundle: false, processEntrypoint: false },
       dev: {

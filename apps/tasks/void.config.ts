@@ -28,5 +28,6 @@ export default defineConfig({
       html_handling: 'none',
     },
     workers_dev: false,
+    preview_urls: false,
   },
 });

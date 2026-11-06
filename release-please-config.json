@@ -358,6 +358,10 @@
     "packages/meet-core": {
       "component": "meet-core",
       "package-name": "@tuturuuu/meet-core"
+    },
+    "packages/cms-blocks": {
+      "component": "cms-blocks",
+      "package-name": "@tuturuuu/cms-blocks"
     }
   }
 }
