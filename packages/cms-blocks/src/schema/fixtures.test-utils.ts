@@ -93,3 +93,62 @@ export const samplePage: CmsPage = {
   ...createEmptyCmsPage('Home'),
   content: allBlocks,
 };
+
+/** Blocks added for the ieeai.net port (Section, Heading, Gallery, Embed, Accordion, Divider). */
+export const contractBlocks: CmsBlock[] = [
+  {
+    props: {
+      align: 'center',
+      anchor: 'about',
+      id: 'hd',
+      level: '2',
+      text: 'About IEEAI',
+    },
+    type: 'Heading',
+  },
+  {
+    props: {
+      aspect: 'square',
+      columns: '4',
+      id: 'gl',
+      images: [{ alt: 'Stage', caption: '', src: 'https://ieeai.net/a.jpg' }],
+    },
+    type: 'Gallery',
+  },
+  {
+    props: {
+      aspect: '16:9',
+      id: 'em',
+      title: 'Keynote',
+      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    },
+    type: 'Embed',
+  },
+  {
+    props: {
+      heading: 'FAQ',
+      id: 'ac',
+      items: [{ answer: doc, question: 'Who can join?' }],
+    },
+    type: 'Accordion',
+  },
+  { props: { id: 'dv', spacing: 'lg', variant: 'dashed' }, type: 'Divider' },
+];
+
+export const contractPage: CmsPage = {
+  ...createEmptyCmsPage('Contract'),
+  content: [
+    ...contractBlocks,
+    {
+      props: {
+        anchor: 'events',
+        background: 'muted',
+        children: contractBlocks as never,
+        id: 'sec',
+        padding: 'lg',
+        width: 'wide',
+      },
+      type: 'Section',
+    },
+  ],
+};
