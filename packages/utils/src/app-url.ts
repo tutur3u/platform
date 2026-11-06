@@ -1,4 +1,5 @@
 import { type AppName, getAppDomainByUrl } from './internal-domains';
+import { isRetiredAppHostname } from './retired-app-hosts';
 
 type AppUrlCandidate = string | null | undefined;
 
@@ -39,7 +40,10 @@ function normalizeHttpUrl(value: AppUrlCandidate) {
       return null;
     }
 
-    if (isWildcardListenerHostname(url.hostname)) {
+    if (
+      isWildcardListenerHostname(url.hostname) ||
+      isRetiredAppHostname(url.hostname)
+    ) {
       return null;
     }
 

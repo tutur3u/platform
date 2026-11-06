@@ -1,14 +1,13 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Save } from '@tuturuuu/icons';
+import { useQuery } from '@tanstack/react-query';
+import { Loader2 } from '@tuturuuu/icons';
 import {
   getWorkspaceTaskBoard,
   listWorkspaceLabels,
   listWorkspaceTaskBoards,
   listWorkspaceTaskInitiatives,
   listWorkspaceTaskProjectDetails,
-  updateWorkspaceTaskBoard,
   type WorkspaceTaskBoardDetail,
 } from '@tuturuuu/internal-api/tasks';
 import { listWorkspaceTemplates } from '@tuturuuu/internal-api/templates';
@@ -26,28 +25,23 @@ import NotesContent from '@tuturuuu/tasks-ui/tu-do/notes/notes-content';
 import { TaskProjectsClient } from '@tuturuuu/tasks-ui/tu-do/projects/task-projects-client';
 import type { TaskProject } from '@tuturuuu/tasks-ui/tu-do/projects/types';
 import { BoardLayoutSettingsContent } from '@tuturuuu/tasks-ui/tu-do/shared/board-layout-settings';
+import { SettingsGroup } from '@tuturuuu/tasks-ui/tu-do/shared/settings-group';
 import MarketplaceClient from '@tuturuuu/tasks-ui/tu-do/templates/marketplace/client';
 import { TaskTemplatesHub } from '@tuturuuu/tasks-ui/tu-do/templates/task-templates-hub';
 import TaskTemplateDetailPageClient from '@tuturuuu/tasks-ui/tu-do/templates/templateId/task-template-detail-page-client';
 import type { BoardTemplate } from '@tuturuuu/tasks-ui/tu-do/templates/types';
 import type { Workspace } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Combobox } from '@tuturuuu/ui/custom/combobox';
-import IconPicker from '@tuturuuu/ui/custom/icon-picker';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
+import { BoardDetailsSettings } from './board-details-settings';
 import { BoardSettingsNavigation } from './board-settings-navigation';
 import { TaskBoardBehaviorSettings } from './task-board-behavior-settings';
 import { TaskBoardLifecycleSettings } from './task-board-lifecycle-settings';
@@ -144,43 +138,29 @@ export function TaskBoardSettingsPanel({
   );
 
   return (
-    <div className="space-y-5">
-      <BoardSettingsNavigation
-        boardDescription={t('settings.tasks.board_description')}
-        boardDetailsLabel={t('settings.tasks.board_details')}
-        boardLayoutLabel={t('settings.tasks.board_layout')}
-        boardName={board.name}
-        layoutTitle={t('ws-task-boards.layout_settings.title')}
-        listCount={lists.length}
-        ticketPrefix={board.ticket_prefix}
-      >
-        <TabsContent className="space-y-5" value="setup">
-          <BoardDetailsSettings
-            board={board}
-            onRefresh={() => void refetch()}
-            wsId={wsId}
-          />
-          <BoardSprintSettings boardId={board.id} wsId={wsId} />
-          <TaskBoardBehaviorSettings />
-          <CapacityRulesSettings boardId={board.id} lists={lists} wsId={wsId} />
-          <TaskBoardLifecycleSettings board={board} wsId={wsId} />
-        </TabsContent>
+    <BoardSettingsNavigation
+      boardDetailsLabel={t('settings.tasks.board_details')}
+      boardLayoutLabel={t('settings.tasks.board_layout')}
+      listCount={lists.length}
+    >
+      <TabsContent className="space-y-4" value="setup">
+        <BoardDetailsSettings
+          board={board}
+          onRefresh={() => void refetch()}
+          wsId={wsId}
+        />
+        <BoardSprintSettings boardId={board.id} wsId={wsId} />
+        <TaskBoardBehaviorSettings />
+        <CapacityRulesSettings boardId={board.id} lists={lists} wsId={wsId} />
+        <TaskBoardLifecycleSettings board={board} wsId={wsId} />
+      </TabsContent>
 
-        <TabsContent value="layout">
-          <div className="space-y-5 rounded-2xl border bg-background p-4 sm:p-5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-1">
-                <h3 className="font-semibold">
-                  {t('settings.tasks.board_layout')}
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  {t('settings.tasks.board_layout_description')}
-                </p>
-              </div>
-              <Badge className="w-fit" variant="secondary">
-                {lists.length}
-              </Badge>
-            </div>
+      <TabsContent value="layout">
+        <SettingsGroup
+          description={t('settings.tasks.board_layout_description')}
+          title={t('settings.tasks.board_layout')}
+        >
+          <div className="p-4">
             <BoardLayoutSettingsContent
               boardId={board.id}
               disableScrollArea
@@ -195,197 +175,18 @@ export function TaskBoardSettingsPanel({
                 listsReordered: t(
                   'ws-task-boards.layout_settings.lists_reordered'
                 ),
+                // The list fills in {status} itself, so keep it literal.
                 movedToStatus: t(
-                  'ws-task-boards.layout_settings.moved_to_status'
+                  'ws-task-boards.layout_settings.moved_to_status',
+                  { status: '{status}' }
                 ),
               }}
               wsId={wsId}
             />
           </div>
-        </TabsContent>
-      </BoardSettingsNavigation>
-    </div>
-  );
-}
-
-function BoardDetailsSettings({
-  board,
-  onRefresh,
-  wsId,
-}: {
-  board: WorkspaceTaskBoardDetail;
-  onRefresh: () => void;
-  wsId: string;
-}) {
-  const t = useTranslations();
-  const queryClient = useQueryClient();
-  const [boardName, setBoardName] = useState(board.name ?? '');
-  const [boardIcon, setBoardIcon] = useState<string | null>(board.icon ?? null);
-  const [ticketPrefix, setTicketPrefix] = useState(board.ticket_prefix ?? '');
-  const [defaultListId, setDefaultListId] = useState(
-    board.default_list_id ?? '__none__'
-  );
-
-  useEffect(() => {
-    setBoardName(board.name ?? '');
-    setBoardIcon(board.icon ?? null);
-    setTicketPrefix(board.ticket_prefix ?? '');
-    setDefaultListId(board.default_list_id ?? '__none__');
-  }, [board.default_list_id, board.icon, board.name, board.ticket_prefix]);
-
-  const listOptions = useMemo(
-    () => [
-      {
-        label: t('settings.tasks.no_default_list'),
-        value: '__none__',
-      },
-      ...(board.task_lists ?? [])
-        .filter((list) => !list.deleted)
-        .map((list) => ({
-          label: list.name || t('settings.tasks.untitled_list'),
-          value: list.id,
-        })),
-    ],
-    [board.task_lists, t]
-  );
-
-  const normalizedBoardName =
-    boardName.trim() || t('ws-task-boards.unnamed_board');
-  const normalizedTicketPrefix = ticketPrefix.trim().toUpperCase() || null;
-  const normalizedDefaultListId =
-    defaultListId === '__none__' ? null : defaultListId;
-  const isDirty =
-    normalizedBoardName !== (board.name || t('ws-task-boards.unnamed_board')) ||
-    (boardIcon ?? null) !== (board.icon ?? null) ||
-    normalizedTicketPrefix !== (board.ticket_prefix ?? null) ||
-    normalizedDefaultListId !== (board.default_list_id ?? null);
-
-  const updateBoardMutation = useMutation({
-    mutationFn: () =>
-      updateWorkspaceTaskBoard(
-        wsId,
-        board.id,
-        {
-          default_list_id: normalizedDefaultListId,
-          icon: boardIcon as WorkspaceTaskBoardDetail['icon'],
-          name: normalizedBoardName,
-          ticket_prefix: normalizedTicketPrefix,
-        },
-        getBrowserInternalApiOptions()
-      ),
-    onSuccess: async () => {
-      toast.success(t('ws-task-boards.toast.update_success'));
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['task-board-settings', wsId, board.id],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ['task-board', wsId, board.id],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ['boards', wsId],
-        }),
-      ]);
-      onRefresh();
-    },
-    onError: (error) => {
-      toast.error(t('ws-task-boards.errors.unexpected'), {
-        description: error instanceof Error ? error.message : undefined,
-      });
-    },
-  });
-
-  return (
-    <div className="space-y-5 rounded-2xl border bg-background p-4 sm:p-5">
-      <div className="space-y-1">
-        <h3 className="font-medium">{t('settings.tasks.board_details')}</h3>
-        <p className="text-muted-foreground text-sm">
-          {t('settings.tasks.board_details_description')}
-        </p>
-      </div>
-
-      <div className="grid gap-4">
-        <div className="rounded-xl border bg-muted/20 p-4">
-          <div className="flex items-center gap-4">
-            <IconPicker
-              ariaLabel={t('ws-task-boards.icon_picker.title')}
-              clearLabel={t('ws-task-boards.icon_picker.clear')}
-              description={t('ws-task-boards.icon_picker.description')}
-              onValueChange={setBoardIcon}
-              searchPlaceholder={t(
-                'ws-task-boards.icon_picker.search_placeholder'
-              )}
-              title={t('ws-task-boards.icon_picker.title')}
-              triggerClassName="size-12 shrink-0 rounded-xl bg-background shadow-sm [&_svg]:size-5"
-              value={boardIcon}
-            />
-
-            <div className="min-w-0 flex-1 space-y-2">
-              <div>
-                <Label htmlFor="board-name">{t('ws-task-boards.name')}</Label>
-                <p className="mt-0.5 text-muted-foreground text-xs">
-                  {t('ws-task-boards.icon_picker.description')}
-                </p>
-              </div>
-              <Input
-                autoComplete="off"
-                id="board-name"
-                onChange={(event) => setBoardName(event.target.value)}
-                placeholder={t('ws-task-boards.unnamed_board')}
-                value={boardName}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="board-ticket-prefix">
-              {t('ws-task-boards.settings.ticket_prefix')}
-            </Label>
-            <Input
-              id="board-ticket-prefix"
-              maxLength={12}
-              onChange={(event) => setTicketPrefix(event.target.value)}
-              placeholder={t(
-                'ws-task-boards.settings.ticket_prefix_placeholder'
-              )}
-              value={ticketPrefix}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>{t('settings.tasks.default_list')}</Label>
-            <Combobox
-              contentWidth="md"
-              mode="single"
-              onChange={(value) => {
-                if (typeof value === 'string') setDefaultListId(value);
-              }}
-              options={listOptions}
-              placeholder={t('settings.tasks.no_default_list')}
-              searchPlaceholder={t('common.search_tasks')}
-              selected={defaultListId}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end border-t pt-4">
-          <Button
-            disabled={updateBoardMutation.isPending || !isDirty}
-            onClick={() => updateBoardMutation.mutate()}
-            type="button"
-          >
-            {updateBoardMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            {t('common.save_changes')}
-          </Button>
-        </div>
-      </div>
-    </div>
+        </SettingsGroup>
+      </TabsContent>
+    </BoardSettingsNavigation>
   );
 }
 

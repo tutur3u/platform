@@ -29,6 +29,10 @@ vi.mock('@/lib/tutoring/route-access', () => ({
 vi.mock('@/lib/tutoring/teachers', () => ({
   listWorkspaceTeacherIds: mocks.eligibility,
 }));
+// Class exclusion has its own coverage in group-exclusion.test.ts.
+vi.mock('@/lib/tutoring/group-exclusion', () => ({
+  denyExcludedTutoringGroup: async () => null,
+}));
 vi.mock(
   '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/sessions/session-create-helpers',
   async (original) => ({

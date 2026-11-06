@@ -8,6 +8,7 @@ import {
   useBoardSprintMutations,
   useBoardSprints,
 } from '../shared/board-sprints/use-board-sprints';
+import { SettingsGroup, SettingsRow } from '../shared/settings-group';
 
 const OPTIONS = ['off', '1', '2'] as const;
 
@@ -27,8 +28,14 @@ export function BoardSprintSettings({
       ? 'off'
       : String(sprints.sprintLengthWeeks);
 
-  // Hidden until the sprint migration has reached this database.
-  if (sprints.isLoading || sprints.isError || !sprints.schemaAvailable) {
+  // Hidden until the sprint migration has reached this database and verified
+  // staff have enabled board cycles for the workspace.
+  if (
+    sprints.isLoading ||
+    sprints.isError ||
+    !sprints.schemaAvailable ||
+    !sprints.cyclesEnabled
+  ) {
     return null;
   }
 
@@ -49,30 +56,28 @@ export function BoardSprintSettings({
   };
 
   return (
-    <div className="space-y-4 rounded-2xl border bg-background p-4 sm:p-5">
-      <div className="space-y-1">
-        <h3 className="font-medium">{t('settings_title')}</h3>
-        <p className="text-muted-foreground text-sm">
-          {t('settings_description')}
-        </p>
-      </div>
-      <ToggleGroup
-        aria-label={t('sprint_length')}
-        className="w-fit"
-        disabled={setLength.isPending}
-        onValueChange={handleChange}
-        type="single"
-        value={value}
-        variant="outline"
+    <SettingsGroup title={t('settings_title')}>
+      <SettingsRow
+        description={t('settings_description')}
+        label={t('sprint_length')}
       >
-        {OPTIONS.map((option) => (
-          <ToggleGroupItem key={option} className="px-3" value={option}>
-            {option === 'off'
-              ? t('off')
-              : t('weeks', { count: Number(option) })}
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
-    </div>
+        <ToggleGroup
+          aria-label={t('sprint_length')}
+          disabled={setLength.isPending}
+          onValueChange={handleChange}
+          type="single"
+          value={value}
+          variant="outline"
+        >
+          {OPTIONS.map((option) => (
+            <ToggleGroupItem key={option} className="px-3" value={option}>
+              {option === 'off'
+                ? t('off')
+                : t('weeks', { count: Number(option) })}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </SettingsRow>
+    </SettingsGroup>
   );
 }

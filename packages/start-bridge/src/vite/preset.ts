@@ -267,6 +267,7 @@ export function startBridgePreset(
       },
     },
     define: {
+      'process.env.NODE_ENV': JSON.stringify(env.NODE_ENV ?? 'production'),
       'import.meta.env.VITE_TUTURUUU_BASE_PATH': JSON.stringify(
         basePath.basePath
       ),

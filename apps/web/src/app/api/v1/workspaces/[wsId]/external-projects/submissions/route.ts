@@ -1,6 +1,9 @@
+import {
+  isTurnstileError,
+  verifyTurnstileToken,
+} from '@tuturuuu/cloudflare/turnstile';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { isTurnstileError, verifyTurnstileToken } from '@tuturuuu/turnstile';
 import type { ExternalProjectCollection, Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
