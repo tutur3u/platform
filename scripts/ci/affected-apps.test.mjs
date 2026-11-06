@@ -243,3 +243,34 @@ test('importing the module as a library does not run the CLI', () => {
   const out = execFileSync('node', ['--input-type=module', '-e', `import ${JSON.stringify(path.join(here, 'affected-apps.mjs'))};`], { encoding: 'utf8' });
   assert.equal(out, '');
 });
+
+
+test('ownerless non-Markdown assets fail closed while md and mdx stay documentation', () => {
+  const f = fixture();
+  try {
+    for (const file of ['platform-version.txt', 'docs/config.rst', 'docs/config.svg', 'docs/config.png', 'docs/config.jpg', 'docs/config.jpeg', 'docs/config.gif', 'docs/config.webp']) {
+      assert.equal(run(f, f.change(file)).mode, 'all', file);
+    }
+    const before = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: f.cwd, encoding: 'utf8' }).trim();
+    const markdown = f.change('docs/guide.mdx');
+    assert.deepEqual(run(f, markdown, {}, before).apps, []);
+    assert.equal(run(f, markdown, {}, before).mode, 'affected');
+  } finally { f.close(); }
+});
+
+test('multiple merge bases fail closed for a real criss-cross history', () => {
+  const f = fixture();
+  try {
+    const left = f.change('apps/alpha/index.js', 'left\n');
+    f.git('checkout', '-q', '--detach', f.initial);
+    const right = f.change('apps/beta/index.js', 'right\n');
+    f.git('merge', '--no-ff', '--no-edit', left);
+    const rightMerge = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: f.cwd, encoding: 'utf8' }).trim();
+    f.git('checkout', '-q', '--detach', left);
+    f.git('merge', '--no-ff', '--no-edit', right);
+    const leftMerge = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: f.cwd, encoding: 'utf8' }).trim();
+    const bases = execFileSync('git', ['merge-base', '--all', leftMerge, rightMerge], { cwd: f.cwd, encoding: 'utf8' }).trim().split(/\r?\n/).sort();
+    assert.deepEqual(bases, [left, right].sort());
+    assert.equal(run(f, rightMerge, {}, leftMerge).mode, 'all');
+  } finally { f.close(); }
+});

@@ -122,13 +122,14 @@ function loadGraphAtTree(cwd, ref) {
   return { dirs, dependents, declares };
 }
 
-const DOC_EXTENSIONS = new Set(['.md', '.mdx', '.txt', '.rst', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp']);
+const DOC_EXTENSIONS = new Set(['.md', '.mdx']);
 const isDocumentation = (file) => DOC_EXTENSIONS.has(path.posix.extname(file).toLowerCase());
 
 export function calculate({ base, head = 'HEAD', cwd = process.cwd(), extraEdges }) {
   try {
-    const mergeBase = runGit('-C', cwd, 'merge-base', base, head);
-    if (!mergeBase) return { mode: 'all', apps: [], reason: 'merge-base could not be resolved' };
+    const mergeBases = runGit('-C', cwd, 'merge-base', '--all', base, head).split(/\r?\n/);
+    if (mergeBases.length !== 1 || !/^[0-9a-f]{40}$/.test(mergeBases[0])) return { mode: 'all', apps: [], reason: 'merge-base must resolve to exactly one full SHA' };
+    const [mergeBase] = mergeBases;
     // --no-renames reports a rename as a delete of the old path plus an add of the new one, so the
     // moved-from workspace is never hidden. -z avoids path quoting.
     const files = execFileSync('git', ['-C', cwd, 'diff', '--name-only', '--no-renames', '-z', `${mergeBase}..${head}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 28 }).split('\0').filter(Boolean);

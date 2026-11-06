@@ -75,3 +75,35 @@ export const PUT = withSessionAuth<SprintRouteParams>(
   },
   { allowAppSessionAuth: TASK_BOARD_SPRINT_APP_SESSION_AUTH }
 );
+
+// Plans one more sprint after the last open one (up to five open sprints).
+export const POST = withSessionAuth<SprintRouteParams>(
+  async (request, auth, params) => {
+    try {
+      const access = await requireSprintAccess(request, params, auth, 'plan');
+      if ('error' in access) return access.error;
+
+      const { data: added, error } = await access.sbAdmin.rpc(
+        'add_board_sprint',
+        {
+          p_actor_id: access.user.id,
+          p_board_id: access.boardId,
+          p_ws_id: access.wsId,
+        }
+      );
+      if (error) {
+        return sprintRpcErrorResponse(error, 'Failed to add sprint');
+      }
+
+      const loaded = await loadBoardSprints(access);
+      if (!loaded.ok) {
+        return sprintRpcErrorResponse(loaded.error, 'Failed to load sprints');
+      }
+
+      return NextResponse.json({ ...loaded.data, addedSprintId: added?.id });
+    } catch (error) {
+      return sprintRouteErrorResponse(error, 'Error adding sprint:');
+    }
+  },
+  { allowAppSessionAuth: TASK_BOARD_SPRINT_APP_SESSION_AUTH }
+);

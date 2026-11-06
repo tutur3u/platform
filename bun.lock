@@ -2384,6 +2384,21 @@
         "vitest": "^5.0.5",
       },
     },
+    "packages/cms-blocks": {
+      "name": "@tuturuuu/cms-blocks",
+      "version": "0.0.0",
+      "dependencies": {
+        "react": "^19.2.8",
+        "zod": "^4.6.7",
+      },
+      "devDependencies": {
+        "@types/react": "~19.2.18",
+        "@types/react-dom": "~19.2.7",
+        "react-dom": "^19.2.8",
+        "typescript": "7.0.2",
+        "vitest": "^5.0.5",
+      },
+    },
     "packages/devbox": {
       "name": "@tuturuuu/devbox",
       "version": "0.3.2",
@@ -5447,6 +5462,8 @@
     "@tuturuuu/cloudflare": ["@tuturuuu/cloudflare@workspace:packages/cloudflare"],
 
     "@tuturuuu/cms": ["@tuturuuu/cms@workspace:apps/cms"],
+
+    "@tuturuuu/cms-blocks": ["@tuturuuu/cms-blocks@workspace:packages/cms-blocks"],
 
     "@tuturuuu/colab": ["@tuturuuu/colab@workspace:apps/colab"],
 
