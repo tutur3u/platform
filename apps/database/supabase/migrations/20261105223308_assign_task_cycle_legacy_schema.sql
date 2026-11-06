@@ -31,7 +31,7 @@
 -- may execute it. Existing duplicate links are not cleaned up here; the next
 -- assign of an affected task replaces them, and the planning reads and cycle
 -- counts use only the newest link to a live workspace cycle.
--- Rollback: apps/database/rollbacks/20261101130030_assign_task_cycle.rollback.sql
+-- Rollback: apps/database/rollbacks/20261105223308_assign_task_cycle_legacy_schema.rollback.sql
 
 set lock_timeout = '5s';
 set statement_timeout = '60s';
@@ -67,7 +67,7 @@ begin
       using errcode = 'P0002';
   end if;
 
-  select tc.ws_id, tc.board_id, tc.deleted
+  select tc.ws_id, (pg_catalog.to_jsonb(tc)->>'board_id')::uuid, tc.deleted
   into v_cycle_ws_id, v_cycle_board_id, v_cycle_deleted
   from public.task_cycles tc
   where tc.id operator(pg_catalog.=) p_cycle_id;
@@ -99,7 +99,7 @@ begin
   delete from public.task_cycle_tasks tct
   using public.task_cycles c
   where c.id operator(pg_catalog.=) tct.cycle_id
-    and c.board_id is null
+    and (pg_catalog.to_jsonb(c)->>'board_id') is null
     and tct.task_id operator(pg_catalog.=) p_task_id;
 
   insert into public.task_cycle_tasks (task_id, cycle_id)

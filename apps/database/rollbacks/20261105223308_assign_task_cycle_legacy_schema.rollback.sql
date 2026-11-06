@@ -1,8 +1,8 @@
--- Rollback for 20261104152700_assign_task_cycle.sql.
+-- Rollback for 20261105223308_assign_task_cycle_legacy_schema.sql.
 -- Drops public.assign_task_cycle(uuid, uuid). No rows are changed.
 -- Deploy Tasks API code that does not call the assign_task_cycle rpc first,
 -- or every assign to a cycle fails.
---   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/rollbacks/20261104152700_assign_task_cycle.rollback.sql
+--   psql "$DB_URL" -v ON_ERROR_STOP=1 -f apps/database/rollbacks/20261105223308_assign_task_cycle_legacy_schema.rollback.sql
 -- Not a migration: apply manually only with release-authority approval.
 begin;
 set local lock_timeout = '5s';

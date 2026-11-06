@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
   cyclePlanningTaskSelect,
+  isCycleBoardScopeUnavailable,
   isInNoWorkspaceCycle,
   type RawPlanningTask,
   toCyclePlanningTask,
@@ -46,21 +47,32 @@ export const GET = withSessionAuth<RouteParams>(
       }
 
       const sbAdmin = await createAdminClient();
-      const { data, error } = await sbAdmin
-        .from('tasks')
-        .select(cyclePlanningTaskSelect('backlog'))
-        .is('cycle_links.cycle.board_id', null)
-        .not('cycle_links.cycle.deleted', 'is', true)
-        .eq('list.board.ws_id', access.wsId)
-        .is('list.board.deleted_at', null)
-        .is('list.board.archived_at', null)
-        .in('list.status', [...OPEN_TASK_LIST_STATUSES])
-        .not('list.deleted', 'is', true)
-        .not('list.archived', 'is', true)
-        .is('deleted_at', null)
-        .is('cycle_links', null)
-        .order('created_at', { ascending: false })
-        .limit(parsed.data.limit ?? MAX_CYCLE_TASKS);
+      const queryTasks = async (withBoardScope: boolean) => {
+        let query = sbAdmin
+          .from('tasks')
+          .select(cyclePlanningTaskSelect('backlog'))
+          .not('cycle_links.cycle.deleted', 'is', true)
+          .eq('list.board.ws_id', access.wsId)
+          .is('list.board.deleted_at', null)
+          .is('list.board.archived_at', null)
+          .in('list.status', [...OPEN_TASK_LIST_STATUSES])
+          .not('list.deleted', 'is', true)
+          .not('list.archived', 'is', true)
+          .is('deleted_at', null)
+          .is('cycle_links', null)
+          .order('created_at', { ascending: false })
+          .limit(parsed.data.limit ?? MAX_CYCLE_TASKS);
+
+        if (withBoardScope) {
+          query = query.is('cycle_links.cycle.board_id', null);
+        }
+        return query;
+      };
+      let result = await queryTasks(true);
+      if (isCycleBoardScopeUnavailable(result.error)) {
+        result = await queryTasks(false);
+      }
+      const { data, error } = result;
 
       if (error) {
         console.error('Error fetching task backlog:', error);

@@ -105,7 +105,7 @@ export async function assertCycleInWorkspace(
 
   const { data: cycle, error } = await sbAdmin
     .from('task_cycles')
-    .select('ws_id, board_id, deleted')
+    .select('*')
     .eq('id', cycleId)
     .maybeSingle();
 

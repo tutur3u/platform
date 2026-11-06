@@ -32,7 +32,17 @@ export type SprintAccessLevel = 'view' | 'plan' | 'manage';
 // workspace secret, which only verified Tuturuuu staff can set.
 export const BOARD_CYCLES_ENABLED_SECRET = 'ENABLE_BOARD_CYCLES';
 
+const BOARD_CYCLES_RELEASE_ENABLED = false;
+
 export async function areBoardCyclesEnabled(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string
+) {
+  if (!BOARD_CYCLES_RELEASE_ENABLED) return false;
+  return readWorkspaceBoardCyclesEnabled(sbAdmin, wsId);
+}
+
+export async function readWorkspaceBoardCyclesEnabled(
   sbAdmin: TypedSupabaseClient,
   wsId: string
 ) {
@@ -68,6 +78,10 @@ export async function requireSprintAccess(
     requiredPermission: level === 'view' ? 'view' : 'edit',
   });
   if ('error' in access) return access;
+
+  if (!BOARD_CYCLES_RELEASE_ENABLED && level !== 'view') {
+    return { error: boardCyclesNotEnabledResponse() };
+  }
 
   if (level === 'manage' && access.access.mode !== 'member') {
     return {
@@ -260,7 +274,20 @@ async function listUnplannedTaskIds(
   return { data: (data ?? []) as string[], error: null };
 }
 
-export async function loadBoardSprints({
+export function boardSprintReadReleaseResponse() {
+  return BOARD_CYCLES_RELEASE_ENABLED ? null : NextResponse.json(UNAVAILABLE);
+}
+
+export async function loadBoardSprints(
+  access: Parameters<typeof loadEnabledBoardSprints>[0]
+): ReturnType<typeof loadEnabledBoardSprints> {
+  if (!BOARD_CYCLES_RELEASE_ENABLED) {
+    return { ok: true, data: UNAVAILABLE };
+  }
+  return loadEnabledBoardSprints(access);
+}
+
+export async function loadEnabledBoardSprints({
   boardId,
   sbAdmin,
   wsId,
@@ -272,7 +299,9 @@ export async function loadBoardSprints({
   | { ok: true; data: BoardSprintsResponse }
   | { ok: false; error: SprintQueryError }
 > {
-  const cyclesEnabled = areBoardCyclesEnabled(sbAdmin, wsId).catch(() => false);
+  const cyclesEnabled = readWorkspaceBoardCyclesEnabled(sbAdmin, wsId).catch(
+    () => false
+  );
   const [boardResult, sprintsResult, reportsResult, unplannedResult] =
     await Promise.all([
       sbAdmin
