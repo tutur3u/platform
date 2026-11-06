@@ -10,6 +10,16 @@ const {
   runScriptTests,
 } = require('./run-script-tests.js');
 
+test('the root Node job owns both Hive maintenance suites', () => {
+  const files = discoverScriptTests();
+  for (const file of [
+    'apps/hive/maintenance/prepare-tunnel.test.mjs',
+    'apps/hive/maintenance/worker.test.mjs',
+  ]) {
+    assert.equal(files.filter((entry) => entry === file).length, 1);
+  }
+});
+
 function createFixture(t) {
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'script tests '));
   t.after(() => fs.rmSync(repoRoot, { force: true, recursive: true }));

@@ -146,7 +146,7 @@ class _SettingsWorkspaceMembersViewState
                 if (_loading)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 48),
-                    child: Center(child: NovaLoadingIndicator()),
+                    child: AppLoadingIndicator.page(),
                   )
                 else if (_error != null)
                   _MembersStatePanel(

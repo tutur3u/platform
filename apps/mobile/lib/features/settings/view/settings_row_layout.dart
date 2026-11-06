@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Settings row geometry, expressed in the design foundation's tokens.
@@ -52,20 +53,31 @@ abstract final class SettingsRowLayout {
   /// over the grouped page in light themes); ambient pages get the
   /// translucent appearance card.
   static Color groupFill(BuildContext context) {
-    final scheme = shad.Theme.of(context).colorScheme;
+    final c = AppTokens.of(context).colorScheme;
     if (AppearanceScope.hasAmbientBackground(context)) {
-      return AppearanceScope.surfaceColor(context, scheme.card);
+      return AppearanceScope.surfaceColor(context, c.card);
     }
-    return solidGroupFill(scheme);
+    return _solidFill(c.card, c.background, c.foreground, c.brightness);
   }
 
   /// The theme card, or a quiet tonal lift when the card matches the page.
-  static Color solidGroupFill(shad.ColorScheme scheme) =>
-      scheme.card != scheme.background
-      ? scheme.card
+  static Color solidGroupFill(shad.ColorScheme scheme) => _solidFill(
+    scheme.card,
+    scheme.background,
+    scheme.foreground,
+    scheme.brightness,
+  );
+
+  static Color _solidFill(
+    Color card,
+    Color background,
+    Color foreground,
+    Brightness brightness,
+  ) => card != background
+      ? card
       : Color.lerp(
-          scheme.background,
-          scheme.foreground,
-          scheme.brightness == Brightness.dark ? 0.08 : 0.04,
+          background,
+          foreground,
+          brightness == Brightness.dark ? 0.08 : 0.04,
         )!;
 }

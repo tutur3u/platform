@@ -81,13 +81,23 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   if (request.nextUrl.pathname.startsWith('/api')) {
+    const isBuildInfoRead =
+      request.nextUrl.pathname === '/api/build-info' &&
+      (request.method === 'GET' || request.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of request.cookies.getAll())
+        request.cookies.delete(cookie.name);
+      request.headers.delete('cookie');
+      request.headers.delete('authorization');
+    }
     const isLocalAuthApi = LOCAL_AUTH_API_PATHS.has(request.nextUrl.pathname);
-    const appSessionRefresh = isLocalAuthApi
-      ? null
-      : await refreshAppSessionForRequest(request, {
-          sessionMode: 'supabase-first',
-          targetApp: 'ai',
-        });
+    const appSessionRefresh =
+      isLocalAuthApi || isBuildInfoRead
+        ? null
+        : await refreshAppSessionForRequest(request, {
+            sessionMode: 'supabase-first',
+            targetApp: 'ai',
+          });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -106,6 +116,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       }
       return preserveMfaRecoveryCookies(request, guardResponse);
     }
+
+    if (isBuildInfoRead)
+      return NextResponse.next({ request: { headers: request.headers } });
 
     return (
       appSessionRefresh?.response ??

@@ -47,6 +47,9 @@ const INVOICE_CREATION_DEFAULT_CONFIG_IDS = new Set([
   'DEFAULT_CURRENCY',
 ]);
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+
 const PROFILE_LINK_DEFAULT_CONFIG_IDS = new Set<string>(
   WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS
 );
@@ -317,6 +320,53 @@ export async function PUT(req: NextRequest, { params }: Params) {
       }
 
       updateEntries.set(key, value);
+    }
+
+    // Mirror the single-config PUT: only wallet changers may move the default
+    // wallet, and it must belong to this workspace.
+    const defaultWalletUpdate = updateEntries.get('default_wallet_id');
+    if (defaultWalletUpdate !== undefined) {
+      if (permissions.withoutPermission('change_finance_wallets')) {
+        return NextResponse.json(
+          { error: 'Insufficient permissions to change the default wallet' },
+          { status: 403 }
+        );
+      }
+
+      const defaultWalletId = defaultWalletUpdate.trim();
+      updateEntries.set('default_wallet_id', defaultWalletId);
+
+      if (defaultWalletId) {
+        if (!UUID_PATTERN.test(defaultWalletId)) {
+          return NextResponse.json(
+            { error: 'Invalid default wallet' },
+            { status: 400 }
+          );
+        }
+
+        const { data: wallet, error: walletError } = await sbAdmin
+          .schema('private')
+          .from('workspace_wallets')
+          .select('id')
+          .eq('id', defaultWalletId)
+          .eq('ws_id', wsId)
+          .maybeSingle();
+
+        if (walletError) {
+          console.error('Error validating default wallet:', walletError);
+          return NextResponse.json(
+            { error: 'Failed to validate default wallet' },
+            { status: 500 }
+          );
+        }
+
+        if (!wallet) {
+          return NextResponse.json(
+            { error: 'Invalid default wallet' },
+            { status: 400 }
+          );
+        }
+      }
     }
 
     const parsedUpdates: WorkspaceConfigUpdates =

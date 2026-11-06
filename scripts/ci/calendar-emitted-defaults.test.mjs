@@ -118,6 +118,7 @@ function fixture(run) {
       directory: '../client',
       run_worker_first: true,
       not_found_handling: 'none',
+      html_handling: 'none',
     },
   };
   put('.wrangler/deploy/config.json', {

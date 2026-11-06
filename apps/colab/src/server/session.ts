@@ -96,6 +96,7 @@ export async function resolveSession(
   }
   if (!response.ok) throw new RoomError('session_unavailable', 503);
   const data = (await response.json().catch(() => null)) as {
+    staffVerified?: boolean;
     user?: {
       id?: string;
       email?: string;
@@ -140,6 +141,7 @@ export async function resolveSession(
       : user.user_metadata?.avatar_url;
   const identity: AccountSession = {
     id: user.id,
+    staffVerified: data?.staffVerified === true,
     email: user.email,
     name: typeof name === 'string' ? name.slice(0, 120) : 'Member',
     avatarUrl:

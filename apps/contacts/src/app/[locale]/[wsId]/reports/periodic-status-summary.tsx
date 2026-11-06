@@ -19,11 +19,14 @@ export { PERIODIC_STAGES } from './periodic-stage-meta';
 
 export function PeriodicStatusSummary({
   counts,
+  partial = false,
   stage,
   onChange,
   toolbar,
 }: {
   counts?: PeriodicReportCounts;
+  /** Counts cover only the selected stage; show the others as unknown. */
+  partial?: boolean;
   stage: PeriodicReportStage | 'all';
   onChange: (stage: PeriodicReportStage | 'all') => void;
   toolbar?: ReactNode;
@@ -32,19 +35,26 @@ export function PeriodicStatusSummary({
   const common = useTranslations('common');
   return (
     <ReportStatusDashboard
-      total={counts?.total}
+      total={partial ? undefined : counts?.total}
       totalLabel={t('total_reports')}
       label={t('report_status')}
       toolbar={toolbar}
       actions={
-        <Button
-          variant={stage === 'all' ? 'secondary' : 'ghost'}
-          size="sm"
-          aria-pressed={stage === 'all'}
-          onClick={() => onChange('all')}
-        >
-          {common('all')}
-        </Button>
+        <>
+          <Button
+            variant={stage === 'all' ? 'secondary' : 'ghost'}
+            size="sm"
+            aria-pressed={stage === 'all'}
+            onClick={() => onChange('all')}
+          >
+            {common('all')}
+          </Button>
+          {partial && (
+            <p className="basis-full text-muted-foreground text-xs">
+              {t('summary_partial')}
+            </p>
+          )}
+        </>
       }
     >
       {PERIODIC_STAGES.map(([value, label]) => (
@@ -52,8 +62,10 @@ export function PeriodicStatusSummary({
           key={value}
           label={t(label)}
           active={stage === value}
-          count={counts?.stages?.[value]}
-          total={counts?.total}
+          count={
+            partial && value !== stage ? undefined : counts?.stages?.[value]
+          }
+          total={partial ? undefined : counts?.total}
           appearance={getPeriodicStageAppearance(value)}
           onClick={() => onChange(value)}
         />

@@ -34,12 +34,14 @@
   "apps/git": "0.15.0",
   "apps/track": "0.31.0",
   "packages/agent-quota": "0.2.0",
+  "packages/start-bridge": "0.1.0",
   "packages/ai": "0.18.3",
   "packages/apis": "0.13.1",
   "packages/auth": "0.7.0",
   "packages/devbox": "0.3.2",
   "packages/education-core": "0.5.0",
   "packages/editor": "0.8.3",
+  "packages/feature-flags": "0.0.0",
   "packages/finance-core": "0.4.2",
   "packages/payment-core": "0.6.1",
   "packages/email-service": "0.7.1",
@@ -68,7 +70,7 @@
   "packages/tasks-ui": "0.17.3",
   "packages/transactional": "1.1.1",
   "packages/trigger": "0.4.0",
-  "packages/turnstile": "0.2.0",
+  "packages/cloudflare": "0.2.0",
   "packages/types": "0.37.0",
   "packages/typescript-config": "0.1.2",
   "packages/ui": "0.40.0",
@@ -79,5 +81,6 @@
   "packages/workflows": "0.0.2",
   "apps/lettin": "1.6.0",
   "apps/parley": "1.5.0",
-  "packages/meet-core": "1.4.2"
+  "packages/meet-core": "1.4.2",
+  "packages/cms-blocks": "0.0.0"
 }

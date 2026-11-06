@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { TopicAnnouncementAccessScope } from './access';
 import { normalizeTopicAnnouncementAttachmentFileName } from './attachments';
 
 export type TopicAnnouncementsSupabaseClient = any;
@@ -7,6 +8,13 @@ export interface TopicAnnouncementsAccessContext {
   actorUserId: string;
   normalizedWsId: string;
   sbAdmin: TopicAnnouncementsSupabaseClient;
+  /** Absent only for legacy callers; treated as the supervisor scope. */
+  scope?: TopicAnnouncementAccessScope;
+  /**
+   * `ENABLE_TOPIC_TEACHER_ASSIGNMENTS` for the workspace. Absent or false keeps
+   * the pre-teacher supervisor behavior on every write path.
+   */
+  teacherAssignmentsEnabled?: boolean;
   supabase: TopicAnnouncementsSupabaseClient;
 }
 
@@ -214,6 +222,8 @@ export function mapTopicAnnouncementRow(announcement: {
 
   return {
     ...rest,
+    // Drafts may hold a null topic until the teacher writes it.
+    ...('topic' in rest ? { topic: rest.topic ?? '' } : {}),
     attachments: (attachments ?? []).map(serializeTopicAnnouncementAttachment),
     ...(contacts ? { contacts } : {}),
     group:

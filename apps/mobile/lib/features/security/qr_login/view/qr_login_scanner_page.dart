@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as compat;
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_service.dart';
 import 'package:mobile/features/security/qr_login/data/qr_login_repository.dart';
@@ -128,10 +128,10 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
 
   Future<void> _enterLink() async {
     final controller = TextEditingController();
-    final value = await compat.showDialog<String>(
+    final value = await showAppDialog<String>(
       context: context,
-      builder: (context) => compat.AlertDialog(
-        title: Text(context.l10n.deviceMfaQrPaste),
+      builder: (context) => AppDialog(
+        title: context.l10n.deviceMfaQrPaste,
         content: shad.TextField(
           selectionControls: platformTextSelectionControls(),
           contextMenuBuilder: platformTextContextMenuBuilder(),

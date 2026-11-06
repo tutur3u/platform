@@ -58,6 +58,7 @@ test('actual lifecycle CI command runs only its explicit worker regressions outs
       'room-do-recovery.test.ts',
       'collaboration-retry-budget.test.ts',
       'channel-retry-budget.test.ts',
+      'channel-checkpoint-request.test.ts',
     ].map((file) => `apps/meet-realtime/src/${file}`);
     assert.deepEqual(observed.argv, [
       'test',

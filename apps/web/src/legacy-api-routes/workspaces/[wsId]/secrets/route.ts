@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import {
   canMutateManagedCronEnableSecret,
+  createManagedCronSecretAdminClient,
   isManagedCronEnableSecretName,
 } from '@/lib/workspace-secrets/managed-cron';
 import { getWorkspaceSecretsAccess } from './access';
+import { workspaceSecretWriteSchema } from './schema';
 
 interface Params {
   params: Promise<{
@@ -40,16 +42,25 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  let data: { name?: string; value?: string };
+  let body: unknown;
 
   try {
-    data = await req.json();
+    body = await req.json();
   } catch {
     return NextResponse.json(
       { message: 'Malformed JSON payload' },
       { status: 400 }
     );
   }
+
+  const parsed = workspaceSecretWriteSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid workspace secret payload' },
+      { status: 400 }
+    );
+  }
+  const { name, value } = parsed.data;
 
   const { wsId } = await params;
   const access = await getWorkspaceSecretsAccess(wsId, req);
@@ -61,18 +72,20 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  if (
-    isManagedCronEnableSecretName(data.name) &&
-    !(await canMutateManagedCronEnableSecret(req))
-  ) {
+  const touchesManagedCron = isManagedCronEnableSecretName(name);
+  if (touchesManagedCron && !(await canMutateManagedCronEnableSecret(req))) {
     return NextResponse.json(
       { message: 'Only Tuturuuu employees can enable managed cron jobs.' },
       { status: 403 }
     );
   }
 
-  const { error } = await access.db.from('workspace_secrets').insert({
-    ...data,
+  const db = touchesManagedCron
+    ? await createManagedCronSecretAdminClient()
+    : access.db;
+  const { error } = await db.from('workspace_secrets').insert({
+    name,
+    value,
     ws_id: access.resolvedWsId,
   });
 

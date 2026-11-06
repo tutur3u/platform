@@ -41,6 +41,21 @@ export async function POST(request: Request, context: Params) {
       { headers: { 'Cache-Control': 'no-store' } }
     );
   } catch (error) {
+    // Surface the real limit and its reset (budget or rate limit) so the dialog can say when to retry.
+    if (error instanceof InternalApiError && error.status === 429)
+      return Response.json(
+        {
+          message: error.message,
+          code: error.code,
+          retryAfter: error.retryAfter,
+        },
+        {
+          status: 429,
+          headers: error.retryAfter
+            ? { 'Retry-After': String(error.retryAfter) }
+            : undefined,
+        }
+      );
     return Response.json(
       { message: 'Avatar upload unavailable' },
       { status: error instanceof InternalApiError ? error.status : 503 }

@@ -4,18 +4,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_editor_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_memory_editor.dart';
 import 'package:mobile/features/assistant/widgets/assistant_personality_editor.dart';
-import 'package:mobile/features/assistant/widgets/assistant_settings_info.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:share_plus/share_plus.dart';
 
 class AssistantPersonalSettingsSection extends StatefulWidget {
@@ -112,92 +111,107 @@ class _AssistantPersonalSettingsSectionState
       bloc: cubit,
       builder: (context, state) {
         final snapshot = state.snapshot;
+        final idle = !state.busy && !state.loading;
+        const togglePadding = EdgeInsets.symmetric(
+          horizontal: AppLayout.rowHorizontalPadding,
+          vertical: AppSpacing.sm,
+        );
+        if (snapshot == null) {
+          return AppGroupedSection.spaced(
+            children: [
+              if (state.loading)
+                const AppSkeletonRows(count: 1)
+              else
+                AppStateMessage.inline(
+                  icon: LucideIcons.cloudOff,
+                  tone: AppTone.destructive,
+                  title: l.assistantPersonalSettingsError,
+                  actionLabel: state.failed ? l.commonRetry : null,
+                  onAction: state.failed && !state.busy ? cubit.load : null,
+                ),
+            ],
+          );
+        }
+        final canEditSoul = cubit.admitted && state.canEditSoul;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (state.loading && snapshot == null)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: NovaLoadingIndicator(size: 20)),
-              ),
-            if (snapshot != null) ...[
-              AppListTile(
-                leading: const Icon(LucideIcons.sparkles),
-                title: Text(l.assistantPersonalityTitle),
-                subtitle: Text(
-                  snapshot.soul.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+            AppGroupedSection.spaced(
+              children: [
+                AppGroupedRow(
+                  key: const ValueKey('assistant-settings-personality'),
+                  leading: const AppIconTile(
+                    icon: LucideIcons.sparkles,
+                    tone: AppTone.primary,
+                  ),
+                  title: Text(l.assistantPersonalityTitle),
+                  subtitle: Text(
+                    snapshot.soul.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  showChevron: canEditSoul,
+                  onTap: canEditSoul
+                      ? () => pushScopedSettingsPage(
+                          context,
+                          builder: (_, isCurrent) =>
+                              AssistantSettingsEditorPage(
+                                title: l.assistantPersonalityTitle,
+                                child: AssistantPersonalityEditor(
+                                  cubit: cubit,
+                                  isScopeCurrent: () =>
+                                      isCurrent() && cubit.admitted,
+                                ),
+                              ),
+                        )
+                      : null,
                 ),
-                trailing: const Icon(LucideIcons.chevronRight),
-                enabled: cubit.admitted && state.canEditSoul,
-                onTap: () => cubit.admitted && cubit.state.canEditSoul
-                    ? pushScopedSettingsPage(
-                        context,
-                        builder: (_, isCurrent) => AssistantSettingsEditorPage(
-                          title: l.assistantPersonalityTitle,
-                          child: AssistantPersonalityEditor(
-                            cubit: cubit,
-                            isScopeCurrent: () => isCurrent() && cubit.admitted,
-                          ),
-                        ),
-                      )
+              ],
+            ),
+            if (snapshot.memoryEnabled != null ||
+                snapshot.memories.isNotEmpty ||
+                !state.failed)
+              AppGroupedSection.spaced(
+                caption: l.assistantMemoryTitle,
+                footer: snapshot.products['mira'] == false
+                    ? l.assistantMemoryProductDisabled
                     : null,
-              ),
-              AppDisclosure(
-                title: Text(l.assistantMemoryTitle),
-                leading: const Icon(LucideIcons.brain),
-                childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  if (snapshot.memoryEnabled != null)
+                  if (snapshot.memoryEnabled case final enabled?)
                     AppToggleRow(
-                      title: Row(
-                        children: [
-                          Expanded(child: Text(l.assistantMemoryCollection)),
-                          AssistantSettingsInfo(
-                            title: l.assistantMemoryTitle,
-                            description: l.assistantMemoryWorkspaceScope,
-                          ),
-                        ],
-                      ),
-                      value: snapshot.memoryEnabled!,
-                      onChanged: state.busy || state.loading
-                          ? null
-                          : (value) => cubit.setMemoryEnabled(enabled: value),
-                    ),
-                  if (snapshot.products['mira'] == false)
-                    Text(l.assistantMemoryProductDisabled),
-                  if (snapshot.memoryEnabled == null && state.loading)
-                    Semantics(
-                      label: l.commonLoading,
-                      child: const Center(
-                        child: NovaLoadingIndicator(size: 20),
-                      ),
-                    ),
-                  if (snapshot.memoryEnabled == null && !state.loading)
-                    Text(l.assistantPersonalSettingsError),
-                  if (snapshot.memoryEnabled == null && !state.loading)
-                    AppButton.ghost(
-                      onPressed: cubit.load,
-                      child: Text(l.commonRetry),
+                      padding: togglePadding,
+                      title: Text(l.assistantMemoryCollection),
+                      subtitle: Text(l.assistantMemoryWorkspaceScope),
+                      value: enabled,
+                      onChanged: idle
+                          ? (value) => cubit.setMemoryEnabled(enabled: value)
+                          : null,
+                    )
+                  else if (state.loading)
+                    const AppSkeletonRows(count: 1)
+                  else if (!state.failed)
+                    AppStateMessage.inline(
+                      icon: LucideIcons.cloudOff,
+                      tone: AppTone.destructive,
+                      title: l.assistantPersonalSettingsError,
+                      actionLabel: l.commonRetry,
+                      onAction: cubit.load,
                     ),
                   if (snapshot.memoryEnabled != null &&
                       snapshot.memories.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Text(l.assistantMemoryEmpty),
+                    AppStateMessage.inline(
+                      icon: LucideIcons.brain,
+                      title: l.assistantMemoryEmpty,
                     ),
                   for (final item in snapshot.memories)
-                    AppListTile(
-                      contentPadding: EdgeInsets.zero,
+                    AppGroupedRow(
                       title: Text(
                         item.text,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      onTap: state.busy || state.loading
-                          ? null
-                          : () => pushScopedSettingsPage(
+                      onTap: idle
+                          ? () => pushScopedSettingsPage(
                               context,
                               builder: (_, isCurrent) =>
                                   AssistantSettingsEditorPage(
@@ -208,40 +222,36 @@ class _AssistantPersonalSettingsSectionState
                                       isScopeCurrent: isCurrent,
                                     ),
                                   ),
-                            ),
+                            )
+                          : null,
                       trailing: AppIconButton(
                         tooltip: l.commonDelete,
-                        onPressed: state.busy || state.loading
-                            ? null
-                            : () => _delete(item),
+                        onPressed: idle ? () => _delete(item) : null,
                         icon: const Icon(LucideIcons.trash2),
                       ),
                     ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: AppButton.ghost(
-                      onPressed: state.busy || state.loading ? null : _export,
-                      leading: const Icon(LucideIcons.share),
-                      child: Text(l.assistantMemoryExport),
+                  if (snapshot.memories.isNotEmpty)
+                    AppGroupedRow(
+                      key: const ValueKey('assistant-memory-export'),
+                      leading: const AppIconTile(icon: LucideIcons.share),
+                      title: Text(l.assistantMemoryExport),
+                      onTap: idle ? _export : null,
                     ),
-                  ),
                 ],
               ),
-            ],
             if (state.failed || _exportFailed)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  l.assistantPersonalSettingsError,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            if (state.failed)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: AppButton.ghost(
-                  onPressed: state.busy ? null : cubit.load,
-                  child: Text(l.commonRetry),
+                padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
+                child: AppGroupedCard(
+                  children: [
+                    AppStateMessage.inline(
+                      icon: LucideIcons.triangleAlert,
+                      tone: AppTone.destructive,
+                      title: l.assistantPersonalSettingsError,
+                      actionLabel: state.failed ? l.commonRetry : null,
+                      onAction: state.failed && !state.busy ? cubit.load : null,
+                    ),
+                  ],
                 ),
               ),
           ],

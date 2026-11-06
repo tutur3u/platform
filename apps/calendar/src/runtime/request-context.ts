@@ -1,18 +1,25 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
+import { runtimeAppBase } from '@tuturuuu/start-bridge/app-url';
 import {
-  RequestCookies,
-  ResponseCookies,
-} from 'next/dist/compiled/@edge-runtime/cookies';
-
+  type BridgeRequestInit,
+  createRequestLocal,
+  maybeBridgeRequest,
+  withBridgeRequest,
+} from '@tuturuuu/start-bridge/request-context';
 import type { CalendarTelemetryPort } from './request-telemetry.server';
 import type {
   CalendarExecutionContext,
   CalendarWorkerEnvironment,
 } from './worker-contract';
 
-export interface CalendarRequestContext {
+export {
+  after,
+  connection,
+  cookies,
+  headers,
+} from '@tuturuuu/start-bridge/request-context';
+
+export interface CalendarRequestContext extends BridgeRequestInit {
   telemetry?: CalendarTelemetryPort;
-  request: Request;
   responseHeaders: Headers;
   waitUntil: (work: Promise<unknown>) => void;
   cloudflare?: {
@@ -20,64 +27,30 @@ export interface CalendarRequestContext {
     ctx: CalendarExecutionContext;
   };
 }
-
-const requests = new AsyncLocalStorage<CalendarRequestContext>();
+const contextSlot = createRequestLocal<CalendarRequestContext>(
+  'calendar request adapter'
+);
 
 export function withCalendarRequest<T>(
   context: CalendarRequestContext,
   run: () => T
 ): T {
-  return requests.run(context, run);
+  return withBridgeRequest(
+    {
+      ...context,
+      cookieSource: context.cookieSource ?? context.request.headers,
+      appBase: context.appBase ?? runtimeAppBase(),
+      locals: new Map(context.locals ?? maybeBridgeRequest()?.locals),
+    },
+    () => {
+      contextSlot.set(context);
+      return run();
+    }
+  );
 }
 
 export function calendarRequest() {
-  const context = requests.getStore();
+  const context = contextSlot.get();
   if (!context) throw new Error('Calendar request context is unavailable');
   return context;
-}
-
-export async function headers() {
-  return new Headers(calendarRequest().request.headers);
-}
-
-export async function cookies() {
-  const context = calendarRequest();
-  const incoming = new RequestCookies(context.request.headers);
-  const outgoing = new ResponseCookies(context.responseHeaders);
-  return {
-    get: incoming.get.bind(incoming),
-    getAll: incoming.getAll.bind(incoming),
-    has: incoming.has.bind(incoming),
-    toString: incoming.toString.bind(incoming),
-    get size() {
-      return incoming.size;
-    },
-    [Symbol.iterator]: incoming[Symbol.iterator].bind(incoming),
-    set(...args: Parameters<ResponseCookies['set']>) {
-      outgoing.set(...args);
-      const name = typeof args[0] === 'string' ? args[0] : args[0].name;
-      const cookie = outgoing.get(name);
-      if (!cookie) throw new Error('Calendar cookie write was not retained');
-      incoming.set(cookie.name, cookie.value);
-      return outgoing;
-    },
-    delete(...args: Parameters<ResponseCookies['delete']>) {
-      outgoing.delete(...args);
-      const cookie = typeof args[0] === 'string' ? args[0] : args[0].name;
-      incoming.delete(cookie);
-      return outgoing;
-    },
-  };
-}
-
-export async function connection() {
-  // Start pages are request-rendered; access outside a request fails closed.
-  calendarRequest();
-}
-
-export function after(task: Promise<unknown> | (() => unknown)) {
-  const context = calendarRequest();
-  context.waitUntil(
-    Promise.resolve().then(() => (typeof task === 'function' ? task() : task))
-  );
 }

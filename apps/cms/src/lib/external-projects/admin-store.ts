@@ -107,11 +107,11 @@ export async function createCanonicalExternalProject(
     adapter: CanonicalExternalProject['adapter'];
     allowed_collections: CanonicalExternalProject['allowed_collections'];
     allowed_features: CanonicalExternalProject['allowed_features'];
-    delivery_profile: Json;
+    delivery_profile: NonNullable<Json>;
     display_name: string;
     id: string;
     is_active: boolean;
-    metadata: Json;
+    metadata: NonNullable<Json>;
   },
   db?: AdminDb
 ) {
@@ -142,10 +142,10 @@ export async function updateCanonicalExternalProject(
     adapter: CanonicalExternalProject['adapter'];
     allowed_collections: CanonicalExternalProject['allowed_collections'];
     allowed_features: CanonicalExternalProject['allowed_features'];
-    delivery_profile: Json;
+    delivery_profile: NonNullable<Json>;
     display_name: string;
     is_active: boolean;
-    metadata: Json;
+    metadata: NonNullable<Json>;
   }> & {
     actorId: string;
   },

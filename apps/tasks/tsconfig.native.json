@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "plugins": [],
+    "types": ["vite/client", "node"],
+    "noEmit": true,
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src", "cloudflare", "global.d.ts", "messages"],
+  "exclude": ["node_modules", "dist", ".turbo", "src/app/sw.ts"]
+}

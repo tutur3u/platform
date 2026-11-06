@@ -30,7 +30,10 @@ test('fork package smoke builds use a secretless compatibility path', () => {
   );
   assert.equal(
     (workflow.match(/if: env\.IS_FORK_PULL_REQUEST != 'true'/g) ?? []).length,
-    3,
-    'secret-backed setup and build steps must remain trusted-only'
+    1,
+    'the trusted build step must remain trusted-only'
   );
+  // The build never read the pulled Vercel preview environment, and pulling
+  // it exposed an account token and preview values to pull request code.
+  assert.doesNotMatch(workflow, /secrets\.VERCEL_|vercel pull/u);
 });

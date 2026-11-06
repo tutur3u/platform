@@ -192,3 +192,20 @@ describe('additive public Apps Worker', () => {
     expect(fetch).toHaveBeenCalledOnce();
   });
 });
+
+it.each([
+  ['apps.tutur3u.com', 500],
+  ['gateway.example.test', 200],
+])('enforces outgoing cookie scope on %s', async (host, status) => {
+  const env = environment();
+  const cookie = 'session=fixture; Domain=.tuturuuu.com; Path=/; Secure';
+  env.ASSETS.fetch.mockResolvedValueOnce(
+    new Response('asset', { headers: { 'set-cookie': cookie } })
+  );
+  const result = await gatewayRequest(
+    new Request(`https://${host}/assets/example.js`),
+    env
+  );
+  expect(result.status).toBe(status);
+  expect(result.headers.getSetCookie()).toEqual(status === 500 ? [] : [cookie]);
+});

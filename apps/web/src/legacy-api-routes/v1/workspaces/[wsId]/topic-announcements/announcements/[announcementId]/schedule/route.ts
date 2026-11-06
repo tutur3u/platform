@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import {
   getWorkspaceSchedulingTimezone,
+  isTopicAnnouncementTopicReady,
+  loadScopedTopicAnnouncement,
   resolveTopicAnnouncementsAccess,
   TopicAnnouncementScheduleSchema,
 } from '../../../shared';
@@ -13,6 +15,7 @@ export async function POST(request: Request, { params }: Params) {
   const { announcementId, wsId } = await params;
   const access = await resolveTopicAnnouncementsAccess(request, wsId, {
     requireSend: true,
+    teacherAccess: 'send',
   });
   if (access.response) return access.response;
 
@@ -56,7 +59,24 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { actorUserId, normalizedWsId, sbAdmin } = access.context;
+  const { actorUserId, normalizedWsId, sbAdmin, scope } = access.context;
+  const loaded = await loadScopedTopicAnnouncement<{ topic: string | null }>({
+    announcementId,
+    columns: 'id,topic',
+    normalizedWsId,
+    sbAdmin,
+    scope,
+  });
+  if (loaded.response) return loaded.response;
+  if (
+    !isTopicAnnouncementTopicReady({
+      status: 'queued',
+      topic: loaded.row.topic,
+    })
+  ) {
+    return NextResponse.json({ message: 'TOPIC_REQUIRED' }, { status: 409 });
+  }
+
   const { data, error } = await sbAdmin
     .from('topic_announcements')
     .update({

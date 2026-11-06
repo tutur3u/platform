@@ -26,7 +26,9 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
       throw const FormatException('Invalid task estimates cache payload.');
     }
 
-    return Map<String, dynamic>.from(json);
+    final payload = Map<String, dynamic>.from(json);
+    TaskEstimateBoard.listFromJson(payload['boards']);
+    return payload;
   }
 
   static CacheKey _cacheKey(String wsId) {
@@ -72,45 +74,61 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
 
     return TaskEstimatesState(
       status: TaskEstimatesStatus.loaded,
-      boards: ((json['boards'] as List<dynamic>?) ?? const <dynamic>[])
-          .whereType<Map<String, dynamic>>()
-          .map(TaskEstimateBoard.fromJson)
-          .toList(growable: false),
+      boards: TaskEstimateBoard.listFromJson(json['boards']),
     );
   }
 
-  Future<void> loadBoards(String wsId) async {
+  /// [retainError] keeps a visible error state and its message while the
+  /// pull-to-refresh gesture reloads; an explicit Retry leaves it false so
+  /// the page re-enters its loading state.
+  Future<void> loadBoards(
+    String wsId, {
+    bool forceRefresh = false,
+    bool retainError = false,
+  }) async {
+    if (isClosed) return;
+    final sameWorkspace = _lastLoadWsId == wsId;
     _lastLoadWsId = wsId;
     final cacheKey = _cacheKey(wsId);
     final cached = await CacheStore.instance.read<Map<String, dynamic>>(
       key: cacheKey,
       decode: _decodeCacheJson,
     );
+    if (isClosed || _lastLoadWsId != wsId) return;
     if (cached.hasValue) {
       final json = cached.data!;
       emit(
         state.copyWith(
           status: TaskEstimatesStatus.loaded,
-          boards: ((json['boards'] as List<dynamic>?) ?? const <dynamic>[])
-              .whereType<Map<String, dynamic>>()
-              .map(TaskEstimateBoard.fromJson)
-              .toList(growable: false),
+          boards: TaskEstimateBoard.listFromJson(json['boards']),
           error: null,
         ),
       );
     }
+    final keepError =
+        retainError &&
+        sameWorkspace &&
+        state.status == TaskEstimatesStatus.error;
     emit(
       state.copyWith(
         status: cached.hasValue
             ? TaskEstimatesStatus.loaded
+            : keepError ||
+                  (sameWorkspace &&
+                      state.status != TaskEstimatesStatus.initial &&
+                      state.status != TaskEstimatesStatus.error)
+            ? state.status
             : TaskEstimatesStatus.loading,
-        error: null,
+        error: keepError ? state.error : null,
       ),
     );
 
     try {
-      final boards = await _taskRepository.getTaskEstimateBoards(wsId);
-      if (_lastLoadWsId != wsId) {
+      final boards = await _taskRepository.getTaskEstimateBoards(
+        wsId,
+        forceRefresh: forceRefresh,
+      );
+      if (isClosed || _lastLoadWsId != wsId) {
         return;
       }
 
@@ -132,7 +150,7 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
         tags: [_cacheTag, 'workspace:$wsId', 'module:tasks'],
       );
     } on Exception catch (error) {
-      if (_lastLoadWsId != wsId) {
+      if (isClosed || _lastLoadWsId != wsId) {
         return;
       }
 
@@ -153,6 +171,7 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
     required bool allowZeroEstimates,
     required bool countUnestimatedIssues,
   }) async {
+    if (isClosed) return;
     final currentWsId = _lastLoadWsId;
     emit(state.copyWith(status: TaskEstimatesStatus.updating, error: null));
 
@@ -166,11 +185,16 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
         countUnestimatedIssues: countUnestimatedIssues,
       );
 
-      if (_lastLoadWsId != currentWsId) {
+      if (isClosed || _lastLoadWsId != currentWsId) {
         return;
       }
 
-      if (_lastLoadWsId != wsId) {
+      if (isClosed || _lastLoadWsId != wsId) {
+        return;
+      }
+
+      if (updatedBoard == null) {
+        await loadBoards(wsId, forceRefresh: true);
         return;
       }
 
@@ -195,12 +219,14 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
         ),
       );
     } on Exception catch (error) {
-      emit(
-        state.copyWith(
-          status: TaskEstimatesStatus.error,
-          error: error.toString(),
-        ),
-      );
+      if (!isClosed && _lastLoadWsId == currentWsId) {
+        emit(
+          state.copyWith(
+            status: TaskEstimatesStatus.error,
+            error: error.toString(),
+          ),
+        );
+      }
       rethrow;
     }
   }

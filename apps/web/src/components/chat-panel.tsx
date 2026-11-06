@@ -9,7 +9,7 @@ import {
   LinkIcon,
   Lock,
 } from '@tuturuuu/icons';
-import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+import { uploadAiChatFile } from '@tuturuuu/internal-api';
 import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -27,7 +27,6 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { encodeStoragePath } from '@tuturuuu/utils/storage-path';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -466,6 +465,11 @@ export function ChatPanel({
   );
 }
 
+/**
+ * Uploads a chat attachment through the owning server API: the server checks
+ * workspace membership and chat ownership, then issues a signed upload URL.
+ * Browsers never write private chat storage directly.
+ */
 export async function uploadFile(
   wsId: string,
   file: StatedFile,
@@ -473,57 +477,17 @@ export async function uploadFile(
 ): Promise<{ data: { path: string } | null; error: Error | string | null }> {
   if (!id) return { data: null, error: 'No chat id provided' };
 
-  const fileName = file.rawFile.name;
-  const hasExtension = fileName.lastIndexOf('.') !== -1;
-  const baseName = hasExtension
-    ? fileName.substring(0, fileName.lastIndexOf('.'))
-    : fileName;
-  const fileExtension = hasExtension
-    ? fileName.substring(fileName.lastIndexOf('.') + 1)
-    : '';
-  let newFileName = fileName;
-
-  const supabase = createDynamicClient();
-
-  // Check if a file with the same name already exists
-  const { data: existingFileName } = await supabase
-    .schema('storage')
-    .from('objects')
-    .select('*')
-    .eq('bucket_id', 'workspaces')
-    .not('owner', 'is', null)
-    .eq('name', `${wsId}/chat/${id}/${fileName}`)
-    .order('name', { ascending: true });
-
-  const { data: existingFileNames } = await supabase
-    .schema('storage')
-    .from('objects')
-    .select('*')
-    .eq('bucket_id', 'workspaces')
-    .not('owner', 'is', null)
-    .ilike('name', `${wsId}/chat/${id}/${baseName}(%).${fileExtension}`)
-    .order('name', { ascending: true });
-
-  if (existingFileName && existingFileName.length > 0) {
-    if (existingFileNames && existingFileNames.length > 0) {
-      const lastFileName = existingFileNames[existingFileNames.length - 1].name;
-      const lastFileNameIndex = parseInt(
-        lastFileName.substring(
-          lastFileName.lastIndexOf('(') + 1,
-          lastFileName.lastIndexOf(')')
-        ),
-        10
-      );
-      newFileName = `${baseName}(${lastFileNameIndex + 1}).${fileExtension}`;
-    } else {
-      newFileName = `${baseName}(1).${fileExtension}`;
-    }
+  try {
+    const { path } = await uploadAiChatFile({
+      chatId: id,
+      file: file.rawFile,
+      workspaceId: wsId,
+    });
+    return { data: { path }, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: error instanceof Error ? error : 'Upload failed',
+    };
   }
-
-  const path = `${wsId}/chat/${id}/${newFileName}`;
-  const { data, error } = await supabase.storage
-    .from('workspaces')
-    .upload(encodeStoragePath(path), file.rawFile);
-
-  return { data: data ? { ...data, path } : null, error };
 }

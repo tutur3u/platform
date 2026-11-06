@@ -231,15 +231,13 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
       snapSizes: const [0.62, 0.92],
       expand: false,
       builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.background,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          ),
-          child: Column(
-            children: [
-              Expanded(
+        return Column(
+          children: [
+            Expanded(
+              child: NovaRefreshIndicator(
+                onRefresh: _loadComments,
                 child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   controller: scrollController,
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
                   child: Column(
@@ -369,9 +367,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                           () => _commentsExpanded = !_commentsExpanded,
                         ),
                         child: _isLoadingComments
-                            ? const Center(
-                                child: NovaLoadingIndicator(size: 20),
-                              )
+                            ? const AppLoadingIndicator()
                             : CommentsSection(
                                 comments: _comments,
                                 workspaceId: widget.wsId,
@@ -407,132 +403,132 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                   ),
                 ),
               ),
-              if (showManagerActions)
-                RequestManagerActionsBar(
-                  onApprove: () async {
-                    await widget.onApprove();
+            ),
+            if (showManagerActions)
+              RequestManagerActionsBar(
+                onApprove: () async {
+                  await widget.onApprove();
 
-                    if (!mounted) {
-                      return;
-                    }
+                  if (!mounted) {
+                    return;
+                  }
 
-                    setState(() {
-                      _request = _requestWithStatus(ApprovalStatus.approved);
-                    });
-                    _scheduleGracePeriodExpiryRebuild();
-                  },
-                  onReject: (reason) async {
-                    await widget.onReject(reason);
+                  setState(() {
+                    _request = _requestWithStatus(ApprovalStatus.approved);
+                  });
+                  _scheduleGracePeriodExpiryRebuild();
+                },
+                onReject: (reason) async {
+                  await widget.onReject(reason);
 
-                    if (!mounted) {
-                      return;
-                    }
+                  if (!mounted) {
+                    return;
+                  }
 
-                    setState(() {
-                      _request = _requestWithStatus(
-                        ApprovalStatus.rejected,
-                        reason: reason,
-                      );
-                    });
-                    _scheduleGracePeriodExpiryRebuild();
-                  },
-                  onRequestInfo: (reason) async {
-                    await widget.onRequestInfo(reason);
+                  setState(() {
+                    _request = _requestWithStatus(
+                      ApprovalStatus.rejected,
+                      reason: reason,
+                    );
+                  });
+                  _scheduleGracePeriodExpiryRebuild();
+                },
+                onRequestInfo: (reason) async {
+                  await widget.onRequestInfo(reason);
 
-                    if (!mounted) {
-                      return;
-                    }
+                  if (!mounted) {
+                    return;
+                  }
 
-                    setState(() {
-                      _request = _requestWithStatus(
-                        ApprovalStatus.needsInfo,
-                        reason: reason,
-                      );
-                    });
-                    _scheduleGracePeriodExpiryRebuild();
-                  },
-                ),
-              if (showRevertActions)
-                RequestManagerActionsBar(
-                  onApprove: () async {
-                    await widget.onApprove();
+                  setState(() {
+                    _request = _requestWithStatus(
+                      ApprovalStatus.needsInfo,
+                      reason: reason,
+                    );
+                  });
+                  _scheduleGracePeriodExpiryRebuild();
+                },
+              ),
+            if (showRevertActions)
+              RequestManagerActionsBar(
+                onApprove: () async {
+                  await widget.onApprove();
 
-                    if (!mounted) {
-                      return;
-                    }
+                  if (!mounted) {
+                    return;
+                  }
 
-                    setState(() {
-                      _request = _requestWithStatus(ApprovalStatus.approved);
-                    });
-                    _scheduleGracePeriodExpiryRebuild();
-                  },
-                  onReject: (reason) async {
-                    await widget.onReject(reason);
+                  setState(() {
+                    _request = _requestWithStatus(ApprovalStatus.approved);
+                  });
+                  _scheduleGracePeriodExpiryRebuild();
+                },
+                onReject: (reason) async {
+                  await widget.onReject(reason);
 
-                    if (!mounted) {
-                      return;
-                    }
+                  if (!mounted) {
+                    return;
+                  }
 
-                    setState(() {
-                      _request = _requestWithStatus(
-                        ApprovalStatus.rejected,
-                        reason: reason,
-                      );
-                    });
-                    _scheduleGracePeriodExpiryRebuild();
-                  },
-                  onRequestInfo: (_) async {},
-                  showApprove: canApproveRejectedRequest,
-                  showReject: canRejectApprovedRequest,
-                  showRequestInfo: false,
-                  showRevertToRejected: canRejectApprovedRequest,
-                  showRevertToApproved: canApproveRejectedRequest,
-                ),
-              if (showResubmitAction)
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const shad.Divider(),
-                    SafeArea(
-                      top: false,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-                        child: shad.PrimaryButton(
-                          onPressed: _isResubmitting
-                              ? null
-                              : () async {
-                                  setState(() => _isResubmitting = true);
-                                  try {
-                                    await widget.onResubmit();
-                                    if (!mounted) {
-                                      return;
-                                    }
-                                    setState(() {
-                                      _request = _requestWithStatus(
-                                        ApprovalStatus.pending,
-                                      );
-                                    });
-                                    _scheduleGracePeriodExpiryRebuild();
-                                  } finally {
-                                    if (mounted) {
-                                      setState(() => _isResubmitting = false);
-                                    }
+                  setState(() {
+                    _request = _requestWithStatus(
+                      ApprovalStatus.rejected,
+                      reason: reason,
+                    );
+                  });
+                  _scheduleGracePeriodExpiryRebuild();
+                },
+                onRequestInfo: (_) async {},
+                showApprove: canApproveRejectedRequest,
+                showReject: canRejectApprovedRequest,
+                showRequestInfo: false,
+                showRevertToRejected: canRejectApprovedRequest,
+                showRevertToApproved: canApproveRejectedRequest,
+              ),
+            if (showResubmitAction)
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const shad.Divider(),
+                  SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                      child: shad.PrimaryButton(
+                        onPressed: _isResubmitting
+                            ? null
+                            : () async {
+                                setState(() => _isResubmitting = true);
+                                try {
+                                  await widget.onResubmit();
+                                  if (!mounted) {
+                                    return;
                                   }
-                                },
-                          child: _isResubmitting
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: NovaLoadingIndicator(size: 20),
-                                )
-                              : Text(l10n.timerRequestResubmit),
-                        ),
+                                  setState(() {
+                                    _request = _requestWithStatus(
+                                      ApprovalStatus.pending,
+                                    );
+                                  });
+                                  _scheduleGracePeriodExpiryRebuild();
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => _isResubmitting = false);
+                                  }
+                                }
+                              },
+                        child: _isResubmitting
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: NovaLoadingIndicator(size: 20),
+                              )
+                            : Text(l10n.timerRequestResubmit),
                       ),
                     ),
-                  ],
-                ),
-            ],
-          ),
+                  ),
+                ],
+              ),
+          ],
         );
       },
     );

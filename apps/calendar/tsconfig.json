@@ -18,13 +18,7 @@
     "declaration": false,
     "declarationMap": false
   },
-  "include": [
-    "src",
-    "vite.config.mts",
-    "void.config.ts",
-    "global.d.ts",
-    "messages"
-  ],
+  "include": ["src", "global.d.ts", "messages"],
   "exclude": [
     "node_modules",
     "dist",

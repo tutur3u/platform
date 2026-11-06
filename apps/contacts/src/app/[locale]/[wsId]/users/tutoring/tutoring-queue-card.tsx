@@ -24,7 +24,13 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { TutoringReasonBadge } from './tutoring-badges';
+import {
+  canEndWeakSupport,
+  TutoringEndWeakSupport,
+} from './tutoring-end-weak-support';
+import { tutoringQueueFilterGroups } from './tutoring-filters';
 import { WorkspacePersonPicker } from './tutoring-people-picker';
+import { TutoringQueueContent } from './tutoring-queue-content';
 
 interface TutoringQueueFilters {
   groupId: string;
@@ -49,6 +55,8 @@ interface Props {
   enabled: boolean;
   filters: TutoringQueueFilters;
   groups: UserGroup[];
+  /** Class tag names, loaded only when the policy has a tag exclusion rule. */
+  groupTags?: ReadonlyMap<string, readonly string[]>;
   pagination: { page: number; pageSize: number };
   policy: TutoringPolicy;
   schedulingKey: string | null;
@@ -85,6 +93,7 @@ export function TutoringQueueCard({
   enabled,
   filters,
   groups,
+  groupTags,
   pagination,
   policy,
   schedulingKey,
@@ -135,15 +144,21 @@ export function TutoringQueueCard({
     filters.groupId !== 'all' ||
     filters.studentUserId !== 'all';
 
+  // Classes excluded from all tutoring hold nobody here, so they are not offered.
   const groupOptions = useMemo<ComboboxOption[]>(
     () => [
       { label: t('all_groups'), value: 'all' },
-      ...groups.map((group) => ({
+      ...tutoringQueueFilterGroups(
+        policy,
+        groups,
+        filters.groupId,
+        groupTags
+      ).map((group) => ({
         label: group.name || group.id,
         value: group.id,
       })),
     ],
-    [groups, t]
+    [filters.groupId, groupTags, groups, policy, t]
   );
 
   const reasonLabels: Record<string, string> = {
@@ -218,14 +233,12 @@ export function TutoringQueueCard({
           <DataTableColumnHeader
             column={column}
             t={tableT}
-            title={t('feedback')}
+            title={t('tutoring_content')}
           />
         ),
         cell: ({ row }) => (
           <div className="max-w-80 space-y-1">
-            <p className="line-clamp-2 text-sm">
-              {row.original.feedback_content || '-'}
-            </p>
+            <TutoringQueueContent item={row.original} />
             {!row.original.review_only &&
             row.original.feedback_created_at &&
             Date.parse(row.original.feedback_created_at) <=
@@ -245,6 +258,9 @@ export function TutoringQueueCard({
                 {t('weak_content_review_due')}
               </Badge>
             ) : null}
+            {row.original.support_group ? (
+              <Badge variant="outline">{t('queue_support_group')}</Badge>
+            ) : null}
           </div>
         ),
       },
@@ -253,13 +269,21 @@ export function TutoringQueueCard({
         header: () => <div className="text-right">{t('actions')}</div>,
         cell: ({ row }) =>
           row.original.review_only ? (
-            <Button asChild size="sm" variant="outline">
-              <Link href={`/${locale}/${wsId}/users/feedbacks`}>
-                {t('queue_office_review')}
-              </Link>
-            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/${locale}/${wsId}/users/feedbacks`}>
+                  {t('queue_office_review')}
+                </Link>
+              </Button>
+              {canManage ? (
+                <TutoringEndWeakSupport item={row.original} wsId={wsId} />
+              ) : null}
+            </div>
           ) : canManage ? (
-            <div className="flex justify-end">
+            <div className="flex flex-wrap justify-end gap-2">
+              {canEndWeakSupport(row.original) ? (
+                <TutoringEndWeakSupport item={row.original} wsId={wsId} />
+              ) : null}
               <Button
                 disabled={schedulingKey !== null}
                 onClick={() => actions.onSchedule(row.original)}

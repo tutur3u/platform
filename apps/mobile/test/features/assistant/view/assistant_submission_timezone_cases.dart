@@ -50,6 +50,7 @@ void submissionTimezoneCases() {
       _addNextAnswer(h);
       await tester.pump();
       final composer = _composer(tester);
+      final sentDraft = composer.controller.value;
       final timezone = _holdTimezone(tester);
       final sending = composer.onSend();
       await tester.pump();
@@ -85,7 +86,9 @@ void submissionTimezoneCases() {
           ),
         );
       }
-      final draft = composer.controller.value;
+      // Send emptied the composer; a refused send gives the sent draft back
+      // unless the user has typed a new one meanwhile.
+      final draft = editDraft ? composer.controller.value : sentDraft;
       final attachments = h.chat.state.composerAttachments;
       expect(attachments.length, editDraft ? 2 : 1);
       timezone.release.complete('UTC');
@@ -124,7 +127,9 @@ void submissionTimezoneCases() {
       expect(repository.sent!.last.replyToMessageId, _answer);
       expect(repository.sentAttachments, attachments);
       expect(completed, isFalse);
-      expect(composer.controller.value, draft);
+      // Send empties the text at once; attachments wait for the ACK.
+      expect(composer.controller.text, isEmpty);
+      expect(draft.text, isNotEmpty);
       expect(h.chat.state.composerAttachments, attachments);
       expect(find.text(_replyChangedNotice), findsNothing);
       repository.acknowledge();

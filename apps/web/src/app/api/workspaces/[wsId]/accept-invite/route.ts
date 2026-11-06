@@ -2,6 +2,7 @@ import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { assignSeatToMember } from '@tuturuuu/payment-core/polar-seat-helper';
 import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthEmail } from '@tuturuuu/supabase/next/user';
 import {
   isWorkspaceUuidLiteral,
   normalizeWorkspaceId,
@@ -93,16 +94,26 @@ export const POST = withSessionAuth<{ wsId: string }>(
       );
     }
 
-    const authEmail = user.email?.trim().toLowerCase() || null;
-    const { data: privateDetails } = await sbAdmin
-      .from('user_private_details')
-      .select('email')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    const privateEmail = privateDetails?.email?.trim().toLowerCase() || null;
-    const candidateEmails = [...new Set([authEmail, privateEmail])].filter(
-      (email): email is string => typeof email === 'string' && email.length > 0
-    );
+    // Only the confirmed Auth email can redeem email invites. The profile
+    // email in user_private_details is user-editable, so it is not proof.
+    let authEmail: string | null;
+    try {
+      authEmail = await getVerifiedAuthEmail(sbAdmin, user.id);
+    } catch (authEmailError) {
+      console.error('Failed to resolve verified auth email:', {
+        error: authEmailError,
+        userId: user.id,
+        wsId,
+      });
+      return NextResponse.json(
+        {
+          error: 'Failed to verify account email',
+          errorCode: 'AUTH_IDENTITY_LOOKUP_FAILED',
+        },
+        { status: 500 }
+      );
+    }
+    const candidateEmails = authEmail ? [authEmail] : [];
     const scheduleNotificationFinalization = () => {
       after(async () => {
         try {
@@ -227,7 +238,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
         guestSelfJoinCandidate = await resolveGuestSelfJoinCandidate(sbAdmin, {
           authEmail,
           rpcSupabase: supabase,
-          privateEmail,
+          privateEmail: null,
           userId: user.id,
           workspaceId: wsId,
         });

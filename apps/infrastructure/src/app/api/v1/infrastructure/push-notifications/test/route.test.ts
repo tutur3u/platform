@@ -33,6 +33,7 @@ import { POST } from './route';
 
 function createPermissionsResult(permissions: string[] = []) {
   return {
+    membershipType: 'MEMBER',
     permissions,
     containsPermission: (permission: string) =>
       permissions.includes(permission),

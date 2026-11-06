@@ -1,8 +1,11 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/features/audience_mode/audience_mode.dart';
 
-const homeWidgetIds = [
+/// Default Home order. Mode-specific widgets lead; a mode only offers them.
+const List<String> homeWidgetIds = [
+  classesTodayHomeWidgetId,
   'tasks',
   'calendar',
   'mail',

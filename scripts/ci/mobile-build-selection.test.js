@@ -83,11 +83,20 @@ test('explicit switchboard disable remains authoritative', () => {
   );
 });
 
-test('all mobile named PR checks and main build triggers remain present', () => {
+test('mobile PR checks remain; expensive desktop and Apple builds use nightly/release/manual', () => {
   for (const platform of platforms) {
     const workflow = readWorkflow(`mobile-build-${platform}.yaml`);
     assert.ok(Object.hasOwn(workflow.on, 'pull_request'));
-    assert.deepEqual(workflow.on.push.branches, ['main']);
+    if (['ios', 'macos', 'windows'].includes(platform)) {
+      assert.equal(workflow.on.push, undefined);
+      assert.equal(workflow.on.schedule.length, 1);
+      assert.deepEqual(workflow.on.release.types, ['published']);
+      assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
+    } else {
+      assert.deepEqual(workflow.on.push.branches, ['main']);
+    }
+    assert.ok(workflow.on.pull_request.types.includes('ready_for_review'));
+    assert.ok(workflow.on.pull_request.types.includes('converted_to_draft'));
     assert.equal(
       workflow.jobs[`build-${platform}`].if,
       "needs.check-ci.outputs.should_run == 'true'"

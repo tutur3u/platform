@@ -29,7 +29,7 @@ const RUNTIME_UNITS = new Set(['per-thread-tree', 'per-parent']);
 const MARKER_FILES = [
   'AGENTS.md',
   'plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md',
-  'apps/docs/build/development-tools/agent-operating-model.mdx',
+  'docs-internal/build/development-tools/agent-operating-model.mdx',
 ];
 const EXAMPLE_FILES = [
   'plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/agent-allocation.example.json',

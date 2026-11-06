@@ -112,7 +112,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('sự kiện'), findsWidgets);
+      expect(find.textContaining('Sự kiện'), findsWidgets);
       final rows = tester
           .widgetList<AppGroupedRow>(find.byType(AppGroupedRow))
           .toList();
@@ -167,7 +167,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Later event'), findsOneWidget);
       expect(find.text('Earlier task'), findsOneWidget);
-      expect(find.textContaining('workspace event'), findsNWidgets(2));
+      // Calendar rows read as workspace activity, once per row.
+      expect(find.text('Workspace event'), findsOneWidget);
       expect(
         tester.getTopLeft(find.text('Later event')).dy,
         lessThan(tester.getTopLeft(find.text('Earlier task')).dy),

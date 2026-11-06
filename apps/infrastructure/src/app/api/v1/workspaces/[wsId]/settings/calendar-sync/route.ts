@@ -1,3 +1,5 @@
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
   getSyncLogs,
@@ -10,11 +12,24 @@ interface Params {
   }>;
 }
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
+  const actor = await resolveSatelliteRequestActor(request, 'infra');
+  if (!actor)
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { wsId } = await params;
+  const member = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: actor.user.id,
+    supabase: actor.admin,
+  });
+  if (!member.ok)
+    return NextResponse.json(
+      { error: 'Workspace access denied' },
+      { status: member.error === 'membership_lookup_failed' ? 500 : 403 }
+    );
   const [metrics, logsResult] = await Promise.all([
-    getSyncMetrics(wsId),
-    getSyncLogs(wsId, { limit: 25, offset: 0 }),
+    getSyncMetrics(wsId, actor),
+    getSyncLogs(wsId, { limit: 25, offset: 0 }, actor),
   ]);
 
   return NextResponse.json({

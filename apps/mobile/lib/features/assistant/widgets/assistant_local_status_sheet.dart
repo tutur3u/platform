@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
+/// On-device status: the active model, any notice, and the way to settings.
+/// The privacy note stays in the scrolling body so large text never pushes
+/// the header and action out of a small sheet.
 class AssistantLocalStatusSheet extends StatelessWidget {
   const AssistantLocalStatusSheet({
     required this.preparing,
@@ -16,38 +20,39 @@ class AssistantLocalStatusSheet extends StatelessWidget {
   final VoidCallback onManage;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(20),
-    child: SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AppSheetScaffold(
+      title: l10n.assistantLocalHeaderReady,
+      actions: [
+        AppButton.primary(
+          key: const ValueKey('assistant-local-status-manage'),
+          onPressed: onManage,
+          child: Text(l10n.assistantLocalModeAction),
+        ),
+      ],
+      child: AppGroupedSection(
+        footer: l10n.assistantLocalHelp,
         children: [
-          Text(
-            context.l10n.assistantLocalModeAction,
-            style: Theme.of(context).textTheme.titleLarge,
+          AppGroupedRow(
+            leading: const AppIconTile(
+              icon: LucideIcons.cpu,
+              tone: AppTone.primary,
+            ),
+            title: Text(
+              preparing
+                  ? l10n.assistantLocalLoading
+                  : modelLabel ?? l10n.assistantLocalSelectionUnknown,
+            ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            preparing
-                ? context.l10n.assistantLocalLoading
-                : context.l10n.assistantLocalMode(
-                    modelLabel ?? context.l10n.assistantLocalSelectionUnknown,
-                  ),
-          ),
-          if (notice case final text?) ...[
-            const SizedBox(height: 12),
-            Text(text),
-          ],
-          const SizedBox(height: 12),
-          Text(context.l10n.assistantLocalHelp),
-          const SizedBox(height: 20),
-          AppButton.primary(
-            onPressed: onManage,
-            child: Text(context.l10n.assistantLocalModeAction),
-          ),
+          if (notice case final text?)
+            AppStateMessage.inline(
+              icon: LucideIcons.triangleAlert,
+              tone: AppTone.warning,
+              title: text,
+            ),
         ],
       ),
-    ),
-  );
+    );
+  }
 }

@@ -170,6 +170,17 @@ export async function getWorkspace(
   );
 }
 
+export async function deleteWorkspace(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<void>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}`,
+    { method: 'DELETE', cache: 'no-store' }
+  );
+}
+
 export async function getWorkspaceInviteStatus(
   workspaceId: string,
   options?: InternalApiClientOptions

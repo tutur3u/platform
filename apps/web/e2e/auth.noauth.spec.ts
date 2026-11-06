@@ -28,7 +28,7 @@ test.describe('Authentication (unauthenticated)', () => {
     });
   });
 
-  test('login page renders with email input and primary auth button', async ({
+  test('login page renders with email input and primary auth button @smoke', async ({
     page,
   }) => {
     await page.goto(`/${DEFAULT_LOCALE}/login`, {
@@ -197,7 +197,7 @@ test.describe('Authentication (unauthenticated)', () => {
     expect(typeof settings!.otpEnabled).toBe('boolean');
   });
 
-  test('password login with seed account succeeds', async ({ page }) => {
+  test('password login with seed account succeeds @smoke', async ({ page }) => {
     // Disable OTP so the password form appears directly
     const previousOtpState = await setWebOtpEnabled(false);
 

@@ -1,4 +1,8 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
+import {
+  appBaseHeadScript,
+  withAppBase,
+} from '@tuturuuu/start-bridge/start/base-path';
 import { loadCalendarLocale } from '../runtime/page-loader';
 import { CalendarError, Document } from '../runtime/router-shell';
 export const Route = createRootRoute({
@@ -19,9 +23,10 @@ export const Route = createRootRoute({
       { title: 'Tuturuuu Calendar' },
       { name: 'robots', content: 'noindex,nofollow' },
     ],
+    scripts: [appBaseHeadScript()],
     links: [
-      { rel: 'icon', href: '/favicon.ico' },
-      { rel: 'manifest', href: '/site.webmanifest' },
+      { rel: 'icon', href: withAppBase('/favicon.ico') },
+      { rel: 'manifest', href: withAppBase('/site.webmanifest') },
     ],
   }),
   notFoundComponent: () => (

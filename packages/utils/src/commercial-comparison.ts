@@ -24,8 +24,22 @@ const advanced: ComparisonFeature[] = [
     values: ['internal', 'internal', 'internal', 'internal'],
   },
   {
+    id: 'mastermind',
+    app: 'mastermind',
+    category: 'internal',
+    detail: 'standard',
+    values: ['internal', 'internal', 'internal', 'internal'],
+  },
+  {
     id: 'parley_0',
     app: 'parley',
+    category: 'internal',
+    detail: 'standard',
+    values: ['internal', 'internal', 'internal', 'internal'],
+  },
+  {
+    id: 'turboCache',
+    app: 'turbo-cache',
     category: 'internal',
     detail: 'standard',
     values: ['internal', 'internal', 'internal', 'internal'],

@@ -88,7 +88,6 @@ test('every workflow_run consumer is gated by the canonical trust step', () => {
     'production-package-resume.yaml',
     'release-please-transient-retry.yaml',
     'supabase-production.yaml',
-    'supabase-staging.yaml',
   ]);
   const scripts = new Set();
   for (const file of consumerFiles) {
@@ -388,9 +387,25 @@ test('Discord deploys a behind head only while apps/discord is unchanged at the 
     )
   );
   assert.deepEqual(withTree, ['discord-modal-deploy.yml']);
-  const staging = cases.find(({ file }) => file === 'supabase-staging.yaml');
+  const staging = require('./workflow-yaml-test-helper').readWorkflow(
+    'supabase-staging.yaml'
+  );
+  const stagingContext = {
+    event_name: 'push',
+    ref: 'refs/heads/main',
+    ref_protected: true,
+    repository,
+    repository_id: String(repositoryId),
+    sha: headSha,
+    event: {
+      ref: 'refs/heads/main',
+      after: headSha,
+      deleted: false,
+      repository: { full_name: repository, id: repositoryId },
+    },
+  };
   const stagingJobs = (compareDefault) =>
-    runningJobs(staging.workflow, trustedCompletion(staging.producer), {
+    runningJobs(staging, stagingContext, {
       compareDefault,
       gate: 'run',
       tipSha,

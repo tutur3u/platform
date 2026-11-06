@@ -44,7 +44,8 @@ describe('POST infrastructure project sync', () => {
     expect(mocks.handleInfrastructureProjectRequest).toHaveBeenCalledWith(
       request,
       '/api/v1/infrastructure/projects/project-1/sync',
-      expect.any(Function)
+      expect.any(Function),
+      { access: 'operator' }
     );
   });
 });

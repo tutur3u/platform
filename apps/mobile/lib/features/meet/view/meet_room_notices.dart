@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
 import 'package:mobile/features/meet/view/meet_participant_tile.dart';
 import 'package:mobile/features/meet/view/meet_room_sheets.dart';
@@ -80,17 +81,17 @@ Future<void> toggleMeetScreen(
 ) async {
   final l10n = context.l10n;
   if (!call.media.screenEnabled) {
-    final agreed = await showDialog<bool>(
+    final agreed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.meetShareScreen),
+      builder: (context) => AppDialog(
+        title: l10n.meetShareScreen,
         content: Text(l10n.meetScreenShareHint),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.pop(context, false),
             child: Text(l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.primary(
             onPressed: () => Navigator.pop(context, true),
             child: Text(l10n.meetShareScreen),
           ),

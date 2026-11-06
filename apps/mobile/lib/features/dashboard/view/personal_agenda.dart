@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -15,7 +16,6 @@ import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 Workspace? homePersonalWorkspace(Iterable<Workspace> memberships) =>
     memberships.where((workspace) => workspace.personal).firstOrNull;
@@ -124,7 +124,7 @@ class PersonalAgendaViewState extends State<PersonalAgendaView> {
       BlocBuilder<CalendarCubit, CalendarState>(
         builder: (context, state) {
           if (!state.hasLoadedOnce && state.error == null) {
-            return const Center(child: NovaLoadingIndicator());
+            return const AppLoadingIndicator.page();
           }
           final status = _status(state);
           return RefreshIndicator(

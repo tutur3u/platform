@@ -7,8 +7,11 @@ import type {
   WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
 import { listWorkspaceUserGroupSessions } from '@tuturuuu/internal-api';
-import type { TutoringPolicy } from '@tuturuuu/internal-api/tutoring-policy';
-import { suggestTutoringSlots } from '@tuturuuu/internal-api/tutoring-suggestion';
+import {
+  filterTutoringEligibleGroups,
+  type TutoringPolicy,
+  tutoringExclusionReason,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
@@ -21,6 +24,11 @@ import { TutoringCreateSlots } from './tutoring-create-slots';
 import { TutoringDraftChoices } from './tutoring-draft-choices';
 import { addDaysToIsoDate, toIsoDate } from './tutoring-filters';
 import { WorkspacePersonPicker } from './tutoring-people-picker';
+import {
+  applyTutoringSuggestions,
+  isTutoringFormGroupExcluded,
+  resolveTutoringClassSchedule,
+} from './tutoring-suggestion-apply';
 import {
   findSessionSlotConflicts,
   getConflictingSlotIndexes,
@@ -38,6 +46,8 @@ const REASON_TYPES: TutoringReasonType[] = [
 interface Props {
   form: TutoringFormValues;
   groups: UserGroup[];
+  /** Class tag names, loaded only when the policy has a tag exclusion rule. */
+  groupTags?: ReadonlyMap<string, readonly string[]>;
   isSubmitting: boolean;
   students: WorkspaceBasicUserRecord[];
   onChange: (next: TutoringFormValues) => void;
@@ -49,6 +59,7 @@ interface Props {
 export function TutoringCreateCard({
   form,
   groups,
+  groupTags,
   isSubmitting,
   students,
   onChange,
@@ -93,14 +104,58 @@ export function TutoringCreateCard({
     staleTime: 5 * 60_000,
   });
 
-  const groupOptions = useMemo<ComboboxOption[]>(
+  const selectedGroupName =
+    groups.find((group) => group.id === form.groupId)?.name ?? null;
+  const selectedGroupTags = groupTags?.get(form.groupId);
+  const groupExcluded = isTutoringFormGroupExcluded({
+    form,
+    groupName: selectedGroupName,
+    groupTags: selectedGroupTags,
+    policy,
+  });
+
+  const schedule = useMemo(
     () =>
-      groups.map((group) => ({
+      resolveTutoringClassSchedule({
+        calendar: classSchedule.data?.data ?? [],
+        groupId: form.groupId,
+        groupName: selectedGroupName,
+        groupTags: selectedGroupTags,
+        loaded: classSchedule.isSuccess,
+        policy,
+        reasonType: form.reasonType,
+        today,
+      }),
+    [
+      classSchedule.data,
+      classSchedule.isSuccess,
+      form.groupId,
+      form.reasonType,
+      policy,
+      selectedGroupName,
+      selectedGroupTags,
+      today,
+    ]
+  );
+
+  // Classes the workspace excludes from this kind of tutoring are not offered;
+  // a class already chosen stays visible so the warning below can explain it.
+  const groupOptions = useMemo<ComboboxOption[]>(() => {
+    const eligible = new Set(
+      filterTutoringEligibleGroups(
+        policy,
+        groups,
+        tutoringExclusionReason(form.reasonType),
+        groupTags
+      ).map((group) => group.id)
+    );
+    return groups
+      .filter((group) => eligible.has(group.id) || group.id === form.groupId)
+      .map((group) => ({
         label: group.name || group.id,
         value: group.id,
-      })),
-    [groups]
-  );
+      }));
+  }, [form.groupId, form.reasonType, groupTags, groups, policy]);
 
   const teacherOptions = useMemo<ComboboxOption[]>(() => {
     const managers =
@@ -179,6 +234,14 @@ export function TutoringCreateCard({
     );
   }, [form]);
 
+  const singleSlot = form.sessionSlots.length === 1;
+  const contentHelp = t(
+    form.reasonType === 'WEAK_SUPPORT'
+      ? 'content_rule_weak'
+      : 'content_rule_absent'
+  );
+  const firstSlot = form.sessionSlots[0];
+
   const reasonLabels: Record<TutoringReasonType, string> = {
     ABSENT_RECOVERY: t('absent_recovery'),
     CUSTOM: t('custom_reason'),
@@ -200,6 +263,8 @@ export function TutoringCreateCard({
                 ...form,
                 groupId: nextGroupId,
                 missedClassDate: '',
+                missedClassDates: undefined,
+                missingLessonDates: undefined,
                 sourceFeedbackId: null,
               });
             }}
@@ -222,6 +287,8 @@ export function TutoringCreateCard({
                 studentLabel: option?.label || form.studentLabel,
                 studentUserId: value,
                 missedClassDate: '',
+                missedClassDates: undefined,
+                missingLessonDates: undefined,
               })
             }
             placeholder={t('select_student')}
@@ -239,7 +306,7 @@ export function TutoringCreateCard({
               onChange({ ...form, reasonType: value as TutoringReasonType })
             }
             options={REASON_TYPES.map((reason) => ({
-              label: reasonLabels[reason],
+              label: reasonLabels[reason] ?? reason,
               value: reason,
             }))}
             placeholder={t('reason')}
@@ -258,7 +325,17 @@ export function TutoringCreateCard({
         </p>
       </div>
 
-      {form.reasonType !== 'CUSTOM' ? (
+      {groupExcluded ? (
+        <p
+          className="flex items-center gap-2 rounded-lg border border-dynamic-orange/25 bg-dynamic-orange/10 p-3 text-dynamic-orange text-sm"
+          role="alert"
+        >
+          <TriangleAlert className="h-4 w-4 shrink-0" />
+          {t('group_excluded')}
+        </p>
+      ) : null}
+
+      {form.reasonType !== 'CUSTOM' && !groupExcluded ? (
         <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
           <div>
             <h3 className="font-semibold text-sm">{t('suggestion_title')}</h3>
@@ -299,39 +376,20 @@ export function TutoringCreateCard({
                   void classSchedule.refetch();
                   return;
                 }
-                const suggestions = suggestTutoringSlots(
-                  classSchedule.data?.data ?? [],
-                  form.reasonType === 'ABSENT_RECOVERY'
-                    ? missedDate
-                    : addDaysToIsoDate(today, -1),
-                  form.sessionSlots.length,
+                const result = applyTutoringSuggestions({
+                  form,
+                  fromDate:
+                    form.reasonType === 'ABSENT_RECOVERY'
+                      ? missedDate
+                      : addDaysToIsoDate(today, -1),
+                  groupName: selectedGroupName,
+                  groupTags: selectedGroupTags,
                   policy,
-                  form.reasonType === 'WEAK_SUPPORT'
-                    ? 'consecutive'
-                    : 'separate'
-                );
-                if (suggestions.length !== form.sessionSlots.length) {
-                  setScheduleMessage(
-                    t('suggestion_unavailable', {
-                      days: policy.schedulingHorizonDays,
-                    })
-                  );
-                  return;
-                }
-                onChange({
-                  ...form,
-                  sessionSlots: form.sessionSlots.map((slot, index) => ({
-                    ...slot,
-                    durationMinutes:
-                      suggestions[index]?.durationMinutes ??
-                      policy.durationMinutes,
-                    sessionDate:
-                      suggestions[index]?.sessionDate ?? slot.sessionDate,
-                    startTime: suggestions[index]?.startTime ?? slot.startTime,
-                  })),
+                  schedule,
                 });
+                if (result.form) onChange(result.form);
                 setScheduleMessage(
-                  t('smart_suggestion_applied', { count: suggestions.length })
+                  t(result.message.key, result.message.values)
                 );
               }}
               type="button"
@@ -357,21 +415,26 @@ export function TutoringCreateCard({
         </div>
       ) : null}
 
-      <TutoringDraftChoices
-        wsId={wsId}
-        form={form}
-        policy={policy}
-        today={today}
-        schedule={classSchedule.data?.data ?? []}
-        missingCount={classSchedule.data?.missing?.length ?? 0}
-        scheduleLoading={classSchedule.isFetching}
-        scheduleError={classSchedule.isError}
-        onRetrySchedule={() => void classSchedule.refetch()}
-        onChange={onChange}
-      />
+      {groupExcluded ? null : (
+        <TutoringDraftChoices
+          wsId={wsId}
+          form={form}
+          groupName={selectedGroupName}
+          groupTags={selectedGroupTags}
+          policy={policy}
+          today={today}
+          schedule={schedule}
+          missingCount={classSchedule.data?.missing?.length ?? 0}
+          scheduleLoading={classSchedule.isFetching}
+          scheduleError={classSchedule.isError}
+          onRetrySchedule={() => void classSchedule.refetch()}
+          onChange={onChange}
+        />
+      )}
 
       <TutoringCreateSlots
         conflictingIndexes={conflictingIndexes}
+        contentHelp={contentHelp}
         form={form}
         onChange={onChange}
         teacherOptions={teacherOptions}
@@ -379,23 +442,41 @@ export function TutoringCreateCard({
       />
 
       <div className="space-y-2">
-        <Label htmlFor="content">{t('content')}</Label>
-        <p className="text-muted-foreground text-xs">
-          {t(
-            form.reasonType === 'WEAK_SUPPORT'
-              ? 'content_rule_weak'
-              : 'content_rule_absent'
-          )}
-        </p>
-        <Textarea
-          id="content"
-          onChange={(event) =>
-            onChange({ ...form, content: event.target.value })
-          }
-          placeholder={t('content_placeholder')}
-          rows={3}
-          value={form.content}
-        />
+        {singleSlot ? <Label htmlFor="content">{t('content')}</Label> : null}
+        {singleSlot ? (
+          <p className="text-muted-foreground text-xs" id="content-help">
+            {contentHelp}
+          </p>
+        ) : null}
+        {singleSlot ? (
+          <Textarea
+            aria-describedby="content-help"
+            id="content"
+            onChange={(event) =>
+              onChange(
+                firstSlot?.content !== undefined
+                  ? {
+                      ...form,
+                      sessionSlots: form.sessionSlots.map((slot) => ({
+                        ...slot,
+                        content: event.target.value,
+                      })),
+                    }
+                  : { ...form, content: event.target.value }
+              )
+            }
+            placeholder={t('content_placeholder')}
+            rows={3}
+            value={firstSlot?.content ?? form.content}
+          />
+        ) : null}
+        {form.missingLessonDates?.length ? (
+          <p className="text-dynamic-orange text-xs">
+            {t('lesson_notes_missing', {
+              dates: form.missingLessonDates.join(', '),
+            })}
+          </p>
+        ) : null}
       </div>
 
       {conflictMessage ? (
@@ -407,7 +488,12 @@ export function TutoringCreateCard({
 
       <Button
         className="w-full"
-        disabled={isSubmitting || Boolean(firstConflict) || !hasRequiredFields}
+        disabled={
+          isSubmitting ||
+          Boolean(firstConflict) ||
+          !hasRequiredFields ||
+          groupExcluded
+        }
         onClick={onSubmit}
         size="lg"
       >

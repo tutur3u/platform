@@ -17,7 +17,7 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
                 if (_isCheckingPermissions &&
                     !_hasResolvedPermissions &&
                     !hasVisibleData) {
-                  return const Center(child: NovaLoadingIndicator());
+                  return const AppLoadingIndicator.page();
                 }
                 if (_hasResolvedPermissions &&
                     !_canManageProjects &&
@@ -30,7 +30,7 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
                   labelsState,
                   portfolioState,
                 )) {
-                  return const Center(child: NovaLoadingIndicator());
+                  return const AppLoadingIndicator.page();
                 }
 
                 final error = _activeTabError(
@@ -90,7 +90,7 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
       _TaskPlanningTab.estimates
           when estimatesState.status == TaskEstimatesStatus.error &&
               estimatesState.boards.isEmpty =>
-        estimatesState.error,
+        context.l10n.taskBoardsLoadError,
       _TaskPlanningTab.labels
           when labelsState.status == TaskLabelsStatus.error &&
               labelsState.labels.isEmpty =>

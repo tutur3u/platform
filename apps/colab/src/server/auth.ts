@@ -161,6 +161,7 @@ export async function authRoute(request: Request, env: Env): Promise<Response> {
   requireRule(response.ok, 'invalid_login', 401);
   const data = (await response.json()) as {
     valid?: boolean;
+    staffVerified?: boolean;
     userId?: string;
     email?: string;
     expiresAt?: string;
@@ -184,6 +185,7 @@ export async function authRoute(request: Request, env: Env): Promise<Response> {
   const email = data.email ?? null;
   const identity: Identity = {
     id: data.userId,
+    staffVerified: data.staffVerified === true,
     email,
     name:
       typeof data.displayName === 'string' && data.displayName.trim()

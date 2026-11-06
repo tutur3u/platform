@@ -33,10 +33,12 @@ export async function PATCH(
         adapter: payload.adapter,
         allowed_collections: payload.allowed_collections,
         allowed_features: payload.allowed_features,
-        delivery_profile: payload.delivery_profile as Json | undefined,
+        delivery_profile: payload.delivery_profile as
+          | NonNullable<Json>
+          | undefined,
         display_name: payload.display_name,
         is_active: payload.is_active,
-        metadata: payload.metadata as Json | undefined,
+        metadata: payload.metadata as NonNullable<Json> | undefined,
       },
       access.admin
     );

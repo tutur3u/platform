@@ -38,6 +38,12 @@
       "bun": "./src/auth-errors.ts",
       "default": "./dist/auth-errors.js"
     },
+    "./shared-cookie-domains": {
+      "types": "./src/shared-cookie-domains.ts",
+      "bun": "./src/shared-cookie-domains.ts",
+      "import": "./src/shared-cookie-domains.ts",
+      "default": "./src/shared-cookie-domains.ts"
+    },
     "./next/client": {
       "types": "./dist/next/client.d.ts",
       "bun": "./src/next/client.ts",

@@ -3,6 +3,7 @@ import { getInternalAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import type { useRouter } from 'next/navigation';
 
 export * from './navigation';
+export * from './revoke';
 
 /**
  * Generates a cross-app authentication token for a user

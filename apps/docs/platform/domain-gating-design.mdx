@@ -1,33 +1,42 @@
 ---
 title: "Workspace domain setup: access and abuse controls"
-description: "Product decision and phased design for custom domains and managed subdomains."
+description: "Proposal for workspace domain eligibility, verification, and lifecycle controls."
+updatedAt: "2026-11-06"
 ---
 
 # Workspace domain setup: access and abuse controls
 
-## Product decision
+## Proposal status
 
-**Scope:** workspace setup, linking, and continued serving of managed subdomains and customer-owned domains, including email-domain verification and projects created through `ttr project new`.
+This document proposes controls for workspace domains. It does not establish current feature availability, approved pricing, or an authorization policy. Product, billing, security, and privacy decisions require acceptance by their responsible owners before implementation.
 
-**Default:** deny. Enable the capability only for (1) TRUSTED workspaces explicitly maintained on a root-managed allowlist, or (2) workspaces on an eligible paid plan with the custom-domain add-on, priced at **$5 per domain per month**. Enforce entitlement in server-side create, update, link, and serving paths; hiding a control in the UI is not authorization. The trusted allowlist bypasses paid-plan/add-on requirements, but not verification or safety controls.
+## Proposed scope and defaults
 
-**Surfaces:** workspace settings, domain-link/create APIs, project provisioning pipeline, email sender-domain verification, billing/entitlement status, operational audit and kill switch. Ineligible workspaces see a disabled control and a plain explanation of the trusted/paid options.
+**Proposed scope:** workspace setup, linking, and continued serving of managed subdomains and customer-owned domains, including email-domain verification and projects created through `ttr project new`.
 
-**Exceptions:** trusted workspaces may operate without a paid add-on; staff/root may disable the global feature during an incident. No other implicit bypass. While a paid entitlement lapses, retain configuration for a defined grace period, stop accepting new domains immediately, and then disable serving/linkage unless restored. Determine the grace duration before implementation.
+**Proposed default:** deny. Enable the capability only for (1) trusted workspaces explicitly maintained on a root-managed allowlist, or (2) workspaces on an eligible paid plan with the custom-domain add-on, with a proposed price of **$5 per domain per month**, subject to billing and product approval. Enforce entitlement in server-side create, update, link, and serving paths; hiding a control in the UI is not authorization. The trusted allowlist bypasses paid-plan/add-on requirements, but not verification or safety controls.
+
+**Proposed integration points:** workspace settings, domain-link/create APIs, project provisioning pipeline, email sender-domain verification, billing/entitlement status, operational audit and kill switch. Ineligible workspaces see a disabled control and a plain explanation of the trusted/paid options.
+
+**Proposed exceptions:** trusted workspaces may operate without a paid add-on; staff/root may disable the global feature during an incident. No other implicit bypass. While a paid entitlement lapses, retain configuration for a defined grace period, stop accepting new domains immediately, and then disable serving/linkage unless restored. Determine the grace duration before implementation.
 
 ## Existing system and grounding
 
-Managed project hostname input is normalized and validated in [projects.ts](../../../web/src/lib/infrastructure/projects.ts#L92): the existing reserved-hostname set protects platform names, and [normalization](../../../web/src/lib/infrastructure/projects.ts#L186) rejects malformed and reserved hostnames before persistence. Reuse and extend this source of reserved-name policy; add protected brand names and reserved labels/domains centrally. Workspace subscription tier selection already reads active records from `workspace_subscriptions` and resolves products in [layout-data.ts](../../../web/src/app/%5Blocale%5D/%28dashboard%29/%5BwsId%5D/layout-data.ts#L130). This is useful plan context, not by itself sufficient authorization for a per-domain add-on. Polar server client setup exists in [payment/polar/server](../../../packages/payment/src/polar/index.ts#L1); confirm the actual subscription product/event model with billing before implementation.
+The checked-in code provides building blocks for this proposal:
 
-The active Cloudflare for SaaS account and hostname allowance/cost assumptions are from the project brief and require current operator confirmation before provisioning. The account still needs a Fallback Origin before hostname onboarding. Domain ownership must be verified before attaching a hostname or issuing TLS.
+- [`normalizeInfrastructureProjectHostnames`](https://github.com/tutur3u/platform/blob/86d1369500db9559016af05139bf62591b0a2f6e/apps/web/src/lib/infrastructure/project-model.ts) normalizes and deduplicates input, then rejects unsafe and reserved hostnames. It imports the shared rules through [`managed-project-hostnames.ts`](https://github.com/tutur3u/platform/blob/86d1369500db9559016af05139bf62591b0a2f6e/packages/utils/src/managed-project-hostnames.ts). The create and update functions in [`projects.ts`](https://github.com/tutur3u/platform/blob/86d1369500db9559016af05139bf62591b0a2f6e/apps/web/src/lib/infrastructure/projects.ts) call this validator before persisting hostnames. Input validation alone does not establish domain ownership or billing entitlement.
+- [`layout-data.ts`](https://github.com/tutur3u/platform/blob/86d1369500db9559016af05139bf62591b0a2f6e/apps/web/src/app/%5Blocale%5D/%28dashboard%29/%5BwsId%5D/layout-data.ts) derives a workspace tier from active `workspace_subscriptions` records and `workspace_subscription_products`. This supplies plan context. It does not establish the proposed per-domain add-on entitlement.
+- [`createPolarClient`](https://github.com/tutur3u/platform/blob/86d1369500db9559016af05139bf62591b0a2f6e/packages/payment/src/polar/server.ts) creates a server-side Polar client. The package's `polar/index.ts` exports SDK types and helpers. These exports do not establish a domain billing product or its lifecycle semantics.
 
-## Entitlement and lifecycle
+These source references describe implementation building blocks, not deployment evidence for this proposal. Provider readiness, hostname allowances, costs, and Fallback Origin requirements need confirmation before any provisioning plan is accepted. This document makes no claim about an active provider account's configuration.
 
-Represent each domain as a workspace-owned resource with normalized hostname, verification state, provider hostname/certificate state, add-on subscription reference, entitlement state, and lifecycle timestamps. A server-side policy function takes workspace, hostname, operation, trusted-list state, paid-plan state, add-on quantity/status, and global kill-switch state; fail closed on missing or stale billing state. One active $5/month add-on unit maps to one domain. Reconcile provider webhooks idempotently and periodically against billing state. Do not infer the entitlement from client data.
+## Proposed entitlement and lifecycle
+
+Represent each domain as a workspace-owned resource with normalized hostname, verification state, provider hostname/certificate state, add-on subscription reference, entitlement state, and lifecycle timestamps. A server-side policy function takes workspace, hostname, operation, trusted-list state, paid-plan state, add-on quantity/status, and global kill-switch state; fail closed on missing or stale billing state. Under the proposed pricing model, one active $5/month add-on unit would map to one domain. Reconcile provider webhooks idempotently and periodically against billing state. Do not derive entitlement from browser-supplied state.
 
 On lapse, immediately block adding/transferring domains and mark the affected domain pending grace; notify workspace admins and show the deadline. During grace, preserve DNS ownership records and configuration, but do not permit ownership transfer. At grace expiry disable serving and detach safely; retain records for recovery/audit. Cancellation, refund, chargeback, and payment retry semantics need provider-specific decisions. Trusted workspaces do not lapse into paid state, but remain subject to global kill switch and DNS safety.
 
-## Verification and abuse controls
+## Proposed verification and abuse controls
 
 1. Require a unique TXT challenge or provider-approved CNAME proof for every customer-owned hostname; re-check before activation, transfer, and recovery. Verify control of the registrable domain where feasible. Never treat an existing CNAME target alone as proof.
 2. Reject protected brands, platform/reserved names, public suffixes, invalid IDNs, internal/private targets, and names on maintained blocklists. Make checks canonicalization-safe and race-safe at persistence time.
@@ -36,23 +45,24 @@ On lapse, immediately block adding/transferring domains and mark the affected do
 5. Audit actor, workspace, hostname, operation, verification, billing transition, and administrative override without logging DNS tokens or secrets. Provide a root kill switch that blocks new attachments and can suspend routing/issuance; exercise it operationally.
 6. Review abuse signals and exceptions with the designated security/operations owner before launch.
 
-## New-client-project pipeline
+## Proposed project creation integration
 
-`ttr project new` should collect requested hostname/domain intent and workspace identity, then call the same server policy and provisioning path used by settings. For an eligible project it creates a pending domain record, prints the exact TXT/CNAME instructions, waits for verification, then attaches the hostname and reports status. For an ineligible workspace it explains the disabled feature and paid/trusted eligibility without creating provider resources. Project creation must not bypass caps, verification, kill switch, audit, or billing. Email-domain verification should reuse normalized-domain records and proof state where security boundaries permit; sender identity approval remains a distinct consent/authorization step.
+The proposed `ttr project new` integration would collect requested hostname/domain intent and workspace identity, then call the same server policy and provisioning path used by settings. For an eligible project it creates a pending domain record, prints the exact TXT or CNAME instructions, waits for verification, then attaches the hostname and reports status. For an ineligible workspace it explains the disabled feature and paid/trusted eligibility without creating provider resources. Project creation must not bypass caps, verification, kill switch, audit, or billing. Email-domain verification should reuse normalized-domain records and proof state where security boundaries permit; sender identity approval remains a distinct consent/authorization step.
 
-## Effort ranges and phases
+## Proposed implementation phases
 
-Ranges are engineering person-days, exclude provider waiting/review, and need refinement after billing/provider discovery.
+Estimate effort only after billing and provider discovery establishes the
+implementation scope and dependencies.
 
-| Slice | Scope | Range |
-|---|---|---:|
-| 1. Trusted allowlist + server gate | Root-managed allowlist, shared server entitlement check, fail-closed gating at domain create/link/attach; disabled UI explanation; audit decision | 5–8 days |
-| 2. Paid add-on billing | Product/catalog setup, one unit per domain at $5/month, webhook reconciliation, entitlement reads, billing lifecycle and grace-period disable | 8–14 days |
-| 3. DNS lifecycle + abuse defense | TXT/CNAME proof, blocklists, caps, transfer/dangling-DNS protection, TLS rate limits, audit and kill switch | 10–18 days |
-| 4. Settings and project pipeline | Domain management UX, `ttr project new` integration, email verification reuse, operator runbook and alerting | 6–11 days |
-| 5. Rollout | Seed trusted workspaces, observe provider usage, staged enablement, recovery/rollback exercise | 3–5 days |
+| Slice                                | Scope                                                                                                                                              |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Trusted allowlist and server gate | Root-managed allowlist, shared server entitlement check, fail-closed domain create/link/attach checks, disabled UI explanation and audit decisions |
+| 2. Paid add-on billing               | Product/catalog setup, approved per-domain pricing, webhook reconciliation, entitlement reads, billing lifecycle and grace-period disable          |
+| 3. DNS lifecycle and abuse defense   | TXT or CNAME proof, blocklists, caps, transfer/dangling-DNS protection, TLS rate limits, audit and kill switch                                     |
+| 4. Settings and project pipeline     | Domain management UX, proposed project-creation integration, email verification reuse, operator runbook and alerting                               |
+| 5. Rollout                           | Seed trusted workspaces, observe provider usage, staged enablement and recovery/rollback exercise                                                  |
 
-**Phase order:** Slice 1 is the first delivery and must land before any customer-facing domain enablement. Next settle provider/product semantics, then implement Slice 2. Complete Slice 3 before broad exposure. Integrate pipeline and email verification in Slice 4, then perform limited trusted-workspace rollout and expand only after measured abuse/cost behavior is acceptable.
+**Proposed phase order:** Slice 1 is the first delivery and must land before any customer-facing domain enablement. Next settle provider/product semantics, then implement Slice 2. Complete Slice 3 before broad exposure. Integrate pipeline and email verification in Slice 4, then perform limited trusted-workspace rollout and expand only after measured abuse/cost behavior is acceptable.
 
 ## Decisions required before implementation
 
@@ -61,3 +71,5 @@ Ranges are engineering person-days, exclude provider waiting/review, and need re
 - Grace duration and lapse actions (suspend immediately vs. grace-period serving).
 - Per-workspace/global caps, verification timeout, quarantine duration, and TLS/provider alert thresholds.
 - Confirm Fallback Origin readiness, billing webhook ownership, and operational kill-switch owner.
+
+For documentation conventions, see [Documenting](/build/development-tools/documenting).

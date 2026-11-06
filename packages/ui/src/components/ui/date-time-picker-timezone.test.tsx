@@ -256,3 +256,24 @@ describe('calendar picker bounds with a different browser day', () => {
     });
   });
 });
+
+it.each(['2026-10-31T12:00:00Z', '2026-11-02T12:00:00Z'])(
+  'rolls minimum time to the first DST occurrence with the clock at %s',
+  (now) => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date(now));
+      expect(
+        pickerTimeWithMinimum(
+          new Date('2026-10-31T05:30:00Z'),
+          1,
+          30,
+          'America/New_York',
+          new Date('2026-10-31T16:00:00Z')
+        )?.toISOString()
+      ).toBe('2026-11-01T05:30:00.000Z');
+    } finally {
+      vi.useRealTimers();
+    }
+  }
+);

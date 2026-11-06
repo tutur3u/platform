@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/components/app_search_field.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/app_modal_scope.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 
@@ -110,14 +109,12 @@ class _AppSheetSearchHostState extends State<AppSheetSearchHost> {
       locations: const {},
       modal: true,
       actions: [
-        ShellActionSpec(
+        ShellActionSpec.search(
           id: '${scope.ownerId}/search',
-          icon: _active ? AppIcons.close : AppIcons.search,
+          active: _active,
+          hasQuery: hasQuery,
           tooltip: search.hint,
-          inDock: true,
-          highlighted: _active || hasQuery,
-          callbackToken: (_active, hasQuery),
-          searchController: _active ? search.controller : null,
+          controller: search.controller,
           searchHint: search.hint,
           onSearchChanged: search.onChanged,
           onCloseSearch: _close,

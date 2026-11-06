@@ -58,29 +58,3 @@ export function classifyCalendarSyncError(
     return 'network';
   return 'unknown';
 }
-
-export function isInvalidCalendarGrant(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false;
-  if (
-    'message' in error &&
-    typeof error.message === 'string' &&
-    /\binvalid_grant\b/.test(error.message)
-  )
-    return true;
-  if ('errorCode' in error && error.errorCode === 'invalid_grant') return true;
-  if (
-    'response' in error &&
-    error.response &&
-    typeof error.response === 'object' &&
-    'data' in error.response
-  ) {
-    const data = error.response.data;
-    return (
-      !!data &&
-      typeof data === 'object' &&
-      'error' in data &&
-      data.error === 'invalid_grant'
-    );
-  }
-  return false;
-}

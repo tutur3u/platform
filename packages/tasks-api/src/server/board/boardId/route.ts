@@ -42,6 +42,9 @@ const paramsSchema = z.object({
 const TASK_BOARD_NAME_EXISTS_CODE = 'TASK_BOARD_NAME_EXISTS';
 const TASK_BOARD_NAME_EXISTS_ERROR =
   'A task board with this name already exists';
+const TASK_BOARD_TICKET_PREFIX_TAKEN_CODE = 'TASK_BOARD_TICKET_PREFIX_TAKEN';
+const TASK_BOARD_TICKET_PREFIX_TAKEN_ERROR =
+  'Ticket prefix is already used by a project in this workspace';
 const DEFAULT_LIST_COLUMN_UNAVAILABLE_ERROR =
   'Default task list settings are not available until the database migration is applied';
 const DEFAULT_LIST_COLUMNS = [
@@ -59,6 +62,17 @@ type BoardUpdatePayload =
 
 function isUniqueViolation(error: unknown) {
   return error instanceof Object && 'code' in error && error.code === '23505';
+}
+
+/** The board prefix trigger refuses a prefix that equals a project key. */
+function isTicketPrefixTaken(error: unknown) {
+  return (
+    isUniqueViolation(error) &&
+    error instanceof Object &&
+    'message' in error &&
+    typeof error.message === 'string' &&
+    error.message.includes('TASK_BOARD_TICKET_PREFIX_PROJECT_KEY')
+  );
 }
 
 function isDefaultListColumnUnavailable(error: unknown) {
@@ -287,6 +301,15 @@ export async function handleBoardRoutePUT(
   }
 
   if (error) {
+    if (isTicketPrefixTaken(error)) {
+      return NextResponse.json(
+        {
+          code: TASK_BOARD_TICKET_PREFIX_TAKEN_CODE,
+          error: TASK_BOARD_TICKET_PREFIX_TAKEN_ERROR,
+        },
+        { status: 409 }
+      );
+    }
     if (isUniqueViolation(error)) {
       return taskBoardNameExistsResponse();
     }

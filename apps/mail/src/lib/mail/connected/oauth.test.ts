@@ -26,8 +26,11 @@ describe('mail OAuth authorization', () => {
     '%s binds state to actor, browser, workspace and a PKCE verifier',
     async (provider) => {
       const response = await startOAuth(
-        { user: { id: 'owner' }, normalizedWsId: 'workspace' } as any,
-        provider
+        { user: { id: 'owner' }, normalizedWsId: 'workspace' },
+        provider,
+        new Request(
+          'https://mail.example.test/api/v1/workspaces/personal/mail/connected/connect'
+        )
       );
       const url = new URL((await response.json()).authUrl);
       const row = mocks.insert.mock.calls[0]?.[0];
@@ -47,6 +50,42 @@ describe('mail OAuth authorization', () => {
       expect(url.searchParams.has('client_secret')).toBe(false);
     }
   );
+  it.each(['google', 'microsoft'] as const)(
+    '%s starts on the mounted host using its registered callback and scoped state cookie',
+    async (provider) => {
+      const prefix = provider === 'google' ? 'GOOGLE' : 'MICROSOFT';
+      vi.stubEnv(
+        `MAIL_${prefix}_APEX_REDIRECT_URI`,
+        'https://tuturuuu.com/mail/api/v1/mail/connected/callback'
+      );
+      const response = await startOAuth(
+        { user: { id: 'owner' }, normalizedWsId: 'workspace' },
+        provider,
+        new Request(
+          'https://tuturuuu.com/mail/api/v1/workspaces/personal/mail/connected/connect'
+        )
+      );
+      const url = new URL((await response.json()).authUrl);
+      expect(url.searchParams.get('redirect_uri')).toBe(
+        'https://tuturuuu.com/mail/api/v1/mail/connected/callback'
+      );
+      expect(response.headers.get('set-cookie')).toContain(
+        'Path=/mail/api/v1/mail/connected'
+      );
+    }
+  );
+  it('rejects an unregistered serving host before creating pending state', async () => {
+    await expect(
+      startOAuth(
+        { user: { id: 'owner' }, normalizedWsId: 'workspace' },
+        'google',
+        new Request(
+          'https://other.example.test/api/v1/workspaces/personal/mail/connected/connect'
+        )
+      )
+    ).rejects.toMatchObject({ status: 400 });
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
   it('rejects mismatched, missing and different-length browser state', () => {
     expect(matchesState('abc', 'abc')).toBe(true);
     expect(matchesState('abc', 'xyz')).toBe(false);
@@ -54,3 +93,27 @@ describe('mail OAuth authorization', () => {
     expect(matchesState('abc', 'abcd')).toBe(false);
   });
 });
+
+it.each(['google', 'microsoft'] as const)(
+  '%s starts with the canonical subdomain callback when unset',
+  async (provider) => {
+    const prefix = provider === 'google' ? 'GOOGLE' : 'MICROSOFT';
+    vi.stubEnv(`MAIL_${prefix}_REDIRECT_URI`, undefined);
+    vi.stubEnv(`MAIL_${prefix}_APEX_REDIRECT_URI`, undefined);
+    const response = await startOAuth(
+      { user: { id: 'owner' }, normalizedWsId: 'workspace' },
+      provider,
+      new Request('https://mail.tuturuuu.com/api/start')
+    );
+    expect(
+      new URL((await response.json()).authUrl).searchParams.get('redirect_uri')
+    ).toBe('https://mail.tuturuuu.com/api/v1/mail/connected/callback');
+    await expect(
+      startOAuth(
+        { user: { id: 'owner' }, normalizedWsId: 'workspace' },
+        provider,
+        new Request('https://tuturuuu.com/mail/api/start')
+      )
+    ).rejects.toMatchObject({ status: 400 });
+  }
+);

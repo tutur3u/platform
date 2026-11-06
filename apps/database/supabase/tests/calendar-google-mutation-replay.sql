@@ -1,3 +1,4 @@
+\ir helpers/local-dblink.inc
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
@@ -62,9 +63,8 @@ insert into public.habit_calendar_events(habit_id,event_id,occurrence_date) valu
 commit;
 -- The fixture is committed because the second independent SQL connection must
 -- see it. The owning isolated lifecycle destroys this entire disposable stack.
--- Independent backend validates actual lock ordering. Local trust-auth stacks
--- run this fixture as their disposable DB bootstrap role.
-select dblink_connect('competitor','dbname=postgres user=postgres password=postgres host=127.0.0.1');
+-- Independent backend validates actual lock ordering through the test helper.
+select dblink_connect('competitor',pg_temp.fixture_dblink_connstr());
 begin;
 select is(public.fixture_color_call('reserve',public.fixture_color_input(0))->>'generation','1','color admission holds first generation');
 select is(public.fixture_mutation_call('inspect',jsonb_build_object('identity',public.fixture_color_input()->'identity'))->'operation'->'intent'->>'kind',
@@ -154,3 +154,4 @@ delete from auth.users where id='00000000-0000-4000-8000-000000009701';
 delete from public.workspaces where creator_id='00000000-0000-4000-8000-000000009701';
 delete from public.users where id='00000000-0000-4000-8000-000000009701';
 commit;
+

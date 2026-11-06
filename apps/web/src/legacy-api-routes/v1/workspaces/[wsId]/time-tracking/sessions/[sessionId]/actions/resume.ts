@@ -54,6 +54,7 @@ export async function handleResumeAction({
         description: session.description,
         category_id: session.category_id,
         task_id: session.task_id,
+        tags: session.tags ?? [],
         start_time: resumeTime,
         is_running: true,
         was_resumed: true,

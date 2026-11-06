@@ -6,7 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
-import { DocumentEditor } from './document-panel';
+import { DOCUMENT_SURFACE_CLASS_NAME, DocumentEditor } from './document-panel';
 
 vi.mock('@tuturuuu/realtime/channels', () => ({ RealtimeChannel: class {} }));
 const providers = vi.hoisted(() => ({ awareness: [] as Awareness[] }));
@@ -41,18 +41,24 @@ vi.mock('@tuturuuu/ui/text-editor/editor', () => ({
     allowCollaboration,
     yjsDoc,
     yjsProvider,
+    className,
+    fillHeight,
   }: {
     toolbarLeadingContent: ReactNode;
     toolbarToolsLabel: string;
     allowCollaboration?: boolean;
     yjsDoc?: unknown;
     yjsProvider?: unknown;
+    className?: string;
+    fillHeight?: boolean;
   }) => (
     <div
       data-testid="editor"
       data-shared={String(
         allowCollaboration === true && !!yjsDoc && !!yjsProvider
       )}
+      data-surface={className}
+      data-fill={String(fillHeight === true)}
     >
       <div role="toolbar">
         {toolbarLeadingContent}
@@ -101,4 +107,34 @@ it('places backup feedback in the editor toolbar without a padded title wrapper'
   expect(container.querySelector('section')?.className).not.toMatch(
     /\bp-4\b|\bpx-4\b/
   );
+});
+
+it('pads the writing surface itself, fills the panel and drops the focus ring', () => {
+  const initial: Parameters<typeof DocumentEditor>[0]['initial'] = {
+    documentId: 'synthetic-document',
+    revision: 0,
+    endpoint: 'https://realtime.example.invalid',
+    token: 'synthetic-test-token',
+    role: 'editor',
+    state: [],
+    user: {
+      id: 'synthetic-actor',
+      user_metadata: { display_name: 'Participant' },
+    },
+  };
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <TooltipProvider>
+        <DocumentEditor meetingId="synthetic-room" initial={initial} />
+      </TooltipProvider>
+    </NextIntlClientProvider>
+  );
+  const editor = screen.getByTestId('editor');
+  expect(editor.getAttribute('data-fill')).toBe('true');
+  expect(editor.getAttribute('data-surface')).toBe(DOCUMENT_SURFACE_CLASS_NAME);
+  // Horizontal and bottom padding live on the ProseMirror surface, not a frame.
+  expect(DOCUMENT_SURFACE_CLASS_NAME).toMatch(/\bpx-6\b/);
+  expect(DOCUMENT_SURFACE_CLASS_NAME).toMatch(/\bpb-\d+\b/);
+  expect(DOCUMENT_SURFACE_CLASS_NAME).toMatch(/\boutline-none\b/);
+  expect(DOCUMENT_SURFACE_CLASS_NAME).toMatch(/\bborder-0!/);
 });

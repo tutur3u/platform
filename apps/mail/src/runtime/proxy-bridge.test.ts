@@ -173,7 +173,9 @@ describe('Mail request bridge', () => {
         expect((await cookies()).get('actor')?.value).toBe('second');
       }
     );
-    expect(() => mailRequest()).toThrow('Mail request context is unavailable');
+    expect(() => mailRequest()).toThrow(
+      'Start bridge request context unavailable'
+    );
   });
 
   it('does not run document authentication for excluded assets', async () => {
@@ -206,6 +208,6 @@ describe('Mail request bridge', () => {
           throw new Error('Must not dispatch');
         },
       })
-    ).rejects.toThrow('Unexpected external Mail middleware rewrite');
+    ).rejects.toThrow('Unexpected external middleware rewrite');
   });
 });

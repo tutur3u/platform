@@ -3,7 +3,7 @@
 // There are no alarms: only Cron Triggers start work, so a stopped or
 // exhausted job can never reschedule itself.
 
-export type RunOutcome = 'failed' | 'ok' | 'stopped' | 'unknown';
+export type RunOutcome = 'degraded' | 'failed' | 'ok' | 'stopped' | 'unknown';
 
 export interface JobState {
   consecutiveFailures: number;
@@ -174,7 +174,7 @@ export class LedgerCore {
     const failed = outcome === 'failed' || outcome === 'unknown';
     const consecutiveFailures = failed
       ? state.consecutiveFailures + 1
-      : outcome === 'ok'
+      : outcome === 'ok' || outcome === 'degraded'
         ? 0
         : state.consecutiveFailures;
     const exhausted = consecutiveFailures >= maxConsecutiveFailures;

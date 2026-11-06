@@ -224,6 +224,7 @@ class V87Repository extends ReplyRepository {
     required String wsId,
     required AssistantFilePickerResult file,
     String? chatId,
+    void Function(double progress)? onProgress,
   }) async => AssistantAttachment(
     id: file.id,
     name: file.name,

@@ -2,6 +2,7 @@
 title: "SePay Integration"
 description: "Architecture and implementation notes for the SePay finance integration."
 updatedAt: "2026-04-22"
+audience: developers
 ---
 
 ## Goal
@@ -72,7 +73,7 @@ and the created `wallet_transactions.id` when processing succeeds.
 ## Operational Notes
 
 - Required runtime env vars are documented in
-  [Secrets & Configuration](/build/devops/secrets-and-configuration).
+  Secrets & Configuration.
 - The end-to-end validation flow lives in
   [SePay Testing Guide](/build/devops/sepay-testing-guide).
 - OAuth callback state is a short-lived HMAC-signed payload bound to the

@@ -2,6 +2,14 @@ import { copyFile, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+// Development has its own Firebase project since #7294; staging still shares
+// production's. Any other project id fails closed.
+const EXPECTED_PROJECT = {
+  development: 'tuturuuu-mobile-dev',
+  staging: 'tuturuuu-mobile',
+  production: 'tuturuuu-mobile',
+};
+
 export async function prepareMacos(mobileRoot) {
   const configurations = {};
   for (const flavor of ['development', 'staging', 'production']) {
@@ -13,7 +21,7 @@ export async function prepareMacos(mobileRoot) {
       )?.[1];
     const appId = field('GOOGLE_APP_ID');
     const projectId = field('PROJECT_ID');
-    if (!appId || projectId !== 'tuturuuu-mobile')
+    if (!appId || projectId !== EXPECTED_PROJECT[flavor])
       throw new Error('Invalid macOS Firebase identity');
     for (const mode of ['Debug', 'Profile', 'Release']) {
       configurations[`${mode}-${flavor}`] = {

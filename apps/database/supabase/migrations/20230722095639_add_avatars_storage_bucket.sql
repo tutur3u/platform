@@ -16,4 +16,5 @@ VALUES (
         true,
         true,
         2097152
-    );
+    )
+ON CONFLICT (id) DO NOTHING;

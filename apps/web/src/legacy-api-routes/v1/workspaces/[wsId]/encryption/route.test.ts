@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  checkE2EEPermission: vi.fn(),
   createAdminClient: vi.fn(),
   encryptWorkspaceKey: vi.fn(),
   generateWorkspaceKey: vi.fn(),
@@ -30,7 +31,7 @@ vi.mock('@/lib/api-auth', () => ({
 }));
 
 vi.mock('./utils', () => ({
-  checkE2EEPermission: vi.fn(),
+  checkE2EEPermission: mocks.checkE2EEPermission,
 }));
 
 const WS_ID = '22222222-2222-4222-8222-222222222222';
@@ -85,12 +86,28 @@ describe('POST workspace encryption initialization', () => {
       ok: true,
       type: 'MEMBER',
     });
+    mocks.checkE2EEPermission.mockResolvedValue({
+      authorized: true,
+      user: { id: 'user-1' },
+    });
     mocks.getMasterKey.mockReturnValue('master-key');
     mocks.generateWorkspaceKey.mockReturnValue('workspace-key');
     mocks.encryptWorkspaceKey.mockResolvedValue('encrypted-key');
   });
 
-  it('allows a workspace member to create the initial key', async () => {
+  it('SR-249 denies key creation without E2EE management', async () => {
+    mocks.checkE2EEPermission.mockResolvedValue({
+      authorized: false,
+      user: { id: 'user-1' },
+      reason: 'no_permission',
+    });
+    const admin = createAdmin();
+    mocks.createAdminClient.mockResolvedValue(admin.admin);
+    expect((await postEncryption()).status).toBe(403);
+    expect(admin.insert).not.toHaveBeenCalled();
+  });
+
+  it('allows an E2EE manager to create the initial key', async () => {
     const admin = createAdmin();
     mocks.createAdminClient.mockResolvedValue(admin.admin);
 

@@ -221,3 +221,41 @@ it('fences late obligation settlement and failure charges from an earlier slot',
   });
   expect(core.pendingWork('job')).toEqual([]);
 });
+
+it('persists degraded completion across restart, resets fatal streak and preserves last productive completion', () => {
+  const { store } = memoryLedgerStore();
+  const core = new LedgerCore(store);
+  const complete = (
+    slot: string,
+    now: number,
+    outcome: 'ok' | 'failed' | 'degraded'
+  ) => {
+    const claim = core.claim({
+      jobId: 'calendar-provider-sync',
+      slot,
+      now,
+      leaseMs: 1,
+      maxConsecutiveFailures: 5,
+    });
+    if (!claim.granted) throw new Error('Expected admission');
+    return core.complete({
+      jobId: 'calendar-provider-sync',
+      slot,
+      now,
+      outcome,
+      generation: claim.generation,
+      maxConsecutiveFailures: 5,
+    });
+  };
+  complete('1', 1, 'ok');
+  complete('2', 2, 'failed');
+  complete('3', 3, 'degraded');
+  expect(
+    new LedgerCore(store).status()['calendar-provider-sync']
+  ).toMatchObject({
+    lastOutcome: 'degraded',
+    consecutiveFailures: 0,
+    lastCompletedAt: 1,
+    stopped: false,
+  });
+});

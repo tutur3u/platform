@@ -1,3 +1,4 @@
+import type { FlagValue } from './args';
 import {
   activateRelease,
   cliStore,
@@ -15,13 +16,32 @@ export async function runUpgrade(
   action: string | undefined,
   args: string[],
   json: boolean,
-  keep?: unknown
+  keep?: unknown,
+  flags: Record<string, FlagValue> = {}
 ) {
-  if (!action) return upgradeCli();
-  if (!cliVersionActions.includes(action))
+  if (action && !cliVersionActions.includes(action))
     throw new Error(
-      `Unknown upgrade action "${action}". Use ttr upgrade --help.`
+      `Unknown upgrade action "${action}". Usage: ttr upgrade [install|activate|list|prune].`
     );
+  const usage =
+    'Usage: ttr upgrade [install [version]|activate <version>|list [--json]|prune --keep <n>]';
+  const allowedFlags = action
+    ? ['json', 'no-update-check', ...(action === 'prune' ? ['keep'] : [])]
+    : ['no-update-check'];
+  const invalidFlag = Object.keys(flags).find(
+    (key) => !allowedFlags.includes(key)
+  );
+  if (
+    invalidFlag ||
+    ('json' in flags && flags.json !== true) ||
+    ('no-update-check' in flags && flags['no-update-check'] !== true) ||
+    args.length > (action === 'install' || action === 'activate' ? 1 : 0) ||
+    (!action && (json || keep !== undefined))
+  )
+    throw new Error(
+      `Unsupported upgrade arguments${invalidFlag ? `: --${invalidFlag}` : ''}. ${usage}`
+    );
+  if (!action) return upgradeCli();
   return runCliVersionsCommand(action, args, json, keep);
 }
 

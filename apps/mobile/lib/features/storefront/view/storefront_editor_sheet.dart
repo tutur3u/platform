@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/components/app_toggle_row.dart';
 import 'package:mobile/data/models/storefront/storefront_models.dart';
 import 'package:mobile/features/storefront/storefront_labels.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -209,14 +210,12 @@ class _StorefrontEditorState extends State<_StorefrontEditor> {
             values: const ['compact', 'rounded', 'soft'],
             onChanged: (value) => setState(() => _cornerStyle = value),
           ),
-          SwitchListTile.adaptive(
-            contentPadding: EdgeInsets.zero,
+          AppToggleRow(
             title: Text(l10n.storefrontInventoryBadges),
             value: _showInventoryBadges,
             onChanged: (value) => setState(() => _showInventoryBadges = value),
           ),
-          SwitchListTile.adaptive(
-            contentPadding: EdgeInsets.zero,
+          AppToggleRow(
             title: Text(l10n.storefrontAnalytics),
             value: _analyticsEnabled,
             onChanged: (value) => setState(() => _analyticsEnabled = value),

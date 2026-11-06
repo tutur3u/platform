@@ -217,10 +217,7 @@ class _ConnectionsSheetBody extends StatelessWidget {
     child: BlocBuilder<CalendarConnectionsCubit, CalendarConnectionsState>(
       builder: (context, state) {
         if (state.status == CalendarConnectionsStatus.loading) {
-          return const SizedBox(
-            height: 120,
-            child: Center(child: NovaLoadingIndicator()),
-          );
+          return const SizedBox(height: 120, child: AppLoadingIndicator());
         }
         if (state.status == CalendarConnectionsStatus.error) {
           return _ErrorBody(

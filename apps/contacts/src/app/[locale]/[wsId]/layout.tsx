@@ -11,7 +11,8 @@ import {
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { isTopicTeacherAssignmentsEnabled } from '@tuturuuu/utils/topic-announcements';
+import { getSecrets, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
@@ -76,6 +77,12 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
   // instead of returning an empty state or a route-specific 404.
   const access = await getContactsWorkspaceAccess(workspace.id);
   const permissions = access?.permissions;
+  const teacherAssignmentsEnabled =
+    Boolean(access) &&
+    !workspace.personal &&
+    isTopicTeacherAssignmentsEnabled(
+      (await getSecrets({ forceAdmin: true, wsId: workspace.id })) ?? []
+    );
 
   const cookieStore = await cookies();
   const sidebarBehavior = parseSidebarBehavior(cookieStore);
@@ -99,6 +106,7 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
             await getNavigationLinks({
               permissions: permissions ?? undefined,
               personalOrWsId: workspaceSlug,
+              teacherAssignmentsEnabled,
             })
           }
           actions={

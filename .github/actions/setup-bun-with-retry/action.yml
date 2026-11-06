@@ -5,6 +5,10 @@ inputs:
     description: Bun version to install.
     required: false
     default: 1.4.4
+  cache-enabled:
+    description: Restore or save Bun caches; disable on persistent PR runners.
+    required: false
+    default: "true"
   max-attempts:
     description: Maximum install attempts.
     required: false
@@ -13,28 +17,28 @@ runs:
   using: composite
   steps:
     - name: Restore and save trusted Bun runtime cache
-      if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]' }}
+      if: ${{ inputs['cache-enabled'] == 'true' && (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]') }}
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/bin/bun
         key: bun-runtime-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}
 
     - name: Restore Bun runtime cache without saving
-      if: ${{ github.ref != 'refs/heads/main' || (github.event_name != 'push' && github.event_name != 'workflow_dispatch') || github.actor == 'dependabot[bot]' }}
+      if: ${{ inputs['cache-enabled'] == 'true' && (github.ref != 'refs/heads/main' || (github.event_name != 'push' && github.event_name != 'workflow_dispatch') || github.actor == 'dependabot[bot]') }}
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/bin/bun
         key: bun-runtime-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}
 
     - name: Restore and save trusted Bun package cache
-      if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]' }}
+      if: ${{ inputs['cache-enabled'] == 'true' && (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]') }}
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/install/cache
         key: bun-deps-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}
 
     - name: Restore Bun package cache without saving
-      if: ${{ github.ref != 'refs/heads/main' || (github.event_name != 'push' && github.event_name != 'workflow_dispatch') || github.actor == 'dependabot[bot]' }}
+      if: ${{ inputs['cache-enabled'] == 'true' && (github.ref != 'refs/heads/main' || (github.event_name != 'push' && github.event_name != 'workflow_dispatch') || github.actor == 'dependabot[bot]') }}
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/install/cache

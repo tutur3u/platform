@@ -1,6 +1,6 @@
 # Local agent GitHub identity
 
-The [tuturuuu-bot runbook](../../../../../apps/docs/build/devops/tuturuuu-bot.mdx)
+The internal tuturuuu-bot runbook (org/lanes/internal-docs)
 owns provisioning, permissions, threat model and revocation. The App is only for
 local agent task-branch pushes and PR creation. Release automation keeps its own
 PAT/job identity. No workflow currently mints this App token and no Actions App

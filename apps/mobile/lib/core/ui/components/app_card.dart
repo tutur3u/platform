@@ -32,7 +32,7 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
-    final radius = borderRadius ?? BorderRadius.circular(AppRadius.md);
+    final radius = borderRadius ?? tokens.interface.borderRadius(AppRadius.md);
     final solid = MediaQuery.highContrastOf(context);
     Widget content = Padding(padding: padding, child: child);
     if (onTap != null) {

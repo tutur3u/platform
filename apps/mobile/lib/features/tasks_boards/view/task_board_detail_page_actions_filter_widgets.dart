@@ -220,6 +220,8 @@ class _FilterSelectionSheet extends StatefulWidget {
     required this.initialSelectedIds,
     this.singleSelection = false,
     this.autoApplyOnSelection = false,
+    this.applyLabel,
+    this.clearLabel,
   });
 
   final String title;
@@ -227,6 +229,10 @@ class _FilterSelectionSheet extends StatefulWidget {
   final Set<String> initialSelectedIds;
   final bool singleSelection;
   final bool autoApplyOnSelection;
+
+  /// Button labels; default to the filter wording.
+  final String? applyLabel;
+  final String? clearLabel;
 
   @override
   State<_FilterSelectionSheet> createState() => _FilterSelectionSheetState();
@@ -248,11 +254,12 @@ class _FilterSelectionSheetState extends State<_FilterSelectionSheet> {
         ? const BorderRadius.vertical(top: Radius.circular(16))
         : BorderRadius.circular(12);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: shad.Theme.of(context).colorScheme.background,
-        borderRadius: borderRadius,
-      ),
+    // A Material surface, not a decorated box, so the option ListTiles paint
+    // their ink on the sheet itself.
+    return Material(
+      color: shad.Theme.of(context).colorScheme.background,
+      borderRadius: borderRadius,
+      textStyle: DefaultTextStyle.of(context).style,
       child: SafeArea(
         top: false,
         child: Padding(
@@ -324,7 +331,8 @@ class _FilterSelectionSheetState extends State<_FilterSelectionSheet> {
                           ? null
                           : () => _select(const <String>{}),
                       child: _CenteredButtonText(
-                        context.l10n.taskBoardDetailClearFilters,
+                        widget.clearLabel ??
+                            context.l10n.taskBoardDetailClearFilters,
                       ),
                     ),
                   ),
@@ -338,7 +346,8 @@ class _FilterSelectionSheetState extends State<_FilterSelectionSheet> {
                         ).pop(Set<String>.from(_draftSelectedIds));
                       },
                       child: _CenteredButtonText(
-                        context.l10n.taskBoardDetailApplyFilters,
+                        widget.applyLabel ??
+                            context.l10n.taskBoardDetailApplyFilters,
                       ),
                     ),
                   ),

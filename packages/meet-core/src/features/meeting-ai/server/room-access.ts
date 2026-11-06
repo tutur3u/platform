@@ -1,5 +1,7 @@
 import 'server-only';
 import { getMeetCallSession } from '@tuturuuu/meet-core/features/call/lib/call-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { isMeetingNotesAdmin } from './notes-admin';
 
 /** Read-only, signed room policy lookup. No room is joined and no media is opened. */
 export async function readMeetingRoomPolicy(
@@ -36,7 +38,7 @@ export async function readMeetingRoomPolicy(
     signal: AbortSignal.timeout(5000),
   });
   if (!response.ok) throw new Error('meet_room_policy_unavailable');
-  return (await response.json()) as {
+  const policy = (await response.json()) as {
     canReadNotes: boolean;
     ended: boolean;
     lifecycleVersion?: number;
@@ -46,6 +48,18 @@ export async function readMeetingRoomPolicy(
       publicLinkPreview?: boolean;
     };
   };
+  // Sharing only narrows participant access; it never gates workspace admins.
+  if (settings || policy.canReadNotes || input.isHost) return policy;
+  try {
+    const canRead = await isMeetingNotesAdmin({
+      supabase: await createAdminClient({ noCookie: true }),
+      wsId: input.wsId,
+      userId: input.userId,
+    });
+    return canRead ? { ...policy, canReadNotes: true } : policy;
+  } catch {
+    return policy;
+  }
 }
 
 export async function canReadSharedMeetingNotes(input: {

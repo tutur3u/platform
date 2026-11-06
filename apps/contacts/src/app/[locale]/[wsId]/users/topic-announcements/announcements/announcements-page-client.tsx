@@ -11,6 +11,7 @@ export function TopicAnnouncementsAnnouncementsPageClient() {
     actions,
     announcements,
     canSend,
+    teacherAssignmentsEnabled,
     contacts,
     filters,
     groups,
@@ -31,6 +32,7 @@ export function TopicAnnouncementsAnnouncementsPageClient() {
       <AnnouncementsPanel
         announcements={announcements}
         canSend={canSend}
+        teacherAssignmentsEnabled={teacherAssignmentsEnabled}
         contacts={contacts}
         groups={groups}
         isCreating={pending.createAnnouncement}
@@ -44,6 +46,7 @@ export function TopicAnnouncementsAnnouncementsPageClient() {
         onCreateAndSchedule={actions.createAndSchedule}
         onCreateAndSend={actions.createAndSend}
         onDelete={actions.deleteAnnouncement}
+        onNotifyTeachers={actions.notifyTeachers}
         onPageChange={filters.setPage}
         onQueryChange={filters.setQuery}
         onSaveTemplate={actions.saveTemplateFromForm}

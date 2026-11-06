@@ -1,6 +1,10 @@
 export { generateAssuredCrossAppToken } from './generate-server';
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthEmail } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import { isRequiredMfaProofAllowed } from '@tuturuuu/utils/required-mfa-app-session';
@@ -110,6 +114,8 @@ export async function validateCrossAppTokenWithClient({
     return null;
   }
 
+  const admin = await createAdminClient({ noCookie: true });
+  const email = await getVerifiedAuthEmail(admin, userId);
   const mfa = readMfaTransfer(
     firstRow.session_data?.mfaTransfer,
     userId,
@@ -118,7 +124,7 @@ export async function validateCrossAppTokenWithClient({
   if (!(await isRequiredMfaProofAllowed(userId, mfa))) return null;
   return {
     mfa,
-    sessionData: firstRow.session_data ?? null,
+    sessionData: { ...firstRow.session_data, email: email ?? undefined },
     userId,
   };
 }

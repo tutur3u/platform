@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class AssistantMermaidDiagramCard extends StatefulWidget {
   const AssistantMermaidDiagramCard({
@@ -318,7 +317,7 @@ class _AssistantMermaidWebViewState extends State<AssistantMermaidWebView> {
       future: _scriptFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: NovaLoadingIndicator());
+          return const AppLoadingIndicator();
         }
 
         if (snapshot.hasError || !snapshot.hasData) {

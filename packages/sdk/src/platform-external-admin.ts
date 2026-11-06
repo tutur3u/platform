@@ -24,6 +24,10 @@ export interface ExternalAppConfiguration {
   origins: string[];
   allowedScopes: string[];
   allowedWorkspaceIds: string[];
+  /** Require an S256 PKCE challenge on every login handoff (default false). */
+  requirePkce?: boolean;
+  /** Exact return URL paths; empty keeps the origin-only check. */
+  callbackPaths?: string[];
 }
 
 /** User-authenticated control plane. All operations retain server-side root gates. */

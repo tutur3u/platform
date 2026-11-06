@@ -16,7 +16,7 @@ const syncModelsSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const auth = await authorizeAiCreditsAdminRequest();
+    const auth = await authorizeAiCreditsAdminRequest('manage_workspace_roles');
     if (!auth.ok) return auth.response;
 
     const body = await request.json().catch(() => ({}));

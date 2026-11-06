@@ -11,6 +11,7 @@ class _TaskBoardEnhancedListView extends StatefulWidget {
     required this.scrollController,
     required this.onTaskTap,
     required this.onTaskToggleDone,
+    required this.rowActions,
     required this.isBulkSelectMode,
     required this.selectedTaskIds,
     required this.onToggleTaskSelection,
@@ -28,6 +29,7 @@ class _TaskBoardEnhancedListView extends StatefulWidget {
   final ScrollController scrollController;
   final void Function(TaskBoardTask task) onTaskTap;
   final void Function(TaskBoardTask task, String targetStatus) onTaskToggleDone;
+  final _TaskRowActionHandlers rowActions;
   final bool isBulkSelectMode;
   final Set<String> selectedTaskIds;
   final void Function(TaskBoardTask task) onToggleTaskSelection;
@@ -185,6 +187,7 @@ class _TaskBoardEnhancedListViewState
           onToggleCollapsed: () => widget.onToggleListCollapsed(section.list),
           onTaskTap: widget.onTaskTap,
           onTaskToggleDone: widget.onTaskToggleDone,
+          rowActions: widget.rowActions,
           isBulkSelectMode: widget.isBulkSelectMode,
           selectedTaskIds: widget.selectedTaskIds,
           onToggleTaskSelection: widget.onToggleTaskSelection,
@@ -265,6 +268,7 @@ class _TaskListStickySection extends StatelessWidget {
     required this.onToggleCollapsed,
     required this.onTaskTap,
     required this.onTaskToggleDone,
+    required this.rowActions,
     required this.isBulkSelectMode,
     required this.selectedTaskIds,
     required this.onToggleTaskSelection,
@@ -279,6 +283,7 @@ class _TaskListStickySection extends StatelessWidget {
   final VoidCallback onToggleCollapsed;
   final void Function(TaskBoardTask task) onTaskTap;
   final void Function(TaskBoardTask task, String targetStatus) onTaskToggleDone;
+  final _TaskRowActionHandlers rowActions;
   final bool isBulkSelectMode;
   final Set<String> selectedTaskIds;
   final void Function(TaskBoardTask task) onToggleTaskSelection;
@@ -327,6 +332,7 @@ class _TaskListStickySection extends StatelessWidget {
                           onTap: () => onTaskTap(tasks[index]),
                           onToggleDone: (targetStatus) =>
                               onTaskToggleDone(tasks[index], targetStatus),
+                          rowActions: rowActions,
                           isBulkSelectMode: isBulkSelectMode,
                           isSelected: selectedTaskIds.contains(tasks[index].id),
                           onToggleSelected: () =>

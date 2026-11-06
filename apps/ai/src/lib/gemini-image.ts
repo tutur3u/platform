@@ -80,9 +80,16 @@ export function createGeminiImageBilling(prompt: string, count: number) {
   let markup: number | undefined;
   const usage: MeteredUsage = {};
   const generationIds: string[] = [];
-  const calculateCost: UsageCostCalculator = async (measured, workspaceId) => {
+  const calculateCost: UsageCostCalculator = async (
+    measured,
+    workspaceId,
+    io
+  ) => {
     if (markup === undefined) {
-      const admin = await createAdminClient({ noCookie: true });
+      const admin = await createAdminClient({
+        noCookie: true,
+        fetch: io?.fetch,
+      });
       const tier = await admin.rpc('_resolve_workspace_tier', {
         p_ws_id: workspaceId,
       });

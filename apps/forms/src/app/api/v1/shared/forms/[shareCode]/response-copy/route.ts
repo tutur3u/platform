@@ -1,8 +1,8 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   isTurnstileError,
   verifyTurnstileToken,
-} from '@tuturuuu/turnstile/server';
+} from '@tuturuuu/cloudflare/turnstile/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {

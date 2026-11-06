@@ -3,6 +3,10 @@ import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Json } from '@tuturuuu/types/db';
 import { z } from 'zod';
 
+const GOOGLE_ACCOUNT_PAGE = 200;
+// Sanity bound on one workspace's active Google accounts.
+const MAX_WORKSPACE_GOOGLE_ACCOUNTS = 10_000;
+
 const CaptureSchema = z
   .object({
     id: z.guid(),
@@ -145,22 +149,54 @@ export async function replayDeferredGoogleImports(args: {
   return { deferred };
 }
 
+// Constant-time comparison so the match does not leak a credential prefix.
+function sameCredential(stored: unknown, supplied: string) {
+  if (typeof stored !== 'string' || stored.length !== supplied.length)
+    return false;
+  let difference = 0;
+  for (let index = 0; index < stored.length; index += 1)
+    difference |= stored.charCodeAt(index) ^ supplied.charCodeAt(index);
+  return difference === 0;
+}
+
 /** Resolve a background caller's exact stored token row from its supplied
- * credential, without persisting or logging that credential. Ambiguity is null. */
+ * credential, without persisting or logging that credential. The credential
+ * is compared in process; it never becomes a request filter, because
+ * PostgREST filters travel in the URL. Ambiguity is null. */
 export async function verifiedGoogleImportToken(
   client: SupabaseClient,
   wsId: string,
   accessToken: string
 ) {
-  const { data, error } = await client
-    .from('calendar_auth_tokens')
-    .select('id')
-    .eq('ws_id', wsId)
-    .eq('provider', 'google')
-    .eq('is_active', true)
-    .eq('access_token', accessToken)
-    .limit(2);
-  if (error) throw new GoogleImportFenceError();
-  const token = data?.length === 1 ? data[0] : undefined;
-  return token ? z.guid().parse(token.id) : null;
+  const matches: string[] = [];
+  let scanned = 0;
+  let after: string | null = null;
+  // Keyset pages by id, so a large workspace is read in bounded chunks.
+  for (;;) {
+    let page = client
+      .from('calendar_auth_tokens')
+      .select('id, access_token')
+      .eq('ws_id', wsId)
+      .eq('provider', 'google')
+      .eq('is_active', true);
+    if (after) page = page.gt('id', after);
+    const { data, error } = await page
+      .order('id', { ascending: true })
+      .limit(GOOGLE_ACCOUNT_PAGE);
+    if (error) throw new GoogleImportFenceError();
+    const rows = data ?? [];
+    scanned += rows.length;
+    if (scanned > MAX_WORKSPACE_GOOGLE_ACCOUNTS) {
+      console.warn('Google import token scan exceeded its bound', {
+        wsId,
+        scanned,
+      });
+      throw new GoogleImportFenceError();
+    }
+    for (const row of rows)
+      if (sameCredential(row.access_token, accessToken)) matches.push(row.id);
+    if (rows.length < GOOGLE_ACCOUNT_PAGE) break;
+    after = rows[rows.length - 1]?.id ?? null;
+  }
+  return matches.length === 1 ? z.guid().parse(matches[0]) : null;
 }

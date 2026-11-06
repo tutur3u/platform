@@ -5,6 +5,10 @@ select no_plan();
 insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data) values
 ('00000000-0000-4000-8000-000000009910','actor-fixture@tuturuuu.com',now(),'{}','{}'),
 ('00000000-0000-4000-8000-000000009911','foreign-fixture@example.com',now(),'{}','{}');
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 insert into public.workspaces(id,name,creator_id,personal) values('00000000-0000-0000-0000-000000000000','Root fixture','00000000-0000-4000-8000-000000009910',false)
 on conflict(id) do update set creator_id=excluded.creator_id;
 insert into public.workspace_members(ws_id,user_id,type) values('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000009910','MEMBER') on conflict(ws_id,user_id) do update set type='MEMBER';
@@ -13,6 +17,10 @@ select ok(not exists(select 1 from auth.users where id='00000000-0000-4000-8000-
 select is(private.employee_inbound_mailbox('finalize-fixture@tuturuuu.com',(select id from private.mail_domains where domain='tuturuuu.com')),jsonb_build_object('managed',true,'mailbox',null),'retained intent alone blocks exact and catch-all routing before Auth INSERT');
 insert into auth.users(id,email,email_confirmed_at,banned_until,raw_app_meta_data,raw_user_meta_data) values
 ('00000000-0000-4000-8000-000000009912','finalize-fixture@tuturuuu.com',now(),now()+interval '100 years','{"employee_onboarding":true}','{"display_name":"Managed fixture","full_name":"Managed fixture"}');
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 select throws_ok($$select private.employee_creation_preflight('00000000-0000-4000-8000-000000009910','00000000-0000-4000-8000-000000009914','finalize-fixture@tuturuuu.com','Changed fixture')$$,'23505','Employee account or reservation already exists','second request cannot retry or take over retained intent');
 select lives_ok($$select private.employee_creation_preflight('00000000-0000-4000-8000-000000009910','00000000-0000-4000-8000-000000009913','new-fixture@tuturuuu.com','New fixture')$$,'fresh root actor can preflight');
 update auth.users set banned_until=now()+interval '1 day' where id='00000000-0000-4000-8000-000000009910';

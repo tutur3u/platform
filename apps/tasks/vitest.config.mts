@@ -7,6 +7,20 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: '@tuturuuu/internal-api/users',
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/users.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/internal-api/tasks',
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/tasks.ts'
+        ),
+      },
+      {
         find: /^@tuturuuu\/types\/primitives\/(.+)$/,
         replacement: resolve(
           __dirname,

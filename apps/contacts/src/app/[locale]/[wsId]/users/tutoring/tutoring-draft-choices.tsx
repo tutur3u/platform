@@ -2,7 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { WorkspaceUserGroupSession } from '@tuturuuu/internal-api';
-import type { TutoringPolicy } from '@tuturuuu/internal-api/tutoring-policy';
+import {
+  type TutoringPolicy,
+  tutoringExclusionReason,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import {
   rankTutoringDraftChoices,
   suggestTutoringSlots,
@@ -19,6 +22,8 @@ import { useTutoringHandoff } from './use-tutoring-handoff';
 export function TutoringDraftChoices({
   wsId,
   form,
+  groupName,
+  groupTags,
   policy,
   today,
   schedule,
@@ -30,6 +35,9 @@ export function TutoringDraftChoices({
 }: {
   wsId: string;
   form: TutoringFormValues;
+  /** The chosen class's name, read by the workspace exclusion rules. */
+  groupName?: string | null;
+  groupTags?: readonly string[];
   policy: TutoringPolicy;
   today: string;
   schedule: WorkspaceUserGroupSession[];
@@ -77,6 +85,11 @@ export function TutoringDraftChoices({
     retry: false,
   });
   if (!form.groupId || !form.studentUserId) return null;
+  const exclusion = {
+    groupName,
+    groupTags,
+    reason: tutoringExclusionReason(form.reasonType),
+  };
   const suggestions =
     form.reasonType === 'WEAK_SUPPORT'
       ? schedule
@@ -86,7 +99,9 @@ export function TutoringDraftChoices({
               addDaysToIsoDate(today, -1),
               Math.min(50, form.sessionSlots.length),
               policy,
-              'consecutive'
+              'consecutive',
+              new Date(),
+              exclusion
             )
           )
           .slice(0, 50)
@@ -94,7 +109,10 @@ export function TutoringDraftChoices({
           schedule,
           form.missedClassDate || addDaysToIsoDate(today, -1),
           50,
-          policy
+          policy,
+          'separate',
+          new Date(),
+          exclusion
         );
   let message = missingAbsenceDate
     ? t('plan_choose_missed_date')
@@ -131,6 +149,7 @@ export function TutoringDraftChoices({
       sessionSlots: form.sessionSlots.map((slot, slotIndex) =>
         slotIndex === index
           ? {
+              ...slot,
               durationMinutes: choice.durationMinutes ?? policy.durationMinutes,
               sessionDate: choice.sessionDate,
               startTime: choice.startTime,
@@ -149,6 +168,7 @@ export function TutoringDraftChoices({
           form.sessionSlots[slotIndex]?.startTime
       )
       .map((slot) => ({
+        group_id: form.groupId,
         session_date: slot.sessionDate,
         start_time: slot.startTime,
         duration_minutes: slot.durationMinutes,

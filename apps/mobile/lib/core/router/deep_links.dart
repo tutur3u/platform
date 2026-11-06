@@ -195,6 +195,7 @@ String? _moduleLocation(Uri uri, List<String> segments) {
     'documents' => _documentsLocation(segments),
     'cms' => Routes.cms,
     'crm' => Routes.crm,
+    'mastermind' => _mastermindLocation(segments),
     'meet' => _meetLocation(uri),
     'timer' => _timerLocation(uri, segments),
     'settings' => _settingsLocation(segments),
@@ -205,6 +206,18 @@ String? _moduleLocation(Uri uri, List<String> segments) {
           ? Routes.settingsAccounts
           : Routes.profileRoot,
     _ => null,
+  };
+}
+
+/// Mastermind tabs only. Item and decision ids never travel in a link.
+String _mastermindLocation(List<String> segments) {
+  if (segments.length < 2) return Routes.mastermind;
+  return switch (segments[1]) {
+    'inbox' => Routes.mastermindInbox,
+    'work' => Routes.mastermindWork,
+    'ship' => Routes.mastermindShip,
+    'insights' => Routes.mastermindInsights,
+    _ => Routes.mastermind,
   };
 }
 

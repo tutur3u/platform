@@ -1,0 +1,19 @@
+{
+  "appDir": "src/app",
+  "stripSegments": {
+    "[locale]": {
+      "locale": "en"
+    }
+  },
+  "api": {
+    "out": "src/runtime/api-registry.bridge.gen.ts",
+    "patternsOut": "src/runtime/api-patterns.bridge.gen.ts",
+    "lazy": true
+  },
+  "pages": {
+    "out": "src/runtime/page-registry.bridge.gen.ts"
+  },
+  "owned": {
+    "serwist/[path]/route.ts": "src/runtime/handler.ts"
+  }
+}

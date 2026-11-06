@@ -9,6 +9,10 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validateWorkspaceApiKey } from '../../lib/workspace-api-key';
+import {
+  canReadWorkspaceUsers,
+  redactWorkspaceUser,
+} from '../../lib/workspace-user-read-access';
 import { handleCreateWorkspaceUserRequest } from './workspace-user-create';
 
 interface Params {
@@ -134,7 +138,13 @@ async function getDataFromSession(
     return access.response;
   }
 
-  const { normalizedWsId: wsId, sbAdmin } = access.context;
+  const { normalizedWsId: wsId, sbAdmin, permissions } = access.context;
+  if (!canReadWorkspaceUsers(permissions)) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
   const searchParams = new URLSearchParams(req.nextUrl.search);
   const query = searchParams.get('q') || searchParams.get('query');
   const from = parseInt(searchParams.get('from') || '0', 10);
@@ -153,7 +163,10 @@ async function getDataFromSession(
     );
   }
 
-  return NextResponse.json({ data: data || [], count: count ?? 0 });
+  return NextResponse.json({
+    data: (data ?? []).map((user) => redactWorkspaceUser(user, permissions)),
+    count: count ?? 0,
+  });
 }
 
 export async function POST(req: Request, context: Params) {

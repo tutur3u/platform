@@ -56,7 +56,7 @@ function fixture() {
       state = next;
     },
     run: (message: MeetRealtimeClientMessage) =>
-      executor.run({ message, token, now }, options),
+      executor.run({ message, token, now, notesEligible: true }, options),
   };
 }
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));

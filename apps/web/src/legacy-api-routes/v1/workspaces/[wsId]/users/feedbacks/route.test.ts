@@ -1,3 +1,7 @@
+import {
+  STANDARD_TUTORING_POLICY,
+  serializeTutoringPolicyConfigRows,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -21,6 +25,7 @@ const mocks = vi.hoisted(() => ({
   groupEq: vi.fn(),
   groupResult: vi.fn(),
   insertFeedback: vi.fn(),
+  restrictWeakContent: { value: false },
   getPermissions: vi.fn(),
   resolveAuthenticatedSessionUser: vi.fn(),
   targetUserEq: vi.fn(),
@@ -68,6 +73,20 @@ function createAdminClientDouble() {
       }
       if (table === 'workspace_user_groups') {
         return lookupQuery(mocks.groupEq, mocks.groupResult);
+      }
+      if (table === 'workspace_configs') {
+        const query = {
+          eq: vi.fn(() => query),
+          like: vi.fn(async () => ({
+            data: serializeTutoringPolicyConfigRows({
+              ...STANDARD_TUTORING_POLICY,
+              restrictWeakContentEditors: mocks.restrictWeakContent.value,
+            }),
+            error: null,
+          })),
+          select: vi.fn(() => query),
+        };
+        return query;
       }
       if (table === 'user_feedbacks') {
         return {
@@ -124,8 +143,12 @@ describe('workspace feedback mutation authorization', () => {
     mocks.containsPermission.mockImplementation(
       (permission: string) => permission === 'update_user_groups_scores'
     );
+    mocks.restrictWeakContent.value = false;
     mocks.getPermissions.mockResolvedValue({
       containsPermission: mocks.containsPermission,
+      withoutPermission: (permission: string) =>
+        !mocks.containsPermission(permission),
+      wsId: WORKSPACE_ID,
     });
     mocks.createClient.mockResolvedValue({ auth: {} });
     mocks.createAdminClient.mockResolvedValue(createAdminClientDouble());
@@ -408,6 +431,63 @@ describe('workspace feedback mutation authorization', () => {
       });
       expect(consoleError).toHaveBeenCalled();
       consoleError.mockRestore();
+    });
+  });
+
+  describe('weak-support tutoring content policy', () => {
+    beforeEach(() => {
+      mocks.restrictWeakContent.value = true;
+      mocks.feedbackLookupResult.mockResolvedValue({
+        data: { id: FEEDBACK_ID, require_attention: true },
+        error: null,
+      });
+    });
+
+    it('limits flagged feedback edits to class managers when restricted', async () => {
+      const { PUT } = await import('./route');
+
+      const denied = await PUT(
+        request('PUT', { content: 'Keep reading practice' }, FEEDBACK_ID),
+        params()
+      );
+      expect(denied.status).toBe(403);
+      expectNoMutation();
+
+      mocks.containsPermission.mockImplementation((permission: string) =>
+        ['update_user_groups_scores', 'update_user_groups'].includes(permission)
+      );
+      const allowed = await PUT(
+        request('PUT', { content: 'Keep reading practice' }, FEEDBACK_ID),
+        params()
+      );
+      expect(allowed.status).toBe(200);
+    });
+
+    it('blocks setting or deleting tutoring content without class management', async () => {
+      const { DELETE, POST } = await import('./route');
+
+      expect(
+        (await POST(request('POST', validCreateBody()), params())).status
+      ).toBe(403);
+      expect(
+        (await DELETE(request('DELETE', undefined, FEEDBACK_ID), params()))
+          .status
+      ).toBe(403);
+      expectNoMutation();
+    });
+
+    it('leaves ordinary feedback unrestricted', async () => {
+      mocks.feedbackLookupResult.mockResolvedValue({
+        data: { id: FEEDBACK_ID, require_attention: false },
+        error: null,
+      });
+      const { PUT } = await import('./route');
+
+      const response = await PUT(
+        request('PUT', { content: 'Great work' }, FEEDBACK_ID),
+        params()
+      );
+      expect(response.status).toBe(200);
     });
   });
 

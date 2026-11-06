@@ -1,13 +1,20 @@
+import 'package:mobile/core/config/env_security.dart';
+
 /// Environment configuration for the app.
 ///
 /// Uses `--dart-define` flags passed at build time to configure
 /// Supabase URLs and API base URLs per flavor.
+///
+/// Release builds have no cleartext localhost fallback: an unset URL is empty
+/// and [assertSecureForRelease] rejects it at startup.
 class Env {
   const Env._();
 
+  static const _isRelease = bool.fromEnvironment('dart.vm.product');
+
   static const supabaseUrl = String.fromEnvironment(
     'NEXT_PUBLIC_SUPABASE_URL',
-    defaultValue: 'http://localhost:54321',
+    defaultValue: _isRelease ? '' : 'http://localhost:54321',
   );
 
   static const supabaseAnonKey = String.fromEnvironment(
@@ -21,7 +28,7 @@ class Env {
 
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:7803',
+    defaultValue: _isRelease ? '' : 'http://localhost:7803',
   );
 
   static const tasksApiBaseUrl = String.fromEnvironment('TASKS_API_BASE_URL');
@@ -86,4 +93,32 @@ class Env {
       supabaseAnonKey.isNotEmpty && supabaseUrl.isNotEmpty;
 
   static bool get isDevelopment => apiBaseUrl.contains('localhost');
+
+  /// Backends that receive credentials and bearer tokens. Keep in sync with
+  /// `scripts/mobile-validate-dart-defines.js`, which fails the build first.
+  static Map<String, String> get releaseRequiredUrls => {
+    'NEXT_PUBLIC_SUPABASE_URL': supabaseUrl,
+    'API_BASE_URL': apiBaseUrl,
+  };
+
+  static Map<String, String> get releaseOptionalUrls => {
+    'TASKS_API_BASE_URL': tasksApiBaseUrl,
+    'FINANCE_API_BASE_URL': financeApiBaseUrl,
+    'INVENTORY_API_BASE_URL': inventoryApiBaseUrl,
+    'CONTACTS_API_BASE_URL': contactsApiBaseUrl,
+    'CALENDAR_API_BASE_URL': calendarApiBaseUrl,
+    'TEACH_API_BASE_URL': teachApiBaseUrl,
+    'TRACK_API_BASE_URL': trackApiBaseUrl,
+    'MAIL_API_BASE_URL': mailApiBaseUrl,
+    'INFRASTRUCTURE_API_BASE_URL': infrastructureApiBaseUrl,
+  };
+
+  /// Throws [InsecureEnvException] in release builds unless every backend URL
+  /// is https. Debug and profile builds may keep localhost http.
+  static void assertSecureForRelease({bool releaseMode = _isRelease}) =>
+      assertSecureBackendUrls(
+        releaseMode: releaseMode,
+        requiredUrls: releaseRequiredUrls,
+        optionalUrls: releaseOptionalUrls,
+      );
 }

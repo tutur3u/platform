@@ -1,19 +1,18 @@
+import { verifyAppSessionToken } from '@tuturuuu/auth/app-session';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from './route';
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
+  getUserById: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     auth: {
       admin: {
-        getUserById: async (id: string) => ({
-          data: { user: { id, app_metadata: {} } },
-          error: null,
-        }),
+        getUserById: (...args: unknown[]) => mocks.getUserById(...args),
       },
     },
   }),
@@ -46,6 +45,17 @@ describe('central cross-app token verification route', () => {
     vi.stubEnv('SUPABASE_SERVICE_KEY', '');
     vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
+    mocks.getUserById.mockImplementation(async (id: string) => ({
+      data: {
+        user: {
+          id,
+          email: 'learn@example.com',
+          email_confirmed_at: '2026-01-01',
+          app_metadata: {},
+        },
+      },
+      error: null,
+    }));
     mocks.createClient.mockResolvedValue({
       rpc: vi.fn().mockResolvedValue({
         data: [
@@ -90,6 +100,62 @@ describe('central cross-app token verification route', () => {
         p_token: 'learn-token',
       }
     );
+  });
+
+  it.each(['infra', 'tasks'] as const)(
+    'signs the verified subject email for %s',
+    async (targetApp) => {
+      mocks.getUserById.mockResolvedValue({
+        data: {
+          user: {
+            id: 'user-1',
+            email: 'Canonical@Example.com',
+            email_confirmed_at: '2026-01-01',
+            app_metadata: {},
+          },
+        },
+        error: null,
+      });
+      const response = await POST(
+        new NextRequest('http://localhost/api/v1/auth/cross-app-token/verify', {
+          body: JSON.stringify({ targetApp, token: 'handoff' }),
+          method: 'POST',
+        })
+      );
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.sessionData.email).toBe('canonical@example.com');
+      const verified = verifyAppSessionToken(body.appSessionToken, {
+        targetApp,
+      });
+      expect(verified.ok).toBe(true);
+      if (verified.ok) {
+        expect(verified.claims.sub).toBe('user-1');
+        expect(verified.claims.email).toBe('canonical@example.com');
+      }
+    }
+  );
+
+  it('does not sign an unconfirmed auth email', async () => {
+    mocks.getUserById.mockResolvedValue({
+      data: {
+        user: { id: 'user-1', email: 'staff@tuturuuu.com', app_metadata: {} },
+      },
+      error: null,
+    });
+    const response = await POST(
+      new NextRequest('http://localhost/api/v1/auth/cross-app-token/verify', {
+        body: JSON.stringify({ targetApp: 'infra', token: 'handoff' }),
+        method: 'POST',
+      })
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    const verified = verifyAppSessionToken(body.appSessionToken, {
+      targetApp: 'infra',
+    });
+    expect(verified.ok).toBe(true);
+    if (verified.ok) expect(verified.claims.email ?? null).toBeNull();
   });
 
   it('rejects unregistered target apps', async () => {

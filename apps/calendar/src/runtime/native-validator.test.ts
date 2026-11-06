@@ -5,6 +5,7 @@ import {
   loadCalendarPage,
 } from './page-loader';
 import { addRealtimeLog, realtimeLogInput } from './realtime-log-actions';
+import { fetchWorkspaces, workspaceReadInput } from './workspace-actions';
 
 // Importing the actual ports also constructs the installed createServerFn builders.
 describe('installed native builders and their real input schemas', () => {
@@ -12,6 +13,7 @@ describe('installed native builders and their real input schemas', () => {
     expect(typeof loadCalendarPage).toBe('function');
     expect(typeof loadCalendarLocale).toBe('function');
     expect(typeof addRealtimeLog).toBe('function');
+    expect(typeof fetchWorkspaces).toBe('function');
   });
   it('accepts an internal page path and rejects external or malformed inputs', () => {
     expect(
@@ -25,6 +27,16 @@ describe('installed native builders and their real input schemas', () => {
       { path: `/${'a'.repeat(8192)}` },
     ])
       expect(calendarPageInput.safeParse(input).success).toBe(false);
+  });
+  it('accepts an empty workspace read payload and rejects caller identity', () => {
+    expect(workspaceReadInput.parse({})).toEqual({});
+    for (const input of [
+      undefined,
+      null,
+      { userId: 'caller' },
+      { wsId: 'caller' },
+    ])
+      expect(workspaceReadInput.safeParse(input).success).toBe(false);
   });
   it('validates actor/workspace identities and bounded log fields before the supplier', () => {
     const valid = {

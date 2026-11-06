@@ -1,4 +1,8 @@
 const desktopReleaseRepository = 'tutur3u/platform';
+
+/// Current tags are `desktop-v<version>`; legacy betas appended the CI run ID.
+final desktopReleaseTag = RegExp(r'^desktop-v(\d+\.\d+\.\d+)(?:-(\d+))?$');
+
 const desktopAssets = {
   'windows': 'Tuturuuu-windows-x64-setup.exe',
   'macos': 'Tuturuuu-macos-universal.dmg',
@@ -20,21 +24,54 @@ class DesktopRelease {
 
   final String tag;
   final String version;
-  final BigInt run;
+
+  /// Legacy run-suffixed tags only; current releases differ by version.
+  final BigInt? run;
   final String name;
   final Uri url;
   final int size;
   final String digest;
 
+  /// Parses `major.minor.patch`; anything else is unknown (`null`).
+  static List<int>? parseVersion(String value) {
+    final parts = value.split('.').map(int.tryParse).toList();
+    if (parts.length != 3 || parts.contains(null)) return null;
+    return parts.cast<int>();
+  }
+
+  /// Orders releases by version, then by legacy run. An unknown version or a
+  /// missing run sorts lowest so it can never outrank a known release.
+  int compareTo(DesktopRelease other) {
+    final a = parseVersion(version);
+    final b = parseVersion(other.version);
+    if (a == null || b == null) {
+      if (a != null) return 1;
+      if (b != null) return -1;
+    } else {
+      for (var i = 0; i < 3; i++) {
+        if (a[i] != b[i]) return a[i].compareTo(b[i]);
+      }
+    }
+    final left = run;
+    final right = other.run;
+    if (left == null || right == null) {
+      if (left != null) return 1;
+      if (right != null) return -1;
+      return 0;
+    }
+    return left.compareTo(right);
+  }
+
   bool newerThan(String installedVersion, String installedRun) {
-    final current = installedVersion.split('.').map(int.tryParse).toList();
-    final next = version.split('.').map(int.parse).toList();
-    if (current.length != 3 || current.contains(null)) return false;
+    final current = parseVersion(installedVersion);
+    final next = parseVersion(version);
+    if (current == null || next == null) return false;
     for (var i = 0; i < 3; i++) {
-      if (next[i] != current[i]) return next[i] > current[i]!;
+      if (next[i] != current[i]) return next[i] > current[i];
     }
     final previousRun = BigInt.tryParse(installedRun);
-    return previousRun != null && run > previousRun;
+    final run = this.run;
+    return run != null && previousRun != null && run > previousRun;
   }
 
   static DesktopRelease? parse(Object? value, String platform) {
@@ -45,7 +82,7 @@ class DesktopRelease {
     }
     final tag = value['tag_name'];
     if (tag is! String || tag.length > 100) return null;
-    final match = RegExp(r'^desktop-v(\d+\.\d+\.\d+)-(\d+)$').firstMatch(tag);
+    final match = desktopReleaseTag.firstMatch(tag);
     if (match == null) return null;
     const base = 'https://github.com/$desktopReleaseRepository/releases';
     if (value['html_url'] != '$base/tag/$tag') return null;
@@ -78,7 +115,7 @@ class DesktopRelease {
         selected = DesktopRelease(
           tag: tag,
           version: match[1]!,
-          run: BigInt.parse(match[2]!),
+          run: match[2] == null ? null : BigInt.parse(match[2]!),
           name: entry.value,
           url: Uri.parse(url),
           size: size,

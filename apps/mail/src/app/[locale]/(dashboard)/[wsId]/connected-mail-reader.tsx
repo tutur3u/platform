@@ -1,6 +1,7 @@
 'use client';
 import type { ConnectedMailMessage } from '@tuturuuu/internal-api';
 import { connectedMailPath } from '@tuturuuu/internal-api';
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { ConnectedMailInvitation } from './connected-mail-invitation';
@@ -103,7 +104,7 @@ export function ConnectedMailReader({
         <a
           key={file.id}
           className="block text-sm underline"
-          href={
+          href={withAppBase(
             connectedMailPath(workspaceId, [
               accountId,
               'messages',
@@ -111,7 +112,7 @@ export function ConnectedMailReader({
               'attachments',
               file.id,
             ]) + (folder === 'drafts' ? '?draft=1' : '')
-          }
+          )}
         >
           {file.filename}
         </a>

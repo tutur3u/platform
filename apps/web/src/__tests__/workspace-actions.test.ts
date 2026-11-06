@@ -1,3 +1,5 @@
+vi.mock('server-only', () => ({}));
+
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -113,6 +115,31 @@ describe('fetchWorkspaceSummaries', () => {
         email: 'alex@example.com',
       },
     });
+  });
+
+  it('preserves soft-deletion metadata for mobile presentation', async () => {
+    mocks.workspacesEq.mockResolvedValue({
+      data: [
+        {
+          id: 'archived-workspace',
+          name: 'Archived',
+          personal: false,
+          avatar_url: null,
+          logo_url: null,
+          deleted: true,
+          creator_id: 'user-1',
+          workspace_subscriptions: [],
+        },
+      ],
+      error: null,
+    });
+    const { fetchWorkspaceSummaries } = await import(
+      '@tuturuuu/ui/lib/workspace-actions'
+    );
+    const summaries = await fetchWorkspaceSummaries();
+    expect(summaries).toEqual([
+      expect.objectContaining({ id: 'archived-workspace', deleted: true }),
+    ]);
   });
 
   it('uses the latest active subscription tier and personal profile overrides', async () => {

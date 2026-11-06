@@ -2,7 +2,6 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Info, Loader2, UserIcon } from '@tuturuuu/icons';
-import { uploadWorkspaceUserAvatar } from '@tuturuuu/internal-api/profile-media';
 import {
   createWorkspaceUser,
   updateWorkspaceUser,
@@ -34,6 +33,7 @@ import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { uploadWorkspaceUserAvatarWithLimitNotice } from './avatar-upload-limit';
 
 interface Props {
   wsId: string;
@@ -276,7 +276,7 @@ export default function UserForm({
       );
     }
 
-    return uploadWorkspaceUserAvatar(wsId, file);
+    return uploadWorkspaceUserAvatarWithLimitNotice(wsId, file, t);
   }
 
   const onSubmit = async (formData: z.infer<typeof FormSchema>) => {

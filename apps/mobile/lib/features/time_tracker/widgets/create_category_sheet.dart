@@ -4,6 +4,8 @@ import 'package:flutter/material.dart' hide TextField;
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
+    show AppSheetHandle;
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -181,129 +183,111 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final keyboardBottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return PopScope(
       canPop: !_saving,
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.background,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(20, 8, 20, 16 + keyboardBottomInset),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Drag handle
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: colorScheme.border,
-                      borderRadius: BorderRadius.circular(2),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(20, 8, 20, 16 + keyboardBottomInset),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const AppSheetHandle(),
+              const shad.Gap(16),
+              // Title row
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.timerCreateCategory,
+                      style: theme.typography.h4,
                     ),
                   ),
-                ),
-                const shad.Gap(16),
-                // Title row
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        l10n.timerCreateCategory,
-                        style: theme.typography.h4,
-                      ),
-                    ),
-                    shad.IconButton.ghost(
-                      icon: const Icon(LucideIcons.x, size: 18),
-                      onPressed: _saving
-                          ? null
-                          : () => unawaited(Navigator.maybePop(context)),
-                    ),
-                  ],
-                ),
-                const shad.Gap(20),
-
-                // Name field
-                Text(
-                  l10n.timerCategoryName,
-                  style: theme.typography.small.copyWith(
-                    fontWeight: FontWeight.w600,
+                  shad.IconButton.ghost(
+                    icon: const Icon(LucideIcons.x, size: 18),
+                    onPressed: _saving
+                        ? null
+                        : () => unawaited(Navigator.maybePop(context)),
                   ),
-                ),
-                const shad.Gap(6),
-                shad.TextField(
-                  selectionControls: platformTextSelectionControls(),
-                  contextMenuBuilder: platformTextContextMenuBuilder(),
-                  controller: _nameController,
-                  hintText: l10n.timerCategoryName,
-                  autofocus: true,
-                  onSubmitted: (_) => unawaited(_save()),
-                ),
-                const shad.Gap(16),
+                ],
+              ),
+              const shad.Gap(20),
 
-                // Color picker
-                Text(
-                  l10n.timerCategoryColor,
-                  style: theme.typography.small.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              // Name field
+              Text(
+                l10n.timerCategoryName,
+                style: theme.typography.small.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-                const shad.Gap(10),
-                _ColorGrid(
-                  tokens: _kColorTokens,
-                  selected: _selectedColor,
-                  onSelect: (token) => setState(
-                    () =>
-                        _selectedColor = _selectedColor == token ? null : token,
-                  ),
-                ),
-                const shad.Gap(16),
+              ),
+              const shad.Gap(6),
+              shad.TextField(
+                selectionControls: platformTextSelectionControls(),
+                contextMenuBuilder: platformTextContextMenuBuilder(),
+                controller: _nameController,
+                hintText: l10n.timerCategoryName,
+                autofocus: true,
+                onSubmitted: (_) => unawaited(_save()),
+              ),
+              const shad.Gap(16),
 
-                // Description field
-                Text(
-                  l10n.timerCategoryDescription,
-                  style: theme.typography.small.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              // Color picker
+              Text(
+                l10n.timerCategoryColor,
+                style: theme.typography.small.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-                const shad.Gap(6),
-                shad.TextField(
-                  selectionControls: platformTextSelectionControls(),
-                  contextMenuBuilder: platformTextContextMenuBuilder(),
-                  controller: _descriptionController,
-                  hintText: l10n.timerCategoryDescription,
-                  maxLines: 3,
-                  minLines: 2,
+              ),
+              const shad.Gap(10),
+              _ColorGrid(
+                tokens: _kColorTokens,
+                selected: _selectedColor,
+                onSelect: (token) => setState(
+                  () => _selectedColor = _selectedColor == token ? null : token,
                 ),
-                const shad.Gap(20),
+              ),
+              const shad.Gap(16),
 
-                // Save button
-                shad.PrimaryButton(
-                  onPressed: _saving ? null : () => unawaited(_save()),
-                  child: _saving
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: NovaLoadingIndicator(size: 20),
-                            ),
-                            const shad.Gap(8),
-                            Text(l10n.timerCategoryCreateInProgress),
-                          ],
-                        )
-                      : Text(l10n.timerSave),
+              // Description field
+              Text(
+                l10n.timerCategoryDescription,
+                style: theme.typography.small.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            ),
+              ),
+              const shad.Gap(6),
+              shad.TextField(
+                selectionControls: platformTextSelectionControls(),
+                contextMenuBuilder: platformTextContextMenuBuilder(),
+                controller: _descriptionController,
+                hintText: l10n.timerCategoryDescription,
+                maxLines: 3,
+                minLines: 2,
+              ),
+              const shad.Gap(20),
+
+              // Save button
+              shad.PrimaryButton(
+                onPressed: _saving ? null : () => unawaited(_save()),
+                child: _saving
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: NovaLoadingIndicator(size: 20),
+                          ),
+                          const shad.Gap(8),
+                          Text(l10n.timerCategoryCreateInProgress),
+                        ],
+                      )
+                    : Text(l10n.timerSave),
+              ),
+            ],
           ),
         ),
       ),

@@ -32,6 +32,11 @@ const appSchema = z
     origins: z.array(z.url()).min(1).max(20),
     allowedScopes: z.array(z.string().trim().min(1).max(80)).max(50),
     allowedWorkspaceIds: z.array(z.uuid()).min(1).max(50),
+    requirePkce: z.boolean().optional(),
+    callbackPaths: z
+      .array(z.string().trim().min(1).max(512))
+      .max(20)
+      .optional(),
   })
   .strict();
 
@@ -183,7 +188,8 @@ export function externalAdminHelp() {
   ttr external binding set --workspace <id> --template <key> --confirm LINK_SITE_TEMPLATE
   ttr external projects --help
 
-App JSON: id, displayName, enabled, origins, allowedScopes, allowedWorkspaceIds.
+App JSON: id, displayName, enabled, origins, allowedScopes, allowedWorkspaceIds;
+optional requirePkce and callbackPaths (omitted fields keep their stored value).
 Scopes replace the approved list; use --dry-run to review or --clear-scopes to revoke all. Workspace allowlists must be explicit.
 Template JSON: id (same as custom app ID), display_name, adapter: custom.
 Secrets never print; --secret-out creates a NEW owner-only file. Rotation invalidates the old secret.

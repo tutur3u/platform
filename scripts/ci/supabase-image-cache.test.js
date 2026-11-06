@@ -13,17 +13,20 @@ const {
   MAX_ARCHIVE_BYTES,
 } = require('./supabase-image-cache.js');
 const services = [
-  ['supabase/postgres', '17.6.1.167'],
-  ['supabase/postgres-meta', 'v0.99.0'],
-  ['postgrest/postgrest', 'v16.2'],
-  ['supabase/gotrue', 'v2.196.0'],
-  ['supabase/realtime', 'v2.130.0'],
-  ['supabase/storage-api', 'v1.72.1'],
-  ['supabase/studio', '2026.08.24-sha-8ec45b2'],
+  ['supabase/postgres', '17.11.0.004'],
+  ['supabase/postgres-meta', 'v0.100.0'],
+  ['postgrest/postgrest', 'v16.4'],
+  ['supabase/gotrue', 'v2.197.0'],
+  ['supabase/realtime', 'v2.143.4'],
+  ['supabase/storage-api', 'v1.82.1'],
+  ['supabase/studio', '2026.10.12-sha-3699278'],
+  ['supabase/edge-runtime', 'v1.77.4'],
+  ['supabase/logflare', '1.53.0'],
+  ['supabase/supavisor', '2.9.13'],
 ].map(([name, local]) => ({ name, local }));
 const identity = {
   services,
-  cliVersion: '2.117.0',
+  cliVersion: '2.121.0',
   registry: 'public.ecr.aws',
   profile: 'contract',
 };
@@ -45,11 +48,11 @@ test('configuration diagnostics allow only fixed public messages and service ide
 
 test('contract images derive versions from CLI metadata including temporary overrides', () => {
   assert.deepEqual(imageList(identity), [
-    'public.ecr.aws/supabase/gotrue:v2.196.0',
-    'public.ecr.aws/supabase/postgres:17.6.1.167',
-    'public.ecr.aws/supabase/postgres-meta:v0.99.0',
-    'public.ecr.aws/supabase/realtime:v2.130.0',
-    'public.ecr.aws/supabase/storage-api:v1.72.1',
+    'public.ecr.aws/supabase/gotrue:v2.197.0',
+    'public.ecr.aws/supabase/postgres:17.11.0.004',
+    'public.ecr.aws/supabase/postgres-meta:v0.100.0',
+    'public.ecr.aws/supabase/realtime:v2.143.4',
+    'public.ecr.aws/supabase/storage-api:v1.82.1',
   ]);
   assert.ok(
     imageList({
@@ -60,20 +63,20 @@ test('contract images derive versions from CLI metadata including temporary over
     }).includes('public.ecr.aws/supabase/postgres:17.6.1.168')
   );
   assert.deepEqual(imageList({ ...identity, profile: 'contract-http' }), [
-    'public.ecr.aws/supabase/gotrue:v2.196.0',
+    'public.ecr.aws/supabase/gotrue:v2.197.0',
     'public.ecr.aws/supabase/kong:2.8.1',
-    'public.ecr.aws/supabase/postgres:17.6.1.167',
-    'public.ecr.aws/supabase/postgres-meta:v0.99.0',
-    'public.ecr.aws/supabase/postgrest:v16.2',
-    'public.ecr.aws/supabase/realtime:v2.130.0',
-    'public.ecr.aws/supabase/storage-api:v1.72.1',
+    'public.ecr.aws/supabase/postgres:17.11.0.004',
+    'public.ecr.aws/supabase/postgres-meta:v0.100.0',
+    'public.ecr.aws/supabase/postgrest:v16.4',
+    'public.ecr.aws/supabase/realtime:v2.143.4',
+    'public.ecr.aws/supabase/storage-api:v1.82.1',
   ]);
 });
 test('full stack includes pinned supplemental images and omits disabled services', () => {
   const config = fs.readFileSync('apps/database/supabase/config.toml', 'utf8');
   const images = imageList({ ...identity, profile: 'full', config });
   assert.equal(images.length, 10);
-  for (const image of ['kong:2.8.1', 'mailpit:v1.30.2', 'imgproxy:v3.8.0'])
+  for (const image of ['kong:2.8.1', 'mailpit:v1.31.3', 'imgproxy:v3.26.0'])
     assert.ok(images.includes(`public.ecr.aws/supabase/${image}`));
   assert.ok(
     images.every(
@@ -93,6 +96,34 @@ test('full stack includes pinned supplemental images and omits disabled services
     /Uncached service/
   );
   assert.equal(MAX_ARCHIVE_BYTES, 6 * 1024 ** 3);
+});
+test('catalog overlap uses CLI local tags once and rejects duplicate catalog names', () => {
+  const config = fs.readFileSync('apps/database/supabase/config.toml', 'utf8');
+  const overlap = [
+    { name: 'library/kong', local: '2.8.1' },
+    { name: 'axllent/mailpit', local: 'v1.31.3' },
+    { name: 'darthsim/imgproxy', local: 'v3.26.0' },
+  ];
+  const options = { ...identity, profile: 'full', config };
+  assert.deepEqual(
+    imageList({ ...options, services: [...services, ...overlap] }),
+    imageList(options)
+  );
+  const images = imageList({
+    ...options,
+    services: [...services, { ...overlap[1], local: 'v1.31.4' }],
+  });
+  assert.equal(images.length, 10);
+  assert.ok(images.includes('public.ecr.aws/supabase/mailpit:v1.31.4'));
+  assert.ok(!images.includes('public.ecr.aws/supabase/mailpit:v1.31.3'));
+  assert.throws(
+    () =>
+      imageList({
+        ...options,
+        services: [...services, ...overlap, overlap[0]],
+      }),
+    /Duplicate CLI image metadata/
+  );
 });
 test('unknown versions, profiles, registry and malformed metadata fail closed', () => {
   for (const patch of [
@@ -175,7 +206,7 @@ test('real cache helper pulls only on miss, saves only trusted archives, and loa
   fs.writeFileSync(path.join(database, 'supabase/config.toml'), '');
   fs.writeFileSync(
     path.join(database, 'scripts/run-supabase.js'),
-    `console.log(process.argv.includes('--version') ? '2.117.0' : ${JSON.stringify(JSON.stringify(services))});`
+    `console.log(process.argv.includes('--version') ? '2.121.0' : ${JSON.stringify(JSON.stringify(services))});`
   );
   const docker = path.join(root, 'docker');
   fs.writeFileSync(
@@ -441,7 +472,7 @@ test('only the fixed trusted Linux seed catalog bypasses installed CLI metadata'
   assert.throws(() => catalogPin('cli-2.121.0', gotrue));
 });
 
-test('all three future seed keys equal consumer keys and current keys remain unchanged', () => {
+test('all three seed keys equal current consumer keys and retained keys remain unchanged', () => {
   const expected = [
     [
       'contract',
@@ -460,7 +491,24 @@ test('all three future seed keys equal consumer keys and current keys remain unc
     ],
   ];
   const config = fs.readFileSync('apps/database/supabase/config.toml', 'utf8');
-  for (const [profile, currentKey, futureKey] of expected) {
+  const retained = {
+    contract: [
+      'gotrue:v2.196.0',
+      'postgres-meta:v0.99.0',
+      'postgres:17.6.1.167',
+      'realtime:v2.130.0',
+      'storage-api:v1.72.1',
+    ],
+    'contract-http': ['kong:2.8.1', 'postgrest:v16.2'],
+    full: [
+      'imgproxy:v3.8.0',
+      'mailpit:v1.30.2',
+      'studio:2026.08.24-sha-8ec45b2',
+    ],
+  };
+  retained['contract-http'].push(...retained.contract);
+  retained.full.push(...retained['contract-http']);
+  for (const [profile, retainedKey, currentKey] of expected) {
     const key = (images) =>
       cacheKey({
         images,
@@ -472,8 +520,16 @@ test('all three future seed keys equal consumer keys and current keys remain unc
       key(imageList({ ...identity, profile, config })),
       `supabase-images-v1-${currentKey}`
     );
+    assert.equal(
+      key(retained[profile].map((image) => `public.ecr.aws/supabase/${image}`)),
+      `supabase-images-v1-${retainedKey}`
+    );
     const images = seedCatalog('cli-2.121.0', { ...futureContext, profile });
-    assert.equal(key(images), `supabase-images-v1-${futureKey}`);
+    assert.deepEqual(
+      [...images].sort(),
+      imageList({ ...identity, profile, config }).sort()
+    );
+    assert.equal(key(images), `supabase-images-v1-${currentKey}`);
     for (const image of images) {
       const pin = catalogPin('cli-2.121.0', image);
       for (const field of ['index', 'amd64', 'config'])

@@ -37,7 +37,8 @@ export const POST = withSessionAuth<{ wsId: string }>(
         'avatar',
         process.env.NEXT_PUBLIC_APP_URL || request.url,
         undefined,
-        `${permissions.wsId}/users`
+        `${permissions.wsId}/users`,
+        permissions.wsId
       );
       return NextResponse.json(
         { ...ticket, path: ticket.filePath },
@@ -46,15 +47,24 @@ export const POST = withSessionAuth<{ wsId: string }>(
         }
       );
     } catch (error) {
-      return NextResponse.json(
-        { message: 'Avatar upload unavailable' },
-        {
-          status: error instanceof ProfileUploadError ? error.status : 503,
-          headers:
-            error instanceof ProfileUploadError && error.retryAfter
+      // Surface the real limit and retry time so managers know to wait.
+      if (error instanceof ProfileUploadError && error.status === 429)
+        return NextResponse.json(
+          {
+            message: error.message,
+            code: 'PROFILE_UPLOAD_LIMIT',
+            retryAfter: error.retryAfter,
+          },
+          {
+            status: 429,
+            headers: error.retryAfter
               ? { 'Retry-After': String(error.retryAfter) }
               : undefined,
-        }
+          }
+        );
+      return NextResponse.json(
+        { message: 'Avatar upload unavailable' },
+        { status: error instanceof ProfileUploadError ? error.status : 503 }
       );
     }
   },

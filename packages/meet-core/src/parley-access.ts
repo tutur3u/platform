@@ -1,7 +1,5 @@
-import {
-  hasInternalParleyDomain,
-  normalizeParleyEmail,
-} from './parley/access-policy';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
+import { normalizeParleyEmail } from './parley/access-policy';
 import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { parleyDatabase } from './parley/database';
@@ -19,7 +17,7 @@ export async function hasParleyAccess(userId: string): Promise<boolean> {
       new Date(data.user.banned_until).getTime() > Date.now())
   )
     return false;
-  if (hasInternalParleyDomain(email)) return true;
+  if (isVerifiedTuturuuuStaffSession(data.user)) return true;
   const { data: entry, error: accessError } = await (await parleyDatabase())
     .schema('private')
     .from('parley_members')

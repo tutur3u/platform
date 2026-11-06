@@ -112,6 +112,21 @@ const mocks = vi.hoisted(() => {
       createQuery(table, dequeue(adminQueues, table))
     ),
     schema: vi.fn(() => adminSchemaClient),
+    auth: {
+      admin: {
+        // Board access resolves guest mailbox authority from verified Auth.
+        getUserById: vi.fn(async (id: string) => ({
+          data: {
+            user: {
+              id,
+              email: 'guest@example.com',
+              email_confirmed_at: '2026-01-01T00:00:00.000Z',
+            },
+          },
+          error: null,
+        })),
+      },
+    },
   };
   const memberClient = {
     from: vi.fn((table: string) =>

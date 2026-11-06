@@ -138,13 +138,38 @@ export const POST = withSessionAuth(
     }
 
     const { moduleId, ...payload } = parsedBody.data;
+
+    // RLS only proves the module is visible to the caller, not that it lives in
+    // this workspace, so resolve it through its group before any write.
+    if (moduleId != null) {
+      const { data: module, error: moduleError } = await access.sbAdmin
+        .from('workspace_course_modules')
+        .select('id, workspace_user_groups!inner(ws_id)')
+        .eq('id', moduleId)
+        .eq('workspace_user_groups.ws_id', access.normalizedWsId)
+        .maybeSingle();
+      if (moduleError) {
+        console.error('Failed to validate quiz set module', moduleError);
+        return NextResponse.json(
+          { message: 'Error validating course module' },
+          { status: 500 }
+        );
+      }
+      if (!module) {
+        return NextResponse.json(
+          { message: 'Module not found' },
+          { status: 404 }
+        );
+      }
+    }
+
     const { data, error } = await context.supabase
       .from('workspace_quiz_sets')
       .insert({
         ...payload,
         ws_id: access.normalizedWsId,
       })
-      .select('id')
+      .select('id, ws_id')
       .single();
 
     if (error) {
@@ -156,6 +181,13 @@ export const POST = withSessionAuth(
     }
 
     if (moduleId != null) {
+      if (data.ws_id !== access.normalizedWsId) {
+        return NextResponse.json(
+          { message: 'Quiz set not found' },
+          { status: 404 }
+        );
+      }
+
       const { error: linkError } = await context.supabase
         .from('course_module_quiz_sets')
         .insert({

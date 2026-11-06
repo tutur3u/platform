@@ -4,6 +4,7 @@ import { TaskTemplatesHub } from '@tuturuuu/tasks-ui/tu-do/templates/task-templa
 import type { BoardTemplate } from '@tuturuuu/tasks-ui/tu-do/templates/types';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { isWorkspaceTemplateBackgroundPath } from '@tuturuuu/utils/template-background-path';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
@@ -61,7 +62,12 @@ async function getTemplates(
       };
 
       let backgroundUrl: string | null = null;
-      if (template.background_path) {
+      if (
+        isWorkspaceTemplateBackgroundPath(
+          template.background_path,
+          template.ws_id
+        )
+      ) {
         try {
           const { data: signedUrlData } = await supabase.storage
             .from('workspaces')

@@ -1,5 +1,10 @@
 import { execFileSync } from 'node:child_process';
-export type ProcessState = 'same' | 'dead' | 'replaced' | 'unknown';
+export type ProcessState =
+  | 'same'
+  | 'dead'
+  | 'replaced'
+  | 'permission-denied'
+  | 'unknown';
 export function processStartedAt(pid: number): string | undefined {
   try {
     const text = execFileSync('ps', ['-p', String(pid), '-o', 'lstart='], {
@@ -17,9 +22,11 @@ export function processState(pid: number, startedAt: string): ProcessState {
   try {
     process.kill(pid, 0);
   } catch (error) {
-    return (error as NodeJS.ErrnoException).code === 'ESRCH'
-      ? 'dead'
-      : 'unknown';
+    const code =
+      error instanceof Error && 'code' in error ? error.code : undefined;
+    if (code === 'ESRCH') return 'dead';
+    if (code === 'EPERM') return 'permission-denied';
+    return 'unknown';
   }
   const actual = processStartedAt(pid);
   if (!actual || !Number.isFinite(Date.parse(startedAt))) return 'unknown';

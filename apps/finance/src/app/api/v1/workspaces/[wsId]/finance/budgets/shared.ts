@@ -1,4 +1,7 @@
-import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import {
+  type FinanceRouteContext,
+  getFinanceRouteContext,
+} from '@tuturuuu/apis/finance/request-access';
 import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -17,7 +20,13 @@ export const budgetPayloadSchema = z.object({
 
 export type BudgetPayload = z.infer<typeof budgetPayloadSchema>;
 
-export async function requireBudgetAccess(request: Request, rawWsId: string) {
+export async function requireBudgetAccess(
+  request: Request,
+  rawWsId: string
+): Promise<
+  | { error: NextResponse }
+  | { wsId: string; sbAdmin: FinanceRouteContext['sbAdmin'] }
+> {
   const access = await getFinanceRouteContext(
     request,
     rawWsId,

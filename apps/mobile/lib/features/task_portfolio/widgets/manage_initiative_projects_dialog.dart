@@ -34,8 +34,8 @@ class _ManageInitiativeProjectsDialogState
         );
     final selectedProjectId = hasSelectedProject ? _selectedProjectId : null;
 
-    return shad.AlertDialog(
-      title: Text(context.l10n.taskPortfolioManageProjects),
+    return AppDialog(
+      title: context.l10n.taskPortfolioManageProjects,
       content: SizedBox(
         width: double.maxFinite,
         child: Column(

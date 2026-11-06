@@ -1,6 +1,7 @@
 import {
   CRON_JOBS,
   type CronJob,
+  DATABASE_MAINTENANCE_RPCS,
   leaseMs,
   MAX_CONCURRENT_DISPATCHES,
   MAX_CONSECUTIVE_FAILURES,
@@ -15,10 +16,12 @@ import type { ClaimResult, Ledger, RunOutcome } from './ledger';
 import { WORKER_PROCESSORS } from './processors';
 import { withinDeadline } from './processors/deadline';
 import type { ProcessorEnv } from './processors/types';
+import { isWebJob } from './web-gate';
 
 export type DispatchEnv = Partial<Record<string, string>> & {
   CRON_CONTROL_ENABLED_JOBS?: string;
   CRON_CONTROL_WORKER_PROCESSORS?: string;
+  CRON_CONTROL_WEB_MODE?: string;
 };
 
 export interface DispatchDeps {
@@ -45,6 +48,23 @@ const RETRY_BACKOFF_MS = 2_000;
 type Target = { problem: string } | { secret: string; url: URL };
 
 function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
+  const maintenanceRpc = cronJob.workerProcessor
+    ? DATABASE_MAINTENANCE_RPCS[cronJob.workerProcessor]
+    : undefined;
+  if (maintenanceRpc) {
+    if (!env.SUPABASE_SECRET_KEY)
+      return { problem: 'SUPABASE_SECRET_KEY unset' };
+    try {
+      const url = new URL(`/rest/v1/rpc/${maintenanceRpc}`, env.SUPABASE_URL);
+      const loopback =
+        url.hostname === '127.0.0.1' || url.hostname === 'localhost';
+      if (url.protocol !== 'https:' && !(loopback && url.protocol === 'http:'))
+        return { problem: 'SUPABASE_URL must be https' };
+      return { secret: env.SUPABASE_SECRET_KEY, url };
+    } catch {
+      return { problem: 'SUPABASE_URL invalid' };
+    }
+  }
   const origin = env[TARGET_ORIGIN_VARS[cronJob.target]];
   const secret = env[TARGET_SECRET_VARS[cronJob.target]];
   if (!origin)
@@ -63,26 +83,30 @@ function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
   return { secret, url };
 }
 
-// The Worker port is selected separately from enabling the job, so a job can
-// move its schedule first and its processor later. It also needs the
-// database secrets the Worker already holds.
+// Legacy ports are selected separately so schedules and processors can move
+// independently. Native database maintenance has no legacy HTTP fallback.
 function workerProcessorFor(cronJob: CronJob, env: DispatchEnv) {
   if (!cronJob.workerProcessor) return null;
   const selected = (env.CRON_CONTROL_WORKER_PROCESSORS ?? '')
     .split(',')
     .map((id) => id.trim());
-  if (!selected.includes(cronJob.id)) return null;
+  if (
+    !DATABASE_MAINTENANCE_RPCS[cronJob.workerProcessor] &&
+    !selected.includes(cronJob.id)
+  )
+    return null;
   return WORKER_PROCESSORS[cronJob.workerProcessor];
 }
 
-type Attempt = 'failed' | 'ok' | 'retryable' | 'unknown';
+type Attempt = 'degraded' | 'failed' | 'ok' | 'retryable' | 'unknown';
 
 // Existing processors return JSON objects, some without an ok field. A partial,
 // unreadable or oversized summary cannot establish success, even after 200 headers.
 export const MAX_OUTCOME_BODY_BYTES = 64 * 1024;
 
 async function readOutcome(
-  response: Response
+  response: Response,
+  allowDegraded: boolean
 ): Promise<Exclude<RunOutcome, 'stopped'>> {
   const reader = response.body?.getReader();
   if (!reader) return 'unknown';
@@ -107,8 +131,25 @@ async function readOutcome(
     );
     if (typeof body !== 'object' || body === null || Array.isArray(body))
       return 'unknown';
-    if ('ok' in body)
-      return body.ok === true ? 'ok' : body.ok === false ? 'failed' : 'unknown';
+    if ('ok' in body) {
+      if (body.ok === false) return 'failed';
+      if (body.ok !== true) return 'unknown';
+      if (allowDegraded && 'degraded' in body && body.degraded !== false) {
+        if (body.degraded !== true || !('transientProviders' in body))
+          return 'unknown';
+        const providers = body.transientProviders;
+        return Array.isArray(providers) &&
+          providers.length > 0 &&
+          providers.length <= 2 &&
+          new Set(providers).size === providers.length &&
+          providers.every(
+            (provider) => provider === 'google' || provider === 'microsoft'
+          )
+          ? 'degraded'
+          : 'unknown';
+      }
+      return 'ok';
+    }
     return 'ok';
   } catch {
     return 'unknown';
@@ -120,7 +161,8 @@ async function readOutcome(
 async function invoke(
   cronJob: CronJob,
   target: { secret: string; url: URL },
-  deps: DispatchDeps
+  deps: DispatchDeps,
+  slot: string
 ): Promise<{ result: Attempt; status?: number }> {
   let response: Response;
   try {
@@ -129,6 +171,9 @@ async function invoke(
       headers: {
         Authorization: `Bearer ${target.secret}`,
         'User-Agent': USER_AGENT,
+        ...(isWebJob(cronJob.id)
+          ? { 'X-Tuturuuu-Cron-Slot': String(Date.parse(slot)) }
+          : {}),
         ...(cronJob.method === 'POST'
           ? { 'Content-Type': 'application/json' }
           : {}),
@@ -142,11 +187,14 @@ async function invoke(
     const name = error instanceof Error ? error.name : '';
     if (name === 'TimeoutError' || name === 'AbortError')
       return { result: 'unknown' };
-    return { result: 'retryable' };
+    return { result: isWebJob(cronJob.id) ? 'unknown' : 'retryable' };
   }
   if (response.ok)
     return {
-      result: await readOutcome(response),
+      result: await readOutcome(
+        response,
+        cronJob.id === 'calendar-provider-sync'
+      ),
       status: response.status,
     };
   await response.body?.cancel().catch(() => undefined);
@@ -161,6 +209,13 @@ async function runJob(
   env: DispatchEnv,
   deps: DispatchDeps
 ): Promise<JobReport> {
+  if (isWebJob(cronJob.id) && env.CRON_CONTROL_WEB_MODE !== 'active')
+    return {
+      id: cronJob.id,
+      outcome: 'skipped',
+      reason:
+        env.CRON_CONTROL_WEB_MODE === 'shadow' ? 'shadow' : 'web-disabled',
+    };
   const target = resolveTarget(cronJob, env);
   if ('problem' in target) {
     console.error('Cron Control job misconfigured', {
@@ -219,6 +274,7 @@ async function runJob(
           fetch: deps.fetch,
           fence: () => ledger.checkFence(cronJob.id, claim.generation),
           now: deps.now,
+          sleep: deps.sleep,
           pending: {
             add: (items) => ledger.addPendingWork(cronJob.id, items),
             fail: (items) =>
@@ -274,8 +330,15 @@ async function runJob(
         break;
       }
     }
+    if (
+      isWebJob(cronJob.id) &&
+      !(await ledger.checkFence(cronJob.id, claim.generation))
+    ) {
+      outcome = 'stopped';
+      break;
+    }
     attempts = attempt;
-    const result = await invoke(cronJob, target, deps);
+    const result = await invoke(cronJob, target, deps, slot);
     status = result.status;
     if (result.result === 'retryable') continue;
     outcome = result.result;

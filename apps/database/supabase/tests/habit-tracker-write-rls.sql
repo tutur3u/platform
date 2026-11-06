@@ -43,10 +43,11 @@ select ok(
         'workspace_habit_tracker_entries',
         'workspace_habit_tracker_streak_actions'
       )
+      and permissive = 'PERMISSIVE'
       and cmd in ('INSERT', 'UPDATE', 'DELETE', 'ALL')
       and roles && array['public'::name, 'anon'::name, 'authenticated'::name]
   ),
-  'habit tracker tables have no client-facing write RLS policies'
+  'habit tracker tables have no permissive client-facing write RLS policies'
 );
 
 select ok(

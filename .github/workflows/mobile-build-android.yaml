@@ -1,7 +1,7 @@
 name: Mobile Build Android
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 on:
@@ -14,6 +14,7 @@ on:
       - ".github/actions/setup-flutter-with-cache/**"
       - "scripts/ci/gradle-cache-budget.js"
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-build-android.yaml"
@@ -25,6 +26,7 @@ permissions:
 
 jobs:
   check-ci:
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
       deployments: read
@@ -35,7 +37,7 @@ jobs:
   build-android:
     name: Build Android APK (Development)
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -70,15 +72,11 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Create dummy google-services.json
-        run: |
-          echo '{"project_info":{"project_number":"123","firebase_url":"https://dummy.firebaseio.com","project_id":"dummy-project","storage_bucket":"dummy.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:123:android:abc","android_client_info":{"package_name":"com.tuturuuu.app.mobile"}},"oauth_client":[],"api_key":[{"current_key":"dummy_key"}],"services":{"appinvite_service":{"other_platform_oauth_client":[]}}},{"client_info":{"mobilesdk_app_id":"1:123:android:def","android_client_info":{"package_name":"com.tuturuuu.app.mobile.dev"}},"oauth_client":[],"api_key":[{"current_key":"dummy_key"}],"services":{"appinvite_service":{"other_platform_oauth_client":[]}}},{"client_info":{"mobilesdk_app_id":"1:123:android:ghi","android_client_info":{"package_name":"com.tuturuuu.app.mobile.stg"}},"oauth_client":[],"api_key":[{"current_key":"dummy_key"}],"services":{"appinvite_service":{"other_platform_oauth_client":[]}}}]}' > android/app/google-services.json
-
       - name: Build APK (development flavor)
         run: flutter build apk --flavor development --target lib/main_development.dart
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: android-dev-apk
           path: apps/mobile/build/app/outputs/flutter-apk/app-development-release.apk
@@ -90,7 +88,7 @@ jobs:
         run: flutter build apk --debug --flavor development --target lib/main_realtime_fixture.dart
 
       - name: Upload native Meet capture fixture
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: android-meet-capture-fixture-apk
           path: apps/mobile/build/app/outputs/flutter-apk/app-development-debug.apk

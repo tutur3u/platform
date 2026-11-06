@@ -23,64 +23,34 @@ class AssistantCreditSourceSheetBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final showWorkspaceOption = !isPersonalWorkspace;
 
-    return SafeArea(
-      top: false,
-      child: Material(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      context.l10n.assistantSourceLabel,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                  AppIconButton(
-                    tooltip: MaterialLocalizations.of(
-                      context,
-                    ).closeButtonTooltip,
-                    onPressed: onClose,
-                    icon: const Icon(LucideIcons.x),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _CreditSourceOptionCard(
-                icon: LucideIcons.user,
-                title: context.l10n.assistantSourcePersonal,
-                credits: shellState.personalCredits,
-                selected:
-                    shellState.creditSource == AssistantCreditSource.personal,
-                onTap: () => onSelect(AssistantCreditSource.personal),
-              ),
-              if (showWorkspaceOption) ...[
-                const SizedBox(height: 10),
-                _CreditSourceOptionCard(
-                  icon: LucideIcons.building2,
-                  title: context.l10n.assistantSourceWorkspace,
-                  credits: shellState.workspaceCredits,
-                  selected:
-                      shellState.creditSource ==
-                      AssistantCreditSource.workspace,
-                  disabled: shellState.workspaceCreditLocked,
-                  onTap: () => onSelect(AssistantCreditSource.workspace),
-                ),
-              ],
-            ],
+    return AppSheetScaffold(
+      title: context.l10n.assistantSourceLabel,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _CreditSourceOptionCard(
+            icon: LucideIcons.user,
+            title: context.l10n.assistantSourcePersonal,
+            credits: shellState.personalCredits,
+            selected: shellState.creditSource == AssistantCreditSource.personal,
+            onTap: () => onSelect(AssistantCreditSource.personal),
           ),
-        ),
+          if (showWorkspaceOption) ...[
+            const SizedBox(height: AppLayout.itemGap),
+            _CreditSourceOptionCard(
+              icon: LucideIcons.building2,
+              title: context.l10n.assistantSourceWorkspace,
+              credits: shellState.workspaceCredits,
+              selected:
+                  shellState.creditSource == AssistantCreditSource.workspace,
+              disabled: shellState.workspaceCreditLocked,
+              onTap: () => onSelect(AssistantCreditSource.workspace),
+            ),
+          ],
+        ],
       ),
     );
   }

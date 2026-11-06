@@ -36,7 +36,7 @@ class WorkspaceRepository {
        _cacheUserId = cacheUserId ?? currentCacheUserId;
 
   static const _workspaceBaseSelect =
-      'id, name, personal, avatar_url, created_at';
+      'id, name, personal, avatar_url, created_at, deleted';
   static const CachePolicy _workspacesCachePolicy = CachePolicies.metadata;
   static const _workspacesCacheTag = 'workspace:list';
 

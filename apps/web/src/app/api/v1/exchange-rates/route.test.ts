@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  seedExchangeRates: vi.fn(),
   attachSupabaseAuthUser: vi.fn(),
   buildAbuseRiskSubjects: vi.fn(),
   checkRateLimit: vi.fn(),
@@ -96,6 +97,10 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   setLogDrainUserContext: mocks.setLogDrainUserContext,
 }));
 
+vi.mock('@/lib/finance/seed-exchange-rates', () => ({
+  seedExchangeRates: mocks.seedExchangeRates,
+}));
+
 vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: mocks.checkRateLimit,
 }));
@@ -113,6 +118,9 @@ const request = () =>
 let query: Record<string, ReturnType<typeof vi.fn>>;
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.seedExchangeRates.mockResolvedValue(
+    new Response(null, { status: 200 })
+  );
   query = {
     select: vi.fn(),
     eq: vi.fn(),
@@ -219,31 +227,20 @@ describe('exchange rates with real session middleware', () => {
 });
 
 describe('exchange rate query failures', () => {
-  beforeEach(() => {
-    vi.stubEnv('SUPABASE_SECRET_KEY', 'synthetic-service-key');
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response(null, { status: 200 }))
-    );
-  });
-  afterEach(() => {
-    vi.unstubAllEnvs();
-    vi.unstubAllGlobals();
-  });
   it('does not seed when the latest-date query fails', async () => {
     query.maybeSingle!.mockResolvedValue({
       data: null,
       error: { message: 'synthetic database outage' },
     });
     expect((await GET(request())).status).toBe(500);
-    expect(fetch).not.toHaveBeenCalled();
+    expect(mocks.seedExchangeRates).not.toHaveBeenCalled();
   });
   it('seeds only an empty successful lookup and preserves an empty result', async () => {
     query.maybeSingle!.mockResolvedValue({ data: null, error: null });
     const response = await GET(request());
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ data: [], date: null });
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(mocks.seedExchangeRates).toHaveBeenCalledTimes(1);
   });
   it('returns an error when the seeded-date lookup fails', async () => {
     query
@@ -253,7 +250,7 @@ describe('exchange rate query failures', () => {
         error: { message: 'synthetic database outage' },
       });
     expect((await GET(request())).status).toBe(500);
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(mocks.seedExchangeRates).toHaveBeenCalledTimes(1);
   });
   it('does not return success when the seeded rates query fails', async () => {
     query
@@ -268,6 +265,6 @@ describe('exchange rate query failures', () => {
         : query
     );
     expect((await GET(request())).status).toBe(500);
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(mocks.seedExchangeRates).toHaveBeenCalledTimes(1);
   });
 });

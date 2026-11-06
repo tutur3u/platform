@@ -30,6 +30,7 @@ import {
 import { applyRoomProgramming } from './room-programming';
 import type { RoomRecording } from './room-recording';
 import { summarizeRoomUsage } from './room-usage';
+import { transcriptionClientSnapshot } from './transcription';
 
 const attachment = z.object({
   id: z.uuid(),
@@ -262,6 +263,7 @@ export function roomService(
     return {
       state: snapshot,
       body: {
+        ...transcriptionClientSnapshot(snapshot, token.userId),
         chat: snapshot.chat ?? [],
         settings: snapshot.settings ?? { shareNotes: false },
         recording: snapshot.recording,

@@ -17,6 +17,16 @@ import {
 } from './resources-hosts-plan';
 import { preferenceRegistry } from './resources-hosts-sim';
 
+vi.mock('node:timers/promises', async (importOriginal) => {
+  const timers = await importOriginal<typeof import('node:timers/promises')>();
+  return {
+    ...timers,
+    // Skip fixture admission polls; preserve the real ledger mutex backoff.
+    setTimeout: (...args: Parameters<typeof timers.setTimeout>) =>
+      args[0] === 1 ? Promise.resolve(args[1]) : timers.setTimeout(...args),
+  };
+});
+
 const runtime = vi.hoisted(() => {
   const state: { platform: 'darwin' | 'linux' } = { platform: 'darwin' };
   return state;
@@ -218,6 +228,7 @@ describe.each(['darwin', 'linux'] as const)(
       expect(
         await hostsRun({
           home,
+          env: {},
           command: 'node',
           args: ['-e', ''],
           jobClass: 'heavy',
@@ -236,7 +247,7 @@ describe.each(['darwin', 'linux'] as const)(
         let probes = 0;
         const fleet = async (): Promise<DevboxFleetSnapshot> => {
           probes += 1;
-          const now = new Date().toISOString();
+          const now = '2026-10-25T00:00:00.000Z';
           return {
             server_time: now,
             runs: [],
@@ -275,6 +286,7 @@ describe.each(['darwin', 'linux'] as const)(
         expect(
           await hostsRun({
             home,
+            env: {},
             command: 'bun',
             args,
             jobClass: 'heavy',
@@ -351,6 +363,7 @@ describe.each(['darwin', 'linux'] as const)(
       expect(
         await hostsRun({
           home,
+          env: {},
           command: 'node',
           args: ['-e', ''],
           jobClass: 'heavy',

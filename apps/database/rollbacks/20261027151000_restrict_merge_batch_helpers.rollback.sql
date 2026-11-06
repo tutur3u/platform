@@ -1,0 +1,2 @@
+-- Not a migration: release-authority approval only.
+-- Rollback intentionally makes no grant change: restoring authenticated/anon/public EXECUTE reopens the exposure.

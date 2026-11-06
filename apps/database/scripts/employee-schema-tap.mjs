@@ -84,7 +84,10 @@ export function exactSourceSha(value) {
 }
 
 export function assertRollbackSource(sql) {
-  const statements = sql.replace(/--[^\n]*/gu, '').trim();
+  const statements = sql
+    .replace(/^\\(?:ir|if|else|endif|quit).*$/gmu, '')
+    .replace(/--[^\n]*/gu, '')
+    .trim();
   if (
     !/^begin\s*;/iu.test(statements) ||
     !/select\s+\*\s+from\s+finish\(\)\s*;\s*rollback\s*;$/iu.test(statements) ||

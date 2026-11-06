@@ -1,5 +1,6 @@
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { isEducationEnabled } from '../education/education-flag';
 
 import { ENABLE_EDUCATION_SECRET } from './constants';
 import { getAdmin } from './db';
@@ -41,7 +42,7 @@ export async function hasEducationEnabled(wsId: string, db?: Db) {
     .maybeSingle();
 
   if (error) throw error;
-  return data?.value?.trim().toLowerCase() === 'true';
+  return isEducationEnabled(data?.value);
 }
 
 export async function resolveStudentForPlatformUser({

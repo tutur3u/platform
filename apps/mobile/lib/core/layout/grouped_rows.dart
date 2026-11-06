@@ -85,7 +85,7 @@ class AppIconTile extends StatelessWidget {
 }
 
 /// A row inside an `AppGroupedCard`: leading tile, title, optional supporting
-/// line and trailing widget. Rows are at least [AppLayout.rowMinHeight] tall,
+/// line and trailing widget. Rows are at least the density row height tall,
 /// and the whole row is the tap target when [onTap] is set.
 class AppGroupedRow extends StatelessWidget {
   const AppGroupedRow({
@@ -114,7 +114,7 @@ class AppGroupedRow extends StatelessWidget {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
     final row = ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: AppLayout.rowMinHeight),
+      constraints: BoxConstraints(minHeight: tokens.interface.rowMinHeight),
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppLayout.rowHorizontalPadding,

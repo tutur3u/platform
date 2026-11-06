@@ -1,5 +1,6 @@
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { getTuturuuuSharedCookieDomains } from '@tuturuuu/utils/shared-cookie';
 import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import { NextResponse } from 'next/server';
 import {
@@ -185,11 +186,12 @@ function getRequestHostnames(request: RequestLike) {
 }
 
 function isSharedSupabaseCookieHostname(hostname: string) {
-  return (
-    hostname === 'tuturuuu.com' ||
-    hostname.endsWith('.tuturuuu.com') ||
-    hostname === 'tuturuuu.localhost' ||
-    hostname.endsWith('.tuturuuu.localhost')
+  const normalizedHostname = hostname.toLowerCase();
+
+  return getTuturuuuSharedCookieDomains().some(
+    (entry) =>
+      normalizedHostname === entry.hostname ||
+      normalizedHostname.endsWith(`.${entry.hostname}`)
   );
 }
 
@@ -236,7 +238,25 @@ function shouldPreserveSupabaseAuthCookie(
   request: RequestLike,
   cookieName: string
 ) {
-  if (!getRequestHostnames(request).some(isSharedSupabaseCookieHostname)) {
+  const localSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  let localE2E = false;
+  if (process.env.TUTURUUU_LOCAL_E2E_AUTH_BYPASS === '1' && localSupabaseUrl) {
+    try {
+      const url = new URL(localSupabaseUrl);
+      localE2E =
+        url.protocol === 'http:' &&
+        ['localhost', '127.0.0.1'].includes(url.hostname);
+    } catch {
+      localE2E = false;
+    }
+  }
+  if (
+    !getRequestHostnames(request).some(
+      (hostname) =>
+        isSharedSupabaseCookieHostname(hostname) ||
+        (localE2E && ['localhost', '127.0.0.1'].includes(hostname))
+    )
+  ) {
     return false;
   }
 

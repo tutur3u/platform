@@ -6,6 +6,9 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
+import { currentDeployment } from './cf-worker-current-deployment.mjs';
+import { verifyDashboardAdmission } from './cf-worker-settings-dashboard.mjs';
+import { settingsList } from './cf-worker-settings-pagination.mjs';
 
 function canonical(value) {
   if (Array.isArray(value))
@@ -208,9 +211,12 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
   let requests = 0;
   // Diagnostics name a request by a display path built only from trusted
   // config (account, Worker) and constants; zones appear as ordinals.
-  async function get(path, display = path) {
-    assert.ok(++requests <= 28, 'settings snapshot request budget exceeded');
+  async function request(path, display = path) {
     const target = `GET ${display}`;
+    assert.ok(
+      ++requests <= 28,
+      `settings snapshot request budget exceeded for ${target}`
+    );
     const response = await fetchImpl(
       `https://api.cloudflare.com/client/v4${path}`,
       {
@@ -230,21 +236,22 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
       body?.success === true,
       `settings snapshot API failed for ${target}${errorCodes(body)}`
     );
-    assert.ok(
-      (body.result_info?.total_pages ?? 1) <= 1,
-      'settings snapshot refuses truncated pagination'
-    );
-    return body.result;
+    return body;
   }
-  async function list(path, display) {
-    const items = await get(path, display);
+  async function get(path) {
+    const { result } = await request(path);
+    // These endpoints return one settings object, not a top-level result page.
     assert.ok(
-      Array.isArray(items) && items.length < 50,
-      'settings snapshot refuses unbounded/truncated list'
+      result && typeof result === 'object' && !Array.isArray(result),
+      `settings snapshot object unavailable for GET ${path}`
     );
-    return items;
+    return result;
   }
+  const list = (path, display) => settingsList(request, path, display);
   const settings = await get(`${script}/settings`);
+  const service = await get(
+    `/accounts/${account}/workers/services/${encodeURIComponent(identity.name)}`
+  );
   const subdomain = await get(`${script}/subdomain`);
   const schedules = await get(`${script}/schedules`);
   const secrets = await list(`${script}/secrets`);
@@ -264,9 +271,10 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
     ))
       zoneRoutes.push({ zone: zone.id, route });
   }
-  const deployments = await get(`${script}/deployments`);
+  const deployments = await currentDeployment(request, `${script}/deployments`);
   return {
     settings,
+    service,
     subdomain,
     schedules,
     secrets,
@@ -369,7 +377,12 @@ function verifyBindings(settings, identity) {
   };
 }
 
-function verifySettings(raw, identity, { bindings = false } = {}) {
+function verifySettings(
+  raw,
+  identity,
+  { bindings = false, dashboardAdmission } = {}
+) {
+  verifyDashboardAdmission(raw, identity, dashboardAdmission, verifyBindings);
   const { settings, subdomain } = raw;
   same(subdomain.enabled, identity.workersDev, 'workers.dev changed');
   same(
@@ -410,11 +423,21 @@ function verifySettings(raw, identity, { bindings = false } = {}) {
     identity.observability.logs,
     'observability.logs differs'
   );
+  if (identity.observability.traces)
+    same(
+      observed.traces,
+      {
+        enabled: identity.observability.traces.enabled,
+        head_sampling_rate: identity.observability.traces.headSamplingRate,
+        persist: identity.observability.traces.persist,
+      },
+      'observability.traces differs'
+    );
   const { schedules } = raw;
   assert.ok(Array.isArray(schedules.schedules), 'schedule list unavailable');
   same(
     schedules.schedules.map((entry) => entry.cron).sort(),
-    identity.crons,
+    [...identity.crons].sort(),
     'cron schedules differ'
   );
   const secrets = raw.secrets.map((entry) => entry.name).sort();
@@ -450,7 +473,7 @@ function verifySettings(raw, identity, { bindings = false } = {}) {
     ...(bindings && { bindings: verifyBindings(settings, identity) }),
     effective,
     subdomain,
-    schedules: identity.crons,
+    schedules: [...identity.crons].sort(),
     secrets,
     routes,
     domains,
@@ -459,7 +482,10 @@ function verifySettings(raw, identity, { bindings = false } = {}) {
 }
 
 export async function captureSettings(options) {
-  return verifySettings(await readSettings(options), options.identity);
+  return verifySettings(await readSettings(options), options.identity, {
+    ...options,
+    bindings: Boolean(options.identity.vars),
+  });
 }
 
 /** Snapshot keys a reviewed transition may change; everything else must hold. */
@@ -505,10 +531,12 @@ const TRANSITION_FIELDS = new Set([
  * declared fields, and each declared field must actually change.
  */
 export function settingsPlan(baseline) {
-  const { identity, previousIdentity, transition } = baseline;
+  const { identity, previousIdentity, transition, dashboardAdmission } =
+    baseline;
+  const admission = dashboardAdmission ? { dashboardAdmission } : {};
   assert.ok(identity, 'baseline identity is required');
   if (previousIdentity === undefined && transition === undefined)
-    return { target: identity };
+    return { target: identity, ...admission };
   assert.ok(
     previousIdentity && transition,
     'a settings transition needs both previousIdentity and transition'
@@ -540,7 +568,12 @@ export function settingsPlan(baseline) {
       canonical(identity[field]),
       `transition field ${field} does not change; remove it`
     );
-  return { target: identity, previous: previousIdentity, transition };
+  return {
+    target: identity,
+    previous: previousIdentity,
+    transition,
+    ...admission,
+  };
 }
 
 /**
@@ -550,7 +583,11 @@ export function settingsPlan(baseline) {
  */
 export async function captureBefore({ plan, ...credentials }) {
   if (!plan.previous)
-    return captureSettings({ identity: plan.target, ...credentials });
+    return captureSettings({
+      identity: plan.target,
+      dashboardAdmission: plan.dashboardAdmission,
+      ...credentials,
+    });
   const raw = await readSettings({ identity: plan.target, ...credentials });
   const failures = [];
   for (const [stage, identity] of [
@@ -572,14 +609,21 @@ export async function captureBefore({ plan, ...credentials }) {
 /** Capture live settings after publication; they must match the target. */
 export async function captureAfter({ plan, ...credentials }) {
   if (!plan.previous)
-    return captureSettings({ identity: plan.target, ...credentials });
+    return captureSettings({
+      identity: plan.target,
+      dashboardAdmission: plan.dashboardAdmission,
+      ...credentials,
+    });
   const raw = await readSettings({ identity: plan.target, ...credentials });
   return transitionSnapshot(raw, plan, 'target', plan.target);
 }
 
 function transitionSnapshot(raw, plan, stage, identity) {
   return {
-    ...verifySettings(raw, identity, { bindings: true }),
+    ...verifySettings(raw, identity, {
+      bindings: true,
+      dashboardAdmission: plan.dashboardAdmission,
+    }),
     stage,
     transition: plan.transition.decision,
   };

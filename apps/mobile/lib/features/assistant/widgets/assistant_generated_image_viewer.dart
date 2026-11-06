@@ -40,7 +40,7 @@ class _AssistantGeneratedImageViewerState
               builder: (context, snapshot) {
                 final url = snapshot.data ?? widget.initialUrl;
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: NovaLoadingIndicator());
+                  return const AppLoadingIndicator.page();
                 }
                 return Center(
                   child: InteractiveViewer(

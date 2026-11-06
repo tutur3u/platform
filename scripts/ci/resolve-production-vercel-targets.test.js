@@ -46,6 +46,8 @@ function resolveFixtureTargets({
   workflowMarkers,
   platformEnabled,
   includeEvidence = false,
+  // Hold semantics are exercised against Meet; admission has its own test.
+  publicationPolicy = { meet: { state: 'held', reason: 'held for test' } },
 }) {
   const output = execFileSync(
     'bun',
@@ -54,6 +56,9 @@ function resolveFixtureTargets({
       `
         import { resolveProductionVercelTargets } from './scripts/ci/resolve-production-vercel-targets.ts';
         import { ci } from './tuturuuu.ts';
+        import { productionPublicationPolicy } from './tuturuuu.ci.ts';
+        const publicationPolicy = ${JSON.stringify(publicationPolicy)};
+        if (publicationPolicy) Object.assign(productionPublicationPolicy, publicationPolicy);
         if (${JSON.stringify(platformEnabled)} !== undefined) {
           ci['vercel-production-platform.yaml'] = ${JSON.stringify(platformEnabled)};
         }
@@ -151,6 +156,33 @@ test('production planner holds Cloudflare for shared Meet runtime changes', () =
     { shouldRun: false, workflowName: 'vercel-production-calendar.yaml' },
     { shouldRun: false, workflowName: 'vercel-production-storefront.yaml' },
   ]);
+});
+
+test('admitted Meet runs Cloudflare for shared Meet runtime changes', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'apps/meet-realtime/src/worker.ts',
+    'export const changed = true;\n',
+    'meet realtime change'
+  );
+  const [meet] = resolveFixtureTargets({
+    baseSha,
+    headSha,
+    rootDir,
+    publicationPolicy: {
+      meet: {
+        state: 'admitted',
+        reason: 'reviewed cutover',
+        surfaces: ['frontend', 'realtime-do'],
+      },
+    },
+  });
+  assert.deepEqual(meet, {
+    shouldRun: true,
+    workflowName: 'meet-cloudflare.yaml',
+  });
 });
 
 test('production hold overrides missing Cloudflare deployment markers', () => {
@@ -581,6 +613,12 @@ for (const eventName of ['push', 'workflow_dispatch']) {
       rootDir,
       eventName,
       targets: workflows.map((productionWorkflow) => ({ productionWorkflow })),
+      publicationPolicy: Object.fromEntries(
+        ['meet', 'calendar', 'mail', 'apps', 'shortener'].map((app) => [
+          app,
+          { state: 'held', reason: 'held for wave-1 cutover' },
+        ])
+      ),
       includeEvidence: true,
     });
     assert.equal(decisions.length, workflows.length);

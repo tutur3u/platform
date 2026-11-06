@@ -29,6 +29,13 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      {
+        find: '@tuturuuu/supabase/next/user',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/user.ts'
+        ),
+      },
       // Match guard imports and test mocks under Bun's isolated linker.
       {
         find: '@upstash/ratelimit',
@@ -50,6 +57,13 @@ export default defineConfig({
         replacement: resolve(
           __dirname,
           '../../packages/supabase/src/auth-errors.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/devbox/balancer',
+        replacement: resolve(
+          __dirname,
+          '../../packages/devbox/src/balancer/index.ts'
         ),
       },
       { find: '@', replacement: resolve(__dirname, './src') },

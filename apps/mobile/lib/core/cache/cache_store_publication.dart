@@ -74,6 +74,7 @@ extension CacheStorePublication on CacheStore {
       fetchedAt: now,
       staleAt: now.add(policy.staleAfter),
       expireAt: now.add(policy.expireAfter),
+      neverExpires: policy.neverExpires,
       userId: key.userId,
       workspaceId: key.workspaceId,
       locale: key.locale,

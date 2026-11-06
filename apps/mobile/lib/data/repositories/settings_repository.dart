@@ -9,9 +9,36 @@ export 'package:mobile/data/repositories/theme_preference_ledger.dart'
 /// Ported from apps/native/lib/stores/ui-store.ts.
 
 class SettingsRepository {
+  static int _mastermindUndoSeconds = 5;
+  static const mastermindUndoChoices = [0, 5, 10, 30];
+  Duration get mastermindUndoWindow =>
+      Duration(seconds: _mastermindUndoSeconds);
+  Future<void> loadMastermindUndoWindow() async {
+    final prefs = await SharedPreferences.getInstance();
+    final seconds = prefs.getInt('mastermind-undo-seconds');
+    _mastermindUndoSeconds = mastermindUndoChoices.contains(seconds)
+        ? seconds!
+        : 5;
+  }
+
+  Future<void> setMastermindUndoWindow(int seconds) async {
+    if (!mastermindUndoChoices.contains(seconds)) {
+      throw ArgumentError.value(seconds);
+    }
+    final prefs = await SharedPreferences.getInstance();
+    if (!await prefs.setInt('mastermind-undo-seconds', seconds)) {
+      throw StateError('Could not save undo window');
+    }
+    _mastermindUndoSeconds = seconds;
+  }
+
   static const _themeModeKey = 'theme-mode';
   static const _appearanceKey = 'appearance-v1';
   static const _appearanceIntroSeenKey = 'appearance-intro-seen';
+  static const _appearanceDeviceOverrideKey = 'appearance-device-override';
+  static const _appearanceSeedConsumedKey = 'appearance-seed-consumed';
+  static const _accountAppearancePrefix = 'appearance-account';
+  static const _accountAppearancePendingPrefix = 'appearance-account-pending';
   static const _calendarViewKey = 'calendar-view';
   static const _taskViewModeKey = 'task-view-mode';
   static const _disableDefaultTaskBoardNavigationKey =
@@ -127,6 +154,77 @@ class SettingsRepository {
     final prefs = await SharedPreferences.getInstance();
     if (shouldWrite?.call() == false) return;
     await prefs.setString(_appearanceKey, encoded);
+  }
+
+  /// Whether this device keeps its own appearance instead of the account's.
+  Future<bool> getAppearanceDeviceOverride() async =>
+      (await SharedPreferences.getInstance()).getBool(
+        _appearanceDeviceOverrideKey,
+      ) ??
+      false;
+
+  Future<void> setAppearanceDeviceOverride({required bool value}) async {
+    await (await SharedPreferences.getInstance()).setBool(
+      _appearanceDeviceOverrideKey,
+      value,
+    );
+  }
+
+  /// Last known appearance of account [userId], so it shows at launch and
+  /// offline. `pendingUpload` marks a local change the server has not
+  /// confirmed yet.
+  Future<({String? encoded, bool pendingUpload})> getAccountAppearance(
+    String userId,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    return (
+      encoded: prefs.getString('$_accountAppearancePrefix:$userId'),
+      pendingUpload:
+          prefs.getBool('$_accountAppearancePendingPrefix:$userId') ?? false,
+    );
+  }
+
+  Future<void> setAccountAppearance(
+    String userId,
+    String encoded, {
+    required bool pendingUpload,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    // Both are dispatched in one event so a reader never sees a new value
+    // with a stale pending mark.
+    await Future.wait([
+      prefs.setString('$_accountAppearancePrefix:$userId', encoded),
+      prefs.setBool('$_accountAppearancePendingPrefix:$userId', pendingUpload),
+    ]);
+  }
+
+  /// Marks [encoded] as confirmed by the server, unless a newer local
+  /// choice replaced it meanwhile. Returns whether it was cleared.
+  Future<bool> clearAccountAppearancePending(
+    String userId,
+    String encoded,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString('$_accountAppearancePrefix:$userId') != encoded) {
+      return false;
+    }
+    await prefs.setBool('$_accountAppearancePendingPrefix:$userId', false);
+    return true;
+  }
+
+  /// Whether this device already seeded an account with its pre-sync look.
+  /// Only the first account bound after the upgrade is seeded.
+  Future<bool> getAppearanceSeedConsumed() async =>
+      (await SharedPreferences.getInstance()).getBool(
+        _appearanceSeedConsumedKey,
+      ) ??
+      false;
+
+  Future<void> setAppearanceSeedConsumed() async {
+    await (await SharedPreferences.getInstance()).setBool(
+      _appearanceSeedConsumedKey,
+      true,
+    );
   }
 
   /// Whether the user has opened Appearance since the themes were introduced.

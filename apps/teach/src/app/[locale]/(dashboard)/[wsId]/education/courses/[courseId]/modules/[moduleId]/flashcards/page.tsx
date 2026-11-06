@@ -1,5 +1,4 @@
 import { SwatchBook } from '@tuturuuu/icons';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
@@ -9,6 +8,7 @@ import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import FlashcardForm from '../../../../../flashcards/form';
 import { AIFlashcards } from './client-ai';
 import ClientFlashcards from './client-flashcards';
+import { getFlashcards } from './data';
 
 export const metadata: Metadata = {
   title: 'Flashcards',
@@ -27,10 +27,17 @@ interface Props {
 export default async function ModuleFlashcardsPage({ params }: Props) {
   await connection();
 
-  const { wsId: routeWsId, moduleId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { wsId: routeWsId, courseId, moduleId } = await params;
+  const { resolvedWsId } = await resolveRouteWorkspace(
+    routeWsId,
+    'update_user_groups'
+  );
   const t = await getTranslations();
-  const flashcards = await getFlashcards(moduleId);
+  const flashcards = await getFlashcards({
+    wsId: resolvedWsId,
+    courseId,
+    moduleId,
+  });
 
   const cards = flashcards.map((fc) => ({
     id: fc.id,
@@ -100,18 +107,3 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
     </div>
   );
 }
-
-const getFlashcards = async (moduleId: string) => {
-  const supabase = await createAdminClient();
-
-  const { data, error } = await supabase
-    .from('course_module_flashcards')
-    .select('...workspace_flashcards(*)')
-    .eq('module_id', moduleId);
-
-  if (error) {
-    console.error('error', error);
-  }
-
-  return data || [];
-};

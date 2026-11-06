@@ -80,6 +80,32 @@ describe('tutoring section save isolation', () => {
     expect(screen.getByLabelText('policy_durationMinutes')).toHaveValue(45);
   });
 
+  it('saves the campus list with legacy class mappings and other fields kept', async () => {
+    vi.mocked(updateTutoringPolicy).mockResolvedValueOnce({} as never);
+    const legacy = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      campusByGroupId: {
+        '11111111-1111-4111-8111-111111111111': 'Legacy Annex',
+      },
+    };
+    render(view(legacy, new QueryClient()));
+    fireEvent.click(screen.getAllByRole('button', { name: 'policy_edit' })[5]!);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'policy_add_campus_option' })
+    );
+    fireEvent.change(screen.getByLabelText('policy_campus_option_label'), {
+      target: { value: 'Campus North' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'policy_save' }));
+    await waitFor(() =>
+      expect(updateTutoringPolicy).toHaveBeenCalledWith('workspace', {
+        ...legacy,
+        campusOptions: ['Campus North'],
+        preset: 'custom',
+      })
+    );
+  });
+
   it('does not enable save because only another section refreshed', () => {
     const client = new QueryClient();
     const { rerender } = render(view(EASY_CENTER_TUTORING_POLICY, client));

@@ -147,7 +147,7 @@ class _NoteTaskConversionSheetState extends State<NoteTaskConversionSheet> {
               ),
               const SizedBox(height: 20),
               if (_loading)
-                const Expanded(child: Center(child: NovaLoadingIndicator()))
+                const Expanded(child: AppLoadingIndicator.page())
               else ...[
                 Text(context.l10n.notesTaskBoard),
                 const SizedBox(height: 8),

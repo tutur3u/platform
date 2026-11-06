@@ -1,7 +1,7 @@
 import { posix } from 'node:path';
 import { canAccessFinanceTransactionStoragePath } from '@tuturuuu/finance-core/storage-access';
 import { validateFinanceTransactionAttachmentUploadRequest } from '@tuturuuu/finance-core/storage-limits';
-import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import { isExcludedDrivePath } from '@tuturuuu/storage-core/drive-path-policy';
 import {
   createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,
@@ -11,6 +11,10 @@ import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  type StorageAccessAuditScope,
+  withStorageAccessAudit,
+} from '@/lib/storage/storage-access-audit';
 import {
   resolveTopicAnnouncementsAccess,
   TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES,
@@ -170,8 +174,12 @@ async function resolveTopicAnnouncementAttachmentUploadAccess({
     };
   }
 
+  // Assigned teachers with update_user_groups_posts (the permission that
+  // attaching needs) upload topic page images too; files stay unattached
+  // until an assignment-checked write.
   const access = await resolveTopicAnnouncementsAccess(request, wsId, {
     requireManage: true,
+    teacherAccess: 'update',
   });
   if (access.response) {
     return { allowed: false, response: access.response };
@@ -180,7 +188,13 @@ async function resolveTopicAnnouncementAttachmentUploadAccess({
   return { allowed: true, contentType: resolvedContentType };
 }
 
-export async function POST(
+export const POST = withStorageAccessAudit(
+  { action: 'upload', route: '/api/v1/workspaces/[wsId]/storage/upload-url' },
+  createWorkspaceStorageUploadUrl
+);
+
+async function createWorkspaceStorageUploadUrl(
+  audit: StorageAccessAuditScope,
   request: Request,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
@@ -193,6 +207,7 @@ export async function POST(
       return auth.response;
     }
     const { normalizedWsId, permissions, supabase, userId } = auth.context;
+    audit.set({ actorId: userId, wsId: normalizedWsId });
 
     let payload: unknown;
     try {
@@ -227,8 +242,15 @@ export async function POST(
     const requestedStoragePath = sanitizedPath
       ? posix.join(sanitizedPath, sanitizedFilename)
       : sanitizedFilename;
+    audit.set({ path: requestedStoragePath });
+    // Topic Announcement attachments live in a private root that Drive
+    // excludes; they are authorized below by the feature gate and
+    // manage_users instead of Drive permissions.
+    const isTopicAnnouncementUpload =
+      isReservedTopicAnnouncementPath(sanitizedPath);
     if (
-      isReservedMobileDeploymentDrivePath(normalizedWsId, requestedStoragePath)
+      !isTopicAnnouncementUpload &&
+      isExcludedDrivePath(normalizedWsId, requestedStoragePath)
     ) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
@@ -244,7 +266,7 @@ export async function POST(
     }
 
     let uploadContentType: typeof parsed.data.contentType;
-    const topicUploadAccess = isReservedTopicAnnouncementPath(sanitizedPath)
+    const topicUploadAccess = isTopicAnnouncementUpload
       ? await resolveTopicAnnouncementAttachmentUploadAccess({
           contentType: parsed.data.contentType,
           filename: sanitizedFilename,

@@ -1,5 +1,5 @@
 import { posix } from 'node:path';
-import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import { isExcludedDrivePath } from '@tuturuuu/storage-core/drive-path-policy';
 import {
   renameWorkspaceStorageEntry,
   WorkspaceStorageError,
@@ -73,8 +73,8 @@ export async function POST(
       ? posix.join(sanitizedPath, newName)
       : newName;
     if (
-      isReservedMobileDeploymentDrivePath(normalizedWsId, currentPath) ||
-      isReservedMobileDeploymentDrivePath(normalizedWsId, nextPath)
+      isExcludedDrivePath(normalizedWsId, currentPath) ||
+      isExcludedDrivePath(normalizedWsId, nextPath)
     ) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
@@ -88,6 +88,7 @@ export async function POST(
       currentName,
       newName,
       isFolder: parsed.data.isFolder,
+      driveOnly: true,
     });
 
     return NextResponse.json({

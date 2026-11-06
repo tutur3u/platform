@@ -34,6 +34,7 @@ import {
   type ToolSet,
 } from 'ai';
 import { checkRateLimitRedis } from '@/lib/rate-limit';
+import { resolveDiscordGuildMemberUser } from './discord-user-mapping';
 import { persistAiAgentExternalSdkMessage } from './external-chat-mirror';
 import {
   getChannelSecretValues,
@@ -162,19 +163,12 @@ async function resolveMappedDiscordUser({
     return null;
   }
 
-  const sbAdmin = await createAdminClient();
-  const { data, error } = await sbAdmin
-    .from('discord_guild_members')
-    .select('platform_user_id')
-    .eq('discord_guild_id', channel.discordGuildId)
-    .eq('discord_user_id', externalUserId)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data?.platform_user_id ?? null;
+  return resolveDiscordGuildMemberUser({
+    db: await createAdminClient(),
+    discordGuildId: channel.discordGuildId,
+    discordUserId: externalUserId,
+    workspaceId: channel.workspaceId,
+  });
 }
 
 async function resolveMappedPlatformUser({

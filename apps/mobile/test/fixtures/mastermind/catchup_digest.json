@@ -1,0 +1,188 @@
+{
+  "generated_at": "2026-01-31T17:30:00+00:00",
+  "window_start": "2026-01-30T17:30:00+00:00",
+  "coverage": "partial",
+  "products": [
+    { "slug": "tuturuuu", "name": "Tuturuuu" },
+    { "slug": "upskii", "name": "Upskii" }
+  ],
+  "counts": { "needs_you": 3, "shipped": 3, "blocked": 2, "changed": 2 },
+  "sections": [
+    {
+      "key": "needs_you",
+      "items": [
+        {
+          "id": "n1",
+          "kind": "decision",
+          "title": "Ship Upskii 1.8.2 to production?",
+          "product": "upskii",
+          "at": "2026-01-31T17:20:00+00:00",
+          "importance": "high",
+          "link": { "label": "Decision", "url": "https://tuturuuu.com/mastermind/ask/n1" },
+          "entity": { "kind": "ask", "id": "item-00000000000000000001" },
+          "neutral": false
+        },
+        {
+          "id": "n2",
+          "kind": "decision",
+          "title": "Approve the contacts import",
+          "product": "tuturuuu",
+          "at": "2026-01-31T17:00:00+00:00",
+          "importance": "normal",
+          "link": { "label": "Open", "url": "https://mastermind.tuturuuu.com/asks/n2" },
+          "entity": null,
+          "neutral": false
+        },
+        {
+          "id": "n3",
+          "kind": "risk",
+          "title": "Embargoed details that must never render",
+          "product": "tuturuuu",
+          "at": "2026-01-31T16:40:00+00:00",
+          "importance": "high",
+          "link": { "label": "Secret", "url": "https://tuturuuu.com/secret" },
+          "entity": { "kind": "ask", "id": "item-secret" },
+          "neutral": true
+        }
+      ]
+    },
+    {
+      "key": "shipped",
+      "items": [
+        {
+          "id": "s1",
+          "kind": "merge",
+          "title": "Merged: Azure SSO entry fix",
+          "product": "tuturuuu",
+          "at": "2026-01-31T16:30:00+00:00",
+          "importance": "normal",
+          "link": { "label": "PR", "url": "https://github.com/tutur3u/platform/pull/7211" },
+          "entity": null,
+          "neutral": false
+        },
+        {
+          "id": "s2",
+          "kind": "release",
+          "title": "Tuturuuu 2.4.0 released",
+          "product": "tuturuuu",
+          "at": "2026-01-31T16:10:00+00:00",
+          "importance": "normal",
+          "link": null,
+          "entity": { "kind": "release", "id": "tuturuuu-2.4.0" },
+          "neutral": false
+        },
+        {
+          "id": "s3",
+          "kind": "deploy",
+          "title": "Upskii deployed to staging",
+          "product": "upskii",
+          "at": "2026-01-31T12:00:00+00:00",
+          "importance": "low",
+          "link": { "label": "Run", "url": "https://upskii.tuturuuu.com/runs/9" },
+          "entity": { "kind": "env", "id": "upskii-staging" },
+          "neutral": false
+        }
+      ]
+    },
+    {
+      "key": "blocked",
+      "items": [
+        {
+          "id": "b1",
+          "kind": "lane",
+          "title": "Contacts import migration",
+          "product": "tuturuuu",
+          "at": "2026-01-31T17:10:00+00:00",
+          "importance": "high",
+          "link": null,
+          "entity": { "kind": "lane", "id": "lane-7" },
+          "neutral": false,
+          "reason": "pgTAP caller-scope check fails",
+          "owner_name": "Forge"
+        },
+        {
+          "id": "b2",
+          "kind": "risk",
+          "title": "Vector Strike build is slow",
+          "product": "vector-strike",
+          "at": "2026-01-31T15:00:00+00:00",
+          "importance": "normal",
+          "link": null,
+          "entity": null,
+          "neutral": false,
+          "reason": "Runner queue is saturated"
+        }
+      ]
+    },
+    {
+      "key": "changed",
+      "items": [
+        {
+          "id": "c1",
+          "kind": "answered",
+          "title": "You approved Mastermind access",
+          "product": null,
+          "at": "2026-01-31T15:30:00+00:00",
+          "importance": "low",
+          "link": null,
+          "entity": null,
+          "neutral": false
+        },
+        {
+          "id": "c2",
+          "kind": "answered",
+          "title": "Rex held Upskii 1.8.1",
+          "product": "upskii",
+          "at": "2026-01-31T05:00:00+00:00",
+          "importance": "low",
+          "link": null,
+          "entity": { "kind": "ask", "id": "item-00000000000000000002" },
+          "neutral": false
+        }
+      ]
+    },
+    {
+      "key": "usage_health",
+      "items": [
+        {
+          "id": "u1",
+          "kind": "usage",
+          "title": "Claude C runs short before reset",
+          "product": null,
+          "at": "2026-01-31T16:50:00+00:00",
+          "importance": "high",
+          "link": null,
+          "entity": { "kind": "usage", "id": "claude-c" },
+          "neutral": false
+        },
+        {
+          "id": "u2",
+          "kind": "incident",
+          "title": "Hub degraded for 4 minutes",
+          "product": null,
+          "at": "2026-01-31T16:20:00+00:00",
+          "importance": "normal",
+          "link": null,
+          "entity": null,
+          "neutral": false
+        }
+      ]
+    },
+    {
+      "key": "future_section",
+      "items": [
+        {
+          "id": "x1",
+          "kind": "hologram",
+          "title": "A kind this build does not know",
+          "product": "tuturuuu",
+          "at": "2026-01-31T16:00:00+00:00",
+          "importance": "urgent-ish",
+          "link": null,
+          "entity": { "kind": "teleporter", "id": "t1" },
+          "neutral": false
+        }
+      ]
+    }
+  ]
+}

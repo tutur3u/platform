@@ -22,7 +22,7 @@ import { MeetingLocalTime } from '@/features/call/components/meeting-local-time'
 import { MeetingPublicSettings } from '@/features/call/components/meeting-public-settings';
 import { buildCalendarEventUrl } from '@/features/call/lib/calendar-link';
 import { encodeRoomCode } from '@/features/call/lib/room-code';
-import { MeetingAiOverview } from '@/features/meeting-ai/meeting-ai-overview';
+import { MeetingNotesSection } from '@/features/meeting-notes/meeting-notes-section';
 import { MeetingActions } from '../app/[locale]/[wsId]/meetings/[meetingId]/meeting-actions';
 import { RecordingSessionsOverview } from '../app/[locale]/[wsId]/meetings/[meetingId]/recording-sessions-overview';
 import { MeetingDurationInfo } from './meeting-duration-view';
@@ -38,6 +38,7 @@ export function MeetingView({ model }: { model: DetailModel }) {
   const meetingId = meeting.id;
   const t = useTranslations('meet.call');
   const details = useTranslations('meet.details');
+  const title = meeting.name ?? t('untitled_meeting');
   if (model.detail.kind === 'ended')
     return (
       <CallEnded
@@ -47,8 +48,19 @@ export function MeetingView({ model }: { model: DetailModel }) {
         shareNotesAfterMeeting={policy.settings?.shareNotesAfterMeeting}
         meetingId={meetingId}
         wsId={wsId}
-        meetingName={meeting.name ?? t('untitled_meeting')}
+        meetingName={title}
         backHref={`/${workspaceSlug}/meetings`}
+        initialShowNotes={policy.canReadNotes}
+        notes={
+          <MeetingNotesSection
+            wsId={wsId}
+            meetingId={meetingId}
+            title={title}
+            isHost={isHost}
+            policy={policy}
+            sharingControl={false}
+          />
+        }
       />
     );
   const { calendarEvent, durationSeconds } = model.detail;
@@ -86,9 +98,13 @@ export function MeetingView({ model }: { model: DetailModel }) {
       </div>
 
       <div className="mb-6">
-        {policy.canReadNotes && (
-          <MeetingAiOverview wsId={wsId} meetingId={meetingId} />
-        )}
+        <MeetingNotesSection
+          wsId={wsId}
+          meetingId={meetingId}
+          title={title}
+          isHost={isHost}
+          policy={policy}
+        />
       </div>
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

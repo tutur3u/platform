@@ -73,13 +73,12 @@ extension _EducationPageLayout on _EducationPageState {
             actions: [
               if (_tab == _EducationTab.courses ||
                   _tab == _EducationTab.library)
-                ShellActionSpec(
+                ShellActionSpec.search(
                   id: 'education-search',
-                  icon: Icons.search_rounded,
+                  active: _searching,
                   tooltip: _searchHint(l10n),
-                  callbackToken: (_searching, _tab, _libraryTab),
-                  inDock: true,
-                  searchController: _searching ? _searchController : null,
+                  callbackToken: (_tab, _libraryTab),
+                  controller: _searchController,
                   searchHint: _searchHint(l10n),
                   onSearchChanged: _onSearchChanged,
                   onCloseSearch: _resetSearch,

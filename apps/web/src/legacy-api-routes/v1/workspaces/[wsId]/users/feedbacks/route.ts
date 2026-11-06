@@ -6,6 +6,7 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
+import { denyWeakContentEdit } from '@/lib/tutoring/weak-content-access';
 import {
   buildWorkspaceFeedbacksQuery,
   CreateWorkspaceFeedbackSchema,
@@ -120,6 +121,13 @@ export async function POST(request: Request, { params }: Params) {
 
   const supabase = await createClient(request);
   const sbAdmin = await createAdminClient();
+  const denied = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent: parsed.data.require_attention,
+    wsId: permissions.wsId,
+  });
+  if (denied) return denied;
   const { user: authUser } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!authUser) {
@@ -225,7 +233,9 @@ export async function PUT(request: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const { data: existingFeedback, error: fetchError } = await sbAdmin
     .from('user_feedbacks')
-    .select('id, user:workspace_users!user_feedbacks_user_id_fkey!inner(ws_id)')
+    .select(
+      'id, require_attention, user:workspace_users!user_feedbacks_user_id_fkey!inner(ws_id)'
+    )
     .eq('id', feedbackId)
     .eq('user.ws_id', wsId)
     .maybeSingle();
@@ -236,6 +246,15 @@ export async function PUT(request: Request, { params }: Params) {
       { status: 404 }
     );
   }
+
+  const denied = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent:
+      existingFeedback.require_attention || parsed.data.require_attention,
+    wsId: permissions.wsId,
+  });
+  if (denied) return denied;
 
   const { error } = await sbAdmin
     .from('user_feedbacks')
@@ -284,7 +303,9 @@ export async function DELETE(request: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const { data: existingFeedback, error: fetchError } = await sbAdmin
     .from('user_feedbacks')
-    .select('id, user:workspace_users!user_feedbacks_user_id_fkey!inner(ws_id)')
+    .select(
+      'id, require_attention, user:workspace_users!user_feedbacks_user_id_fkey!inner(ws_id)'
+    )
     .eq('id', feedbackId)
     .eq('user.ws_id', wsId)
     .maybeSingle();
@@ -295,6 +316,14 @@ export async function DELETE(request: Request, { params }: Params) {
       { status: 404 }
     );
   }
+
+  const denied = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent: existingFeedback.require_attention,
+    wsId: permissions.wsId,
+  });
+  if (denied) return denied;
 
   const { error } = await sbAdmin
     .from('user_feedbacks')

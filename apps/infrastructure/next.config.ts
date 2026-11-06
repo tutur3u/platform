@@ -54,7 +54,7 @@ const nextConfig = createTuturuuuNextConfig({
     '@tuturuuu/satellite',
     '@tuturuuu/supabase',
     '@tuturuuu/transactional',
-    '@tuturuuu/turnstile',
+    '@tuturuuu/cloudflare',
     '@tuturuuu/types',
     '@tuturuuu/ui',
     '@tuturuuu/utils',

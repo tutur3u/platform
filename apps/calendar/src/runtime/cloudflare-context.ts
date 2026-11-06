@@ -1,8 +1,11 @@
-import { calendarRequest } from './request-context';
-
-export function getCloudflareContext(_options?: { async?: boolean }) {
-  const cloudflare = calendarRequest().cloudflare;
-  if (!cloudflare)
-    throw new Error('Calendar Cloudflare bindings are unavailable');
-  return cloudflare;
+import { getCloudflareContext as bridgeCloudflareContext } from '@tuturuuu/start-bridge/next/cloudflare-context';
+import type {
+  CalendarExecutionContext,
+  CalendarWorkerEnvironment,
+} from './worker-contract';
+export function getCloudflareContext(options?: { async?: boolean }) {
+  return bridgeCloudflareContext<
+    CalendarWorkerEnvironment,
+    CalendarExecutionContext
+  >(options);
 }

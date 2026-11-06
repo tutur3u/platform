@@ -13,10 +13,28 @@ export interface TutoringFormValues {
     startTime: string;
     durationMinutes: number;
     teacherUserId: string;
+    /**
+     * This session's own content. Unset, the session takes the form-level
+     * `content`; a split make-up draft sets one per missed class date.
+     */
+    content?: string;
+    /** The class notes `content` was drafted from; unchanged text stays linked. */
+    linkedContent?: string;
+    /** The missed class date this session was drafted to teach. */
+    pairedMissedDate?: string;
   }[];
   reasonType: TutoringReasonType;
   reasonDetail: string;
   content: string;
+  /** Lesson notes drafted from the missed class; unchanged drafts stay linked. */
+  linkedContent?: string;
+  /**
+   * The student's uncovered missed dates, oldest first, when sessions were
+   * drafted per date. The server pairs blank make-up sessions with them in order.
+   */
+  missedClassDates?: string[];
+  /** Missed dates whose class has no recorded notes, shown as an inline hint. */
+  missingLessonDates?: string[];
   sourceFeedbackId?: string | null;
 }
 
@@ -210,38 +228,42 @@ export function getConflictingSlotIndexes(form: TutoringFormValues) {
 /** Duration presets offered next to the free-form minutes input. */
 export const DURATION_PRESETS = [30, 45, 60, 90, 120] as const;
 
-export function nextWeeklySlot(
+export function nextWeeklySlots(
   slots: TutoringFormValues['sessionSlots'],
   fallbackTeacherId: string
-) {
-  const last = slots.at(-1);
+): TutoringFormValues['sessionSlots'] {
+  const patterns = new Map<
+    string,
+    { day: number; slot: TutoringFormValues['sessionSlots'][number] }
+  >();
+  let latestDay = Number.NEGATIVE_INFINITY;
 
-  if (!last?.sessionDate) {
-    return {
-      durationMinutes: last?.durationMinutes ?? 45,
-      sessionDate: '',
-      startTime: last?.startTime ?? '18:00',
-      teacherUserId: last?.teacherUserId || fallbackTeacherId,
-    };
+  for (const slot of slots) {
+    const day = dateStringToDayNumber(slot.sessionDate);
+    if (day === null) continue;
+    latestDay = Math.max(latestDay, day);
+    const key = `${day % 7}:${slot.startTime}`;
+    const previous = patterns.get(key);
+    if (!previous || day >= previous.day) patterns.set(key, { day, slot });
   }
 
-  const [year, month, day] = last.sessionDate
-    .split('-')
-    .map((part) => Number.parseInt(part, 10));
-
-  if (!(year && month && day)) {
-    return { ...last, teacherUserId: last.teacherUserId || fallbackTeacherId };
-  }
-
-  const next = new Date(year, month - 1, day);
-  next.setDate(next.getDate() + 7);
-  const nextMonth = `${next.getMonth() + 1}`.padStart(2, '0');
-  const nextDay = `${next.getDate()}`.padStart(2, '0');
-
-  return {
-    durationMinutes: last.durationMinutes,
-    sessionDate: `${next.getFullYear()}-${nextMonth}-${nextDay}`,
-    startTime: last.startTime,
-    teacherUserId: last.teacherUserId || fallbackTeacherId,
-  };
+  return [...patterns.values()]
+    .map(({ day, slot }) => {
+      const weeksAhead = Math.floor((latestDay - day) / 7) + 1;
+      // These are civil-date day numbers, not UTC session timestamps.
+      const sessionDate = new Date((day + weeksAhead * 7) * 86_400_000)
+        .toISOString()
+        .slice(0, 10);
+      return {
+        durationMinutes: slot.durationMinutes,
+        sessionDate,
+        startTime: slot.startTime,
+        teacherUserId: slot.teacherUserId || fallbackTeacherId,
+      };
+    })
+    .sort((a, b) =>
+      `${a.sessionDate}T${a.startTime}`.localeCompare(
+        `${b.sessionDate}T${b.startTime}`
+      )
+    );
 }

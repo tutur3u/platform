@@ -1,4 +1,3 @@
-import { match } from '@formatjs/intl-localematcher';
 import { clearSupabaseAuthCookies } from '@tuturuuu/auth/app-session';
 import {
   appSessionFailureResponse,
@@ -8,8 +7,8 @@ import {
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
+import { negotiateAcceptLanguage } from '@tuturuuu/satellite/accept-language';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
-import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
@@ -33,12 +32,22 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    const appSessionRefresh = isLocalAuthApi
-      ? null
-      : await refreshAppSessionForRequest(req, {
-          sessionMode: 'supabase-first',
-          targetApp: 'nova',
-        });
+    const isBuildInfoRead =
+      req.nextUrl.pathname === '/api/build-info' &&
+      (req.method === 'GET' || req.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of req.cookies.getAll())
+        req.cookies.delete(cookie.name);
+      req.headers.delete('cookie');
+      req.headers.delete('authorization');
+    }
+    const appSessionRefresh =
+      isLocalAuthApi || isBuildInfoRead
+        ? null
+        : await refreshAppSessionForRequest(req, {
+            sessionMode: 'supabase-first',
+            targetApp: 'nova',
+          });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -57,6 +66,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       }
       return preserveMfaRecoveryCookies(req, guardResponse);
     }
+
+    if (isBuildInfoRead)
+      return NextResponse.next({ request: { headers: req.headers } });
 
     return (
       appSessionRefresh?.response ??
@@ -145,21 +157,13 @@ const getDefaultLocale = (
   req: NextRequest
 ): {
   locale: Locale;
-} => {
-  // Get browser languages
-  const headers = {
-    'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
-  };
-
-  const languages = new Negotiator({ headers }).languages();
-  const detectedLocale = match(languages, supportedLocales, defaultLocale);
-
-  return {
-    locale: supportedLocales.includes(detectedLocale as Locale)
-      ? (detectedLocale as Locale)
-      : defaultLocale,
-  };
-};
+} => ({
+  locale: negotiateAcceptLanguage(
+    req.headers.get('accept-language'),
+    supportedLocales,
+    defaultLocale
+  ),
+});
 
 const getLocale = (
   req: NextRequest

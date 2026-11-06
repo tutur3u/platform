@@ -35,5 +35,6 @@ export const createPolarClient = (options: CreatePolarClientOptions = {}) => {
   return new Polar({
     accessToken: options.accessToken ?? process.env.POLAR_ACCESS_TOKEN ?? '',
     server: sandbox ? 'sandbox' : 'production',
+    timeoutMs: 10_000,
   });
 };

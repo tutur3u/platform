@@ -259,12 +259,14 @@ class _UserFormSheetState extends State<_UserFormSheet> {
                 ),
               ),
               const SizedBox(height: 12),
-              SwitchListTile(
+              AppToggleRow(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 value: _isGuest,
                 onChanged: (value) => setState(() => _isGuest = value),
                 title: Text(l10n.crmGuestUser),
               ),
-              SwitchListTile(
+              AppToggleRow(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 value: _archived,
                 onChanged: (value) => setState(() => _archived = value),
                 title: Text(l10n.crmArchived),

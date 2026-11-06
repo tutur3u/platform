@@ -49,16 +49,21 @@ interface TopicAnnouncementPendingState {
   send: boolean;
   updateTemplate: boolean;
   verify: boolean;
+  verifyMany: boolean;
 }
 
 interface TopicAnnouncementActions {
   cancelSchedule: (announcementId: string) => void;
   createAndSchedule: (
     payload: TopicAnnouncementPayload,
-    scheduledSendAt: string
-  ) => Promise<void>;
-  createAndSend: (payload: TopicAnnouncementPayload) => Promise<void>;
-  createAnnouncement: (payload: TopicAnnouncementPayload) => Promise<void>;
+    scheduledSendAt: string,
+    onCreated?: (announcementId: string) => void
+  ) => Promise<string>;
+  createAndSend: (
+    payload: TopicAnnouncementPayload,
+    onCreated?: (announcementId: string) => void
+  ) => Promise<string>;
+  createAnnouncement: (payload: TopicAnnouncementPayload) => Promise<string>;
   createContact: (payload: TopicAnnouncementContactPayload) => void;
   createTemplate: (payload: TopicAnnouncementTemplatePayload) => void;
   deleteAnnouncement: (announcementId: string) => void;
@@ -66,6 +71,7 @@ interface TopicAnnouncementActions {
   deleteTemplate: (templateId: string) => void;
   importAndSendRows: (payload: TopicAnnouncementImportPayload) => void;
   importRows: (payload: TopicAnnouncementImportPayload) => void;
+  notifyTeachers: (announcementIds: string[]) => Promise<void>;
   requestTimezone: () => void;
   saveTemplateFromForm: (values: TemplateFormValues) => void;
   schedule: (announcementId: string, scheduledSendAt: string) => void;
@@ -75,6 +81,7 @@ interface TopicAnnouncementActions {
     payload: Partial<TopicAnnouncementTemplatePayload>
   ) => void;
   verify: (contactId: string) => void;
+  verifyMany: (contactIds: string[]) => void;
 }
 
 interface TopicAnnouncementFilters {
@@ -102,6 +109,8 @@ interface TopicAnnouncementsContextValue {
   actions: TopicAnnouncementActions;
   announcements: TopicAnnouncementRecord[];
   canSend: boolean;
+  /** ENABLE_TOPIC_TEACHER_ASSIGNMENTS: teacher assignment UI in the composer. */
+  teacherAssignmentsEnabled: boolean;
   contacts: TopicAnnouncementContact[];
   deliveredAnnouncements: TopicAnnouncementRecord[];
   filters: TopicAnnouncementFilters;
@@ -139,10 +148,12 @@ export function useTopicAnnouncements() {
 export function TopicAnnouncementsProvider({
   canSend,
   children,
+  teacherAssignmentsEnabled = false,
   wsId,
 }: {
   canSend: boolean;
   children: ReactNode;
+  teacherAssignmentsEnabled?: boolean;
   wsId: string;
 }) {
   const queryClient = useQueryClient();
@@ -276,6 +287,7 @@ export function TopicAnnouncementsProvider({
       }),
       announcements,
       canSend,
+      teacherAssignmentsEnabled,
       contacts,
       deliveredAnnouncements,
       filters: {
@@ -320,6 +332,7 @@ export function TopicAnnouncementsProvider({
         send: mutations.sendMutation.isPending,
         updateTemplate: mutations.updateTemplateMutation.isPending,
         verify: mutations.verifyMutation.isPending,
+        verifyMany: mutations.verifyManyMutation.isPending,
       },
       schedulingTimezone,
       templates,
@@ -350,6 +363,7 @@ export function TopicAnnouncementsProvider({
       setStatusQuery,
       status,
       templates,
+      teacherAssignmentsEnabled,
       templatesQuery.isLoading,
       usersQuery.isLoading,
       workspaceUsers,
@@ -383,21 +397,27 @@ function createActions({
   return {
     cancelSchedule: (announcementId) =>
       mutations.cancelScheduleMutation.mutate(announcementId),
-    createAndSchedule: async (payload, scheduledSendAt) => {
+    createAndSchedule: async (payload, scheduledSendAt, onCreated) => {
       const result =
         await mutations.createAnnouncementMutation.mutateAsync(payload);
+      onCreated?.(result.data.id);
       await mutations.scheduleMutation.mutateAsync({
         announcementId: result.data.id,
         scheduledSendAt,
       });
+      return result.data.id;
     },
-    createAndSend: async (payload) => {
+    createAndSend: async (payload, onCreated) => {
       const result =
         await mutations.createAnnouncementMutation.mutateAsync(payload);
+      onCreated?.(result.data.id);
       await mutations.sendMutation.mutateAsync(result.data.id);
+      return result.data.id;
     },
     createAnnouncement: async (payload) => {
-      await mutations.createAnnouncementMutation.mutateAsync(payload);
+      const result =
+        await mutations.createAnnouncementMutation.mutateAsync(payload);
+      return result.data.id;
     },
     createContact: (payload) => mutations.createContactMutation.mutate(payload),
     createTemplate: (payload) =>
@@ -411,6 +431,9 @@ function createActions({
     importAndSendRows: (payload) =>
       mutations.importAndSendMutation.mutate(payload),
     importRows: (payload) => mutations.importMutation.mutate(payload),
+    notifyTeachers: async (announcementIds) => {
+      await mutations.notifyTeachersMutation.mutateAsync(announcementIds);
+    },
     requestTimezone: () => setTimezoneDialogOpen(true),
     saveTemplateFromForm: (values) => {
       mutations.createTemplateMutation.mutate({
@@ -431,5 +454,6 @@ function createActions({
     updateTemplate: (templateId, payload) =>
       mutations.updateTemplateMutation.mutate({ payload, templateId }),
     verify: (contactId) => mutations.verifyMutation.mutate(contactId),
+    verifyMany: (contactIds) => mutations.verifyManyMutation.mutate(contactIds),
   };
 }

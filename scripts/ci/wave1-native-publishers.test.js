@@ -24,14 +24,29 @@ for (const app of ['calendar', 'mail', 'apps']) {
       assert.equal(p.accountId, 'e8912e2867beecc673d171907bf09649');
       assert.equal(emitted.name, p.name);
       assert.equal(emitted.workers_dev, false);
-      assert.deepEqual(
-        emitted.routes,
-        env === 'staging' ? [] : [{ pattern: p.host, custom_domain: true }]
-      );
+      assert.equal(emitted.upload_source_maps, false);
+      assert.deepEqual(emitted.routes, []);
       assert.ok(receipt.files['server/index.js']);
       assert.deepEqual(emitted.secrets.required, p.secrets);
       assert.equal(emitted.services, undefined);
       assert.equal(emitted.r2_buckets, undefined);
+      if (app === 'calendar') {
+        assert.equal(
+          emitted.secrets.required.includes('GOOGLE_REDIRECT_URI'),
+          env === 'production'
+        );
+        assert.equal(
+          emitted.vars.GOOGLE_REDIRECT_URI,
+          env === 'production'
+            ? undefined
+            : `https://${p.host}/api/v1/calendar/auth/callback`
+        );
+      }
+      if (app === 'calendar')
+        assert.equal(
+          emitted.vars.MICROSOFT_REDIRECT_URI,
+          `https://${p.host}/api/v1/calendar/auth/microsoft/callback`
+        );
       if (app === 'apps')
         assert.equal(
           emitted.vars.APPS_CANONICAL_HOST_ENABLED,
@@ -485,4 +500,24 @@ test('Mail staging and production preserve native compatibility and bundling unc
     'global_fetch_strictly_public',
   ]);
   assert.equal(configs[0].compatibility_date, '2026-10-19');
+});
+
+test('Calendar coordination fallback is optional while Mail and Apps still require their key', async (t) => {
+  const [{ profiles }, { prepare, verify }] = await modules;
+  for (const app of ['calendar', 'mail', 'apps']) {
+    const root = fixture(t, app);
+    prepare(root, app, 'staging', 'owner-example', sha);
+    const { config } = verify(root, app, 'staging', sha);
+    const emitted = JSON.parse(fs.readFileSync(config));
+    assert.equal(
+      emitted.secrets.required.includes('TUTURUUU_APP_COORDINATION_SECRET'),
+      app !== 'calendar',
+      `${app} coordination requirement must match its accepted fallback contract`
+    );
+  }
+  assert.ok(
+    profiles.apps.calendar.optionalSecretNames.includes(
+      'TUTURUUU_APP_COORDINATION_SECRET'
+    )
+  );
 });

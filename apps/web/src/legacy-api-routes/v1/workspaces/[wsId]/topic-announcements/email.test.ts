@@ -31,9 +31,7 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   },
 }));
 
-vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
-  resolveAuthenticatedSessionUser: vi.fn(),
-}));
+vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: vi.fn() }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(),

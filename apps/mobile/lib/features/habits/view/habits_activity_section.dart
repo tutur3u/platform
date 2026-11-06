@@ -24,7 +24,7 @@ class HabitsActivitySection extends StatelessWidget {
         state.activityEntries.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 32),
-        child: Center(child: NovaLoadingIndicator()),
+        child: AppLoadingIndicator(),
       );
     }
 

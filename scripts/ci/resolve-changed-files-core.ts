@@ -171,55 +171,73 @@ function getChangedFilesFromRange({
   };
 }
 
-function getPushPayloadFiles(payload: PushPayload | null): ChangedFilesResult {
+// Main pushes from squash/admin merges arrive with commits[] entries whose
+// added/modified/removed lists are empty, so the payload alone reported zero
+// paths and every affected-gated scan skipped. Diff the pushed before..after
+// range first, use payload lists only when the range is not in the checkout,
+// and fail open whenever a non-empty push still resolves to no paths.
+function getPushPayloadFiles(
+  payload: PushPayload | null,
+  rootDir: string
+): ChangedFilesResult {
   const headSha = payload?.after;
   const baseSha = payload?.before;
+  const unavailable = (reason: string): ChangedFilesResult => ({
+    available: false,
+    baseSha,
+    files: [],
+    headSha,
+    reason: `${reason}; affected gating must fail open`,
+    source: 'push-payload',
+  });
 
   if (!payload || payload.deleted) {
-    return {
-      available: false,
+    return unavailable('push payload is unavailable or branch was deleted');
+  }
+
+  if (
+    baseSha &&
+    headSha &&
+    commitExists(rootDir, baseSha) &&
+    commitExists(rootDir, headSha)
+  ) {
+    const compared = getChangedFilesFromRange({
       baseSha,
-      files: [],
       headSha,
-      reason: 'push payload is unavailable or branch was deleted',
-      source: 'push-payload',
-    };
+      requireAncestor: false,
+      rootDir,
+      source: 'push-compare',
+    });
+
+    if (compared.available && compared.files.length > 0) {
+      return compared;
+    }
   }
 
   const commits = payload.commits ?? [];
 
-  if (commits.length === 0) {
-    return {
-      available: false,
-      baseSha,
-      files: [],
-      headSha,
-      reason: 'push payload contains no commits',
-      source: 'push-payload',
-    };
-  }
-
   if (typeof payload.size === 'number' && payload.size > commits.length) {
-    return {
-      available: false,
-      baseSha,
-      files: [],
-      headSha,
-      reason: 'push payload commit list is truncated',
-      source: 'push-payload',
-    };
+    return unavailable('push payload commit list is truncated');
   }
 
-  const changedFiles = commits.flatMap((commit) => [
-    ...(commit.added ?? []),
-    ...(commit.modified ?? []),
-    ...(commit.removed ?? []),
-  ]);
+  const changedFiles = uniqueChangedFiles(
+    commits.flatMap((commit) => [
+      ...(commit.added ?? []),
+      ...(commit.modified ?? []),
+      ...(commit.removed ?? []),
+    ])
+  );
+
+  if (changedFiles.length === 0) {
+    return unavailable(
+      'push resolved no changed paths from the before..after range or payload'
+    );
+  }
 
   return {
     available: true,
     baseSha,
-    files: uniqueChangedFiles(changedFiles),
+    files: changedFiles,
     headSha,
     source: `push-payload:${commits.length}-commit${
       commits.length === 1 ? '' : 's'
@@ -339,7 +357,10 @@ export async function resolveChangedFiles({
   }
 
   if (eventName === 'push') {
-    return getPushPayloadFiles(readEventPayload<PushPayload>(eventPath));
+    return getPushPayloadFiles(
+      readEventPayload<PushPayload>(eventPath),
+      rootDir
+    );
   }
 
   if (eventName === 'pull_request') {

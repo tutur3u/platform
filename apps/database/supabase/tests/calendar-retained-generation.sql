@@ -8,6 +8,9 @@ insert into public.workspaces(id,name,personal,creator_id) values('00000000-0000
 insert into public.workspace_members(ws_id,user_id,type) values('00000000-0000-4000-8000-000000008811','00000000-0000-4000-8000-000000008801','MEMBER') on conflict do nothing;
 update public.workspace_default_permissions set enabled=true where ws_id='00000000-0000-4000-8000-000000008811' and permission='manage_calendar';
 insert into public.workspace_default_permissions(ws_id,permission,enabled) select '00000000-0000-4000-8000-000000008811','manage_calendar',true where not exists(select 1 from public.workspace_default_permissions where ws_id='00000000-0000-4000-8000-000000008811' and permission='manage_calendar');
+-- Transactionally set aside the current ledger to exercise historical schema shapes.
+-- ROLLBACK restores it, including its dependent constraints and policies.
+alter table private.calendar_google_color_operations rename to retained_generation_current_ledger;
 -- This foundation test intentionally owns only its transactional synthetic table.
 -- Later feature branches use the real ledger instead and skip this fixture.
 create function public.fixture_retained() returns jsonb language sql as $$

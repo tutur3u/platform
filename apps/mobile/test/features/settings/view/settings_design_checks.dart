@@ -156,7 +156,7 @@ void registerSettingsDesignChecks() {
       of: section,
       matching: find.byType(SettingsGroup),
     );
-    expect(groups, findsNWidgets(3));
+    expect(groups, findsNWidgets(4));
     expect(
       tester.getRect(section).bottom - tester.getRect(groups.last).bottom,
       closeTo(0, 0.1),

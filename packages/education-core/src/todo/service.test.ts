@@ -57,6 +57,7 @@ const input = {
   kind: 'tutoring' as const,
   page: 2,
   pageSize: 20,
+  isTutoringEnabled: async () => true,
 };
 
 describe('personal education to do', () => {
@@ -141,6 +142,39 @@ describe('personal education to do', () => {
       expect(result.data[0]?.durationMinutes).toBe(60);
     }
   );
+  it.each(['learn', 'teach'] as const)(
+    'lists no %s tutoring sessions while the tutoring module is off',
+    async (app) => {
+      const isTutoringEnabled = vi.fn(async () => false);
+      const { db, calls } = dbMock(base());
+
+      const result = await listEducationTodo({
+        ...input,
+        db,
+        app,
+        isTutoringEnabled,
+      });
+
+      expect(isTutoringEnabled).toHaveBeenCalledWith('workspace');
+      expect(result).toMatchObject({ data: [], count: 0, totalPages: 0 });
+      expect(
+        calls.some((call) => call.table === 'workspace_tutoring_sessions')
+      ).toBe(false);
+    }
+  );
+  it('does not consult the tutoring toggle for other kinds', async () => {
+    const isTutoringEnabled = vi.fn(async () => false);
+    const { db } = dbMock(
+      base({
+        workspace_user_groups_users: [{ data: [{ group_id: 'course' }] }],
+        course_tests: [{ data: [], count: 0 }],
+      })
+    );
+
+    await listEducationTodo({ ...input, db, kind: 'tests', isTutoringEnabled });
+
+    expect(isTutoringEnabled).not.toHaveBeenCalled();
+  });
   it('returns empty for a parent without an own learner link and never falls back to a child', async () => {
     const { db, calls } = dbMock(
       base({ workspace_user_linked_users: [{ data: null }] })

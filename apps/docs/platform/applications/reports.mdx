@@ -2,6 +2,8 @@
 title: 'Daily and Periodic Reports'
 description: 'Configure, approve, deliver, and troubleshoot daily, weekly, monthly, quarterly, and yearly workspace reports.'
 updated: '2026-10-09'
+updatedAt: "2026-10-31"
+audience: users
 ---
 
 The Contacts Reports hub at `/{wsId}/reports` is the canonical workspace surface
@@ -30,7 +32,16 @@ Daily defaults and existing `view=daily`, `view=periodic`, `view=automations` an
 retain separate URL state so switching cadence does not reinterpret an old filter.
 
 Every displayed count is a server total over the same active result predicate,
-including stage, statuses, search, dates, category and access scope. Daily counts
+including statuses, search, dates, category and access scope. The list, its
+matching total and the category counts also include the selected stage. The
+periodic stage cards do not: each card counts its own stage under every other
+active filter, so opening the default Pending view shows every stage's real count
+instead of zero for the stages that are not selected (`report-summary-scope.test.ts`).
+That all-stage read never fails the page: if it exceeds the 20,000-report guard or
+errors, the list still loads, the response sets `summaryPartial`, and the cards show
+only the selected stage's count with "—" for the rest plus a hint to narrow the
+dates or search (`periodic-status-summary.test.tsx`).
+Daily counts
 recipient rows; periodic counts report records, including category counts. Changing
 a filter resets actionable selection and hides previous-scope totals while the new
 request is pending. Loading and failed reads show unknown counts rather than zero.
@@ -92,6 +103,64 @@ Periods are calculated in the workspace timezone:
 | Quarterly | Q1 through Q4 | Draft after the quarter closes |
 | Yearly | Calendar year | Draft after December 31 closes |
 
+The periodic worklist's report-period range uses inclusive calendar dates. A
+saved period matches when it overlaps the range, so a range may span months. A
+report without a saved period, such as one written manually from a class, matches
+when it was created inside the range, counted in whole days in the workspace
+timezone, or the viewer's browser timezone when the workspace has none
+(`report-summary-scope.test.ts`, `periodic-reports-panel-counts.test.tsx`).
+
+### Report month (monthly cadence)
+
+Monthly reports are chosen and grouped by the month they cover, not by the day
+they were written. Teachers often write a month's report in the last days of
+that month or the first days of the next one.
+
+- **Default month.** `REPORT_MONTH_GRACE_DAYS = 10`
+  (`packages/users-core/src/features/reports/report-month.ts`): from day 1 to day
+  10 of a month, the default is the previous month; from day 11, the current
+  month. The worklist's Month picker and the new-report month picker both use it,
+  reading "today" in the viewer's timezone.
+- **Worklist.** The Monthly view shows a **Month** picker ("Tháng 10/2026") with
+  an **All months** option, kept in the `reportMonth` URL key. The from/to range
+  stays available as **Custom date range**; a range replaces the month, and the
+  API rejects both together. The stage cards and category counts come from the
+  same month-scoped response as the list.
+- **Matching.** `GET /users/reports?month=YYYY-MM` matches a saved period that
+  starts in that month. A report without a saved period matches by its
+  estimated month: created after day 10 of the month and up to day 10 of the next
+  month, in the workspace timezone (else the viewer's, else UTC). A report written
+  on 28 Oct or on 2 Nov is therefore listed under October.
+- **New reports** save `period_start`/`period_end` as the chosen month's calendar
+  bounds with `cadence: monthly`. The workspace default title (`<title> MM/YYYY`)
+  follows the chosen month until the teacher edits the title.
+- **Older reports without a saved period** are not migrated or backfilled. They
+  show under the estimated month with an "estimated month" mark and a one-click
+  **Set month** action (edit permission) that saves that month as the period.
+  Staff can change the month of any monthly report from the report page.
+- **Approval.** A period-only edit keeps the report's review decision: the period
+  is not part of the email parents receive. Cadence and content edits still
+  return the report to review. The database `review_revision` still advances.
+- **Sent reports.** Moving a report parents already received (`delivered_at`
+  set or `delivery_status = 'sent'`) to another month needs `approve_reports`;
+  the API returns 403 otherwise, and Contacts hides the action. Unsent reports
+  can be moved by anyone with the edit permission.
+- **Audit.** Every period change sets `updated_by` to the acting staff member.
+  The existing supa_audit trigger on `private.external_user_monthly_reports`
+  writes an `audit.record_version` row per update (`record_id` = report id,
+  `old_record`/`record` with the old and new `period_start`/`period_end`, `ts`),
+  which `private.list_user_group_activity_logs` attributes through `updated_by`
+  for these service-role writes. No new table or migration.
+- **One report per month.** A create for a student, class and month that
+  already has a report returns 409; so does a unique-constraint race on insert.
+
+Regression coverage: `report-month.test.ts`, `report-period-filter.test.ts`,
+`report-month-scope.test.ts`, `report-month-edit.test.ts`,
+`explicit-approval.test.ts` (users-core);
+`periodic-report-filters.test.ts`, `periodic-reports-panel-counts.test.tsx`,
+`periodic-report-row-month.test.tsx`, `report-month.test.tsx`,
+`editable-report-preview-reset.test.tsx` (contacts).
+
 Manual schedules create an editable draft at the start of the period. AI
 schedules generate after the period closes. The default delivery target is
 09:00 on the first day after close. Automation remains disabled until a valid
@@ -124,8 +193,8 @@ Ordinary manual report creation and edits through the shared report API remain
 pending even when the legacy approval setting is disabled or the author can
 approve reports. Contacts Save and score recalculation do not submit approval
 markers; an explicit permitted approval action remains separate. Narrative,
-feedback, title, score, cadence, period, manager instruction and generation changes invalidate the API
-review state. Subject and group cannot be changed through this update API.
+feedback, title, score, cadence, manager instruction and generation changes invalidate the API
+review state. A period-only change (the report month) keeps it. Subject and group cannot be changed through this update API.
 Approval timestamps and actor attribution are server-owned.
 
 This API/client safeguard alone does not establish dispatch authorization:
@@ -290,10 +359,11 @@ Daily reports count group-post completion and delivery. Periodic reports count
 subject reports by cadence and approval/delivery state. They intentionally use
 different underlying models and should not be summed as the same metric.
 
-Periodic summary cards use a private aggregate RPC rather than materializing
-report rows in the application. This keeps totals exact beyond PostgREST's
-default row limit. The report list remains independently paginated and can load
-every matching record without using the summary result as a page.
+Periodic stage cards are counted from a separate, column-limited read of the
+same scope without the stage selection. Both reads walk complete server chunks,
+so totals stay exact beyond PostgREST's default row limit. The report list remains
+independently paginated and can load every matching record without using the
+summary result as a page.
 
 ## Verification
 
@@ -317,6 +387,73 @@ Changing this setting requires both `manage_user_report_automation` and
 `send_user_group_report_emails`. The setting applies to future approval transitions,
 including approvals from the report editor and bulk approval flows. It does not
 backfill previously approved reports or automatically resend delivered reports.
+
+### Approved, not sent
+
+A report that is approved but was never requested for delivery (not queued,
+processing, sent, failed, blocked or skipped, and with no recorded error) is
+counted in the Reports worklist under **Approved, not sent** ("Đã duyệt, chưa
+gửi"), across every stage in the current cadence and period. Enabling
+auto-send, deploys, migrations and scheduled worker runs never queue these
+reports. An administrator with both `manage_user_report_automation` and
+`send_user_group_report_emails` chooses per period and/or class:
+
+- **Send now** queues only the held reports in that scope through
+  `private.request_held_periodic_report_delivery`, which re-checks that each
+  report is still held under its row lock and then calls
+  `private.request_periodic_report_delivery`, the same per-report path as a
+  manual send, so its row locks, 409 guards, one queue row per report, worker
+  caps and workspace email limits all apply. A report another admin skipped
+  before or during the batch is refused, never queued. At most 100 per action.
+- **Skip** marks them `skipped` without sending, through
+  `private.skip_held_periodic_reports`, scoped to the workspace's subjects and
+  classes. A report queued meanwhile is left alone. Skipped reports leave the
+  list and can still be sent manually later.
+
+The server re-derives the held set from the scope (client report ids are
+rejected), re-checks the count shown in the confirmation, and records each
+choice in `private.periodic_report_held_actions` (actor, time, workspace,
+scope, action, counts and the affected report ids) before acting. One
+confirmation key acts at most once, so a re-click replays the recorded result.
+
+### Resend failed or stuck reports
+
+An administrator with the same two permissions can **Resend** ("Gửi lại") a
+report that:
+
+- failed with a retryable error (`failed` or `blocked` with a generic provider
+  error, the **Delivery failure** category);
+- is stuck in the queue: `queued` for more than 60 minutes without a worker
+  claim, the same threshold as the "waiting more than 1 hour" queue warning
+  and well past the 15-minute worker lease; or
+- is approved but was never sent.
+
+A report is never resent when it was sent or may have been sent (unknown
+outcome, provider accepted), is processing or recently queued, was skipped or
+cancelled by a person, or failed for a reason that needs a fix first
+(suppression, missing email, setup, approval change). A test delivery is never
+resent: Resend always requests a real send, so a stuck or failed `[TEST]` email
+would otherwise reach the recipient as the real report. Resend is offered per
+row (failed and stuck rows; held rows keep **Send**), for the selected rows
+("Gửi lại các mục đã chọn"), and per period and/or class. The confirmation
+shows the server's exact count.
+
+Each report goes through `private.request_periodic_report_resend`. Under the
+report row lock it re-checks the delivery state the administrator confirmed
+and stage (a report skipped, cancelled, sent, processing, regenerating or
+changed since the count is refused), the retryable-error rule and the delivery
+kind (a test delivery is refused), refuses anything that may already have been
+delivered, cancels a
+stuck queue row and requests delivery through
+`private.request_periodic_report_delivery` with its guards, all in one
+transaction; if delivery is refused, nothing changes. The action is recorded in
+`private.periodic_report_held_actions` with `action = 'resend'` (a selection
+has no period, class or cadence) and is rate limited per workspace in the
+shared Postgres security budget: at most 100 reports per action, 10 resends per
+fixed 10-minute window and 300 resent reports per clock hour. A denied request
+answers 429 with `Retry-After`; an unavailable budget fails closed. The held
+**Send now** and **Skip** re-checks also require no recorded delivery error,
+matching the app's held rule.
 
 The `20260911100000_periodic_report_approval_delivery.sql` migration atomically
 queues the report with its approval. Production migration CI applies it automatically
@@ -395,7 +532,7 @@ Report delivery and Test send are separate statuses. A successful test does not 
 
 Weekly, monthly, quarterly, and yearly reports use ten exclusive stages: Drafts, Pending approval, Approved awaiting delivery, Undeliverable, Queued, Processing, Sent, Failed, Skipped, and Rejected. The default view shows Pending approval. Select a status to filter or Show all reports to include terminal states. Counts respect the cadence and period range. Skipped reports are preserved and do not send automatically after approval.
 
-The September 12, 2026 cleanup marks Easy Center reports created strictly before `2026-09-11T17:00:00Z` as Skipped when their delivery status is still Not sent. It covers all periodic cadences and generation states, preserves content/approval/history, and excludes active queues, accepted real deliveries, and unknown delivery outcomes. Any stale retryable queue entry on a skipped report is cancelled. The migration logs the affected row count and is safe to rerun.
+A one-time cleanup can mark old, undelivered reports as Skipped when their delivery status is still Not sent. It covers all periodic cadences and generation states, preserves content/approval/history, and excludes active queues, accepted real deliveries, and unknown delivery outcomes. Any stale retryable queue entry on a skipped report is cancelled. The migration logs the affected row count and is safe to rerun.
 
 
 ### Monthly report editor draft refresh

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet_body.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class AssistantCreditSourceSheet extends StatelessWidget {
   const AssistantCreditSourceSheet({
@@ -23,39 +23,31 @@ class AssistantCreditSourceSheet extends StatelessWidget {
         builder: (context, state) {
           if (state.status != AssistantShellStatus.loaded) {
             final failed = state.status == AssistantShellStatus.error;
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: AppIconButton(
-                        icon: const Icon(LucideIcons.x),
-                        tooltip: MaterialLocalizations.of(
-                          context,
-                        ).closeButtonTooltip,
-                        onPressed: state.status == AssistantShellStatus.loading
-                            ? null
-                            : () => Navigator.maybePop(context),
-                      ),
+            return AppSheetScaffold(
+              title: context.l10n.assistantSourceLabel,
+              child: AppGroupedCard(
+                children: [
+                  if (failed)
+                    AppStateMessage.inline(
+                      icon: LucideIcons.cloudOff,
+                      tone: AppTone.destructive,
+                      title: context.l10n.assistantCreditsUnavailable,
+                      actionLabel: state.workspace == null
+                          ? null
+                          : context.l10n.commonRetry,
+                      onAction: state.workspace == null
+                          ? null
+                          : () => cubit.loadWorkspace(
+                              state.workspace!,
+                              forceRefresh: true,
+                            ),
+                    )
+                  else
+                    Semantics(
+                      label: context.l10n.commonLoading,
+                      child: const AppSkeletonRows(),
                     ),
-                    if (failed) ...[
-                      Text(context.l10n.assistantCreditsUnavailable),
-                      AppButton.ghost(
-                        onPressed: state.workspace == null
-                            ? null
-                            : () => cubit.loadWorkspace(
-                                state.workspace!,
-                                forceRefresh: true,
-                              ),
-                        child: Text(context.l10n.commonRetry),
-                      ),
-                    ] else
-                      const NovaLoadingIndicator(),
-                  ],
-                ),
+                ],
               ),
             );
           }
