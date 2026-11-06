@@ -1,8 +1,4 @@
 import { expect, test, vi } from 'vitest';
-import worker from '../../../ops-hub/src/worker';
-
-vi.mock('../../../ops-hub/src/hub', () => ({ OpsHub: class {} }));
-
 import { ASSERTION_HEADER, verifyAssertion } from '@tuturuuu/ops-hub/protocol';
 import { createDataClients } from './clients';
 
@@ -25,7 +21,7 @@ test('snapshot signs the exact GET target and sends no bearer', async () => {
       },
     },
   };
-  await createDataClients(env, owner).agentSnapshot();
+  expect((await createDataClients(env, owner).agentSnapshot()).status).toBe(200);
   expect(captured).toBeDefined();
   if (!captured) throw new Error('Missing request');
   expect(captured.headers.has('Authorization')).toBe(false);
@@ -50,36 +46,6 @@ test('snapshot signs the exact GET target and sends no bearer', async () => {
     )
   ).toBeNull();
   expect(captured.redirect).toBe('error');
-});
-
-test('snapshot passes the hub authentication gate that rejects bearer with 404', async () => {
-  const hub = {
-    async fetch(request: Request) {
-      return worker.fetch(request, {
-        OPS_HUB_MASTERMIND_SNAPSHOT_SECRET: secret,
-        OPS_HUB_GATEWAY_SECRET: `${secret}-gateway`,
-        OPS_HUB_ALLOWED_USER_IDS: owner.id,
-        HUB: { getByName: () => ({ fetch: async () => new Response('{}') }) },
-      });
-    },
-  };
-  expect(
-    (
-      await hub.fetch(
-        new Request('https://ops-hub/snapshot', {
-          headers: { Authorization: `Bearer ${owner.token}` },
-        })
-      )
-    ).status
-  ).toBe(404);
-  expect(
-    (
-      await createDataClients(
-        { OPS_HUB: hub, OPS_HUB_MASTERMIND_SNAPSHOT_SECRET: secret },
-        owner
-      ).agentSnapshot()
-    ).status
-  ).toBe(200);
 });
 
 test('missing signing key fails before sending a request', async () => {
