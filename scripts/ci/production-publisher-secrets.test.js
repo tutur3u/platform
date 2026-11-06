@@ -253,13 +253,23 @@ test('native Calendar/Mail validation receives no cache credentials on productio
               scope.vars.TURBO_TEAM = team;
               const expected =
                 field === 'team'
-                  ? team || 'credential:TURBO_TEAM'
+                  ? team ||
+                    (event !== 'pull_request' ? 'credential:TURBO_TEAM' : '')
                   : actor !== 'dependabot[bot]' &&
                       event !== 'pull_request' &&
                       ref === 'refs/heads/main'
                     ? 'credential:TURBO_TOKEN'
                     : '';
               assert.equal(evaluate(step.with[field], scope), expected);
+              if (event === 'pull_request') {
+                assert.equal(
+                  String(evaluate(step.with[field], scope)).includes(
+                    'credential:'
+                  ),
+                  false,
+                  `pull request ${field} receives no cache credential`
+                );
+              }
             }
           }
         }

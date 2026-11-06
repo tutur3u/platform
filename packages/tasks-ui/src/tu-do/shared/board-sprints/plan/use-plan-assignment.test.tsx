@@ -61,4 +61,36 @@ describe('usePlanAssignment', () => {
     });
     resolvers[1]?.();
   });
+
+  it('stops a later owner change when the placement it followed fails', async () => {
+    updateTask.mockReset();
+    updateTask.mockResolvedValue({});
+    const client = new QueryClient();
+    const { result } = renderHook(
+      () => usePlanAssignment({ boardId: 'b', members, wsId: 'ws' }),
+      {
+        wrapper: ({ children }: { children: ReactNode }) => (
+          <QueryClientProvider client={client}>{children}</QueryClientProvider>
+        ),
+      }
+    );
+    const ghost = { id: 't', assignees: [] } as unknown as Task;
+    let failPlacement = () => {};
+    const placement = new Promise((_, reject) => {
+      failPlacement = () => reject(new Error('move failed'));
+    });
+
+    act(() => result.current.move(ghost, { from: null, to: 'ana' }, placement));
+    // It shows in the sprint already, so moving it on sends no placement.
+    act(() =>
+      result.current.move(
+        { ...ghost, assignees: [members[0]] } as unknown as Task,
+        { from: 'ana', to: 'binh' }
+      )
+    );
+    failPlacement();
+
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    expect(updateTask).not.toHaveBeenCalled();
+  });
 });

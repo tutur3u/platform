@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { InternalApiError, updatePeriodicReport } from '@tuturuuu/internal-api';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/sonner';
+import { reportMonthBounds } from '@tuturuuu/users-core/features/reports/report-month';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
@@ -33,7 +34,10 @@ export function useReportMutations({
   userGroupMetrics = [],
   factorEnabled = false,
   scoreCalculationMethod = 'LATEST',
+  reportMonth,
 }: {
+  /** New monthly report: `YYYY-MM` it covers, saved as its period. */
+  reportMonth?: string;
   wsId: string;
   report: UserReport;
   isNew: boolean;
@@ -100,6 +104,11 @@ export function useReportMutations({
           feedback: payload.feedback,
           score: calculatedScore,
           scores: calculatedScores,
+          ...(reportMonth && {
+            cadence: 'monthly',
+            period_start: reportMonthBounds(reportMonth).start,
+            period_end: reportMonthBounds(reportMonth).end,
+          }),
         }),
       });
 
