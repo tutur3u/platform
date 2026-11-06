@@ -48,6 +48,18 @@ test.each(['/snapshot', '/status'])(
     expect((await request(environment(), 'GET', target)).status).toBe(200);
   }
 );
+test('Authorization bearer is not a Mastermind credential', async () => {
+  const env = environment();
+  const response = await worker.fetch(
+    new Request('https://hub.invalid/snapshot', {
+      headers: { Authorization: 'Bearer fixture-session' },
+    }),
+    env
+  );
+  expect(response.status).toBe(404);
+  expect(await response.json()).toEqual({ error: 'Not found' });
+  expect(env.HUB.getByName).not.toHaveBeenCalled();
+});
 test.each([
   ['DELETE', '/hub'],
   ['GET', '/hub/export'],
