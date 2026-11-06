@@ -265,7 +265,7 @@ export function successfulGenerationSource(
   metrics: Record<string, Json>,
   revision: string,
   manual = false
-): Json {
+): NonNullable<Json> {
   return {
     ...sourceObject(prior),
     ...(manual ? { generation_source: 'manual_request' } : {}),
@@ -300,7 +300,7 @@ export function failedGenerationSource(
   evidence: HumanFeedbackEvidence | null,
   revision: string,
   reason: string
-): Json {
+): NonNullable<Json> {
   return {
     ...sourceObject(prior),
     latest_generation_attempt: generationAttempt(

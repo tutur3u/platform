@@ -28,6 +28,7 @@ import { vi } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { TutoringContentHint } from '../../../tutoring/tutoring-content-hint';
 
 interface UserFeedbackDialogProps {
   open: boolean;
@@ -282,6 +283,7 @@ export default function UserFeedbackDialog({
                   {tFeedback('requires_attention')}
                 </Label>
               </div>
+              <TutoringContentHint show={formData.require_attention} />
 
               {/* Action buttons */}
               <div className="flex justify-end space-x-2">

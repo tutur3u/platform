@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import type { DatasetAccess } from '@/lib/datasets/access';
 
 type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
@@ -17,8 +17,8 @@ interface RowData {
   cells: Json;
 }
 
-export async function getDatasetMetrics(datasetId: string) {
-  const supabase = await createClient();
+export async function getDatasetMetrics(access: DatasetAccess) {
+  const { supabase, datasetId } = access;
 
   // Get total columns
   const { count: totalColumns } = await supabase
@@ -48,8 +48,8 @@ export async function getDatasetMetrics(datasetId: string) {
   };
 }
 
-export async function detectDuplicates(datasetId: string) {
-  const supabase = await createClient();
+export async function detectDuplicates(access: DatasetAccess) {
+  const { supabase, datasetId } = access;
   const uniqueRows = new Map<
     string,
     { id: string; created_at: string; data: Json }
@@ -193,11 +193,11 @@ export async function detectDuplicates(datasetId: string) {
   };
 }
 
-export async function removeDuplicates(datasetId: string) {
-  const supabase = await createClient();
+export async function removeDuplicates(access: DatasetAccess) {
+  const { supabase, datasetId } = access;
 
   // First detect duplicates
-  const { duplicateRows } = await detectDuplicates(datasetId);
+  const { duplicateRows } = await detectDuplicates(access);
 
   if (duplicateRows.length === 0) {
     return { removedCount: 0 };

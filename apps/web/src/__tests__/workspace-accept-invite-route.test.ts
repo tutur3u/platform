@@ -16,11 +16,11 @@ const mocks = vi.hoisted(() => {
     async () => '11111111-1111-4111-8111-111111111111'
   );
   const authGetUser = vi.fn();
+  const adminGetUserById = vi.fn();
   const sessionInviteMaybeSingle = vi.fn();
   const sessionEmailInviteIn = vi.fn();
 
   const adminWorkspaceSingle = vi.fn();
-  const adminPrivateEmailMaybeSingle = vi.fn();
   const adminInviteMaybeSingle = vi.fn();
   const adminEmailInviteIn = vi.fn();
   const adminLinkedUsersUpsert = vi.fn();
@@ -61,22 +61,17 @@ const mocks = vi.hoisted(() => {
   };
 
   const adminSupabase = {
+    auth: {
+      admin: {
+        getUserById: adminGetUserById,
+      },
+    },
     from: vi.fn((table: string) => {
       if (table === 'workspaces') {
         return {
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
               single: adminWorkspaceSingle,
-            })),
-          })),
-        };
-      }
-
-      if (table === 'user_private_details') {
-        return {
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              maybeSingle: adminPrivateEmailMaybeSingle,
             })),
           })),
         };
@@ -139,10 +134,10 @@ const mocks = vi.hoisted(() => {
     assignSeatToMember,
     adminEmailInviteDeleteIn,
     adminEmailInviteIn,
+    adminGetUserById,
     adminInviteDeleteEq,
     adminInviteMaybeSingle,
     adminLinkedUsersUpsert,
-    adminPrivateEmailMaybeSingle,
     adminSupabase,
     adminWorkspaceSingle,
     authGetUser,
@@ -231,8 +226,14 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       error: null,
     });
 
-    mocks.adminPrivateEmailMaybeSingle.mockResolvedValue({
-      data: { email: 'private@example.com' },
+    mocks.adminGetUserById.mockResolvedValue({
+      data: {
+        user: {
+          email: 'Auth@Example.com',
+          email_confirmed_at: '2026-01-01T00:00:00.000Z',
+          id: 'user-1',
+        },
+      },
       error: null,
     });
 
@@ -375,7 +376,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     mocks.adminEmailInviteIn.mockResolvedValueOnce({
       data: [
         {
-          email: 'private@example.com',
+          email: 'auth@example.com',
           type: 'MEMBER',
           ws_id: NORMALIZED_WS_ID,
         },
@@ -462,7 +463,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     mocks.adminEmailInviteIn.mockResolvedValueOnce({
       data: [
         {
-          email: 'private@example.com',
+          email: 'auth@example.com',
           type: 'GUEST',
           ws_id: NORMALIZED_WS_ID,
         },
@@ -486,9 +487,11 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       'finalize_workspace_invitation_membership_v2',
       expect.objectContaining({ p_member_type: 'GUEST' })
     );
+    expect(mocks.adminEmailInviteIn).toHaveBeenCalledWith('email', [
+      'auth@example.com',
+    ]);
     expect(mocks.adminEmailInviteDeleteIn).toHaveBeenCalledWith('email', [
       'auth@example.com',
-      'private@example.com',
     ]);
   });
 

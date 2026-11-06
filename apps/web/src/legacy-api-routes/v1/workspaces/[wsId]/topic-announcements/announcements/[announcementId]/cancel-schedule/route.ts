@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { resolveTopicAnnouncementsAccess } from '../../../shared';
+import {
+  loadScopedTopicAnnouncement,
+  resolveTopicAnnouncementsAccess,
+} from '../../../shared';
 
 interface Params {
   params: Promise<{ announcementId: string; wsId: string }>;
@@ -9,10 +12,20 @@ export async function POST(request: Request, { params }: Params) {
   const { announcementId, wsId } = await params;
   const access = await resolveTopicAnnouncementsAccess(request, wsId, {
     requireSend: true,
+    teacherAccess: 'send',
   });
   if (access.response) return access.response;
 
-  const { actorUserId, normalizedWsId, sbAdmin } = access.context;
+  const { actorUserId, normalizedWsId, sbAdmin, scope } = access.context;
+  const loaded = await loadScopedTopicAnnouncement({
+    announcementId,
+    columns: 'id',
+    normalizedWsId,
+    sbAdmin,
+    scope,
+  });
+  if (loaded.response) return loaded.response;
+
   const { data, error } = await sbAdmin
     .from('topic_announcements')
     .update({

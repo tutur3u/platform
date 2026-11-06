@@ -2,6 +2,7 @@
 title: 'Documenting'
 description: 'Learn how to contribute to our documentation.'
 updatedAt: '2026-10-08'
+audience: developers
 ---
 
 ## Preview and validate
@@ -34,6 +35,31 @@ and locked dependencies. Do not hand-edit generated reference pages. It excludes
 paused Rust/TanStack source and dependency refreshes. Version references describe
 checked-in versions, not the newest upstream release or a deployment claim.
 
+Generated pages under `reference/repository/` carry `noindex: true` in their
+frontmatter. They remain public and visible in navigation, but stay out of site
+search, search-engine indexing, AI assistant context, `llms.txt`, and
+`llms-full.txt`. The inventory generator owns this flag. Keep `seo.indexing`
+unset (or at its default) in `docs.json`; `"all"` can override the exclusions.
+See Mintlify's [indexing rules](https://www.mintlify.com/docs/organize/hidden-pages#search-seo-and-ai-indexing)
+and [LLM files](https://www.mintlify.com/docs/ai/llmstxt).
+Authored package guides, including SDK and masonry, stay indexed.
+
+The pinned 4.2.1184 static exporter excludes these pages from its search index
+and emits their HTML with `noindex`, but still lists them in its `llms.txt`.
+It emits no `llms-full.txt`. Use hosted checks below to verify the documented
+LLM exclusions; a successful static export does not establish them.
+
+After an authorized deployment, fetch `llms-full.txt` and confirm that no
+`Source: https://docs.tuturuuu.com/reference/repository/` sections remain;
+ordinary links to those pages may remain. Check `llms.txt` for excluded entries,
+following any split indexes it links. Fetch every generated page anonymously:
+it must return HTTP 200 with its body and a robots `noindex` directive. Confirm
+that the Reference navigation still lists those pages. Search for exact generated
+page titles and distinctive body text in the site's search: those pages must be
+absent, while an authored guide still returns results. Record full-file byte size
+after the deployment and search-index refresh. Source checks alone do not prove
+hosted LLM output or search behavior.
+
 `docs-seo-check.yaml` runs inventory, navigation/link, SEO-policy tests, and strict
 Mintlify validation in CI. Strict validation compiles docs; do not run it or app
 builds on this machine. Require relevant lint, type-check, unit-test, and real
@@ -53,7 +79,7 @@ The platform owns `src/app/sitemap.ts` and `src/app/robots.ts`; static files wit
 those names conflict with its publication-aware metadata routes. Satellite
 sitemaps advertise their own canonical origin, including Nova
 (`nova.tuturuuu.com`) and Rewise (`rewise.tuturuuu.com`) production domains. The retired `rewise.me` and
-noncanonical `nova.ai.vn` hosts must not appear in generated discovery links. Do not invent `lastmod` values
+`rewise.school` hosts and the noncanonical `nova.ai.vn` host must not appear in generated discovery links. Do not invent `lastmod` values
 from build time or add language URLs that redirect to the same canonical page.
 Dynamic publication paths need an anonymous, publication-aware reader before
 being enumerated; public route patterns alone do not expose a content catalog.

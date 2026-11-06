@@ -1,4 +1,4 @@
-import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
+import { resolveTurnstileClientState } from '@tuturuuu/cloudflare/turnstile/client';
 
 const LOCAL_SUPABASE_HOSTS = new Set([
   '0.0.0.0',

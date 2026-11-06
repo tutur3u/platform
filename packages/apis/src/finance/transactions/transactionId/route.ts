@@ -3,11 +3,14 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { canReassignFinanceWallet } from '@tuturuuu/utils/finance';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-
 import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
 } from '../../request-access';
+import {
+  validateFinanceReferences,
+  validateFinanceWalletWriteAccess,
+} from '../../workspace-references';
 import {
   enrichTransactionsWithTags,
   validateTransactionTagIdsForWorkspace,
@@ -21,13 +24,11 @@ async function verifyTransactionWorkspace(
   supabase?: TypedSupabaseClient
 ) {
   const sbClient = supabase || (await createAdminClient());
-
   const { data, error } = await sbClient
     .from('wallet_transactions')
     .select('id, wallet_id')
     .eq('id', transactionId)
     .single();
-
   if (error || !data) {
     console.error('Error verifying transaction workspace:', {
       transactionId,
@@ -36,7 +37,6 @@ async function verifyTransactionWorkspace(
     });
     return null;
   }
-
   const { data: wallet, error: walletError } = await sbClient
     .schema('private')
     .from('workspace_wallets')
@@ -44,7 +44,6 @@ async function verifyTransactionWorkspace(
     .eq('id', data.wallet_id)
     .eq('ws_id', wsId)
     .maybeSingle();
-
   if (walletError || !wallet) {
     console.error('Error verifying transaction wallet workspace:', {
       transactionId,
@@ -53,17 +52,14 @@ async function verifyTransactionWorkspace(
     });
     return null;
   }
-
   return data;
 }
-
 interface Params {
   params: Promise<{
     transactionId: string;
     wsId: string;
   }>;
 }
-
 interface DeleteTransactionOptions {
   authContext?: FinanceRouteAuthContext;
   onBeforeDeleteFiles?: (input: {
@@ -72,7 +68,6 @@ interface DeleteTransactionOptions {
     wsId: string;
   }) => Promise<void> | void;
 }
-
 const TransactionUpdateSchema = z.object({
   description: z.string().optional(),
   amount: z.number().optional(),
@@ -85,19 +80,16 @@ const TransactionUpdateSchema = z.object({
   is_description_confidential: z.boolean().optional(),
   is_category_confidential: z.boolean().optional(),
 });
-
 const TransactionRouteParamsSchema = z.object({
   transactionId: z.guid(),
   wsId: z.string().trim().min(1),
 });
-
 export async function GET(
   req: Request,
   { params }: Params,
   authContext?: FinanceRouteAuthContext
 ) {
   const paramsValidation = TransactionRouteParamsSchema.safeParse(await params);
-
   if (!paramsValidation.success) {
     return NextResponse.json(
       { message: 'Invalid transaction or workspace ID' },
@@ -106,36 +98,30 @@ export async function GET(
   }
   const { transactionId, wsId } = paramsValidation.data;
   const access = await getFinanceRouteContext(req, wsId, authContext);
-
   if (access.response) {
     return access.response;
   }
-
   const { normalizedWsId, permissions, sbAdmin, supabase, user } =
     access.context;
   const { withoutPermission } = permissions;
-
   if (withoutPermission('view_transactions')) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
       { status: 403 }
     );
   }
-
   // Verify transaction belongs to workspace and fetch full data
   const transaction = await verifyTransactionWorkspace(
     transactionId,
     normalizedWsId,
     sbAdmin
   );
-
   if (!transaction) {
     return NextResponse.json(
       { message: 'Transaction not found' },
       { status: 404 }
     );
   }
-
   // Use redaction function to get transaction with permission-based field redaction
   const { data, error } = await supabase.rpc(
     'get_wallet_transactions_with_permissions',
@@ -145,7 +131,6 @@ export async function GET(
       p_transaction_ids: [transactionId],
     }
   );
-
   if (error || !data || data.length === 0) {
     console.error('Error fetching transaction:', {
       transactionId,
@@ -338,7 +323,7 @@ export async function PUT(
 
   // Verify new wallet belongs to workspace if being changed
   if (newData.wallet_id) {
-    const { data: walletCheck } = await sbAdmin
+    const { data: walletCheck, error: walletError } = await sbAdmin
       .schema('private')
       .from('workspace_wallets')
       .select('id, currency')
@@ -346,8 +331,14 @@ export async function PUT(
       .eq('ws_id', normalizedWsId)
       .maybeSingle();
 
+    if (walletError) {
+      return NextResponse.json(
+        { message: 'Error checking wallet' },
+        { status: 500 }
+      );
+    }
     if (!walletCheck) {
-      return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
+      return NextResponse.json({ message: 'Invalid wallet' }, { status: 403 });
     }
     if (
       source &&
@@ -375,6 +366,44 @@ export async function PUT(
       { status: 403 }
     );
   }
+
+  if (newData.category_id) {
+    const { data: category, error: categoryError } = await sbAdmin
+      .from('transaction_categories')
+      .select('id')
+      .eq('id', newData.category_id)
+      .eq('ws_id', normalizedWsId)
+      .maybeSingle();
+
+    if (categoryError) {
+      return NextResponse.json(
+        { message: 'Error checking transaction category' },
+        { status: 500 }
+      );
+    }
+    if (!category) {
+      return NextResponse.json(
+        { message: 'Invalid category' },
+        { status: 403 }
+      );
+    }
+  }
+
+  const deniedWallet = await validateFinanceWalletWriteAccess(
+    access.context,
+    [
+      existingTransaction.wallet_id,
+      ...(newData.wallet_id ? [newData.wallet_id] : []),
+    ],
+    'update_transactions'
+  );
+  if (deniedWallet) return deniedWallet;
+  const invalidCategory = await validateFinanceReferences(
+    sbAdmin,
+    normalizedWsId,
+    { category_id: data.category_id }
+  );
+  if (invalidCategory) return invalidCategory;
 
   const tagValidation = await validateTransactionTagIdsForWorkspace(
     sbAdmin,
@@ -514,6 +543,13 @@ export async function deleteTransaction(
       { status: 404 }
     );
   }
+
+  const deniedWallet = await validateFinanceWalletWriteAccess(
+    access.context,
+    [transaction.wallet_id],
+    'delete_transactions'
+  );
+  if (deniedWallet) return deniedWallet;
 
   // Check if transaction is confidential
   const { data: txData } = await sbAdmin

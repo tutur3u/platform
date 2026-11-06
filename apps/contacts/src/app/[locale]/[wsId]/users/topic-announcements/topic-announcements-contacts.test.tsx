@@ -13,6 +13,10 @@ vi.mock('next-intl', () => ({
       : key,
 }));
 
+vi.mock('./existing-contact-picker', () => ({
+  ExistingContactPicker: () => <button type="button">existing_contact</button>,
+}));
+
 vi.mock('./workspace-virtual-user-linker', () => ({
   WorkspaceVirtualUserLinker: () => <button type="button">linked_user</button>,
 }));

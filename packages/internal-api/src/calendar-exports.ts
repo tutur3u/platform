@@ -2,6 +2,7 @@ export {
   applyWorkspaceCalendarSchedule,
   type CalendarAccount,
   type CalendarAccountDisconnectResponse,
+  type CalendarAccountNeedingReconnect,
   type CalendarAccountsResponse,
   type CalendarAuthUrlResponse,
   type CalendarCategoriesReorderPayload,

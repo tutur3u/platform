@@ -9,10 +9,12 @@ class AssistantComposerAttachments extends StatelessWidget {
   const AssistantComposerAttachments({
     required this.attachments,
     required this.onRemove,
+    this.onRetry,
     super.key,
   });
   final List<AssistantAttachment> attachments;
   final Future<void> Function(String)? onRemove;
+  final Future<void> Function(String)? onRetry;
   @override
   Widget build(BuildContext context) => ConstrainedBox(
     constraints: const BoxConstraints(maxHeight: 100),
@@ -29,6 +31,9 @@ class AssistantComposerAttachments extends StatelessWidget {
               onRemove: onRemove == null
                   ? null
                   : () => unawaited(onRemove!(attachment.id)),
+              onRetry: onRetry == null
+                  ? null
+                  : () => unawaited(onRetry!(attachment.id)),
             ),
         ],
       ),

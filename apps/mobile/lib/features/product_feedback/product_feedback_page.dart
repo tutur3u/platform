@@ -8,10 +8,13 @@ import 'package:mime/mime.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart'
     show newLocalMutationId;
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/widgets/security_check_dialog.dart';
 import 'package:mobile/features/product_feedback/product_feedback_repository.dart';
+import 'package:mobile/features/settings/view/settings_row_layout.dart';
+import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -245,84 +248,120 @@ class _FeedbackFormState extends State<ProductFeedbackForm> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final locked = _busy || _pendingKey != null || _preferences == null;
+    final canSubmit =
+        !_busy &&
+        _preferences != null &&
+        !(_pendingKey != null && _draft == null);
+    Widget gap() => const SizedBox(height: SettingsRowLayout.groupGap);
     return Form(
       key: _formKey,
       child: AppPageListView(
         kind: AppPageKind.form,
         children: [
-          Text(l10n.feedbackPrivate),
-          const SizedBox(height: 16),
-          if (_receipt != null) ...[
-            Text(l10n.feedbackSent),
-            SelectableText(_receipt!.id),
-          ] else ...[
-            TextFormField(
-              controller: _title,
-              validator: (value) =>
-                  value == null ||
-                      value.trim().runes.isEmpty ||
-                      value.trim().runes.length > 160
-                  ? l10n.feedbackSubjectRequired
-                  : null,
-              enabled: !locked,
-              maxLength: 160,
-              decoration: InputDecoration(
-                labelText: l10n.feedbackSubject,
-                hintText: l10n.feedbackSubjectPlaceholder,
-              ),
+          SettingsCaption(l10n.feedbackIntro),
+          const SizedBox(height: AppSpacing.md),
+          if (_receipt != null)
+            AppAlert(
+              variant: AppAlertVariant.success,
+              title: Text(l10n.feedbackSent),
+              content: SelectableText(_receipt!.id),
+            )
+          else ...[
+            SettingsCompactSection(
+              title: l10n.feedbackYourFeedback,
+              children: [
+                SettingsFieldRow(
+                  child: AppTextFormField(
+                    key: const ValueKey('feedback-subject'),
+                    controller: _title,
+                    validator: (value) =>
+                        value == null ||
+                            value.trim().runes.isEmpty ||
+                            value.trim().runes.length > 160
+                        ? l10n.feedbackSubjectRequired
+                        : null,
+                    enabled: !locked,
+                    maxLength: 160,
+                    label: l10n.feedbackSubject,
+                    placeholder: l10n.feedbackSubjectPlaceholder,
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
+                ),
+                SettingsFieldRow(
+                  child: AppTextFormField(
+                    key: const ValueKey('feedback-details'),
+                    controller: _body,
+                    validator: (value) =>
+                        value == null ||
+                            value.trim().runes.isEmpty ||
+                            value.trim().runes.length > 8000
+                        ? l10n.feedbackDetailsRequired
+                        : null,
+                    enabled: !locked,
+                    maxLength: 8000,
+                    minLines: 5,
+                    maxLines: 12,
+                    label: l10n.feedbackDetails,
+                    placeholder: l10n.feedbackDetailsPlaceholder,
+                    helperText: l10n.feedbackDetailsHelper,
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _body,
-              validator: (value) =>
-                  value == null ||
-                      value.trim().runes.isEmpty ||
-                      value.trim().runes.length > 8000
-                  ? l10n.feedbackDetailsRequired
-                  : null,
-              enabled: !locked,
-              maxLength: 8000,
-              minLines: 5,
-              maxLines: 12,
-              decoration: InputDecoration(
-                labelText: l10n.feedbackDetails,
-                hintText: l10n.feedbackDetailsPlaceholder,
-              ),
+            gap(),
+            SettingsCompactSection(
+              title: l10n.feedbackScreenshotGroup,
+              children: [
+                if (_image != null)
+                  SettingsTile(
+                    key: const ValueKey('feedback-remove-media'),
+                    grouped: true,
+                    icon: LucideIcons.imageMinus,
+                    title: l10n.feedbackMediaSelected,
+                    subtitle: l10n.feedbackRemoveMedia,
+                    showChevron: false,
+                    onTap: locked
+                        ? null
+                        : () => setState(() {
+                            _image = null;
+                            _contentType = null;
+                          }),
+                  )
+                else
+                  SettingsTile(
+                    key: const ValueKey('feedback-attach-media'),
+                    grouped: true,
+                    icon: LucideIcons.imagePlus,
+                    title: l10n.feedbackAttach,
+                    subtitle: l10n.feedbackAttachDescription,
+                    onTap: locked ? null : () => unawaited(_pickImage()),
+                  ),
+              ],
             ),
-            const SizedBox(height: 12),
-            if (_image != null) ...[
-              Text(l10n.feedbackMediaSelected),
-              TextButton(
-                onPressed: locked
-                    ? null
-                    : () => setState(() {
-                        _image = null;
-                        _contentType = null;
-                      }),
-                child: Text(l10n.feedbackRemoveMedia),
-              ),
-            ] else
-              OutlinedButton(
-                onPressed: locked ? null : _pickImage,
-                child: Text(l10n.feedbackAttach),
-              ),
             if (_pendingKey != null) ...[
-              Text(l10n.feedbackPending),
-              SelectableText(_pendingKey!),
-              TextButton(
-                onPressed: _busy ? null : _observe,
-                child: Text(l10n.feedbackCheckReceipt),
+              gap(),
+              AppAlert(
+                variant: AppAlertVariant.info,
+                title: Text(l10n.feedbackPending),
+                content: SelectableText(_pendingKey!),
+                trailing: AppButton.ghost(
+                  onPressed: _busy ? null : () => unawaited(_observe()),
+                  child: Text(l10n.feedbackCheckReceipt),
+                ),
               ),
             ],
-            if (_message != null) Text(_message!),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed:
-                  _busy ||
-                      _preferences == null ||
-                      (_pendingKey != null && _draft == null)
-                  ? null
-                  : _submit,
+            if (_message != null) ...[
+              gap(),
+              AppAlert(content: Text(_message!)),
+            ],
+            gap(),
+            AppButton.primary(
+              key: const ValueKey('feedback-submit'),
+              onPressed: canSubmit ? () => unawaited(_submit()) : null,
+              loading: _busy,
+              size: AppButtonSize.large,
+              leading: const Icon(LucideIcons.send),
               child: Text(
                 _busy
                     ? l10n.feedbackSending
@@ -332,8 +371,8 @@ class _FeedbackFormState extends State<ProductFeedbackForm> {
               ),
             ),
             if (_editableFailure)
-              TextButton(
-                onPressed: _busy ? null : _editRejected,
+              AppButton.ghost(
+                onPressed: _busy ? null : () => unawaited(_editRejected()),
                 child: Text(l10n.feedbackEditRejected),
               ),
           ],

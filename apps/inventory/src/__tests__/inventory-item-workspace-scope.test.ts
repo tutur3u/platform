@@ -254,7 +254,7 @@ describe('inventory item mutation workspace scope', () => {
 
   it('binds product category updates to the normalized route workspace', async () => {
     const categoryClient = createCategoryClient();
-    mocks.createClient.mockResolvedValue(categoryClient.client);
+    mocks.createAdminClient.mockResolvedValue(categoryClient.client);
     const request = new Request('https://app.example.com/api', {
       body: JSON.stringify({ name: 'Retail', ws_id: 'workspace-b' }),
       method: 'PUT',
@@ -271,14 +271,10 @@ describe('inventory item mutation workspace scope', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
-      'personal',
-      categoryClient.client
-    );
-    expect(mocks.getPermissions).toHaveBeenCalledWith({
+    expect(mocks.authorizeInventoryWorkspace).toHaveBeenCalledWith(
       request,
-      wsId: 'workspace-a',
-    });
+      'personal'
+    );
     expect(categoryClient.from).toHaveBeenCalledWith('product_categories');
     expect(categoryClient.update).toHaveBeenCalledWith({ name: 'Retail' });
     expect(categoryClient.updateChain.eqCalls).toEqual([
@@ -290,7 +286,7 @@ describe('inventory item mutation workspace scope', () => {
 
   it('binds product category deletes to the normalized route workspace', async () => {
     const categoryClient = createCategoryClient();
-    mocks.createClient.mockResolvedValue(categoryClient.client);
+    mocks.createAdminClient.mockResolvedValue(categoryClient.client);
     const request = new Request('https://app.example.com/api', {
       method: 'DELETE',
     });
@@ -314,9 +310,7 @@ describe('inventory item mutation workspace scope', () => {
   });
 
   it('binds warehouse updates to the normalized route workspace', async () => {
-    const userClient = {};
     const warehouseAdmin = createWarehouseAdminClient();
-    mocks.createClient.mockResolvedValue(userClient);
     mocks.createAdminClient.mockResolvedValue(warehouseAdmin.client);
     const request = new Request('https://app.example.com/api', {
       body: JSON.stringify({ name: 'Main', ws_id: 'workspace-b' }),
@@ -334,14 +328,10 @@ describe('inventory item mutation workspace scope', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
-      'personal',
-      userClient
-    );
-    expect(mocks.getPermissions).toHaveBeenCalledWith({
+    expect(mocks.authorizeInventoryWorkspace).toHaveBeenCalledWith(
       request,
-      wsId: 'workspace-a',
-    });
+      'personal'
+    );
     expect(warehouseAdmin.schema).toHaveBeenCalledWith('private');
     expect(warehouseAdmin.from).toHaveBeenCalledWith('inventory_warehouses');
     expect(warehouseAdmin.update).toHaveBeenCalledWith({ name: 'Main' });

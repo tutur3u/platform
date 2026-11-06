@@ -1,6 +1,6 @@
 import { canAccessFinanceTransactionStoragePath } from '@tuturuuu/finance-core/storage-access';
 import { validateFinalizedFinanceTransactionAttachment } from '@tuturuuu/finance-core/storage-limits';
-import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import { isExcludedDrivePath } from '@tuturuuu/storage-core/drive-path-policy';
 import { triggerWorkspaceStorageAutoExtract } from '@tuturuuu/storage-core/workspace-storage-auto-extract';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
@@ -79,7 +79,7 @@ export async function POST(
     if (sanitizedPath === null) {
       return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
     }
-    if (isReservedMobileDeploymentDrivePath(normalizedWsId, sanitizedPath)) {
+    if (isExcludedDrivePath(normalizedWsId, sanitizedPath)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 

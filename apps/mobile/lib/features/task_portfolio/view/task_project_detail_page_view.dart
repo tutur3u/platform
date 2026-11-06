@@ -101,12 +101,15 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
         builder: (context, state) {
           if (state.status == TaskPortfolioStatus.loading &&
               state.projects.isEmpty) {
-            return const Center(child: NovaLoadingIndicator());
+            return const AppLoadingIndicator.page();
           }
 
           if (state.status == TaskPortfolioStatus.error &&
               state.projects.isEmpty) {
-            return _ErrorState(message: state.error);
+            return NovaRefreshIndicator.state(
+              onRefresh: _reload,
+              child: _ErrorState(message: state.error),
+            );
           }
 
           final project = wsId == null
@@ -119,9 +122,12 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
                     .firstOrNull;
 
           if (project == null) {
-            return _NotFoundState(
-              title: l10n.taskPortfolioProjectNotFoundTitle,
-              description: l10n.taskPortfolioProjectNotFoundDescription,
+            return NovaRefreshIndicator.state(
+              onRefresh: _reload,
+              child: _NotFoundState(
+                title: l10n.taskPortfolioProjectNotFoundTitle,
+                description: l10n.taskPortfolioProjectNotFoundDescription,
+              ),
             );
           }
 
@@ -230,13 +236,13 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
     String? selectedTaskId;
     var searchQuery = '';
     final didLink =
-        await shad.showDialog<bool>(
+        await showAppDialog<bool>(
           context: context,
           builder: (context) {
             return StatefulBuilder(
               builder: (context, setState) {
-                return shad.AlertDialog(
-                  title: Text(context.l10n.taskPortfolioLinkTask),
+                return AppDialog(
+                  title: context.l10n.taskPortfolioLinkTask,
                   content: SizedBox(
                     width: double.maxFinite,
                     child: availableTasks.isEmpty

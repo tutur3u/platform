@@ -152,6 +152,20 @@ void main() {
   ShellActionSpec search() => actions.state
       .resolveForLocation(Routes.drive)
       .firstWhere((action) => action.id == 'drive-search');
+  testWidgets('phones keep View in the single dock slot ahead of Search', (
+    tester,
+  ) async {
+    repository.load = (ws, offset, query) async => result(['First folder']);
+    // Under 400dp the dock shows only its first dock action.
+    await mount(tester, size: const Size(360, 780));
+    final dock = actions.state
+        .resolveForLocation(Routes.drive)
+        .where((action) => action.inDock)
+        .map((action) => action.id)
+        .toList();
+    expect(dock, ['drive-view', 'drive-sort', 'drive-search']);
+  });
+
   for (final grid in [false, true]) {
     for (final canManageDrive in [false, true]) {
       testWidgets(

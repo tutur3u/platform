@@ -19,6 +19,8 @@ class AppStateMessage extends StatelessWidget {
     this.tone = AppTone.neutral,
     this.actionLabel,
     this.onAction,
+    this.secondaryActionLabel,
+    this.onSecondaryAction,
     super.key,
   }) : inline = false;
 
@@ -29,6 +31,8 @@ class AppStateMessage extends StatelessWidget {
     this.tone = AppTone.neutral,
     this.actionLabel,
     this.onAction,
+    this.secondaryActionLabel,
+    this.onSecondaryAction,
     super.key,
   }) : inline = true;
 
@@ -38,6 +42,10 @@ class AppStateMessage extends StatelessWidget {
   final AppTone tone;
   final String? actionLabel;
   final FutureOr<void> Function()? onAction;
+
+  /// A quieter second choice shown under the main action.
+  final String? secondaryActionLabel;
+  final FutureOr<void> Function()? onSecondaryAction;
   final bool inline;
 
   @override
@@ -51,6 +59,15 @@ class AppStateMessage extends StatelessWidget {
             child: Text(actionLabel!),
           )
         : null;
+    final secondaryAction =
+        secondaryActionLabel != null && onSecondaryAction != null
+        ? AppButton.ghost(
+            size: inline ? AppButtonSize.small : AppButtonSize.normal,
+            onPressed: () => unawaited(Future.sync(onSecondaryAction!)),
+            child: Text(secondaryActionLabel!),
+          )
+        : null;
+    final actions = [?action, ?secondaryAction];
     final titleText = Text(
       title,
       textAlign: inline ? TextAlign.start : TextAlign.center,
@@ -88,9 +105,9 @@ class AppStateMessage extends StatelessWidget {
                       const SizedBox(height: AppSpacing.xxs),
                       messageText,
                     ],
-                    if (action != null) ...[
+                    if (actions.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.sm),
-                      action,
+                      _Actions(actions),
                     ],
                   ],
                 ),
@@ -119,9 +136,9 @@ class AppStateMessage extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xs + AppSpacing.xxs),
                   messageText,
                 ],
-                if (action != null) ...[
+                if (actions.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.lg),
-                  action,
+                  _Actions(actions, center: true),
                 ],
               ],
             ),
@@ -130,4 +147,21 @@ class AppStateMessage extends StatelessWidget {
       ),
     );
   }
+}
+
+class _Actions extends StatelessWidget {
+  const _Actions(this.children, {this.center = false});
+
+  final List<Widget> children;
+  final bool center;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: center
+        ? CrossAxisAlignment.center
+        : CrossAxisAlignment.start,
+    spacing: AppSpacing.xs,
+    children: children,
+  );
 }

@@ -171,15 +171,11 @@ class _AppsScreenState extends State<AppsScreen> {
             locations: const {Routes.apps},
             onResetSection: () => setState(() => _showGrid = true),
             actions: [
-              ShellActionSpec(
+              ShellActionSpec.search(
                 id: 'apps-search',
-                inDock: true,
-                icon: _searching
-                    ? Icons.search_off_rounded
-                    : Icons.search_rounded,
+                active: _searching,
                 tooltip: context.l10n.appsHubSearchHint,
-                callbackToken: 'search-$_searching',
-                searchController: _searching ? _search : null,
+                controller: _search,
                 searchHint: context.l10n.appsHubSearchHint,
                 onSearchChanged: (_) => setState(() {}),
                 onSearchSubmitted: _submitSearch,

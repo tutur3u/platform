@@ -3,9 +3,9 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(13);
+select plan(15);
 
-insert into public.users (id)
+insert into auth.users (id)
 values
   ('00000000-0000-4000-8000-000000008601'),
   ('00000000-0000-4000-8000-000000008602'),
@@ -52,6 +52,10 @@ values
     'MEMBER'
   )
 on conflict (ws_id, user_id) do update set type = excluded.type;
+
+-- Explicitly deny the workspace default; only the manager role below grants access.
+update public.workspace_default_permissions set enabled=false
+where ws_id='00000000-0000-4000-8000-000000008611' and permission in ('admin','manage_calendar');
 
 insert into public.workspace_roles (id, ws_id, name)
 values (
@@ -102,10 +106,17 @@ select policies_are(
     'Calendar managers can delete workspace events',
     'Calendar managers can insert workspace events',
     'Calendar managers can select workspace events',
-    'Calendar managers can update workspace events'
+    'Calendar managers can update workspace events',
+    'account_required_mfa'
   ],
   'workspace events expose only operation-specific calendar manager policies'
 );
+
+-- Direct clients are denied by the proxy-only table ACL. Exercise the retained
+-- defense-in-depth policies below with rollback-only grants.
+select ok(not has_table_privilege('authenticated', 'public.workspace_calendar_events', 'SELECT, INSERT, UPDATE, DELETE'), 'authenticated has no direct calendar CRUD grant');
+select ok(not has_table_privilege('anon', 'public.workspace_calendar_events', 'SELECT, INSERT, UPDATE, DELETE'), 'anon has no direct calendar CRUD grant');
+grant select, insert, update, delete on public.workspace_calendar_events to authenticated, anon;
 
 set local role authenticated;
 select set_config(
@@ -169,23 +180,25 @@ select throws_ok(
   'workspace member without manage_calendar cannot insert events'
 );
 
-select is(
-  (with changed as (
+with changed as (
     update public.workspace_calendar_events
     set title = 'Denied update'
     where id = '00000000-0000-4000-8000-000000008621'
     returning 1
-  ) select count(*) from changed),
+)
+select is(
+  (select count(*) from changed),
   0::bigint,
   'workspace member without manage_calendar cannot update events'
 );
 
-select is(
-  (with removed as (
+with removed as (
     delete from public.workspace_calendar_events
     where id = '00000000-0000-4000-8000-000000008621'
     returning 1
-  ) select count(*) from removed),
+)
+select is(
+  (select count(*) from removed),
   0::bigint,
   'workspace member without manage_calendar cannot delete events'
 );

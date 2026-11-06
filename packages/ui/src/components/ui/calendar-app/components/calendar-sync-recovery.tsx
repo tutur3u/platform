@@ -1,6 +1,7 @@
 import { AlertTriangle, RefreshCw } from '@tuturuuu/icons';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { Button } from '../../button';
+import { reconnectCalendarProvider } from './calendar-reconnect-action';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
 
 type RecoveryState = Pick<
@@ -8,6 +9,7 @@ type RecoveryState = Pick<
   | 'failedCalendars'
   | 'pauseFailedCalendarMutation'
   | 'accounts'
+  | 'needsReconnectAccounts'
   | 'providerAccountStatuses'
   | 'syncHealth'
   | 'syncStatusError'
@@ -26,7 +28,8 @@ export function needsCalendarSyncAttention(
     | 'syncStatusError'
     | 'providerAccountStatuses'
     | 'syncMutation'
-  >
+  > &
+    Partial<Pick<RecoveryState, 'needsReconnectAccounts'>>
 ) {
   const lastSuccess = state.syncHealth?.lastSuccessAt;
   const failedAttemptIsNewer =
@@ -36,6 +39,7 @@ export function needsCalendarSyncAttention(
     (failedAttemptIsNewer &&
       (state.syncMutation.isError || state.syncMutation.data?.ok === false)) ||
     state.syncHealth?.state === 'degraded' ||
+    !!state.needsReconnectAccounts?.length ||
     Object.values(state.providerAccountStatuses).some(
       (status) => status.state !== 'connected'
     )
@@ -53,10 +57,15 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
   const syncing = isCalendarSyncActive(state);
   const needsAttention = needsCalendarSyncAttention(state);
   if (!needsAttention && !syncing) return null;
-  const reconnectAccounts = state.accounts.filter(
-    (account) =>
-      providerAccountStatuses[account.id]?.state === 'reconnect_required'
-  );
+  // Active accounts whose status says reconnect, plus accounts sync
+  // quarantined after the provider rejected their credential.
+  const reconnectAccounts = [
+    ...state.accounts.filter(
+      (account) =>
+        providerAccountStatuses[account.id]?.state === 'reconnect_required'
+    ),
+    ...(state.needsReconnectAccounts ?? []),
+  ];
   const reason = syncStatusError
     ? 'unavailable'
     : reconnectAccounts.length
@@ -167,7 +176,7 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
         )}
         {reconnectAccounts.map((account) => (
           <p key={account.id} className="break-all text-xs">
-            {account.account_email}
+            {account.account_email ?? account.account_name}
           </p>
         ))}
         <div className="flex flex-wrap gap-2">
@@ -192,7 +201,7 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
             <Button
               size="sm"
               disabled={state.googleAuthMutation.isPending}
-              onClick={() => state.googleAuthMutation.mutate()}
+              onClick={() => reconnectCalendarProvider(state, 'google')}
             >
               {t('sync_recovery.reconnect_google')}
             </Button>
@@ -201,7 +210,7 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
             <Button
               size="sm"
               disabled={state.microsoftAuthMutation.isPending}
-              onClick={() => state.microsoftAuthMutation.mutate()}
+              onClick={() => reconnectCalendarProvider(state, 'microsoft')}
             >
               {t('sync_recovery.reconnect_microsoft')}
             </Button>

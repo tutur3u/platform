@@ -60,6 +60,14 @@ import {
 } from '@/lib/calendar/calendar-oauth-state';
 import { GET } from './route';
 
+// Quarantined Google accounts for the caller, as the route reads them.
+function sessionClient(quarantined: unknown[] = []) {
+  const query: Record<string, unknown> = {};
+  for (const method of ['select', 'eq', 'not']) query[method] = () => query;
+  query.limit = async () => ({ data: quarantined, error: null });
+  return { from: () => query };
+}
+
 describe('Google Calendar auth route', () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
@@ -71,10 +79,37 @@ describe('Google Calendar auth route', () => {
     normalizeWorkspaceIdMock.mockResolvedValue('workspace-1');
     resolveSessionAuthContextMock.mockResolvedValue({
       ok: true,
-      supabase: {},
+      supabase: sessionClient(),
       user: { id: 'user-1' },
     });
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
+  });
+
+  it('forces consent when the reconnect prompt asks for it', async () => {
+    const response = await GET(
+      new NextRequest(
+        'https://tuturuuu.com/api/v1/calendar/auth?wsId=personal&reconnect=1'
+      )
+    );
+    const { authUrl } = (await response.json()) as { authUrl: string };
+    expect(new URL(authUrl).searchParams.get('prompt')).toBe('consent');
+  });
+
+  it('forces consent only when reconnecting a quarantined account', async () => {
+    resolveSessionAuthContextMock.mockResolvedValue({
+      ok: true,
+      supabase: sessionClient([{ id: 'quarantined' }]),
+      user: { id: 'user-1' },
+    });
+    const response = await GET(
+      new NextRequest('https://tuturuuu.com/api/v1/calendar/auth?wsId=personal')
+    );
+    const { authUrl } = (await response.json()) as { authUrl: string };
+    expect(new URL(authUrl).searchParams.get('prompt')).toBe('consent');
+    expect(generatedAuthUrlInputs[0]).toMatchObject({
+      access_type: 'offline',
+      prompt: 'consent',
+    });
   });
 
   it.each(['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] as const)(

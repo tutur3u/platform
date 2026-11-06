@@ -37,6 +37,10 @@ const presentationFields = new Set([
 function normalize(value) {
   if (Array.isArray(value)) return value.map(normalize);
   if (value === null || typeof value !== 'object') return value;
+  if (value.type === 'TSPropertySignature' && !value.computed) {
+    const name = memberName(value.key);
+    if (name !== null) value = { ...value, key: { type: 'Identifier', name } };
+  }
   return Object.fromEntries(
     Object.keys(value)
       .filter((key) => !presentationFields.has(key))

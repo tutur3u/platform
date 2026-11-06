@@ -44,13 +44,16 @@ export async function consumeCalendarOAuthNonce({
   nonce,
   provider,
   userId,
+  purpose = 'state',
 }: {
   client?: CalendarOAuthNonceClient;
+  purpose?: 'state' | 'consent_restart';
   expiresAt: number;
   nonce: string;
   provider: CalendarOAuthProvider;
   userId: string;
 }): Promise<CalendarOAuthNonceConsumption> {
+  const operation = purpose === 'state' ? 'state use' : 'consent restart';
   try {
     const db = client ?? (await defaultClient());
     const { data, error } = await db
@@ -63,7 +66,7 @@ export async function consumeCalendarOAuthNonce({
       });
 
     if (error) {
-      console.error('Failed to record calendar OAuth state use', {
+      console.error(`Failed to record calendar OAuth ${operation}`, {
         code: error.code ?? null,
         provider,
       });
@@ -73,12 +76,15 @@ export async function consumeCalendarOAuthNonce({
     if (data === true) return 'consumed';
     if (data === false) return 'replayed';
 
-    console.error('Unexpected calendar OAuth state ledger response', {
-      provider,
-    });
+    console.error(
+      `Unexpected calendar OAuth ${purpose === 'state' ? 'state' : 'consent restart'} ledger response`,
+      {
+        provider,
+      }
+    );
     return 'unavailable';
   } catch (error) {
-    console.error('Failed to record calendar OAuth state use', {
+    console.error(`Failed to record calendar OAuth ${operation}`, {
       error: error instanceof Error ? error.message : 'Unknown error',
       provider,
     });

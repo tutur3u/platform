@@ -208,7 +208,7 @@ function assertWorkflow(source) {
     'workflow.runtime-bypass must remain absent'
   );
   let credentialFreeSource = source;
-  for (const id of ['native-publication-profiles', 'native-publish-staging']) {
+  for (const id of ['native-publish-staging']) {
     const publisher = job(source, id);
     let admittedPublisher = publisher;
     for (const name of [
@@ -565,6 +565,23 @@ test('staging deploy/control secrets are allowed only in the explicit publisher 
       'secrets.CLOUDFLARE_API_TOKEN'
     );
     assert.throws(() => assertWorkflow(production), /workflow.secrets/);
+  }
+});
+
+test('native qualification rejects forwarding every publisher secret', () => {
+  const qualification = job(workflow, 'native-publication-profiles');
+  for (const name of [
+    'CLOUDFLARE_STAGING_API_TOKEN',
+    'WAVE1_CONTROL_READ_TOKEN',
+    'STAGING_SUPABASE_URL',
+    'STAGING_SUPABASE_PUBLISHABLE_KEY',
+  ]) {
+    const expression = `\${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.${name} || '' }}`;
+    const changed = workflow.replace(
+      qualification,
+      `${qualification}\n    secrets:\n      ${name}: ${expression}\n`
+    );
+    assert.throws(() => assertWorkflow(changed), /workflow.secrets/);
   }
 });
 

@@ -26,6 +26,10 @@ update private.account_benefits set starts_at=now()-interval '1 day',expires_at=
 select ok(not private.account_playgrounds_allowed('00000000-0000-4000-8000-000000009801'),'expired benefit denies execution');
 -- Only the current confirmed host identity can elevate this exact meeting.
 insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values('00000000-0000-4000-8000-000000009803','host@tuturuuu.com',now(),'{}');
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 insert into public.workspace_meetings(id,ws_id,name,creator_id) values('00000000-0000-4000-8000-000000009804',private.account_personal_workspace('00000000-0000-4000-8000-000000009803'),'Disposable coding meeting','00000000-0000-4000-8000-000000009803');
 select ok(private.meeting_programming_elevated('00000000-0000-4000-8000-000000009804','00000000-0000-4000-8000-000000009803'),'confirmed exact-domain host elevates the meeting');
 select ok(not private.meeting_programming_elevated('00000000-0000-4000-8000-000000009804','00000000-0000-4000-8000-000000009801'),'another actor cannot claim host elevation');

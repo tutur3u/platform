@@ -1,11 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/features/audience_mode/audience_mode.dart';
+import 'package:mobile/features/audience_mode/audience_mode_cubit.dart';
+import 'package:mobile/features/audience_mode/audience_mode_labels.dart';
 import 'package:mobile/features/onboarding/widgets/onboarding_backdrop.dart';
 import 'package:mobile/features/onboarding/widgets/onboarding_choice_slide.dart';
 import 'package:mobile/features/onboarding/widgets/onboarding_slide.dart';
@@ -23,8 +27,9 @@ class OnboardingPage extends StatefulWidget {
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
-  static const _pageCount = 4;
+  static const _pageCount = 5;
   final _pageController = PageController();
+  final Set<int> _selectedMode = {};
   final Set<int> _selectedGoals = {};
   final Set<int> _selectedRoles = {};
   int _currentPage = 0;
@@ -35,7 +40,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
     super.dispose();
   }
 
-  Future<void> _completeOnboarding() async {
+  Future<void> _completeOnboarding({bool skipped = false}) async {
+    if (!skipped) _saveMode();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('has_seen_onboarding', true);
     if (_selectedRoles.isNotEmpty) {
@@ -53,6 +59,27 @@ class _OnboardingPageState extends State<OnboardingPage> {
       context.go(Routes.login);
     }
   }
+
+  /// Writes the account-wide mode. Workspace choices still take precedence.
+  void _saveMode() {
+    final index = _selectedMode.firstOrNull;
+    final cubit = context.read<AudienceModeCubit?>();
+    if (index == null || cubit == null) return;
+    final mode = AudienceMode.values[index];
+    unawaited(() async {
+      try {
+        await cubit.setAccountMode(mode);
+      } on Object {
+        // Settings → Mode remains available; onboarding never blocks on it.
+      }
+    }());
+  }
+
+  void _toggleMode(int index) => setState(() {
+    _selectedMode
+      ..clear()
+      ..add(index);
+  });
 
   void _toggleRole(int index) => setState(() {
     _selectedRoles
@@ -120,7 +147,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       ],
                     ),
                     shad.GhostButton(
-                      onPressed: () => unawaited(_completeOnboarding()),
+                      onPressed: () =>
+                          unawaited(_completeOnboarding(skipped: true)),
                       child: Text(l10n.connectedOnboardingSkip),
                     ),
                   ],
@@ -136,6 +164,20 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       title: l10n.connectedOnboardingEcosystemTitle,
                       subtitle: l10n.connectedOnboardingEcosystemSubtitle,
                       icon: LucideIcons.orbit,
+                    ),
+                    OnboardingChoiceSlide(
+                      title: l10n.onboardingModeTitle,
+                      subtitle: l10n.onboardingModeSubtitle,
+                      options: [
+                        for (final mode in AudienceMode.values)
+                          audienceModeLabel(l10n, mode),
+                      ],
+                      descriptions: [
+                        for (final mode in AudienceMode.values)
+                          audienceModeDescription(l10n, mode),
+                      ],
+                      selected: _selectedMode,
+                      onToggle: _toggleMode,
                     ),
                     OnboardingChoiceSlide(
                       title: l10n.connectedOnboardingRoleTitle,

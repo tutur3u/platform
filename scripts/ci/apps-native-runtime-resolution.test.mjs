@@ -55,6 +55,7 @@ test('Apps evidence packaging runs in a cold checkout without root YAML packages
   }
   await copyModule(join(repository, entry));
   await copyModule(join(repository, 'scripts/ci/workflow-yaml-test-helper.js'));
+  await copyModule(join(repository, 'scripts/ci/pr-label-gate.js'));
   const workflow = '.github/workflows/apps-cloudflare.yaml';
   await mkdir(join(cold, '.github/workflows'), { recursive: true });
   await copyFile(join(repository, workflow), join(cold, workflow));

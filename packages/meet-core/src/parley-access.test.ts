@@ -24,7 +24,11 @@ describe('fresh Parley authorization', () => {
     vi.resetAllMocks();
     mocks.identity.mockResolvedValue({
       data: {
-        user: { email: 'user@example.test', email_confirmed_at: '2026-01-01' },
+        user: {
+          email: 'user@example.test',
+          email_confirmed_at: '2026-01-01',
+          identities: [{ provider: 'email', identity_data: {} }],
+        },
       },
       error: null,
     });
@@ -40,12 +44,30 @@ describe('fresh Parley authorization', () => {
   it('does not consult the allowlist for a confirmed exact internal domain', async () => {
     mocks.identity.mockResolvedValue({
       data: {
-        user: { email: 'user@tuturuuu.com', email_confirmed_at: '2026-01-01' },
+        user: {
+          email: 'user@tuturuuu.com',
+          email_confirmed_at: '2026-01-01',
+          identities: [{ provider: 'email', identity_data: {} }],
+        },
       },
       error: null,
     });
     expect(await hasParleyAccess('user')).toBe(true);
     expect(mocks.member).not.toHaveBeenCalled();
+  });
+  it('treats xwf accounts as external', async () => {
+    mocks.identity.mockResolvedValue({
+      data: {
+        user: {
+          email: 'user@xwf.tuturuuu.com',
+          email_confirmed_at: '2026-01-01',
+          identities: [{ provider: 'email', identity_data: {} }],
+        },
+      },
+      error: null,
+    });
+    expect(await hasParleyAccess('user')).toBe(false);
+    expect(mocks.member).toHaveBeenCalled();
   });
   it('rejects unconfirmed identities even with allowlist membership', async () => {
     mocks.identity.mockResolvedValue({

@@ -29,7 +29,9 @@ export async function completeTutoringPages<T extends { id: string }>(
       response.count > 2000 ||
       response.page !== page ||
       response.pageSize !== 100 ||
-      response.totalPages !== Math.ceil(response.count / 100) ||
+      // An empty catalog may report zero or one page; the sessions API reports one.
+      (response.totalPages !== Math.ceil(response.count / 100) &&
+        !(response.count === 0 && response.totalPages === 1)) ||
       (expectedCount !== undefined && response.count !== expectedCount) ||
       (expectedPages !== undefined && response.totalPages !== expectedPages) ||
       response.data.length !==
@@ -59,7 +61,8 @@ export async function loadTutoringPlanData(
   current: () => boolean
 ) {
   const teachers = await completeTutoringPages(
-    (page) => listTutoringTeachers(wsId, { page, pageSize: 100 }),
+    (page) =>
+      listTutoringTeachers(wsId, { page, pageSize: 100, tutorsOnly: false }),
     current
   );
   const sessions = await completeTutoringPages(

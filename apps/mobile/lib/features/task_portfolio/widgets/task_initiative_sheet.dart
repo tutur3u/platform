@@ -52,19 +52,7 @@ class _TaskInitiativeSheetState extends State<TaskInitiativeSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Sheet handle indicator
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.mutedForeground.withValues(
-                      alpha: 0.3,
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const AppSheetHandle(),
               const shad.Gap(16),
               // Title
               Text(
@@ -204,8 +192,8 @@ class _TaskInitiativeSheetState extends State<TaskInitiativeSheet> {
       context: context,
       maxDialogWidth: 420,
       builder: (dialogCtx) {
-        return shad.AlertDialog(
-          title: Text(context.l10n.taskPortfolioInitiativeStatus),
+        return AppDialog(
+          title: context.l10n.taskPortfolioInitiativeStatus,
           content: SizedBox(
             width: double.maxFinite,
             child: ConstrainedBox(

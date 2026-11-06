@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:mobile/core/ui/overlays/app_modal_scope.dart';
+import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 /// Keeps Material's drag threshold, accessibility, and refresh lifecycle while
@@ -11,6 +14,25 @@ class NovaRefreshIndicator extends StatefulWidget {
     super.key,
   });
 
+  NovaRefreshIndicator.state({
+    required Widget child,
+    required this.onRefresh,
+    super.key,
+  }) : notificationPredicate = defaultScrollNotificationPredicate,
+       child = LayoutBuilder(
+         builder: (context, constraints) => SingleChildScrollView(
+           physics: const AlwaysScrollableScrollPhysics(),
+           child: ConstrainedBox(
+             constraints: BoxConstraints(
+               minHeight: constraints.hasBoundedHeight
+                   ? constraints.maxHeight
+                   : 0,
+             ),
+             child: child,
+           ),
+         ),
+       );
+
   final Widget child;
   final RefreshCallback onRefresh;
   final ScrollNotificationPredicate notificationPredicate;
@@ -22,6 +44,18 @@ class NovaRefreshIndicator extends StatefulWidget {
 class _NovaRefreshIndicatorState extends State<NovaRefreshIndicator> {
   RefreshIndicatorStatus? _status;
   double _pull = 0;
+
+  void _update(VoidCallback change) {
+    if (!mounted) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(change);
+      });
+    } else {
+      setState(change);
+    }
+  }
 
   bool _onScroll(ScrollNotification notification) {
     if (!widget.notificationPredicate(notification) ||
@@ -41,8 +75,17 @@ class _NovaRefreshIndicatorState extends State<NovaRefreshIndicator> {
         notification.overscroll < 0) {
       pull = (_pull - notification.overscroll).clamp(0.0, 150.0);
     }
-    if (pull != _pull) setState(() => _pull = pull);
+    if (pull != _pull) _update(() => _pull = pull);
     return false;
+  }
+
+  double _headerOffset(BuildContext context) {
+    final dock = context.findAncestorWidgetOfExactType<FloatingShellDock>();
+    return dock?.scrollableHeader == true &&
+            dock?.header != null &&
+            AppModalScope.maybeOf(context) == null
+        ? floatingShellHeaderInset(context)
+        : 0;
   }
 
   @override
@@ -54,7 +97,7 @@ class _NovaRefreshIndicatorState extends State<NovaRefreshIndicator> {
           onRefresh: widget.onRefresh,
           notificationPredicate: widget.notificationPredicate,
           onStatusChange: (status) {
-            if (mounted) setState(() => _status = status);
+            _update(() => _status = status);
           },
           child: widget.child,
         ),
@@ -66,7 +109,7 @@ class _NovaRefreshIndicatorState extends State<NovaRefreshIndicator> {
           _status != RefreshIndicatorStatus.done &&
           _status != RefreshIndicatorStatus.canceled)
         Positioned(
-          top: 12,
+          top: 12 + _headerOffset(context),
           left: 0,
           right: 0,
           child: IgnorePointer(
@@ -90,5 +133,24 @@ class _NovaRefreshIndicatorState extends State<NovaRefreshIndicator> {
           ),
         ),
     ],
+  );
+}
+
+/// Fills a bounded viewport so a non-scrolling canvas (such as the month
+/// grid) still receives the pull gesture. Under unbounded height it defers
+/// to the child's own size instead of throwing.
+class RefreshCanvas extends StatelessWidget {
+  const RefreshCanvas({required this.child, super.key});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(
+        height: constraints.hasBoundedHeight ? constraints.maxHeight : null,
+        child: child,
+      ),
+    ),
   );
 }

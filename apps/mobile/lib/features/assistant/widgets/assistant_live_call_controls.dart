@@ -41,7 +41,8 @@ class AssistantLiveCallControls extends StatelessWidget {
               label: state.isMicrophoneActive
                   ? l10n.assistantLiveMute
                   : l10n.assistantLiveListen,
-              icon: state.isMicrophoneActive
+              // A crossed-out mic means muted, so only show it in a call.
+              icon: state.isMicrophoneActive || !connected
                   ? LucideIcons.mic
                   : LucideIcons.micOff,
               active: state.isMicrophoneActive,

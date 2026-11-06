@@ -23,6 +23,6 @@ describe('Mail supported env template filename', () => {
       createHash('sha256')
         .update(readFileSync(resolve(root, 'env.example')))
         .digest('hex')
-    ).toBe('8316b329a1bd0445a09cbde2cc632c27321dd4639c7b0677d137d57066449eca');
+    ).toBe('f6e30fde90ef6448bfbed00c11a4c1703f07c6447cf1848a02dee39343672c4d');
   });
 });

@@ -41,13 +41,13 @@ const artifactMetadata = {
   archivePath: 'external-projects/yoola/games/mine/webgl-packages/package.zip',
   assetUrls: {
     'Build/Mine Blast WebGL.loader.js':
-      '/api/v1/workspaces/ws-1/external-projects/assets/asset-1/webgl/Build/Mine%20Blast%20WebGL.loader.js',
+      '/api/v1/workspaces/123e4567-e89b-12d3-a456-426614174000/external-projects/assets/asset-1/webgl/Build/Mine%20Blast%20WebGL.loader.js',
     'index.html':
-      '/api/v1/workspaces/ws-1/external-projects/assets/asset-1/webgl/index.html',
+      '/api/v1/workspaces/123e4567-e89b-12d3-a456-426614174000/external-projects/assets/asset-1/webgl/index.html',
   },
   entryRelativePath: 'index.html',
   entryUrl:
-    '/api/v1/workspaces/ws-1/external-projects/assets/asset-1/webgl/index.html',
+    '/api/v1/workspaces/123e4567-e89b-12d3-a456-426614174000/external-projects/assets/asset-1/webgl/index.html',
   files: [
     {
       contentType: 'text/html; charset=utf-8',
@@ -77,7 +77,7 @@ function createAdminWithAsset(status: 'draft' | 'published') {
           workspace_external_project_entries: {
             status,
           },
-          ws_id: 'ws-1',
+          ws_id: '123e4567-e89b-12d3-a456-426614174000',
         },
         error: null,
       }),
@@ -85,20 +85,23 @@ function createAdminWithAsset(status: 'draft' | 'published') {
   };
 }
 
-async function callRoute(assetPath: string[]) {
+async function callRoute(
+  assetPath: string[],
+  wsId = '123e4567-e89b-12d3-a456-426614174000'
+) {
   const { GET } = await import(
     '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/webgl/[...assetPath]/route'
   );
 
   return GET(
     new Request(
-      'http://localhost/api/v1/workspaces/ws-1/external-projects/assets/asset-1/webgl/index.html'
+      `http://localhost/api/v1/workspaces/${wsId}/external-projects/assets/asset-1/webgl/index.html`
     ),
     {
       params: Promise.resolve({
         assetId: 'asset-1',
         assetPath,
-        wsId: 'ws-1',
+        wsId,
       }),
     }
   );
@@ -116,6 +119,14 @@ describe('WebGL package asset route', () => {
     });
   });
 
+  it('rejects malformed workspace IDs before database access', async () => {
+    const response = await callRoute(['index.html'], 'not-a-uuid');
+
+    expect(response.status).toBe(400);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.resolveWorkspaceExternalProjectBinding).not.toHaveBeenCalled();
+  });
+
   it('blocks unpublished WebGL package files for anonymous users', async () => {
     mocks.createAdminClient.mockResolvedValue(createAdminWithAsset('draft'));
     mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
@@ -128,7 +139,7 @@ describe('WebGL package asset route', () => {
     expect(mocks.requireWorkspaceExternalProjectAccess).toHaveBeenCalledWith(
       expect.objectContaining({
         mode: 'read',
-        wsId: 'ws-1',
+        wsId: '123e4567-e89b-12d3-a456-426614174000',
       })
     );
     expect(
@@ -155,7 +166,7 @@ describe('WebGL package asset route', () => {
     expect(
       mocks.downloadWorkspaceStorageObjectForProvider
     ).toHaveBeenCalledWith(
-      'ws-1',
+      '123e4567-e89b-12d3-a456-426614174000',
       'supabase',
       'external-projects/yoola/games/mine/webgl-packages/package/Mine Blast WebGL/index.html'
     );
@@ -183,12 +194,12 @@ describe('WebGL package asset route', () => {
     expect(response.headers.get('content-length')).toBeTruthy();
     const html = await response.text();
     expect(html).toContain(
-      '<base data-tuturuuu-webgl-viewport-fill href="/api/v1/workspaces/ws-1/external-projects/assets/asset-1/webgl/">'
+      '<base data-tuturuuu-webgl-viewport-fill href="/api/v1/workspaces/123e4567-e89b-12d3-a456-426614174000/external-projects/assets/asset-1/webgl/">'
     );
     expect(html).toContain('data-tuturuuu-webgl-viewport-fill');
     expect(html).toContain('data-cfasync="false"');
     expect(html).toContain(
-      '"Build/Mine Blast WebGL.loader.js":"/api/v1/workspaces/ws-1/external-projects/assets/asset-1/webgl/Build/Mine%20Blast%20WebGL.loader.js"'
+      '"Build/Mine Blast WebGL.loader.js":"/api/v1/workspaces/123e4567-e89b-12d3-a456-426614174000/external-projects/assets/asset-1/webgl/Build/Mine%20Blast%20WebGL.loader.js"'
     );
     expect(html).toContain('new URL(baseHref,window.location.href)');
     expect(html).toContain('HTMLScriptElement');
@@ -237,7 +248,7 @@ describe('WebGL package asset route', () => {
     expect(
       mocks.downloadWorkspaceStorageObjectForProvider
     ).toHaveBeenCalledWith(
-      'ws-1',
+      '123e4567-e89b-12d3-a456-426614174000',
       'supabase',
       'external-projects/yoola/games/mine/webgl-packages/package/Mine Blast WebGL/Build/Mine Blast WebGL.loader.js'
     );

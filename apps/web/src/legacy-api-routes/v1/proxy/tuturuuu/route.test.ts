@@ -79,3 +79,21 @@ describe('tuturuuu proxy route', () => {
     });
   });
 });
+
+it('SR-323 denies a resolved URL that changes the validated origin', async () => {
+  vi.clearAllMocks();
+  requestMock.mockResolvedValue({
+    statusCode: 200,
+    headers: { 'content-type': 'application/json' },
+    body: { json: async () => ({}) },
+  });
+  const path = String.raw`/\outside.invalid/path`;
+  const response = await GET(
+    new NextRequest(
+      `http://localhost/api/v1/proxy/tuturuuu?path=${encodeURIComponent(path)}&apiUrl=https://tuturuuu.com`,
+      { headers: { 'X-Tuturuuu-Api-Key': 'fixture-key' } }
+    )
+  );
+  expect(response.status).toBe(400);
+  expect(requestMock).not.toHaveBeenCalled();
+});

@@ -1,0 +1,10 @@
+{
+  "appDir": "src/app",
+  "api": null,
+  "pages": null,
+  "owned": {
+    "api/build-info/route.ts": "src/native/api.server.ts",
+    "[locale]/page.tsx": "src/routes/index.tsx",
+    "[locale]/[appSlug]/[[...path]]/page.tsx": "src/native/redirect.ts"
+  }
+}

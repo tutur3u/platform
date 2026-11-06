@@ -1,4 +1,7 @@
-import type { CalendarSourceOption } from '@tuturuuu/internal-api/calendar';
+import type {
+  CalendarAccountNeedingReconnect,
+  CalendarSourceOption,
+} from '@tuturuuu/internal-api/calendar';
 import type { ConnectedAccount } from './calendar-types';
 
 export interface AccountsResponse {
@@ -8,6 +11,7 @@ export interface AccountsResponse {
     microsoft: ConnectedAccount[];
   };
   total: number;
+  needsReconnect?: CalendarAccountNeedingReconnect[];
 }
 
 export interface WorkspaceCalendar {

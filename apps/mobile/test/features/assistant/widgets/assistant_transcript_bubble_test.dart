@@ -37,8 +37,11 @@ void main() {
     expect(tester.getSize(summary).height, lessThanOrEqualTo(32));
     await tester.tap(summary);
     await tester.pumpAndSettle();
-    expect(find.text('read_tasks'), findsOneWidget);
-    await tester.tap(find.text('read_tasks'));
+    expect(find.text('Read tasks'), findsNWidgets(2));
+    expect(find.textContaining('count'), findsNothing);
+    await tester.tap(
+      find.byKey(const ValueKey('assistant-tool-details-transparent-tool')),
+    );
     await tester.pumpAndSettle();
     expect(find.textContaining('count'), findsWidgets);
     expect(tester.takeException(), isNull);

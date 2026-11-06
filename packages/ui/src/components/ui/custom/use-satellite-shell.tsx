@@ -1,11 +1,27 @@
 'use client';
 import { ArrowLeft } from '@tuturuuu/icons';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import type { NavLink } from './navigation';
 import {
   findActiveNavigation,
   type NavigationState,
 } from './satellite-shell-utils';
+
+const mobileQuery = '(max-width: 767px)';
+const subscribeMobile = (notify: () => void) => {
+  const query = window.matchMedia(mobileQuery);
+  query.addEventListener('change', notify);
+  return () => query.removeEventListener('change', notify);
+};
+const getIsMobile = () => window.matchMedia(mobileQuery).matches;
+const getServerIsMobile = () => false;
+
 export function useSatelliteShell({
   pathname,
   links,
@@ -25,7 +41,17 @@ export function useSatelliteShell({
   persistCollapsed?: (collapsed: boolean) => void;
   backLabel: string;
 }) {
-  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const isMobile = useSyncExternalStore(
+    subscribeMobile,
+    getIsMobile,
+    getServerIsMobile
+  );
+  const [desktopCollapsed, setDesktopCollapsed] = useState(
+    behavior ? behavior !== 'expanded' : defaultCollapsed
+  );
+  const [mobileCollapsed, setMobileCollapsed] = useState(true);
+  const isCollapsed = isMobile ? mobileCollapsed : desktopCollapsed;
+  const setIsCollapsed = isMobile ? setMobileCollapsed : setDesktopCollapsed;
   const [appsLauncherOpen, setAppsLauncherOpen] = useState(false);
   const [workspaceSelectVisible, setWorkspaceSelectVisible] = useState(false);
   const navigationLinks = useMemo<(NavLink | null)[]>(() => links, [links]);
@@ -46,7 +72,7 @@ export function useSatelliteShell({
 
   useEffect(() => {
     if (!behavior) return;
-    setIsCollapsed(
+    setDesktopCollapsed(
       behavior === 'collapsed' || behavior === 'hover' || behavior === 'hidden'
     );
   }, [behavior]);
@@ -97,6 +123,10 @@ export function useSatelliteShell({
   );
 
   const handleToggle = () => {
+    if (isMobile) {
+      setMobileCollapsed((collapsed) => !collapsed);
+      return;
+    }
     if (behavior === 'hidden') {
       setIsCollapsed(true);
       handleBehaviorChange?.('collapsed');
@@ -116,13 +146,17 @@ export function useSatelliteShell({
   };
 
   const expandSidebar = useCallback(() => {
-    setIsCollapsed(false);
+    if (isMobile) {
+      setMobileCollapsed(false);
+      return;
+    }
+    setDesktopCollapsed(false);
     persistCollapsed?.(false);
 
     if (behavior !== 'expanded') {
       handleBehaviorChange?.('expanded');
     }
-  }, [behavior, handleBehaviorChange, persistCollapsed]);
+  }, [behavior, handleBehaviorChange, persistCollapsed, isMobile]);
 
   const hasOpenDialogs = useCallback(
     () =>
@@ -143,11 +177,12 @@ export function useSatelliteShell({
       }
     : undefined;
   const closeOnMobile = useCallback(() => {
-    if (window.innerWidth < 768) setIsCollapsed(true);
+    if (window.innerWidth < 768) setMobileCollapsed(true);
   }, []);
 
   return {
     isCollapsed,
+    mobileSidebarOpen: !mobileCollapsed,
     setIsCollapsed,
     appsLauncherOpen,
     setAppsLauncherOpen,

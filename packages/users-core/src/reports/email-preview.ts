@@ -3,22 +3,31 @@ import type { Database } from '@tuturuuu/types/supabase';
 import { reportConfigs } from '@tuturuuu/utils/configs/reports';
 import { renderReportEmail } from './email-template';
 
-/** Resolve only workspace-scoped report data and allowlisted display configuration. */
+/**
+ * Resolve only workspace-scoped report data and allowlisted display configuration.
+ * Both the report subject and its group must belong to the workspace; a non-null
+ * `accessibleGroupIds` further limits the report to those groups (null = all).
+ */
 export async function loadReportEmailPreview(
   admin: Awaited<ReturnType<typeof createAdminClient<Database>>>,
   wsId: string,
-  reportId: string
+  reportId: string,
+  accessibleGroupIds: string[] | null = null
 ) {
+  let reportQuery = admin
+    .schema('private')
+    .from('external_user_monthly_reports_workspace_view')
+    .select(
+      'id,title,content,feedback,score,user_full_name,group_name,creator_full_name,user_email,report_approval_status'
+    )
+    .eq('id', reportId)
+    .eq('user_ws_id', wsId)
+    .eq('group_ws_id', wsId);
+  if (accessibleGroupIds !== null) {
+    reportQuery = reportQuery.in('group_id', accessibleGroupIds);
+  }
   const [reportResult, configsResult] = await Promise.all([
-    admin
-      .schema('private')
-      .from('external_user_monthly_reports_workspace_view')
-      .select(
-        'id,title,content,feedback,score,user_full_name,group_name,creator_full_name,user_email,report_approval_status'
-      )
-      .eq('id', reportId)
-      .eq('user_ws_id', wsId)
-      .maybeSingle(),
+    reportQuery.maybeSingle(),
     admin
       .from('workspace_configs')
       .select('id,value')

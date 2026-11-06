@@ -1,0 +1,184 @@
+---
+title: 'Fleet run balancer'
+description: 'Request a test, lint, build or review run and let ttr balancer place it on an eligible machine.'
+---
+
+`ttr balancer` places a requested run on one or more registered machines. Each
+run uses a fresh checkout of an exact commit and executes inside that machine's
+own `ttr resources run` queue. The result goes back to the request that asked
+for it. The balancer adds no second queue: each host's canonical resource
+queue stays the final admission for every project and consumer on that machine.
+
+## Request a run
+
+```sh
+ttr balancer run --sha main --cwd packages/sdk --class light --replicas 2 \
+  --thread "$T3_THREAD_ID" -- bun x vitest run src/cli/resources-hosts-plan.test.ts
+```
+
+- `--sha` takes a full commit SHA or `main`, which resolves origin `main`. The
+  commit must be on an origin branch. Dirty-source sync is not enabled yet.
+- `--replicas N` runs the same request on `N` distinct hosts.
+- `--priority 0-9` places higher priority first when capacity is scarce.
+- `--host`/`--exclude-host` constrain placement. `--request-id` is the
+  idempotency key: repeating it resumes the same request, and reusing it with
+  different parameters is refused. A retry after an interrupted submit only
+  adds missing runs; it never re-queues a run that was already placed.
+- `--cwd` must resolve inside the exact checkout. A path that leaves it through
+  a symlink component fails setup.
+- `--detach` places once and returns. `ttr balancer reconcile` (no argument)
+  places queued runs and settles active ones later.
+
+Other commands: `status [requestId] [--json]`, `probe`, `cancel <run|request>`,
+`log <runId>`, `consume <runId> --thread <id>` (records one consumption per
+thread and result) and `publish [requestId]`.
+
+## Register hosts
+
+Hosts live in `~/.tuturuuu/balancer/hosts.json` on the requesting machine. It
+must be a regular `0600` file owned by you. Each entry names a transport
+(`local`, or `ssh` with an SSH config alias), the verified `hostname`,
+`platform` and `arch`, disk floors (`minDiskGiB`, `minDiskFreePercent`,
+default 10), an optional `maxLoadPerCpu` (default 1), capacity, reserved
+headroom, per-class weights and an optional `preference` (lower first). An
+optional `hold` keeps a host out of placement.
+
+## Placement rules
+
+- A host is eligible only with fresh (under 60 s), complete telemetry from a
+  probe of that host: identity, load, memory pressure, free disk (GiB and
+  percent) and its `ttr resources` queue. Missing or stale telemetry is
+  UNKNOWN and never receives work.
+- Lanes are the slot count. Every owner and waiter in the host queue occupies
+  them, whatever project or tool started it. Dispatched runs that the host has
+  not reported yet stay reserved.
+- Placement reuses the `--hosts` planner (`planAdmissions`): preference first,
+  then remaining CPU. Account or provider capacity is never a host slot.
+- When no host qualifies, the run stays queued with its closest blockers.
+
+## Execution and identities
+
+| Identity | Meaning |
+| --- | --- |
+| `requestId` | The caller's idempotency key. |
+| `runId` | `<requestId>-r<replica>`: one logical run. |
+| `sourceId` | SHA-256 of the source spec (repository and commit). |
+| `deviceId` | The registered host the run was placed on. |
+| `leaseId` + `fence` | The placement, written before dispatch. |
+| `resultId` | Equals `leaseId`: one result per lease. |
+
+The controller ships a content-addressed agent bundle (Node built-ins only)
+to the host and runs it with the host's own bun. The host creates
+`~/.tuturuuu/balancer/runs/<runId>` exclusively, so a second admission of the
+same run is refused. A supervisor (a `systemd-run --user` unit on Linux, a
+detached process elsewhere) runs the whole job inside one
+`ttr resources run` admission:
+
+1. Fetch the commit into a per-host partial mirror and add a detached
+   worktree.
+2. Resolve Node.js: the `.nvmrc` pin, else the newest installed version that
+   meets `engines.node`. The choice is recorded in `toolchain.json`. Toolchain
+   installation is not automated yet.
+3. Run `bun install --frozen-lockfile` and then the command.
+
+The host writes `result.json` with the lease, exit code, phase and log digest,
+then removes the checkout. Host admission refusals (for example, low disk)
+record `rejected`, setup errors record `setup_failed`, and timeouts record
+`failed`.
+
+## Unknown outcomes and cancellation
+
+An uncertain dispatch or three failed status reads mark a run `unknown`. An
+UNKNOWN run is never rescheduled. `reconcile` settles it from the host record
+once the host answers, and only a result carrying the run's lease and fence is
+accepted. `cancel` stops a queued run locally and signals a placed run's host
+supervisor, which stops the queue admission and its command.
+
+Host registry and log readers open with `O_NOFOLLOW`, validate the opened
+descriptor, and read through that same descriptor. Log appends also validate
+and retain their descriptor. A pathname replacement cannot redirect an open
+operation; symlinked or non-private log files are refused.
+Host JSON records use an exclusive, private temporary file in the destination
+directory, sync its complete contents, and rename it into place. Cancellation
+notices publish the complete temporary file with an exclusive link instead,
+retaining the first notice without a check-then-write race. Regression coverage:
+`packages/sdk/src/cli/balancer-host-files.test.ts`.
+
+## Controller ledger locking
+
+The published `ttr balancer` launcher selects Node.js for controller execution.
+Node.js must be available on `PATH`. Direct Bun calls to ledger mutation fail
+before store creation because Bun 1.4.4 lacks the native binding's libuv error
+and thread APIs. Host agents continue to use their host's Bun runtime.
+
+Controllers serialize submit and revision updates with a descriptor-owned OS
+lock (`fs-native-extensions` 1.5.1: Linux OFD locks, macOS BSD flock). The SDK
+ships the dependency's prebuilt binaries; an unavailable native binding or
+unsupported locking syscall fails before mutation. Busy locks use bounded
+asynchronous retries. Closing the descriptor, action failure and process death
+release its lock. No PID or elapsed-time heuristic recovers a lock.
+
+A fresh store creates `ledger/.lock/protocol.json` last, recording the inode
+of its mutex and store directories. Device numbers can change at reboot, so
+historical device fields are ignored when reading existing manifests. Each
+acquisition compares live entry device numbers with the current root device;
+the open mutex descriptor and pathname must share that live device.
+Ordinary acquisition opens
+`ledger/.lock/mutex` without `O_CREAT`. After acquiring the lock, it verifies
+the open descriptor, current pathname and recorded identity before allowing
+mutation. A missing or replaced mutex is refused, including while another
+controller still holds the original inode; it is never silently recreated.
+
+The new protocol also permanently fences both predecessors. The `.lock`
+directory has no PID, so PID-lock controllers cannot acquire or reclaim it.
+A directory at `ledger/mutation-lock.sqlite` prevents earlier SQLite
+controllers from opening their database. Both fences are created before
+checking that no legacy run/request directories exist. A controller already
+inside a predecessor mutation therefore prevents new-store admission, and a
+predecessor started later cannot enter the fresh store.
+
+Existing unmarked ledgers, interrupted initialization, changed store identities
+and insecure or symlinked store directories fail closed. Stop old controllers
+and use a fresh `TTR_BALANCER_HOME`; preserve the old store for reconciliation.
+Do not replay old request/run IDs from a fresh home until their outcomes have
+been reconciled.
+There is no automatic state migration, reset or repair. Concurrent callers
+that observe incomplete first initialization must retry after its creator
+finishes. Never remove or replace a protocol fence or mutex while controllers
+may run.
+
+Deleting and recreating the entire store also removes its identity record and
+protocol fences; the controller cannot detect that loss as a replaced store.
+Whole-store removal or restore requires stopping all controllers and reconciling
+in-flight outcomes first. Do not run whole-store cleanup while any controller
+may still be active.
+
+Filesystem admission allows APFS and HFS on macOS; ext2/3/4, XFS, Btrfs and
+tmpfs on Linux. Unknown types, NFS, SMB, FUSE and cluster filesystems are
+refused. macOS type IDs are mount-assigned; an unrecognized APFS/HFS numeric
+assignment is also refused until name-based admission is available.
+Store directories and the mutex must remain private, owned by the
+controller user and on the same device. This does not qualify shared block
+storage mounted concurrently by independent kernels; such storage is outside
+the supported local-store contract.
+
+An exclusive request-intent link that loses reads and validates the winning
+marker. Conflicting parameters fail without creating runs; a matching intent
+retains its original source identity and creation time, and a committed marker
+returns the existing runs. Regression coverage lives in
+`packages/sdk/src/cli/balancer-stale-lock.test.ts` (the concurrent stale-recovery
+dispatch race and process-death recovery) and `balancer-ledger.test.ts` (intent
+link conflicts and partial-submit recovery). The mixed-protocol, unsupported
+filesystem and missing/replaced-inode regressions live in
+`packages/sdk/src/cli/balancer-ledger-admission.test.ts`.
+Reboot device renumbering and live cross-device rejection are covered in
+`packages/sdk/src/cli/balancer-ledger-reboot.test.ts`.
+
+## Infrastructure view
+
+Controllers publish each changed run (best effort) to
+`POST /api/v1/infrastructure/balancer/runs`. Infrastructure shows them at
+`/<wsId>/balancer`. The database keeps only a newer revision from the same
+publisher. Any root member may publish, but reading runs (the page and
+`GET`) requires `view_infrastructure`. Published records include the command
+argv, so never pass secrets as arguments.

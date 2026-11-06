@@ -76,7 +76,11 @@ beforeEach(() => {
   });
   mocks.host.mockResolvedValue({
     data: {
-      user: { email: 'host@tuturuuu.com', email_confirmed_at: '2026-01-01' },
+      user: {
+        email: 'host@tuturuuu.com',
+        email_confirmed_at: '2026-01-01',
+        identities: [{ provider: 'email', identity_data: {} }],
+      },
     },
     error: null,
   });
@@ -92,10 +96,15 @@ it('allows an external signed-in invitee without granting workspace access', asy
 });
 
 it.each([
-  { email: 'host@example.com', email_confirmed_at: '2026-01-01' },
+  {
+    email: 'host@example.com',
+    email_confirmed_at: '2026-01-01',
+    identities: [{ provider: 'email', identity_data: {} }],
+  },
   {
     email: 'host@tuturuuu.com.attacker.test',
     email_confirmed_at: '2026-01-01',
+    identities: [{ provider: 'email', identity_data: {} }],
   },
   { email: 'host@tuturuuu.com', email_confirmed_at: null },
 ])(
@@ -251,7 +260,11 @@ it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
   async (tier) => {
     mocks.host.mockResolvedValue({
       data: {
-        user: { email: 'paid@example.test', email_confirmed_at: '2026-01-01' },
+        user: {
+          email: 'paid@example.test',
+          email_confirmed_at: '2026-01-01',
+          identities: [{ provider: 'email', identity_data: {} }],
+        },
       },
       error: null,
     });
@@ -278,7 +291,11 @@ it('rejects an unverified paid host', async () => {
 it('fails closed with retryable status when host entitlement is unavailable', async () => {
   mocks.host.mockResolvedValue({
     data: {
-      user: { email: 'paid@example.test', email_confirmed_at: '2026-01-01' },
+      user: {
+        email: 'paid@example.test',
+        email_confirmed_at: '2026-01-01',
+        identities: [{ provider: 'email', identity_data: {} }],
+      },
     },
     error: null,
   });
@@ -311,4 +328,42 @@ it('keeps scenario AI policy isolated even for approved users visiting Meet', as
   await expect(getMeetCallAccess(meetingId, 'Guest')).rejects.toMatchObject({
     status: 403,
   });
+});
+
+it('uses an injected meeting row and Parley flag with the same decisions', async () => {
+  const meeting = vi.fn().mockResolvedValue({
+    data: {
+      id: meetingId,
+      ws_id: 'workspace',
+      creator_id: 'host',
+      name: 'Invited call',
+      workspaces: { personal: false },
+    },
+    error: null,
+  });
+  const isParleySession = vi.fn().mockResolvedValue(false);
+  expect(
+    await getMeetCallAccess(meetingId, 'Guest', { meeting, isParleySession })
+  ).toMatchObject({ isHost: false, admission: 'lobby' });
+  expect(meeting).toHaveBeenCalledTimes(1);
+  expect(isParleySession).toHaveBeenCalledWith(false);
+  expect(mocks.meeting).not.toHaveBeenCalled();
+  expect(mocks.scenario).not.toHaveBeenCalled();
+});
+
+it('still rejects an injected Parley session through Meet', async () => {
+  await expect(
+    getMeetCallAccess(meetingId, 'Guest', {
+      isParleySession: async () => true,
+    })
+  ).rejects.toMatchObject({ status: 403 });
+});
+
+it('still checks sign-in before reading injected sources', async () => {
+  mocks.user.mockResolvedValue(null);
+  const meeting = vi.fn();
+  await expect(
+    getMeetCallAccess(meetingId, 'Guest', { meeting })
+  ).rejects.toMatchObject({ status: 401 });
+  expect(meeting).not.toHaveBeenCalled();
 });

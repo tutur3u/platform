@@ -1,3 +1,4 @@
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import sanitizeHtml from 'sanitize-html';
 
 const FORBIDDEN_MAIL_TAGS = [
@@ -91,7 +92,7 @@ export function sanitizeMailHtml(
           attribs: {
             ...attributes,
             ...(source?.startsWith('/api/v1/workspaces/')
-              ? { src: source }
+              ? { src: withAppBase(source) }
               : {}),
           },
         };

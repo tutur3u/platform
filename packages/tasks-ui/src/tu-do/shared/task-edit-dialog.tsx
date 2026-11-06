@@ -23,7 +23,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import {
-  getTicketIdentifier,
+  getTaskTicketLabel,
   invalidateTaskCaches,
 } from '@tuturuuu/utils/task-helper';
 import {
@@ -49,9 +49,10 @@ import { DescriptionOverflowWarningDialog } from './description-overflow-warning
 import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import {
+  getTaskDialogContentClassName,
+  getTaskDialogContentPresentation,
   resolveTaskDialogOpeningPresentation,
   TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME,
-  TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME,
   type TaskDialogPresentation,
   type TaskDialogPresentationPreferences,
 } from './task-dialog-presentation';
@@ -64,13 +65,17 @@ import {
 } from './task-edit-dialog/components/smart-task-suggestions-panel';
 import { TaskDescriptionEditor } from './task-edit-dialog/components/task-description-editor';
 import {
-  getTaskDialogHeaderInfo,
   TaskDialogHeader,
+  useTaskDialogHeaderInfo,
 } from './task-edit-dialog/components/task-dialog-header';
 import { TaskDialogLoadingShell } from './task-edit-dialog/components/task-dialog-loading-shell';
 import { TaskNameInput } from './task-edit-dialog/components/task-name-input';
+import { TaskSprintRow } from './task-edit-dialog/components/task-sprint-row';
 import { TaskSuggestionMenus } from './task-edit-dialog/components/task-suggestion-menus';
-import { NAME_UPDATE_DEBOUNCE_MS } from './task-edit-dialog/constants';
+import {
+  EMPTY_TASK_DESCRIPTION_DOC,
+  NAME_UPDATE_DEBOUNCE_MS,
+} from './task-edit-dialog/constants';
 import { getTaskDescriptionRecoveryVersion } from './task-edit-dialog/description-reconciliation';
 import {
   buildRecoverableTaskDescriptionVersions,
@@ -93,6 +98,7 @@ import { useTaskDescriptionReceipt } from './task-edit-dialog/hooks/use-task-des
 import { useTaskDialogClose } from './task-edit-dialog/hooks/use-task-dialog-close';
 import { useTaskDialogKeyboardShortcuts } from './task-edit-dialog/hooks/use-task-dialog-keyboard-shortcuts';
 import { useTaskDialogSettling } from './task-edit-dialog/hooks/use-task-dialog-settling';
+import { useTaskDocumentTitle } from './task-edit-dialog/hooks/use-task-document-title';
 import { useTaskFormReset } from './task-edit-dialog/hooks/use-task-form-reset';
 import { useTaskFormState } from './task-edit-dialog/hooks/use-task-form-state';
 import { useTaskMediaUpload } from './task-edit-dialog/hooks/use-task-media-upload';
@@ -151,16 +157,17 @@ import {
   resolveInlineTaskTargetList,
   resolveInlineTaskTargetWorkspaceId,
 } from './task-edit-dialog/utils/inline-task-target-list';
+import { getTaskMentionTranslations } from './task-edit-dialog/utils/mention-translations';
+import { TaskPanelResizeHandle } from './task-panel-resize-handle';
+import {
+  setTaskPanelOpen,
+  useIsTaskPanelSurfaceActive,
+} from './task-panel-surface';
 import { TaskShareDialog } from './task-share-dialog';
 import type { TaskFilters } from './types';
 import { UnsavedChangesWarningDialog } from './unsaved-changes-warning-dialog';
 
 type AssigneeMemberSource = 'workspace' | 'board' | 'workspace-and-board';
-
-const EMPTY_TASK_DESCRIPTION_DOC: JSONContent = {
-  type: 'doc',
-  content: [{ type: 'paragraph' }],
-};
 
 export {
   type DialogHeaderInfo,
@@ -304,6 +311,9 @@ export function TaskEditDialog({
     isCreateMode,
     isSaving,
   });
+  const ticketLabel = isCreateMode
+    ? null
+    : getTaskTicketLabel({ ...task, projects: formState.selectedProjects });
 
   // Refs
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
@@ -689,26 +699,20 @@ export function TaskEditDialog({
   const currentList = availableLists?.find(
     (list) => list.id === formState.selectedListId
   );
+  const panelSurface = useIsTaskPanelSurfaceActive();
   const openingPresentation = useMemo(
     () =>
       resolveTaskDialogOpeningPresentation({
         preferences: presentationPreferences,
         draftId,
         mode,
+        panelSurface,
         selectedListStatus: currentList?.status,
       }),
-    [currentList?.status, draftId, mode, presentationPreferences]
+    [currentList?.status, draftId, mode, panelSurface, presentationPreferences]
   );
 
-  // Update browser tab title
-  useEffect(() => {
-    if (!isOpen || isCreateMode || !task) return;
-    const originalTitle = document.title;
-    document.title = `${getTicketIdentifier(boardConfig?.ticket_prefix, task.display_number)} - ${task.name}`;
-    return () => {
-      document.title = originalTitle;
-    };
-  }, [isOpen, isCreateMode, task, boardConfig?.ticket_prefix]);
+  useTaskDocumentTitle(isOpen && !isCreateMode ? (task ?? null) : null);
 
   // Labels state
   const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
@@ -2345,6 +2349,10 @@ export function TaskEditDialog({
 
   const showCompactDialog = presentation === 'compact' && !draftId;
   const showFocusedDialog = presentation === 'focused' && !draftId;
+  const isPanel = presentation === 'panel' && !draftId;
+  // Lets the board leave room for the side panel while it is open.
+  useEffect(() => setTaskPanelOpen(isOpen && isPanel), [isOpen, isPanel]);
+  useEffect(() => () => setTaskPanelOpen(false), []);
   const compactDescriptionPreview = useMemo(() => {
     if (isCreateMode) return null;
 
@@ -2374,26 +2382,15 @@ export function TaskEditDialog({
       )}
     </div>
   ) : null;
-  const compactHeaderInfo = useMemo(
-    () =>
-      getTaskDialogHeaderInfo(
-        {
-          isCreateMode,
-          parentTaskId,
-          parentTaskName,
-          pendingRelationship,
-          draftId,
-        },
-        rootT
-      ),
-    [
+  const compactHeaderInfo = useTaskDialogHeaderInfo(
+    {
       isCreateMode,
       parentTaskId,
       parentTaskName,
       pendingRelationship,
       draftId,
-      rootT,
-    ]
+    },
+    rootT
   );
   const compactEditActions = canShowCompactEditActions ? (
     <>
@@ -2460,77 +2457,86 @@ export function TaskEditDialog({
   const renderTaskPropertiesSection = (
     variant: 'compact' | 'default' | 'embedded' = 'default'
   ) => (
-    <TaskPropertiesSection
-      wsId={effectiveTaskWsId}
-      boardId={boardId}
-      taskId={task?.id}
-      priority={formState.priority}
-      startDate={formState.startDate}
-      endDate={formState.endDate}
-      estimationPoints={formState.estimationPoints}
-      selectedLabels={formState.selectedLabels}
-      selectedProjects={formState.selectedProjects}
-      selectedListId={formState.selectedListId}
-      selectedAssignees={formState.selectedAssignees}
-      isLoading={isLoading}
-      isPersonalWorkspace={isPersonalWorkspace}
-      canUseBoardAssignees={canUseBoardAssignees ?? !isPersonalWorkspace}
-      totalDuration={formState.totalDuration}
-      isSplittable={formState.isSplittable}
-      minSplitDurationMinutes={formState.minSplitDurationMinutes}
-      maxSplitDurationMinutes={formState.maxSplitDurationMinutes}
-      calendarHours={formState.calendarHours}
-      autoSchedule={formState.autoSchedule}
-      availableLists={availableLists}
-      availableLabels={availableLabels}
-      taskProjects={taskProjects}
-      workspaceMembers={workspaceMembers}
-      boardConfig={boardConfig}
-      onPriorityChange={updatePriority}
-      onStartDateChange={updateStartDate}
-      onEndDateChange={updateEndDate}
-      onEstimationChange={updateEstimation}
-      onLabelToggle={toggleLabel}
-      onProjectToggle={toggleProject}
-      onListChange={updateList}
-      onAssigneeToggle={toggleAssignee}
-      onQuickDueDate={handleQuickDueDate}
-      onShowNewLabelDialog={() => {
-        setNewLabelColor((previousColor) =>
-          getRandomNewLabelColor(previousColor)
-        );
-        setShowNewLabelDialog(true);
-      }}
-      onShowNewProjectDialog={() => setShowNewProjectDialog(true)}
-      onShowEstimationConfigDialog={() => setShowEstimationConfigDialog(true)}
-      onTotalDurationChange={formState.setTotalDuration}
-      onIsSplittableChange={formState.setIsSplittable}
-      onMinSplitDurationChange={formState.setMinSplitDurationMinutes}
-      onMaxSplitDurationChange={formState.setMaxSplitDurationMinutes}
-      onCalendarHoursChange={formState.setCalendarHours}
-      onAutoScheduleChange={formState.setAutoSchedule}
-      isCreateMode={isCreateMode}
-      savedSchedulingSettings={
-        personalScheduleData?.task
-          ? {
-              totalDuration: personalScheduleData.task.total_duration ?? null,
-              isSplittable: !!personalScheduleData.task.is_splittable,
-              minSplitDurationMinutes:
-                personalScheduleData.task.min_split_duration_minutes ?? null,
-              maxSplitDurationMinutes:
-                personalScheduleData.task.max_split_duration_minutes ?? null,
-              calendarHours: personalScheduleData.task.calendar_hours ?? null,
-              autoSchedule: !!personalScheduleData.task.auto_schedule,
-            }
-          : undefined
-      }
-      onSaveSchedulingSettings={saveSchedulingSettings}
-      schedulingSaving={schedulingSaving}
-      scheduledEvents={localCalendarEvents}
-      disabled={taskControlsDisabled}
-      isDraftMode={!!draftId || (isCreateMode && saveAsDraft)}
-      variant={variant}
-    />
+    <>
+      <TaskSprintRow
+        boardId={boardId}
+        canEdit={!taskControlsDisabled}
+        endDate={formState.endDate}
+        task={isCreateMode ? undefined : task}
+        wsId={effectiveTaskWsId}
+      />
+      <TaskPropertiesSection
+        wsId={effectiveTaskWsId}
+        boardId={boardId}
+        taskId={task?.id}
+        priority={formState.priority}
+        startDate={formState.startDate}
+        endDate={formState.endDate}
+        estimationPoints={formState.estimationPoints}
+        selectedLabels={formState.selectedLabels}
+        selectedProjects={formState.selectedProjects}
+        selectedListId={formState.selectedListId}
+        selectedAssignees={formState.selectedAssignees}
+        isLoading={isLoading}
+        isPersonalWorkspace={isPersonalWorkspace}
+        canUseBoardAssignees={canUseBoardAssignees ?? !isPersonalWorkspace}
+        totalDuration={formState.totalDuration}
+        isSplittable={formState.isSplittable}
+        minSplitDurationMinutes={formState.minSplitDurationMinutes}
+        maxSplitDurationMinutes={formState.maxSplitDurationMinutes}
+        calendarHours={formState.calendarHours}
+        autoSchedule={formState.autoSchedule}
+        availableLists={availableLists}
+        availableLabels={availableLabels}
+        taskProjects={taskProjects}
+        workspaceMembers={workspaceMembers}
+        boardConfig={boardConfig}
+        onPriorityChange={updatePriority}
+        onStartDateChange={updateStartDate}
+        onEndDateChange={updateEndDate}
+        onEstimationChange={updateEstimation}
+        onLabelToggle={toggleLabel}
+        onProjectToggle={toggleProject}
+        onListChange={updateList}
+        onAssigneeToggle={toggleAssignee}
+        onQuickDueDate={handleQuickDueDate}
+        onShowNewLabelDialog={() => {
+          setNewLabelColor((previousColor) =>
+            getRandomNewLabelColor(previousColor)
+          );
+          setShowNewLabelDialog(true);
+        }}
+        onShowNewProjectDialog={() => setShowNewProjectDialog(true)}
+        onShowEstimationConfigDialog={() => setShowEstimationConfigDialog(true)}
+        onTotalDurationChange={formState.setTotalDuration}
+        onIsSplittableChange={formState.setIsSplittable}
+        onMinSplitDurationChange={formState.setMinSplitDurationMinutes}
+        onMaxSplitDurationChange={formState.setMaxSplitDurationMinutes}
+        onCalendarHoursChange={formState.setCalendarHours}
+        onAutoScheduleChange={formState.setAutoSchedule}
+        isCreateMode={isCreateMode}
+        savedSchedulingSettings={
+          personalScheduleData?.task
+            ? {
+                totalDuration: personalScheduleData.task.total_duration ?? null,
+                isSplittable: !!personalScheduleData.task.is_splittable,
+                minSplitDurationMinutes:
+                  personalScheduleData.task.min_split_duration_minutes ?? null,
+                maxSplitDurationMinutes:
+                  personalScheduleData.task.max_split_duration_minutes ?? null,
+                calendarHours: personalScheduleData.task.calendar_hours ?? null,
+                autoSchedule: !!personalScheduleData.task.auto_schedule,
+              }
+            : undefined
+        }
+        onSaveSchedulingSettings={saveSchedulingSettings}
+        schedulingSaving={schedulingSaving}
+        scheduledEvents={localCalendarEvents}
+        disabled={taskControlsDisabled}
+        isDraftMode={!!draftId || (isCreateMode && saveAsDraft)}
+        variant={variant}
+      />
+    </>
   );
 
   const renderTaskActivitySection = () => {
@@ -2604,19 +2610,19 @@ export function TaskEditDialog({
         handleCustomDateSelect={handleCustomDateSelect}
       />
 
-      <Dialog open={isOpen} onOpenChange={handleDialogOpenChange} modal={true}>
+      <Dialog
+        open={isOpen}
+        onOpenChange={handleDialogOpenChange}
+        modal={!isPanel}
+      >
         <DialogContent
           showCloseButton={false}
-          presentation={
-            presentation === 'fullscreen' ? 'fullscreen' : 'default'
-          }
-          className={
-            showCompactDialog
-              ? 'w-[min(calc(100vw-2rem),30rem)] max-w-[30rem] gap-0 overflow-visible rounded-lg border p-0 shadow-xl'
-              : showFocusedDialog
-                ? TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME
-                : undefined
-          }
+          presentation={getTaskDialogContentPresentation(presentation, isPanel)}
+          className={getTaskDialogContentClassName({
+            compact: showCompactDialog,
+            focused: showFocusedDialog,
+            panel: isPanel,
+          })}
           onContextMenu={(e) => {
             if (shouldPreserveNativeContextMenu(e.target)) {
               return;
@@ -2626,7 +2632,9 @@ export function TaskEditDialog({
             e.stopPropagation();
           }}
           onPointerDownOutside={(e) => {
+            // The side panel stays open while the board is used; X or Esc closes it.
             if (
+              isPanel ||
               suggestionMenus.showCustomDatePicker ||
               suggestionMenus.slashState.open ||
               suggestionMenus.mentionState.open
@@ -2635,6 +2643,7 @@ export function TaskEditDialog({
           }}
           onInteractOutside={(e) => {
             if (
+              isPanel ||
               suggestionMenus.showCustomDatePicker ||
               suggestionMenus.slashState.open ||
               suggestionMenus.mentionState.open
@@ -2642,6 +2651,7 @@ export function TaskEditDialog({
               e.preventDefault();
           }}
         >
+          {isPanel ? <TaskPanelResizeHandle /> : null}
           {showCompactDialog ? (
             <CompactTaskDialogPanel
               title={compactHeaderInfo.title}
@@ -2665,6 +2675,7 @@ export function TaskEditDialog({
                   flushNameUpdate={flushNameUpdate}
                   disabled={taskTitleDisabled}
                   isHydrating={isAwaitingTaskHydration && !formState.name}
+                  ticketLabel={ticketLabel}
                   variant="compact"
                   onSubmit={
                     isCreateMode && !taskControlsDisabled
@@ -2721,8 +2732,7 @@ export function TaskEditDialog({
                     draftId={draftId}
                     isTitleVisible={isTitleVisible}
                     taskName={formState.name}
-                    ticketPrefix={boardConfig?.ticket_prefix}
-                    displayNumber={task?.display_number}
+                    ticketLabel={ticketLabel}
                     user={
                       user
                         ? {
@@ -2795,6 +2805,7 @@ export function TaskEditDialog({
                       flushNameUpdate={flushNameUpdate}
                       disabled={taskTitleDisabled || isDialogSettling}
                       isHydrating={isAwaitingTaskHydration && !formState.name}
+                      ticketLabel={ticketLabel}
                     />
 
                     {smartSuggestionsButton && (
@@ -2977,33 +2988,7 @@ export function TaskEditDialog({
                           descriptionLimit={MAX_TASK_DESCRIPTION_LENGTH}
                           isDescriptionOverLimit={isDescriptionOverLimit}
                           disabled={taskControlsDisabled}
-                          mentionTranslations={{
-                            delete_task: t('delete_task'),
-                            delete_task_confirmation: (name: string) =>
-                              t('delete_task_confirmation', { name }),
-                            cancel: t('cancel'),
-                            deleting: t('deleting'),
-                            set_custom_due_date: t('set_custom_due_date'),
-                            custom_due_date_description: t(
-                              'custom_due_date_description'
-                            ),
-                            remove_due_date: t('remove_due_date'),
-                            create_new_label: t('create_new_label'),
-                            create_new_label_description: t(
-                              'create_new_label_description'
-                            ),
-                            label_name: t('label_name'),
-                            color: t('color'),
-                            preview: t('preview'),
-                            creating: t('creating'),
-                            create_label: t('create_label'),
-                            create_new_project: t('create_new_project'),
-                            create_new_project_description: t(
-                              'create_new_project_description'
-                            ),
-                            project_name: t('project_name'),
-                            create_project: t('create_project'),
-                          }}
+                          mentionTranslations={getTaskMentionTranslations(t)}
                         />
                       </div>
                     )}

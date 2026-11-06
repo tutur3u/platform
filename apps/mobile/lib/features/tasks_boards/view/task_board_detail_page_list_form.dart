@@ -73,19 +73,7 @@ class _TaskBoardListFormSheetState extends State<_TaskBoardListFormSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Sheet handle indicator
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.mutedForeground.withValues(
-                      alpha: 0.3,
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const AppSheetHandle(),
               const shad.Gap(16),
               // Title
               Text(widget.title, style: theme.typography.h4),
@@ -567,16 +555,7 @@ class _TaskBoardPickerHandle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 36,
-        height: 4,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-    );
+    return const AppSheetHandle();
   }
 }
 
@@ -634,19 +613,7 @@ class _TaskBoardRenameBoardSheetState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Sheet handle indicator
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.mutedForeground.withValues(
-                      alpha: 0.3,
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const AppSheetHandle(),
               const shad.Gap(16),
               // Title
               Text(widget.title, style: theme.typography.h4),

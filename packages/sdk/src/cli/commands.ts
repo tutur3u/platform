@@ -2039,7 +2039,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
 
   if (group === 'upgrade')
-    return runUpgrade(rawAction, positionals.slice(2), json, flags.keep);
+    return runUpgrade(rawAction, positionals.slice(2), json, flags.keep, flags);
 
   if (group === 'tiptap') {
     await runTiptapCommand({ action: rawAction, flags, json });

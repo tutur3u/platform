@@ -153,9 +153,10 @@ void main() {
       expect(find.text('Mute mic'), findsNothing);
       expect(find.text('Show camera'), findsNothing);
       expect(find.text('Type'), findsNothing);
-      expect(find.text('Mira'), findsWidgets);
-      expect(find.text('Your microphone is live'), findsOneWidget);
+      // One status line says what is happening now; the navbar names Mira.
       expect(find.text('Voice response is streaming'), findsOneWidget);
+      expect(find.text('Your microphone is live'), findsNothing);
+      expect(find.byKey(const ValueKey('live-stage-start')), findsNothing);
     },
   );
 
@@ -193,10 +194,16 @@ void main() {
       ),
     );
 
-    expect(find.text('Ready to talk'), findsOneWidget);
+    // Idle shows one obvious action and no helper copy or empty transcript.
+    expect(find.byKey(const ValueKey('live-stage-start')), findsOneWidget);
+    expect(find.text('Start talking'), findsOneWidget);
     expect(find.text('Start live session'), findsNothing);
     expect(find.text('Available'), findsNothing);
-    expect(find.text('Live transcript'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('live-retained-transcript')),
+      findsNothing,
+    );
+    expect(find.byKey(const ValueKey('live-stage-status')), findsNothing);
   });
 
   testWidgets('shows localized recovery without raw provider details', (
@@ -251,5 +258,42 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Retry live session'), findsOneWidget);
+  });
+
+  testWidgets('the stage button and orb both start talking', (tester) async {
+    var starts = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: AssistantLiveModeView(
+            chatState: const AssistantChatState(fallbackChatId: 'idle'),
+            liveState: const AssistantLiveState(),
+            liveUiState: const AssistantLiveUiState(
+              kind: AssistantLiveUiKind.available,
+              tone: AssistantLiveUiTone.neutral,
+              workspaceTier: 'PRO',
+              activeTier: 'PRO',
+              creditSource: AssistantCreditSource.workspace,
+              isEligible: true,
+              isVisibleLiveSession: true,
+            ),
+            assistantName: 'Mira',
+            scrollController: ScrollController(),
+            onRetry: () async {},
+            onToggleMicrophone: () async => starts++,
+            onToggleCamera: () async {},
+            onDisconnect: () async {},
+            onOpenTextEntry: () async {},
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('live-stage-start')));
+    await tester.tap(find.byKey(const ValueKey('live-stage-orb-start')));
+    expect(starts, 2);
+    expect(find.bySemanticsLabel('Start talking'), findsWidgets);
+    expect(tester.takeException(), isNull);
   });
 }

@@ -34,7 +34,6 @@ extension _EducationPageActions on _EducationPageState {
     if (wsId.isEmpty) return;
     final result = await _showOwnedSheet<bool>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => _CourseSheet(
         title: course == null
             ? context.l10n.educationCreateCourse
@@ -69,7 +68,6 @@ extension _EducationPageActions on _EducationPageState {
     if (wsId.isEmpty) return;
     final result = await _showOwnedSheet<bool>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => _SimpleEducationSheet(
         title: quizSet == null
             ? context.l10n.educationCreateQuizSet
@@ -95,7 +93,6 @@ extension _EducationPageActions on _EducationPageState {
     if (wsId.isEmpty) return;
     final result = await _showOwnedSheet<bool>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => _SimpleEducationSheet(
         title: flashcard == null
             ? context.l10n.educationCreateFlashcard
@@ -128,7 +125,6 @@ extension _EducationPageActions on _EducationPageState {
     if (wsId.isEmpty) return;
     final result = await _showOwnedSheet<bool>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => _QuizSheet(
         title: quiz == null
             ? context.l10n.educationCreateQuiz
@@ -188,7 +184,6 @@ extension _EducationPageActions on _EducationPageState {
   Future<void> _showAttemptsFilterSheet() async {
     final result = await _showOwnedSheet<Map<String, String?>>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => _AttemptsFilterSheet(
         sets: _attemptSets,
         selectedSetId: _attemptSetId,
@@ -211,7 +206,6 @@ extension _EducationPageActions on _EducationPageState {
 
     await _showOwnedSheet<void>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => FractionallySizedBox(
         heightFactor: 0.86,
         child: _EducationAttemptReader(

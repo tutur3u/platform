@@ -123,7 +123,7 @@ class _SettingsWorkspaceRolesViewState
                 if (_loading)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 48),
-                    child: Center(child: NovaLoadingIndicator()),
+                    child: AppLoadingIndicator.page(),
                   )
                 else if (_error != null)
                   _SettingsStatePanel(
@@ -396,7 +396,7 @@ class _WorkspaceRoleEditorPageState extends State<WorkspaceRoleEditorPage> {
       isSaving: _saving,
       onPrimaryPressed: _saving ? null : _save,
       child: _loading
-          ? const Center(child: NovaLoadingIndicator())
+          ? const AppLoadingIndicator.page()
           : _error != null
           ? _SettingsStatePanel(
               message: _error!,

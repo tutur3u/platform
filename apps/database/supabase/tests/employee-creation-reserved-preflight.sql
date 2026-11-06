@@ -13,6 +13,10 @@ insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data,raw_user_me
 ('00000000-0000-4000-8000-000000094302','preflight-other-admin@tuturuuu.com',now(),'{}','{}'),
 ('00000000-0000-4000-8000-000000094303','preflight-outsider@example.com',now(),'{}','{}'),
 ('00000000-0000-4000-8000-000000094304','Preflight-Auth@tuturuuu.com',now(),'{}','{}');
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 insert into public.workspaces(id,name,creator_id,personal) values
 ('00000000-0000-0000-0000-000000000000','Preflight fixture','00000000-0000-4000-8000-000000094302',false)
 on conflict(id) do update set creator_id=excluded.creator_id;
@@ -188,6 +192,10 @@ select throws_ok($$select private.employee_creation_operation_claim('00000000-00
 -- Synthetic Auth row only, through the real identity triggers. No SDK call.
 insert into auth.users(id,email,email_confirmed_at,banned_until,raw_app_meta_data,raw_user_meta_data)
 values('00000000-0000-4000-8000-000000094310','preflight-reserved@tuturuuu.com',now(),now()+interval '1 day','{}','{}');
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 set constraints all immediate;
 select throws_ok('select pg_temp.reserve()','23505','Employee account or reservation already exists','exact tuple cannot preflight after Auth exists');
 select results_eq('select user_id,to_jsonb(i),ctid::text from private.employee_creation_intents i order by user_id',

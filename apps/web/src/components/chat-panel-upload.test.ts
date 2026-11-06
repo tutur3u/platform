@@ -1,11 +1,15 @@
 // @vitest-environment node
-import { createRequire } from 'node:module';
-import { resolve } from 'node:path';
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ client: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  createDynamicClient: vi.fn(),
+  uploadAiChatFile: vi.fn(),
+}));
+vi.mock('@tuturuuu/internal-api', () => ({
+  uploadAiChatFile: mocks.uploadAiChatFile,
+}));
 vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createDynamicClient: mocks.client,
+  createDynamicClient: mocks.createDynamicClient,
 }));
 vi.mock('./chat-model-selector', () => ({}));
 vi.mock('./prompt-form', () => ({}));
@@ -17,67 +21,52 @@ vi.mock('@/constants/common', () => ({
 
 import { uploadFile } from './chat-panel';
 
-const supabaseRequire = createRequire(
-  resolve(import.meta.dirname, '../../../../packages/supabase/package.json')
-);
-const sdkRequire = createRequire(
-  supabaseRequire.resolve('@supabase/supabase-js')
-);
-const { StorageClient } = sdkRequire('@supabase/storage-js');
-let keys: string[];
-let urls: URL[];
-let queries: string[];
 beforeEach(() => {
-  keys = [];
-  urls = [];
-  queries = [];
-  const storage = new StorageClient(
-    'https://synthetic.invalid/storage/v1',
-    {},
-    async (input: RequestInfo | URL) => {
-      const url = new URL(String(input));
-      urls.push(url);
-      const key = decodeURIComponent(
-        url.pathname.slice('/storage/v1/object/workspaces/'.length)
-      );
-      keys.push(key);
-      return Response.json({ Key: `workspaces/${key}` });
-    }
-  );
-  const query = {
-    select: () => query,
-    eq: (column: string, value: string) => {
-      if (column === 'name') queries.push(value);
-      return query;
-    },
-    not: () => query,
-    ilike: () => query,
-    order: async () => ({ data: [] }),
-  };
-  mocks.client.mockReturnValue({
-    storage,
-    schema: () => ({ from: () => query }),
-  });
+  vi.clearAllMocks();
 });
 
-it.each([
-  '%41.txt',
-  'what?.txt',
-  'hash#.txt',
-  'Báo cáo.txt',
-  'Báo cáo.txt'.normalize('NFD'),
-])('uploads the exact logical chat filename %s', async (name) => {
-  const file = new File(['synthetic'], name, { type: 'text/plain' });
+it('uploads chat attachments through the signed upload API', async () => {
+  const path = 'workspace/chats/ai/resources/chat/1_Bao_cao.txt';
+  mocks.uploadAiChatFile.mockResolvedValue({ path });
+  const file = new File(['synthetic'], 'Báo cáo.txt', { type: 'text/plain' });
+
   const result = await uploadFile(
     'workspace',
     { rawFile: file, url: '', status: 'pending' },
     'chat'
   );
-  expect(result.error).toBeNull();
-  expect(keys).toEqual([`workspace/chat/chat/${name}`]);
-  expect(queries).toEqual([`workspace/chat/chat/${name}`]);
-  expect(urls.map(({ search, hash }) => ({ search, hash }))).toEqual([
-    { search: '', hash: '' },
-  ]);
-  expect(result.data?.path).toBe(`workspace/chat/chat/${name}`);
+
+  expect(result).toEqual({ data: { path }, error: null });
+  expect(mocks.uploadAiChatFile).toHaveBeenCalledWith({
+    chatId: 'chat',
+    file,
+    workspaceId: 'workspace',
+  });
+  expect(mocks.createDynamicClient).not.toHaveBeenCalled();
+});
+
+it('requires a chat id before uploading', async () => {
+  const file = new File(['synthetic'], 'a.txt', { type: 'text/plain' });
+  const result = await uploadFile('workspace', {
+    rawFile: file,
+    url: '',
+    status: 'pending',
+  });
+
+  expect(result).toEqual({ data: null, error: 'No chat id provided' });
+  expect(mocks.uploadAiChatFile).not.toHaveBeenCalled();
+});
+
+it('reports upload API failures', async () => {
+  const failure = new Error("You don't have access to this chat");
+  mocks.uploadAiChatFile.mockRejectedValue(failure);
+  const file = new File(['synthetic'], 'a.txt', { type: 'text/plain' });
+
+  const result = await uploadFile(
+    'workspace',
+    { rawFile: file, url: '', status: 'pending' },
+    'chat'
+  );
+
+  expect(result).toEqual({ data: null, error: failure });
 });

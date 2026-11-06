@@ -1,0 +1,617 @@
+{
+  "schema_version": "1.4",
+  "generated_at": "2026-10-28T12:22:58.842275+00:00",
+  "now": {
+    "after_seq": 0,
+    "latest_seq": 0,
+    "cursor_gap": false,
+    "digest": [],
+    "needs_you": [
+      {
+        "id": "item-f23ae309c10a83c168e3",
+        "title": "Review plan",
+        "body": "Review the plan",
+        "options": [
+          "Reply on Mac"
+        ],
+        "recommended_option": null,
+        "state": "open",
+        "kind": "decision",
+        "version_hash": "4b9e601013cf31c8c5ddbe0081fb67f011ec3a29a96ed7093b418c6efa8c8511",
+        "status": "open",
+        "ask_text": "Review the plan",
+        "ask_truncated": false
+      },
+      {
+        "id": "item-429667e602ed941dc870",
+        "title": "Review plan",
+        "body": "Review the plan",
+        "options": [
+          "Reply on Mac"
+        ],
+        "recommended_option": null,
+        "state": "open",
+        "kind": "decision",
+        "version_hash": "c6d332b87410dcd8ae7e5c934fcb5e864e7f853a032a15730498009fd84dd301",
+        "status": "open",
+        "ask_text": "Review the plan",
+        "ask_truncated": false
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "item-cccccccccccccccccccc",
+      "name": "Atlas",
+      "role": "Mastermind",
+      "title": "[Atlas] Mastermind",
+      "state": "idle",
+      "status": "idle",
+      "top_level": true,
+      "provider_model": "Unknown model",
+      "age_seconds": 0,
+      "eta_seconds": null
+    }
+  ],
+  "backlog": [],
+  "products": {
+    "releases": [],
+    "quotas": []
+  },
+  "environments": [],
+  "sources": [
+    {
+      "source": "t3",
+      "state": "ok"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "item-f23ae309c10a83c168e3",
+      "title": "Review plan",
+      "body": "Review the plan",
+      "options": [
+        "Reply on Mac"
+      ],
+      "recommended_option": null,
+      "state": "open",
+      "kind": "decision",
+      "version_hash": "4b9e601013cf31c8c5ddbe0081fb67f011ec3a29a96ed7093b418c6efa8c8511",
+      "status": "open",
+      "ask_text": "Review the plan",
+      "ask_truncated": false
+    },
+    {
+      "id": "item-429667e602ed941dc870",
+      "title": "Review plan",
+      "body": "Review the plan",
+      "options": [
+        "Reply on Mac"
+      ],
+      "recommended_option": null,
+      "state": "open",
+      "kind": "decision",
+      "version_hash": "c6d332b87410dcd8ae7e5c934fcb5e864e7f853a032a15730498009fd84dd301",
+      "status": "open",
+      "ask_text": "Review the plan",
+      "ask_truncated": false
+    }
+  ],
+  "decisions_skipped": 0,
+  "observability": {
+    "quota_series": [],
+    "quota_forecasts": [],
+    "speed_series": [],
+    "children_series": [],
+    "staff": [],
+    "ci": [],
+    "cadence": [],
+    "usage": {
+      "coverage": "missing",
+      "instances": [],
+      "series": [],
+      "credits": [],
+      "gaps": [
+        {
+          "start": "2026-10-27T22:45:00+00:00",
+          "end": "2026-10-28T03:15:00+00:00",
+          "reason": "no_samples"
+        }
+      ]
+    },
+    "models": {
+      "coverage": "missing",
+      "observed_at": null,
+      "breakdown": [],
+      "series": []
+    },
+    "fleet": {
+      "coverage": "unavailable",
+      "counts": [],
+      "series": [],
+      "tree": []
+    },
+    "coordination": {
+      "coverage": "unavailable",
+      "messages": [],
+      "latency": [],
+      "queue": [],
+      "failures": []
+    },
+    "delivery": {
+      "coverage": "partial",
+      "ships": [],
+      "merge_to_live": [],
+      "ci": [],
+      "open_prs": []
+    }
+  },
+  "decisions_resolved": [
+    {
+      "id": "item-abe540ef7c23733cd622",
+      "title": "Review plan",
+      "body": "Review the plan",
+      "options": [
+        "Reply on Mac"
+      ],
+      "recommended_option": null,
+      "state": "answered",
+      "kind": "decision",
+      "version_hash": "9fd7aa55538a7758ca48099a71cffaf209bb93561242d6f32c516dd3050e5c4a",
+      "status": "resolved",
+      "ask_text": "Review the plan",
+      "ask_truncated": false,
+      "resolved_at": "2026-10-28T12:17:58.842275+00:00",
+      "resolved_by": "owner",
+      "resolution": "Yes"
+    },
+    {
+      "id": "item-0ba95f347a77364a0893",
+      "title": "Review plan",
+      "body": "Review the plan",
+      "options": [
+        "Reply on Mac"
+      ],
+      "recommended_option": null,
+      "state": "answered",
+      "kind": "decision",
+      "version_hash": "1db63c8eb72274f04d5ab59deaf8e927e18c5776a722e3f62e6eb1e2c725bccf",
+      "status": "resolved",
+      "ask_text": "Review the plan",
+      "ask_truncated": false,
+      "resolved_at": "2026-10-28T12:17:58.842275+00:00",
+      "resolved_by": "owner",
+      "resolution": "Yes"
+    }
+  ],
+  "ship": [
+    {
+      "product": "Tuturuuu web",
+      "deploy": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "ci": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "released_at": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      }
+    },
+    {
+      "product": "Tuturuuu contacts",
+      "deploy": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "ci": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "released_at": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      }
+    },
+    {
+      "product": "Tuturuuu calendar",
+      "deploy": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "ci": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "released_at": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      }
+    },
+    {
+      "product": "Tuturuuu mobile",
+      "deploy": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "ci": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "released_at": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      }
+    },
+    {
+      "product": "Upskii",
+      "deploy": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "ci": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "released_at": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      }
+    },
+    {
+      "product": "PKTM",
+      "deploy": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "ci": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "released_at": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      }
+    },
+    {
+      "product": "MasteryAI",
+      "deploy": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "ci": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      },
+      "released_at": {
+        "value": null,
+        "status": "not_connected",
+        "checked_at": "2026-10-28T12:22:58.842275+00:00",
+        "reason": "No observation"
+      }
+    }
+  ],
+  "work": {
+    "checked_at": "2026-10-28T12:22:58.842275+00:00",
+    "status": "ok",
+    "lanes": [
+      {
+        "id": "item-cccccccccccccccccccc",
+        "status": "idle",
+        "eta_seconds": {
+          "value": null,
+          "status": "not_published",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "age_seconds": {
+          "value": 0,
+          "status": "ok",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00"
+        }
+      }
+    ],
+    "counts": {
+      "running": 0,
+      "waiting": 0,
+      "idle": 1
+    }
+  },
+  "insights": [
+    {
+      "instance": "Claude pool A",
+      "weekly": {
+        "remaining_percent": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "resets_at": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "burn_percent_per_hour": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "projected_remaining_at_reset": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "pacing": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        }
+      }
+    },
+    {
+      "instance": "Claude pool B",
+      "weekly": {
+        "remaining_percent": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "resets_at": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "burn_percent_per_hour": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "projected_remaining_at_reset": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "pacing": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        }
+      }
+    },
+    {
+      "instance": "Claude pool C",
+      "weekly": {
+        "remaining_percent": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "resets_at": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "burn_percent_per_hour": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "projected_remaining_at_reset": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "pacing": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        }
+      }
+    },
+    {
+      "instance": "Claude pool D",
+      "weekly": {
+        "remaining_percent": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "resets_at": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "burn_percent_per_hour": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "projected_remaining_at_reset": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "pacing": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        }
+      }
+    },
+    {
+      "instance": "Claude pool E",
+      "weekly": {
+        "remaining_percent": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "resets_at": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "burn_percent_per_hour": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "projected_remaining_at_reset": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "pacing": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        }
+      }
+    },
+    {
+      "instance": "Codex pool A",
+      "weekly": {
+        "remaining_percent": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "resets_at": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "burn_percent_per_hour": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "projected_remaining_at_reset": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "pacing": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        }
+      }
+    },
+    {
+      "instance": "Codex pool B",
+      "weekly": {
+        "remaining_percent": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "resets_at": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "burn_percent_per_hour": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "projected_remaining_at_reset": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        },
+        "pacing": {
+          "value": null,
+          "status": "not_connected",
+          "checked_at": "2026-10-28T12:22:58.842275+00:00",
+          "reason": "No observation"
+        }
+      }
+    }
+  ],
+  "asks_source": {
+    "value": 4,
+    "status": "ok",
+    "checked_at": "2026-10-28T12:22:58.842275+00:00",
+    "reason": "Ledger observed",
+    "skipped": 0
+  },
+  "decisions_unknown": []
+}

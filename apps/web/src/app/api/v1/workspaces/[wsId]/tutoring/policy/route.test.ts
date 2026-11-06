@@ -2,6 +2,8 @@
 import {
   EASY_CENTER_TUTORING_POLICY,
   readTutoringPolicyConfigRows,
+  serializeTutoringPolicyConfigRows,
+  type TutoringPolicy,
 } from '@tuturuuu/internal-api/tutoring-policy';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -73,6 +75,38 @@ describe('tutoring policy API', () => {
     expect(query.upsert).not.toHaveBeenCalled();
   });
 
+  it('rejects an invalid count-from date before writing', async () => {
+    for (const absenceCountFromDate of ['2026-02-30', '2099-01-01', 20261101]) {
+      const response = await request('PUT', {
+        ...EASY_CENTER_TUTORING_POLICY,
+        absenceCountFromDate,
+      });
+      expect(response.status).toBe(400);
+    }
+    expect(query.upsert).not.toHaveBeenCalled();
+  });
+
+  it('reads a bad stored count-from date as unset without resetting the policy', async () => {
+    const stored = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      preset: 'custom' as const,
+      absenceCountFromDate: '2026-02-30',
+    };
+    query.like.mockResolvedValueOnce({
+      data: serializeTutoringPolicyConfigRows(
+        stored as unknown as TutoringPolicy
+      ),
+      error: null,
+    } as never);
+    const response = await request('GET');
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.policy).toEqual({ ...stored, absenceCountFromDate: null });
+    expect(body.policy.groupExclusions).toEqual(
+      EASY_CENTER_TUTORING_POLICY.groupExclusions
+    );
+  });
+
   it('requires settings permission to save', async () => {
     mocks.resolveAccess.mockResolvedValue({
       normalizedWsId: wsId,
@@ -82,6 +116,34 @@ describe('tutoring policy API', () => {
       403
     );
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('saves tutor groups alongside every other policy field', async () => {
+    const tutorGroupId = '22222222-2222-4222-8222-222222222222';
+    const policy = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      preset: 'custom' as const,
+      campusByGroupId: {
+        '11111111-1111-4111-8111-111111111111': 'Legacy Annex',
+      },
+      tutorGroupIds: [tutorGroupId, tutorGroupId.toUpperCase()],
+    };
+    const response = await request('PUT', policy);
+    expect(response.status).toBe(200);
+    const saved = query.upsert.mock.calls[0]?.[0] ?? [];
+    expect(readTutoringPolicyConfigRows(saved)).toEqual({
+      ...policy,
+      tutorGroupIds: [tutorGroupId],
+    });
+  });
+
+  it('rejects a tutor group that is not a UUID before writing', async () => {
+    const response = await request('PUT', {
+      ...EASY_CENTER_TUTORING_POLICY,
+      tutorGroupIds: ['not-a-group'],
+    });
+    expect(response.status).toBe(400);
+    expect(query.upsert).not.toHaveBeenCalled();
   });
 
   it('stores a validated policy in the authorized workspace', async () => {
@@ -98,5 +160,23 @@ describe('tutoring policy API', () => {
     expect(readTutoringPolicyConfigRows(saved)).toMatchObject(
       EASY_CENTER_TUTORING_POLICY
     );
+  });
+
+  it('saves the campus list alongside every other policy field', async () => {
+    const policy = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      preset: 'custom' as const,
+      campusByGroupId: {
+        '11111111-1111-4111-8111-111111111111': 'Legacy Annex',
+      },
+      campusOptions: [' Campus North ', 'Campus North', ''],
+    };
+    const response = await request('PUT', policy);
+    expect(response.status).toBe(200);
+    const saved = query.upsert.mock.calls[0]?.[0] ?? [];
+    expect(readTutoringPolicyConfigRows(saved)).toEqual({
+      ...policy,
+      campusOptions: ['Campus North'],
+    });
   });
 });

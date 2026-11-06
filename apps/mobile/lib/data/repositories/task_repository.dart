@@ -35,6 +35,7 @@ import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/repositories/task_pending_user_overlay.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 part 'task_repository_helpers.dart';
 part 'task_repository_local.dart';
@@ -606,37 +607,25 @@ class TaskRepository {
     List<String>? assigneeIds,
     bool? completed,
     bool clearDescription = false,
+    bool clearPriority = false,
     bool clearStartDate = false,
     bool clearEndDate = false,
     bool clearEstimationPoints = false,
   }) async {
-    if (description != null && clearDescription) {
-      throw ArgumentError(
-        'description and clearDescription cannot both be provided',
-      );
-    }
-
-    if (startDate != null && clearStartDate) {
-      throw ArgumentError(
-        'startDate and clearStartDate cannot both be provided',
-      );
-    }
-
-    if (endDate != null && clearEndDate) {
-      throw ArgumentError('endDate and clearEndDate cannot both be provided');
-    }
-
-    if (estimationPoints != null && clearEstimationPoints) {
-      throw ArgumentError(
-        'estimationPoints and clearEstimationPoints cannot both be provided',
-      );
-    }
+    _rejectValueAndClear([
+      (description, clearDescription, 'description'),
+      (priority, clearPriority, 'priority'),
+      (startDate, clearStartDate, 'startDate'),
+      (endDate, clearEndDate, 'endDate'),
+      (estimationPoints, clearEstimationPoints, 'estimationPoints'),
+    ]);
 
     final updatePayload = <String, dynamic>{
       if (name != null) 'name': name,
       if (description != null) 'description': description,
       if (clearDescription) 'description': null,
       if (priority != null) 'priority': priority,
+      if (clearPriority) 'priority': null,
       if (startDate != null) 'start_date': _taskStartDateIso(startDate),
       if (endDate != null) 'end_date': _taskEndDateIso(endDate),
       if (clearStartDate) 'start_date': null,

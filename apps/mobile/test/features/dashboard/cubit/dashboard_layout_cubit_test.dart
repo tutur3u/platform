@@ -38,4 +38,19 @@ void main() {
     await restored.setOrder(['tasks', 'summary']);
     expect(restored.state.order, ['tasks', 'calendar', 'summary']);
   });
+
+  test('Education Today leads by default but never jumps a custom order', () {
+    const fresh = DashboardLayoutState();
+    expect(fresh.arranged(['tasks', 'calendar', 'classes_today']), [
+      'classes_today',
+      'tasks',
+      'calendar',
+    ]);
+    const customized = DashboardLayoutState(order: ['calendar', 'tasks']);
+    expect(customized.arranged(['tasks', 'calendar', 'classes_today']), [
+      'calendar',
+      'tasks',
+      'classes_today',
+    ]);
+  });
 }

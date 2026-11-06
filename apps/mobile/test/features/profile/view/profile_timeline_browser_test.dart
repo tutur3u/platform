@@ -71,11 +71,12 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(AppGroupedRow),
-        matching: find.text('Created 1 task'),
+        matching: find.text('Task'),
       ),
       findsOneWidget,
     );
-    expect(find.textContaining('Created 1 task ·'), findsNothing);
+    // The kind is the title of an untitled row, never repeated below it.
+    expect(find.text('Task'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -195,7 +196,8 @@ void main() {
       await mount(tester);
       expect(find.text('October task'), findsOneWidget);
       expect(find.text('September task', skipOffstage: false), findsOneWidget);
-      expect(find.text('Older task'), findsNothing);
+      // Only returned days appear; the oldest one is included, not padded.
+      expect(find.text('Older task', skipOffstage: false), findsOneWidget);
       final semantics = tester.ensureSemantics();
       tester
           .widget<AppIconButton>(
@@ -291,7 +293,7 @@ void main() {
         pageSize: 2,
         items: [
           ...data,
-          for (var i = 0; i < 4; i++)
+          for (var i = 0; i < 12; i++)
             item('October task $i', DateTime(2026, 10, 1, 9, -i)),
         ],
       );

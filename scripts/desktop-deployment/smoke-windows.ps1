@@ -7,34 +7,59 @@ foreach ($name in @('ACTIONS_ID_TOKEN_REQUEST_URL', 'ACTIONS_ID_TOKEN_REQUEST_TO
 }
 $artifacts = Join-Path $env:RUNNER_TEMP 'desktop-artifacts'
 $installer = Join-Path $artifacts 'Tuturuuu-windows-x64-setup.exe'
-$installerSha256 = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+$installerSha256 = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
 $receipt = Get-Content (Join-Path $artifacts 'verified-windows.json') -Raw | ConvertFrom-Json
 if ($receipt.sha256 -ne $installerSha256 -or $receipt.source -ne $env:GITHUB_SHA -or $receipt.run -ne $env:GITHUB_RUN_ID) {
     throw 'Installer does not match the exact-source packaging receipt'
 }
 $installRoot = Join-Path $env:RUNNER_TEMP "tuturuuu-smoke-$([guid]::NewGuid())"
 $process = $null
+$setup = $null
 $originalError = $null
 $cleanupErrors = @()
+function Wait-SmokeInstaller($Child, $Phase) {
+    if (!$Child.WaitForExit(120000)) {
+        try {
+            $Child.Kill($true)
+            if (!$Child.WaitForExit(10000)) { Write-Warning "$Phase did not stop within 10 seconds" }
+        } catch { Write-Warning "$Phase timeout cleanup failed: $($_.Exception.Message)" }
+        throw "$Phase timed out after 120 seconds"
+    }
+    if ($Child.ExitCode -ne 0) { throw "$Phase failed: $($Child.ExitCode)" }
+}
 try {
-    $setup = Start-Process -FilePath $installer -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=`"$installRoot`"") -Wait -PassThru
-    if ($setup.ExitCode -ne 0) { throw "Installer failed: $($setup.ExitCode)" }
+    $setup = Start-Process -FilePath $installer -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=`"$installRoot`"") -PassThru
+    $null = $setup.Handle
+    Wait-SmokeInstaller $setup 'Installer'
     foreach ($relative in @('tuturuuu.exe', 'flutter_windows.dll', 'data\icudtl.dat', 'data\app.so', 'data\flutter_assets')) {
         if (!(Test-Path (Join-Path $installRoot $relative))) { throw "Installed bundle missing $relative" }
     }
-    $files = @(Get-ChildItem $installRoot -Recurse -File | ForEach-Object {
+    $files = @(Get-ChildItem -LiteralPath $installRoot -Recurse -Force | ForEach-Object {
+        if ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Installed bundle contains a reparse point: $($_.FullName)" }
+        if ($_.PSIsContainer) { return }
         $relative = [IO.Path]::GetRelativePath($installRoot, $_.FullName)
-        if ($relative -notmatch '^(tuturuuu\.exe|[^\\/]+\.dll|data[\\/].+|unins000\.(exe|dat|msg))$') {
+        if ($relative -notmatch '^(tuturuuu\.exe|[^\\/]+\.dll|data[\\/](icudtl\.dat|app\.so|flutter_assets[\\/].+)|unins000\.(exe|dat|msg))$') {
             throw "Unexpected installed file: $relative"
         }
-        [ordered]@{ name = $relative; bytes = $_.Length; sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
+        if ($relative -match '^data[\\/]' -and ($relative -match '[\\/]\.env' -or $relative -match '\.(exe|dll|sys|msi|bat|cmd|ps1|com|scr|vbs|lnk|hta|wsf|psm1|vbe|jse|pdb|lib|exp|ilk|env|p12|pfx|pem|key|p8|jks|keystore|mobileprovision|provisionprofile)$')) {
+            throw "Unexpected installed file type: $relative"
+        }
+        if ($relative -match '^data[\\/]') {
+            $stream = [IO.File]::OpenRead($_.FullName)
+            try {
+                if ($stream.ReadByte() -eq 0x4D -and $stream.ReadByte() -eq 0x5A) { throw "Unexpected MZ payload in data: $relative" }
+            } finally { $stream.Dispose() }
+        }
+        [ordered]@{ name = $relative; bytes = $_.Length; sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
     })
     $process = Start-Process -FilePath (Join-Path $installRoot 'tuturuuu.exe') -WorkingDirectory $installRoot -PassThru
     Start-Sleep -Seconds 15
     $process.Refresh()
     if ($process.HasExited) { throw "Installed app exited during startup: $($process.ExitCode)" }
     if ($process.MainWindowHandle -eq 0) { throw 'Installed app did not render its first frame' }
+    if ($process.MainWindowTitle -cne 'Tuturuuu') { throw 'Installed app main window title is not Tuturuuu' }
     [ordered]@{
+        windowTitle = $process.MainWindowTitle
         source = $env:GITHUB_SHA
         run = $env:GITHUB_RUN_ID
         attempt = $env:GITHUB_RUN_ATTEMPT
@@ -52,10 +77,12 @@ try {
         }
     } catch { $cleanupErrors += $_ }
     try {
+        if ($setup -and !$setup.HasExited) { throw 'Installer is still running; uninstall skipped' }
         $uninstaller = Join-Path $installRoot 'unins000.exe'
         if (Test-Path $uninstaller) {
-            $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -Wait -PassThru
-            if ($uninstall.ExitCode -ne 0) { throw "Uninstaller failed: $($uninstall.ExitCode)" }
+            $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -PassThru
+            $null = $uninstall.Handle
+            Wait-SmokeInstaller $uninstall 'Uninstaller'
         }
     } catch { $cleanupErrors += $_ }
 }

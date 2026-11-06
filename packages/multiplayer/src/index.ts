@@ -10,6 +10,7 @@ import {
 import { type MockRecord, seedRecords } from './mock-catalog';
 import type { PromptReview } from './prompt-review';
 import type { Run } from './run';
+import { hasStaffAddress, staff } from './staff';
 
 export {
   type PromptFramework,
@@ -31,11 +32,12 @@ export type {
   Trace,
   TraceStatus,
 } from './run';
-
+export { staff } from './staff';
 export type RoomMode = 'open' | 'readonly' | 'private';
 export type Identity = {
   id: string;
   email: string | null;
+  staffVerified?: boolean;
   name: string;
   expires: number;
   avatarUrl?: string;
@@ -45,6 +47,7 @@ export type Member = {
   id: string;
   name: string;
   email: string | null;
+  staffVerified?: boolean;
   teamId: string;
   teamIds: string[];
   admin: boolean;
@@ -117,7 +120,6 @@ export type Room = {
   limits: WorkshopLimits;
   revision: number;
 };
-
 export function workshopScheduleError(
   startsAt: number | null,
   endsAt: number | null,
@@ -164,7 +166,8 @@ export function normalizeRoom(room: Room): Room {
     const teamId = teamIds.includes(member.teamId)
       ? member.teamId
       : (teamIds[0] ?? member.teamId);
-    return { ...member, teamId, teamIds, admin: member.admin && staff(member) };
+    const admin = member.admin && hasStaffAddress(member.email);
+    return { ...member, teamId, teamIds, admin };
   });
   room.showcaseTeamId = room.teams.some(
     (team) => team.id === room.showcaseTeamId
@@ -241,12 +244,7 @@ export function requireRule(
 ): asserts condition {
   if (!condition) throw new RoomError(code, status);
 }
-export function staff(identity: Pick<Identity, 'email'>) {
-  return (
-    typeof identity.email === 'string' &&
-    /^[^@\s]+@tuturuuu\.com$/i.test(identity.email)
-  );
-}
+
 export function text(value: unknown, max: number, min = 1): string {
   requireRule(
     typeof value === 'string' &&
@@ -293,6 +291,7 @@ export function memberOf(
   );
   const effective = {
     ...member,
+    staffVerified: identity.staffVerified,
     admin: (member.admin || member.id === room.ownerId) && staff(identity),
   };
   requireRule(room.mode !== 'private' || effective.admin, 'private_room', 403);
@@ -423,6 +422,7 @@ export function createRoom(
       {
         id: identity.id,
         email: identity.email,
+        staffVerified: identity.staffVerified,
         name: identity.name,
         admin: true,
         teamId: 'team-1',
@@ -452,6 +452,7 @@ export function joinRoom(
   requireRule(identity.expires > now, 'session_expired', 401);
   const existing = room.members.find((m) => m.id === identity.id);
   if (existing) {
+    existing.staffVerified = identity.staffVerified === true;
     memberOf(room, identity, now);
     return;
   }
@@ -472,6 +473,7 @@ export function joinRoom(
     id: identity.id,
     name: identity.name,
     email: identity.email,
+    staffVerified: identity.staffVerified,
     teamId,
     teamIds: [teamId],
     admin: false,

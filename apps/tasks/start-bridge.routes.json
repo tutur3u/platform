@@ -1,0 +1,20 @@
+{
+  "appDir": "src/app",
+  "stripSegments": {
+    "[locale]": {
+      "locale": "en"
+    }
+  },
+  "api": {
+    "out": "src/runtime/api-registry.bridge.gen.ts"
+  },
+  "pages": {
+    "out": "src/runtime/page-registry.bridge.gen.ts"
+  },
+  "owned": {
+    "api/build-info/route.ts": "src/runtime/worker-request.ts"
+  },
+  "ignored": {
+    "serwist/[path]/route.ts": "builds the offline worker with esbuild at request time; the Next build keeps serving it until the native offline port"
+  }
+}

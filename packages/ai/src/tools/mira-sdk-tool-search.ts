@@ -10,6 +10,8 @@ type StepPolicy = {
   toolChoice?: 'required' | 'none';
 };
 
+const DEFAULT_READ_TOOLS = ['get_my_tasks', 'get_day_overview'];
+
 /** Each generation owns discovery state; execution retains the original guards. */
 export function createMiraSdkToolSearch(
   originalTools: ToolSet,
@@ -17,12 +19,14 @@ export function createMiraSdkToolSearch(
   withoutPermission?: (permission: PermissionId) => boolean
 ) {
   const tools: ToolSet = Object.fromEntries(
-    Object.entries(originalTools).map(([name, definition]) => [
-      name,
-      name === 'search_tools'
-        ? toolSearch()
-        : { ...definition, deferLoading: true },
-    ])
+    Object.entries(originalTools)
+      .filter(([name]) => name !== 'select_tools')
+      .map(([name, definition]) => [
+        name,
+        name === 'search_tools'
+          ? toolSearch()
+          : { ...definition, deferLoading: true },
+      ])
   );
 
   async function prepareStep(policy: StepPolicy) {
@@ -67,6 +71,9 @@ export function createMiraSdkToolSearch(
       toolChoice = undefined;
     }
     const canDiscover = selected.has('search_tools');
+    if (canDiscover && toolChoice !== 'required') {
+      for (const name of DEFAULT_READ_TOOLS) selected.add(name);
+    }
     const activeTools = [...allowed].filter(
       (name) => canDiscover || selected.has(name)
     );

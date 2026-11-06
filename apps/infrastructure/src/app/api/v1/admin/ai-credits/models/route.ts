@@ -67,7 +67,7 @@ const patchSchema = z.object({
 
 export async function PATCH(req: Request) {
   try {
-    const auth = await authorizeAiCreditsAdminRequest();
+    const auth = await authorizeAiCreditsAdminRequest('manage_workspace_roles');
     if (!auth.ok) return auth.response;
 
     const body = await req.json();

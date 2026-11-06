@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
+import 'package:mobile/core/theme/appearance/interface_theme.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Restores the Material infrastructure intentionally removed from
@@ -21,18 +23,24 @@ class ShadcnMaterialBridge extends StatelessWidget {
     final theme = shad.Theme.of(context);
     final appearance = AppearanceScope.maybeOf(context)?.settings;
 
+    final base = appearance != null
+        ? AppearanceTheme.materialTheme(appearance, theme.brightness)
+        : theme.brightness == Brightness.light
+        ? AppTheme.light
+        : AppTheme.dark;
     return Theme(
-      data: appearance != null
-          ? AppearanceTheme.materialTheme(appearance, theme.brightness)
-          : theme.brightness == Brightness.light
-          ? AppTheme.light
-          : AppTheme.dark,
-      child: Material(
-        color: Colors.transparent,
-        child: ScaffoldMessenger(
-          child: AnnotatedRegion<SystemUiOverlayStyle>(
-            value: AppTheme.systemUiOverlayStyleFor(theme.brightness),
-            child: child,
+      data: appearance == null
+          ? base
+          : AppInterfaceTheme.apply(base, appearance.interfaceTokens),
+      child: AppInterfaceScope(
+        settings: appearance ?? const AppearanceSettings(),
+        child: Material(
+          color: Colors.transparent,
+          child: ScaffoldMessenger(
+            child: AnnotatedRegion<SystemUiOverlayStyle>(
+              value: AppTheme.systemUiOverlayStyleFor(theme.brightness),
+              child: child,
+            ),
           ),
         ),
       ),

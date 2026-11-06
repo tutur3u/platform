@@ -194,10 +194,20 @@ describe('workspace calendar sync route', () => {
   });
 
   it('never fetches Microsoft events with credentials that failed refresh', async () => {
-    ensureValidTokenMock.mockResolvedValue({
-      accessToken: 'expired',
-      error: 'invalid_grant',
-    });
+    ensureValidTokenMock.mockImplementation(async (_client, token) =>
+      token.provider === 'microsoft'
+        ? {
+            accessToken: 'expired',
+            error: 'invalid_grant',
+            failure: {
+              kind: 'permanent',
+              reason: 'microsoft_invalid_grant',
+              providerCode: 'invalid_grant',
+            },
+            quarantine: 'deactivated',
+          }
+        : { accessToken: token.access_token, refreshed: false }
+    );
     const response = await POST(
       new Request(`http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`, {
         method: 'POST',

@@ -63,6 +63,28 @@ void main() {
   );
 
   test(
+    'conditional GET sends bearer and ETag and never parses a 304 body',
+    () async {
+      final reader = api(
+        MockClient((request) async {
+          expect(request.url.queryParameters['wsId'], 'workspace');
+          expect(request.headers['Authorization'], 'Bearer synthetic-session');
+          expect(request.headers['If-None-Match'], '"v1"');
+          return http.Response('invalid JSON must not be parsed', 304);
+        }),
+      );
+      expect(
+        await reader.getConditionalJson(
+          '/api/v1/mobile/feature-flags?wsId=workspace',
+          version: '"v1"',
+        ),
+        isNull,
+      );
+      reader.dispose();
+    },
+  );
+
+  test(
     'bulk GETs across clients are sequential and paced; mutations are unmarked',
     () async {
       final timer = Stopwatch()..start();

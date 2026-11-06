@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -270,8 +271,8 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return shad.AlertDialog(
-              title: Text(context.l10n.financePickColor),
+            return AppDialog(
+              title: context.l10n.financePickColor,
               content: SizedBox(
                 width: double.maxFinite,
                 child: ColorPicker(

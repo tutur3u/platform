@@ -147,7 +147,7 @@ describe('blocked IP authorization', () => {
       const response = await POST(createRequest('POST', { invalid: true }));
 
       expect(response.status).toBe(status);
-      expect(mocks.authorize).toHaveBeenCalledWith('view_infrastructure');
+      expect(mocks.authorize).toHaveBeenCalledWith('manage_workspace_roles');
       expect(mocks.from).not.toHaveBeenCalled();
       expect(mocks.getUpstashRestRedisClient).not.toHaveBeenCalled();
     });
@@ -160,7 +160,7 @@ describe('blocked IP authorization', () => {
       );
 
       expect(response.status).toBe(status);
-      expect(mocks.authorize).toHaveBeenCalledWith('view_infrastructure');
+      expect(mocks.authorize).toHaveBeenCalledWith('manage_workspace_roles');
       expect(mocks.unblockIP).not.toHaveBeenCalled();
     });
   }

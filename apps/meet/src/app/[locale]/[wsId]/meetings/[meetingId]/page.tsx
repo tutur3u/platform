@@ -28,8 +28,8 @@ import { MeetingLocalTime } from '@/features/call/components/meeting-local-time'
 import { MeetingPublicSettings } from '@/features/call/components/meeting-public-settings';
 import { buildCalendarEventUrl } from '@/features/call/lib/calendar-link';
 import { encodeRoomCode } from '@/features/call/lib/room-code';
-import { MeetingAiOverview } from '@/features/meeting-ai/meeting-ai-overview';
 import { readMeetingRoomPolicy } from '@/features/meeting-ai/server/room-access';
+import { MeetingNotesSection } from '@/features/meeting-notes/meeting-notes-section';
 import { getMeetWorkspaceContext } from '../../workspace-context';
 import { MeetingActions } from './meeting-actions';
 import { loadMeetingCalendarEvent } from './meeting-calendar-event';
@@ -79,6 +79,7 @@ export default async function MeetingDetailPage({
   }
 
   const isHost = meeting.creator_id === user.id;
+  const title = meeting.name ?? t('untitled_meeting');
   // Permissions do not depend on room policy. Capture rejection immediately so
   // the ended-room shortcut and policy error precedence remain unchanged.
   const permissionsPromise = getPermissions({ user, wsId }).then(
@@ -100,8 +101,19 @@ export default async function MeetingDetailPage({
         shareNotesAfterMeeting={policy.settings?.shareNotesAfterMeeting}
         meetingId={meetingId}
         wsId={wsId}
-        meetingName={meeting.name ?? t('untitled_meeting')}
+        meetingName={title}
         backHref={`/${workspaceSlug}/meetings`}
+        initialShowNotes={policy.canReadNotes}
+        notes={
+          <MeetingNotesSection
+            wsId={wsId}
+            meetingId={meetingId}
+            title={title}
+            isHost={isHost}
+            policy={policy}
+            sharingControl={false}
+          />
+        }
       />
     );
   const permissionOutcome = await permissionsPromise;
@@ -149,9 +161,13 @@ export default async function MeetingDetailPage({
       </div>
 
       <div className="mb-6">
-        {policy.canReadNotes && (
-          <MeetingAiOverview wsId={wsId} meetingId={meetingId} />
-        )}
+        <MeetingNotesSection
+          wsId={wsId}
+          meetingId={meetingId}
+          title={title}
+          isHost={isHost}
+          policy={policy}
+        />
       </div>
       {/* Meeting Details */}
       <div className="grid gap-6 md:grid-cols-2">

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
+import 'package:mobile/features/assistant/data/mira_offline_reads.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/internal_diagnostics_copy.dart';
@@ -16,6 +17,9 @@ class AssistantChatFeedback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (state.error == MiraLegacyOffline.code) {
+      return Center(child: Text(context.l10n.assistantNotAvailableOffline));
+    }
     if (state.status == AssistantChatStatus.error) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),

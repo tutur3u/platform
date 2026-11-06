@@ -1,9 +1,11 @@
 import { google } from '@ai-sdk/google';
 import { generateObject } from '@tuturuuu/ai/core';
-import { withAiMemory } from '@tuturuuu/ai/memory';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import z from 'zod';
+import {
+  getPlaygroundAccess,
+  playgroundDeniedResponse,
+} from '@/lib/staff-access';
 
 const systemPrompt =
   "If the user needs to do something, it's a task, otherwise, smartly classify it as a note, transaction, document, or time-tracking. If the user didn't do it yet, it's not time tracking, it's a task. Always provide internalReasoning explaining why you classified it that way.";
@@ -25,18 +27,13 @@ const schema = z.object({
 });
 
 export const GET = async () => {
+  const access = await getPlaygroundAccess();
+  if (!access.ok) return playgroundDeniedResponse(access.status);
+
   if (!prompt) return NextResponse.json({ tasks: [] });
 
   const tasks = await generateObject({
-    model: await withAiMemory({
-      customId: 'playground-object-generation',
-      model: google('gemini-2.5-flash-lite'),
-      product: 'playground',
-      source: 'playground_object_generation',
-      surface: 'playground_object_generation',
-      userId: ROOT_WORKSPACE_ID,
-      wsId: ROOT_WORKSPACE_ID,
-    }),
+    model: google('gemini-2.5-flash-lite'),
     schema,
     prompt,
     system: systemPrompt,

@@ -1,14 +1,14 @@
 import crypto from 'node:crypto';
 import {
+  isTurnstileError,
+  type TurnstileRequestLike,
+  verifyTurnstileToken,
+} from '@tuturuuu/cloudflare/turnstile/server';
+import {
   createAdminClient,
   createClient,
   createDetachedClient,
 } from '@tuturuuu/supabase/next/server';
-import {
-  isTurnstileError,
-  type TurnstileRequestLike,
-  verifyTurnstileToken,
-} from '@tuturuuu/turnstile/server';
 import type { Database, QrLoginChallenge } from '@tuturuuu/types/db';
 import type { Json } from '@tuturuuu/types/supabase';
 import {
@@ -131,7 +131,7 @@ function normalizeOrigin(origin: string | undefined, requestUrl?: string) {
 }
 
 function asJson(value: Record<string, unknown>) {
-  return value as Json;
+  return value as NonNullable<Json>;
 }
 
 function createTurnstileRequestLike(

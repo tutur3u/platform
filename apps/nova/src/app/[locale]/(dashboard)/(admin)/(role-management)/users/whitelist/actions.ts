@@ -1,10 +1,15 @@
 'use server';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { requireNovaAppSessionUser } from '@/lib/app-session';
+import { canManageNovaRolesGlobally } from '@/lib/challenge-management-auth';
 
 export async function addWhitelistEmail(email: string, enabled: boolean) {
-  const sbAdmin = await createAdminClient();
-  if (!sbAdmin) throw new Error('Unauthorized');
+  const user = await requireNovaAppSessionUser();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  if (!(await canManageNovaRolesGlobally(user, sbAdmin))) {
+    throw new Error('Forbidden');
+  }
 
   const { error } = await sbAdmin.from('platform_email_roles').insert([
     {

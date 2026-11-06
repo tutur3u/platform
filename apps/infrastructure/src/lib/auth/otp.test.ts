@@ -83,7 +83,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   ) => mocks.createDetachedClient(...args),
 }));
 
-vi.mock('@tuturuuu/turnstile/server', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile/server', () => ({
   isTurnstileError: (...args: Parameters<typeof mocks.isTurnstileError>) =>
     mocks.isTurnstileError(...args),
   resolveTurnstileToken: (

@@ -88,9 +88,9 @@ export function createProfileMediaPutHandler(kind: ProfileMediaKind) {
         ? `${verified.claims.sub}/${bannerOperation}.webp`
         : undefined;
       if (bannerOperation) {
-        const operationStatus = admin.rpc.bind(
-          admin
-        ) as unknown as BannerOperationStatusRpc;
+        const operationStatus = (
+          admin.rpc as unknown as BannerOperationStatusRpc
+        ).bind(admin);
         const receipt = await operationStatus(
           'profile_banner_operation_status',
           {

@@ -102,6 +102,40 @@ describe('useTaskProjectManagement', () => {
     });
   });
 
+  it('shows the ticket number the server gives a new project link', async () => {
+    const numbered = { ...project, ticket_key: 'ROAD', ticket_number: 4 };
+    mockUpdateWorkspaceTask.mockResolvedValueOnce({
+      task: { ...mockTask, projects: [numbered] },
+    });
+    queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+    queryClient.setQueryData(['tasks-full', 'board-1', 'sprints'], [mockTask]);
+
+    const { result } = renderHook(
+      () =>
+        useTaskProjectManagement({
+          task: mockTask,
+          boardId: 'board-1',
+          workspaceProjects: [project],
+          workspaceId: 'ws-1',
+          taskId: 'task-1',
+        }),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.toggleTaskProject('project-1');
+    });
+
+    for (const key of [
+      ['tasks', 'board-1'],
+      ['tasks-full', 'board-1', 'sprints'],
+    ]) {
+      expect(queryClient.getQueryData<Task[]>(key)?.[0]?.projects).toEqual([
+        numbered,
+      ]);
+    }
+  });
+
   it('rolls back every visible cache when the project update fails', async () => {
     const taskWithProject = {
       ...mockTask,

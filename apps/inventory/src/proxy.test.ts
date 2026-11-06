@@ -183,6 +183,40 @@ describe('Inventory proxy storefront access', () => {
     });
   });
 
+  it('retains the apex mount when redirecting an anonymous operator to login', async () => {
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      error: 'Missing app session',
+      ok: false,
+    });
+    const request = new NextRequest(
+      'https://tuturuuu.com/inventory/personal/catalog?tag=1&tag=2',
+      { nextConfig: { basePath: '/inventory' } }
+    );
+    const response = await proxy(request);
+    const target = new URL(response.headers.get('location') ?? '');
+    expect(response.status).toBe(307);
+    expect(target.origin + target.pathname).toBe(
+      'https://tuturuuu.com/inventory/login'
+    );
+    expect(target.searchParams.get('next')).toBe(
+      '/personal/catalog?tag=1&tag=2'
+    );
+  });
+
+  it('retains the apex mount and query when removing an explicit locale', async () => {
+    const request = new NextRequest(
+      'https://tuturuuu.com/inventory/vi/personal/catalog?tag=1&tag=2',
+      { nextConfig: { basePath: '/inventory' } }
+    );
+    const response = await proxy(request);
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/inventory/personal/catalog?tag=1&tag=2'
+    );
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
   it('guards local auth API routes before route handling', async () => {
     const guardResponse = NextResponse.json(
       { error: 'Payload Too Large' },

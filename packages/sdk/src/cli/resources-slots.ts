@@ -117,7 +117,9 @@ export async function ownerState(path: string): Promise<OwnerState> {
       ? { kind: 'owner', owner: parsed.data }
       : { kind: 'invalid' };
   } catch (error) {
-    return errno(error, 'ENOENT') ? { kind: 'missing' } : { kind: 'invalid' };
+    return errno(error, 'ENOENT') || errno(error, 'ENOTDIR')
+      ? { kind: 'missing' }
+      : { kind: 'invalid' };
   }
 }
 export async function readOwner(path: string) {
@@ -216,13 +218,14 @@ export function newOwner(tool: string, command?: string): ResourceOwner {
     queuedAt: new Date().toISOString(),
   };
 }
-async function directoryExists(path: string) {
+async function resourceDirectory(path: string) {
   try {
-    if (!(await stat(path)).isDirectory())
+    const info = await stat(path);
+    if (!info.isDirectory())
       throw new Error(`Invalid resource directory: ${path}`);
-    return true;
+    return info;
   } catch (error) {
-    if (errno(error, 'ENOENT')) return false;
+    if (errno(error, 'ENOENT') || errno(error, 'ENOTDIR')) return undefined;
     throw error;
   }
 }
@@ -488,8 +491,11 @@ export async function occupancy(
     join(home, 'lock'),
     ...Array.from({ length: maxLanes }, (_, i) => join(slots, String(i))),
   ]) {
-    if (!(await directoryExists(path))) continue;
+    if (!(await resourceDirectory(path))) continue;
     const state = await ownerState(join(path, 'owner.json'));
+    const initializingDirectory =
+      state.kind === 'missing' ? await resourceDirectory(path) : undefined;
+    if (state.kind === 'missing' && !initializingDirectory) continue;
     if (state.kind === 'invalid')
       throw new Error('Malformed resource owner; admission is closed.');
     if (state.kind === 'owner' && ownerAlive(state.owner)) {
@@ -497,8 +503,8 @@ export async function occupancy(
       ownerSlots.push(path);
       occupied.push(path);
     } else if (
-      state.kind === 'missing' &&
-      Date.now() - (await stat(path)).mtimeMs <= initializationGrace
+      initializingDirectory &&
+      Date.now() - initializingDirectory.mtimeMs <= initializationGrace
     ) {
       occupied.push(path);
       initializing = true;

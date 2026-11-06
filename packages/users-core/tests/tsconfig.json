@@ -1,0 +1,8 @@
+{
+  "extends": "@tuturuuu/typescript-config/base.json",
+  "compilerOptions": {
+    "composite": false,
+    "rootDir": ".."
+  },
+  "include": ["**/*.ts"]
+}

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as compat;
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -24,10 +24,10 @@ class TrustedAuthenticatorsPanel extends StatelessWidget {
     TrustedAuthenticator device,
   ) async {
     final l10n = context.l10n;
-    final confirmed = await compat.showDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => compat.AlertDialog(
-        title: Text(l10n.deviceMfaRemoveTrusted),
+      builder: (context) => AppDialog(
+        title: l10n.deviceMfaRemoveTrusted,
         content: Text('${device.name}\n\n${l10n.deviceMfaRemoveDeviceHint}'),
         actions: [
           shad.OutlineButton(
@@ -104,8 +104,7 @@ class TrustedAuthenticatorsPanel extends StatelessWidget {
               ],
             ),
           ),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
+        AppToggleRow(
           title: Text(l10n.deviceMfaLockTitle),
           subtitle: Text(l10n.deviceMfaLockHint),
           value: registry.locked,

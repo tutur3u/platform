@@ -15,6 +15,10 @@ select set_config('request.jwt.claims',
 insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data) values
 ('00000000-0000-4000-8000-000000094501','inbound-admin-fixture@tuturuuu.com',now(),'{}','{}'),
 ('00000000-0000-4000-8000-000000094502','inbound-foreign-fixture@example.com',now(),'{}','{}');
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 insert into public.workspaces(id,name,creator_id,personal) values
 ('00000000-0000-0000-0000-000000000000','Inbound fixture','00000000-0000-4000-8000-000000094501',false)
 on conflict(id) do update set creator_id=excluded.creator_id;
@@ -39,6 +43,10 @@ insert into auth.users(id,email,email_confirmed_at,banned_until,raw_app_meta_dat
 ('00000000-0000-4000-8000-000000094503','inbound-normalization-fixture@tuturuuu.com',now(),
  now()+interval '100 years','{"employee_onboarding":true}',
  '{"display_name":"Inbound fixture","full_name":"Inbound fixture"}');
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 set local role service_role;
 select private.finalize_employee_creation('00000000-0000-4000-8000-000000094501',
   '00000000-0000-4000-8000-000000094503','inbound-normalization-fixture@tuturuuu.com','Inbound fixture');

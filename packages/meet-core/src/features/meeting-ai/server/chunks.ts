@@ -6,9 +6,14 @@ import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
 import { generateBilledMeetArtifact } from './artifact-billing';
 import { readAudioParts } from './audio-input';
 import { readMeetAudioForm } from './body';
+import { admitMeetCredits } from './credit-admission';
 import { resolveTranscriptSpeaker } from './transcript-speaker';
+import { enforceMeetAiUsage } from './usage-limit';
 
 const schema = z.object({
+  language: z.enum(['auto', 'vi', 'en', 'vi+en']).default('auto'),
+  glossary: z.string().max(800).optional(),
+  context: z.string().max(400).optional(),
   sessionId: z.uuid(),
   id: z.uuid(),
   sequence: z.coerce.number().int().min(0).max(1080),
@@ -19,7 +24,11 @@ export async function transcribeMeetChunk(
   request: Request,
   params: MeetAiParams
 ) {
-  const { db, meetingId, user } = await meetAiAccess(request, params, true);
+  const { db, meetingId, wsId, user } = await meetAiAccess(
+    request,
+    params,
+    true
+  );
   const batched = request.headers.get('x-meet-audio-batch') === '1';
   const maxBytes = batched ? MEET_AUDIO_REQUEST_MAX_BYTES : 500_000;
   if (Number(request.headers.get('content-length') ?? 0) > maxBytes)
@@ -27,6 +36,11 @@ export async function transcribeMeetChunk(
   const body = await readMeetAudioForm(request, maxBytes);
   const parsed = schema.safeParse(Object.fromEntries(body));
   if (!parsed.success) throw new MeetAiError(400, 'Invalid audio');
+  const hints = {
+    language: parsed.data.language,
+    glossary: parsed.data.glossary,
+    context: parsed.data.context,
+  };
   const parts = await readAudioParts(body, batched);
   const { sessionId, id, sequence, startSeconds } = parsed.data;
   const { data: session, error } = await db
@@ -51,6 +65,21 @@ export async function transcribeMeetChunk(
     Date.now() - Date.parse(session.created_at) > 3 * 60 * 60 * 1000
   )
     throw new MeetAiError(409, 'Transcription has ended');
+  // Per-user, per-meeting and per-workspace volume limits, charged in
+  // server-computed audio seconds before any credit check, chunk row or
+  // provider call. Fails closed (503) when the limiter cannot decide.
+  await enforceMeetAiUsage({
+    kind: 'chunk',
+    userId: user.id,
+    meetingId,
+    workspaceId: wsId,
+    audioSeconds: parts.reduce(
+      (total, part) => total + part.durationSeconds,
+      0
+    ),
+  });
+  // A credit refusal must reject the upload before it can leave a failed row.
+  const admission = await admitMeetCredits(user.id, meetingId);
   const resolved = await Effect.runPromise(
     Effect.either(
       Effect.forEach(
@@ -123,9 +152,10 @@ export async function transcribeMeetChunk(
       );
     const result = await generateBilledMeetArtifact(
       batched
-        ? { audioSegments: parts.map((part) => part.bytes) }
-        : { audio: parts[0]!.bytes },
-      { userId: user.id, meetingId, attemptId: inserted.data.attempt_id ?? id }
+        ? { audioSegments: parts.map((part) => part.bytes), hints }
+        : { audio: parts[0]!.bytes, hints },
+      { userId: user.id, meetingId, attemptId: inserted.data.attempt_id ?? id },
+      admission
     );
     const segments = batched
       ? parts.map((part, index) => ({

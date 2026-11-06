@@ -5,6 +5,18 @@ const mocks = vi.hoisted(() => {
   const handlers = new Map<string, ReturnType<typeof vi.fn>>();
   return {
     handlers,
+    module(methods: Record<string, unknown>) {
+      return {
+        GET: undefined,
+        HEAD: undefined,
+        POST: undefined,
+        PUT: undefined,
+        PATCH: undefined,
+        DELETE: undefined,
+        OPTIONS: undefined,
+        ...methods,
+      };
+    },
     make(key: string) {
       const handler = vi.fn(async (..._args: unknown[]) =>
         Response.json({ key })
@@ -14,315 +26,369 @@ const mocks = vi.hoisted(() => {
     },
   };
 });
-vi.mock('@tanstack/react-start/server-only', () => ({}));
-vi.mock('../app/api/ai/email-draft/route', () => ({
-  POST: mocks.make('/api/ai/email-draft POST'),
-}));
-vi.mock('../app/api/auth/logout/route', () => ({
-  GET: mocks.make('/api/auth/logout GET'),
-  POST: mocks.make('/api/auth/logout POST'),
-}));
-vi.mock('../app/api/auth/refresh-app-session/route', () => ({
-  POST: mocks.make('/api/auth/refresh-app-session POST'),
-}));
-vi.mock('../app/api/auth/verify-app-token/route', () => ({
-  POST: mocks.make('/api/auth/verify-app-token POST'),
-}));
-vi.mock('../app/api/build-info/route', () => ({
-  GET: mocks.make('/api/build-info GET'),
-}));
-vi.mock('../app/api/v1/mail/connected/callback/route', () => ({
-  GET: mocks.make('/api/v1/mail/connected/callback GET'),
-}));
-vi.mock('../app/api/v1/mail/domains/[domainId]/catch-all/route', () => ({
-  GET: mocks.make('/api/v1/mail/domains/[domainId]/catch-all GET'),
-  PATCH: mocks.make('/api/v1/mail/domains/[domainId]/catch-all PATCH'),
-}));
-vi.mock('../app/api/v1/mail/domains/route', () => ({
-  GET: mocks.make('/api/v1/mail/domains GET'),
-  PUT: mocks.make('/api/v1/mail/domains PUT'),
-}));
-vi.mock('../app/api/v1/webhooks/mail/cloudflare/route', () => ({
-  POST: mocks.make('/api/v1/webhooks/mail/cloudflare POST'),
-}));
-vi.mock('../app/api/v1/webhooks/mail/ses/route', () => ({
-  POST: mocks.make('/api/v1/webhooks/mail/ses POST'),
-}));
-vi.mock('../app/api/v1/workspaces/[wsId]/mail/bootstrap/route', () => ({
-  GET: mocks.make('/api/v1/workspaces/[wsId]/mail/bootstrap GET'),
-}));
+vi.mock('@tanstack/react-start/server-only', () => mocks.module({}));
+vi.mock('../app/api/ai/email-draft/route', () =>
+  mocks.module({
+    POST: mocks.make('/api/ai/email-draft POST'),
+  })
+);
+vi.mock('../app/api/auth/logout/route', () =>
+  mocks.module({
+    GET: mocks.make('/api/auth/logout GET'),
+    POST: mocks.make('/api/auth/logout POST'),
+  })
+);
+vi.mock('../app/api/auth/refresh-app-session/route', () =>
+  mocks.module({
+    POST: mocks.make('/api/auth/refresh-app-session POST'),
+  })
+);
+vi.mock('../app/api/auth/verify-app-token/route', () =>
+  mocks.module({
+    POST: mocks.make('/api/auth/verify-app-token POST'),
+  })
+);
+vi.mock('../app/api/build-info/route', () =>
+  mocks.module({
+    GET: mocks.make('/api/build-info GET'),
+  })
+);
+vi.mock('../app/api/v1/mail/connected/callback/route', () =>
+  mocks.module({
+    GET: mocks.make('/api/v1/mail/connected/callback GET'),
+  })
+);
+vi.mock('../app/api/v1/mail/domains/[domainId]/catch-all/route', () =>
+  mocks.module({
+    GET: mocks.make('/api/v1/mail/domains/[domainId]/catch-all GET'),
+    PATCH: mocks.make('/api/v1/mail/domains/[domainId]/catch-all PATCH'),
+  })
+);
+vi.mock('../app/api/v1/mail/domains/route', () =>
+  mocks.module({
+    GET: mocks.make('/api/v1/mail/domains GET'),
+    PUT: mocks.make('/api/v1/mail/domains PUT'),
+  })
+);
+vi.mock('../app/api/v1/webhooks/mail/cloudflare/route', () =>
+  mocks.module({
+    POST: mocks.make('/api/v1/webhooks/mail/cloudflare POST'),
+  })
+);
+vi.mock('../app/api/v1/webhooks/mail/ses/route', () =>
+  mocks.module({
+    POST: mocks.make('/api/v1/webhooks/mail/ses POST'),
+  })
+);
+vi.mock('../app/api/v1/workspaces/[wsId]/mail/bootstrap/route', () =>
+  mocks.module({
+    GET: mocks.make('/api/v1/workspaces/[wsId]/mail/bootstrap GET'),
+  })
+);
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/connected/[[...segments]]/route',
-  () => ({
-    GET: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/connected/[[...segments]] GET'
-    ),
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/connected/[[...segments]] POST'
-    ),
-    DELETE: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/connected/[[...segments]] DELETE'
-    ),
-  })
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/connected/[[...segments]] GET'
+      ),
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/connected/[[...segments]] POST'
+      ),
+      DELETE: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/connected/[[...segments]] DELETE'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/ai/draft/route',
-  () => ({
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/ai/draft POST'
-    ),
-  })
+  () =>
+    mocks.module({
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/ai/draft POST'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/ai/labels/route',
-  () => ({
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/ai/labels POST'
-    ),
-  })
+  () =>
+    mocks.module({
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/ai/labels POST'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/attachments/[attachmentId]/route',
-  () => ({
-    GET: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/attachments/[attachmentId] GET'
-    ),
-    DELETE: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/attachments/[attachmentId] DELETE'
-    ),
-  })
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/attachments/[attachmentId] GET'
+      ),
+      DELETE: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/attachments/[attachmentId] DELETE'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/attachments/route',
-  () => ({
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/attachments POST'
-    ),
-  })
+  () =>
+    mocks.module({
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/attachments POST'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/route',
-  () => ({
-    PATCH: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId] PATCH'
-    ),
-    DELETE: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId] DELETE'
-    ),
-  })
+  () =>
+    mocks.module({
+      PATCH: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId] PATCH'
+      ),
+      DELETE: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId] DELETE'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/route',
-  () => ({
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts POST'
-    ),
-  })
+  () =>
+    mocks.module({
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts POST'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/folders/[folderId]/route',
-  () => ({
-    PATCH: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/folders/[folderId] PATCH'
-    ),
-    DELETE: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/folders/[folderId] DELETE'
-    ),
-  })
+  () =>
+    mocks.module({
+      PATCH: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/folders/[folderId] PATCH'
+      ),
+      DELETE: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/folders/[folderId] DELETE'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/folders/route',
-  () => ({
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/folders POST'
-    ),
-  })
+  () =>
+    mocks.module({
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/folders POST'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/labels/[labelId]/route',
-  () => ({
-    PATCH: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/labels/[labelId] PATCH'
-    ),
-    DELETE: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/labels/[labelId] DELETE'
-    ),
-  })
+  () =>
+    mocks.module({
+      PATCH: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/labels/[labelId] PATCH'
+      ),
+      DELETE: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/labels/[labelId] DELETE'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/labels/route',
-  () => ({
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/labels POST'
-    ),
-  })
+  () =>
+    mocks.module({
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/labels POST'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/members/[userId]/route',
-  () => ({
-    DELETE: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/members/[userId] DELETE'
-    ),
-  })
+  () =>
+    mocks.module({
+      DELETE: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/members/[userId] DELETE'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/members/route',
-  () => ({
-    GET: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/members GET'
-    ),
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/members POST'
-    ),
-  })
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/members GET'
+      ),
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/members POST'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/attachments/[attachmentId]/route',
-  () => ({
-    GET: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/attachments/[attachmentId] GET'
-    ),
-  })
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/attachments/[attachmentId] GET'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/blacklist/route',
-  () => ({
-    GET: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/blacklist GET'
-    ),
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/blacklist POST'
-    ),
-  })
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/blacklist GET'
+      ),
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/blacklist POST'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/calendar-link/preview/route',
-  () => ({
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/calendar-link/preview POST'
-    ),
-  })
+  () =>
+    mocks.module({
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/calendar-link/preview POST'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/calendar-link/route',
-  () => ({
-    GET: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/calendar-link GET'
-    ),
-    PUT: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/calendar-link PUT'
-    ),
-    DELETE: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/calendar-link DELETE'
-    ),
-  })
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/calendar-link GET'
+      ),
+      PUT: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/calendar-link PUT'
+      ),
+      DELETE: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/calendar-link DELETE'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/invitation/route',
-  () => ({
-    GET: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/invitation GET'
-    ),
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/invitation POST'
-    ),
-  })
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/invitation GET'
+      ),
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/invitation POST'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/route',
-  () => ({
-    GET: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId] GET'
-    ),
-  })
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId] GET'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/state/route',
-  () => ({
-    PATCH: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/state PATCH'
-    ),
-  })
+  () =>
+    mocks.module({
+      PATCH: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/state PATCH'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/bulk/route',
-  () => ({
-    PATCH: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/bulk PATCH'
-    ),
-  })
+  () =>
+    mocks.module({
+      PATCH: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/bulk PATCH'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/route',
-  () => ({
-    GET: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages GET'
-    ),
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages POST'
-    ),
-  })
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages GET'
+      ),
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages POST'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/organization/route',
-  () => ({
-    GET: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/organization GET'
-    ),
-  })
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/organization GET'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/read-all/route',
-  () => ({
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/read-all POST'
-    ),
-  })
+  () =>
+    mocks.module({
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/read-all POST'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/settings/route',
-  () => ({
-    GET: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/settings GET'
-    ),
-    PATCH: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/settings PATCH'
-    ),
-  })
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/settings GET'
+      ),
+      PATCH: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/settings PATCH'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/[threadId]/route',
-  () => ({
-    GET: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/[threadId] GET'
-    ),
-    PATCH: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/[threadId] PATCH'
-    ),
-  })
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/[threadId] GET'
+      ),
+      PATCH: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/[threadId] PATCH'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/bulk/route',
-  () => ({
-    POST: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/bulk POST'
-    ),
-  })
+  () =>
+    mocks.module({
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/bulk POST'
+      ),
+    })
 );
 vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/route',
-  () => ({
-    GET: mocks.make(
-      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads GET'
-    ),
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads GET'
+      ),
+    })
+);
+vi.mock('../app/api/v1/workspaces/[wsId]/mail/route', () =>
+  mocks.module({
+    GET: mocks.make('/api/v1/workspaces/[wsId]/mail GET'),
   })
 );
-vi.mock('../app/api/v1/workspaces/[wsId]/mail/route', () => ({
-  GET: mocks.make('/api/v1/workspaces/[wsId]/mail GET'),
-}));
-vi.mock('../app/api/v1/workspaces/[wsId]/mail/send/route', () => ({
-  POST: mocks.make('/api/v1/workspaces/[wsId]/mail/send POST'),
-}));
+vi.mock('../app/api/v1/workspaces/[wsId]/mail/send/route', () =>
+  mocks.module({
+    POST: mocks.make('/api/v1/workspaces/[wsId]/mail/send POST'),
+  })
+);
 
 import { dispatchMailEndpoint, mailEndpoints } from './api-registry.server';
 
@@ -365,13 +431,8 @@ describe('every original Mail API registration', () => {
         expect(handler).toHaveBeenCalledTimes(1);
         const args = handler.mock.calls[0];
         if (!args) throw new Error('Missing handler call');
-        const zeroArgumentMethods: readonly string[] = fixture.zeroMethods;
-        if (zeroArgumentMethods.includes(method)) {
-          expect(args).toEqual([]);
-          return;
-        }
         expect(args[0]).toBe(request);
-        if (fixture.params.length) {
+        {
           const context = args[1];
           if (
             typeof context !== 'object' ||
@@ -380,6 +441,6 @@ describe('every original Mail API registration', () => {
           )
             throw new Error('Missing native context');
           expect(await context.params).toEqual(params);
-        } else expect(args).toHaveLength(1);
+        }
       });
 });

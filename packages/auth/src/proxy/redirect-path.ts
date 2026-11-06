@@ -61,3 +61,19 @@ export function normalizeAuthRedirectPath(
 
   return fallbackPath;
 }
+
+/**
+ * Prefixes the request's Next basePath (an app mounted at `tuturuuu.com/<app>`)
+ * to a path-absolute app path, once. At the origin root it is the identity.
+ */
+export function withRequestBasePath(
+  req: { nextUrl: { basePath: string } },
+  path: string
+) {
+  const base = req.nextUrl.basePath;
+  if (!base || !path.startsWith('/') || path.startsWith('//')) return path;
+  const end = path.search(/[?#]/u);
+  const pathname = end === -1 ? path : path.slice(0, end);
+  if (pathname === base || pathname.startsWith(`${base}/`)) return path;
+  return `${base}${pathname === '/' ? '' : pathname}${end === -1 ? '' : path.slice(end)}`;
+}

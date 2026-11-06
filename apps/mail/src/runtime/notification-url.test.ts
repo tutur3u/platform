@@ -6,6 +6,25 @@ const mocks = vi.hoisted(() => {
   const urls: string[] = [];
   return { urls, actor: vi.fn(), profile: vi.fn(), workspace: vi.fn() };
 });
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ({
+    auth: {
+      admin: {
+        getUserById: async (id: string) => ({
+          data: {
+            user: {
+              ...(await mocks.actor()),
+              id,
+              email_confirmed_at: '2026-01-01',
+              identities: [{ provider: 'email', identity_data: {} }],
+            },
+          },
+          error: null,
+        }),
+      },
+    },
+  }),
+}));
 vi.mock('@tanstack/react-start/server-only', () => ({}));
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser: mocks.actor,

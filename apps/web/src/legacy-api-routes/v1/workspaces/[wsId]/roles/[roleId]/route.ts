@@ -5,7 +5,12 @@ import type {
   TablesUpdate,
   WorkspaceRole,
 } from '@tuturuuu/types';
+import { isExplicitGrantPermission } from '@tuturuuu/utils/explicit-grant-permissions';
 import { NextResponse } from 'next/server';
+import {
+  canManageCreatorGrantRole,
+  filterCreatorGrantPermissions,
+} from '@/lib/workspace-creator-grant-permissions';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
@@ -29,7 +34,11 @@ async function authorizeRoleRequest(req: Request, wsId: string) {
     };
   }
 
-  return { error: null, permissions: access.permissions };
+  return {
+    error: null,
+    permissions: access.permissions,
+    userId: access.user?.id,
+  };
 }
 
 export async function GET(req: Request, { params }: Params) {
@@ -85,35 +94,107 @@ export async function PUT(req: Request, { params }: Params) {
     name: data.name,
   };
 
-  const roleQuery = supabase
+  const existingRole = await supabase
     .from('workspace_roles')
-    .update(coreData)
+    .select('name')
     .eq('id', id)
-    .eq('ws_id', resolvedWsId);
+    .eq('ws_id', resolvedWsId)
+    .maybeSingle();
 
-  const permissionsQuery = supabase.from('workspace_role_permissions').upsert(
-    permissions.map(
-      (permission): TablesInsert<'workspace_role_permissions'> => ({
-        ws_id: resolvedWsId,
-        role_id: id,
-        permission: permission.id as WorkspaceRolePermissionValue,
-        enabled: permission.enabled,
-      })
-    )
-  );
+  if (existingRole.error) {
+    return NextResponse.json(
+      { message: 'Error fetching workspace role' },
+      { status: 500 }
+    );
+  }
 
-  const [roleRes, permissionsRes] = await Promise.all([
-    roleQuery,
-    permissionsQuery,
-  ]);
+  if (!existingRole.data) {
+    return NextResponse.json({ message: 'Role not found' }, { status: 404 });
+  }
 
-  if (roleRes.error || permissionsRes.error) {
+  if (
+    data.name !== existingRole.data.name &&
+    !(await canManageCreatorGrantRole(supabase, {
+      roleId: id,
+      userId: authorization.userId,
+      wsId: resolvedWsId,
+    }))
+  ) {
+    return NextResponse.json(
+      { message: 'Only the workspace creator can rename this role' },
+      { status: 403 }
+    );
+  }
+
+  // Update the role first so permission rows are only written for a role that
+  // belongs to the authorized workspace.
+  const roleRes = await supabase
+    .from('workspace_roles')
+    .select('id')
+    .eq('id', id)
+    .eq('ws_id', resolvedWsId)
+    .maybeSingle();
+
+  if (roleRes.error) {
     console.error('Error updating workspace role', {
-      permissionsError: permissionsRes.error,
       roleError: roleRes.error,
       roleId: id,
       wsId: resolvedWsId,
     });
+    return NextResponse.json(
+      { message: 'Error updating workspace role' },
+      { status: 500 }
+    );
+  }
+
+  if (!roleRes.data) {
+    return NextResponse.json({ message: 'Role not found' }, { status: 404 });
+  }
+
+  const updatedRoleId = roleRes.data.id;
+
+  const writablePermissions = await filterCreatorGrantPermissions(supabase, {
+    permissions,
+    userId: authorization.userId,
+    wsId: resolvedWsId,
+  });
+
+  const permissionsRes = await supabase
+    .from('workspace_role_permissions')
+    .upsert(
+      writablePermissions
+        .filter((permission) => !isExplicitGrantPermission(permission.id))
+        .map(
+          (permission): TablesInsert<'workspace_role_permissions'> => ({
+            ws_id: resolvedWsId,
+            role_id: updatedRoleId,
+            permission: permission.id as WorkspaceRolePermissionValue,
+            enabled: permission.enabled,
+          })
+        )
+    );
+
+  if (permissionsRes.error) {
+    console.error('Error updating workspace role permissions', {
+      permissionsError: permissionsRes.error,
+      roleId: id,
+      wsId: resolvedWsId,
+    });
+    return NextResponse.json(
+      { message: 'Error updating workspace role' },
+      { status: 500 }
+    );
+  }
+
+  // A rejected permission save must leave the role name untouched.
+  const updateRes = await supabase
+    .from('workspace_roles')
+    .update(coreData)
+    .eq('id', updatedRoleId)
+    .eq('ws_id', resolvedWsId);
+
+  if (updateRes.error) {
+    console.error('Error updating workspace role', updateRes.error);
     return NextResponse.json(
       { message: 'Error updating workspace role' },
       { status: 500 }

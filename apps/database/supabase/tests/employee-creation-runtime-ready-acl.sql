@@ -1,0 +1,10 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+select plan(4);
+select ok(has_function_privilege('service_role', 'private.employee_creation_runtime_ready(uuid)', 'EXECUTE'), 'service_role can execute runtime readiness');
+select ok(not has_function_privilege('anon', 'private.employee_creation_runtime_ready(uuid)', 'EXECUTE'), 'anon cannot execute runtime readiness');
+select ok(not has_function_privilege('authenticated', 'private.employee_creation_runtime_ready(uuid)', 'EXECUTE'), 'authenticated cannot execute runtime readiness');
+select ok(not has_function_privilege(0::oid, 'private.employee_creation_runtime_ready(uuid)', 'EXECUTE'), 'PUBLIC cannot execute runtime readiness');
+select * from finish();
+rollback;

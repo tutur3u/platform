@@ -2,9 +2,11 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobile/core/utils/timezone_location.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class _MockApiClient extends Mock implements ApiClient {}
 
@@ -193,6 +195,62 @@ void main() {
       expect(
         DateTime.parse(requestBody!['end_date'] as String).toLocal(),
         DateTime(2026, 4, 26, 23, 59, 59, 999),
+      );
+    });
+
+    test("updateBoardTask snaps zoned dates to that zone's day", () async {
+      Map<String, dynamic>? requestBody;
+
+      when(() => apiClient.putJson(any(), any())).thenAnswer((
+        invocation,
+      ) async {
+        requestBody = invocation.positionalArguments[1] as Map<String, dynamic>;
+        return {
+          'task': {'id': 'task-1', 'list_id': 'list-1'},
+        };
+      });
+      // UTC+14 all year, so its day never matches the device's.
+      final zone = timezoneLocation('Pacific/Kiritimati');
+
+      await repository.updateBoardTask(
+        wsId: 'ws-1',
+        taskId: 'task-1',
+        startDate: tz.TZDateTime(zone, 2026, 10, 20, 15, 30),
+        endDate: tz.TZDateTime(zone, 2026, 10, 24, 9),
+      );
+
+      expect(requestBody!['start_date'], '2026-10-19T10:00:00.000Z');
+      expect(requestBody!['end_date'], '2026-10-24T09:59:59.999Z');
+    });
+
+    test('updateBoardTask clears the priority with an explicit null', () async {
+      Map<String, dynamic>? requestBody;
+
+      when(() => apiClient.putJson(any(), any())).thenAnswer((
+        invocation,
+      ) async {
+        requestBody = invocation.positionalArguments[1] as Map<String, dynamic>;
+        return {
+          'task': {'id': 'task-1', 'list_id': 'list-1'},
+        };
+      });
+
+      await repository.updateBoardTask(
+        wsId: 'ws-1',
+        taskId: 'task-1',
+        name: 'Task',
+        clearPriority: true,
+      );
+
+      expect(requestBody, containsPair('priority', null));
+      expect(
+        () => repository.updateBoardTask(
+          wsId: 'ws-1',
+          taskId: 'task-1',
+          priority: 'high',
+          clearPriority: true,
+        ),
+        throwsArgumentError,
       );
     });
   });

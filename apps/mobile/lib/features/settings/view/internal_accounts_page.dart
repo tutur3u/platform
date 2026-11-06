@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/repositories/internal_account_repository.dart';
 import 'package:mobile/features/settings/view/internal_account_editor.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class InternalAccountsPage extends StatefulWidget {
   const InternalAccountsPage({
@@ -146,7 +146,7 @@ class _InternalAccountsPageState extends State<InternalAccountsPage> {
                   ),
                   children: [
                     if (_loading && _accounts.isEmpty)
-                      const Center(child: NovaLoadingIndicator()),
+                      const AppLoadingIndicator.page(),
                     if (_failed)
                       ListTile(
                         title: Text(l10n.adminAccountsUnavailable),

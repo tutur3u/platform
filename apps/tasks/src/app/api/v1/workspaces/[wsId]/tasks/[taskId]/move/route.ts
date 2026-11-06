@@ -62,6 +62,9 @@ type TaskMoveRow = {
     created_at: string | null;
   } | null> | null;
   projects: Array<{
+    ticket_key?: string;
+    ticket_number?: number;
+    created_at?: string;
     id: string | null;
     name: string | null;
     status: string | null;
@@ -161,6 +164,9 @@ function normalizeTask(task: TaskMoveRow) {
       return [
         {
           id: project.id,
+          ticket_key: project.ticket_key,
+          ticket_number: project.ticket_number,
+          created_at: project.created_at,
           name: project.name,
           status: project.status,
         },
@@ -367,7 +373,9 @@ export async function POST(
           workspace_task_labels(id, name, color, created_at)
         ),
         projects:task_project_tasks(
-          task_projects(id, name, status)
+          ticket_number,
+          created_at,
+          task_projects(id, name, status, ticket_key)
         )
       `
       )
@@ -398,9 +406,9 @@ export async function POST(
           : never;
       }>;
       projects?: Array<{
-        task_projects?: TaskMoveRow['projects'] extends Array<infer U>
-          ? U
-          : never;
+        ticket_number?: number;
+        created_at?: string;
+        task_projects?: NonNullable<TaskMoveRow['projects']>[number];
       }>;
     } & Omit<TaskMoveRow, 'assignees' | 'labels' | 'projects'>;
 
@@ -410,8 +418,14 @@ export async function POST(
       labels: (rawTask.labels ?? []).map(
         (entry) => entry.workspace_task_labels ?? null
       ),
-      projects: (rawTask.projects ?? []).map(
-        (entry) => entry.task_projects ?? null
+      projects: (rawTask.projects ?? []).map((entry) =>
+        entry.task_projects
+          ? {
+              ...entry.task_projects,
+              ticket_number: entry.ticket_number,
+              created_at: entry.created_at,
+            }
+          : null
       ),
     } as TaskMoveRow);
 

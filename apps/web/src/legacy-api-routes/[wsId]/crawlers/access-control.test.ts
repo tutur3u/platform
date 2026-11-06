@@ -17,6 +17,14 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: mocks.createClient,
 }));
 
+vi.mock('@tuturuuu/supabase/next/user', () => ({
+  getVerifiedAuthUser: async () => ({
+    id: 'staff',
+    email: 'staff@tuturuuu.com',
+    email_confirmed_at: '2026-01-01',
+    identities: [{ provider: 'email', identity_data: {} }],
+  }),
+}));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: mocks.getPermissions,
 }));
@@ -100,4 +108,107 @@ describe('crawler read access control', () => {
     await expect(response.json()).resolves.toEqual({ error: 'Forbidden' });
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
+});
+
+it('SR-248 denies global crawler reads using a tenant AI permission', async () => {
+  vi.clearAllMocks();
+  mocks.createClient.mockResolvedValue({});
+  mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+    user: { id: 'tenant-admin' },
+  });
+  mocks.getPermissions.mockResolvedValue({
+    wsId: 'tenant-workspace',
+    withoutPermission: () => false,
+  });
+  mocks.createAdminClient.mockResolvedValue({
+    from: () => ({
+      select: () => ({
+        range: async () => ({ data: [], error: null }),
+        eq: () => ({ range: async () => ({ data: [], error: null }) }),
+      }),
+    }),
+  });
+  const response = await getDomains(
+    new Request('http://localhost/api/tenant-workspace/crawlers/domains'),
+    { params: Promise.resolve({ wsId: 'tenant-workspace' }) }
+  );
+  expect(response.status).toBe(403);
+  expect(mocks.createAdminClient).not.toHaveBeenCalled();
+});
+vi.mock('@/lib/workspace-api-key', () => ({
+  validateWorkspaceApiKey: vi.fn(),
+}));
+
+it('SR-270 denies staff crawler list and create without root AI permission', async () => {
+  vi.clearAllMocks();
+  mocks.createClient.mockResolvedValue({});
+  mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+    user: { id: 'staff', email: 'staff@tuturuuu.com' },
+  });
+  mocks.getPermissions.mockResolvedValue({
+    wsId: '00000000-0000-0000-0000-000000000000',
+    withoutPermission: () => true,
+  });
+  const query = {
+    select: vi.fn(),
+    order: vi.fn(),
+    eq: vi.fn(),
+    range: async () => ({ data: [], error: null }),
+    maybeSingle: async () => ({ data: null, error: null }),
+    insert: async () => ({ error: null }),
+  };
+  query.select.mockReturnValue(query);
+  query.order.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
+  const from = vi.fn(() => query);
+  mocks.createAdminClient.mockResolvedValue({ from });
+  const { GET } = await import('./list/route');
+  const { POST } = await import('../../v1/workspaces/[wsId]/crawlers/route');
+  expect((await GET(new Request('http://localhost/api/crawlers'))).status).toBe(
+    403
+  );
+  expect(
+    (
+      await POST(
+        new Request('http://localhost/api/crawlers', {
+          method: 'POST',
+          body: JSON.stringify({ url: 'https://fixture.invalid' }),
+        })
+      )
+    ).status
+  ).toBe(403);
+  expect(mocks.getPermissions).toHaveBeenCalledTimes(2);
+  expect(mocks.createAdminClient).toHaveBeenCalledTimes(2);
+  for (const [options] of mocks.createAdminClient.mock.calls)
+    expect(options).toEqual({ noCookie: true });
+  expect(from).not.toHaveBeenCalled();
+  expect(query.select).not.toHaveBeenCalled();
+});
+
+it('allows global crawler reads for a root AI operator', async () => {
+  vi.clearAllMocks();
+  mocks.createClient.mockResolvedValue({});
+  mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+    user: { id: 'operator' },
+  });
+  mocks.getPermissions.mockResolvedValue({
+    wsId: '00000000-0000-0000-0000-000000000000',
+    withoutPermission: () => false,
+  });
+  mocks.createAdminClient.mockResolvedValue({
+    from: () => ({
+      select: () => ({
+        range: async () => ({ data: [], error: null }),
+        eq: () => ({ range: async () => ({ data: [], error: null }) }),
+      }),
+    }),
+  });
+  const response = await getDomains(
+    new Request('http://localhost/api/root/crawlers/domains'),
+    {
+      params: Promise.resolve({ wsId: '00000000-0000-0000-0000-000000000000' }),
+    }
+  );
+  expect(response.status).toBe(200);
+  expect(mocks.createAdminClient).toHaveBeenCalledOnce();
 });

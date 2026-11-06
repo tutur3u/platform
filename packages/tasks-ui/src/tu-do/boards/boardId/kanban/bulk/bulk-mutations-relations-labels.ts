@@ -115,7 +115,6 @@ export function useBulkAddLabel(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -250,7 +249,6 @@ export function useBulkRemoveLabel(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 

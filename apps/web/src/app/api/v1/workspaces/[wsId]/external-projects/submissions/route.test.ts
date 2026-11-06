@@ -14,7 +14,7 @@ class FakeTurnstileError extends Error {
   }
 }
 
-vi.mock('@tuturuuu/turnstile', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile', () => ({
   isTurnstileError: (error: unknown) => error instanceof FakeTurnstileError,
   verifyTurnstileToken: (
     ...args: Parameters<typeof mocks.verifyTurnstileToken>
@@ -114,6 +114,7 @@ beforeEach(() => {
   });
   mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
     adapter: 'richfield',
+    canonical_project: { adapter: 'richfield', id: 'richfield' },
     enabled: true,
   });
 });
@@ -200,6 +201,7 @@ describe('GET external-project submissions', () => {
     mocks.createAdminClient.mockResolvedValue({});
     mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
       adapter: 'yashie',
+      canonical_project: { adapter: 'yashie', id: 'yashie' },
       enabled: true,
     });
     const { GET } = await import('./route');
@@ -353,6 +355,7 @@ describe('GET binding ownership', () => {
     mocks.createAdminClient.mockResolvedValue({});
     mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
       adapter: 'yashie',
+      canonical_project: { adapter: 'yashie', id: 'yashie' },
       enabled: true,
     });
     const { GET } = await import('./route');

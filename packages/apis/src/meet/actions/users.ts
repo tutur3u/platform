@@ -60,14 +60,31 @@ export async function removeUserFromPlan(planId: string, userId: string) {
       return { error: 'Error removing user from plan' };
     }
 
-    // Delete guest votes from polls for this user
-    const { error: guestVoteError } = await sbAdmin
-      .from('poll_guest_votes')
-      .delete()
-      .eq('guest_id', userId);
-
-    if (guestVoteError) {
-      return { error: 'Error removing user from plan' };
+    const { data: polls, error: pollsError } = await sbAdmin
+      .from('polls')
+      .select('id')
+      .eq('plan_id', planId);
+    if (pollsError) return { error: 'Error removing user from plan' };
+    if (polls?.length) {
+      const { data: options, error: optionsError } = await sbAdmin
+        .from('poll_options')
+        .select('id')
+        .in(
+          'poll_id',
+          polls.map((poll) => poll.id)
+        );
+      if (optionsError) return { error: 'Error removing user from plan' };
+      if (options?.length) {
+        const { error: guestVoteError } = await sbAdmin
+          .from('poll_guest_votes')
+          .delete()
+          .eq('guest_id', userId)
+          .in(
+            'option_id',
+            options.map((option) => option.id)
+          );
+        if (guestVoteError) return { error: 'Error removing user from plan' };
+      }
     }
 
     revalidatePath(`/meet/plans/${planId}`);

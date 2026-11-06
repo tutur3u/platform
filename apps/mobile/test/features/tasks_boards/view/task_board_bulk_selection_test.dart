@@ -165,32 +165,33 @@ void main() {
       return BlocProvider.of<TaskBoardDetailCubit>(context);
     }
 
-    testWidgets(
-      'long press enters bulk mode and toggles selection in list view',
-      (tester) async {
-        await pumpBoard(tester);
+    testWidgets('context menu Select enters bulk mode and toggles selection', (
+      tester,
+    ) async {
+      await pumpBoard(tester);
 
-        await tester.longPress(find.text('Alpha task').first);
-        await tester.pumpAndSettle();
+      await tester.longPress(find.text('Alpha task').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Select task'));
+      await tester.pumpAndSettle();
 
-        final cubit = readCubit(tester);
-        expect(cubit.state.isBulkSelectMode, isTrue);
-        expect(cubit.state.selectedTaskIds, {'task-1'});
+      final cubit = readCubit(tester);
+      expect(cubit.state.isBulkSelectMode, isTrue);
+      expect(cubit.state.selectedTaskIds, {'task-1'});
 
-        await tester.tap(find.text('Beta task').first);
-        await tester.pumpAndSettle();
+      await tester.tap(find.text('Beta task').first);
+      await tester.pumpAndSettle();
 
-        expect(cubit.state.selectedTaskIds, {'task-1', 'task-2'});
+      expect(cubit.state.selectedTaskIds, {'task-1', 'task-2'});
 
-        await tester.tap(find.text('Beta task').first);
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Alpha task').first);
-        await tester.pumpAndSettle();
+      await tester.tap(find.text('Beta task').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Alpha task').first);
+      await tester.pumpAndSettle();
 
-        expect(cubit.state.isBulkSelectMode, isFalse);
-        expect(cubit.state.selectedTaskIds, isEmpty);
-      },
-    );
+      expect(cubit.state.isBulkSelectMode, isFalse);
+      expect(cubit.state.selectedTaskIds, isEmpty);
+    });
 
     testWidgets('tap in bulk mode toggles selection and does not open editor', (
       tester,
@@ -198,6 +199,8 @@ void main() {
       await pumpBoard(tester);
 
       await tester.longPress(find.text('Alpha task').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Select task'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Beta task').first);
       await tester.pumpAndSettle();

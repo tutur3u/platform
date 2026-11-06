@@ -46,6 +46,11 @@ import {
   webSessionReceipt,
 } from './employee-web-session-receipt.mjs';
 import {
+  assertFixtureHash,
+  stageFixtureCopy,
+  stageLocalDblinkHelpers,
+} from './local-dblink-fixture.mjs';
+import {
   buildCausalInventory,
   causalDeadline,
   causalPins,
@@ -387,30 +392,23 @@ const runner = async (command, args, cwd) => {
         runFeedbackCausalPhase(causalState, causalRunSQL, causalRemaining);
       }
       const container = `supabase_db_${metadata.projectId}`;
+      stageLocalDblinkHelpers({
+        packets: selectedPackets,
+        disposableRoot: metadata.disposableRoot,
+        container,
+        cwd,
+        bounded,
+      });
       for (const [position, [file, count]] of selectedPackets.entries()) {
         packetOrdinal = position + 1;
         currentPhase = 'fixture-hash';
-        const fixture = path.join(
+        const fixture = assertFixtureHash(
           metadata.disposableRoot,
-          'supabase/tests',
-          file
+          file,
+          fixtureHashes.find((entry) => entry.file === file).sha256
         );
-        const actual = createHash('sha256')
-          .update(readFileSync(fixture))
-          .digest('hex');
-        if (
-          actual !== fixtureHashes.find((entry) => entry.file === file).sha256
-        ) {
-          throw new Error('Isolated fixture differs');
-        }
-        const target = '/tmp/employee-schema-contract.sql';
         currentPhase = 'packet-copy';
-        bounded(
-          'docker',
-          ['cp', fixture, `${container}:${target}`],
-          cwd,
-          10000
-        );
+        stageFixtureCopy({ fixture, container, cwd, bounded });
         currentPhase = 'packet-execution';
         const tap = bounded(
           'docker',
@@ -425,12 +423,14 @@ const runner = async (command, args, cwd) => {
             '-t',
             '-v',
             'ON_ERROR_STOP=1',
+            '-v',
+            'require_dblink=1',
             '-U',
             'supabase_admin',
             '--dbname',
             'postgres',
             '-f',
-            target,
+            '/tmp/employee-schema-contract.sql',
           ],
           cwd,
           60000

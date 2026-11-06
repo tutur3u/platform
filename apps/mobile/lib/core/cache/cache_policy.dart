@@ -2,6 +2,7 @@ class CachePolicy {
   const CachePolicy({
     required this.staleAfter,
     required this.expireAfter,
+    this.neverExpires = false,
     this.refreshOnResume = true,
     this.refreshOnReconnect = true,
     this.allowBackgroundRefresh = true,
@@ -9,6 +10,7 @@ class CachePolicy {
 
   final Duration staleAfter;
   final Duration expireAfter;
+  final bool neverExpires;
   final bool refreshOnResume;
   final bool refreshOnReconnect;
   final bool allowBackgroundRefresh;

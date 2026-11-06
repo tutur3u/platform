@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/theme/appearance/brand_accents.dart';
 import 'package:mobile/core/theme/colors.dart';
 
 /// Colour tokens for one brightness of a background theme.
@@ -285,6 +286,15 @@ abstract final class AppearancePalettes {
       dark: Color(0xFFAE95FB),
     ),
   };
+
+  /// Tuturuuu logo marks (Innovation, Growth, Energy, Impact) with fills and
+  /// labels per brightness. See [BrandAccents].
+  static const List<BrandAccent> brandAccents = BrandAccents.core;
+
+  /// Brand marks at two steps each, for stable per-object identity colours
+  /// ([BrandAccents.forKey]). Theme-independent: an object keeps its colour
+  /// across appearances.
+  static const List<BrandAccent> identityAccents = BrandAccents.identity;
 
   /// Resolves [AppearanceAccentId.theme] to the palette's recommended accent.
   static AppearanceAccentId effectiveAccentId(AppearanceSettings settings) =>

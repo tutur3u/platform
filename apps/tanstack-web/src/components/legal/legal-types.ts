@@ -42,6 +42,7 @@ export interface ThirdPartyCategory {
 }
 
 export interface LegalPageConfig {
+  upcomingChanges?: string;
   badgeText: string;
   badgeIcon: LucideIcon;
   title: string;

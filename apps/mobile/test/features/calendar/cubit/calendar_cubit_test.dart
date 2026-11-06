@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/calendar_event.dart';
@@ -399,5 +401,88 @@ void main() {
         ),
       ).called(1);
     });
+    testWidgets('Retry shows loading', (tester) async {
+      when(
+        () => repository.getEvents(
+          'ws',
+          start: any(named: 'start'),
+          end: any(named: 'end'),
+        ),
+      ).thenThrow(const ApiException(message: 'Offline', statusCode: 503));
+      await tester.runAsync(() => cubit.loadEvents('ws', forceRefresh: true));
+      final pending = Completer<List<CalendarEvent>>();
+      when(
+        () => repository.getEvents(
+          'ws',
+          start: any(named: 'start'),
+          end: any(named: 'end'),
+        ),
+      ).thenAnswer((_) => pending.future);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: BlocBuilder<CalendarCubit, CalendarState>(
+            bloc: cubit,
+            builder: (context, state) => state.status == CalendarStatus.loading
+                ? const Text('Loading')
+                : TextButton(
+                    onPressed: () => cubit.loadEvents('ws', forceRefresh: true),
+                    child: const Text('Retry'),
+                  ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Retry'));
+      await tester.pump();
+      expect(find.text('Loading'), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
+      pending.completeError(
+        const ApiException(message: 'Still offline', statusCode: 503),
+      );
+      await tester.runAsync(() async {
+        await Future<void>.delayed(Duration.zero);
+      });
+      await tester.pump();
+    });
+
+    for (final retainError in [false, true]) {
+      testWidgets('error reload retention: $retainError', (tester) async {
+        await tester.runAsync(() async {
+          when(
+            () => repository.getEvents(
+              'ws',
+              start: any(named: 'start'),
+              end: any(named: 'end'),
+            ),
+          ).thenThrow(const ApiException(message: 'Offline', statusCode: 503));
+          await cubit.loadEvents('ws', forceRefresh: true);
+          final pending = Completer<List<CalendarEvent>>();
+          when(
+            () => repository.getEvents(
+              'ws',
+              start: any(named: 'start'),
+              end: any(named: 'end'),
+            ),
+          ).thenAnswer((_) => pending.future);
+          final reload = cubit.loadEvents(
+            'ws',
+            forceRefresh: true,
+            retainError: retainError,
+          );
+          await Future<void>.delayed(Duration.zero);
+          expect(
+            cubit.state.status,
+            retainError ? CalendarStatus.error : CalendarStatus.loading,
+          );
+          if (retainError) {
+            expect(cubit.state.error, 'ApiException(503): Offline');
+            expect(cubit.state.isRefreshing, isTrue);
+          }
+          pending.completeError(
+            const ApiException(message: 'Still offline', statusCode: 503),
+          );
+          await reload;
+        });
+      });
+    }
   });
 }

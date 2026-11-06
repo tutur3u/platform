@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/task_estimate_board.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -44,146 +45,139 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
       _selectedEstimationType == 'none' ? null : _selectedEstimationType,
     );
 
-    return shad.AlertDialog(
-      title: Text(l10n.taskEstimatesDialogTitle(boardName)),
-      content: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.6,
-        ),
-        child: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+    return AppDialog(
+      title: l10n.taskEstimatesDialogTitle(boardName),
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l10n.taskEstimatesDialogEstimationMethod,
+            style: shad.Theme.of(context).typography.small,
+          ),
+          const shad.Gap(8),
+          shad.OutlineButton(
+            onPressed: isSaving ? null : () => _showMethodPicker(context),
+            child: Row(
               children: [
-                Text(
-                  l10n.taskEstimatesDialogEstimationMethod,
-                  style: shad.Theme.of(context).typography.small,
-                ),
-                const shad.Gap(8),
-                shad.OutlineButton(
-                  onPressed: isSaving ? null : () => _showMethodPicker(context),
-                  child: Row(
-                    children: [
-                      Expanded(child: Text(type.label)),
-                      const Icon(Icons.keyboard_arrow_down),
-                    ],
-                  ),
-                ),
-                if (_selectedEstimationType != 'none') ...[
-                  const shad.Gap(16),
-                  Text(
-                    l10n.taskEstimatesDialogRangeTitle(type.rangeLabel),
-                    style: shad.Theme.of(context).typography.small,
-                  ),
-                  const shad.Gap(8),
-                  _RangeOptionTile(
-                    title: l10n.taskEstimatesRangeStandard,
-                    description: type.description(
-                      isExtended: false,
-                      allowZeroEstimates: _allowZeroEstimates,
-                    ),
-                    selected: !_extendedEstimation,
-                    onTap: isSaving
-                        ? null
-                        : () => setState(() => _extendedEstimation = false),
-                  ),
-                  const shad.Gap(8),
-                  _RangeOptionTile(
-                    title: l10n.taskEstimatesRangeExtended,
-                    description: type.description(
-                      isExtended: true,
-                      allowZeroEstimates: _allowZeroEstimates,
-                    ),
-                    selected: _extendedEstimation,
-                    onTap: isSaving
-                        ? null
-                        : () => setState(() => _extendedEstimation = true),
-                  ),
-                  const shad.Gap(16),
-                  Text(
-                    l10n.taskEstimatesDialogEstimationOptions,
-                    style: shad.Theme.of(context).typography.small,
-                  ),
-                  const shad.Gap(8),
-                  _SwitchTile(
-                    title: l10n.taskEstimatesAllowZeroEstimates,
-                    description:
-                        l10n.taskEstimatesAllowZeroEstimatesDescription,
-                    value: _allowZeroEstimates,
-                    onChanged: isSaving
-                        ? null
-                        : (value) =>
-                              setState(() => _allowZeroEstimates = value),
-                  ),
-                  const shad.Gap(8),
-                  _SwitchTile(
-                    title: l10n.taskEstimatesCountUnestimatedIssues,
-                    description:
-                        l10n.taskEstimatesCountUnestimatedIssuesDescription,
-                    value: _countUnestimatedIssues,
-                    onChanged: isSaving
-                        ? null
-                        : (value) =>
-                              setState(() => _countUnestimatedIssues = value),
-                  ),
-                  const shad.Gap(16),
-                  shad.Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.taskEstimatesDialogSelectedConfiguration,
-                            style: shad.Theme.of(context).typography.small
-                                .copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          const shad.Gap(6),
-                          Text(
-                            type.description(
-                              isExtended: _extendedEstimation,
-                              allowZeroEstimates: _allowZeroEstimates,
-                            ),
-                            style: shad.Theme.of(context).typography.textMuted,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                Expanded(child: Text(type.label)),
+                const Icon(Icons.keyboard_arrow_down),
               ],
             ),
           ),
-        ),
+          if (_selectedEstimationType != 'none') ...[
+            const shad.Gap(16),
+            Text(
+              l10n.taskEstimatesDialogRangeTitle(type.rangeLabel),
+              style: shad.Theme.of(context).typography.small,
+            ),
+            const shad.Gap(8),
+            _RangeOptionTile(
+              title: l10n.taskEstimatesRangeStandard,
+              description: type.description(
+                isExtended: false,
+                allowZeroEstimates: _allowZeroEstimates,
+              ),
+              selected: !_extendedEstimation,
+              onTap: isSaving
+                  ? null
+                  : () => setState(() => _extendedEstimation = false),
+            ),
+            const shad.Gap(8),
+            _RangeOptionTile(
+              title: l10n.taskEstimatesRangeExtended,
+              description: type.description(
+                isExtended: true,
+                allowZeroEstimates: _allowZeroEstimates,
+              ),
+              selected: _extendedEstimation,
+              onTap: isSaving
+                  ? null
+                  : () => setState(() => _extendedEstimation = true),
+            ),
+            const shad.Gap(16),
+            Text(
+              l10n.taskEstimatesDialogEstimationOptions,
+              style: shad.Theme.of(context).typography.small,
+            ),
+            const shad.Gap(8),
+            _SwitchTile(
+              title: l10n.taskEstimatesAllowZeroEstimates,
+              description: l10n.taskEstimatesAllowZeroEstimatesDescription,
+              value: _allowZeroEstimates,
+              onChanged: isSaving
+                  ? null
+                  : (value) => setState(() => _allowZeroEstimates = value),
+            ),
+            const shad.Gap(8),
+            _SwitchTile(
+              title: l10n.taskEstimatesCountUnestimatedIssues,
+              description: l10n.taskEstimatesCountUnestimatedIssuesDescription,
+              value: _countUnestimatedIssues,
+              onChanged: isSaving
+                  ? null
+                  : (value) => setState(() => _countUnestimatedIssues = value),
+            ),
+            const shad.Gap(16),
+            shad.Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.taskEstimatesDialogSelectedConfiguration,
+                      style: shad.Theme.of(
+                        context,
+                      ).typography.small.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const shad.Gap(6),
+                    Text(
+                      type.description(
+                        isExtended: _extendedEstimation,
+                        allowZeroEstimates: _allowZeroEstimates,
+                      ),
+                      style: shad.Theme.of(context).typography.textMuted,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          const shad.Gap(16),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              shad.OutlineButton(
+                onPressed: isSaving ? null : () => Navigator.of(context).pop(),
+                child: Text(l10n.commonCancel),
+              ),
+              shad.PrimaryButton(
+                onPressed: isSaving ? null : _save,
+                child: isSaving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: NovaLoadingIndicator(size: 20),
+                      )
+                    : Text(l10n.taskEstimatesDialogSave),
+              ),
+            ],
+          ),
+        ],
       ),
-      actions: [
-        shad.OutlineButton(
-          onPressed: isSaving ? null : () => Navigator.of(context).pop(),
-          child: Text(l10n.commonCancel),
-        ),
-        shad.PrimaryButton(
-          onPressed: isSaving ? null : _save,
-          child: isSaving
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: NovaLoadingIndicator(size: 20),
-                )
-              : Text(l10n.taskEstimatesDialogSave),
-        ),
-      ],
     );
   }
 
   Future<void> _showMethodPicker(BuildContext context) async {
-    final selected = await shad.showDialog<String>(
+    final selected = await showAppDialog<String>(
       context: context,
       builder: (dialogContext) {
         final options = estimationTypes(dialogContext, includeNone: true);
-        return shad.AlertDialog(
-          title: Text(dialogContext.l10n.taskEstimatesDialogEstimationMethod),
+        return AppDialog(
+          title: dialogContext.l10n.taskEstimatesDialogEstimationMethod,
           content: SizedBox(
             width: double.maxFinite,
             child: Column(
@@ -283,7 +277,7 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
           content: Text(error.message),
         ),
       );
-    } on Exception catch (error) {
+    } on Exception {
       if (!mounted || !rootNavigator.mounted) {
         return;
       }
@@ -291,7 +285,7 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
         context: rootNavigator.context,
         builder: (_, overlay) => shad.Alert.destructive(
           title: Text(l10n.commonSomethingWentWrong),
-          content: Text(error.toString()),
+          content: Text(l10n.commonSomethingWentWrong),
         ),
       );
     }

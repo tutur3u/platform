@@ -72,9 +72,9 @@ export function CallShell(
             ? 'startup_failed'
             : 'preparing_call'
       )}
-      description={t(
-        choice ? 'device_choice_hint' : (errorKey ?? 'preparing_call_hint')
-      )}
+      description={
+        choice ? t('device_choice_hint') : errorKey ? t(errorKey) : undefined
+      }
     >
       {choice ? (
         <>

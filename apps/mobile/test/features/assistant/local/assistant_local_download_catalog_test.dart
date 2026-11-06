@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/local/assistant_local_models_cubit.dart';
@@ -134,18 +135,20 @@ void main() {
       expect(find.text('Qwen 3 0.6B'), findsNothing);
       final use = tester.widget<AppIconButton>(_action('Use on this device'));
       expect(use.onPressed, isNull);
-      final remove = tester.widget<AppIconButton>(_action('Remove weights'));
-      expect(remove.onPressed, isNotNull);
       expect(find.text('Remove weights'), findsNothing);
-      await tester.tap(find.byTooltip('About Gemma 3 270M'));
+      // License, publisher and removal live in the row menu.
+      await tester.tap(find.text('Gemma 3 270M'));
       await tester.pumpAndSettle();
-      expect(find.byType(AppDialog), findsOneWidget);
+      expect(find.byType(AppActionSheet<String>), findsOneWidget);
       expect(find.text('License'), findsOneWidget);
       expect(find.text('Get model from publisher'), findsOneWidget);
-      expect(find.widgetWithText(AppButton, 'Remove weights'), findsNothing);
-      await tester.tap(find.text('Done'));
+      final remove = tester.widget<AppGroupedRow>(
+        find.widgetWithText(AppGroupedRow, 'Remove weights'),
+      );
+      expect(remove.onTap, isNotNull);
+      await tester.tap(find.byKey(const ValueKey('app-sheet-close')));
       await tester.pumpAndSettle();
-      expect(find.byType(AppDialog), findsNothing);
+      expect(find.byType(AppActionSheet<String>), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.pump();

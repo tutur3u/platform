@@ -1,7 +1,8 @@
 import 'server-only';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { Effect, Either } from '@tuturuuu/utils/effect';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { z } from 'zod';
 import { InternalAccountAdminError } from './errors';
 
@@ -51,7 +52,7 @@ export const InspectionSchema = z.strictObject({
 });
 export type Inspection = z.infer<typeof InspectionSchema>;
 export type EmployeeRestorationProvider = Pick<
-  TypedSupabaseClient['auth']['admin'],
+  SupabaseClient['auth']['admin'],
   'getUserById' | 'updateUserById'
 >;
 export type EmployeeProviderUser = NonNullable<
@@ -197,6 +198,7 @@ export async function assertEmployeeServiceActor(
     !result.data.user ||
     result.data.user.id !== input.actorUserId ||
     !isExactTuturuuuDotComEmail(result.data.user.email) ||
+    !isVerifiedTuturuuuStaffSession(result.data.user) ||
     providerState(result.data.user) !== 'confirmed_active'
   ) {
     throw new EmployeeManagementError('employee_management_forbidden', 403);

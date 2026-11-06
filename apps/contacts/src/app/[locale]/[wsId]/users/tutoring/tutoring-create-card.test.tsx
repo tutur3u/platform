@@ -89,3 +89,26 @@ it('shows homeroom context and preserves the independently selected tutor on cla
     })
   );
 });
+
+it('hints which missed dates have no recorded lesson notes', () => {
+  const props = {
+    groups: [],
+    isSubmitting: false,
+    onChange: vi.fn(),
+    onSubmit: vi.fn(),
+    policy: EASY_CENTER_TUTORING_POLICY,
+    students: [],
+    wsId: 'center',
+  };
+  const { rerender } = render(
+    <TutoringCreateCard {...props} form={DEFAULT_FORM} />
+  );
+  expect(screen.queryByText('lesson_notes_missing')).not.toBeInTheDocument();
+  rerender(
+    <TutoringCreateCard
+      {...props}
+      form={{ ...DEFAULT_FORM, missingLessonDates: ['2026-10-22'] }}
+    />
+  );
+  expect(screen.getByText('lesson_notes_missing')).toBeInTheDocument();
+});

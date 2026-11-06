@@ -7,6 +7,7 @@ class _LiveCallStage extends StatelessWidget {
     required this.assistantName,
     required this.cameraController,
     required this.onRetry,
+    required this.onStart,
     required this.compact,
     super.key,
   });
@@ -15,10 +16,13 @@ class _LiveCallStage extends StatelessWidget {
   final String assistantName;
   final CameraController? cameraController;
   final Future<void> Function() onRetry;
+  final Future<void> Function() onStart;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final connected =
@@ -31,22 +35,34 @@ class _LiveCallStage extends StatelessWidget {
       _ => false,
     };
     final speaking = connected && liveState.isAssistantSpeaking;
+    final canStart = idle && !recovery && liveUiState.isEligible;
+    // One status line: what is happening now. The navbar already names the
+    // assistant and the Start button says what to do, so idle needs none.
     final status = recovery
         ? liveUiState.statusLabel(l10n)
         : liveState.hasEnded && idle
         ? l10n.assistantLiveCallEnded
         : idle
-        ? l10n.assistantLiveIdleHeading
-        : connected
-        ? speaking
-              ? l10n.assistantLiveStageAssistantSpeaking
-              : l10n.assistantLiveStageAssistantReady
-        : liveUiState.statusLabel(l10n);
-    final detail = recovery || liveState.isBusy
-        ? liveUiState.detailLabel(l10n, liveState)
-        : idle && !liveState.hasEnded
-        ? l10n.assistantLiveDescriptionIdle
-        : null;
+        ? null
+        : liveState.isBusy
+        ? l10n.assistantLiveCallingAssistant(assistantName)
+        : speaking
+        ? l10n.assistantLiveStageAssistantSpeaking
+        : liveState.isMicrophoneActive
+        ? l10n.assistantLiveStageYouListening
+        : l10n.assistantLiveStageYouMuted;
+    final detail = recovery ? liveUiState.detailLabel(l10n, liveState) : null;
+    final orb = SizedBox(
+      height: compact ? 120 : 184,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: AssistantLivePlaybackBlob(
+          energy: liveState.assistantAudioLevel,
+          bands: liveState.assistantSpectrum,
+          active: speaking,
+        ),
+      ),
+    );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -56,17 +72,20 @@ class _LiveCallStage extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              SizedBox(
-                height: compact ? 120 : 184,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: AssistantLivePlaybackBlob(
-                    energy: liveState.assistantAudioLevel,
-                    bands: liveState.assistantSpectrum,
-                    active: speaking,
+              if (canStart)
+                Semantics(
+                  button: true,
+                  label: l10n.assistantLiveStartTalking,
+                  excludeSemantics: true,
+                  child: GestureDetector(
+                    key: const ValueKey('live-stage-orb-start'),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => unawaited(onStart()),
+                    child: orb,
                   ),
-                ),
-              ),
+                )
+              else
+                orb,
               if (connected &&
                   liveState.isCameraActive &&
                   cameraController?.value.isInitialized == true)
@@ -76,7 +95,7 @@ class _LiveCallStage extends StatelessWidget {
                   child: Semantics(
                     label: l10n.assistantLiveCameraPreview,
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(AppRadius.card),
                       child: SizedBox(
                         width: 64,
                         height: 80,
@@ -88,69 +107,48 @@ class _LiveCallStage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        Text(
-          liveState.isBusy
-              ? l10n.assistantLiveCallingAssistant(assistantName)
-              : assistantName,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Semantics(
-          liveRegion: true,
-          child: Text(
-            status,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: recovery
-                  ? _toneColor(theme, liveUiState.tone)
-                  : theme.colorScheme.onSurfaceVariant,
+        const SizedBox(height: AppSpacing.xl),
+        if (status != null)
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              status,
+              key: const ValueKey('live-stage-status'),
+              textAlign: TextAlign.center,
+              style: tokens.typography.large.copyWith(
+                fontWeight: FontWeight.w600,
+                color: recovery
+                    ? _toneColor(theme, liveUiState.tone)
+                    : c.foreground,
+              ),
             ),
           ),
-        ),
         if (detail != null) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             detail,
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              height: 1.5,
+            style: tokens.typography.small.copyWith(
+              color: c.mutedForeground,
+              height: 1.45,
             ),
           ),
         ],
         if (recovery)
           Padding(
-            padding: const EdgeInsets.only(top: 12),
+            padding: const EdgeInsets.only(top: AppSpacing.lg),
             child: AppButton.outline(
               onPressed: onRetry,
               child: Text(l10n.assistantLiveRetryAction),
             ),
           ),
-        if (connected && !recovery) ...[
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                liveState.isMicrophoneActive
-                    ? LucideIcons.mic
-                    : LucideIcons.micOff,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  liveState.isMicrophoneActive
-                      ? l10n.assistantLiveStageYouListening
-                      : l10n.assistantLiveStageYouMuted,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
+        if (canStart) ...[
+          if (status != null) const SizedBox(height: AppSpacing.lg),
+          AppButton.primary(
+            key: const ValueKey('live-stage-start'),
+            leading: const Icon(LucideIcons.mic),
+            onPressed: () => unawaited(onStart()),
+            child: Text(l10n.assistantLiveStartTalking),
           ),
         ],
       ],
@@ -169,45 +167,24 @@ class _LiveTranscript extends StatelessWidget {
   final AssistantLiveState liveState;
   final String assistantName;
 
+  /// True when there is something to read; an empty transcript shows nothing.
+  static bool hasContent(
+    AssistantChatState chatState,
+    AssistantLiveState liveState,
+  ) =>
+      (chatState.workspaceId == liveState.workspaceId &&
+          (chatState.chat?.id ?? chatState.fallbackChatId) ==
+              liveState.chatId &&
+          chatState.messages.isNotEmpty) ||
+      liveState.hasDraft ||
+      liveState.completedTurns.isNotEmpty;
+
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final hasHistory =
-        chatState.workspaceId == liveState.workspaceId &&
-        (chatState.chat?.id ?? chatState.fallbackChatId) == liveState.chatId &&
-        chatState.messages.isNotEmpty;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Divider(height: 1),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          child: Text(
-            context.l10n.assistantLiveTranscriptTitle,
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        AssistantLiveTranscriptSection(
-          chatState: chatState,
-          liveState: liveState,
-          assistantName: assistantName,
-        ),
-        if (!hasHistory &&
-            !liveState.hasDraft &&
-            liveState.completedTurns.isEmpty)
-          Text(
-            context.l10n.assistantLiveTranscriptEmpty,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              height: 1.5,
-            ),
-          ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => AssistantLiveTranscriptSection(
+    chatState: chatState,
+    liveState: liveState,
+    assistantName: assistantName,
+  );
 }
 
 Color _toneColor(ThemeData theme, AssistantLiveUiTone tone) => switch (tone) {

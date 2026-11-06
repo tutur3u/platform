@@ -14,20 +14,58 @@ class TaskEstimateBoard extends Equatable {
   });
 
   factory TaskEstimateBoard.fromJson(Map<String, dynamic> json) {
+    final id = _optional<String>(json, 'id');
+    if (id == null || id.trim().isEmpty) {
+      throw const FormatException('Invalid task estimation board identity.');
+    }
+    final name = _optional<String>(json, 'name')?.trim();
+    final timestamp = _optional<String>(json, 'created_at');
+    final createdAt = timestamp == null ? null : DateTime.tryParse(timestamp);
+    if (timestamp != null && createdAt == null) {
+      throw const FormatException('Invalid task estimation board date.');
+    }
+    final type = _optional<String>(json, 'estimation_type');
+    if (type != null &&
+        !const {
+          'exponential',
+          'fibonacci',
+          'linear',
+          't-shirt',
+        }.contains(type)) {
+      throw const FormatException('Invalid task estimation method.');
+    }
     return TaskEstimateBoard(
-      id: json['id'] as String,
-      name: (json['name'] as String?)?.trim().isNotEmpty == true
-          ? (json['name'] as String).trim()
-          : null,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : null,
-      estimationType: json['estimation_type'] as String?,
-      extendedEstimation: json['extended_estimation'] as bool? ?? false,
-      allowZeroEstimates: json['allow_zero_estimates'] as bool? ?? true,
+      id: id,
+      name: name == null || name.isEmpty ? null : name,
+      createdAt: createdAt,
+      estimationType: type,
+      extendedEstimation: _optional<bool>(json, 'extended_estimation') ?? false,
+      allowZeroEstimates: _optional<bool>(json, 'allow_zero_estimates') ?? true,
       countUnestimatedIssues:
-          json['count_unestimated_issues'] as bool? ?? false,
+          _optional<bool>(json, 'count_unestimated_issues') ?? false,
     );
+  }
+
+  static List<TaskEstimateBoard> listFromJson(Object? value) {
+    if (value == null) return const [];
+    if (value is! List) {
+      throw const FormatException('Invalid task estimation board list.');
+    }
+    return value
+        .map((row) {
+          if (row is! Map<String, dynamic>) {
+            throw const FormatException('Invalid task estimation board.');
+          }
+          return TaskEstimateBoard.fromJson(row);
+        })
+        .toList(growable: false);
+  }
+
+  static T? _optional<T>(Map<String, dynamic> json, String key) {
+    final value = json[key];
+    if (value == null) return null;
+    if (value is T) return value;
+    throw FormatException('Invalid task estimation field: $key.');
   }
 
   final String id;

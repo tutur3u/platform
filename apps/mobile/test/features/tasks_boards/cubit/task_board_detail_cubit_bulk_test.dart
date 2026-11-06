@@ -17,6 +17,31 @@ part 'task_board_detail_cubit_bulk_cases.dart';
 
 class _MockTaskRepository extends Mock implements TaskRepository {}
 
+/// An updateBoardTask call for `when`/`verify` that matches every optional
+/// field; pass the fields a test pins.
+Future<TaskBoardTask> _updateTaskCall(
+  TaskRepository repository, {
+  String? wsId,
+  String? taskId,
+  String? name,
+  String? priority,
+}) => repository.updateBoardTask(
+  wsId: wsId ?? any(named: 'wsId'),
+  taskId: taskId ?? any(named: 'taskId'),
+  name: name ?? any(named: 'name'),
+  priority: priority ?? any(named: 'priority'),
+  startDate: any(named: 'startDate'),
+  endDate: any(named: 'endDate'),
+  estimationPoints: any(named: 'estimationPoints'),
+  labelIds: any(named: 'labelIds'),
+  projectIds: any(named: 'projectIds'),
+  assigneeIds: any(named: 'assigneeIds'),
+  clearPriority: any(named: 'clearPriority'),
+  clearStartDate: any(named: 'clearStartDate'),
+  clearEndDate: any(named: 'clearEndDate'),
+  clearEstimationPoints: any(named: 'clearEstimationPoints'),
+);
+
 void main() {
   group('TaskBoardDetailCubit bulk operations', () {
     late _MockTaskRepository repository;
@@ -198,23 +223,7 @@ void main() {
         return created;
       });
 
-      when(
-        () => repository.updateBoardTask(
-          wsId: any(named: 'wsId'),
-          taskId: any(named: 'taskId'),
-          name: any(named: 'name'),
-          priority: any(named: 'priority'),
-          startDate: any(named: 'startDate'),
-          endDate: any(named: 'endDate'),
-          estimationPoints: any(named: 'estimationPoints'),
-          labelIds: any(named: 'labelIds'),
-          projectIds: any(named: 'projectIds'),
-          assigneeIds: any(named: 'assigneeIds'),
-          clearStartDate: any(named: 'clearStartDate'),
-          clearEndDate: any(named: 'clearEndDate'),
-          clearEstimationPoints: any(named: 'clearEstimationPoints'),
-        ),
-      ).thenAnswer((invocation) async {
+      when(() => _updateTaskCall(repository)).thenAnswer((invocation) async {
         final taskId = invocation.namedArguments[#taskId] as String;
         final name = invocation.namedArguments[#name] as String?;
         final task = repositoryTasks.firstWhere((task) => task.id == taskId);
@@ -506,20 +515,11 @@ void main() {
       );
 
       verify(
-        () => repository.updateBoardTask(
+        () => _updateTaskCall(
+          repository,
           wsId: 'ws-1',
           taskId: 'task-1',
           name: 'Updated task',
-          priority: any(named: 'priority'),
-          startDate: any(named: 'startDate'),
-          endDate: any(named: 'endDate'),
-          estimationPoints: any(named: 'estimationPoints'),
-          labelIds: any(named: 'labelIds'),
-          projectIds: any(named: 'projectIds'),
-          assigneeIds: any(named: 'assigneeIds'),
-          clearStartDate: any(named: 'clearStartDate'),
-          clearEndDate: any(named: 'clearEndDate'),
-          clearEstimationPoints: any(named: 'clearEstimationPoints'),
         ),
       ).called(1);
       verify(
@@ -540,20 +540,12 @@ void main() {
       clearInteractions(repository);
       final updateCompleter = Completer<void>();
       when(
-        () => repository.updateBoardTask(
+        () => _updateTaskCall(
+          repository,
           wsId: 'ws-1',
           taskId: 'task-1',
           name: 'First task',
           priority: 'critical',
-          startDate: any(named: 'startDate'),
-          endDate: any(named: 'endDate'),
-          estimationPoints: any(named: 'estimationPoints'),
-          labelIds: any(named: 'labelIds'),
-          projectIds: any(named: 'projectIds'),
-          assigneeIds: any(named: 'assigneeIds'),
-          clearStartDate: any(named: 'clearStartDate'),
-          clearEndDate: any(named: 'clearEndDate'),
-          clearEstimationPoints: any(named: 'clearEstimationPoints'),
         ),
       ).thenAnswer((_) async {
         await updateCompleter.future;
@@ -592,20 +584,12 @@ void main() {
     test('updateTask applies repository returned task snapshots', () async {
       clearInteractions(repository);
       when(
-        () => repository.updateBoardTask(
+        () => _updateTaskCall(
+          repository,
           wsId: 'ws-1',
           taskId: 'task-1',
           name: 'Submitted task',
           priority: 'high',
-          startDate: any(named: 'startDate'),
-          endDate: any(named: 'endDate'),
-          estimationPoints: any(named: 'estimationPoints'),
-          labelIds: any(named: 'labelIds'),
-          projectIds: any(named: 'projectIds'),
-          assigneeIds: any(named: 'assigneeIds'),
-          clearStartDate: any(named: 'clearStartDate'),
-          clearEndDate: any(named: 'clearEndDate'),
-          clearEstimationPoints: any(named: 'clearEstimationPoints'),
         ),
       ).thenAnswer((_) async {
         final updated = taskOne.copyWith(

@@ -1,9 +1,9 @@
+import { verifyTurnstileToken } from '@tuturuuu/cloudflare/turnstile/server';
 import {
   createPlayIntegrityVerifier,
   type NativeIntegrityMode,
   NativeIntegrityService,
 } from '@tuturuuu/internal-api/native-integrity';
-import { verifyTurnstileToken } from '@tuturuuu/turnstile/server';
 import { configuredAppleVerifiers } from './apple-verifiers';
 import {
   nativeIntegrityActorEligibility,

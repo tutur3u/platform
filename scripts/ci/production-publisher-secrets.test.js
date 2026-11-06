@@ -11,6 +11,7 @@ const publishers = [
   'meet-cloudflare.yaml',
   'mail-calendar-tasks-builds.yaml',
   'apps-cloudflare.yaml',
+  'wave1-native-production.yaml',
 ];
 const workflows = Object.fromEntries(
   publishers.map((name) => [name, readWorkflow(name)])
@@ -252,13 +253,23 @@ test('native Calendar/Mail validation receives no cache credentials on productio
               scope.vars.TURBO_TEAM = team;
               const expected =
                 field === 'team'
-                  ? team || 'credential:TURBO_TEAM'
+                  ? team ||
+                    (event !== 'pull_request' ? 'credential:TURBO_TEAM' : '')
                   : actor !== 'dependabot[bot]' &&
                       event !== 'pull_request' &&
                       ref === 'refs/heads/main'
                     ? 'credential:TURBO_TOKEN'
                     : '';
               assert.equal(evaluate(step.with[field], scope), expected);
+              if (event === 'pull_request') {
+                assert.equal(
+                  String(evaluate(step.with[field], scope)).includes(
+                    'credential:'
+                  ),
+                  false,
+                  `pull request ${field} receives no cache credential`
+                );
+              }
             }
           }
         }
@@ -284,15 +295,13 @@ function assertStagingCallerSecrets(workflow) {
         " || '' }}",
     ])
   );
-  for (const name of ['native-profiles', 'native-publish-staging']) {
-    assert.deepEqual(
-      workflow.jobs[name].secrets,
-      expected,
-      'caller staging secrets must match exactly'
-    );
-  }
+  assert.deepEqual(
+    workflow.jobs['native-publish-staging'].secrets,
+    expected,
+    'caller staging secrets must match exactly'
+  );
   for (const [name, otherJob] of Object.entries(workflow.jobs)) {
-    if (['native-profiles', 'native-publish-staging'].includes(name)) continue;
+    if (name === 'native-publish-staging') continue;
     assert.equal(
       otherJob.secrets,
       undefined,
@@ -324,15 +333,23 @@ for (const name of ['calendar-cloudflare.yaml', 'mail-cloudflare.yaml']) {
           '$' + '{{ secrets.STAGING_SUPABASE_URL }}';
       },
     ]) {
-      for (const jobName of ['native-profiles', 'native-publish-staging']) {
-        const workflow = readWorkflow(name);
-        mutate(workflow.jobs[jobName].secrets);
-        assert.throws(
-          () => assertStagingCallerSecrets(workflow),
-          /caller staging secrets/
-        );
-      }
+      const workflow = readWorkflow(name);
+      mutate(workflow.jobs['native-publish-staging'].secrets);
+      assert.throws(
+        () => assertStagingCallerSecrets(workflow),
+        /caller staging secrets/
+      );
     }
+  });
+  test(`${name}: qualification rejects forwarded publisher credentials`, () => {
+    const workflow = readWorkflow(name);
+    workflow.jobs['native-profiles'].secrets = structuredClone(
+      workflow.jobs['native-publish-staging'].secrets
+    );
+    assert.throws(
+      () => assertStagingCallerSecrets(workflow),
+      /must not receive secrets/
+    );
   });
 }
 

@@ -23,10 +23,18 @@ function context(cookie = 'app=one; refresh=two'): CalendarRequestContext {
 describe('real Calendar request context', () => {
   it('fails closed outside a request and restores nested async contexts', async () => {
     expect(calendarRequest).toThrow('Calendar request context is unavailable');
-    await expect(connection()).rejects.toThrow('context is unavailable');
-    await expect(headers()).rejects.toThrow('context is unavailable');
-    await expect(cookies()).rejects.toThrow('context is unavailable');
-    expect(() => after(() => undefined)).toThrow('context is unavailable');
+    await expect(connection()).rejects.toThrow(
+      'Start bridge request context unavailable'
+    );
+    await expect(headers()).rejects.toThrow(
+      'Start bridge request context unavailable'
+    );
+    await expect(cookies()).rejects.toThrow(
+      'Start bridge request context unavailable'
+    );
+    expect(() => after(() => undefined)).toThrow(
+      'Start bridge request context unavailable'
+    );
     const outer = context();
     const inner = context('app=inner');
     await withCalendarRequest(outer, async () => {

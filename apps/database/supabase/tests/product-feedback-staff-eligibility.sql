@@ -37,6 +37,10 @@ BEGIN
   END IF;
 END;
 $eligibility_identity_setup$;
+-- Real Auth users carry a provider identity; verified staff checks require one.
+insert into auth.identities(id,provider_id,user_id,identity_data,provider)
+select gen_random_uuid(),u.id::text,u.id,jsonb_build_object('sub',u.id::text,'email',u.email),'email'
+from auth.users u where not exists(select 1 from auth.identities i where i.user_id=u.id);
 INSERT INTO private.infrastructure_employees(user_id,staff_email,managed_name,lifecycle_state)
  VALUES ('91800000-0000-4000-8000-000000000001','eligibility-fixture@tuturuuu.com','Synthetic eligibility','active');
 UPDATE auth.users SET raw_app_meta_data='{"employee_onboarding":true}'::jsonb

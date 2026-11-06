@@ -158,6 +158,7 @@ export function Structure({
   );
   const {
     isCollapsed: collapsed,
+    mobileSidebarOpen,
     setIsCollapsed,
     handleToggle,
     navState,
@@ -169,7 +170,6 @@ export function Structure({
     pathname: roomId ? `/?room=${roomId}` : location.pathname,
     links,
     defaultCollapsed:
-      window.innerWidth < 768 ||
       localStorage.getItem('colab-sidebar-collapsed') === 'true',
     persistCollapsed,
     behavior: sidebar.behavior,
@@ -226,6 +226,7 @@ export function Structure({
       />
       <SatelliteShell
         isCollapsed={collapsed}
+        mobileSidebarOpen={mobileSidebarOpen}
         setIsCollapsed={handleToggle}
         sidebarLabels={{ open: c.shellExpand, close: c.shellCollapse }}
         homeLabel={c.shellPlatform}

@@ -113,34 +113,32 @@ extension _AssistantPageChrome on _AssistantPageState {
   Future<void> _showAssistantMore(bool isLiveMode) async {
     final scope = _localScope();
     if (scope == null) return;
-    final choice = await showAppSheet<String>(
+    final l10n = context.l10n;
+    final choice = await showAppActionSheet<String>(
       context: context,
-      builder: (sheetContext) => Material(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!isLiveMode)
-                AppListTile(
-                  leading: const Icon(LucideIcons.history),
-                  title: Text(context.l10n.assistantHistoryTitle),
-                  onTap: () => Navigator.of(sheetContext).pop('history'),
-                ),
-              AppListTile(
-                leading: const Icon(LucideIcons.slidersHorizontal),
-                title: Text(context.l10n.assistantSettingsTitle),
-                onTap: () => Navigator.of(sheetContext).pop('settings'),
-              ),
-              if (!isLiveMode)
-                AppListTile(
-                  leading: const Icon(LucideIcons.palette),
-                  title: Text(context.l10n.assistantThemeTitle),
-                  onTap: () => Navigator.of(sheetContext).pop('appearance'),
-                ),
-            ],
+      title: l10n.commonMoreOptions,
+      actions: [
+        if (!isLiveMode)
+          AppSheetAction(
+            key: const ValueKey('assistant-more-history'),
+            icon: LucideIcons.history,
+            label: l10n.assistantHistoryTitle,
+            value: 'history',
           ),
+        AppSheetAction(
+          key: const ValueKey('assistant-more-settings'),
+          icon: LucideIcons.slidersHorizontal,
+          label: l10n.assistantSettingsTitle,
+          value: 'settings',
         ),
-      ),
+        if (!isLiveMode)
+          AppSheetAction(
+            key: const ValueKey('assistant-more-appearance'),
+            icon: LucideIcons.palette,
+            label: l10n.assistantThemeTitle,
+            value: 'appearance',
+          ),
+      ],
     );
     if (!mounted || scope != _localScope()) return;
     if (choice == 'history') {

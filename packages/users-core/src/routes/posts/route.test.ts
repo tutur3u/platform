@@ -24,7 +24,9 @@ describe('Contacts-compatible workspace Posts list', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.resolveWorkspaceId.mockResolvedValue(WORKSPACE_ID);
-    mocks.getPermissions.mockResolvedValue({ containsPermission: vi.fn() });
+    mocks.getPermissions.mockResolvedValue({
+      containsPermission: vi.fn(() => true),
+    });
     mocks.getPostsPageData.mockResolvedValue({
       postsData: { count: 1, data: [{ id: 'post-row', stage: 'sent' }] },
       postsStatus: { total: 1 },

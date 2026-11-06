@@ -17,7 +17,7 @@
     "noEmit": true,
     "incremental": false
   },
-  "include": ["src/**/*", "scripts/**/*", "messages/**/*.json", "*.ts"],
+  "include": ["src/**/*", "scripts/**/*", "messages/**/*.json"],
   "exclude": [
     "node_modules",
     "dist",

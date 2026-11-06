@@ -1,205 +1,182 @@
 part of 'task_board_detail_page.dart';
 
-const List<String> _taskQuickActionPriorityOptions = [
-  'critical',
-  'high',
-  'normal',
-  'low',
+/// Statuses the quick sheet offers, in board order. Documents lists hold
+/// notes rather than work, so they are never a status target.
+const List<String> _taskQuickActionStatusOrder = [
+  'not_started',
+  'active',
+  'review',
+  'done',
+  'closed',
 ];
 
+/// What the quick sheet runs. Each callback receives the task as it is now,
+/// so consecutive edits never save a stale snapshot. Null callbacks hide or
+/// disable the matching control.
+class _TaskQuickActionCallbacks {
+  const _TaskQuickActionCallbacks({
+    required this.onStatus,
+    required this.onPriority,
+    required this.onPickDate,
+    required this.onClearDate,
+    required this.onOpenDetails,
+    this.onAssignees,
+    this.onLabels,
+    this.onMove,
+  });
+
+  final void Function(TaskBoardTask task, String status) onStatus;
+
+  /// A null priority clears it (the web's None).
+  final void Function(TaskBoardTask task, String? priority) onPriority;
+  final void Function(TaskBoardTask task, _TaskQuickDate field) onPickDate;
+  final void Function(TaskBoardTask task, _TaskQuickDate field) onClearDate;
+  final void Function(TaskBoardTask task) onOpenDetails;
+  final void Function(TaskBoardTask task)? onAssignees;
+  final void Function(TaskBoardTask task)? onLabels;
+  final void Function(TaskBoardTask task)? onMove;
+}
+
+/// The latest snapshot of [taskId] in the board state, or null once the
+/// task is gone (deleted or moved out of every loaded list).
+TaskBoardTask? _taskQuickActionsLiveTask(
+  TaskBoardDetailState state,
+  String taskId,
+) {
+  for (final task in state.board?.tasks ?? const <TaskBoardTask>[]) {
+    if (task.id == taskId) return task;
+  }
+  for (final tasks in state.listTasksByListId.values) {
+    for (final task in tasks) {
+      if (task.id == taskId) return task;
+    }
+  }
+  return null;
+}
+
+/// Tap-to-edit sheet for one task: status, priority, start and due dates,
+/// assignees, labels and list, then the full details.
+///
+/// The sheet follows the board cubit, so a priority or field edit updates
+/// it in place and several edits can be made in a row.
 class _TaskQuickActionsSheet extends StatelessWidget {
   const _TaskQuickActionsSheet({
     required this.task,
     required this.lists,
-    required this.onMove,
-    required this.onMarkStatus,
-    required this.onPriorityChanged,
-    required this.onOpenDetails,
+    required this.callbacks,
   });
 
+  /// The task as it was tapped; used until the cubit has a newer snapshot.
   final TaskBoardTask task;
   final List<TaskBoardList> lists;
-  final VoidCallback onMove;
-  final ValueChanged<String> onMarkStatus;
-  final ValueChanged<String> onPriorityChanged;
-  final VoidCallback onOpenDetails;
+  final _TaskQuickActionCallbacks callbacks;
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final title = task.name?.trim().isNotEmpty == true
-        ? task.name!.trim()
-        : context.l10n.taskBoardDetailUntitledTask;
-    final list = lists.firstWhere(
-      (list) => list.id == task.listId,
-      orElse: () => TaskBoardList(
-        id: task.listId,
-        boardId: '',
-        name: context.l10n.taskBoardDetailUntitledList,
-      ),
+    final live = context.select<TaskBoardDetailCubit, TaskBoardTask>(
+      (cubit) => _taskQuickActionsLiveTask(cubit.state, task.id) ?? task,
     );
-    final status = TaskBoardList.normalizeSupportedStatus(list.status);
-    final doneTargetStatus = status == 'done' ? 'not_started' : 'done';
-    final closedTargetStatus = status == 'closed' ? 'not_started' : 'closed';
-
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.l10n.taskBoardDetailQuickActions,
-              style: theme.typography.small.copyWith(
-                color: theme.colorScheme.mutedForeground,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const shad.Gap(6),
-            Text(
-              title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.large.copyWith(
-                fontWeight: FontWeight.w700,
-                height: 1.15,
-              ),
-            ),
-            const shad.Gap(12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _TaskQuickActionButton(
-                  icon: Icons.drive_file_move_outlined,
-                  label: context.l10n.taskBoardDetailMoveTask,
-                  onPressed: onMove,
-                ),
-                _TaskQuickActionButton(
-                  icon: status == 'done'
-                      ? Icons.radio_button_unchecked
-                      : Icons.check_circle_outline,
-                  label: status == 'done'
-                      ? context.l10n.taskBoardDetailMarkNotStarted
-                      : context.l10n.taskBoardDetailBulkMarkDone,
-                  onPressed: () => onMarkStatus(doneTargetStatus),
-                ),
-                _TaskQuickActionButton(
-                  icon: status == 'closed'
-                      ? Icons.radio_button_unchecked
-                      : Icons.cancel_outlined,
-                  label: status == 'closed'
-                      ? context.l10n.taskBoardDetailMarkNotStarted
-                      : context.l10n.taskBoardDetailBulkMarkClosed,
-                  onPressed: () => onMarkStatus(closedTargetStatus),
-                ),
-              ],
-            ),
-            const shad.Gap(14),
-            Text(
-              context.l10n.taskBoardDetailChangePriority,
-              style: theme.typography.small.copyWith(
-                color: theme.colorScheme.mutedForeground,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const shad.Gap(8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final priority in _taskQuickActionPriorityOptions)
-                  _TaskQuickPriorityButton(
-                    priority: priority,
-                    selected:
-                        _normalizeTaskPriority(
-                          task.priority,
-                          _taskQuickActionPriorityOptions,
-                        ) ==
-                        priority,
-                    onPressed: () => onPriorityChanged(priority),
-                  ),
-              ],
-            ),
-            const shad.Gap(14),
-            SizedBox(
-              width: double.infinity,
-              child: shad.OutlineButton(
-                onPressed: onOpenDetails,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.open_in_full_rounded, size: 16),
-                      const shad.Gap(8),
-                      Text(context.l10n.taskBoardDetailOpenFullDetails),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    final board = context.select<TaskBoardDetailCubit, TaskBoardDetail?>(
+      (cubit) => cubit.state.board,
     );
-  }
-}
-
-class _TaskQuickActionButton extends StatelessWidget {
-  const _TaskQuickActionButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return shad.OutlineButton(
-      onPressed: onPressed,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [Icon(icon, size: 16), const shad.Gap(6), Text(label)],
-      ),
+    final busy = context.select<TaskBoardDetailCubit, bool>(
+      (cubit) => cubit.state.isMutating,
     );
-  }
-}
+    final l10n = context.l10n;
+    final title = live.name?.trim().isNotEmpty == true
+        ? live.name!.trim()
+        : l10n.taskBoardDetailUntitledTask;
+    final list = lists.where((list) => list.id == live.listId).firstOrNull;
+    final listName = list?.name?.trim().isNotEmpty == true
+        ? list!.name!.trim()
+        : l10n.taskBoardDetailUntitledList;
+    final status = TaskBoardList.normalizeSupportedStatus(list?.status);
+    final boardStatuses = {
+      for (final candidate in lists)
+        ?TaskBoardList.normalizeSupportedStatus(candidate.status),
+    };
+    final statuses = [
+      for (final candidate in _taskQuickActionStatusOrder)
+        if (boardStatuses.contains(candidate)) candidate,
+    ];
+    final priority = TaskPriorityLevel.tryParse(live.priority)?.value;
 
-class _TaskQuickPriorityButton extends StatelessWidget {
-  const _TaskQuickPriorityButton({
-    required this.priority,
-    required this.selected,
-    required this.onPressed,
-  });
-
-  final String priority;
-  final bool selected;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = _taskPriorityStyle(context, priority);
-    return shad.OutlineButton(
-      onPressed: selected ? null : onPressed,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+    return AppSheetScaffold(
+      title: title,
+      description: board == null
+          ? listName
+          : '${_taskReference(live, board)} · $listName',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(style.icon, size: 15, color: selected ? style.foreground : null),
-          const shad.Gap(5),
-          Text(
-            style.label,
-            style: TextStyle(
-              color: selected ? style.foreground : null,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          if (statuses.isNotEmpty) ...[
+            _TaskQuickSectionCaption(l10n.taskQuickActionsStatus),
+            _TaskQuickStatusGrid(
+              statuses: statuses,
+              selected: status,
+              enabled: !busy,
+              onSelected: (value) => callbacks.onStatus(live, value),
             ),
+            const SizedBox(height: AppLayout.sectionGap),
+          ],
+          _TaskQuickSectionCaption(l10n.taskBoardDetailPriority),
+          _TaskQuickPriorityGrid(
+            selected: priority,
+            enabled: !busy,
+            onSelected: (value) => callbacks.onPriority(live, value),
+          ),
+          const SizedBox(height: AppLayout.sectionGap),
+          _TaskQuickSectionCaption(l10n.taskBoardDetailTaskDates),
+          _TaskQuickDatesCard(
+            task: live,
+            list: list,
+            enabled: !busy,
+            callbacks: callbacks,
+          ),
+          const SizedBox(height: AppLayout.sectionGap),
+          _TaskQuickFieldsCard(
+            task: live,
+            board: board,
+            listName: listName,
+            enabled: !busy,
+            callbacks: callbacks,
+          ),
+          const SizedBox(height: AppLayout.sectionGap),
+          AppButton.outline(
+            key: const ValueKey('task-quick-open-details'),
+            enabled: !busy,
+            onPressed: () => callbacks.onOpenDetails(live),
+            leading: const Icon(LucideIcons.maximize2),
+            child: Text(l10n.taskBoardDetailOpenFullDetails),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TaskQuickSectionCaption extends StatelessWidget {
+  const _TaskQuickSectionCaption(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSpacing.xs,
+        bottom: AppLayout.sectionCaptionGap,
+      ),
+      child: Semantics(
+        header: true,
+        child: Text(
+          text,
+          style: tokens.typography.small.copyWith(
+            color: tokens.colorScheme.mutedForeground,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

@@ -155,6 +155,29 @@ export function getAiChatUploadContentType(file: File): string {
   return mime || 'application/octet-stream';
 }
 
+export interface AiChatSignedReadUrl {
+  path: string;
+  signedUrl: string | null;
+}
+
+/** Signs AI chat attachments and Mira generated images on read (1 hour). */
+export async function getAiChatSignedReadUrls(
+  paths: string[],
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const payload = await client.json<{ urls?: AiChatSignedReadUrl[] }>(
+    '/api/ai/chat/signed-read-url',
+    {
+      body: JSON.stringify({ paths }),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+  return payload.urls ?? [];
+}
+
 export async function deleteAiChatFile(
   payload: DeleteAiChatFilePayload,
   options?: InternalApiClientOptions

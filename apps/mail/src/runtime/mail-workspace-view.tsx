@@ -7,6 +7,7 @@ import {
   MAIL_FOLDERS,
   mailFolderIcons,
 } from '../app/[locale]/(dashboard)/[wsId]/mail-folders';
+import { MailSourceProvider } from '../app/[locale]/(dashboard)/[wsId]/mail-source';
 import { MailWorkspace } from '../app/[locale]/(dashboard)/[wsId]/mail-workspace';
 import { Structure } from '../app/[locale]/(dashboard)/[wsId]/structure';
 import { MailActorProvider } from '../components/mail-actor-provider';
@@ -46,38 +47,37 @@ export function MailWorkspaceView({
     };
   });
   return (
-    <SidebarProvider
-      initialBehavior={model.behavior}
-      initialBehaviorUpdatedAt={model.behaviorUpdatedAt}
-    >
-      <Structure
-        actions={
-          <div className="flex w-full items-center gap-1">
-            <div className="flex-1">{userPopover}</div>
-            {notificationPopover}
-          </div>
-        }
-        defaultCollapsed={model.defaultCollapsed}
-        links={links}
-        personalOrWsId={workspaceSlug}
-        notificationPopover={notificationPopover}
-        userPopover={userPopover}
-        workspace={model.workspace}
-        wsId={wsId}
+    <MailSourceProvider connectedByDefault={model.connectedByDefault}>
+      <SidebarProvider
+        initialBehavior={model.behavior}
+        initialBehaviorUpdatedAt={model.behaviorUpdatedAt}
       >
-        <RealtimeLogProvider wsId={wsId}>
-          <div data-workspace-slug={workspaceSlug}>
-            <MailActorProvider actorId={actorId}>
-              <MailWorkspace
-                workspaceId={workspaceSlug}
-                connectedByDefault={model.connectedByDefault}
-              >
-                {null}
-              </MailWorkspace>
-            </MailActorProvider>
-          </div>
-        </RealtimeLogProvider>
-      </Structure>
-    </SidebarProvider>
+        <Structure
+          actions={
+            <div className="flex w-full items-center gap-1">
+              <div className="flex-1">{userPopover}</div>
+              {notificationPopover}
+            </div>
+          }
+          defaultCollapsed={model.defaultCollapsed}
+          links={links}
+          personalOrWsId={workspaceSlug}
+          notificationPopover={notificationPopover}
+          userPopover={userPopover}
+          workspace={model.workspace}
+          wsId={wsId}
+        >
+          <RealtimeLogProvider wsId={wsId}>
+            <div data-workspace-slug={workspaceSlug}>
+              <MailActorProvider actorId={actorId}>
+                <MailWorkspace workspaceId={workspaceSlug}>
+                  {null}
+                </MailWorkspace>
+              </MailActorProvider>
+            </div>
+          </RealtimeLogProvider>
+        </Structure>
+      </SidebarProvider>
+    </MailSourceProvider>
   );
 }

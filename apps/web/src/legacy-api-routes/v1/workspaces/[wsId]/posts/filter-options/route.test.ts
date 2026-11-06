@@ -44,7 +44,9 @@ describe('post filter options route', () => {
         return { rpc: mocks.privateRpc };
       }),
     });
-    mocks.getPermissions.mockResolvedValue({ containsPermission: vi.fn() });
+    mocks.getPermissions.mockResolvedValue({
+      containsPermission: vi.fn(() => true),
+    });
     mocks.getPostEmailMaxAgeCutoff.mockReturnValue('2026-05-01T00:00:00.000Z');
     mocks.privateRpc.mockResolvedValue({
       data: [

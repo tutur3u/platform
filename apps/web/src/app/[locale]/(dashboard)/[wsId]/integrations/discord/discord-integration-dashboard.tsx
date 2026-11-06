@@ -9,7 +9,6 @@ import {
   Loader2,
   Plus,
   Search,
-  Trash2,
   UserMinus,
   Users,
 } from '@tuturuuu/icons';
@@ -34,7 +33,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -43,6 +41,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useCallback, useEffect, useState } from 'react';
+import { DisconnectDiscordDialog } from './disconnect-discord-dialog';
 
 type DiscordIntegration =
   Database['public']['Tables']['discord_integrations']['Row'];
@@ -492,46 +491,12 @@ export default function DiscordIntegrationDashboard({
             </div>
 
             <div className="pt-2">
-              <Dialog
+              <DisconnectDiscordDialog
                 open={showDeleteDialog}
                 onOpenChange={setShowDeleteDialog}
-              >
-                <DialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="w-full transition-all duration-200 hover:scale-[1.02]"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Disconnect Integration
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Disconnect Discord Integration</DialogTitle>
-                    <DialogDescription>
-                      This will remove the connection between your workspace and
-                      Discord server. The bot will remain in your Discord server
-                      but won't respond to commands.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter>
-                    <Button
-                      variant="ghost"
-                      onClick={() => setShowDeleteDialog(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={handleDisconnectDiscord}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Disconnecting...' : 'Disconnect'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                onConfirm={handleDisconnectDiscord}
+                isLoading={isLoading}
+              />
             </div>
           </CardContent>
         </Card>

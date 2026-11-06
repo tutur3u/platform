@@ -20,7 +20,7 @@ import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/glass_effects.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 
-const _list = ValueKey('glass-bench-list');
+const ValueKey<String> _list = ValueKey('glass-bench-list');
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized().framePolicy =

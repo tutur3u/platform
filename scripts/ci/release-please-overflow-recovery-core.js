@@ -6,6 +6,35 @@ const DEFAULT_FOOTER =
   'This PR was generated with [Release Please](https://github.com/googleapis/release-please). See [documentation](https://github.com/googleapis/release-please#release-please).';
 const NOTES_DELIMITER = '---';
 const PENDING_LABEL = 'autorelease: pending';
+const RELEASE_BRANCH_PREFIX = 'release-please--branches--';
+
+function releaseBranchFor(targetBranch) {
+  return `${RELEASE_BRANCH_PREFIX}${targetBranch}`;
+}
+
+function notesBranchFor(targetBranch) {
+  return `${releaseBranchFor(targetBranch)}--release-notes`;
+}
+
+// Recovery writes with an admin token, so only the generated same-repository
+// release PR may select it, and only onto its own notes branch. A pull request
+// body is attacker-controlled: a fork or a lookalike head could otherwise
+// point the write at production or main.
+function overflowRecoveryTarget(pullRequest, targetBranch) {
+  if (pullRequest.head?.ref !== releaseBranchFor(targetBranch))
+    return undefined;
+  if (pullRequest.base?.ref !== targetBranch) return undefined;
+
+  const headRepository = pullRequest.head?.repo?.full_name;
+  if (!headRepository || headRepository !== pullRequest.base?.repo?.full_name) {
+    return undefined;
+  }
+
+  const notesBranch = extractOverflowBranchName(pullRequest.body || '');
+  if (notesBranch !== notesBranchFor(targetBranch)) return undefined;
+
+  return { notesBranch, pullRequest };
+}
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
@@ -134,20 +163,14 @@ async function findMergedPendingOverflowPullRequest(github, targetBranch) {
 
     for (const pullRequest of pullRequests) {
       if (!pullRequest.merged_at) continue;
-      if (!pullRequest.head?.ref?.startsWith('release-please--branches--')) {
-        continue;
-      }
 
-      const notesBranch = extractOverflowBranchName(pullRequest.body || '');
-      if (!notesBranch) continue;
+      const recoveryTarget = overflowRecoveryTarget(pullRequest, targetBranch);
+      if (!recoveryTarget) continue;
 
       const labels = await github.getIssueLabels(pullRequest.number);
       if (!labels.includes(PENDING_LABEL)) continue;
 
-      return {
-        notesBranch,
-        pullRequest,
-      };
+      return recoveryTarget;
     }
 
     if (pullRequests.length < 25) break;
@@ -156,7 +179,23 @@ async function findMergedPendingOverflowPullRequest(github, targetBranch) {
   return undefined;
 }
 
+// Release Please rewrites overflow notes in two API steps: it first resets the
+// notes branch to the target branch, then commits release-notes.md. A failure
+// in between leaves the open release PR pointing at a missing file, and every
+// later run fails while parsing that PR. Its own changelogs restore the notes.
+async function findOpenOverflowPullRequest(github, targetBranch) {
+  const pullRequests = await github.listOpenPullRequests(targetBranch);
+
+  for (const pullRequest of pullRequests) {
+    const recoveryTarget = overflowRecoveryTarget(pullRequest, targetBranch);
+    if (recoveryTarget) return recoveryTarget;
+  }
+
+  return undefined;
+}
+
 async function buildReleaseNotesFromPullRequest({
+  changelogRef,
   configFile,
   github,
   manifestFile,
@@ -184,7 +223,10 @@ async function buildReleaseNotesFromPullRequest({
 
   for (const { releasePath, version } of versionChanges) {
     const changelogPath = getChangelogPath(config, releasePath);
-    const changelog = await github.getTextFile(changelogPath, targetBranch);
+    const changelog = await github.getTextFile(
+      changelogPath,
+      changelogRef || targetBranch
+    );
 
     entries.push({
       component: getComponent(config, releasePath),
@@ -203,13 +245,22 @@ async function recoverReleasePleaseOverflowNotes({
   manifestFile = '.release-please-manifest.json',
   targetBranch = 'production',
 }) {
-  const recoveryTarget = await findMergedPendingOverflowPullRequest(
+  const mergedTarget = await findMergedPendingOverflowPullRequest(
     github,
     targetBranch
   );
+  const recoveryTarget =
+    mergedTarget || (await findOpenOverflowPullRequest(github, targetBranch));
 
   if (!recoveryTarget) {
     return { status: 'skipped', reason: 'no merged pending overflow PR' };
+  }
+
+  // Fail closed before any read or write if a selector ever regresses.
+  if (recoveryTarget.notesBranch !== notesBranchFor(targetBranch)) {
+    throw new Error(
+      `Refusing overflow recovery onto ${recoveryTarget.notesBranch}; only ${notesBranchFor(targetBranch)} may be written`
+    );
   }
 
   const existingNotes = await github.getTextFile(
@@ -227,6 +278,11 @@ async function recoverReleasePleaseOverflowNotes({
   }
 
   const notes = await buildReleaseNotesFromPullRequest({
+    // A merged release's changelogs are on the target branch; an open one's
+    // exist only on the release PR head.
+    changelogRef: mergedTarget
+      ? targetBranch
+      : recoveryTarget.pullRequest.head.sha,
     configFile,
     github,
     manifestFile,
@@ -271,7 +327,10 @@ module.exports = {
   extractChangelogEntry,
   extractOverflowBranchName,
   findMergedPendingOverflowPullRequest,
+  findOpenOverflowPullRequest,
   getChangelogPath,
+  notesBranchFor,
+  overflowRecoveryTarget,
   getComponent,
   parseManifestVersionChanges,
   recoverReleasePleaseOverflowNotes,
