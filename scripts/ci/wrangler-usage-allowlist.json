@@ -124,14 +124,14 @@
       "digest": "a5e511a92544ac9fdf20c4f5933836f11d10fe388be6d4c5c7902dbadf16ea02"
     },
     ".github/workflows/mail-calendar-tasks-builds.yaml": {
-      "lines": 7,
-      "uses": 7,
+      "lines": 11,
+      "uses": 11,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6637",
-        "reason": "Calendar runs cf-inferred standalone binding generation; CI retains the legacy reference oracle until exact-artifact qualification. Publication and runtime gaps remain unchanged."
+        "decision": "https://github.com/tutur3u/platform/pull/7644",
+        "reason": "REV-7644: production config qualification, sealed archive restore and matching emitted-config regression fixtures; no new Wrangler command. Existing publication gap and removal condition remain."
       },
-      "digest": "ab93d38ca88f0b634967f90a6e829b02f43b3b50a9ab31c00dfe42d91d6a925f"
+      "digest": "2392f6d063d1996a39fb80caa64386e54f450ead750e9b353484a6eab3cc92c7"
     },
     ".github/workflows/meet-cloudflare.yaml": {
       "lines": 30,
@@ -2204,14 +2204,14 @@
       "digest": "06dc1c0c44ba14771d1cc73b5b7eae49f602a795d50959122913be5847fad3fd"
     },
     "scripts/ci/tasks-native-artifact.test.py": {
-      "lines": 7,
-      "uses": 8,
+      "lines": 11,
+      "uses": 12,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6849",
-        "reason": "Tasks native artifact regressions (#6849) build the same emitted-config fixture as Finance's: the .void-wrangler.jsonc producer metadata, the deploy pointer and the emitted wrangler.json; Tasks on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+        "decision": "https://github.com/tutur3u/platform/pull/7644",
+        "reason": "REV-7644: production config qualification, sealed archive restore and matching emitted-config regression fixtures; no new Wrangler command. Existing publication gap and removal condition remain."
       },
-      "digest": "9ea2206674d3b1e3377608f589805a6ced065510d62b53a861625a083edc4e3a"
+      "digest": "4631db45929dc1645af9ca37d74fb366606d1bf9d9447528077f513622452644"
     },
     "scripts/ci/turbo-cache-config.test.js": {
       "lines": 2,
