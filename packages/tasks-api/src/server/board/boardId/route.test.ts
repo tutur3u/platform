@@ -325,6 +325,74 @@ describe('task board boardId route PUT', () => {
     });
   });
 
+  for (const [label, databaseError] of [
+    [
+      'an unrelated unique constraint',
+      {
+        code: '23505',
+        message:
+          'duplicate key value violates unique constraint "another_constraint"',
+      },
+    ],
+    [
+      'a prefix marker embedded in another message',
+      {
+        code: '23505',
+        message: 'prefix TASK_BOARD_TICKET_PREFIX_PROJECT_KEY suffix',
+      },
+    ],
+    [
+      'a prefix marker with a different SQLSTATE',
+      { code: '42501', message: 'TASK_BOARD_TICKET_PREFIX_PROJECT_KEY' },
+    ],
+  ] as const) {
+    it(`keeps a safe generic response for ${label}`, async () => {
+      updateEqWorkspaceMock.mockResolvedValueOnce({ error: databaseError });
+      const response = await PUT(
+        new NextRequest(
+          'http://localhost/api/v1/workspaces/ws-1/task-boards/00000000-0000-4000-8000-000000000456',
+          {
+            method: 'PUT',
+            body: JSON.stringify({ ticket_prefix: 'PLA' }),
+            headers: { 'Content-Type': 'application/json' },
+          }
+        ),
+        {
+          params: Promise.resolve({
+            wsId: 'ws-1',
+            boardId: '00000000-0000-4000-8000-000000000456',
+          }),
+        }
+      );
+      expect(response.status).toBe(500);
+      await expect(response.json()).resolves.toEqual({
+        message: 'Error updating workspace board',
+      });
+    });
+  }
+
+  it('updates a non-colliding ticket prefix with the existing success envelope', async () => {
+    const response = await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/task-boards/00000000-0000-4000-8000-000000000456',
+        {
+          method: 'PUT',
+          body: JSON.stringify({ ticket_prefix: 'SAFE' }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+          boardId: '00000000-0000-4000-8000-000000000456',
+        }),
+      }
+    );
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ message: 'success' });
+    expect(updateMock).toHaveBeenCalledWith({ ticket_prefix: 'SAFE' });
+  });
+
   it('maps mobile archive, restore, and soft-delete flags onto board metadata', async () => {
     const response = await PUT(
       new NextRequest(

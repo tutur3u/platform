@@ -64,6 +64,16 @@ function isUniqueViolation(error: unknown) {
   return error instanceof Object && 'code' in error && error.code === '23505';
 }
 
+function isTaskBoardNameTaken(error: unknown) {
+  return (
+    isUniqueViolation(error) &&
+    error instanceof Object &&
+    'message' in error &&
+    error.message ===
+      'duplicate key value violates unique constraint "idx_workspace_boards_unique_active_name"'
+  );
+}
+
 /** The board prefix trigger refuses a prefix that equals a project key. */
 function isTicketPrefixTaken(error: unknown) {
   return (
@@ -71,7 +81,7 @@ function isTicketPrefixTaken(error: unknown) {
     error instanceof Object &&
     'message' in error &&
     typeof error.message === 'string' &&
-    error.message.includes('TASK_BOARD_TICKET_PREFIX_PROJECT_KEY')
+    error.message === 'TASK_BOARD_TICKET_PREFIX_PROJECT_KEY'
   );
 }
 
@@ -310,7 +320,7 @@ export async function handleBoardRoutePUT(
         { status: 409 }
       );
     }
-    if (isUniqueViolation(error)) {
+    if (isTaskBoardNameTaken(error)) {
       return taskBoardNameExistsResponse();
     }
 
