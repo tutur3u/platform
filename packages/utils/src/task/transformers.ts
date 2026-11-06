@@ -124,7 +124,11 @@ function normalizeProjects(projects: unknown): TaskProject[] {
         isObject(entry.project) &&
         'id' in entry.project
       ) {
-        return entry.project as TaskProject;
+        return {
+          ...entry.project,
+          ticket_number: entry.ticket_number,
+          created_at: entry.created_at,
+        } as TaskProject;
       }
 
       if ('id' in entry) {

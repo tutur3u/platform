@@ -1,13 +1,10 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plus, Share2, UserStar, X, Zap } from '@tuturuuu/icons';
-import { getWorkspaceTaskBoard } from '@tuturuuu/internal-api/tasks';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { useOptionalSidebar } from '@tuturuuu/ui/custom/sidebar-context';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { BoardShareDialog } from '../boards/board-share-dialog';
@@ -31,6 +28,7 @@ import { BoardSearchInput } from './board-header/board-search-input';
 import { BoardSortMenu } from './board-header/board-sort-menu';
 import { BoardViewMenu } from './board-header/board-view-menu';
 import { ToneButton } from './board-header/tone-button';
+import { useOpenBoardSettings } from './board-header/use-open-board-settings';
 import { BoardSwitcher } from './board-switcher';
 import { BoardUserPresenceAvatarsComponent } from './board-user-presence-avatars';
 import type { ViewType } from './board-views';
@@ -79,16 +77,16 @@ interface Props {
   projectTaskCounts?: Map<string, number>;
   countsComplete?: boolean;
   onCreateTask?: () => void;
-}
-
-const BOARD_SETTINGS_PRELOAD_EVENT = 'tuturuuu:board-settings-intent';
-const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
-  'tuturuuu:settings-dialog-open-intent';
-
-function getBrowserInternalApiOptions() {
-  return typeof window !== 'undefined'
-    ? { baseUrl: window.location.origin }
-    : undefined;
+  /** Sprint pill shown after the board in the breadcrumb. */
+  sprintSlot?: ReactNode;
+  /** Plan | Board tabs, shown first in the second row on sprint boards. */
+  planTabs?: ReactNode;
+  /** The Plan tab is open, so board-only controls hide. */
+  planActive?: boolean;
+  /** Shown after the search field, e.g. matches outside the shown sprint. */
+  searchExtra?: ReactNode;
+  /** The pointer or focus reached search or filters: a filter may follow. */
+  onFilterIntent?: () => void;
 }
 
 export function BoardHeader({
@@ -119,16 +117,17 @@ export function BoardHeader({
   projectTaskCounts,
   countsComplete = true,
   onCreateTask,
+  sprintSlot,
+  planTabs,
+  planActive = false,
+  searchExtra,
+  onFilterIntent,
 }: Props) {
   const t = useTranslations();
-  const queryClient = useQueryClient();
   const [shareBoardOpen, setShareBoardOpen] = useState(false);
   const [plannerOpen, setPlannerOpen] = useState(false);
   const [createBoardOpen, setCreateBoardOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const enabledViews = availableViews ?? ['kanban', 'list', 'timeline'];
   const interactiveControlsVisible = !readOnly;
   const managerControlsVisible = !hideActions && !readOnly;
@@ -153,6 +152,12 @@ export function BoardHeader({
         email: null,
       })
     : undefined;
+  const { openBoardSettings, prefetchBoardSettings } = useOpenBoardSettings({
+    boardId: board.id,
+    enabled: managerControlsVisible,
+    onBoardSettingsIntent,
+    workspaceId,
+  });
   const focusOn = isFocusActive(filters, listStatusFilter, currentUserId);
   const filtersActive = hasActiveBoardFilters(filters, listStatusFilter);
 
@@ -179,46 +184,6 @@ export function BoardHeader({
     onFiltersChange({ ...filters, searchQuery });
     // Timeline cannot show search results, so searching opens List.
     if (searchQuery && currentView === 'timeline') onViewChange('list');
-  }
-
-  function prefetchBoardSettings() {
-    if (!managerControlsVisible) return;
-
-    onBoardSettingsIntent?.();
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event(BOARD_SETTINGS_PRELOAD_EVENT));
-    }
-
-    void queryClient.prefetchQuery({
-      queryKey: ['task-board-settings', workspaceId, board.id],
-      queryFn: async () => {
-        const payload = await getWorkspaceTaskBoard(
-          workspaceId,
-          board.id,
-          getBrowserInternalApiOptions()
-        );
-        return payload.board;
-      },
-      staleTime: 30_000,
-    });
-  }
-
-  function openBoardSettings() {
-    prefetchBoardSettings();
-
-    const openIntent = new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
-      cancelable: true,
-      detail: { settingsBoardId: board.id, settingsTab: 'task_board' },
-    });
-    window.dispatchEvent(openIntent);
-
-    if (openIntent.defaultPrevented) return;
-
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('settingsDialog', 'open');
-    params.set('settingsTab', 'task_board');
-    params.set('settingsBoardId', board.id);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   async function refreshBoard() {
@@ -282,129 +247,185 @@ export function BoardHeader({
   );
 
   return (
-    <div className="-mt-2 flex flex-col gap-2 border-b p-2">
-      <div className="flex flex-wrap items-center gap-2">
-        {backUrl ? (
-          <Link
-            aria-label={t('common.back')}
-            className="text-muted-foreground transition-colors hover:text-foreground"
-            href={backUrl}
-          >
-            <ArrowLeft className="size-5" />
-          </Link>
-        ) : null}
-        {title}
-        <span className="min-w-0 flex-1" />
-        {presenceVisible ? (
-          <BoardUserPresenceAvatarsComponent
-            boardId={board.id}
-            currentMetadata={presenceMetadata}
-            onFiltersChange={onFiltersChange}
-            onListStatusFilterChange={onListStatusFilterChange}
+    // Three fixed lines that never wrap: as the header narrows, the least
+    // needed parts hide or drop to icons instead of moving to a new line.
+    <div
+      className="@container/board-header -mt-2 flex flex-col gap-2 border-b p-2"
+      data-board-header
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+          {backUrl ? (
+            <Link
+              aria-label={t('common.back')}
+              className="text-muted-foreground transition-colors hover:text-foreground"
+              href={backUrl}
+            >
+              <ArrowLeft className="size-5" />
+            </Link>
+          ) : null}
+          <div className="min-w-9 shrink overflow-hidden">{title}</div>
+          {sprintSlot && !publicView && currentView !== 'my_tasks' ? (
+            <>
+              <span
+                aria-hidden="true"
+                className="-mx-1 text-lg text-muted-foreground"
+              >
+                /
+              </span>
+              {sprintSlot}
+            </>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {presenceVisible ? (
+            <div className="@xl/board-header:block hidden">
+              <BoardUserPresenceAvatarsComponent
+                boardId={board.id}
+                currentMetadata={presenceMetadata}
+                onFiltersChange={onFiltersChange}
+                onListStatusFilterChange={onListStatusFilterChange}
+              />
+            </div>
+          ) : null}
+          {managerControlsVisible ? (
+            <ToneButton
+              aria-label={t('ws-task-boards.header.share')}
+              onClick={() => setShareBoardOpen(true)}
+              tone="neutral"
+            >
+              <Share2 />
+              <span className="@2xl/board-header:inline hidden">
+                {t('ws-task-boards.header.share')}
+              </span>
+            </ToneButton>
+          ) : null}
+          {interactiveControlsVisible && onCreateTask ? (
+            <Button
+              aria-label={t('ws-task-boards.header.new_task')}
+              className="h-8"
+              onClick={onCreateTask}
+              size="sm"
+            >
+              <Plus />
+              <span className="@lg/board-header:inline hidden">
+                {t('ws-task-boards.header.new_task')}
+              </span>
+            </Button>
+          ) : null}
+          <BoardMoreMenu
+            isMultiSelectMode={isMultiSelectMode}
+            isRefreshing={isRefreshing}
+            onCreateBoard={
+              interactiveControlsVisible && !publicView
+                ? () => setCreateBoardOpen(true)
+                : undefined
+            }
+            onHideSidebar={
+              hideSidebarVisible
+                ? () => sidebar?.handleBehaviorChange('hidden')
+                : undefined
+            }
+            onOpenPlanner={
+              plannerVisible ? () => setPlannerOpen(true) : undefined
+            }
+            onOpenSettings={
+              managerControlsVisible ? openBoardSettings : undefined
+            }
+            onPrefetchSettings={prefetchBoardSettings}
+            onRefresh={
+              interactiveControlsVisible ? () => void refreshBoard() : undefined
+            }
+            onToggleSelect={
+              interactiveControlsVisible
+                ? () => setIsMultiSelectMode(!isMultiSelectMode)
+                : undefined
+            }
           />
-        ) : null}
+        </div>
+      </div>
+      <div
+        className="flex min-w-0 items-center gap-2"
+        onFocusCapture={onFilterIntent}
+        onPointerEnter={onFilterIntent}
+      >
+        {planTabs}
+        {/* One search for both tabs: Plan searches every open sprint. */}
         <BoardSearchInput
           isSearching={isSearching}
           onSearchChange={handleSearchChange}
           searchQuery={filters.searchQuery}
         />
-        {managerControlsVisible ? (
-          <ToneButton onClick={() => setShareBoardOpen(true)} tone="cyan">
-            <Share2 />
-            {t('ws-task-boards.header.share')}
-          </ToneButton>
-        ) : null}
-        {interactiveControlsVisible && onCreateTask ? (
-          <Button className="h-8" onClick={onCreateTask} size="sm">
-            <Plus />
-            {t('ws-task-boards.header.new_task')}
-          </Button>
-        ) : null}
-        <BoardMoreMenu
-          isMultiSelectMode={isMultiSelectMode}
-          isRefreshing={isRefreshing}
-          onCreateBoard={
-            interactiveControlsVisible && !publicView
-              ? () => setCreateBoardOpen(true)
-              : undefined
-          }
-          onHideSidebar={
-            hideSidebarVisible
-              ? () => sidebar?.handleBehaviorChange('hidden')
-              : undefined
-          }
-          onOpenPlanner={
-            plannerVisible ? () => setPlannerOpen(true) : undefined
-          }
-          onOpenSettings={
-            managerControlsVisible ? openBoardSettings : undefined
-          }
-          onPrefetchSettings={prefetchBoardSettings}
-          onRefresh={
-            interactiveControlsVisible ? () => void refreshBoard() : undefined
-          }
-          onToggleSelect={
-            interactiveControlsVisible
-              ? () => setIsMultiSelectMode(!isMultiSelectMode)
-              : undefined
-          }
-        />
+        {searchExtra}
+        {planActive ? null : (
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <BoardSortMenu
+              onChange={(sortBy) => onFiltersChange({ ...filters, sortBy })}
+              sortBy={filters.sortBy}
+            />
+            <BoardViewMenu
+              availableViews={enabledViews}
+              currentView={currentView}
+              hotkeyLabels={viewHotkeyLabels}
+              onViewChange={onViewChange}
+            />
+          </div>
+        )}
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        {interactiveControlsVisible && people ? (
-          <BoardPeopleFilter
-            currentUserId={currentUserId}
-            filters={filters}
-            onFiltersChange={onFiltersChange}
-            people={people}
-            unassignedCount={unassignedCount}
-            countsComplete={countsComplete}
-          />
-        ) : null}
-        {interactiveControlsVisible && projectTaskCounts ? (
-          <BoardProjectFilter
-            filters={filters}
-            onFiltersChange={onFiltersChange}
-            projectTaskCounts={projectTaskCounts}
-            countsComplete={countsComplete}
-            workspaceId={workspaceId}
-          />
-        ) : null}
-        {interactiveControlsVisible && currentUserId ? (
-          <ToneButton
-            active={focusOn}
-            aria-pressed={focusOn}
-            onClick={handleFocus}
-            title={t('ws-task-boards.header.focus_hint')}
-            tone="blue"
-          >
-            <Zap className={cn(focusOn && 'fill-current')} />
-            {t('ws-task-boards.header.focus')}
-          </ToneButton>
-        ) : null}
-        <span className="min-w-0 flex-1" />
-        {filtersActive ? (
-          <Button
-            className="h-8 text-muted-foreground"
-            onClick={handleClear}
-            size="sm"
-            variant="ghost"
-          >
-            <X />
-            {t('common.clear')}
-          </Button>
-        ) : null}
-        <BoardSortMenu
-          onChange={(sortBy) => onFiltersChange({ ...filters, sortBy })}
-          sortBy={filters.sortBy}
-        />
-        <BoardViewMenu
-          availableViews={enabledViews}
-          currentView={currentView}
-          hotkeyLabels={viewHotkeyLabels}
-          onViewChange={onViewChange}
-        />
-      </div>
+      {/* Filters get their own row so people pills keep their names. */}
+      {planActive || !interactiveControlsVisible ? null : (
+        <div
+          className="flex min-w-0 items-center gap-2"
+          onFocusCapture={onFilterIntent}
+          onPointerEnter={onFilterIntent}
+        >
+          {people ? (
+            <BoardPeopleFilter
+              currentUserId={currentUserId}
+              filters={filters}
+              onFiltersChange={onFiltersChange}
+              people={people}
+              unassignedCount={unassignedCount}
+              countsComplete={countsComplete}
+            />
+          ) : null}
+          {projectTaskCounts ? (
+            <BoardProjectFilter
+              filters={filters}
+              onFiltersChange={onFiltersChange}
+              projectTaskCounts={projectTaskCounts}
+              countsComplete={countsComplete}
+              workspaceId={workspaceId}
+            />
+          ) : null}
+          {currentUserId ? (
+            <ToneButton
+              active={focusOn}
+              aria-label={t('ws-task-boards.header.focus')}
+              aria-pressed={focusOn}
+              onClick={handleFocus}
+              title={t('ws-task-boards.header.focus_hint')}
+              tone="neutral"
+            >
+              <Zap className={cn(focusOn && 'fill-current')} />
+              <span className="@2xl/board-header:inline hidden">
+                {t('ws-task-boards.header.focus')}
+              </span>
+            </ToneButton>
+          ) : null}
+          {filtersActive ? (
+            <Button
+              className="h-8 text-muted-foreground"
+              onClick={handleClear}
+              size="sm"
+              variant="ghost"
+            >
+              <X />
+              {t('common.clear')}
+            </Button>
+          ) : null}
+        </div>
+      )}
       <BoardShareDialog
         board={{ id: board.id, name: board.name }}
         open={shareBoardOpen}

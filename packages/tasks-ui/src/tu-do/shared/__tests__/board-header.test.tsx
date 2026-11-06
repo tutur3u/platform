@@ -127,17 +127,17 @@ vi.mock('../board-user-presence-avatars', () => ({
 
 vi.mock('../../boards/boardId/kanban/planner/kanban-planner-dialog', () => ({
   KanbanPlannerDialog: ({ open }: { open: boolean }) =>
-    open ? <div role="dialog">planner-dialog</div> : null,
+    open ? <dialog open>planner-dialog</dialog> : null,
 }));
 
 vi.mock('../../boards/board-share-dialog', () => ({
   BoardShareDialog: ({ open }: { open: boolean }) =>
-    open ? <div role="dialog">share-dialog</div> : null,
+    open ? <dialog open>share-dialog</dialog> : null,
 }));
 
 vi.mock('../../boards/create-board-anywhere-dialog', () => ({
   CreateBoardAnywhereDialog: ({ open }: { open?: boolean }) =>
-    open ? <div role="dialog">create-board-dialog</div> : null,
+    open ? <dialog open>create-board-dialog</dialog> : null,
 }));
 
 const mockBoard = {
@@ -249,7 +249,7 @@ describe('BoardHeader', () => {
     });
   });
 
-  it('keeps search, Share, New task and More in the first row', () => {
+  it('keeps search with the filters and Share, New task and More in the header', () => {
     const onCreateTask = vi.fn();
     renderBoardHeader({ onCreateTask });
 
@@ -605,6 +605,29 @@ describe('BoardHeader', () => {
 
     expect(onFiltersChange).toHaveBeenCalledWith(DEFAULT_BOARD_FILTERS);
     expect(onListStatusFilterChange).toHaveBeenCalledWith('all');
+  });
+
+  it('shows the sprint pill after the board in the breadcrumb', () => {
+    const { rerender } = renderBoardHeader({
+      sprintSlot: <span data-testid="sprint-pill">Sprint 14</span>,
+    });
+
+    expect(screen.getByTestId('sprint-pill')).toBeInTheDocument();
+    expect(
+      screen
+        .getByTestId('board-switcher')
+        .compareDocumentPosition(screen.getByTestId('sprint-pill'))
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        {headerElement({
+          currentView: 'my_tasks',
+          sprintSlot: <span data-testid="sprint-pill">Sprint 14</span>,
+        })}
+      </QueryClientProvider>
+    );
+    expect(screen.queryByTestId('sprint-pill')).not.toBeInTheDocument();
   });
 
   it('shows no Clear button while nothing is filtered', () => {

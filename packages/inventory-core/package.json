@@ -22,7 +22,7 @@
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
-    "@tuturuuu/turnstile": "workspace:*",
+    "@tuturuuu/cloudflare": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "next": "^16.4.0",

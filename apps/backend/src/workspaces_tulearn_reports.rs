@@ -22,6 +22,20 @@ const NO_LEARNER_ACCESS_MESSAGE: &str = "You don't have access to this learner";
 const WORKSPACES_PATH_PREFIX: &str = "/api/v1/workspaces/";
 const REPORTS_PATH_SUFFIX: &str = "/tulearn/reports";
 
+/// The only periodic report stage a learner or linked parent may read: the
+/// report was approved and delivered by email. Mirrors
+/// `LEARNER_VISIBLE_REPORT_STAGE` in `@tuturuuu/education-core` tulearn
+/// activity.
+const LEARNER_VISIBLE_REPORT_STAGE: &str = "sent";
+
+/// Who the caller is relative to the resolved learner.
+enum Subject {
+    /// The caller is the learner themself.
+    SelfStudent(String),
+    /// The caller is a read-only parent linked to the learner.
+    Parent(String),
+}
+
 #[derive(Deserialize)]
 struct WorkspaceIdRow {
     id: Option<String>,
@@ -112,7 +126,7 @@ async fn reports_response(
     }
 
     // Resolve the subject student (self or via parent link).
-    let student_workspace_user_id = match resolve_subject_student(
+    let subject = match resolve_subject_student(
         contact_data,
         outbound,
         &resolved_ws_id,
@@ -121,9 +135,15 @@ async fn reports_response(
     )
     .await
     {
-        Ok(Some(id)) => id,
+        Ok(Some(subject)) => subject,
         Ok(None) => return message_response(403, NO_LEARNER_ACCESS_MESSAGE),
         Err(()) => return message_response(500, FAILED_TO_LOAD_REPORTS_MESSAGE),
+    };
+
+    // Learners and parents both see only released (approved and sent)
+    // reports; the stage filter is applied in `learner_reports`.
+    let student_workspace_user_id = match subject {
+        Subject::SelfStudent(id) | Subject::Parent(id) => id,
     };
 
     let course_ids = match assigned_course_ids(
@@ -170,15 +190,19 @@ async fn resolve_subject_student(
     ws_id: &str,
     user_id: &str,
     student_id: Option<&str>,
-) -> Result<Option<String>, ()> {
+) -> Result<Option<Subject>, ()> {
     if student_id.is_none()
         && let Some(self_student) =
             self_student_workspace_user_id(contact_data, outbound, ws_id, user_id).await?
     {
-        return Ok(Some(self_student));
+        return Ok(Some(Subject::SelfStudent(self_student)));
     }
 
-    parent_linked_student(contact_data, outbound, ws_id, user_id, student_id).await
+    Ok(
+        parent_linked_student(contact_data, outbound, ws_id, user_id, student_id)
+            .await?
+            .map(Subject::Parent),
+    )
 }
 
 async fn self_student_workspace_user_id(
@@ -338,6 +362,8 @@ async fn learner_reports(
             ("user_id", format!("eq.{student_workspace_user_id}")),
             ("group_id", in_filter),
             ("user_ws_id", format!("eq.{ws_id}")),
+            ("report_stage", format!("eq.{LEARNER_VISIBLE_REPORT_STAGE}")),
+            ("report_approval_status", "eq.APPROVED".to_owned()),
             ("order", "created_at.desc".to_owned()),
             ("limit", "12".to_owned()),
         ],

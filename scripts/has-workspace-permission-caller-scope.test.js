@@ -113,9 +113,13 @@ test('latest time-tracking update guard ignores the actor override for end users
   );
 });
 
+const INVENTORY_ENTRY = /^--\s{2,}((?:public|private)\.\w+)\(\)/gmu;
+
 // Trigger calls are exempt from the caller binding, so every trigger that
 // evaluates permissions must be reviewed and listed in the inventory carried
-// by the migration that last defines the helper.
+// by the migration that last defines the helper. Applied migrations keep their
+// bytes, so a later migration that adds a trigger caller lists it in its own
+// "-- Trigger inventory addendum" block instead.
 test('trigger callers of has_workspace_permission match the reviewed inventory', () => {
   const { filename, sql } = latest(HELPER);
   const block = sql.match(/^-- Trigger inventory\b[^\n]*\n((?:--[^\n]*\n)+)/mu);
@@ -124,11 +128,17 @@ test('trigger callers of has_workspace_permission match the reviewed inventory',
     `${filename}: missing the "-- Trigger inventory" header block`
   );
 
-  const inventory = [
-    ...block[1].matchAll(/^--\s{2,}((?:public|private)\.\w+)\(\)/gmu),
-  ]
-    .map((match) => match[1].toLowerCase())
-    .sort();
+  const listed = [...block[1].matchAll(INVENTORY_ENTRY)];
+  for (const later of fs.readdirSync(MIGRATIONS_DIR).sort()) {
+    if (!later.endsWith('.sql') || later <= filename) continue;
+    const laterSql = fs.readFileSync(path.join(MIGRATIONS_DIR, later), 'utf8');
+    for (const addendum of laterSql.matchAll(
+      /^-- Trigger inventory addendum\b[^\n]*\n((?:--[^\n]*\n)+)/gmu
+    )) {
+      listed.push(...addendum[1].matchAll(INVENTORY_ENTRY));
+    }
+  }
+  const inventory = listed.map((match) => match[1].toLowerCase()).sort();
   assert.ok(
     inventory.length > 0,
     `${filename}: the trigger inventory is empty`
@@ -231,12 +241,19 @@ test('latest is_org_member binds end-user callers outside triggers', () => {
 
 test('unreviewed cross-user trigger caller fails the guard', () => {
   const { spawnSync } = require('node:child_process');
-  const fixture = path.join(
-    MIGRATIONS_DIR,
-    '99999999999999_scope_guard_negative.sql'
-  );
-  assert.equal(fs.existsSync(fixture), false);
+  const { tmpdir } = require('node:os');
+  const scratch = fs.mkdtempSync(path.join(tmpdir(), 'scope-guard-'));
+  const migrations = path.join(scratch, 'apps/database/supabase/migrations');
+  const probe = path.join(scratch, 'scripts', path.basename(__filename));
   try {
+    fs.mkdirSync(path.dirname(migrations), { recursive: true });
+    fs.cpSync(MIGRATIONS_DIR, migrations, { recursive: true });
+    fs.mkdirSync(path.dirname(probe));
+    fs.copyFileSync(__filename, probe);
+    const fixture = path.join(
+      migrations,
+      '99999999999999_scope_guard_negative.sql'
+    );
     fs.writeFileSync(
       fixture,
       `CREATE FUNCTION public.unreviewed_scope_probe() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM public.is_org_member(NEW.user_id, NEW.ws_id); RETURN NEW; END; $$;`
@@ -248,13 +265,13 @@ test('unreviewed cross-user trigger caller fails the guard', () => {
       [
         '--test',
         '--test-name-pattern=trigger callers|trigger calls about',
-        __filename,
+        probe,
       ],
       { encoding: 'utf8', env }
     );
     assert.notEqual(result.status, 0);
     assert.match(result.stdout + result.stderr, /unreviewed_scope_probe/);
   } finally {
-    fs.unlinkSync(fixture);
+    fs.rmSync(scratch, { recursive: true, force: true });
   }
 });

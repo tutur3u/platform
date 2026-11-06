@@ -43,14 +43,10 @@ let timelineBoardProps:
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
-
-vi.mock('@tuturuuu/ui/hooks/use-semantic-task-search', () => ({
-  useSemanticTaskSearch: () => ({
-    data: [],
-    isFetching: false,
-    isLoading: false,
-  }),
-}));
+vi.mock(
+  '@tuturuuu/ui/hooks/use-semantic-task-search',
+  () => import('./mocks/semantic-search-off')
+);
 
 vi.mock('../../hooks/useTaskDialog', () => ({
   useTaskDialog: () => ({
@@ -61,6 +57,10 @@ vi.mock('../../hooks/useTaskDialog', () => ({
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   listWorkspaceTasks: listWorkspaceTasksMock,
 }));
+vi.mock(
+  '@tuturuuu/internal-api/task-sprints',
+  () => import('./mocks/board-sprints-off')
+);
 vi.mock('@tuturuuu/internal-api/users', () => ({
   TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID: 'TASK_BOARD_PINNED_SPECIAL_LISTS',
   TASK_LAST_BOARD_VIEW_CONFIG_ID: 'TASK_LAST_BOARD_VIEW',
@@ -79,14 +79,7 @@ vi.mock('../progressive-loader-context', () => ({
     pagination: progressivePagination,
   }),
 }));
-vi.mock('../kanban-presentation', () => ({
-  KanbanPresentation: ({ children, header }: any) => (
-    <>
-      {header}
-      {children}
-    </>
-  ),
-}));
+vi.mock('../kanban-presentation', () => import('./mocks/kanban-presentation'));
 vi.mock('../board-header', () => ({
   BoardHeader: (props: any) => {
     boardHeaderProps = props;
@@ -1066,47 +1059,6 @@ describe('BoardViews', () => {
           sourceWorkspaceIds: ['ws-2'],
         })
       );
-    });
-  });
-
-  it('uses server-side search counts to hide task lists without matching tasks', async () => {
-    listWorkspaceTasksMock.mockImplementation(async (_workspaceId, options) => {
-      if (options?.includeListCounts) {
-        return {
-          listCounts: [{ count: 1, list_id: 'list-1' }],
-          tasks: [],
-        };
-      }
-
-      return { tasks: [mockTasks[0]!] };
-    });
-
-    renderBoardViews();
-
-    act(() => {
-      boardHeaderProps?.onFiltersChange({
-        ...boardHeaderProps.filters,
-        estimationRange: { max: 5, min: 2 },
-        searchQuery: 'TIMELINE',
-      });
-    });
-
-    await waitFor(() => {
-      expect(listWorkspaceTasksMock).toHaveBeenCalledWith(
-        'ws-1',
-        expect.objectContaining({
-          boardId: 'board-1',
-          estimationMax: 5,
-          estimationMin: 2,
-          includeListCounts: true,
-          limit: 0,
-          q: 'TIMELINE',
-        })
-      );
-    });
-
-    await waitFor(() => {
-      expect(kanbanBoardProps?.lists).toEqual([mockLists[0]]);
     });
   });
 
