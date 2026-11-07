@@ -10,7 +10,7 @@
     "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7812} --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
-    "build": "vp build --configLoader runner",
+    "build": "next build --turbopack",
     "start": "next start",
     "preview": "next build --turbopack && next start -p 7812 --turbopack",
     "stop": "cd ../database && bun sb:stop",
@@ -28,7 +28,7 @@
     "preview:cloudflare": "vp preview --configLoader runner --host 127.0.0.1 --port ${PORT:-7812}",
     "routes:check": "bun ../../packages/start-bridge/src/codegen/cli.ts check .",
     "type-check:cloudflare": "tsc --noEmit -p tsconfig.cloudflare.json",
-    "test:runtime": "node --test cloudflare/*.runtime.mjs",
+    "test:runtime": "node --test cloudflare/native-auth.runtime.mjs",
     "build:legacy": "next build --turbopack"
   },
   "dependencies": {
