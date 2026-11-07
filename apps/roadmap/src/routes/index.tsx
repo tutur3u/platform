@@ -7,7 +7,7 @@ import {
   filterProducts,
   isSnapshotStale,
   type RoadmapFilter,
-  type SourceStatus,
+  stageCounts,
   snapshot,
 } from '../roadmap-data';
 
@@ -18,8 +18,9 @@ function RoadmapPage() {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<RoadmapFilter>('all');
   const t = language === 'en' ? en : vi;
-  const summaryStatuses: SourceStatus[] = ['active', 'blocked', 'planned'];
-  const apps = filterProducts(snapshot.apps, query, status);
+  const [blockedOnly, setBlockedOnly] = useState(false);
+  const counts = stageCounts(snapshot.apps);
+  const apps = filterProducts(snapshot.apps, query, status, blockedOnly);
   const updated = new Intl.DateTimeFormat(
     language === 'en' ? 'en-GB' : 'vi-VN',
     {
@@ -95,19 +96,13 @@ function RoadmapPage() {
         </section>
 
         <section className="progress-overview" aria-label={t.source}>
-          {summaryStatuses.map((item) => (
+          {counts.map(({ stage: item, count }) => (
             <div className="metric" key={item}>
               <span className={`status-dot ${item}`} aria-hidden="true" />
               <span>{t[item]}</span>
-              <strong>
-                {snapshot.apps.filter((app) => app.status === item).length}
-              </strong>
+              <strong>{count}</strong>
             </div>
           ))}
-          <div className="verification">
-            <span>{t.live}</span>
-            <strong>{t.unverified}</strong>
-          </div>
         </section>
 
         <section id="products" aria-label={t.all}>
@@ -135,6 +130,14 @@ function RoadmapPage() {
               />
             </label>
           </div>
+          <label className="blocked-filter">
+            <input
+              type="checkbox"
+              checked={blockedOnly}
+              onChange={(event) => setBlockedOnly(event.target.checked)}
+            />
+            {t.blocked} ({snapshot.apps.filter((app) => app.blocked).length})
+          </label>
           <p className="definitions">{t.definition}</p>
           <div className="product-list" aria-live="polite">
             {apps.map((app) => (
@@ -143,12 +146,16 @@ function RoadmapPage() {
                   <a className="product-name" href={app.productUrl}>
                     {app.name}
                   </a>
-                  <span className={`badge ${app.status}`}>
+                  <span className={`badge ${app.stage}`}>
                     <span className="status-dot" aria-hidden="true" />
-                    {t[app.status]}
+                    {t[app.stage]}
                   </span>
                 </div>
-                <p>{app.summary[language]}</p>
+                {app.blocked ? (
+                  <span className="badge blocked">{t.blocked}</span>
+                ) : null}
+                <p>{t.summaries[app.stage]}</p>
+                {!app.stageEvidence.pr ? <p>{t.missingEvidence}</p> : null}
                 <details>
                   <summary>{t.evidence}</summary>
                   <ul aria-label={t.details}>
@@ -173,6 +180,7 @@ function RoadmapPage() {
                   onClick={() => {
                     setQuery('');
                     setStatus('all');
+                    setBlockedOnly(false);
                   }}
                 >
                   {t.reset}

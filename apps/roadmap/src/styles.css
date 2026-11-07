@@ -157,7 +157,7 @@ h1 {
 }
 .progress-overview {
   display: grid;
-  grid-template-columns: repeat(3, 1fr) 1.4fr;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--panel);
@@ -197,7 +197,7 @@ h1 {
   border-radius: 50%;
   flex: 0 0 auto;
 }
-.active {
+.rolling_out {
   color: #127568;
 }
 .blocked {
@@ -417,7 +417,7 @@ footer p {
     --accent: #86c9ae;
     --soft: #243e35;
   }
-  .active {
+  .rolling_out {
     color: #86c9ae;
   }
   .blocked {
@@ -434,4 +434,12 @@ footer p {
       background-color 0.15s,
       color 0.15s;
   }
+}
+
+.blocked-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 12px;
 }
