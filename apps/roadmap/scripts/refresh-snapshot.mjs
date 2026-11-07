@@ -1,5 +1,12 @@
 import { execFileSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, statSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import {
+  deriveStage,
+  emptyEvidence,
+  parseEvidenceInputs,
+  timestamp,
+} from '../src/migration-evidence.ts';
 
 // Only products with public marketing pages belong in this public snapshot.
 const products = [
@@ -25,14 +32,24 @@ if (!/^[a-f0-9]{40}$/.test(sourceCommit ?? '')) {
 const read = (path) =>
   execFileSync('git', ['show', `${sourceCommit}:${path}`], {
     encoding: 'utf8',
+    timeout: 5000,
+    maxBuffer: 1024 * 1024,
   });
 const files = execFileSync(
   'git',
   ['ls-tree', '-r', '--name-only', sourceCommit, '--', 'apps'],
-  { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 }
+  { encoding: 'utf8', timeout: 5000, maxBuffer: 8 * 1024 * 1024 }
 ).split('\n');
 const policy = read('tuturuuu.ci.ts');
-const checkedAt = new Date().toISOString();
+const evidencePath = process.argv[3];
+if (evidencePath && statSync(evidencePath).size > 128 * 1024)
+  throw new Error('Public evidence input too large');
+const input = evidencePath
+  ? readFileSync(evidencePath)
+  : Buffer.from('{"schemaVersion":1,"apps":{}}');
+const inputs = parseEvidenceInputs(JSON.parse(input.toString('utf8')));
+const evidenceInputSha256 = createHash('sha256').update(input).digest('hex');
+const checkedAt = timestamp(process.argv[4] ?? new Date().toISOString());
 const source = `https://github.com/tutur3u/platform/blob/${sourceCommit}/`;
 const apps = products.map(([id, name, product]) => {
   const marketing = `apps/web/src/app/[locale]/(marketing)/products/${product}/page.tsx`;
@@ -46,16 +63,6 @@ const apps = products.map(([id, name, product]) => {
     /tanstackStart/.test(read(config)) &&
     /voidPlugin/.test(read(config))
   );
-  let status = native ? 'active' : 'planned';
-  let summary = native
-    ? {
-        en: 'Start + Void configuration is in main; live migration is not verified.',
-        vi: 'Cấu hình Start + Void đã có trên main; chưa xác minh chuyển đổi trên production.',
-      }
-    : {
-        en: 'Part of the web migration target; a merged Start + Void configuration is not established by this snapshot.',
-        vi: 'Thuộc mục tiêu chuyển đổi web; bản cập nhật này chưa xác nhận cấu hình Start + Void đã hợp nhất.',
-      };
   const evidence = [{ label: 'Public product', url: source + marketing }];
   if (native)
     evidence.push({ label: 'Source configuration', url: source + config });
@@ -64,19 +71,6 @@ const apps = products.map(([id, name, product]) => {
   const admitted = new RegExp(`\\b${id}:\\s*\\{\\s*state:\\s*'admitted'`).test(
     policy
   );
-  if (held) {
-    status = 'blocked';
-    summary = {
-      en: 'Source work is in main; production cutover awaits publication approval.',
-      vi: 'Mã nguồn đã có trên main; chuyển đổi production đang chờ duyệt phát hành.',
-    };
-  }
-  if (admitted) {
-    summary = {
-      en: 'Publication is permitted. That permission alone does not verify the live migration.',
-      vi: 'Đã được phép phát hành. Quyền phát hành chưa xác nhận chuyển đổi trên production.',
-    };
-  }
   if (held || admitted)
     evidence.push({
       label: 'Public publication policy',
@@ -87,20 +81,56 @@ const apps = products.map(([id, name, product]) => {
       label: 'Migration target',
       url: source + 'apps/docs/build/devops/native-start-migration.mdx',
     });
+  const stageEvidence =
+    inputs.find((item) => item.id === id)?.evidence ?? emptyEvidence;
+  const merge = stageEvidence.pr?.merge;
+  let mergeIncluded = false;
+  if (merge) {
+    try {
+      execFileSync(
+        'git',
+        ['merge-base', '--is-ancestor', merge.sha, sourceCommit],
+        { timeout: 5000, stdio: 'pipe' }
+      );
+      mergeIncluded = true;
+    } catch {
+      throw new Error(`Merge evidence is not included in source: ${id}`);
+    }
+  }
+  if (stageEvidence.pr)
+    evidence.push({ label: 'Migration PR', url: stageEvidence.pr.url });
+  if (stageEvidence.production) {
+    evidence.push({
+      label: 'Production readback',
+      url: stageEvidence.production.url,
+    });
+    evidence.push({
+      label: 'Production receipt',
+      url: stageEvidence.production.receiptUrl,
+    });
+  }
+  const stage = deriveStage(native, stageEvidence, checkedAt, mergeIncluded);
   return {
     id,
     name,
     productUrl: `https://tuturuuu.com/products/${product}`,
-    status,
-    summary,
+    stage,
+    blocked: held,
+    workInSource: native,
+    stageEvidence,
+    mergeIncluded,
     evidence,
     checkedAt,
   };
 });
 writeFileSync(
   new URL('../src/snapshot.json', import.meta.url),
-  JSON.stringify({ sourceCommit, checkedAt, apps }, null, 2) + '\n'
+  JSON.stringify(
+    { sourceCommit, checkedAt, evidenceInputSha256, apps },
+    null,
+    2
+  ) + '\n'
 );
 console.log(
-  `Refreshed ${apps.length} allowlisted public products from ${sourceCommit}; no live deployment claims`
+  `Refreshed ${apps.length} allowlisted public products from ${sourceCommit}; stages derived from recorded public evidence`
 );
