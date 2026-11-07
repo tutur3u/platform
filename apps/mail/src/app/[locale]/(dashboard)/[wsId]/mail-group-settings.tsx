@@ -2,6 +2,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateMailMailboxSettings } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -39,16 +45,20 @@ export function MailGroupSettings({
     onError: () => toast.error(t('settings_save_failed')),
   });
   return (
-    <section className="space-y-4 rounded-lg border p-4">
-      <div>
-        <h3 className="font-medium">{t('group_delivery_title')}</h3>
-        <p className="mt-1 text-muted-foreground text-sm">
-          {t('group_delivery_description')}
-        </p>
-      </div>
+    <SettingsSection
+      title={t('group_delivery_title')}
+      description={t('group_delivery_description')}
+    >
       {(['posting', 'attachments', 'sendAs'] as const).map((field) => (
-        <div className="space-y-2" key={field}>
-          <Label htmlFor={`group-${field}`}>{t(`group_policy_${field}`)}</Label>
+        <SettingItemTab
+          key={field}
+          title={
+            <Label htmlFor={`group-${field}`}>
+              {t(`group_policy_${field}`)}
+            </Label>
+          }
+          controlWidth="sm"
+        >
           <Select
             value={value[field]}
             onValueChange={(next) => setValue({ ...value, [field]: next })}
@@ -67,14 +77,16 @@ export function MailGroupSettings({
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </SettingItemTab>
       ))}
-      <p className="text-muted-foreground text-sm">
+      <SettingsSectionMessage className="py-3">
         {t('group_authentication_notice')}
-      </p>
-      <Button disabled={save.isPending} onClick={() => save.mutate()}>
-        {t('save')}
-      </Button>
-    </section>
+      </SettingsSectionMessage>
+      <SettingsSectionFooter>
+        <Button disabled={save.isPending} onClick={() => save.mutate()}>
+          {t('save')}
+        </Button>
+      </SettingsSectionFooter>
+    </SettingsSection>
   );
 }

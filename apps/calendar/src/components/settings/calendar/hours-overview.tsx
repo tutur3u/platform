@@ -130,9 +130,16 @@ function DayRow({
   const anyEnabled = work?.enabled || meeting?.enabled || personal?.enabled;
 
   return (
-    <div className={cn('flex items-center gap-3', !anyEnabled && 'opacity-40')}>
+    <div className="flex items-center gap-3">
       <div className="w-12 shrink-0">
-        <span className="font-medium text-sm">{shortLabel}</span>
+        <span
+          className={cn(
+            'font-medium text-sm',
+            !anyEnabled && 'text-muted-foreground'
+          )}
+        >
+          {shortLabel}
+        </span>
       </div>
       <div className="relative h-12 flex-1 rounded-md bg-muted/20">
         {/* Grid lines for reference */}
@@ -229,11 +236,11 @@ export function HoursOverview({
       </div>
 
       {/* Timeline container */}
-      <div className="rounded-lg border p-4">
+      <div>
         {/* Hour markers */}
         <div className="mb-2 flex items-center gap-3">
           <div className="w-12 shrink-0" />
-          <div className="flex flex-1 justify-between text-[10px] text-muted-foreground">
+          <div className="flex flex-1 justify-between text-muted-foreground text-xs">
             <span>{formatTime('00:00')}</span>
             <span>{formatTime('06:00')}</span>
             <span>{formatTime('12:00')}</span>

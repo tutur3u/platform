@@ -91,7 +91,7 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
     <section className="grid gap-5">
       <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border bg-card p-4">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="grid size-9 shrink-0 place-items-center rounded-md border border-border bg-primary/10 text-primary">
+          <span className="grid size-9 shrink-0 place-items-center rounded-md border border-border bg-muted text-muted-foreground">
             <Settings2 className="size-4" />
           </span>
           <div className="min-w-0">
@@ -121,7 +121,7 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
       </div>
 
       {!effectiveProgress.ready && effectiveProgress.firstIncompleteId ? (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-dynamic-orange/30 bg-dynamic-orange/5 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card p-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="warning">{t('nextStepBadge')}</Badge>

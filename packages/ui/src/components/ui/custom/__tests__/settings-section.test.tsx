@@ -101,19 +101,9 @@ describe('SettingsSection parts', () => {
 });
 
 describe('SettingItemTab', () => {
-  it('stacks the control under the label by default', () => {
+  it('keeps the control beside the label on wide rows by default', () => {
     const { container } = render(
       <SettingItemTab title="Row">
-        <span>Control</span>
-      </SettingItemTab>
-    );
-
-    expect(container.querySelector('.\\@lg\\:flex-row')).toBeNull();
-  });
-
-  it('keeps an inline control beside the label on wide rows', () => {
-    const { container } = render(
-      <SettingItemTab layout="inline" title="Row">
         <span>Control</span>
       </SettingItemTab>
     );
@@ -121,9 +111,19 @@ describe('SettingItemTab', () => {
     expect(container.querySelector('.\\@lg\\:flex-row')).not.toBeNull();
   });
 
+  it('stacks the control under the label on request', () => {
+    const { container } = render(
+      <SettingItemTab layout="stacked" title="Row">
+        <span>Control</span>
+      </SettingItemTab>
+    );
+
+    expect(container.querySelector('.\\@lg\\:flex-row')).toBeNull();
+  });
+
   it('applies the control width to the control area', () => {
     render(
-      <SettingItemTab controlWidth="xl" layout="inline" title="Row">
+      <SettingItemTab controlWidth="xl" title="Row">
         <span>Control</span>
       </SettingItemTab>
     );

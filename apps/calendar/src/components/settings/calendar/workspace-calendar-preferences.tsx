@@ -4,15 +4,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Info } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSectionBlock } from '@tuturuuu/ui/custom/settings-section';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import {
@@ -153,42 +155,44 @@ export function WorkspaceCalendarPreferences({
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <SettingsSectionBlock className="space-y-6">
         <div className="h-20 animate-pulse rounded-lg bg-muted" />
         <div className="h-20 animate-pulse rounded-lg bg-muted" />
-      </div>
+      </SettingsSectionBlock>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="workspace-timezone">
-            {t('calendar.workspace_timezone')}
-          </Label>
-          {userHasTimezoneOverride && (
-            <Badge variant="secondary" className="text-xs">
-              {t('calendar.overridden_by_settings')}
-            </Badge>
-          )}
-        </div>
-        <p className="text-muted-foreground text-sm">
-          {t('calendar.workspace_timezone_desc')}
-        </p>
+    <>
+      <SettingItemTab
+        title={
+          <>
+            <Label htmlFor="workspace-timezone">
+              {t('calendar.workspace_timezone')}
+            </Label>
+            {userHasTimezoneOverride && (
+              <Badge variant="secondary" className="text-xs">
+                {t('calendar.overridden_by_settings')}
+              </Badge>
+            )}
+          </>
+        }
+        description={t('calendar.workspace_timezone_desc')}
+        controlWidth="lg"
+      >
         <Select
           value={calendarSettings?.timezone || 'auto'}
           onValueChange={handleTimezoneChange}
           disabled={updateCalendarSettings.isPending}
         >
-          <SelectTrigger id="workspace-timezone" className="w-full">
+          <SelectTrigger id="workspace-timezone">
             <SelectValue placeholder={t('settings-appearance.auto-detect')} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="auto">
               {t('settings-appearance.auto-detect')} ({systemTimezone})
             </SelectItem>
-            <Separator className="my-1" />
+            <SelectSeparator />
             {timezones.map((tz) => (
               <SelectItem key={tz} value={tz}>
                 {tz}
@@ -196,48 +200,44 @@ export function WorkspaceCalendarPreferences({
             ))}
           </SelectContent>
         </Select>
-        {userHasTimezoneOverride && (
-          <div className="mt-2 flex items-start gap-2 rounded-md bg-muted/50 p-3">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-            <div className="text-muted-foreground text-sm">
-              <p>
-                {t.rich('calendar.personal_timezone_override_desc', {
-                  timezone: userSettings?.timezone,
-                  effectiveTimezone,
-                  bold: (chunks) => (
-                    <span className="font-medium text-foreground">
-                      {chunks}
-                    </span>
-                  ),
-                })}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+      </SettingItemTab>
+      {userHasTimezoneOverride && (
+        <SettingsSectionBlock className="flex items-start gap-2 py-3">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          <p className="text-muted-foreground text-sm">
+            {t.rich('calendar.personal_timezone_override_desc', {
+              timezone: userSettings?.timezone,
+              effectiveTimezone,
+              bold: (chunks) => (
+                <span className="font-medium text-foreground">{chunks}</span>
+              ),
+            })}
+          </p>
+        </SettingsSectionBlock>
+      )}
 
-      <Separator />
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="workspace-first-day">
-            {t('calendar.workspace_first_day')}
-          </Label>
-          {userHasFirstDayOverride && (
-            <Badge variant="secondary" className="text-xs">
-              {t('calendar.overridden_by_settings')}
-            </Badge>
-          )}
-        </div>
-        <p className="text-muted-foreground text-sm">
-          {t('calendar.workspace_first_day_desc')}
-        </p>
+      <SettingItemTab
+        title={
+          <>
+            <Label htmlFor="workspace-first-day">
+              {t('calendar.workspace_first_day')}
+            </Label>
+            {userHasFirstDayOverride && (
+              <Badge variant="secondary" className="text-xs">
+                {t('calendar.overridden_by_settings')}
+              </Badge>
+            )}
+          </>
+        }
+        description={t('calendar.workspace_first_day_desc')}
+        controlWidth="lg"
+      >
         <Select
           value={calendarSettings?.first_day_of_week || 'auto'}
           onValueChange={handleFirstDayChange}
           disabled={updateCalendarSettings.isPending}
         >
-          <SelectTrigger id="workspace-first-day" className="w-full md:w-72">
+          <SelectTrigger id="workspace-first-day">
             <SelectValue placeholder={t('settings-appearance.auto')} />
           </SelectTrigger>
           <SelectContent>
@@ -253,27 +253,23 @@ export function WorkspaceCalendarPreferences({
             </SelectItem>
           </SelectContent>
         </Select>
-        {userHasFirstDayOverride && (
-          <div className="mt-2 flex items-start gap-2 rounded-md bg-muted/50 p-3">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-            <div className="text-muted-foreground text-sm">
-              <p>
-                {t.rich('calendar.personal_first_day_override_desc', {
-                  firstDay: getFirstDayLabel(
-                    userSettings?.first_day_of_week || 'auto'
-                  ),
-                  effectiveFirstDay: getFirstDayLabel(effectiveFirstDay),
-                  bold: (chunks) => (
-                    <span className="font-medium text-foreground">
-                      {chunks}
-                    </span>
-                  ),
-                })}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      </SettingItemTab>
+      {userHasFirstDayOverride && (
+        <SettingsSectionBlock className="flex items-start gap-2 py-3">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          <p className="text-muted-foreground text-sm">
+            {t.rich('calendar.personal_first_day_override_desc', {
+              firstDay: getFirstDayLabel(
+                userSettings?.first_day_of_week || 'auto'
+              ),
+              effectiveFirstDay: getFirstDayLabel(effectiveFirstDay),
+              bold: (chunks) => (
+                <span className="font-medium text-foreground">{chunks}</span>
+              ),
+            })}
+          </p>
+        </SettingsSectionBlock>
+      )}
+    </>
   );
 }
