@@ -10,7 +10,7 @@ export const Route = createRootRoute({
       { title: 'Roadmap · Tuturuuu' },
       { name: 'description', content: 'Follow Tuturuuu’s migration to Cloudflare. Public milestones, current work and the evidence behind each update.' },
     ],
-    links: [{ rel: 'stylesheet', href: styles }, { rel: 'canonical', href: 'https://tuturuuu.com/roadmap' }],
+    links: [{ rel: 'stylesheet', href: styles }, { rel: 'canonical', href: 'https://tuturuuu.com/roadmap/' }],
   }),
   component: Outlet,
   shellComponent: Document,

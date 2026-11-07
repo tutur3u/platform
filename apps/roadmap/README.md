@@ -47,8 +47,20 @@ and both the bare `/roadmap` and `/roadmap/*` routes against existing zone route
 The bare path with a query needs exact path canonicalization to `/roadmap/`,
 preserving the query through the qualified zone/origin publisher; the two Worker
 route patterns alone do not cover that case. Never broaden to `/roadmap*`.
-Only the admitted release owner runs `void deploy --platform cloudflare`. Do not
-infer target identity or authentication from a configured name.
+The release owner uploads the sealed prebuilt artifact with the qualified
+Wrangler versions interface. Publication must not rebuild it with Void deploy.
+A configured Worker name does not establish target identity or authentication.
+
+The canonical page is https://tuturuuu.com/roadmap/. The application, assets,
+server functions and artifact seal keep the /roadmap mount; there is no
+subdomain-root variant. The Cloudflare zone publisher owns a Single Redirect
+for roadmap.tuturuuu.com: every path receives a 301 to the same path beneath
+https://tuturuuu.com/roadmap/, preserving the query string. For example,
+https://roadmap.tuturuuu.com/?status=active redirects to
+https://tuturuuu.com/roadmap/?status=active.
+This redirect is a zone operation, not an application request rewrite or a
+Worker custom-domain declaration. Capture its rule preimage alongside the
+Worker route preimages and verify both hostnames before accepting delivery.
 
 Capture the existing route mapping and immutable Worker version before a write.
 For a regression, the release owner restores those exact route mappings and the
