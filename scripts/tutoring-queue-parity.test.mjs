@@ -19,9 +19,8 @@ const {
   readTutoringPolicy,
   STANDARD_TUTORING_POLICY,
 } = await import('../packages/internal-api/src/tutoring-policy.ts');
-const { loadCurrentLearnerMemberships, loadGroupTagNames } = await import(
-  '../apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/queue/queue-membership.ts'
-);
+const { loadCurrentLearnerMemberships, loadGroupTagNames } =
+  await import('../apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/queue/queue-membership.ts');
 
 const fixtures = JSON.parse(
   readFileSync(
