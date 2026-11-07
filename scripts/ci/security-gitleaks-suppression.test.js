@@ -253,3 +253,153 @@ test('the scan step pins trusted inputs and disables inline allows', () => {
   );
   assert.doesNotMatch(run, /config=\(\)/u);
 });
+
+const discordRuleId = 'discord-client-id';
+const discordFingerprint =
+  'cc59d0ba1527509297ec18ac6a1d559991f1fe64:apps/web/src/__tests__/discord-members-route.test.ts:discord-client-id:72';
+const discordTrustedConfig = `[extend]
+useDefault = true
+
+[[rules]]
+id = "${discordRuleId}"
+description = "Identified a Discord client ID"
+regex = '''(?i)[\\w.-]{0,50}?(?:discord)(?:[ \\t\\w.-]{0,20})[\\s'"]{0,3}(?:=|>|:{1,3}=|\\|\\||:|=>|\\?=|,)[\x60'"\\s=]{0,5}([0-9]{18})(?:[\x60'"\\s;]|\\\\[nr]|$)'''
+`;
+
+test('the #6990 discord-client-id fingerprint is suppressed while new findings fail', (t) => {
+  const repoRoot = path.resolve(__dirname, '../..');
+  const ignoreFile = path.join(repoRoot, '.gitleaksignore');
+  const ignoreContent = fs.readFileSync(ignoreFile, 'utf8');
+  assert.ok(
+    ignoreContent
+      .split('\n')
+      .some((line) => line.trim() === discordFingerprint),
+    '.gitleaksignore must contain the reviewed #6990 Discord fingerprint'
+  );
+
+  // If the historical commit is present in the repository, prove that exactly
+  // this fingerprint is suppressed by the trusted ignore, and flagged without it.
+  let hasHistoricalCommit = false;
+  try {
+    git(repoRoot, 'cat-file', '-e', 'cc59d0ba1527509297ec18ac6a1d559991f1fe64');
+    hasHistoricalCommit = true;
+  } catch {
+    hasHistoricalCommit = false;
+  }
+
+  if (hasHistoricalCommit) {
+    const temp = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'gitleaks-discord-hist-')
+    );
+    t.after(() => fs.rmSync(temp, { force: true, recursive: true }));
+    const bin = gitleaksBinary(temp);
+    const report = path.join(temp, 'raw.json');
+    const run = (args) => {
+      const result = spawnSync(
+        bin,
+        [
+          'git',
+          ...args,
+          '--log-opts',
+          'fa47e8d24c03633e3dbee9f6ccb7d2f9540e3a8e..cc59d0ba1527509297ec18ac6a1d559991f1fe64',
+          '--redact',
+          '--no-banner',
+          '--exit-code',
+          '0',
+          '--report-format',
+          'json',
+          '--report-path',
+          report,
+          temp,
+        ],
+        {
+          cwd: temp,
+          encoding: 'utf8',
+          env: { ...process.env, GIT_DIR: path.join(repoRoot, '.git') },
+        }
+      );
+      assert.equal(result.status, 0, result.stderr);
+      return JSON.parse(fs.readFileSync(report, 'utf8') || '[]');
+    };
+
+    const config = path.join(temp, 'trusted.toml');
+    fs.writeFileSync(config, discordTrustedConfig);
+    const emptyIgnore = path.join(temp, 'empty-ignore');
+    fs.writeFileSync(emptyIgnore, '');
+
+    // Without the ignore exception, the historical commit is detected as a finding.
+    const unignored = run([
+      '--config',
+      config,
+      '--gitleaks-ignore-path',
+      emptyIgnore,
+      '--ignore-gitleaks-allow',
+    ]);
+    assert.equal(unignored.length, 1);
+    assert.equal(unignored[0].RuleID, discordRuleId);
+    assert.equal(unignored[0].Fingerprint, discordFingerprint);
+    assert.equal(
+      unignored[0].File,
+      'apps/web/src/__tests__/discord-members-route.test.ts'
+    );
+    assert.equal(unignored[0].StartLine, 72);
+
+    // With the repository's .gitleaksignore, the fingerprint is suppressed.
+    const ignored = run([
+      '--config',
+      config,
+      '--gitleaks-ignore-path',
+      ignoreFile,
+      '--ignore-gitleaks-allow',
+    ]);
+    assert.equal(ignored.length, 0);
+  }
+
+  // A NEW discord-client-id finding elsewhere (different file or line) still fails.
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'gitleaks-discord-new-'));
+  t.after(() => fs.rmSync(root, { force: true, recursive: true }));
+  const repo = path.join(root, 'repo');
+  const temp = path.join(root, 'runner-temp');
+  fs.mkdirSync(repo);
+  fs.mkdirSync(temp);
+  git(repo, 'init', '--quiet', '--initial-branch=main');
+  git(repo, 'config', 'user.email', 'test@example.invalid');
+  git(repo, 'config', 'user.name', 'Discord Suppression Test');
+  git(repo, 'config', 'commit.gpgsign', 'false');
+
+  const base = commit(
+    repo,
+    {
+      '.github/security/gitleaks.toml': discordTrustedConfig,
+      '.gitleaksignore': `${discordFingerprint}\n`,
+      'scripts/ci/security-scan-diff.js': fs.readFileSync(
+        path.join(__dirname, 'security-scan-diff.js'),
+        'utf8'
+      ),
+    },
+    'base with discord fingerprint exception'
+  );
+
+  const head = commit(
+    repo,
+    {
+      'apps/web/src/new-leak.ts':
+        'const discordUserId = "987654321098765432";\n',
+    },
+    'add new discord finding elsewhere'
+  );
+  gitleaksBinary(temp);
+
+  const result = runScan({ base, head, repo, temp });
+  const log = `${result.stdout}\n${result.stderr}`;
+  assert.equal(result.status, 1, log);
+  assert.match(log, /1 possible secret\(s\); values are never printed\./u);
+  assert.match(log, /Possible secret \(discord-client-id\)/u);
+  const redacted = JSON.parse(
+    fs.readFileSync(path.join(temp, 'register-input/gitleaks.json'), 'utf8')
+  );
+  assert.deepEqual(
+    redacted.map(({ file, rule }) => `${rule}@${file}`),
+    ['discord-client-id@apps/web/src/new-leak.ts']
+  );
+});
