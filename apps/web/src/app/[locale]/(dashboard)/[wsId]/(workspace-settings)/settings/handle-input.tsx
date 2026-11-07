@@ -2,6 +2,7 @@
 
 import { Check, Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
   Form,
   FormControl,
@@ -87,41 +88,51 @@ export default function HandleInput({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)}>
         <FormField
           control={form.control}
           name="handle"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('handle')}</FormLabel>
-              <div className="flex min-w-0 items-center gap-2">
-                <FormControl className="min-w-0 flex-1">
-                  <Input
-                    placeholder={t('handle_placeholder')}
-                    disabled={disabled}
-                    {...field}
-                    onChange={(event) => {
-                      field.onChange(event.target.value.toLowerCase());
-                    }}
-                  />
-                </FormControl>
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="shrink-0"
-                  disabled={!isDirty || saving || disabled}
-                >
-                  {saving ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Check className="h-5 w-5" />
-                  )}
-                </Button>
-              </div>
-              <FormDescription className="text-xs">
-                {t('handle_description')}
-              </FormDescription>
-              <FormMessage />
+              <SettingItemTab
+                controlClassName="space-y-2"
+                controlWidth="xl"
+                title={
+                  <div className="min-w-0 space-y-0.5">
+                    <FormLabel>{t('handle')}</FormLabel>
+                    <FormDescription className="font-normal">
+                      {t('handle_description')}
+                    </FormDescription>
+                  </div>
+                }
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <FormControl className="min-w-0 flex-1">
+                    <Input
+                      placeholder={t('handle_placeholder')}
+                      disabled={disabled}
+                      {...field}
+                      onChange={(event) => {
+                        field.onChange(event.target.value.toLowerCase());
+                      }}
+                    />
+                  </FormControl>
+                  <Button
+                    type="submit"
+                    size="icon"
+                    variant="outline"
+                    className="shrink-0"
+                    disabled={!isDirty || saving || disabled}
+                  >
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <FormMessage />
+              </SettingItemTab>
             </FormItem>
           )}
         />

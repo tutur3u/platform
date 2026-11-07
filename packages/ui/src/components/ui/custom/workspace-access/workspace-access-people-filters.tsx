@@ -14,6 +14,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
+import { SettingsSectionBlock } from '../settings-section';
 import type { getMemberFilterOptions } from './member-filter-utils';
 import type {
   MemberFiltersState,
@@ -52,7 +53,7 @@ export function WorkspaceAccessPeopleFilters({
     filters.permissionIds.length + filters.roleIds.length;
 
   return (
-    <div className="grid gap-2 rounded-xl border border-border bg-foreground/[0.02] p-2.5 sm:p-3">
+    <SettingsSectionBlock className="grid gap-2 py-3">
       <div className="grid min-w-0 gap-2 sm:grid-cols-[auto_1fr] sm:items-center">
         <div className="hidden items-center gap-2 text-muted-foreground text-sm sm:flex">
           <ListFilter className="h-4 w-4" />
@@ -89,7 +90,7 @@ export function WorkspaceAccessPeopleFilters({
               className="h-8 min-w-0 flex-1 gap-1.5 border-dashed bg-background/60 px-2 sm:flex-none sm:px-3"
               disabled={filterOptions.roles.length === 0}
             >
-              <ShieldCheck className="h-4 w-4 text-dynamic-purple" />
+              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
               <span className="truncate sm:max-w-36">
                 {labels.filterByRole}
               </span>
@@ -144,7 +145,7 @@ export function WorkspaceAccessPeopleFilters({
               className="h-8 min-w-0 flex-1 gap-1.5 border-dashed bg-background/60 px-2 sm:flex-none sm:px-3"
               disabled={filterOptions.permissions.length === 0}
             >
-              <KeyRound className="h-4 w-4 text-dynamic-blue" />
+              <KeyRound className="h-4 w-4 text-muted-foreground" />
               <span className="truncate sm:max-w-44">
                 {labels.filterByPermission}
               </span>
@@ -209,6 +210,6 @@ export function WorkspaceAccessPeopleFilters({
           </Badge>
         ) : null}
       </div>
-    </div>
+    </SettingsSectionBlock>
   );
 }
