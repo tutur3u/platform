@@ -1,7 +1,7 @@
 # Tuturuuu public roadmap
 
 A public, read-only migration roadmap served by TanStack Start, Vite+ and Void on
-Cloudflare Workers. The app is mounted at `/roadmap`; assets and server-function
+Cloudflare Workers. The canonical app mount is `/roadmap`; assets and server-function
 URLs use the same prefix. The provider asset base is root (omitted in source);
 the post-build packaging step moves client files beneath `dist/client/roadmap/`.
 Thus `/roadmap/assets/example.js` maps to the physical
@@ -109,11 +109,32 @@ basepath and the router basepath all match `/roadmap`. Before production traffic
 verify the emitted Worker and client artifacts, the exact source SHA and account,
 and both the bare `/roadmap` and `/roadmap/*` routes against existing zone routes.
 The app-owned `src/worker.ts`, selected through Void's supported `cloudflare.main`,
-returns 308 for `/`, `/?x=1`, `/roadmap` and `/roadmap?x=1` to `/roadmap/`,
-preserving query bytes. Mounted page, asset and server-function requests delegate
-to the native Start entry. Encoded or malformed pathnames return 400, preventing Void's asset fallback
-from decoding rejected aliases; paths outside `/roadmap/` return 404; the Worker does not act as an apex fallback. The existing
-zone route patterns still need publisher acceptance for bare paths with queries. Never broaden to `/roadmap*`.
+selects the external router basepath once per request. Only the exact URL host
+`roadmap.tuturuuu.com`, with no conflicting Host header or non-default port,
+selects `/`. Forwarded-host headers do not select a mount. Apex, workers.dev and
+unknown hosts retain `/roadmap` behavior: root and bare mount return 308 to
+`/roadmap/` with the query preserved, and outside-prefix requests return 404.
+
+On the dedicated host, `/` serves the app. Legacy `/roadmap` and `/roadmap/*`
+page paths redirect 308 to the corresponding root path with the query preserved.
+The reserved `/roadmap/assets` and `/roadmap/_serverFn` paths are transport
+exceptions: they retain the physical asset and server-function URLs, including
+POST bodies and query strings. This app emits client resources under its Vite
+`assets` directory; additional public asset roots require an explicit transport
+contract before use. Encoded paths, backslashes and repeated slashes return 400,
+preventing alias fallthrough and protocol-relative redirect targets.
+
+Pinned Start server-core 1.169.44 and client-core 1.170.38 overwrite the router
+basepath with the compiled mount. The source therefore internally rewrites
+root-host page requests beneath `/roadmap`, retaining the compiled SSR router,
+asset base and server-function base. The Worker overwrites an internal mount
+header for every delegated request. The router reads that server-owned value,
+dehydrates it and restores the external client basepath during Router's hydrate
+hook, before client location matching. There is no independent client host sniff.
+The source trace uses react-start 1.169.3 and router-core 1.171.38; acceptance must
+verify actual SSR/hydration and navigation in the emitted Worker, not just the
+pure boundary fixtures. No provider config projection or build-SHA change is used.
+
 The release owner uploads the sealed prebuilt artifact with the qualified
 Wrangler versions interface. Publication must not rebuild it with Void deploy.
 A configured Worker name does not establish target identity or authentication.
@@ -125,16 +146,14 @@ functions against that artifact. Synthetic source tests do not attest a build,
 seal, runtime or deployment. A PR synthetic merge SHA is distinct from its PR head
 and from the reviewed main commit used for release.
 
-The canonical page is https://tuturuuu.com/roadmap/. The application, assets,
-server functions and artifact seal keep the /roadmap mount; there is no
-subdomain-root variant. The Cloudflare zone publisher owns a Single Redirect
-for roadmap.tuturuuu.com: every path receives a 301 to the same path beneath
-https://tuturuuu.com/roadmap/, preserving the query string. For example,
-https://roadmap.tuturuuu.com/?status=active redirects to
-https://tuturuuu.com/roadmap/?status=active.
-This redirect is a zone operation, not an application request rewrite or a
-Worker custom-domain declaration. Capture its rule preimage alongside the
-Worker route preimages and verify both hostnames before accepting delivery.
+The canonical page remains https://tuturuuu.com/roadmap/. The dedicated host's
+root behavior is an application route contract, not a declaration that a new
+source commit is live. The release owner must reconcile any existing zone
+redirect with this contract and capture routing preimages before a hosted rollout.
+No DNS, zone, provider or deployment operation follows from source publication.
+Verify the exact-host root page, query and legacy-page redirects, reserved asset
+and server-function transport, hydration, direct reload, spoofed hosts, malformed
+paths and unchanged apex/workers.dev behavior before accepting delivery.
 
 Capture the existing route mapping and immutable Worker version before a write.
 For a regression, the release owner restores those exact route mappings and the
