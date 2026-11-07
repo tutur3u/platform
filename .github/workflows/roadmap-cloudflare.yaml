@@ -19,8 +19,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: roadmap-artifact-${{ github.sha }}
-  cancel-in-progress: false
+  group: roadmap-artifact-${{ github.event_name }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
