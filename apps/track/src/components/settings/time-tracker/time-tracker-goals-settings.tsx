@@ -10,7 +10,6 @@ import {
   Calendar,
   Clock,
   Edit,
-  Goal,
   MoreHorizontal,
   Plus,
   Trash2,
@@ -28,7 +27,11 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent } from '@tuturuuu/ui/card';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Dialog,
   DialogContent,
@@ -219,12 +222,8 @@ export function TimeTrackerGoalsSettings({
 
   return (
     <>
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2">
-            <Goal className="h-5 w-5 shrink-0" />
-            <h3 className="font-medium text-lg">{t('goals')}</h3>
-          </div>
+      <SettingsSection
+        action={
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={openAddDialog} className="shrink-0">
@@ -233,112 +232,100 @@ export function TimeTrackerGoalsSettings({
               </Button>
             </DialogTrigger>
           </Dialog>
-        </div>
-
+        }
+      >
         {goals?.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Goal className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-lg text-muted-foreground">
+          <SettingsSectionMessage>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">
                 {t('no_goals_title')}
               </p>
-              <p className="mt-1 text-muted-foreground text-sm">
-                {t('no_goals_description')}
-              </p>
+              <p>{t('no_goals_description')}</p>
               <Button
                 onClick={openAddDialog}
                 variant="outline"
-                className="mt-4"
+                className="mt-3 text-foreground"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 {t('create_first_goal')}
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </SettingsSectionMessage>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {goals?.map((goal) => (
-              <Card key={goal.id} className="group relative">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex min-w-0 flex-1 flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        {goal.category ? (
-                          <div
-                            className={cn(
-                              'h-3 w-3 rounded-full',
-                              getCategoryColor(goal.category.color || 'BLUE')
-                            )}
-                          />
-                        ) : (
-                          <div className="h-3 w-3 rounded-full bg-linear-to-br from-blue-500 to-purple-500" />
-                        )}
-                        <h3 className="truncate font-medium">
-                          {goal.category?.name || t('general_goal')}
-                        </h3>
-                        {goal.is_active ? (
-                          <Badge
-                            variant="secondary"
-                            className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                          >
-                            {t('active')}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline">{t('inactive')}</Badge>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-sm">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>
-                            {t('daily')}:{' '}
-                            {formatMinutes(goal.daily_goal_minutes)}
-                          </span>
-                        </div>
-                        {goal.weekly_goal_minutes && (
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>
-                              {t('weekly')}:{' '}
-                              {formatMinutes(goal.weekly_goal_minutes)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(goal)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          {t('edit_goal')}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => setGoalToDelete(goal)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          {t('delete_goal')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+          goals?.map((goal) => (
+            <SettingsSectionBlock
+              className="flex items-start justify-between gap-3 py-3"
+              key={goal.id}
+            >
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  {goal.category ? (
+                    <div
+                      className={cn(
+                        'h-3 w-3 shrink-0 rounded-full',
+                        getCategoryColor(goal.category.color || 'BLUE')
+                      )}
+                    />
+                  ) : (
+                    <div className="h-3 w-3 shrink-0 rounded-full bg-muted-foreground" />
+                  )}
+                  <p className="truncate font-medium text-sm">
+                    {goal.category?.name || t('general_goal')}
+                  </p>
+                  {goal.is_active ? (
+                    <Badge
+                      variant="outline"
+                      className="border-dynamic-green/30 text-dynamic-green"
+                    >
+                      {t('active')}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline">{t('inactive')}</Badge>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-sm">
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span>
+                      {t('daily')}: {formatMinutes(goal.daily_goal_minutes)}
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  {goal.weekly_goal_minutes && (
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      <span>
+                        {t('weekly')}: {formatMinutes(goal.weekly_goal_minutes)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => openEditDialog(goal)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    {t('edit_goal')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setGoalToDelete(goal)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('delete_goal')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SettingsSectionBlock>
+          ))
         )}
-      </div>
+      </SettingsSection>
 
       {/* Add Goal Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

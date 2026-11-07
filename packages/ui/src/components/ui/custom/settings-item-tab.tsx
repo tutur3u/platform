@@ -38,7 +38,7 @@ export function SettingItemTab({
   description,
   children,
   icon,
-  layout = 'stacked',
+  layout = 'inline',
   controlWidth,
   className,
   controlClassName,

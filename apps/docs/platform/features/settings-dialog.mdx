@@ -196,8 +196,8 @@ Settings pages are a single centered column of grouped cards, so a person can sc
 | --- | --- |
 | `SettingsSection` from `@tuturuuu/ui/custom/settings-section` | One card of related settings, with an optional title, description and heading action. It is the only section heading style, and it never outranks the page title. |
 | `SettingItemTab` from `@tuturuuu/ui/custom/settings-item-tab` | One setting. Inside a section it is a divided row. Alone it draws its own card. |
-| `layout="inline"` | Label on the left, compact control on the right, for switches, selects, buttons and short values. Stacks automatically when the row is narrower than 512px. |
-| `layout="stacked"` | Control spans the row, for tile pickers, textareas, tables and lists. This is the default. |
+| `layout="inline"` | Label on the left, compact control on the right, for switches, selects, buttons and short values. Stacks automatically when the row is narrower than 512px. This is the default. |
+| `layout="stacked"` | Control spans the row, for tile pickers, textareas, tables and lists. |
 | `controlWidth` | Width of the control in a wide inline row, such as `xl` for a text field. The scale lives in `settings-item-tab.tsx`, so every app emits it. |
 | `SettingsSectionFooter` | A card's trailing actions, such as its save button. |
 | `SettingsSectionMessage` | Empty, loading and error states inside a card, with an optional retry action. |

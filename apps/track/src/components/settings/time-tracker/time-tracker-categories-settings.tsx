@@ -3,14 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWorkspaceCategories } from '@tuturuuu/hooks/hooks/use-workspace-categories';
 import { getCategoryColor } from '@tuturuuu/hooks/utils/time-tracker-category-colors';
-import {
-  Copy,
-  Edit,
-  LayoutGrid,
-  MoreHorizontal,
-  Plus,
-  Trash2,
-} from '@tuturuuu/icons';
+import { Copy, Edit, MoreHorizontal, Plus, Trash2 } from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 import {
   AlertDialog,
@@ -23,7 +16,11 @@ import {
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent } from '@tuturuuu/ui/card';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Dialog,
   DialogContent,
@@ -212,12 +209,8 @@ export function TimeTrackerCategoriesSettings({
 
   return (
     <>
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2">
-            <LayoutGrid className="h-5 w-5 shrink-0" />
-            <h3 className="font-medium text-lg">{t('title')}</h3>
-          </div>
+      <SettingsSection
+        action={
           <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
@@ -240,87 +233,75 @@ export function TimeTrackerCategoriesSettings({
               </DialogTrigger>
             </Dialog>
           </div>
-        </div>
-
+        }
+      >
         {categories?.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-lg text-muted-foreground">
+          <SettingsSectionMessage>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">
                 {t('no_categories')}
               </p>
-              <p className="mt-1 text-muted-foreground text-sm">
-                {t('no_categories_description')}
-              </p>
+              <p>{t('no_categories_description')}</p>
               <Button
                 onClick={openAddDialog}
                 variant="outline"
-                className="mt-4"
+                className="mt-3 text-foreground"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 {t('create_first')}
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </SettingsSectionMessage>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {categories?.map((category) => (
-              <Card key={category.id} className="group relative">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex min-w-0 flex-1 items-start gap-3">
-                      <div
-                        className={cn(
-                          'h-6 w-6 shrink-0 rounded-full',
-                          getCategoryColor(category.color || 'BLUE')
-                        )}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate font-medium">
-                          {category.name}
-                        </h3>
-                        {category.description && (
-                          <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">
-                            {category.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+          categories?.map((category) => (
+            <SettingsSectionBlock
+              className="flex items-center justify-between gap-3 py-3"
+              key={category.id}
+            >
+              <div className="flex min-w-0 flex-1 items-start gap-3">
+                <div
+                  className={cn(
+                    'mt-0.5 h-4 w-4 shrink-0 rounded-full',
+                    getCategoryColor(category.color || 'BLUE')
+                  )}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-sm">
+                    {category.name}
+                  </p>
+                  {category.description && (
+                    <p className="mt-0.5 line-clamp-2 text-muted-foreground text-sm">
+                      {category.description}
+                    </p>
+                  )}
+                </div>
+              </div>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => openEditDialog(category)}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          {t('edit')}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => setCategoryToDelete(category)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          {t('delete')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => openEditDialog(category)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    {t('edit')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setCategoryToDelete(category)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('delete')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SettingsSectionBlock>
+          ))
         )}
-      </div>
+      </SettingsSection>
 
       {/* Add Category Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
