@@ -28,6 +28,7 @@ test('Calendar staging seal restores its explicit host without a provider subdom
   assert.equal(config.workers_dev, false);
   assert.equal(config.preview_urls, false);
   assert.deepEqual(config.routes, []);
+  assert.equal(config.vars.NODE_ENV, 'production');
   assert.equal(
     config.vars.NEXT_PUBLIC_CALENDAR_APP_URL,
     'https://calendar.tutur3u.com'
@@ -40,6 +41,23 @@ test('Calendar staging seal restores its explicit host without a provider subdom
     config.vars.MICROSOFT_REDIRECT_URI,
     'https://calendar.tutur3u.com/api/v1/calendar/auth/microsoft/callback'
   );
+});
+
+test('Calendar requires every runtime secret its Vercel production holds', () => {
+  const required = [
+    'ENCRYPTION_MASTER_KEY',
+    'CLOUDFLARE_COORDINATION_URL',
+    'CLOUDFLARE_COORDINATION_TOKEN',
+    'TUTURUUU_AZURE_TENANT_ID',
+  ];
+  for (const environment of ['staging', 'production']) {
+    const { secrets } = profileFor('calendar', environment, 'owner-example');
+    for (const name of required) assert.ok(secrets.includes(name), name);
+  }
+  for (const app of ['mail', 'apps'])
+    assert.ok(
+      !profileFor(app, 'production').secrets.includes('ENCRYPTION_MASTER_KEY')
+    );
 });
 
 test('production and other apps keep their existing profile identities', () => {
