@@ -26,7 +26,9 @@ import { effectiveWorkerConfig } from '../../../scripts/start-bridge-codemod/wor
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
-const WORKER = 'tuturuuu-forms-vite-staging';
+const { deploymentProfile } = await import('./deployment-profile.ts');
+const PROFILE = deploymentProfile();
+const WORKER = PROFILE.name;
 const PUBLIC_FILES = ['embed.js', 'robots.txt', 'sitemap.xml'];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
 const EXPECTED = { '/': 200 };
@@ -107,8 +109,9 @@ test('emitted forms Worker serves its root, mount and unknown paths', {
     config.compatibility_flags,
     WORKER_CONFIG.compatibilityFlags
   );
-  assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
-  assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
+  assert.equal(config.workers_dev, false);
+  assert.equal(config.preview_urls, false);
+  assert.equal(config.vars?.TUTURUUU_NOINDEX, PROFILE.vars.TUTURUUU_NOINDEX);
   for (const name of PUBLIC_FILES)
     assert.equal(
       await sha256(join(app, 'dist/client', name)),
@@ -124,6 +127,30 @@ test('emitted forms Worker serves its root, mount and unknown paths', {
     envFiles: [staged.envFile],
     sendMetrics: false,
     bindings: {
+      TURNSTILE_SECRET_KEY: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
+      TUTURUUU_APP_COORDINATION_SECRET: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only-coordination',
+      },
+      SUPABASE_SECRET_KEY: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only-supabase',
+      },
+      NEXT_PUBLIC_SUPABASE_URL: {
+        type: 'plain_text',
+        value: 'https://runtime.supabase.invalid',
+      },
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: {
+        type: 'plain_text',
+        value: 'sb_publishable_runtime_fixture',
+      },
       INTERNAL_WEB_API_ORIGIN: {
         type: 'plain_text',
         value: 'https://central.invalid',
