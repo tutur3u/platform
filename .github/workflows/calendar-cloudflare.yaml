@@ -54,3 +54,93 @@ jobs:
       WAVE1_CONTROL_READ_TOKEN: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.WAVE1_CONTROL_READ_TOKEN || '' }}
       STAGING_SUPABASE_URL: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_URL || '' }}
       STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || '' }}
+
+  production-policy:
+    if: (github.event_name == 'workflow_dispatch' && github.workflow != 'Production Deployment Planner') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      allowed: ${{ steps.policy.outputs.allowed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - id: policy
+        run: node scripts/ci/production-publication-policy.ts calendar-cloudflare.yaml "$GITHUB_STEP_SUMMARY"
+  # Dispatch-only: builds the deployable production bytes with the real public
+  # inputs (the matrix build above uses placeholders) so the release owner can
+  # publish them. The sealed config has no routes and this job never publishes.
+  production-artifact:
+    needs: production-policy
+    if: (github.event_name == 'workflow_dispatch' && needs.production-policy.outputs.allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      APP: calendar
+      CALENDAR_DEPLOYMENT_PROFILE: production
+      SOURCE_SHA: ${{ github.sha }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_APP_URL: https://calendar.tuturuuu.com
+      NEXT_PUBLIC_CALENDAR_APP_URL: https://calendar.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      WRANGLER_SEND_METRICS: 'false'
+      WRANGLER_WRITE_LOGS: 'false'
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Generate exact source metadata
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build production frontend and transitive suppliers
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter=@tuturuuu/calendar --concurrency=2
+          token: ''
+          team: ''
+      - name: Record bounded emitted config receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs "apps/$APP" "$SOURCE_SHA" "$RUNNER_TEMP/native-emitted-config.json"
+      - name: Retain diagnostic config receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: calendar-production-config-receipt-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/native-emitted-config.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Seal, exercise and pack the route-free production bytes
+        timeout-minutes: 8
+        run: |
+          node scripts/ci/wave1-native-artifact.mjs prepare "$APP" production "$SOURCE_SHA"
+          node scripts/ci/calendar-host-scan.mjs "apps/$APP/dist" production
+          # NODE_ENV must be inlined so dev-secret fallbacks fold out of the Worker.
+          ! grep -rlE --include='*.mjs' --include='*.js' 'process\.env\.NODE_ENV|tuturuuu-local-development' "apps/$APP/dist/server"
+          node scripts/ci/wave1-native-runtime.mjs "$APP" production "$SOURCE_SHA"
+          node scripts/ci/wave1-native-publish.mjs dry-run "$APP" production "$SOURCE_SHA"
+          node scripts/ci/wave1-native-artifact.mjs verify "$APP" production "$SOURCE_SHA"
+          python3 scripts/ci/wave1-native-archive.py pack "apps/$APP" "$RUNNER_TEMP/calendar-production.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: calendar-production-deployable-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/calendar-production.tar.gz
+          retention-days: 14
+          if-no-files-found: error
