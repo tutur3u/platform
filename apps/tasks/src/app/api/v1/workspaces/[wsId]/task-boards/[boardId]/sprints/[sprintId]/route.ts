@@ -84,7 +84,7 @@ export const PATCH = withSessionAuth<SprintRouteParams>(
 export const DELETE = withSessionAuth<SprintRouteParams>(
   async (request, auth, params) => {
     try {
-      const access = await requireSprintAccess(request, params, auth, 'plan');
+      const access = await requireSprintAccess(request, params, auth, 'delete');
       if ('error' in access) return access.error;
 
       const sprintId = sprintIdSchema.parse(params.sprintId);

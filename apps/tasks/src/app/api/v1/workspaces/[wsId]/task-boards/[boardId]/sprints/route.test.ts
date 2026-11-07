@@ -2,11 +2,17 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const requireBoardAccessMock = vi.fn();
+const getPermissionsMock = vi.fn();
 const sessionSupabase = { from: vi.fn() };
 const sessionUser = { id: 'user-1' };
 
 vi.mock('@tuturuuu/auth/cli-session', () => ({
   CLI_APP_TARGET_APP: 'platform',
+}));
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: (...args: Parameters<typeof getPermissionsMock>) =>
+    getPermissionsMock(...args),
 }));
 
 vi.mock('@/lib/api-auth', () => ({
@@ -197,6 +203,133 @@ const params = (sprintId?: string) => ({
 describe('board sprint routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getPermissionsMock.mockResolvedValue({
+      membershipType: 'MEMBER',
+      containsPermission: () => true,
+    });
+  });
+
+  describe('dedicated sprint structure permissions', () => {
+    const operations = [
+      ['add', ADD, 'create_task_sprints', 'POST'],
+      ['remove', DELETE, 'delete_task_sprints', 'DELETE'],
+    ] as const;
+
+    it.each(operations)(
+      'allows the exact dedicated permission to reach the %s operation',
+      async (_name, operation, requiredPermission, method) => {
+        const sbAdmin = createAdmin({
+          ...CYCLES_ON,
+          task_cycles: {
+            data: { id: SPRINT_ID, status: 'planned' },
+            error: null,
+          },
+        });
+        grantAccess(sbAdmin);
+        getPermissionsMock.mockResolvedValue({
+          membershipType: 'MEMBER',
+          containsPermission: (permission: string) =>
+            permission === requiredPermission,
+        });
+        sbAdmin.rpc.mockReturnValueOnce(
+          rpcResult({
+            data: null,
+            error: { code: '55000', message: 'SPRINT_NOT_LAST' },
+          })
+        );
+
+        const response = await operation(request(method), params(SPRINT_ID));
+
+        expect(response.status).toBe(409);
+        expect(sbAdmin.rpc).toHaveBeenCalled();
+      }
+    );
+
+    it.each(operations)(
+      'fails closed when permission lookup for %s throws',
+      async (_name, operation, _requiredPermission, method) => {
+        const sbAdmin = createAdmin({ ...CYCLES_ON });
+        grantAccess(sbAdmin);
+        getPermissionsMock.mockRejectedValue(new Error('lookup failed'));
+
+        const response = await operation(request(method), params(SPRINT_ID));
+
+        expect(response.status).toBe(500);
+        expect(sbAdmin.rpc).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each(operations)(
+      'denies guests attempting to %s a sprint before permission lookup',
+      async (_name, operation, _requiredPermission, method) => {
+        const sbAdmin = createAdmin({ ...CYCLES_ON });
+        grantAccess(sbAdmin, 'guest');
+
+        const response = await operation(request(method), params(SPRINT_ID));
+
+        expect(response.status).toBe(403);
+        expect(getPermissionsMock).not.toHaveBeenCalled();
+        expect(sbAdmin.rpc).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each(operations)(
+      'requires the exact dedicated permission to %s a sprint',
+      async (_name, operation, requiredPermission, method) => {
+        const sbAdmin = createAdmin({ ...CYCLES_ON });
+        grantAccess(sbAdmin);
+        const containsPermission = vi.fn(
+          (permission: string) => permission !== requiredPermission
+        );
+        getPermissionsMock.mockResolvedValue({
+          membershipType: 'MEMBER',
+          containsPermission,
+        });
+        const incoming = request(method);
+
+        const response = await operation(incoming, params(SPRINT_ID));
+
+        expect(response.status).toBe(403);
+        expect(containsPermission).toHaveBeenCalledWith(requiredPermission);
+        expect(getPermissionsMock).toHaveBeenCalledWith({
+          request: incoming,
+          user: sessionUser,
+          wsId: 'ws-1',
+        });
+        expect(sbAdmin.rpc).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each(operations)(
+      'fails closed when permissions for %s cannot be resolved',
+      async (_name, operation, _requiredPermission, method) => {
+        const sbAdmin = createAdmin({ ...CYCLES_ON });
+        grantAccess(sbAdmin);
+        getPermissionsMock.mockResolvedValue(null);
+
+        const response = await operation(request(method), params(SPRINT_ID));
+
+        expect(response.status).toBe(500);
+        expect(sbAdmin.rpc).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each(operations)(
+      'denies a workspace guest with a nominal permission to %s',
+      async (_name, operation, _requiredPermission, method) => {
+        const sbAdmin = createAdmin({ ...CYCLES_ON });
+        grantAccess(sbAdmin);
+        getPermissionsMock.mockResolvedValue({
+          membershipType: 'GUEST',
+          containsPermission: () => true,
+        });
+
+        const response = await operation(request(method), params(SPRINT_ID));
+
+        expect(response.status).toBe(403);
+        expect(sbAdmin.rpc).not.toHaveBeenCalled();
+      }
+    );
   });
 
   it('lists sprints with membership, reports and the board length', async () => {
@@ -451,7 +584,7 @@ describe('board sprint routes', () => {
       task_cycles: { data: sprintRows, error: null },
       task_sprint_reports: { data: [], error: null },
     });
-    grantAccess(sbAdmin, 'guest');
+    grantAccess(sbAdmin);
     sbAdmin.rpc.mockReturnValueOnce(
       rpcResult({
         data: { id: SPRINT_ID },

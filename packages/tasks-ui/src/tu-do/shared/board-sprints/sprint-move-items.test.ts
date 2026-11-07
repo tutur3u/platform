@@ -10,7 +10,7 @@ const running = sprint(2, 'active');
 const next = sprint(3, 'planned');
 const later = sprint(4, 'planned');
 const moves = (current: BoardSprint | null, open: BoardSprint[]) =>
-  getSprintMoveOptions(open, current).map(({ key, target }) => [
+  getSprintMoveOptions(open, current, true).map(({ key, target }) => [
     key,
     target === NEW_SPRINT ? NEW_SPRINT : (target?.id ?? null),
   ]);
@@ -44,5 +44,21 @@ describe('getSprintMoveOptions', () => {
       ['move_to_next_sprint', 's3'],
     ]);
     expect(moves(null, [next, later])).toEqual([['move_to_next_sprint', 's3']]);
+  });
+});
+
+describe('getSprintMoveOptions without sprint creation permission', () => {
+  it('keeps existing-target moves and unplanning without offering a new sprint', () => {
+    expect(
+      getSprintMoveOptions([running, next], running, false).map(({ target }) =>
+        target === NEW_SPRINT ? NEW_SPRINT : (target?.id ?? null)
+      )
+    ).toEqual(['s3', null]);
+    expect(
+      getSprintMoveOptions([running, next, later], later, false).map(
+        ({ target }) =>
+          target === NEW_SPRINT ? NEW_SPRINT : (target?.id ?? null)
+      )
+    ).toEqual([null]);
   });
 });

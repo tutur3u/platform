@@ -24,17 +24,19 @@ export const ALL_SPRINTS = 'all';
 
 /**
  * The sprint Plan shows, as its title: open sprints, then ended ones newest
- * first, then all sprints. Planners add a sprint here, or remove the last one.
+ * first, then all sprints. Authorized members add or remove the last sprint.
  */
 export function PlanSprintPicker({
-  canPlan,
+  canCreate,
+  canDelete,
   onAdd,
   onRemove,
   onSelect,
   selected,
   sprints,
 }: {
-  canPlan: boolean;
+  canCreate: boolean;
+  canDelete: boolean;
   onAdd: () => void;
   onRemove: (sprint: BoardSprint) => void;
   onSelect: (value: string) => void;
@@ -106,22 +108,24 @@ export function PlanSprintPicker({
             {t('all_sprints')}
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
-        {canPlan ? (
+        {canCreate || (canDelete && removable) ? (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              disabled={open.length >= MAX_OPEN_BOARD_SPRINTS}
-              onSelect={onAdd}
-            >
-              <Plus className="size-4" />
-              <span className="flex-1">{t('add_sprint')}</span>
-              {open.length >= MAX_OPEN_BOARD_SPRINTS ? (
-                <span className="text-muted-foreground text-xs">
-                  {t('sprint_limit', { count: MAX_OPEN_BOARD_SPRINTS })}
-                </span>
-              ) : null}
-            </DropdownMenuItem>
-            {removable ? (
+            {canCreate ? (
+              <DropdownMenuItem
+                disabled={open.length >= MAX_OPEN_BOARD_SPRINTS}
+                onSelect={onAdd}
+              >
+                <Plus className="size-4" />
+                <span className="flex-1">{t('add_sprint')}</span>
+                {open.length >= MAX_OPEN_BOARD_SPRINTS ? (
+                  <span className="text-muted-foreground text-xs">
+                    {t('sprint_limit', { count: MAX_OPEN_BOARD_SPRINTS })}
+                  </span>
+                ) : null}
+              </DropdownMenuItem>
+            ) : null}
+            {canDelete && removable ? (
               <DropdownMenuItem
                 className="text-dynamic-red focus:text-dynamic-red"
                 onSelect={() => onRemove(removable)}

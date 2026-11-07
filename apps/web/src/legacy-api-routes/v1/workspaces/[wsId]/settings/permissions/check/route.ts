@@ -27,6 +27,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
 
       return NextResponse.json({
         hasPermission: permissions.containsPermission(permission as never),
+        membershipType: permissions.membershipType,
       });
     } catch (error) {
       console.error('Error checking workspace permission:', error);

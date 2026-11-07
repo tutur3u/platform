@@ -25,6 +25,8 @@ import type { useBoardSprints } from './use-board-sprints';
 export function useBoardSprintSurface({
   board,
   boardCard,
+  canCreate,
+  canDelete,
   canManage,
   canPlan,
   currentUserId,
@@ -38,6 +40,8 @@ export function useBoardSprintSurface({
   board: Pick<WorkspaceTaskBoard, 'id' | 'default_list_id'>;
   /** What the Board passes its cards; the Plan backlog reuses them. */
   boardCard?: PlanBoardCardProps;
+  canCreate: boolean;
+  canDelete: boolean;
   canManage: boolean;
   canPlan: boolean;
   currentUserId?: string;
@@ -130,6 +134,8 @@ export function useBoardSprintSurface({
     <BoardPlanView
       boardCard={boardCard}
       boardId={board.id}
+      canCreate={canCreate}
+      canDelete={canDelete}
       canManage={canManage}
       canPlan={canPlan}
       currentUserId={currentUserId}

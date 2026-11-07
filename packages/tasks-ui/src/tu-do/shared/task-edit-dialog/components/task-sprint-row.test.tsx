@@ -9,7 +9,21 @@ import { TaskSprintRow } from './task-sprint-row';
 const state = vi.hoisted(() => ({
   mutate: vi.fn(),
   pending: false,
+  canCreate: true,
+  canEditBoard: true,
+  permissionInput: vi.fn(),
   sprints: null as unknown,
+}));
+
+vi.mock('../../board-sprints/use-board-sprint-permissions', () => ({
+  useBoardEditPermission: () => state.canEditBoard,
+  useBoardSprintPermissions: (options: { canEdit: boolean }) => {
+    state.permissionInput(options);
+    return {
+      canCreate: options.canEdit && state.canCreate,
+      canDelete: false,
+    };
+  },
 }));
 
 vi.mock('next-intl', () => ({
@@ -121,6 +135,8 @@ const task = (extra: Partial<Task> = {}) =>
 beforeEach(() => {
   vi.clearAllMocks();
   state.pending = false;
+  state.canCreate = true;
+  state.canEditBoard = true;
   setSprints([done, running, next]);
 });
 
@@ -256,4 +272,57 @@ describe('TaskSprintRow', () => {
     );
     expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
   });
+});
+
+describe('TaskSprintRow dedicated sprint creation permission', () => {
+  it('keeps moves to existing sprints and out of sprints when creation is denied', () => {
+    state.canCreate = false;
+    render(
+      <TaskSprintRow
+        boardId="b"
+        canEdit
+        endDate={undefined}
+        task={task()}
+        wsId="w"
+      />
+    );
+    expect(
+      screen.getByRole('menuitem', { name: 'remove_from_sprint' })
+    ).toBeEnabled();
+    expect(
+      screen.getByRole('menuitem', { name: 'move_to_next_sprint' })
+    ).toBeEnabled();
+    expect(screen.queryByRole('menuitem', { name: 'new_sprint' })).toBeNull();
+  });
+});
+
+describe('TaskSprintRow board-edit authority', () => {
+  it.each([false, true])(
+    'conjoins create grant with board-edit capability %s',
+    (canEditBoard) => {
+      state.canEditBoard = canEditBoard;
+      state.canCreate = true;
+      render(
+        <TaskSprintRow
+          boardId="b"
+          canEdit
+          endDate={undefined}
+          task={task()}
+          wsId="w"
+        />
+      );
+      expect(state.permissionInput).toHaveBeenCalledWith(
+        expect.objectContaining({ canEdit: canEditBoard })
+      );
+      expect(
+        Boolean(screen.queryByRole('menuitem', { name: 'new_sprint' }))
+      ).toBe(canEditBoard);
+      expect(
+        screen.getByRole('menuitem', { name: 'move_to_next_sprint' })
+      ).toBeEnabled();
+      expect(
+        screen.getByRole('menuitem', { name: 'remove_from_sprint' })
+      ).toBeEnabled();
+    }
+  );
 });

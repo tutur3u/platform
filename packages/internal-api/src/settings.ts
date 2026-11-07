@@ -185,7 +185,10 @@ export async function checkWorkspacePermission(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ hasPermission: boolean }>(
+  return client.json<{
+    hasPermission: boolean;
+    membershipType?: WorkspaceDefaultPermissionMemberType;
+  }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/settings/permissions/check`,
     {
       query: {

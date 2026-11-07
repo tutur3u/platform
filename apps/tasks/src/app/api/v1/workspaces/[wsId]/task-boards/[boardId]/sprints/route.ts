@@ -80,7 +80,7 @@ export const PUT = withSessionAuth<SprintRouteParams>(
 export const POST = withSessionAuth<SprintRouteParams>(
   async (request, auth, params) => {
     try {
-      const access = await requireSprintAccess(request, params, auth, 'plan');
+      const access = await requireSprintAccess(request, params, auth, 'create');
       if ('error' in access) return access.error;
 
       const { data: added, error } = await access.sbAdmin.rpc(
