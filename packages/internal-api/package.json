@@ -10,7 +10,10 @@
   "main": "./dist/index.js",
   "sideEffects": false,
   "types": "./dist/index.d.ts",
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -312,6 +315,11 @@
       "types": "./dist/tutoring-queue-rules.d.ts",
       "import": "./dist/tutoring-queue-rules.js",
       "require": "./dist/tutoring-queue-rules.js"
+    },
+    "./task-cycles": {
+      "types": "./dist/task-cycles.d.ts",
+      "import": "./dist/task-cycles.js",
+      "require": "./dist/task-cycles.js"
     },
     "./task-templates": {
       "types": "./dist/task-templates.d.ts",

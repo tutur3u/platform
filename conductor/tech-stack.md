@@ -34,10 +34,11 @@
 *   **Orchestration:** LangChain (implied/potential usage in Python services)
 
 ## 5. Development & Quality Assurance
-*   **Testing:** Vitest, Playwright (implied for E2E)
-*   **Linting & Formatting:** Biome
-*   **Type Checking:** TypeScript, `tsgo` (native speedup)
-*   **Documentation:** Mintlify (`apps/docs`)
+
+- **Testing:** Vitest, Playwright (implied for E2E)
+- **Linting & Formatting:** Oxc
+- **Type Checking:** TypeScript, `tsgo` (native speedup)
+- **Documentation:** Mintlify (`apps/docs`)
 
 ## 6. Hosting & CI/CD
 *   **Web:** Vercel

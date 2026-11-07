@@ -20,9 +20,8 @@ it('generates one random marker on first use and reuses it', async () => {
   const randomUUID = vi
     .spyOn(globalThis.crypto, 'randomUUID')
     .mockReturnValue(uuid);
-  const { getMeetMentionMarker, remarkMeetMentions } = await import(
-    './assistant-identity'
-  );
+  const { getMeetMentionMarker, remarkMeetMentions } =
+    await import('./assistant-identity');
   const transform = remarkMeetMentions();
   expect(randomUUID).not.toHaveBeenCalled();
 
@@ -41,9 +40,8 @@ it('generates one random marker on first use and reuses it', async () => {
 it('leaves authored links inert without generating a marker', async () => {
   vi.resetModules();
   const randomUUID = vi.spyOn(globalThis.crypto, 'randomUUID');
-  const { MEET_ASSISTANT_PROFILE, remarkMeetMentions } = await import(
-    './assistant-identity'
-  );
+  const { MEET_ASSISTANT_PROFILE, remarkMeetMentions } =
+    await import('./assistant-identity');
   const tree = {
     type: 'link',
     url: MEET_ASSISTANT_PROFILE,

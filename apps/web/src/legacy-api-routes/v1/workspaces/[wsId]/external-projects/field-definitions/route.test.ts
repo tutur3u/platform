@@ -51,9 +51,8 @@ describe('external project field definition route', () => {
 
   it('requires read access before listing field definitions', async () => {
     mocks.listWorkspaceExternalProjectFieldDefinitions.mockResolvedValue([]);
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/field-definitions/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/field-definitions/route');
 
     const response = await GET(
       new NextRequest(
@@ -85,9 +84,8 @@ describe('external project field definition route', () => {
   });
 
   it('rejects invalid collection filters before listing field definitions', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/field-definitions/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/field-definitions/route');
 
     const response = await GET(
       new NextRequest(
@@ -111,9 +109,8 @@ describe('external project field definition route', () => {
       id: 'field-1',
       key: 'medium',
     });
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/field-definitions/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/field-definitions/route');
 
     const response = await POST(
       new NextRequest(

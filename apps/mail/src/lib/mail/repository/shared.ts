@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthEmail } from '@tuturuuu/supabase/next/user';
 import type { Database } from '@tuturuuu/types';
 import { readMailAutomation } from '../automation/policy';
 import { readGroupPolicy } from '../groups/policy';
@@ -52,6 +53,23 @@ export async function getAdminClient(): Promise<SupabaseClient<Database>> {
 
 export function normalizeAddress(value: string) {
   return value.trim().toLowerCase();
+}
+
+/**
+ * SR-926: the caller's own mailbox address is their confirmed Auth email,
+ * read server-side by user ID. Token and claim emails are never authority for
+ * which mailbox a user owns. Throws when Auth cannot be read; returns null
+ * when the account has no confirmed email.
+ */
+export async function getConfirmedOwnerAddress(
+  admin: AnyRecord,
+  userId: string
+): Promise<string | null> {
+  const email = await getVerifiedAuthEmail(
+    admin as Parameters<typeof getVerifiedAuthEmail>[0],
+    userId
+  );
+  return email ? normalizeAddress(email) : null;
 }
 
 export function toMailbox(

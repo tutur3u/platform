@@ -37,8 +37,10 @@ export function LandingStructuredData({
 
   return (
     <script
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD has to be serialized into the document, and the payload is built entirely from trusted strings.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(payload) }}
+      // eslint-disable-next-line react/no-danger -- JSON-LD serialization encodes < to prevent a closing-script terminator.
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(payload).replace(/</g, '\\u003c'),
+      }}
       type="application/ld+json"
     />
   );

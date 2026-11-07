@@ -15,7 +15,9 @@ export async function GET(
   }
   const id = z.uuid().safeParse((await params).id);
   if (!id.success) return new Response('Not found', { status: 404 });
-  const { data, error } = await (await parleyDatabase())
+  const { data, error } = await (
+    await parleyDatabase()
+  )
     .schema('private')
     .from('parley_references')
     .select('filename, media_type, content_base64')

@@ -163,117 +163,129 @@ function parseGithubEnv(path) {
   return { delimiters, exported };
 }
 
-test('Android hydration keeps signing material in runner temp with owner-only modes', {
-  skip: !posix,
-}, () => {
-  const paths = workspace();
-  const result = hydrate(paths, androidBundle());
-  assert.equal(result.status, 0, result.stderr);
+test(
+  'Android hydration keeps signing material in runner temp with owner-only modes',
+  {
+    skip: !posix,
+  },
+  () => {
+    const paths = workspace();
+    const result = hydrate(paths, androidBundle());
+    assert.equal(result.status, 0, result.stderr);
 
-  const keystore = join(
-    paths.runnerTemp,
-    'mobile-deployment/android-upload-keystore.jks'
-  );
-  const serviceAccount = join(
-    paths.runnerTemp,
-    'mobile-deployment/google-play-service-account.json'
-  );
-  assert.equal(
-    readFileSync(keystore, 'utf8'),
-    ANDROID_FILES.android_upload_keystore
-  );
-  assert.equal(
-    readFileSync(serviceAccount, 'utf8'),
-    ANDROID_FILES.google_play_service_account_json
-  );
+    const keystore = join(
+      paths.runnerTemp,
+      'mobile-deployment/android-upload-keystore.jks'
+    );
+    const serviceAccount = join(
+      paths.runnerTemp,
+      'mobile-deployment/google-play-service-account.json'
+    );
+    assert.equal(
+      readFileSync(keystore, 'utf8'),
+      ANDROID_FILES.android_upload_keystore
+    );
+    assert.equal(
+      readFileSync(serviceAccount, 'utf8'),
+      ANDROID_FILES.google_play_service_account_json
+    );
 
-  for (const file of [
-    keystore,
-    serviceAccount,
-    join(paths.mobileRoot, '.env.github'),
-    join(paths.mobileRoot, 'android/app/src/production/google-services.json'),
-  ]) {
-    assert.equal(mode(file), 0o600, `${file} must be owner read/write only`);
+    for (const file of [
+      keystore,
+      serviceAccount,
+      join(paths.mobileRoot, '.env.github'),
+      join(paths.mobileRoot, 'android/app/src/production/google-services.json'),
+    ]) {
+      assert.equal(mode(file), 0o600, `${file} must be owner read/write only`);
+    }
+    assert.equal(mode(join(paths.runnerTemp, 'mobile-deployment')), 0o700);
+
+    // Nothing secret may land inside the checked-out mobile app tree.
+    assert.deepEqual(listFiles(paths.mobileRoot).sort(), [
+      '.env.github',
+      'android/app/src/production/google-services.json',
+    ]);
+    for (const file of listFiles(paths.mobileRoot)) {
+      const contents = readFileSync(join(paths.mobileRoot, file), 'utf8');
+      assert.ok(!contents.includes(ANDROID_FILES.android_upload_keystore));
+      assert.ok(
+        !contents.includes(ANDROID_FILES.google_play_service_account_json)
+      );
+    }
   }
-  assert.equal(mode(join(paths.runnerTemp, 'mobile-deployment')), 0o700);
+);
 
-  // Nothing secret may land inside the checked-out mobile app tree.
-  assert.deepEqual(listFiles(paths.mobileRoot).sort(), [
-    '.env.github',
-    'android/app/src/production/google-services.json',
-  ]);
-  for (const file of listFiles(paths.mobileRoot)) {
-    const contents = readFileSync(join(paths.mobileRoot, file), 'utf8');
-    assert.ok(!contents.includes(ANDROID_FILES.android_upload_keystore));
-    assert.ok(
-      !contents.includes(ANDROID_FILES.google_play_service_account_json)
+test(
+  'hydration tightens permissive modes on files that already exist',
+  {
+    skip: !posix,
+  },
+  () => {
+    const paths = workspace();
+    const envPath = join(paths.mobileRoot, '.env.github');
+    const keystoreDirectory = join(paths.runnerTemp, 'mobile-deployment');
+    const keystorePath = join(keystoreDirectory, 'android-upload-keystore.jks');
+    mkdirSync(keystoreDirectory, { recursive: true, mode: 0o755 });
+    writeFileSync(envPath, 'STALE=1\n', { mode: 0o644 });
+    writeFileSync(keystorePath, 'stale-keystore', { mode: 0o666 });
+    chmodSync(envPath, 0o644);
+    chmodSync(keystorePath, 0o666);
+
+    const result = hydrate(paths, androidBundle());
+    assert.equal(result.status, 0, result.stderr);
+
+    assert.equal(mode(envPath), 0o600);
+    assert.equal(mode(keystorePath), 0o600);
+    assert.equal(readFileSync(envPath, 'utf8'), androidBundle().envFile);
+    assert.equal(
+      readFileSync(keystorePath, 'utf8'),
+      ANDROID_FILES.android_upload_keystore
     );
   }
-});
+);
 
-test('hydration tightens permissive modes on files that already exist', {
-  skip: !posix,
-}, () => {
-  const paths = workspace();
-  const envPath = join(paths.mobileRoot, '.env.github');
-  const keystoreDirectory = join(paths.runnerTemp, 'mobile-deployment');
-  const keystorePath = join(keystoreDirectory, 'android-upload-keystore.jks');
-  mkdirSync(keystoreDirectory, { recursive: true, mode: 0o755 });
-  writeFileSync(envPath, 'STALE=1\n', { mode: 0o644 });
-  writeFileSync(keystorePath, 'stale-keystore', { mode: 0o666 });
-  chmodSync(envPath, 0o644);
-  chmodSync(keystorePath, 0o666);
+test(
+  'iOS hydration keeps certificates, profile and API key out of the app tree',
+  {
+    skip: !posix,
+  },
+  () => {
+    const paths = workspace();
+    const result = hydrate(paths, iosBundle());
+    assert.equal(result.status, 0, result.stderr);
 
-  const result = hydrate(paths, androidBundle());
-  assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(listFiles(paths.mobileRoot).sort(), [
+      '.env.github',
+      'ios/Runner/GoogleService-Info-production.plist',
+      'ios/Runner/GoogleService-Info.plist',
+    ]);
+    assert.deepEqual(listFiles(paths.runnerTemp).sort(), [
+      'mobile-deployment/app-store.mobileprovision',
+      'mobile-deployment/apple-distribution.p12',
+      'mobile-deployment/private_keys/AuthKey_ABCDE12345.p8',
+    ]);
+    for (const file of listFiles(paths.runnerTemp)) {
+      assert.equal(mode(join(paths.runnerTemp, file)), 0o600, `${file} mode`);
+    }
+    assert.equal(
+      mode(join(paths.runnerTemp, 'mobile-deployment/private_keys')),
+      0o700
+    );
 
-  assert.equal(mode(envPath), 0o600);
-  assert.equal(mode(keystorePath), 0o600);
-  assert.equal(readFileSync(envPath, 'utf8'), androidBundle().envFile);
-  assert.equal(
-    readFileSync(keystorePath, 'utf8'),
-    ANDROID_FILES.android_upload_keystore
-  );
-});
-
-test('iOS hydration keeps certificates, profile and API key out of the app tree', {
-  skip: !posix,
-}, () => {
-  const paths = workspace();
-  const result = hydrate(paths, iosBundle());
-  assert.equal(result.status, 0, result.stderr);
-
-  assert.deepEqual(listFiles(paths.mobileRoot).sort(), [
-    '.env.github',
-    'ios/Runner/GoogleService-Info-production.plist',
-    'ios/Runner/GoogleService-Info.plist',
-  ]);
-  assert.deepEqual(listFiles(paths.runnerTemp).sort(), [
-    'mobile-deployment/app-store.mobileprovision',
-    'mobile-deployment/apple-distribution.p12',
-    'mobile-deployment/private_keys/AuthKey_ABCDE12345.p8',
-  ]);
-  for (const file of listFiles(paths.runnerTemp)) {
-    assert.equal(mode(join(paths.runnerTemp, file)), 0o600, `${file} mode`);
+    const exported = parseGithubEnv(paths.githubEnv).exported;
+    assert.equal(
+      exported.get('APP_STORE_CONNECT_PRIVATE_KEY_PATH'),
+      join(
+        paths.runnerTemp,
+        'mobile-deployment/private_keys/AuthKey_ABCDE12345.p8'
+      )
+    );
+    assert.equal(
+      exported.get('API_PRIVATE_KEYS_DIR'),
+      join(paths.runnerTemp, 'mobile-deployment/private_keys')
+    );
   }
-  assert.equal(
-    mode(join(paths.runnerTemp, 'mobile-deployment/private_keys')),
-    0o700
-  );
-
-  const exported = parseGithubEnv(paths.githubEnv).exported;
-  assert.equal(
-    exported.get('APP_STORE_CONNECT_PRIVATE_KEY_PATH'),
-    join(
-      paths.runnerTemp,
-      'mobile-deployment/private_keys/AuthKey_ABCDE12345.p8'
-    )
-  );
-  assert.equal(
-    exported.get('API_PRIVATE_KEYS_DIR'),
-    join(paths.runnerTemp, 'mobile-deployment/private_keys')
-  );
-});
+);
 
 test('a file that fails its integrity check is never written and stops hydration', () => {
   const paths = workspace();

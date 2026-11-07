@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: finite CLI subprocess PATH, not a cached task input.
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';

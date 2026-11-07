@@ -14,7 +14,7 @@ const REPO_ROOT = path.resolve(
 /** Repository files copied verbatim so edits run against real anchors. */
 export const REAL_FILES = [
   'tuturuuu.ci.ts',
-  'biome.json',
+  '.oxfmtrc.json',
   'scripts/ci/production-publication-policy.ts',
   'scripts/ci/production-publication-policy.test.js',
 ];
@@ -36,7 +36,6 @@ export const DEMO_FILES = {
       name: '@tuturuuu/demo',
       private: true,
       scripts: {
-        // biome-ignore lint/suspicious/noTemplateCurlyInString: shell parameter expansion
         'dev:app': 'next dev -p ${PORT:-7899} --turbopack',
         build: 'next build --turbopack',
       },

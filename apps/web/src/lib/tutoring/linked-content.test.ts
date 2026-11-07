@@ -67,7 +67,6 @@ function query(table: string) {
       data: (tables[table] ?? []).find((row) => matches(row, filters)) ?? null,
       error: null,
     }),
-    // biome-ignore lint/suspicious/noThenProperty: mirrors a Supabase builder
     then: (resolve: (value: { data: Row[] | null; error: null }) => void) => {
       if (updateValues) {
         updates.push({ table, values: updateValues, filters: [...filters] });

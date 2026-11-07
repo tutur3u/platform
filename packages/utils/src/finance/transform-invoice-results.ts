@@ -117,11 +117,10 @@ function normalizeWallet(
  * Intermediate type for merged search results
  * Combines SearchInvoiceRpcResult with additional creator and wallet data
  */
-interface MergedSearchInvoiceData
-  extends Omit<
-    SearchInvoiceRpcResult,
-    'customer_full_name' | 'customer_avatar_url'
-  > {
+interface MergedSearchInvoiceData extends Omit<
+  SearchInvoiceRpcResult,
+  'customer_full_name' | 'customer_avatar_url'
+> {
   customer: {
     full_name: string | null;
     avatar_url: string | null;

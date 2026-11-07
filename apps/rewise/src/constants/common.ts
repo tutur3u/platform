@@ -17,9 +17,12 @@ export {
 export const PORT = process.env.PORT || 7804;
 export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 
+/** Rewise's canonical production origin. */
+export const REWISE_PRODUCTION_URL = 'https://rewise.tuturuuu.com';
+
 const DEFAULT_REWISE_APP_URL =
   process.env.NODE_ENV === 'production'
-    ? 'https://rewise.tuturuuu.com'
+    ? REWISE_PRODUCTION_URL
     : getLocalInternalAppUrl('rewise', `http://localhost:${PORT}`);
 const DEFAULT_WEB_APP_URL =
   process.env.NODE_ENV === 'production'

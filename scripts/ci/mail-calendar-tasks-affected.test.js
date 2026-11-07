@@ -238,9 +238,8 @@ test('workflow keeps check names, mandatory commands, restore dependency and gat
 
 test('cross-workspace renames invalidate the removed source as well as the destination', async (t) => {
   const { git, initializeGitRepo } = require('./workflow-config-test-helpers');
-  const { resolveChangedFiles } = await import(
-    './resolve-changed-files-core.ts'
-  );
+  const { resolveChangedFiles } =
+    await import('./resolve-changed-files-core.ts');
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'affected-rename-'));
   t.after(() => fs.rmSync(temp, { recursive: true, force: true }));
   const before = 'apps/mail/source.ts';

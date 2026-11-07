@@ -202,12 +202,10 @@ async function claimDueManagedCronJobs({
     Omit<ManagedCronJobRow, 'headers_config'> & {
       headers_config: ManagedCronHeaderConfig[] | string | null;
     }
-  >(rows).map(
-    (row): ManagedCronJobRow => ({
-      ...row,
-      headers_config: parseHeaderConfig(row.headers_config),
-    })
-  );
+  >(rows).map((row): ManagedCronJobRow => ({
+    ...row,
+    headers_config: parseHeaderConfig(row.headers_config),
+  }));
 }
 
 async function executeManagedCronJob({

@@ -64,9 +64,8 @@ vi.mock('@tuturuuu/trigger/google-calendar-full-sync', () => ({
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', async () => {
-  const { sharedFakeCalendarOAuthNonceLedger } = await import(
-    '@/lib/calendar/calendar-oauth-nonce-ledger.test-utils'
-  );
+  const { sharedFakeCalendarOAuthNonceLedger } =
+    await import('@/lib/calendar/calendar-oauth-nonce-ledger.test-utils');
   return {
     createAdminClient: vi.fn(
       async () => sharedFakeCalendarOAuthNonceLedger().client
@@ -565,9 +564,8 @@ describe('Google Calendar OAuth callback route', () => {
     [
       'a state with a swapped workspace',
       () => {
-        const [content, signature] = decodeURIComponent(signedState()).split(
-          '.'
-        );
+        const [content, signature] =
+          decodeURIComponent(signedState()).split('.');
         const payload = JSON.parse(
           Buffer.from(content!, 'base64url').toString('utf8')
         ) as Record<string, unknown>;

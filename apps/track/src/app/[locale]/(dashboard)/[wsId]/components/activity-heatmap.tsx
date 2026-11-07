@@ -257,7 +257,6 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
   }, [setOnboardingState, tipAutoHideTimer]);
 
   // Set up auto-hide timer when tips are shown (optional - can be disabled)
-  // biome-ignore lint/correctness/useExhaustiveDependencies(handleDismissTips): suppress dependency array linting
   useEffect(() => {
     if (shouldShowOnboardingTips && onboardingState.viewCount >= 5) {
       // Only auto-hide for users who've seen tips multiple times

@@ -32,7 +32,7 @@ const PROTECTED_TRIGGERS = {
   'ai-cloudflare.yaml': '2b1f1ae8795d0216',
   'api-worker.yaml': '058d68d5d261d527',
   'apps-cloudflare.yaml': '257f752668dce766',
-  'biome-check.yaml': '6c39e758f15186ed',
+  'oxc-check.yaml': '6c39e758f15186ed',
   'calendar-cloudflare.yaml': 'e3e096233a6e8a60',
   'calendar-generation-contract.yaml': '0a3cc2c97958f5cd',
   'cms-cloudflare.yaml': 'c43009624296a37c',
@@ -70,7 +70,7 @@ const PROTECTED_TRIGGERS = {
   'nova-cloudflare.yaml': 'a2d9cd99b1329afe',
   'ops-hub-cloudflare.yaml': '0a3cc2c97958f5cd',
   'parley-cloudflare.yaml': 'f1777123fb48e37c',
-  'pay-cloudflare.yaml': '8037389e72881e88',
+  'pay-cloudflare.yaml': 'a31b0975203c9817',
   'periodic-report-delivery-contract.yaml': 'dc372af9059d0c07',
   'playground-cloudflare.yaml': '7c22fc6d616e6d01',
   'playground-runtime-acceptance.yaml': '0a3cc2c97958f5cd',
@@ -449,7 +449,7 @@ test('reported build push selectors preserve protected refs and release branches
   for (const file of [
     'turbo-unit-tests.yaml',
     'type-check.yaml',
-    'biome-check.yaml',
+    'oxc-check.yaml',
   ]) {
     assert.deepEqual(
       events(workflows[file]).push.branches,

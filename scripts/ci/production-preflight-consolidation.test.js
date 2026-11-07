@@ -21,9 +21,7 @@ test('Cloudflare release relevance shares the existing config job and gates vali
     description: 'Also detect release-only PR changes; other events always run',
   });
   assert.equal(step.if, 'inputs.check_pr_release_only');
-  // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
   assert.equal(step.env.BASE_SHA, '${{ github.event.pull_request.base.sha }}');
-  // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
   assert.equal(step.env.HEAD_SHA, '${{ github.event.pull_request.head.sha }}');
   assert.ok(
     gate.jobs.check.outputs.run_checks.includes(

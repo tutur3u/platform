@@ -163,9 +163,8 @@ describe('native Calendar gateway verified session parity', () => {
   });
 
   it('uses Bearer precedence even when a different trusted cookie is present', async () => {
-    const { buildProxySessionSubjectKey } = await import(
-      '../api-proxy-guard.js'
-    );
+    const { buildProxySessionSubjectKey } =
+      await import('../api-proxy-guard.js');
     const cookieKey = await buildProxySessionSubjectKey(
       'sb-test-auth-token',
       'cookie'

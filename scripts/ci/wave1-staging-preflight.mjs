@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Direct CI entrypoint.
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 

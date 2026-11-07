@@ -11,8 +11,10 @@ import {
   usePanelRef,
 } from 'react-resizable-panels';
 
-interface ResizablePanelGroupProps
-  extends Omit<GroupPropsOriginal, 'orientation' | 'onLayoutChange'> {
+interface ResizablePanelGroupProps extends Omit<
+  GroupPropsOriginal,
+  'orientation' | 'onLayoutChange'
+> {
   direction?: 'horizontal' | 'vertical';
   onLayout?: (sizes: number[]) => void;
 }

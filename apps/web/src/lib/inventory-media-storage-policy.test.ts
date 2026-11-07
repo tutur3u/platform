@@ -51,9 +51,8 @@ describe('inventory media storage policy', () => {
   });
 
   it('accepts finalized inventory media with matching image bytes', async () => {
-    const { validateFinalizedInventoryMediaUpload } = await import(
-      './inventory-media-storage-policy'
-    );
+    const { validateFinalizedInventoryMediaUpload } =
+      await import('./inventory-media-storage-policy');
 
     await expect(
       validateFinalizedInventoryMediaUpload({
@@ -74,9 +73,8 @@ describe('inventory media storage policy', () => {
       size: 9 * 1024 * 1024,
     });
 
-    const { validateFinalizedInventoryMediaUpload } = await import(
-      './inventory-media-storage-policy'
-    );
+    const { validateFinalizedInventoryMediaUpload } =
+      await import('./inventory-media-storage-policy');
 
     await expect(
       validateFinalizedInventoryMediaUpload({
@@ -104,9 +102,8 @@ describe('inventory media storage policy', () => {
       contentType: 'image/webp',
     });
 
-    const { validateFinalizedInventoryMediaUpload } = await import(
-      './inventory-media-storage-policy'
-    );
+    const { validateFinalizedInventoryMediaUpload } =
+      await import('./inventory-media-storage-policy');
 
     await expect(
       validateFinalizedInventoryMediaUpload({
@@ -126,9 +123,8 @@ describe('inventory media storage policy', () => {
   });
 
   it('rejects unknown inventory media targets', async () => {
-    const { validateFinalizedInventoryMediaUpload } = await import(
-      './inventory-media-storage-policy'
-    );
+    const { validateFinalizedInventoryMediaUpload } =
+      await import('./inventory-media-storage-policy');
 
     await expect(
       validateFinalizedInventoryMediaUpload({

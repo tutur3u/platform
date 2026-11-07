@@ -103,9 +103,8 @@ describe('workspace storage object by id route', () => {
   });
 
   it('returns 400 before auth when route params are invalid', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route');
 
     const response = await GET(createRequest(), createParams('not-a-guid'));
 
@@ -114,9 +113,8 @@ describe('workspace storage object by id route', () => {
   });
 
   it('returns object metadata for callers with Drive view access', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route');
 
     const response = await GET(createRequest(), createParams());
 
@@ -149,9 +147,8 @@ describe('workspace storage object by id route', () => {
     });
     mocks.canAccessFinanceTransactionStoragePath.mockResolvedValue(true);
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route');
 
     const response = await GET(createRequest(), createParams());
 
@@ -181,9 +178,8 @@ describe('workspace storage object by id route', () => {
     });
     mocks.canAccessFinanceTransactionStoragePath.mockResolvedValue(false);
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route');
 
     const response = await GET(createRequest(), createParams());
 
@@ -206,9 +202,8 @@ describe('workspace storage object by id route', () => {
       },
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route');
 
     const response = await GET(createRequest(), createParams());
 
@@ -223,9 +218,8 @@ describe('workspace storage object by id route', () => {
       response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route');
 
     const response = await GET(createRequest(), createParams());
 

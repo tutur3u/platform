@@ -19,11 +19,11 @@ vi.mock('@/i18n/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) =>
     (
-      ({
+      {
         importSource: 'Source',
         canonicalExport: 'Canonical JSON export',
         exocorpseCms: 'Exocorpse CMS',
-      }) as Record<string, string>
+      } as Record<string, string>
     )[key] ?? key,
 }));
 vi.mock('@tuturuuu/ui/input', () => ({

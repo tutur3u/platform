@@ -148,9 +148,8 @@ describe('inventory batch API route', () => {
 
     mocks.createAdminClient.mockResolvedValue(client.client);
 
-    const { PATCH } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/batches/[batchId]/route'
-    );
+    const { PATCH } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/batches/[batchId]/route');
     const response = await PATCH(
       new Request('https://app.example.com/api', {
         body: JSON.stringify({
@@ -195,9 +194,8 @@ describe('inventory batch API route', () => {
 
     mocks.createAdminClient.mockResolvedValue(client.client);
 
-    const { PATCH } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/batches/[batchId]/route'
-    );
+    const { PATCH } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/batches/[batchId]/route');
     const response = await PATCH(
       new Request('https://app.example.com/api', {
         body: JSON.stringify({

@@ -217,15 +217,13 @@ describe('legacy workspace detail route DELETE', () => {
     mockWorkspaceLookup(false);
     mocks.getPermissions.mockResolvedValue({ containsPermission: () => true });
     mocks.deleteWorkspace.mockImplementationOnce(() => ({
-      eq: vi.fn(
-        async (): Promise<DeleteWorkspaceResult> => ({
-          error: {
-            code: '23503',
-            message: 'private fixture detail',
-            details: 'private fixture record',
-          },
-        })
-      ),
+      eq: vi.fn(async (): Promise<DeleteWorkspaceResult> => ({
+        error: {
+          code: '23503',
+          message: 'private fixture detail',
+          details: 'private fixture record',
+        },
+      })),
     }));
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
     try {

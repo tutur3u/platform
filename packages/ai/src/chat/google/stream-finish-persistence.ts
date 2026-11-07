@@ -197,9 +197,9 @@ function collectSerializableSources(response: StreamFinishResponseLike) {
       (step.sources ?? []).filter((source): source is SourceLike =>
         Boolean(
           source &&
-            typeof source === 'object' &&
-            'url' in source &&
-            typeof source.url === 'string'
+          typeof source === 'object' &&
+          'url' in source &&
+          typeof source.url === 'string'
         )
       )
     ),
@@ -266,9 +266,9 @@ export function buildAbortedStreamFinishResponse(
       (step.sources ?? []).filter((source): source is SourceLike =>
         Boolean(
           source &&
-            typeof source === 'object' &&
-            'url' in source &&
-            typeof source.url === 'string'
+          typeof source === 'object' &&
+          'url' in source &&
+          typeof source.url === 'string'
         )
       )
     ),

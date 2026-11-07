@@ -211,7 +211,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Log in to GHCR for E2E bundle publishing
         env:
@@ -320,7 +320,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Restore shared Supabase images
         continue-on-error: true
@@ -441,7 +441,7 @@ jobs:
           package-manager-cache: false
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Build app workspace dependencies
         uses: ./.github/actions/run-with-turbo-remote-cache
@@ -603,7 +603,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Reuse migrated Supabase baseline
         uses: ./.github/actions/setup-supabase-baseline

@@ -36342,17 +36342,20 @@ export type Database = {
           created_at: string | null;
           project_id: string;
           task_id: string;
+          ticket_number: number | null;
         };
         ComputedFields: never;
         Insert: {
           created_at?: string | null;
           project_id: string;
           task_id: string;
+          ticket_number?: number | null;
         };
         Update: {
           created_at?: string | null;
           project_id?: string;
           task_id?: string;
+          ticket_number?: number | null;
         };
         Relationships: [
           {
@@ -36613,9 +36616,11 @@ export type Database = {
           id: string;
           lead_id: string | null;
           name: string;
+          next_ticket_number: number;
           priority: Database['public']['Enums']['task_priority'] | null;
           start_date: string | null;
           status: string | null;
+          ticket_key: string | null;
           updated_at: string | null;
           ws_id: string;
         };
@@ -36632,9 +36637,11 @@ export type Database = {
           id?: string;
           lead_id?: string | null;
           name: string;
+          next_ticket_number?: number;
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           status?: string | null;
+          ticket_key?: string | null;
           updated_at?: string | null;
           ws_id: string;
         };
@@ -36650,9 +36657,11 @@ export type Database = {
           id?: string;
           lead_id?: string | null;
           name?: string;
+          next_ticket_number?: number;
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           status?: string | null;
+          ticket_key?: string | null;
           updated_at?: string | null;
           ws_id?: string;
         };
@@ -49050,6 +49059,16 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      add_board_sprint: {
+        Args: { p_actor_id?: string; p_board_id: string; p_ws_id: string };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       add_platform_entity_creation_limit_table: {
         Args: {
           p_notes?: string;
@@ -49294,6 +49313,10 @@ export type Database = {
       archive_old_notifications: {
         Args: { p_days_threshold?: number };
         Returns: number;
+      };
+      assign_task_cycle: {
+        Args: { p_cycle_id: string; p_task_id: string };
+        Returns: undefined;
       };
       atomic_sync_token_operation: {
         Args: {
@@ -52355,6 +52378,10 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      list_board_unplanned_task_ids: {
+        Args: { p_board_id: string; p_ws_id: string };
+        Returns: string[];
+      };
       list_deferred_calendar_google_imports: {
         Args: {
           p_auth_token_id?: string;
@@ -52809,6 +52836,21 @@ export type Database = {
           remaining_credits: number;
           success: boolean;
         }[];
+      };
+      remove_board_sprint: {
+        Args: {
+          p_actor_id?: string;
+          p_board_id: string;
+          p_cycle_id: string;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       remove_task_label_with_actor: {
         Args: {
@@ -56527,12 +56569,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -56556,11 +56598,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -56581,11 +56623,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -56606,11 +56648,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema['Enums']
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -56623,11 +56665,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema['CompositeTypes']
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }

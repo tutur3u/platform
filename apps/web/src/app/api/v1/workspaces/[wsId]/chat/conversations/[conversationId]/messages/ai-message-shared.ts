@@ -509,13 +509,11 @@ export function toAiChatUiMessages(messages: ChatMessage[]): UiMessageForAi[] {
           : message.content,
     }))
     .filter((message) => message.content.trim())
-    .map(
-      (message): UiMessageForAi => ({
-        id: message.id,
-        parts: [{ text: message.content, type: 'text' }],
-        role: message.kind,
-      })
-    );
+    .map((message): UiMessageForAi => ({
+      id: message.id,
+      parts: [{ text: message.content, type: 'text' }],
+      role: message.kind,
+    }));
 
   if (uiMessages.length > 0) return withAiMessageSplitInstruction(uiMessages);
 

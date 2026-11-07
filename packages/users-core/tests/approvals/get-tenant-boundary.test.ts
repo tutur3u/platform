@@ -69,7 +69,6 @@ function query() {
       end = to;
       return q;
     },
-    // biome-ignore lint/suspicious/noThenProperty: emulate the real lazy PostgREST query contract.
     then: (resolve: (value: ReturnType<typeof result>) => unknown) =>
       Promise.resolve(result()).then(resolve),
   };

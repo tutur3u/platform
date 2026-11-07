@@ -359,9 +359,8 @@ test('mobile history excludes multi-parent product-titled merges but keeps their
   git('commit', '-m', 'feat(mobile): send feedback');
   git('checkout', '--detach', base);
   git('merge', '--no-ff', 'product', '-m', 'feat(mobile): integration noise');
-  const { changesBetween } = await import(
-    '../mobile-deployment/release-history.mjs'
-  );
+  const { changesBetween } =
+    await import('../mobile-deployment/release-history.mjs');
   assert.deepEqual(
     changesBetween(base, 'HEAD', (command, args) =>
       execFileSync(command, args, { cwd: fixture.cwd, encoding: 'utf8' })

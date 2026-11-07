@@ -26,15 +26,14 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
     : string;
 };
 declare namespace NodeJS {
-  interface ProcessEnv
-    extends StringifyValues<
-      Pick<
-        Cloudflare.Env,
-        | 'NEXT_PUBLIC_APP_URL'
-        | 'NEXT_PUBLIC_WEB_APP_URL'
-        | 'NEXT_PUBLIC_SUPABASE_URL'
-        | 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'
-        | 'SUPABASE_SECRET_KEY'
-      >
-    > {}
+  interface ProcessEnv extends StringifyValues<
+    Pick<
+      Cloudflare.Env,
+      | 'NEXT_PUBLIC_APP_URL'
+      | 'NEXT_PUBLIC_WEB_APP_URL'
+      | 'NEXT_PUBLIC_SUPABASE_URL'
+      | 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'
+      | 'SUPABASE_SECRET_KEY'
+    >
+  > {}
 }

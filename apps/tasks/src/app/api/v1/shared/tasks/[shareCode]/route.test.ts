@@ -165,7 +165,6 @@ class QueryBuilder implements PromiseLike<{ data: unknown; error: null }> {
     return Promise.resolve({ data: null });
   }
 
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
   then<TResult1 = { data: unknown; error: null }, TResult2 = never>(
     onfulfilled?:
       | ((value: {

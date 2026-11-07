@@ -86,12 +86,10 @@ function request(path: string) {
   });
 }
 async function dispatch(req: NextRequest, workspace?: string) {
-  const { guardApiProxyRequest } = await import(
-    '@tuturuuu/utils/api-proxy-guard'
-  );
-  const { handleCalendarSettings } = await import(
-    './calendar-settings-handler'
-  );
+  const { guardApiProxyRequest } =
+    await import('@tuturuuu/utils/api-proxy-guard');
+  const { handleCalendarSettings } =
+    await import('./calendar-settings-handler');
   const response = await guardApiProxyRequest(
     req,
     calendarPreferenceGuardOptions(req)
@@ -154,12 +152,10 @@ describe('calendar proxy assurance before route identity resolution', () => {
     );
   });
   it('falls back to independent route authentication across a cloned Next request boundary', async () => {
-    const { guardApiProxyRequest } = await import(
-      '@tuturuuu/utils/api-proxy-guard'
-    );
-    const { handleCalendarSettings } = await import(
-      './calendar-settings-handler'
-    );
+    const { guardApiProxyRequest } =
+      await import('@tuturuuu/utils/api-proxy-guard');
+    const { handleCalendarSettings } =
+      await import('./calendar-settings-handler');
     const req = request('/api/v1/users/calendar-settings');
     expect(
       await guardApiProxyRequest(req, calendarPreferenceGuardOptions(req))
