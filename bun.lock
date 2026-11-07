@@ -2955,6 +2955,7 @@
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/legal": "workspace:*",
         "@tuturuuu/payment-core": "workspace:*",
         "@tuturuuu/storage-core": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",

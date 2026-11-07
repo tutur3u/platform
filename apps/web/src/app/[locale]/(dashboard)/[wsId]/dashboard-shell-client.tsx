@@ -1,5 +1,6 @@
 'use client';
 
+import { LegalNoticeBanner } from '@tuturuuu/satellite/legal-notice-banner';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -243,6 +244,7 @@ export function DashboardShellClient({
           {personalWorkspacePrompt}
         </div>
       )}
+      <LegalNoticeBanner className="mx-2 mt-2 md:mx-4 md:mt-3" />
       {structuredContent}
     </SidebarProvider>
   );

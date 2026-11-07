@@ -1,3 +1,7 @@
+import {
+  LEGAL_NOTICE_FLOATING_CLASSNAME,
+  LegalNoticeBanner,
+} from '@tuturuuu/satellite/legal-notice-banner';
 import { Suspense } from 'react';
 import {
   getLocalE2ESupabaseBrowserConfig,
@@ -13,13 +17,16 @@ export default async function Login() {
   const localE2EAuthBypass = isLocalE2EAuthBypassEnabled();
 
   return (
-    <Suspense fallback={<LoginShellFallback />}>
-      <LoginContent
-        localE2EAuthBypass={localE2EAuthBypass}
-        runtimeSupabaseConfig={
-          localE2EAuthBypass ? getLocalE2ESupabaseBrowserConfig() : null
-        }
-      />
-    </Suspense>
+    <>
+      <LegalNoticeBanner className={LEGAL_NOTICE_FLOATING_CLASSNAME} />
+      <Suspense fallback={<LoginShellFallback />}>
+        <LoginContent
+          localE2EAuthBypass={localE2EAuthBypass}
+          runtimeSupabaseConfig={
+            localE2EAuthBypass ? getLocalE2ESupabaseBrowserConfig() : null
+          }
+        />
+      </Suspense>
+    </>
   );
 }
