@@ -1,3 +1,4 @@
+import { verifyPublicSource } from '../src/source-proof.ts';
 import { githubSourceUrl } from '../src/public-evidence-url.ts';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -5,27 +6,13 @@ import { createHash } from 'node:crypto';
 import {
   deriveStage,
   emptyEvidence,
+  publicProducts,
+  publicRouteDefinition,
+  productUrl,
   parseEvidenceInputs,
   timestamp,
 } from '../src/migration-evidence.ts';
 
-// Only products with public marketing pages belong in this public snapshot.
-const products = [
-  ['ai', 'AI', 'ai'],
-  ['calendar', 'Calendar', 'calendar'],
-  ['chat', 'Chat', 'chat'],
-  ['contacts', 'CRM', 'crm'],
-  ['drive', 'Drive', 'drive'],
-  ['finance', 'Finance', 'finance'],
-  ['forms', 'Forms', 'forms'],
-  ['hive', 'Hive', 'hive'],
-  ['inventory', 'Inventory', 'inventory'],
-  ['mail', 'Mail', 'mail'],
-  ['meet', 'Meet', 'meet-together'],
-  ['storefront', 'Storefront', 'storefront'],
-  ['tasks', 'Tasks', 'tasks'],
-  ['track', 'Track', 'track'],
-];
 const sourceCommit = process.argv[2];
 if (!/^[a-f0-9]{40}$/.test(sourceCommit ?? '')) {
   throw new Error('Supply an immutable 40-character public source commit');
@@ -47,15 +34,28 @@ if (evidencePath && statSync(evidencePath).size > 128 * 1024)
   throw new Error('Public evidence input too large');
 const input = evidencePath
   ? readFileSync(evidencePath)
-  : Buffer.from('{"schemaVersion":1,"apps":{}}');
+  : Buffer.from('{"schemaVersion":2,"apps":{}}');
 const inputs = parseEvidenceInputs(JSON.parse(input.toString('utf8')));
 const evidenceInputSha256 = createHash('sha256').update(input).digest('hex');
 const checkedAt = timestamp(process.argv[4] ?? new Date().toISOString());
 const source = (path) => githubSourceUrl(sourceCommit, path);
-const apps = products.map(([id, name, product]) => {
-  const marketing = `apps/web/src/app/[locale]/(marketing)/products/${product}/page.tsx`;
+const apps = publicProducts.map((id) => {
+  const name =
+    id === 'ai'
+      ? 'AI'
+      : id === 'contacts'
+        ? 'CRM'
+        : id[0].toUpperCase() + id.slice(1);
+  const product =
+    id === 'contacts' ? 'crm' : id === 'meet' ? 'meet-together' : id;
+  const route = publicRouteDefinition(id);
+  const marketing =
+    route?.path ??
+    `apps/web/src/app/[locale]/(marketing)/products/${product}/page.tsx`;
   if (!files.includes(marketing))
     throw new Error(`Public product evidence missing: ${id}`);
+  if (route && !read(route.path).includes(`createFileRoute('${route.route}')`))
+    throw new Error(`Public route definition mismatch: ${id}`);
   const config = files.find((path) =>
     path.startsWith(`apps/${id}/vite.config.`)
   );
@@ -84,20 +84,40 @@ const apps = products.map(([id, name, product]) => {
     });
   const stageEvidence =
     inputs.find((item) => item.id === id)?.evidence ?? emptyEvidence;
-  const merge = stageEvidence.pr?.merge;
-  let mergeIncluded = false;
-  if (merge) {
-    try {
-      execFileSync(
+  const mergeIncluded = Boolean(stageEvidence.pr?.merge);
+  verifyPublicSource({
+    id,
+    evidence: stageEvidence,
+    sourceCommit,
+    readSubtree: (commit, app) =>
+      execFileSync('git', ['rev-parse', `${commit}:apps/${app}`], {
+        encoding: 'utf8',
+        timeout: 5000,
+        maxBuffer: 1024,
+      }).trim(),
+    isAncestor: (commit, source) => {
+      try {
+        execFileSync('git', ['merge-base', '--is-ancestor', commit, source], {
+          timeout: 5000,
+          stdio: 'pipe',
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    readReceipt: (url) => {
+      const parts = new URL(url).pathname.split('/');
+      return execFileSync(
         'git',
-        ['merge-base', '--is-ancestor', merge.sha, sourceCommit],
-        { timeout: 5000, stdio: 'pipe' }
+        [
+          'show',
+          `${parts[4]}:${parts.slice(5).map(decodeURIComponent).join('/')}`,
+        ],
+        { timeout: 5000, maxBuffer: 128 * 1024 }
       );
-      mergeIncluded = true;
-    } catch {
-      throw new Error(`Merge evidence is not included in source: ${id}`);
-    }
-  }
+    },
+  });
   if (stageEvidence.pr)
     evidence.unshift({ label: 'Migration PR', url: stageEvidence.pr.url });
   if (stageEvidence.production) {
@@ -114,7 +134,7 @@ const apps = products.map(([id, name, product]) => {
   return {
     id,
     name,
-    productUrl: `https://tuturuuu.com/products/${product}`,
+    productUrl: productUrl(id, sourceCommit),
     stage,
     blocked: held,
     workInSource: native,

@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { verifyPublicSource } from './source-proof.ts';
 import {
   encodePathSegment,
   githubSourceUrl,
@@ -15,6 +17,7 @@ import {
   stages,
   type MigrationEvidence,
   type PullEvidence,
+  type ProductionEvidence,
 } from './migration-evidence.ts';
 import {
   filterProducts,
@@ -31,6 +34,7 @@ function pull(): PullEvidence {
   return {
     url: 'https://github.com/tutur3u/platform/pull/1',
     scope: 'migration_completion',
+    provenanceUrl: 'https://api.github.com/repos/tutur3u/platform/pulls/1',
     state: 'open',
     headSha: head,
     draft: false,
@@ -43,7 +47,33 @@ function pull(): PullEvidence {
   };
 }
 function evidence(pr = pull()): MigrationEvidence {
-  return { pr, production: null };
+  return {
+    source: { commit: head, appSubtree: 'c'.repeat(40) },
+    pr,
+    production: null,
+  };
+}
+function productionFixture(): ProductionEvidence {
+  return {
+    kind: 'production_readback',
+    scope: 'mail',
+    url: 'https://tuturuuu.com/mail/',
+    receiptUrl: `https://github.com/tutur3u/platform/blob/${head}/proof.json`,
+    receiptSha256: 'd'.repeat(64),
+    versionId: '11111111-1111-1111-1111-111111111111',
+    equivalence: {
+      kind: 'git_app_subtree',
+      app: 'mail',
+      sourceCommit: head,
+      mergeCommit: merged,
+      deployedCommit: merged,
+      appSubtree: 'c'.repeat(40),
+    },
+    deployedSha: merged,
+    responseSha: merged,
+    accepted: true,
+    observedAt: at,
+  };
 }
 const stage = (e: MigrationEvidence, work = false, included = false) =>
   deriveStage(work, parseEvidence(e, 'mail'), at, included);
@@ -58,15 +88,7 @@ test('each lifecycle stage requires its own evidence; scaffolding is only work i
   });
   assert.equal(stage(e, true, true), 'waiting_for_production_sync');
   assert.equal(stage(e, true, false), 'rolling_out');
-  e.production = {
-    kind: 'production_readback',
-    url: 'https://tuturuuu.com/mail/',
-    receiptUrl: `https://github.com/tutur3u/platform/blob/${head}/evidence/mail.json`,
-    deployedSha: merged,
-    responseSha: merged,
-    accepted: true,
-    observedAt: at,
-  };
+  e.production = productionFixture();
   assert.equal(stage(e, true, true), 'live');
   e.production.accepted = false;
   assert.equal(stage(e, true, true), 'waiting_for_production_sync');
@@ -108,15 +130,8 @@ test('unsupported live claims and unknown/private-shaped inputs fail closed', ()
     state: 'merged',
     merge: { sha: merged, at },
   });
-  const production = {
-    kind: 'production_readback',
-    url: 'https://tuturuuu.com/mail/',
-    receiptUrl: `https://github.com/tutur3u/platform/blob/${head}/proof.json`,
-    deployedSha: merged,
-    responseSha: merged,
-    accepted: true,
-    observedAt: at,
-  };
+  const production = productionFixture();
+  parseEvidence({ ...e, production }, 'mail');
   for (const delta of [
     { kind: 'build_success' },
     { responseSha: head },
@@ -137,11 +152,11 @@ test('unsupported live claims and unknown/private-shaped inputs fail closed', ()
     )
   );
   assert.throws(() =>
-    parseEvidenceInputs({ schemaVersion: 1, apps: { private: emptyEvidence } })
+    parseEvidenceInputs({ schemaVersion: 2, apps: { private: emptyEvidence } })
   );
-  assert.throws(() => parseEvidenceInputs({ schemaVersion: 2, apps: {} }));
+  assert.throws(() => parseEvidenceInputs({ schemaVersion: 99, apps: {} }));
   assert.deepEqual(
-    parseEvidenceInputs({ schemaVersion: 1, apps: { mail: emptyEvidence } }),
+    parseEvidenceInputs({ schemaVersion: 2, apps: { mail: emptyEvidence } }),
     [{ id: 'mail', evidence: emptyEvidence }]
   );
 });
@@ -153,7 +168,10 @@ test('public snapshot preserves allowlist, provenance, conservative stages and b
     assert.equal(app.checkedAt, snapshot.checkedAt);
     assert.notEqual(app.stage, 'live');
     for (const entry of app.evidence)
-      assert.ok(entry.url.includes(`/blob/${snapshot.sourceCommit}/`));
+      assert.ok(
+        entry.label === 'Migration PR' ||
+          entry.url.includes(`/blob/${snapshot.sourceCommit}/`)
+      );
   }
   for (const value of stages)
     assert.ok(
@@ -234,4 +252,148 @@ test('all evidence URLs use canonical RFC3986 segments and the exact category ho
     url.replace('/apps/', '/%5Capps/'),
   ])
     assert.throws(() => publicEvidenceUrl(bad, 'github.com'));
+});
+
+test('reviewable public merge inputs retain unknown metadata and no production claim', () => {
+  for (const id of ['playground', 'shortener', 'roadmap']) {
+    const app = snapshot.apps.find((app) => app.id === id);
+    assert.ok(app);
+    assert.equal(app.stage, 'waiting_for_production_sync');
+    assert.equal(app.stageEvidence.pr?.review, 'UNKNOWN');
+    assert.deepEqual(app.stageEvidence.pr?.checks, []);
+    assert.equal(app.stageEvidence.production, null);
+    assert.ok(
+      app.productUrl.includes(
+        `/blob/${snapshot.sourceCommit}/apps/${id}/src/routes/`
+      )
+    );
+    assert.equal(app.evidence[0].label, 'Migration PR');
+  }
+});
+
+test('cohort release needs exact app source, ancestry, receipt bytes, target and response', () => {
+  const cohort = 'e'.repeat(40),
+    subtree = 'c'.repeat(40);
+  const original = evidence({
+    ...pull(),
+    state: 'merged',
+    merge: { sha: merged, at },
+  });
+  original.production = productionFixture();
+  original.production.scope = 'roadmap';
+  original.production.url = 'https://roadmap.tuturuuu.com/roadmap/';
+  original.production.equivalence.app = 'roadmap';
+  original.production.equivalence.deployedCommit = cohort;
+  original.production.deployedSha = cohort;
+  original.production.responseSha = cohort;
+  const {
+    receiptUrl: _url,
+    receiptSha256: _hash,
+    ...attestation
+  } = original.production;
+  const receipt = Buffer.from(JSON.stringify(attestation));
+  original.production.receiptSha256 = createHash('sha256')
+    .update(receipt)
+    .digest('hex');
+  const e = parseEvidence(original, 'roadmap');
+  const options = {
+    id: 'roadmap' as const,
+    evidence: e,
+    sourceCommit: head,
+    readSubtree: () => subtree,
+    isAncestor: () => true,
+    readReceipt: () => receipt,
+  };
+  verifyPublicSource(options);
+  assert.equal(deriveStage(true, e, at, true), 'live');
+  assert.equal(deriveStage(true, e, at, false), 'rolling_out');
+  assert.equal(
+    deriveStage(true, e, '2026-11-09T12:00:00Z', true),
+    'waiting_for_production_sync'
+  );
+  assert.throws(
+    () => verifyPublicSource({ ...options, isAncestor: () => false }),
+    /ancestry/
+  );
+  assert.throws(
+    () => verifyPublicSource({ ...options, readSubtree: () => head }),
+    /source identity/
+  );
+  assert.throws(
+    () =>
+      verifyPublicSource({
+        ...options,
+        readSubtree: (commit) => (commit === cohort ? head : subtree),
+      }),
+    /equivalence/
+  );
+  assert.throws(
+    () =>
+      verifyPublicSource({
+        ...options,
+        readReceipt: () => {
+          throw new Error('Missing public receipt');
+        },
+      }),
+    /Missing public receipt/
+  );
+  assert.throws(
+    () =>
+      verifyPublicSource({ ...options, readReceipt: () => Buffer.from('{}') }),
+    /receipt identity/
+  );
+  const wrongReceipt = Buffer.from(
+    JSON.stringify({ ...attestation, accepted: false })
+  );
+  const wrongEvidence = structuredClone(original);
+  if (wrongEvidence.production)
+    wrongEvidence.production.receiptSha256 = createHash('sha256')
+      .update(wrongReceipt)
+      .digest('hex');
+  assert.throws(
+    () =>
+      verifyPublicSource({
+        ...options,
+        evidence: parseEvidence(wrongEvidence, 'roadmap'),
+        readReceipt: () => wrongReceipt,
+      }),
+    /content mismatch/
+  );
+  for (const delta of [
+    { scope: 'shortener' },
+    { kind: 'build_artifact' },
+    { responseSha: head },
+    { receiptSha256: 'unknown' },
+    { url: 'https://tuturuuu.com/roadmap/' },
+    { versionId: 'unknown' },
+    { extra: true },
+  ]) {
+    assert.throws(() =>
+      parseEvidence(
+        { ...original, production: { ...original.production, ...delta } },
+        'roadmap'
+      )
+    );
+  }
+  for (const delta of [
+    { app: 'shortener' },
+    { sourceCommit: merged },
+    { mergeCommit: head },
+    { deployedCommit: head },
+    { appSubtree: head },
+    { kind: 'approved' },
+  ]) {
+    assert.throws(() =>
+      parseEvidence(
+        {
+          ...original,
+          production: {
+            ...original.production,
+            equivalence: { ...original.production?.equivalence, ...delta },
+          },
+        },
+        'roadmap'
+      )
+    );
+  }
 });
