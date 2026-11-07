@@ -201,3 +201,33 @@ Official tooling references:
 - [Void Cloudflare deployment](https://void.cloud/reference/cli/deploy)
 - [Vite+ configuration](https://www.viteplus.dev/config/)
 - [TanStack Start on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/)
+
+## Public satellite presentation and response caching
+
+The public page opts into `@tuturuuu/satellite/public` for the shared brand,
+logo and theme. It does not mount authenticated satellite providers or resolve
+sessions. EN/VI controls, filters and evidence use the bundled public snapshot.
+A central sign-in link is the only account affordance. Root and mounted-host
+router selection and the canonical apex URL remain owned by the request adapter.
+
+`src/cache-policy.ts` composes headers after the native response. Only successful
+GET/HEAD HTML at `https://tuturuuu.com/roadmap/` and
+`https://roadmap.tuturuuu.com/`, without query variants, receives
+`public,s-maxage=300,stale-while-revalidate=86400`. Cookie-bearing requests do not
+select a different document or read identity. Set-Cookie, unsafe Vary,
+private/no-store upstream responses, unknown hosts, auth/serverFn paths, errors
+and non-document responses receive `private,no-store`. Unsafe headers remain
+present. Successful native assets retain their supplier's cache policy and MIME;
+this wrapper does not establish immutable asset delivery.
+
+The wrapper preserves response body streams, status and Content-Type bytes.
+It has no Cache API, storage, network work, timers or background operations;
+rollback is the owning source revert and normal reviewed release process.
+`node --test src/cache-policy.test.ts src/roadmap-data.test.ts` exercises the
+header boundary with synthetic requests and preserves stage/evidence controls.
+
+Source tests do not establish hosted edge hits. The release owner must verify
+exact-artifact SSR/hydration, immutable hashed assets, response headers and actual
+edge cache hits on both hosts. Measure before/after client bytes and Lighthouse
+metrics only on admitted production artifacts with identical commands and limits.
+No source-only measurement substitutes for that acceptance.

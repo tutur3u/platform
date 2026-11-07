@@ -1,5 +1,6 @@
 {
   "all": "All products",
+  "appName": "Roadmap",
   "blocked": "Blocked",
   "definition": "Planned → work in progress → approved with green checks → merged, awaiting production verification → live with public readback. Blocked is a separate flag at any stage.",
   "details": "Migration evidence",
@@ -7,13 +8,13 @@
   "en": "English",
   "evidence": "View evidence",
   "evidenceLabels": {
-    "Public product": "Public product",
-    "Source configuration": "Source configuration",
-    "Public publication policy": "Public publication policy",
-    "Migration target": "Migration target",
     "Migration PR": "Migration PR",
+    "Migration target": "Migration target",
     "Production readback": "Production readback",
-    "Production receipt": "Production receipt"
+    "Production receipt": "Production receipt",
+    "Public product": "Public product",
+    "Public publication policy": "Public publication policy",
+    "Source configuration": "Source configuration"
   },
   "eyebrow": "Public roadmap",
   "footer": "Updates are reviewed with source changes. No estimated percentages or private operational data.",
@@ -28,16 +29,17 @@
   "reset": "Clear filters",
   "rolling_out": "Work in progress",
   "search": "Find a product",
+  "signIn": "Sign in",
   "snapshot": "Source snapshot",
   "source": "Source progress",
   "stale": "This snapshot is over 24 hours old. Check the linked evidence for newer updates.",
   "summaries": {
+    "live": "Public production readback and acceptance match the merged migration source.",
+    "pendingPublicProductionReceipt": "Awaiting public production receipt",
     "planned": "A public migration target; implementation evidence is not recorded.",
     "rolling_out": "Source work or a current migration PR is recorded; completion is not verified.",
     "waiting_for_merge": "The current PR head is approved with all recorded required checks successful.",
-    "waiting_for_production_sync": "The migration PR is merged into this source; production serving is not verified.",
-    "live": "Public production readback and acceptance match the merged migration source.",
-    "pendingPublicProductionReceipt": "Awaiting public production receipt"
+    "waiting_for_production_sync": "The migration PR is merged into this source; production serving is not verified."
   },
   "target": "TanStack Start · Vite+ · Void · Cloudflare Workers",
   "title": "A clearer path to Cloudflare.",

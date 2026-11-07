@@ -4,6 +4,7 @@ import {
   Outlet,
   Scripts,
 } from '@tanstack/react-router';
+import { PublicSatelliteProviders } from '@tuturuuu/satellite/public';
 import type { ReactNode } from 'react';
 import styles from '../styles.css?url';
 
@@ -36,12 +37,12 @@ export const Route = createRootRoute({
 
 function Document({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
       <body>
-        {children}
+        <PublicSatelliteProviders>{children}</PublicSatelliteProviders>
         <Scripts />
       </body>
     </html>
