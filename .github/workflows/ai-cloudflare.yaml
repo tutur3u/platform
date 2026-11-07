@@ -187,6 +187,13 @@ jobs:
       - name: Check emitted anonymous redirect and required-secret startup refusal
         timeout-minutes: 4
         run: node scripts/ci/ai-cutover-smoke.mjs
+      - name: Exercise emitted runtime with fixture bindings
+        working-directory: apps/ai
+        timeout-minutes: 4
+        env:
+          CI: 'true'
+          CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: bun run test:runtime
       - name: Package deployable output and emitted Wrangler config
         run: |
           python3 scripts/ci/ai-native-artifact.py config apps/ai

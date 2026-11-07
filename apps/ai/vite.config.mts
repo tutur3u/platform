@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import { startBridgePreset } from '@tuturuuu/start-bridge/vite';
@@ -34,7 +35,7 @@ export default defineConfig(({ command }) => ({
       transform(code, id) {
         if (
           id.split('?')[0] !==
-          new URL('./cloudflare/worker.ts', import.meta.url).pathname
+          fileURLToPath(new URL('./cloudflare/worker.ts', import.meta.url))
         )
           return;
         return {
@@ -49,6 +50,10 @@ for (const name of ['TUTURUUU_APP_COORDINATION_SECRET', 'SUPABASE_SECRET_KEY']) 
 for (const name of ['APP_COORDINATION_TOKEN_SECRET', 'SUPABASE_SERVICE_KEY', 'SUPABASE_SERVICE_ROLE_KEY']) {
   if (nativeStartupEnv[name]?.trim().startsWith('tuturuuu-local-development-')) throw new Error('Development signing secret forbidden: ' + name);
 }
+const nativeGoogleCredential = nativeStartupEnv.GOOGLE_GENERATIVE_AI_API_KEY ?? nativeStartupEnv.GOOGLE_API_KEY;
+const nativeGatewayCredential = nativeStartupEnv.AI_GATEWAY_API_KEY ?? nativeStartupEnv.VERCEL_OIDC_TOKEN;
+const nativeAiProvider = nativeGoogleCredential ? 'google' : nativeGatewayCredential ? 'gateway' : 'unconfigured';
+console.info('ai provider: ' + nativeAiProvider);
 ${code}`,
           map: null,
         };
