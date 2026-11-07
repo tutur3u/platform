@@ -138,6 +138,7 @@ export const ci = {
   'tools-cloudflare.yaml': true,
   'pay-cloudflare.yaml': true,
   'playground-cloudflare.yaml': true,
+  'chat-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
