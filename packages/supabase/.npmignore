@@ -1,7 +1,7 @@
 # Config files
 tsconfig.json
 vitest.config.ts
-biome.json
+.oxfmtrc.json
 
 # Build artifacts
 .turbo/

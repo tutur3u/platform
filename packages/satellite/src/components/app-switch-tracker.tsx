@@ -46,7 +46,6 @@ function markSwitchOnLinkClick(currentApp: string, event: MouseEvent) {
     domain: cookieDomain(),
     secure: window.location.protocol === 'https:',
   });
-  // biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is missing in Safari and Firefox, and this short-lived marker must work in every browser.
   if (cookie) document.cookie = cookie;
 }
 
@@ -75,7 +74,6 @@ function reportAppReady(currentApp: string) {
   }
   const start = parseAppSwitchStart(document.cookie, Date.now());
   if (!start) return;
-  // biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is missing in Safari and Firefox, and this short-lived marker must work in every browser.
   document.cookie = clearAppSwitchStart({ domain: cookieDomain() });
   const handoff = sessionStorage.getItem(HANDOFF_KEY) === '1';
   sessionStorage.removeItem(HANDOFF_KEY);

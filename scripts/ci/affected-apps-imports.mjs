@@ -99,9 +99,8 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   // Usage: node scripts/ci/affected-apps-imports.mjs  -> prints suggested entries for undeclared imports.
-  const { loadGraph, loadExtraEdges, coveredByExtraEdges } = await import(
-    './affected-apps.mjs'
-  );
+  const { loadGraph, loadExtraEdges, coveredByExtraEdges } =
+    await import('./affected-apps.mjs');
   const cwd = process.cwd();
   const graph = loadGraph(cwd);
   const missing = undeclaredImports(

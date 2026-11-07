@@ -40,7 +40,6 @@ function builder(result: () => Result) {
     state.inserted = rows;
     return b;
   };
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
   b.then = (
     resolve: (value: unknown) => unknown,
     reject: (error: unknown) => unknown

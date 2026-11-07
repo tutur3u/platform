@@ -58,9 +58,8 @@ describe('external project PATCH route workspace scoping', () => {
     mocks.updateWorkspaceExternalProjectCollection.mockResolvedValue({
       id: 'collection-1',
     });
-    const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/collections/[collectionId]/route'
-    );
+    const { PATCH } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/collections/[collectionId]/route');
 
     const response = await PATCH(
       new Request(
@@ -96,9 +95,8 @@ describe('external project PATCH route workspace scoping', () => {
     mocks.updateWorkspaceExternalProjectBlock.mockResolvedValue({
       id: 'block-1',
     });
-    const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/blocks/[blockId]/route'
-    );
+    const { PATCH } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/blocks/[blockId]/route');
 
     const response = await PATCH(
       new Request(
@@ -134,9 +132,8 @@ describe('external project PATCH route workspace scoping', () => {
     mocks.deleteWorkspaceExternalProjectBlock.mockResolvedValue({
       id: 'block-1',
     });
-    const { DELETE } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/blocks/[blockId]/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/blocks/[blockId]/route');
 
     const response = await DELETE(
       new Request(
@@ -167,9 +164,8 @@ describe('external project PATCH route workspace scoping', () => {
     mocks.updateWorkspaceExternalProjectEntry.mockResolvedValue({
       id: 'entry-1',
     });
-    const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/[entryId]/route'
-    );
+    const { PATCH } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/[entryId]/route');
 
     const response = await PATCH(
       new Request(

@@ -52,7 +52,6 @@ function client({
     for (const method of ['select', 'eq', 'like', 'in'])
       builder[method] = () => builder;
     builder.maybeSingle = async () => result();
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
     builder.then = (
       resolve: (value: Result) => unknown,
       reject: (reason: unknown) => unknown

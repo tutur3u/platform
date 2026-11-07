@@ -133,9 +133,8 @@ describe('mobile deployment bundle route', () => {
   });
 
   it('uses generic auth failures for invalid OIDC tokens', async () => {
-    const { MobileDeploymentOidcError } = await import(
-      '@/lib/mobile-deployment/oidc'
-    );
+    const { MobileDeploymentOidcError } =
+      await import('@/lib/mobile-deployment/oidc');
     const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
     mocks.verifyGitHubOidcToken.mockRejectedValue(
       new MobileDeploymentOidcError('bad token', 'invalid_signature')
@@ -161,9 +160,8 @@ describe('mobile deployment bundle route', () => {
   });
 
   it('does not leak readiness details when the active bundle is unavailable', async () => {
-    const { MobileDeploymentStoreError } = await import(
-      '@/lib/mobile-deployment/store'
-    );
+    const { MobileDeploymentStoreError } =
+      await import('@/lib/mobile-deployment/store');
     mocks.fetchMobileDeploymentBundle.mockRejectedValue(
       new MobileDeploymentStoreError('missing resource', 409)
     );

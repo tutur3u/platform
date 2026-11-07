@@ -62,11 +62,9 @@ function identity() {
   const services = JSON.parse(cli('services', '-o', 'json'));
   const image = postgresImage(
     services,
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Supabase CLI image registry override used by CI.
     process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY || undefined
   );
   const seedEpoch =
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct CI helper fixes its seed epoch for the job.
     process.env.SUPABASE_BASELINE_EPOCH ||
     new Date().toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(seedEpoch))
@@ -112,7 +110,6 @@ function verifyHistory(container) {
 
 function prepare({ key, image }) {
   // Never snapshot a developer or production database. Each CI job starts empty.
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: Invoked directly by GitHub Actions, not Turbo.
   if (process.env.GITHUB_ACTIONS !== 'true' || process.platform !== 'linux') {
     throw new Error(
       'Baseline preparation requires a fresh Linux GitHub Actions runner'
@@ -135,7 +132,6 @@ function prepare({ key, image }) {
     );
   }
   const directory = path.resolve(
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct CI snapshot helper override.
     process.env.SUPABASE_BASELINE_DIR ||
       path.join(process.env.RUNNER_TEMP, 'supabase-baseline')
   );

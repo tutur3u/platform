@@ -15,8 +15,7 @@ export interface UserGroupPostCheckPayload {
   notes?: string | null;
 }
 
-export interface CreateUserGroupPostCheckPayload
-  extends UserGroupPostCheckPayload {
+export interface CreateUserGroupPostCheckPayload extends UserGroupPostCheckPayload {
   post_id: string;
 }
 

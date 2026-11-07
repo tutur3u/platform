@@ -154,9 +154,8 @@ it('rejects target replacement between independent observations', async () => {
 });
 
 it('production composition issues only readiness/inspection RPCs and a provider get', async () => {
-  const { observeEmployeeCreation } = await import(
-    './employee-creation-observation'
-  );
+  const { observeEmployeeCreation } =
+    await import('./employee-creation-observation');
   runtime.config.mockReturnValue({
     url: 'https://synthetic.supabase.co',
     key: 'synthetic',

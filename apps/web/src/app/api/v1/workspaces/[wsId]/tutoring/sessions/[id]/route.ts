@@ -413,13 +413,13 @@ export async function DELETE(request: Request, { params }: Params) {
     .in('attendance_status', ['PENDING', 'CANCELLED']);
   if (scope.teacherId)
     deleteQuery = deleteQuery.eq('teacher_user_id', scope.teacherId);
-  const { data: deleted, error: deleteError } =
-    await (session.source_feedback_id === null
+  const { data: deleted, error: deleteError } = await (
+    session.source_feedback_id === null
       ? deleteQuery.is('source_feedback_id', null)
       : deleteQuery.eq('source_feedback_id', session.source_feedback_id)
-    )
-      .select('id')
-      .maybeSingle();
+  )
+    .select('id')
+    .maybeSingle();
 
   if (deleteError) {
     console.error('Failed to delete tutoring session', {

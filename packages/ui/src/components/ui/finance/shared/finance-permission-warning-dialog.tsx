@@ -27,8 +27,7 @@ interface FinancePermissionWarningContentProps {
   user?: FinancePermissionRequestUser | null;
 }
 
-interface FinancePermissionWarningDialogProps
-  extends FinancePermissionWarningContentProps {
+interface FinancePermissionWarningDialogProps extends FinancePermissionWarningContentProps {
   defaultOpen?: boolean;
   trigger?: ReactNode;
 }

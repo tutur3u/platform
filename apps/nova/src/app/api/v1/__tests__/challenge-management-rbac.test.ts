@@ -168,9 +168,8 @@ describe('Nova challenge-management API RBAC', () => {
     const { client, operations } = createMockAdminClient();
     vi.mocked(createAdminClient).mockResolvedValue(client as never);
 
-    const { POST } = await import(
-      '../challenges/[challengeId]/whitelists/route'
-    );
+    const { POST } =
+      await import('../challenges/[challengeId]/whitelists/route');
     const response = await POST(
       new Request(
         'https://nova.test/api/v1/challenges/challenge-1/whitelists',

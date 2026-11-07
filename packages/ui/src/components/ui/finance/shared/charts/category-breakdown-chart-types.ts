@@ -19,8 +19,7 @@ export interface CategoryBreakdownDisplayRange {
   displayStart: string;
 }
 
-export interface CategoryBreakdownDateRange
-  extends CategoryBreakdownDisplayRange {
+export interface CategoryBreakdownDateRange extends CategoryBreakdownDisplayRange {
   endDate: string;
   startDate: string;
 }

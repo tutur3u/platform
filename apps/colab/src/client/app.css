@@ -354,16 +354,14 @@
     border-bottom: 1px solid var(--border);
     background: linear-gradient(135deg, var(--card), var(--muted));
   }
-  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
+
   .admin-command-header h2 {
     margin: 6px 0;
     font-size: 22px;
   }
-  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
+
   .admin-command-header p,
-  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
   .admin-tab-heading p,
-  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
   .danger-card p {
     margin: 0;
     color: var(--muted-foreground);
@@ -401,7 +399,7 @@
     align-items: flex-start;
     gap: 20px;
   }
-  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
+
   .admin-tab-heading h3,
   .danger-card h4,
   .subsection-heading h4 {

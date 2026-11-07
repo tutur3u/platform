@@ -73,7 +73,6 @@ function fixture(platform: 'windows' | 'macos' = 'windows') {
       eq: vi.fn(() => chain),
       limit: vi.fn(() => chain),
       maybeSingle: () => Promise.resolve(tables[table]),
-      // biome-ignore lint/suspicious/noThenProperty: model the real awaitable query builder.
       then: (resolve: (value: unknown) => unknown) =>
         Promise.resolve(tables[table]).then(resolve),
     };

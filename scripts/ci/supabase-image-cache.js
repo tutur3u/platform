@@ -266,7 +266,6 @@ async function main(mode) {
   const root = path.resolve(__dirname, '../..');
   const database = path.resolve(
     root,
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     process.env.IMAGE_DATABASE || 'apps/database'
   );
   const directory = path.join(process.env.RUNNER_TEMP, 'supabase-images');
@@ -279,17 +278,13 @@ async function main(mode) {
         [path.join(database, 'scripts/run-supabase.js'), ...args],
         { cwd: database }
       );
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     const registry = process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY;
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     const profile = process.env.IMAGE_PROFILE;
     const trusted = trustedSave(
       process.env.GITHUB_EVENT_NAME,
       process.env.GITHUB_REF
     );
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     const catalog = process.env.IMAGE_SEED_CATALOG;
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     const seedBudget = process.env.IMAGE_PULL_BUDGET_SECONDS;
     const fixed = seedCatalog(catalog, {
       trusted,
@@ -383,7 +378,6 @@ async function main(mode) {
   if (mode !== 'pull')
     throw new Error('Usage: supabase-image-cache.js key|load|load-subset|pull');
   const budget = pullBudget(
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     process.env.IMAGE_PULL_BUDGET_SECONDS,
     process.env.GITHUB_EVENT_NAME,
     process.env.GITHUB_REF
@@ -399,13 +393,10 @@ async function main(mode) {
     platform: process.platform,
     arch: process.arch,
   };
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
   const catalog = process.env.IMAGE_SEED_CATALOG;
   const fixed = seedCatalog(catalog, {
     ...seedContext,
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     profile: process.env.IMAGE_PROFILE,
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     registry: process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY,
   });
   if (fixed && JSON.stringify(fixed) !== JSON.stringify(images))
@@ -432,7 +423,6 @@ async function main(mode) {
   if (fixed)
     for (const image of images)
       verifyPinned(image, catalogPin(catalog, image), { deadline });
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
   if (process.env.IMAGE_SAVE !== 'true' || !trusted) return;
   const bytes = images.reduce(
     (sum, image) =>
@@ -479,7 +469,6 @@ if (require.main === module)
       console.error(
         `::warning::Supabase image cache configuration: ${diagnostic}`
       );
-      // biome-ignore lint/suspicious/noUndeclaredEnvVars: GitHub Actions output file, outside Turbo.
       const summary = process.env.GITHUB_STEP_SUMMARY;
       if (summary) {
         try {

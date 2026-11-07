@@ -50,7 +50,6 @@ vi.mock('@tuturuuu/supabase/next/server', () => {
     chain.single = async () => ({ data: rows[table] });
     chain.maybeSingle = async () => ({ data: rows[table] });
     if (table === 'audio_chunks') {
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
       chain.then = (resolve: (value: unknown) => void) => {
         mocks.chunkQuery();
         resolve({

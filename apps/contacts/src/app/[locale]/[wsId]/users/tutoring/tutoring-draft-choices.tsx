@@ -68,10 +68,10 @@ export function TutoringDraftChoices({
     ],
     enabled: Boolean(
       lease.scope.actor &&
-        form.groupId &&
-        form.studentUserId &&
-        schedule.length &&
-        !missingAbsenceDate
+      form.groupId &&
+      form.studentUserId &&
+      schedule.length &&
+      !missingAbsenceDate
     ),
     queryFn: () =>
       loadTutoringPlanData(

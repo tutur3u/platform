@@ -1,8 +1,10 @@
 mod absence_credits;
+mod context;
 mod policy;
 mod query;
 mod response;
 
+use context::{QueueContext, load_queue_context};
 use policy::{
     QueuePolicy, content_review_due, current_utc_day, group_excluded, iso_day, load_queue_policy,
     reassessment_due, unchanged_feedback_since,
@@ -31,9 +33,6 @@ const NOT_FOUND_MESSAGE: &str = "Not found";
 const INSUFFICIENT_PERMISSIONS_MESSAGE: &str = "Insufficient permissions";
 const INVALID_QUERY_MESSAGE: &str = "Invalid query";
 const FAILED_TO_LOAD_MESSAGE: &str = "Failed to load queue";
-
-// ---------------------------------------------------------------------------
-// Query parameters (mirror of TutoringQueueQuerySch-------------------------------------------------
 
 #[derive(Deserialize)]
 struct AttendanceGroupEmbed {
@@ -83,9 +82,7 @@ struct FeedbackRow {
     group: Option<FeedbackGroupEmbed>,
 }
 
-// ---------------------------------------------------------------------------
 // Entry point
-// ---------------------------------------------------------------------------
 
 pub(crate) async fn handle_workspaces_tutoring_queue_route(
     config: &BackendConfig,
@@ -164,21 +161,25 @@ async fn tutoring_queue_response(
         Err(()) => return message_response(500, FAILED_TO_LOAD_MESSAGE),
     };
 
+    let context = match load_queue_context(contact_data, outbound, &ws_id, &query, &policy).await {
+        Ok(context) => context,
+        Err(()) => return message_response(500, FAILED_TO_LOAD_MESSAGE),
+    };
+
     let response = build_queue_response(
         &query,
         attendance_rows,
         reserved_rows,
         feedback_rows,
         &policy,
+        &context,
         current_utc_day(),
     );
 
     no_store_response(json_response(200, response))
 }
 
-// ---------------------------------------------------------------------------
 // Supabase reads (service-role, mirroring the legacy admin client)
-// ---------------------------------------------------------------------------
 
 async fn load_attendance_rows(
     contact_data: &contact::ContactDataConfig,
@@ -315,9 +316,7 @@ async fn send_service_role_request(
     outbound.send(request).await.map_err(|_| ())
 }
 
-// ---------------------------------------------------------------------------
 // Queue assembly (mirror of the legacy in-memory aggregation)
-// ---------------------------------------------------------------------------
 
 fn build_queue_response(
     query: &TutoringQueueQuery,
@@ -325,6 +324,7 @@ fn build_queue_response(
     reserved_rows: Vec<ReservedSessionRow>,
     feedback_rows: Vec<FeedbackRow>,
     policy: &QueuePolicy,
+    context: &QueueContext,
     today: i64,
 ) -> QueueResponse {
     let absence_cutoff = today - policy.absence_lookback_days;
@@ -411,6 +411,8 @@ fn build_queue_response(
         }
     }
 
+    key_set.retain(|key| context.current_keys.contains(key));
+
     // Latest feedback per key (rows already ordered created_at desc).
     let mut latest_feedback: BTreeMap<String, (Option<String>, String, Option<String>)> =
         BTreeMap::new();
@@ -463,12 +465,17 @@ fn build_queue_response(
             .get(group_id)
             .map(String::as_str)
             .unwrap_or_default();
-        let has_absent = deficit > 0 && !group_excluded(policy, group_label, "make_up");
+        let tags = context
+            .tags
+            .get(group_id)
+            .map(Vec::as_slice)
+            .unwrap_or_default();
+        let has_absent = deficit > 0 && !group_excluded(policy, group_label, "make_up", tags);
         let has_weak = feedback
             .and_then(|(id, _, _)| id.as_ref())
             .is_some_and(|id| {
                 !scheduled_feedback_ids.contains(id)
-                    && !group_excluded(policy, group_label, "weak_support")
+                    && !group_excluded(policy, group_label, "weak_support", tags)
                     && reassessment_due(
                         completed_feedback_dates.get(id).map(String::as_str),
                         policy.reassessment_days,
@@ -477,7 +484,7 @@ fn build_queue_response(
             });
 
         let content_unchanged_since =
-            if feedback.is_some() && !group_excluded(policy, group_label, "weak_support") {
+            if feedback.is_some() && !group_excluded(policy, group_label, "weak_support", tags) {
                 feedback_history
                     .get(key)
                     .and_then(|rows| unchanged_feedback_since(rows))
@@ -624,9 +631,6 @@ fn is_present_id(value: Option<&str>) -> bool {
     matches!(value, Some(value) if !value.is_empty() && value != "null" && value != "undefined")
 }
 
-// ---------------------------------------------------------------------------
-// Query parsing (mirror of TutoringQueueQuerySchema-------------------------------------------
-
 fn workspaces_tutoring_queue_ws_id(path: &str) -> Option<&str> {
     let ws_id = path
         .strip_prefix(WORKSPACES_TUTORING_QUEUE_PATH_PREFIX)?
@@ -635,9 +639,7 @@ fn workspaces_tutoring_queue_ws_id(path: &str) -> Option<&str> {
     (!ws_id.is_empty() && !ws_id.contains('/')).then_some(ws_id)
 }
 
-// ---------------------------------------------------------------------------
 // Response helpers
-// ---------------------------------------------------------------------------
 
 fn invalid_query_response(error: QueryParseError) -> BackendResponse {
     let issue = match error {
@@ -674,3 +676,9 @@ fn is_success_status(status: u16) -> bool {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod golden_tests;
+
+#[cfg(test)]
+mod context_tests;

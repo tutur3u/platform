@@ -209,15 +209,13 @@ export function reviseLegalDocument(document: LegalDocument): LegalDocument {
     footer: `${document.locale === 'en' ? 'Draft revision for review; not a newly effective agreement.' : 'Bản sửa đổi để rà soát; chưa phải thỏa thuận mới có hiệu lực.'} ${document.footer}`,
     sections: [
       ...sections,
-      ...additions.map(
-        ([title, text], index): LegalSection => ({
-          id: `${kind}-proposal-${index + 1}`,
-          title,
-          content: text,
-          icon: 'scale',
-          tone: 'blue',
-        })
-      ),
+      ...additions.map(([title, text], index): LegalSection => ({
+        id: `${kind}-proposal-${index + 1}`,
+        title,
+        content: text,
+        icon: 'scale',
+        tone: 'blue',
+      })),
     ],
   };
 }

@@ -25,19 +25,19 @@ const createTaskMock = vi.fn();
 const loadListPageMock = vi.fn();
 let progressivePagination: Record<string, unknown> = {};
 let boardHeaderProps:
-  | React.ComponentProps<typeof import('../board-header')['BoardHeader']>
+  | React.ComponentProps<(typeof import('../board-header'))['BoardHeader']>
   | undefined;
 let kanbanBoardProps:
   | React.ComponentProps<
-      typeof import('../../boards/boardId/kanban')['KanbanBoard']
+      (typeof import('../../boards/boardId/kanban'))['KanbanBoard']
     >
   | undefined;
 let listViewProps:
-  | React.ComponentProps<typeof import('../list-view')['ListView']>
+  | React.ComponentProps<(typeof import('../list-view'))['ListView']>
   | undefined;
 let timelineBoardProps:
   | React.ComponentProps<
-      typeof import('../../boards/boardId/timeline-board')['TimelineBoard']
+      (typeof import('../../boards/boardId/timeline-board'))['TimelineBoard']
     >
   | undefined;
 vi.mock('next-intl', () => ({

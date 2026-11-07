@@ -286,8 +286,8 @@ export function useTaskActions({
     const now = new Date().toISOString();
     const shouldMoveToCompletionList = Boolean(
       newClosedState &&
-        targetCompletionList &&
-        targetCompletionList.id !== task.list_id
+      targetCompletionList &&
+      targetCompletionList.id !== task.list_id
     );
     const mutationId = applyOptimisticTaskPatch({
       queryClient,

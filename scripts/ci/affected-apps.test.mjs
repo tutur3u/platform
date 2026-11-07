@@ -124,7 +124,7 @@ for (const file of [
   'turbo.json',
   '.github/ci.yml',
   'tsconfig.json',
-  'biome.json',
+  '.oxfmtrc.json',
   'eslint.config.js',
   'apps/alpha/Dockerfile',
   '.env.local',

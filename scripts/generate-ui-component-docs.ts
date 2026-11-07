@@ -258,17 +258,13 @@ function buildDocsJson(current: string): string {
       !(typeof page === 'object' && page !== null && page.group === UI_GROUP)
   );
   componentsGroup.pages.push(buildUiNavGroup());
-  // Round-trip through Biome so the output matches the repo's canonical JSON
+  // Round-trip through Oxc so the output matches the repo's canonical JSON
   // formatting (and stays idempotent under `--check`).
-  return execFileSync(
-    'bunx',
-    ['biome', 'format', '--stdin-file-path=docs.json'],
-    {
-      input: `${JSON.stringify(json, null, 2)}\n`,
-      encoding: 'utf8',
-      cwd: repoRoot,
-    }
-  );
+  return execFileSync('bunx', ['oxfmt', '--stdin-filepath', 'docs.json'], {
+    input: `${JSON.stringify(json, null, 2)}\n`,
+    encoding: 'utf8',
+    cwd: repoRoot,
+  });
 }
 
 // --- Run -------------------------------------------------------------------

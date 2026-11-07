@@ -169,7 +169,6 @@ function database(seed: Row[] = []) {
       },
       single: async () => result(true),
       maybeSingle: async () => result(true),
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query fixtures intentionally implement its awaitable builder contract.
       then(
         onfulfilled: (value: Result) => unknown,
         onrejected?: (reason: unknown) => unknown

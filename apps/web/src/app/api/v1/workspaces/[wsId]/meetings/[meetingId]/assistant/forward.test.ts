@@ -47,9 +47,8 @@ beforeEach(() => {
 });
 
 it('maps workspace resolution failures without forwarding to Meet', async () => {
-  const { WorkspaceNotFoundError } = await import(
-    '@tuturuuu/utils/workspace-helper'
-  );
+  const { WorkspaceNotFoundError } =
+    await import('@tuturuuu/utils/workspace-helper');
   normalize.mockRejectedValueOnce(new WorkspaceNotFoundError());
   const fetchMeet = vi.fn();
   globalThis.fetch = fetchMeet as unknown as typeof fetch;

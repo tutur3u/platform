@@ -36,7 +36,9 @@ export async function listScenarios(): Promise<ScenarioSummary[]> {
   }
 }
 export async function getPublishedScenario(id: string) {
-  const { data, error } = await (await parleyDatabase())
+  const { data, error } = await (
+    await parleyDatabase()
+  )
     .schema('private')
     .from('parley_scenarios')
     .select('id, title, category, briefing, roles, revision')
@@ -47,7 +49,9 @@ export async function getPublishedScenario(id: string) {
   return data ? publicScenario(data) : null;
 }
 export async function getSessionScenario(meetingId: string) {
-  const { data, error } = await (await parleyDatabase())
+  const { data, error } = await (
+    await parleyDatabase()
+  )
     .schema('private')
     .from('parley_sessions')
     .select('snapshot, created_at, scenario_revision')
@@ -68,7 +72,9 @@ export async function getScenarioPrompt(meetingId: string) {
 }
 
 export async function isParleySession(meetingId: string, required = false) {
-  const { data, error } = await (await parleyDatabase())
+  const { data, error } = await (
+    await parleyDatabase()
+  )
     .schema('private')
     .from('parley_sessions')
     .select('meeting_id')

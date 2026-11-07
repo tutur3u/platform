@@ -60,11 +60,9 @@ const handler = (
 
 export default {
   async fetch(request: Request, env: PayEnvironment, ctx: WorkerContext) {
-    const response = await (await handler)(
-      stagingCookieRequest(request),
-      env,
-      ctx
-    );
+    const response = await (
+      await handler
+    )(stagingCookieRequest(request), env, ctx);
     const secured = appConfig.wrapResponse
       ? await appConfig.wrapResponse(response, { request, env })
       : response;
