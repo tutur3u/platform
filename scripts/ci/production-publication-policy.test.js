@@ -237,7 +237,7 @@ for (const app of apps) {
       surfaces: app === 'meet' ? ['frontend', 'realtime-do'] : ['frontend'],
     };
     const workflow = `${app}-cloudflare.yaml`;
-    const target = ['meet', 'calendar'].includes(app)
+    const target = ['meet', 'calendar', 'shortener'].includes(app)
       ? workflow
       : `vercel-production-${app}.yaml`;
     const root = fixture(t, policy);
