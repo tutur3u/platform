@@ -12,6 +12,12 @@ export const stagingProfile = {
   hsts: 'max-age=31536000',
 } as const;
 
+export const webCandidateMounts = {
+  app: 'web',
+  rootHosts: [stagingProfile.host],
+  unknownHost: 'reject',
+} as const;
+
 export interface WebCandidateEnv {
   WEB_START_CANDIDATE?: string;
   WEB_STAGING_SOURCE_SHA?: string;

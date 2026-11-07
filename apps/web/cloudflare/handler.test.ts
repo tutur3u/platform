@@ -49,6 +49,16 @@ function forwarded(fetcher: ReturnType<typeof setup>['fetcher']) {
 }
 
 describe('Web candidate admission', () => {
+  it('rejects unknown-host preflights before serving or calling upstream', async () => {
+    const { handler, start, fetcher } = setup();
+    const response = await handler(
+      new Request('https://unknown.workers.dev/', { method: 'OPTIONS' }),
+      env
+    );
+    expect(response.status).toBe(503);
+    expect(start).not.toHaveBeenCalled();
+    expect(fetcher).not.toHaveBeenCalled();
+  });
   it.each([undefined, '', 'on', 'true', 'off', 'unknown'])(
     'defaults closed for %s',
     async (flag) => {

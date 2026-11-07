@@ -41,7 +41,7 @@
     "ui:add": "bunx shadcn-ui@latest add",
     "ui:diff": "bunx shadcn-ui@latest diff",
     "build:candidate": "cd cloudflare && node prepare-build.mjs && vp build --config ../vite.config.mts --configLoader runner",
-    "test:candidate": "cd ../.. && vitest run --config apps/web/cloudflare/vitest.config.mts",
+    "test:candidate": "cd ../.. && node --test apps/web/cloudflare/required-secrets.test.mjs && vitest run --config apps/web/cloudflare/vitest.config.mts",
     "type-check:candidate": "tsc --noEmit -p tsconfig.candidate.json",
     "routes:candidate": "bun cloudflare/generate-inventory.ts",
     "routes:candidate:check": "bun cloudflare/generate-inventory.ts --check",
