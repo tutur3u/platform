@@ -48,3 +48,7 @@ The report-only Web browser workflow runs smoke or broader browser verification 
 ## Repository cache budget
 
 CI caches reduce repeated downloads and setup work. Cache availability is not guaranteed, and eviction can require fresh downloads. Reusing a cache never substitutes for checking the candidate source and dependency identity.
+
+## Frozen workflow installs
+
+Workflow dependency installs use `bun install --frozen-lockfile`, and the retry helper adds the flag to project installs. Deliberate lockfile regeneration and pinned global CLI installs must match an exact workflow file, step name and full command in `scripts/ci/frozen-bun-install-exceptions.json`, and every exception disables lifecycle scripts. Run `node --test scripts/ci/frozen-bun-install-guard.test.js` to check the policy. Release credentials are scoped to the steps that push; operator details are maintained privately.

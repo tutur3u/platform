@@ -646,27 +646,22 @@ test('Biome workflow runs pinned npm Biome CLI and prints captured output when c
   }
 
   assert.doesNotMatch(workflow, /biomejs\/setup-biome@v2/u);
-  assert.match(
-    formatJob,
-    new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} format \\. 2>&1`,
-      'u'
-    )
-  );
-  assert.match(
-    lintJob,
-    new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} lint \\. 2>&1`,
-      'u'
-    )
-  );
-  assert.match(
-    applyFormatJob,
-    new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} format --write \\.`,
-      'u'
-    )
-  );
+  // An exact pinned Biome, never a binary chosen by the PR's own lockfile
+  // (biome-workflow-lifecycle.test.js keeps the pin equal to bun.lock).
+  for (const [job, command] of [
+    [formatJob, 'format \\. 2>&1'],
+    [lintJob, 'lint \\. 2>&1'],
+    [applyFormatJob, 'format --write \\.'],
+  ]) {
+    assert.doesNotMatch(job, /node_modules\/\.bin\/biome/u);
+    assert.match(
+      job,
+      new RegExp(
+        `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} ${command}`,
+        'u'
+      )
+    );
+  }
 });
 
 test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', () => {
@@ -899,7 +894,7 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
   );
   assert.match(
     cleanupStep,
-    /git push origin --delete "\$\{RELEASE_NOTES_BRANCH\}"/
+    /bash scripts\/ci\/github-token-push\.sh --delete "\$\{RELEASE_NOTES_BRANCH\}"/
   );
   assert.match(
     cleanupStep,
@@ -1246,7 +1241,7 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
     const header = workflow.slice(0, workflow.indexOf('\njobs:'));
     const deployJob = readWorkflowJobBlock(workflowName, jobName);
     const installIndex = workflow.indexOf(
-      'run: bash scripts/ci/run-with-backoff.sh bun install\n'
+      'run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile\n'
     );
     const firstSecretInterpolationIndex = workflow.search(
       SECRET_INTERPOLATION_PATTERN

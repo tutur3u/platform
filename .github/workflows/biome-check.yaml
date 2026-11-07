@@ -104,6 +104,10 @@ jobs:
 
       - name: Check Biome formatting
         id: format-check
+        # Pinned Biome (kept equal to bun.lock by biome-workflow-lifecycle.test.js),
+        # not the PR's own lockfile; package lifecycle scripts never run.
+        env:
+          npm_config_ignore_scripts: 'true'
         run: |
           # Capture biome format output and exit code
           set +e
@@ -199,6 +203,10 @@ jobs:
 
       - name: Check Biome linting
         id: lint-check
+        # Pinned Biome (kept equal to bun.lock by biome-workflow-lifecycle.test.js),
+        # not the PR's own lockfile; package lifecycle scripts never run.
+        env:
+          npm_config_ignore_scripts: 'true'
         run: |
           # Capture biome lint output and exit code
           set +e
@@ -280,6 +288,10 @@ jobs:
           node-version: 24
 
       - name: Apply Biome format
+        # Pinned Biome (kept equal to bun.lock by biome-workflow-lifecycle.test.js),
+        # not the PR's own lockfile; package lifecycle scripts never run.
+        env:
+          npm_config_ignore_scripts: 'true'
         run: npx --yes @biomejs/biome@2.5.13 format --write .
 
       - name: Check for changes

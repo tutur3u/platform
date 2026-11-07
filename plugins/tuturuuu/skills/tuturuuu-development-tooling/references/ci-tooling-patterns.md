@@ -1452,3 +1452,24 @@ Run synthetic metrics, dataset-boundary and runner tests with the AI workspace's
 Vitest config before the build-free changed-files gate. Provider calls are a
 separate consented-data experiment; synthetic green does not confirm D1 or enable
 a production provider. Never attach content-bearing provider errors to evidence.
+
+## Frozen workflow dependency installs
+
+Use explicit `bun install --frozen-lockfile` in workflows; the retry helper also
+adds it for project installs. Lockfile regeneration and pinned global tool installs
+must match an exact workflow file, step name and full command in
+`scripts/ci/frozen-bun-install-exceptions.json`. Each command requires
+`--ignore-scripts`; lock rewrites also require `--lockfile-only`. The preceding
+`# unfrozen-bun-install: <reason>` documents the entry but grants no authority. Run
+`frozen-bun-install-guard.test.js` with the workflow-config, release-workflows,
+checkout-credentials and Wrangler usage tests after changing this boundary.
+Exceptions must still name a live workflow step and command; delete stale entries.
+Match workflows by content, not package or file name, so renamed release
+workflows stay covered. Release formatting installs the locked Biome binary on
+trusted production content before checking out generated files. PR-facing Biome
+jobs instead run the exact Biome version pinned in `biome-check.yaml` (kept equal
+to `bun.lock` by `biome-workflow-lifecycle.test.js`) with lifecycle scripts off,
+never a binary from the PR's own lockfile. Keep checkout persistence disabled and
+push only through `scripts/ci/github-token-push.sh`, which passes the token as an
+env-config auth header so it never appears in process argv. See the GitHub
+Actions runbook's frozen-install section for the operating policy.

@@ -149,7 +149,12 @@ test('only allowlisted read-only, secret-free portable jobs can select the Mac p
                 line
               ) && !line.includes('--lockfile-only')
           );
-        if (installs.length) {
+        const alwaysScriptFree = installs.every((line) =>
+          /^(?:bash scripts\/ci\/run-with-backoff\.sh )?bun install --frozen-lockfile --ignore-scripts$/.test(
+            line.trim()
+          )
+        );
+        if (installs.length && !alwaysScriptFree) {
           assert.match(
             step.run,
             /bun install --frozen-lockfile \$BUN_INSTALL_FLAGS/
