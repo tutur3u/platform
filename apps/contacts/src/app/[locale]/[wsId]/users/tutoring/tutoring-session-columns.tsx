@@ -38,6 +38,7 @@ export interface TutoringSessionColumnActions {
   isMarking: boolean;
   locale: string;
   policy: TutoringPolicy;
+  onComment?: (session: TutoringSessionRecord) => void;
   onEditContent: (session: TutoringSessionRecord) => void;
   onDelete: (session: TutoringSessionRecord) => void;
   onMark: (id: string, status: TutoringAttendanceStatus) => void;
@@ -107,6 +108,11 @@ function SessionActionsCell({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          {actions.onComment ? (
+            <DropdownMenuItem onClick={() => actions.onComment?.(session)}>
+              {t('tutor_comment')}
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem
             disabled={!canManage}
             onClick={() => onEditContent(session)}

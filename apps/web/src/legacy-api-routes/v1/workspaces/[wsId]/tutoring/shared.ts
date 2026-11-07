@@ -83,6 +83,13 @@ export const TutoringSessionCreateSchema = z.object({
   sourceFeedbackId: z.string().uuid().nullable().optional(),
 });
 
+const TutorCommentSchema = z
+  .string()
+  .trim()
+  .max(2000)
+  .transform((value) => value || null)
+  .optional();
+
 export const TutoringSessionUpdateSchema = z
   .object({
     teacherUserId: z.string().uuid().nullable().optional(),
@@ -93,6 +100,7 @@ export const TutoringSessionUpdateSchema = z
     reasonDetail: z.string().max(5000).optional(),
     content: z.string().max(10000).optional(),
     attendanceStatus: TutoringAttendanceStatusSchema.optional(),
+    tutorComment: TutorCommentSchema,
     parentMessagePreview: z.string().max(10000).optional(),
     resolvedAt: z.string().datetime({ offset: true }).nullable().optional(),
   })
@@ -127,6 +135,7 @@ export const TutoringQueueQuerySchema = z.object({
 });
 
 export const TutoringMarkSchema = z.object({
+  tutorComment: TutorCommentSchema,
   attendanceStatus: TutoringAttendanceStatusSchema,
 });
 

@@ -41,6 +41,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { TutoringCommentDialog } from './tutoring-comment-dialog';
 import { TutoringCreateCard } from './tutoring-create-card';
 import { isTutoringContentRestricted } from './tutoring-errors';
 import {
@@ -90,6 +91,7 @@ interface TutoringSessionsActions {
 interface Props {
   actions: TutoringSessionsActions;
   canManage: boolean;
+  tutorCommentsEnabled?: boolean;
   create: TutoringSessionsCreateState;
   exportQuery: ListTutoringSessionsParams;
   error: string | null;
@@ -154,6 +156,7 @@ function SessionsEmptyState({
 export function TutoringSessionsCard({
   actions,
   canManage,
+  tutorCommentsEnabled = false,
   create,
   exportQuery,
   error,
@@ -181,6 +184,10 @@ export function TutoringSessionsCard({
   const [deletingSession, setDeletingSession] =
     useState<TutoringSessionRecord | null>(null);
   const [draftContent, setDraftContent] = useState('');
+  const [commentSession, setCommentSession] = useState<{
+    id: string;
+    complete: boolean;
+  } | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const canExportDetailed = canExportTutoringFormat(exportQuery, 'detailed');
   const canExportPayroll = canExportTutoringFormat(exportQuery, 'payroll');
@@ -252,7 +259,14 @@ export function TutoringSessionsCard({
         setDraftContent(session.content);
       },
       onDelete: setDeletingSession,
-      onMark: actions.onMark,
+      onComment: tutorCommentsEnabled
+        ? (session) => setCommentSession({ id: session.id, complete: false })
+        : undefined,
+      onMark: (id, status) => {
+        if (tutorCommentsEnabled && status === 'DONE')
+          setCommentSession({ id, complete: true });
+        else actions.onMark(id, status);
+      },
       onParentMessage: setParentMessageSession,
       t,
       tableT,
@@ -413,6 +427,16 @@ export function TutoringSessionsCard({
         </DialogContent>
       </Dialog>
 
+      {commentSession ? (
+        <TutoringCommentDialog
+          key={commentSession.id}
+          wsId={wsId}
+          sessionId={commentSession.id}
+          complete={commentSession.complete}
+          canManage={canManage}
+          onClose={() => setCommentSession(null)}
+        />
+      ) : null}
       <TutoringParentMessageDialog
         onOpenChange={(open) => !open && setParentMessageSession(null)}
         session={parentMessageSession}

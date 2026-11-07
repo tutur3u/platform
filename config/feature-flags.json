@@ -126,5 +126,13 @@
     "class": "ui",
     "default": false,
     "removeBy": "2027-01-31"
+  },
+  {
+    "key": "tutoring_tutor_comments",
+    "description": "Workspace-scoped via workspace_configs. Kill switch: set tutoring_tutor_comments false or remove it; tutor-only writes and staff reads.",
+    "owner": "pax",
+    "class": "write",
+    "default": false,
+    "removeBy": "2027-01-31"
   }
 ]

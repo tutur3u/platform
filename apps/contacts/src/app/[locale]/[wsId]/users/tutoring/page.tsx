@@ -72,6 +72,16 @@ export default async function TutoringPage({ params }: PageProps) {
 
         return (
           <TutoringClient
+            tutorCommentsEnabled={
+              (
+                await getContactsWorkspaceConfigValue(
+                  wsId,
+                  'tutoring_tutor_comments'
+                )
+              )
+                ?.trim()
+                .toLowerCase() === 'true'
+            }
             wsId={wsId}
             canManage={access.canManage}
             canConfigure={Boolean(

@@ -21,7 +21,11 @@ function query(table: string, rows: () => Row[]) {
   let to = Number.POSITIVE_INFINITY;
   let ids: string[] | null = null;
   const builder = {
-    select: () => builder,
+    select: (columns: string) => {
+      expect(columns).not.toContain('tutor_comment');
+      expect(columns).not.toContain('*');
+      return builder;
+    },
     eq: () => builder,
     gte: () => builder,
     lte: () => builder,

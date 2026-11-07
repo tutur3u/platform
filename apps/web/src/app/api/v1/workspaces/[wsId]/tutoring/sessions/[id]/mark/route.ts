@@ -8,6 +8,7 @@ import {
 } from '@/lib/tutoring/linked-content';
 import { resolveTutoringWriteScope } from '@/lib/tutoring/read-scope';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
+import { tutorCommentsEnabled } from '@/lib/tutoring/tutor-comments';
 
 interface Params {
   params: Promise<{ wsId: string; id: string }>;
@@ -44,10 +45,22 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
+  if (
+    parsed.data.tutorComment !== undefined &&
+    !(await tutorCommentsEnabled(normalizedWsId))
+  ) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+
   const resolvedAt =
     parsed.data.attendanceStatus === 'DONE' ? new Date().toISOString() : null;
   const sbAdmin = await createAdminClient();
-  const scope = await resolveTutoringWriteScope({ request, access, sbAdmin });
+  const scope = await resolveTutoringWriteScope({
+    request,
+    access,
+    sbAdmin,
+    tutorOnly: parsed.data.tutorComment !== undefined,
+  });
   if (!scope.allowed)
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   const tutoringSessionsClient = sbAdmin.schema('private');
@@ -78,6 +91,9 @@ export async function POST(request: Request, { params }: Params) {
   let updateQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .update({
+      ...(parsed.data.tutorComment !== undefined
+        ? { tutor_comment: parsed.data.tutorComment }
+        : {}),
       attendance_status: parsed.data.attendanceStatus,
       resolved_at: resolvedAt,
     })
