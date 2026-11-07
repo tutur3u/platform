@@ -1,3 +1,9 @@
+import {
+  hydrationBasepath,
+  mountHeader,
+  prepareRoadmapRequest,
+  selectedBasepath,
+} from '../src/request-boundary.ts';
 import { roadmapBoundary } from '../src/request-boundary.ts';
 import { assertEmittedMapping } from './asset-mapping.mjs';
 import { packageAssets } from './package-assets.mjs';
@@ -347,4 +353,116 @@ test('packaging moves real bytes once and refuses unsafe or missing clients', (t
     join(bad, 'dist/client/app.js')
   );
   assert.throws(() => packageAssets(bad), /single-link/);
+});
+
+test('dedicated exact host serves root and canonicalizes legacy pages without redirecting transport', async () => {
+  const request = (path, options) =>
+    new Request(`https://roadmap.tuturuuu.com${path}`, options);
+  for (const [path, target] of [
+    ['/roadmap', '/'],
+    ['/roadmap/?x=1&x=2', '/?x=1&x=2'],
+    ['/roadmap/deep?x=%2F', '/deep?x=%2F'],
+  ]) {
+    const response = roadmapBoundary(request(path));
+    assert.equal(response.status, 308);
+    assert.equal(response.headers.get('Location'), target);
+    assert.ok(!target.startsWith('//'));
+  }
+  for (const path of [
+    '/',
+    '/?x=1',
+    '/deep',
+    '/roadmap/assets/app.js',
+    '/roadmap/_serverFn/abc?x=1',
+  ]) {
+    const original = request(path);
+    const basepath = selectedBasepath(original);
+    assert.equal(basepath, '/');
+    assert.equal(roadmapBoundary(original, basepath), undefined);
+    const prepared = prepareRoadmapRequest(original, basepath);
+    const expected = path.startsWith('/roadmap/')
+      ? original.url
+      : `https://roadmap.tuturuuu.com/roadmap${path}`;
+    assert.equal(prepared.url, expected);
+    assert.equal(prepared.headers.get(mountHeader), '/');
+    assert.equal(
+      hydrationBasepath({ roadmapBasepath: prepared.headers.get(mountHeader) }),
+      '/'
+    );
+  }
+  const post = request('/roadmap/_serverFn/abc?x=1', {
+    method: 'POST',
+    body: 'payload',
+    headers: { [mountHeader]: '/roadmap', 'content-type': 'text/plain' },
+  });
+  const prepared = prepareRoadmapRequest(post, selectedBasepath(post));
+  assert.equal(prepared.method, 'POST');
+  assert.equal(await prepared.text(), 'payload');
+  assert.equal(prepared.headers.get(mountHeader), '/');
+  assert.equal(prepared.headers.get('content-type'), 'text/plain');
+});
+
+test('host selection ignores forwarded spoofing and preserves mounted fallback hosts', () => {
+  for (const host of [
+    'tuturuuu.com',
+    'sample.workers.dev',
+    'unknown.test',
+    'roadmap.tuturuuu.com.evil.test',
+    'roadmap.tuturuuu.com:8443',
+  ]) {
+    const request = new Request(`https://${host}/?x=1`, {
+      headers: {
+        'x-forwarded-host': 'roadmap.tuturuuu.com',
+        [mountHeader]: '/',
+      },
+    });
+    assert.equal(selectedBasepath(request), '/roadmap');
+    assert.equal(
+      roadmapBoundary(request).headers.get('Location'),
+      '/roadmap/?x=1'
+    );
+    const mounted = new Request(`https://${host}/roadmap/?x=1`, {
+      headers: request.headers,
+    });
+    assert.equal(roadmapBoundary(mounted), undefined);
+    const prepared = prepareRoadmapRequest(mounted, selectedBasepath(mounted));
+    assert.equal(prepared.url, mounted.url);
+    assert.equal(prepared.headers.get(mountHeader), '/roadmap');
+  }
+  const mismatch = new Request('https://roadmap.tuturuuu.com/', {
+    headers: { host: 'roadmap.tuturuuu.com:8443' },
+  });
+  assert.equal(selectedBasepath(mismatch), '/roadmap');
+  const spoof = new Request('https://unknown.test/', {
+    headers: { host: 'roadmap.tuturuuu.com' },
+  });
+  assert.equal(selectedBasepath(spoof), '/roadmap');
+  const forwarded = new Request('https://roadmap.tuturuuu.com/', {
+    headers: { 'x-forwarded-host': 'evil.test' },
+  });
+  assert.equal(selectedBasepath(forwarded), '/');
+  for (const data of [
+    null,
+    {},
+    { roadmapBasepath: '//evil.test' },
+    { roadmapBasepath: '/wrong' },
+  ])
+    assert.throws(() => hydrationBasepath(data));
+});
+
+test('both host modes reject encoded aliases, backslashes and protocol-relative redirect targets', () => {
+  for (const host of ['roadmap.tuturuuu.com', 'sample.workers.dev']) {
+    for (const path of [
+      '//evil.test',
+      '/roadmap//evil.test',
+      '/roadmap/%5Cevil',
+      '/roadmap/%2Fevil',
+      '/%ZZ',
+      '/roadmap/\\\\evil.test',
+    ]) {
+      const response = roadmapBoundary(new Request(`https://${host}${path}`));
+      assert.equal(response.status, 400);
+      assert.equal(response.headers.get('Location'), null);
+    }
+  }
 });
