@@ -27,7 +27,12 @@ the input SHA-256, source commit, observation time and source-verified merge
 inclusion. Reproduce it with the same source, input bytes and observation time.
 Review public evidence inputs before generating; never include private products,
 customer records, accounts, check logs, security reasons or operational notes.
-No status is assigned directly in the input.
+No status is assigned directly in the input. Source URLs encode each path segment
+using RFC3986, including brackets and parentheses. Every evidence URL must be
+absolute HTTPS at its category's exact host, without userinfo, query or fragment;
+malformed escapes and noncanonical/raw reserved path characters are rejected.
+Supplied migration PR and production receipt links accompany source links when
+actual stage proof is available; no PR is inferred from configuration.
 
 A PR record identifies its public first-party PR URL, `migration_completion`
 scope, open/merged/closed state, current head, draft flag, review decision and

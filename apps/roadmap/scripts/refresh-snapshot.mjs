@@ -1,3 +1,4 @@
+import { githubSourceUrl } from '../src/public-evidence-url.ts';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -50,7 +51,7 @@ const input = evidencePath
 const inputs = parseEvidenceInputs(JSON.parse(input.toString('utf8')));
 const evidenceInputSha256 = createHash('sha256').update(input).digest('hex');
 const checkedAt = timestamp(process.argv[4] ?? new Date().toISOString());
-const source = `https://github.com/tutur3u/platform/blob/${sourceCommit}/`;
+const source = (path) => githubSourceUrl(sourceCommit, path);
 const apps = products.map(([id, name, product]) => {
   const marketing = `apps/web/src/app/[locale]/(marketing)/products/${product}/page.tsx`;
   if (!files.includes(marketing))
@@ -63,9 +64,9 @@ const apps = products.map(([id, name, product]) => {
     /tanstackStart/.test(read(config)) &&
     /voidPlugin/.test(read(config))
   );
-  const evidence = [{ label: 'Public product', url: source + marketing }];
+  const evidence = [{ label: 'Public product', url: source(marketing) }];
   if (native)
-    evidence.push({ label: 'Source configuration', url: source + config });
+    evidence.push({ label: 'Source configuration', url: source(config) });
   // Publish only the public state, never operational or security reason strings.
   const held = new RegExp(`\\b${id}:\\s*\\{\\s*state:\\s*'held'`).test(policy);
   const admitted = new RegExp(`\\b${id}:\\s*\\{\\s*state:\\s*'admitted'`).test(
@@ -74,12 +75,12 @@ const apps = products.map(([id, name, product]) => {
   if (held || admitted)
     evidence.push({
       label: 'Public publication policy',
-      url: source + 'tuturuuu.ci.ts',
+      url: source('tuturuuu.ci.ts'),
     });
   if (!native)
     evidence.push({
       label: 'Migration target',
-      url: source + 'apps/docs/build/devops/native-start-migration.mdx',
+      url: source('apps/docs/build/devops/native-start-migration.mdx'),
     });
   const stageEvidence =
     inputs.find((item) => item.id === id)?.evidence ?? emptyEvidence;
@@ -98,7 +99,7 @@ const apps = products.map(([id, name, product]) => {
     }
   }
   if (stageEvidence.pr)
-    evidence.push({ label: 'Migration PR', url: stageEvidence.pr.url });
+    evidence.unshift({ label: 'Migration PR', url: stageEvidence.pr.url });
   if (stageEvidence.production) {
     evidence.push({
       label: 'Production readback',

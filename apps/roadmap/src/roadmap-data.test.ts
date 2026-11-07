@@ -1,3 +1,8 @@
+import {
+  encodePathSegment,
+  githubSourceUrl,
+  publicEvidenceUrl,
+} from './public-evidence-url.ts';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
@@ -192,4 +197,41 @@ test('freshness boundary is deterministic and invalid/future observations are st
   assert.equal(isSnapshotStale(at, Date.parse(at) + 86_400_001), true);
   assert.equal(isSnapshotStale(at, Date.parse(at) - 1), true);
   assert.equal(isSnapshotStale('bad', Date.parse(at)), true);
+});
+
+test('all evidence URLs use canonical RFC3986 segments and the exact category host', () => {
+  assert.equal(encodePathSegment('[locale]'), '%5Blocale%5D');
+  assert.equal(encodePathSegment('(marketing)'), '%28marketing%29');
+  const path = 'apps/web/src/app/[locale]/(marketing)/products/ai/page.tsx';
+  const url = githubSourceUrl(head, path);
+  assert.ok(url.includes('%5Blocale%5D/%28marketing%29'));
+  assert.equal(
+    decodeURIComponent(new URL(url).pathname.split(`/blob/${head}/`)[1]),
+    path
+  );
+  assert.equal(publicEvidenceUrl(url, 'github.com').href, url);
+  for (const app of snapshot.apps) {
+    for (const entry of app.evidence) {
+      const host =
+        entry.label === 'Production readback' ? 'tuturuuu.com' : 'github.com';
+      publicEvidenceUrl(entry.url, host);
+      assert.doesNotMatch(entry.url, /[[\]()]/);
+    }
+  }
+  for (const bad of [
+    url.replace('%5B', '['),
+    url.replace('%28', '('),
+    url.replace('%5B', '%5b'),
+    url.replace('%5B', '%ZZ'),
+    url.replace('https:', 'http:'),
+    url.replace('github.com', 'github.com.evil.test'),
+    url.replace('github.com', 'tuturuuu.com'),
+    url.replace('https://', '//'),
+    url + '?token=x',
+    url + '#fragment',
+    url.replace('/apps/', '/apps//'),
+    url.replace('/apps/', '/%2Fapps/'),
+    url.replace('/apps/', '/%5Capps/'),
+  ])
+    assert.throws(() => publicEvidenceUrl(bad, 'github.com'));
 });

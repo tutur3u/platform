@@ -1,3 +1,4 @@
+import { publicEvidenceUrl } from './public-evidence-url.ts';
 export const stages = [
   'planned',
   'rolling_out',
@@ -103,15 +104,12 @@ function choice<T extends string>(value: unknown, choices: readonly T[]): T {
 }
 export function immutableUrl(value: unknown) {
   const result = text(value);
-  if (
-    !/^https:\/\/github\.com\/tutur3u\/platform\/blob\/[a-f0-9]{40}\/[A-Za-z0-9_./()[\]-]+$/.test(
-      result
-    ) ||
-    result.includes('/../')
-  )
+  const url = publicEvidenceUrl(result, 'github.com');
+  if (!/^\/tutur3u\/platform\/blob\/[a-f0-9]{40}\/.+/.test(url.pathname))
     throw new Error('Require immutable public repository proof');
   return result;
 }
+
 function parsePull(value: unknown): PullEvidence | null {
   if (value === null) return null;
   const p = object(value);
@@ -129,6 +127,7 @@ function parsePull(value: unknown): PullEvidence | null {
     'merge',
   ]);
   const url = text(p.url);
+  publicEvidenceUrl(url, 'github.com');
   if (
     !/^https:\/\/github\.com\/tutur3u\/platform\/pull\/[1-9][0-9]*$/.test(url)
   )
@@ -209,6 +208,7 @@ export function parseEvidence(
       'observedAt',
     ]);
     const url = text(p.url);
+    publicEvidenceUrl(url, 'tuturuuu.com');
     if (url !== `https://tuturuuu.com/${id}/`)
       throw new Error('Require named public production URL');
     production = {

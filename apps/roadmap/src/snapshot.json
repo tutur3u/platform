@@ -18,7 +18,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/ai/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/ai/page.tsx"
         },
         {
           "label": "Source configuration",
@@ -42,7 +42,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/calendar/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/calendar/page.tsx"
         },
         {
           "label": "Source configuration",
@@ -70,7 +70,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/chat/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/chat/page.tsx"
         },
         {
           "label": "Migration target",
@@ -94,7 +94,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/crm/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/crm/page.tsx"
         },
         {
           "label": "Source configuration",
@@ -118,7 +118,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/drive/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/drive/page.tsx"
         },
         {
           "label": "Source configuration",
@@ -142,7 +142,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/finance/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/finance/page.tsx"
         },
         {
           "label": "Source configuration",
@@ -166,7 +166,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/forms/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/forms/page.tsx"
         },
         {
           "label": "Source configuration",
@@ -190,7 +190,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/hive/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/hive/page.tsx"
         },
         {
           "label": "Migration target",
@@ -214,7 +214,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/inventory/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/inventory/page.tsx"
         },
         {
           "label": "Source configuration",
@@ -238,7 +238,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/mail/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/mail/page.tsx"
         },
         {
           "label": "Source configuration",
@@ -266,7 +266,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/meet-together/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/meet-together/page.tsx"
         },
         {
           "label": "Source configuration",
@@ -294,7 +294,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/storefront/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/storefront/page.tsx"
         },
         {
           "label": "Source configuration",
@@ -318,7 +318,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/tasks/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/tasks/page.tsx"
         },
         {
           "label": "Source configuration",
@@ -342,7 +342,7 @@
       "evidence": [
         {
           "label": "Public product",
-          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/[locale]/(marketing)/products/track/page.tsx"
+          "url": "https://github.com/tutur3u/platform/blob/15c05f5ffa32d1a0596e9d4f43396f4476197624/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/track/page.tsx"
         },
         {
           "label": "Source configuration",
