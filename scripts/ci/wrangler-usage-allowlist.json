@@ -163,6 +163,16 @@
       },
       "digest": "9277cfdb4d2c575212c57c3969b41d019932f379df4a9e677f27a655e310fb5a"
     },
+    ".github/workflows/playground-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7647",
+        "reason": "PR7647 references the legacy metrics opt-out and the existing Void-emitted-config packaging label. This source record authorizes neither CLI publication nor provider credentials or deployment."
+      },
+      "digest": "1beb88e2772be3324b55b9f33dcfe4b0c818fa7898de666878c61b1d0080214f"
+    },
     ".github/workflows/rust-backend.yml": {
       "lines": 14,
       "uses": 18,
