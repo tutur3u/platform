@@ -19,10 +19,11 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: roadmap-artifact-${{ github.event_name }}-${{ github.event.pull_request.number || github.sha }}
+  group: roadmap-artifact-${{ github.event_name }}-${{ github.event.pull_request.number || github.sha }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -31,7 +32,7 @@ jobs:
       workflow_name: roadmap-cloudflare.yaml
   build:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true' && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
+    if: (needs.check-ci.outputs.should_run == 'true' && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
