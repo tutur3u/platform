@@ -68,10 +68,10 @@
       "uses": 9,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7785",
-        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
-      "digest": "391d7c1ad043e48d92c4ea54ea933aa130dfaf8ea66c1b2e31636b903076af55"
+      "digest": "24ed53e4bdf4d2c96fcef553a50a4d1286b78bf56c22f3f0d4d0c2456a7f1442"
     },
     ".github/workflows/colab-cloudflare.yaml": {
       "lines": 2,
@@ -2308,10 +2308,10 @@
       "uses": 4,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Read the existing Meet staging and production JSONC fixtures with the established JSONC parser. Existing isolation assertions and Wrangler occurrence counts are preserved; no CLI invocation is added."
       },
-      "digest": "13de163bf53ff57255e072479452cbb55c1be49feea0e78079f3927d9b651471"
+      "digest": "6a0bde07ebebad80901e7a2bb5cc71436ed1ce6a749367f0b494c2cc13e8a599"
     },
     "scripts/ci/wave1-native-runtime.mjs": {
       "lines": 2,
