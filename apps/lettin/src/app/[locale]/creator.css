@@ -207,7 +207,7 @@
   color: var(--muted-foreground);
   font-size: 0.7rem;
 }
-.notebook-theme [data-slot='button'] {
+.notebook-theme [data-slot="button"] {
   border: 1px solid var(--border);
   border-radius: 0.6rem;
   box-shadow: none;
@@ -215,12 +215,12 @@
   letter-spacing: 0;
   transition: background-color 180ms ease;
 }
-.notebook-theme [data-slot='button']:hover:not(:disabled),
-.notebook-theme [data-slot='button']:active:not(:disabled) {
+.notebook-theme [data-slot="button"]:hover:not(:disabled),
+.notebook-theme [data-slot="button"]:active:not(:disabled) {
   transform: none;
   box-shadow: none;
 }
-.notebook-theme [data-slot='input'],
+.notebook-theme [data-slot="input"],
 .notebook-theme textarea,
 .notebook-theme select {
   border-width: 1px;

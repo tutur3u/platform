@@ -17,9 +17,9 @@
   color: inherit;
   background: transparent;
 }
-.stage[data-motion='paused'] *,
-.stage[data-motion='paused'] *::before,
-.stage[data-motion='paused'] *::after {
+.stage[data-motion="paused"] *,
+.stage[data-motion="paused"] *::before,
+.stage[data-motion="paused"] *::after {
   animation: none !important;
 
   transition: none !important;

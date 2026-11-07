@@ -1,9 +1,9 @@
-@import '../../../../packages/ui/src/globals.css';
+@import "../../../../packages/ui/src/globals.css";
 @source "../../src/app";
 @font-face {
   font-family: ProgrammingQA;
-  src: url('../../src/app/[locale]/(dashboard)/[wsId]/coding/fonts/JetBrainsMono-Regular.woff2')
-    format('woff2');
+  src: url("../../src/app/[locale]/(dashboard)/[wsId]/coding/fonts/JetBrainsMono-Regular.woff2")
+    format("woff2");
   font-weight: 400;
   font-display: swap;
 }

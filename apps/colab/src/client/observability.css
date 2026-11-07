@@ -30,7 +30,7 @@
     font-size: 12px;
   }
   .run-title-row,
-  .run-title-row [data-slot='badge'] {
+  .run-title-row [data-slot="badge"] {
     display: flex;
     gap: 8px;
     align-items: center;
@@ -175,7 +175,7 @@
     font-size: 12px;
   }
   .run-usage,
-  .observability-heading [data-slot='badge'] {
+  .observability-heading [data-slot="badge"] {
     display: flex;
     gap: 6px;
     align-items: center;
@@ -296,11 +296,11 @@
     border-radius: 50%;
     background: var(--muted-foreground);
   }
-  .team-health-status[data-status='complete'] {
+  .team-health-status[data-status="complete"] {
     background: var(--primary);
   }
-  .team-health-status[data-status='attention'],
-  .team-health-status[data-status='limited'] {
+  .team-health-status[data-status="attention"],
+  .team-health-status[data-status="limited"] {
     background: var(--destructive);
   }
   .limits-panel,
@@ -325,7 +325,7 @@
   .limit-scope-heading h4 {
     margin: 0;
   }
-  .limit-scope-heading > [data-slot='label'] {
+  .limit-scope-heading > [data-slot="label"] {
     display: grid;
     gap: 8px;
     min-width: min(100%, 280px);
@@ -355,7 +355,7 @@
     flex-wrap: wrap;
     gap: 6px;
   }
-  .limit-preset-actions [aria-pressed='true'] {
+  .limit-preset-actions [aria-pressed="true"] {
     border-color: var(--foreground);
     background: var(--foreground);
     color: var(--background);
@@ -365,14 +365,14 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
   }
-  .limit-fields [data-slot='label'] {
+  .limit-fields [data-slot="label"] {
     display: grid;
     grid-template-rows: auto minmax(30px, auto) auto;
     gap: 6px;
     color: var(--foreground);
     font-size: 12px;
   }
-  .limit-fields [data-slot='label'] small {
+  .limit-fields [data-slot="label"] small {
     color: var(--muted-foreground);
     font-weight: 400;
     line-height: 1.35;
@@ -471,7 +471,7 @@
     .run-step-heading {
       grid-template-columns: auto minmax(0, 1fr);
     }
-    .run-step-heading [data-slot='badge'] {
+    .run-step-heading [data-slot="badge"] {
       grid-column: 2;
       justify-self: start;
     }
@@ -486,7 +486,7 @@
     .team-health-row {
       grid-template-columns: auto minmax(0, 1fr);
     }
-    .team-health-list [data-slot='badge'] {
+    .team-health-list [data-slot="badge"] {
       grid-column: 2;
       justify-self: start;
     }

@@ -106,7 +106,7 @@
   border-radius: 999px;
   font-size: 0.7rem;
 }
-.studio-filters button[aria-pressed='true'] {
+.studio-filters button[aria-pressed="true"] {
   background: var(--foreground);
   color: var(--background);
 }
@@ -152,7 +152,7 @@
   text-align: left;
   font-size: 0.8rem;
 }
-.studio-template-options button[aria-pressed='true'] {
+.studio-template-options button[aria-pressed="true"] {
   background: var(--secondary);
   color: var(--secondary-foreground);
   outline: 2px solid var(--ring);

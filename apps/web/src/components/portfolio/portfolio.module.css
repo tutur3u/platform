@@ -315,7 +315,7 @@
   color: inherit;
   cursor: pointer;
 }
-.filters button[aria-pressed='true'] {
+.filters button[aria-pressed="true"] {
   background: var(--foreground);
   color: var(--background);
 }

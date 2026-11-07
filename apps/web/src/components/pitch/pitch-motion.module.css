@@ -1,4 +1,4 @@
-.deck :where(section[aria-hidden='false'] > div) {
+.deck :where(section[aria-hidden="false"] > div) {
   animation: sceneEnter 240ms ease-out;
 }
 .deck button,

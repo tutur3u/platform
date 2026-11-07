@@ -2,10 +2,10 @@
   color-scheme: light dark;
   font-family: system-ui, sans-serif;
 }
-:root[data-theme='light'] {
+:root[data-theme="light"] {
   color-scheme: light;
 }
-:root[data-theme='dark'] {
+:root[data-theme="dark"] {
   color-scheme: dark;
 }
 body {
