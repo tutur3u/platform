@@ -25,6 +25,7 @@ const configs = files.filter((file) => /(?:^|\/)wrangler\.json$/.test(file.path)
 if (configs.length !== 1) throw new Error('Require one actual emitted JSON Worker configuration');
 const config = JSON.parse(readFileSync(join(root, configs[0].path), 'utf8'));
 if (config.name !== 'tuturuuu-roadmap' || !config.main || !config.assets) throw new Error('Unexpected emitted Worker identity or assets');
+if (config.assets.base_path !== '/roadmap') throw new Error('Emitted asset mount must equal /roadmap');
 if (!files.some((file) => file.path.startsWith('dist/client/') && file.path.endsWith('.js'))) throw new Error('Client assets are missing');
 if (!files.some((file) => /\.[cm]?js$/.test(file.path) && readFileSync(join(root, file.path), 'utf8').includes(source))) throw new Error('Source identity missing from emitted code');
 writeFileSync(join(root, 'roadmap-artifact.json'), JSON.stringify({ source, worker: config.name, basePath: '/roadmap', emittedConfig: configs[0].path, files }, null, 2) + '\n');
