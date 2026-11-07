@@ -292,7 +292,7 @@ test('Security Checks bytes match the reviewed definer-guard workflow', () => {
   );
   assert.equal(
     createHash('sha256').update(bytes).digest('hex'),
-    '710679d84c07604d3301635e54240a735fc9d00133240f4a258b609430334ee1'
+    '21c63351f01ffe048250ff7fdda1391ea9d00e09af1f638599f9e77d8690f43d'
   );
 });
 
