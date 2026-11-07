@@ -1,4 +1,3 @@
-import { getEffectiveCommunityPolicy } from './effective-community';
 import type { LegalDocument, LegalDocumentKind, LegalLocale } from './types';
 
 const EFFECTIVE_DATE = '2026-08-15';
@@ -688,12 +687,8 @@ export const LEGAL_DOCUMENTS: Record<
 };
 
 export { ARCHIVED_LEGAL_VERSIONS } from './archive';
-
-export function getLegalDocument(
-  kind: LegalDocumentKind | 'acceptable-use' | 'community-guidelines',
-  locale: string
-): LegalDocument {
-  if (kind === 'acceptable-use' || kind === 'community-guidelines')
-    return getEffectiveCommunityPolicy(kind, locale);
-  return LEGAL_DOCUMENTS[locale === 'vi' ? 'vi' : 'en'][kind];
-}
+export {
+  AUGUST_LEGAL_VERSION,
+  getLegalDocument,
+  getLegalDocumentVersion,
+} from './in-force';

@@ -1,6 +1,6 @@
 import { reviseLegalDocument } from './commercial-revisions';
 import { getCommunityPolicy } from './community-policies';
-import { getLegalDocument } from './documents';
+import { AUGUST_LEGAL_VERSION, getLegalDocumentVersion } from './documents';
 import { mobileRevisionCopy } from './mobile-revision-copy';
 import type { LegalDocument, LegalSection } from './types';
 
@@ -78,7 +78,11 @@ export function getLegalRevision(
   if (version === upcomingMobilePrivacyRevision.version) {
     if (kind !== 'privacy')
       throw new Error('Mobile revision supports privacy only');
-    const current = getLegalDocument('privacy', locale);
+    const current = getLegalDocumentVersion(
+      AUGUST_LEGAL_VERSION,
+      'privacy',
+      locale
+    )!;
     return {
       ...current,
       ...upcomingMobilePrivacyRevision,
@@ -88,7 +92,9 @@ export function getLegalRevision(
   const draft =
     kind === 'acceptable-use' || kind === 'community-guidelines'
       ? getCommunityPolicy(kind, locale)
-      : reviseLegalDocument(getLegalDocument(kind, locale));
+      : reviseLegalDocument(
+          getLegalDocumentVersion(AUGUST_LEGAL_VERSION, kind, locale)!
+        );
   if (version === '2026-09-13-draft') return draft;
   const copy = mobileRevisionCopy[draft.locale];
   const sections = [...draft.sections];
