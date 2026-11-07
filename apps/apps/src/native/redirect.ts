@@ -1,8 +1,13 @@
-import { getGatewayApp, getGatewayAppOrigin } from '../lib/apps-registry';
+import {
+  getGatewayApp,
+  getGatewayAppOrigin,
+  StagingGatewayOriginError,
+} from '../lib/apps-registry';
 
 type GatewayDestination =
   | { kind: 'invalid' | 'catalogue' | 'missing' }
-  | { kind: 'redirect'; href: string };
+  | { kind: 'redirect'; href: string }
+  | { kind: 'staging-unavailable'; slug: string };
 
 export function gatewayDestination(requestUrl: URL): GatewayDestination {
   let segments: string[];
@@ -18,7 +23,15 @@ export function gatewayDestination(requestUrl: URL): GatewayDestination {
   if (!slug) return { kind: 'catalogue' };
   const app = getGatewayApp(slug);
   if (!app) return { kind: 'missing' };
-  const destination = new URL(getGatewayAppOrigin(app));
+  let origin: string;
+  try {
+    origin = getGatewayAppOrigin(app);
+  } catch (error) {
+    if (error instanceof StagingGatewayOriginError)
+      return { kind: 'staging-unavailable', slug: error.slug };
+    throw error;
+  }
+  const destination = new URL(origin);
   const suffix = path.map(encodeURIComponent).join('/');
   if (suffix)
     destination.pathname = `${destination.pathname.replace(/\/+$/, '')}/${suffix}`;

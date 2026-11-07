@@ -77,7 +77,15 @@ export async function appsRequest(request: Request, env: AppsEnvironment) {
                 status: 307,
                 headers: { Location: destination.href },
               })
-            : await handler.fetch(request);
+            : destination.kind === 'staging-unavailable'
+              ? new Response(
+                  'No staging origin is registered for this app; staging never falls back to production',
+                  {
+                    status: 503,
+                    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+                  }
+                )
+              : await handler.fetch(request);
       }
       response = new Response(response.body, response);
       response.headers.set('Cache-Control', 'private, no-store');

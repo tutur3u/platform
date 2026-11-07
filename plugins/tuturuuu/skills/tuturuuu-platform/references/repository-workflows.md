@@ -252,6 +252,27 @@ isolated copies and Bun --no-install, and retain actual marker/descendant cleanu
 assertions. Diagnose root/import boundaries before attributing a control timeout
 to IPC or Web startup; a missing later artifact is secondary when the gate failed.
 
+## Wave-1 hosted staging acceptance
+
+The hosted staging runbook lives in the private internal-docs repository. Keep
+the hosted acceptance config separate from local Web E2E setup, and never use
+its local seed or dev-session helpers against hosted staging. Keep browser suites
+out of Vitest and register pure guard tests with the script collector. Hosted
+staging uses its own dedicated Worker identities; never bootstrap, reseed or
+reuse the signed admissions of the existing route-free publishers.
+
+Staging cookies stay host-only. The hosted response wrapper only ever scopes the
+Supabase auth and app-session cookies, and only to the accepted shared cookie
+domain when the request host is inside it. Other cookies and `__Host-` cookies
+never get a Domain attribute. In staging mode the Apps gateway refuses apps with
+no exact staging origin instead of falling back to production. Production
+markers (`TUTURUUU_DEPLOY_ENV`, Vercel, the Cloudflare production build marker
+and a production app origin) ignore the shared cookie override on every runtime.
+Regression coverage: `scripts/wave1-staging/acceptance.test.mjs`,
+`production-cookie-guard.test.ts`, `staging-cookie.test.ts`,
+`internal-domains.staging.test.ts` and
+`apps/apps/src/native/route-boundary.test.ts`.
+
 ## Focused route tests with unbuilt packages
 
 When a test partially imports route utilities to keep a pure parameter parser

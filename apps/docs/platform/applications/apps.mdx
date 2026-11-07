@@ -111,3 +111,14 @@ retain their existing behavior until explicit cutover.
 `scripts/ci/wave1-native-publishers.test.js` covers path/method/cache behavior;
 CI original/restored workerd acceptance checks the actual bundled identity.
 See the native publisher runbook.
+
+## Hosted staging destinations
+
+In explicit staging mode (`NEXT_PUBLIC_TUTURUUU_STAGING=1`), the Apps gateway
+redirects only to the exact staging origins registered in
+`NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS`. It never falls back to a production
+origin. A catalogue entry without an exact staging origin, or a missing
+registry, makes the gateway refuse the request with a clear error. Redirects
+keep encoded paths and repeated query parameters. Ordinary mode keeps its current
+local and production origin selection. The regression is
+`apps/apps/src/native/route-boundary.test.ts`.

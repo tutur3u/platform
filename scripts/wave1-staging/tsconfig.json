@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+  },
+  "include": [
+    "profiles.ts",
+    "profiles.test.ts",
+    "prepare.test.ts",
+    "response.ts",
+    "prepare.ts",
+    "../../apps/meet/void.hosted-staging.config.ts",
+    "../../apps/calendar/void.hosted-staging.config.ts",
+    "../../apps/mail/void.hosted-staging.config.ts",
+    "../../apps/apps/void.hosted-staging.config.ts"
+  ]
+}
