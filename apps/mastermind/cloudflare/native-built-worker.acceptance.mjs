@@ -65,6 +65,8 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
     createHmac('sha256', secret).update(content).digest('base64url');
   const plain = (value) => ({ type: 'plain_text', value });
   const require = createRequire(join(app, 'package.json'));
+  let rootAccess = true;
+  let permissionReads = 0;
   const workerOptions = {
     config: join(scratch, relative(app, configPath)),
     envFiles: [envFile],
@@ -102,6 +104,11 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
           return new Response(jwks, {
             headers: { 'Content-Type': 'application/json' },
           });
+        }
+        if (request.url === 'https://tuturuuu.com/api/v1/mastermind/access') {
+          permissionReads++;
+          assert.equal(request.headers.get('Authorization'), `Bearer ${session}`);
+          return Response.json({ enabled: rootAccess });
         }
         throw new Error('Application data reads forbidden');
       },
@@ -174,4 +181,12 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
     assert.ok(html.includes(email));
     assert.ok(html.includes(locale === 'en' ? 'Coming soon' : 'Sắp ra mắt'));
   }
+  const readsBeforeRevocation = permissionReads;
+  rootAccess = false;
+  assert.equal(
+    (await worker.fetch('https://mastermind.tuturuuu.com/en', { headers })).status,
+    403
+  );
+  assert.equal(permissionReads, readsBeforeRevocation + 1);
+
 });
