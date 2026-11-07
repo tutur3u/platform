@@ -45,6 +45,9 @@ and its focused regression coverage before adding a reason or changing middlewar
   own hosts and SEO/security headers. Preserve forwarded WebGL sandbox CSP without
   handler-level CSP. Limit asset caching to GET/HEAD paths; keep config imports strippable.
   Suppliers authorize direct calls; preserve disabled service-worker registration.
+  Native request adapters use `@tuturuuu/satellite/auth-request` with the current
+  request, registered target and verified Supabase resolver. Next callers retain
+  `@tuturuuu/satellite/auth`; do not duplicate its actor/profile fallback policy.
   Use the [Nova/Inventory qualification guide](../../../../../apps/docs/build/devops/nova-inventory-start-bridge.mdx)
   for action/offline parity and separate raw-Host, header and browser acceptance.
 
