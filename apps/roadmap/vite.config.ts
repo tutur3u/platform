@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite-plus';
@@ -15,6 +16,7 @@ export default defineConfig(({ command }) => {
     define: { __ROADMAP_BUILD_SHA__: JSON.stringify(source ?? 'development') },
     plugins: [
       voidPlugin(),
+      tailwindcss(),
       tanstackStart({
         router: { basepath: '/roadmap' },
         serverFns: { base: '/roadmap/_serverFn' },
