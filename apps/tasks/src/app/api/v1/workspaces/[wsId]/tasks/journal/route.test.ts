@@ -234,9 +234,8 @@ describe('task journal route', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/journal/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/tasks/journal/route');
     const response = await POST(
       new Request('http://localhost/api/v1/workspaces/ws-1/tasks/journal', {
         method: 'POST',
@@ -331,9 +330,8 @@ describe('task journal route', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/journal/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/tasks/journal/route');
     const response = await POST(
       new Request('http://localhost/api/v1/workspaces/ws-1/tasks/journal', {
         method: 'POST',
@@ -423,9 +421,8 @@ describe('task journal route', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/journal/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/tasks/journal/route');
     const response = await POST(
       new Request('http://localhost/api/v1/workspaces/ws-1/tasks/journal', {
         method: 'POST',
@@ -518,9 +515,8 @@ describe('task journal route', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/journal/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/tasks/journal/route');
     const response = await POST(
       new Request('http://localhost/api/v1/workspaces/ws-1/tasks/journal', {
         method: 'POST',
@@ -580,9 +576,8 @@ describe('task journal route', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/journal/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/tasks/journal/route');
     await POST(
       new Request('http://localhost/api/v1/workspaces/personal/tasks/journal', {
         method: 'POST',
@@ -617,9 +612,8 @@ describe('task journal route', () => {
     'rejects invalid session resolution before workspace access: %s',
     async (resolution) => {
       resolveSession.mockResolvedValue({ ...resolution, supabase: userClient });
-      const { POST } = await import(
-        '@/app/api/v1/workspaces/[wsId]/tasks/journal/route'
-      );
+      const { POST } =
+        await import('@/app/api/v1/workspaces/[wsId]/tasks/journal/route');
       const response = await POST(
         new Request('http://localhost/api/v1/workspaces/ws-1/tasks/journal', {
           method: 'POST',

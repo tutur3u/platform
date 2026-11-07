@@ -9,11 +9,10 @@ import {
 import { useMemo } from 'react';
 import { CurrencyInput, type CurrencyInputProps } from './currency-input';
 
-export interface MoneyInputProps
-  extends Omit<
-    CurrencyInputProps,
-    'value' | 'onChange' | 'locale' | 'maximumFractionDigits' | 'currencySuffix'
-  > {
+export interface MoneyInputProps extends Omit<
+  CurrencyInputProps,
+  'value' | 'onChange' | 'locale' | 'maximumFractionDigits' | 'currencySuffix'
+> {
   /** ISO currency code (e.g. 'USD', 'VND'). Drives precision + locale. */
   currency: string;
   /** Amount in integer minor units (cents for USD, whole units for JPY/VND). */

@@ -144,116 +144,123 @@ for (const scenario of [
   'junction',
   'lowercase-title',
 ]) {
-  test(`Windows smoke fixture: ${scenario}`, {
-    skip: process.platform !== 'win32',
-  }, async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'tuturuuu-smoke-test-'));
-    try {
-      const artifacts = join(directory, 'desktop-artifacts');
-      await mkdir(artifacts);
-      const bytes = Buffer.from('synthetic installer');
-      const sha256 = createHash('sha256').update(bytes).digest('hex');
-      await writeFile(join(artifacts, 'Tuturuuu-windows-x64-setup.exe'), bytes);
-      await writeFile(
-        join(artifacts, 'verified-windows.json'),
-        JSON.stringify({
-          sha256: scenario === 'tampered-receipt' ? '0'.repeat(64) : sha256,
-          source: '1'.repeat(40),
-          run: '1234',
-        })
-      );
-      const script = join(directory, 'fixture.ps1');
-      await writeFile(script, fixture);
-      const result = spawnSync('pwsh', ['-NoProfile', '-File', script], {
-        encoding: 'utf8',
-        timeout: 20000,
-        env: {
-          ...process.env,
-          RUNNER_TEMP: directory,
-          GITHUB_SHA: '1'.repeat(40),
-          GITHUB_RUN_ID: '1234',
-          GITHUB_RUN_ATTEMPT: '2',
-          TUTURUUU_SMOKE_SCRIPT: resolve(
-            'scripts/desktop-deployment/smoke-windows.ps1'
-          ),
-          SMOKE_SCENARIO: scenario,
-          ACTIONS_ID_TOKEN_REQUEST_URL: 'synthetic',
-          ACTIONS_ID_TOKEN_REQUEST_TOKEN: 'synthetic',
-          ACTIONS_RUNTIME_TOKEN: 'synthetic',
-        },
-      });
-      assert.equal(result.status, 0, result.stderr || result.stdout);
-      const observed = JSON.parse(
-        (await readFile(join(directory, 'result.json'), 'utf8')).replace(
-          /^\uFEFF/,
-          ''
-        )
-      );
-      assert.equal(observed.childEnvironmentClean, true);
-      if (scenario === 'visible') {
-        assert.equal(observed.status, 'passed', observed.message);
-        const inventory = JSON.parse(
-          (
-            await readFile(
-              join(directory, 'windows-installed-files.json'),
-              'utf8'
-            )
-          ).replace(/^\uFEFF/, '')
+  test(
+    `Windows smoke fixture: ${scenario}`,
+    {
+      skip: process.platform !== 'win32',
+    },
+    async () => {
+      const directory = await mkdtemp(join(tmpdir(), 'tuturuuu-smoke-test-'));
+      try {
+        const artifacts = join(directory, 'desktop-artifacts');
+        await mkdir(artifacts);
+        const bytes = Buffer.from('synthetic installer');
+        const sha256 = createHash('sha256').update(bytes).digest('hex');
+        await writeFile(
+          join(artifacts, 'Tuturuuu-windows-x64-setup.exe'),
+          bytes
         );
-        assert.equal(inventory.installerSha256, sha256);
-        assert.equal(inventory.attempt, '2');
-        assert.equal(inventory.windowTitle, 'Tuturuuu');
-        assert.deepEqual(observed.waits, ['h', 120000, 'h', 120000]);
-        assert.equal(observed.handles, 2);
-        assert.ok(
-          inventory.files.every((file) => /^[a-f0-9]{64}$/.test(file.sha256))
+        await writeFile(
+          join(artifacts, 'verified-windows.json'),
+          JSON.stringify({
+            sha256: scenario === 'tampered-receipt' ? '0'.repeat(64) : sha256,
+            source: '1'.repeat(40),
+            run: '1234',
+          })
         );
-      } else {
-        assert.equal(observed.status, 'failed');
-        const expected = {
-          hidden: /did not render its first frame/,
-          'hidden-cleanup-failure': /did not render its first frame/,
-          'unexpected-file': /Unexpected installed file: /,
-          'tampered-receipt': /Installer does not match/,
-          'hidden-file': /Unexpected installed file: /,
-          'bad-data-file': /Unexpected installed file type/,
-          'wrong-title': /main window title is not Tuturuuu/,
-          'installer-timeout': /Installer timed out after 120 seconds/,
-          'uninstaller-timeout': /Uninstaller timed out after 120 seconds/,
-          'installer-stop-fails-timeout':
-            /Installer timed out after 120 seconds/,
-          'extra-data-file': /Unexpected installed file: /,
-          'dotenv-file': /Unexpected installed file type/,
-          'dotenv-directory': /Unexpected installed file type/,
-          'disguised-mz-file': /Unexpected MZ payload in data/,
-          junction: /contains a reparse point/,
-          'lowercase-title': /main window title is not Tuturuuu/,
-        };
-        assert.match(observed.message, expected[scenario]);
-        if (scenario.endsWith('-timeout')) {
-          assert.equal(observed.kills, 1);
-          assert.ok(observed.waits.includes(120000));
-          assert.ok(observed.waits.includes(10000));
+        const script = join(directory, 'fixture.ps1');
+        await writeFile(script, fixture);
+        const result = spawnSync('pwsh', ['-NoProfile', '-File', script], {
+          encoding: 'utf8',
+          timeout: 20000,
+          env: {
+            ...process.env,
+            RUNNER_TEMP: directory,
+            GITHUB_SHA: '1'.repeat(40),
+            GITHUB_RUN_ID: '1234',
+            GITHUB_RUN_ATTEMPT: '2',
+            TUTURUUU_SMOKE_SCRIPT: resolve(
+              'scripts/desktop-deployment/smoke-windows.ps1'
+            ),
+            SMOKE_SCENARIO: scenario,
+            ACTIONS_ID_TOKEN_REQUEST_URL: 'synthetic',
+            ACTIONS_ID_TOKEN_REQUEST_TOKEN: 'synthetic',
+            ACTIONS_RUNTIME_TOKEN: 'synthetic',
+          },
+        });
+        assert.equal(result.status, 0, result.stderr || result.stdout);
+        const observed = JSON.parse(
+          (await readFile(join(directory, 'result.json'), 'utf8')).replace(
+            /^\uFEFF/,
+            ''
+          )
+        );
+        assert.equal(observed.childEnvironmentClean, true);
+        if (scenario === 'visible') {
+          assert.equal(observed.status, 'passed', observed.message);
+          const inventory = JSON.parse(
+            (
+              await readFile(
+                join(directory, 'windows-installed-files.json'),
+                'utf8'
+              )
+            ).replace(/^\uFEFF/, '')
+          );
+          assert.equal(inventory.installerSha256, sha256);
+          assert.equal(inventory.attempt, '2');
+          assert.equal(inventory.windowTitle, 'Tuturuuu');
+          assert.deepEqual(observed.waits, ['h', 120000, 'h', 120000]);
+          assert.equal(observed.handles, 2);
+          assert.ok(
+            inventory.files.every((file) => /^[a-f0-9]{64}$/.test(file.sha256))
+          );
+        } else {
+          assert.equal(observed.status, 'failed');
+          const expected = {
+            hidden: /did not render its first frame/,
+            'hidden-cleanup-failure': /did not render its first frame/,
+            'unexpected-file': /Unexpected installed file: /,
+            'tampered-receipt': /Installer does not match/,
+            'hidden-file': /Unexpected installed file: /,
+            'bad-data-file': /Unexpected installed file type/,
+            'wrong-title': /main window title is not Tuturuuu/,
+            'installer-timeout': /Installer timed out after 120 seconds/,
+            'uninstaller-timeout': /Uninstaller timed out after 120 seconds/,
+            'installer-stop-fails-timeout':
+              /Installer timed out after 120 seconds/,
+            'extra-data-file': /Unexpected installed file: /,
+            'dotenv-file': /Unexpected installed file type/,
+            'dotenv-directory': /Unexpected installed file type/,
+            'disguised-mz-file': /Unexpected MZ payload in data/,
+            junction: /contains a reparse point/,
+            'lowercase-title': /main window title is not Tuturuuu/,
+          };
+          assert.match(observed.message, expected[scenario]);
+          if (scenario.endsWith('-timeout')) {
+            assert.equal(observed.kills, 1);
+            assert.ok(observed.waits.includes(120000));
+            assert.ok(observed.waits.includes(10000));
+          }
+          if (scenario === 'installer-stop-fails-timeout') {
+            assert.equal(observed.uninstalls, 0);
+            assert.match(
+              result.stdout,
+              /Installer is still running; uninstall skipped/
+            );
+            assert.match(
+              result.stdout,
+              /Installer did not stop within 10 seconds/
+            );
+          }
+          if (scenario === 'hidden-cleanup-failure')
+            assert.match(
+              result.stdout,
+              /Cleanup also failed: Uninstaller failed: 9/
+            );
         }
-        if (scenario === 'installer-stop-fails-timeout') {
-          assert.equal(observed.uninstalls, 0);
-          assert.match(
-            result.stdout,
-            /Installer is still running; uninstall skipped/
-          );
-          assert.match(
-            result.stdout,
-            /Installer did not stop within 10 seconds/
-          );
-        }
-        if (scenario === 'hidden-cleanup-failure')
-          assert.match(
-            result.stdout,
-            /Cleanup also failed: Uninstaller failed: 9/
-          );
+      } finally {
+        await rm(directory, { recursive: true, force: true });
       }
-    } finally {
-      await rm(directory, { recursive: true, force: true });
     }
-  });
+  );
 }

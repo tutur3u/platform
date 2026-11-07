@@ -83,9 +83,7 @@ const SHA = /^[0-9a-f]{40}$/;
 function readLockfileWorkspaces(
   changedFiles: string[] | null,
   rootDir: string,
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: ci-check step input, outside Turbo.
   baseSha = process.env.CHANGED_BASE_SHA,
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: ci-check step input, outside Turbo.
   headSha = process.env.CHANGED_HEAD_SHA
 ): string[] | null {
   if (!changedFiles?.includes('bun.lock')) return null;

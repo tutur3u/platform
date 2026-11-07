@@ -103,9 +103,8 @@ describe('user group indicator category item route', () => {
   });
 
   it('unlinks category relationships without deleting metrics', async () => {
-    const { DELETE } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/categories/[categoryId]/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/categories/[categoryId]/route');
 
     const response = await DELETE(
       new NextRequest(
@@ -138,9 +137,8 @@ describe('user group indicator category item route', () => {
       data: null,
       error: null,
     });
-    const { DELETE } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/categories/[categoryId]/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/categories/[categoryId]/route');
 
     const response = await DELETE(
       new NextRequest(
@@ -165,9 +163,8 @@ describe('user group indicator category item route', () => {
       data: null,
       error: null,
     });
-    const { DELETE } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/categories/[categoryId]/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/categories/[categoryId]/route');
 
     const response = await DELETE(
       new NextRequest(
@@ -189,9 +186,8 @@ describe('user group indicator category item route', () => {
 
   it('rejects callers without score deletion permission', async () => {
     mocks.hasPermission.mockReturnValueOnce(false);
-    const { DELETE } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/categories/[categoryId]/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/categories/[categoryId]/route');
 
     const response = await DELETE(
       new NextRequest(

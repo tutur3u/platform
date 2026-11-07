@@ -148,7 +148,6 @@ function EntryCards({
         >
           <ContentNotice notice={entry.draft.contentNotice} />
           {entry.draft.image && (
-            // biome-ignore lint/performance/noImgElement: Artwork access is revocable.
             <img
               src={entry.draft.image}
               alt=""

@@ -42,7 +42,6 @@ const mocks = vi.hoisted(() => {
       maybeSingle: vi.fn(respond),
       select: vi.fn(() => builder),
       single: vi.fn(respond),
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
       then: (onFulfilled, onRejected) =>
         respond().then(onFulfilled, onRejected),
       update: vi.fn((payload: unknown) => {

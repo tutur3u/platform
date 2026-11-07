@@ -13,11 +13,10 @@ import {
   useState,
 } from 'react';
 
-export interface CurrencyInputProps
-  extends Omit<
-    React.InputHTMLAttributes<HTMLInputElement>,
-    'value' | 'onChange'
-  > {
+export interface CurrencyInputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'value' | 'onChange'
+> {
   /** The numeric value (positive number) */
   value: number | undefined;
   /** Called when the value changes */

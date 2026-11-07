@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Direct CI entrypoint; deployment credentials never enter Turbo builds.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import {
@@ -186,9 +185,8 @@ export async function main({
     return;
   }
   const request = (url, token, body) => boundedJson(url, token, fetcher, body);
-  const { productionPublicationHold } = await import(
-    './production-publication-policy.ts'
-  );
+  const { productionPublicationHold } =
+    await import('./production-publication-policy.ts');
   const admission = publicationAdmission({
     environment,
     hold: productionPublicationHold(`${app}-cloudflare.yaml`) ?? null,

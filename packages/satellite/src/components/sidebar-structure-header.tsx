@@ -41,8 +41,7 @@ function getBrandActions(
   );
 }
 
-interface SidebarStructureMobileHeaderProps
-  extends WorkspaceSelectControlProps {
+interface SidebarStructureMobileHeaderProps extends WorkspaceSelectControlProps {
   appHref: string;
   appId: AppBrandId;
   brandHref: string;

@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import sourceRegistry from '../../../config/feature-flags.json';
 import { evaluateFlags, registry } from './index';
@@ -20,6 +21,28 @@ describe('registry', () => {
         flag.removeBy
       );
     }
+  });
+  it('matches generated mobile_flag.dart enum keys', () => {
+    const mobileFlagUrl = new URL(
+      '../../../apps/mobile/lib/core/feature_flags/mobile_flag.dart',
+      import.meta.url
+    );
+    expect(
+      existsSync(mobileFlagUrl),
+      'apps/mobile/lib/core/feature_flags/mobile_flag.dart is missing. Run dart tool/generate_mobile_flags.dart'
+    ).toBe(true);
+
+    const content = readFileSync(mobileFlagUrl, 'utf8');
+    const mobileMatches = [
+      ...content.matchAll(/^\s*([a-zA-Z0-9_]+)\('([^']+)'\)[,;]/gm),
+    ];
+    const mobileKeys = mobileMatches.map((m) => m[2]);
+    const configKeys = sourceRegistry.map(({ key }) => key);
+
+    expect(
+      mobileKeys,
+      'config/feature-flags.json keys do not match apps/mobile generated mobile_flag.dart enum keys. Run dart tool/generate_mobile_flags.dart'
+    ).toEqual(configKeys);
   });
 });
 

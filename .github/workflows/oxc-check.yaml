@@ -1,0 +1,356 @@
+name: Oxc Check
+
+on:
+  workflow_call:
+  push:
+    branches: [main, production, "release-please--branches--**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Validation jobs supersede independently; repository mutations finish under a
+# separate non-cancelling lock. Never add a cancelling workflow-level parent.
+jobs:
+  check-ci:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    permissions:
+      contents: read
+      deployments: read
+    concurrency:
+      group: oxc-check-${{ github.workflow }}-check-ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+      cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: oxc-check.yaml
+      pr_runner: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) }}
+
+  duplicate-validation:
+    concurrency:
+      group: oxc-check-${{ github.workflow }}-duplicate-validation-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+      cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+    name: Check completed validation
+    needs: [check-ci]
+    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-please--branches--') && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      run_checks: ${{ steps.proof.outputs.run_checks }}
+    steps:
+      - name: Checkout validation helper
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          sparse-checkout: |
+            .github/actions/pr-runner-hygiene/*
+            scripts/ci/check-completed-validation.js
+          sparse-checkout-cone-mode: false
+          clean: true
+          persist-credentials: ${{ runner.environment != 'self-hosted' }}
+      - name: Isolate persistent runner state
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/pr-runner-hygiene
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: ${{ runner.environment != 'self-hosted' }}
+      - name: Prove completed duplicate
+        id: proof
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_NAME: oxc-check.yaml
+        run: node scripts/ci/check-completed-validation.js
+
+  format:
+    concurrency:
+      group: oxc-check-${{ github.workflow }}-format-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+      cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+    name: Oxfmt Format Check
+    timeout-minutes: 10
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
+    needs: [check-ci, duplicate-validation]
+    if: ${{ (!cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      has_issues: ${{ steps.format-check.outputs.has_issues }}
+      exit_code: ${{ steps.format-check.outputs.exit_code }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          clean: true
+          persist-credentials: ${{ runner.environment != 'self-hosted' }}
+      - name: Isolate persistent runner state
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/pr-runner-hygiene
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: ${{ runner.environment != 'self-hosted' }}
+
+      - name: Check Oxc formatting
+        id: format-check
+        env:
+          npm_config_ignore_scripts: 'true'
+        run: |
+          set +e
+          oxc_output=$(npx --yes oxfmt@0.74.0 --check . 2>&1)
+          oxc_exit_code=$?
+          set -e
+          printf '%s\n' "$oxc_output"
+          echo "exit_code=$oxc_exit_code" >> "$GITHUB_OUTPUT"
+          if [ "$oxc_exit_code" -ne 0 ]; then
+            echo "has_issues=true" >> "$GITHUB_OUTPUT"
+            echo "::error::Oxc format failed with exit code $oxc_exit_code"
+            exit "$oxc_exit_code"
+          fi
+          echo "has_issues=false" >> "$GITHUB_OUTPUT"
+
+  lint:
+    concurrency:
+      group: oxc-check-${{ github.workflow }}-lint-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+      cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+    name: Oxlint Lint Check
+    timeout-minutes: 10
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
+    needs: [check-ci, duplicate-validation]
+    if: ${{ (!cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      has_issues: ${{ steps.lint-check.outputs.has_issues }}
+      exit_code: ${{ steps.lint-check.outputs.exit_code }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          clean: true
+          persist-credentials: ${{ runner.environment != 'self-hosted' }}
+      - name: Isolate persistent runner state
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/pr-runner-hygiene
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: ${{ runner.environment != 'self-hosted' }}
+
+      - name: Check Oxc linting
+        id: lint-check
+        env:
+          npm_config_ignore_scripts: 'true'
+        run: |
+          set +e
+          oxc_output=$(npx --yes oxlint@1.89.0 --deny-warnings --threads 2 . 2>&1)
+          oxc_exit_code=$?
+          set -e
+          printf '%s\n' "$oxc_output"
+          echo "exit_code=$oxc_exit_code" >> "$GITHUB_OUTPUT"
+          if [ "$oxc_exit_code" -ne 0 ]; then
+            echo "has_issues=true" >> "$GITHUB_OUTPUT"
+            echo "::error::Oxc lint failed with exit code $oxc_exit_code"
+            exit "$oxc_exit_code"
+          fi
+          echo "has_issues=false" >> "$GITHUB_OUTPUT"
+
+  apply-format:
+    concurrency:
+      group: oxc-mutations-${{ github.ref }}
+      cancel-in-progress: false
+      queue: max
+    name: Apply Format
+    runs-on: ubuntu-latest
+    needs: [format]
+    if: ${{ (github.event_name == 'push' && needs.format.outputs.has_issues == 'true' && !startsWith(github.ref_name, 'release-please--')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Apply Oxc format
+        env:
+          npm_config_ignore_scripts: 'true'
+        run: npx --yes oxfmt@0.74.0 --write .
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure Git
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Create Pull Request
+        if: steps.git-check.outputs.changes == 'true'
+        id: create-pr
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "style: apply Oxfmt formatting"
+          title: "style: apply Oxfmt formatting for ${{ github.ref_name }}"
+          body: |
+            This PR fixes code formatting issues using Oxc.
+
+            Auto-generated by the Oxfmt Format Check workflow.
+          branch: fix/oxc-formatting-${{ github.ref_name }}
+          base: ${{ github.ref_name }}
+          delete-branch: true
+          committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
+
+      - name: Fail Workflow After Creating PR
+        if: steps.create-pr.outputs.pull-request-url != ''
+        env:
+          CREATE_PR_PULL_REQUEST_URL: ${{ steps.create-pr.outputs.pull-request-url }}
+        run: |
+          echo "Oxc formatting issues were found and a PR has been created."
+          echo "PR URL: ${CREATE_PR_PULL_REQUEST_URL}"
+          exit 1
+
+  close-outdated-format-pr:
+    concurrency:
+      group: oxc-mutations-${{ github.ref }}
+      cancel-in-progress: false
+      queue: max
+    name: Close Outdated Format PR
+    runs-on: ubuntu-latest
+    needs: [format]
+    if: ${{ (github.event_name == 'push' && needs.format.outputs.has_issues == 'false' && !startsWith(github.ref_name, 'release-please--')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Close and delete outdated formatting PR
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const branchName = context.ref.replace('refs/heads/', '');
+            const formattingBranchName = `fix/oxc-formatting-${branchName}`;
+
+            console.log(`Looking for PRs from branch: ${formattingBranchName}`);
+
+            try {
+              // Find PRs with the formatting branch name
+              const { data: prs } = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head: `${context.repo.owner}:${formattingBranchName}`,
+                state: 'open'
+              });
+
+              if (prs.length === 0) {
+                console.log('No outdated formatting PRs found.');
+                return;
+              }
+
+              // Close each PR found
+              for (const pr of prs) {
+                console.log(`Closing outdated formatting PR #${pr.number}: ${pr.title}`);
+
+                // Add a comment explaining why it's being closed
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: '✅ This PR is being automatically closed because the base branch now has up-to-date formatting. No changes are needed anymore.'
+                });
+
+                // Close the PR
+                await github.rest.pulls.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  state: 'closed'
+                });
+
+                // Delete the branch
+                try {
+                  await github.rest.git.deleteRef({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ref: `heads/${formattingBranchName}`
+                  });
+                  console.log(`Deleted branch: ${formattingBranchName}`);
+                } catch (error) {
+                  console.log(`Could not delete branch ${formattingBranchName}: ${error.message}`);
+                }
+
+                console.log(`Successfully closed PR #${pr.number} and cleaned up.`);
+              }
+            } catch (error) {
+              console.log('Error while closing outdated formatting PRs:', error.message);
+            }
+
+  comment:
+    concurrency:
+      group: oxc-mutations-${{ github.ref }}
+      cancel-in-progress: false
+      queue: max
+    name: Comment on PR
+    runs-on: ubuntu-latest
+    needs: [format, lint]
+    if: ${{ (!cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (needs.format.result == 'success' || needs.format.result == 'failure') && (needs.lint.result == 'success' || needs.lint.result == 'failure')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Comment on PR with progress
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          FORMAT_HAS_ISSUES: ${{ needs.format.outputs.has_issues }}
+          FORMAT_EXIT_CODE: ${{ needs.format.outputs.exit_code }}
+          LINT_HAS_ISSUES: ${{ needs.lint.outputs.has_issues }}
+          LINT_EXIT_CODE: ${{ needs.lint.outputs.exit_code }}
+        with:
+          script: |
+            const number = context.payload.pull_request?.number;
+            if (!number) return;
+            const result = (kind) => process.env[`${kind}_HAS_ISSUES`] === 'false'
+              && process.env[`${kind}_EXIT_CODE`] === '0' ? 'Passed' : 'Failed; see job output';
+            const marker = '<!-- oxc-check-comment -->';
+            const body = `${marker}\nOxfmt: ${result('FORMAT')}\n\nOxlint: ${result('LINT')}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo, issue_number: number,
+            });
+            const existing = comments.find((comment) => comment.user.login === 'github-actions[bot]'
+              && comment.body.includes(marker));
+            if (existing) await github.rest.issues.updateComment({
+              ...context.repo, comment_id: existing.id, body,
+            });
+            else await github.rest.issues.createComment({
+              ...context.repo, issue_number: number, body,
+            });

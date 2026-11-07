@@ -44,15 +44,15 @@ function runnerMatches(env) {
     const expected = JSON.parse(env.E2E_EXPECTED_RUNNER);
     return Boolean(
       expected &&
-        typeof expected.image === 'string' &&
-        expected.image.length > 0 &&
-        typeof expected.os === 'string' &&
-        expected.os.length > 0 &&
-        typeof expected.arch === 'string' &&
-        expected.arch.length > 0 &&
-        expected.image === env.ImageVersion &&
-        expected.os === env.RUNNER_OS &&
-        expected.arch === env.RUNNER_ARCH
+      typeof expected.image === 'string' &&
+      expected.image.length > 0 &&
+      typeof expected.os === 'string' &&
+      expected.os.length > 0 &&
+      typeof expected.arch === 'string' &&
+      expected.arch.length > 0 &&
+      expected.image === env.ImageVersion &&
+      expected.os === env.RUNNER_OS &&
+      expected.arch === env.RUNNER_ARCH
     );
   } catch {
     return false;

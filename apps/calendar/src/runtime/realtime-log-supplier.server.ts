@@ -14,9 +14,8 @@ export async function recordAuthorizedRealtimeLog(data: {
     throw new Error('Unauthorized');
   const workspace = await getWorkspace(data.wsId, { useAdmin: true, user });
   if (!workspace?.joined) throw new Error('Unauthorized');
-  const { addRealtimeLog } = await import(
-    '../../../../packages/supabase/src/next/realtime-log-actions'
-  );
+  const { addRealtimeLog } =
+    await import('../../../../packages/supabase/src/next/realtime-log-actions');
   return addRealtimeLog(
     workspace.id,
     user.id,

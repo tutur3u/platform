@@ -13,9 +13,8 @@ async function visibleResult<T>(result: Promise<T>) {
 const resetGuestPasswordTransport = createServerFn({ method: 'POST' })
   .validator(legacyActionSchemas.resetGuestPassword)
   .handler(async ({ data }) => {
-    const { getLegacyActionPorts } = await import(
-      './legacy-action-runtime.server'
-    );
+    const { getLegacyActionPorts } =
+      await import('./legacy-action-runtime.server');
     return getLegacyActionPorts().resetGuestPassword(data);
   });
 
@@ -28,9 +27,8 @@ export function resetGuestPassword(
 const guestLoginTransport = createServerFn({ method: 'POST' })
   .validator(legacyActionSchemas.guestLogin)
   .handler(async ({ data }) => {
-    const { getLegacyActionPorts } = await import(
-      './legacy-action-runtime.server'
-    );
+    const { getLegacyActionPorts } =
+      await import('./legacy-action-runtime.server');
     return getLegacyActionPorts().guestLogin(data);
   });
 
@@ -43,9 +41,8 @@ export function guestLogin(
 const togglePlanLockTransport = createServerFn({ method: 'POST' })
   .validator(legacyActionSchemas.togglePlanLock)
   .handler(async ({ data }) => {
-    const { getLegacyActionPorts } = await import(
-      './legacy-action-runtime.server'
-    );
+    const { getLegacyActionPorts } =
+      await import('./legacy-action-runtime.server');
     return getLegacyActionPorts().togglePlanLock(data);
   });
 
@@ -58,9 +55,8 @@ export function togglePlanLock(
 const removeUserFromPlanTransport = createServerFn({ method: 'POST' })
   .validator(legacyActionSchemas.removeUserFromPlan)
   .handler(async ({ data }) => {
-    const { getLegacyActionPorts } = await import(
-      './legacy-action-runtime.server'
-    );
+    const { getLegacyActionPorts } =
+      await import('./legacy-action-runtime.server');
     return getLegacyActionPorts().removeUserFromPlan(data);
   });
 
@@ -73,9 +69,8 @@ export function removeUserFromPlan(
 const createPollTransport = createServerFn({ method: 'POST' })
   .validator(legacyActionSchemas.createPoll)
   .handler(async ({ data }) => {
-    const { getLegacyActionPorts } = await import(
-      './legacy-action-runtime.server'
-    );
+    const { getLegacyActionPorts } =
+      await import('./legacy-action-runtime.server');
     return getLegacyActionPorts().createPoll(data);
   });
 
@@ -88,9 +83,8 @@ export function createPoll(
 const deletePollTransport = createServerFn({ method: 'POST' })
   .validator(legacyActionSchemas.deletePoll)
   .handler(async ({ data }) => {
-    const { getLegacyActionPorts } = await import(
-      './legacy-action-runtime.server'
-    );
+    const { getLegacyActionPorts } =
+      await import('./legacy-action-runtime.server');
     return getLegacyActionPorts().deletePoll(data);
   });
 
@@ -103,9 +97,8 @@ export function deletePoll(
 const addPollOptionTransport = createServerFn({ method: 'POST' })
   .validator(legacyActionSchemas.addPollOption)
   .handler(async ({ data }) => {
-    const { getLegacyActionPorts } = await import(
-      './legacy-action-runtime.server'
-    );
+    const { getLegacyActionPorts } =
+      await import('./legacy-action-runtime.server');
     return getLegacyActionPorts().addPollOption(data);
   });
 
@@ -118,9 +111,8 @@ export function addPollOption(
 const deletePollOptionTransport = createServerFn({ method: 'POST' })
   .validator(legacyActionSchemas.deletePollOption)
   .handler(async ({ data }) => {
-    const { getLegacyActionPorts } = await import(
-      './legacy-action-runtime.server'
-    );
+    const { getLegacyActionPorts } =
+      await import('./legacy-action-runtime.server');
     return getLegacyActionPorts().deletePollOption(data);
   });
 
@@ -133,9 +125,8 @@ export function deletePollOption(
 const submitVoteTransport = createServerFn({ method: 'POST' })
   .validator(legacyActionSchemas.submitVote)
   .handler(async ({ data }) => {
-    const { getLegacyActionPorts } = await import(
-      './legacy-action-runtime.server'
-    );
+    const { getLegacyActionPorts } =
+      await import('./legacy-action-runtime.server');
     return getLegacyActionPorts().submitVote(data);
   });
 
@@ -148,9 +139,8 @@ export function submitVote(
 const toggleWherePollTransport = createServerFn({ method: 'POST' })
   .validator(legacyActionSchemas.toggleWherePoll)
   .handler(async ({ data }) => {
-    const { getLegacyActionPorts } = await import(
-      './legacy-action-runtime.server'
-    );
+    const { getLegacyActionPorts } =
+      await import('./legacy-action-runtime.server');
     return getLegacyActionPorts().toggleWherePoll(data);
   });
 

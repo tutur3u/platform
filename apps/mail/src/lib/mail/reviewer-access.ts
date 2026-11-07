@@ -17,9 +17,9 @@ export async function isManagedMailReviewer(user: {
   const marker = stored?.app_metadata?.infrastructure_review_account;
   return Boolean(
     stored.email?.toLowerCase() === user.email?.trim().toLowerCase() &&
-      (!stored.banned_until || Date.parse(stored.banned_until) <= Date.now()) &&
-      marker &&
-      typeof marker === 'object' &&
-      (marker as { kind?: unknown }).kind === 'review'
+    (!stored.banned_until || Date.parse(stored.banned_until) <= Date.now()) &&
+    marker &&
+    typeof marker === 'object' &&
+    (marker as { kind?: unknown }).kind === 'review'
   );
 }

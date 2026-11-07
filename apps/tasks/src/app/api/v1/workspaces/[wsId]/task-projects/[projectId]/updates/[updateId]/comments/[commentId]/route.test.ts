@@ -27,12 +27,10 @@ function builder(terminal: 'maybeSingle' | 'single' | 'then', result: unknown) {
   for (const method of ['select', 'eq', 'is', 'update'] as const)
     value[method] = vi.fn(() => value);
   if (terminal === 'then') {
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     value.then = vi.fn((resolve) => Promise.resolve(result).then(resolve));
   } else value[terminal] = vi.fn(async () => result);
   value.maybeSingle ??= vi.fn();
   value.single ??= vi.fn();
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
   value.then ??= vi.fn();
   return value;
 }

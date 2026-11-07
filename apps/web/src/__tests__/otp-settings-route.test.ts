@@ -30,9 +30,8 @@ describe('otp settings route', () => {
   it('allows web requests without a platform query param', async () => {
     mocks.getPublicOtpSettings.mockResolvedValue({ otpEnabled: true });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/auth/otp/settings/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/auth/otp/settings/route');
     const response = await GET(
       new NextRequest(
         'http://localhost/api/v1/auth/otp/settings?client=web&platform='
@@ -50,9 +49,8 @@ describe('otp settings route', () => {
   it('fails open for web settings when the config lookup fails', async () => {
     mocks.getPublicOtpSettings.mockRejectedValue(new Error('database down'));
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/auth/otp/settings/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/auth/otp/settings/route');
     const response = await GET(
       new NextRequest('http://localhost/api/v1/auth/otp/settings?client=web')
     );
@@ -75,9 +73,8 @@ describe('otp settings route', () => {
   it('keeps mobile settings fail-closed when policy loading fails', async () => {
     mocks.getPublicOtpSettings.mockRejectedValue(new Error('invalid policy'));
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/auth/otp/settings/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/auth/otp/settings/route');
     const response = await GET(
       new NextRequest(
         'http://localhost/api/v1/auth/otp/settings?client=mobile&platform=ios'

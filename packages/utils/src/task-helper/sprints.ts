@@ -195,3 +195,22 @@ export function formatSprintDateRange(
   if (start && end) return `${start} - ${end}`;
   return start ?? end ?? '';
 }
+
+/** A sprint's dates without the year, for labels beside its name: "27 Oct – 6 Nov". */
+export function formatSprintShortRange(
+  sprint: Pick<BoardSprint, 'start_date' | 'end_date'>,
+  locale?: string
+) {
+  const resolvedLocale =
+    locale === 'en' || locale === 'en-US' ? 'en-GB' : locale;
+  const start = sprint.start_date ? parseDateOnly(sprint.start_date) : null;
+  const end = sprint.end_date ? parseDateOnly(sprint.end_date) : null;
+  const format = new Intl.DateTimeFormat(resolvedLocale, {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
+  if (start && end) return format.formatRange(start, end);
+  const only = start ?? end;
+  return only ? format.format(only) : '';
+}

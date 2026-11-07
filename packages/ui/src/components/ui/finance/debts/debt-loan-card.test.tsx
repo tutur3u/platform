@@ -38,13 +38,11 @@ function renderDebtLoanCard() {
 
 describe('DebtLoanCard', () => {
   beforeEach(() => {
-    // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
       'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;Secure';
   });
 
   it('masks amounts, progress, and interest rate when finance numbers are hidden', () => {
-    // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
     document.cookie = 'finance-confidential-mode=true;path=/;Secure';
 
     const { container } = renderDebtLoanCard();
@@ -58,7 +56,6 @@ describe('DebtLoanCard', () => {
   });
 
   it('shows amounts, progress, and interest rate when finance numbers are visible', () => {
-    // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
     document.cookie = 'finance-confidential-mode=false;path=/;Secure';
 
     const { container } = renderDebtLoanCard();

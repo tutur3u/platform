@@ -202,9 +202,8 @@ vi.mock('ai', () => {
 });
 
 async function callRoute(body: Record<string, unknown>) {
-  const { POST } = await import(
-    '@/app/api/v1/workspaces/[wsId]/tasks/suggestions/route'
-  );
+  const { POST } =
+    await import('@/app/api/v1/workspaces/[wsId]/tasks/suggestions/route');
 
   return POST(
     new Request('http://localhost/api/v1/workspaces/ws-1/tasks/suggestions', {

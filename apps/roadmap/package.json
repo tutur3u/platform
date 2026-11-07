@@ -1,0 +1,31 @@
+{
+  "name": "@tuturuuu/roadmap",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev",
+    "build": "vp build",
+    "type-check": "node scripts/generate-route-tree.cjs && tsc --noEmit",
+    "test": "node --test src/roadmap-data.test.ts",
+    "deploy:cloudflare": "void deploy --platform cloudflare",
+    "build:cloudflare": "vp build",
+    "seal:cloudflare": "node scripts/seal-artifact.mjs"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "1.170.45",
+    "@tanstack/react-start": "1.169.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "@vitejs/plugin-react": "6.1.2",
+    "typescript": "7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
+    "vite-plus": "1.3.0",
+    "void": "1.1.12",
+    "wrangler": "4.151.2"
+  }
+}

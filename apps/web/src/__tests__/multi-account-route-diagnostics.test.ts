@@ -39,9 +39,8 @@ describe('multi-account route diagnostics', () => {
   it('logs and returns a diagnostic code for account-save vault failures', async () => {
     mocks.saveCurrentWebAccount.mockRejectedValue(new Error('vault failed'));
 
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/auth/accounts/current/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/auth/accounts/current/route');
     const response = await POST(
       new NextRequest('http://localhost/api/v1/auth/accounts/current', {
         body: JSON.stringify({ route: '/en/personal/tasks' }),
@@ -71,9 +70,8 @@ describe('multi-account route diagnostics', () => {
       success: false,
     });
 
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/auth/accounts/switch/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/auth/accounts/switch/route');
     const response = await POST(
       new NextRequest('http://localhost/api/v1/auth/accounts/switch', {
         body: JSON.stringify({

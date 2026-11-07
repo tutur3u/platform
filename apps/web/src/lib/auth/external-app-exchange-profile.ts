@@ -8,7 +8,6 @@ export type AuthUserIdentity = {
 };
 
 type UserPrivateDetailsRow = {
-  email?: string | null;
   full_name?: string | null;
 };
 
@@ -94,9 +93,7 @@ export async function getExchangeUserProfile({
 }): Promise<ExchangeUserProfile> {
   const { data, error } = await sbAdmin
     .from('users')
-    .select(
-      'id, display_name, avatar_url, user_private_details(email, full_name)'
-    )
+    .select('id, display_name, avatar_url, user_private_details(full_name)')
     .eq('id', userId)
     .maybeSingle();
 
@@ -117,7 +114,10 @@ export async function getExchangeUserProfile({
     privateDetails?.full_name,
     authIdentity.metadata?.full_name
   );
-  const email = firstCleanString(privateDetails?.email, authIdentity.email);
+  // SR-926: `email` is mailbox authority for app tokens and their consumers.
+  // It comes only from confirmed Auth state, never from the user-editable
+  // user_private_details.email profile column.
+  const email = authIdentity.email;
   const avatarUrl = firstCleanString(
     userProfile?.avatar_url,
     authIdentity.metadata?.avatar_url

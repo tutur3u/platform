@@ -1,9 +1,5 @@
 {
-  "editor.codeActionsOnSave": {
-    "source.biome": "explicit",
-    "source.organizeImports.biome": "explicit",
-    "source.fixAll.biome": "explicit"
-  },
+  "editor.codeActionsOnSave": { "source.fixAll.oxc": "explicit" },
   "files.eol": "\n",
   "files.exclude": {
     "**/.git": true,
@@ -51,30 +47,27 @@
   "editor.formatOnPaste": false,
   "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "file",
-  "editor.defaultFormatter": "biomejs.biome",
-  "[xml]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
+  "editor.defaultFormatter": "oxc.oxc-vscode",
   "[css]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "[json]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "[jsonc]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "[javascript]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "[javascriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "js/ts.tsdk.path": "node_modules/typescript/lib",
   "workbench.editor.customLabels.patterns": {
