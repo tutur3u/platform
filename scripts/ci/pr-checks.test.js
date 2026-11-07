@@ -21,7 +21,7 @@ const filters = JSON.parse(
   )
 );
 const converted = [
-  'biome-check.yaml',
+  'oxc-check.yaml',
   'i18n-check.yaml',
   'docs-seo-check.yaml',
   'check-migrations.yml',
@@ -53,9 +53,9 @@ test('one unfiltered PR entrypoint replaces seven independent PR runs', () => {
 
 test('existing check display names remain stable in the consolidated run', () => {
   const expected = {
-    'biome-check.yaml': {
-      format: 'Biome Format Check',
-      lint: 'Biome Lint Check',
+    'oxc-check.yaml': {
+      format: 'Oxfmt Format Check',
+      lint: 'Oxlint Lint Check',
     },
     'i18n-check.yaml': {
       'i18n-sort-check': 'Translation Sort Check',
@@ -135,13 +135,13 @@ test('the always-run gate accepts path skips and rejects failures, cancellation 
       `admitted ${status}`
     );
     assert.equal(
-      gate(resultSet({ biome: status }, { biome: true }), true).status,
+      gate(resultSet({ oxc: status }, { oxc: true }), true).status,
       1,
-      `selected biome ${status}`
+      `selected oxc ${status}`
     );
   }
   assert.equal(
-    gate(resultSet({ biome: 'success' }, { biome: true }), true).status,
+    gate(resultSet({ oxc: 'success' }, { oxc: true }), true).status,
     0
   );
   assert.equal(gate(resultSet({ migrations: 'failure' }, {})).status, 1);
@@ -163,7 +163,7 @@ test('gated callers stay deferred until ready while script-only checks remain el
       },
     },
   });
-  for (const name of ['biome', 'i18n', 'docs']) {
+  for (const name of ['oxc', 'i18n', 'docs']) {
     assert.equal(
       Boolean(evaluateExpression(workflow.jobs[name].if, scope(false))),
       false,
@@ -237,7 +237,7 @@ test('all new third-party actions are immutable and callees cannot cancel their 
     'ci-admitted.yaml',
   ].map((file) => renderTemplate(workflows[file].concurrency.group, context));
   assert.equal(new Set([parent, ...groups]).size, groups.length + 1);
-  assert.ok(!Object.hasOwn(workflows['biome-check.yaml'], 'concurrency'));
+  assert.ok(!Object.hasOwn(workflows['oxc-check.yaml'], 'concurrency'));
 });
 
 test('the inventory records all baseline PR entrypoints and the required-check mapping', () => {

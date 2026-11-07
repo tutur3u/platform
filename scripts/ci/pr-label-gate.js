@@ -23,7 +23,7 @@ const PROTECTED_PUSH_BRANCHES = [
   'release-please--branches--**',
 ];
 const PUSH_TO_PR = {
-  'biome-check.yaml': PROTECTED_PUSH_BRANCHES,
+  'oxc-check.yaml': PROTECTED_PUSH_BRANCHES,
   'discord-python-ci.yml': PROTECTED_PUSH_BRANCHES,
   'supabase-baseline.yaml': ['main', 'release-please--branches--**'],
   'turbo-unit-tests.yaml': PROTECTED_PUSH_BRANCHES,
@@ -107,7 +107,7 @@ const ALWAYS_ON_PR_WORKFLOWS = [
 // Admission controls run before label-gated validation can start.
 const ADMISSION_PR_WORKFLOWS = ['auto-ready-for-ci.yaml', 'pr-checks.yaml'];
 const REUSABLE_GATED_WORKFLOWS = [
-  'biome-check.yaml',
+  'oxc-check.yaml',
   'docs-seo-check.yaml',
   'i18n-check.yaml',
 ];

@@ -39,7 +39,6 @@ function createQuery(table: string) {
     });
   }
   query.maybeSingle = vi.fn(async () => single());
-  // biome-ignore lint/suspicious/noThenProperty: mimics the awaitable query builder.
   query.then = (resolve: (value: unknown) => unknown) =>
     Promise.resolve(
       table === 'workspace_role_permissions'

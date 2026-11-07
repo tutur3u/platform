@@ -27,7 +27,7 @@ function admitted(job, { github, needs }, cancelled = false) {
   );
 }
 
-for (const file of ['biome-check.yaml']) {
+for (const file of ['oxc-check.yaml']) {
   const workflow = readWorkflow(file);
   const needs = {
     'check-ci': {
@@ -82,7 +82,7 @@ for (const file of ['biome-check.yaml']) {
 
   test(`${file}: skipped or failed proof still admits real validation`, () => {
     const job =
-      workflow.jobs[file === 'biome-check.yaml' ? 'format' : 'test-shards'];
+      workflow.jobs[file === 'oxc-check.yaml' ? 'format' : 'test-shards'];
     for (const result of ['skipped', 'failure', 'cancelled']) {
       assert.equal(
         admitted(job, {

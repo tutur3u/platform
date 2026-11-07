@@ -45,7 +45,6 @@ function query(rows: () => unknown[], filters?: string[]) {
     order: () => builder,
     limit: () => builder,
     range: () => builder,
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
     then(
       resolve: (value: unknown) => unknown,
       reject: (error: unknown) => unknown

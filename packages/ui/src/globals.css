@@ -605,7 +605,7 @@
      * blow out their brightness. Entrance keyframes use `both`, so removing
      * the animation simply leaves the element in its natural, final state.
      */
-    /* biome-ignore lint/complexity/noImportantStyles: must beat utility-class animations for accessibility */
+
     animation: none !important;
   }
 }

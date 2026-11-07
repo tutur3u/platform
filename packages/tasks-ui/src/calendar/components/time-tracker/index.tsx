@@ -303,7 +303,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
             onClick={() => tracker.setIsOpen(true)}
           />
         </DialogTrigger>
-
         <DialogContent className="@container max-h-[95vh] max-w-7xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -334,7 +333,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
               </span>
             </DialogDescription>
           </DialogHeader>
-
           <Tabs
             value={tracker.activeTab}
             onValueChange={(v) =>
@@ -355,7 +353,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                 History
               </TabsTrigger>
             </TabsList>
-
             <div className="grid @5xl:grid-cols-2 grid-cols-1 gap-6">
               <TabsContent value="current" className="@container space-y-4">
                 <Card className="transition-all hover:shadow-md">
@@ -414,14 +411,12 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                     )}
                   </CardContent>
                 </Card>
-
                 {tracker.justCompleted && (
                   <CompletionCelebration session={tracker.justCompleted} />
                 )}
 
                 <StatsCards stats={tracker.timerStats} />
               </TabsContent>
-
               <TabsContent value="recent" className="@container space-y-4">
                 <RecentSessionsTab
                   sessions={tracker.recentSessions}
@@ -435,7 +430,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                   onSwitchToCurrentTab={() => tracker.setActiveTab('current')}
                 />
               </TabsContent>
-
               <TabsContent value="history" className="@container space-y-4">
                 <HistoryTab />
               </TabsContent>
@@ -443,7 +437,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
           </Tabs>
         </DialogContent>
       </Dialog>
-
       <EditSessionDialog
         session={sessions.sessionToEdit}
         onClose={() => sessions.setSessionToEdit(null)}
@@ -454,14 +447,12 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
         categories={tracker.categories}
         tasks={tasks}
       />
-
       <DeleteSessionDialog
         session={sessions.sessionToDelete}
         onClose={() => sessions.setSessionToDelete(null)}
         onDelete={sessions.deleteSession}
         isDeleting={sessions.isDeleting}
       />
-
       <CreateTaskDialog
         isOpen={showTaskCreation}
         onClose={() => setShowTaskCreation(false)}
@@ -513,7 +504,6 @@ function NewSessionForm({
           Ready to start tracking time
         </p>
       </div>
-
       <Tabs
         value={sessionMode}
         onValueChange={(v) => onSessionModeChange(v as 'task' | 'manual')}
@@ -544,7 +534,6 @@ function NewSessionForm({
             </div>
           </TabsTrigger>
         </TabsList>
-
         <TabsContent
           value="task"
           className="fade-in-50 slide-in-from-bottom-2 animate-in space-y-4 duration-300"
@@ -611,7 +600,6 @@ function NewSessionForm({
               </p>
             )}
           </div>
-
           <Textarea
             placeholder="Add session notes (optional)"
             value={newSessionDescription}
@@ -619,13 +607,11 @@ function NewSessionForm({
             rows={2}
             className="@lg:text-base text-sm"
           />
-
           <CategorySelect
             categories={categories}
             value={selectedCategoryId}
             onChange={setSelectedCategoryId}
           />
-
           <Button
             onClick={onStartTimer}
             disabled={isLoading}
@@ -636,7 +622,6 @@ function NewSessionForm({
             {selectedTaskId ? 'Start Timer' : 'Create Task & Start Timer'}
           </Button>
         </TabsContent>
-
         <TabsContent
           value="manual"
           className="fade-in-50 slide-in-from-bottom-2 animate-in space-y-4 duration-300"
@@ -649,7 +634,6 @@ function NewSessionForm({
               className="@lg:text-base text-sm"
               autoFocus={sessionMode === 'manual'}
             />
-
             {showTaskSuggestion && newSessionTitle.length > 2 && (
               <TaskSuggestionCard
                 title={newSessionTitle}
@@ -667,7 +651,6 @@ function NewSessionForm({
               />
             )}
           </div>
-
           <Textarea
             placeholder="Add description (optional)"
             value={newSessionDescription}
@@ -675,13 +658,11 @@ function NewSessionForm({
             rows={3}
             className="@lg:text-base text-sm"
           />
-
           <CategorySelect
             categories={categories}
             value={selectedCategoryId}
             onChange={setSelectedCategoryId}
           />
-
           <Button
             onClick={onStartTimer}
             disabled={!newSessionTitle.trim() || isLoading}
@@ -693,7 +674,6 @@ function NewSessionForm({
           </Button>
         </TabsContent>
       </Tabs>
-
       {(recentSessions.length > 0 || templates.length > 0) && (
         <QuickActions
           recentSessions={recentSessions}

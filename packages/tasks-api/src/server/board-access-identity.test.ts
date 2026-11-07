@@ -41,7 +41,6 @@ function client(confirmed = true) {
           data: { email: 'recipient@example.com' },
           error: null,
         }),
-        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
         then: (resolve: (value: unknown) => unknown) =>
           Promise.resolve({
             data:

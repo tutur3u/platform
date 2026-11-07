@@ -29,7 +29,7 @@ read-only Oxfmt comparison. Explicit `.oxlintrc.json` and `.oxfmtrc.json` files 
 resolution through Bun's shared package store; the CLI uses these files directly. The initial Oxlint gate covers core/TypeScript/Oxc correctness and native-dialog
 prohibition. React compiler diagnostics and additional accessibility rules need
 separate behavior-reviewed fixes before enabling those rule families; existing
-Biome accessibility/hooks checks remain authoritative. Biome
+Oxc accessibility/hooks checks remain authoritative. Oxc
 remains the repository formatter until this scope's formatting/rule parity and
 editor/generator changes are complete; do not enable competing format writers.
 Colab tests use the thread pool with per-file isolation retained. Repeated fork-pool

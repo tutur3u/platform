@@ -81,7 +81,7 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # Release Please serializes package.json files independently of Biome.
+      # Release Please serializes package.json files independently of Oxc.
       # When those serializers disagree (for example, a short `files` array),
       # the generated PR immediately goes red even though no authored source is
       # malformed. Normalize only the files changed by the generated release,
@@ -133,7 +133,7 @@ jobs:
           node "${trusted_scripts}/scripts/ci/release-docs-inventory.js" --refresh origin/production HEAD "${PREVIOUS_RELEASE_SHA}"
           node "${trusted_scripts}/scripts/ci/release-workspace-lock.js" origin/production HEAD --working
           node "${trusted_scripts}/scripts/ci/normalize-release-notes.js" origin/production
-          npx --yes @biomejs/biome@2.5.13 format --write --files-ignore-unknown=true -- "${changed_files[@]}"
+          npx --yes oxfmt@0.74.0 --write -- "${changed_files[@]}"
 
           # Refresh only manager-owned metadata: no dependency installation or
           # package lifecycle scripts. Independently reject any non-version delta.
@@ -146,7 +146,7 @@ jobs:
           if ! git diff --quiet -- bun.lock; then changed_files+=("bun.lock"); fi
 
           if git diff --quiet -- "${changed_files[@]}"; then
-            echo "Generated release files already match Biome formatting."
+            echo "Generated release files already match Oxc formatting."
             exit 0
           fi
 

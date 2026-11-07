@@ -9,11 +9,11 @@ const {
 } = require('./workflow-config-test-helpers.js');
 
 const workflow = fs.readFileSync(
-  path.join(repoRoot, '.github/workflows/biome-check.yaml'),
+  path.join(repoRoot, '.github/workflows/oxc-check.yaml'),
   'utf8'
 );
 
-test('overflow notes cannot attach cancelled Biome checks to a release SHA', () => {
+test('overflow notes cannot attach cancelled Oxc checks to a release SHA', () => {
   const triggers = JSON.parse(
     execFileSync(
       'bun',
@@ -33,7 +33,7 @@ test('overflow notes cannot attach cancelled Biome checks to a release SHA', () 
   assert.ok(Object.hasOwn(triggers, 'workflow_dispatch'));
 });
 
-test('Biome preserves canonical and generated commits without branch collisions', () => {
+test('Oxc preserves canonical and generated commits without branch collisions', () => {
   assert.match(workflow, /group:.*github\.workflow.*github\.ref.*github\.sha/);
   assert.match(
     workflow,
@@ -44,21 +44,21 @@ test('Biome preserves canonical and generated commits without branch collisions'
 test('Release Please owns formatting its generated branches', () => {
   for (const jobName of ['apply-format', 'close-outdated-format-pr']) {
     assert.match(
-      readWorkflowJobBlock('biome-check.yaml', jobName),
+      readWorkflowJobBlock('oxc-check.yaml', jobName),
       /!startsWith\(github.ref_name, 'release-please--'\)/
     );
   }
   // Generated release commits still receive the same required validation.
   for (const jobName of ['format', 'lint']) {
     assert.doesNotMatch(
-      readWorkflowJobBlock('biome-check.yaml', jobName),
+      readWorkflowJobBlock('oxc-check.yaml', jobName),
       /if:.*startsWith\(github.ref_name, 'release-please--'\)/
     );
   }
 });
 
 test('cancelled or skipped validation cannot publish a misleading PR report', () => {
-  const comment = readWorkflowJobBlock('biome-check.yaml', 'comment');
+  const comment = readWorkflowJobBlock('oxc-check.yaml', 'comment');
   assert.match(comment, /!cancelled\(\)/);
   for (const jobName of ['format', 'lint']) {
     assert.ok(

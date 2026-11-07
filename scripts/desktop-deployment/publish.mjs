@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: standalone CI-only scripts never run in Turbo or cache release inputs */
 import { execFileSync } from 'node:child_process';
 import { appendFile, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';

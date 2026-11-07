@@ -31,7 +31,6 @@ export function UserAvatarCell({ avatarUrl, name }: UserAvatarCellProps) {
   return (
     <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-foreground/5 font-semibold text-foreground/60 text-xs">
       {showImage ? (
-        // biome-ignore lint/performance/noImgElement: Supabase public avatars are served directly to avoid Next image proxy failures.
         <img
           src={avatarUrl}
           alt=""

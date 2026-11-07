@@ -1,6 +1,6 @@
 'use client';
 
-import { containsHtml, sanitizeHtml } from '@tuturuuu/utils/html-sanitizer';
+import { sanitizeHtml } from '@tuturuuu/utils/html-sanitizer';
 
 interface EventDescriptionProps {
   description: string;
@@ -16,11 +16,9 @@ export default function EventDescription({
   return (
     <div
       className={`event-description ${className}`}
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: content is already sanitized
+      // eslint-disable-next-line react/no-danger -- Every description passes through the shared sanitizeHtml allowlist.
       dangerouslySetInnerHTML={{
-        __html: containsHtml(description)
-          ? sanitizeHtml(description)
-          : description,
+        __html: sanitizeHtml(description),
       }}
     />
   );

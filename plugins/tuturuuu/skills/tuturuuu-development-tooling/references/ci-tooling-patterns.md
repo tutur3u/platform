@@ -6,10 +6,15 @@ For root scripts, CI workflows, plugin validation, formatting and repo verificat
 
 Use root-pinned Oxlint/Oxfmt through `bun oxc:lint`, `bun oxc:format` and
 `bun oxc:write` with explicit owned-file paths. Read-only commands are the default;
-format writes are intentional. Existing Biome CI/editor/generator ownership remains
+format writes are intentional. Existing Oxc CI/editor/generator ownership remains
 until a workspace records rule coverage, formatting deltas and compensating
 validators. Do not run global formatters or the root-wide Vite+ migrator for a
 single workspace. `scripts/oxc.test.js` covers file scope, symlinks and read-only formatting.
+The conflict helper retains no-follow regular-file and parent-directory descriptors,
+checks device/inode identity and containment, and uses positional descriptor reads
+and writes. Refuse replacement or unsupported no-follow access; keep outside-sentinel
+path-swap controls in `scripts/resolve-format-conflicts.test.js`. It does not
+update the Git index or publish resolutions.
 Colab's local Worker preview uses `vite.worker.config.ts`; keep its existing
 configuration/persistence, disable remote bindings and require the CI preview runtime check.
 Publication remains separate.
@@ -228,7 +233,7 @@ fleet versions; verify those separately before claiming runtime acceptance.
 
 - Focused non-build tests needed to validate authorized work may run. Builds and setup-triggered builds run in CI only. Start long-lived development servers only when requested or needed for explicitly requested runtime verification. Deployment authority stays separate.
 - For TypeScript, JavaScript, root scripts, or repo config changes, run focused non-build checks locally; do not run local `bun validate`.
-- Run `bun check:changed` before every push. It maps changed paths to Biome, branch-name, generated-inventory, guard, related-test, affected type-check and Flutter checks without builds, queues heavy steps through ttr, and treats cold-`dist` type errors outside changed files as advisory. Missing imports never demote real changed-file errors such as TS2322; only implicit-any follow-ons may be softened. Shared packages select reverse dependents; root/shared configs explicitly require CI. Hook mode refuses dirty tracked content and untracked inputs in selected workspaces/reverse dependents and parent directories of selected script tests. Git paths are NUL-delimited; reject only option-like repository/workspace-relative prefixes, preserving internal dash route directories. Shared config coverage notices include Bun/npm, root Vitest and Oxc configs. Extend `scripts/check-changed/plan.js` with tests when a new cheap CI failure class appears; see [pre-push checks](../../../../../apps/docs/build/development-tools/pre-push-checks.mdx).
+- Run `bun check:changed` before every push. It maps changed paths to Oxc, branch-name, generated-inventory, guard, related-test, affected type-check and Flutter checks without builds, queues heavy steps through ttr, and treats cold-`dist` type errors outside changed files as advisory. Missing imports never demote real changed-file errors such as TS2322; only implicit-any follow-ons may be softened. Shared packages select reverse dependents; root/shared configs explicitly require CI. Hook mode refuses dirty tracked content and untracked inputs in selected workspaces/reverse dependents and parent directories of selected script tests. Git paths are NUL-delimited; reject only option-like repository/workspace-relative prefixes, preserving internal dash route directories. Shared config coverage notices include Bun/npm, root Vitest and Oxc configs. Extend `scripts/check-changed/plan.js` with tests when a new cheap CI failure class appears; see [pre-push checks](../../../../../apps/docs/build/development-tools/pre-push-checks.mdx).
 - Partition related tests by runner before planning commands. Parse runtime imports from syntax with the pinned root parser; fixture strings, template text, comments, regular expressions and type-only imports must not select a runner. Actual `node:test` imports or the owning package's `node --test` script select native tests; explicit runtime Vitest imports override that package default. Cover both directions and the SDK portable-build fixture in `scripts/check-changed-runners.test.js`. Never send the same file to both runners or suppress real failures as empty discovery. Hook mode validates every pushed branch destination from Git stdin; without push refs, local `tmp/` branches may validate a configured tracking branch, printing both names; untracked temporary branches and ordinary invalid local names still fail. Published branch names remain CI-gated.
 - tsrs (Rust TypeScript port) is advisory only: the gate defaults to tsc until seeded-error qualification, and explicit tsrs runs always retain tsc confirmation. Gate each project through TSRS_PROJECTS and print exact diagnostic-key differences as advisory output even when tsc passes. Resolve tsrs only for plans including a qualified project, disable npm lifecycle scripts, and use only an existing TSRS_BIN in hook mode, and `tsrs-shadow.yaml` records main-push parity. Keep `tsc` as the required gate until the [promotion criteria](../../../../../apps/docs/build/development-tools/tsrs-shadow-type-check.mdx#promotion-criteria) hold; tsrs currently tracks TypeScript 7.1 semantics and lacks `--showConfig`.
 - Use focused package-local tests, then applicable exact-commit CI checks.
@@ -236,8 +241,8 @@ fleet versions; verify those separately before claiming runtime acceptance.
 - Standalone chat qualification uses verified Node 24.21.0 plus the source Vitest entry directly. Preserve original exit/signal/timeout/group and report gates; passing Web reports or an optional diagnostic comparison never override failure. Require fresh exact-source SQL197/Web9/Dart9 with fixture/database cleanup; see the [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx).
 - Normally run the applicable check, lint, test, and build workflows in CI for the exact authored commit, then inspect their terminal results. A demonstrably stuck queue can defer this proof; record pending jobs and local evidence, and finish exact-commit CI before calling the change release-ready.
 - For single-package validation, prefer package-local commands such as `bun --cwd packages/ai vitest run ...` instead of root commands that fan out through Turbo.
-- Run `bun ff` for owned frontend/TS files when required; if it triggers repo-wide Biome behavior, use exact-file Biome commands. Preserve unrelated dirty files and require the applicable lint workflow in exact-commit CI.
-- For nested Biome configs, reproduce with the pinned executable and authentic generated bytes: Biome 2.5.13 rebases inherited root `files.includes` globs under the extending config, so root `!apps/meet/src/routeTree.gen.ts` can miss the file. In Meet and Calendar, use owning `formatter.includes: ["**", "!src/routeTree.gen.ts"]`. Preserve supplier bytes and generated casts; do not format or hand-patch generated source, disable types, or add global waivers. Compare before/after generated exclusions and authored/Worker negative controls; preserve linter settings and inactive-runtime scope. Fixture skips prove exclusion only, not lint/type/build/full CI or runtime acceptance; retain raw failures and protocol NOTPASS separately.
+- Run `bun ff` for owned frontend/TS files when required; if it triggers repo-wide Oxc behavior, use exact-file Oxc commands. Preserve unrelated dirty files and require the applicable lint workflow in exact-commit CI.
+- Keep generated route trees excluded in both root Oxc configs with `**/routeTree.gen.ts`; preserve generator bytes. Pair ignored paths with an authored negative control because an ignored-only Oxfmt invocation returns a no-files error.
 
 Keep Vite/Void host configuration in its own TypeScript program when tooling
 loads runtime globals such as Bun's augmented fetch. Mail, Calendar and Meet
@@ -378,7 +383,7 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   enforce a short 5-10-minute claim TTL, and include `node:test` coverage for
   conflict, stale-lock, and wait behavior.
 - ANSI strip helpers in root scripts should use `new RegExp(...)` forms when
-  Biome would otherwise flag control characters in regex literals.
+  Oxc would otherwise flag control characters in regex literals.
 - Literal `${...}` source checks should use regex or escaped forms, not plain
   string literals that trip `noTemplateCurlyInString`.
 - Do not remove caching, fail-fast behavior, or security validation silently;
@@ -584,7 +589,7 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   true and `bun check:mobile` always runs; `flutter pub get` also covers the
   `generate: true` gen-l10n step that `flutter-analyze` needs.
 - Exclude `release-please--branches--**--release-notes` metadata branches from
-  Biome's native push trigger, while preserving validation for real release PR
+  Oxc's native push trigger, while preserving validation for real release PR
   branches and manual dispatch. Overflow branch creation briefly reuses the
   production SHA; cancellation on its next push otherwise marks main/production
   red too. Verify all check runs on the release SHA, not only branch-filtered runs.
@@ -732,7 +737,7 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   then `gh run rerun <run-id>`); reruns retain the original SHA/ref and workflow
   revision. Older workflow revisions do not acquire this protection on rerun.
   Production deployment, migration and release workflows retain their locks.
-- Keep mutating jobs outside cancelling workflow parents. Biome uses job-specific
+- Keep mutating jobs outside cancelling workflow parents. Oxc uses job-specific
   cancellable validation locks and a separate serialized non-cancelling mutation
   lock. Guard Modal deployment before its job lock; cancelled validation
   completions must never cancel active provider work. Discover `workflow_run`
@@ -793,7 +798,7 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   unique non-cancelling group. Classify the workflow there. Gate callers, never
   reusable callees; never use workflow-level filters. Leave paused `if: false` jobs alone. Branch-push validators keep
   push only for `main`, `production` and `release-please--branches--**`; keep
-  mutating jobs (Biome auto-format) push-only. Cheap script-only and security
+  mutating jobs (Oxc auto-format) push-only. Cheap script-only and security
   checks stay ungated. See the
   [runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#label-gated-heavy-pr-ci-ready-for-ci).
 - Verify new third-party action pins through the owning repository's
@@ -1053,7 +1058,7 @@ Give an adopted native Worker an owning private workspace, pinned Vite+/Cloudfla
 plugin and a matching `vite` core alias when plugin peer types require it. Keep
 Cloudflare dev/build configuration separate from unit-test configuration so root
 Vitest discovery does not start Worker development servers. Use explicit scoped
-JSON Oxc configuration; retain existing Biome gates during parity work. Generate
+root Oxc configuration and blocking lint/format gates. Generate
 Worker types before checking source/config TypeScript. Build only in exact-commit
 CI and test the emitted Wrangler configuration in addition to source fixtures;
 dry-run and authorized deployment consume that same emitted target. Preserve
@@ -1062,7 +1067,7 @@ Assert each service's source compatibility flags rather than copying another
 Worker's flags; Devbox Control intentionally has none.
 
 For scoped Bun changes, frozen restoration alone does not prove the effective
-provider or alias identity. Follow the [scoped lockfile guidance](../../../../../apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx#move-one-workspace-at-a-time)
+provider or alias identity. Follow the [scoped lockfile guidance](../../../../../apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx#rule-parity-follow-up)
 for complete dependency closures, installed app/CLI/plugin resolution checks and
 exact-commit CI build evidence.
 
@@ -1320,7 +1325,7 @@ Use `bun validate` / `bun validate:now` for the existing aggregate runner.
 Do not add a `check` package script: it shadows Bun's native checker. The
 collision regression in `scripts/validate-command.test.js` covers every root
 and workspace manifest through the existing script-test gate. Keep guard,
-format/lint/test, conditional checks, fail-fast/mandatory-Biome handling and
+format/lint/test, conditional checks, fail-fast/mandatory-Oxc handling and
 queue/child-temp semantics intact when changing the entrypoint. Retain legacy
 queue directory/environment identifiers for in-flight runner compatibility;
 process recognition must never identify native `bun check` as an aggregate to
@@ -1452,3 +1457,16 @@ Run synthetic metrics, dataset-boundary and runner tests with the AI workspace's
 Vitest config before the build-free changed-files gate. Provider calls are a
 separate consented-data experiment; synthetic green does not confirm D1 or enable
 a production provider. Never attach content-bearing provider errors to evidence.
+
+## Oxc validation and formatting conflicts
+
+Use `bun format` and `bun lint` as the canonical checks. CI pins Oxfmt 0.74.0
+and Oxlint 1.89.0; retain `--deny-warnings` for lint. `bun ff` applies safe lint
+fixes before formatting. Generated JSON producers use Oxfmt stdin mode without
+`--check`, because callers consume its stdout. Maintain generated/vendor exclusions
+in both root configs.
+
+For open-PR conflicts after a manual main merge, use the dry-run-first helper in
+[the tooling runbook](../../../../../apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx#formatting-conflicts-in-open-pull-requests).
+It compares real index blobs and refuses semantic changes or manual conflict edits;
+it never stages, commits, merges or pushes.

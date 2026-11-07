@@ -61,7 +61,6 @@ function builder() {
     data: { id: GUEST_ID, plan_id: PLAN_ID },
     error: null,
   }));
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
   query.then = (resolve: (value: unknown) => unknown) =>
     Promise.resolve({ data: [{ id: 'tb-1' }], error: null }).then(resolve);
   return query;

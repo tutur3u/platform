@@ -651,9 +651,7 @@ async function qualify({
 if (require.main === module) {
   qualify({
     root: process.cwd(),
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: standalone workflow input; this command is not Turbo-cached.
     output: process.env.QUALIFICATION_OUTPUT,
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: standalone workflow input; this command is not Turbo-cached.
     sourceSha: process.env.SOURCE_SHA,
     phase: require('./sdk-qualification-phase').workflowPhase(process.env),
   })

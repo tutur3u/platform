@@ -13,10 +13,11 @@ const {
 const rootPackageJson = JSON.parse(
   fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')
 );
-const expectedBiomeVersion = rootPackageJson.devDependencies[
-  '@biomejs/biome'
-].replace(/^[^\d]*/u, '');
-const expectedBiomePattern = expectedBiomeVersion.replaceAll('.', '\\.');
+const expectedOxcVersion = rootPackageJson.devDependencies['oxfmt'].replace(
+  /^[^\d]*/u,
+  ''
+);
+const expectedOxcPattern = expectedOxcVersion.replaceAll('.', '\\.');
 const releaseJob = readWorkflowJobBlock(
   'release-please.yaml',
   'release-please'
@@ -105,9 +106,7 @@ test('generated formatting is path-scoped and race-safe', () => {
 
   assert.match(
     formatStep,
-    new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomePattern} format --write`
-    )
+    new RegExp(`npx --yes oxfmt@${expectedOxcPattern} --write`)
   );
   assert.match(
     formatStep,

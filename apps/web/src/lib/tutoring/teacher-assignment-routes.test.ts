@@ -60,7 +60,6 @@ const query = {
     },
     error: null,
   })),
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
   then: (resolve: (value: unknown) => unknown) =>
     mocks.conflicts().then(resolve),
 };

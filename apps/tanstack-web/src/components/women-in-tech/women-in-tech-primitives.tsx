@@ -180,7 +180,6 @@ export function LanguageSwitcher({
       return;
     }
 
-    // biome-ignore lint/suspicious/noDocumentCookie: Mirrors the legacy locale switcher without a client API call.
     document.cookie = `${localeCookieName}=${targetLocale}; Path=/; Max-Age=31536000; SameSite=Lax`;
   };
 

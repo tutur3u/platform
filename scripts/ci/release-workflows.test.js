@@ -18,10 +18,11 @@ const PACKAGE_PROVENANCE_REPOSITORY_URL = 'https://github.com/tutur3u/platform';
 const rootPackageJson = JSON.parse(
   fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')
 );
-const expectedBiomeCliVersion = rootPackageJson.devDependencies[
-  '@biomejs/biome'
-].replace(/^[^\d]*/u, '');
-const expectedBiomeCliVersionPattern = expectedBiomeCliVersion.replaceAll(
+const expectedOxcCliVersion = rootPackageJson.devDependencies['oxfmt'].replace(
+  /^[^\d]*/u,
+  ''
+);
+const expectedOxcCliVersionPattern = expectedOxcCliVersion.replaceAll(
   '.',
   '\\.'
 );
@@ -622,48 +623,43 @@ test('Codecov workflow runs workspace package tests with coverage', () => {
   assert.doesNotMatch(workflow, /run: bun vitest run --coverage/u);
 });
 
-test('Biome workflow runs pinned npm Biome CLI and prints captured output when checks fail', () => {
+test('Oxc workflow runs pinned npm Oxc CLI and prints captured output when checks fail', () => {
   const workflow = fs.readFileSync(
-    path.join(repoRoot, '.github', 'workflows', 'biome-check.yaml'),
+    path.join(repoRoot, '.github', 'workflows', 'oxc-check.yaml'),
     'utf8'
   );
-  const formatJob = readWorkflowJobBlock('biome-check.yaml', 'format');
-  const lintJob = readWorkflowJobBlock('biome-check.yaml', 'lint');
-  const applyFormatJob = readWorkflowJobBlock(
-    'biome-check.yaml',
-    'apply-format'
-  );
+  const formatJob = readWorkflowJobBlock('oxc-check.yaml', 'format');
+  const lintJob = readWorkflowJobBlock('oxc-check.yaml', 'lint');
+  const applyFormatJob = readWorkflowJobBlock('oxc-check.yaml', 'apply-format');
 
   for (const job of [formatJob, lintJob]) {
     assert.match(job, /uses: actions\/setup-node@[0-9a-f]{40} # v7\b/u);
     assert.match(job, /node-version: 24/u);
-    assert.match(job, /printf '%s\\n' "\$biome_output"/u);
-    assert.match(job, /Biome exit code \$biome_exit_code/u);
-    assert.match(
-      job,
-      /\[ "\$total_issues" -gt 0 \] \|\| \[ "\$biome_exit_code" -ne 0 \]/u
-    );
+    assert.match(job, /printf '%s\\n' "\$oxc_output"/u);
+    assert.match(job, /if \[ "\$oxc_exit_code" -ne 0 \]/u);
+    assert.match(job, /exit "\$oxc_exit_code"/u);
+    assert.doesNotMatch(job, /total_issues/u);
   }
 
-  assert.doesNotMatch(workflow, /biomejs\/setup-biome@v2/u);
+  assert.doesNotMatch(workflow, /oxcjs\/setup-oxc@v2/u);
   assert.match(
     formatJob,
     new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} format \\. 2>&1`,
+      `npx --yes oxfmt@${expectedOxcCliVersionPattern} --check \\. 2>&1`,
       'u'
     )
   );
   assert.match(
     lintJob,
     new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} lint \\. 2>&1`,
+      `npx --yes oxlint@1\\.89\\.0 --deny-warnings --threads 2 \\. 2>&1`,
       'u'
     )
   );
   assert.match(
     applyFormatJob,
     new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} format --write \\.`,
+      `npx --yes oxfmt@${expectedOxcCliVersionPattern} --write \\.`,
       'u'
     )
   );

@@ -45,7 +45,6 @@ function createListClient(rows: Array<Record<string, unknown>>) {
     ilike: vi.fn(() => query),
     not: vi.fn(() => query),
     order: vi.fn(() => query),
-    // biome-ignore lint/suspicious/noThenProperty: Model the PostgREST thenable query contract.
     then: (resolve: (result: unknown) => unknown) =>
       Promise.resolve({ count: rows.length, data: rows, error: null }).then(
         resolve

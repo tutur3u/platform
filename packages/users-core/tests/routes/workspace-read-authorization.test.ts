@@ -196,7 +196,6 @@ function query(initial: Row[]) {
     range: (_from: number, _to: number) => q,
     maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
     single: async () => ({ data: rows[0] ?? null, error: null }),
-    // biome-ignore lint/suspicious/noThenProperty: Model Supabase query builders, which are intentionally awaitable.
     then: (
       resolve: (value: { data: Row[]; count: number; error: null }) => unknown
     ) =>

@@ -80,7 +80,6 @@ function database({
       inserted && insertError
         ? { data: null, error: insertError }
         : { data: inserted ? { id: 'report-new' } : read(), error: null };
-    // biome-ignore lint/suspicious/noThenProperty: emulate the awaited PostgREST builder.
     builder.then = (resolve: (value: unknown) => unknown) =>
       Promise.resolve(
         table === 'external_user_monthly_reports' && writes

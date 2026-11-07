@@ -44,7 +44,6 @@ type RisePracticeRecord = {
 };
 
 const risePracticeRecords: Record<MockApp, RisePracticeRecord> = {
-  // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
   drive: {
     primary: [
       'RISE Pathways campaign brief',
@@ -55,7 +54,6 @@ const risePracticeRecords: Record<MockApp, RisePracticeRecord> = {
       'English and Vietnamese drafts are ready for department leads to review. The registration links must be checked before publishing.',
     ],
   },
-  // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
   notion: {
     primary: [
       'RISE operating handbook',
@@ -66,7 +64,6 @@ const risePracticeRecords: Record<MockApp, RisePracticeRecord> = {
       'Marketing tells the story; Product shapes experiences; External Relations builds partnerships; People & Culture supports members.',
     ],
   },
-  // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
   zalo: {
     primary: [
       'People & Culture check-in',
@@ -77,7 +74,6 @@ const risePracticeRecords: Record<MockApp, RisePracticeRecord> = {
       'Send time and venue reminders only after the event lead confirms the final run sheet.',
     ],
   },
-  // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
   messenger: {
     primary: [
       'Prospective member question',
@@ -88,7 +84,6 @@ const risePracticeRecords: Record<MockApp, RisePracticeRecord> = {
       'A member is worried club work will conflict with an assignment deadline. Suggest a respectful way to raise capacity early.',
     ],
   },
-  // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
   teams: {
     primary: [
       'RISE cross-department planning',
@@ -99,7 +94,6 @@ const risePracticeRecords: Record<MockApp, RisePracticeRecord> = {
       'The team has energy but unclear ownership. Turn the discussion into decisions, owners, and follow-up questions.',
     ],
   },
-  // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
   calendar: {
     primary: [
       'Induction Day & Start Up Showcase',
@@ -110,7 +104,6 @@ const risePracticeRecords: Record<MockApp, RisePracticeRecord> = {
       'Protect class time and assignment deadlines when proposing RISE meetings. Never schedule from availability alone.',
     ],
   },
-  // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
   jira: {
     primary: [
       'RISE-31: Induction experience',
@@ -121,7 +114,6 @@ const risePracticeRecords: Record<MockApp, RisePracticeRecord> = {
       'Marketing & Growth is blocked until all four department leads approve their role descriptions.',
     ],
   },
-  // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
   trello: {
     primary: [
       'Pathways content board',
@@ -132,7 +124,6 @@ const risePracticeRecords: Record<MockApp, RisePracticeRecord> = {
       'Venue, demo teams, volunteer roster, and partner welcome pack are not all ready yet.',
     ],
   },
-  // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
   gmail: {
     primary: [
       'Draft: Meet the pathways to innovation',

@@ -3,5 +3,14 @@
   "tabWidth": 2,
   "singleQuote": true,
   "trailingComma": "es5",
-  "sortPackageJson": false
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "**/*.md",
+    "**/*.mdx",
+    "**/*.yml",
+    "**/*.yaml",
+    "**/*.html",
+    "**/*.toml",
+    "**/*.inc"
+  ]
 }

@@ -22,6 +22,22 @@
     "tmp/**",
     "apps/backend/**",
     "apps/tanstack-web/**",
-    "apps/mobile/**"
+    "apps/mobile/**",
+    "**/routeTree.gen.ts",
+    "**/*.bridge.gen.ts",
+    "apps/api/generated/**",
+    "apps/contacts/cloudflare/.void/**",
+    "apps/contacts/cloudflare/package.json",
+    ".agents/skills/**",
+    "packages/sdk/src/operational-search/python-adapter-code.ts",
+    "apps/docs/reference/repository/**",
+    ".github/workflows/security-checks.yaml",
+    "**/*.md",
+    "**/*.mdx",
+    "**/*.yml",
+    "**/*.yaml",
+    "**/*.html",
+    "**/*.toml",
+    "**/*.inc"
   ]
 }

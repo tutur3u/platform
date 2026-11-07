@@ -84,7 +84,6 @@ function query(table: string) {
       data: { virtual_user_id: ownId },
       error: null,
     }),
-    // biome-ignore lint/suspicious/noThenProperty: PostgREST builders are thenable.
     then: (resolve: (value: unknown) => unknown) =>
       Promise.resolve(result()).then(resolve),
   };

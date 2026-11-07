@@ -114,7 +114,6 @@ export function MailAttachmentCard({
                 {t('attachment_preview_failed')}
               </p>
             ) : preview?.kind === 'image' ? (
-              // biome-ignore lint/performance/noImgElement: Protected original attachments are not public optimized images.
               <img
                 className="mx-auto max-h-[65dvh] max-w-full object-contain"
                 src={previewUrl}

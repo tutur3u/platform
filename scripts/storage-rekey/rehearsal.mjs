@@ -29,7 +29,6 @@ const { positionals, values } = parseArgs({
 });
 const [command] = positionals;
 const projectRef = values['project-ref'];
-// biome-ignore lint/suspicious/noUndeclaredEnvVars: direct operator script, outside cached Turbo tasks.
 const accessToken = readSecretFile(process.env.SUPABASE_ACCESS_TOKEN_FILE);
 
 const project = await (

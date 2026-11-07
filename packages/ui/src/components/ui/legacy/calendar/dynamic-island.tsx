@@ -78,7 +78,6 @@ export const DynamicIsland = () => {
   const [time, setTime] = useState(0);
 
   const firstEventId = events?.[0]?.id;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: A different event with the same deadline starts a new session.
   useEffect(() => {
     setEndAt(firstEventEnd);
     setCurrentCycle(1);
