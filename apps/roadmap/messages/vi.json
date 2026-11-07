@@ -1,5 +1,6 @@
 {
   "all": "Tất cả sản phẩm",
+  "appName": "Lộ trình",
   "blocked": "Bị chặn",
   "definition": "Dự kiến → đang thực hiện → đã duyệt, kiểm tra thành công → đã hợp nhất, chờ xác minh production → hoạt động với bằng chứng công khai. Bị chặn là cờ riêng ở mọi giai đoạn.",
   "details": "Bằng chứng chuyển đổi",
@@ -7,13 +8,13 @@
   "en": "English",
   "evidence": "Xem bằng chứng",
   "evidenceLabels": {
-    "Public product": "Sản phẩm công khai",
-    "Source configuration": "Cấu hình mã nguồn",
-    "Public publication policy": "Chính sách phát hành công khai",
-    "Migration target": "Mục tiêu chuyển đổi",
     "Migration PR": "PR chuyển đổi",
+    "Migration target": "Mục tiêu chuyển đổi",
     "Production readback": "Kết quả đọc production",
-    "Production receipt": "Bằng chứng production"
+    "Production receipt": "Bằng chứng production",
+    "Public product": "Sản phẩm công khai",
+    "Public publication policy": "Chính sách phát hành công khai",
+    "Source configuration": "Cấu hình mã nguồn"
   },
   "eyebrow": "Lộ trình công khai",
   "footer": "Cập nhật được duyệt cùng thay đổi mã nguồn. Không ước lượng phần trăm hoặc công khai dữ liệu vận hành riêng tư.",
@@ -28,16 +29,17 @@
   "reset": "Xóa bộ lọc",
   "rolling_out": "Đang thực hiện",
   "search": "Tìm sản phẩm",
+  "signIn": "Đăng nhập",
   "snapshot": "Phiên bản mã nguồn",
   "source": "Tiến độ mã nguồn",
   "stale": "Bản cập nhật đã quá 24 giờ. Xem bằng chứng liên kết để kiểm tra thông tin mới hơn.",
   "summaries": {
+    "live": "Kết quả đọc và kiểm tra production công khai khớp mã nguồn chuyển đổi đã hợp nhất.",
+    "pendingPublicProductionReceipt": "Chờ bằng chứng production công khai",
     "planned": "Mục tiêu chuyển đổi công khai; chưa ghi nhận bằng chứng triển khai.",
     "rolling_out": "Đã ghi nhận mã nguồn hoặc PR chuyển đổi hiện tại; chưa xác minh hoàn tất.",
     "waiting_for_merge": "Phiên bản PR hiện tại đã được duyệt và mọi kiểm tra bắt buộc đã ghi nhận đều thành công.",
-    "waiting_for_production_sync": "PR chuyển đổi đã hợp nhất vào mã nguồn này; chưa xác minh phục vụ trên production.",
-    "live": "Kết quả đọc và kiểm tra production công khai khớp mã nguồn chuyển đổi đã hợp nhất.",
-    "pendingPublicProductionReceipt": "Chờ bằng chứng production công khai"
+    "waiting_for_production_sync": "PR chuyển đổi đã hợp nhất vào mã nguồn này; chưa xác minh phục vụ trên production."
   },
   "target": "TanStack Start · Vite+ · Void · Cloudflare Workers",
   "title": "Hành trình rõ ràng lên Cloudflare.",

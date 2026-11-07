@@ -1,4 +1,5 @@
 import handler from '@tanstack/react-start/server-entry';
+import { withRoadmapCachePolicy } from './cache-policy';
 import {
   prepareRoadmapRequest,
   roadmapBoundary,
@@ -7,11 +8,15 @@ import {
 
 export default {
   ...handler,
-  fetch(...args: Parameters<typeof handler.fetch>) {
+  async fetch(...args: Parameters<typeof handler.fetch>) {
     const basepath = selectedBasepath(args[0]);
     const boundary = roadmapBoundary(args[0], basepath);
-    if (boundary) return boundary;
+    if (boundary) return withRoadmapCachePolicy(args[0], boundary);
     const [request, ...options] = args;
-    return handler.fetch(prepareRoadmapRequest(request, basepath), ...options);
+    const response = await handler.fetch(
+      prepareRoadmapRequest(request, basepath),
+      ...options
+    );
+    return withRoadmapCachePolicy(request, response);
   },
 };
