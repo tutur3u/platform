@@ -104,8 +104,8 @@ const ALWAYS_ON_PR_WORKFLOWS = [
   'security-review-classifier.yaml',
 ];
 
-// The mixed entrypoint always reports admission and selects its validation callers.
-const ADMISSION_PR_WORKFLOWS = ['pr-checks.yaml'];
+// Admission controls run before label-gated validation can start.
+const ADMISSION_PR_WORKFLOWS = ['auto-ready-for-ci.yaml', 'pr-checks.yaml'];
 const REUSABLE_GATED_WORKFLOWS = [
   'biome-check.yaml',
   'docs-seo-check.yaml',
