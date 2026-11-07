@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import { isAbsolute, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { assertEmittedMapping } from './asset-mapping.mjs';
+
 const MAX_FILES = 10000;
 const MAX_BYTES = 100 * 1024 * 1024;
 const identityKeys = ['dev', 'ino', 'mode'];
@@ -142,17 +144,12 @@ export function sealArtifact(root, source) {
     if (configs.length !== 1)
       throw new Error('Require one actual emitted JSON Worker configuration');
     const config = JSON.parse(contents.get(configs[0].path).toString('utf8'));
-    if (config.name !== 'tuturuuu-roadmap' || !config.main || !config.assets)
-      throw new Error('Unexpected emitted Worker identity or assets');
-    if (config.assets.base_path !== '/roadmap')
-      throw new Error('Emitted asset mount must equal /roadmap');
-    if (
-      !files.some(
-        (file) =>
-          file.path.startsWith('dist/client/') && file.path.endsWith('.js')
-      )
-    )
-      throw new Error('Client assets are missing');
+    assertEmittedMapping(
+      config,
+      configs[0].path,
+      files.map((file) => file.path),
+      root
+    );
     if (
       !files.some(
         (file) =>
@@ -169,6 +166,8 @@ export function sealArtifact(root, source) {
       source,
       worker: config.name,
       basePath: '/roadmap',
+      providerAssetBase: '/',
+      assetDirectory: 'dist/client',
       emittedConfig: configs[0].path,
       files,
     };
