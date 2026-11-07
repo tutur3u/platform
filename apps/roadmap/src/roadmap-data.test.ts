@@ -219,10 +219,10 @@ test('all evidence URLs use canonical RFC3986 segments and the exact category ho
     }
   }
   for (const bad of [
-    url.replace('%5B', '['),
-    url.replace('%28', '('),
-    url.replace('%5B', '%5b'),
-    url.replace('%5B', '%ZZ'),
+    'https://github.com/tutur3u/platform/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/apps/web/src/app/[locale%5D/%28marketing%29/products/ai/page.tsx',
+    'https://github.com/tutur3u/platform/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/apps/web/src/app/%5Blocale%5D/(marketing%29/products/ai/page.tsx',
+    'https://github.com/tutur3u/platform/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/apps/web/src/app/%5blocale%5D/%28marketing%29/products/ai/page.tsx',
+    'https://github.com/tutur3u/platform/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/apps/web/src/app/%ZZlocale%5D/%28marketing%29/products/ai/page.tsx',
     url.replace('https:', 'http:'),
     url.replace('github.com', 'github.com.evil.test'),
     url.replace('github.com', 'tuturuuu.com'),
