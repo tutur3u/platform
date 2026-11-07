@@ -38,8 +38,10 @@ considers unmerged JS/TS files changed on the PR and proves that normalized base
 and incoming-main blobs match using the pinned formatter. It retains the PR blob
 and formats it. Real semantic changes, manual conflict edits, unsupported paths,
 symlinks, binary content and add/delete/rename conflicts are refused before writes.
-Checked no-follow file descriptors retain device/inode identity for reads and
-writes. Parent containment and identity are rechecked; path replacement refuses
+Targets are opened with no-follow flags before inspecting their descriptor
+metadata; no pathname precheck authorizes access. Checked regular-file descriptors
+retain device/inode identity for reads and writes. Nonblocking open rejects
+non-regular targets without waiting on FIFO peers. Parent containment and identity are rechecked; path replacement refuses
 without following the replacement. The helper is not a crash-atomic multi-file writer.
 Only ordinary merge conflict markers are supported; diff3/zdiff3 conflicts need
 manual resolution. Files with no conflicts are left alone. No index update,

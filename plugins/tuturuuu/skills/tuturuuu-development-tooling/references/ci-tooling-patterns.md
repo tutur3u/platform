@@ -10,7 +10,8 @@ format writes are intentional. Existing Oxc CI/editor/generator ownership remain
 until a workspace records rule coverage, formatting deltas and compensating
 validators. Do not run global formatters or the root-wide Vite+ migrator for a
 single workspace. `scripts/oxc.test.js` covers file scope, symlinks and read-only formatting.
-The conflict helper retains no-follow regular-file and parent-directory descriptors,
+The conflict helper opens targets without pathname prechecks, validates descriptor
+metadata, and retains no-follow regular-file and parent-directory descriptors,
 checks device/inode identity and containment, and uses positional descriptor reads
 and writes. Refuse replacement or unsupported no-follow access; keep outside-sentinel
 path-swap controls in `scripts/resolve-format-conflicts.test.js`. It does not

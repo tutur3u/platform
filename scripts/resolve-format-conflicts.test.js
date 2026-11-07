@@ -164,3 +164,27 @@ for (const swap of ['leaf', 'parent', 'regular']) {
     assert.equal(git('ls-files', '-u'), index);
   });
 }
+
+test('opening a selected hard link refuses without changing outside content', (t) => {
+  const { root, file } = fixture(t);
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'oxc-outside-link-'));
+  t.after(() => fs.rmSync(outside, { recursive: true, force: true }));
+  const sentinel = path.join(outside, 'sentinel.js');
+  const original = fs.readFileSync(file, 'utf8');
+  fs.writeFileSync(sentinel, original);
+  fs.unlinkSync(file);
+  fs.linkSync(sentinel, file);
+  assert.throws(() => resolve({ root, main: 'main', apply: true }), /unsafe/);
+  assert.equal(fs.readFileSync(sentinel, 'utf8'), original);
+});
+
+test('a selected directory refuses before any content access', (t) => {
+  const { root, file } = fixture(t);
+  fs.unlinkSync(file);
+  fs.mkdirSync(file);
+  assert.throws(
+    () => resolve({ root, main: 'main', apply: true }),
+    /EISDIR|Non-regular/
+  );
+  assert.ok(fs.statSync(file).isDirectory());
+});

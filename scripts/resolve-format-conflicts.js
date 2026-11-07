@@ -18,30 +18,30 @@ function openChecked(root, file, apply) {
     for (const parent of parents) fs.closeSync(parent.fd);
   };
   try {
-    if (!fs.constants.O_NOFOLLOW || !fs.constants.O_DIRECTORY)
+    if (
+      !fs.constants.O_NOFOLLOW ||
+      !fs.constants.O_DIRECTORY ||
+      !fs.constants.O_NONBLOCK
+    )
       throw new Error('No-follow file access is unavailable.');
     let directory = root;
     for (const part of ['', ...file.split('/').slice(0, -1)]) {
       directory = path.join(directory, part);
-      const before = fs.lstatSync(directory);
       const directoryFd = fs.openSync(
         directory,
         fs.constants.O_RDONLY |
           fs.constants.O_NOFOLLOW |
           fs.constants.O_DIRECTORY
       );
-      parents.push({ path: directory, fd: directoryFd, identity: before });
-      if (
-        !before.isDirectory() ||
-        !sameIdentity(before, fs.fstatSync(directoryFd))
-      )
-        throw new Error(`Parent changed: ${file}`);
+      const identity = fs.fstatSync(directoryFd);
+      parents.push({ path: directory, fd: directoryFd, identity });
+      if (!identity.isDirectory()) throw new Error(`Unsafe parent: ${file}`);
     }
-    const before = fs.lstatSync(absolute);
     fd = fs.openSync(
       absolute,
       (apply ? fs.constants.O_RDWR : fs.constants.O_RDONLY) |
-        fs.constants.O_NOFOLLOW
+        fs.constants.O_NOFOLLOW |
+        fs.constants.O_NONBLOCK
     );
     const identity = fs.fstatSync(fd);
     const check = () => {
@@ -67,12 +67,8 @@ function openChecked(root, file, apply) {
       )
         throw new Error(`File replaced or unsafe: ${file}`);
     };
-    if (
-      !before.isFile() ||
-      !identity.isFile() ||
-      !sameIdentity(before, identity)
-    )
-      throw new Error(`File changed while opening: ${file}`);
+    if (!identity.isFile())
+      throw new Error(`Non-regular file refused: ${file}`);
     const read = () => {
       check();
       const size = fs.fstatSync(fd).size;
