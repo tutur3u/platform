@@ -20,7 +20,7 @@ const bridge = startBridgePreset({
 
 export default defineConfig(({ command }) => ({
   base: bridge.base,
-  define: bridge.define,
+  define: { ...bridge.define, 'process.env.NODE_ENV': JSON.stringify('production') },
   plugins: [
     startBridgeRscPlugin({ rscEntries: { 'bridge-api': new URL('./src/start-bridge/api-entry.ts', import.meta.url), 'bridge-pages': new URL('./src/start-bridge/page-modules.bridge.gen.ts', import.meta.url) } }),
     // SSR bundles CommonJS too (postcss via sanitize-html requires 'path'):
