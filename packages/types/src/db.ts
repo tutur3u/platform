@@ -6,6 +6,7 @@ import type { InternalApiWorkspaceSummary } from './workspace-summary';
 
 export type * from './db-desktop-deployment';
 export type * from './db-task-actor';
+export type * from './db-tutoring-campus';
 export type { Database, Json } from './supabase';
 export type { TaskProjectRelationRow } from './task-project-ticket';
 

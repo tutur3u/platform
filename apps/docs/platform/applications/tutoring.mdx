@@ -1173,3 +1173,46 @@ teacher read scope to both the session read and preview save. Editors without
 other-teacher session IDs are denied. A concurrent reassignment cannot return a
 preview after a scoped save no longer matches. Regression coverage is the
 message-preview route test suite.
+
+
+## Session campus override
+
+Tutoring sessions inherit the main class campus from the workspace tutoring
+policy. A session may store a different campus label; that explicit value takes
+precedence in the session table and generated parent-message preview. Blank or
+null resets inheritance. Class mappings and profile defaults are never updated
+by a session choice. The saved-profile owner and source field remain unspecified;
+this session/class contract does not implement a profile default and proceeds
+independently. Any profile persistence requires a separate explicit product decision.
+
+Staff with existing session-management permissions can edit the campus in each
+creation slot or in the session table. The API uses the shared 80-character campus
+label limit, trims input and persists an empty reset as null. Omitted update fields
+preserve existing overrides. Existing workspace, teacher-scope and group checks
+continue to apply.
+
+### Schema deployment and recovery
+
+`20261107123000_tutoring_session_campus_override.sql` adds one nullable text column
+on `private.workspace_tutoring_sessions` with a bounded nonblank-label constraint.
+There is no backfill, grant, policy or profile change. Apply and verify this schema
+through the separately authorized migration path before releasing consumers;
+a missing column fails the new reads/writes instead of discarding an override.
+The authored `db-tutoring-campus.ts` supplement describes the additive contract;
+full-schema replay/type generation must reconcile it before integration.
+
+Old readers ignore the extra column, and old updates omit it. Recovery retains
+the column, constraint and every stored value: stop campus edits, retain an
+immutable application deployment, and restore the prior application only after
+accepting that its views/messages display class defaults rather than overrides.
+Such a rollback preserves data but does not preserve campus display semantics;
+prefer a forward application repair. Do not drop the column or clear values to
+make rollback appear safe. Independent source/recovery review, SQL replay,
+constraint validation and real API save/reload checks remain required before
+integration or execution.
+
+Regression sources: `tutoring-session-campus.test.ts` covers precedence and class
+mapping preservation; `campus-override.test.ts` covers normalization, reset and
+omitted-field behavior; `session-create-helpers.test.ts` covers distinct slot
+values and legacy sequential inheritance. Real database round trips and negative
+workspace/teacher-scope checks require separate runtime acceptance.

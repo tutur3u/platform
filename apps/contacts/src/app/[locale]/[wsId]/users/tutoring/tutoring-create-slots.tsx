@@ -1,6 +1,7 @@
 'use client';
 
 import { CalendarPlus, CopyPlus, X } from '@tuturuuu/icons';
+import { TUTORING_CAMPUS_LABEL_MAX_LENGTH } from '@tuturuuu/internal-api/tutoring-policy';
 import { Button } from '@tuturuuu/ui/button';
 import type { ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
@@ -153,6 +154,13 @@ function SlotRow({
         </div>
       </div>
 
+      <div className="mt-3 space-y-1">
+        <Label htmlFor={`slotCampus-${index}`}>{t('campus')}</Label>
+        <Input id={`slotCampus-${index}`} maxLength={TUTORING_CAMPUS_LABEL_MAX_LENGTH}
+          placeholder={t('campus_inherit_class')}
+          value={slot.campusOverride ?? ''}
+          onChange={(event) => onChange({ campusOverride: event.target.value })} />
+      </div>
       {content !== undefined ? (
         <div className="mt-3 space-y-1">
           <Label className="text-xs" htmlFor={`slotContent-${index}`}>

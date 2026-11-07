@@ -13,6 +13,7 @@ import {
   TUTORING_VALUE_UNKNOWN,
   type TutoringClassTimeSession,
 } from '@tuturuuu/utils/tutoring-message-values';
+import type { TutoringSessionCampusPreview } from '@tuturuuu/types/db';
 import { NextResponse } from 'next/server';
 import { resolveTutoringReadScope } from '@/lib/tutoring/read-scope';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
@@ -78,14 +79,17 @@ export async function POST(request: Request, { params }: Params) {
       duration_minutes,
       group_id,
       student_user_id,
-      teacher_user_id
+      teacher_user_id,
+      campus_override
     `
     )
     .eq('id', id)
     .eq('ws_id', normalizedWsId);
   if (scope.teacherId)
     sessionQuery = sessionQuery.eq('teacher_user_id', scope.teacherId);
-  const { data, error } = await sessionQuery.maybeSingle();
+  const { data, error } = await sessionQuery
+    .maybeSingle()
+    .overrideTypes<TutoringSessionCampusPreview, { merge: false }>();
 
   if (error) {
     console.error('Failed to load tutoring session for preview', error);
@@ -198,7 +202,12 @@ export async function POST(request: Request, { params }: Params) {
   }
   const preview = renderTutoringParentMessage(policy.parentMessageTemplate, {
     campus:
-      getTutoringCampus(policy, data.group_id, group?.name) ?? 'Chưa xác định',
+      getTutoringCampus(
+        policy,
+        data.group_id,
+        group?.name,
+        data.campus_override
+      ) ?? 'Chưa xác định',
     class_time: classTime,
     date: formatTutoringDate(data.session_date),
     duration: String(data.duration_minutes),

@@ -243,6 +243,7 @@ export function TutoringSessionsCard({
 
   const columns = ({ t: tableT }: { t: ReturnType<typeof useTranslations> }) =>
     buildTutoringSessionColumns({
+      wsId,
       canManage,
       isMarking,
       locale,
