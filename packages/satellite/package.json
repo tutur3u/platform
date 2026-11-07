@@ -47,7 +47,8 @@
     "./sidebar-context": "./src/context/sidebar-context.tsx",
     "./workspace-layout-helpers": "./src/utils/workspace-layout-helpers.ts",
     "./workspace-actions": "./src/utils/workspace-actions.ts",
-    "./workspace-settings-route-handlers": "./src/routes/workspace-settings.ts"
+    "./workspace-settings-route-handlers": "./src/routes/workspace-settings.ts",
+    "./auth-request": "./src/auth-request.ts"
   },
   "license": "MIT",
   "scripts": {
