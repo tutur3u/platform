@@ -9,7 +9,7 @@ const decorate = createRootResponsePolicy({
 
 export default defineBridgeAppConfig({
   mounts: {
-    rootHosts: ['drive.tutur3u.com'],
+    rootHosts: ['drive.tutur3u.com', 'drive.tuturuuu.com'],
     mountHosts: [],
     unknownHost: 'reject',
   },
