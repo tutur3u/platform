@@ -21,8 +21,10 @@ export type FormSessionRow = PrivateTable<'form_sessions'>;
 export type FormResponseRow = PrivateTable<'form_responses'>;
 export type FormResponseAnswerRow = PrivateTable<'form_response_answers'>;
 
-export interface FormDefinitionQuestion
-  extends Omit<FormQuestionInput, 'options' | 'settings'> {
+export interface FormDefinitionQuestion extends Omit<
+  FormQuestionInput,
+  'options' | 'settings'
+> {
   id: string;
   sectionId: string;
   settings: FormQuestionInput['settings'];
@@ -34,17 +36,18 @@ export interface FormDefinitionQuestion
   }>;
 }
 
-export interface FormDefinitionSection
-  extends Omit<FormSectionInput, 'questions'> {
+export interface FormDefinitionSection extends Omit<
+  FormSectionInput,
+  'questions'
+> {
   id: string;
   questions: FormDefinitionQuestion[];
 }
 
-export interface FormDefinition
-  extends Omit<
-    FormStudioInput,
-    'sections' | 'logicRules' | 'theme' | 'settings'
-  > {
+export interface FormDefinition extends Omit<
+  FormStudioInput,
+  'sections' | 'logicRules' | 'theme' | 'settings'
+> {
   id: string;
   wsId: string;
   creatorId: string;

@@ -43,7 +43,6 @@ function chain(result: unknown) {
     value[key] = vi.fn(() => value);
   value.maybeSingle = vi.fn().mockResolvedValue(result);
   value.single = vi.fn().mockResolvedValue(result);
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
   value.then = (resolve: (value: unknown) => void) =>
     Promise.resolve(result).then(resolve);
   return value;

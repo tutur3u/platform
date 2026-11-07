@@ -102,7 +102,7 @@ function parseNameStatusZ(output, source) {
   const fields = output.split('\0');
   const changes = [];
 
-  for (let index = 0; index < fields.length; ) {
+  for (let index = 0; index < fields.length;) {
     const rawStatus = fields[index++];
     if (!rawStatus) {
       continue;

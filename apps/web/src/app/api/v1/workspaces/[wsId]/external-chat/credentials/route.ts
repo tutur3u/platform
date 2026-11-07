@@ -71,7 +71,7 @@ export const POST = withSessionAuth<Params>(
     ) {
       const paired = Boolean(
         current.credentials?.verified_at ||
-          current.credentials?.pairing_ticket_consumed_at
+        current.credentials?.pairing_ticket_consumed_at
       );
       if (!paired) {
         try {
@@ -444,7 +444,7 @@ function hasVerifiedCurrentControlCredential(
 ) {
   return Boolean(
     credentials?.control_secret_encrypted &&
-      credentials.verified_at &&
-      credentials.verified_revision === credentials.configuration_revision
+    credentials.verified_at &&
+    credentials.verified_revision === credentials.configuration_revision
   );
 }

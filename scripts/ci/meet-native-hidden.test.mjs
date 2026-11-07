@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noTemplateCurlyInString: Literal dotenv expansion must be rejected without evaluation.
 import assert from 'node:assert/strict';
 import { mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';

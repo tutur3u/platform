@@ -140,8 +140,8 @@ export function ChatWorkspace({
     : null;
   const requestedConversationPending = Boolean(
     requestedConversationId &&
-      !conversationIds.has(requestedConversationId) &&
-      conversationsQuery.isFetching
+    !conversationIds.has(requestedConversationId) &&
+    conversationsQuery.isFetching
   );
   const selectedConversationId = resolveChatConversationSelection({
     conversationIds: conversationIdList,
@@ -592,8 +592,8 @@ export function ChatWorkspace({
                 (selectedAiConversation && sendMessage.isPending) ||
                 Boolean(
                   selectedExternalConversation &&
-                    activeConversationId &&
-                    realtime.typingConversationIds.has(activeConversationId)
+                  activeConversationId &&
+                  realtime.typingConversationIds.has(activeConversationId)
                 )
               }
               messages={messages}

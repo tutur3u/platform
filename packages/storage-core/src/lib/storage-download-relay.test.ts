@@ -297,9 +297,8 @@ it.each([
 ])(
   'clamps oversized range endpoints to the inspected object: %s',
   async (range) => {
-    const { resolveStorageDownloadRange } = await import(
-      './storage-download-range'
-    );
+    const { resolveStorageDownloadRange } =
+      await import('./storage-download-range');
     expect(resolveStorageDownloadRange(range, 100)).toEqual({
       header: 'bytes=0-99',
       contentRange: 'bytes 0-99/100',

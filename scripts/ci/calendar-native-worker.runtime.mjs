@@ -115,7 +115,6 @@ async function runParent() {
       sourceSHA,
       runId: process.env.GITHUB_RUN_ID,
       attempt: process.env.GITHUB_RUN_ATTEMPT,
-      // biome-ignore lint/suspicious/noUndeclaredEnvVars: This direct Node CI fixture does not run through Turbo.
       job: process.env.GITHUB_JOB,
     });
     const packetFile = join(

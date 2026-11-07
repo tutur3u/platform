@@ -60,10 +60,11 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Install Vercel CLI
-        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0
+        # unfrozen-bun-install: pinned global CLI has no project lockfile
+        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts
 
       - name: Pull Vercel Environment Information
         env:

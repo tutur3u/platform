@@ -76,9 +76,8 @@ it('streams first text while initial realtime publication is still pending', asy
       return { messages: [assistantMessage], replayed: false };
     throw new Error(`Unexpected RPC ${name}`);
   });
-  const { streamNativeAiConversationResponse } = await import(
-    './native-ai-message'
-  );
+  const { streamNativeAiConversationResponse } =
+    await import('./native-ai-message');
   const response = streamNativeAiConversationResponse({
     auth: mocks.auth as never,
     context: { normalizedWsId: 'workspace-1' } as never,

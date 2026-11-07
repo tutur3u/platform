@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: standalone CI-only scripts never run in Turbo or cache signing inputs */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {

@@ -12,17 +12,15 @@ async function requireActor() {
 
 export async function fetchAuthorizedWorkspaces() {
   await requireActor();
-  const { fetchSatelliteWorkspaces } = await import(
-    '../../../../packages/satellite/src/utils/workspace-actions'
-  );
+  const { fetchSatelliteWorkspaces } =
+    await import('../../../../packages/satellite/src/utils/workspace-actions');
   return fetchSatelliteWorkspaces();
 }
 
 export async function listAuthorizedPublicBoardTemplates() {
   await requireActor();
-  const { listPublicBoardTemplates } = await import(
-    '../components/settings/template-marketplace-actions'
-  );
+  const { listPublicBoardTemplates } =
+    await import('../components/settings/template-marketplace-actions');
   return listPublicBoardTemplates();
 }
 
@@ -38,9 +36,8 @@ export async function recordAuthorizedRealtimeLog(data: {
     throw new Error('Unauthorized');
   const workspace = await getWorkspace(data.wsId, { useAdmin: true, user });
   if (!workspace?.joined) throw new Error('Unauthorized');
-  const { addRealtimeLog } = await import(
-    '../../../../packages/supabase/src/next/realtime-log-actions'
-  );
+  const { addRealtimeLog } =
+    await import('../../../../packages/supabase/src/next/realtime-log-actions');
   return addRealtimeLog(
     workspace.id,
     user.id,

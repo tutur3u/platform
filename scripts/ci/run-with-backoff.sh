@@ -19,11 +19,21 @@ command=("$@")
 # lockfile-backed.
 if [ "${command[0]:-}" = "bun" ] && [ "${command[1]:-}" = "install" ]; then
   has_minimum_release_age=false
+  has_frozen_lockfile=false
   is_global_install=false
+  is_lockfile_only=false
 
   for argument in "${command[@]}"; do
     if [[ "$argument" == --minimum-release-age* ]]; then
       has_minimum_release_age=true
+    fi
+
+    if [ "$argument" = "--frozen-lockfile" ]; then
+      has_frozen_lockfile=true
+    fi
+
+    if [ "$argument" = "--lockfile-only" ]; then
+      is_lockfile_only=true
     fi
 
     if [ "$argument" = "--global" ] || [ "$argument" = "-g" ]; then
@@ -33,6 +43,13 @@ if [ "${command[0]:-}" = "bun" ] && [ "${command[1]:-}" = "install" ]; then
 
   if [ "$has_minimum_release_age" = false ] && [ "$is_global_install" = false ]; then
     command+=("--minimum-release-age=0")
+  fi
+
+  # Lockfile-backed installs must never resolve or rewrite dependency intent in
+  # CI. Global tool installs and deliberate lockfile refreshes are not
+  # lockfile-backed installs, so they keep their own semantics.
+  if [ "$has_frozen_lockfile" = false ] && [ "$is_global_install" = false ] && [ "$is_lockfile_only" = false ]; then
+    command+=("--frozen-lockfile")
   fi
 fi
 

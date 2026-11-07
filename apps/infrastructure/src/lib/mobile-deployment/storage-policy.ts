@@ -51,7 +51,7 @@ export function isReservedMobileDeploymentDrivePath(
     normalizedPath.startsWith(`${MOBILE_DEPLOYMENT_DRIVE_PREFIX}/`) ||
     Boolean(
       normalizedPath &&
-        MOBILE_DEPLOYMENT_DRIVE_PREFIX.startsWith(`${normalizedPath}/`)
+      MOBILE_DEPLOYMENT_DRIVE_PREFIX.startsWith(`${normalizedPath}/`)
     )
   );
 }

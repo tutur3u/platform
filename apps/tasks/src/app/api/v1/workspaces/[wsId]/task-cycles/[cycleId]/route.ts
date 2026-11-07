@@ -1,4 +1,8 @@
 import {
+  currentCycleLink,
+  isWorkspaceCycle,
+} from '@tuturuuu/tasks-ui/tu-do/cycles/task-cycles-page-model';
+import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
@@ -8,6 +12,39 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
 import { isSprintSchemaUnavailable } from '../../task-boards/[boardId]/sprints/_lib';
+
+type CycleTaskWithLinks = {
+  task_id: string;
+  task: {
+    cycle_links:
+      | {
+          cycle_id: string;
+          created_at: string | null;
+          cycle: { board_id?: string | null; deleted: boolean | null } | null;
+        }[]
+      | null;
+  } | null;
+};
+
+/**
+ * Tasks whose current (newest live workspace-cycle) link is this cycle. A
+ * deleted cycle reports all its rows, as in the cycle list. `cycle:*` keeps
+ * the select valid before the sprint migration adds board_id.
+ */
+function countTasksCurrentlyInCycle(
+  cycle: { id: string; deleted?: boolean | null },
+  links: CycleTaskWithLinks[] | null
+) {
+  if (cycle.deleted === true) return links?.length ?? 0;
+  return (links ?? []).filter(
+    (link) =>
+      currentCycleLink(
+        (link.task?.cycle_links ?? []).filter(
+          (other) => !other.cycle || isWorkspaceCycle(other.cycle)
+        )
+      )?.cycle_id === cycle.id
+  ).length;
+}
 
 const cycleStatusSchema = z.enum([
   'planned',
@@ -100,7 +137,14 @@ export async function PUT(
             avatar_url
           ),
           task_cycle_tasks(
-            task_id
+            task_id,
+            task:tasks(
+              cycle_links:task_cycle_tasks(
+                cycle_id,
+                created_at,
+                cycle:task_cycles(*)
+              )
+            )
           )
         `
         )
@@ -132,7 +176,10 @@ export async function PUT(
       end_date: updatedCycle.end_date,
       created_at: updatedCycle.created_at,
       creator: updatedCycle.creator,
-      tasksCount: updatedCycle.task_cycle_tasks?.length ?? 0,
+      tasksCount: countTasksCurrentlyInCycle(
+        updatedCycle,
+        updatedCycle.task_cycle_tasks as unknown as CycleTaskWithLinks[] | null
+      ),
     });
   } catch (error) {
     console.error(

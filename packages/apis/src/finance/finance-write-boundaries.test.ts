@@ -235,14 +235,12 @@ describe('finance write boundaries', () => {
       };
       const response =
         operation === 'create'
-          ? await (await import('./transactions/route.js')).POST(
-              request(body),
-              params
-            )
-          : await (await import('./transactions/transactionId/route.js')).PUT(
-              request(body, 'PUT'),
-              params
-            );
+          ? await (
+              await import('./transactions/route.js')
+            ).POST(request(body), params)
+          : await (
+              await import('./transactions/transactionId/route.js')
+            ).PUT(request(body, 'PUT'), params);
       expect(response.status).toBe(403);
       expect(state.writes).toEqual([]);
     }
@@ -254,14 +252,12 @@ describe('finance write boundaries', () => {
       const body = { amount: 10, origin_wallet_id: ID, taken_at: '2026-01-01' };
       const response =
         operation === 'create'
-          ? await (await import('./transactions/route.js')).POST(
-              request(body),
-              params
-            )
-          : await (await import('./transactions/transactionId/route.js')).PUT(
-              request(body, 'PUT'),
-              params
-            );
+          ? await (
+              await import('./transactions/route.js')
+            ).POST(request(body), params)
+          : await (
+              await import('./transactions/transactionId/route.js')
+            ).PUT(request(body, 'PUT'), params);
       expect(response.status).toBe(404);
       expect(state.writes).toEqual([]);
     }
@@ -321,18 +317,16 @@ describe('finance write boundaries', () => {
       const response =
         operation === 'create'
           ? await (await import('./debts/route.js')).POST(request(body), params)
-          : await (await import('./debts/[debtId]/route.js')).PUT(
-              request(body, 'PUT'),
-              params
-            );
+          : await (
+              await import('./debts/[debtId]/route.js')
+            ).PUT(request(body, 'PUT'), params);
       expect(response.status).toBe(400);
       expect(state.writes).toEqual([]);
     }
   );
   it('rejects a foreign category before checkpoint reconciliation', async () => {
-    const { POST } = await import(
-      './wallets/walletId/checkpoints/checkpointId/reconcile/route.js'
-    );
+    const { POST } =
+      await import('./wallets/walletId/checkpoints/checkpointId/reconcile/route.js');
     expect((await POST(request({ category_id: ID }), params)).status).toBe(400);
     expect(client.rpc).not.toHaveBeenCalled();
   });
@@ -355,14 +349,12 @@ describe('finance write boundaries', () => {
       };
       const response =
         operation === 'create'
-          ? await (await import('./transactions/route.js')).POST(
-              request(body),
-              params
-            )
-          : await (await import('./transactions/transactionId/route.js')).PUT(
-              request(body, 'PUT'),
-              params
-            );
+          ? await (
+              await import('./transactions/route.js')
+            ).POST(request(body), params)
+          : await (
+              await import('./transactions/transactionId/route.js')
+            ).PUT(request(body, 'PUT'), params);
       expect(response.status).toBe(200);
       expect(state.writes).toContain('wallet_transactions');
     }

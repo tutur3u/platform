@@ -7,6 +7,7 @@ import {
 } from '@tuturuuu/ui/text-editor/text-replacements';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { MAX_TASK_NAME_LENGTH } from '@tuturuuu/utils/constants';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useLayoutEffect, useRef } from 'react';
 
@@ -31,6 +32,8 @@ interface TaskNameInputProps {
    * not momentarily read as a brand-new, empty task.
    */
   isHydrating?: boolean;
+  /** The task's project key. It sits before the title and only goes when the project does. */
+  ticketLabel?: string | null;
 }
 
 export function TaskNameInput({
@@ -47,6 +50,7 @@ export function TaskNameInput({
   variant = 'fullscreen',
   onSubmit,
   isHydrating = false,
+  ticketLabel,
 }: TaskNameInputProps) {
   const t = useTranslations('ws-task-boards.dialog');
   const isCompact = variant === 'compact';
@@ -201,7 +205,12 @@ export function TaskNameInput({
 
   if (isCompact) {
     return (
-      <div className="group">
+      <div className="group flex items-start gap-2">
+        {ticketLabel ? (
+          <span className="shrink-0 font-semibold text-base text-muted-foreground leading-tight md:text-lg">
+            {ticketLabel}
+          </span>
+        ) : null}
         <Textarea
           ref={titleInputRef as React.RefObject<HTMLTextAreaElement | null>}
           data-task-name-input
@@ -221,7 +230,12 @@ export function TaskNameInput({
   }
 
   return (
-    <div className="group">
+    <div className="group flex items-baseline">
+      {ticketLabel ? (
+        <span className="shrink-0 pt-4 pb-2 pl-4 font-bold text-2xl text-muted-foreground leading-tight tracking-tight md:pl-8">
+          {ticketLabel}
+        </span>
+      ) : null}
       <Input
         ref={titleInputRef as React.RefObject<HTMLInputElement | null>}
         data-task-name-input
@@ -232,7 +246,10 @@ export function TaskNameInput({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         placeholder={t('task_name_placeholder')}
-        className="h-auto border-0 bg-transparent px-4 pt-4 pb-2 font-bold text-2xl text-foreground leading-tight tracking-tight shadow-none transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 disabled:opacity-100 md:px-8 md:pt-4 md:pb-2 md:text-2xl"
+        className={cn(
+          'h-auto border-0 bg-transparent px-4 pt-4 pb-2 font-bold text-2xl text-foreground leading-tight tracking-tight shadow-none transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 disabled:opacity-100 md:px-8 md:pt-4 md:pb-2 md:text-2xl',
+          ticketLabel && 'pl-2 md:pl-2'
+        )}
         autoFocus
       />
     </div>

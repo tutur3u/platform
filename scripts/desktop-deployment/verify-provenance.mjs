@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: release identity comes from protected GitHub Actions */
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';

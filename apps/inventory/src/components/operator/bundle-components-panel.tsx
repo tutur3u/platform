@@ -136,8 +136,8 @@ function BundleComponentsDialog({
   });
   const canAdd = Boolean(
     productId &&
-      stringField(activeInventory, 'unit_id') &&
-      stringField(activeInventory, 'warehouse_id')
+    stringField(activeInventory, 'unit_id') &&
+    stringField(activeInventory, 'warehouse_id')
   );
 
   return (

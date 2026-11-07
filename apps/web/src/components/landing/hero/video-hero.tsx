@@ -93,7 +93,6 @@ export function VideoHero() {
             onClick={handlePlay}
             type="button"
           >
-            {/* biome-ignore lint/performance/noImgElement: Keeps the landing dev compile graph off next/image. */}
             <img
               alt={t('thumbnail')}
               className="absolute inset-0 block h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"

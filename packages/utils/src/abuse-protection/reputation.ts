@@ -278,9 +278,8 @@ function normalizeTrustDecisionRow(row?: TrustDecisionRow | null) {
 
 async function getSupabaseAdmin(): Promise<SupabaseClient<Database> | null> {
   try {
-    const { createAdminClient } = await import(
-      '@tuturuuu/supabase/next/server'
-    );
+    const { createAdminClient } =
+      await import('@tuturuuu/supabase/next/server');
     return (await createAdminClient({
       noCookie: true,
     })) as SupabaseClient<Database>;

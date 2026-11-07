@@ -374,9 +374,8 @@ export async function executeEnableE2EE(
     const newKey = generateWorkspaceKey();
     const encryptedKey = await encryptWorkspaceKey(newKey, masterKey);
 
-    const { createAdminClient } = await import(
-      '@tuturuuu/supabase/next/server'
-    );
+    const { createAdminClient } =
+      await import('@tuturuuu/supabase/next/server');
     const sbAdmin = await createAdminClient();
 
     const { error } = await sbAdmin.from('workspace_encryption_keys').insert({

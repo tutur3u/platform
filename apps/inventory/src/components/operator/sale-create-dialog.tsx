@@ -252,11 +252,11 @@ export function SaleCreateDialog({
   );
   const canSubmit = Boolean(
     lines.length > 0 &&
-      content.trim() &&
-      walletId &&
-      categoryId &&
-      periodId !== 'choose' &&
-      seasonPricing.cartIsCurrent(lines)
+    content.trim() &&
+    walletId &&
+    categoryId &&
+    periodId !== 'choose' &&
+    seasonPricing.cartIsCurrent(lines)
   );
   const tabIndex = SALE_TABS.indexOf(tab as (typeof SALE_TABS)[number]);
   const canGoNext = lines.length > 0;

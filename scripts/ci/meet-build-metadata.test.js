@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noTemplateCurlyInString: GitHub expressions are tested as literal YAML values.
 const assert = require('node:assert/strict');
 const { existsSync, readFileSync } = require('node:fs');
 const { cp, mkdtemp, mkdir, rm, writeFile } = require('node:fs/promises');

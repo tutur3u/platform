@@ -171,8 +171,8 @@ export function isExternalChatEnabled(settings: unknown) {
   const chat = (settings as Record<string, unknown>).chat;
   return Boolean(
     chat &&
-      typeof chat === 'object' &&
-      (chat as Record<string, unknown>).enabled === true
+    typeof chat === 'object' &&
+    (chat as Record<string, unknown>).enabled === true
   );
 }
 

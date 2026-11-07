@@ -38,7 +38,7 @@ export function normalizeAssistantModelMessages(
         )
           return [part];
         const chunks: (typeof part)[] = [];
-        for (let start = 0; start < part.text.length; ) {
+        for (let start = 0; start < part.text.length;) {
           let end = Math.min(
             start + AI_MESSAGE_CONTENT_MAX_CHARACTERS,
             part.text.length

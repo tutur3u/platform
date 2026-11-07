@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: isolated fixture shell environment.
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
 const { mkdtempSync, rmSync, writeFileSync } = require('node:fs');

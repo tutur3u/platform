@@ -87,9 +87,8 @@ describe('workspace transaction detail route', () => {
   });
 
   it('continues deleting when the transaction has no attachment folder', async () => {
-    const { WorkspaceStorageError } = await import(
-      '@tuturuuu/storage-core/workspace-storage-provider'
-    );
+    const { WorkspaceStorageError } =
+      await import('@tuturuuu/storage-core/workspace-storage-provider');
     mocks.deleteWorkspaceStorageFolderByPath.mockRejectedValueOnce(
       new WorkspaceStorageError('Folder not found', 404)
     );

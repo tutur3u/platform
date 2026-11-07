@@ -29,9 +29,8 @@ export async function getWorkspaceKeyForTools(
 
     if (!strict && !isEncryptionEnabled()) return null;
 
-    const { createAdminClient } = await import(
-      '@tuturuuu/supabase/next/server'
-    );
+    const { createAdminClient } =
+      await import('@tuturuuu/supabase/next/server');
     const sbAdmin = await createAdminClient();
 
     const { data, error } = await sbAdmin
@@ -89,9 +88,8 @@ export async function encryptEventFieldsForTools(
     return { ...fields, is_encrypted: false };
   }
 
-  const { encryptCalendarEventFields } = await import(
-    '@tuturuuu/utils/encryption'
-  );
+  const { encryptCalendarEventFields } =
+    await import('@tuturuuu/utils/encryption');
   const encrypted = encryptCalendarEventFields(
     {
       title: fields.title,

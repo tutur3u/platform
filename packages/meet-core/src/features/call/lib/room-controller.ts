@@ -17,8 +17,9 @@ export interface UseMeetRoomOptions {
   wsId: string;
 }
 
-export interface MeetRoomController
-  extends ReturnType<typeof createRoomActions> {
+export interface MeetRoomController extends ReturnType<
+  typeof createRoomActions
+> {
   getAudioProcessing: () => import('./audio-processing').AudioProcessing;
   getAudioProcessingSettings: () => MediaTrackSettings | null;
   setAudioProcessing: (

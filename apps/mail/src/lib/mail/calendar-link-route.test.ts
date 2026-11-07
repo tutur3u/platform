@@ -207,8 +207,8 @@ it('suppresses inaccessible or superseded source and fences unlink with saved re
 function actualServiceFixture() {
   let saved: MailCalendarAssociation | null = null;
   const authority = calendarPreviewFixture();
-  const readTarget = vi.fn(
-    async () => projectMailCalendarTarget('actor', 'ws', 'event', authority)!
+  const readTarget = vi.fn(async () =>
+    projectMailCalendarTarget('actor', 'ws', 'event', authority)!
   );
   const save = vi.fn(
     async (

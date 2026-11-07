@@ -406,9 +406,8 @@ describe('external project store cleanup', () => {
       }),
     };
 
-    const { buildWorkspaceExternalProjectDeliveryPayload } = await import(
-      './store'
-    );
+    const { buildWorkspaceExternalProjectDeliveryPayload } =
+      await import('./store');
 
     const payload = await buildWorkspaceExternalProjectDeliveryPayload(
       {
@@ -556,9 +555,8 @@ describe('external project store cleanup', () => {
       }),
     };
 
-    const { deleteWorkspaceExternalProjectCollection } = await import(
-      './store'
-    );
+    const { deleteWorkspaceExternalProjectCollection } =
+      await import('./store');
 
     await expect(
       deleteWorkspaceExternalProjectCollection(
@@ -673,9 +671,8 @@ describe('external project store update scoping', () => {
     {
       id: 'collection-1',
       run: async (db: ReturnType<typeof createScopedUpdateDb>['db']) => {
-        const { updateWorkspaceExternalProjectCollection } = await import(
-          './store'
-        );
+        const { updateWorkspaceExternalProjectCollection } =
+          await import('./store');
 
         return updateWorkspaceExternalProjectCollection(
           'collection-1',

@@ -47,7 +47,7 @@ function inventory() {
         'Release automation retains RELEASE_PLEASE_TOKEN/GITHUB_TOKEN, including workflow-scoped PAT writes. The local agent App is a separate identity and has no bypass.';
     } else if (
       /pull_request/.test(JSON.stringify(workflow.on || {})) ||
-      file === 'biome-check.yaml'
+      file === 'oxc-check.yaml'
     ) {
       reason =
         'Fork/branch-code boundary: no App key in this workflow. Keep existing job permissions and triggers.';

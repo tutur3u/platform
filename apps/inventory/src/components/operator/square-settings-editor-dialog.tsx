@@ -106,7 +106,7 @@ export function SquareSettingsEditorDialog({
   );
   const oauthReady = Boolean(
     activeAppCredential?.applicationId &&
-      activeAppCredential.applicationSecretLast4
+    activeAppCredential.applicationSecretLast4
   );
 
   const invalidateSquare = () => {

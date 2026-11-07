@@ -143,10 +143,10 @@ export function isChatConversation(value: unknown): value is ChatConversation {
 
   return Boolean(
     conversation?.id &&
-      (conversation.type === 'direct' ||
-        conversation.type === 'group' ||
-        conversation.type === 'channel' ||
-        conversation.type === 'ai')
+    (conversation.type === 'direct' ||
+      conversation.type === 'group' ||
+      conversation.type === 'channel' ||
+      conversation.type === 'ai')
   );
 }
 

@@ -31,7 +31,6 @@ function chain(result: unknown) {
   }
   query.maybeSingle = vi.fn(() => Promise.resolve(result));
   query.single = vi.fn(() => Promise.resolve(result));
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
   query.then = (resolve: (value: unknown) => unknown) => resolve(result);
   return query;
 }

@@ -55,7 +55,6 @@ function database(
       };
     }
     builder.maybeSingle = async () => response();
-    // biome-ignore lint/suspicious/noThenProperty: emulate the awaited PostgREST builder.
     builder.then = (resolve: (value: unknown) => unknown) =>
       Promise.resolve(response()).then(resolve);
     return builder;

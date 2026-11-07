@@ -20,9 +20,8 @@
 .stage[data-motion="paused"] *,
 .stage[data-motion="paused"] *::before,
 .stage[data-motion="paused"] *::after {
-  /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
   animation: none !important;
-  /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
+
   transition: none !important;
 }
 .stage [data-story-image] {
@@ -43,11 +42,10 @@
   .stage *,
   .stage *::before,
   .stage *::after {
-    /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
     animation: none !important;
-    /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
+
     transition: none !important;
-    /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
+
     scroll-behavior: auto !important;
   }
   .floating,
@@ -59,9 +57,8 @@
   .stage *,
   .stage *::before,
   .stage *::after {
-    /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
     animation: none !important;
-    /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
+
     transition: none !important;
   }
   .floating,

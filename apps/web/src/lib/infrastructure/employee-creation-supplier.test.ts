@@ -63,14 +63,12 @@ function fixture() {
     executionQualification: {},
     trustedOperatorPublicKey: 'fixture',
   };
-  const readiness = vi.fn(
-    async (): Promise<EmployeeReadiness> => ({
-      kind: 'qualified',
-      configuration,
-      observedAt: now - 100,
-      expiresAt: now + 1000,
-    })
-  );
+  const readiness = vi.fn(async (): Promise<EmployeeReadiness> => ({
+    kind: 'qualified',
+    configuration,
+    observedAt: now - 100,
+    expiresAt: now + 1000,
+  }));
   const scope = vi.fn<() => Promise<unknown>>(async () => ({
     ...scopeBase,
     operation,

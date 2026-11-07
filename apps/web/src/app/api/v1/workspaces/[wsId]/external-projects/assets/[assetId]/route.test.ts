@@ -84,9 +84,8 @@ describe('external project asset route', () => {
   it('preserves public sources and returns 404 for invalid legacy private sources', async () => {
     vi.stubEnv('SECURITY_EGRESS_ENFORCEMENT_ENABLED', 'true');
     vi.stubEnv('SUPABASE_SERVER_URL', 'https://storage.example.test');
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
     for (const [source, status] of [
       [
         'https://storage.example.test/storage/v1/object/public/avatars/a.png',
@@ -154,9 +153,8 @@ describe('external project asset route', () => {
       })),
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -223,9 +221,8 @@ describe('external project asset route', () => {
       })),
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -286,9 +283,8 @@ describe('external project asset route', () => {
       })),
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -364,9 +360,8 @@ describe('external project asset route', () => {
       })),
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -439,9 +434,8 @@ describe('external project asset route', () => {
       })),
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -469,9 +463,8 @@ describe('external project asset route', () => {
       },
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -521,9 +514,8 @@ describe('external project asset route', () => {
       },
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -600,9 +592,8 @@ describe('external project asset route', () => {
       id: 'asset-1',
     });
 
-    const { PATCH } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { PATCH } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await PATCH(
       new Request(
@@ -646,9 +637,8 @@ describe('external project asset route', () => {
       },
     });
 
-    const { PATCH } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { PATCH } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await PATCH(
       new Request(

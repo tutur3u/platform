@@ -18,7 +18,6 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
         order: () => query,
         range: () => query,
         limit: () => query,
-        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
         then: (resolve: (value: unknown) => unknown) =>
           Promise.resolve({ data: mocks.rows[table] ?? [], error: null }).then(
             resolve

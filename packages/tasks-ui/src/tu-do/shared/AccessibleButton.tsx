@@ -3,8 +3,7 @@
 import { cn } from '@tuturuuu/utils/format';
 import { forwardRef } from 'react';
 
-interface AccessibleButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface AccessibleButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'default' | 'ghost' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;

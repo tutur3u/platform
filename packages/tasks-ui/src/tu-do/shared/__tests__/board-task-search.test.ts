@@ -94,6 +94,36 @@ describe('getBoardTaskIdentifier', () => {
 });
 
 describe('taskMatchesBoardSearch', () => {
+  it('finds current and secondary project keys while retaining legacy board lookup', () => {
+    const task = buildTask({
+      id: 'task-project',
+      display_number: 248,
+      projects: [
+        {
+          id: 'a',
+          name: 'Platform',
+          status: 'active',
+          ticket_key: 'PLA',
+          ticket_number: 12,
+          created_at: '2026-01-01',
+        },
+        {
+          id: 'b',
+          name: 'Mobile',
+          status: 'active',
+          ticket_key: 'MOB',
+          ticket_number: 9,
+          created_at: '2026-02-01',
+        },
+      ],
+    });
+    expect(getTicketIdentifierSearchQuery('PLA-12')).toBe('PLA-12');
+    expect(taskMatchesBoardSearch(task, 'pla-12', 'DEV')).toBe(true);
+    expect(taskMatchesBoardSearch(task, 'mob-9', 'DEV')).toBe(true);
+    expect(taskMatchesBoardSearch(task, 'dev-248', 'DEV')).toBe(true);
+    expect(taskMatchesBoardSearch(task, 'pla-248', 'DEV')).toBe(false);
+  });
+
   it('matches names, display numbers, and board ticket identifiers', () => {
     const task = buildTask({ display_number: 115, id: 'task-1' });
 
@@ -256,6 +286,85 @@ describe('listBoardTasksForSearch', () => {
       includeCount: true,
       offset: 200,
     });
+  });
+
+  it('loads the remaining pages side by side, in order, once the total is known', async () => {
+    const page = (offset: number) =>
+      Array.from({ length: offset === 600 ? 50 : 200 }, (_, index) =>
+        buildTask({ id: `task-${offset + index}` })
+      );
+    let inFlight = 0;
+    let most = 0;
+    listWorkspaceTasksMock.mockImplementation(
+      async (_workspaceId: string, options: ListWorkspaceTasksOptions) => {
+        inFlight += 1;
+        most = Math.max(most, inFlight);
+        // Later pages answer first; the result still keeps page order.
+        await new Promise((resolve) =>
+          setTimeout(resolve, 30 - (options.offset ?? 0) / 40)
+        );
+        inFlight -= 1;
+        return { tasks: page(options.offset ?? 0), count: 650 };
+      }
+    );
+
+    const tasks = await listBoardTasksForSearch('ws-1', {
+      boardId: 'board-1',
+      limit: 200,
+    });
+
+    expect(tasks).toHaveLength(650);
+    expect(tasks[0]?.id).toBe('task-0');
+    expect(tasks.at(-1)?.id).toBe('task-649');
+    expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(4);
+    expect(most).toBe(3);
+  });
+
+  it('keeps paging when tasks are added after the total was read', async () => {
+    const page = (offset: number) =>
+      Array.from({ length: offset === 400 ? 1 : 200 }, (_, index) =>
+        buildTask({ id: `task-${offset + index}` })
+      );
+    listWorkspaceTasksMock.mockImplementation(
+      async (_workspaceId: string, options: ListWorkspaceTasksOptions) => {
+        const offset = options.offset ?? 0;
+        return { tasks: page(offset), count: offset === 0 ? 400 : 401 };
+      }
+    );
+
+    const tasks = await listBoardTasksForSearch('ws-1', {
+      boardId: 'board-1',
+      limit: 200,
+    });
+
+    expect(tasks).toHaveLength(401);
+    expect(tasks.at(-1)?.id).toBe('task-400');
+    expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps paging when a personal board page also carries external tasks', async () => {
+    // 400 board tasks and 1 external task; each page holds up to 200 of each.
+    listWorkspaceTasksMock.mockImplementation(
+      async (_workspaceId: string, options: ListWorkspaceTasksOptions) => {
+        const offset = options.offset ?? 0;
+        const board = Array.from(
+          { length: Math.max(0, Math.min(200, 400 - offset)) },
+          (_, index) => buildTask({ id: `task-${offset + index}` })
+        );
+        const external = offset === 0 ? [buildTask({ id: 'external-0' })] : [];
+        return { tasks: [...board, ...external], count: 401 };
+      }
+    );
+
+    const tasks = await listBoardTasksForSearch('ws-1', {
+      boardId: 'board-1',
+      limit: 200,
+    });
+
+    expect(tasks).toHaveLength(401);
+    expect(listWorkspaceTasksMock.mock.calls.map(([, o]) => o.offset)).toEqual([
+      0, 200, 400,
+    ]);
   });
 
   it('rejects a later-page failure instead of caching a partial board', async () => {
