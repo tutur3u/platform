@@ -5,7 +5,11 @@ import { createServer } from 'node:http';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { exerciseAppsSessions } from '../../../scripts/ci/apps-native-runtime.mjs';
+import {
+  appsServingOrigin,
+  exerciseAppsSessions,
+  fetchAppsListener,
+} from '../../../scripts/ci/apps-native-runtime.mjs';
 import {
   launchAppsAcceptance,
   readAppsChildPlan,
@@ -220,7 +224,15 @@ test(
       bindings,
       async (workers, completed) => {
         runtime.check();
-        const origin = (await workers.app.url).origin;
+        const listener = (await workers.app.url).origin;
+        const origin = appsServingOrigin(listener);
+        runtime.fetch = (url, init = {}) => {
+          runtime.check();
+          return fetchAppsListener(listener, url, {
+            ...init,
+            signal: runtime.signal,
+          });
+        };
         runtime.check();
         // The same compiled API handler must hit the runtime deny service.
         const negativeWorker = workers.negative;

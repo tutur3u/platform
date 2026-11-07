@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
+import { request as httpRequest } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { basename } from 'node:path';
@@ -27,6 +28,84 @@ import {
 } from './native-wrangler-runtime.mjs';
 
 export { APPS_SUPPLIER };
+
+// Keep the serving host admitted without DNS or an external network connection.
+export function appsServingOrigin(listener) {
+  const url = new URL(listener);
+  assert.equal(url.hostname, '127.0.0.1');
+  assert.equal(url.protocol, 'http:');
+  assert.ok(url.port);
+  url.hostname = 'apps.tutur3u.com';
+  return url.origin;
+}
+
+export async function fetchAppsListener(listener, input, init = {}, hops = 0) {
+  const url = new URL(input);
+  assert.equal(url.origin, appsServingOrigin(listener));
+  assert.ok(hops < 20, 'Bounded local redirect chain');
+  const headers = new Headers(init.headers);
+  headers.set('host', url.host);
+  const target = new URL(listener);
+  target.pathname = url.pathname;
+  target.search = url.search;
+  const response = await new Promise((resolve, reject) => {
+    const request = httpRequest(
+      target,
+      {
+        method: init.method ?? 'GET',
+        headers: Object.fromEntries(headers),
+        signal: init.signal,
+        agent: false,
+      },
+      (incoming) => {
+        const chunks = [];
+        incoming.on('data', (chunk) => chunks.push(chunk));
+        incoming.on('error', reject);
+        incoming.on('end', () => {
+          const responseHeaders = new Headers();
+          for (let i = 0; i < incoming.rawHeaders.length; i += 2)
+            responseHeaders.append(
+              incoming.rawHeaders[i],
+              incoming.rawHeaders[i + 1]
+            );
+          const status = incoming.statusCode;
+          resolve(
+            new Response(
+              init.method === 'HEAD' || [204, 205, 304].includes(status)
+                ? null
+                : Buffer.concat(chunks),
+              { status, headers: responseHeaders }
+            )
+          );
+        });
+      }
+    );
+    request.on('error', reject);
+    request.end(init.body);
+  });
+  if (
+    [301, 302, 303, 307, 308].includes(response.status) &&
+    response.headers.has('location') &&
+    init.redirect !== 'manual'
+  ) {
+    assert.notEqual(init.redirect, 'error', 'Redirect forbidden');
+    const next = new URL(response.headers.get('location'), url);
+    const get =
+      response.status === 303 ||
+      ([301, 302].includes(response.status) && init.method === 'POST');
+    return fetchAppsListener(
+      listener,
+      next,
+      {
+        ...init,
+        ...(get ? { method: 'GET', body: undefined } : {}),
+      },
+      hops + 1
+    );
+  }
+  return response;
+}
+
 export function admitAppsSupplier(summary) {
   assert.deepEqual(
     summary,

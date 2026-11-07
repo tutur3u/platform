@@ -7,7 +7,11 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { verifyNativeBrowserNavigation } from '../../apps/apps/cloudflare/native-browser-navigation.mjs';
 import { browserEgress } from '../../apps/apps/cloudflare/native-runtime-fence.mjs';
-import { exerciseAppsSessions } from './apps-native-runtime.mjs';
+import {
+  appsServingOrigin,
+  exerciseAppsSessions,
+  fetchAppsListener,
+} from './apps-native-runtime.mjs';
 import {
   launchAppsAcceptance,
   readAppsChildPlan,
@@ -59,7 +63,8 @@ test(
       bindings,
       async (workers, completed) => {
         const runtime = workers.app;
-        const origin = (await runtime.url).origin;
+        const listener = (await runtime.url).origin;
+        const origin = appsServingOrigin(listener);
         const canonical = await runtime.fetch('https://apps.tuturuuu.com/', {
           redirect: 'manual',
         });
@@ -86,7 +91,13 @@ test(
         );
         completed('build');
         const { chromium } = browserRequire('playwright');
-        const browser = await chromium.launch({ headless: true });
+        const browser = await chromium.launch({
+          headless: true,
+          args: [
+            '--no-proxy-server',
+            '--host-resolver-rules=MAP apps.tutur3u.com 127.0.0.1',
+          ],
+        });
         let browserPrimary;
         try {
           const { counts } = await verifyNativeBrowserNavigation(
@@ -111,7 +122,8 @@ test(
             'Unexpected fixture egress must remain zero'
           );
           completed('egress');
-          const listenerRedirect = await fetch(
+          const listenerRedirect = await fetchAppsListener(
+            listener,
             `${origin}/vi/meet/a%2Fb?tag=1&tag=2`,
             { redirect: 'manual', signal: t.signal }
           );

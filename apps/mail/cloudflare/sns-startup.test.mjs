@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { requiredRuntimeSecrets } from './runtime-secrets.ts';
 import { assertSnsVerification } from './sns-startup.ts';
+
+test('Mail smoke inventory loads through the plain Node TypeScript loader', () => {
+  assert.ok(requiredRuntimeSecrets.includes('SUPABASE_SECRET_KEY'));
+});
 
 test('production Mail refuses the SNS verification bypass in bindings or runtime env', (t) => {
   const mode = process.env.NODE_ENV;

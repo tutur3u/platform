@@ -20,6 +20,8 @@ import {
   APPS_SUPPLIER,
   admitAppsSupplier,
   appsFixtureBindings,
+  appsServingOrigin,
+  fetchAppsListener,
   assertAppsOwnerSupplier,
   createAppsOwner,
   loadAppsSupplier,
@@ -631,4 +633,21 @@ test('browser fixture service credentials remain the exact unused disposable lit
       'app'
     )
   );
+});
+
+test('serving origin maps only a loopback listener to the admitted Apps host', async () => {
+  const listener = 'http://127.0.0.1:12345';
+  assert.equal(appsServingOrigin(listener), 'http://apps.tutur3u.com:12345');
+  for (const invalid of [
+    'https://127.0.0.1:12345',
+    'http://localhost:12345',
+    'http://127.0.0.1',
+  ])
+    assert.throws(() => appsServingOrigin(invalid));
+  for (const invalid of [
+    'https://apps.tutur3u.com:12345/',
+    'http://apps.tuturuuu.com:12345/',
+    'http://apps.tutur3u.com:12346/',
+  ])
+    await assert.rejects(fetchAppsListener(listener, invalid));
 });

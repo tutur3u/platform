@@ -10,8 +10,9 @@ describe('Mail host and app mount boundaries', () => {
       'https://web.tutur3u.com/mail/api/v1/webhooks/mail/ses',
       '/api/v1/webhooks/mail/ses',
     ],
+    ['https://mail-preview.example.test/api/v1/mail/connected/callback', null],
     [
-      'https://mail-preview.example.test/api/v1/mail/connected/callback',
+      'https://mail.tuturuuu.com/api/v1/mail/connected/callback',
       '/api/v1/mail/connected/callback',
     ],
     ['https://tuturuuu.com/mail', '/'],
