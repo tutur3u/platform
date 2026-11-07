@@ -5434,7 +5434,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route.ts",
-    "sourceSha256": "42f8379ff5e09e8a10915edab1ea2d140b7913afc22297a4d97861816f56e299",
+    "sourceSha256": "5ddf529d00c1b2963c1081ef655b911a3e504ded32356eb799f9b47c567daee5",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -5444,7 +5444,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/route.ts",
-    "sourceSha256": "b71e6c69908c37492ccf5312b5ba2e400d140c7aa7217bfe60ef276b8542ae5a",
+    "sourceSha256": "c2063760008be165dbd5372fa9e98ff2a59bd360f30bdb779427a7e301f77b0d",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

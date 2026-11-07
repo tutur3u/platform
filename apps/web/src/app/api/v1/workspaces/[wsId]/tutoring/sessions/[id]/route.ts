@@ -1,6 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { TutoringSessionCampusUpdate } from '@tuturuuu/types/db';
+import type {
+  TutoringSessionCampusDatabase,
+  TutoringSessionCampusUpdate,
+} from '@tuturuuu/types/db';
 import { NextResponse } from 'next/server';
 import { getAdjacentSessionDates } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/sessions/session-create-helpers';
 import {
@@ -90,7 +93,7 @@ export async function PUT(request: Request, { params }: Params) {
   if (parsed.data.resolvedAt !== undefined)
     updates.resolved_at = parsed.data.resolvedAt;
 
-  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const sbAdmin = await createAdminClient<TutoringSessionCampusDatabase>();
   const scope = await resolveTutoringWriteScope({ request, access, sbAdmin });
   if (!scope.allowed)
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });

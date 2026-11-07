@@ -1,7 +1,10 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { TutoringSessionCampusRow } from '@tuturuuu/types/db';
+import type {
+  TutoringSessionCampusDatabase,
+  TutoringSessionCampusRow,
+} from '@tuturuuu/types/db';
 import { NextResponse } from 'next/server';
 import {
   createLegacyGetHandler,
@@ -254,7 +257,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const supabase = await createTutoringRequestClient(request, user);
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient<TutoringSessionCampusDatabase>();
   const tutoringSessionsClient = sbAdmin.schema('private');
   // Without view_payroll a member may only create sessions they teach
   // themselves; an omitted teacher defaults to them, never to someone else.

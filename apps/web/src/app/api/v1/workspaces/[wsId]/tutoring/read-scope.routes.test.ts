@@ -79,6 +79,7 @@ function query(table: string) {
     in: () => builder,
     order: () => builder,
     range: () => builder,
+    overrideTypes: () => builder,
     like: () => builder,
     maybeSingle: async () => ({
       data: { virtual_user_id: ownId },
