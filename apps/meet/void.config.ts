@@ -49,7 +49,8 @@ const production = defineConfig({
       enabled: true,
       head_sampling_rate: 0.05,
     },
-    workers_dev: true,
+    workers_dev: false,
+    preview_urls: false,
     routes: [
       {
         pattern: 'meet.tuturuuu.com',
@@ -63,9 +64,12 @@ const production = defineConfig({
         'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
         'SUPABASE_SECRET_KEY',
         'GOOGLE_GENERATIVE_AI_API_KEY',
+        'MEET_AI_DISABLED_WORKSPACE_IDS',
       ],
     },
     vars: {
+      // Read from process.env at runtime, where the bundler cannot inline it.
+      NODE_ENV: 'production',
       NEXT_PUBLIC_APP_URL: 'https://meet.tuturuuu.com',
       NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
       MEET_REALTIME_URL: 'wss://meet-realtime.tuturuuu.com/realtime',

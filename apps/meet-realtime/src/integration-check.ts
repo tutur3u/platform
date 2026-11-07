@@ -17,10 +17,17 @@ import {
 } from '../../../packages/realtime/src/meet';
 import { signMeetRealtimeToken } from '../../../packages/realtime/src/meet/token';
 import { validateMeetCheckEndpoint } from './check-endpoint';
+import { checkNoteSharing, notesCanaryWorkspace } from './check-note-sharing';
 import { createMeetRealtimeServer } from './server';
 
 const PORT = 7899;
-const WS_ID = '0f1a64f7-780f-4d30-9d72-5530f204e95c';
+// Default checks prove Meet AI is off. Once the realtime Worker enables Meet AI,
+// set MEET_CHECK_NOTES_CANARY_WS_ID to a dedicated FAKE UUID with no database row
+// that the gate allows. Never use a real workspace to make this script pass.
+const NOTES_CANARY = notesCanaryWorkspace(
+  process.env.MEET_CHECK_NOTES_CANARY_WS_ID
+);
+const WS_ID = NOTES_CANARY ?? '0f1a64f7-780f-4d30-9d72-5530f204e95c';
 const MEETING_ID = crypto.randomUUID();
 const HOST_ID = '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691';
 const GUEST_ID = '4b320da6-6c8a-43fe-b1bf-09fbe77303f9';
@@ -297,9 +304,14 @@ try {
       (await policy('speaker', { shareNotes: true })).status === 403
     );
     check(
-      'host can update room sharing over signed HTTP',
-      (await policy('host', { shareNotes: true })).ok
+      'live sharing enable follows containment policy and disabling succeeds',
+      await checkNoteSharing(
+        (settings) => policy('host', settings),
+        'shareNotes',
+        Boolean(NOTES_CANARY)
+      )
     );
+    if (NOTES_CANARY) await policy('host', { shareNotes: true });
     const returning = new TestClient();
     try {
       await returning.connect(mintToken('speaker', GUEST_ID, 'lobby', 'Guest'));
@@ -307,8 +319,9 @@ try {
       host.send({ admit: true, type: 'admission.decide', userId: GUEST_ID });
       await returning.waitFor('admission.result');
       check(
-        'approved guest can read live shared notes',
-        (await (await policy('speaker')).json()).canReadNotes === true
+        'guest live notes access follows containment policy',
+        (await (await policy('speaker')).json()).canReadNotes ===
+          Boolean(NOTES_CANARY)
       );
       host.send({ type: 'room.end', requestId: 'end-policy-check' });
       const endedAck = await host.waitFor(
@@ -327,17 +340,20 @@ try {
         endedPolicy.ended === true && endedPolicy.canReadNotes === false
       );
       check(
-        'host can enable post-call notes after socket closes',
-        (
-          await policy('host', {
-            shareNotesAfterMeeting: true,
-          })
-        ).ok
+        'post-call enable follows containment policy and disabling succeeds',
+        await checkNoteSharing(
+          (settings) => policy('host', settings),
+          'shareNotesAfterMeeting',
+          Boolean(NOTES_CANARY)
+        )
       );
-      check(
-        'approved guest can read opted-in post-call notes',
-        (await (await policy('speaker')).json()).canReadNotes === true
-      );
+      if (NOTES_CANARY) {
+        await policy('host', { shareNotesAfterMeeting: true });
+        check(
+          'approved guest can read opted-in post-call notes',
+          (await (await policy('speaker')).json()).canReadNotes === true
+        );
+      }
       await policy('host', { shareNotesAfterMeeting: false });
       check(
         'post-call sharing revocation takes effect',

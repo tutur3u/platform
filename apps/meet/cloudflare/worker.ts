@@ -16,6 +16,7 @@ import { configureMeetAbuseGuard } from '../src/runtime/abuse-guard';
 import { handleMeetRequest } from '../src/runtime/handler';
 import { meetOneOriginConfig } from './one-origin';
 import { applyMeetDocumentHeaders } from './security-profile';
+import { refuseMeetRequest } from './worker-admission';
 
 /** Per-isolate app-switch metrics write budget (see app-switch-rum). */
 const appSwitchWriteBudget = createAppSwitchWriteBudget();
@@ -24,6 +25,8 @@ export { MeetLiveDurableObject } from './live/session';
 export { MeetingAIProvider } from './provider';
 export default {
   async fetch(incoming: Request, env: CloudflareEnv, ctx: ExecutionContext) {
+    const refusal = refuseMeetRequest(incoming, env);
+    if (refusal) return refusal;
     const decision = decideOneOriginRequest(incoming, meetOneOriginConfig(env));
     if (decision.action !== 'serve')
       return enforceStagingCookiePolicy(incoming, decision.response);

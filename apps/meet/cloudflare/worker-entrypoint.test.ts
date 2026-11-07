@@ -16,6 +16,14 @@ vi.mock('./provider', () => ({ MeetingAIProvider: class {} }));
 
 import worker from './worker';
 
+const admitted = {
+  GOOGLE_GENERATIVE_AI_API_KEY: 'fixture',
+  MEET_REALTIME_TOKEN_SECRET: 'fixture',
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'fixture',
+  NEXT_PUBLIC_SUPABASE_URL: 'https://db.example.test',
+  SUPABASE_SECRET_KEY: 'fixture',
+};
+
 describe('Meet Worker entrypoint', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -23,7 +31,10 @@ describe('Meet Worker entrypoint', () => {
 
   it('configures the abuse guard from the Worker env before handling', async () => {
     const env = {
+      ...admitted,
       ABUSE_GUARD_FAMILIES: 'password',
+      NEXT_PUBLIC_APP_URL: 'https://meet.example.test',
+      NEXT_PUBLIC_WEB_APP_URL: 'https://web.example.test',
     } as unknown as CloudflareEnv;
     const ctx = {} as ExecutionContext;
     const response = await worker.fetch(
@@ -46,6 +57,7 @@ it.each([
   'enforces cookie scope at the %s Worker exit',
   async (host, expectedStatus) => {
     const env = {
+      ...admitted,
       NEXT_PUBLIC_APP_URL: `https://${host}`,
       NEXT_PUBLIC_WEB_APP_URL: host.endsWith('.tutur3u.com')
         ? 'https://web.tutur3u.com'
