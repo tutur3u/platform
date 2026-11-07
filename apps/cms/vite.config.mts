@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import { startBridgePreset } from '@tuturuuu/start-bridge/vite';
@@ -34,7 +35,7 @@ export default defineConfig(({ command }) => ({
       transform(code, id) {
         if (
           id.split('?')[0] !==
-          new URL('./cloudflare/worker.ts', import.meta.url).pathname
+          fileURLToPath(new URL('./cloudflare/worker.ts', import.meta.url))
         )
           return;
         return {
