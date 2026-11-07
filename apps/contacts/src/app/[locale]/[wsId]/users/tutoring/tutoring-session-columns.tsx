@@ -14,7 +14,6 @@ import type {
   TutoringSessionRecord,
 } from '@tuturuuu/internal-api';
 import {
-  getTutoringCampus,
   getTutoringShiftLabel,
   type TutoringPolicy,
 } from '@tuturuuu/internal-api/tutoring-policy';
@@ -32,9 +31,11 @@ import type { useTranslations } from 'next-intl';
 import { TutoringReasonBadge, TutoringStatusBadge } from './tutoring-badges';
 import { formatSessionTimeRange } from './tutoring-filters';
 import { getDisplayName } from './tutoring-types';
+import { TutoringCampusCell } from './tutoring-campus-cell';
 
 export interface TutoringSessionColumnActions {
   canManage: boolean;
+  wsId: string;
   isMarking: boolean;
   locale: string;
   policy: TutoringPolicy;
@@ -233,13 +234,12 @@ export function buildTutoringSessionColumns(
         <DataTableColumnHeader column={column} t={tableT} title={t('campus')} />
       ),
       cell: ({ row }) => (
-        <span className="text-sm">
-          {getTutoringCampus(
-            policy,
-            row.original.group_id,
-            row.original.group?.name
-          ) ?? '—'}
-        </span>
+        <TutoringCampusCell
+          canManage={actions.canManage}
+          wsId={actions.wsId}
+          session={row.original}
+          policy={policy}
+        />
       ),
     },
     {

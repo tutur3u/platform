@@ -60,11 +60,15 @@ function query(table: string, result: () => unknown) {
     };
   }
   const chain = Object.assign(Promise.resolve(result()), methods, {
-    maybeSingle: async () =>
-      table === 'workspace_tutoring_sessions' &&
-      teacherFilters.some((value) => value !== teacherId)
-        ? { data: null, error: null }
-        : result(),
+    maybeSingle: () => {
+      const single = Promise.resolve(
+        table === 'workspace_tutoring_sessions' &&
+          teacherFilters.some((value) => value !== teacherId)
+          ? { data: null, error: null }
+          : result()
+      );
+      return Object.assign(single, { overrideTypes: () => single });
+    },
   });
   return chain;
 }

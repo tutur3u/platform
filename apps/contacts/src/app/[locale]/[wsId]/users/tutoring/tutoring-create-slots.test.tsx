@@ -48,8 +48,11 @@ it('gives each session of a multi-session draft its own content field', () => {
       slot('2026-11-07'),
     ],
   });
-  const fields = screen.getAllByRole('textbox');
+  const fields = screen.getAllByRole('textbox', {
+    name: /^content_for_session \d+$/,
+  });
   expect(fields).toHaveLength(2);
+  expect(screen.getAllByRole('textbox', { name: 'campus' })).toHaveLength(2);
   // Each field is named by its session so a screen reader can tell them apart.
   expect(fields.map((field) => field.getAttribute('id'))).toEqual([
     'slotContent-0',
@@ -76,7 +79,13 @@ it('gives each session of a multi-session draft its own content field', () => {
 
 it('leaves a single session to the form-level content field', () => {
   mount({ ...DEFAULT_FORM, sessionSlots: [slot('2026-10-31')] });
-  expect(screen.queryByRole('textbox')).toBeNull();
+  expect(
+    screen.queryByRole('textbox', { name: /^content_for_session \d+$/ })
+  ).toBeNull();
+  expect(screen.getByRole('textbox', { name: 'campus' })).toHaveAttribute(
+    'id',
+    'slotCampus-0'
+  );
 });
 
 it('shows the content help beside the per-session fields and describes each by it', () => {
@@ -94,6 +103,10 @@ it('shows the content help beside the per-session fields and describes each by i
     />
   );
   const help = screen.getByText('Keep drafted notes to follow the class.');
-  for (const field of screen.getAllByRole('textbox'))
+  const fields = screen.getAllByRole('textbox', {
+    name: /^content_for_session \d+$/,
+  });
+  expect(fields).toHaveLength(2);
+  for (const field of fields)
     expect(field.getAttribute('aria-describedby')).toBe(help.id);
 });

@@ -6,6 +6,7 @@ import type { InternalApiWorkspaceSummary } from './workspace-summary';
 
 export type * from './db-desktop-deployment';
 export type * from './db-task-actor';
+export type * from './db-tutoring-campus';
 export type { Database, Json } from './supabase';
 export type { TaskProjectRelationRow } from './task-project-ticket';
 
@@ -331,11 +332,6 @@ export interface FinanceBudgetStatus {
 }
 export type Workspace = Tables<'workspaces'>;
 export type WorkspaceUser = Tables<'workspace_users'>;
-export type WorkspaceTutoringSession =
-  PrivateTable<'workspace_tutoring_sessions'> & {
-    attendance_status: 'PENDING' | 'DONE' | 'NO_SHOW' | 'CANCELLED';
-    reason_type: 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'CUSTOM';
-  };
 export type TopicAnnouncement = PrivateTable<'topic_announcements'>;
 export type TopicAnnouncementBatch = PrivateTable<'topic_announcement_batches'>;
 export type TopicAnnouncementContact =

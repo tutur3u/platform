@@ -40,6 +40,7 @@ function builder(result: () => Result) {
     state.inserted = rows;
     return b;
   };
+  b.overrideTypes = () => b;
   b.then = (
     resolve: (value: unknown) => unknown,
     reject: (error: unknown) => unknown
