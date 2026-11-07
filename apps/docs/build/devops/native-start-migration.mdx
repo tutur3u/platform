@@ -15,7 +15,7 @@ for an app until its explicit cutover PR merges.
 
 `mastermind-cloudflare.yaml` builds the native Worker on GitHub and uploads
 `mastermind-cutover-<source SHA>` with `mastermind-native.tar.gz`. The app-owned
-job records advisory emitted-runtime smoke after uploading; it has no test gate or publication steps. The archive contains the emitted Worker,
+job requires emitted-runtime smoke after uploading and has no publication steps. The archive contains the emitted Worker,
 assets, Wrangler config, deployment pointer and exact-source hash receipt.
 Discover its config with `scripts/ci/mastermind-native-artifact.py config` after
 restoring the archive with that helper's `restore` command. Set
