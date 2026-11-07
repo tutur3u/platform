@@ -40,9 +40,8 @@ describe('workspace storage auto extract config', () => {
       },
     ]);
 
-    const { resolveWorkspaceStorageAutoExtractConfig } = await import(
-      './workspace-storage-auto-extract'
-    );
+    const { resolveWorkspaceStorageAutoExtractConfig } =
+      await import('./workspace-storage-auto-extract');
 
     await expect(
       resolveWorkspaceStorageAutoExtractConfig('ws-1')
@@ -65,9 +64,8 @@ describe('workspace storage auto extract config', () => {
       },
     ]);
 
-    const { resolveWorkspaceStorageAutoExtractConfig } = await import(
-      './workspace-storage-auto-extract'
-    );
+    const { resolveWorkspaceStorageAutoExtractConfig } =
+      await import('./workspace-storage-auto-extract');
 
     await expect(
       resolveWorkspaceStorageAutoExtractConfig('ws-1')
@@ -94,9 +92,8 @@ describe('workspace storage auto extract config', () => {
       },
     ]);
 
-    const { resolveWorkspaceStorageAutoExtractConfig } = await import(
-      './workspace-storage-auto-extract'
-    );
+    const { resolveWorkspaceStorageAutoExtractConfig } =
+      await import('./workspace-storage-auto-extract');
 
     await expect(
       resolveWorkspaceStorageAutoExtractConfig('ws-1')

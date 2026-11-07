@@ -53,9 +53,8 @@ describe('useTaskProjectManagement', () => {
       },
     });
 
-    const { updateWorkspaceTask } = await import(
-      '@tuturuuu/internal-api/tasks'
-    );
+    const { updateWorkspaceTask } =
+      await import('@tuturuuu/internal-api/tasks');
     mockUpdateWorkspaceTask = updateWorkspaceTask as any;
 
     vi.clearAllMocks();

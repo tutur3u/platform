@@ -76,14 +76,12 @@ export function PersonalPlacementDialog({
             status: 'active',
           });
 
-          return (payload.boards ?? []).map(
-            (board): PersonalBoardOption => ({
-              id: board.id,
-              name: board.name,
-              workspaceId: workspace.id,
-              workspaceName: workspace.name,
-            })
-          );
+          return (payload.boards ?? []).map((board): PersonalBoardOption => ({
+            id: board.id,
+            name: board.name,
+            workspaceId: workspace.id,
+            workspaceName: workspace.name,
+          }));
         })
       );
 

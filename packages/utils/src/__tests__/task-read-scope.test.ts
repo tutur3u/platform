@@ -79,7 +79,6 @@ function fixture({
           data: membership ? { type: membership } : null,
           error: failMembership ? new Error('lookup failed') : null,
         }),
-      // biome-ignore lint/suspicious/noThenProperty: Supabase queries are awaitable.
       then: (resolve: (value: unknown) => unknown) =>
         Promise.resolve({
           data: selected,

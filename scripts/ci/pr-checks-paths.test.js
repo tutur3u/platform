@@ -27,14 +27,20 @@ const common = {
   'bun.lock': ['bun.lock'],
 };
 const cases = {
-  biome: {
+  oxc: {
     ...common,
-    '**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx,json,jsonc,css,graphql,gql}': [
-      'scripts/check.js',
-      '.ci/policy.json',
-      'packages/ui/src/view.tsx',
-      'apps/web/messages/en.json',
-    ],
+    '**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx,json,jsonc,css,graphql,gql,md,mdx,yaml,yml,html}':
+      [
+        'README.md',
+        'apps/docs/platform/overview.mdx',
+        'config.yml',
+        'config.yaml',
+        'public/index.html',
+        'scripts/check.js',
+        '.ci/policy.json',
+        'packages/ui/src/view.tsx',
+        'apps/web/messages/en.json',
+      ],
     '.editorconfig': ['.editorconfig'],
     '.gitignore': ['.gitignore'],
   },
@@ -146,7 +152,7 @@ for (const [category, patterns] of Object.entries(cases)) {
 }
 
 test('unrelated prose and mobile screen edits do not select unrelated checks', () => {
-  for (const category of ['biome', 'i18n', 'migrations', 'mobile', 'plugin'])
+  for (const category of ['i18n', 'migrations', 'mobile', 'plugin'])
     assert.equal(
       matches(filters[category], 'apps/docs/platform/overview.mdx'),
       false,
@@ -158,5 +164,5 @@ test('unrelated prose and mobile screen edits do not select unrelated checks', (
       false,
       category
     );
-  assert.equal(matches(filters.biome, 'README.md'), false);
+  assert.equal(matches(filters.oxc, 'README.md'), true);
 });

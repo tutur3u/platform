@@ -20,7 +20,7 @@ export async function authenticateExternalChatIngest(request: Request) {
       : null;
   const matches = Boolean(
     (expectedHash && verifyExternalChatSecret(secret, expectedHash)) ||
-      (pendingHash && verifyExternalChatSecret(secret, pendingHash))
+    (pendingHash && verifyExternalChatSecret(secret, pendingHash))
   );
   if (
     !state?.binding.is_enabled ||

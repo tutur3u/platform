@@ -89,9 +89,8 @@ async function callRoute(
   assetPath: string[],
   wsId = '123e4567-e89b-12d3-a456-426614174000'
 ) {
-  const { GET } = await import(
-    '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/webgl/[...assetPath]/route'
-  );
+  const { GET } =
+    await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/webgl/[...assetPath]/route');
 
   return GET(
     new Request(

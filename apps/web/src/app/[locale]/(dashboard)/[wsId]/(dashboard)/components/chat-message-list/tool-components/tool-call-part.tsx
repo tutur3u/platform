@@ -469,7 +469,6 @@ export function ToolCallPart({
                   onClick={() => setFullscreenImageUrl(null)}
                   className="flex size-full min-h-[50vh] items-center justify-center p-4 focus:outline-none focus:ring-0"
                 >
-                  {/* biome-ignore lint/performance/noImgElement: Dynamic URL from tool output */}
                   <img
                     src={fullscreenImageUrl}
                     alt={t('generated_image')}
@@ -541,7 +540,6 @@ export function ToolCallPart({
                   onClick={() => setFullscreenImageUrl(null)}
                   className="flex size-full min-h-[50vh] items-center justify-center p-4 focus:outline-none focus:ring-0"
                 >
-                  {/* biome-ignore lint/performance/noImgElement: Dynamic URL from tool output */}
                   <img
                     src={fullscreenImageUrl}
                     alt={t('generated_qr_code')}

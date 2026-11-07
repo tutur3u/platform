@@ -1,7 +1,5 @@
 'use client';
 
-import { containsHtml, sanitizeHtml } from '@tuturuuu/utils/html-sanitizer';
-
 interface EventDescriptionProps {
   description: string;
   className?: string;
@@ -14,14 +12,8 @@ export default function EventDescription({
   if (!description) return null;
 
   return (
-    <div
-      className={`event-description ${className}`}
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: content is already sanitized
-      dangerouslySetInnerHTML={{
-        __html: containsHtml(description)
-          ? sanitizeHtml(description)
-          : description,
-      }}
-    />
+    <div className={`event-description whitespace-pre-wrap ${className}`}>
+      {description}
+    </div>
   );
 }

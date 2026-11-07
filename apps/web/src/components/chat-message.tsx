@@ -121,7 +121,7 @@ const MermaidRenderer = ({ content }: { content: string }) => {
     <div
       ref={elementRef}
       className="overflow-x-auto"
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: required for rendering SVG content
+      // eslint-disable-next-line react/no-danger -- Only Mermaid output rendered with securityLevel strict reaches this sink.
       dangerouslySetInnerHTML={{ __html: svgContent }}
     />
   );

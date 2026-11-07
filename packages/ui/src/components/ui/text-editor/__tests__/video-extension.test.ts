@@ -623,9 +623,8 @@ describe('VideoExtension', () => {
     });
 
     it('should fall back to default dimensions (640x360) when dimension loading fails', async () => {
-      const { getVideoDimensions: mockedGetVideoDimensions } = await import(
-        '../media-utils.js'
-      );
+      const { getVideoDimensions: mockedGetVideoDimensions } =
+        await import('../media-utils.js');
 
       (mockedGetVideoDimensions as any).mockRejectedValueOnce(
         new Error('Failed to load dimensions')

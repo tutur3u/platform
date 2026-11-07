@@ -55,7 +55,6 @@ function client() {
           values = value;
           return query;
         },
-        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
         then(resolve: (result: unknown) => unknown) {
           // Mirror the explicit constraints restored by 20260601210819.
           if (

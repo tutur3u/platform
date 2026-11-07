@@ -124,9 +124,8 @@ describe('workspace storage object route', () => {
   });
 
   it('deletes storage objects for workspace Drive managers', async () => {
-    const { DELETE } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/route');
 
     const response = await DELETE(createRequest('folder/receipt.pdf'), {
       params: Promise.resolve({ wsId: 'ws-1' }),
@@ -149,9 +148,8 @@ describe('workspace storage object route', () => {
     });
     mocks.canAccessFinanceTransactionStoragePath.mockResolvedValue(true);
 
-    const { DELETE } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/route');
 
     const response = await DELETE(
       createRequest('ws-1/finance/transactions/tx-1/receipt.pdf'),
@@ -183,9 +181,8 @@ describe('workspace storage object route', () => {
     });
     mocks.canAccessFinanceTransactionStoragePath.mockResolvedValue(false);
 
-    const { DELETE } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/route');
 
     const response = await DELETE(
       createRequest('finance/transactions/tx-1/receipt.pdf'),
@@ -204,9 +201,8 @@ describe('workspace storage object route', () => {
   it('rejects deletes against the reserved mobile deployment vault path', async () => {
     mocks.normalizeWorkspaceId.mockResolvedValue(ROOT_WORKSPACE_ID);
 
-    const { DELETE } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/object/route');
 
     const response = await DELETE(
       createRequest('.tuturuuu/mobile-deployment-vault/version/file.json'),

@@ -219,7 +219,6 @@ const TERMINAL_ESCAPE_SEQUENCE_PATTERN = new RegExp(
   'g'
 );
 
-// biome-ignore lint/complexity/useRegexLiterals: literal form triggers noControlCharactersInRegex here
 const TERMINAL_CONTROL_CHARACTER_PATTERN = new RegExp(
   '[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F-\\u009F]',
   'g'

@@ -40,7 +40,7 @@ qualification candidate. No global console drain is installed. Google Takeout
 filesystem imports are CLI-only in the current source graph.
 
 Migration regressions are authored but **UNRUN** under the current custody hold.
-Pinned Biome and source/diff inspection are not compiler/runtime proof. Parent
+Pinned Oxc and source/diff inspection are not compiler/runtime proof. Parent
 must run exact-commit type/lint/tests/build, inspect emitted client/server imports,
 and exercise actual Worker routes and native functions, including concurrent
 identity/locale isolation, SSO/logout/cookie multiplicity, CORS/signature negatives,

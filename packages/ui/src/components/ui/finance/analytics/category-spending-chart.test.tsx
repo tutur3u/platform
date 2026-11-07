@@ -39,7 +39,6 @@ function renderCategorySpendingChart() {
 describe('CategorySpendingChart', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
       'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;Secure';
     mocks.getCategoryBreakdown.mockResolvedValue([
@@ -49,7 +48,6 @@ describe('CategorySpendingChart', () => {
   });
 
   it('masks category percentages when finance numbers are hidden', async () => {
-    // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
     document.cookie = 'finance-confidential-mode=true;path=/;Secure';
 
     renderCategorySpendingChart();
@@ -62,7 +60,6 @@ describe('CategorySpendingChart', () => {
   });
 
   it('shows category percentages when finance numbers are visible', async () => {
-    // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
     document.cookie = 'finance-confidential-mode=false;path=/;Secure';
 
     renderCategorySpendingChart();

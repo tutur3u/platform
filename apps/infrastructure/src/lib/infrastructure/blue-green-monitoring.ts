@@ -544,12 +544,12 @@ function matchesRequestArchiveFilters(
 function hasRequestArchiveFilters(filters: RequestArchiveFilters) {
   return Boolean(
     filters.q?.trim() ||
-      filters.render ||
-      filters.route ||
-      filters.since ||
-      filters.status ||
-      filters.until ||
-      filters.traffic
+    filters.render ||
+    filters.route ||
+    filters.since ||
+    filters.status ||
+    filters.until ||
+    filters.traffic
   );
 }
 

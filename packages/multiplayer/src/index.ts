@@ -25,13 +25,7 @@ export * from './limits';
 export type { MockApp, MockAppKind, MockRecord } from './mock-catalog';
 export { mockAppCatalog, mockApps, seedRecords } from './mock-catalog';
 export { starterScenarios } from './rise-scenarios';
-export type {
-  Run,
-  RunStopReason,
-  RunUsage,
-  Trace,
-  TraceStatus,
-} from './run';
+export type { Run, RunStopReason, RunUsage, Trace, TraceStatus } from './run';
 export { staff } from './staff';
 export type RoomMode = 'open' | 'readonly' | 'private';
 export type Identity = {
@@ -394,20 +388,17 @@ export function createRoom(
     'External Relations',
     'People & Culture',
   ];
-  const teams = Array.from(
-    { length: count },
-    (_, i): Team => ({
-      id: `team-${i + 1}`,
-      name: riseTeams[i] ?? `Team ${i + 1}`,
-      prompt: '',
-      revision: 0,
-      skills: [],
-      records: seedRecords(),
-      runs: [],
-      aiCalls: 0,
-      limits: { ...defaultTeamLimits },
-    })
-  );
+  const teams = Array.from({ length: count }, (_, i): Team => ({
+    id: `team-${i + 1}`,
+    name: riseTeams[i] ?? `Team ${i + 1}`,
+    prompt: '',
+    revision: 0,
+    skills: [],
+    records: seedRecords(),
+    runs: [],
+    aiCalls: 0,
+    limits: { ...defaultTeamLimits },
+  }));
   return {
     id,
     title: text(body.title, 100),

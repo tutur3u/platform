@@ -46,9 +46,10 @@ const SETTINGS_EXTRA_KEYS = [
 let settingsDialogPromise: Promise<SettingsDialogComponent> | null = null;
 
 export function preloadSettingsDialog(): Promise<SettingsDialogComponent> {
-  settingsDialogPromise ??= import(
-    '@/components/settings/settings-dialog'
-  ).then((module) => module.SettingsDialog);
+  settingsDialogPromise ??=
+    import('@/components/settings/settings-dialog').then(
+      (module) => module.SettingsDialog
+    );
   return settingsDialogPromise;
 }
 

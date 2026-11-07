@@ -35,7 +35,6 @@ export function useFormDraft({
   setSectionTrail: Dispatch<SetStateAction<string[]>>;
 }) {
   // Load draft from localStorage on mount
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional run on mount
   useEffect(() => {
     if (mode !== 'public' || readOnly || submittedAt) {
       return;
@@ -74,7 +73,6 @@ export function useFormDraft({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: answers triggers saves; the stable ref supplies the current snapshot
   useEffect(() => {
     if (mode !== 'public' || readOnly || submittedAt || isSubmitting) {
       return;

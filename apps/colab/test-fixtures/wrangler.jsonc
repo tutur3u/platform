@@ -4,9 +4,9 @@
   "compatibility_date": "2026-06-20",
   "compatibility_flags": ["nodejs_compat"],
   "durable_objects": {
-    "bindings": [{ "name": "FIXTURES", "class_name": "ExpiryFixture" }]
+    "bindings": [{ "name": "FIXTURES", "class_name": "ExpiryFixture" }],
   },
   "migrations": [
-    { "tag": "fixture-v1", "new_sqlite_classes": ["ExpiryFixture"] }
-  ]
+    { "tag": "fixture-v1", "new_sqlite_classes": ["ExpiryFixture"] },
+  ],
 }

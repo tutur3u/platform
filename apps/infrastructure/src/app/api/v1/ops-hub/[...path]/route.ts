@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: server-only Release Desk configuration.
 import { connection } from 'next/server';
 import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 import { forwardOpsHubRequest } from '@/lib/ops-hub/gateway';

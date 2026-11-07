@@ -15,15 +15,15 @@ export default async function InventorySalesPage({
   const permissions = user ? await getPermissions({ user, wsId }) : null;
   const canExportSales = Boolean(
     permissions &&
-      canViewInventorySales(permissions) &&
-      permissions.containsPermission('export_finance_data')
+    canViewInventorySales(permissions) &&
+    permissions.containsPermission('export_finance_data')
   );
 
   const canMergeSeasons = Boolean(
     permissions?.containsPermission('update_invoices') &&
-      permissions.containsPermission('delete_invoices') &&
-      (permissions.containsPermission('manage_inventory_catalog') ||
-        permissions.containsPermission('update_inventory'))
+    permissions.containsPermission('delete_invoices') &&
+    (permissions.containsPermission('manage_inventory_catalog') ||
+      permissions.containsPermission('update_inventory'))
   );
 
   return (

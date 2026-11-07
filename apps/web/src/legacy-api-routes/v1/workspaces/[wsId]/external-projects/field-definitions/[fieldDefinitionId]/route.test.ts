@@ -56,9 +56,8 @@ describe('external project field definition item route', () => {
       id: 'field-1',
       label: 'Medium',
     });
-    const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/field-definitions/[fieldDefinitionId]/route'
-    );
+    const { PATCH } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/field-definitions/[fieldDefinitionId]/route');
 
     const response = await PATCH(
       new NextRequest(
@@ -96,9 +95,8 @@ describe('external project field definition item route', () => {
     mocks.deleteWorkspaceExternalProjectFieldDefinition.mockResolvedValue({
       id: 'field-1',
     });
-    const { DELETE } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/field-definitions/[fieldDefinitionId]/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/field-definitions/[fieldDefinitionId]/route');
 
     const response = await DELETE(
       new NextRequest(
@@ -128,9 +126,8 @@ describe('external project field definition item route', () => {
   });
 
   it('rejects invalid field definition ids before updating', async () => {
-    const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/field-definitions/[fieldDefinitionId]/route'
-    );
+    const { PATCH } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/field-definitions/[fieldDefinitionId]/route');
 
     const response = await PATCH(
       new NextRequest(

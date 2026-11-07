@@ -38,7 +38,7 @@ test('validate retains every existing aggregate component and conditional gate',
     [
       'tests',
       'type-check',
-      'biome',
+      'oxc',
       'source-size',
       'public-seo-routes',
       'server-console',

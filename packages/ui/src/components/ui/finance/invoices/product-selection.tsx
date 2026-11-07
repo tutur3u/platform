@@ -122,12 +122,10 @@ export function ProductSelection({
           </Label>
           <Combobox
             t={t}
-            options={products.map(
-              (product): ComboboxOptions => ({
-                value: product.id,
-                label: `${product.name || t('ws-invoices.no_name')}${product.owner?.name ? ` · ${product.owner.name}` : ''}${product.category ? ` (${product.category})` : ''}${product.manufacturer ? ` - ${product.manufacturer}` : ''}`,
-              })
-            )}
+            options={products.map((product): ComboboxOptions => ({
+              value: product.id,
+              label: `${product.name || t('ws-invoices.no_name')}${product.owner?.name ? ` · ${product.owner.name}` : ''}${product.category ? ` (${product.category})` : ''}${product.manufacturer ? ` - ${product.manufacturer}` : ''}`,
+            }))}
             selected={selectedProductId}
             onChange={(value) => setSelectedProductId(value as string)}
             placeholder={t('ws-invoices.search_products')}

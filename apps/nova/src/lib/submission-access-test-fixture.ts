@@ -101,7 +101,6 @@ export function submissionAccessFixture() {
           return builder;
         },
         single: async () => one(),
-        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
         then: (resolve: (value: unknown) => unknown) =>
           Promise.resolve({ data: write ? null : rows(), error: null }).then(
             resolve

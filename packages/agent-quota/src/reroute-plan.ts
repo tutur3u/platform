@@ -138,16 +138,16 @@ export function reroutePlan(
       if (!chosen) blockers.push('no-eligible-pool');
       const resumed = Boolean(
         chosen &&
-          proof?.resumed &&
-          snapshot?.runs.some(
-            (run) =>
-              run.id === proof.resumed?.runId &&
-              run.threadId === threadId &&
-              run.taskId === proof.resumed.taskId &&
-              run.status === 'running' &&
-              run.instanceId === chosen.providerInstanceId &&
-              run.model === chosen.model
-          )
+        proof?.resumed &&
+        snapshot?.runs.some(
+          (run) =>
+            run.id === proof.resumed?.runId &&
+            run.threadId === threadId &&
+            run.taskId === proof.resumed.taskId &&
+            run.status === 'running' &&
+            run.instanceId === chosen.providerInstanceId &&
+            run.model === chosen.model
+        )
       );
       // Post-resume verification is not another switch. Only the exact reserved
       // running task can explain this active-run/superseded boundary.

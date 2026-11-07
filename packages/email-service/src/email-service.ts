@@ -112,9 +112,8 @@ export class EmailService {
     if (!this.supabase) {
       // Try to get admin client
       try {
-        const { createAdminClient } = await import(
-          '@tuturuuu/supabase/next/server'
-        );
+        const { createAdminClient } =
+          await import('@tuturuuu/supabase/next/server');
         this.supabase = (await createAdminClient()) as SupabaseClient<Database>;
       } catch {
         return {
@@ -466,9 +465,8 @@ export class EmailService {
   ): Promise<SendEmailResult> {
     if (!this.supabase) {
       try {
-        const { createAdminClient } = await import(
-          '@tuturuuu/supabase/next/server'
-        );
+        const { createAdminClient } =
+          await import('@tuturuuu/supabase/next/server');
         this.supabase = (await createAdminClient()) as SupabaseClient<Database>;
       } catch {
         return {
@@ -653,9 +651,8 @@ export class EmailService {
       devMode?: boolean;
     }
   ): Promise<EmailService> {
-    const { createAdminClient } = await import(
-      '@tuturuuu/supabase/next/server'
-    );
+    const { createAdminClient } =
+      await import('@tuturuuu/supabase/next/server');
     const sbAdmin = (await createAdminClient()) as SupabaseClient<Database>;
     const credentialWorkspaceId = options?.credentialWorkspaceId ?? wsId;
     const { data: dbCredentials, error } = await sbAdmin

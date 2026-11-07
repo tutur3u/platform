@@ -211,7 +211,7 @@ test('rerun racing the job lookup invalidates previous success', async () => {
   }
 });
 
-test('Coverage and Biome require their own actual successful jobs', async () => {
+test('Coverage and Oxc require their own actual successful jobs', async () => {
   for (const [workflow, names] of [
     [
       'codecov.yaml',
@@ -220,7 +220,7 @@ test('Coverage and Biome require their own actual successful jobs', async () => 
         'Run tests and collect coverage',
       ],
     ],
-    ['biome-check.yaml', ['Biome Format Check', 'Biome Lint Check']],
+    ['oxc-check.yaml', ['Oxfmt Format Check', 'Oxlint Lint Check']],
   ]) {
     assert.equal(
       await completedValidationProof({ ...input, workflow, ...fixture() }),
@@ -260,7 +260,7 @@ test('unavailable proof fails open and logs no raw token/error data', async () =
   assert.deepEqual(await main({}), { runChecks: true, sourceRun: null });
 });
 
-for (const workflow of ['biome-check.yaml']) {
+for (const workflow of ['oxc-check.yaml']) {
   test(`${workflow} isolates immutable refs and gates validation on proof`, () => {
     const text = fs.readFileSync(
       path.join(__dirname, '../../.github/workflows', workflow),
@@ -324,4 +324,59 @@ test('overall proof deadline fails open before the job deadline', async (t) => {
   assert.deepEqual(warnings, [
     'Completed validation proof unavailable; running checks.',
   ]);
+});
+
+test('exact Oxc job names match the actual workflow and prove a duplicate', async () => {
+  const names = ['Oxfmt Format Check', 'Oxlint Lint Check'];
+  const workflow = fs.readFileSync(
+    path.join(__dirname, '../../.github/workflows/oxc-check.yaml'),
+    'utf8'
+  );
+  const declared = [...workflow.matchAll(/^ {4}name: (.+)$/gm)].map(
+    (match) => match[1]
+  );
+  for (const name of names) assert.ok(declared.includes(name));
+  const api = fixture({
+    jobs: names.map((name) => ({
+      name,
+      status: 'completed',
+      conclusion: 'success',
+    })),
+  });
+  assert.equal(
+    await completedValidationProof({
+      ...input,
+      workflow: 'oxc-check.yaml',
+      ...api,
+    }),
+    7
+  );
+  assert.equal(api.calls.length, 3);
+});
+
+test('Oxc proof rejects mismatched names, duplicates, or unsuccessful jobs', async () => {
+  const job = (name, conclusion = 'success') => ({
+    name,
+    status: 'completed',
+    conclusion,
+  });
+  for (const jobs of [
+    [job('Oxc Format Check'), job('Oxc Lint Check')],
+    [job('Oxfmt Format Check')],
+    [job('Oxfmt Format Check'), job('Oxlint Lint Check', 'failure')],
+    [
+      job('Oxfmt Format Check'),
+      job('Oxlint Lint Check'),
+      job('Oxlint Lint Check'),
+    ],
+  ]) {
+    assert.equal(
+      await completedValidationProof({
+        ...input,
+        workflow: 'oxc-check.yaml',
+        ...fixture({ jobs }),
+      }),
+      null
+    );
+  }
 });

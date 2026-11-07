@@ -16,7 +16,7 @@ and removal date, and wire its kill switch before enabling the feature. Follow t
 flags default OFF; kill switch first, rollback second.
 
 Run `cd packages/feature-flags && bun run generate` after editing the JSON, then
-format the generated file with Biome and commit it. `@tuturuuu/feature-flags`
+format the generated file with Oxc and commit it. `@tuturuuu/feature-flags`
 exports `registry`, the generated `FlagKey` union, and the pure
 `evaluateFlags(registry, context, overrides?)` function. Its tests validate the
 registry and detect generated-source drift.

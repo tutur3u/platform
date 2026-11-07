@@ -158,7 +158,6 @@ export const getUserColumns = ({
         if (!avatarUrl) return <div className="min-w-32">-</div>;
 
         return (
-          // biome-ignore lint/performance/noImgElement: Supabase public avatars are served directly to avoid Next image proxy failures.
           <img
             width={128}
             height={128}

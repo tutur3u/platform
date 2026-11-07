@@ -251,7 +251,6 @@ export function EditTemplateDialog({
             {backgroundPreviewUrl ? (
               <div className="space-y-2">
                 <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
-                  {/* biome-ignore lint/performance/noImgElement: preview image */}
                   <img
                     src={backgroundPreviewUrl}
                     alt="Template background"
