@@ -633,7 +633,10 @@ test('Oxc workflow runs pinned npm Oxc CLI and prints captured output when check
   const applyFormatJob = readWorkflowJobBlock('oxc-check.yaml', 'apply-format');
   for (const job of [formatJob, lintJob, applyFormatJob]) {
     assert.match(job, /npm_config_ignore_scripts: 'true'/u);
-    assert.doesNotMatch(job, /node_modules\/\.bin\/(?:oxfmt|oxlint)|bun install/u);
+    assert.doesNotMatch(
+      job,
+      /node_modules\/\.bin\/(?:oxfmt|oxlint)|bun install/u
+    );
   }
 
   for (const job of [formatJob, lintJob]) {
