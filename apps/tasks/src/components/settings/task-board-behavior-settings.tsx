@@ -1,14 +1,12 @@
 'use client';
 
 import {
-  SettingsGroup,
-  SettingsRow,
-} from '@tuturuuu/tasks-ui/tu-do/shared/settings-group';
-import {
   TASK_AUTO_COLLAPSE_EMPTY_LISTS_CONFIG_ID,
   TASK_HIDE_EMPTY_LISTS_CONFIG_ID,
   TASK_PERSIST_COLLAPSED_LISTS_CONFIG_ID,
 } from '@tuturuuu/tasks-ui/tu-do/shared/task-board-preferences';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
@@ -47,15 +45,15 @@ export function TaskBoardBehaviorSettings() {
   ] as const;
 
   return (
-    <SettingsGroup
+    <SettingsSection
       description={t('board_behavior_description')}
       title={t('board_behavior')}
     >
       {settings.map(([key, checked, onCheckedChange, disabled]) => (
-        <SettingsRow
+        <SettingItemTab
           description={t(`${key}_description`)}
           key={key}
-          label={t(key)}
+          title={t(key)}
         >
           <Switch
             aria-label={t(key)}
@@ -63,8 +61,8 @@ export function TaskBoardBehaviorSettings() {
             onCheckedChange={onCheckedChange}
             disabled={disabled}
           />
-        </SettingsRow>
+        </SettingItemTab>
       ))}
-    </SettingsGroup>
+    </SettingsSection>
   );
 }

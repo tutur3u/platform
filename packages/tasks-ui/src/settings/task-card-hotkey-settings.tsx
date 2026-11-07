@@ -2,6 +2,11 @@
 
 import { RotateCcw, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   useUpdateUserConfig,
   useUserConfig,
@@ -95,14 +100,8 @@ export function TaskCardHotkeySettings({
   };
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="font-medium text-sm">{t('task_cards')}</h3>
-          <p className="mt-1 text-muted-foreground text-xs">
-            {t('task_cards_description')}
-          </p>
-        </div>
+    <SettingsSection
+      action={
         <Button
           variant="outline"
           size="sm"
@@ -113,74 +112,73 @@ export function TaskCardHotkeySettings({
           <RotateCcw className="h-3.5 w-3.5" />
           {t('reset_defaults')}
         </Button>
-      </div>
-
-      <div className="divide-y rounded-md border">
-        {TASK_CARD_HOTKEY_ACTIONS.map((action) => {
-          const binding = bindings[action];
-          const recording = recordingAction === action;
-          const conflict = recording && conflictAction;
-          return (
-            <div
-              className="grid min-h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2"
-              key={action}
-            >
-              <div className="min-w-0">
-                <div className="truncate text-sm">
-                  {t(ACTION_LABEL_KEYS[action])}
-                </div>
-                {conflict ? (
-                  <div className="mt-0.5 text-dynamic-red text-xs">
-                    {t('shortcut_conflict', {
-                      action: t(ACTION_LABEL_KEYS[conflict]),
-                    })}
-                  </div>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Button
-                  variant={recording ? 'secondary' : 'outline'}
-                  size="sm"
-                  className="min-w-24 justify-center"
-                  disabled={isLoading || updateConfig.isPending}
-                  onClick={() => {
-                    setRecordingAction(action);
-                    setConflictAction(null);
-                  }}
-                  onKeyDown={(event) => handleRecorderKeyDown(event, action)}
-                >
-                  {recording ? (
-                    <span className="text-muted-foreground text-xs">
-                      {t('press_shortcut')}
-                    </span>
-                  ) : binding ? (
-                    <span className="flex items-center gap-1">
-                      {getTaskCardHotkeyDisplayKeys(binding).map((key) => (
-                        <Kbd key={key}>{key === 'Mod' ? modKey : key}</Kbd>
-                      ))}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">
-                      {t('disabled')}
-                    </span>
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-8"
-                  aria-label={t('clear_shortcut')}
-                  disabled={!binding || isLoading || updateConfig.isPending}
-                  onClick={() => updateBinding(action, '')}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+      }
+      description={t('task_cards_description')}
+      title={t('task_cards')}
+    >
+      {TASK_CARD_HOTKEY_ACTIONS.map((action) => {
+        const binding = bindings[action];
+        const recording = recordingAction === action;
+        const conflict = recording && conflictAction;
+        return (
+          <SettingItemTab
+            description={
+              conflict ? (
+                <span className="text-dynamic-red">
+                  {t('shortcut_conflict', {
+                    action: t(ACTION_LABEL_KEYS[conflict]),
+                  })}
+                </span>
+              ) : null
+            }
+            key={action}
+            title={t(ACTION_LABEL_KEYS[action])}
+          >
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant={recording ? 'secondary' : 'outline'}
+                size="sm"
+                className="min-w-24 justify-center"
+                disabled={isLoading || updateConfig.isPending}
+                onClick={() => {
+                  setRecordingAction(action);
+                  setConflictAction(null);
+                }}
+                onKeyDown={(event) => handleRecorderKeyDown(event, action)}
+              >
+                {recording ? (
+                  <span className="text-muted-foreground text-xs">
+                    {t('press_shortcut')}
+                  </span>
+                ) : binding ? (
+                  <span className="flex items-center gap-1">
+                    {getTaskCardHotkeyDisplayKeys(binding).map((key) => (
+                      <Kbd key={key}>{key === 'Mod' ? modKey : key}</Kbd>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground text-xs">
+                    {t('disabled')}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                aria-label={t('clear_shortcut')}
+                disabled={!binding || isLoading || updateConfig.isPending}
+                onClick={() => updateBinding(action, '')}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
             </div>
-          );
-        })}
-      </div>
-      <p className="text-muted-foreground text-xs">{t('task_cards_hint')}</p>
-    </section>
+          </SettingItemTab>
+        );
+      })}
+      <SettingsSectionMessage className="py-3">
+        {t('task_cards_hint')}
+      </SettingsSectionMessage>
+    </SettingsSection>
   );
 }
