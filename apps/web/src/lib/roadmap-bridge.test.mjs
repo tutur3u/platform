@@ -1,6 +1,7 @@
+// @vitest-environment node
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { test } from 'node:test';
+import { test, vi } from 'vitest';
 import { isRoadmapPath, serveRoadmap } from './roadmap-bridge.ts';
 
 const origin = 'https://roadmap.synthetic.workers.dev';
@@ -190,23 +191,27 @@ test('failures, oversized declared/streamed bodies and broken streams fail close
   }
 });
 
-test('timeout aborts a stalled upstream without retries or fallback', async (t) => {
-  t.mock.timers.enable({ apis: ['setTimeout'] });
-  let signal;
-  let calls = 0;
-  const pending = serveRoadmap({
-    origin,
-    request: request(),
-    fetcher: async (_url, options) => {
-      calls++;
-      signal = options.signal;
-      return new Promise(() => {});
-    },
-  });
-  t.mock.timers.tick(8000);
-  assert.equal((await pending).status, 502);
-  assert.equal(signal.aborted, true);
-  assert.equal(calls, 1);
+test('timeout aborts a stalled upstream without retries or fallback', async () => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  try {
+    let signal;
+    let calls = 0;
+    const pending = serveRoadmap({
+      origin,
+      request: request(),
+      fetcher: async (_url, options) => {
+        calls++;
+        signal = options.signal;
+        return new Promise(() => {});
+      },
+    });
+    vi.advanceTimersByTime(8000);
+    assert.equal((await pending).status, 502);
+    assert.equal(signal.aborted, true);
+    assert.equal(calls, 1);
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 test('proxy admits assets explicitly and branches before auth and locale', () => {
