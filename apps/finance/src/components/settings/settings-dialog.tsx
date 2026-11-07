@@ -32,6 +32,7 @@ import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calend
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
@@ -225,20 +226,16 @@ export function SettingsDialog({
       )}
 
       {activeTab === 'finance_general' && workspace && (
-        <div className="h-full">
-          <div className="space-y-8">
-            <div className="grid gap-6">
-              <SettingItemTab
-                title={t('settings.finance.workspace_name')}
-                description={t('settings.finance.workspace_name_description')}
-              >
-                <span className="text-muted-foreground text-sm">
-                  {workspace.name || t('common.unnamed')}
-                </span>
-              </SettingItemTab>
-            </div>
-          </div>
-        </div>
+        <SettingsSection>
+          <SettingItemTab
+            title={t('settings.finance.workspace_name')}
+            description={t('settings.finance.workspace_name_description')}
+          >
+            <span className="text-muted-foreground text-sm">
+              {workspace.name || t('common.unnamed')}
+            </span>
+          </SettingItemTab>
+        </SettingsSection>
       )}
 
       {activeTab === 'finance_navigation' && workspace?.id && (

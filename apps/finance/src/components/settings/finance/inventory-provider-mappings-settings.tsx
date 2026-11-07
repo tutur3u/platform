@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link2, ShieldCheck } from '@tuturuuu/icons';
 import {
   getInventoryFinanceMappings,
   type InventoryFinanceExternalProvider,
@@ -9,6 +8,12 @@ import {
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Select,
   SelectContent,
@@ -72,34 +77,25 @@ export function InventoryProviderMappingsSettings({
   });
 
   return (
-    <section className="rounded-3xl border bg-card p-5 shadow-sm">
-      <div className="mb-5 flex items-start gap-3">
-        <Link2 className="mt-0.5 h-5 w-5 text-dynamic-blue" />
-        <div>
-          <h4 className="font-semibold text-base">{t('mapping_title')}</h4>
-          <p className="text-muted-foreground text-sm">
-            {t('mapping_description')}
-          </p>
-        </div>
-      </div>
+    <SettingsSection
+      title={t('mapping_title')}
+      description={t('mapping_description')}
+    >
+      {(data?.mappings ?? []).map((mapping) => (
+        <SettingsSectionBlock
+          className="flex flex-wrap items-center gap-2 py-3 text-sm"
+          key={`${mapping.provider}:${mapping.currency}`}
+        >
+          <Badge variant="outline">{t(`provider_${mapping.provider}`)}</Badge>
+          <Badge variant="secondary">{mapping.currency}</Badge>
+          <span>{mapping.wallet?.name ?? t('needs_wallet')}</span>
+          <span className="text-muted-foreground">
+            {mapping.category?.name ?? t('uncategorized')}
+          </span>
+        </SettingsSectionBlock>
+      ))}
 
-      <div className="mb-4 space-y-2">
-        {(data?.mappings ?? []).map((mapping) => (
-          <div
-            className="flex flex-wrap items-center gap-2 rounded-xl border p-3 text-sm"
-            key={`${mapping.provider}:${mapping.currency}`}
-          >
-            <Badge variant="outline">{t(`provider_${mapping.provider}`)}</Badge>
-            <Badge variant="secondary">{mapping.currency}</Badge>
-            <span>{mapping.wallet?.name ?? t('needs_wallet')}</span>
-            <span className="text-muted-foreground">
-              {mapping.category?.name ?? t('uncategorized')}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <SettingsSectionBlock className="grid gap-3 md:grid-cols-2">
         <Select
           value={provider}
           onValueChange={(value) =>
@@ -165,25 +161,22 @@ export function InventoryProviderMappingsSettings({
               ))}
           </SelectContent>
         </Select>
-      </div>
-      <Button
-        className="mt-3"
-        disabled={mutation.isPending}
-        onClick={() => mutation.mutate()}
-        type="button"
-      >
-        {t('save_mapping')}
-      </Button>
+      </SettingsSectionBlock>
+      <SettingsSectionFooter>
+        <Button
+          disabled={mutation.isPending}
+          onClick={() => mutation.mutate()}
+          type="button"
+        >
+          {t('save_mapping')}
+        </Button>
+      </SettingsSectionFooter>
 
-      <div className="mt-5 flex gap-3 rounded-xl border border-dynamic-orange/30 bg-dynamic-orange/5 p-4">
-        <ShieldCheck className="mt-0.5 h-5 w-5 text-dynamic-orange" />
-        <div>
-          <p className="font-medium text-sm">{t('square_readiness_title')}</p>
-          <p className="text-muted-foreground text-sm">
-            {t('square_readiness_description')}
-          </p>
-        </div>
-      </div>
-    </section>
+      <SettingItemTab
+        layout="stacked"
+        title={t('square_readiness_title')}
+        description={t('square_readiness_description')}
+      />
+    </SettingsSection>
   );
 }

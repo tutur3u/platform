@@ -1,12 +1,13 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { CreditCard, MonitorSmartphone, ShieldCheck } from '@tuturuuu/icons';
+import { CreditCard, MonitorSmartphone } from '@tuturuuu/icons';
 import {
   getInventoryPolarSettings,
   getInventorySquareSettings,
 } from '@tuturuuu/internal-api/inventory';
 import { Badge } from '@tuturuuu/ui/badge';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -67,62 +68,37 @@ export function PaymentSettingsPanel({
 
   return (
     <section className="grid min-w-0 gap-5">
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-6">
-        <div
-          aria-hidden
-          className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_80%_20%,var(--muted),transparent_70%)]"
-        />
-        <div className="relative flex max-w-2xl items-start gap-4">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-border bg-background shadow-sm">
-            <ShieldCheck className="size-5" />
-          </span>
-          <div>
-            <p className="font-mono text-muted-foreground text-xs uppercase tracking-[0.18em]">
-              {t('eyebrow')}
-            </p>
-            <h2 className="mt-2 font-semibold text-xl tracking-tight">
-              {t('title')}
-            </h2>
-            <p className="mt-1.5 text-muted-foreground text-sm leading-6">
-              {t('description')}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <Tabs className="min-w-0 gap-4" defaultValue={defaultProvider}>
-        <TabsList className="grid h-auto w-full grid-cols-1 gap-2 bg-muted/35 p-2 sm:grid-cols-2">
-          <TabsTrigger
-            className="h-auto min-w-0 justify-start gap-3 rounded-xl border border-transparent px-4 py-3 text-left data-[state=active]:border-border data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            value="polar"
-          >
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-card">
-              <CreditCard className="size-4" />
-            </span>
-            <span className="min-w-0">
-              <span className="block font-medium">{t('polarTitle')}</span>
-              <span className="block truncate font-normal text-muted-foreground text-xs">
-                {t('polarDescription')}
+      <Tabs className="min-w-0 gap-5" defaultValue={defaultProvider}>
+        <SettingsSection title={t('title')} description={t('description')}>
+          <TabsList className="grid h-auto w-full grid-cols-1 gap-2 bg-transparent p-2 sm:grid-cols-2">
+            <TabsTrigger
+              className="h-auto min-w-0 justify-start gap-3 rounded-lg border border-transparent px-3 py-3 text-left data-[state=active]:border-border data-[state=active]:bg-muted data-[state=active]:shadow-none"
+              value="polar"
+            >
+              <CreditCard className="size-4 shrink-0 text-muted-foreground" />
+              <span className="min-w-0">
+                <span className="block font-medium">{t('polarTitle')}</span>
+                <span className="block whitespace-normal font-normal text-muted-foreground text-sm">
+                  {t('polarDescription')}
+                </span>
               </span>
-            </span>
-            <ProviderStatus checking={polar.isPending} ready={polarReady} />
-          </TabsTrigger>
-          <TabsTrigger
-            className="h-auto min-w-0 justify-start gap-3 rounded-xl border border-transparent px-4 py-3 text-left data-[state=active]:border-border data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            value="square"
-          >
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-card">
-              <MonitorSmartphone className="size-4" />
-            </span>
-            <span className="min-w-0">
-              <span className="block font-medium">{t('squareTitle')}</span>
-              <span className="block truncate font-normal text-muted-foreground text-xs">
-                {t('squareDescription')}
+              <ProviderStatus checking={polar.isPending} ready={polarReady} />
+            </TabsTrigger>
+            <TabsTrigger
+              className="h-auto min-w-0 justify-start gap-3 rounded-lg border border-transparent px-3 py-3 text-left data-[state=active]:border-border data-[state=active]:bg-muted data-[state=active]:shadow-none"
+              value="square"
+            >
+              <MonitorSmartphone className="size-4 shrink-0 text-muted-foreground" />
+              <span className="min-w-0">
+                <span className="block font-medium">{t('squareTitle')}</span>
+                <span className="block whitespace-normal font-normal text-muted-foreground text-sm">
+                  {t('squareDescription')}
+                </span>
               </span>
-            </span>
-            <ProviderStatus checking={square.isPending} ready={squareReady} />
-          </TabsTrigger>
-        </TabsList>
+              <ProviderStatus checking={square.isPending} ready={squareReady} />
+            </TabsTrigger>
+          </TabsList>
+        </SettingsSection>
         <TabsContent value="polar">
           <PolarSettingsPanel wsId={wsId} />
         </TabsContent>

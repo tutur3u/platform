@@ -8,6 +8,11 @@ import {
 } from '@tuturuuu/internal-api/workspace-configs';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useHydratedWorkspaceGroupSelection } from './use-hydrated-workspace-group-selection';
@@ -77,24 +82,18 @@ export default function FeaturedGroupsSettings({
   }
 
   return (
-    <div className="space-y-6">
+    <SettingsSection>
       <form
         onSubmit={(event) => {
           event.preventDefault();
           updateMutation.mutate(selection);
         }}
-        className="space-y-4"
       >
-        <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-          <div className="space-y-0.5">
-            <div className="font-medium text-base">
-              {t('featured_groups_label')}
-            </div>
-            <div className="text-muted-foreground text-sm">
-              {t('featured_groups_help')}
-            </div>
-          </div>
-
+        <SettingItemTab
+          title={t('featured_groups_label')}
+          description={t('featured_groups_help')}
+          controlWidth="md"
+        >
           <Combobox
             mode="multiple"
             options={options}
@@ -133,14 +132,15 @@ export default function FeaturedGroupsSettings({
                   })
                 : undefined
             }
-            className="w-64"
           />
-        </div>
+        </SettingItemTab>
 
-        <Button type="submit" disabled={updateMutation.isPending || !isDirty}>
-          {updateMutation.isPending ? t('saving') : t('save')}
-        </Button>
+        <SettingsSectionFooter>
+          <Button type="submit" disabled={updateMutation.isPending || !isDirty}>
+            {updateMutation.isPending ? t('saving') : t('save')}
+          </Button>
+        </SettingsSectionFooter>
       </form>
-    </div>
+    </SettingsSection>
   );
 }

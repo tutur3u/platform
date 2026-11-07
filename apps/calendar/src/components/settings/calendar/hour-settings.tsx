@@ -1,16 +1,13 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  Briefcase,
-  Calendar,
-  Clock,
-  Layers,
-  Loader2,
-  User,
-} from '@tuturuuu/icons';
+import { Briefcase, Calendar, Layers, Loader2, User } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
+import {
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -201,20 +198,18 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <SettingsSectionBlock className="space-y-6">
         <Skeleton className="h-20 w-full rounded-md" />
         <Skeleton className="h-10 w-full max-w-md rounded-md" />
         <Skeleton className="h-64 w-full rounded-lg" />
-      </div>
+      </SettingsSectionBlock>
     );
   }
 
   if (isError) {
     return (
-      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center">
-        <p className="text-destructive">
-          {error instanceof Error ? error.message : t('hours.load_failed')}
-        </p>
+      <SettingsSectionMessage tone="error">
+        <p>{error instanceof Error ? error.message : t('hours.load_failed')}</p>
         <button
           type="button"
           onClick={() =>
@@ -222,26 +217,22 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
               queryKey: ['hour-settings', wsId],
             })
           }
-          className="mt-4 text-primary text-sm underline hover:no-underline"
+          className="mt-3 text-primary text-sm underline hover:no-underline"
         >
           {t('hours.try_again')}
         </button>
-      </div>
+      </SettingsSectionMessage>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-md bg-muted/30 p-4">
-        <div className="flex items-start gap-2">
-          <Clock className="mt-0.5 h-4 w-4 text-muted-foreground" />
-          <div className="text-muted-foreground text-sm">
-            <p>{t('hours.info')}</p>
-          </div>
-        </div>
-      </div>
+    <>
+      <SettingsSectionMessage className="py-4">
+        {t('hours.info')}
+      </SettingsSectionMessage>
 
       <Tabs
+        className="px-4 py-4 md:px-5"
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as typeof activeTab)}
       >
@@ -289,7 +280,6 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
           Object.keys(HOUR_TYPE_CONFIG) as Array<keyof typeof HOUR_TYPE_CONFIG>
         ).map((key) => {
           const config = HOUR_TYPE_CONFIG[key];
-          const Icon = config.icon;
           const hours = hourSettings?.[config.field];
           const isSaving =
             updateMutation.isPending &&
@@ -297,18 +287,15 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
           return (
             <TabsContent key={key} value={key} className="mt-0">
-              <div className="rounded-lg border p-4">
+              <div>
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-5 w-5" />
-                    <div>
-                      <h3 className="font-medium">
-                        {t(`hours.types.${config.translationKey}.label`)}
-                      </h3>
-                      <p className="text-muted-foreground text-xs">
-                        {t(`hours.types.${config.translationKey}.description`)}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="font-medium text-sm">
+                      {t(`hours.types.${config.translationKey}.label`)}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      {t(`hours.types.${config.translationKey}.description`)}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {isSaving && (
@@ -336,6 +323,6 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
           );
         })}
       </Tabs>
-    </div>
+    </>
   );
 }

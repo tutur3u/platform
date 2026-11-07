@@ -1,6 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateWorkspaceConfig } from '@tuturuuu/internal-api/workspace-configs';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Form,
   FormControl,
@@ -74,42 +79,47 @@ export function ReportDefaultTitleSettings({ workspaceId }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="font-medium text-lg">{t('title')}</h3>
-        <p className="text-muted-foreground text-sm">{t('description')}</p>
-      </div>
-
+    <SettingsSection description={t('description')}>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)}>
           <FormField
             control={form.control}
             name="default_title"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('default_title_label')}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder={t('default_title_placeholder')}
-                  />
-                </FormControl>
-                <FormDescription>{t('default_title_help')}</FormDescription>
-                <FormMessage />
+              <FormItem className="gap-0">
+                <SettingItemTab
+                  title={<FormLabel>{t('default_title_label')}</FormLabel>}
+                  description={
+                    <FormDescription>{t('default_title_help')}</FormDescription>
+                  }
+                  controlWidth="xl"
+                >
+                  <div className="space-y-2">
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder={t('default_title_placeholder')}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </div>
+                </SettingItemTab>
               </FormItem>
             )}
           />
 
-          <Button
-            type="submit"
-            disabled={
-              isLoading || updateMutation.isPending || !form.formState.isDirty
-            }
-          >
-            {updateMutation.isPending ? t('saving') : t('save')}
-          </Button>
+          <SettingsSectionFooter>
+            <Button
+              type="submit"
+              disabled={
+                isLoading || updateMutation.isPending || !form.formState.isDirty
+              }
+            >
+              {updateMutation.isPending ? t('saving') : t('save')}
+            </Button>
+          </SettingsSectionFooter>
         </form>
       </Form>
-    </div>
+    </SettingsSection>
   );
 }

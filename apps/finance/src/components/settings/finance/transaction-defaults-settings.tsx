@@ -1,30 +1,23 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowDownCircle,
-  ArrowUpCircle,
-  CheckSquare,
-  LayoutGrid,
-  Loader2,
-  Wallet,
-} from '@tuturuuu/icons';
+import { ArrowDownCircle, ArrowUpCircle, Loader2 } from '@tuturuuu/icons';
 import {
   FINANCE_DEFAULT_RECONCILIATION_CATEGORY_CONFIG_ID,
   updateWorkspaceConfig,
 } from '@tuturuuu/internal-api/workspace-configs';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   getIconComponentByKey,
   type PlatformIconKey,
 } from '@tuturuuu/ui/custom/icon-picker';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useFinanceTransactionPreferences } from '@tuturuuu/ui/hooks/use-finance-transaction-preferences';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { useWorkspacePermission } from '@tuturuuu/ui/hooks/use-workspace-permission';
-import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -32,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
@@ -261,138 +253,81 @@ export default function TransactionDefaultsSettings({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-dynamic-blue/10 via-background to-dynamic-green/10 p-6">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-dynamic-blue/60 to-transparent" />
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="rounded-full px-3 py-1">
-                {tFinance('transaction_defaults_badge')}
-              </Badge>
-            </div>
-            <h3 className="font-semibold text-xl">
-              {tFinance('transaction_defaults')}
-            </h3>
-            <p className="max-w-2xl text-muted-foreground text-sm">
-              {tFinance('transaction_defaults_description')}
-            </p>
+    <div className="space-y-8">
+      <SettingsSection title={tFinance('transaction_defaults_badge')}>
+        <SettingItemTab
+          title={tFinance('remember_last_transaction_selection')}
+          description={`${tFinance('remember_last_transaction_selection_description')}\n${tFinance('remember_last_transaction_selection_help')}`}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-muted-foreground text-sm">
+              {rememberLastSelections
+                ? tFinance('remember_last_transaction_selection_on')
+                : tFinance('remember_last_transaction_selection_off')}
+            </span>
+            <Switch
+              checked={rememberLastSelections}
+              disabled={isPendingRememberLastSelections}
+              onCheckedChange={setRememberLastSelections}
+            />
           </div>
+        </SettingItemTab>
 
-          <div className="rounded-2xl border bg-background/80 p-4 shadow-sm backdrop-blur">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 font-medium text-sm">
-                  <CheckSquare className="h-4 w-4 text-dynamic-blue" />
-                  {tFinance('remember_last_transaction_selection')}
-                </div>
-                <p className="max-w-xl text-muted-foreground text-sm">
-                  {tFinance('remember_last_transaction_selection_description')}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  {tFinance('remember_last_transaction_selection_help')}
-                </p>
-              </div>
-              <div className="flex items-center gap-3 rounded-full border bg-background px-4 py-2">
-                <span className="font-medium text-sm">
-                  {rememberLastSelections
-                    ? tFinance('remember_last_transaction_selection_on')
-                    : tFinance('remember_last_transaction_selection_off')}
+        <SettingItemTab title={tFinance('last_wallet_preview')}>
+          <p className="text-muted-foreground text-sm">
+            {rememberedWalletName ||
+              tFinance('remember_last_transaction_selection_empty_wallet')}
+          </p>
+        </SettingItemTab>
+
+        <SettingItemTab title={tFinance('last_category_preview')}>
+          <div className="text-muted-foreground text-sm">
+            {rememberedCategory ? (
+              <div className="flex items-center gap-2">
+                <CategoryIcon category={rememberedCategory} />
+                <span>
+                  {rememberedCategory.name || tCategories('unnamed_category')}
                 </span>
-                <Switch
-                  checked={rememberLastSelections}
-                  disabled={isPendingRememberLastSelections}
-                  onCheckedChange={setRememberLastSelections}
-                />
               </div>
-            </div>
-
-            <Separator className="my-4" />
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border bg-muted/20 p-4">
-                <div className="mb-2 flex items-center gap-2 font-medium text-sm">
-                  <Wallet className="h-4 w-4 text-dynamic-blue" />
-                  {tFinance('last_wallet_preview')}
-                </div>
-                <p className="text-sm">
-                  {rememberedWalletName ||
-                    tFinance(
-                      'remember_last_transaction_selection_empty_wallet'
-                    )}
-                </p>
-              </div>
-              <div className="rounded-2xl border bg-muted/20 p-4">
-                <div className="mb-2 flex items-center gap-2 font-medium text-sm">
-                  <LayoutGrid className="h-4 w-4 text-dynamic-green" />
-                  {tFinance('last_category_preview')}
-                </div>
-                <div className="text-sm">
-                  {rememberedCategory ? (
-                    <div className="flex items-center gap-2">
-                      <CategoryIcon category={rememberedCategory} />
-                      <span>
-                        {rememberedCategory.name ||
-                          tCategories('unnamed_category')}
-                      </span>
-                    </div>
-                  ) : (
-                    tFinance(
-                      'remember_last_transaction_selection_empty_category'
-                    )
-                  )}
-                </div>
-              </div>
-            </div>
+            ) : (
+              tFinance('remember_last_transaction_selection_empty_category')
+            )}
           </div>
-        </div>
-      </div>
+        </SettingItemTab>
+      </SettingsSection>
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <section className="rounded-3xl border bg-card p-5 shadow-sm">
-          <div className="mb-5 space-y-2">
-            <div className="flex items-center gap-2">
-              <Wallet className="h-4 w-4 text-dynamic-blue" />
-              <h4 className="font-semibold text-base">
-                {tSettings('default_wallet')}
-              </h4>
-            </div>
-            <p className="text-muted-foreground text-sm">
-              {tSettings('default_wallet_description')}
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="grid gap-2">
-              <Label>{tSettings('default_wallet_label')}</Label>
-              <Select
-                onValueChange={setSelectedWalletId}
-                value={selectedWalletId}
-                disabled={canChangeFinanceWallets === false}
-              >
-                <SelectTrigger className="h-11 rounded-xl">
-                  <SelectValue
-                    placeholder={tSettings('select_default_wallet')}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_OPTION}>
-                    {tSettings('no_default_wallet')}
-                  </SelectItem>
-                  {wallets
-                    .filter((wallet) => wallet.id)
-                    .map((wallet) => (
-                      <SelectItem key={wallet.id} value={wallet.id as string}>
-                        {wallet.name || tWallets('unnamed_wallet')}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <SettingsSection>
+        <SettingItemTab
+          title={tSettings('default_wallet')}
+          description={tSettings('default_wallet_description')}
+          controlWidth="xl"
+        >
+          <div className="flex items-center gap-2">
+            <Select
+              onValueChange={setSelectedWalletId}
+              value={selectedWalletId}
+              disabled={canChangeFinanceWallets === false}
+            >
+              <SelectTrigger className="min-w-0 flex-1">
+                <SelectValue placeholder={tSettings('select_default_wallet')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE_OPTION}>
+                  {tSettings('no_default_wallet')}
+                </SelectItem>
+                {wallets
+                  .filter((wallet) => wallet.id)
+                  .map((wallet) => (
+                    <SelectItem key={wallet.id} value={wallet.id as string}>
+                      {wallet.name || tWallets('unnamed_wallet')}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
 
             <Button
               type="button"
-              className="w-full rounded-xl"
+              variant="outline"
               disabled={
                 isLoading ||
                 canChangeFinanceWallets === false ||
@@ -406,59 +341,45 @@ export default function TransactionDefaultsSettings({
                 : tSettings('save')}
             </Button>
           </div>
-        </section>
+        </SettingItemTab>
 
-        <section className="rounded-3xl border bg-card p-5 shadow-sm">
-          <div className="mb-5 space-y-2">
-            <div className="flex items-center gap-2">
-              <LayoutGrid className="h-4 w-4 text-dynamic-green" />
-              <h4 className="font-semibold text-base">
-                {tSettings('default_category_title')}
-              </h4>
-            </div>
-            <p className="text-muted-foreground text-sm">
-              {tSettings('default_category_description')}
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="grid gap-2">
-              <Label>{tSettings('default_category_label')}</Label>
-              <Select
-                onValueChange={setSelectedCategoryId}
-                value={selectedCategoryId}
-              >
-                <SelectTrigger className="h-11 rounded-xl">
-                  <SelectValue
-                    placeholder={tSettings('select_default_category')}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_OPTION}>
-                    {tSettings('no_default_category')}
-                  </SelectItem>
-                  {categories
-                    .filter((category) => category.id)
-                    .map((category) => (
-                      <SelectItem
-                        key={category.id}
-                        value={category.id as string}
-                      >
-                        <div className="flex items-center gap-2">
-                          <CategoryIcon category={category} />
-                          <span>
-                            {category.name || tCategories('unnamed_category')}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <SettingItemTab
+          title={tSettings('default_category_title')}
+          description={tSettings('default_category_description')}
+          controlWidth="xl"
+        >
+          <div className="flex items-center gap-2">
+            <Select
+              onValueChange={setSelectedCategoryId}
+              value={selectedCategoryId}
+            >
+              <SelectTrigger className="min-w-0 flex-1">
+                <SelectValue
+                  placeholder={tSettings('select_default_category')}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE_OPTION}>
+                  {tSettings('no_default_category')}
+                </SelectItem>
+                {categories
+                  .filter((category) => category.id)
+                  .map((category) => (
+                    <SelectItem key={category.id} value={category.id as string}>
+                      <div className="flex items-center gap-2">
+                        <CategoryIcon category={category} />
+                        <span>
+                          {category.name || tCategories('unnamed_category')}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
 
             <Button
               type="button"
-              className="w-full rounded-xl"
+              variant="outline"
               disabled={
                 isLoading ||
                 updateCategoryMutation.isPending ||
@@ -471,63 +392,47 @@ export default function TransactionDefaultsSettings({
                 : tSettings('save')}
             </Button>
           </div>
-        </section>
+        </SettingItemTab>
 
-        <section className="rounded-3xl border bg-card p-5 shadow-sm">
-          <div className="mb-5 space-y-2">
-            <div className="flex items-center gap-2">
-              <LayoutGrid className="h-4 w-4 text-dynamic-green" />
-              <h4 className="font-semibold text-base">
-                {tSettings('default_reconciliation_category_title')}
-              </h4>
-            </div>
-            <p className="text-muted-foreground text-sm">
-              {tSettings('default_reconciliation_category_description')}
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="grid gap-2">
-              <Label>
-                {tSettings('default_reconciliation_category_label')}
-              </Label>
-              <Select
-                onValueChange={setSelectedReconciliationCategoryId}
-                value={selectedReconciliationCategoryId}
-              >
-                <SelectTrigger className="h-11 rounded-xl">
-                  <SelectValue
-                    placeholder={tSettings(
-                      'select_default_reconciliation_category'
-                    )}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_OPTION}>
-                    {tSettings('no_default_reconciliation_category')}
-                  </SelectItem>
-                  {categories
-                    .filter((category) => category.id)
-                    .map((category) => (
-                      <SelectItem
-                        key={category.id}
-                        value={category.id as string}
-                      >
-                        <div className="flex items-center gap-2">
-                          <CategoryIcon category={category} />
-                          <span>
-                            {category.name || tCategories('unnamed_category')}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <SettingItemTab
+          title={tSettings('default_reconciliation_category_title')}
+          description={tSettings('default_reconciliation_category_description')}
+          controlWidth="xl"
+        >
+          <div className="flex items-center gap-2">
+            <Select
+              onValueChange={setSelectedReconciliationCategoryId}
+              value={selectedReconciliationCategoryId}
+            >
+              <SelectTrigger className="min-w-0 flex-1">
+                <SelectValue
+                  placeholder={tSettings(
+                    'select_default_reconciliation_category'
+                  )}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE_OPTION}>
+                  {tSettings('no_default_reconciliation_category')}
+                </SelectItem>
+                {categories
+                  .filter((category) => category.id)
+                  .map((category) => (
+                    <SelectItem key={category.id} value={category.id as string}>
+                      <div className="flex items-center gap-2">
+                        <CategoryIcon category={category} />
+                        <span>
+                          {category.name || tCategories('unnamed_category')}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
 
             <Button
               type="button"
-              className="w-full rounded-xl"
+              variant="outline"
               disabled={
                 isLoading ||
                 updateReconciliationCategoryMutation.isPending ||
@@ -541,8 +446,9 @@ export default function TransactionDefaultsSettings({
                 : tSettings('save')}
             </Button>
           </div>
-        </section>
-      </div>
+        </SettingItemTab>
+      </SettingsSection>
+
       <InventoryProviderMappingsSettings workspaceId={workspaceId} />
     </div>
   );
