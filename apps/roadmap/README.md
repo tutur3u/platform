@@ -34,7 +34,11 @@ checkout with the complete lockfile, the app's `type-check` script generates
 It does not require a release build or run a formatter.
 Set `ROADMAP_SOURCE_SHA` to the exact checkout commit, then run `build:cloudflare`.
 Run `seal:cloudflare -- <same-sha>` after the build to hash the actual emitted
-files into `roadmap-artifact.json`. The sealer requires one emitted Worker JSON
+files into a fresh `roadmap-artifact.json`. Sealing runs on the qualified Linux
+CI host: every ancestor and artifact is opened without following symlinks,
+reads stay relative to retained directory descriptors through `/proc/self/fd`,
+and file size/content/hash checks use the same regular-file descriptor.
+Replacement or mutation refuses the seal; an existing manifest is never overwritten. The sealer requires one emitted Worker JSON
 config, the expected Worker name, client assets and source identity in emitted
 code. It does not attest runtime behavior or deployment. SSR HTML exposes the
 build identity as `data-source-sha` for the release readback.
