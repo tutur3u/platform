@@ -3970,6 +3970,7 @@
       "processing": "Processing…",
       "questions": "Open questions",
       "recovering": "Retrying transcription… {count, plural, one {# audio chunk is buffered} other {# audio chunks are buffered}} on this device. Retrying automatically for up to 5 minutes.",
+      "removed_banner": "Some content was removed from this transcript.",
       "retry_notes": "Generate missing notes",
       "review_notice": "AI-generated notes may contain mistakes. Review important details before relying on them.",
       "session_notes": "Session {number} notes",
