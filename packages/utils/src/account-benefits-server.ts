@@ -1,5 +1,6 @@
 import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { retryMeetFenceRpc } from './meet-fence-retry';
 export class AccountServiceError extends Error {
   constructor(
     readonly status: number,
@@ -22,7 +23,10 @@ export async function accountPrivateRpc<T>(
   const client = (
     admin as unknown as { schema(name: string): AccountPrivateTransport }
   ).schema('private');
-  const result = await client.rpc<T>(name, args);
+  const result =
+    name === 'checkpoint_meeting_document'
+      ? await retryMeetFenceRpc(() => client.rpc<T>(name, args))
+      : await client.rpc<T>(name, args);
   if (result.error || result.data === null) {
     const code = result.error?.code;
     throw new AccountServiceError(

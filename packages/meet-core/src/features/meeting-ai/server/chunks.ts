@@ -1,6 +1,7 @@
 import 'server-only';
 import { MEET_AUDIO_REQUEST_MAX_BYTES } from '@tuturuuu/ai/meetings/audio-contract';
 import { Effect, Either, Schedule } from '@tuturuuu/utils/effect';
+import { retryMeetFenceRpc } from '@tuturuuu/utils/meet-fence-retry';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
 import { generateBilledMeetArtifact } from './artifact-billing';
@@ -104,13 +105,17 @@ export async function transcribeMeetChunk(
   const speakers = resolved.right;
   // Claim one provider attempt at a time, including recovery of failed attempts.
   const reservationStarted = performance.now();
-  const inserted = await db.rpc('reserve_meet_ai_chunk', {
-    p_id: id,
-    p_session_id: sessionId,
-    p_sequence: sequence,
-    p_start_seconds: startSeconds,
-    p_duration_seconds: Math.max(...parts.map((part) => part.durationSeconds)),
-  });
+  const inserted = await retryMeetFenceRpc(() =>
+    db.rpc('reserve_meet_ai_chunk', {
+      p_id: id,
+      p_session_id: sessionId,
+      p_sequence: sequence,
+      p_start_seconds: startSeconds,
+      p_duration_seconds: Math.max(
+        ...parts.map((part) => part.durationSeconds)
+      ),
+    })
+  );
   if (inserted.error)
     throw new MeetAiError(
       ['P0001', '23505'].includes(inserted.error.code) ? 409 : 500,
