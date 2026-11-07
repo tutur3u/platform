@@ -106,7 +106,7 @@ async function getUserData({
     // If there's a search query, use the RPC function
     if (q) {
       // Use type assertion to overcome TypeScript issues
-      const { data, error } = await sbAdmin.rpc('search_users', {
+      const { data, error } = await sbAdmin.rpc('search_users_with_services', {
         search_query: q,
         page_number: parseInt(page, 10),
         page_size: parseInt(pageSize, 10),
