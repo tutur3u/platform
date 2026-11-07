@@ -110,9 +110,8 @@ vi.mock('@/lib/workspace-invitation-notifications', () => ({
 }));
 
 async function acceptInvite() {
-  const { POST } = await import(
-    '@/app/api/workspaces/[wsId]/accept-invite/route'
-  );
+  const { POST } =
+    await import('@/app/api/workspaces/[wsId]/accept-invite/route');
   return POST(new NextRequest('http://localhost/test'), {
     params: Promise.resolve({ wsId: WS_ID }),
   });

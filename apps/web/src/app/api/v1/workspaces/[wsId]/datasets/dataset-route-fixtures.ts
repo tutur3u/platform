@@ -127,7 +127,6 @@ export function createFakeSupabase(db: Db) {
           single = true;
           return query;
         },
-        // biome-ignore lint/suspicious/noThenProperty: mimics the thenable PostgREST builder
         then: (
           resolve: (value: ReturnType<typeof execute>) => unknown,
           reject?: (reason: unknown) => unknown

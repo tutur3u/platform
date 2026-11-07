@@ -98,7 +98,6 @@ export function UserBanner({ userId }: { userId: string }) {
     <div className="grid w-full gap-3">
       {url && (
         // Public, immutable profile media; preserve native image loading.
-        // biome-ignore lint/performance/noImgElement: remote profile media URL
         <img
           src={url}
           alt={t('banner')}

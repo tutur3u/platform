@@ -6,64 +6,64 @@
   "compatibility_date": "2026-09-06",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "placement": {
-    "region": "aws:ap-southeast-1"
+    "region": "aws:ap-southeast-1",
   },
   "assets": {
     "directory": ".open-next/assets",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
   },
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "tuturuuu-parley"
+      "service": "tuturuuu-parley",
     },
     {
       "binding": "MEETING_AI_PROVIDER",
       "service": "tuturuuu-meet",
-      "entrypoint": "MeetingAIProvider"
-    }
+      "entrypoint": "MeetingAIProvider",
+    },
   ],
   "r2_buckets": [
     {
       "binding": "NEXT_INC_CACHE_R2_BUCKET",
-      "bucket_name": "tuturuuu-parley-cache"
-    }
+      "bucket_name": "tuturuuu-parley-cache",
+    },
   ],
   "images": {
-    "binding": "IMAGES"
+    "binding": "IMAGES",
   },
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 0.05
+    "head_sampling_rate": 0.05,
   },
   "workers_dev": true,
   "routes": [
     {
       "pattern": "parley.tuturuuu.com",
-      "custom_domain": true
-    }
+      "custom_domain": true,
+    },
   ],
   "secrets": {
     "required": [
       "MEET_REALTIME_TOKEN_SECRET",
       "NEXT_PUBLIC_SUPABASE_URL",
       "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-      "SUPABASE_SECRET_KEY"
-    ]
+      "SUPABASE_SECRET_KEY",
+    ],
   },
   "vars": {
     "NEXT_PUBLIC_MEETING_APP": "parley",
     "NEXT_PUBLIC_APP_URL": "https://parley.tuturuuu.com",
     "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
-    "MEET_REALTIME_URL": "wss://meet-realtime.tuturuuu.com/realtime"
+    "MEET_REALTIME_URL": "wss://meet-realtime.tuturuuu.com/realtime",
   },
   "durable_objects": {
     "bindings": [
       {
         "name": "MEET_LIVE",
         "class_name": "MeetLiveDurableObject",
-        "script_name": "tuturuuu-meet"
-      }
-    ]
-  }
+        "script_name": "tuturuuu-meet",
+      },
+    ],
+  },
 }

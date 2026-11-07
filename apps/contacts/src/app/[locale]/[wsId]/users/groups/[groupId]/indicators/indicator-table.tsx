@@ -222,7 +222,6 @@ export function IndicatorTable({
                                   }}
                                   className="h-full w-full bg-transparent text-center text-sm outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                   placeholder="-"
-                                  // biome-ignore lint/a11y/noAutofocus: <focus> is appropriate here
                                   autoFocus
                                 />
                               </div>

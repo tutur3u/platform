@@ -88,10 +88,10 @@ export function TutoringPolicyCard({
       ? JSON.stringify(draft) !== JSON.stringify(policy)
       : Boolean(
           editing &&
-            sectionFields[editing].some(
-              (field) =>
-                JSON.stringify(draft[field]) !== JSON.stringify(policy[field])
-            )
+          sectionFields[editing].some(
+            (field) =>
+              JSON.stringify(draft[field]) !== JSON.stringify(policy[field])
+          )
         );
   const valid = Boolean(parseTutoringPolicy(submittedPolicy));
   const save = useMutation({

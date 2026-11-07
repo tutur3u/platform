@@ -121,7 +121,6 @@ class SupabaseQuery implements PromiseLike<QueryResult> {
     return this;
   }
 
-  // biome-ignore lint/suspicious/noThenProperty: Supabase builders are intentionally awaitable.
   then<TResult1 = QueryResult, TResult2 = never>(
     onfulfilled?:
       | ((value: QueryResult) => TResult1 | PromiseLike<TResult1>)

@@ -116,7 +116,6 @@ export function DriveGridThumbnail({
   }
 
   return (
-    // biome-ignore lint/performance/noImgElement: signed storage URLs are runtime-only
     <img
       src={thumbnailQuery.data}
       alt={item.name || 'File thumbnail'}

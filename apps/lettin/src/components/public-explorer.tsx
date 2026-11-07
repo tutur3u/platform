@@ -75,7 +75,6 @@ export function PublicExplorer({
               <ContentNotice notice={world.published.contentNotice} />
               <div className="studio-world-art relative flex h-52 items-center justify-center overflow-hidden">
                 {world.published.image ? (
-                  // biome-ignore lint/performance/noImgElement: Artwork must bypass optimizer caching so private media access can be revoked.
                   <img
                     alt=""
                     src={world.published.image}

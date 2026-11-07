@@ -83,13 +83,13 @@ export default function PostsFilters({
     () =>
       Boolean(
         (queryState.stage && queryState.stage !== DEFAULT_POST_REVIEW_STAGE) ||
-          queryState.showAll ||
-          queryState.approvalStatus ||
-          queryState.queueStatus ||
-          hasNonDefaultDateRange ||
-          queryState.userId ||
-          (queryState.includedGroups?.length ?? 0) > 0 ||
-          (queryState.excludedGroups?.length ?? 0) > 0
+        queryState.showAll ||
+        queryState.approvalStatus ||
+        queryState.queueStatus ||
+        hasNonDefaultDateRange ||
+        queryState.userId ||
+        (queryState.includedGroups?.length ?? 0) > 0 ||
+        (queryState.excludedGroups?.length ?? 0) > 0
       ),
     [hasNonDefaultDateRange, queryState]
   );

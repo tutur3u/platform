@@ -52,7 +52,7 @@ export function TaskResourceSearchField({
           option.getAttribute('aria-hidden') !== 'true' &&
           Boolean(
             root.compareDocumentPosition(option) &
-              Node.DOCUMENT_POSITION_FOLLOWING
+            Node.DOCUMENT_POSITION_FOLLOWING
           )
       );
 

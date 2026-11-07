@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: protected CI-only signing inputs */
 import { fetchSigningBundle } from './vault-fetch.mjs';
 import { signVaultBundle } from './vault-signing.mjs';
 

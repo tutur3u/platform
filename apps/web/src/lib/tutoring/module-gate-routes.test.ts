@@ -92,9 +92,7 @@ const routes = {
     ).POST(call('POST', 'tutoring/sessions', {}), { params }),
   'PUT /tutoring/sessions/{id}': async () =>
     (
-      await import(
-        '../../app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route'
-      )
+      await import('../../app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route')
     ).PUT(call('PUT', `tutoring/sessions/${sessionId}`, {}), { params }),
   'GET /tutoring/queue': async () =>
     (

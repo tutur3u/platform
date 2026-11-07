@@ -108,20 +108,20 @@ app-local duplicates.
 
 ## Technology Foundation
 
-| Layer | Choices |
-| --- | --- |
-| Runtime and package manager | Bun (`packageManager` pin), Node.js 26.12.1 (`.node-version`) |
-| Monorepo orchestration | Turborepo |
-| Web apps | Next.js 16 App Router, React 19, TypeScript |
-| Local app routing | Portless, stable `https://*.tuturuuu.localhost` origins |
-| UI | Tailwind CSS 4, Radix/Shadcn patterns, `@tuturuuu/ui`, `@tuturuuu/icons` |
-| Data | Supabase PostgreSQL with RLS and generated database types |
-| Client state | TanStack Query, Jotai, nuqs |
-| APIs | Next.js Route Handlers, tRPC, `@tuturuuu/internal-api` |
-| AI | Vercel AI SDK and provider-specific packages |
-| Mobile | Flutter, Dart, BLoC/Cubit |
-| Tests and checks | Vitest, Playwright, Biome, tsc, Flutter checks |
-| Deployment | Vercel, GitHub Actions, Docker blue/green workflow |
+| Layer                       | Choices                                                                  |
+| --------------------------- | ------------------------------------------------------------------------ |
+| Runtime and package manager | Bun (`packageManager` pin), Node.js 26.12.1 (`.node-version`)            |
+| Monorepo orchestration      | Turborepo                                                                |
+| Web apps                    | Next.js 16 App Router, React 19, TypeScript                              |
+| Local app routing           | Portless, stable `https://*.tuturuuu.localhost` origins                  |
+| UI                          | Tailwind CSS 4, Radix/Shadcn patterns, `@tuturuuu/ui`, `@tuturuuu/icons` |
+| Data                        | Supabase PostgreSQL with RLS and generated database types                |
+| Client state                | TanStack Query, Jotai, nuqs                                              |
+| APIs                        | Next.js Route Handlers, tRPC, `@tuturuuu/internal-api`                   |
+| AI                          | Vercel AI SDK and provider-specific packages                             |
+| Mobile                      | Flutter, Dart, BLoC/Cubit                                                |
+| Tests and checks            | Vitest, Playwright, Oxc, tsc, Flutter checks                             |
+| Deployment                  | Vercel, GitHub Actions, Docker blue/green workflow                       |
 
 ## Quick Start
 
@@ -305,17 +305,17 @@ task workflows, finance workflows, and agent-friendly JSON output.
 Use the narrowest focused check first, then the repo-level check when your
 change touches TypeScript, JavaScript, root scripts, or shared config.
 
-| Command | Purpose |
-| --- | --- |
-| `bun format:fix <files>` | Format specific files with Biome |
-| `bun i18n:sort` | Sort message files after translation edits |
-| `bun test` | Run package test tasks through Turbo |
-| `bun test:scripts` | Run root script tests |
-| `bun type-check` | Run type-check tasks through Turbo |
-| `bun validate` | Run the repository validation suite |
-| `bun check:docker` | Validate Docker web configuration |
-| `bun check:mobile` | Run Flutter mobile validation |
-| `git diff --check` | Catch whitespace issues before commit |
+| Command                  | Purpose                                    |
+| ------------------------ | ------------------------------------------ |
+| `bun format:fix <files>` | Format specific files with Oxc             |
+| `bun i18n:sort`          | Sort message files after translation edits |
+| `bun test`               | Run package test tasks through Turbo       |
+| `bun test:scripts`       | Run root script tests                      |
+| `bun type-check`         | Run type-check tasks through Turbo         |
+| `bun validate`           | Run the repository validation suite        |
+| `bun check:docker`       | Validate Docker web configuration          |
+| `bun check:mobile`       | Run Flutter mobile validation              |
+| `git diff --check`       | Catch whitespace issues before commit      |
 
 For Markdown-only changes, keep the file manually formatted and run
 `git diff --check`. For product, API, schema, or shared package changes, follow
@@ -343,7 +343,7 @@ The short version:
 
 ## CI, Security, And License
 
-GitHub Actions cover branch naming, Biome, type checks, tests, CodeQL, mobile
+GitHub Actions cover branch naming, Oxc, type checks, tests, CodeQL, mobile
 builds, Supabase checks, Vercel preview and production deployments, package
 releases, Docker setup checks, and Discord Modal deployment.
 

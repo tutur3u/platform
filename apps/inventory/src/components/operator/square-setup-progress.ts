@@ -40,7 +40,7 @@ export function getSquareSetupProgress({
       complete: Boolean(
         (appCredential?.applicationId &&
           appCredential.applicationSecretLast4) ||
-          (connection?.authMethod === 'manual' && connection.status === 'ready')
+        (connection?.authMethod === 'manual' && connection.status === 'ready')
       ),
       id: 'application',
     },

@@ -1679,9 +1679,8 @@ describe('guardApiProxyRequest', () => {
   });
 
   it('does not classify raw app-session cookies as authenticated sessions', async () => {
-    const { hasAuthenticatedApiSession } = await import(
-      '../api-proxy-guard.js'
-    );
+    const { hasAuthenticatedApiSession } =
+      await import('../api-proxy-guard.js');
 
     expect(
       hasAuthenticatedApiSession(
@@ -1693,9 +1692,8 @@ describe('guardApiProxyRequest', () => {
   });
 
   it('detects bearer credentials that route handlers can authenticate', async () => {
-    const { hasAuthenticatedBearerToken } = await import(
-      '../api-proxy-guard.js'
-    );
+    const { hasAuthenticatedBearerToken } =
+      await import('../api-proxy-guard.js');
 
     expect(
       hasAuthenticatedBearerToken(

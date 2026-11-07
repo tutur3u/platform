@@ -452,8 +452,7 @@ export type BackendOnboardingProgress = {
   [key: string]: unknown;
 };
 
-export type BackendOnboardingProgressResponse =
-  BackendOnboardingProgress | null;
+export type BackendOnboardingProgressResponse = BackendOnboardingProgress | null;
 
 export type BackendOnboardingProgressUpdate = Pick<
   BackendOnboardingProgress,

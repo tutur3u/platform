@@ -266,9 +266,8 @@ it('bounds Cloudflare pagination and reminder fan-out without leaking into anoth
 });
 
 it('bounds post-email queue fallback pagination before a 21st query', async () => {
-  const { fetchAllPaginatedRows } = await import(
-    '../post-email-queue/queue-core'
-  );
+  const { fetchAllPaginatedRows } =
+    await import('../post-email-queue/queue-core');
   await withWebCronBudget(async () => {
     const page = vi.fn(async () => ({
       data: Array(1000).fill('row'),

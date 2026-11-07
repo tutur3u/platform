@@ -276,9 +276,9 @@ export function fromGoogleCalendarRecurrence(
     fields.BYSETPOS === '-1' &&
     Boolean(
       monthDays &&
-        monthDays.length > 1 &&
-        monthDays.every((day, i) => day === 28 + i) &&
-        monthDays.at(-1)! <= 31
+      monthDays.length > 1 &&
+      monthDays.every((day, i) => day === 28 + i) &&
+      monthDays.at(-1)! <= 31
     );
   if (
     byday?.some((day) => day.index !== index) ||

@@ -166,7 +166,6 @@ export function renderDocumentNode(
     case 'imageResize': {
       const src = safeDocumentImage(node.attrs?.src);
       return src ? (
-        // biome-ignore lint/performance/noImgElement: Revocable media bypasses optimizer caching.
         <img
           src={src}
           alt={typeof node.attrs?.alt === 'string' ? node.attrs.alt : ''}

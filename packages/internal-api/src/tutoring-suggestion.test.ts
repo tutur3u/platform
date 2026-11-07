@@ -215,3 +215,122 @@ describe('center scheduling policy', () => {
     ).toBe('Hello Lan {{unknown}}');
   });
 });
+
+describe('class exclusions in suggestions', () => {
+  const now = new Date('2026-09-25T00:00:00Z');
+  const DDT = '33333333-3333-4333-8333-333333333333';
+  const ENGLISH = '44444444-4444-4444-8444-444444444444';
+
+  function classOf(groupId: string, groupName: string, startsAt: string) {
+    return { ...session(startsAt), groupId, groupName };
+  }
+
+  it('suggests nothing for a DDT class, whatever its letter case', () => {
+    for (const name of ['DDT Starters', 'lớp ddt 2', 'Movers-Ddt']) {
+      expect(
+        suggestTutoringSlots(
+          [
+            classOf(DDT, name, '2026-09-27T11:00:00Z'),
+            classOf(DDT, name, '2026-10-03T11:00:00Z'),
+          ],
+          '2026-09-26',
+          2,
+          EASY_CENTER_TUTORING_POLICY,
+          'separate',
+          now
+        )
+      ).toEqual([]);
+    }
+  });
+
+  it('suggests nothing for a kindergarten class', () => {
+    for (const name of ['Mẫu giáo Hoa Mai', 'Kindergarten K2']) {
+      expect(
+        suggestTutoringSlots(
+          [classOf(DDT, name, '2026-09-27T11:00:00Z')],
+          '2026-09-26',
+          1,
+          EASY_CENTER_TUTORING_POLICY,
+          'consecutive',
+          now,
+          { reason: 'weak_support' }
+        )
+      ).toEqual([]);
+    }
+  });
+
+  it('skips only the excluded class when a schedule mixes classes', () => {
+    expect(
+      suggestTutoringSlots(
+        [
+          classOf(DDT, 'DDT Starters', '2026-09-27T11:00:00Z'),
+          classOf(ENGLISH, 'English A1', '2026-10-03T11:00:00Z'),
+        ],
+        '2026-09-26',
+        2,
+        EASY_CENTER_TUTORING_POLICY,
+        'separate',
+        now
+      )
+    ).toMatchObject([{ sessionDate: '2026-10-03', startTime: '17:15' }]);
+  });
+
+  it('reads the class name the caller passes over a missing calendar name', () => {
+    expect(
+      suggestTutoringSlots(
+        [session('2026-09-27T11:00:00Z')],
+        '2026-09-26',
+        1,
+        EASY_CENTER_TUTORING_POLICY,
+        'separate',
+        now,
+        { groupName: 'DDT Starters', reason: 'make_up' }
+      )
+    ).toEqual([]);
+  });
+
+  it('still suggests for DDT under a custom policy without a DDT rule', () => {
+    expect(
+      suggestTutoringSlots(
+        [classOf(DDT, 'DDT Starters', '2026-09-27T11:00:00Z')],
+        '2026-09-26',
+        1,
+        { ...EASY_CENTER_TUTORING_POLICY, groupExclusions: [] },
+        'separate',
+        now
+      )
+    ).toMatchObject([{ sessionDate: '2026-09-27', startTime: '17:15' }]);
+  });
+
+  it('honours a rule scoped to the other reason', () => {
+    const policy = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      groupExclusions: [
+        {
+          scope: 'weak_support' as const,
+          match: 'contains' as const,
+          value: 'DDT',
+        },
+      ],
+    };
+    const classes = [classOf(DDT, 'DDT Starters', '2026-09-27T11:00:00Z')];
+    expect(
+      suggestTutoringSlots(classes, '2026-09-26', 1, policy, 'separate', now, {
+        reason: 'make_up',
+      })
+    ).toHaveLength(1);
+    expect(
+      suggestTutoringSlots(
+        classes,
+        '2026-09-26',
+        1,
+        policy,
+        'consecutive',
+        now,
+        {
+          reason: 'weak_support',
+        }
+      )
+    ).toEqual([]);
+  });
+});

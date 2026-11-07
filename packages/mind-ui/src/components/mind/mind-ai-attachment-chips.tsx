@@ -50,7 +50,6 @@ export function MindAiAttachmentChips({
         >
           <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded bg-muted">
             {item.previewUrl && item.file.type.startsWith('image/') ? (
-              // biome-ignore lint/performance/noImgElement: object URL preview cannot use Next Image
               <img
                 alt=""
                 className="h-full w-full object-cover"

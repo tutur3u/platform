@@ -4,7 +4,7 @@ import ReportPreview from '../report-preview';
 
 const t = (key: string) =>
   (
-    ({
+    {
       'common.empty': 'Empty',
       'common.untitled': 'Untitled',
       'ws-reports.continued': 'Continued',
@@ -18,7 +18,7 @@ const t = (key: string) =>
       'ws-reports.report_overview_description':
         'Lesson highlights, completed study content, and classroom progress are organized below.',
       'ws-reports.representative_score': 'Representative score',
-    }) as Record<string, string>
+    } as Record<string, string>
   )[key] ?? key;
 
 function createRect(height: number): DOMRect {
@@ -114,11 +114,11 @@ describe('ReportPreview', () => {
     const onPaginationStateChange = vi.fn();
     const getConfig = (id: string) =>
       (
-        ({
+        {
           BRAND_NAME: 'Easy',
           BRAND_PHONE_NUMBER: '0123 456 789',
           REPORT_INTRO: 'Intro text',
-        }) as Record<string, string>
+        } as Record<string, string>
       )[id] ?? null;
 
     const { container, rerender } = render(

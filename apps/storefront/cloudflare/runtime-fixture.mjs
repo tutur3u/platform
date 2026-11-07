@@ -33,6 +33,9 @@ export async function startFixtureWorker(
     sendMetrics: false,
     bindings: Object.fromEntries(
       Object.entries({
+        INVENTORY_APP_URL: 'https://inventory.invalid',
+        SUPABASE_SECRET_KEY: 'fixture',
+        TUTURUUU_APP_COORDINATION_SECRET: 'fixture',
         INTERNAL_WEB_API_ORIGIN: 'https://central.invalid',
         ...bindings,
       }).map(([key, value]) => [key, { type: 'plain_text', value }])

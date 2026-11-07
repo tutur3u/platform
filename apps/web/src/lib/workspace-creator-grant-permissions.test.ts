@@ -39,7 +39,6 @@ function supabaseFixture({
             : null,
         error: null,
       });
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
       query.then = (resolve: (value: unknown) => unknown) =>
         Promise.resolve({
           data:

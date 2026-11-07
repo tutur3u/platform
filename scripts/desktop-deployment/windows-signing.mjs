@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: CI signing-presence flags contain no credential values */
 import { appendFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 

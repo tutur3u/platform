@@ -277,9 +277,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
   });
 
   it('returns 404 when no invite and guest self-join disabled', async () => {
-    const { resolveGuestSelfJoinCandidate } = await import(
-      '@tuturuuu/utils/workspace-helper'
-    );
+    const { resolveGuestSelfJoinCandidate } =
+      await import('@tuturuuu/utils/workspace-helper');
     vi.mocked(resolveGuestSelfJoinCandidate).mockResolvedValue({
       allowGuestSelfJoin: false,
       candidateEmails: ['auth@example.com', 'private@example.com'],
@@ -289,9 +288,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       virtualUserId: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
 
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'ws-1' }),
@@ -305,14 +303,12 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
   }, 20000);
 
   it('returns 404 for unresolved non-UUID workspace id after auth check', async () => {
-    const { resolveGuestSelfJoinCandidate } = await import(
-      '@tuturuuu/utils/workspace-helper'
-    );
+    const { resolveGuestSelfJoinCandidate } =
+      await import('@tuturuuu/utils/workspace-helper');
     mocks.normalizeWorkspaceId.mockResolvedValueOnce('triple-sss');
 
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
 
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'triple-sss' }),
@@ -327,9 +323,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
   });
 
   it('joins as guest via RPC candidate when enabled', async () => {
-    const { resolveGuestSelfJoinCandidate } = await import(
-      '@tuturuuu/utils/workspace-helper'
-    );
+    const { resolveGuestSelfJoinCandidate } =
+      await import('@tuturuuu/utils/workspace-helper');
     vi.mocked(resolveGuestSelfJoinCandidate).mockResolvedValueOnce({
       allowGuestSelfJoin: true,
       candidateEmails: ['auth@example.com', 'private@example.com'],
@@ -339,9 +334,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       virtualUserId: 'virtual-user-1',
     });
 
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
 
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'ws-1' }),
@@ -384,9 +378,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       error: null,
     });
     mocks.hasPendingInvitationSeatCompensation.mockResolvedValueOnce(true);
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
 
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
@@ -397,9 +390,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
   });
 
   it('returns guest-match reason code when RPC says not eligible', async () => {
-    const { resolveGuestSelfJoinCandidate } = await import(
-      '@tuturuuu/utils/workspace-helper'
-    );
+    const { resolveGuestSelfJoinCandidate } =
+      await import('@tuturuuu/utils/workspace-helper');
     vi.mocked(resolveGuestSelfJoinCandidate).mockResolvedValueOnce({
       allowGuestSelfJoin: false,
       candidateEmails: ['auth@example.com', 'private@example.com'],
@@ -409,9 +401,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       virtualUserId: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
 
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'ws-1' }),
@@ -425,9 +416,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
   });
 
   it('returns linked-user reason code when RPC says candidate is linked elsewhere', async () => {
-    const { resolveGuestSelfJoinCandidate } = await import(
-      '@tuturuuu/utils/workspace-helper'
-    );
+    const { resolveGuestSelfJoinCandidate } =
+      await import('@tuturuuu/utils/workspace-helper');
     vi.mocked(resolveGuestSelfJoinCandidate).mockResolvedValueOnce({
       allowGuestSelfJoin: false,
       candidateEmails: ['auth@example.com', 'private@example.com'],
@@ -437,9 +427,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       virtualUserId: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
 
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'ws-1' }),
@@ -453,9 +442,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
   });
 
   it('accepts pending email invites through the server-owned lookup path', async () => {
-    const { resolveGuestSelfJoinCandidate } = await import(
-      '@tuturuuu/utils/workspace-helper'
-    );
+    const { resolveGuestSelfJoinCandidate } =
+      await import('@tuturuuu/utils/workspace-helper');
     mocks.sessionEmailInviteIn.mockResolvedValueOnce({
       data: null,
       error: { message: 'permission denied for table workspace_email_invites' },
@@ -471,9 +459,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
 
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
@@ -510,9 +497,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       new Error('notification write failed')
     );
 
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
     });
@@ -524,9 +510,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
   });
 
   it('finalizes stale invitations for an existing member', async () => {
-    const { verifyWorkspaceMembershipType } = await import(
-      '@tuturuuu/utils/workspace-helper'
-    );
+    const { verifyWorkspaceMembershipType } =
+      await import('@tuturuuu/utils/workspace-helper');
     vi.mocked(verifyWorkspaceMembershipType).mockResolvedValueOnce({
       membershipType: 'MEMBER',
       ok: true,
@@ -536,9 +521,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
     });
@@ -557,9 +541,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
     });
@@ -590,9 +573,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
     });
@@ -621,9 +603,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       error: { message: 'The invited workspace role is no longer available' },
     });
 
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'ws-1' }),
     });
@@ -636,9 +617,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
   });
 
   it('accepts fixture-style Postgres UUID invite paths without workspace normalization', async () => {
-    const { resolveGuestSelfJoinCandidate } = await import(
-      '@tuturuuu/utils/workspace-helper'
-    );
+    const { resolveGuestSelfJoinCandidate } =
+      await import('@tuturuuu/utils/workspace-helper');
     mocks.adminInviteMaybeSingle.mockResolvedValueOnce({
       data: {
         type: 'MEMBER',
@@ -647,9 +627,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
 
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: POSTGRES_FIXTURE_WS_ID }),
@@ -680,9 +659,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       error: {},
     });
 
-    const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/accept-invite/route'
-    );
+    const { POST } =
+      await import('@/app/api/workspaces/[wsId]/accept-invite/route');
 
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'ws-1' }),

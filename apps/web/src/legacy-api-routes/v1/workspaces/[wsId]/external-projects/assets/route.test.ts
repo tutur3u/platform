@@ -57,9 +57,8 @@ describe('external project asset creation route', () => {
       },
       totals: { all: 0, audio: 0, image: 0, other: 0 },
     });
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/route');
 
     const response = await GET(
       new Request(
@@ -88,9 +87,8 @@ describe('external project asset creation route', () => {
   });
 
   it('rejects unbounded media page sizes', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/route');
 
     const response = await GET(
       new Request(
@@ -104,9 +102,8 @@ describe('external project asset creation route', () => {
   });
 
   it('rejects asset creation that points outside external project storage', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/route');
 
     const response = await POST(
       new Request(
@@ -141,9 +138,8 @@ describe('external project asset creation route', () => {
       storage_path: 'external-projects/yoola/artworks/cover.png',
     });
 
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/route');
 
     const response = await POST(
       new Request(

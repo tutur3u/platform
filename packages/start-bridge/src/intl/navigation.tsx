@@ -26,7 +26,6 @@ export function createNavigation<const Locales extends readonly string[]>(
   function rememberLocale(locale: string | undefined, current: string) {
     if (mode !== 'never' || !locale || locale === current) return;
     if (typeof document !== 'undefined')
-      // biome-ignore lint/suspicious/noDocumentCookie: next-intl's 'never' mode switches locale through this cookie.
       document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000; samesite=lax`;
   }
 

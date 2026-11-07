@@ -25,7 +25,6 @@ export interface PageLocationOptions {
 const ORIGIN = 'http://bridge.invalid';
 // URL parsing strips tabs and newlines and treats `\` as `/` in special
 // schemes, which could turn `/\t/x` or `/\x` into a protocol-relative URL.
-// biome-ignore lint/suspicious/noControlCharactersInRegex: matching control characters is the point.
 const UNSAFE_HREF = /[\\\u0000-\u001f\u007f]/u;
 // Server-function request headers that must not reach a page navigation.
 const DROPPED_HEADERS = [

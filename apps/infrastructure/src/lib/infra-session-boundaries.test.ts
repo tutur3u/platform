@@ -64,41 +64,36 @@ beforeEach(() => {
 
 describe('SR-253 Infrastructure actor boundary', () => {
   it('requires the infra actor before checking AI-agent permissions', async () => {
-    const { requireAiAgentAdmin } = await import(
-      '@/app/api/v1/infrastructure/ai-agents/access'
-    );
+    const { requireAiAgentAdmin } =
+      await import('@/app/api/v1/infrastructure/ai-agents/access');
     const result = await requireAiAgentAdmin(req());
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.response.status).toBe(401);
     expect(mocks.admin).not.toHaveBeenCalled();
   });
   it('denies an unresolved infra actor at suspension reads', async () => {
-    const { GET } = await import(
-      '@/app/api/v1/infrastructure/suspensions/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/infrastructure/suspensions/route');
     expect((await GET(req(), {})).status).toBe(401);
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it('denies an unresolved infra actor at suspension writes', async () => {
-    const { POST } = await import(
-      '@/app/api/v1/infrastructure/suspensions/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/infrastructure/suspensions/route');
     expect((await POST(req(), {})).status).toBe(401);
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it('denies an unresolved infra actor at suspension removal', async () => {
-    const { DELETE } = await import(
-      '@/app/api/v1/infrastructure/suspensions/[id]/route'
-    );
+    const { DELETE } =
+      await import('@/app/api/v1/infrastructure/suspensions/[id]/route');
     expect((await DELETE(req(), { params: { id: 'suspension' } })).status).toBe(
       401
     );
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it('denies unresolved infra actors before fetching calendar metrics', async () => {
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/calendar-sync/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/settings/calendar-sync/route');
     expect(
       (await GET(req(), { params: Promise.resolve({ wsId: 'workspace' }) }))
         .status
@@ -107,9 +102,8 @@ describe('SR-253 Infrastructure actor boundary', () => {
     expect(mocks.logs).not.toHaveBeenCalled();
   });
   it('requires an administrative permission for STT', async () => {
-    const { POST } = await import(
-      '@/app/api/v1/infrastructure/ai/stt/modal/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/infrastructure/ai/stt/modal/route');
     expect((await POST(req())).status).toBe(403);
   });
 });

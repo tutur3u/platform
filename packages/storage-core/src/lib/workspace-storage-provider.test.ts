@@ -53,9 +53,8 @@ describe('workspace storage provider', () => {
       },
     });
 
-    const { deleteWorkspaceStorageFolderByPath } = await import(
-      './workspace-storage-provider'
-    );
+    const { deleteWorkspaceStorageFolderByPath } =
+      await import('./workspace-storage-provider');
 
     await expect(
       deleteWorkspaceStorageFolderByPath('ws-1', '', 'assets')
@@ -102,9 +101,8 @@ describe('workspace storage provider', () => {
       },
     });
 
-    const { deleteWorkspaceStorageFolderByPath } = await import(
-      './workspace-storage-provider'
-    );
+    const { deleteWorkspaceStorageFolderByPath } =
+      await import('./workspace-storage-provider');
 
     await expect(
       deleteWorkspaceStorageFolderByPath('ws-1', '', 'missing')
@@ -157,9 +155,8 @@ describe('workspace storage provider', () => {
       },
     });
 
-    const { createWorkspaceStorageUploadPayload } = await import(
-      './workspace-storage-provider'
-    );
+    const { createWorkspaceStorageUploadPayload } =
+      await import('./workspace-storage-provider');
 
     await expect(
       createWorkspaceStorageUploadPayload('ws-1', 'build.zip', {
@@ -217,9 +214,8 @@ describe('workspace storage provider', () => {
       },
     });
 
-    const { createWorkspaceStorageUploadPayload } = await import(
-      './workspace-storage-provider'
-    );
+    const { createWorkspaceStorageUploadPayload } =
+      await import('./workspace-storage-provider');
 
     await expect(
       createWorkspaceStorageUploadPayload('ws-1', 'empty.pdf', {
@@ -281,9 +277,8 @@ describe('workspace storage provider', () => {
       },
     });
 
-    const { listWorkspaceStorageRawObjectsForProvider } = await import(
-      './workspace-storage-provider'
-    );
+    const { listWorkspaceStorageRawObjectsForProvider } =
+      await import('./workspace-storage-provider');
 
     await expect(
       listWorkspaceStorageRawObjectsForProvider('ws-1', 'supabase', {
@@ -338,9 +333,8 @@ describe('workspace storage provider', () => {
   });
 
   it('blocks generic writes to the mobile deployment vault', async () => {
-    const { uploadWorkspaceStorageFileDirectToProvider } = await import(
-      './workspace-storage-provider'
-    );
+    const { uploadWorkspaceStorageFileDirectToProvider } =
+      await import('./workspace-storage-provider');
 
     await expect(
       uploadWorkspaceStorageFileDirectToProvider(
@@ -376,9 +370,8 @@ describe('workspace storage provider', () => {
       },
     });
 
-    const { uploadWorkspaceStorageFileDirectToProvider } = await import(
-      './workspace-storage-provider'
-    );
+    const { uploadWorkspaceStorageFileDirectToProvider } =
+      await import('./workspace-storage-provider');
 
     await expect(
       uploadWorkspaceStorageFileDirectToProvider(
@@ -442,9 +435,8 @@ describe('workspace storage provider', () => {
       },
     });
 
-    const { listWorkspaceStorageRawObjectsForProvider } = await import(
-      './workspace-storage-provider'
-    );
+    const { listWorkspaceStorageRawObjectsForProvider } =
+      await import('./workspace-storage-provider');
 
     await expect(
       listWorkspaceStorageRawObjectsForProvider(ROOT_WORKSPACE_ID, 'supabase')

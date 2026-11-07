@@ -157,11 +157,10 @@ describe('Mind chat file routes', () => {
       }
     );
     const context = createRouteContext();
-    const { POST } = (await import(
-      '@/app/api/ai/chat/upload-url/route'
-    )) as unknown as {
-      POST: ChatFileRoutePost;
-    };
+    const { POST } =
+      (await import('@/app/api/ai/chat/upload-url/route')) as unknown as {
+        POST: ChatFileRoutePost;
+      };
 
     const response = await POST(request, context);
 
@@ -208,11 +207,10 @@ describe('Mind chat file routes', () => {
       }
     );
     const context = createRouteContext();
-    const { POST } = (await import(
-      '@/app/api/ai/chat/delete-file/route'
-    )) as unknown as {
-      POST: ChatFileRoutePost;
-    };
+    const { POST } =
+      (await import('@/app/api/ai/chat/delete-file/route')) as unknown as {
+        POST: ChatFileRoutePost;
+      };
 
     const response = await POST(request, context);
 
@@ -233,9 +231,10 @@ describe('Mind chat file routes', () => {
       from: aiChatLookup('user-2'),
       storage: { from: vi.fn(() => ({ createSignedUploadUrl })) },
     });
-    const { POST } = (await import(
-      '@/app/api/ai/chat/upload-url/route'
-    )) as unknown as { POST: ChatFileRoutePost };
+    const { POST } =
+      (await import('@/app/api/ai/chat/upload-url/route')) as unknown as {
+        POST: ChatFileRoutePost;
+      };
 
     const response = await POST(
       new Request('https://web.tuturuuu.com/api/ai/chat/upload-url', {
@@ -258,9 +257,10 @@ describe('Mind chat file routes', () => {
       from: aiChatLookup(null),
       storage: { from: vi.fn(() => ({ createSignedUploadUrl })) },
     });
-    const { POST } = (await import(
-      '@/app/api/ai/chat/upload-url/route'
-    )) as unknown as { POST: ChatFileRoutePost };
+    const { POST } =
+      (await import('@/app/api/ai/chat/upload-url/route')) as unknown as {
+        POST: ChatFileRoutePost;
+      };
 
     const response = await POST(
       new Request('https://web.tuturuuu.com/api/ai/chat/upload-url', {
@@ -303,9 +303,10 @@ describe('Mind chat file routes', () => {
       from: aiChatLookup(creatorId),
       storage: { from: vi.fn(() => ({ remove })) },
     });
-    const { POST } = (await import(
-      '@/app/api/ai/chat/delete-file/route'
-    )) as unknown as { POST: ChatFileRoutePost };
+    const { POST } =
+      (await import('@/app/api/ai/chat/delete-file/route')) as unknown as {
+        POST: ChatFileRoutePost;
+      };
 
     const response = await POST(
       new Request('https://web.tuturuuu.com/api/ai/chat/delete-file', {
@@ -326,9 +327,10 @@ describe('Mind chat file routes', () => {
       from,
       storage: { from: vi.fn(() => ({ remove })) },
     });
-    const { POST } = (await import(
-      '@/app/api/ai/chat/delete-file/route'
-    )) as unknown as { POST: ChatFileRoutePost };
+    const { POST } =
+      (await import('@/app/api/ai/chat/delete-file/route')) as unknown as {
+        POST: ChatFileRoutePost;
+      };
 
     const response = await POST(
       new Request('https://web.tuturuuu.com/api/ai/chat/delete-file', {
@@ -391,11 +393,10 @@ describe('Mind chat file routes', () => {
       }
     );
     const context = createRouteContext();
-    const { POST } = (await import(
-      '@/app/api/ai/chat/file-urls/route'
-    )) as unknown as {
-      POST: ChatFileRoutePost;
-    };
+    const { POST } =
+      (await import('@/app/api/ai/chat/file-urls/route')) as unknown as {
+        POST: ChatFileRoutePost;
+      };
 
     const response = await POST(request, context);
 

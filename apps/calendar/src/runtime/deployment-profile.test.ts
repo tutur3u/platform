@@ -53,9 +53,8 @@ describe('Calendar deployment profile', () => {
   );
 
   it('accepts development only for the dev server, never a build', async () => {
-    const { resolveCalendarDeploymentProfile } = await import(
-      './deployment-profile'
-    );
+    const { resolveCalendarDeploymentProfile } =
+      await import('./deployment-profile');
     expect(resolveCalendarDeploymentProfile('development', 'serve')).toBe(
       'development'
     );

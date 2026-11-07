@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
@@ -44,6 +44,8 @@ const staffAuthUser = {
 
 const HTTP_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
+afterEach(() => vi.unstubAllEnvs());
+
 describe('playground API route contracts', () => {
   beforeEach(() => {
     for (const mock of Object.values(mocks)) mock.mockReset();
@@ -78,6 +80,21 @@ describe('playground API route contracts', () => {
   });
 
   it('build-info returns uncached JSON for the playground app', async () => {
+    const metadata = {
+      PLATFORM_BUILD_BUILT_AT: '2026-01-01T00:00:00Z',
+      PLATFORM_BUILD_COMMIT_HASH: 'a'.repeat(40),
+      PLATFORM_BUILD_COMMIT_MESSAGE: 'fixture build',
+      PLATFORM_BUILD_COMMIT_SHORT_HASH: 'a'.repeat(7),
+      PLATFORM_BUILD_DEPLOYMENT_STAMP: 'fixture-deployment',
+      PLATFORM_BUILD_DEPLOYMENT_URL: 'https://playground.example',
+      PLATFORM_BUILD_ENVIRONMENT: 'test',
+      PLATFORM_BUILD_REF_NAME: 'fixture-ref',
+    };
+    for (const [name, value] of Object.entries(metadata))
+      vi.stubEnv(name, value);
+    const privateValue = 'fixture-private-value-never-public';
+    vi.stubEnv('SUPABASE_SECRET_KEY', privateValue);
+    vi.stubEnv('PRIVATE_KEY', privateValue);
     const res = buildInfo.GET();
 
     expect(res.status).toBe(200);
@@ -88,6 +105,8 @@ describe('playground API route contracts', () => {
     const body = await res.json();
     expect(body).toEqual(expect.any(Object));
     expect(JSON.stringify(body)).not.toMatch(/SECRET|PRIVATE_KEY|TOKEN=/i);
+    expect(body.appName).toBe('playground');
+    expect(JSON.stringify(body)).not.toContain(privateValue);
   });
 
   it('object-generation takes no request input and runs a fixed server prompt for staff without memory', async () => {

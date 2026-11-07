@@ -81,5 +81,6 @@
   "packages/workflows": "0.0.2",
   "apps/lettin": "1.6.0",
   "apps/parley": "1.5.0",
-  "packages/meet-core": "1.4.2"
+  "packages/meet-core": "1.4.2",
+  "packages/cms-blocks": "0.0.0"
 }

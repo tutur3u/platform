@@ -13,8 +13,7 @@ export async function submitRealtimeLog([wsId, userId, kind, message, data]: [
     throw new Error('Unauthorized');
   const workspace = await getWorkspace(wsId, { user, useAdmin: true });
   if (!workspace?.joined) throw new Error('Forbidden');
-  const { addRealtimeLog } = await import(
-    '@tuturuuu/supabase/next/realtime-log-actions'
-  );
+  const { addRealtimeLog } =
+    await import('@tuturuuu/supabase/next/realtime-log-actions');
   await addRealtimeLog(workspace.id, user.id, kind, message, data);
 }
