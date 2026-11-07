@@ -546,6 +546,32 @@ grants. Replay installation and rollback as the non-superuser `postgres` role:
 Auth tables belong to `supabase_auth_admin`, so creating and dropping a trigger
 have different privilege requirements.
 
+## Password vault lifecycle isolation
+
+Vault lifecycle triggers capture metadata only. Do not put vault row locks, audit
+appends or cross-domain FK actions back on account/workspace erasure paths.
+Supported vault operations deny this workspace's own pending or terminal lifecycle
+work. They apply at most five of that workspace's due jobs first, and they never
+lock or apply another workspace's jobs, so a foreign backlog cannot block writes.
+The bounded service-only retry owns revocation, retirement, identity-link cleanup
+and audit in one subtransaction. It bulk-completes no-vault jobs, round-robins by
+workspace, retains completed jobs for 24 hours up to 500 rows, and returns
+`alert` with `pendingCap` 1000. Preserve SQLSTATE-only diagnostics, SKIP LOCKED job
+claims, NOWAIT vault locks, the five-attempt stop and replay/concurrency regressions.
+Item and byte caps count live rows only. Read-only operations do not take
+`FOR NO KEY UPDATE` on the workspace row. A caller/pump and the `alert` field are
+separate activation requirements; without a caller, terminal and failed jobs have
+no finite completion guarantee and that workspace stays denied. See the approved
+[feature contract and scoped rollback](../../../../../apps/docs/platform/features/passwords-vault.mdx#lifecycle-recovery-and-cleanup-sla).
+Never drop the shared private schema for a feature rollback. Use the guarded
+empty-feature fixture, and retain data and audit on an activated installation.
+
+Vault rollbacks are manual and reverse chronological. Preserve main's existing
+private schema, grants and Storage policies. Refuse retained data and lifecycle
+history; bucket removal additionally requires verified pre-migration absence
+because ON CONFLICT can adopt a bucket. The executable SQL roundtrip and
+retained-data controls live under apps/database/verification/password-vault-rollback-*.sql.
+
 ### Atomic Assistant first-message creation
 
 The native first-message RPC binds a client UUID and request key to an immutable
