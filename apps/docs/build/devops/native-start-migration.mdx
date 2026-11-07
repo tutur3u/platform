@@ -159,3 +159,29 @@ the gates above pass. There are no staged canaries or traffic percentages.
 Rolling back an app restores the captured routing to the immutable prior
 deployment in one step. Never delete the prior deployment or its routing record until the native
 runtime has served all traffic through a full release cycle.
+
+
+## Production-based roadmap bridge candidate
+
+The optional web bridge is a production-based hotfix candidate, separate from
+main and from the direct Cloudflare route. It intercepts only `/roadmap` and
+`/roadmap/*` before locale and session handling. `ROADMAP_ORIGIN` is a public,
+build-time HTTPS workers.dev origin; an empty or invalid value returns 503.
+GET and HEAD are admitted; other methods return 405. The bare mount redirects
+to `/roadmap/` with its query intact.
+
+Outbound requests carry only bounded Accept and Accept-Language values. They
+carry no session cookies, Authorization or forwarded identity. Redirects are
+manual and remain within the fixed origin and roadmap mount. Responses use a
+header allowlist, exclude Set-Cookie and upstream cache directives, and emit
+`Cache-Control: private, no-store`. Each request has an eight-second deadline,
+an eight-MiB decoded-body limit and no retry or route fallback. Regression
+coverage lives in `apps/web/src/lib/roadmap-bridge.test.mjs`.
+
+Deployment requires the actual deployed web commit, a smoked roadmap Worker
+origin/version, an exact-hotfix hosted build and staging acceptance, independent
+security acceptance, and a captured eligible prior production deployment. A
+production Git ref alone proves neither deployed identity nor rollback. The
+release owner stages and verifies the hotfix before promotion and restores the
+captured previous deployment on regression. A raw external beforeFiles rewrite
+does not enforce these credential and response-header boundaries.

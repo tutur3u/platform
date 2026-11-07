@@ -86,6 +86,7 @@ const dockerNextBuildCpus = parsePositiveIntegerEnv(
   isDockerStandaloneBuild && !isNativeDockerStandaloneBuild ? 4 : undefined
 );
 const nextConfig = createTuturuuuNextConfig({
+  env: { ROADMAP_ORIGIN: process.env.ROADMAP_ORIGIN ?? '' },
   seoApp: 'web',
   framablePathPatterns: nativeIntegrityFramablePaths,
   seoPublicPathPatterns: [
