@@ -8,6 +8,7 @@ import {
   isSnapshotStale,
   type RoadmapFilter,
   stageCounts,
+  rowSummaryKey,
   snapshot,
 } from '../roadmap-data';
 
@@ -154,7 +155,7 @@ function RoadmapPage() {
                 {app.blocked ? (
                   <span className="badge blocked">{t.blocked}</span>
                 ) : null}
-                <p>{t.summaries[app.stage]}</p>
+                <p>{t.summaries[rowSummaryKey(app)]}</p>
                 {!app.stageEvidence.pr ? <p>{t.missingEvidence}</p> : null}
                 <details>
                   <summary>{t.evidence}</summary>

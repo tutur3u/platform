@@ -36,7 +36,8 @@
     "rolling_out": "Đã ghi nhận mã nguồn hoặc PR chuyển đổi hiện tại; chưa xác minh hoàn tất.",
     "waiting_for_merge": "Phiên bản PR hiện tại đã được duyệt và mọi kiểm tra bắt buộc đã ghi nhận đều thành công.",
     "waiting_for_production_sync": "PR chuyển đổi đã hợp nhất vào mã nguồn này; chưa xác minh phục vụ trên production.",
-    "live": "Kết quả đọc và kiểm tra production công khai khớp mã nguồn chuyển đổi đã hợp nhất."
+    "live": "Kết quả đọc và kiểm tra production công khai khớp mã nguồn chuyển đổi đã hợp nhất.",
+    "pendingPublicProductionReceipt": "Chờ bằng chứng production công khai"
   },
   "target": "TanStack Start · Vite+ · Void · Cloudflare Workers",
   "title": "Hành trình rõ ràng lên Cloudflare.",
