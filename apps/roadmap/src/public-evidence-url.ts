@@ -6,7 +6,12 @@ export function encodePathSegment(segment: string): string {
 }
 export function publicEvidenceUrl(
   value: string,
-  host: 'github.com' | 'tuturuuu.com'
+  host:
+    | 'github.com'
+    | 'api.github.com'
+    | 'tuturuuu.com'
+    | 'roadmap.tuturuuu.com'
+    | 'tuturuuu-roadmap.tuturuuu-e89.workers.dev'
 ): URL {
   const url = new URL(value);
   if (
