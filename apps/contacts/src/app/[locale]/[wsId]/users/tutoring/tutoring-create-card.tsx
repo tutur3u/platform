@@ -50,6 +50,8 @@ interface Props {
   groupTags?: ReadonlyMap<string, readonly string[]>;
   isSubmitting: boolean;
   students: WorkspaceBasicUserRecord[];
+  /** `tutoring_student_picker_group_only`; default OFF lists every user. */
+  studentPickerGroupOnly?: boolean;
   onChange: (next: TutoringFormValues) => void;
   onSubmit: () => void;
   policy: TutoringPolicy;
@@ -62,6 +64,7 @@ export function TutoringCreateCard({
   groupTags,
   isSubmitting,
   students,
+  studentPickerGroupOnly = false,
   onChange,
   onSubmit,
   policy,
@@ -258,9 +261,16 @@ export function TutoringCreateCard({
             emptyText={t('no_groups')}
             onChange={(value) => {
               const nextGroupId = value as string;
+              // With the picker scoped to one group, a learner picked for the
+              // previous group may not belong to the new one.
+              const clearStudent =
+                studentPickerGroupOnly && nextGroupId !== form.groupId;
 
               onChange({
                 ...form,
+                ...(clearStudent
+                  ? { studentLabel: undefined, studentUserId: '' }
+                  : {}),
                 groupId: nextGroupId,
                 missedClassDate: '',
                 missedClassDates: undefined,
@@ -280,6 +290,9 @@ export function TutoringCreateCard({
           <WorkspacePersonPicker
             emptyText={t('no_students')}
             extraOptions={studentExtraOptions}
+            groupId={
+              studentPickerGroupOnly && form.groupId ? form.groupId : undefined
+            }
             onChange={(value, option) =>
               onChange({
                 ...form,

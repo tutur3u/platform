@@ -126,5 +126,14 @@
     "class": "ui",
     "default": false,
     "removeBy": "2027-01-31"
+  },
+  {
+    "key": "tutoring_student_picker_group_only",
+    "description": "Workspace-scoped: the tutoring student picker lists only members of the selected group. Kill switch: set workspace_configs tutoring_student_picker_group_only to false or remove it.",
+    "owner": "pax",
+    "scope": "workspace",
+    "class": "ui",
+    "default": false,
+    "removeBy": "2027-01-31"
   }
 ]

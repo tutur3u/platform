@@ -7,6 +7,8 @@ export interface FlagDefinition<Key extends string = string> {
   readonly key: Key;
   readonly description: string;
   readonly owner: string;
+  /** Workspace entries are inventory-only in the v0 mobile endpoint. */
+  readonly scope?: 'workspace';
   readonly class: FlagClass;
   readonly default: boolean;
   readonly removeBy: string;
