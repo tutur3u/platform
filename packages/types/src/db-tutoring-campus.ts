@@ -1,4 +1,4 @@
-import type { Database } from './supabase';
+import type { Database, Tables } from './supabase';
 
 /** Additive campus contract; retain until full-schema regeneration is admitted. */
 export type TutoringSessionCampusRow = Omit<
@@ -23,3 +23,11 @@ export type TutoringSessionCampusPreview = Pick<
   | 'teacher_user_id'
   | 'campus_override'
 >;
+
+export type WorkspaceTutoringSession = Tables<
+  { schema: 'private' },
+  'workspace_tutoring_sessions'
+> & {
+  attendance_status: 'PENDING' | 'DONE' | 'NO_SHOW' | 'CANCELLED';
+  reason_type: 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'CUSTOM';
+};
