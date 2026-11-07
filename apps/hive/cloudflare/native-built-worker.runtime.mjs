@@ -24,9 +24,9 @@ const require = createRequire(join(app, 'package.json'));
 const WORKER = "tuturuuu-hive";
 const PUBLIC_FILES = ["assets/hive/hive-voxel-asset-sheet.png", "hive-landing-reference.png", "robots.txt"];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
-const EXPECTED = {"/":200};
+const EXPECTED = {"/":{"redirect":"/login"}};
 // Response-policy probes (start-bridge.routes.json `runtimeProbes`).
-const POLICY_PROBES = [{"kind":"page","path":"/"},{"kind":"api","path":"/api/build-info"},{"kind":"notFound","path":"/__native-smoke-missing__"}];
+const POLICY_PROBES = [{"kind":"page","path":"/login"},{"kind":"api","path":"/api/build-info"},{"kind":"notFound","path":"/__native-smoke-missing__"}];
 // The Worker's mounts: the generated defaults plus the app-owned
 // start-bridge.config.ts overrides, exactly as cloudflare/worker.ts spreads
 // them (loaded with Node's type stripping).
@@ -36,7 +36,7 @@ const { default: appConfig } = await import(
 );
 const MOUNTS = { ...DEFAULT_MOUNTS, ...appConfig.mounts };
 // The Worker settings the codemod emitted from start-bridge.config.ts `worker`.
-const WORKER_CONFIG = {"workersDev":true,"compatibilityFlags":["nodejs_compat","global_fetch_strictly_public"]};
+const WORKER_CONFIG = {"workersDev":false,"compatibilityFlags":["nodejs_compat","global_fetch_strictly_public"]};
 const APEX = 'tuturuuu.com';
 const MOUNTED = (MOUNTS.mountHosts ?? []).some((host) => host.toLowerCase() === APEX);
 const BASE = (MOUNTS.basePath ?? "/hive").replace(/\/+$/u, '');
@@ -89,7 +89,7 @@ test('emitted hive Worker serves its root, mount and unknown paths', {
   );
   assert.deepEqual(config.compatibility_flags, WORKER_CONFIG.compatibilityFlags);
   assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
-  assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
+  assert.equal(config.preview_urls, false);
   for (const name of PUBLIC_FILES)
     assert.equal(
       await sha256(join(app, 'dist/client', name)),
@@ -105,6 +105,8 @@ test('emitted hive Worker serves its root, mount and unknown paths', {
     envFiles: [staged.envFile],
     sendMetrics: false,
     bindings: {
+      TUTURUUU_APP_COORDINATION_SECRET: { type: 'plain_text', value: 'synthetic-coordination-secret-for-ci-only' },
+      SUPABASE_SECRET_KEY: { type: 'plain_text', value: 'synthetic-supabase-secret-for-ci-only' },
       INTERNAL_WEB_API_ORIGIN: { type: 'plain_text', value: 'https://central.invalid' },
     },
     build: { bundle: false, processEntrypoint: false },
