@@ -12,7 +12,7 @@ button, input, summary, a { -webkit-tap-highlight-color: transparent; }
 .brand-mark { display: grid; place-items: center; width: 30px; height: 30px; background: var(--ink); color: var(--paper); border-radius: 9px; font-size: 24px; }
 nav, .language-switch { display: flex; align-items: center; gap: 24px; }
 nav > a { font-size: 13px; }
-.language-switch { gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 7px; }
+.language-switch { min-inline-size: 0; margin: 0; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 7px; }
 .language-switch button { border: 0; padding: 6px 8px; border-radius: 4px; background: transparent; color: var(--muted); font-size: 11px; }
 .language-switch [aria-pressed=true] { background: var(--ink); color: var(--paper); }
 .hero { max-width: 800px; padding: 76px 0 40px; }
@@ -32,7 +32,7 @@ h1 { max-width: 700px; margin: 24px 0 20px; font-size: clamp(38px, 5.4vw, 68px);
 .status-dot { display: inline-block; height: 6px; width: 6px; background: currentColor; border-radius: 50%; flex: 0 0 auto; }
 .active { color: #127568; }.blocked { color: #8c5c13; }.planned { color: #64747b; }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.filters { display: flex; flex-wrap: wrap; gap: 4px; }
+.filters { min-inline-size: 0; margin: 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: 4px; }
 .filters button { background: transparent; border: 0; color: var(--muted); border-radius: 6px; padding: 9px 12px; font-size: 12px; }
 .filters button[aria-pressed=true] { color: var(--ink); background: var(--soft); font-weight: 650; }
 .search input { width: 200px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); padding: 10px 12px; font-size: 12px; }
