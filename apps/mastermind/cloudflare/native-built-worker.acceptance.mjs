@@ -65,7 +65,7 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
     createHmac('sha256', secret).update(content).digest('base64url');
   const plain = (value) => ({ type: 'plain_text', value });
   const require = createRequire(join(app, 'package.json'));
-  const worker = await require('wrangler').unstable_startWorker({
+  const workerOptions = {
     config: join(scratch, relative(app, configPath)),
     envFiles: [envFile],
     sendMetrics: false,
@@ -106,9 +106,26 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
         throw new Error('Application data reads forbidden');
       },
     },
-  });
+  };
+  const worker = await require('wrangler').unstable_startWorker(workerOptions);
   t.after(() => worker.dispose());
   await worker.ready;
+  const { TUTURUUU_APP_COORDINATION_SECRET: _secret, ...missingSecretBindings } =
+    workerOptions.bindings;
+  const misconfigured = await require('wrangler').unstable_startWorker({
+    ...workerOptions,
+    bindings: missingSecretBindings,
+  });
+  t.after(() => misconfigured.dispose());
+  await misconfigured.ready;
+  const unavailable = await misconfigured.fetch('https://mastermind.tuturuuu.com/');
+  assert.equal(unavailable.status, 503);
+  assert.equal(await unavailable.text(), 'Service unavailable');
+  const anonymousRoot = await worker.fetch('https://mastermind.tuturuuu.com/', {
+    redirect: 'manual',
+  });
+  assert.equal(anonymousRoot.status, 303);
+  assert.equal(anonymousRoot.headers.get('Location'), '/login');
   const headers = {
     'Cf-Access-Jwt-Assertion': access,
     Authorization: `Bearer ${session}`,
