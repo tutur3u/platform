@@ -6,6 +6,7 @@ import {
   ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
   updateWorkspaceConfig,
 } from '@tuturuuu/internal-api/workspace-configs';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -67,13 +68,10 @@ export function GuestSelfJoinSetting({
   });
 
   const inner = (
-    <div className="flex flex-row items-center justify-between gap-4 rounded-lg border p-4">
-      <div className="space-y-1">
-        <p className="font-medium text-base">{t('guest_self_join_label')}</p>
-        <p className="text-muted-foreground text-sm">
-          {t('guest_self_join_description')}
-        </p>
-      </div>
+    <SettingItemTab
+      description={t('guest_self_join_description')}
+      title={t('guest_self_join_label')}
+    >
       {isLoading ? (
         <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
       ) : (
@@ -83,7 +81,7 @@ export function GuestSelfJoinSetting({
           onCheckedChange={(nextChecked) => updateMutation.mutate(nextChecked)}
         />
       )}
-    </div>
+    </SettingItemTab>
   );
 
   if (embedded) return inner;
