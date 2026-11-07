@@ -1,3 +1,5 @@
+vi.mock('./chunk-consent', () => ({ requireChunkConsent: async () => {} }));
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { encodeMeetWav } from '../audio';
 
