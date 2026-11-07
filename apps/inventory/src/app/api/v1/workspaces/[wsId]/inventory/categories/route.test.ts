@@ -126,9 +126,8 @@ describe('inventory categories API route', () => {
       },
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/categories/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/categories/route');
     const response = await GET(
       new Request(
         'https://app.example.com/api?response=paginated&pageSize=100'
@@ -165,9 +164,8 @@ describe('inventory categories API route', () => {
       },
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/categories/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/categories/route');
     const response = await POST(
       new Request('https://app.example.com/api', {
         body: JSON.stringify({ name: 'Education' }),
@@ -196,9 +194,8 @@ describe('inventory categories API route', () => {
       },
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/categories/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/categories/route');
     const response = await POST(
       new Request('https://app.example.com/api', {
         body: JSON.stringify({ name: 'Education' }),
@@ -227,9 +224,8 @@ describe('inventory categories API route', () => {
       },
     });
 
-    const { DELETE } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/categories/[categoryId]/route'
-    );
+    const { DELETE } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/categories/[categoryId]/route');
     const response = await DELETE(new Request('https://app.example.com/api'), {
       params: Promise.resolve({
         categoryId: 'category-1',

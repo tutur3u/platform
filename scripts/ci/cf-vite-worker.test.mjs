@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: disposable harness environment fixtures.
 import assert from 'node:assert/strict';
 import {
   existsSync,

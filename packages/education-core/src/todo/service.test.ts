@@ -32,7 +32,6 @@ function dbMock(
         calls.push({ table, method, args });
         return query;
       };
-    // biome-ignore lint/suspicious/noThenProperty: PostgREST query builders are intentional thenables.
     query.then = (resolve: (value: unknown) => unknown) =>
       Promise.resolve({ error: null, ...result }).then(resolve);
     return query;

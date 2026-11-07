@@ -62,7 +62,6 @@ export function FacebookMockupImageUploadField({
       >
         {imageUrl ? (
           <div className="w-full overflow-hidden rounded-xl border border-border bg-background">
-            {/* biome-ignore lint/performance/noImgElement: object URLs are rendered directly in the preview tool */}
             <img
               src={imageUrl}
               alt={previewAlt}

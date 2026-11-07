@@ -97,9 +97,8 @@ describe('whiteboard pages', () => {
       })),
     });
 
-    const { default: WhiteboardPage } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/whiteboards/[boardId]/page'
-    );
+    const { default: WhiteboardPage } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/whiteboards/[boardId]/page');
     const element = await WhiteboardPage({
       params: Promise.resolve({
         wsId: 'personal',

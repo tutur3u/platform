@@ -109,109 +109,113 @@ test('fixture PID admission rejects empty, zero, noninteger and unrelated record
 for (const runner of ['probe', 'command'])
   for (const mode of ['timeout', 'interruption', 'output-limit']) {
     if (runner === 'command' && mode === 'interruption') continue;
-    test(`${runner} settles on ${mode} despite an escaped descendant retaining both pipes`, {
-      timeout: 5000,
-      concurrency: false,
-    }, async (t) => {
-      const { base, context } = await fixture(t);
-      const helper = path.join(base, 'probe.mjs');
-      const marker = path.join(base, 'escaped-pid');
-      const token = randomUUID();
-      const readPid = () =>
-        existsSync(marker)
-          ? fixturePid(readFileSync(marker, 'utf8'), token)
-          : undefined;
-      // Synthetic Node only: escaped process has its own group and retains pipes.
-      // The test owns and kills it explicitly; proposal does not claim to kill escapees.
-      await writeFile(
-        helper,
-        `import {spawn} from 'node:child_process';import {writeFileSync,renameSync} from 'node:fs';process.on('SIGTERM',()=>{});const child=spawn(process.execPath,['-e','setTimeout(()=>process.exit(0),6000)'],{detached:true,stdio:['ignore',1,2]});child.once('spawn',()=>{writeFileSync(process.argv[2]+'.tmp',JSON.stringify({pid:child.pid,token:${jsLiteral(token)}}));renameSync(process.argv[2]+'.tmp',process.argv[2]);${mode === 'output-limit' ? "process.stderr.write('x'.repeat(256));" : ''}setInterval(()=>{},1000);});`
-      );
-      const signals = new EventEmitter();
-      const signalSource = runner === 'command' ? process : signals;
-      const events = ['SIGINT', 'SIGTERM'];
-      const baseline = new Map(
-        events.map((event) => [event, signalSource.rawListeners(event)])
-      );
-      const ownedHandlers = new Map();
-      let interrupt;
-      let safety;
-      try {
-        const started = performance.now();
-        const pending =
-          runner === 'command'
-            ? runHostedCommand(process.execPath, [helper, marker], {
-                context,
-                timeout: mode === 'timeout' ? 500 : 2000,
-                maxBuffer: 128,
-              })
-            : runCliProbe(process.execPath, [helper, marker], {
-                ...context,
-                phase: 'cli-version',
-                timeoutMs: mode === 'timeout' ? 500 : 2000,
-                maxOutputBytes: 128,
-                signalSource: signals,
-              });
-        for (const event of events) {
-          ownedHandlers.set(
-            event,
-            signalSource
-              .rawListeners(event)
-              .filter((handler) => !baseline.get(event).includes(handler))
-          );
-        }
-        if (mode === 'interruption')
-          interrupt = setInterval(() => {
-            if (readPid()) signals.emit('SIGTERM');
-          }, 10);
-        await assert.rejects(
-          Promise.race([
-            pending,
-            new Promise((_, reject) => {
-              safety = setTimeout(
-                () => reject(new Error('probe did not settle')),
-                3000
-              );
-            }),
-          ]),
-          (error) =>
-            error.outcome === (mode === 'interruption' ? 'interrupted' : mode)
+    test(
+      `${runner} settles on ${mode} despite an escaped descendant retaining both pipes`,
+      {
+        timeout: 5000,
+        concurrency: false,
+      },
+      async (t) => {
+        const { base, context } = await fixture(t);
+        const helper = path.join(base, 'probe.mjs');
+        const marker = path.join(base, 'escaped-pid');
+        const token = randomUUID();
+        const readPid = () =>
+          existsSync(marker)
+            ? fixturePid(readFileSync(marker, 'utf8'), token)
+            : undefined;
+        // Synthetic Node only: escaped process has its own group and retains pipes.
+        // The test owns and kills it explicitly; proposal does not claim to kill escapees.
+        await writeFile(
+          helper,
+          `import {spawn} from 'node:child_process';import {writeFileSync,renameSync} from 'node:fs';process.on('SIGTERM',()=>{});const child=spawn(process.execPath,['-e','setTimeout(()=>process.exit(0),6000)'],{detached:true,stdio:['ignore',1,2]});child.once('spawn',()=>{writeFileSync(process.argv[2]+'.tmp',JSON.stringify({pid:child.pid,token:${jsLiteral(token)}}));renameSync(process.argv[2]+'.tmp',process.argv[2]);${mode === 'output-limit' ? "process.stderr.write('x'.repeat(256));" : ''}setInterval(()=>{},1000);});`
         );
-        assert(
-          performance.now() - started < (mode === 'timeout' ? 1500 : 3000),
-          'probe exceeded bounded settlement'
+        const signals = new EventEmitter();
+        const signalSource = runner === 'command' ? process : signals;
+        const events = ['SIGINT', 'SIGTERM'];
+        const baseline = new Map(
+          events.map((event) => [event, signalSource.rawListeners(event)])
         );
-        assert(existsSync(marker), 'escaped fixture did not start');
-        const pid = readPid();
-        assert(pid, 'owned PID record missing');
-        process.kill(pid, 0);
-        for (const event of events) {
-          assert.equal(
-            ownedHandlers.get(event).length,
-            1,
-            'actual emitter did not register the owned interrupt handler'
+        const ownedHandlers = new Map();
+        let interrupt;
+        let safety;
+        try {
+          const started = performance.now();
+          const pending =
+            runner === 'command'
+              ? runHostedCommand(process.execPath, [helper, marker], {
+                  context,
+                  timeout: mode === 'timeout' ? 500 : 2000,
+                  maxBuffer: 128,
+                })
+              : runCliProbe(process.execPath, [helper, marker], {
+                  ...context,
+                  phase: 'cli-version',
+                  timeoutMs: mode === 'timeout' ? 500 : 2000,
+                  maxOutputBytes: 128,
+                  signalSource: signals,
+                });
+          for (const event of events) {
+            ownedHandlers.set(
+              event,
+              signalSource
+                .rawListeners(event)
+                .filter((handler) => !baseline.get(event).includes(handler))
+            );
+          }
+          if (mode === 'interruption')
+            interrupt = setInterval(() => {
+              if (readPid()) signals.emit('SIGTERM');
+            }, 10);
+          await assert.rejects(
+            Promise.race([
+              pending,
+              new Promise((_, reject) => {
+                safety = setTimeout(
+                  () => reject(new Error('probe did not settle')),
+                  3000
+                );
+              }),
+            ]),
+            (error) =>
+              error.outcome === (mode === 'interruption' ? 'interrupted' : mode)
           );
-          assert.deepEqual(
-            signalSource.rawListeners(event),
-            baseline.get(event),
-            'actual emitter retained an owned interrupt handler'
+          assert(
+            performance.now() - started < (mode === 'timeout' ? 1500 : 3000),
+            'probe exceeded bounded settlement'
           );
-        }
-      } finally {
-        clearInterval(interrupt);
-        clearTimeout(safety);
-        // Restore only handlers introduced by this invocation; preserve pre-existing listeners.
-        for (const [event, handlers] of ownedHandlers) {
-          for (const handler of handlers) signalSource.off(event, handler);
-        }
-        const pid = readPid();
-        if (pid) {
-          try {
-            process.kill(-pid, 'SIGKILL');
-          } catch (error) {
-            assert.equal(error.code, 'ESRCH');
+          assert(existsSync(marker), 'escaped fixture did not start');
+          const pid = readPid();
+          assert(pid, 'owned PID record missing');
+          process.kill(pid, 0);
+          for (const event of events) {
+            assert.equal(
+              ownedHandlers.get(event).length,
+              1,
+              'actual emitter did not register the owned interrupt handler'
+            );
+            assert.deepEqual(
+              signalSource.rawListeners(event),
+              baseline.get(event),
+              'actual emitter retained an owned interrupt handler'
+            );
+          }
+        } finally {
+          clearInterval(interrupt);
+          clearTimeout(safety);
+          // Restore only handlers introduced by this invocation; preserve pre-existing listeners.
+          for (const [event, handlers] of ownedHandlers) {
+            for (const handler of handlers) signalSource.off(event, handler);
+          }
+          const pid = readPid();
+          if (pid) {
+            try {
+              process.kill(-pid, 'SIGKILL');
+            } catch (error) {
+              assert.equal(error.code, 'ESRCH');
+            }
           }
         }
       }
-    });
+    );
   }

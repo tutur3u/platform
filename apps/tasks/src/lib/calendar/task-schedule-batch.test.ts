@@ -68,7 +68,6 @@ function fixture(overrides: Record<string, unknown> = {}) {
           return typeof value === 'function' ? value(rangeFrom) : value;
         };
         b.maybeSingle = () => Promise.resolve(result());
-        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
         b.then = (
           resolve: (value: unknown) => unknown,
           reject: (error: unknown) => unknown

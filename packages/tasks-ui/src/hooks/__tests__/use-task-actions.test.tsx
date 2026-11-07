@@ -204,18 +204,14 @@ describe('useTaskActions', () => {
     (createClient as any).mockReturnValue(mockSupabase);
 
     const { useUpdateTask } = await import('@tuturuuu/utils/task-helper');
-    const { updateWorkspaceTask } = await import(
-      '@tuturuuu/internal-api/tasks'
-    );
-    const { listWorkspaceTaskLists } = await import(
-      '@tuturuuu/internal-api/tasks'
-    );
-    const { upsertCurrentUserTaskPersonalPlacement } = await import(
-      '@tuturuuu/internal-api/tasks'
-    );
-    const { resolveTaskProjectWorkspaceId } = await import(
-      '@tuturuuu/internal-api/tasks'
-    );
+    const { updateWorkspaceTask } =
+      await import('@tuturuuu/internal-api/tasks');
+    const { listWorkspaceTaskLists } =
+      await import('@tuturuuu/internal-api/tasks');
+    const { upsertCurrentUserTaskPersonalPlacement } =
+      await import('@tuturuuu/internal-api/tasks');
+    const { resolveTaskProjectWorkspaceId } =
+      await import('@tuturuuu/internal-api/tasks');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

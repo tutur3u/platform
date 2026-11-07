@@ -37,8 +37,7 @@ export interface MeetAvailabilityIdentity {
   guestSession?: string;
 }
 
-export interface ReplaceMeetAvailabilityPayload
-  extends MeetAvailabilityIdentity {
+export interface ReplaceMeetAvailabilityPayload extends MeetAvailabilityIdentity {
   timeblocks: Array<
     Pick<Timeblock, 'date' | 'start_time' | 'end_time' | 'tentative'>
   >;

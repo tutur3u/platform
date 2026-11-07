@@ -46,7 +46,6 @@ function createQueryMock(
     range: vi.fn(),
     select: vi.fn(),
     single: vi.fn(),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     then: vi.fn(),
     update: vi.fn(),
   };

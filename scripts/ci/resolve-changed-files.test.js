@@ -51,7 +51,7 @@ test('changed-file resolver unions batched push commits before workflow gating',
     eventPath,
     headSha,
     rootDir,
-    workflowName: 'biome-check.yaml',
+    workflowName: 'oxc-check.yaml',
   });
 
   assert.match(resolver.output, /Changed-file source: push-compare/);
@@ -374,7 +374,7 @@ test('changed-file resolver does not fall back to latest commit only when push r
     eventPath,
     headSha,
     rootDir,
-    workflowName: 'biome-check.yaml',
+    workflowName: 'oxc-check.yaml',
   });
 
   assert.equal(resolver.changedFiles, null);

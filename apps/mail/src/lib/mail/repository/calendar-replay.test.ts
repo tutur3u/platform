@@ -124,7 +124,6 @@ beforeEach(() => {
           error: null,
         };
       },
-      // biome-ignore lint/suspicious/noThenProperty: Supabase updates are intentionally awaitable.
       then(resolve: (value: unknown) => void) {
         const draft = drafts.get(conditions.id as string);
         if (draft && patch)

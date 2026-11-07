@@ -74,7 +74,6 @@ function database(linked = true) {
           : (selected()[0] ?? null),
       error: null,
     });
-    // biome-ignore lint/suspicious/noThenProperty: actual awaited PostgREST builder contract.
     builder.then = (resolve: (value: unknown) => unknown) =>
       Promise.resolve({ data: selected(), error: null }).then(resolve);
     return builder;

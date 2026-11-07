@@ -30,7 +30,6 @@ export default forwardRef<HTMLImageElement, Props>(function BridgeImage(
   const image =
     typeof src === 'string' ? null : 'default' in src ? src.default : src;
   return (
-    // biome-ignore lint/performance/noImgElement: Native Start serves original image URLs without the Next optimizer.
     <img
       {...props}
       alt={alt}

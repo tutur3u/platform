@@ -17,7 +17,6 @@ h3,
 h4,
 h5,
 h6 {
-  /* biome-ignore lint/complexity/noImportantStyles: overrides Mintlify theme utility classes */
   font-family: var(--docs-font-family) !important;
 }
 
@@ -27,6 +26,5 @@ h3,
 h4,
 h5,
 h6 {
-  /* biome-ignore lint/complexity/noImportantStyles: overrides Mintlify theme utility classes */
   color: rgb(var(--docs-heading-color)) !important;
 }

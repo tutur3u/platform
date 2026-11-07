@@ -30,7 +30,6 @@ it('keeps board-only search results while enforcing both parent visibility paths
       return builder;
     };
   }
-  // biome-ignore lint/suspicious/noThenProperty: Supabase queries are awaitable.
   builder.then = (resolve: (result: unknown) => unknown) =>
     Promise.resolve({ data, count: 1, error: null }).then(resolve);
   const ctx = {
@@ -143,7 +142,6 @@ it.each(['detail', 'search'])(
       };
     }
     builder.maybeSingle = () => Promise.resolve({ data: null, error: null });
-    // biome-ignore lint/suspicious/noThenProperty: Supabase queries are awaitable.
     builder.then = (resolve: (value: unknown) => unknown) =>
       Promise.resolve({ data: [], count: 0, error: null }).then(resolve);
     const ctx = {

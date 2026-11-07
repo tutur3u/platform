@@ -433,10 +433,10 @@ async function getTutoringData(request: Request, { params }: Params) {
     );
     const feedbackWeak = Boolean(
       feedback &&
-        !weakExcluded &&
-        !scheduledFeedbackIds.has(feedback.id) &&
-        (completedDay === undefined ||
-          todayNumber - completedDay >= reassessmentDays)
+      !weakExcluded &&
+      !scheduledFeedbackIds.has(feedback.id) &&
+      (completedDay === undefined ||
+        todayNumber - completedDay >= reassessmentDays)
     );
     // A support-group learner needs weak support until a session is pending,
     // and again once the reassessment interval after a completed one passes.

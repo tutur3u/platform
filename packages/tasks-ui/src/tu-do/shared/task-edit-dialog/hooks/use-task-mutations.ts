@@ -85,8 +85,8 @@ function hasPersonalExternalVisibleContext({
 }) {
   return Boolean(
     visibleBoardId &&
-      visibleBoardId !== boardId &&
-      isPersonalExternalOverlayTask(visibleTaskSnapshot as Task | undefined)
+    visibleBoardId !== boardId &&
+    isPersonalExternalOverlayTask(visibleTaskSnapshot as Task | undefined)
   );
 }
 

@@ -345,9 +345,9 @@ export function MeetSuggestionsPanel({
                   );
                   return Boolean(
                     selectedCandidate &&
-                      selectedCandidate.date === candidate.date &&
-                      selectedCandidate.startMinute < candidate.endMinute &&
-                      candidate.startMinute < selectedCandidate.endMinute
+                    selectedCandidate.date === candidate.date &&
+                    selectedCandidate.startMinute < candidate.endMinute &&
+                    candidate.startMinute < selectedCandidate.endMinute
                   );
                 });
                 if (overlaps) {

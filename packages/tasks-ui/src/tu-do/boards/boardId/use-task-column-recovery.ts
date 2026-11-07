@@ -38,12 +38,12 @@ export function useTaskColumnRecovery({
       enabled &&
       Boolean(
         listState &&
-          !listState.isLoading &&
-          !listState.isInitialLoad &&
-          ((taskCount === 0 &&
-            listState.totalCount > 0 &&
-            listState.firstPageTaskCount === undefined) ||
-            taskCount < expectedCount)
+        !listState.isLoading &&
+        !listState.isInitialLoad &&
+        ((taskCount === 0 &&
+          listState.totalCount > 0 &&
+          listState.firstPageTaskCount === undefined) ||
+          taskCount < expectedCount)
       ),
     staleTime: 30_000,
     retry: false,

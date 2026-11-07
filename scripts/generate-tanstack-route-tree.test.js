@@ -123,18 +123,17 @@ test('formatGeneratedRouteTree formats ignored generated output with an isolated
   });
 
   assert.equal(writes.length, 1);
-  assert.equal(path.basename(writes[0].filePath), 'biome.json');
-  assert.match(writes[0].content, /"semicolons": "always"/u);
-  assert.match(writes[0].content, /"quoteStyle": "single"/u);
-  assert.match(writes[0].content, /"trailingCommas": "all"/u);
+  assert.equal(path.basename(writes[0].filePath), '.oxfmtrc.json');
+  assert.match(writes[0].content, /"semi": true/u);
+  assert.match(writes[0].content, /"singleQuote": true/u);
+  assert.match(writes[0].content, /"trailingComma": "all"/u);
   assert.deepEqual(runs, [
     {
       command: 'bunx',
       args: [
-        'biome',
-        'format',
+        'oxfmt',
         '--write',
-        '--config-path',
+        '--config',
         writes[0].filePath,
         generatedRouteTree,
       ],

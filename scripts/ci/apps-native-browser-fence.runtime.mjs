@@ -85,116 +85,122 @@ async function clickThrough(page, origin, destination, blocked = false) {
   }
 }
 
-test('loopback redirect RED bypass, CDP GREEN fulfillment and denied hop', {
-  timeout: 60000,
-}, async () => {
-  let upstream = 0;
-  let intermediate = 0;
-  let destination;
-  let origin;
-  let browser;
-  let primary;
-  const errors = [];
-  const b = createServer((_request, response) => {
-    upstream++;
-    response.writeHead(200, { 'Content-Type': 'text/html' }).end(html);
-  });
-  const a = createServer((request, response) => {
-    if (request.url === '/launch') {
-      response.writeHead(307, { Location: `${origin}/intermediate` }).end();
-    } else if (request.url === '/intermediate') {
-      intermediate++;
-      response.writeHead(307, { Location: `${destination}/destination` }).end();
-    } else if (request.url === '/') {
-      response
-        .writeHead(200, { 'Content-Type': 'text/html' })
-        .end(
-          '<link rel="icon" href="data:,"><a href="/launch">Open disposable destination</a>'
-        );
-    } else {
-      response.writeHead(404).end();
-    }
-  });
-  try {
-    destination = await listen(b);
-    origin = await listen(a);
-    const { chromium } = browserRequire('playwright');
-    browser = await chromium.launch({
-      headless: true,
-      ...(args.includes('--chrome') ? { channel: 'chrome' } : {}),
+test(
+  'loopback redirect RED bypass, CDP GREEN fulfillment and denied hop',
+  {
+    timeout: 60000,
+  },
+  async () => {
+    let upstream = 0;
+    let intermediate = 0;
+    let destination;
+    let origin;
+    let browser;
+    let primary;
+    const errors = [];
+    const b = createServer((_request, response) => {
+      upstream++;
+      response.writeHead(200, { 'Content-Type': 'text/html' }).end(html);
     });
-    const page = await browser.newPage({ serviceWorkers: 'block' });
-    let redPrimary;
-    const red = { fulfilled: 0, blocked: 0 };
+    const a = createServer((request, response) => {
+      if (request.url === '/launch') {
+        response.writeHead(307, { Location: `${origin}/intermediate` }).end();
+      } else if (request.url === '/intermediate') {
+        intermediate++;
+        response
+          .writeHead(307, { Location: `${destination}/destination` })
+          .end();
+      } else if (request.url === '/') {
+        response
+          .writeHead(200, { 'Content-Type': 'text/html' })
+          .end(
+            '<link rel="icon" href="data:,"><a href="/launch">Open disposable destination</a>'
+          );
+      } else {
+        response.writeHead(404).end();
+      }
+    });
     try {
-      await oldRouteControl(page, origin, destination, red);
-      await clickThrough(page, origin, destination);
-      assert.equal(
-        red.fulfilled,
-        0,
-        'RED must demonstrate the real redirect bypass'
+      destination = await listen(b);
+      origin = await listen(a);
+      const { chromium } = browserRequire('playwright');
+      browser = await chromium.launch({
+        headless: true,
+        ...(args.includes('--chrome') ? { channel: 'chrome' } : {}),
+      });
+      const page = await browser.newPage({ serviceWorkers: 'block' });
+      let redPrimary;
+      const red = { fulfilled: 0, blocked: 0 };
+      try {
+        await oldRouteControl(page, origin, destination, red);
+        await clickThrough(page, origin, destination);
+        assert.equal(
+          red.fulfilled,
+          0,
+          'RED must demonstrate the real redirect bypass'
+        );
+        assert.equal(upstream, 1, 'RED must reach the disposable B listener');
+        assert.equal(intermediate, 1);
+      } catch (error) {
+        redPrimary = error;
+      } finally {
+        try {
+          await page.close();
+        } catch (error) {
+          errors.push(error);
+        }
+      }
+      if (redPrimary) throw redPrimary;
+      upstream = 0;
+      intermediate = 0;
+      const green = await withNativeBrowserFence(
+        browser,
+        origin,
+        [destination],
+        (ownedPage) => clickThrough(ownedPage, origin, destination)
       );
-      assert.equal(upstream, 1, 'RED must reach the disposable B listener');
+      assert.equal(green.counts.fulfilled, 1);
+      assert.equal(
+        green.counts.continued,
+        3,
+        'Catalogue and both A redirect hops classify independently'
+      );
+      assert.equal(green.counts.blocked, 0);
+      assert.equal(green.counts.excess, 0);
+      assert.equal(upstream, 0, 'GREEN must never reach B upstream');
+      assert.equal(intermediate, 1);
+      intermediate = 0;
+      const denied = await withNativeBrowserFence(
+        browser,
+        origin,
+        [],
+        (ownedPage) => clickThrough(ownedPage, origin, destination, true)
+      );
+      assert.equal(denied.counts.fulfilled, 0);
+      assert.equal(denied.counts.blocked, 1);
+      assert.equal(denied.counts.continued, 3);
+      assert.equal(denied.counts.excess, 0);
+      assert.equal(upstream, 0, 'Unadmitted B must not reach upstream');
       assert.equal(intermediate, 1);
     } catch (error) {
-      redPrimary = error;
+      primary = error;
     } finally {
-      try {
-        await page.close();
-      } catch (error) {
-        errors.push(error);
+      for (const close of [
+        () => browser?.close(),
+        () => closeServer(a),
+        () => closeServer(b),
+      ]) {
+        try {
+          await close();
+        } catch (error) {
+          errors.push(error);
+        }
       }
     }
-    if (redPrimary) throw redPrimary;
-    upstream = 0;
-    intermediate = 0;
-    const green = await withNativeBrowserFence(
-      browser,
-      origin,
-      [destination],
-      (ownedPage) => clickThrough(ownedPage, origin, destination)
-    );
-    assert.equal(green.counts.fulfilled, 1);
-    assert.equal(
-      green.counts.continued,
-      3,
-      'Catalogue and both A redirect hops classify independently'
-    );
-    assert.equal(green.counts.blocked, 0);
-    assert.equal(green.counts.excess, 0);
-    assert.equal(upstream, 0, 'GREEN must never reach B upstream');
-    assert.equal(intermediate, 1);
-    intermediate = 0;
-    const denied = await withNativeBrowserFence(
-      browser,
-      origin,
-      [],
-      (ownedPage) => clickThrough(ownedPage, origin, destination, true)
-    );
-    assert.equal(denied.counts.fulfilled, 0);
-    assert.equal(denied.counts.blocked, 1);
-    assert.equal(denied.counts.continued, 3);
-    assert.equal(denied.counts.excess, 0);
-    assert.equal(upstream, 0, 'Unadmitted B must not reach upstream');
-    assert.equal(intermediate, 1);
-  } catch (error) {
-    primary = error;
-  } finally {
-    for (const close of [
-      () => browser?.close(),
-      () => closeServer(a),
-      () => closeServer(b),
-    ]) {
-      try {
-        await close();
-      } catch (error) {
-        errors.push(error);
-      }
-    }
+    if (primary || errors.length)
+      throw new AggregateError(
+        [primary, ...errors].filter(Boolean),
+        'Finite browser fence proof failed'
+      );
   }
-  if (primary || errors.length)
-    throw new AggregateError(
-      [primary, ...errors].filter(Boolean),
-      'Finite browser fence proof failed'
-    );
-});
+);

@@ -8,8 +8,10 @@ import {
   useRef,
 } from 'react';
 
-interface TaskCommandSearchInputProps
-  extends Omit<ComponentProps<typeof CommandInput>, 'value' | 'onValueChange'> {
+interface TaskCommandSearchInputProps extends Omit<
+  ComponentProps<typeof CommandInput>,
+  'value' | 'onValueChange'
+> {
   value: string;
   onValueChange: (value: string) => void;
 }

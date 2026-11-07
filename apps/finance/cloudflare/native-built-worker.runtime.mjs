@@ -395,10 +395,14 @@ async function qualifyMode(t, mode) {
   );
 }
 
-test('emitted Finance Worker: auth redirects, API ownership and action admission', {
-  timeout: 180000,
-}, async (t) => {
-  for (const mode of modes) {
-    await t.test(mode.origin, (modeTest) => qualifyMode(modeTest, mode));
+test(
+  'emitted Finance Worker: auth redirects, API ownership and action admission',
+  {
+    timeout: 180000,
+  },
+  async (t) => {
+    for (const mode of modes) {
+      await t.test(mode.origin, (modeTest) => qualifyMode(modeTest, mode));
+    }
   }
-});
+);

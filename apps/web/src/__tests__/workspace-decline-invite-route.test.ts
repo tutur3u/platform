@@ -128,9 +128,8 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
 
   it('declines direct invites and email invites addressed to the confirmed Auth email', async () => {
     mocks.emailInviteRows.push('auth@example.com');
-    const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/decline-invite/route');
 
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'workspace-slug' }),
@@ -170,9 +169,8 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
   it('does not delete an invite addressed only to the editable profile email', async () => {
     mocks.emailInviteRows.push('private@example.com');
 
-    const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/decline-invite/route');
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
     });
@@ -190,9 +188,8 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
       error: { message: 'lookup failed' },
     });
 
-    const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/decline-invite/route');
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
     });
@@ -212,9 +209,8 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
       new Error('notification write failed')
     );
 
-    const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/decline-invite/route');
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
     });
@@ -226,9 +222,8 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
   });
 
   it('declines UUID invite paths without workspace RLS normalization', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/decline-invite/route');
 
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
@@ -246,9 +241,8 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
   });
 
   it('declines fixture-style Postgres UUID invite paths without workspace normalization', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/decline-invite/route');
 
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: POSTGRES_FIXTURE_WS_ID }),
@@ -268,9 +262,8 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
   it('returns 404 for unresolved non-UUID workspace ids', async () => {
     mocks.normalizeWorkspaceId.mockResolvedValueOnce('not-a-uuid');
 
-    const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/decline-invite/route');
 
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'not-a-uuid' }),

@@ -107,12 +107,10 @@ export async function saveProgrammingProblem(
 ): Promise<
   { ok: true; id: string; revision: number } | { ok: false; status: number }
 > {
-  const { ProgrammingProblemInputSchema } = await import(
-    '@tuturuuu/education-core/education/programming-schema'
-  );
-  const { createProgrammingProblem, editProgrammingProblem } = await import(
-    '@tuturuuu/internal-api/programming'
-  );
+  const { ProgrammingProblemInputSchema } =
+    await import('@tuturuuu/education-core/education/programming-schema');
+  const { createProgrammingProblem, editProgrammingProblem } =
+    await import('@tuturuuu/internal-api/programming');
   const { InternalApiError } = await import('@tuturuuu/internal-api');
   const parsed = ProgrammingProblemInputSchema.safeParse(payload);
   if (!parsed.success) return { ok: false, status: 400 };

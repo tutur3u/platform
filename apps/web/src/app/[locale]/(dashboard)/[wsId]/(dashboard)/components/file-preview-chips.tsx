@@ -128,7 +128,6 @@ function FileChip({
       {/* Thumbnail / Icon */}
       <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/60">
         {isImage && previewUrl ? (
-          // biome-ignore lint/performance/noImgElement: blob URL not compatible with Next.js Image
           <img
             src={previewUrl}
             alt={file.name}
@@ -258,7 +257,6 @@ function MediaLightbox({
         <DialogTitle className="sr-only">{media.alt}</DialogTitle>
         <div className="relative flex items-center justify-center">
           {media.kind === 'image' ? (
-            // biome-ignore lint/performance/noImgElement: signed/blob URL not compatible with Next.js Image
             <img
               src={media.src}
               alt={media.alt}
@@ -324,7 +322,6 @@ function MessageAttachmentChip({
         )}
       >
         {isImage && src ? (
-          // biome-ignore lint/performance/noImgElement: signed/blob URL not compatible with Next.js Image
           <img
             src={src}
             alt={attachment.name}
@@ -469,7 +466,7 @@ function MessageImageThumbnail({
           />
         </div>
       )}
-      {/* biome-ignore lint/performance/noImgElement: signed/blob URL not compatible with Next.js Image */}
+
       <img
         key={retryCount}
         src={src}

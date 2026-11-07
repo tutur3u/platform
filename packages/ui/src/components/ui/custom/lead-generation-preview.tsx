@@ -164,7 +164,6 @@ export default function LeadGenerationPreview({
       <div className="flex items-center justify-between gap-8">
         {brandLogoUrl && (
           <>
-            {/* biome-ignore lint/performance/noImgElement: external branding image */}
             <img
               src={brandLogoUrl}
               alt="logo"

@@ -117,9 +117,8 @@ function normalizePersistedTaskDescription(
 async function deriveTaskDescriptionYjsState(
   description: string | null | undefined
 ) {
-  const { deriveTaskDescriptionYjsState: deriveYjsState } = await import(
-    '@tuturuuu/utils/yjs-task-description'
-  );
+  const { deriveTaskDescriptionYjsState: deriveYjsState } =
+    await import('@tuturuuu/utils/yjs-task-description');
 
   return deriveYjsState(description);
 }
@@ -127,9 +126,8 @@ async function deriveTaskDescriptionYjsState(
 async function validateTaskDescriptionYjsState(
   yjsState: number[] | null | undefined
 ) {
-  const { isValidTaskDescriptionYjsState } = await import(
-    '@tuturuuu/utils/yjs-task-description'
-  );
+  const { isValidTaskDescriptionYjsState } =
+    await import('@tuturuuu/utils/yjs-task-description');
 
   return isValidTaskDescriptionYjsState(yjsState);
 }

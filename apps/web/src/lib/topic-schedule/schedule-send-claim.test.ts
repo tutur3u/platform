@@ -50,15 +50,12 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   WorkspaceStorageError: class extends Error {},
 }));
 
-const { PUT } = await import(
-  '@/app/api/v1/workspaces/[wsId]/topic-announcements/schedule/route'
-);
-const { POST: SEND } = await import(
-  '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/announcements/[announcementId]/send/route'
-);
-const { POST: SEND_BULK } = await import(
-  '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/send-bulk/route'
-);
+const { PUT } =
+  await import('@/app/api/v1/workspaces/[wsId]/topic-announcements/schedule/route');
+const { POST: SEND } =
+  await import('@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/announcements/[announcementId]/send/route');
+const { POST: SEND_BULK } =
+  await import('@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/send-bulk/route');
 
 const params = { params: Promise.resolve({ wsId: WS }) };
 

@@ -6,11 +6,11 @@ const { reverseDependents, assertSafePaths } = require('./workspaces.js');
 const { AUTH_GUARDS } = require('../auth-guards.js');
 const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
 
-const BIOME_VERSION = '2.5.13';
+const OXC_VERSION = '0.74.0';
 // Keep in sync with .github/workflows/branch-name-check.yaml (tested).
 const BRANCH_NAME_PATTERN =
   /^(feature|feat|fix|bugfix|hotfix|release|chore|docs|style|refactor|perf|dependabot|claude)\/.+|^release-please--branches--.+|^imgbot$/;
-const BIOME_FILE = /\.(?:[cm]?[jt]sx?|jsonc?|css|graphql|gql)$/;
+const OXC_FILE = /\.(?:[cm]?[jt]sx?|jsonc?|css|graphql|gql|mdx?|ya?ml|html)$/;
 const SCRIPT_FILE = /\.(?:[cm]?js|ts)$/;
 const TS_SOURCE = /\.(?:[cm]?tsx?|d\.ts)$/;
 const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
@@ -86,6 +86,7 @@ function nodeScriptTests(files, exists) {
   const selected = new Set();
   for (const file of files) {
     if (NODE_TEST_FILE.test(file)) {
+      if (/-built-worker\.test\.mjs$/.test(file)) continue;
       if (exists(file)) selected.add(file);
       continue;
     }
@@ -157,6 +158,7 @@ function runtimeImports(source, filename) {
  * Node cannot load because of extensionless workspace imports).
  */
 function testRunnerOf(file, context) {
+  if (/-built-worker\.test\.mjs$/.test(file)) return 'ci';
   const workspace = workspaceOf(file);
   if (!workspace) return NODE_TEST_FILE.test(file) ? 'node' : 'vitest';
   const script = context.workspaces?.find(
@@ -190,7 +192,7 @@ function planChecks(changes, context) {
   const steps = [];
   const skipped = [];
   const sharedConfig = all.filter((file) =>
-    /^(?:tsconfig\.json|biome\.jsonc?|turbo\.json|package\.json|bun\.lock|bunfig\.toml|\.npmrc|vitest\.config\.ts|\.oxlintrc\.json|\.oxfmtrc\.json)$|^packages\/typescript-config\/.*\.json$/.test(
+    /^(?:tsconfig\.json|oxfmtrc\.json|turbo\.json|package\.json|bun\.lock|bunfig\.toml|\.npmrc|vitest\.config\.ts|\.oxlintrc\.json|\.oxfmtrc\.json)$|^packages\/typescript-config\/.*\.json$/.test(
       file
     )
   );
@@ -246,27 +248,32 @@ function planChecks(changes, context) {
     );
   }
 
-  const biomeFiles = present.filter(
-    (file) => BIOME_FILE.test(file) && !file.startsWith(MOBILE_PREFIX)
+  const formatFiles = present.filter(
+    (file) =>
+      OXC_FILE.test(file) &&
+      !file.startsWith(MOBILE_PREFIX) &&
+      !file.split('/').some((segment) => OXC_EXCLUDED.has(segment)) &&
+      !/routeTree\.gen\.ts$|\.bridge\.gen\.ts$/.test(file) &&
+      !/^(?:\.agents\/skills\/|apps\/api\/generated\/|apps\/docs\/reference\/repository\/)/.test(
+        file
+      ) &&
+      file !== 'packages/sdk/src/operational-search/python-adapter-code.ts'
   );
-  if (biomeFiles.length) {
+  if (formatFiles.length) {
     steps.push({
-      id: 'biome',
-      label: `biome check (${biomeFiles.length} files)`,
-      command: context.biomeBinary ?? 'npx',
+      id: 'oxfmt',
+      label: `oxfmt check (${formatFiles.length} files)`,
+      command: context.oxfmtBinary ?? 'npx',
       args: [
-        ...(context.biomeBinary
-          ? []
-          : ['--yes', `@biomejs/biome@${BIOME_VERSION}`]),
-        'check',
-        '--error-on-warnings',
-        '--no-errors-on-unmatched',
-        '--files-ignore-unknown=true',
-        ...biomeFiles,
+        ...(context.oxfmtBinary ? [] : ['--yes', `oxfmt@${OXC_VERSION}`]),
+        '--check',
+        '--threads',
+        '2',
+        ...formatFiles,
       ],
-      fixHint: `npx @biomejs/biome@${BIOME_VERSION} check --write <files>`,
+      fixHint: 'bun oxfmt --write <files>',
     });
-    const oxcFiles = biomeFiles.filter(
+    const oxcFiles = formatFiles.filter(
       (file) =>
         /\.[cm]?[jt]sx?$/.test(file) &&
         !file.split('/').some((segment) => OXC_EXCLUDED.has(segment))
@@ -275,9 +282,9 @@ function planChecks(changes, context) {
       steps.push(
         nodeStep(
           'oxlint',
-          `oxlint (${oxcFiles.length} files, advisory)`,
+          `oxlint (${oxcFiles.length} files)`,
           ['scripts/oxc.js', 'lint', ...oxcFiles],
-          { advisory: true }
+          {}
         )
       );
     }
@@ -368,6 +375,11 @@ function planChecks(changes, context) {
       'browser specs require separate E2E runtime verification',
     ]);
   }
+  if (present.some((file) => /-built-worker\.test\.mjs$/.test(file)))
+    skipped.push([
+      'emitted-worker-tests',
+      'owning exact-commit CI build and emitted Worker acceptance required',
+    ]);
   const scriptTests = nodeScriptTests(
     all.filter((file) => !isPausedPath(file)),
     exists
@@ -519,7 +531,7 @@ function planChecks(changes, context) {
 }
 
 module.exports = {
-  BIOME_VERSION,
+  OXC_VERSION,
   BRANCH_NAME_PATTERN,
   PINNED_CONTRACT_FILES,
   STAGING_CONTRACT_TESTS,

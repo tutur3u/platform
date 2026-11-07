@@ -35,7 +35,7 @@ test('parseArgs handles flags, hooks and trailing file lists', () => {
     '--base',
     'origin/main',
     '--only',
-    'biome',
+    'oxc',
     '--skip',
     'type-check',
     '--no-ttr',
@@ -44,7 +44,7 @@ test('parseArgs handles flags, hooks and trailing file lists', () => {
     'b.ts',
   ]);
   assert.equal(options.base, 'origin/main');
-  assert.deepEqual(options.only, ['biome']);
+  assert.deepEqual(options.only, ['oxc']);
   assert.deepEqual(options.skip, ['type-check']);
   assert.equal(options.ttr, false);
   assert.deepEqual(options.files, ['a.ts', 'b.ts']);
@@ -162,7 +162,7 @@ test('ttrPrefix queues only outside admitted lanes and refuses a broken global C
 
 test('selectSteps matches ids and workspace-qualified prefixes', () => {
   const steps = [
-    { id: 'biome' },
+    { id: 'oxc' },
     { id: 'type-check:apps/web' },
     { id: 'vitest:apps/web' },
   ];
@@ -171,7 +171,7 @@ test('selectSteps matches ids and workspace-qualified prefixes', () => {
     ['type-check:apps/web']
   );
   assert.deepEqual(
-    selectSteps(steps, [], ['vitest', 'biome']).map((step) => step.id),
+    selectSteps(steps, [], ['vitest', 'oxc']).map((step) => step.id),
     ['type-check:apps/web']
   );
 });
@@ -340,7 +340,7 @@ test('main prints the plan in dry-run mode and exits cleanly without changes', (
     }),
     0
   );
-  assert.match(logs.join('\n'), /biome: .*check-changed\.js/);
+  assert.match(logs.join('\n'), /oxfmt: .*check-changed\.js/);
   assert.match(logs.join('\n'), /script-tests: node --test/);
 
   const empty = fakeGit({

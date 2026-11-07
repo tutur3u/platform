@@ -261,9 +261,8 @@ async function plansModel(
   options: Parameters<typeof getMeetTogetherPlansData>[0]
 ) {
   // Only the plan lists need the legacy Meet Together data layer.
-  const { getMeetTogetherPlansData } = await import(
-    '@tuturuuu/ui/legacy/meet/page'
-  );
+  const { getMeetTogetherPlansData } =
+    await import('@tuturuuu/ui/legacy/meet/page');
   const result = await getMeetTogetherPlansData(options);
   const user = result.user;
   return {
@@ -330,9 +329,8 @@ async function loadResolvedPageModel(url: URL) {
     } satisfies MeetPageMeta,
   };
   if (segments[0] === 'login' && segments.length === 1) {
-    const { default: LoginPage } = await import(
-      '../app/[locale]/(auth)/login/page'
-    );
+    const { default: LoginPage } =
+      await import('../app/[locale]/(auth)/login/page');
     await LoginPage({
       searchParams: Promise.resolve(Object.fromEntries(url.searchParams)),
     });

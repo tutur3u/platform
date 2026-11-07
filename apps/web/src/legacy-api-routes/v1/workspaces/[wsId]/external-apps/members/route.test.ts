@@ -71,9 +71,8 @@ describe('external app workspace member routes', () => {
   });
 
   it('loads members with read scopes', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/route');
 
     const response = await GET(
       new Request(
@@ -98,9 +97,8 @@ describe('external app workspace member routes', () => {
       ok: false,
       response: Response.json({ error: 'Forbidden' }, { status: 403 }),
     });
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/route');
 
     const response = await GET(
       new Request(
@@ -114,9 +112,8 @@ describe('external app workspace member routes', () => {
   });
 
   it('invites members with member-write access', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/invitations/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/invitations/route');
 
     const response = await POST(
       new Request('http://localhost', {
@@ -142,9 +139,8 @@ describe('external app workspace member routes', () => {
   });
 
   it('removes access with member-write access', async () => {
-    const { DELETE } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/access/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/access/route');
 
     const response = await DELETE(new Request('http://localhost'), {
       params: Promise.resolve({ wsId: 'ws-1' }),
@@ -166,9 +162,8 @@ describe('external app workspace member routes', () => {
   });
 
   it('updates roles with member-write and role-write access', async () => {
-    const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/[userId]/role/route'
-    );
+    const { PATCH } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/[userId]/role/route');
 
     const response = await PATCH(new Request('http://localhost'), {
       params: Promise.resolve({ userId: 'user-2', wsId: 'ws-1' }),
@@ -191,9 +186,8 @@ describe('external app workspace member routes', () => {
   });
 
   it('updates default admin with member-write and role-write access', async () => {
-    const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/default-admin/route'
-    );
+    const { PATCH } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/default-admin/route');
 
     const response = await PATCH(new Request('http://localhost'), {
       params: Promise.resolve({ wsId: 'ws-1' }),

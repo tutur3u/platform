@@ -105,9 +105,8 @@ describe('mobile MFA approval helpers', () => {
   });
 
   it('binds a consumed mobile MFA approval to the current Supabase session', async () => {
-    const { pollMfaMobileApprovalChallenge } = await import(
-      './mfa-mobile-approval'
-    );
+    const { pollMfaMobileApprovalChallenge } =
+      await import('./mfa-mobile-approval');
     const row = createChallengeRow({
       approval_metadata: { approvedBy: 'mobile' },
       status: 'approved',
@@ -160,9 +159,8 @@ describe('mobile MFA approval helpers', () => {
   });
 
   it('does not reissue a consumed approval cookie for a different Supabase session', async () => {
-    const { pollMfaMobileApprovalChallenge } = await import(
-      './mfa-mobile-approval'
-    );
+    const { pollMfaMobileApprovalChallenge } =
+      await import('./mfa-mobile-approval');
     const row = createChallengeRow({
       approval_metadata: {
         approverSessionId: 'session-1',
@@ -233,9 +231,8 @@ describe('number matching and request lifecycle', () => {
     mocks.adminClient.from.mockReset();
   });
   it('cannot use pre-recovery AAL2 to approve a fresh browser challenge', async () => {
-    const { approveMfaMobileApprovalChallenge } = await import(
-      './mfa-mobile-approval'
-    );
+    const { approveMfaMobileApprovalChallenge } =
+      await import('./mfa-mobile-approval');
     mocks.assurance.mockResolvedValue({ status: 'required', userId: 'user-1' });
     const now = Math.floor(Date.now() / 1000);
     mocks.userClient.auth.getUser.mockResolvedValue({
@@ -272,9 +269,8 @@ describe('number matching and request lifecycle', () => {
   it.each([undefined, '', '999999'])(
     'refuses missing or incorrect number %s',
     async (pairCode) => {
-      const { approveMfaMobileApprovalChallenge } = await import(
-        './mfa-mobile-approval'
-      );
+      const { approveMfaMobileApprovalChallenge } =
+        await import('./mfa-mobile-approval');
       const row = createChallengeRow({
         status: 'pending',
         request_metadata: {
@@ -294,9 +290,8 @@ describe('number matching and request lifecycle', () => {
     }
   );
   it('persists a denial without consuming or approving the challenge', async () => {
-    const { approveMfaMobileApprovalChallenge } = await import(
-      './mfa-mobile-approval'
-    );
+    const { approveMfaMobileApprovalChallenge } =
+      await import('./mfa-mobile-approval');
     const row = createChallengeRow({
       status: 'pending',
       request_metadata: { kind: MFA_MOBILE_APPROVAL_KIND, pairCode: '123456' },
@@ -316,9 +311,8 @@ describe('number matching and request lifecycle', () => {
     );
   });
   it('rejects a poll from another session of the same account', async () => {
-    const { pollMfaMobileApprovalChallenge } = await import(
-      './mfa-mobile-approval'
-    );
+    const { pollMfaMobileApprovalChallenge } =
+      await import('./mfa-mobile-approval');
     const load = createBuilder(
       createChallengeRow({
         request_metadata: {
@@ -336,9 +330,8 @@ describe('number matching and request lifecycle', () => {
     expect(load.update).not.toHaveBeenCalled();
   });
   it('does not consume an approval after its original deadline', async () => {
-    const { pollMfaMobileApprovalChallenge } = await import(
-      './mfa-mobile-approval'
-    );
+    const { pollMfaMobileApprovalChallenge } =
+      await import('./mfa-mobile-approval');
     const load = createBuilder(
       createChallengeRow({ expires_at: '2000-01-01T00:00:00Z' })
     );
@@ -353,9 +346,8 @@ describe('number matching and request lifecycle', () => {
     );
   });
   it('never sends the matching number to the approving device', async () => {
-    const { listPendingMfaMobileApprovals } = await import(
-      './mfa-mobile-approval'
-    );
+    const { listPendingMfaMobileApprovals } =
+      await import('./mfa-mobile-approval');
     const row = createChallengeRow({
       request_metadata: {
         kind: MFA_MOBILE_APPROVAL_KIND,

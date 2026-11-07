@@ -52,7 +52,7 @@ test('Oxc requires explicit files and isolates paused/generated source', (t) => 
   );
 });
 
-test('installed Oxc enforces dialogs and checks formatting without writing', (t) => {
+test('installed Oxc enforces debugger checks and checks formatting without writing', (t) => {
   const root = path.resolve(__dirname, '..');
   const fixture = mkdtempSync(path.join(tmpdir(), 'oxc-tools-'));
   t.after(() => rmSync(fixture, { recursive: true, force: true }));
@@ -63,10 +63,10 @@ test('installed Oxc enforces dialogs and checks formatting without writing', (t)
       ['--config', path.join(root, config), '--threads', '1', ...args, file],
       { encoding: 'utf8' }
     );
-  writeFileSync(file, 'alert("forbidden");\n');
+  writeFileSync(file, 'debugger;\n');
   const lint = invoke('oxlint', '.oxlintrc.json', ['--deny-warnings']);
   assert.equal(lint.status, 1, lint.stdout + lint.stderr);
-  assert.match(lint.stdout + lint.stderr, /no-alert/);
+  assert.match(lint.stdout + lint.stderr, /no-debugger/);
   const original = 'export const message="hello"\n';
   writeFileSync(file, original);
   const check = invoke('oxfmt', '.oxfmtrc.json', ['--check']);

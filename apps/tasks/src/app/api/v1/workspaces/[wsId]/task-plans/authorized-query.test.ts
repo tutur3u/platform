@@ -111,7 +111,6 @@ function client(tables = fixture, sessionRls = false) {
           return query;
         },
         maybeSingle: () => Promise.resolve({ data: rows[0], error: null }),
-        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
         then: (resolve: (result: unknown) => unknown) =>
           Promise.resolve({ data: rows.slice(0, 1000), error: null }).then(
             resolve
@@ -161,7 +160,6 @@ describe('actor-scoped plans with two synthetic tenants', () => {
           order: () => q,
           range: () => q,
           maybeSingle: () => q,
-          // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
           then: (resolve: (value: unknown) => unknown) =>
             Promise.resolve({ error }).then(resolve),
         };
