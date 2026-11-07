@@ -83,9 +83,8 @@ describe('WebGL package proxy upload route', () => {
   });
 
   it('streams ZIP bytes through a backend signed storage upload', async () => {
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route');
 
     const response = await PUT(
       new Request(
@@ -135,9 +134,8 @@ describe('WebGL package proxy upload route', () => {
   });
 
   it('allows credentialed CMS browser uploads from the configured CMS origin', async () => {
-    const { OPTIONS, PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route'
-    );
+    const { OPTIONS, PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route');
     const requestUrl =
       'http://localhost/api/v1/workspaces/ws-1/external-projects/webgl-packages/upload?entryId=00000000-0000-4000-8000-000000000001&archivePath=external-projects%2Fyoola%2Fgames%2Fmine%2Fwebgl-packages%2Fupload.zip&filename=Mine+Blast+WebGL.zip';
 
@@ -184,9 +182,8 @@ describe('WebGL package proxy upload route', () => {
   });
 
   it('rejects archive paths outside the entry WebGL package folder', async () => {
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route');
 
     const response = await PUT(
       new Request(

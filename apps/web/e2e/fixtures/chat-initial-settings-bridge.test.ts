@@ -145,9 +145,8 @@ beforeEach(() => {
   });
 });
 async function invoke(item: z.infer<typeof itemSchema>) {
-  const { POST } = await import(
-    '../../src/app/api/v1/workspaces/[wsId]/chat/conversations/route'
-  );
+  const { POST } =
+    await import('../../src/app/api/v1/workspaces/[wsId]/chat/conversations/route');
   return POST(
     new NextRequest('https://synthetic.invalid/api', {
       method: 'POST',

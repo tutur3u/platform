@@ -18,10 +18,10 @@ const selected = {
   'docs-seo-check.yaml': ['validate'],
   'mobile-api-mappings.yaml': ['verify'],
   'type-check.yaml': ['type-check-pr'],
-  'biome-check.yaml': ['duplicate-validation', 'format', 'lint'],
+  'oxc-check.yaml': ['duplicate-validation', 'format', 'lint'],
   'turbo-unit-tests.yaml': ['test-shards-pr'],
 };
-const routedViaInput = ['biome-check.yaml:check-ci'];
+const routedViaInput = ['oxc-check.yaml:check-ci'];
 const poolSelectors = ['ci-check.yml:check'];
 const workflows = readAllWorkflows();
 // Jobs that keep secrets run only for non-PR events, on hosted runners. Each
@@ -213,8 +213,8 @@ test('only allowlisted read-only, secret-free portable jobs can select the Mac p
       assert.equal(callee.on.workflow_call.secrets, undefined, job.uses);
     }
   const callerRoute =
-    workflows['biome-check.yaml'].jobs['check-ci'].with.pr_runner;
-  const jobRoute = workflows['biome-check.yaml'].jobs.lint['runs-on'];
+    workflows['oxc-check.yaml'].jobs['check-ci'].with.pr_runner;
+  const jobRoute = workflows['oxc-check.yaml'].jobs.lint['runs-on'];
   assert.ok(jobRoute.includes(callerRoute.replace(/^\$\{\{\s*|\s*\}\}$/g, '')));
   assert.equal(
     workflows['ci-check.yml'].on.workflow_call.inputs.pr_runner.default,
@@ -222,7 +222,7 @@ test('only allowlisted read-only, secret-free portable jobs can select the Mac p
   );
   for (const job of ['apply-format', 'close-outdated-format-pr', 'comment'])
     assert.equal(
-      workflows['biome-check.yaml'].jobs[job]['runs-on'],
+      workflows['oxc-check.yaml'].jobs[job]['runs-on'],
       'ubuntu-latest'
     );
   assert.equal(

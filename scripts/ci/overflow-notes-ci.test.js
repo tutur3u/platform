@@ -123,15 +123,15 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
   for (const name of [
     'turbo-unit-tests.yaml',
     'e2e-tests.yaml',
-    'biome-check.yaml',
+    'oxc-check.yaml',
     'supabase-baseline.yaml',
   ]) {
     const workflow = readWorkflow(name);
     const policy = workflow.concurrency || workflow.jobs.format.concurrency;
     // Reusable callees carry a workflow prefix so their groups cannot collide
-    // with the caller's group; Biome validates in per-job groups.
+    // with the caller's group; Oxc validates in per-job groups.
     const policyName =
-      name === 'biome-check.yaml' ? `biome-check-${name}-format` : name;
+      name === 'oxc-check.yaml' ? `oxc-check-${name}-format` : name;
     const base = {
       workflow: name,
       event: { pull_request: {} },
@@ -187,7 +187,7 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
       )
     );
   }
-  assert.deepEqual(readWorkflow('biome-check.yaml').on.push, {
+  assert.deepEqual(readWorkflow('oxc-check.yaml').on.push, {
     branches: ['main', 'production', 'release-please--branches--**'],
   });
 });

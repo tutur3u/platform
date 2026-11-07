@@ -7,8 +7,10 @@ import {
 } from 'react';
 import { TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES } from './task-card-checkbox-style';
 
-interface TaskCardSelectionCheckboxProps
-  extends Omit<ComponentPropsWithoutRef<'label'>, 'onClick'> {
+interface TaskCardSelectionCheckboxProps extends Omit<
+  ComponentPropsWithoutRef<'label'>,
+  'onClick'
+> {
   checked: boolean;
   label: string;
   onSelectionClick?: (event: MouseEvent<HTMLInputElement>) => void;

@@ -15,18 +15,16 @@ const options = {
 };
 function fixture() {
   const devboxes = {
-    createRun: vi.fn(
-      async (): Promise<unknown> => ({ run: { id: 'run-1', status: 'queued' } })
-    ),
+    createRun: vi.fn(async (): Promise<unknown> => ({
+      run: { id: 'run-1', status: 'queued' },
+    })),
     getRun: vi.fn(async () => ({
       run: { id: 'run-1', status: 'succeeded', exitCode: 0 },
     })),
-    getRunLogs: vi.fn(
-      async (): Promise<{ logs: string[]; next: number }> => ({
-        logs: [],
-        next: 0,
-      })
-    ),
+    getRunLogs: vi.fn(async (): Promise<{ logs: string[]; next: number }> => ({
+      logs: [],
+      next: 0,
+    })),
     stopRun: vi.fn(async () => ({ message: 'stopped' })),
     fleet: {
       snapshot: vi.fn(async () => ({ runners: [], runs: [], leases: [] })),

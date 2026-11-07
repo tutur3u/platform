@@ -130,7 +130,6 @@ it('counts the same non-archived mailboxes from the authenticated user membershi
       eq(...args);
       return query;
     },
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
     then: (resolve: (value: object) => unknown) =>
       Promise.resolve({ data: [{ mailbox_id: 'allowed' }], error: null }).then(
         resolve

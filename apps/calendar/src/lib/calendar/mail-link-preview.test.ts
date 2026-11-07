@@ -116,7 +116,6 @@ function db(rows: Record<string, Record<string, unknown>[]>) {
           data: data.length === 1 ? data[0] : null,
           error: null,
         }),
-        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders intentionally implement PromiseLike.
         then: (resolve: (value: unknown) => void) =>
           Promise.resolve({ data, error: null }).then(resolve),
       };

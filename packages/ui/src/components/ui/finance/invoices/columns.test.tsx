@@ -39,13 +39,11 @@ function InvoicePriceCell({ price }: { price: number }) {
 
 describe('invoiceColumns', () => {
   beforeEach(() => {
-    // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
       'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;Secure';
   });
 
   it('masks amount columns when finance numbers are globally hidden', () => {
-    // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
     document.cookie = 'finance-confidential-mode=true;path=/;Secure';
 
     render(<InvoicePriceCell price={123} />);
@@ -55,7 +53,6 @@ describe('invoiceColumns', () => {
   });
 
   it('shows amount columns when finance numbers are globally visible', async () => {
-    // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
     document.cookie = 'finance-confidential-mode=false;path=/;Secure';
 
     render(<InvoicePriceCell price={123} />);

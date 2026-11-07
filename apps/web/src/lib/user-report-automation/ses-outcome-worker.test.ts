@@ -62,9 +62,8 @@ vi.mock('./schedule-reconciliation', () => ({
 
 import { processPeriodicReportAutomation } from './processor';
 
-const { SESEmailProvider } = await import(
-  '../../../../../packages/email-service/src/providers/ses'
-);
+const { SESEmailProvider } =
+  await import('../../../../../packages/email-service/src/providers/ses');
 
 function forbidNetwork<T>(provider: T): T {
   // If module interception ever misses, the real SDK cannot issue an HTTP request.

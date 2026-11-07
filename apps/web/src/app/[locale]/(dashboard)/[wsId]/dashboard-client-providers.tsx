@@ -29,9 +29,9 @@ function loadDashboardWorkspaceProviders(): Promise<DashboardWorkspaceProvidersC
 }
 
 function loadFadeSettingInitializer(): Promise<FadeSettingInitializerComponent> {
-  return import(
-    '@tuturuuu/tasks-ui/tu-do/shared/fade-setting-initializer'
-  ).then((module) => module.FadeSettingInitializer);
+  return import('@tuturuuu/tasks-ui/tu-do/shared/fade-setting-initializer').then(
+    (module) => module.FadeSettingInitializer
+  );
 }
 
 function loadTaskSoundEffectsInitializer(): Promise<TaskSoundEffectsInitializerComponent> {

@@ -19,10 +19,13 @@ export async function startScenario(form: FormData) {
   if (form.get('consent') !== 'on')
     throw new Error('Participation acknowledgement required');
   const wsId = await personalWorkspace(user.id);
-  const { data, error } = await (await parleyDatabase()).rpc(
-    'create_parley_session',
-    { p_scenario_id: id, p_user_id: user.id, p_ws_id: wsId }
-  );
+  const { data, error } = await (
+    await parleyDatabase()
+  ).rpc('create_parley_session', {
+    p_scenario_id: id,
+    p_user_id: user.id,
+    p_ws_id: wsId,
+  });
   if (error || !data) throw new Error('Could not start scenario');
   redirect(`/r/${encodeRoomCode(data)}`);
 }
@@ -36,7 +39,9 @@ export async function saveObservation(form: FormData) {
     kind: form.get('kind'),
     content: form.get('content'),
   });
-  const { error } = await (await parleyDatabase())
+  const { error } = await (
+    await parleyDatabase()
+  )
     .schema('private')
     .from('parley_observations')
     .insert({ ...input, meeting_id: meetingId, author_id: user.id });

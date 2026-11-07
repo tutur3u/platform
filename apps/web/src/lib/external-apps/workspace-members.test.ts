@@ -192,7 +192,6 @@ describe('external app workspace member helpers', () => {
             : table === 'workspace_role_permissions' && !enabledOnly
               ? [{ role_id: 'role-external-admin', ws_id: 'workspace-1' }]
               : [];
-        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
         query.then = (resolve: (value: unknown) => unknown) =>
           Promise.resolve({ data: rows(), error: null }).then(resolve);
         return query;

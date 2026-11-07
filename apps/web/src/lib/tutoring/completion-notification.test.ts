@@ -39,7 +39,6 @@ function query(table: string) {
       return builder;
     },
     maybeSingle: async () => ({ data: rows()[0] ?? null, error: null }),
-    // biome-ignore lint/suspicious/noThenProperty: mirrors a Supabase builder
     then: (resolve: (value: { data: Row[]; error: null }) => void) =>
       resolve({ data: rows(), error: null }),
   };

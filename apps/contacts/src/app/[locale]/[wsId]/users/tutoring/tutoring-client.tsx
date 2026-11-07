@@ -168,7 +168,6 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [schedulingKey, setSchedulingKey] = useState<string | null>(null);
   const handoffScope = handoff.scope;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scope changes must clear private drafts even when the reset value is identical.
   useLayoutEffect(() => {
     setForm(DEFAULT_FORM);
     setCreateDialogOpen(false);

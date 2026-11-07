@@ -39,9 +39,7 @@ it('joins adjacent marked runs but separates paragraphs, headings and table cell
 });
 it('counts Unicode graphemes without whitespace and handles Vietnamese punctuation', () => {
   expect(
-    documentWritingStatistics(
-      doc(paragraph(text('Xin chào! a\u0301 👨‍👩‍👧‍👦\n')))
-    )
+    documentWritingStatistics(doc(paragraph(text('Xin chào! a\u0301 👨‍👩‍👧‍👦\n'))))
   ).toEqual({ words: 3, characters: 10, truncated: false });
 });
 it('uses hard breaks as word boundaries and ignores hidden attributes/leaf children', () => {

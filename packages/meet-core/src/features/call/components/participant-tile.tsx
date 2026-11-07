@@ -126,9 +126,9 @@ function ParticipantTileImpl({
   const readiness = useStreamReadiness(stream);
   const showVideo = Boolean(
     presentingVideo &&
-      (kind === 'screen'
-        ? participant.media.screenEnabled
-        : participant.media.videoEnabled)
+    (kind === 'screen'
+      ? participant.media.screenEnabled
+      : participant.media.videoEnabled)
   );
   useEffect(() => {
     const element = videoRef.current;

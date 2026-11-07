@@ -219,7 +219,6 @@ function scanPackageNamespaces(pkg) {
     // Reset regex lastIndex for each file
     NAMESPACE_REGEX.lastIndex = 0;
 
-    // biome-ignore lint/suspicious/noAssignInExpressions: <>
     while ((match = NAMESPACE_REGEX.exec(content)) !== null) {
       const topLevel = getTopLevelNamespace(match[1]);
       if (!namespaces.has(topLevel)) {

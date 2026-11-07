@@ -34,8 +34,9 @@ interface SelectFieldProps {
   classNames?: ClassNames;
 }
 
-export interface SelectProps
-  extends React.ComponentPropsWithoutRef<typeof Root> {}
+export interface SelectProps extends React.ComponentPropsWithoutRef<
+  typeof Root
+> {}
 
 // Merge the two interfaces
 type Props = SelectFieldProps & SelectProps;

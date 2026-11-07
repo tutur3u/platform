@@ -216,7 +216,6 @@ function fakeQuery(table: string) {
       single = true;
       return query;
     },
-    // biome-ignore lint/suspicious/noThenProperty: thenable query builder fake
     then: (resolve: (value: unknown) => unknown, reject: () => unknown) =>
       Promise.resolve(run()).then(resolve, reject),
   };

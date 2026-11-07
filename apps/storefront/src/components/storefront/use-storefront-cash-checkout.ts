@@ -26,10 +26,10 @@ export function useStorefrontCashCheckout({
   const optionsQuery = useQuery({
     enabled: Boolean(
       storefront &&
-        !isDemoStorefront &&
-        ['cash', 'polar', 'square_pos', 'square_terminal'].includes(
-          storefront.checkoutMode
-        )
+      !isDemoStorefront &&
+      ['cash', 'polar', 'square_pos', 'square_terminal'].includes(
+        storefront.checkoutMode
+      )
     ),
     queryFn: () => getInventoryStaffCheckoutOptions(storeSlug),
     queryKey: ['storefront', storeSlug, 'staff-checkout-options'],

@@ -79,3 +79,11 @@ There are 5 seed accounts that are already set up on running the local developme
 5. <user4@tuturuuu.com>:password123
 
 Let us know if you have any other questions! We're happy to help you get started contributing.
+
+## Formatting and lint
+
+Run `bun format` and `bun lint` before submitting changes. `bun ff` applies safe
+Oxlint fixes followed by Oxfmt formatting. Use the repository-pinned tools and
+editor integrations; generated artifacts follow their owning generators. For
+formatting conflicts after a manual main merge, see the
+[tooling runbook](apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx#formatting-conflicts-in-open-pull-requests).

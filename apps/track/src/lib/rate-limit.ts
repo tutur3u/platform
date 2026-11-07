@@ -224,9 +224,8 @@ async function getWorkspaceRateLimitConfig(
   secretName?: string
 ): Promise<Partial<RateLimitConfig> | null> {
   try {
-    const { createDynamicAdminClient } = await import(
-      '@tuturuuu/supabase/next/server'
-    );
+    const { createDynamicAdminClient } =
+      await import('@tuturuuu/supabase/next/server');
     const supabase = await createDynamicAdminClient();
 
     let query = supabase

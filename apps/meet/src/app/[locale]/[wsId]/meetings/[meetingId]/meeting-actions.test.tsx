@@ -17,9 +17,8 @@ const mocks = vi.hoisted(() => ({
   success: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', async () => {
-  const { InternalApiError } = await import(
-    '@tuturuuu/internal-api/internal-api-error'
-  );
+  const { InternalApiError } =
+    await import('@tuturuuu/internal-api/internal-api-error');
   return {
     InternalApiError,
     getWorkspaceMeetingRecordings: mocks.list,

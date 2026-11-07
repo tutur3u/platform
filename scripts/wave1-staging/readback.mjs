@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Direct CI/operator entrypoint; credentials never enter Turbo builds.
 // Read-only staging ingress readback (staging-web-publisher design §9).
 //
 //   node scripts/wave1-staging/readback.mjs [--app web|calendar] [--expect-sha <sha>]

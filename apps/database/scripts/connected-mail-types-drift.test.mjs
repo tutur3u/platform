@@ -24,7 +24,7 @@ test('ignores only presentation differences in the three owned table types', () 
 function quotedProperties(source) {
   return source.replace(/\b([a-zA-Z_]\w*)(\??):/gu, '"$1"$2:');
 }
-test('accepts postgres-meta quoted property names after Biome formatting', () => {
+test('accepts postgres-meta quoted property names after Oxc formatting', () => {
   assert.equal(
     assertConnectedMailTypesMatch(schema(), quotedProperties(schema())).matched,
     3

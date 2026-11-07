@@ -41,7 +41,6 @@ function emptyQuery() {
   for (const method of ['select', 'eq', 'not', 'order', 'limit'])
     builder[method] = () => builder;
   builder.maybeSingle = async () => ({ data: null, error: null });
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are deliberately awaitable.
   builder.then = (resolve: (value: unknown) => void) =>
     resolve({ data: [], error: null });
   return builder;

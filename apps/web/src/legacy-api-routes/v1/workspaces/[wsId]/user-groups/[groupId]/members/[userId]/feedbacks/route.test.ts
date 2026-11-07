@@ -60,7 +60,6 @@ function query(table: string) {
     },
     maybeSingle: async () => ({ ...result(), data: rows[0] ?? null }),
     single: async () => ({ ...result(), data: rows[0] ?? null }),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase queries are awaitable.
     then: (resolve: (value: ReturnType<typeof result>) => unknown) =>
       Promise.resolve(resolve(result())),
   };

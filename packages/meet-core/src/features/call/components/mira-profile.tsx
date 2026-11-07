@@ -43,7 +43,6 @@ export function MiraAvatar({ size = 28 }: { size?: number }) {
   const className = 'shrink-0 rounded-[22%] object-contain';
   return (
     <>
-      {/* biome-ignore lint/performance/noImgElement: the image optimizer is unavailable on some deployments */}
       <img
         src={MIRA_MARK.light}
         width={size}
@@ -54,7 +53,7 @@ export function MiraAvatar({ size = 28 }: { size?: number }) {
         onError={onError}
         className={`${className} dark:hidden`}
       />
-      {/* biome-ignore lint/performance/noImgElement: the image optimizer is unavailable on some deployments */}
+
       <img
         src={MIRA_MARK.dark}
         width={size}

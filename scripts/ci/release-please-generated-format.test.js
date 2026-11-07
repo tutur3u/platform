@@ -96,12 +96,12 @@ test('generated formatting is path-scoped and race-safe', () => {
     releaseJob.indexOf('Delete tagged overflow release notes')
   );
 
-  assert.doesNotMatch(releaseJob, /npx\b[^\n]*biome/u);
+  assert.doesNotMatch(releaseJob, /npx\b/u);
   assert.match(
     releaseJob,
     /run-with-backoff\.sh bun install --frozen-lockfile --ignore-scripts/
   );
-  assert.match(formatStep, /"\$\{biome_bin\}" format --write/);
+  assert.match(formatStep, /"\$\{oxfmt_bin\}" --write/);
   assert.match(
     formatStep,
     /git diff --name-only -z origin\/production\.\.\.HEAD/

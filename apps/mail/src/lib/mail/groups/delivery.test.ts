@@ -31,7 +31,6 @@ function adminWithRows(rows: Record<string, Row[]>) {
             data: result().data[0] ?? null,
             error: null,
           }),
-          // biome-ignore lint/suspicious/noThenProperty: Model the awaited Supabase query builder.
           then: (resolve: (value: ReturnType<typeof result>) => unknown) =>
             Promise.resolve(result()).then(resolve),
         };

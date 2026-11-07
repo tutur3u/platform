@@ -63,7 +63,6 @@ beforeEach(() => {
     lt: vi.fn().mockReturnThis(),
     gt: vi.fn().mockReturnThis(),
     order: vi.fn(() => Promise.resolve({ data: mocks.events, error: null })),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     then: (resolve: (value: unknown) => void) =>
       resolve({ data: [{ calendar_id: 'linked-calendar' }], error: null }),
   };

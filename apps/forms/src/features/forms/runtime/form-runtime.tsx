@@ -289,11 +289,11 @@ function FormRuntimeContent({
     readOnly && Boolean(advanceTarget.targetSectionId);
   const canTriggerReadOnlyResponseCopy = Boolean(
     readOnly &&
-      canRequestResponseCopy &&
-      onRequestResponseCopy &&
-      readOnlyResponseId &&
-      readOnlyResponseSessionId &&
-      !readOnlyResponseCopySentTo
+    canRequestResponseCopy &&
+    onRequestResponseCopy &&
+    readOnlyResponseId &&
+    readOnlyResponseSessionId &&
+    !readOnlyResponseCopySentTo
   );
   const shouldShowTurnstile =
     requiresTurnstile &&

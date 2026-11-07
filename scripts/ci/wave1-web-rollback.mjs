@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Direct CI entrypoint; credentials never enter Turbo builds.
 // Worker-scoped automatic rollback after a red verify-ingress (Tess R-d).
 //
 //   node scripts/ci/wave1-web-rollback.mjs <sha>

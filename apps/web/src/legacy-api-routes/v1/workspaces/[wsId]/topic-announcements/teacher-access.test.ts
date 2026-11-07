@@ -60,9 +60,8 @@ vi.mock('./email', () => ({
 }));
 
 const { PATCH } = await import('./announcements/[announcementId]/route');
-const { POST: SEND } = await import(
-  './announcements/[announcementId]/send/route'
-);
+const { POST: SEND } =
+  await import('./announcements/[announcementId]/send/route');
 const { resolveTopicAnnouncementsAccess } = await import('./server-helpers');
 const { POST: SEND_BULK } = await import('./send-bulk/route');
 

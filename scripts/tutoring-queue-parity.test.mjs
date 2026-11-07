@@ -19,9 +19,8 @@ const {
   readTutoringPolicy,
   STANDARD_TUTORING_POLICY,
 } = await import('../packages/internal-api/src/tutoring-policy.ts');
-const { loadCurrentLearnerMemberships, loadGroupTagNames } = await import(
-  '../apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/queue/queue-membership.ts'
-);
+const { loadCurrentLearnerMemberships, loadGroupTagNames } =
+  await import('../apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/queue/queue-membership.ts');
 
 const fixtures = JSON.parse(
   readFileSync(
@@ -69,7 +68,6 @@ for (const fixture of fixtures) {
             to = end;
             return query;
           },
-          // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
           then(resolve, reject) {
             const data =
               table === 'workspace_user_groups_users'

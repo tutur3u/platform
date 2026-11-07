@@ -21,8 +21,9 @@ import {
 } from '../src/start-candidate/staging-policy';
 import appConfig from '../start-bridge.config';
 
-export interface DriveEnvironment
-  extends Partial<Record<keyof typeof stagingVars, string>> {
+export interface DriveEnvironment extends Partial<
+  Record<keyof typeof stagingVars, string>
+> {
   ASSETS: AssetsBinding;
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;

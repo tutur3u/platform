@@ -325,9 +325,8 @@ describe('Google Calendar Incremental Sync', () => {
 
   describe('Integration with syncWorkspaceBatched', () => {
     it('should call syncWorkspaceBatched when events exist', async () => {
-      const { syncWorkspaceBatched } = await import(
-        '../src/google-calendar-sync.js'
-      );
+      const { syncWorkspaceBatched } =
+        await import('../src/google-calendar-sync.js');
 
       // This would be tested in the actual task run
       expect(syncWorkspaceBatched).toBeDefined();
@@ -342,9 +341,8 @@ describe('Google Calendar Incremental Sync', () => {
         } as MockCalendarResponse['data'],
       });
 
-      const { syncWorkspaceBatched } = await import(
-        '../src/google-calendar-sync.js'
-      );
+      const { syncWorkspaceBatched } =
+        await import('../src/google-calendar-sync.js');
 
       // This would be tested in the actual task run
       expect(syncWorkspaceBatched).toBeDefined();
@@ -352,9 +350,8 @@ describe('Google Calendar Incremental Sync', () => {
 
     it('should handle batched sync errors gracefully', async () => {
       // Mock error in syncWorkspaceBatched
-      const { syncWorkspaceBatched } = await import(
-        '../src/google-calendar-sync.js'
-      );
+      const { syncWorkspaceBatched } =
+        await import('../src/google-calendar-sync.js');
       (syncWorkspaceBatched as any).mockRejectedValue(
         new Error('Batched sync error')
       );

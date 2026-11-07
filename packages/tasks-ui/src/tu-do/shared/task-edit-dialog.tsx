@@ -1075,7 +1075,7 @@ export function TaskEditDialog({
   );
   const isDeletedTask = Boolean(
     task?.deleted_at ||
-      (task as (Task & { deleted?: boolean }) | undefined)?.deleted
+    (task as (Task & { deleted?: boolean }) | undefined)?.deleted
   );
   const canShowCompactEditActions =
     !isCreateMode &&

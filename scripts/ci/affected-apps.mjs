@@ -60,7 +60,7 @@ function failSafePath(file) {
     file === 'turbo.json' ||
     file.startsWith('.github/') ||
     /^tsconfig[^/]*$/.test(file) ||
-    /^(biome|eslint)[^/]*$/.test(file) ||
+    /^(\.oxfmtrc|\.oxlintrc|eslint)[^/]*$/.test(file) ||
     /(^|\/)Dockerfile[^/]*$/.test(file) ||
     file.startsWith('.env') ||
     /\.env\.example$/.test(file) ||
