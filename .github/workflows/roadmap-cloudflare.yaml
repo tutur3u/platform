@@ -1,0 +1,61 @@
+name: Roadmap Cloudflare Artifact
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Reviewed immutable roadmap source commit
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: roadmap-artifact-${{ inputs.source_sha }}
+  cancel-in-progress: false
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: roadmap-cloudflare.yaml
+  build:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      ROADMAP_SOURCE_SHA: ${{ inputs.source_sha }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - name: Validate immutable source input
+        run: '[[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+      - name: Verify checkout identity
+        run: 'test "$(git rev-parse HEAD)" = "$SOURCE_SHA"'
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - name: Check public roadmap data
+        run: node --test apps/roadmap/src/roadmap-data.test.ts
+      - name: Build the exact roadmap Worker
+        run: bun run --cwd apps/roadmap build:cloudflare
+      - name: Check generated-route types
+        run: bun run --cwd apps/roadmap type-check
+      - name: Seal emitted source and files
+        run: node apps/roadmap/scripts/seal-artifact.mjs "$SOURCE_SHA"
+      - name: Archive the exact Worker and client output
+        run: tar -czf "$RUNNER_TEMP/roadmap-worker.tar.gz" -C apps/roadmap dist roadmap-artifact.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: roadmap-worker-${{ inputs.source_sha }}
+          path: ${{ runner.temp }}/roadmap-worker.tar.gz
+          if-no-files-found: error
