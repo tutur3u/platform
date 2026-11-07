@@ -14,14 +14,21 @@ export function withRoadmapCachePolicy(
     (host === null || host === url.host) &&
     url.protocol === 'https:';
   const vary =
-    response.headers.get('vary')?.split(',').map((item) => item.trim().toLowerCase()) ?? [];
+    response.headers
+      .get('vary')
+      ?.split(',')
+      .map((item) => item.trim().toLowerCase()) ?? [];
   const upstreamCache = response.headers.get('cache-control') ?? '';
   const safe =
     exactHost &&
     ['GET', 'HEAD'].includes(request.method) &&
     response.status === 200 &&
-    !url.href.includes('?') && !url.hash && !url.username && !url.password &&
-    !/[%\\]/.test(url.pathname) && !url.pathname.includes('//') &&
+    !url.href.includes('?') &&
+    !url.hash &&
+    !url.username &&
+    !url.password &&
+    !/[%\\]/.test(url.pathname) &&
+    !url.pathname.includes('//') &&
     !response.headers.has('set-cookie') &&
     vary.every((item) => item === 'accept-encoding') &&
     !/\b(?:private|no-store|no-cache)\b/i.test(upstreamCache);
@@ -32,7 +39,8 @@ export function withRoadmapCachePolicy(
     (url.host === 'roadmap.tuturuuu.com' && url.pathname === '/');
 
   // Asset caching remains the native asset supplier's responsibility.
-  if (safe && !html && url.pathname.startsWith('/roadmap/assets/')) return response;
+  if (safe && !html && url.pathname.startsWith('/roadmap/assets/'))
+    return response;
 
   const headers = new Headers(response.headers);
   headers.set(

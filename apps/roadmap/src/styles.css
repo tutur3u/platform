@@ -1,5 +1,5 @@
-@import '@tuturuuu/ui/globals.css';
-@import '@tuturuuu/satellite/public/styles.css';
+@import "@tuturuuu/ui/globals.css";
+@import "@tuturuuu/satellite/public/styles.css";
 @source '../../../../packages/satellite/src/components/public-satellite-shell.tsx';
 
 :root {

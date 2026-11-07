@@ -5,7 +5,7 @@ import type { ComponentProps, ComponentType, ReactNode } from 'react';
 type PublicLink = ComponentType<ComponentProps<'a'> & { href: string }>;
 type PublicImage = ComponentType<ComponentProps<'img'> & { src: string }>;
 const Anchor: PublicLink = (props) => <a {...props} />;
-const Image: PublicImage = (props) => <img {...props} />;
+const Image: PublicImage = ({ alt, ...props }) => <img alt={alt} {...props} />;
 
 export interface PublicSatelliteShellProps {
   appName: string;

@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { PublicSatelliteProviders, PublicSatelliteShell } from '../public';
@@ -22,7 +24,9 @@ function document() {
         navigationLabel="Navigation"
         signIn={{ href: 'https://tuturuuu.com/login', label: 'Sign in' }}
         LinkComponent={(props) => <a data-adapter="link" {...props} />}
-        ImageComponent={(props) => <img data-adapter="image" {...props} />}
+        ImageComponent={({ alt, ...props }) => (
+          <img data-adapter="image" alt={alt} {...props} />
+        )}
       >
         <main>Public evidence</main>
       </PublicSatelliteShell>
@@ -44,7 +48,12 @@ describe('public satellite SSR', () => {
 
   it('keeps sign-in optional and does not mount account controls', () => {
     const html = renderToString(
-      <PublicSatelliteShell appName="Public" appHref="/" homeHref="/" navigationLabel="Navigation">
+      <PublicSatelliteShell
+        appName="Public"
+        appHref="/"
+        homeHref="/"
+        navigationLabel="Navigation"
+      >
         <main>Public</main>
       </PublicSatelliteShell>
     );
