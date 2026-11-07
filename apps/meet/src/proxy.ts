@@ -17,8 +17,7 @@ import {
 } from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import Negotiator from 'negotiator';
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import {
@@ -72,6 +71,40 @@ function isRootPathOrLocaleRoot(pathname: string) {
     segments.length === 0 ||
     (segments.length === 1 && isLocaleSegment(segments[0]))
   );
+}
+
+/**
+ * A signed-in visit to `/` (or `/{locale}`) always 307s to the personal
+ * meetings list below, so a verified sign-in that would land on the root goes
+ * straight there and skips that browser hop. Only the success target changes:
+ * a failed verification still falls back to `/`, a request without a token
+ * keeps its target, and a pending room invite still wins at the root.
+ */
+function withDirectVerifyTarget(req: NextRequest) {
+  const verifySegments = getPathSegmentsWithoutLocale(req.nextUrl.pathname);
+  if (
+    verifySegments.length !== 1 ||
+    verifySegments[0] !== 'verify-token' ||
+    !req.nextUrl.searchParams.get('token') ||
+    pendingMeetInvite(req)
+  )
+    return req;
+  const nextPath = new URL(
+    normalizeAuthRedirectPath(
+      req.nextUrl.searchParams.get('nextUrl'),
+      req.nextUrl.origin,
+      '/'
+    ),
+    req.nextUrl.origin
+  ).pathname;
+  if (!isRootPathOrLocaleRoot(nextPath)) return req;
+  const locale = getPathSegments(nextPath)[0];
+  const url = req.nextUrl.clone();
+  url.searchParams.set(
+    'nextUrl',
+    `${isLocaleSegment(locale) ? `/${locale}` : ''}/personal/meetings`
+  );
+  return new NextRequest(url, req);
 }
 
 // Create the centralized auth middleware
@@ -205,9 +238,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     return publicCallbackLocale(req);
   }
 
-  const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
-    locales: supportedLocales,
-  });
+  const verifyTokenResponse = await consumeVerifyTokenRequest(
+    withDirectVerifyTarget(req),
+    { locales: supportedLocales }
+  );
   if (verifyTokenResponse) {
     return verifyTokenResponse;
   }

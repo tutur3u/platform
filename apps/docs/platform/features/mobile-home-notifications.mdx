@@ -10,6 +10,10 @@ muted captions above rounded grouped cards, Lucide line icons in tone-tinted
 tiles, and theme tokens only. Data sources, actions and routes did not change
 with the redesign.
 
+## Offline Home
+
+The default-off `offline_read_home` flag prepares task/calendar summaries and today's classes in Education mode (4 MiB cap). Home shows one scoped Last synced label; Mail, Meet, wallets and Notes show unavailable placeholders offline. Apps uses its local registry and persisted tabs. Coverage: `home_offline_test.dart` and existing dashboard/classes/Apps suites.
+
 ## Home
 
 - **Header.** Today's date, a time-of-day greeting with the profile display

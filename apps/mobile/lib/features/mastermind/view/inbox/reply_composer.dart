@@ -70,6 +70,7 @@ class ReplyComposer extends StatelessWidget {
         if (pending != null && !pending.committed)
           ReplyUndoBar(
             option: plainOptionLabel(item, pending.optionIndex),
+            onSendNow: () => replies.sendNow(item.id),
             onUndo: () => replies.undoOption(item.id),
           ),
         MastermindGroup(

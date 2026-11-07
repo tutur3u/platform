@@ -27,7 +27,7 @@ import 'package:mobile/l10n/l10n.dart';
 /// the app is in the foreground; history is in memory only and is dropped
 /// when the app leaves the foreground.
 ///
-/// The composer is off unless the hub reports `iris: true` ([writesEnabled])
+/// The composer requires `iris_send: true` ([writesEnabled])
 /// and the relay has served this device a signed read: Iris writes stay off
 /// until the native write enforcement is signed off.
 class IrisChatView extends StatefulWidget {
@@ -127,7 +127,7 @@ class _IrisChatViewState extends State<IrisChatView>
               bloc: _send,
               builder: (context, outgoing) => ValueListenableBuilder<bool>(
                 valueListenable:
-                    widget.writesEnabled ?? mastermindIrisCapability,
+                    widget.writesEnabled ?? mastermindIrisSendCapability,
                 builder: (context, writes, _) {
                   final blocked = _writesBlocked(context, feed, writes: writes);
                   return Stack(

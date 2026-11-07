@@ -149,6 +149,9 @@ export default function ReportsHub({
           <TabsContent value="periodic" className="mt-4 min-w-0">
             <PeriodicReportsPanel
               cadence={periodicCadence}
+              canResolveHeld={
+                canManageAutomation && periodicPermissions.canSendReports
+              }
               permissions={periodicPermissions}
               wsId={wsId}
             />

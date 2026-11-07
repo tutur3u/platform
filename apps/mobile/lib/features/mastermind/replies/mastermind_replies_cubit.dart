@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:bloc/bloc.dart';
+import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_state.dart';
 import 'package:mobile/features/mastermind/data/hub_capabilities.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
@@ -34,8 +35,9 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     bool Function(String itemId)? isAnsweredElsewhere,
     DateTime Function()? clock,
     Random? random,
-    this.optionUndoWindow = defaultOptionUndoWindow,
-  }) : _store = store,
+    Duration? optionUndoWindow,
+  }) : _optionUndoWindow = optionUndoWindow,
+       _store = store,
        _isAnsweredElsewhere = isAnsweredElsewhere,
        _transport = transport,
        _fetchCapabilities = fetchCapabilities,
@@ -46,11 +48,14 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
        super(const MastermindRepliesState());
 
   /// How long a one-tap option reply can be undone before it is queued.
-  static const defaultOptionUndoWindow = Duration(seconds: 30);
+  static const defaultOptionUndoWindow = Duration(seconds: 5);
   static const _capabilityMaxAge = Duration(minutes: 5);
   static const _defaultRetryAfter = Duration(minutes: 1);
 
-  final Duration optionUndoWindow;
+  final Duration? _optionUndoWindow;
+  final _settings = SettingsRepository();
+  Duration get optionUndoWindow =>
+      _optionUndoWindow ?? _settings.mastermindUndoWindow;
   final MastermindOutboxStore _store;
   final MastermindReplyTransport? _transport;
   final Future<CapabilitiesFetch> Function()? _fetchCapabilities;
@@ -176,6 +181,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     final generation = _generation;
     List<OutboxEntry> entries;
     try {
+      if (_optionUndoWindow == null) await _settings.loadMastermindUndoWindow();
       await _storeTail;
       entries = await _store.read();
     } on Object {
@@ -260,6 +266,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
       return false;
     }
     final generation = _generation;
+    final window = optionUndoWindow;
     final entry = OutboxEntry(
       idempotencyKey: newReplyIdempotencyKey(_random),
       itemId: item.id,
@@ -267,7 +274,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
       createdAt: _clock().toUtc(),
       optionIndex: optionIndex,
       optionLabel: item.optionLabel(optionIndex),
-      holdUntil: _clock().add(optionUndoWindow).toUtc(),
+      holdUntil: _clock().add(window).toUtc(),
     );
     emit(
       state.copyWith(
@@ -283,7 +290,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
       ),
     );
     _undoTimers[item.id] = Timer(
-      optionUndoWindow,
+      window,
       () => unawaited(_commitOption(entry, generation)),
     );
     unawaited(_persistHeldOption(entry, generation));
@@ -370,36 +377,61 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     }
   }
 
-  Future<void> _commitOption(OutboxEntry held, int generation) async {
-    _undoTimers.remove(held.itemId);
-    final pending = state.pendingOptions[held.itemId];
+  Future<void> _commitOption(OutboxEntry held, int generation) =>
+      _releaseHeld([held], generation);
+
+  Future<void> _releaseHeld(List<OutboxEntry> held, int generation) async {
     if (!_current(generation)) return;
-    if (pending != null) {
-      emit(
-        state.copyWith(
-          pendingOptions: {
-            ...state.pendingOptions,
-            held.itemId: pending.asCommitted,
-          },
-        ),
-      );
-    }
-    await _storeTail;
-    if (!_current(generation)) return;
-    final current = state.outbox.where(
-      (entry) => entry.idempotencyKey == held.idempotencyKey,
-    );
-    if (current.isEmpty || current.single.status != OutboxStatus.pending) {
-      _clearPending(held.itemId);
+    final keys = {for (final entry in held) entry.idempotencyKey};
+    final ready = <String, OutboxEntry>{
+      for (final entry in state.outbox)
+        if (keys.contains(entry.idempotencyKey) &&
+            entry.status == OutboxStatus.pending &&
+            entry.holdUntil != null)
+          entry.idempotencyKey: entry.withoutHold(),
+    };
+    if (ready.isEmpty) {
+      // Already sent, undone or resolved elsewhere: drop any stale pending
+      // option so the card never shows a hold that no longer exists.
+      for (final entry in held) {
+        _undoTimers.remove(entry.itemId)?.cancel();
+        _clearPending(entry.itemId);
+      }
       return;
     }
-    final ready = current.single.withoutHold();
-    _replace(ready);
-    await _persist();
-    if (!_current(generation)) return;
-    _clearPending(held.itemId);
-    await _dispatch(ready);
+    final items = {for (final entry in ready.values) entry.itemId};
+    for (final id in items) {
+      _undoTimers.remove(id)?.cancel();
+    }
+    emit(
+      state.copyWith(
+        outbox: [
+          for (final entry in state.outbox)
+            ready[entry.idempotencyKey] ?? entry,
+        ],
+        pendingOptions: {
+          for (final entry in state.pendingOptions.entries)
+            if (!items.contains(entry.key)) entry.key: entry.value,
+        },
+      ),
+    );
+    if (!await _persist() || !_current(generation)) return;
+    for (final entry in ready.values) {
+      if (!_current(generation)) return;
+      await _dispatch(entry);
+    }
   }
+
+  Future<void> sendNow(String itemId) => _releaseHeld(
+    state
+        .heldEntries(_clock())
+        .where((entry) => entry.itemId == itemId)
+        .toList(),
+    _generation,
+  );
+
+  Future<void> sendAllNow() =>
+      _releaseHeld(state.heldEntries(_clock()), _generation);
 
   void _clearPending(String itemId) {
     if (!state.pendingOptions.containsKey(itemId)) return;
@@ -501,12 +533,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
         continue;
       }
       if (entry.holdUntil != null) {
-        _undoTimers.remove(entry.itemId)?.cancel();
-        _clearPending(entry.itemId);
-        final ready = entry.withoutHold();
-        _replace(ready);
-        if (!await _persist()) continue;
-        await _dispatch(ready);
+        await _commitOption(entry, _generation);
         continue;
       }
       final status = state.statusFor(entry.itemId);

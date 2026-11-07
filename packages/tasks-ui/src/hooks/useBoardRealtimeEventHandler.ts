@@ -3,6 +3,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useCallback, useEffect, useRef } from 'react';
+import { getBoardSprintsQueryKey } from '../tu-do/shared/board-sprints/use-board-sprints';
 import type { BoardRealtimePayload } from './useBoardRealtime.types';
 
 type CallbackRef<T> = {
@@ -112,16 +113,6 @@ function mergeRealtimeTask(
   ];
 }
 
-function mergeExistingRealtimeTask(
-  old: Task[] | undefined,
-  taskData: Partial<Task> & { id: string }
-) {
-  if (!old?.some((task) => task.id === taskData.id)) return old;
-  return old.map((task) =>
-    task.id === taskData.id ? { ...task, ...taskData } : task
-  );
-}
-
 function deleteRealtimeTask(old: Task[] | undefined, taskId: string) {
   if (!old) return old;
   return old.filter((task) => task.id !== taskId);
@@ -141,26 +132,6 @@ function updateBoardTaskCaches(
   );
 }
 
-function updateDeadlineTaskCaches(
-  queryClient: QueryClient,
-  boardId: string,
-  taskData: Partial<Task> & { id: string }
-) {
-  queryClient.setQueriesData<Task[]>(
-    {
-      predicate: (query) => {
-        const queryKey = query.queryKey;
-        return (
-          Array.isArray(queryKey) &&
-          queryKey[0] === 'kanban-deadline-tasks' &&
-          queryKey[2] === boardId
-        );
-      },
-    },
-    (old) => mergeExistingRealtimeTask(old, taskData)
-  );
-}
-
 export function applyRealtimeTaskUpsert(
   queryClient: QueryClient,
   boardId: string,
@@ -169,7 +140,6 @@ export function applyRealtimeTaskUpsert(
   updateBoardTaskCaches(queryClient, boardId, (old) =>
     mergeRealtimeTask(old, taskData)
   );
-  updateDeadlineTaskCaches(queryClient, boardId, taskData);
 }
 
 function patchWorkspaceTaskCaches(
@@ -275,18 +245,13 @@ function invalidateTaskMembershipQueries(
   void queryClient.invalidateQueries({
     queryKey: ['task-list-counts', boardId],
   });
-  void queryClient.invalidateQueries({
-    predicate: (query) => {
-      const queryKey = query.queryKey;
-      return (
-        Array.isArray(queryKey) &&
-        queryKey[0] === 'kanban-deadline-tasks' &&
-        queryKey[2] === boardId
-      );
-    },
-  });
   void queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
   void queryClient.invalidateQueries({ queryKey: ['my-completed-tasks'] });
+  // The database moves tasks between sprints as they are created, moved,
+  // finished or reopened, so the board's sprints follow every such change.
+  void queryClient.invalidateQueries({
+    queryKey: getBoardSprintsQueryKey(boardId),
+  });
 }
 
 function invalidateTaskRelationQueries(

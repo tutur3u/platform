@@ -34,6 +34,7 @@ import 'package:mobile/features/classes/data/classes_today_repository.dart';
 import 'package:mobile/features/classes/view/classes_today_card.dart';
 import 'package:mobile/features/classes/view/classes_today_scope.dart';
 import 'package:mobile/features/dashboard/cubit/dashboard_layout_cubit.dart';
+import 'package:mobile/features/dashboard/view/home_offline_frame.dart';
 import 'package:mobile/features/dashboard/view/home_workspace_chips.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
@@ -146,7 +147,9 @@ class DashboardPage extends StatelessWidget {
       ],
       child: ClassesTodayScope(
         repository: classesTodayRepository,
-        child: _DashboardView(replayToken: replayToken, active: active),
+        child: HomeOfflineFrame(
+          child: _DashboardView(replayToken: replayToken, active: active),
+        ),
       ),
     );
   }
@@ -291,7 +294,12 @@ class _DashboardViewState extends State<_DashboardView> {
                                       spacing: AppLayout.sectionGap,
                                       leading: StaggeredEntrance(
                                         replayKey: widget.replayToken,
-                                        child: const _HomeHeader(),
+                                        child: Column(
+                                          children: [
+                                            const _HomeHeader(),
+                                            HomeLastSynced(wsId: workspace.id),
+                                          ],
+                                        ),
                                       ),
                                       children: _dashboardWidgets(
                                         context,

@@ -230,13 +230,19 @@ final class HttpIrisRelay implements IrisRelay {
     } on Object {
       return const IrisErr(IrisFailure(IrisFailureKind.offline));
     }
-    return _outcome(reply, parse, allowEmpty: allowEmpty);
+    return _outcome(
+      reply,
+      parse,
+      allowEmpty: allowEmpty,
+      sending: method == 'POST' && path == '/v1/iris/send',
+    );
   }
 
   IrisResult<T> _outcome<T>(
     _Reply reply,
     T? Function(Uint8List bytes) parse, {
     required bool allowEmpty,
+    required bool sending,
   }) {
     final status = reply.status;
     if (status >= 200 && status < 300) {
@@ -270,6 +276,9 @@ final class HttpIrisRelay implements IrisRelay {
       // At most 3 pending enrolments: the same wait as a 429.
       409 when error == 'pending_limit' => const IrisFailure(
         IrisFailureKind.rateLimited,
+      ),
+      403 when sending && error == 'send_disabled' => const IrisFailure(
+        IrisFailureKind.sendDisabled,
       ),
       403 => const IrisFailure(IrisFailureKind.forbidden),
       400 => const IrisFailure(IrisFailureKind.badRequest),

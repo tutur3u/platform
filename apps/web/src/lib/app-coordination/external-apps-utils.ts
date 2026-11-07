@@ -1,4 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { isRetiredAppHostname } from '@tuturuuu/utils/retired-app-hosts';
 
 export const EXTERNAL_APP_SECRET_PREFIX = 'EXTERNAL_APP_REGISTRY';
 
@@ -8,11 +9,13 @@ const APP_SECRET_PREFIX = 'ttr_app_secret_';
 export const FIELD_NAMES = [
   'allowedScopes',
   'allowedWorkspaceIds',
+  'callbackPaths',
   'createdAt',
   'createdBy',
   'displayName',
   'enabled',
   'origins',
+  'requirePkce',
   'secretHash',
   'secretIssuedAt',
   'secretLastFour',
@@ -68,7 +71,10 @@ export function normalizeOrigin(value: string) {
   try {
     const url = new URL(trimmed);
 
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    if (
+      (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+      isRetiredAppHostname(url.hostname)
+    ) {
       return null;
     }
 
@@ -81,6 +87,26 @@ export function normalizeOrigin(value: string) {
 export function normalizeOrigins(values: string[]) {
   const origins = values.map(normalizeOrigin).filter(Boolean) as string[];
   return [...new Set(origins)].sort();
+}
+
+/** Exact absolute paths (no query, fragment or dot segments), e.g. `/auth/callback`. */
+export function isCallbackPath(value: string) {
+  if (!value.startsWith('/') || value.startsWith('//') || value.length > 512) {
+    return false;
+  }
+
+  try {
+    return new URL(value, 'https://callback.invalid').pathname === value;
+  } catch {
+    return false;
+  }
+}
+
+export function normalizeCallbackPaths(values?: string[]) {
+  const paths = (values ?? [])
+    .map((path) => path.trim())
+    .filter(isCallbackPath);
+  return [...new Set(paths)].sort();
 }
 
 export function normalizeScopes(

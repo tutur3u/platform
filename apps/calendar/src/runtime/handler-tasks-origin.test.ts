@@ -83,6 +83,8 @@ describe('staging Calendar Tasks owner dispatch', () => {
     'https://tasks.tuturuuu.com',
     'https://tuturuuu.com',
     'https://tasks.tuturuuu.com/',
+    'https://tasks.tuturuuu.com.',
+    'https://TASKS.TUTURUUU.COM',
     'http://tasks.staging.example.test',
   ])('refuses %s as the staging Tasks URL', async (value) => {
     vi.stubEnv('TASKS_APP_URL', value);
@@ -155,6 +157,15 @@ describe('resolveCalendarTasksOrigin', () => {
     ['staging', '', null],
     ['staging', 'https://tasks.tuturuuu.com', null],
     ['staging', 'https://evil.tuturuuu.com', null],
+    ['staging', 'https://tasks.tuturuuu.com.', null],
+    ['staging', 'https://TASKS.TUTURUUU.COM', null],
+    ['staging', 'https://TASKS.TUTURUUU.COM.', null],
+    ['staging', 'https://tuturuuu.com.', null],
+    [
+      'staging',
+      'https://tasks.staging.example.test.',
+      'https://tasks.staging.example.test.',
+    ],
     ['staging', 'http://tasks.example.test', null],
     ['staging', 'not a url', null],
     [

@@ -174,7 +174,6 @@ export function useBulkAddAssignee(
           boardId,
           previousTasks: context.previousTasks,
           previousFullTasks: context.previousFullTasks,
-          previousDeadlineTasks: context.previousDeadlineTasks,
           failedTaskIds: variables.taskIds,
         });
       }
@@ -190,7 +189,6 @@ export function useBulkAddAssignee(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds: data.failedTaskIds,
       });
 
@@ -334,7 +332,6 @@ export function useBulkRemoveAssignee(
           boardId,
           previousTasks: context.previousTasks,
           previousFullTasks: context.previousFullTasks,
-          previousDeadlineTasks: context.previousDeadlineTasks,
           failedTaskIds: variables.taskIds,
         });
       }
@@ -351,7 +348,6 @@ export function useBulkRemoveAssignee(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds: data.failedTaskIds,
       });
 

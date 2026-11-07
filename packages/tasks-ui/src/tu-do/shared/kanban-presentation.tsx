@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@tuturuuu/utils/format';
 import type { ReactNode } from 'react';
 import {
   useEffect,
@@ -16,6 +17,8 @@ import {
 } from './board-switch-transition';
 import type { ViewType } from './board-views';
 import { TaskBoardHeaderSkeleton } from './task-board-loading-state';
+import { useIsTaskPanelOpen, useTaskPanelSurface } from './task-panel-surface';
+import { useTaskPanelWidthVariable } from './task-panel-width';
 
 interface KanbanPresentationProps {
   boardId: string;
@@ -102,6 +105,32 @@ export function KanbanPresentation({
       >
         {showSkeleton ? <KanbanSkeleton root /> : children}
       </div>
+    </div>
+  );
+}
+
+/**
+ * The board's outer frame. While mounted it asks task edits to open in the
+ * right side panel, and it leaves room for that panel while it is open.
+ */
+export function BoardPanelFrame({
+  children,
+  panelSurface,
+}: {
+  children: ReactNode;
+  panelSurface: boolean;
+}) {
+  useTaskPanelSurface(panelSurface);
+  const panelOpen = useIsTaskPanelOpen() && panelSurface;
+  useTaskPanelWidthVariable(panelSurface);
+  return (
+    <div
+      className={cn(
+        '-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] flex-1 flex-col transition-[padding] [transition-duration:var(--task-board-panel-transition,200ms)] md:-mx-4',
+        panelOpen && 'sm:pr-[var(--task-panel-width,36rem)]'
+      )}
+    >
+      {children}
     </div>
   );
 }

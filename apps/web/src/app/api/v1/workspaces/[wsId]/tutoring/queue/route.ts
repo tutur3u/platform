@@ -1,4 +1,5 @@
 import {
+  getTutoringAbsenceCutoff,
   hasTutoringTagExclusions,
   isTutoringGroupExcluded,
   readTutoringPolicyConfigRows,
@@ -263,11 +264,7 @@ async function getTutoringData(request: Request, { params }: Params) {
   }
   const groupTags = tagResult.data;
   const reassessmentDays = policy.reassessmentDays;
-  const absenceCutoff = new Date(
-    Date.now() - policy.absenceLookbackDays * 86_400_000
-  )
-    .toISOString()
-    .slice(0, 10);
+  const absenceCutoff = getTutoringAbsenceCutoff(policy);
   const todayNumber = Math.floor(Date.now() / 86_400_000);
 
   const absenceCountMap = new Map<string, number>();

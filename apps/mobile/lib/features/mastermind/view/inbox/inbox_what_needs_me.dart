@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_models.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/what_needs_me.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
@@ -14,10 +15,20 @@ import 'package:mobile/features/mastermind/view/inbox/what_needs_me_header.dart'
 /// shows only while replies are on and some open ask has a recommendation
 /// this device has not answered yet.
 class InboxWhatNeedsMe extends StatelessWidget {
-  const InboxWhatNeedsMe({required this.open, this.summary, super.key});
+  const InboxWhatNeedsMe({
+    required this.open,
+    this.summary,
+    this.tiers,
+    this.onTier,
+    super.key,
+  });
 
   final List<NeedsYou> open;
   final IrisSummary? summary;
+
+  /// The list's tier groups and the scroll to one; see [WhatNeedsMeHeader].
+  final List<InboxTierGroup>? tiers;
+  final ValueChanged<InboxTier>? onTier;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +46,13 @@ class InboxWhatNeedsMe extends StatelessWidget {
         return WhatNeedsMeHeader(
           counts: WhatNeedsMeCounts.from(open),
           summary: summary,
+          tierCounts: switch (tiers) {
+            final tiers? => {
+              for (final group in tiers) group.tier: group.items.length,
+            },
+            null => null,
+          },
+          onTier: onTier,
           onUseRecommendations: recommendable.isEmpty
               ? null
               : () => unawaited(

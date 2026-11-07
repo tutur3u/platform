@@ -143,7 +143,8 @@ void main() {
     ) async {
       await _pump(tester, const MastermindInboxPage(), _v1());
       expect(find.byType(InboxItemTile), findsNWidgets(2));
-      expect(find.text('Needs a decision'), findsOneWidget);
+      // The tier heading and its count tile.
+      expect(find.text('Needs a decision'), findsNWidgets(2));
       expect(find.text('Recently resolved'), findsNothing);
 
       await _segment(tester, 'Resolved');

@@ -14,7 +14,7 @@ describe('preserved Contacts signed session contract', () => {
       { targetApp, userId: 'fixture-user', email: 'fixture@example.test' },
       { secret, now }
     ).access.token;
-    return new Request('https://contacts.staging.tutur3u.com/ws/users', {
+    return new Request('https://contacts.tutur3u.com/ws/users', {
       headers: { cookie: `tuturuuu_app_session=${token}` },
     });
   }

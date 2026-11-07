@@ -25,10 +25,10 @@ void main() {
     addTearDown(cubit.close);
   }
 
-  test('the default undo window is 30 seconds', () {
+  test('the default undo window is 5 seconds', () {
     expect(
       MastermindRepliesCubit.defaultOptionUndoWindow,
-      const Duration(seconds: 30),
+      const Duration(seconds: 5),
     );
   });
 

@@ -67,6 +67,9 @@ class TaskListCubit extends Cubit<TaskListState> {
     );
   }
 
+  static CacheKey offlineSummaryKey(String wsId, {required bool isPersonal}) =>
+      _cacheKey(wsId: wsId, isPersonal: isPersonal);
+
   static Future<void> prewarm({
     required TaskRepository taskRepository,
     required String wsId,

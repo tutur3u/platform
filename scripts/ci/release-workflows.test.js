@@ -1653,19 +1653,19 @@ const packageReleaseWorkflows = [
     workflowName: 'release-realtime-package.yaml',
   },
   {
-    artifactDir: 'turnstile-package',
-    artifactName: 'tuturuuu-turnstile-npm-package',
-    environment: 'turnstile-release-production',
-    packageName: '@tuturuuu/turnstile',
-    packagePath: 'packages/turnstile',
+    artifactDir: 'cloudflare-package',
+    artifactName: 'tuturuuu-cloudflare-npm-package',
+    environment: 'cloudflare-release-production',
+    packageName: '@tuturuuu/cloudflare',
+    packagePath: 'packages/cloudflare',
     rejectMessagePattern:
-      /@tuturuuu\/turnstile releases can only run from refs\/heads\/production/,
+      /@tuturuuu\/cloudflare releases can only run from refs\/heads\/production/,
     requiredBuildPatterns: [
-      /working-directory: packages\/turnstile/,
-      /bun turbo:local run type-check --concurrency=4 --filter=@tuturuuu\/turnstile/,
-      /bun turbo:local run test --concurrency=4 --filter=@tuturuuu\/turnstile/,
+      /working-directory: packages\/cloudflare/,
+      /bun turbo:local run type-check --concurrency=4 --filter=@tuturuuu\/cloudflare/,
+      /bun turbo:local run test --concurrency=4 --filter=@tuturuuu\/cloudflare/,
     ],
-    workflowName: 'release-turnstile-package.yaml',
+    workflowName: 'release-cloudflare-package.yaml',
   },
   {
     artifactDir: 'sdk-package',
@@ -1975,22 +1975,23 @@ test('package trusted publishing avoids secret-redacted metadata outputs', () =>
       publishJob,
       /echo "path=\.\/\$\{PACKAGE_TARBALL\}" >> "\$GITHUB_OUTPUT"/
     );
-    // Newer releases hand the artifact path to the script through env; the
-    // older ones still interpolate it and are reviewed in the trust-boundary
-    // test.
+    // The artifact path reaches the publish script through env, never through
+    // direct `${{ }}` interpolation inside `run:` (trust boundary).
     const publishPattern =
       packagePath === 'packages/sdk'
         ? /npm publish "\$\{PACKAGE_TARBALL\}" --ignore-scripts/
-        : ['packages/realtime', 'packages/turnstile'].includes(packagePath)
-          ? /npm publish "\$ARTIFACT_PATH" --ignore-scripts/
-          : /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}" --ignore-scripts/;
+        : /npm publish "\$ARTIFACT_PATH" --ignore-scripts/;
     assert.match(publishJob, publishPattern);
-    if (publishPattern.source.includes('ARTIFACT_PATH')) {
+    if (packagePath !== 'packages/sdk') {
       assert.match(
         publishJob,
         /ARTIFACT_PATH: \$\{\{ steps\.artifact\.outputs\.path \}\}/
       );
     }
+    assert.doesNotMatch(
+      publishJob,
+      /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}"/
+    );
     assert.match(publishJob, /trusted publisher is configured/);
     assert.match(publishJob, /Wait for npm publication/);
     assert.match(

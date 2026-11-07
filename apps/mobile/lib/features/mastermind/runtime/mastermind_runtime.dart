@@ -132,6 +132,7 @@ final class MastermindRuntime {
     final result = await fetch;
     if (result case CapabilitiesFetchOk(:final capabilities)) {
       mastermindIrisCapability.value = capabilities.iris;
+      mastermindIrisSendCapability.value = capabilities.irisSend;
     }
     return result;
   }

@@ -3709,6 +3709,8 @@ export type Database = {
       };
       cross_app_tokens: {
         Row: {
+          code_challenge: string | null;
+          code_challenge_method: string | null;
           created_at: string;
           expires_at: string;
           id: string;
@@ -3722,6 +3724,8 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          code_challenge?: string | null;
+          code_challenge_method?: string | null;
           created_at?: string;
           expires_at: string;
           id?: string;
@@ -3734,6 +3738,8 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          code_challenge?: string | null;
+          code_challenge_method?: string | null;
           created_at?: string;
           expires_at?: string;
           id?: string;
@@ -4208,17 +4214,20 @@ export type Database = {
       devbox_control_settings: {
         Row: {
           id: boolean;
+          personal_pools_enabled: boolean;
           require_reported_execution_mode: boolean;
           updated_at: string;
         };
         ComputedFields: never;
         Insert: {
           id?: boolean;
+          personal_pools_enabled?: boolean;
           require_reported_execution_mode?: boolean;
           updated_at?: string;
         };
         Update: {
           id?: boolean;
+          personal_pools_enabled?: boolean;
           require_reported_execution_mode?: boolean;
           updated_at?: string;
         };
@@ -4338,6 +4347,31 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      devbox_personal_pool_grants: {
+        Row: {
+          accepted_at: string | null;
+          expires_at: string;
+          status: string;
+          suspended: boolean;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          accepted_at?: string | null;
+          expires_at: string;
+          status?: string;
+          suspended?: boolean;
+          user_id: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          expires_at?: string;
+          status?: string;
+          suspended?: boolean;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       devbox_preview_requests: {
         Row: {
@@ -22503,6 +22537,10 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
+      devbox_identity_grant_active: {
+        Args: { p_user_id: string };
+        Returns: boolean;
+      };
       devbox_reports_fresh_trusted: {
         Args: { p_capabilities: Json; p_capabilities_updated_at: string };
         Returns: boolean;
@@ -24979,6 +25017,17 @@ export type Database = {
           p_user_id: string;
         };
         Returns: undefined;
+      };
+      redeem_cross_app_token: {
+        Args: {
+          p_code_verifier: string;
+          p_target_app: string;
+          p_token: string;
+        };
+        Returns: {
+          session_data: Json;
+          user_id: string;
+        }[];
       };
       refresh_posts_dashboard_view: {
         Args: Record<PropertyKey, never>;
@@ -34334,19 +34383,28 @@ export type Database = {
       };
       task_cycle_tasks: {
         Row: {
+          added_after_start: boolean;
+          carry_count: number;
           created_at: string | null;
           cycle_id: string;
+          end_decision: string | null;
           task_id: string;
         };
         ComputedFields: never;
         Insert: {
+          added_after_start?: boolean;
+          carry_count?: number;
           created_at?: string | null;
           cycle_id: string;
+          end_decision?: string | null;
           task_id: string;
         };
         Update: {
+          added_after_start?: boolean;
+          carry_count?: number;
           created_at?: string | null;
           cycle_id?: string;
+          end_decision?: string | null;
           task_id?: string;
         };
         Relationships: [
@@ -34376,14 +34434,20 @@ export type Database = {
       task_cycles: {
         Row: {
           archived: boolean | null;
+          board_id: string | null;
           created_at: string | null;
           creator_id: string;
           deleted: boolean | null;
           description: string | null;
           end_date: string | null;
+          ended_at: string | null;
+          goal: string | null;
+          goal_result: string | null;
           id: string;
           name: string;
+          sequence_number: number | null;
           start_date: string | null;
+          started_at: string | null;
           status: string | null;
           updated_at: string | null;
           ws_id: string;
@@ -34391,33 +34455,52 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           archived?: boolean | null;
+          board_id?: string | null;
           created_at?: string | null;
           creator_id?: string;
           deleted?: boolean | null;
           description?: string | null;
           end_date?: string | null;
+          ended_at?: string | null;
+          goal?: string | null;
+          goal_result?: string | null;
           id?: string;
           name: string;
+          sequence_number?: number | null;
           start_date?: string | null;
+          started_at?: string | null;
           status?: string | null;
           updated_at?: string | null;
           ws_id: string;
         };
         Update: {
           archived?: boolean | null;
+          board_id?: string | null;
           created_at?: string | null;
           creator_id?: string;
           deleted?: boolean | null;
           description?: string | null;
           end_date?: string | null;
+          ended_at?: string | null;
+          goal?: string | null;
+          goal_result?: string | null;
           id?: string;
           name?: string;
+          sequence_number?: number | null;
           start_date?: string | null;
+          started_at?: string | null;
           status?: string | null;
           updated_at?: string | null;
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'task_cycles_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'task_cycles_creator_id_fkey';
             columns: ['creator_id'];
@@ -36259,17 +36342,20 @@ export type Database = {
           created_at: string | null;
           project_id: string;
           task_id: string;
+          ticket_number: number | null;
         };
         ComputedFields: never;
         Insert: {
           created_at?: string | null;
           project_id: string;
           task_id: string;
+          ticket_number?: number | null;
         };
         Update: {
           created_at?: string | null;
           project_id?: string;
           task_id?: string;
+          ticket_number?: number | null;
         };
         Relationships: [
           {
@@ -36530,9 +36616,11 @@ export type Database = {
           id: string;
           lead_id: string | null;
           name: string;
+          next_ticket_number: number;
           priority: Database['public']['Enums']['task_priority'] | null;
           start_date: string | null;
           status: string | null;
+          ticket_key: string | null;
           updated_at: string | null;
           ws_id: string;
         };
@@ -36549,9 +36637,11 @@ export type Database = {
           id?: string;
           lead_id?: string | null;
           name: string;
+          next_ticket_number?: number;
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           status?: string | null;
+          ticket_key?: string | null;
           updated_at?: string | null;
           ws_id: string;
         };
@@ -36567,9 +36657,11 @@ export type Database = {
           id?: string;
           lead_id?: string | null;
           name?: string;
+          next_ticket_number?: number;
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           status?: string | null;
+          ticket_key?: string | null;
           updated_at?: string | null;
           ws_id?: string;
         };
@@ -36880,6 +36972,106 @@ export type Database = {
             columns: ['task_id'];
             isOneToOne: false;
             referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_sprint_reports: {
+        Row: {
+          added_points: number;
+          added_tasks: number;
+          backlog_tasks: number;
+          board_id: string;
+          carried_in_tasks: number;
+          carried_tasks: number;
+          committed_points: number;
+          cycle_id: string;
+          done_points: number;
+          done_tasks: number;
+          ended_at: string;
+          ended_by: string | null;
+          goal: string | null;
+          goal_result: string | null;
+          next_cycle_id: string | null;
+          people: Json;
+          total_tasks: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          added_points?: number;
+          added_tasks?: number;
+          backlog_tasks?: number;
+          board_id: string;
+          carried_in_tasks?: number;
+          carried_tasks?: number;
+          committed_points?: number;
+          cycle_id: string;
+          done_points?: number;
+          done_tasks?: number;
+          ended_at?: string;
+          ended_by?: string | null;
+          goal?: string | null;
+          goal_result?: string | null;
+          next_cycle_id?: string | null;
+          people?: Json;
+          total_tasks?: number;
+          ws_id: string;
+        };
+        Update: {
+          added_points?: number;
+          added_tasks?: number;
+          backlog_tasks?: number;
+          board_id?: string;
+          carried_in_tasks?: number;
+          carried_tasks?: number;
+          committed_points?: number;
+          cycle_id?: string;
+          done_points?: number;
+          done_tasks?: number;
+          ended_at?: string;
+          ended_by?: string | null;
+          goal?: string | null;
+          goal_result?: string | null;
+          next_cycle_id?: string | null;
+          people?: Json;
+          total_tasks?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_sprint_reports_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_sprint_reports_cycle_id_fkey';
+            columns: ['cycle_id'];
+            isOneToOne: true;
+            referencedRelation: 'task_cycles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_sprint_reports_ended_by_fkey';
+            columns: ['ended_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_sprint_reports_next_cycle_id_fkey';
+            columns: ['next_cycle_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_cycles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_sprint_reports_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -40418,6 +40610,7 @@ export type Database = {
           id: string;
           name: string | null;
           next_task_number: number;
+          sprint_length_weeks: number | null;
           template_id: string | null;
           ticket_prefix: string | null;
           ws_id: string;
@@ -40441,6 +40634,7 @@ export type Database = {
           id?: string;
           name?: string | null;
           next_task_number?: number;
+          sprint_length_weeks?: number | null;
           template_id?: string | null;
           ticket_prefix?: string | null;
           ws_id: string;
@@ -40463,6 +40657,7 @@ export type Database = {
           id?: string;
           name?: string | null;
           next_task_number?: number;
+          sprint_length_weeks?: number | null;
           template_id?: string | null;
           ticket_prefix?: string | null;
           ws_id?: string;
@@ -48864,6 +49059,16 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      add_board_sprint: {
+        Args: { p_actor_id?: string; p_board_id: string; p_ws_id: string };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       add_platform_entity_creation_limit_table: {
         Args: {
           p_notes?: string;
@@ -49108,6 +49313,10 @@ export type Database = {
       archive_old_notifications: {
         Args: { p_days_threshold?: number };
         Returns: number;
+      };
+      assign_task_cycle: {
+        Args: { p_cycle_id: string; p_task_id: string };
+        Returns: undefined;
       };
       atomic_sync_token_operation: {
         Args: {
@@ -49755,6 +49964,21 @@ export type Database = {
         Args: { p_now: string; p_ws_id: string };
         Returns: undefined;
       };
+      end_board_sprint: {
+        Args: {
+          p_actor_id?: string;
+          p_cycle_id: string;
+          p_decisions?: Json;
+          p_goal_result?: string;
+        };
+        Returns: Database['public']['Tables']['task_sprint_reports']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_sprint_reports';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       ensure_discord_guild_member_identity_index: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
@@ -49800,6 +50024,18 @@ export type Database = {
             };
             Returns: string;
           };
+      generate_cross_app_token_pkce: {
+        Args: {
+          p_code_challenge: string;
+          p_code_challenge_method: string;
+          p_expiry_seconds: number;
+          p_origin_app: string;
+          p_session_data: Json;
+          p_target_app: string;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
       get_action_frequency_by_hour: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -52142,6 +52378,10 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      list_board_unplanned_task_ids: {
+        Args: { p_board_id: string; p_ws_id: string };
+        Returns: string[];
+      };
       list_deferred_calendar_google_imports: {
         Args: {
           p_auth_token_id?: string;
@@ -52398,6 +52638,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      move_tasks_to_board_sprint: {
+        Args: {
+          p_board_id: string;
+          p_cycle_id?: string;
+          p_task_ids: string[];
+        };
+        Returns: number;
+      };
       normalize_task_sort_keys: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
@@ -52588,6 +52836,21 @@ export type Database = {
           remaining_credits: number;
           success: boolean;
         }[];
+      };
+      remove_board_sprint: {
+        Args: {
+          p_actor_id?: string;
+          p_board_id: string;
+          p_cycle_id: string;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       remove_task_label_with_actor: {
         Args: {
@@ -52826,6 +53089,16 @@ export type Database = {
           relevance: number;
         }[];
       };
+      set_board_sprint_length: {
+        Args: { p_actor_id?: string; p_board_id: string; p_weeks: number };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       set_default_break_type: {
         Args: { p_target_id: string; p_ws_id: string };
         Returns: {
@@ -53059,6 +53332,16 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      start_board_sprint: {
+        Args: { p_actor_id?: string; p_cycle_id: string };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       strict_payload_field_byte_limit: {
         Args: { _column_name: string; _table_name: string };
@@ -53498,6 +53781,17 @@ export type Database = {
       };
       validate_cross_app_token_with_session: {
         Args: { p_target_app: string; p_token: string };
+        Returns: {
+          session_data: Json;
+          user_id: string;
+        }[];
+      };
+      validate_cross_app_token_with_session_pkce: {
+        Args: {
+          p_code_verifier: string;
+          p_target_app: string;
+          p_token: string;
+        };
         Returns: {
           session_data: Json;
           user_id: string;

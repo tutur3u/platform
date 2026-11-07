@@ -26,7 +26,7 @@ test('emitted storefront Worker applies security and personalized cache policy',
       );
     },
   });
-  for (const host of ['store.tuturuuu.com', 'storefront.staging.tutur3u.com']) {
+  for (const host of ['store.tuturuuu.com', 'storefront.tutur3u.com']) {
     for (const path of [
       '/',
       '/api/build-info',

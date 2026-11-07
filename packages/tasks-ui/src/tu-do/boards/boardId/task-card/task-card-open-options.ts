@@ -3,7 +3,8 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-external';
 import {
   type BoardConfig,
-  getTicketIdentifier,
+  getTaskTicketLabel,
+  getTaskTicketProject,
 } from '@tuturuuu/utils/task-helper';
 import type { SharedTaskContext } from '../../../shared/task-edit-dialog/hooks/use-task-data';
 
@@ -50,20 +51,44 @@ function getTaskTicketPrefix(task: Task) {
 }
 
 export function getTaskCardTicketIdentifier({
-  boardConfig,
-  isExternalTask,
   task,
 }: {
   boardConfig: BoardConfig | null | undefined;
   isExternalTask: boolean;
   task: Task;
 }) {
-  if (!isExternalTask && boardConfig === undefined) return null;
+  return getTaskTicketLabel(task);
+}
 
-  return getTicketIdentifier(
-    isExternalTask ? getTaskTicketPrefix(task) : boardConfig?.ticket_prefix,
-    task.display_number
-  );
+/** The ticket ID a card shows; Documents lists show none. */
+export function getShownTicketIdentifier(
+  ticketIdentifier: string | null,
+  listStatus: TaskList['status'] | null | undefined
+) {
+  return listStatus === 'documents' ? null : ticketIdentifier;
+}
+
+/** A task's ticket ID as its card shows it. */
+export function getShownTaskTicketLabel(
+  task: Task,
+  listStatus: TaskList['status'] | null | undefined
+) {
+  return getShownTicketIdentifier(getTaskTicketLabel(task), listStatus);
+}
+
+/**
+ * Projects to show as a card badge. The `[KEY-N]` prefix already names the
+ * project it comes from, so a card whose only project is that one drops the
+ * badge; several projects, or a prefix from another project (a personal
+ * overlay keeps the source ticket), keep theirs.
+ */
+export function getTaskCardBadgeProjects(
+  task: Pick<Task, 'projects'> & { ticket_projects?: Task['projects'] },
+  ticketIdentifier: string | null
+): NonNullable<Task['projects']> {
+  const projects = task.projects ?? [];
+  if (!ticketIdentifier || projects.length !== 1) return projects;
+  return getTaskTicketProject(task)?.id === projects[0]?.id ? [] : projects;
 }
 
 function buildInitialSourceList(
@@ -166,4 +191,12 @@ export function getTaskCardHydratingOpenOptions({
         }
       : {}),
   };
+}
+
+/** The card title's accessible name keeps the visible "[ID] Title" prefix. */
+export function getTaskCardTitleName(
+  name: string,
+  ticketIdentifier: string | null | undefined
+) {
+  return ticketIdentifier ? `[${ticketIdentifier}] ${name}` : name;
 }

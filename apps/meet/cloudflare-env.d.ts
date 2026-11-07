@@ -17,6 +17,9 @@ interface __BaseEnv_CloudflareEnv {
     import('./cloudflare/worker').MeetLiveDurableObject
   >;
   WORKER_SELF_REFERENCE: Service<typeof import('./cloudflare/worker').default>;
+  /** RPC entrypoint AbuseGuardEntrypoint from tuturuuu-abuse-guard. */
+  ABUSE_GUARD: Service &
+    import('@tuturuuu/utils/abuse-guard/client').AbuseGuardBinding;
 }
 declare namespace Cloudflare {
   interface GlobalProps {

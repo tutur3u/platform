@@ -9,12 +9,12 @@ const decorate = createRootResponsePolicy({
 
 export default defineBridgeAppConfig({
   mounts: {
-    rootHosts: ['drive.staging.tutur3u.com'],
+    rootHosts: ['drive.tutur3u.com'],
     mountHosts: [],
     unknownHost: 'reject',
   },
   worker: { workersDev: false },
   csp: defaultContentSecurityPolicy,
   wrapResponse: (response, context) =>
-    scopeStagingCookies(decorate(response, context)),
+    scopeStagingCookies(context.request, decorate(response, context)),
 });

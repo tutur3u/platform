@@ -24,10 +24,9 @@ export 'api_multipart_file.dart';
 
 part 'api_client_mutations.dart';
 part 'api_client_integrity.dart';
+part 'api_client_conditional.dart';
 
 /// Lightweight HTTP client for calling mobile API endpoints.
-///
-/// Ported from apps/native/lib/api/client.ts.
 class ApiClient {
   ApiClient({
     String? baseUrl,

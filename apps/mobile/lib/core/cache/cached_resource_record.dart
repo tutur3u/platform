@@ -8,6 +8,7 @@ class CachedResourceRecord {
     required this.fetchedAt,
     required this.staleAt,
     required this.expireAt,
+    this.neverExpires = false,
     this.userId,
     this.workspaceId,
     this.locale,
@@ -25,6 +26,7 @@ class CachedResourceRecord {
       fetchedAt: DateTime.parse(json['fetchedAt'] as String),
       staleAt: DateTime.parse(json['staleAt'] as String),
       expireAt: DateTime.parse(json['expireAt'] as String),
+      neverExpires: json['neverExpires'] == true,
       userId: json['userId'] as String?,
       workspaceId: json['workspaceId'] as String?,
       locale: json['locale'] as String?,
@@ -45,6 +47,7 @@ class CachedResourceRecord {
   final DateTime fetchedAt;
   final DateTime staleAt;
   final DateTime expireAt;
+  final bool neverExpires;
   final String? userId;
   final String? workspaceId;
   final String? locale;
@@ -54,7 +57,7 @@ class CachedResourceRecord {
   final Map<String, String> params;
 
   bool get isFresh => DateTime.now().isBefore(staleAt);
-  bool get isExpired => !DateTime.now().isBefore(expireAt);
+  bool get isExpired => !neverExpires && !DateTime.now().isBefore(expireAt);
 
   CachedResourceRecord copyWith({
     String? key,
@@ -63,6 +66,7 @@ class CachedResourceRecord {
     DateTime? fetchedAt,
     DateTime? staleAt,
     DateTime? expireAt,
+    bool? neverExpires,
     Object? userId = _cacheRecordSentinel,
     Object? workspaceId = _cacheRecordSentinel,
     Object? locale = _cacheRecordSentinel,
@@ -78,6 +82,7 @@ class CachedResourceRecord {
       fetchedAt: fetchedAt ?? this.fetchedAt,
       staleAt: staleAt ?? this.staleAt,
       expireAt: expireAt ?? this.expireAt,
+      neverExpires: neverExpires ?? this.neverExpires,
       userId: userId == _cacheRecordSentinel ? this.userId : userId as String?,
       workspaceId: workspaceId == _cacheRecordSentinel
           ? this.workspaceId
@@ -103,6 +108,7 @@ class CachedResourceRecord {
     'fetchedAt': fetchedAt.toIso8601String(),
     'staleAt': staleAt.toIso8601String(),
     'expireAt': expireAt.toIso8601String(),
+    if (neverExpires) 'neverExpires': true,
     'userId': userId,
     'workspaceId': workspaceId,
     'locale': locale,
