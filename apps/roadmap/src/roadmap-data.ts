@@ -150,3 +150,15 @@ export function stageCounts(products: readonly RoadmapApp[]) {
     count: products.filter((app) => app.stage === stage).length,
   }));
 }
+
+export function rowSummaryKey(app: RoadmapApp) {
+  if (
+    app.id === 'roadmap' &&
+    app.stage === 'waiting_for_production_sync' &&
+    app.mergeIncluded &&
+    app.stageEvidence.pr?.state === 'merged' &&
+    app.stageEvidence.production === null
+  )
+    return 'pendingPublicProductionReceipt';
+  return app.stage;
+}

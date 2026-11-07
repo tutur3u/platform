@@ -36,7 +36,8 @@
     "rolling_out": "Source work or a current migration PR is recorded; completion is not verified.",
     "waiting_for_merge": "The current PR head is approved with all recorded required checks successful.",
     "waiting_for_production_sync": "The migration PR is merged into this source; production serving is not verified.",
-    "live": "Public production readback and acceptance match the merged migration source."
+    "live": "Public production readback and acceptance match the merged migration source.",
+    "pendingPublicProductionReceipt": "Awaiting public production receipt"
   },
   "target": "TanStack Start · Vite+ · Void · Cloudflare Workers",
   "title": "A clearer path to Cloudflare.",

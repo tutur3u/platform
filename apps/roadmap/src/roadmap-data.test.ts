@@ -24,6 +24,7 @@ import {
   parseSnapshot,
   snapshot,
   stageCounts,
+  rowSummaryKey,
 } from './roadmap-data.ts';
 import en from '../messages/en.json' with { type: 'json' };
 import vi from '../messages/vi.json' with { type: 'json' };
@@ -396,4 +397,72 @@ test('cohort release needs exact app source, ancestry, receipt bytes, target and
       )
     );
   }
+});
+
+test('roadmap row explains the missing public receipt in both languages without changing evidence or stages', () => {
+  const before = structuredClone(snapshot);
+  const counts = stageCounts(snapshot.apps);
+  const roadmap = snapshot.apps.find((app) => app.id === 'roadmap');
+  assert.ok(roadmap);
+  assert.equal(roadmap.stageEvidence.production, null);
+  assert.equal(roadmap.stage, 'waiting_for_production_sync');
+  assert.equal(
+    en.summaries[rowSummaryKey(roadmap)],
+    'Awaiting public production receipt'
+  );
+  assert.equal(
+    vi.summaries[rowSummaryKey(roadmap)],
+    'Chờ bằng chứng production công khai'
+  );
+  for (const app of snapshot.apps.filter((app) => app.id !== 'roadmap')) {
+    assert.equal(rowSummaryKey(app), app.stage);
+    assert.equal(en.summaries[rowSummaryKey(app)], en.summaries[app.stage]);
+    assert.equal(vi.summaries[rowSummaryKey(app)], vi.summaries[app.stage]);
+  }
+  assert.deepEqual(snapshot, before);
+  assert.deepEqual(stageCounts(snapshot.apps), counts);
+  assert.deepEqual(
+    filterProducts(snapshot.apps, '', 'waiting_for_production_sync'),
+    before.apps.filter((app) => app.stage === 'waiting_for_production_sync')
+  );
+});
+
+test('roadmap pending-receipt copy disappears when accepted production evidence derives live', () => {
+  const roadmap = snapshot.apps.find((app) => app.id === 'roadmap');
+  assert.ok(roadmap?.stageEvidence.source && roadmap.stageEvidence.pr?.merge);
+  const source = roadmap.stageEvidence.source;
+  const merge = roadmap.stageEvidence.pr.merge;
+  const production = productionFixture();
+  production.scope = 'roadmap';
+  production.url = 'https://roadmap.tuturuuu.com/roadmap/';
+  production.deployedSha = merge.sha;
+  production.responseSha = merge.sha;
+  production.observedAt = snapshot.checkedAt;
+  production.equivalence = {
+    kind: 'git_app_subtree',
+    app: 'roadmap',
+    sourceCommit: source.commit,
+    mergeCommit: merge.sha,
+    deployedCommit: merge.sha,
+    appSubtree: source.appSubtree,
+  };
+  const stageEvidence = parseEvidence(
+    { ...roadmap.stageEvidence, production },
+    'roadmap'
+  );
+  const stage = deriveStage(
+    roadmap.workInSource,
+    stageEvidence,
+    snapshot.checkedAt,
+    roadmap.mergeIncluded
+  );
+  assert.equal(stage, 'live');
+  const later = { ...roadmap, stageEvidence, stage };
+  assert.equal(rowSummaryKey(later), 'live');
+  assert.equal(en.summaries[rowSummaryKey(later)], en.summaries.live);
+  assert.equal(vi.summaries[rowSummaryKey(later)], vi.summaries.live);
+  assert.equal(
+    rowSummaryKey({ ...roadmap, mergeIncluded: false }),
+    'waiting_for_production_sync'
+  );
 });
