@@ -8,6 +8,7 @@ import { CreateBoardAnywhereDialog } from '@tuturuuu/tasks-ui/tu-do/boards/creat
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import {
   useUpdateUserWorkspaceConfig,
   useUserWorkspaceConfig,
@@ -77,29 +78,15 @@ export function TaskDefaultBoardSettings({ wsId }: { wsId: string }) {
   };
 
   return (
-    <section className="space-y-4 rounded-2xl border bg-muted/20 p-4 sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <h3 className="font-semibold">{t('default_board')}</h3>
-          <p className="text-muted-foreground text-sm">
-            {t('default_board_description')}
-          </p>
-        </div>
-        <CreateBoardAnywhereDialog currentWorkspaceId={wsId}>
-          <Button className="gap-2 sm:shrink-0" size="sm" type="button">
-            <Plus className="size-4" />
-            {t('create_board_anywhere')}
-          </Button>
-        </CreateBoardAnywhereDialog>
-      </div>
-
+    <SettingsSection>
       <SettingItemTab
+        controlClassName="flex flex-wrap items-center gap-2"
         title={t('default_board')}
         description={t('default_board_description')}
       >
         <Combobox
           ariaLabel={t('default_board')}
-          className="w-full sm:w-72"
+          className="w-full sm:w-56"
           disabled={
             boardsQuery.isLoading ||
             defaultBoardQuery.isLoading ||
@@ -112,7 +99,13 @@ export function TaskDefaultBoardSettings({ wsId }: { wsId: string }) {
           searchPlaceholder={t('default_board_search')}
           selected={selectedBoardId}
         />
+        <CreateBoardAnywhereDialog currentWorkspaceId={wsId}>
+          <Button className="gap-2" size="sm" type="button" variant="outline">
+            <Plus className="size-4" />
+            {t('create_board_anywhere')}
+          </Button>
+        </CreateBoardAnywhereDialog>
       </SettingItemTab>
-    </section>
+    </SettingsSection>
   );
 }

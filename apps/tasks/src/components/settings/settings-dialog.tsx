@@ -314,7 +314,7 @@ export function SettingsDialog({
       )}
 
       {activeTab === 'tasks_general' && (
-        <div className="h-full space-y-6">
+        <div className="h-full space-y-8">
           {wsId ? <TaskDefaultBoardSettings wsId={wsId} /> : null}
           {wsId && onBoardSettingsOpen ? (
             <TaskBoardSettingsPicker
@@ -334,7 +334,6 @@ export function SettingsDialog({
           <TaskBoardSettingsPicker
             boardId={boardId}
             onOpenBoard={onBoardSettingsOpen}
-            variant="empty"
             wsId={wsId}
           />
         ) : (

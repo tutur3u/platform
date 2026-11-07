@@ -25,13 +25,17 @@ import NotesContent from '@tuturuuu/tasks-ui/tu-do/notes/notes-content';
 import { TaskProjectsClient } from '@tuturuuu/tasks-ui/tu-do/projects/task-projects-client';
 import type { TaskProject } from '@tuturuuu/tasks-ui/tu-do/projects/types';
 import { BoardLayoutSettingsContent } from '@tuturuuu/tasks-ui/tu-do/shared/board-layout-settings';
-import { SettingsGroup } from '@tuturuuu/tasks-ui/tu-do/shared/settings-group';
 import MarketplaceClient from '@tuturuuu/tasks-ui/tu-do/templates/marketplace/client';
 import { TaskTemplatesHub } from '@tuturuuu/tasks-ui/tu-do/templates/task-templates-hub';
 import TaskTemplateDetailPageClient from '@tuturuuu/tasks-ui/tu-do/templates/templateId/task-template-detail-page-client';
 import type { BoardTemplate } from '@tuturuuu/tasks-ui/tu-do/templates/types';
 import type { Workspace } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Dialog,
   DialogContent,
@@ -69,10 +73,12 @@ function EmptyPanel({
   title: string;
 }) {
   return (
-    <div className="rounded-lg border border-dashed bg-muted/20 p-6">
-      <h3 className="font-medium text-sm">{title}</h3>
-      <p className="mt-1 text-muted-foreground text-sm">{description}</p>
-    </div>
+    <SettingsSection>
+      <SettingsSectionMessage>
+        <p className="font-medium text-foreground">{title}</p>
+        <p className="mt-0.5">{description}</p>
+      </SettingsSectionMessage>
+    </SettingsSection>
   );
 }
 
@@ -143,7 +149,7 @@ export function TaskBoardSettingsPanel({
       boardLayoutLabel={t('settings.tasks.board_layout')}
       listCount={lists.length}
     >
-      <TabsContent className="space-y-4" value="setup">
+      <TabsContent className="space-y-8" value="setup">
         <BoardDetailsSettings
           board={board}
           onRefresh={() => void refetch()}
@@ -156,11 +162,11 @@ export function TaskBoardSettingsPanel({
       </TabsContent>
 
       <TabsContent value="layout">
-        <SettingsGroup
+        <SettingsSection
           description={t('settings.tasks.board_layout_description')}
           title={t('settings.tasks.board_layout')}
         >
-          <div className="p-4">
+          <SettingsSectionBlock>
             <BoardLayoutSettingsContent
               boardId={board.id}
               disableScrollArea
@@ -183,8 +189,8 @@ export function TaskBoardSettingsPanel({
               }}
               wsId={wsId}
             />
-          </div>
-        </SettingsGroup>
+          </SettingsSectionBlock>
+        </SettingsSection>
       </TabsContent>
     </BoardSettingsNavigation>
   );

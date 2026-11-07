@@ -19,7 +19,7 @@ describe('TaskCardHotkeySettings', () => {
     render(<TaskCardHotkeySettings translate={translate} />);
     const priorityButton = screen
       .getByText('priority')
-      .closest('.grid')
+      .closest('[data-slot="settings-row"]')
       ?.querySelector('button');
     expect(priorityButton).toBeTruthy();
 

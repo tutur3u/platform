@@ -6,13 +6,11 @@ import {
   updateWorkspaceTaskBoard,
   type WorkspaceTaskBoardDetail,
 } from '@tuturuuu/internal-api/tasks';
-import {
-  SettingsGroup,
-  SettingsRow,
-} from '@tuturuuu/tasks-ui/tu-do/shared/settings-group';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import IconPicker from '@tuturuuu/ui/custom/icon-picker';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
@@ -108,7 +106,7 @@ export function BoardDetailsSettings({
   });
 
   return (
-    <SettingsGroup
+    <SettingsSection
       action={
         <Button
           disabled={updateBoardMutation.isPending || !isDirty}
@@ -126,10 +124,11 @@ export function BoardDetailsSettings({
       }
       title={t('settings.tasks.board_details')}
     >
-      <SettingsRow
+      <SettingItemTab
+        controlClassName="flex items-center gap-2"
+        controlWidth="xl"
         description={t('ws-task-boards.icon_picker.description')}
-        htmlFor="board-name"
-        label={t('ws-task-boards.name')}
+        title={<label htmlFor="board-name">{t('ws-task-boards.name')}</label>}
       >
         <IconPicker
           ariaLabel={t('ws-task-boards.icon_picker.title')}
@@ -143,28 +142,29 @@ export function BoardDetailsSettings({
         />
         <Input
           autoComplete="off"
-          className="w-full sm:w-64"
+          className="w-full"
           id="board-name"
           onChange={(event) => setBoardName(event.target.value)}
           placeholder={t('ws-task-boards.unnamed_board')}
           value={boardName}
         />
-      </SettingsRow>
-      <SettingsRow label={t('settings.tasks.default_list')}>
-        <div className="w-full sm:w-64">
-          <Combobox
-            contentWidth="md"
-            mode="single"
-            onChange={(value) => {
-              if (typeof value === 'string') setDefaultListId(value);
-            }}
-            options={listOptions}
-            placeholder={t('settings.tasks.no_default_list')}
-            searchPlaceholder={t('common.search_tasks')}
-            selected={defaultListId}
-          />
-        </div>
-      </SettingsRow>
-    </SettingsGroup>
+      </SettingItemTab>
+      <SettingItemTab
+        controlWidth="xl"
+        title={t('settings.tasks.default_list')}
+      >
+        <Combobox
+          contentWidth="md"
+          mode="single"
+          onChange={(value) => {
+            if (typeof value === 'string') setDefaultListId(value);
+          }}
+          options={listOptions}
+          placeholder={t('settings.tasks.no_default_list')}
+          searchPlaceholder={t('common.search_tasks')}
+          selected={defaultListId}
+        />
+      </SettingItemTab>
+    </SettingsSection>
   );
 }

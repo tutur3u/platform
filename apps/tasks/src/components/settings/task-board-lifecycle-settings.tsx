@@ -2,7 +2,10 @@
 
 import type { WorkspaceTaskBoardDetail } from '@tuturuuu/internal-api/tasks';
 import { BoardActions } from '@tuturuuu/tasks-ui/tu-do/boards/row-actions';
-import { SettingsGroup } from '@tuturuuu/tasks-ui/tu-do/shared/settings-group';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+} from '@tuturuuu/ui/custom/settings-section';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
@@ -17,18 +20,18 @@ export function TaskBoardLifecycleSettings({
   const t = useTranslations();
 
   return (
-    <SettingsGroup
+    <SettingsSection
       description={t('ws-task-boards.row_actions.settings_description')}
       title={t('common.actions')}
     >
-      <div className="p-4">
+      <SettingsSectionBlock>
         <BoardActions
           board={{ ...board, ws_id: board.ws_id ?? wsId }}
           display="settings"
           onBoardUnavailable={() => router.replace(`/${wsId}/boards`)}
           wsId={wsId}
         />
-      </div>
-    </SettingsGroup>
+      </SettingsSectionBlock>
+    </SettingsSection>
   );
 }
