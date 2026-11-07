@@ -6,6 +6,10 @@ on:
   pull_request:
     paths:
       - "apps/backend/**"
+      - "packages/internal-api/src/__fixtures__/tutoring-queue-parity.json"
+      - "packages/internal-api/src/tutoring-group-rules.ts"
+      - "packages/internal-api/src/tutoring-policy.ts"
+      - "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/queue/queue-membership.ts"
       - "apps/tanstack-web/**"
       - "apps/backend/README.md"
       - ".github/workflows/rust-backend.yml"
@@ -23,6 +27,10 @@ on:
     branches: ["main", "production"]
     paths:
       - "apps/backend/**"
+      - "packages/internal-api/src/__fixtures__/tutoring-queue-parity.json"
+      - "packages/internal-api/src/tutoring-group-rules.ts"
+      - "packages/internal-api/src/tutoring-policy.ts"
+      - "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/queue/queue-membership.ts"
       - "apps/tanstack-web/**"
       - "apps/backend/README.md"
       - ".github/workflows/rust-backend.yml"
