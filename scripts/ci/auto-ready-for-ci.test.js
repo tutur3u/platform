@@ -84,6 +84,11 @@ test('trusted workflow uses hosted metadata only and no token fallback', () => {
     JSON.stringify(job.steps),
     /checkout@|persist-credentials|\|\| github\.token/
   );
+  assert.ok(
+    require('./pr-label-gate').ADMISSION_PR_WORKFLOWS.includes(
+      'auto-ready-for-ci.yaml'
+    )
+  );
   assert.equal(job.steps.length, 2);
   assert.equal(workflow.concurrency['cancel-in-progress'], true);
   assert.equal(workflow.concurrency.queue, undefined);
