@@ -6,6 +6,7 @@ import {
   ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
   updateWorkspaceConfig,
 } from '@tuturuuu/internal-api/workspace-configs';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -41,13 +42,10 @@ export function GuestSelfJoinSetting({
   });
 
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border bg-card/40 p-4 sm:p-5">
-      <div className="min-w-0 space-y-1">
-        <p className="font-semibold">{t('guest_self_join_label')}</p>
-        <p className="text-muted-foreground text-sm">
-          {t('guest_self_join_description')}
-        </p>
-      </div>
+    <SettingItemTab
+      description={t('guest_self_join_description')}
+      title={t('guest_self_join_label')}
+    >
       {isLoading ? (
         <Loader2 className="shrink-0 animate-spin text-muted-foreground" />
       ) : (
@@ -57,6 +55,6 @@ export function GuestSelfJoinSetting({
           onCheckedChange={(nextChecked) => mutation.mutate(nextChecked)}
         />
       )}
-    </div>
+    </SettingItemTab>
   );
 }

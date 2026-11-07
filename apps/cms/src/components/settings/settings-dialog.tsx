@@ -23,6 +23,7 @@ import { KeyboardShortcutsSettings } from '@tuturuuu/ui/custom/settings/keyboard
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -57,14 +58,12 @@ function CmsGamesSetting({
 }) {
   return (
     <SettingItemTab title={title} description={description}>
-      <div className="flex items-center gap-3">
-        <Switch
-          aria-label={toggleLabel}
-          checked={enabled}
-          disabled={disabled}
-          onCheckedChange={onToggle}
-        />
-      </div>
+      <Switch
+        aria-label={toggleLabel}
+        checked={enabled}
+        disabled={disabled}
+        onCheckedChange={onToggle}
+      />
     </SettingItemTab>
   );
 }
@@ -227,27 +226,23 @@ export function SettingsDialog({
       />
       {activeTab === 'cms_general' && workspace && (
         <div className="h-full">
-          <div className="space-y-8">
-            <div className="grid gap-6">
-              <SettingItemTab
-                title={t('common.workspace')}
-                description={t('external-projects.settings.description')}
-              >
-                <span className="text-muted-foreground text-sm">
-                  {workspace.name || t('common.unnamed')}
-                </span>
-              </SettingItemTab>
-              {cmsGamesSetting}
-            </div>
-          </div>
+          <SettingsSection>
+            <SettingItemTab
+              title={t('common.workspace')}
+              description={t('external-projects.settings.description')}
+            >
+              <span className="text-sm">
+                {workspace.name || t('common.unnamed')}
+              </span>
+            </SettingItemTab>
+            {cmsGamesSetting}
+          </SettingsSection>
         </div>
       )}
 
       {activeTab === 'cms_games' && (
         <div className="h-full">
-          <div className="space-y-8">
-            <div className="grid gap-6">{cmsGamesSetting}</div>
-          </div>
+          <SettingsSection>{cmsGamesSetting}</SettingsSection>
         </div>
       )}
 

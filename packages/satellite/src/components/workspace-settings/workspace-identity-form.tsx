@@ -3,9 +3,10 @@
 import { Check, Copy, Loader2 } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSectionFooter } from '@tuturuuu/ui/custom/settings-section';
 import { useUpdateWorkspaceIdentity } from '@tuturuuu/ui/hooks/use-workspace-identity-mutation';
 import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { workspaceHandleSchema } from '@tuturuuu/utils/workspace-handle';
 import { useTranslations } from 'next-intl';
@@ -67,10 +68,10 @@ export function WorkspaceIdentityForm({
       normalizedHandle !== savedHandle);
 
   return (
-    <div className="grid gap-5 rounded-2xl border bg-card/40 p-4 sm:p-5">
+    <>
       {!workspace.personal && (
-        <div className="grid gap-2 sm:grid-cols-2">
-          <WorkspaceField label={t('name')}>
+        <>
+          <SettingItemTab controlWidth="2xl" title={t('name')}>
             <Input
               disabled={!canEdit || mutation.isPending}
               maxLength={50}
@@ -78,8 +79,8 @@ export function WorkspaceIdentityForm({
               placeholder={t('name_placeholder')}
               value={name}
             />
-          </WorkspaceField>
-          <WorkspaceField label={t('handle')}>
+          </SettingItemTab>
+          <SettingItemTab controlWidth="2xl" title={t('handle')}>
             <Input
               aria-invalid={!handleValid}
               disabled={!canEdit || mutation.isPending}
@@ -87,11 +88,11 @@ export function WorkspaceIdentityForm({
               placeholder={t('handle_placeholder')}
               value={handle}
             />
-          </WorkspaceField>
-        </div>
+          </SettingItemTab>
+        </>
       )}
 
-      <WorkspaceField label={t('id')}>
+      <SettingItemTab controlWidth="2xl" title={t('id')}>
         <div className="flex min-w-0 gap-2">
           <Input className="font-mono text-xs" disabled value={workspace.id} />
           <Button
@@ -108,10 +109,10 @@ export function WorkspaceIdentityForm({
             {copied ? <Check /> : <Copy />}
           </Button>
         </div>
-      </WorkspaceField>
+      </SettingItemTab>
 
       {!workspace.personal && canEdit && (
-        <div className="flex justify-end">
+        <SettingsSectionFooter>
           <Button
             disabled={
               !dirty || !name.trim() || !handleValid || mutation.isPending
@@ -133,23 +134,8 @@ export function WorkspaceIdentityForm({
             )}
             {t('save_changes')}
           </Button>
-        </div>
+        </SettingsSectionFooter>
       )}
-    </div>
-  );
-}
-
-function WorkspaceField({
-  children,
-  label,
-}: {
-  children: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <div className="grid min-w-0 gap-2">
-      <Label>{label}</Label>
-      {children}
-    </div>
+    </>
   );
 }
