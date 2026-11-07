@@ -2,7 +2,8 @@
 
 A public, read-only migration roadmap served by TanStack Start, Vite+ and Void on
 Cloudflare Workers. The app is mounted at `/roadmap`; assets and server-function
-URLs use the same prefix. There are no accounts, database bindings, analytics,
+URLs use the same prefix; `assets.base_path` mounts the client directory at
+`/roadmap` without changing asset keys. Wrangler must be at least 4.148.0. There are no accounts, database bindings, analytics,
 forms, provider credentials or private fleet dependencies.
 
 ## Public evidence

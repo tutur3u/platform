@@ -16,6 +16,12 @@ export default defineConfig({
       { pattern: 'tuturuuu.com/roadmap/*', zone_name: 'tuturuuu.com' },
     ],
     workers_dev: true,
-    assets: { directory: './dist/client', binding: 'ASSETS', run_worker_first: true },
+    assets: {
+      directory: './dist/client',
+      binding: 'ASSETS',
+      base_path: '/roadmap',
+      run_worker_first: true,
+      not_found_handling: 'none',
+    },
   },
 });
