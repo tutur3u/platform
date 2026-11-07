@@ -26,10 +26,11 @@ function RoadmapPage() {
         </a>
         <nav aria-label={t.eyebrow}>
           <a href="https://github.com/tutur3u/platform">GitHub</a>
-          <div className="language-switch" role="group" aria-label={t.language}>
+          <fieldset className="language-switch">
+            <legend className="sr-only">{t.language}</legend>
             <button type="button" aria-pressed={language === 'en'} onClick={() => setLanguage('en')}>EN</button>
             <button type="button" aria-pressed={language === 'vi'} onClick={() => setLanguage('vi')}>VI</button>
-          </div>
+          </fieldset>
         </nav>
       </header>
 
@@ -60,13 +61,14 @@ function RoadmapPage() {
 
         <section id="products" aria-label={t.all}>
           <div className="toolbar">
-            <div className="filters" role="group" aria-label={t.source}>
+            <fieldset className="filters">
+              <legend className="sr-only">{t.source}</legend>
               {filters.map((item) => (
                 <button type="button" key={item} aria-pressed={status === item} onClick={() => setStatus(item)}>
                   {t[item]}
                 </button>
               ))}
-            </div>
+            </fieldset>
             <label className="search">
               <span className="sr-only">{t.search}</span>
               <input type="search" placeholder={t.search} value={query} onChange={(event) => setQuery(event.target.value)} />
