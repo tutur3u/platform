@@ -11,6 +11,7 @@ import {
 } from '@tuturuuu/ai/credits/resolve-plan-model';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { type FinishReason, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validateApiKeyHash } from '../api-key-hash';
@@ -106,6 +107,12 @@ export function createPOST(
       configs.wsId = ROOT_WORKSPACE_ID;
     }
 
+    const aiPolicyRefusal = await workspaceAiPolicyResponse(
+      configs.wsId,
+      undefined,
+      req.headers.get('accept-language') ?? 'en'
+    );
+    if (aiPolicyRefusal) return aiPolicyRefusal;
     if (!configs?.systemPrompt) {
       configs.systemPrompt = '';
     }

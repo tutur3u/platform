@@ -73,7 +73,10 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const touchesManagedCron = isManagedCronEnableSecretName(name);
-  if (touchesManagedCron && !(await canMutateManagedCronEnableSecret(req))) {
+  if (
+    touchesManagedCron &&
+    !(await canMutateManagedCronEnableSecret(req, name))
+  ) {
     return NextResponse.json(
       { message: 'Only Tuturuuu employees can enable managed cron jobs.' },
       { status: 403 }

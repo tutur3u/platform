@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  workspaceAiPolicyResponse: vi.fn(),
   generateObject: vi.fn(),
   getSatelliteAppSessionUser: vi.fn(),
   getVerifiedAuthUser: vi.fn(),
@@ -10,6 +11,10 @@ const mocks = vi.hoisted(() => ({
   withAiMemory: vi.fn(),
 }));
 
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiPolicyResponse: (...args: unknown[]) =>
+    mocks.workspaceAiPolicyResponse(...args),
+}));
 vi.mock('@ai-sdk/google', () => ({
   google: (...args: unknown[]) => mocks.google(...args),
 }));
@@ -59,6 +64,7 @@ describe('playground AI routes require a signed-in staff session', () => {
   beforeEach(() => {
     for (const mock of Object.values(mocks)) mock.mockReset();
     mocks.createAdminClient.mockResolvedValue(admin);
+    mocks.workspaceAiPolicyResponse.mockResolvedValue(null);
     mocks.google.mockReturnValue({ id: 'fake-model' });
     mocks.generateObject.mockResolvedValue({ object: generated });
     mocks.getSatelliteAppSessionUser.mockResolvedValue({ id: 'user-1' });
@@ -136,5 +142,19 @@ describe('playground AI routes require a signed-in staff session', () => {
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({});
     expect(mocks.generateObject).not.toHaveBeenCalled();
+  });
+
+  it('denies disabled workspace policy before provider or memory work', async () => {
+    mocks.workspaceAiPolicyResponse.mockResolvedValueOnce(
+      new Response(null, { status: 403 })
+    );
+    const response = await objectGeneration.GET();
+    expect(response.status).toBe(403);
+    expect(mocks.workspaceAiPolicyResponse).toHaveBeenCalledWith(
+      ROOT_WORKSPACE_ID,
+      'user-1'
+    );
+    expect(mocks.generateObject).not.toHaveBeenCalled();
+    expect(mocks.withAiMemory).not.toHaveBeenCalled();
   });
 });

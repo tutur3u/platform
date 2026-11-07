@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => {
   }
 
   return {
+    workspaceAiAllowed: vi.fn(),
     appendHiveNpcMemories: vi.fn(),
     checkAiCredits: vi.fn(),
     createHiveWorldEvent: vi.fn(),
@@ -35,6 +36,10 @@ const mocks = vi.hoisted(() => {
 });
 
 const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiAllowed: mocks.workspaceAiAllowed,
+}));
 
 vi.mock('@ai-sdk/google', () => ({
   google: (...args: unknown[]) => mocks.google(...args),
@@ -156,6 +161,7 @@ function completedRun(overrides: Partial<HiveNpcRunRow> = {}): HiveNpcRunRow {
 describe('runHiveNpcInteraction AI credit handling', () => {
   beforeEach(() => {
     vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'test-google-key');
+    mocks.workspaceAiAllowed.mockReset().mockResolvedValue(true);
 
     mocks.appendHiveNpcMemories.mockReset();
     mocks.checkAiCredits.mockReset();
@@ -282,5 +288,30 @@ describe('runHiveNpcInteraction AI credit handling', () => {
       'Hive AI credit deduction failed',
       expect.anything()
     );
+  });
+  it('denies workspace policy before credits, provider output or persistence', async () => {
+    const { runHiveNpcInteraction } = await import('./npc-interactions');
+    mocks.workspaceAiAllowed.mockResolvedValueOnce(false);
+    await expect(
+      runHiveNpcInteraction({
+        actorUserId: '00000000-0000-4000-8000-000000000002',
+        expectedRevision: 1,
+        sbAdmin: {} as never,
+        serverId: sourceNpc.server_id,
+        sourceNpcId: sourceNpc.id,
+        world,
+      })
+    ).rejects.toMatchObject({ message: 'WORKSPACE_AI_DISABLED', status: 403 });
+    expect(mocks.workspaceAiAllowed).toHaveBeenCalledWith(
+      '00000000-0000-4000-8000-000000000003',
+      'unknown',
+      '00000000-0000-4000-8000-000000000002'
+    );
+    expect(mocks.checkAiCredits).not.toHaveBeenCalled();
+    expect(mocks.generateObject).not.toHaveBeenCalled();
+    expect(mocks.deductAiCredits).not.toHaveBeenCalled();
+    expect(mocks.persistHiveNpcRun).not.toHaveBeenCalled();
+    expect(mocks.createHiveWorldEvent).not.toHaveBeenCalled();
+    expect(mocks.appendHiveNpcMemories).not.toHaveBeenCalled();
   });
 });

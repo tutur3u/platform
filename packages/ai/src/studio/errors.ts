@@ -1,4 +1,5 @@
 export type AiStudioErrorCode =
+  | 'WORKSPACE_AI_DISABLED'
   | 'invalid_api_key'
   | 'insufficient_credits'
   | 'invalid_request_error'

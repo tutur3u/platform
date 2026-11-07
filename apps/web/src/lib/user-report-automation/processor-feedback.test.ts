@@ -1,3 +1,8 @@
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiPolicyResponse: async () => null,
+  workspaceAiAllowed: async () => true,
+}));
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@tuturuuu/types/supabase';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

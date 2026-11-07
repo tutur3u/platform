@@ -1,6 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getRateLimiters } from '@tuturuuu/utils/api-proxy-rate-limiters';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -202,6 +203,12 @@ export function createPOST({
         return new Response('Workspace access denied', { status: 403 });
       }
 
+      const aiPolicyRefusal = await workspaceAiPolicyResponse(
+        wsId,
+        user.id,
+        req.headers.get('accept-language') ?? 'en'
+      );
+      if (aiPolicyRefusal) return aiPolicyRefusal;
       if (!(await meetAiAllowed(wsId, isMeetAiEnabled))) {
         return new Response('Meet AI is temporarily unavailable', {
           status: 403,

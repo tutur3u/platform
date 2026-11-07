@@ -1,4 +1,13 @@
 import { describe, expect, it, vi } from 'vite-plus/test';
+
+vi.mock('./sponsored-ai', () => ({
+  sponsoredGeneration: async (
+    env: { AI: { run: (system: string, input: unknown) => Promise<unknown> } },
+    system: string,
+    input: unknown
+  ) => env.AI.run(system, input),
+}));
+
 import type { Env } from './env';
 import { reviewPrompt } from './prompt-review';
 

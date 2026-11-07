@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import { resolveUserGroupRouteWorkspaceId } from '@tuturuuu/users-core/lib/user-groups/route-helpers';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { NextResponse } from 'next/server';
 import { loadScopedReportContext } from '@/lib/user-report-automation/context';
 import {
@@ -31,6 +32,13 @@ export async function POST(request: Request, { params }: Params) {
     !permissions?.containsPermission('create_user_groups_reports')
   )
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  const policyRefusal = await workspaceAiPolicyResponse(
+    wsId,
+    undefined,
+    request.headers.get('accept-language') ?? 'en',
+    'learner-data'
+  );
+  if (policyRefusal) return policyRefusal;
   const sbAdmin = await createAdminClient();
   const reportResult = await sbAdmin
     .schema('private')

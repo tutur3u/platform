@@ -1,3 +1,4 @@
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import {
   createMeteredTextEmbedding,
   shouldDisableMemoryForMeteringReason,
@@ -222,6 +223,11 @@ export async function rememberAiMemory({
   scope: AiMemoryScope | null;
   value: string;
 }): Promise<AiMemoryResult<{ id: string; status: string } | null>> {
+  if (
+    !scope ||
+    !(await workspaceAiAllowed(scope.wsId, 'unknown', scope.userId))
+  )
+    return skipped('WORKSPACE_AI_DISABLED', null);
   const runtime = await ensureMemoryRuntime<{
     id: string;
     status: string;
@@ -280,6 +286,11 @@ export async function searchAiMemories({
   query: string;
   scope: AiMemoryScope | null;
 }): Promise<AiMemoryResult<AiMemorySearchResult[]>> {
+  if (
+    !scope ||
+    !(await workspaceAiAllowed(scope.wsId, 'unknown', scope.userId))
+  )
+    return skipped('WORKSPACE_AI_DISABLED', []);
   const runtime = await ensureMemoryRuntime<AiMemorySearchResult[]>({
     fallback: [],
     ignoreSettings,

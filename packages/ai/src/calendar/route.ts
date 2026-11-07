@@ -2,6 +2,7 @@ import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { Output, streamText } from 'ai';
 import { authorizeAiWorkspace } from '../chat/google/route-auth';
 import { withAiMemory } from '../memory';
@@ -42,6 +43,12 @@ export async function POST(req: Request) {
   });
   if (!access.ok) return access.response;
 
+  const aiPolicyRefusal = await workspaceAiPolicyResponse(
+    access.wsId,
+    user.id,
+    req.headers.get('accept-language') ?? 'en'
+  );
+  if (aiPolicyRefusal) return aiPolicyRefusal;
   // Extract timezone information from context if available
   const userTimezone = extractTimezone(context.prompt);
 

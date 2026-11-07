@@ -42,10 +42,51 @@ type TaskBoardContextRow = {
   ws_id: string;
 };
 
+export type InitialMiraWorkspaceContext =
+  | { ok: true; context: MiraWorkspaceContextState }
+  | { ok: false };
+
+/**
+ * Resolves the workspace whose data seeds the initial Mira prompt. Callers
+ * resolve it once and enforce that workspace's AI policy before any of its
+ * context, credits or provider selection is touched.
+ */
+export async function resolveInitialMiraWorkspaceContext({
+  supabase,
+  userId,
+  workspaceContextId,
+  wsId,
+}: {
+  supabase: SupabaseClientLike;
+  userId: string;
+  workspaceContextId?: string;
+  wsId: string;
+}): Promise<InitialMiraWorkspaceContext> {
+  try {
+    return {
+      ok: true,
+      context: await resolveWorkspaceContextState({
+        supabase,
+        userId,
+        requestedWorkspaceContextId: workspaceContextId,
+        fallbackWorkspaceId: wsId,
+      }),
+    };
+  } catch (workspaceContextErr) {
+    console.error(
+      'Failed to verify Mira workspace context:',
+      workspaceContextErr
+    );
+    return { ok: false };
+  }
+}
+
 type PrepareMiraRuntimeParams = {
   isMiraMode?: boolean;
   wsId?: string;
   workspaceContextId?: string;
+  /** Policy-checked result of resolveInitialMiraWorkspaceContext. */
+  initialWorkspaceContext?: InitialMiraWorkspaceContext;
   creditWsId?: string;
   request: NextRequest;
   user?: {
@@ -167,6 +208,7 @@ export async function prepareMiraRuntime({
   isMiraMode,
   wsId,
   workspaceContextId,
+  initialWorkspaceContext,
   creditWsId,
   request,
   user,
@@ -191,24 +233,21 @@ export async function prepareMiraRuntime({
 
   const miraSupabase = toolSupabase ?? supabase;
 
-  let resolvedWorkspaceContext: MiraWorkspaceContextState;
-  try {
-    resolvedWorkspaceContext = await resolveWorkspaceContextState({
+  const initialContext =
+    initialWorkspaceContext ??
+    (await resolveInitialMiraWorkspaceContext({
       supabase: miraSupabase,
       userId,
-      requestedWorkspaceContextId: workspaceContextId,
-      fallbackWorkspaceId: wsId,
-    });
-  } catch (workspaceContextErr) {
-    console.error(
-      'Failed to verify Mira workspace context:',
-      workspaceContextErr
-    );
+      workspaceContextId,
+      wsId,
+    }));
+  if (!initialContext.ok) {
     return {
       miraSystemPrompt:
         'You are Mira. Workspace access could not be verified for this request. Do not claim to read or change workspace data. Explain that the user can retry after access is restored; answer unrelated general questions normally.',
     };
   }
+  const resolvedWorkspaceContext = initialContext.context;
 
   let withoutPermission: PermissionResultLike['withoutPermission'];
   const denyPermissionByDefault = () => true;

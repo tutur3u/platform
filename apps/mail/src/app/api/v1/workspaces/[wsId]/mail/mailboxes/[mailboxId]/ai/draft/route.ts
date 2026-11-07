@@ -1,5 +1,6 @@
 import { google } from '@ai-sdk/google';
 import { withAiMemory } from '@tuturuuu/ai/memory';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { emailDraftSchema } from '@/app/api/ai/email-draft/schema';
@@ -19,6 +20,13 @@ export async function POST(
   if (!body.ok) return body.response;
 
   return withMailContext(request, wsId, async (ctx) => {
+    const aiPolicyRefusal = await workspaceAiPolicyResponse(
+      ctx.normalizedWsId,
+      ctx.user.id,
+      request.headers.get('accept-language') ?? 'en'
+    );
+    if (aiPolicyRefusal) return aiPolicyRefusal;
+
     const access = await requireMailboxAccess(ctx, mailboxId, [
       'admin',
       'owner',

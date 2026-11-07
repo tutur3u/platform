@@ -11,6 +11,15 @@ import {
   normalizeToolInput,
   runAgent,
 } from './ai';
+
+vi.mock('./sponsored-ai', () => ({
+  sponsoredGeneration: async (
+    env: { AI: { run: (system: string, input: unknown) => Promise<unknown> } },
+    system: string,
+    input: unknown
+  ) => env.AI.run(system, input),
+}));
+
 import type { Env } from './env';
 
 function model(...responses: unknown[]) {
@@ -218,10 +227,7 @@ describe('meaningful agent run', () => {
       toolCalls: 1,
       stopReason: 'answered',
     });
-    const request = run.mock.calls[1]?.[1] as {
-      messages: Array<{ content: string }>;
-    };
-    expect(request.messages[0]?.content).toContain('FINAL RESPONSE REQUIRED');
+    expect(run.mock.calls[1]?.[0]).toContain('FINAL RESPONSE REQUIRED');
     expect(run).toHaveBeenCalledTimes(3);
   });
   it('never executes another action on the reserved final turn', async () => {

@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/ai/memory';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { generateText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
@@ -142,6 +143,12 @@ async function generateAiChatConversationTitle({
   conversationId: string;
   normalizedWsId: string;
 }) {
+  const aiPolicyRefusal = await workspaceAiPolicyResponse(
+    normalizedWsId,
+    auth.user.id,
+    'en'
+  );
+  if (aiPolicyRefusal) return aiPolicyRefusal;
   const messages = await listAiChatMessages({
     conversationId,
     limit: 5,

@@ -1,3 +1,8 @@
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiPolicyResponse: async () => null,
+  workspaceAiAllowed: async () => true,
+}));
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const WORKSPACE_A = '11111111-1111-4111-8111-111111111111';

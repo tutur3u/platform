@@ -6,11 +6,15 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 const f = vi.hoisted(() => ({
   check: vi.fn(),
+  policy: vi.fn(),
   begin: vi.fn(),
   settle: vi.fn(),
   step: vi.fn(),
   generate: vi.fn(),
   allocation: vi.fn(),
+}));
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiAllowed: f.policy,
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/ai/credits/check-credits', () => ({
@@ -54,6 +58,7 @@ import { generateBilledMeetArtifact } from './artifact-billing';
 const actor = { userId: 'actor', meetingId: 'meeting', attemptId: 'attempt' };
 beforeEach(() => {
   vi.resetAllMocks();
+  f.policy.mockResolvedValue(true);
   f.check.mockResolvedValue({
     allowed: true,
     tier: 'FREE',
@@ -136,5 +141,25 @@ it('does not execute again when AI Hub rejects an existing attempt', async () =>
   await expect(
     generateBilledMeetArtifact({ transcript: 'hello' }, actor)
   ).rejects.toThrow('already running');
+  expect(f.generate).not.toHaveBeenCalled();
+});
+
+it('rechecks current policy for queued work with an existing credit admission', async () => {
+  f.policy.mockResolvedValue(false);
+  await expect(
+    generateBilledMeetArtifact({ transcript: 'fixture' }, actor, {
+      workspaceId: 'meeting-workspace',
+      allowance: {
+        allowed: true,
+        tier: 'FREE',
+        maxOutputTokens: 2048,
+        remainingCredits: 10,
+        errorCode: null,
+        errorMessage: null,
+      },
+    })
+  ).rejects.toMatchObject({ status: 403 });
+  expect(f.check).not.toHaveBeenCalled();
+  expect(f.begin).not.toHaveBeenCalled();
   expect(f.generate).not.toHaveBeenCalled();
 });

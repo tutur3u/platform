@@ -1,4 +1,5 @@
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 /**
  * Mira Voice Token API
  * POST /api/v1/mira/token - Get ephemeral token for Mira voice chat
@@ -156,6 +157,12 @@ export async function POST(request: Request) {
 
     const normalizedWsId = await normalizeWorkspaceId(wsId);
 
+    const refusal = await workspaceAiPolicyResponse(
+      normalizedWsId,
+      user.id,
+      request.headers.get('accept-language') ?? 'en'
+    );
+    if (refusal) return refusal;
     const membership = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
       userId: user.id,

@@ -29,6 +29,7 @@ import {
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { calculateTopSortKey } from '@tuturuuu/utils/task-helper';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -196,7 +197,6 @@ type CandidateTask = {
   projectIds?: string[];
 };
 
-// Helper: authenticate and restrict to Tuturuuu email
 async function getAuthorizedUser(supabase: TypedSupabaseClient) {
   const resolution = await resolveAuthenticatedSessionUser(supabase);
   const { user, authError } = resolution;
@@ -216,7 +216,6 @@ async function getAuthorizedUser(supabase: TypedSupabaseClient) {
   };
 }
 
-// Helper: parse and validate request body
 function parseRequestBody(rawBody: unknown) {
   const parsed = requestSchema.safeParse(rawBody);
   if (!parsed.success) {
@@ -229,7 +228,6 @@ function parseRequestBody(rawBody: unknown) {
   return { kind: 'ok' as const, data: parsed.data };
 }
 
-// Helper: ensure workspace membership
 async function ensureWorkspaceAccess(
   supabase: TypedSupabaseClient,
   wsId: string,
@@ -259,7 +257,6 @@ async function ensureWorkspaceAccess(
   return { kind: 'ok' as const };
 }
 
-// Helper: verify list access (optional if preview-only)
 async function getListIfProvided(
   supabase: TypedSupabaseClient,
   listId: string | undefined,
@@ -301,7 +298,6 @@ async function getListIfProvided(
   };
 }
 
-// Helper: compute time context strings
 function computeTimeContext(clientTimezone?: string, clientTimestamp?: string) {
   const timezoneContext = (clientTimezone ?? '').trim() || 'UTC';
   let baseTime = clientTimestamp
@@ -315,7 +311,6 @@ function computeTimeContext(clientTimezone?: string, clientTimestamp?: string) {
   return { timezoneContext, clientIsoTimestamp, localTimeDescription };
 }
 
-// Helper: build system prompt
 function buildSystemPrompt(
   generateDescriptions: boolean,
   generatePriority: boolean,
@@ -343,7 +338,6 @@ function buildSystemPrompt(
   return promptInstructions.join('\n');
 }
 
-// Helper: normalize provided tasks
 function normalizeProvidedTasks(
   tasks: z.infer<typeof providedTaskSchema>[] | undefined
 ) {
@@ -371,7 +365,6 @@ function normalizeProvidedTasks(
     .filter((task) => task.title.length > 0);
 }
 
-// Helper: generate AI tasks
 async function generateAiTasks(
   modelId: string,
   systemPrompt: string,
@@ -413,7 +406,6 @@ async function generateAiTasks(
   return { tasks, usage };
 }
 
-// Helper: build candidate tasks from source
 function buildCandidateTasks(
   sourceTasks: Array<any>,
   options: {
@@ -469,7 +461,6 @@ function buildCandidateTasks(
   return candidateTasks;
 }
 
-// Helper: preview response payload
 function buildPreviewPayload(candidateTasks: CandidateTask[]) {
   return candidateTasks.map((task, index) => ({
     id: `preview-${index}`,
@@ -484,7 +475,6 @@ function buildPreviewPayload(candidateTasks: CandidateTask[]) {
   }));
 }
 
-// Helper: load existing labels map
 async function loadLabelNameMap(supabase: TypedSupabaseClient, wsId: string) {
   const labelNameMap = new Map<
     string,
@@ -542,7 +532,6 @@ function collectIncomingLabelIds(
   return incomingLabelIds;
 }
 
-// Helper: load valid project IDs for workspace
 async function loadWorkspaceProjectIds(
   supabase: TypedSupabaseClient,
   wsId: string
@@ -645,6 +634,12 @@ export async function POST(
     let systemPrompt: string | null = null;
 
     if (shouldInvokeAI) {
+      const aiPolicyRefusal = await workspaceAiPolicyResponse(
+        wsId,
+        user.id,
+        req.headers.get('accept-language') ?? 'en'
+      );
+      if (aiPolicyRefusal) return aiPolicyRefusal;
       try {
         const resolvedModel = await resolvePlanModel({
           capability: 'language',

@@ -1,3 +1,8 @@
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiPolicyResponse: async () => null,
+  workspaceAiAllowed: async () => true,
+}));
+
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

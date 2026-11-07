@@ -1,5 +1,6 @@
 import { google } from '@ai-sdk/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -40,7 +41,6 @@ import {
   releaseAiPersistenceRequest,
 } from './request-persistence-lease';
 import {
-  type AiRouteAuthResult,
   authorizeAiWorkspace,
   isInternalTuturuuuAiUser,
   resolveAiRouteAuth,
@@ -58,37 +58,16 @@ import {
   persistRequestScopedUserMessage,
   prepareProcessedMessages,
 } from './route-message-preparation';
+import { admitInitialMiraWorkspaceContext } from './route-mira-context-gate';
 import { prepareMiraRuntime } from './route-mira-runtime';
+import type { ChatRouteOptions } from './route-options';
 import { validateSubscriptionRoute } from './route-subscription-boundary';
 import {
   buildAbortedStreamFinishResponse,
   persistAssistantResponse,
 } from './stream-finish-persistence';
 
-export function createPOST(
-  _options: {
-    serverAPIKeyFallback?: boolean;
-    /** Trusted in-process instructions; never read from the request body. */
-    serverSystemInstructions?: string;
-    /** Direct user-funded chat. It bypasses gateway memory, credits, and provider tools. */
-    subscription?: {
-      resolveModel: (
-        userId: string,
-        model: string | undefined
-      ) => Promise<LanguageModel>;
-      onError: () => string;
-      errorResponse?: (error: unknown) => {
-        message: string;
-        status: number;
-        code: string;
-      };
-    };
-    /** Gateway provider prefix for bare model names (e.g., 'openai', 'anthropic', 'vertex'). Defaults to 'google'. */
-    defaultProvider?: string;
-    requireWorkspaceId?: boolean;
-    resolveAuth?: (request: NextRequest) => Promise<AiRouteAuthResult | null>;
-  } = {}
-) {
+export function createPOST(_options: ChatRouteOptions = {}) {
   const defaultProvider = _options.defaultProvider ?? 'google';
 
   return async function handler(req: NextRequest): Promise<Response> {
@@ -152,24 +131,6 @@ export function createPOST(
         (await _options.resolveAuth?.(req)) ?? (await resolveAiRouteAuth(req));
       if (!auth.ok) return auth.response;
       const { messageInsertMode = 'rpc', supabase, user } = auth;
-      let subscriptionModel: LanguageModel | undefined;
-      if (_options.subscription) {
-        try {
-          subscriptionModel = await _options.subscription.resolveModel(
-            user.id,
-            model
-          );
-        } catch (error) {
-          const failure = _options.subscription.errorResponse?.(error);
-          return NextResponse.json(
-            {
-              error: failure?.message ?? _options.subscription.onError(),
-              code: failure?.code ?? 'CHATGPT_CONNECTION_REQUIRED',
-            },
-            { status: failure?.status ?? 403 }
-          );
-        }
-      }
 
       if (isMiraMode && !(await isInternalTuturuuuAiUser(auth))) {
         return NextResponse.json(
@@ -201,6 +162,44 @@ export function createPOST(
         normalizedWsId = workspaceAuthorization.wsId;
       }
 
+      const locale = req.headers.get('accept-language') ?? 'en';
+      const aiPolicyRefusal = await workspaceAiPolicyResponse(
+        normalizedWsId,
+        user.id,
+        locale
+      );
+      if (aiPolicyRefusal) return aiPolicyRefusal;
+
+      const initialMira = await admitInitialMiraWorkspaceContext({
+        isMiraMode,
+        locale,
+        supabase: sbAdmin as typeof supabase,
+        userId: user.id,
+        workspaceContextId,
+        wsId: normalizedWsId,
+      });
+      if (initialMira.refusal) return initialMira.refusal;
+
+      // Subscription model lookup can refresh stored credentials and contact
+      // the provider, so it runs only after workspace authorization and policy.
+      let subscriptionModel: LanguageModel | undefined;
+      if (_options.subscription) {
+        try {
+          subscriptionModel = await _options.subscription.resolveModel(
+            user.id,
+            model
+          );
+        } catch (error) {
+          const failure = _options.subscription.errorResponse?.(error);
+          return NextResponse.json(
+            {
+              error: failure?.message ?? _options.subscription.onError(),
+              code: failure?.code ?? 'CHATGPT_CONNECTION_REQUIRED',
+            },
+            { status: failure?.status ?? 403 }
+          );
+        }
+      }
       try {
         requestedCreditWsId = rawCreditWsId
           ? await normalizeWorkspaceId(rawCreditWsId, supabase, req)
@@ -506,6 +505,7 @@ export function createPOST(
           isMiraMode,
           wsId: normalizedWsId ?? undefined,
           workspaceContextId,
+          initialWorkspaceContext: initialMira.context,
           creditWsId: billingWsId ?? normalizedWsId ?? undefined,
           request: req,
           user,

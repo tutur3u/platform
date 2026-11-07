@@ -8,6 +8,7 @@ import {
 import { readLiveRequestBody } from '@tuturuuu/meet-core/features/live-assistant/request-body';
 import { liveWorkspaceTools } from '@tuturuuu/meet-core/features/live-assistant/workspace-tools';
 import { isMeetAiAvailableForWorkspace } from '@tuturuuu/meet-core/features/meeting-ai/server/workspace-gate';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { z } from 'zod';
 
 export async function POST(
@@ -26,7 +27,14 @@ export async function POST(
       .safeParse(body.ok ? body.data : null);
     if (!parsed.success) throw new MeetCallAccessError(400, 'Invalid review');
     const { env } = await getCloudflareContext({ async: true });
-    if (!isMeetAiAvailableForWorkspace(access.meeting.ws_id, env))
+    if (
+      !(await workspaceAiAllowed(
+        access.meeting.ws_id,
+        'learner-data',
+        access.user.id
+      )) ||
+      !isMeetAiAvailableForWorkspace(access.meeting.ws_id, env)
+    )
       throw new MeetCallAccessError(403, 'Meet AI is temporarily unavailable');
     const binding = (env as unknown as { MEET_LIVE: DurableObjectNamespace })
       .MEET_LIVE;
@@ -54,9 +62,14 @@ export async function POST(
       toolName: string;
       args: unknown;
     };
+    // The tool target can differ from the meeting workspace; its policy is
+    // checked before execution and again before the provider gets the result.
+    const targetAllowed = () =>
+      workspaceAiAllowed(input.workspaceId, 'learner-data', access.user.id);
     let result: string;
     let failed = false;
     try {
+      if (!(await targetAllowed())) throw new Error('Workspace AI unavailable');
       // Recheck membership and permissions at execution time, never trust a cached catalog.
       const tools = await liveWorkspaceTools(
         access,
@@ -76,6 +89,7 @@ export async function POST(
         messages: [],
       });
       result = JSON.stringify(output).slice(0, 48000);
+      if (!(await targetAllowed())) throw new Error('Workspace AI unavailable');
     } catch {
       failed = true;
       result =

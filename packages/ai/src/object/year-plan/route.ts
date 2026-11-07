@@ -4,6 +4,7 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { Output, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 import { withAiMemory } from '../../memory';
@@ -87,6 +88,12 @@ export async function POST(req: Request) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user?.email) return new Response('Unauthorized', { status: 401 });
+    const aiPolicyRefusal = await workspaceAiPolicyResponse(
+      wsId,
+      user.id,
+      req.headers.get('accept-language') ?? 'en'
+    );
+    if (aiPolicyRefusal) return aiPolicyRefusal;
 
     const whitelisted = await getCurrentUserAIWhitelistStatus(
       withForwardedInternalApiAuth(req.headers)

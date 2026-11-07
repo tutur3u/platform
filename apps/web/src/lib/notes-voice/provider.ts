@@ -1,3 +1,4 @@
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import 'server-only';
 import { google } from '@ai-sdk/google';
 import { checkAiCredits } from '@tuturuuu/ai/credits/check-credits';
@@ -24,6 +25,8 @@ export async function generateBilledNotesVoice(
   input: VoiceGenerationInput,
   actor: { userId: string; wsId: string; jobId: string; attempt: number }
 ) {
+  if (!(await workspaceAiAllowed(actor.wsId, 'learner-data', actor.userId)))
+    throw new NotesVoiceError(403, 'WORKSPACE_AI_DISABLED');
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY)
     throw new NotesVoiceError(503, 'provider_unconfigured');
   const db = await createAdminClient({ noCookie: true });
