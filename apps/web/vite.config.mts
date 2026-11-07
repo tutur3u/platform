@@ -13,6 +13,7 @@ const bridge = startBridgePreset({
 });
 
 export default defineConfig({
+  define: { 'process.env.NODE_ENV': JSON.stringify('production') },
   publicDir: false,
   experimental: bridge.experimental,
   plugins: [
