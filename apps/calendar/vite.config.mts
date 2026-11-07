@@ -17,7 +17,6 @@ const nativePorts = createCalendarNativePortResolver(local);
 const bridge = startBridgePreset({
   appRoot: import.meta.url,
   app: 'calendar',
-  inertVercel: true,
   serverFnBase: CALENDAR_FUNCTION_BASE,
   shims: [
     'next/headers',
