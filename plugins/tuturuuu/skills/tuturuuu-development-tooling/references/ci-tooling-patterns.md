@@ -16,6 +16,10 @@ checks device/inode identity and containment, and uses positional descriptor rea
 and writes. Refuse replacement or unsupported no-follow access; keep outside-sentinel
 path-swap controls in `scripts/resolve-format-conflicts.test.js`. It does not
 update the Git index or publish resolutions.
+Git test fixtures configure a synthetic identity only in their temporary repositories
+and mask system/global config; source publication retains the real repository identity.
+A related-file test selection does not cover the complete root-script workflow.
+Use `discoverScriptTests()` and the workflow runner flags before claiming that gate passes.
 Colab's local Worker preview uses `vite.worker.config.ts`; keep its existing
 configuration/persistence, disable remote bindings and require the CI preview runtime check.
 Publication remains separate.

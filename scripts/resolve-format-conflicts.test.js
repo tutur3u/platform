@@ -8,13 +8,22 @@ const { resolve } = require('./resolve-format-conflicts');
 function fixture(t, incoming = "export const value = 'base';\n", texts = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'oxc-conflict-test-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const gitEnv = {
+    ...process.env,
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_CONFIG_GLOBAL: path.join(root, 'empty-global.gitconfig'),
+  };
+  fs.writeFileSync(gitEnv.GIT_CONFIG_GLOBAL, '');
   const git = (...args) =>
     cp.execFileSync('git', args, {
       cwd: root,
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
+      env: gitEnv,
     });
   git('init', '-b', 'main');
+  git('config', 'user.name', 'Conflict fixture');
+  git('config', 'user.email', 'fixture@example.invalid');
   fs.symlinkSync(
     path.resolve(__dirname, '../node_modules'),
     path.join(root, 'node_modules')

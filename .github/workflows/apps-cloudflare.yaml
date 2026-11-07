@@ -6,99 +6,99 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
       [
-        "apps/apps/**",
-        "packages/ai/**",
-        "packages/apis/**",
-        "packages/google/**",
-        "packages/hooks/**",
-        "packages/payment/**",
-        "packages/payment-core/**",
-        "packages/realtime/**",
-        "packages/storage-core/**",
-        "packages/cloudflare/**",
-        "packages/start-bridge/**",
-        "packages/auth/**",
-        "packages/satellite/**",
-        "packages/internal-api/**",
-        "packages/supabase/**",
-        "packages/ui/**",
-        "packages/utils/**",
-        "packages/icons/**",
-        "packages/types/**",
-        "packages/typescript-config/**",
-        "apps/web/package.json",
-        "scripts/ci/apps-native-*",
-        "scripts/ci/wave1-*",
-        ".github/workflows/wave1-*",
-        "scripts/ci/native-wrangler-*.mjs",
-        "scripts/ci/native-emitted-config-receipt.mjs",
-        "scripts/ci/calendar-native-runtime-profile.mjs",
-        "scripts/ci/native-source-identity-test-helper.js",
-        "bun.lock",
-        ".github/workflows/apps-cloudflare.yaml",
-        ".github/workflows/ci-check.yml",
-        ".github/actions/setup-bun-with-retry/action.yml",
-        ".github/actions/run-with-turbo-remote-cache/action.yml",
-        "scripts/ci/generate-build-metadata.ts",
-        "scripts/ci/check-workflow-config.ts",
-        "scripts/ci/workflow-config-core.ts",
-        "scripts/ci/workspace-dependency-closure.ts",
-        "scripts/ci/resolve-changed-files-core.ts",
-        "scripts/ci/resolve-changed-files.ts",
-        "package.json",
-        "turbo.json",
-        "tuturuuu.ts",
-        "tuturuuu.ci.ts",
-        "!**/*.md",
-        "!**/*.mdx",
+        'apps/apps/**',
+        'packages/ai/**',
+        'packages/apis/**',
+        'packages/google/**',
+        'packages/hooks/**',
+        'packages/payment/**',
+        'packages/payment-core/**',
+        'packages/realtime/**',
+        'packages/storage-core/**',
+        'packages/cloudflare/**',
+        'packages/start-bridge/**',
+        'packages/auth/**',
+        'packages/satellite/**',
+        'packages/internal-api/**',
+        'packages/supabase/**',
+        'packages/ui/**',
+        'packages/utils/**',
+        'packages/icons/**',
+        'packages/types/**',
+        'packages/typescript-config/**',
+        'apps/web/package.json',
+        'scripts/ci/apps-native-*',
+        'scripts/ci/wave1-*',
+        '.github/workflows/wave1-*',
+        'scripts/ci/native-wrangler-*.mjs',
+        'scripts/ci/native-emitted-config-receipt.mjs',
+        'scripts/ci/calendar-native-runtime-profile.mjs',
+        'scripts/ci/native-source-identity-test-helper.js',
+        'bun.lock',
+        '.github/workflows/apps-cloudflare.yaml',
+        '.github/workflows/ci-check.yml',
+        '.github/actions/setup-bun-with-retry/action.yml',
+        '.github/actions/run-with-turbo-remote-cache/action.yml',
+        'scripts/ci/generate-build-metadata.ts',
+        'scripts/ci/check-workflow-config.ts',
+        'scripts/ci/workflow-config-core.ts',
+        'scripts/ci/workspace-dependency-closure.ts',
+        'scripts/ci/resolve-changed-files-core.ts',
+        'scripts/ci/resolve-changed-files.ts',
+        'package.json',
+        'turbo.json',
+        'tuturuuu.ts',
+        'tuturuuu.ci.ts',
+        '!**/*.md',
+        '!**/*.mdx',
       ]
   push:
     branches: [main]
     paths:
       [
-        "apps/apps/**",
-        "packages/ai/**",
-        "packages/apis/**",
-        "packages/google/**",
-        "packages/hooks/**",
-        "packages/payment/**",
-        "packages/payment-core/**",
-        "packages/realtime/**",
-        "packages/storage-core/**",
-        "packages/cloudflare/**",
-        "packages/start-bridge/**",
-        "packages/auth/**",
-        "packages/satellite/**",
-        "packages/internal-api/**",
-        "packages/supabase/**",
-        "packages/ui/**",
-        "packages/utils/**",
-        "packages/icons/**",
-        "packages/types/**",
-        "packages/typescript-config/**",
-        "apps/web/package.json",
-        "scripts/ci/apps-native-*",
-        "scripts/ci/wave1-*",
-        ".github/workflows/wave1-*",
-        "scripts/ci/native-wrangler-*.mjs",
-        "scripts/ci/native-emitted-config-receipt.mjs",
-        "scripts/ci/calendar-native-runtime-profile.mjs",
-        "scripts/ci/native-source-identity-test-helper.js",
-        "bun.lock",
-        ".github/workflows/apps-cloudflare.yaml",
-        ".github/workflows/ci-check.yml",
-        ".github/actions/setup-bun-with-retry/action.yml",
-        ".github/actions/run-with-turbo-remote-cache/action.yml",
-        "scripts/ci/generate-build-metadata.ts",
-        "scripts/ci/check-workflow-config.ts",
-        "scripts/ci/workflow-config-core.ts",
-        "scripts/ci/workspace-dependency-closure.ts",
-        "scripts/ci/resolve-changed-files-core.ts",
-        "scripts/ci/resolve-changed-files.ts",
-        "package.json",
-        "turbo.json",
-        "tuturuuu.ts",
-        "tuturuuu.ci.ts",
+        'apps/apps/**',
+        'packages/ai/**',
+        'packages/apis/**',
+        'packages/google/**',
+        'packages/hooks/**',
+        'packages/payment/**',
+        'packages/payment-core/**',
+        'packages/realtime/**',
+        'packages/storage-core/**',
+        'packages/cloudflare/**',
+        'packages/start-bridge/**',
+        'packages/auth/**',
+        'packages/satellite/**',
+        'packages/internal-api/**',
+        'packages/supabase/**',
+        'packages/ui/**',
+        'packages/utils/**',
+        'packages/icons/**',
+        'packages/types/**',
+        'packages/typescript-config/**',
+        'apps/web/package.json',
+        'scripts/ci/apps-native-*',
+        'scripts/ci/wave1-*',
+        '.github/workflows/wave1-*',
+        'scripts/ci/native-wrangler-*.mjs',
+        'scripts/ci/native-emitted-config-receipt.mjs',
+        'scripts/ci/calendar-native-runtime-profile.mjs',
+        'scripts/ci/native-source-identity-test-helper.js',
+        'bun.lock',
+        '.github/workflows/apps-cloudflare.yaml',
+        '.github/workflows/ci-check.yml',
+        '.github/actions/setup-bun-with-retry/action.yml',
+        '.github/actions/run-with-turbo-remote-cache/action.yml',
+        'scripts/ci/generate-build-metadata.ts',
+        'scripts/ci/check-workflow-config.ts',
+        'scripts/ci/workflow-config-core.ts',
+        'scripts/ci/workspace-dependency-closure.ts',
+        'scripts/ci/resolve-changed-files-core.ts',
+        'scripts/ci/resolve-changed-files.ts',
+        'package.json',
+        'turbo.json',
+        'tuturuuu.ts',
+        'tuturuuu.ci.ts',
       ]
 permissions:
   contents: read
@@ -121,7 +121,7 @@ jobs:
     timeout-minutes: 25
     env:
       APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      WRANGLER_SEND_METRICS: "false"
+      WRANGLER_SEND_METRICS: 'false'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -145,8 +145,8 @@ jobs:
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run build --filter='@tuturuuu/apps^...' --concurrency=2
-          token: ""
-          team: ""
+          token: ''
+          team: ''
       - name: Generate exact-checkout build identity
         env:
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.APPS_SOURCE_SHA }}
@@ -181,11 +181,11 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_apps_ci_placeholder
           NEXT_PUBLIC_APP_URL: https://apps.tuturuuu.com
           NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
-          TUTURUUU_NOINDEX: "1"
+          TUTURUUU_NOINDEX: '1'
         with:
           command: cd apps/apps && bun run build:cloudflare
-          token: ""
-          team: ""
+          token: ''
+          team: ''
       - name: Capture generated Apps route tree evidence
         if: always()
         shell: bash
@@ -242,8 +242,8 @@ jobs:
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: cd apps/apps && bun run type-check
-          token: ""
-          team: ""
+          token: ''
+          team: ''
       - name: Discover actual emitted config and assert staging resource/static contract
         id: output
         run: python3 scripts/ci/apps-native-artifact.py config apps/apps
@@ -284,7 +284,7 @@ jobs:
         timeout-minutes: 3
         working-directory: apps/apps
         env:
-          CI: "true"
+          CI: 'true'
           CI_SOURCE_SHA: ${{ env.APPS_SOURCE_SHA }}
           APPS_ARTIFACT_RECEIPT: ${{ runner.temp }}/apps-native-artifact.json
         run: node --test cloudflare/native-built-worker.test.mjs
@@ -297,13 +297,13 @@ jobs:
       - name: Exercise actual catalogue anchors on the same emitted artifact
         timeout-minutes: 5
         env:
-          CI: "true"
+          CI: 'true'
           APPS_ARTIFACT_RECEIPT: ${{ runner.temp }}/apps-native-artifact.json
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run test:apps-native-browser --concurrency=1
-          token: ""
-          team: ""
+          token: ''
+          team: ''
       - name: Recheck output and pack only qualified bytes
         run: |
           python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"
@@ -358,7 +358,7 @@ jobs:
     timeout-minutes: 15
     env:
       APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      WRANGLER_SEND_METRICS: "false"
+      WRANGLER_SEND_METRICS: 'false'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -389,7 +389,7 @@ jobs:
         timeout-minutes: 3
         working-directory: apps/apps
         env:
-          CI: "true"
+          CI: 'true'
           CI_SOURCE_SHA: ${{ env.APPS_SOURCE_SHA }}
           APPS_ARTIFACT_RECEIPT: ${{ runner.temp }}/apps-native-artifact.json
         run: node --test cloudflare/native-built-worker.test.mjs
@@ -399,13 +399,13 @@ jobs:
       - name: Repeat ordinary anchor acceptance on restored workerd output
         timeout-minutes: 5
         env:
-          CI: "true"
+          CI: 'true'
           APPS_ARTIFACT_RECEIPT: ${{ runner.temp }}/apps-native-artifact.json
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run test:apps-native-browser --concurrency=1
-          token: ""
-          team: ""
+          token: ''
+          team: ''
       - name: Confirm qualification did not mutate the restored artifact
         run: python3 scripts/ci/apps-native-artifact.py verify apps/apps --receipt "$RUNNER_TEMP/apps-native-artifact.json"
       - name: Pack Apps finite public SDK evidence including hidden files
