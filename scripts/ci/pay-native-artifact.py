@@ -24,12 +24,15 @@ def load():
     worker = "tuturuuu-pay" if production else WORKER
     profile_path = PROFILE.with_name("production-profile.json") if production else PROFILE
     profile = json.loads(profile_path.read_text())
+    if production and profile.get("POLAR_SANDBOX") != "false":
+        raise RuntimeError("Pay production qualification requires POLAR_SANDBOX=false")
     if not production and profile.get("POLAR_SANDBOX") != "true":
         raise RuntimeError("Pay staging qualification requires Polar sandbox")
     module.IDENTITY = {
         **module.IDENTITY,
         "name": worker,
         "workers_dev": False,
+        "preview_urls": False,
         "vars": profile,
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],

@@ -1,20 +1,21 @@
 name: Pay Cloudflare artifact
 on:
-  push:
-    branches: [cf/pay-20261104-artifact]
   pull_request:
-    paths: ['apps/pay/**', 'packages/**', 'bun.lock', '.github/workflows/pay-cloudflare.yaml']
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths: ['apps/pay/**', 'packages/**', 'scripts/ci/**', 'bun.lock', '.github/workflows/pay-cloudflare-artifact.yaml']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   build:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      CONTACTS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_pay_ci_placeholder' }}
+      NODE_ENV: production
+      PAY_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
       NEXT_PUBLIC_APP_URL: https://pay.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       VITE_PAY_NATIVE_PROFILE: production
@@ -22,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ env.CONTACTS_SOURCE_SHA }}
+          ref: ${{ env.PAY_SOURCE_SHA }}
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
@@ -35,13 +36,28 @@ jobs:
         run: bun turbo:local run build --filter='@tuturuuu/pay^...' --concurrency=2
       - name: Build Pay Start Worker and assets
         run: bun run --cwd apps/pay build:cloudflare
+      - name: Record emitted configuration receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/pay "${{ env.PAY_SOURCE_SHA }}" "$RUNNER_TEMP/pay-emitted-config.json"
+      - name: Retain emitted configuration receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pay-config-receipt-${{ env.PAY_SOURCE_SHA }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/pay-emitted-config.json
+          if-no-files-found: error
+      - name: Anonymous authentication and host-isolation smoke
+        run: node --test apps/pay/cloudflare/cutover.runtime.mjs
       - name: Seal deployable output
+        if: github.event_name == 'workflow_dispatch'
         run: |
           python3 scripts/ci/pay-native-artifact.py seal apps/pay --receipt "$RUNNER_TEMP/pay-native.json"
           python3 scripts/ci/pay-native-artifact.py pack apps/pay --receipt "$RUNNER_TEMP/pay-native.json" --archive "$RUNNER_TEMP/pay-native.tar.gz"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - name: Upload deployable artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: pay-native-${{ env.CONTACTS_SOURCE_SHA }}
+          name: pay-native-${{ env.PAY_SOURCE_SHA }}
           path: ${{ runner.temp }}/pay-native.tar.gz
           if-no-files-found: error
           retention-days: 7
