@@ -181,9 +181,8 @@ describe('Meet guest availability plan access', () => {
 
   it('leaves the signed-in branches on the existing plan policy', async () => {
     mocks.getPlan.mockResolvedValue(null);
-    const { createTimeblocks, deleteTimeblock } = await import(
-      './timeblocks.js'
-    );
+    const { createTimeblocks, deleteTimeblock } =
+      await import('./timeblocks.js');
 
     await createTimeblocks(PLAN_ID, { timeblocks: [timeblock] });
     await deleteTimeblock(PLAN_ID, 'tb-1');

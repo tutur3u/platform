@@ -140,13 +140,14 @@ export async function upsertMailboxMember({
     role: payload.role,
     user_id: userId,
   };
-  const { data, error } = await (existing
-    ? table
-        .update({ role: payload.role })
-        .eq('mailbox_id', mailboxId)
-        .eq('user_id', userId)
-        .neq('role', 'owner')
-    : table.insert(values)
+  const { data, error } = await (
+    existing
+      ? table
+          .update({ role: payload.role })
+          .eq('mailbox_id', mailboxId)
+          .eq('user_id', userId)
+          .neq('role', 'owner')
+      : table.insert(values)
   )
     .select('created_at, role, user_id')
     .maybeSingle();

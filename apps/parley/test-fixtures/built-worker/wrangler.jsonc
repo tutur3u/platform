@@ -5,13 +5,13 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": "../../.open-next/assets", "binding": "ASSETS" },
   "r2_buckets": [
-    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "fixture-cache" }
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "fixture-cache" },
   ],
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "parley-built-worker-fixture"
-    }
+      "service": "parley-built-worker-fixture",
+    },
   ],
   "images": { "binding": "IMAGES" },
   "vars": {
@@ -21,6 +21,6 @@
     "NEXT_PUBLIC_SUPABASE_URL": "https://fixture.invalid",
     "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "fixture-publishable",
     "SUPABASE_SECRET_KEY": "fixture-secret",
-    "MEET_REALTIME_TOKEN_SECRET": "fixture-token"
-  }
+    "MEET_REALTIME_TOKEN_SECRET": "fixture-token",
+  },
 }

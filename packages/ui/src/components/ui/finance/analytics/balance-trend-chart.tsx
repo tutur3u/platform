@@ -69,12 +69,10 @@ export function BalanceTrendChart({
         includeConfidential,
       });
 
-      return trend.map(
-        (point): BalanceDataPoint => ({
-          date: dayjs(point.date).format('YYYY-MM-DD'),
-          balance: Number(point.balance) || 0,
-        })
-      );
+      return trend.map((point): BalanceDataPoint => ({
+        date: dayjs(point.date).format('YYYY-MM-DD'),
+        balance: Number(point.balance) || 0,
+      }));
     },
     staleTime: 30_000,
   });

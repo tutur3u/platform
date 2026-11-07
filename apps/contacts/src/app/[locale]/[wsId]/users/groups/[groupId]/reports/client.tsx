@@ -493,9 +493,9 @@ export default function GroupReportsClient({
   const hasReportLoadError = dashboardQuery.isError || configsQuery.isError;
   const hasNoReportsForSelectedUser = Boolean(
     userId &&
-      dashboardQuery.data &&
-      dashboardQuery.data.reports.length === 0 &&
-      reportId !== 'new'
+    dashboardQuery.data &&
+    dashboardQuery.data.reports.length === 0 &&
+    reportId !== 'new'
   );
   const emptyReportTitle = hasNoReportsForSelectedUser
     ? t('ws-reports.no_reports_found')

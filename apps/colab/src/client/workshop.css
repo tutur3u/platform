@@ -245,7 +245,7 @@
   padding: 8px 10px;
   border-color: transparent;
 }
-.app-tabs button[aria-selected="true"] {
+.app-tabs button[aria-selected='true'] {
   background: var(--soft);
   border-color: var(--line);
 }

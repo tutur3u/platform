@@ -304,7 +304,7 @@ export function WorkspaceAccessPage({
             );
             const matchesEmail = Boolean(
               normalizedEmail &&
-                member.email?.trim().toLowerCase() === normalizedEmail
+              member.email?.trim().toLowerCase() === normalizedEmail
             );
             if (!member.pending || (!matchesUser && !matchesEmail)) {
               return member;

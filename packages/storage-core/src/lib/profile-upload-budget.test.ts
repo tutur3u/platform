@@ -66,9 +66,8 @@ it('rejects invalid denied dimensions', async () => {
 });
 
 it('consumes one shared ticket once and fails closed for replay or outage', async () => {
-  const { consumeProfileUploadTicket } = await import(
-    './profile-upload-budget'
-  );
+  const { consumeProfileUploadTicket } =
+    await import('./profile-upload-budget');
   await consumeProfileUploadTicket('synthetic-uuid');
   expect(f.reserve).toHaveBeenCalledWith([
     ['api-cost:v1:profile-upload:ticket:synthetic-uuid', 1, 1, 1200],

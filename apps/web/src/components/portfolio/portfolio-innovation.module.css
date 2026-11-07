@@ -72,7 +72,7 @@
   color: #93a6b0;
 }
 .tab::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: auto 16px -1px;
   height: 2px;
@@ -80,12 +80,12 @@
   opacity: 0;
   transition: opacity 160ms ease;
 }
-.tab[data-state="active"] {
+.tab[data-state='active'] {
   background: #ffffff08;
   color: #f3f6ed;
   box-shadow: none;
 }
-.tab[data-state="active"]::after {
+.tab[data-state='active']::after {
   opacity: 1;
 }
 .panels {
@@ -98,11 +98,11 @@
   margin: 0;
   padding-top: 32px;
 }
-.chapter[data-state="inactive"] {
+.chapter[data-state='inactive'] {
   visibility: hidden;
   pointer-events: none;
 }
-.chapter:where([data-state="active"]) :where(.scene) {
+.chapter:where([data-state='active']) :where(.scene) {
   animation: chapterEnter 220ms ease-out;
 }
 @keyframes chapterEnter {

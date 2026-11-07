@@ -7,11 +7,10 @@ import { useTasksRoutePrefix } from '../tu-do/tasks-route-context';
 import { CalendarHeaderActions } from './components/calendar-header-actions';
 import TasksSidebar from './components/tasks-sidebar';
 
-interface TaskCalendarPageShellProps
-  extends Omit<
-    ComponentProps<typeof CalendarPageShell>,
-    'HeaderActions' | 'TasksSidebar'
-  > {
+interface TaskCalendarPageShellProps extends Omit<
+  ComponentProps<typeof CalendarPageShell>,
+  'HeaderActions' | 'TasksSidebar'
+> {
   isPersonalWorkspace: boolean;
   manageTaskDialog?: boolean;
 }

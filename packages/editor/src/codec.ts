@@ -434,7 +434,7 @@ export function markdownToJSON(markdown: string): JSONContent {
   const lines = markdown.replace(/\r\n?/gu, '\n').split('\n');
   const content: JSONContent[] = [];
 
-  for (let index = 0; index < lines.length; ) {
+  for (let index = 0; index < lines.length;) {
     const line = lines[index] ?? '';
     if (!line.trim()) {
       index += 1;

@@ -61,9 +61,8 @@ describe('WebGL package extract callback route', () => {
   });
 
   it('accepts extracted WebGL file bytes and writes them server-side', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/extract-callback/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/extract-callback/route');
 
     const response = await POST(
       new Request(
@@ -116,9 +115,8 @@ describe('WebGL package extract callback route', () => {
         'https://account-id.r2.cloudflarestorage.com/bucket/ws-1/game.data',
       token: undefined,
     });
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/extract-callback/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/extract-callback/route');
 
     const response = await POST(
       new Request(
@@ -168,9 +166,8 @@ describe('WebGL package extract callback route', () => {
   });
 
   it('rejects oversized direct WebGL file callback bodies with valid tokens', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/extract-callback/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/extract-callback/route');
 
     const response = await POST(
       new Request(

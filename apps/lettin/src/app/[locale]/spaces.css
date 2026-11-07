@@ -125,7 +125,7 @@
   overflow: hidden;
 }
 .space-header::after {
-  content: "";
+  content: '';
   position: absolute;
   width: 18rem;
   height: 18rem;
@@ -174,7 +174,7 @@
 .workspace-creative-nav a:hover {
   background: var(--muted);
 }
-.workspace-creative-nav a[aria-current="page"] {
+.workspace-creative-nav a[aria-current='page'] {
   background: var(--foreground);
   color: var(--background);
 }
@@ -199,7 +199,7 @@
   pointer-events: none;
 }
 .space-header > div,
-.space-header > [data-slot="dialog-trigger"] {
+.space-header > [data-slot='dialog-trigger'] {
   position: relative;
   z-index: 1;
 }

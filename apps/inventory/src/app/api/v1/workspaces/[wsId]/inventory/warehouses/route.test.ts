@@ -140,9 +140,8 @@ describe('inventory warehouses API route', () => {
       },
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/warehouses/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/warehouses/route');
     const response = await GET(
       new Request(
         'https://app.example.com/api?response=paginated&pageSize=100'
@@ -180,9 +179,8 @@ describe('inventory warehouses API route', () => {
       },
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/warehouses/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/warehouses/route');
     const response = await POST(
       new Request('https://app.example.com/api', {
         body: JSON.stringify({ name: 'Main' }),
@@ -212,9 +210,8 @@ describe('inventory warehouses API route', () => {
       },
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/warehouses/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/warehouses/route');
     const response = await POST(
       new Request('https://app.example.com/api', {
         body: JSON.stringify({ name: 'Main' }),
@@ -243,9 +240,8 @@ describe('inventory warehouses API route', () => {
       },
     });
 
-    const { DELETE } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/warehouses/[warehouseId]/route'
-    );
+    const { DELETE } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/warehouses/[warehouseId]/route');
     const response = await DELETE(new Request('https://app.example.com/api'), {
       params: Promise.resolve({
         warehouseId: 'warehouse-1',

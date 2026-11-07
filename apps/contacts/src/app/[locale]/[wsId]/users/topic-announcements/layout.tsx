@@ -58,7 +58,7 @@ export default async function TopicAnnouncementsLayout({
           !isSupervisor &&
           Boolean(
             permissions?.containsPermission('create_user_groups_posts') ||
-              permissions?.containsPermission('update_user_groups_posts')
+            permissions?.containsPermission('update_user_groups_posts')
           );
 
         const access = resolveWorkspaceFeatureAccess({

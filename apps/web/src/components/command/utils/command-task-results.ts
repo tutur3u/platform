@@ -49,8 +49,8 @@ export function parseCommandQuery(query: string): {
 export function isTaskOverdue(task: TaskSearchResult, now: Date): boolean {
   return Boolean(
     !task.completed &&
-      task.end_date &&
-      new Date(task.end_date).getTime() < now.getTime()
+    task.end_date &&
+    new Date(task.end_date).getTime() < now.getTime()
   );
 }
 

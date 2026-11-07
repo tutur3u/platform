@@ -131,9 +131,8 @@ describe('portable desktop certificate readiness', () => {
     vi.resetModules();
 
     try {
-      const { inspectDesktopCertificate: inspectWithoutParser } = await import(
-        './certificate-readiness'
-      );
+      const { inspectDesktopCertificate: inspectWithoutParser } =
+        await import('./certificate-readiness');
       const result = await inspectWithoutParser({
         platform: 'windows',
         bytes: Buffer.from('synthetic p12'),

@@ -96,14 +96,12 @@ async function call(method: 'POST' | 'PUT') {
     body: JSON.stringify(body),
   });
   if (method === 'POST') {
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/tutoring/sessions/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/tutoring/sessions/route');
     return POST(request, { params: Promise.resolve({ wsId }) });
   }
-  const { PUT } = await import(
-    '@/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route'
-  );
+  const { PUT } =
+    await import('@/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route');
   return PUT(request, { params: Promise.resolve({ wsId, id }) });
 }
 describe.each(['POST', 'PUT'] as const)(
@@ -203,9 +201,8 @@ describe('PUT moving a session to another date or start', () => {
     error: null,
   });
   async function move() {
-    const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route'
-    );
+    const { PUT } =
+      await import('@/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route');
     return PUT(
       new Request('http://localhost/tutoring', {
         method: 'PUT',

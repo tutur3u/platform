@@ -32,8 +32,10 @@ export type ChatSdkStateAdapterInput =
       id: ChatSdkStateAdapterId;
     };
 
-export interface CreateChatSdkRuntimeOptions
-  extends Omit<ChatConfig, 'adapters' | 'state'> {
+export interface CreateChatSdkRuntimeOptions extends Omit<
+  ChatConfig,
+  'adapters' | 'state'
+> {
   adapters: ChatSdkPlatformAdapterConfigMap;
   state: ChatSdkStateAdapterInput;
 }

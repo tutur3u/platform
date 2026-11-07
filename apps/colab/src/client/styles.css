@@ -1,5 +1,5 @@
 :root {
-  font-family: "Noto Sans", Arial, Helvetica, sans-serif;
+  font-family: 'Noto Sans', Arial, Helvetica, sans-serif;
   color: var(--foreground);
   background: var(--background);
   font-synthesis: none;
@@ -244,7 +244,7 @@
     border: 0;
     background: none;
   }
-  .segmented button[aria-pressed="true"] {
+  .segmented button[aria-pressed='true'] {
     background: var(--card);
     box-shadow: 0 2px 5px color-mix(in srgb, var(--foreground) 5%, transparent);
   }

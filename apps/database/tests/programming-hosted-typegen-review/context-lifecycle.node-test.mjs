@@ -50,31 +50,35 @@ test('private temporary root is revalidated for permissions', async (t) => {
   assert.throws(() => assertSyntheticCliEnvironment(context.env, context.cwd));
 });
 
-test('async monitors are serialized and a rejected monitor aborts owned helper', {
-  timeout: 4000,
-}, async (t) => {
-  const base = await mkdtemp(path.join(os.tmpdir(), 'async-monitor-'));
-  t.after(() => rm(base, { recursive: true, force: true }));
-  let pid;
-  let active = 0;
-  let maximum = 0;
-  await assert.rejects(
-    runOwnedProcess(process.execPath, ['-e', 'setInterval(()=>{},1000)'], {
-      timeoutMs: 2000,
-      intervalMs: 20,
-      onSpawn: (ownedPid) => {
-        pid = ownedPid;
-      },
-      onTick: async () => {
-        maximum = Math.max(maximum, ++active);
-        await new Promise((resolve) => setTimeout(resolve, 80));
-        active--;
-        throw new Error('synthetic policy failure');
-      },
-    }),
-    /synthetic policy failure/
-  );
-  assert.equal(maximum, 1);
-  assert(Number.isSafeInteger(pid) && pid > 1 && pid !== process.pid);
-  assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
-});
+test(
+  'async monitors are serialized and a rejected monitor aborts owned helper',
+  {
+    timeout: 4000,
+  },
+  async (t) => {
+    const base = await mkdtemp(path.join(os.tmpdir(), 'async-monitor-'));
+    t.after(() => rm(base, { recursive: true, force: true }));
+    let pid;
+    let active = 0;
+    let maximum = 0;
+    await assert.rejects(
+      runOwnedProcess(process.execPath, ['-e', 'setInterval(()=>{},1000)'], {
+        timeoutMs: 2000,
+        intervalMs: 20,
+        onSpawn: (ownedPid) => {
+          pid = ownedPid;
+        },
+        onTick: async () => {
+          maximum = Math.max(maximum, ++active);
+          await new Promise((resolve) => setTimeout(resolve, 80));
+          active--;
+          throw new Error('synthetic policy failure');
+        },
+      }),
+      /synthetic policy failure/
+    );
+    assert.equal(maximum, 1);
+    assert(Number.isSafeInteger(pid) && pid > 1 && pid !== process.pid);
+    assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
+  }
+);

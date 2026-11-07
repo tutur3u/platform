@@ -59,9 +59,8 @@ describe('workspace migration module route', () => {
     ['email-blacklist', 'the global email blacklist'],
     ['post-email-queue', 'post email queue delivery metadata'],
   ])('does not expose %s through workspace API keys', async (module) => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v2/workspaces/[wsId]/migrate/[module]/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v2/workspaces/[wsId]/migrate/[module]/route');
 
     const response = await GET(
       new NextRequest(

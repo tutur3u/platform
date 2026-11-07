@@ -45,23 +45,104 @@ type RisePracticeRecord = {
 
 const risePracticeRecords: Record<MockApp, RisePracticeRecord> = {
   // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
-  drive: { primary: ['RISE Pathways campaign brief', 'Introduce Marketing & Growth, Product & Development, External Relations, and People & Culture as four ways for students to find their place and build impact.'], followup: ['Bilingual launch copy', 'English and Vietnamese drafts are ready for department leads to review. The registration links must be checked before publishing.'] },
+  drive: {
+    primary: [
+      'RISE Pathways campaign brief',
+      'Introduce Marketing & Growth, Product & Development, External Relations, and People & Culture as four ways for students to find their place and build impact.',
+    ],
+    followup: [
+      'Bilingual launch copy',
+      'English and Vietnamese drafts are ready for department leads to review. The registration links must be checked before publishing.',
+    ],
+  },
   // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
-  notion: { primary: ['RISE operating handbook', 'Use AI to reduce repetitive work while keeping decisions, outreach, publishing, and assessed coursework under human control.'], followup: ['Department responsibilities', 'Marketing tells the story; Product shapes experiences; External Relations builds partnerships; People & Culture supports members.'] },
+  notion: {
+    primary: [
+      'RISE operating handbook',
+      'Use AI to reduce repetitive work while keeping decisions, outreach, publishing, and assessed coursework under human control.',
+    ],
+    followup: [
+      'Department responsibilities',
+      'Marketing tells the story; Product shapes experiences; External Relations builds partnerships; People & Culture supports members.',
+    ],
+  },
   // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
-  zalo: { primary: ['People & Culture check-in', 'Several new members are unsure which pathway fits them. Draft a warm Vietnamese follow-up with a short self-reflection exercise.'], followup: ['Induction reminders', 'Send time and venue reminders only after the event lead confirms the final run sheet.'] },
+  zalo: {
+    primary: [
+      'People & Culture check-in',
+      'Several new members are unsure which pathway fits them. Draft a warm Vietnamese follow-up with a short self-reflection exercise.',
+    ],
+    followup: [
+      'Induction reminders',
+      'Send time and venue reminders only after the event lead confirms the final run sheet.',
+    ],
+  },
   // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
-  messenger: { primary: ['Prospective member question', 'A student enjoys storytelling and community building but has never joined a club. Explain how Marketing & Growth could help them learn.'], followup: ['Study workload concern', 'A member is worried club work will conflict with an assignment deadline. Suggest a respectful way to raise capacity early.'] },
+  messenger: {
+    primary: [
+      'Prospective member question',
+      'A student enjoys storytelling and community building but has never joined a club. Explain how Marketing & Growth could help them learn.',
+    ],
+    followup: [
+      'Study workload concern',
+      'A member is worried club work will conflict with an assignment deadline. Suggest a respectful way to raise capacity early.',
+    ],
+  },
   // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
-  teams: { primary: ['RISE cross-department planning', 'Product needs event requirements, Marketing needs the final value proposition, and External Relations is waiting on the partner list.'], followup: ['People & Culture pulse', 'The team has energy but unclear ownership. Turn the discussion into decisions, owners, and follow-up questions.'] },
+  teams: {
+    primary: [
+      'RISE cross-department planning',
+      'Product needs event requirements, Marketing needs the final value proposition, and External Relations is waiting on the partner list.',
+    ],
+    followup: [
+      'People & Culture pulse',
+      'The team has energy but unclear ownership. Turn the discussion into decisions, owners, and follow-up questions.',
+    ],
+  },
   // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
-  calendar: { primary: ['Induction Day & Start Up Showcase', 'Draft event window: Thursday, 13:00–17:00. Venue and speaker availability are not yet confirmed.'], followup: ['Student focus blocks', 'Protect class time and assignment deadlines when proposing RISE meetings. Never schedule from availability alone.'] },
+  calendar: {
+    primary: [
+      'Induction Day & Start Up Showcase',
+      'Draft event window: Thursday, 13:00–17:00. Venue and speaker availability are not yet confirmed.',
+    ],
+    followup: [
+      'Student focus blocks',
+      'Protect class time and assignment deadlines when proposing RISE meetings. Never schedule from availability alone.',
+    ],
+  },
   // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
-  jira: { primary: ['RISE-31: Induction experience', 'Product & Development is mapping the newcomer journey. Acceptance criteria need accessibility and feedback checkpoints.'], followup: ['RISE-42: Recruitment campaign', 'Marketing & Growth is blocked until all four department leads approve their role descriptions.'] },
+  jira: {
+    primary: [
+      'RISE-31: Induction experience',
+      'Product & Development is mapping the newcomer journey. Acceptance criteria need accessibility and feedback checkpoints.',
+    ],
+    followup: [
+      'RISE-42: Recruitment campaign',
+      'Marketing & Growth is blocked until all four department leads approve their role descriptions.',
+    ],
+  },
   // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
-  trello: { primary: ['Pathways content board', 'Cards are grouped by Marketing, Product, External Relations, and People & Culture with clear owners and approval states.'], followup: ['Showcase readiness', 'Venue, demo teams, volunteer roster, and partner welcome pack are not all ready yet.'] },
+  trello: {
+    primary: [
+      'Pathways content board',
+      'Cards are grouped by Marketing, Product, External Relations, and People & Culture with clear owners and approval states.',
+    ],
+    followup: [
+      'Showcase readiness',
+      'Venue, demo teams, volunteer roster, and partner welcome pack are not all ready yet.',
+    ],
+  },
   // biome-ignore format: Keep scenario fixtures compact enough for the source-size gate.
-  gmail: { primary: ['Draft: Meet the pathways to innovation', 'A bilingual recruitment email introduces four RISE departments and invites students to explore roles, attend Induction Day, and apply.'], followup: ['Partnership introduction', 'External Relations drafted a university-industry introduction. The contact, shared purpose, and requested next step need review.'] },
+  gmail: {
+    primary: [
+      'Draft: Meet the pathways to innovation',
+      'A bilingual recruitment email introduces four RISE departments and invites students to explore roles, attend Induction Day, and apply.',
+    ],
+    followup: [
+      'Partnership introduction',
+      'External Relations drafted a university-industry introduction. The contact, shared purpose, and requested next step need review.',
+    ],
+  },
   slack: {
     primary: [
       '#rise-operations',

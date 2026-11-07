@@ -114,19 +114,16 @@ for (const endpoint of [
       const url = `http://localhost/${endpoint}?fromDate=2026-10-01&toDate=2026-10-31&mode=${endpoint}&tutorsOnly=false`;
       const response =
         endpoint === 'sessions'
-          ? await (await import('./sessions/route')).GET(
-              new Request(url),
-              context
-            )
+          ? await (
+              await import('./sessions/route')
+            ).GET(new Request(url), context)
           : endpoint === 'teachers'
-            ? await (await import('./teachers/route')).GET(
-                new Request(url),
-                context
-              )
-            : await (await import('./export/route')).GET(
-                new Request(url),
-                context
-              );
+            ? await (
+                await import('./teachers/route')
+              ).GET(new Request(url), context)
+            : await (
+                await import('./export/route')
+              ).GET(new Request(url), context);
       expect(response?.status).toBe(200);
       const body = await response!.json();
       expect(body.data).toHaveLength(payroll ? 2 : 1);

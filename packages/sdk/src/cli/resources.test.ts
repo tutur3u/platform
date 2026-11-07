@@ -372,149 +372,159 @@ describe('resource admission', { timeout: crossProcessTimeout }, () => {
 const queueModule = resolve('src/cli/resources-queue.ts');
 const configModule = resolve('src/cli/resources-config.ts');
 const workerHome = () => fixtures.home(1);
-describe('reviewed resource policy and signals', {
-  timeout: crossProcessTimeout,
-}, () => {
-  it('rejects busy same-lane budget changes and binds actual argv/env to recorded caps', async () => {
-    const home = await workerHome();
-    const ready = join(home, 'ready');
-    const release = join(home, 'release');
-    const active = launch(home, [
-      'run',
-      '--',
-      'node',
-      await script(
+describe(
+  'reviewed resource policy and signals',
+  {
+    timeout: crossProcessTimeout,
+  },
+  () => {
+    it('rejects busy same-lane budget changes and binds actual argv/env to recorded caps', async () => {
+      const home = await workerHome();
+      const ready = join(home, 'ready');
+      const release = join(home, 'release');
+      const active = launch(home, [
+        'run',
+        '--',
+        'node',
+        await script(
+          home,
+          'active',
+          `const fs=require('fs');fs.writeFileSync(${jsLiteral(ready)},'');const timer=setInterval(()=>{if(fs.existsSync(${jsLiteral(release)}))clearInterval(timer)},10);`
+        ),
+      ]);
+      await active.until(() => exists(ready));
+      const probe = await workerProbe(home, 'vitest');
+      const queued = launch(home, [
+        'run',
+        '--',
+        probe,
+        'run',
+        '--maxWorkers=16',
+      ]);
+      await queued.until(
+        async () => (await resourceQueueStatus(home)).waiting.length === 1
+      );
+      const before = await readFile(join(home, 'config.json'), 'utf8');
+      const change = await launch(home, [
+        'setup',
+        '--shell',
+        'none',
+        '--workers',
+        '1',
+      ]).done;
+      expect(change.code).toBe(1);
+      expect(change.err).toContain('worker budgets');
+      expect(await readFile(join(home, 'config.json'), 'utf8')).toBe(before);
+      await writeFile(release, '');
+      await active.done;
+      await queued.until(() => exists(join(home, 'probe.json')));
+      expect(
+        JSON.parse(await readFile(join(home, 'probe.json'), 'utf8'))
+      ).toEqual({
+        args: ['run', '--maxWorkers=2'],
+        vitest: '2',
+        cargo: '2',
+        turbo: '1',
+      });
+      expect((await resourceQueueStatus(home)).owner?.limits).toEqual({
+        vitestWorkers: 2,
+        buildJobs: 2,
+      });
+      await writeFile(join(home, 'probe.release'), '');
+      expect((await queued.done).code).toBe(0);
+    });
+    it('rejects worker changes for a live pressure-held waiter even with zero owners', async () => {
+      const home = await workerHome();
+      const runner = join(home, 'waiter.ts');
+      await writeFile(
+        runner,
+        `import {queuedResourceCommand} from ${jsLiteral(queueModule)};import {writeFileSync} from 'node:fs';process.exitCode=await queuedResourceCommand(${jsLiteral(home)},'node',['-e','process.exit(9)'],process.env,false,1,async()=>{writeFileSync(${jsLiteral(join(home, 'pressure.ready'))},'');return {blocked:true,reason:'private fixture'};});`
+      );
+      const waiter = launch(home, [], undefined, runner);
+      await waiter.until(() => exists(join(home, 'pressure.ready')));
+      expect((await resourceQueueStatus(home)).owners).toHaveLength(0);
+      const before = await readFile(join(home, 'config.json'), 'utf8');
+      await expect(
+        setupResources({ home, roots: [home], shell: 'none', workers: 1 })
+      ).rejects.toThrow('worker budgets');
+      expect(await readFile(join(home, 'config.json'), 'utf8')).toBe(before);
+      waiter.child.kill('SIGTERM');
+      expect((await waiter.done).code).toBe(143);
+    });
+    it('re-caps stale explicit flags across the initial-read to ticket-publication race', async () => {
+      const home = await workerHome();
+      const probe = await workerProbe(home, 'cargo');
+      const runner = join(home, 'race.ts');
+      await writeFile(
+        runner,
+        `import {queuedResourceCommand} from ${jsLiteral(queueModule)};import {readResourceConfig,laneResourceConfig,resourceEnvironment} from ${jsLiteral(configModule)};import {limitCommand} from ${jsLiteral(resolve('src/cli/resources-command.ts'))};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const config=laneResourceConfig(await readResourceConfig(${jsLiteral(home)}));const args=limitCommand('cargo',['test','--jobs=16'],config);writeFileSync(${jsLiteral(join(home, 'initial.json'))},JSON.stringify(args));while(!existsSync(${jsLiteral(join(home, 'initial.release'))}))await setTimeout(10);process.exitCode=await queuedResourceCommand(${jsLiteral(home)},${jsLiteral(probe)},args,resourceEnvironment(config),true,1);`
+      );
+      const broker = launch(home, [], undefined, runner);
+      await broker.until(() => exists(join(home, 'initial.json')));
+      expect(
+        JSON.parse(await readFile(join(home, 'initial.json'), 'utf8'))
+      ).toEqual(['test', '--jobs=2']);
+      expect((await resourceQueueStatus(home)).waiting).toHaveLength(0);
+      await setupResources({ home, roots: [home], shell: 'none', workers: 1 });
+      await writeFile(join(home, 'initial.release'), '');
+      await broker.until(() => exists(join(home, 'probe.json')));
+      expect(
+        JSON.parse(await readFile(join(home, 'probe.json'), 'utf8'))
+      ).toEqual({
+        args: ['test', '--jobs=1'],
+        vitest: '1',
+        cargo: '1',
+        turbo: '1',
+      });
+      expect((await resourceQueueStatus(home)).owner?.limits).toEqual({
+        vitestWorkers: 1,
+        buildJobs: 1,
+      });
+      await writeFile(join(home, 'probe.release'), '');
+      expect((await broker.done).code).toBe(0);
+    });
+    it('rejects a full budget-policy change during pressure probing before any launch', async () => {
+      const home = await workerHome();
+      const probe = await workerProbe(home, 'vitest');
+      const runner = join(home, 'pressure-race.ts');
+      await writeFile(
+        runner,
+        `import {queuedResourceCommand} from ${jsLiteral(queueModule)};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';try{process.exitCode=await queuedResourceCommand(${jsLiteral(home)},${jsLiteral(probe)},['run','--maxWorkers=16'],process.env,false,1,async()=>{writeFileSync(${jsLiteral(join(home, 'pressure.ready'))},'');while(!existsSync(${jsLiteral(join(home, 'pressure.release'))}))await setTimeout(10);return {blocked:false,reason:null};});}catch(error){console.error(error.message);process.exitCode=1;}`
+      );
+      const broker = launch(home, [], undefined, runner);
+      await broker.until(() => exists(join(home, 'pressure.ready')));
+      await atomicJson(join(home, 'config.json'), {
+        ...(await readResourceConfig(home)),
+        vitestWorkers: 1,
+        buildJobs: 1,
+      });
+      await writeFile(join(home, 'pressure.release'), '');
+      const result = await broker.done;
+      expect(result.code).toBe(1);
+      expect(result.err).toContain('worker policy changed');
+      expect(await exists(join(home, 'probe.json'))).toBe(false);
+      expect((await resourceQueueStatus(home)).owners).toHaveLength(0);
+    });
+    it('preserves owned SIGHUP identity and exit129 after child drain', async () => {
+      const home = await workerHome();
+      const child = await script(
         home,
-        'active',
-        `const fs=require('fs');fs.writeFileSync(${jsLiteral(ready)},'');const timer=setInterval(()=>{if(fs.existsSync(${jsLiteral(release)}))clearInterval(timer)},10);`
-      ),
-    ]);
-    await active.until(() => exists(ready));
-    const probe = await workerProbe(home, 'vitest');
-    const queued = launch(home, ['run', '--', probe, 'run', '--maxWorkers=16']);
-    await queued.until(
-      async () => (await resourceQueueStatus(home)).waiting.length === 1
-    );
-    const before = await readFile(join(home, 'config.json'), 'utf8');
-    const change = await launch(home, [
-      'setup',
-      '--shell',
-      'none',
-      '--workers',
-      '1',
-    ]).done;
-    expect(change.code).toBe(1);
-    expect(change.err).toContain('worker budgets');
-    expect(await readFile(join(home, 'config.json'), 'utf8')).toBe(before);
-    await writeFile(release, '');
-    await active.done;
-    await queued.until(() => exists(join(home, 'probe.json')));
-    expect(
-      JSON.parse(await readFile(join(home, 'probe.json'), 'utf8'))
-    ).toEqual({
-      args: ['run', '--maxWorkers=2'],
-      vitest: '2',
-      cargo: '2',
-      turbo: '1',
+        'hup',
+        `const fs=require('fs');process.on('SIGHUP',()=>fs.writeFileSync(${jsLiteral(join(home, 'signal'))},'SIGHUP'));process.on('SIGTERM',()=>fs.writeFileSync(${jsLiteral(join(home, 'signal'))},'SIGTERM'));fs.writeFileSync(${jsLiteral(join(home, 'ready'))},'');const timer=setInterval(()=>{if(fs.existsSync(${jsLiteral(join(home, 'release'))})){clearInterval(timer);process.exit(0)}},10);`
+      );
+      const broker = launch(home, ['run', '--', 'node', child]);
+      await broker.until(() => exists(join(home, 'ready')));
+      broker.child.kill('SIGHUP');
+      await broker.until(() => exists(join(home, 'signal')));
+      expect(await readFile(join(home, 'signal'), 'utf8')).toBe('SIGHUP');
+      expect(broker.child.exitCode).toBeNull();
+      expect((await resourceQueueStatus(home)).owners).toHaveLength(1);
+      await writeFile(join(home, 'release'), '');
+      expect((await broker.done).code).toBe(129);
+      expect((await resourceQueueStatus(home)).owners).toHaveLength(0);
     });
-    expect((await resourceQueueStatus(home)).owner?.limits).toEqual({
-      vitestWorkers: 2,
-      buildJobs: 2,
-    });
-    await writeFile(join(home, 'probe.release'), '');
-    expect((await queued.done).code).toBe(0);
-  });
-  it('rejects worker changes for a live pressure-held waiter even with zero owners', async () => {
-    const home = await workerHome();
-    const runner = join(home, 'waiter.ts');
-    await writeFile(
-      runner,
-      `import {queuedResourceCommand} from ${jsLiteral(queueModule)};import {writeFileSync} from 'node:fs';process.exitCode=await queuedResourceCommand(${jsLiteral(home)},'node',['-e','process.exit(9)'],process.env,false,1,async()=>{writeFileSync(${jsLiteral(join(home, 'pressure.ready'))},'');return {blocked:true,reason:'private fixture'};});`
-    );
-    const waiter = launch(home, [], undefined, runner);
-    await waiter.until(() => exists(join(home, 'pressure.ready')));
-    expect((await resourceQueueStatus(home)).owners).toHaveLength(0);
-    const before = await readFile(join(home, 'config.json'), 'utf8');
-    await expect(
-      setupResources({ home, roots: [home], shell: 'none', workers: 1 })
-    ).rejects.toThrow('worker budgets');
-    expect(await readFile(join(home, 'config.json'), 'utf8')).toBe(before);
-    waiter.child.kill('SIGTERM');
-    expect((await waiter.done).code).toBe(143);
-  });
-  it('re-caps stale explicit flags across the initial-read to ticket-publication race', async () => {
-    const home = await workerHome();
-    const probe = await workerProbe(home, 'cargo');
-    const runner = join(home, 'race.ts');
-    await writeFile(
-      runner,
-      `import {queuedResourceCommand} from ${jsLiteral(queueModule)};import {readResourceConfig,laneResourceConfig,resourceEnvironment} from ${jsLiteral(configModule)};import {limitCommand} from ${jsLiteral(resolve('src/cli/resources-command.ts'))};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';const config=laneResourceConfig(await readResourceConfig(${jsLiteral(home)}));const args=limitCommand('cargo',['test','--jobs=16'],config);writeFileSync(${jsLiteral(join(home, 'initial.json'))},JSON.stringify(args));while(!existsSync(${jsLiteral(join(home, 'initial.release'))}))await setTimeout(10);process.exitCode=await queuedResourceCommand(${jsLiteral(home)},${jsLiteral(probe)},args,resourceEnvironment(config),true,1);`
-    );
-    const broker = launch(home, [], undefined, runner);
-    await broker.until(() => exists(join(home, 'initial.json')));
-    expect(
-      JSON.parse(await readFile(join(home, 'initial.json'), 'utf8'))
-    ).toEqual(['test', '--jobs=2']);
-    expect((await resourceQueueStatus(home)).waiting).toHaveLength(0);
-    await setupResources({ home, roots: [home], shell: 'none', workers: 1 });
-    await writeFile(join(home, 'initial.release'), '');
-    await broker.until(() => exists(join(home, 'probe.json')));
-    expect(
-      JSON.parse(await readFile(join(home, 'probe.json'), 'utf8'))
-    ).toEqual({
-      args: ['test', '--jobs=1'],
-      vitest: '1',
-      cargo: '1',
-      turbo: '1',
-    });
-    expect((await resourceQueueStatus(home)).owner?.limits).toEqual({
-      vitestWorkers: 1,
-      buildJobs: 1,
-    });
-    await writeFile(join(home, 'probe.release'), '');
-    expect((await broker.done).code).toBe(0);
-  });
-  it('rejects a full budget-policy change during pressure probing before any launch', async () => {
-    const home = await workerHome();
-    const probe = await workerProbe(home, 'vitest');
-    const runner = join(home, 'pressure-race.ts');
-    await writeFile(
-      runner,
-      `import {queuedResourceCommand} from ${jsLiteral(queueModule)};import {existsSync,writeFileSync} from 'node:fs';import {setTimeout} from 'node:timers/promises';try{process.exitCode=await queuedResourceCommand(${jsLiteral(home)},${jsLiteral(probe)},['run','--maxWorkers=16'],process.env,false,1,async()=>{writeFileSync(${jsLiteral(join(home, 'pressure.ready'))},'');while(!existsSync(${jsLiteral(join(home, 'pressure.release'))}))await setTimeout(10);return {blocked:false,reason:null};});}catch(error){console.error(error.message);process.exitCode=1;}`
-    );
-    const broker = launch(home, [], undefined, runner);
-    await broker.until(() => exists(join(home, 'pressure.ready')));
-    await atomicJson(join(home, 'config.json'), {
-      ...(await readResourceConfig(home)),
-      vitestWorkers: 1,
-      buildJobs: 1,
-    });
-    await writeFile(join(home, 'pressure.release'), '');
-    const result = await broker.done;
-    expect(result.code).toBe(1);
-    expect(result.err).toContain('worker policy changed');
-    expect(await exists(join(home, 'probe.json'))).toBe(false);
-    expect((await resourceQueueStatus(home)).owners).toHaveLength(0);
-  });
-  it('preserves owned SIGHUP identity and exit129 after child drain', async () => {
-    const home = await workerHome();
-    const child = await script(
-      home,
-      'hup',
-      `const fs=require('fs');process.on('SIGHUP',()=>fs.writeFileSync(${jsLiteral(join(home, 'signal'))},'SIGHUP'));process.on('SIGTERM',()=>fs.writeFileSync(${jsLiteral(join(home, 'signal'))},'SIGTERM'));fs.writeFileSync(${jsLiteral(join(home, 'ready'))},'');const timer=setInterval(()=>{if(fs.existsSync(${jsLiteral(join(home, 'release'))})){clearInterval(timer);process.exit(0)}},10);`
-    );
-    const broker = launch(home, ['run', '--', 'node', child]);
-    await broker.until(() => exists(join(home, 'ready')));
-    broker.child.kill('SIGHUP');
-    await broker.until(() => exists(join(home, 'signal')));
-    expect(await readFile(join(home, 'signal'), 'utf8')).toBe('SIGHUP');
-    expect(broker.child.exitCode).toBeNull();
-    expect((await resourceQueueStatus(home)).owners).toHaveLength(1);
-    await writeFile(join(home, 'release'), '');
-    expect((await broker.done).code).toBe(129);
-    expect((await resourceQueueStatus(home)).owners).toHaveLength(0);
-  });
-});
+  }
+);
 it.each(['enable', 'disable', 'uninstall'] as const)(
   'serializes %s config reads with setup and preserves admitted budgets',
   { timeout: crossProcessTimeout },
@@ -603,80 +613,94 @@ it.each(['enable', 'disable', 'uninstall'] as const)(
     expect((await b.done).code).toBe(0);
   }
 );
-it('retains subprocess diagnostics until inherited pipes close', {
-  timeout: crossProcessTimeout,
-}, async () => {
-  const path = await fixtures.home();
-  const runner = await script(
-    path,
-    'late-diagnostic',
-    `const {spawn}=require('node:child_process');spawn(${jsLiteral(realNode)},['-e',"setTimeout(()=>process.stderr.write('fixture child diagnostic\\n'),100)"],{stdio:['ignore',process.stdout,process.stderr]}).unref();process.exit(7);`
-  );
-  const result = await launch(path, [], path, runner).done;
-  expect(result.code).toBe(7);
-  expect(result.err).toContain('fixture child diagnostic');
-});
-it('disabled out-of-scope and bypass commands retain arguments under oversized policy', {
-  timeout: crossProcessTimeout,
-}, async () => {
-  const home = await fixtures.home();
-  const original = (await readResourceConfig(home))!;
-  const code =
-    'console.log(JSON.stringify([process.argv.slice(1),process.env.VITEST_MAX_WORKERS,process.env.CARGO_BUILD_JOBS]))';
-  for (const mode of ['disabled', 'outside', 'bypass', 'enabled']) {
-    await atomicJson(join(home, 'config.json'), {
-      ...original,
-      enabled: mode !== 'disabled',
-      roots: [mode === 'outside' ? join(home, 'other') : home],
-      vitestWorkers: 64,
-      buildJobs: 64,
-    });
-    const args = [
-      mode === 'bypass' ? 'run' : 'shim',
-      ...(mode === 'bypass' ? [] : ['node']),
-      '--',
-      ...(mode === 'bypass' ? ['node'] : []),
-      '-e',
-      code,
-      '--',
-      '--maxWorkers=16',
-    ];
-    const result = await fixtures.launch(home, args, home, entry, {
-      VITEST_MAX_WORKERS: 'original-vitest',
-      CARGO_BUILD_JOBS: 'original-cargo',
-      ...(mode === 'bypass' ? { TTR_RESOURCES_BYPASS: '1' } : {}),
-    }).done;
-    if (mode === 'enabled') {
-      // Oversized totals clamp to the host budget instead of bricking shims.
-      expect(result.code, result.err).toBe(0);
-      expect(JSON.parse(result.out)).toEqual([['--maxWorkers=16'], '1', '1']);
-      expect(result.err).toContain('multi-lane worker totals must be at most');
-    } else {
-      expect(result.code, result.err).toBe(0);
-      expect(JSON.parse(result.out)).toEqual([
-        ['--maxWorkers=16'],
-        'original-vitest',
-        'original-cargo',
-      ]);
-    }
-    const status = await resourceQueueStatus(home, 2);
-    expect([status.owners.length, status.waiting.length]).toEqual([0, 0]);
+it(
+  'retains subprocess diagnostics until inherited pipes close',
+  {
+    timeout: crossProcessTimeout,
+  },
+  async () => {
+    const path = await fixtures.home();
+    const runner = await script(
+      path,
+      'late-diagnostic',
+      `const {spawn}=require('node:child_process');spawn(${jsLiteral(realNode)},['-e',"setTimeout(()=>process.stderr.write('fixture child diagnostic\\n'),100)"],{stdio:['ignore',process.stdout,process.stderr]}).unref();process.exit(7);`
+    );
+    const result = await launch(path, [], path, runner).done;
+    expect(result.code).toBe(7);
+    expect(result.err).toContain('fixture child diagnostic');
   }
-});
-it('proves absent groups with ESRCH while permissions and unknown errors fail closed without ps', {
-  timeout: crossProcessTimeout,
-}, async () => {
-  const path = await fixtures.home();
-  const runner = join(path, 'group.ts');
-  await writeFile(
-    runner,
-    `import {mock} from 'bun:test';import * as cp from 'node:child_process';let error='ESRCH';let output;let ps=0;const calls=[];process.kill=(...args)=>{calls.push(args);if(error)throw Object.assign(new Error('fixture'),{code:error});return true};mock.module('node:child_process',()=>({...cp,execFileSync:()=>{ps++;if(output===undefined)throw new Error('ps unavailable');return output}}));const {processGroupAlive}=await import(${jsLiteral(resolve('src/cli/resources-slots.ts'))});const results=[];for(error of ['ESRCH','EPERM','EIO',''])results.push(processGroupAlive(12345));output='12345 Z';results.push(processGroupAlive(12345));output='12345 S';results.push(processGroupAlive(12345));console.log(JSON.stringify({results,calls,ps}));`
-  );
-  const result = await launch(path, [], path, runner).done;
-  expect(result.code, result.err).toBe(0);
-  expect(JSON.parse(result.out)).toEqual({
-    results: [false, true, true, true, false, true],
-    calls: Array.from({ length: 6 }, () => [-12345, 0]),
-    ps: 3,
-  });
-});
+);
+it(
+  'disabled out-of-scope and bypass commands retain arguments under oversized policy',
+  {
+    timeout: crossProcessTimeout,
+  },
+  async () => {
+    const home = await fixtures.home();
+    const original = (await readResourceConfig(home))!;
+    const code =
+      'console.log(JSON.stringify([process.argv.slice(1),process.env.VITEST_MAX_WORKERS,process.env.CARGO_BUILD_JOBS]))';
+    for (const mode of ['disabled', 'outside', 'bypass', 'enabled']) {
+      await atomicJson(join(home, 'config.json'), {
+        ...original,
+        enabled: mode !== 'disabled',
+        roots: [mode === 'outside' ? join(home, 'other') : home],
+        vitestWorkers: 64,
+        buildJobs: 64,
+      });
+      const args = [
+        mode === 'bypass' ? 'run' : 'shim',
+        ...(mode === 'bypass' ? [] : ['node']),
+        '--',
+        ...(mode === 'bypass' ? ['node'] : []),
+        '-e',
+        code,
+        '--',
+        '--maxWorkers=16',
+      ];
+      const result = await fixtures.launch(home, args, home, entry, {
+        VITEST_MAX_WORKERS: 'original-vitest',
+        CARGO_BUILD_JOBS: 'original-cargo',
+        ...(mode === 'bypass' ? { TTR_RESOURCES_BYPASS: '1' } : {}),
+      }).done;
+      if (mode === 'enabled') {
+        // Oversized totals clamp to the host budget instead of bricking shims.
+        expect(result.code, result.err).toBe(0);
+        expect(JSON.parse(result.out)).toEqual([['--maxWorkers=16'], '1', '1']);
+        expect(result.err).toContain(
+          'multi-lane worker totals must be at most'
+        );
+      } else {
+        expect(result.code, result.err).toBe(0);
+        expect(JSON.parse(result.out)).toEqual([
+          ['--maxWorkers=16'],
+          'original-vitest',
+          'original-cargo',
+        ]);
+      }
+      const status = await resourceQueueStatus(home, 2);
+      expect([status.owners.length, status.waiting.length]).toEqual([0, 0]);
+    }
+  }
+);
+it(
+  'proves absent groups with ESRCH while permissions and unknown errors fail closed without ps',
+  {
+    timeout: crossProcessTimeout,
+  },
+  async () => {
+    const path = await fixtures.home();
+    const runner = join(path, 'group.ts');
+    await writeFile(
+      runner,
+      `import {mock} from 'bun:test';import * as cp from 'node:child_process';let error='ESRCH';let output;let ps=0;const calls=[];process.kill=(...args)=>{calls.push(args);if(error)throw Object.assign(new Error('fixture'),{code:error});return true};mock.module('node:child_process',()=>({...cp,execFileSync:()=>{ps++;if(output===undefined)throw new Error('ps unavailable');return output}}));const {processGroupAlive}=await import(${jsLiteral(resolve('src/cli/resources-slots.ts'))});const results=[];for(error of ['ESRCH','EPERM','EIO',''])results.push(processGroupAlive(12345));output='12345 Z';results.push(processGroupAlive(12345));output='12345 S';results.push(processGroupAlive(12345));console.log(JSON.stringify({results,calls,ps}));`
+    );
+    const result = await launch(path, [], path, runner).done;
+    expect(result.code, result.err).toBe(0);
+    expect(JSON.parse(result.out)).toEqual({
+      results: [false, true, true, true, false, true],
+      calls: Array.from({ length: 6 }, () => [-12345, 0]),
+      ps: 3,
+    });
+  }
+);

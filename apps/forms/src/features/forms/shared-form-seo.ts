@@ -91,11 +91,11 @@ export function hasFormSeoOverrides(seo: FormSeoInput | null | undefined) {
 
   return Boolean(
     seo.title.trim() ||
-      seo.description.trim() ||
-      seo.image.url.trim() ||
-      seo.image.storagePath.trim() ||
-      seo.keywords.length ||
-      seo.canonicalUrl.trim() ||
-      seo.noIndex
+    seo.description.trim() ||
+    seo.image.url.trim() ||
+    seo.image.storagePath.trim() ||
+    seo.keywords.length ||
+    seo.canonicalUrl.trim() ||
+    seo.noIndex
   );
 }

@@ -67,10 +67,10 @@
   color: var(--muted-foreground);
 }
 .wiki-section-nav a:hover,
-.wiki-section-nav a[aria-current="page"] {
+.wiki-section-nav a[aria-current='page'] {
   background: var(--secondary);
 }
-.wiki-section-nav a[aria-current="page"] {
+.wiki-section-nav a[aria-current='page'] {
   font-weight: 600;
 }
 .wiki-create-entry {
@@ -268,7 +268,7 @@
   position: relative;
 }
 .wiki-timeline button::before {
-  content: "";
+  content: '';
   position: absolute;
   left: -0.3rem;
   top: 2rem;
@@ -534,7 +534,7 @@
   background: var(--background);
   color: var(--foreground);
 }
-.wiki-theme[data-wiki-theme="paper"] {
+.wiki-theme[data-wiki-theme='paper'] {
   --background: oklch(0.978 0.012 80);
   --foreground: oklch(0.31 0.025 60);
   --card: oklch(0.985 0.012 92);
@@ -545,7 +545,7 @@
   --primary: var(--foreground);
   --primary-foreground: oklch(0.97 0.015 92);
 }
-.wiki-theme[data-wiki-theme="forest"] {
+.wiki-theme[data-wiki-theme='forest'] {
   --background: oklch(0.96 0.018 145);
   --foreground: oklch(0.28 0.035 150);
   --card: oklch(0.985 0.012 145);
@@ -556,7 +556,7 @@
   --primary: oklch(0.35 0.055 150);
   --primary-foreground: oklch(0.98 0.01 145);
 }
-.wiki-theme[data-wiki-theme="midnight"] {
+.wiki-theme[data-wiki-theme='midnight'] {
   --background: oklch(0.2 0.02 255);
   --foreground: oklch(0.94 0.015 250);
   --card: oklch(0.24 0.022 255);
@@ -567,7 +567,7 @@
   --primary: oklch(0.86 0.035 250);
   --primary-foreground: oklch(0.2 0.02 255);
 }
-.wiki-theme[data-wiki-theme="rose"] {
+.wiki-theme[data-wiki-theme='rose'] {
   --background: oklch(0.97 0.016 20);
   --foreground: oklch(0.3 0.035 15);
   --card: oklch(0.99 0.008 20);
@@ -578,11 +578,11 @@
   --primary: oklch(0.4 0.06 15);
   --primary-foreground: oklch(0.98 0.01 20);
 }
-.wiki-theme[data-wiki-type="clean"] :is(h1, h2, h3) {
+.wiki-theme[data-wiki-type='clean'] :is(h1, h2, h3) {
   font-family: var(--font-lettin-body), sans-serif;
   letter-spacing: -0.025em;
 }
-.wiki-theme[data-wiki-motion="reduced"] * {
+.wiki-theme[data-wiki-motion='reduced'] * {
   animation: none;
   transition: none;
   scroll-behavior: auto;

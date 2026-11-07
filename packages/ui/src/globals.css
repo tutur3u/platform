@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "slot-text/style.css";
+@import 'tailwindcss';
+@import 'slot-text/style.css';
 @source "components";
 @source "../../../node_modules/streamdown/dist/*.js";
 @source "../../../node_modules/@streamdown/math/dist/*.js";
@@ -36,14 +36,14 @@
  */
 @supports (-webkit-touch-callout: none) {
   @media (pointer: coarse) {
-    input:not([type="button"]):not([type="checkbox"]):not([type="color"]):not(
-        [type="file"]
-      ):not([type="hidden"]):not([type="image"]):not([type="radio"]):not(
-        [type="range"]
-      ):not([type="reset"]):not([type="submit"]),
+    input:not([type='button']):not([type='checkbox']):not([type='color']):not(
+        [type='file']
+      ):not([type='hidden']):not([type='image']):not([type='radio']):not(
+        [type='range']
+      ):not([type='reset']):not([type='submit']),
     select[class],
     textarea[class],
-    [contenteditable="true"][class] {
+    [contenteditable='true'][class] {
       font-size: 16px;
     }
   }
@@ -800,7 +800,7 @@
     /* Line breaks */
     br {
       display: block;
-      content: "";
+      content: '';
       margin-top: 0.25rem;
     }
   }
@@ -809,13 +809,13 @@
    * This is controlled via body[data-fade-completed="true"]
    * The setting is stored in localStorage and applied by task-settings.tsx
    * Default behavior (no attribute) = fade enabled */
-  body:not([data-fade-completed="false"]) .task-content-faded {
+  body:not([data-fade-completed='false']) .task-content-faded {
     opacity: 0.5;
     transition: opacity 150ms;
   }
 
-  body:not([data-fade-completed="false"]) .task-content-faded:hover,
-  body:not([data-fade-completed="false"]) .task-content-faded:has(:hover) {
+  body:not([data-fade-completed='false']) .task-content-faded:hover,
+  body:not([data-fade-completed='false']) .task-content-faded:has(:hover) {
     opacity: 1;
   }
 

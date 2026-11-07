@@ -271,15 +271,14 @@ it('shows workspace lookup failure while preventing private context start', asyn
   expect(mocks.start).not.toHaveBeenCalled();
 });
 it('does not revive departed actor workspace choices after a held A→B→A lookup', async () => {
-  const old =
-    held<
-      Array<{
-        id: string;
-        name: string;
-        personal: boolean;
-        access_type: string;
-      }>
-    >();
+  const old = held<
+    Array<{
+      id: string;
+      name: string;
+      personal: boolean;
+      access_type: string;
+    }>
+  >();
   mocks.list.mockReturnValueOnce(old.promise).mockResolvedValue([
     {
       id: 'personal-workspace',

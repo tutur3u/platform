@@ -79,7 +79,7 @@
   background: var(--foreground);
   opacity: 0.1;
 }
-.skillsGrid i[data-highlight="true"] {
+.skillsGrid i[data-highlight='true'] {
   background: var(--tone);
   opacity: 1;
 }

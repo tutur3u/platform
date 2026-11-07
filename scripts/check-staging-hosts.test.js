@@ -1,8 +1,13 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
-const { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } =
-  require('node:fs');
+const {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {

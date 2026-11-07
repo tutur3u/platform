@@ -385,9 +385,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/[productId]/route');
     const response = await GET(
       new NextRequest(
         `http://localhost/api/v1/workspaces/ws-1/products/${productId}`
@@ -417,9 +416,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/route');
     const response = await POST(
       new NextRequest('http://localhost/api/v1/workspaces/ws-1/products', {
         method: 'POST',
@@ -450,9 +448,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/route');
     const response = await POST(
       new NextRequest('http://localhost/api/v1/workspaces/personal/products', {
         method: 'POST',
@@ -497,9 +494,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route');
     const response = await POST(
       new NextRequest(
         'http://localhost/api/v1/workspaces/ws-1/products/product-1/inventory',
@@ -558,9 +554,8 @@ describe('product routes', () => {
       eq: firstUpdateEq,
     });
 
-    const { PATCH } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
-    );
+    const { PATCH } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route');
     const response = await PATCH(productInventoryPatchRequest(), {
       params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
     });
@@ -585,9 +580,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/count/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/count/route');
     const response = await GET(
       new NextRequest('http://localhost/api/v1/workspaces/ws-1/products/count'),
       {
@@ -620,9 +614,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/[productId]/route');
     const response = await GET(
       new NextRequest(
         `http://localhost/api/v1/workspaces/ws-1/products/${productId}`
@@ -649,9 +642,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/route');
     const response = await POST(
       new NextRequest('http://localhost/api/v1/workspaces/ws-1/products', {
         method: 'POST',
@@ -680,9 +672,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route');
     const response = await POST(
       new NextRequest(
         'http://localhost/api/v1/workspaces/ws-1/products/product-1/inventory',
@@ -742,9 +733,8 @@ describe('product routes', () => {
       eq: firstUpdateEq,
     });
 
-    const { PATCH } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
-    );
+    const { PATCH } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route');
     const response = await PATCH(productInventoryPatchRequest(), {
       params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
     });

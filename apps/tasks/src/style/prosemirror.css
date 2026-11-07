@@ -37,7 +37,7 @@
 }
 
 .collaboration-carets__label::before {
-  content: "";
+  content: '';
   position: absolute;
   bottom: -3px;
   left: 0;

@@ -668,9 +668,7 @@ if (require.main === module) {
         })
       );
       process.exitCode = (
-        receipt.phase === 'source'
-          ? receipt.sourceValidated
-          : receipt.qualified
+        receipt.phase === 'source' ? receipt.sourceValidated : receipt.qualified
       )
         ? 0
         : 1;

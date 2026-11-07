@@ -452,9 +452,8 @@ describe('web account logout revokes derived credentials before sign-out', () =>
   });
 
   async function expectRevokedThenSignedOut() {
-    const { revokeUserAiTempAuthTokens } = await import(
-      '@tuturuuu/utils/ai-temp-auth'
-    );
+    const { revokeUserAiTempAuthTokens } =
+      await import('@tuturuuu/utils/ai-temp-auth');
 
     expect(revokeUserAiTempAuthTokens).toHaveBeenCalledWith('user-a');
     expect(rpc).toHaveBeenCalledWith('revoke_all_cross_app_tokens', {

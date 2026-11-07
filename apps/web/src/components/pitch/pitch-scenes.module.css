@@ -55,79 +55,79 @@
   margin: 18px 0 0;
   letter-spacing: 0.05em;
 }
-.scene[data-scene="origin"] {
+.scene[data-scene='origin'] {
   transform: rotate(-3deg);
 }
-.scene[data-scene="origin"] .legend {
+.scene[data-scene='origin'] .legend {
   transform: rotate(3deg);
 }
-.scene[data-scene="problem"] .canvas {
+.scene[data-scene='problem'] .canvas {
   filter: drop-shadow(0 12px 12px #00000008);
 }
-.scene[data-scene="shift"] .legend {
+.scene[data-scene='shift'] .legend {
   text-align: center;
 }
-.scene[data-scene="vision"] .legend {
+.scene[data-scene='vision'] .legend {
   gap: 30px;
   text-align: center;
 }
-.scene[data-scene="vision"] .legend > div {
+.scene[data-scene='vision'] .legend > div {
   border: 0;
 }
-.scene[data-scene="vision"] .marker {
+.scene[data-scene='vision'] .marker {
   left: calc(50% - 11px);
 }
-.scene[data-scene="context"] .legend {
+.scene[data-scene='context'] .legend {
   grid-template-columns: 1fr;
 }
-.scene[data-scene="context"] .legend > div {
+.scene[data-scene='context'] .legend > div {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 12px;
   padding-top: 10px;
 }
-.scene[data-scene="workflow"] .legend {
+.scene[data-scene='workflow'] .legend {
   counter-reset: step;
 }
-.scene[data-scene="workflow"] .legend h3:before {
+.scene[data-scene='workflow'] .legend h3:before {
   counter-increment: step;
-  content: "0" counter(step) " / ";
+  content: '0' counter(step) ' / ';
   color: var(--tone);
 }
-.scene[data-scene="trust"] .legend {
+.scene[data-scene='trust'] .legend {
   grid-template-columns: 1fr;
 }
-.scene[data-scene="trust"] {
+.scene[data-scene='trust'] {
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: center;
   gap: 24px;
 }
-.scene[data-scene="trust"] .canvas > svg {
+.scene[data-scene='trust'] .canvas > svg {
   max-height: 360px;
 }
-.scene[data-scene="team"] .legend > div {
+.scene[data-scene='team'] .legend > div {
   border-top: 0;
   padding: 18px 0 0;
 }
-.scene[data-scene="intelligence"] .legend {
+.scene[data-scene='intelligence'] .legend {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
 }
-.scene[data-scene="intelligence"] .legend p {
+.scene[data-scene='intelligence'] .legend p {
   font-size: 10px;
 }
-.scene[data-scene="closing"] .legend {
+.scene[data-scene='closing'] .legend {
   text-align: center;
 }
-.scene[data-scene="closing"] .legend > div {
+.scene[data-scene='closing'] .legend > div {
   border: 0;
 }
-.scene[data-scene="closing"] .marker {
+.scene[data-scene='closing'] .marker {
   left: calc(50% - 11px);
 }
 @media screen and (min-width: 1001px) and (max-height: 850px) {
-  .scene[data-scene="trust"] .canvas > svg {
+  .scene[data-scene='trust'] .canvas > svg {
     max-height: 280px;
   }
 }
@@ -144,13 +144,13 @@
   .legend p {
     font-size: 11px;
   }
-  .scene[data-scene="trust"] {
+  .scene[data-scene='trust'] {
     display: block;
   }
-  .scene[data-scene="intelligence"] .legend {
+  .scene[data-scene='intelligence'] .legend {
     grid-template-columns: 1fr 1fr;
   }
-  .scene[data-scene="context"] .legend > div {
+  .scene[data-scene='context'] .legend > div {
     grid-template-columns: 1fr;
   }
 }
@@ -158,14 +158,14 @@
   .legend {
     grid-template-columns: 1fr;
   }
-  .scene[data-scene="shift"] .legend,
-  .scene[data-scene="vision"] .legend {
+  .scene[data-scene='shift'] .legend,
+  .scene[data-scene='vision'] .legend {
     text-align: left;
   }
-  .scene[data-scene="vision"] .marker {
+  .scene[data-scene='vision'] .marker {
     left: 0;
   }
-  .scene[data-scene="origin"] {
+  .scene[data-scene='origin'] {
     transform: none;
   }
 }
@@ -183,15 +183,15 @@
   .legend p {
     font-size: 7pt;
   }
-  .scene[data-scene="trust"] {
+  .scene[data-scene='trust'] {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 5mm;
   }
-  .scene[data-scene="trust"] .canvas > svg {
+  .scene[data-scene='trust'] .canvas > svg {
     max-height: 60mm;
   }
-  .scene[data-scene="intelligence"] .legend {
+  .scene[data-scene='intelligence'] .legend {
     grid-template-columns: repeat(3, 1fr);
   }
 }

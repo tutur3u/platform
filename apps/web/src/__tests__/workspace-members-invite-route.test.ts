@@ -172,9 +172,8 @@ async function postInvite({
   body?: unknown;
   requestedWsId?: string;
 } = {}) {
-  const { POST } = await import(
-    '@/app/api/workspaces/[wsId]/members/invite/route'
-  );
+  const { POST } =
+    await import('@/app/api/workspaces/[wsId]/members/invite/route');
 
   return POST(
     new Request(

@@ -132,11 +132,11 @@ function createInferredCompletedDeploymentStages(
 
   const hasModernDeploymentContext = Boolean(
     deployment.deploymentStamp ||
-      deployment.deploymentKind ||
-      deployment.imageTag ||
-      supportBuildStats.supportBuildCacheHits > 0 ||
-      supportBuildStats.supportBuildServiceCount > 0 ||
-      supportBuildStats.supportBuildServices.length > 0
+    deployment.deploymentKind ||
+    deployment.imageTag ||
+    supportBuildStats.supportBuildCacheHits > 0 ||
+    supportBuildStats.supportBuildServiceCount > 0 ||
+    supportBuildStats.supportBuildServices.length > 0
   );
 
   if (!hasModernDeploymentContext) {

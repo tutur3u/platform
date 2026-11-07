@@ -78,9 +78,8 @@ describe('inventory manufacturers API route', () => {
       },
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/manufacturers/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/manufacturers/route');
     const response = await POST(
       new Request('https://app.example.com/api', {
         body: JSON.stringify({ name: 'Acme' }),
@@ -121,9 +120,8 @@ describe('inventory manufacturers API route', () => {
       },
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/manufacturers/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/manufacturers/route');
     const response = await POST(
       new Request('https://app.example.com/api', {
         body: JSON.stringify({ name: 'Acme' }),
@@ -155,9 +153,8 @@ describe('inventory manufacturers API route', () => {
       },
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/manufacturers/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/manufacturers/route');
     const response = await POST(
       new Request('https://app.example.com/api', {
         body: JSON.stringify({ name: 'Acme' }),
@@ -187,9 +184,8 @@ describe('inventory manufacturers API route', () => {
       },
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/manufacturers/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/manufacturers/route');
     const response = await POST(
       new Request('https://app.example.com/api', {
         body: JSON.stringify({ name: 'Acme' }),

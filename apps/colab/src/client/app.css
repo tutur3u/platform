@@ -1,10 +1,10 @@
-@import "@tuturuuu/ui/globals.css";
-@import "./fonts.css";
-@import "./styles.css" layer(components);
-@import "./workshop.css" layer(components);
-@import "./observability.css" layer(components);
-@import "./mock-desk.css" layer(components);
-@import "./landing.css" layer(components);
+@import '@tuturuuu/ui/globals.css';
+@import './fonts.css';
+@import './styles.css' layer(components);
+@import './workshop.css' layer(components);
+@import './observability.css' layer(components);
+@import './mock-desk.css' layer(components);
+@import './landing.css' layer(components);
 @source "./";
 
 @layer components {
@@ -303,10 +303,10 @@
     line-height: 1.5;
     cursor: pointer;
   }
-  .studio-checkbox [data-slot="checkbox"] {
+  .studio-checkbox [data-slot='checkbox'] {
     flex-shrink: 0;
   }
-  .admin-panel [data-slot="accordion-content"][data-state="closed"] {
+  .admin-panel [data-slot='accordion-content'][data-state='closed'] {
     display: none;
   }
   .admin-section {
@@ -315,14 +315,14 @@
     padding: 4px 0 8px;
     min-width: 0;
   }
-  .admin-section > [data-slot="label"]:not(.studio-checkbox),
-  .admin-section form > [data-slot="label"],
-  .member-row > [data-slot="label"]:not(.studio-checkbox) {
+  .admin-section > [data-slot='label']:not(.studio-checkbox),
+  .admin-section form > [data-slot='label'],
+  .member-row > [data-slot='label']:not(.studio-checkbox) {
     display: grid;
     gap: 8px;
     align-content: start;
   }
-  .admin-section > [data-slot="label"]:not(.studio-checkbox) {
+  .admin-section > [data-slot='label']:not(.studio-checkbox) {
     max-width: 360px;
   }
   .admin-section form {
@@ -384,7 +384,7 @@
     padding: 16px;
     background: var(--muted);
   }
-  .admin-tabs-list [data-slot="tabs-trigger"] {
+  .admin-tabs-list [data-slot='tabs-trigger'] {
     width: 100%;
     justify-content: flex-start;
     gap: 10px;
@@ -733,7 +733,7 @@
     min-width: 180px;
     overflow-wrap: anywhere;
   }
-  .colab-content .member-row > [data-slot="label"] {
+  .colab-content .member-row > [data-slot='label'] {
     min-width: 150px;
   }
   .colab-content .invite-list {
@@ -801,7 +801,7 @@
       border-right: 0;
       border-bottom: 1px solid var(--border);
     }
-    .admin-tabs-list [data-slot="tabs-trigger"] {
+    .admin-tabs-list [data-slot='tabs-trigger'] {
       width: auto;
       white-space: nowrap;
     }

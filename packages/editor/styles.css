@@ -49,8 +49,8 @@
 
 .tuturuuu-editor-toolbar button:hover,
 .tuturuuu-editor-toolbar label:hover,
-.tuturuuu-editor-toolbar button[aria-pressed="true"],
-.tuturuuu-editor-toolbar label[aria-pressed="true"] {
+.tuturuuu-editor-toolbar button[aria-pressed='true'],
+.tuturuuu-editor-toolbar label[aria-pressed='true'] {
   border-color: var(--tuturuuu-editor-active-border, rgb(127 127 127 / 0.2));
   background: var(--tuturuuu-editor-active-background, rgb(127 127 127 / 0.12));
 }
@@ -172,7 +172,7 @@
   flex: 0 0 auto;
   border-block: 0.3rem solid transparent;
   border-inline-start: 0.45rem solid currentcolor;
-  content: "";
+  content: '';
   transition: transform 120ms ease;
 }
 
@@ -201,7 +201,7 @@
   margin: auto;
   border-block: 0.3rem solid transparent;
   border-inline-start: 0.45rem solid currentcolor;
-  content: "";
+  content: '';
   transition: transform 120ms ease;
 }
 
@@ -323,7 +323,7 @@
   font-weight: 600;
 }
 
-.tuturuuu-editor-mode-switch button[aria-pressed="true"] {
+.tuturuuu-editor-mode-switch button[aria-pressed='true'] {
   background: var(--tuturuuu-editor-active-background, rgb(127 127 127 / 0.12));
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
   color: inherit;
@@ -343,7 +343,7 @@
   height: 0.875rem;
 }
 
-.tuturuuu-editor[data-mode="preview"] .tiptap {
+.tuturuuu-editor[data-mode='preview'] .tiptap {
   cursor: default;
   background: var(
     --tuturuuu-editor-preview-background,
@@ -389,7 +389,7 @@
   font-weight: 650;
 }
 
-.tuturuuu-editor-source-actions button[data-primary="true"] {
+.tuturuuu-editor-source-actions button[data-primary='true'] {
   border-color: var(--tuturuuu-editor-primary, #0f172a);
   background: var(--tuturuuu-editor-primary, #0f172a);
   color: var(--tuturuuu-editor-primary-foreground, #fff);
@@ -430,11 +430,11 @@
   min-height: 1.25rem;
 }
 
-.tuturuuu-editor-source-feedback [data-error="true"] {
+.tuturuuu-editor-source-feedback [data-error='true'] {
   color: var(--tuturuuu-editor-error, #dc2626);
 }
 
-.tuturuuu-editor-source-feedback [data-notice="true"] {
+.tuturuuu-editor-source-feedback [data-notice='true'] {
   color: var(--tuturuuu-editor-notice, #a16207);
 }
 
@@ -550,7 +550,7 @@
   opacity: 1;
 }
 
-.tuturuuu-editor-style-control:has(> button[aria-expanded="true"])
+.tuturuuu-editor-style-control:has(> button[aria-expanded='true'])
   > .tuturuuu-editor-tooltip {
   opacity: 0;
 }
@@ -606,7 +606,7 @@
   outline: 1px solid var(--tuturuuu-editor-popover-border, #d1d5db);
 }
 
-.tuturuuu-editor-style-swatches button[aria-checked="true"] {
+.tuturuuu-editor-style-swatches button[aria-checked='true'] {
   box-shadow: 0 0 0 2px var(--tuturuuu-editor-focus, #64748b);
 }
 

@@ -13,7 +13,7 @@ interface Reservation {
 }
 const waiting: Reservation[] = [];
 function drain() {
-  for (let index = 0; index < waiting.length; ) {
+  for (let index = 0; index < waiting.length;) {
     const entry = waiting[index]!;
     if (reserved + entry.weight > HOST_BUDGET) {
       index++;

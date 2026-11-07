@@ -8,8 +8,8 @@
   --border: #181a1b20;
   --ring: var(--pitch-innovation);
 }
-.deck[data-palette="dark"],
-.slide[data-palette="dark"] {
+.deck[data-palette='dark'],
+.slide[data-palette='dark'] {
   --background: #101214;
   --foreground: #f6f6ef;
   --card: #1b1e20;
@@ -98,8 +98,8 @@
   outline: 2px solid var(--pitch-innovation);
   outline-offset: 4px;
 }
-.deck button[aria-pressed="true"],
-.deck button[aria-current="step"] {
+.deck button[aria-pressed='true'],
+.deck button[aria-current='step'] {
   background: color-mix(
     in srgb,
     var(--pitch-innovation) 14%,
@@ -126,7 +126,7 @@
   background: var(--background);
 }
 .slide::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
@@ -143,7 +143,7 @@
       transparent 50%
     );
 }
-.slide[data-palette="dark"]::before {
+.slide[data-palette='dark']::before {
   background:
     radial-gradient(
       ellipse at 100% 0%,
@@ -156,11 +156,11 @@
       transparent 55%
     );
 }
-.slide[data-slide="opening"] {
+.slide[data-slide='opening'] {
   grid-template-columns: 1.25fr 1fr;
   gap: 1vw;
 }
-.slide[data-slide="opening"]::before {
+.slide[data-slide='opening']::before {
   background: radial-gradient(
     ellipse at -10% 100%,
     color-mix(in srgb, var(--pitch-energy) 22%, transparent),
@@ -197,8 +197,8 @@
   outline: none;
   text-wrap: balance;
 }
-.slide[data-slide="opening"] h1,
-.slide[data-slide="closing"] h1 {
+.slide[data-slide='opening'] h1,
+.slide[data-slide='closing'] h1 {
   font-size: clamp(3.5rem, 5.6vw, 7.7rem);
   letter-spacing: -0.07em;
 }
@@ -244,7 +244,7 @@
   border: 1px solid var(--border);
 }
 .links a,
-.deck :where(.slide[data-slide="opening"]) .links button {
+.deck :where(.slide[data-slide='opening']) .links button {
   background: var(--foreground);
   color: var(--background);
 }
@@ -274,7 +274,7 @@
   background: transparent;
 }
 .progress button::after {
-  content: "";
+  content: '';
   position: absolute;
   height: 2px;
   left: 0;
@@ -282,7 +282,7 @@
   top: 50%;
   background: var(--border);
 }
-.progress button[aria-current="step"]::after {
+.progress button[aria-current='step']::after {
   background: var(--tone);
   height: 4px;
 }
@@ -418,19 +418,19 @@
 }
 
 .slide:is(
-  [data-slide="workforce"],
-  [data-slide="readiness"],
-  [data-slide="business"],
-  [data-slide="evidence"]
+  [data-slide='workforce'],
+  [data-slide='readiness'],
+  [data-slide='business'],
+  [data-slide='evidence']
 ) {
   grid-template-columns: 1fr;
   gap: 2.5rem;
 }
 .slide:is(
-    [data-slide="workforce"],
-    [data-slide="readiness"],
-    [data-slide="business"],
-    [data-slide="evidence"]
+    [data-slide='workforce'],
+    [data-slide='readiness'],
+    [data-slide='business'],
+    [data-slide='evidence']
   )
   .story {
   display: grid;
@@ -439,28 +439,28 @@
   align-items: center;
 }
 .slide:is(
-    [data-slide="workforce"],
-    [data-slide="readiness"],
-    [data-slide="business"],
-    [data-slide="evidence"]
+    [data-slide='workforce'],
+    [data-slide='readiness'],
+    [data-slide='business'],
+    [data-slide='evidence']
   )
   .eyebrow {
   grid-column: 1 / -1;
 }
 .slide:is(
-    [data-slide="workforce"],
-    [data-slide="readiness"],
-    [data-slide="business"],
-    [data-slide="evidence"]
+    [data-slide='workforce'],
+    [data-slide='readiness'],
+    [data-slide='business'],
+    [data-slide='evidence']
   )
   .body {
   margin-top: 0;
 }
 .slide:is(
-    [data-slide="workforce"],
-    [data-slide="readiness"],
-    [data-slide="business"],
-    [data-slide="evidence"]
+    [data-slide='workforce'],
+    [data-slide='readiness'],
+    [data-slide='business'],
+    [data-slide='evidence']
   )
   .badge {
   grid-column: 1 / -1;
@@ -495,7 +495,7 @@
     height: 28px;
   }
   .slide,
-  .slide[data-slide="opening"] {
+  .slide[data-slide='opening'] {
     grid-template-columns: 1fr;
     padding: 2.5rem 6vw;
     gap: 2rem;
@@ -503,8 +503,8 @@
   .story h1 {
     font-size: clamp(2.5rem, 7.8vw, 4.5rem);
   }
-  .slide[data-slide="opening"] h1,
-  .slide[data-slide="closing"] h1 {
+  .slide[data-slide='opening'] h1,
+  .slide[data-slide='closing'] h1 {
     font-size: clamp(3rem, 9.7vw, 5rem);
   }
   .eyebrow {
@@ -514,19 +514,19 @@
     margin-top: 1.25rem;
   }
   .slide:is(
-      [data-slide="workforce"],
-      [data-slide="readiness"],
-      [data-slide="business"],
-      [data-slide="evidence"]
+      [data-slide='workforce'],
+      [data-slide='readiness'],
+      [data-slide='business'],
+      [data-slide='evidence']
     )
     .story {
     display: block;
   }
   .slide:is(
-      [data-slide="workforce"],
-      [data-slide="readiness"],
-      [data-slide="business"],
-      [data-slide="evidence"]
+      [data-slide='workforce'],
+      [data-slide='readiness'],
+      [data-slide='business'],
+      [data-slide='evidence']
     )
     .body {
     margin-top: 1.25rem;
@@ -597,7 +597,7 @@
     display: block;
   }
   .slide,
-  .slide[data-slide="opening"] {
+  .slide[data-slide='opening'] {
     display: grid;
     grid-template-columns: 1.1fr 1fr;
     break-after: page;
@@ -607,8 +607,8 @@
     gap: 8mm;
   }
   .story h1,
-  .slide[data-slide="opening"] h1,
-  .slide[data-slide="closing"] h1 {
+  .slide[data-slide='opening'] h1,
+  .slide[data-slide='closing'] h1 {
     font-size: 32pt;
   }
   .body {

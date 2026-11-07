@@ -328,7 +328,10 @@
     "supabase",
     "unrs-resolver"
   ],
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "optionalDependencies": {
     "@typescript/typescript-aix-ppc64": "7.0.2",
     "@typescript/typescript-darwin-arm64": "7.0.2",

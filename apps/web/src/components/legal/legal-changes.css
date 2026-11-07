@@ -5,7 +5,7 @@
   --legal-removed: var(--red);
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-legal-inter, Inter), "Noto Sans", sans-serif;
+  font-family: var(--font-legal-inter, Inter), 'Noto Sans', sans-serif;
   line-height: 1.65;
   padding: 1rem max(1.25rem, calc((100% - 1200px) / 2));
   font-variant-numeric: tabular-nums;
@@ -336,7 +336,7 @@
     display: none;
   }
   .legal-changes a[href]::after {
-    content: " (" attr(href) ")";
+    content: ' (' attr(href) ')';
   }
   .summary-table {
     overflow: visible;

@@ -16,10 +16,7 @@ export {
   removeMailboxMember,
   upsertMailboxMember,
 } from './repository/members';
-export {
-  getMailMessage,
-  listMailMessages,
-} from './repository/messages';
+export { getMailMessage, listMailMessages } from './repository/messages';
 export {
   bulkUpdateMail,
   createMailboxFolder,

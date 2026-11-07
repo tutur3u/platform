@@ -73,8 +73,10 @@ interface RecycleBinPanelProps {
   };
 }
 
-interface RecycleBinContentProps
-  extends Omit<RecycleBinPanelProps, 'open' | 'onOpenChange'> {
+interface RecycleBinContentProps extends Omit<
+  RecycleBinPanelProps,
+  'open' | 'onOpenChange'
+> {
   active?: boolean;
   className?: string;
   onParentOpenChange?: (open: boolean) => void;

@@ -271,7 +271,7 @@
 .flowSteps button:hover {
   border-color: var(--tone);
 }
-.flowSteps button[aria-pressed="true"] {
+.flowSteps button[aria-pressed='true'] {
   background: #fff;
   border-color: var(--tone);
   box-shadow: 0 12px 30px #17211e0c;

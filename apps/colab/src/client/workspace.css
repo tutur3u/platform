@@ -233,7 +233,7 @@
       align-items: stretch;
       flex-direction: column;
     }
-    .settings-row [data-slot="button"] {
+    .settings-row [data-slot='button'] {
       width: 100%;
     }
   }

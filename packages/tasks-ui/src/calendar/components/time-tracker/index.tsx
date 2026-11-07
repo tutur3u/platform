@@ -327,7 +327,9 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                 </kbd>{' '}
                 to pause
                 <br />-{' '}
-                <kbd className="rounded bg-muted px-1 py-0.5 text-xs">Esc</kbd>{' '}
+                <kbd className="rounded bg-muted px-1 py-0.5 text-xs">
+                  Esc
+                </kbd>{' '}
                 to close
               </span>
             </DialogDescription>
