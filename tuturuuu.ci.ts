@@ -1,6 +1,7 @@
 import type { ProductionPublicationPolicy } from './scripts/ci/production-publication-policy.ts';
 
 export const ci = {
+  'roadmap-cloudflare.yaml': true,
   'mastermind-cloudflare.yaml': true,
   'contacts-start-candidate.yaml': true,
   'sso-persistence-contract.yaml': true,

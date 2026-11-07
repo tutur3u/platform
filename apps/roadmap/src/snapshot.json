@@ -1,0 +1,312 @@
+{
+  "sourceCommit": "b024b75053b97a13e450c0f1c3a57c5646c51ddc",
+  "checkedAt": "2026-11-07T06:03:35.669Z",
+  "apps": [
+    {
+      "id": "ai",
+      "name": "AI",
+      "productUrl": "https://tuturuuu.com/products/ai",
+      "status": "active",
+      "summary": {
+        "en": "Start + Void configuration is in main; live migration is not verified.",
+        "vi": "Cấu hình Start + Void đã có trên main; chưa xác minh chuyển đổi trên production."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/ai/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/ai/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    },
+    {
+      "id": "calendar",
+      "name": "Calendar",
+      "productUrl": "https://tuturuuu.com/products/calendar",
+      "status": "active",
+      "summary": {
+        "en": "Publication is permitted. That permission alone does not verify the live migration.",
+        "vi": "Đã được phép phát hành. Quyền phát hành chưa xác nhận chuyển đổi trên production."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/calendar/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/calendar/vite.config.mts"
+        },
+        {
+          "label": "Public publication policy",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/tuturuuu.ci.ts"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    },
+    {
+      "id": "chat",
+      "name": "Chat",
+      "productUrl": "https://tuturuuu.com/products/chat",
+      "status": "planned",
+      "summary": {
+        "en": "Part of the web migration target; a merged Start + Void configuration is not established by this snapshot.",
+        "vi": "Thuộc mục tiêu chuyển đổi web; bản cập nhật này chưa xác nhận cấu hình Start + Void đã hợp nhất."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/chat/page.tsx"
+        },
+        {
+          "label": "Migration target",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/docs/build/devops/native-start-migration.mdx"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    },
+    {
+      "id": "contacts",
+      "name": "CRM",
+      "productUrl": "https://tuturuuu.com/products/crm",
+      "status": "active",
+      "summary": {
+        "en": "Start + Void configuration is in main; live migration is not verified.",
+        "vi": "Cấu hình Start + Void đã có trên main; chưa xác minh chuyển đổi trên production."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/crm/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/contacts/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    },
+    {
+      "id": "drive",
+      "name": "Drive",
+      "productUrl": "https://tuturuuu.com/products/drive",
+      "status": "active",
+      "summary": {
+        "en": "Start + Void configuration is in main; live migration is not verified.",
+        "vi": "Cấu hình Start + Void đã có trên main; chưa xác minh chuyển đổi trên production."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/drive/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/drive/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    },
+    {
+      "id": "finance",
+      "name": "Finance",
+      "productUrl": "https://tuturuuu.com/products/finance",
+      "status": "active",
+      "summary": {
+        "en": "Start + Void configuration is in main; live migration is not verified.",
+        "vi": "Cấu hình Start + Void đã có trên main; chưa xác minh chuyển đổi trên production."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/finance/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/finance/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    },
+    {
+      "id": "forms",
+      "name": "Forms",
+      "productUrl": "https://tuturuuu.com/products/forms",
+      "status": "active",
+      "summary": {
+        "en": "Start + Void configuration is in main; live migration is not verified.",
+        "vi": "Cấu hình Start + Void đã có trên main; chưa xác minh chuyển đổi trên production."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/forms/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/forms/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    },
+    {
+      "id": "hive",
+      "name": "Hive",
+      "productUrl": "https://tuturuuu.com/products/hive",
+      "status": "planned",
+      "summary": {
+        "en": "Part of the web migration target; a merged Start + Void configuration is not established by this snapshot.",
+        "vi": "Thuộc mục tiêu chuyển đổi web; bản cập nhật này chưa xác nhận cấu hình Start + Void đã hợp nhất."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/hive/page.tsx"
+        },
+        {
+          "label": "Migration target",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/docs/build/devops/native-start-migration.mdx"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    },
+    {
+      "id": "inventory",
+      "name": "Inventory",
+      "productUrl": "https://tuturuuu.com/products/inventory",
+      "status": "active",
+      "summary": {
+        "en": "Start + Void configuration is in main; live migration is not verified.",
+        "vi": "Cấu hình Start + Void đã có trên main; chưa xác minh chuyển đổi trên production."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/inventory/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/inventory/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    },
+    {
+      "id": "mail",
+      "name": "Mail",
+      "productUrl": "https://tuturuuu.com/products/mail",
+      "status": "blocked",
+      "summary": {
+        "en": "Source work is in main; production cutover awaits publication approval.",
+        "vi": "Mã nguồn đã có trên main; chuyển đổi production đang chờ duyệt phát hành."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/mail/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/mail/vite.config.ts"
+        },
+        {
+          "label": "Public publication policy",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/tuturuuu.ci.ts"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    },
+    {
+      "id": "meet",
+      "name": "Meet",
+      "productUrl": "https://tuturuuu.com/products/meet-together",
+      "status": "active",
+      "summary": {
+        "en": "Publication is permitted. That permission alone does not verify the live migration.",
+        "vi": "Đã được phép phát hành. Quyền phát hành chưa xác nhận chuyển đổi trên production."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/meet-together/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/meet/vite.config.ts"
+        },
+        {
+          "label": "Public publication policy",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/tuturuuu.ci.ts"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    },
+    {
+      "id": "storefront",
+      "name": "Storefront",
+      "productUrl": "https://tuturuuu.com/products/storefront",
+      "status": "active",
+      "summary": {
+        "en": "Start + Void configuration is in main; live migration is not verified.",
+        "vi": "Cấu hình Start + Void đã có trên main; chưa xác minh chuyển đổi trên production."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/storefront/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/storefront/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    },
+    {
+      "id": "tasks",
+      "name": "Tasks",
+      "productUrl": "https://tuturuuu.com/products/tasks",
+      "status": "active",
+      "summary": {
+        "en": "Start + Void configuration is in main; live migration is not verified.",
+        "vi": "Cấu hình Start + Void đã có trên main; chưa xác minh chuyển đổi trên production."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/tasks/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/tasks/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    },
+    {
+      "id": "track",
+      "name": "Track",
+      "productUrl": "https://tuturuuu.com/products/track",
+      "status": "active",
+      "summary": {
+        "en": "Start + Void configuration is in main; live migration is not verified.",
+        "vi": "Cấu hình Start + Void đã có trên main; chưa xác minh chuyển đổi trên production."
+      },
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/web/src/app/[locale]/(marketing)/products/track/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/b024b75053b97a13e450c0f1c3a57c5646c51ddc/apps/track/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T06:03:35.669Z"
+    }
+  ]
+}
