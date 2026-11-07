@@ -533,6 +533,38 @@ Use `task-list-assignee-authorization.sql` for behavioral regression coverage.
 For rollback rehearsals, compare the observed hosted ACLs with replay first:
 historical GRANT ALL can include MAINTAIN on PostgreSQL 17 even when the hosted
 ACL excludes it. Record that fixture difference separately from migration proof.
+
+### Devbox ownership qualification
+
+When editing `private.claim_next_devbox_run`, locate its latest migration definition
+first. The live base for ownership migration 20261104123000 is 20261026145300,
+including mode admission, the bounded reaper, advisory locking, Judge requeue and
+the resource-limit envelope. Offboarding cancels queued work with a reason and
+sets running work to `cancel_requested`; it does not prove that an OS process stops. Compare function bodies, not just migration files.
+Keep SECURITY DEFINER helpers on `pg_catalog, pg_temp` with qualified object names,
+revoke PUBLIC/anon/authenticated EXECUTE, and grant only service_role.
+
+The actor-fence pgTAP tests fail without the migration and pass with it;
+compare full-suite failure names and round-trip the rollback. A lease ownership
+check must cover both direct run pins and inherited lease pins. Preserve dedicated
+learner Judge/playground enqueue paths. The separate 20261104031050 migration owns
+the shared user_id grant predicate and is a hard prerequisite: 20261104123000
+refuses to apply without it, and a missing or failing predicate raises instead of
+reading as "no grant". Compare NULL-able actors with `IS DISTINCT FROM`, never `<>`.
+
+Revocation hooks fire on transitions only: a grant row going active to inactive
+(or an active row deleted), and a root MEMBER row going away. Grant revocation
+cancels only run/build work pinned to personal runners; root removal cancels the
+other non-learner work. Neither touches Judge/playground learner work or keep
+leases. Runner `actor_id` and `pool` are immutable; re-own a runner by
+registering a new one. The unauthorized-run sweep is not on the claim path:
+Cron Control job `database-devbox-unauthorized-run-sweep` calls
+`private.cancel_unauthorized_devbox_runs(p_limit)`, which scans at most p_limit
+of the oldest queued non-learner rows. `devbox-run-ownership-revocation.sql`
+covers these rules; run it with `devbox-claim-cleanup.sql` and the real
+20261104031050 prerequisite. Absence of an active grant is never permission to
+claim personal work on the fleet.
+
 ### Azure identity-link verification
 
 For Azure account linking, require the explicit provider claim at
