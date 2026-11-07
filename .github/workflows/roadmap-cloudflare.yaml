@@ -63,7 +63,7 @@ jobs:
           package-manager-cache: false
       - run: bun install --frozen-lockfile
       - name: Check public roadmap data
-        run: node --test apps/roadmap/src/roadmap-data.test.ts
+        run: node --test apps/roadmap/src/roadmap-data.test.ts apps/roadmap/scripts/seal-artifact.test.mjs
       - name: Build the exact roadmap Worker
         run: bun run --cwd apps/roadmap build:cloudflare
       - name: Check generated-route types
@@ -77,3 +77,4 @@ jobs:
           name: roadmap-worker-${{ github.sha }}
           path: ${{ runner.temp }}/roadmap-worker.tar.gz
           if-no-files-found: error
+          retention-days: 7

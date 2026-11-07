@@ -119,6 +119,7 @@ export function CommercialComparison({ copy }: { copy: ComparisonCopy }) {
       value === 'included' ||
       value === 'excluded' ||
       value === 'preview' ||
+      value === 'pending' ||
       value === 'contract' ||
       value === 'seats'
     )

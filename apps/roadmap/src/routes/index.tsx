@@ -26,7 +26,7 @@ function RoadmapPage() {
         </a>
         <nav aria-label={t.eyebrow}>
           <a href="https://github.com/tutur3u/platform">GitHub</a>
-          <div className="language-switch" aria-label={t.language}>
+          <div className="language-switch" role="group" aria-label={t.language}>
             <button type="button" aria-pressed={language === 'en'} onClick={() => setLanguage('en')}>EN</button>
             <button type="button" aria-pressed={language === 'vi'} onClick={() => setLanguage('vi')}>VI</button>
           </div>
@@ -60,7 +60,7 @@ function RoadmapPage() {
 
         <section id="products" aria-label={t.all}>
           <div className="toolbar">
-            <div className="filters" aria-label={t.source}>
+            <div className="filters" role="group" aria-label={t.source}>
               {filters.map((item) => (
                 <button type="button" key={item} aria-pressed={status === item} onClick={() => setStatus(item)}>
                   {t[item]}
