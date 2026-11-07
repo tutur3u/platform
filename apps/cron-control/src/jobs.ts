@@ -18,6 +18,7 @@ export type ProcessorTarget =
 export type OverlapClass = 'claim-fenced' | 'handover' | 'idempotent';
 
 export type WorkerProcessorId =
+  | 'ai-studio-retention'
   | 'checkout-expiry'
   | 'cron-history-retention'
   | 'meet-transcript-retention'
@@ -28,6 +29,7 @@ export type WorkerProcessorId =
 export const DATABASE_MAINTENANCE_RPCS: Partial<
   Record<WorkerProcessorId, string>
 > = {
+  'ai-studio-retention': 'cleanup_ai_studio_retention_batch',
   'cron-history-retention': 'prune_cron_history',
   'meet-transcript-retention': 'purge_meet_transcripts_batch',
   'storage-access-audit-retention': 'prune_storage_access_events',
@@ -104,6 +106,16 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '/rest/v1/rpc/purge_meet_transcripts_batch',
     'idempotent',
     { workerProcessor: 'meet-transcript-retention', timeoutMs: 150_000 }
+  ),
+  // Daily at 02:43 GMT+7 (19:43 UTC), the low-traffic window. Counts only
+  // until AI_STUDIO_RETENTION_MODE is 'delete'; 'off' is the kill switch.
+  job(
+    'ai-studio-retention',
+    '43 19 * * *',
+    'web',
+    '/rest/v1/rpc/cleanup_ai_studio_retention_batch',
+    'idempotent',
+    { workerProcessor: 'ai-studio-retention', timeoutMs: 150_000 }
   ),
   job(
     'tasks-cleanup-media',
