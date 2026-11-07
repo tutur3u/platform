@@ -5,8 +5,13 @@ import { Save, Undo2 } from '@tuturuuu/icons';
 import { getCurrentUserHiveAccess } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
-import { Separator } from '@tuturuuu/ui/separator';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import { Switch } from '@tuturuuu/ui/switch';
+import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
@@ -15,6 +20,28 @@ import type { LayoutScope } from './sidebar-navigation-layout-settings.types';
 import { createSidebarNavigationItemDefinitions } from './sidebar-navigation-layout-settings-items';
 import { SidebarNavigationLayoutSection } from './sidebar-navigation-layout-settings-section';
 import { useSidebarNavigationLayoutSettings } from './use-sidebar-navigation-layout-settings';
+
+export function SidebarRecentNavigationSetting() {
+  const t = useTranslations('settings.preferences.sidebar_layout');
+  const {
+    value: recentNavigationEnabled,
+    setValue: setRecentNavigationEnabled,
+    isLoading: isRecentNavigationLoading,
+  } = useUserBooleanConfig(SIDEBAR_RECENT_NAVIGATION_ENABLED_CONFIG_ID, false);
+
+  return (
+    <SettingItemTab
+      title={t('recent_title')}
+      description={t('recent_description')}
+    >
+      <Switch
+        checked={recentNavigationEnabled}
+        onCheckedChange={setRecentNavigationEnabled}
+        disabled={isRecentNavigationLoading}
+      />
+    </SettingItemTab>
+  );
+}
 
 export function SidebarNavigationLayoutSettings({ wsId }: { wsId?: string }) {
   const t = useTranslations('settings.preferences.sidebar_layout');
@@ -34,11 +61,6 @@ export function SidebarNavigationLayoutSettings({ wsId }: { wsId?: string }) {
       }),
     [hiveAccess?.hasAccess, t, tSections]
   );
-  const {
-    value: recentNavigationEnabled,
-    setValue: setRecentNavigationEnabled,
-    isLoading: isRecentNavigationLoading,
-  } = useUserBooleanConfig(SIDEBAR_RECENT_NAVIGATION_ENABLED_CONFIG_ID, false);
   const {
     handleDragEnd,
     hiddenItems,
@@ -75,119 +97,97 @@ export function SidebarNavigationLayoutSettings({ wsId }: { wsId?: string }) {
   };
 
   return (
-    <div className="space-y-8">
-      <SettingItemTab
-        title={t('recent_title')}
-        description={t('recent_description')}
-      >
-        <Switch
-          checked={recentNavigationEnabled}
-          onCheckedChange={setRecentNavigationEnabled}
-          disabled={isRecentNavigationLoading}
-        />
-      </SettingItemTab>
-
-      <Separator />
-
-      <SettingItemTab title={t('title')} description={t('description')}>
-        <div className="space-y-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant={scope === 'account' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setScope('account')}
-            >
-              {t('account_scope')}
-            </Button>
+    <SettingsSection title={t('title')} description={t('description')}>
+      <SettingsSectionBlock className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
+        <Tabs
+          value={scope}
+          onValueChange={(value) => setScope(value as LayoutScope)}
+        >
+          <TabsList>
+            <TabsTrigger value="account">{t('account_scope')}</TabsTrigger>
             {wsId && (
-              <Button
-                type="button"
-                variant={scope === 'workspace' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setScope('workspace')}
-              >
+              <TabsTrigger value="workspace">
                 {t('workspace_scope')}
-              </Button>
+              </TabsTrigger>
             )}
-            <span className="text-muted-foreground text-xs">
-              {scope === 'workspace' && !sourceValue
-                ? t('using_account_default')
-                : t('editing_scope')}
-            </span>
-          </div>
+          </TabsList>
+        </Tabs>
+        <span className="text-muted-foreground text-sm">
+          {scope === 'workspace' && !sourceValue
+            ? t('using_account_default')
+            : t('editing_scope')}
+        </span>
+      </SettingsSectionBlock>
 
-          <div className="grid gap-4 xl:grid-cols-2">
-            <SidebarNavigationLayoutSection
-              emptyLabel={t('empty_section')}
-              itemCountLabel={t('item_count', { count: rootItems.length })}
-              items={rootItems}
-              labels={labels}
-              onDragEnd={handleDragEnd('root')}
-              onHideToggle={toggleHidden}
-              onMoveDown={(id) => moveWithin('root', id, 1)}
-              onMoveToOtherSection={(id) => setPlacement(id, 'more')}
-              onMoveUp={(id) => moveWithin('root', id, -1)}
-              placement="root"
-              title={t('root_title')}
-            />
-            <SidebarNavigationLayoutSection
-              emptyLabel={t('empty_section')}
-              itemCountLabel={t('item_count', { count: moreItems.length })}
-              items={moreItems}
-              labels={labels}
-              onDragEnd={handleDragEnd('more')}
-              onHideToggle={toggleHidden}
-              onMoveDown={(id) => moveWithin('more', id, 1)}
-              onMoveToOtherSection={(id) => setPlacement(id, 'root')}
-              onMoveUp={(id) => moveWithin('more', id, -1)}
-              placement="more"
-              showSectionLabels
-              title={t('more_title')}
-            />
-          </div>
-
-          {hiddenItems.length > 0 && (
-            <SidebarNavigationLayoutSection
-              emptyLabel={t('empty_section')}
-              hidden
-              items={hiddenItems}
-              labels={labels}
-              onHideToggle={toggleHidden}
-              onMoveDown={() => undefined}
-              onMoveToOtherSection={() => undefined}
-              onMoveUp={() => undefined}
-              placement="more"
-              showSectionLabels
-              title={t('hidden_title')}
-            />
-          )}
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              onClick={() => saveMutation.mutate()}
-              disabled={isLoading || !isDirty || saveMutation.isPending}
-            >
-              <Save className="h-4 w-4" />
-              {saveMutation.isPending
-                ? tCommon('saving')
-                : tCommon('save_changes')}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => resetMutation.mutate()}
-              disabled={isLoading || resetMutation.isPending}
-            >
-              <Undo2 className="h-4 w-4" />
-              {scope === 'workspace'
-                ? t('reset_workspace')
-                : t('reset_account')}
-            </Button>
-          </div>
+      <SettingsSectionBlock className="@container">
+        <div className="grid @2xl:grid-cols-2 gap-6">
+          <SidebarNavigationLayoutSection
+            emptyLabel={t('empty_section')}
+            itemCountLabel={t('item_count', { count: rootItems.length })}
+            items={rootItems}
+            labels={labels}
+            onDragEnd={handleDragEnd('root')}
+            onHideToggle={toggleHidden}
+            onMoveDown={(id) => moveWithin('root', id, 1)}
+            onMoveToOtherSection={(id) => setPlacement(id, 'more')}
+            onMoveUp={(id) => moveWithin('root', id, -1)}
+            placement="root"
+            title={t('root_title')}
+          />
+          <SidebarNavigationLayoutSection
+            emptyLabel={t('empty_section')}
+            itemCountLabel={t('item_count', { count: moreItems.length })}
+            items={moreItems}
+            labels={labels}
+            onDragEnd={handleDragEnd('more')}
+            onHideToggle={toggleHidden}
+            onMoveDown={(id) => moveWithin('more', id, 1)}
+            onMoveToOtherSection={(id) => setPlacement(id, 'root')}
+            onMoveUp={(id) => moveWithin('more', id, -1)}
+            placement="more"
+            showSectionLabels
+            title={t('more_title')}
+          />
         </div>
-      </SettingItemTab>
-    </div>
+      </SettingsSectionBlock>
+
+      {hiddenItems.length > 0 && (
+        <SettingsSectionBlock>
+          <SidebarNavigationLayoutSection
+            emptyLabel={t('empty_section')}
+            hidden
+            items={hiddenItems}
+            labels={labels}
+            onHideToggle={toggleHidden}
+            onMoveDown={() => undefined}
+            onMoveToOtherSection={() => undefined}
+            onMoveUp={() => undefined}
+            placement="more"
+            showSectionLabels
+            title={t('hidden_title')}
+          />
+        </SettingsSectionBlock>
+      )}
+
+      <SettingsSectionFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => resetMutation.mutate()}
+          disabled={isLoading || resetMutation.isPending}
+        >
+          <Undo2 className="h-4 w-4" />
+          {scope === 'workspace' ? t('reset_workspace') : t('reset_account')}
+        </Button>
+        <Button
+          type="button"
+          onClick={() => saveMutation.mutate()}
+          disabled={isLoading || !isDirty || saveMutation.isPending}
+        >
+          <Save className="h-4 w-4" />
+          {saveMutation.isPending ? tCommon('saving') : tCommon('save_changes')}
+        </Button>
+      </SettingsSectionFooter>
+    </SettingsSection>
   );
 }

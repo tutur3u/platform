@@ -10,10 +10,8 @@ import {
   CheckCircle2,
   ExternalLink,
   Globe,
-  Link as LinkIcon,
   Shield,
   Trash2,
-  Zap,
 } from '@tuturuuu/icons';
 import {
   AlertDialog,
@@ -28,6 +26,12 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import Image from 'next/image';
@@ -52,26 +56,12 @@ type LinkedIdentitiesResponse = {
   canUnlink: boolean;
 };
 
-function SocialLogoMask({
-  src,
-  alt,
-  size = 'sm',
-}: {
-  src: string;
-  alt: string;
-  size?: 'sm' | 'md' | 'lg';
-}) {
-  const sizeClasses = {
-    sm: 'size-5',
-    md: 'size-6',
-    lg: 'size-8',
-  }[size];
-
+function SocialLogoMask({ src, alt }: { src: string; alt: string }) {
   return (
     <span
       aria-label={alt}
       role="img"
-      className={`block shrink-0 bg-current ${sizeClasses}`}
+      className="block size-5 shrink-0 bg-current"
       style={{
         WebkitMaskImage: `url(${src})`,
         maskImage: `url(${src})`,
@@ -217,37 +207,17 @@ export default function LinkedIdentitiesCard({
     await unlinkMutation.mutateAsync(identity);
   };
 
-  const getProviderIcon = (
-    provider: string,
-    size: 'sm' | 'md' | 'lg' = 'sm'
-  ) => {
-    const sizeClasses = {
-      sm: 'h-5 w-5',
-      md: 'h-6 w-6',
-      lg: 'h-8 w-8',
-    }[size];
-    const imageSize = {
-      sm: 20,
-      md: 24,
-      lg: 32,
-    }[size];
-
+  const getProviderIcon = (provider: string) => {
     switch (provider) {
       case 'apple':
-        return (
-          <SocialLogoMask
-            src="/media/logos/apple.svg"
-            alt="Apple"
-            size={size}
-          />
-        );
+        return <SocialLogoMask src="/media/logos/apple.svg" alt="Apple" />;
       case 'azure':
         return (
           <Image
             src="/media/logos/microsoft.svg"
             alt="Microsoft"
-            width={imageSize}
-            height={imageSize}
+            width={20}
+            height={20}
             className="object-contain"
           />
         );
@@ -256,300 +226,207 @@ export default function LinkedIdentitiesCard({
           <Image
             src="/media/google-logo.png"
             alt="Google"
-            width={imageSize}
-            height={imageSize}
+            width={20}
+            height={20}
             className="object-contain"
           />
         );
       case 'github':
-        return (
-          <SocialLogoMask
-            src="/media/logos/github.svg"
-            alt="GitHub"
-            size={size}
-          />
-        );
+        return <SocialLogoMask src="/media/logos/github.svg" alt="GitHub" />;
       default:
-        return <Globe className={sizeClasses} />;
+        return <Globe className="h-5 w-5" />;
     }
   };
 
   if (isLoading) {
     return (
-      <div className={className}>
-        <div className="mb-6 flex items-center gap-2">
-          <div className="rounded-full bg-dynamic-blue/10 p-2.5 dark:bg-dynamic-blue/20">
-            <LinkIcon className="h-5 w-5 text-dynamic-blue dark:text-dynamic-blue/80" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="font-semibold text-lg">{t('linked-accounts')}</h3>
-            <p className="text-muted-foreground text-sm">
-              {t('linked-accounts-description')}
-            </p>
-          </div>
-        </div>
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <Skeleton className="h-4 w-32" />
-            <div className="space-y-3">
-              {[1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between rounded-lg border p-4"
-                >
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-5 w-5 rounded" />
-                    <div className="space-y-1">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-3 w-32" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-8 w-16" />
-                </div>
-              ))}
+      <SettingsSection
+        className={className}
+        title={t('linked-accounts')}
+        description={t('linked-accounts-description')}
+      >
+        {[1, 2].map((i) => (
+          <SettingsSectionBlock
+            className="flex items-center justify-between gap-4"
+            key={i}
+          >
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-5 rounded" />
+              <div className="space-y-1">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-3 w-32" />
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
+            <Skeleton className="h-8 w-16" />
+          </SettingsSectionBlock>
+        ))}
+      </SettingsSection>
     );
   }
 
   if (error) {
     return (
-      <div className={className}>
-        <div className="mb-6 flex items-center gap-2">
-          <div className="rounded-full bg-dynamic-red/10 p-2.5 dark:bg-dynamic-red/20">
-            <AlertTriangle className="h-5 w-5 text-dynamic-red dark:text-dynamic-red/80" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="font-semibold text-lg">{t('linked-accounts')}</h3>
-            <p className="text-dynamic-red text-sm dark:text-dynamic-red/80">
-              {t('error-loading-accounts')}
-            </p>
-          </div>
-        </div>
-        <div>
-          <Button
-            onClick={() => void refetch()}
-            variant="outline"
-            className="w-full"
-          >
-            {t('try-again')}
-          </Button>
-        </div>
-      </div>
+      <SettingsSection
+        className={className}
+        title={t('linked-accounts')}
+        description={t('linked-accounts-description')}
+      >
+        <SettingsSectionMessage
+          action={
+            <Button onClick={() => void refetch()} variant="outline" size="sm">
+              {t('try-again')}
+            </Button>
+          }
+          tone="error"
+        >
+          {t('error-loading-accounts')}
+        </SettingsSectionMessage>
+      </SettingsSection>
     );
   }
 
   return (
-    <div className={className}>
-      <div className="mb-6 flex items-center gap-2">
-        <div className="rounded-full bg-dynamic-blue/10 p-2.5 dark:bg-dynamic-blue/20">
-          <LinkIcon className="h-5 w-5 text-dynamic-blue dark:text-dynamic-blue/80" />
-        </div>
-        <div className="flex-1 space-y-1">
-          <h3 className="font-semibold text-lg">{t('linked-accounts')}</h3>
-          <p className="text-muted-foreground text-sm">
-            {t('linked-accounts-description')}
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-8">
-        {availableProviders.length > 0 && (
-          <div className="rounded-lg border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/5 to-dynamic-indigo/5 p-6 dark:border-dynamic-blue/30 dark:from-dynamic-blue/5 dark:to-dynamic-indigo/5">
-            <div className="flex items-start gap-4">
-              <div className="rounded-full bg-dynamic-blue/10 p-3 dark:bg-dynamic-blue/20">
-                <Zap className="h-6 w-6 text-dynamic-blue dark:text-dynamic-blue/80" />
-              </div>
-              <div className="flex-1 space-y-4">
-                <div>
-                  <h3 className="mb-2 font-semibold text-dynamic-blue text-lg dark:text-dynamic-blue/90">
-                    {t('enhance-security')}
-                  </h3>
-                  <p className="text-dynamic-blue/80 text-sm dark:text-dynamic-blue/70">
-                    {t('enhance-security-description')}
-                  </p>
-                </div>
-                <div className="grid gap-4">
-                  {availableProviders.map((provider) => (
-                    <div
-                      key={provider.id}
-                      className="group relative overflow-hidden rounded-lg border border-white/20 bg-white/60 backdrop-blur-sm transition-all duration-200 hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/60 dark:hover:bg-gray-800/80"
-                    >
-                      <div className="p-4">
-                        <div className="mb-3 flex items-center gap-2">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm dark:bg-gray-700">
-                            {getProviderIcon(provider.id, 'md')}
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                              {provider.name}
-                            </h4>
-                            <p className="text-gray-600 text-xs dark:text-gray-400">
-                              {t(`provider-benefit-${provider.id}`, {
-                                defaultValue: t('provider-benefit-default', {
-                                  provider: provider.name,
-                                }),
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          onClick={() => handleLinkIdentity(provider.id)}
-                          disabled={linkLoading === provider.id}
-                          variant="outline"
-                          size="sm"
-                        >
-                          {linkLoading === provider.id ? (
-                            <>
-                              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                              {t('linking')}...
-                            </>
-                          ) : (
-                            <>
-                              <ExternalLink className="mr-2 h-4 w-4" />
-                              {t('connect')} {provider.name}
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {identities.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-dynamic-green dark:text-dynamic-green/80" />
-              <h4 className="font-medium text-foreground text-sm">
-                {t('connected-accounts')} ({identities.length})
-              </h4>
-            </div>
-            <div className="space-y-3">
-              {identities.map((identity) => (
-                <div
-                  key={identity.id}
-                  className="group relative overflow-hidden rounded-lg border bg-card transition-all duration-200 hover:shadow-md"
+    <SettingsSection
+      className={className}
+      title={t('linked-accounts')}
+      description={t('linked-accounts-description')}
+      action={
+        identities.length > 0 && (
+          <span className="text-muted-foreground text-sm">
+            {t('connected-accounts')} ({identities.length})
+          </span>
+        )
+      }
+    >
+      {identities.map((identity) => (
+        <SettingItemTab
+          key={identity.id}
+          title={
+            <>
+              {getLinkedIdentityProviderDisplayName(identity.provider)}
+              <Badge
+                variant="outline"
+                className="border-dynamic-green/30 font-medium text-dynamic-green text-xs"
+              >
+                <CheckCircle2 className="mr-1 h-3 w-3" />
+                {t('connected')}
+              </Badge>
+            </>
+          }
+          description={
+            identity.identity_data?.email ||
+            t('connected-on', {
+              date: new Date(identity.created_at || '').toLocaleDateString(),
+            })
+          }
+          icon={getProviderIcon(identity.provider)}
+        >
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-dynamic-red hover:text-dynamic-red"
+                disabled={!canUnlink || unlinkLoadingId === identity.id}
+              >
+                {unlinkLoadingId === identity.id ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    {t('unlinking')}...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    {t('unlink')}
+                  </>
+                )}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-dynamic-amber" />
+                  {t('unlink-account')}
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-left">
+                  {t('unlink-confirmation', {
+                    provider: getLinkedIdentityProviderDisplayName(
+                      identity.provider
+                    ),
+                  })}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => void handleUnlinkIdentity(identity)}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                        {getProviderIcon(identity.provider, 'md')}
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground">
-                            {getLinkedIdentityProviderDisplayName(
-                              identity.provider
-                            )}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className="border-dynamic-green/30 font-medium text-dynamic-green text-xs dark:border-dynamic-green/50 dark:text-dynamic-green/80"
-                          >
-                            <CheckCircle2 className="mr-1 h-3 w-3" />
-                            {t('connected')}
-                          </Badge>
-                        </div>
-                        <p className="text-muted-foreground text-sm">
-                          {identity.identity_data?.email ||
-                            t('connected-on', {
-                              date: new Date(
-                                identity.created_at || ''
-                              ).toLocaleDateString(),
-                            })}
-                        </p>
-                      </div>
-                    </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          disabled={
-                            !canUnlink || unlinkLoadingId === identity.id
-                          }
-                        >
-                          {unlinkLoadingId === identity.id ? (
-                            <>
-                              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                              {t('unlinking')}...
-                            </>
-                          ) : (
-                            <>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              {t('unlink')}
-                            </>
-                          )}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle className="flex items-center gap-2">
-                            <AlertTriangle className="h-5 w-5 text-dynamic-amber" />
-                            {t('unlink-account')}
-                          </AlertDialogTitle>
-                          <AlertDialogDescription className="text-left">
-                            {t('unlink-confirmation', {
-                              provider: getLinkedIdentityProviderDisplayName(
-                                identity.provider
-                              ),
-                            })}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => void handleUnlinkIdentity(identity)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            {t('unlink-account')}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                  {t('unlink-account')}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </SettingItemTab>
+      ))}
 
-        {identities.length === 0 && availableProviders.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="mb-4 rounded-full bg-muted p-4">
-              <LinkIcon className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <h3 className="mb-2 font-medium text-foreground text-lg">
-              {t('no-linked-accounts')}
-            </h3>
-            <p className="max-w-sm text-muted-foreground text-sm">
-              {t('no-linked-accounts-description')}
-            </p>
-          </div>
-        )}
+      {!canUnlink && identities.length === 1 && (
+        <SettingItemTab
+          layout="stacked"
+          title={t('account-security-notice')}
+          description={t('account-security-notice-description')}
+          icon={<Shield className="size-4 text-dynamic-yellow" />}
+        />
+      )}
 
-        {!canUnlink && identities.length === 1 && (
-          <div className="rounded-lg border border-dynamic-amber/30 bg-dynamic-amber/5 p-4 dark:border-dynamic-amber/50 dark:bg-dynamic-amber/10">
-            <div className="flex gap-2">
-              <Shield className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-amber dark:text-dynamic-amber/80" />
-              <div className="space-y-1">
-                <p className="font-medium text-dynamic-amber text-sm dark:text-dynamic-amber/90">
-                  {t('account-security-notice')}
-                </p>
-                <p className="text-dynamic-amber/80 text-sm dark:text-dynamic-amber/70">
-                  {t('account-security-notice-description')}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      {availableProviders.length > 0 && (
+        <SettingItemTab
+          layout="stacked"
+          title={t('enhance-security')}
+          description={t('enhance-security-description')}
+        />
+      )}
+
+      {availableProviders.map((provider) => (
+        <SettingItemTab
+          key={provider.id}
+          title={provider.name}
+          description={t(`provider-benefit-${provider.id}`, {
+            defaultValue: t('provider-benefit-default', {
+              provider: provider.name,
+            }),
+          })}
+          icon={getProviderIcon(provider.id)}
+        >
+          <Button
+            onClick={() => handleLinkIdentity(provider.id)}
+            disabled={linkLoading === provider.id}
+            variant="outline"
+            size="sm"
+          >
+            {linkLoading === provider.id ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                {t('linking')}...
+              </>
+            ) : (
+              <>
+                <ExternalLink className="h-4 w-4" />
+                {t('connect')} {provider.name}
+              </>
+            )}
+          </Button>
+        </SettingItemTab>
+      ))}
+
+      {identities.length === 0 && availableProviders.length === 0 && (
+        <SettingsSectionMessage>
+          <p className="font-medium text-foreground">
+            {t('no-linked-accounts')}
+          </p>
+          <p className="mt-0.5">{t('no-linked-accounts-description')}</p>
+        </SettingsSectionMessage>
+      )}
+    </SettingsSection>
   );
 }
