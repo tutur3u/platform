@@ -15,17 +15,6 @@ const {
 } = require('./workflow-config-test-helpers.js');
 
 const PACKAGE_PROVENANCE_REPOSITORY_URL = 'https://github.com/tutur3u/platform';
-const rootPackageJson = JSON.parse(
-  fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')
-);
-const expectedOxcCliVersion = rootPackageJson.devDependencies['oxfmt'].replace(
-  /^[^\d]*/u,
-  ''
-);
-const expectedOxcCliVersionPattern = expectedOxcCliVersion.replaceAll(
-  '.',
-  '\\.'
-);
 const tanstackWebVercelWorkflows = new Set([
   'vercel-preview-tanstack-web.yaml',
   'vercel-production-tanstack-web.yaml',
@@ -621,55 +610,6 @@ test('Codecov workflow runs workspace package tests with coverage', () => {
   );
   assert.doesNotMatch(testJob, /^\s+run:.*turbo:local run test/mu);
   assert.doesNotMatch(workflow, /run: bun vitest run --coverage/u);
-});
-
-test('Oxc workflow runs pinned npm Oxc CLI and prints captured output when checks fail', () => {
-  const workflow = fs.readFileSync(
-    path.join(repoRoot, '.github', 'workflows', 'oxc-check.yaml'),
-    'utf8'
-  );
-  const formatJob = readWorkflowJobBlock('oxc-check.yaml', 'format');
-  const lintJob = readWorkflowJobBlock('oxc-check.yaml', 'lint');
-  const applyFormatJob = readWorkflowJobBlock('oxc-check.yaml', 'apply-format');
-  for (const job of [formatJob, lintJob, applyFormatJob]) {
-    assert.match(job, /npm_config_ignore_scripts: 'true'/u);
-    assert.doesNotMatch(
-      job,
-      /node_modules\/\.bin\/(?:oxfmt|oxlint)|bun install/u
-    );
-  }
-
-  for (const job of [formatJob, lintJob]) {
-    assert.match(job, /uses: actions\/setup-node@[0-9a-f]{40} # v7\b/u);
-    assert.match(job, /node-version: 24/u);
-    assert.match(job, /printf '%s\\n' "\$oxc_output"/u);
-    assert.match(job, /if \[ "\$oxc_exit_code" -ne 0 \]/u);
-    assert.match(job, /exit "\$oxc_exit_code"/u);
-    assert.doesNotMatch(job, /total_issues/u);
-  }
-
-  assert.doesNotMatch(workflow, /oxcjs\/setup-oxc@v2/u);
-  assert.match(
-    formatJob,
-    new RegExp(
-      `npx --yes oxfmt@${expectedOxcCliVersionPattern} --check \\. 2>&1`,
-      'u'
-    )
-  );
-  assert.match(
-    lintJob,
-    new RegExp(
-      `npx --yes oxlint@1\\.89\\.0 --deny-warnings --threads 2 \\. 2>&1`,
-      'u'
-    )
-  );
-  assert.match(
-    applyFormatJob,
-    new RegExp(
-      `npx --yes oxfmt@${expectedOxcCliVersionPattern} --write \\.`,
-      'u'
-    )
-  );
 });
 
 test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', () => {

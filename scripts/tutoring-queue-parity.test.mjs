@@ -68,7 +68,6 @@ for (const fixture of fixtures) {
             to = end;
             return query;
           },
-          // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
           then(resolve, reject) {
             const data =
               table === 'workspace_user_groups_users'
