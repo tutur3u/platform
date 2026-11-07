@@ -128,4 +128,13 @@ export const registry = [
     default: false,
     removeBy: '2027-01-31',
   },
+  {
+    key: 'tutoring_content_rules',
+    description:
+      'Workspace tutoring content reminder kill switch; workspace_configs override.',
+    owner: 'products',
+    class: 'kill',
+    default: false,
+    removeBy: '2027-02-01',
+  },
 ] as const;
