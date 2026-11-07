@@ -234,8 +234,12 @@ export function buildTutoringSessionColumns(
         <DataTableColumnHeader column={column} t={tableT} title={t('campus')} />
       ),
       cell: ({ row }) => (
-        <TutoringCampusCell canManage={actions.canManage} wsId={actions.wsId}
-          session={row.original} policy={policy} />
+        <TutoringCampusCell
+          canManage={actions.canManage}
+          wsId={actions.wsId}
+          session={row.original}
+          policy={policy}
+        />
       ),
     },
     {

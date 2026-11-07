@@ -30,16 +30,25 @@ export function TutoringCampusCell({
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
-  const inherited = getTutoringCampus(policy, session.group_id, session.group?.name);
+  const inherited = getTutoringCampus(
+    policy,
+    session.group_id,
+    session.group?.name
+  );
   const campus = getTutoringCampus(
-    policy, session.group_id, session.group?.name, session.campus_override
+    policy,
+    session.group_id,
+    session.group?.name,
+    session.campus_override
   );
   const save = useMutation({
     mutationFn: () =>
       updateTutoringSession(wsId, session.id, { campusOverride: draft }),
     onSuccess: () => {
       setEditing(false);
-      void queryClient.invalidateQueries({ queryKey: ['tutoring-sessions', wsId] });
+      void queryClient.invalidateQueries({
+        queryKey: ['tutoring-sessions', wsId],
+      });
       void queryClient.invalidateQueries({
         queryKey: ['tutoring-parent-message', wsId, session.id],
       });
@@ -72,9 +81,15 @@ export function TutoringCampusCell({
         disabled={save.isPending}
         onChange={(event) => setDraft(event.target.value)}
       />
-      <p className="text-muted-foreground text-xs">{t('campus_inherit_class')}</p>
+      <p className="text-muted-foreground text-xs">
+        {t('campus_inherit_class')}
+      </p>
       <div className="flex gap-1">
-        <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+        <Button
+          size="sm"
+          disabled={save.isPending}
+          onClick={() => save.mutate()}
+        >
           {t('campus_save')}
         </Button>
         <Button

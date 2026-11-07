@@ -94,17 +94,26 @@ describe('per-session content on create', () => {
   });
 });
 
-
 describe('per-session campus persistence payload', () => {
   it('keeps distinct overrides and an explicit reset in separate slots', () => {
-    const rows = rowsFor({ campusOverride: 'Shared', sessions: [
-      slot('2026-11-07', { campusOverride: ' North ' }),
-      slot('2026-11-08', { campusOverride: '' }),
-      slot('2026-11-09'),
-    ] });
-    expect(rows.map((row) => row.campus_override)).toEqual(['North', null, 'Shared']);
+    const rows = rowsFor({
+      campusOverride: 'Shared',
+      sessions: [
+        slot('2026-11-07', { campusOverride: ' North ' }),
+        slot('2026-11-08', { campusOverride: '' }),
+        slot('2026-11-09'),
+      ],
+    });
+    expect(rows.map((row) => row.campus_override)).toEqual([
+      'North',
+      null,
+      'Shared',
+    ]);
   });
   it('defaults legacy sequential sessions to inheritance', () => {
-    expect(rowsFor({ sessionDate: '2026-11-07', startTime: '15:15' })[0]?.campus_override).toBeNull();
+    expect(
+      rowsFor({ sessionDate: '2026-11-07', startTime: '15:15' })[0]
+        ?.campus_override
+    ).toBeNull();
   });
 });

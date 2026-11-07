@@ -156,10 +156,13 @@ function SlotRow({
 
       <div className="mt-3 space-y-1">
         <Label htmlFor={`slotCampus-${index}`}>{t('campus')}</Label>
-        <Input id={`slotCampus-${index}`} maxLength={TUTORING_CAMPUS_LABEL_MAX_LENGTH}
+        <Input
+          id={`slotCampus-${index}`}
+          maxLength={TUTORING_CAMPUS_LABEL_MAX_LENGTH}
           placeholder={t('campus_inherit_class')}
           value={slot.campusOverride ?? ''}
-          onChange={(event) => onChange({ campusOverride: event.target.value })} />
+          onChange={(event) => onChange({ campusOverride: event.target.value })}
+        />
       </div>
       {content !== undefined ? (
         <div className="mt-3 space-y-1">

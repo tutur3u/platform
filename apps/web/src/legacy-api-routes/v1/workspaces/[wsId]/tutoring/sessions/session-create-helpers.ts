@@ -118,7 +118,7 @@ export function buildTutoringSessionRows({
     content: slot.content ?? payload.content,
     campus_override:
       slot.campusOverride === undefined
-        ? payload.campusOverride ?? null
+        ? (payload.campusOverride ?? null)
         : slot.campusOverride,
     attendance_status: payload.attendanceStatus,
     source_feedback_id: payload.sourceFeedbackId ?? null,
