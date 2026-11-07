@@ -1,7 +1,5 @@
 'use client';
 
-import { sanitizeHtml } from '@tuturuuu/utils/html-sanitizer';
-
 interface EventDescriptionProps {
   description: string;
   className?: string;
@@ -14,12 +12,8 @@ export default function EventDescription({
   if (!description) return null;
 
   return (
-    <div
-      className={`event-description ${className}`}
-      // eslint-disable-next-line react/no-danger -- Every description passes through the shared sanitizeHtml allowlist.
-      dangerouslySetInnerHTML={{
-        __html: sanitizeHtml(description),
-      }}
-    />
+    <div className={`event-description whitespace-pre-wrap ${className}`}>
+      {description}
+    </div>
   );
 }

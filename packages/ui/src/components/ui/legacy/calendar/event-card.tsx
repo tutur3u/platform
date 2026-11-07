@@ -21,7 +21,6 @@ import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { opaqueGoogleColor } from '@tuturuuu/utils/google-calendar-colors';
-import { sanitizeHtml } from '@tuturuuu/utils/html-sanitizer';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -1295,13 +1294,9 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
 
               {/* Show description if there's enough space */}
               {(duration > 1 || _isMultiDay) && description && (
-                <div
-                  className="event-description mt-1 line-clamp-2 text-xs"
-                  // eslint-disable-next-line react/no-danger -- Every description passes through the shared sanitizeHtml allowlist.
-                  dangerouslySetInnerHTML={{
-                    __html: sanitizeHtml(description),
-                  }}
-                />
+                <div className="event-description mt-1 line-clamp-2 whitespace-pre-wrap text-xs">
+                  {description}
+                </div>
               )}
             </div>
           </div>

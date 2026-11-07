@@ -12,5 +12,13 @@
     "**/*.html",
     "**/*.toml",
     "**/*.inc"
+  ],
+  "overrides": [
+    {
+      "files": ["**/*.css"],
+      "options": {
+        "singleQuote": false
+      }
+    }
   ]
 }
