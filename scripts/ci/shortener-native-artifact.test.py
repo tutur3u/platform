@@ -7,12 +7,13 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 HERE = Path(__file__).parent
 spec = importlib.util.spec_from_file_location("shortener_artifact", HERE / "shortener-native-artifact.py")
 wrapper = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(wrapper)
-artifact = wrapper.load()
+artifact = wrapper.load("staging")
 base_spec = importlib.util.spec_from_file_location("apps_artifact", HERE / "apps-native-artifact.py")
 base = importlib.util.module_from_spec(base_spec)
 base_spec.loader.exec_module(base)
@@ -21,6 +22,14 @@ WORKER = "tuturuuu-shortener-vite-staging"
 
 
 class ShortenerArtifactTest(unittest.TestCase):
+    def test_default_profile_and_explicit_selection_are_independent(self):
+        with mock.patch.dict(os.environ):
+            os.environ.pop(wrapper.PROFILE_ENV, None)
+            self.assertEqual(wrapper.load().IDENTITY["name"], WORKER)
+            os.environ[wrapper.PROFILE_ENV] = "production"
+            self.assertEqual(wrapper.load().IDENTITY["name"], "tuturuuu-shortener")
+            self.assertEqual(wrapper.load("staging").IDENTITY["name"], WORKER)
+
     def fixture(self):
         temporary = tempfile.TemporaryDirectory(prefix="shortener-output-fixture-")
         self.addCleanup(temporary.cleanup)
@@ -105,6 +114,7 @@ class ShortenerArtifactTest(unittest.TestCase):
     def test_cli_requires_the_shortener_source_channel(self):
         app, _ = self.fixture()
         env = {k: v for k, v in os.environ.items() if k not in ("APPS_SOURCE_SHA", "SHORTENER_SOURCE_SHA")}
+        env[wrapper.PROFILE_ENV] = "staging"
         env["APPS_SOURCE_SHA"] = SHA
         receipt = app / "receipt.json"
         failed = subprocess.run([sys.executable, str(HERE / "shortener-native-artifact.py"), "seal", str(app), "--receipt", str(receipt)], env=env, capture_output=True)
