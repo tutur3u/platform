@@ -10,6 +10,13 @@ export default defineConfig({
     observability: { enabled: false },
     env: {
       OPS_HUB_GATEWAY_SECRET: bindings.secret(),
+      OPS_HUB_GATEWAY_SECRET_NEXT: bindings.secret(),
+      OPS_HUB_GATEWAY_NEXT_NOT_BEFORE: bindings.secret(),
+      OPS_HUB_GATEWAY_NEXT_EXPIRES_AT: bindings.secret(),
+      OPS_HUB_MASTERMIND_SNAPSHOT_SECRET: bindings.secret(),
+      OPS_HUB_MASTERMIND_SNAPSHOT_SECRET_NEXT: bindings.secret(),
+      OPS_HUB_MASTERMIND_SNAPSHOT_NEXT_NOT_BEFORE: bindings.secret(),
+      OPS_HUB_MASTERMIND_SNAPSHOT_NEXT_EXPIRES_AT: bindings.secret(),
       OPS_HUB_PUBLISHER_PUBLIC_KEY: bindings.secret(),
       OPS_HUB_ALLOWED_USER_IDS: bindings.secret(),
       HUB: bindings.durableObject({
