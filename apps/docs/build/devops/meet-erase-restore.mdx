@@ -1,0 +1,75 @@
+---
+title: "Meet erase restore quarantine"
+description: "Reconcile the independent erase ledger before restoring service."
+---
+
+This runbook grants no restore authority. Security HOLD, GA HOLD and the ban on
+wider Meet AI enablement remain. Pax owns integration; Selene reviews security;
+Rex owns migration order, backups and restore admission; Cora owns hold decisions.
+
+## Current implementation boundary
+
+V22 is stacked on V9. `erase-reconcile.ts` implements ledger enumeration, outcome
+ordering and quarantine decisions through injected ports. The migration supplies
+an inert admission RPC and durable intent identities. It never releases a fence.
+No cron, runtime binding, key, environment value or flag is installed.
+
+The restore runtime adapters are still required from V12, V14, V17 and V20.
+This PR does not qualify a working restore: disposable PostgreSQL and actual
+channel/playground DO replay must pass AT-10(i)–(vi) and RT-O before admission.
+An absent adapter leaves the meeting held. Local map-backed tests prove the
+coordinator decisions, not PostgreSQL, DO cold-load or storage behavior.
+
+## Admission and verification
+
+1. Rex separately admits the disposable rehearsal or actual recovery. Isolate
+   every restored store from serving, workers, AI jobs, checkpoints and indexes.
+   Apply V4, V2, V10 and the store migrations before invoking the V22 RPC.
+2. Use the independent V9 service in the isolated keyed server runtime. Its
+   `verify()` must validate the complete DO and R2 chains to the same head.
+   Never copy the ledger key into the restore job or meeting room Worker.
+3. Rebuild holds from every retained `hold_create` and `hold_release` event,
+   including events newer than the restored snapshot. Install this projection
+   under the exclusive workspace hold barrier. Preserve active events for their
+   lifetime and recovery window. Missing events, a pending transition, a gap,
+   unavailable ledger or mirror disagreement keeps all stores quarantined.
+4. Only the database owner may admit `meet_restore_quarantines` and certify its
+   verified head and hold projection. The service role can invoke the admission
+   RPC but cannot alter these control rows. Pass the configured protected
+   workspace ids; use synthetic ids in rehearsals and never commit the real EC id.
+5. Supply `ReconcilePort` adapters. `replay` recreates the plan, operation and
+   progress rows by immutable operation key and dispatches the normal fenced
+   worker. Each destructive batch rechecks the ledger head and shared workspace
+   hold barrier, then meeting fence. External DO/storage applies require expiring
+   apply leases and authenticated callbacks; never keep SQL locks across calls.
+   The coordinator's head check alone cannot serialize an external apply.
+6. Replay committed and no-outcome intents in sequence. A restored cancellation
+   appends `aborted/cancelled` and restarts verification at the new head. An
+   aborted/refused outcome may be superseded by a later committed outcome;
+   cancellation followed by commitment is a protocol failure. Never replay a
+   final `not_committed` key. An active hold keeps `restore_hold`; escalate a
+   held no-outcome intent to Cora without deleting anything.
+7. Replay transcript/notes by stable ids. For documents, use a verified post-erase
+   copy or reapply the block-MAC plan to quarantined bytes. Never stamp a target
+   generation onto old bytes. With no history cutoff, clear every restored
+   version for that document only. Replay playground rooms without personal
+   project access, label removals with locators, legacy audio rows and generated
+   object paths, and each registered derived partition. Recovery copies remain
+   isolated for their own reconciliation.
+8. `verify` counts every store's residuals and verifies actual DO/room cold loads.
+   Write a durable reconciled receipt for each intent. The release adapter must
+   atomically recheck the current independent head, pending hold transitions,
+   receipt coverage and zero residuals before lifting quarantine. Any uncertainty
+   remains HOLD with Selene/Rex custody; hold-policy decisions go to Cora.
+
+## Rehearsal evidence
+
+Use test keys and synthetic workspace/meeting ids. Capture exact source and
+migration heads, chain head, zero counts, pending-operation recreation, skipped
+cancelled keys and cold-load receipts. Exercise independent DB, DO, playground,
+audio object and derived-store restores; a dropped ledger entry; an edited mirror;
+a hold after the snapshot; a hold racing a batch; and unavailable adapters.
+Do not substitute unit mocks for these acceptance checks.
+
+Rollback removes only the admission RPC. It retains quarantine evidence and
+`restore_hold` fences. Source rollback never restores erased content.
