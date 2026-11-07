@@ -69,3 +69,17 @@ test('cancelled or skipped validation cannot publish a misleading PR report', ()
   }
   assert.doesNotMatch(comment, /if: always\(\)/);
 });
+
+test('PR-facing Oxc jobs use locked pins without PR-owned binaries or lifecycle scripts', () => {
+  const lock = fs.readFileSync(path.join(repoRoot, 'bun.lock'), 'utf8');
+  for (const [jobName, tool] of [['format', 'oxfmt'], ['lint', 'oxlint'], ['apply-format', 'oxfmt']]) {
+    const locked = new RegExp(`"${tool}": \\["${tool}@([0-9.]+)"`, 'u').exec(lock)?.[1];
+    assert.ok(locked, `bun.lock must resolve ${tool}`);
+    const job = readWorkflowJobBlock('oxc-check.yaml', jobName);
+    assert.doesNotMatch(job, /node_modules\/\.bin\/(?:oxfmt|oxlint)|bun install/u);
+    const pins = [...job.matchAll(new RegExp(`npx --yes ${tool}@(\\S+) `, 'gu'))];
+    assert.ok(pins.length > 0, `${jobName} must use a pinned ${tool}`);
+    for (const [, version] of pins) assert.equal(version, locked);
+    assert.match(job, /npm_config_ignore_scripts: 'true'/u);
+  }
+});

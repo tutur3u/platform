@@ -99,6 +99,8 @@ jobs:
 
       - name: Check Oxc formatting
         id: format-check
+        env:
+          npm_config_ignore_scripts: 'true'
         run: |
           set +e
           oxc_output=$(npx --yes oxfmt@0.74.0 --check . 2>&1)
@@ -147,6 +149,8 @@ jobs:
 
       - name: Check Oxc linting
         id: lint-check
+        env:
+          npm_config_ignore_scripts: 'true'
         run: |
           set +e
           oxc_output=$(npx --yes oxlint@1.89.0 --deny-warnings --threads 2 . 2>&1)
@@ -186,6 +190,8 @@ jobs:
           node-version: 24
 
       - name: Apply Oxc format
+        env:
+          npm_config_ignore_scripts: 'true'
         run: npx --yes oxfmt@0.74.0 --write .
 
       - name: Check for changes

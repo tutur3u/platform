@@ -631,6 +631,10 @@ test('Oxc workflow runs pinned npm Oxc CLI and prints captured output when check
   const formatJob = readWorkflowJobBlock('oxc-check.yaml', 'format');
   const lintJob = readWorkflowJobBlock('oxc-check.yaml', 'lint');
   const applyFormatJob = readWorkflowJobBlock('oxc-check.yaml', 'apply-format');
+  for (const job of [formatJob, lintJob, applyFormatJob]) {
+    assert.match(job, /npm_config_ignore_scripts: 'true'/u);
+    assert.doesNotMatch(job, /node_modules\/\.bin\/(?:oxfmt|oxlint)|bun install/u);
+  }
 
   for (const job of [formatJob, lintJob]) {
     assert.match(job, /uses: actions\/setup-node@[0-9a-f]{40} # v7\b/u);
@@ -895,7 +899,7 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
   );
   assert.match(
     cleanupStep,
-    /git push origin --delete "\$\{RELEASE_NOTES_BRANCH\}"/
+    /bash scripts\/ci\/github-token-push\.sh --delete "\$\{RELEASE_NOTES_BRANCH\}"/
   );
   assert.match(
     cleanupStep,
@@ -1242,7 +1246,7 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
     const header = workflow.slice(0, workflow.indexOf('\njobs:'));
     const deployJob = readWorkflowJobBlock(workflowName, jobName);
     const installIndex = workflow.indexOf(
-      'run: bash scripts/ci/run-with-backoff.sh bun install\n'
+      'run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile\n'
     );
     const firstSecretInterpolationIndex = workflow.search(
       SECRET_INTERPOLATION_PATTERN
