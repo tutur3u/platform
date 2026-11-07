@@ -26,6 +26,7 @@ export interface TutoringSessionRecord {
   content: string;
   /** True while a pending make-up session follows the missed lesson's notes. */
   content_linked?: boolean;
+  campus_override?: string | null;
   attendance_status: TutoringAttendanceStatus;
   parent_message_preview: string;
   source_feedback_id: string | null;
@@ -131,6 +132,7 @@ export interface CreateTutoringSessionPayload {
     teacherUserId?: string | null;
     /** This session's own content; falls back to the payload `content`. */
     content?: string;
+    campusOverride?: string | null;
   }[];
   sessionDate?: string;
   startTime?: string;
@@ -139,6 +141,7 @@ export interface CreateTutoringSessionPayload {
   reasonType: TutoringReasonType;
   reasonDetail?: string;
   content?: string;
+  campusOverride?: string | null;
   attendanceStatus?: TutoringAttendanceStatus;
   sourceFeedbackId?: string | null;
 }
@@ -151,6 +154,7 @@ export interface UpdateTutoringSessionPayload {
   reasonType?: TutoringReasonType;
   reasonDetail?: string;
   content?: string;
+  campusOverride?: string | null;
   attendanceStatus?: TutoringAttendanceStatus;
   parentMessagePreview?: string;
   resolvedAt?: string | null;

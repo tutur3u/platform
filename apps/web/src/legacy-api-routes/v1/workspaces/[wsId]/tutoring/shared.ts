@@ -1,4 +1,12 @@
+import { TUTORING_CAMPUS_LABEL_MAX_LENGTH } from '@tuturuuu/internal-api/tutoring-policy';
 import { z } from 'zod';
+
+export const TutoringCampusOverrideSchema = z
+  .string()
+  .trim()
+  .max(TUTORING_CAMPUS_LABEL_MAX_LENGTH)
+  .nullable()
+  .transform((value) => value || null);
 
 const TIME_FORMAT_REGEX = /^\d{1,2}:\d{2}(?::\d{2})?(?:\s?(?:AM|PM|am|pm))?$/;
 
@@ -67,6 +75,7 @@ export const TutoringSessionCreateSchema = z.object({
         teacherUserId: z.string().uuid().nullable().optional(),
         // This session's own content; absent means the payload `content`.
         content: z.string().max(10000).optional(),
+        campusOverride: TutoringCampusOverrideSchema.optional(),
       })
     )
     .min(1)
@@ -79,6 +88,7 @@ export const TutoringSessionCreateSchema = z.object({
   reasonType: TutoringReasonTypeSchema,
   reasonDetail: z.string().max(5000).default(''),
   content: z.string().max(10000).default(''),
+  campusOverride: TutoringCampusOverrideSchema.optional(),
   attendanceStatus: TutoringAttendanceStatusSchema.default('PENDING'),
   sourceFeedbackId: z.string().uuid().nullable().optional(),
 });
@@ -92,6 +102,7 @@ export const TutoringSessionUpdateSchema = z
     reasonType: TutoringReasonTypeSchema.optional(),
     reasonDetail: z.string().max(5000).optional(),
     content: z.string().max(10000).optional(),
+    campusOverride: TutoringCampusOverrideSchema.optional(),
     attendanceStatus: TutoringAttendanceStatusSchema.optional(),
     parentMessagePreview: z.string().max(10000).optional(),
     resolvedAt: z.string().datetime({ offset: true }).nullable().optional(),

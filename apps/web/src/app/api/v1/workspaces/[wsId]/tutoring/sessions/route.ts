@@ -1,6 +1,7 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { TutoringSessionCampusRow } from '@tuturuuu/types/db';
 import { NextResponse } from 'next/server';
 import {
   createLegacyGetHandler,
@@ -101,6 +102,7 @@ async function getTutoringData(request: Request, { params }: Params) {
         content,
         attendance_status,
         parent_message_preview,
+        campus_override,
         source_feedback_id,
         resolved_at,
         created_by,
@@ -128,7 +130,8 @@ async function getTutoringData(request: Request, { params }: Params) {
   const { data, error, count } = await query
     .order('session_date', { ascending })
     .order('start_time', { ascending })
-    .range(from, to);
+    .range(from, to)
+    .overrideTypes<TutoringSessionCampusRow[], { merge: false }>();
 
   if (error) {
     console.error('Failed to list tutoring sessions', error);

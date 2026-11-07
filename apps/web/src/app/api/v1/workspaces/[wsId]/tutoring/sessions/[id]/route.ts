@@ -1,6 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { TablesUpdate } from '@tuturuuu/types';
+import type { TutoringSessionCampusUpdate } from '@tuturuuu/types/db';
 import { NextResponse } from 'next/server';
 import { getAdjacentSessionDates } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/sessions/session-create-helpers';
 import {
@@ -60,10 +60,9 @@ export async function PUT(request: Request, { params }: Params) {
     );
   }
 
-  const updates: TablesUpdate<
-    { schema: 'private' },
-    'workspace_tutoring_sessions'
-  > = {};
+  const updates: TutoringSessionCampusUpdate = {};
+  if (parsed.data.campusOverride !== undefined)
+    updates.campus_override = parsed.data.campusOverride;
   if (parsed.data.teacherUserId !== undefined)
     updates.teacher_user_id = parsed.data.teacherUserId;
   if (parsed.data.sessionDate !== undefined)

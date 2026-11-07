@@ -18,6 +18,7 @@ export interface TutoringFormValues {
      * `content`; a split make-up draft sets one per missed class date.
      */
     content?: string;
+    campusOverride?: string | null;
     /** The class notes `content` was drafted from; unchanged text stays linked. */
     linkedContent?: string;
     /** The missed class date this session was drafted to teach. */
@@ -255,6 +256,7 @@ export function nextWeeklySlots(
         .toISOString()
         .slice(0, 10);
       return {
+        campusOverride: slot.campusOverride,
         durationMinutes: slot.durationMinutes,
         sessionDate,
         startTime: slot.startTime,
