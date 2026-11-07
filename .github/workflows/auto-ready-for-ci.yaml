@@ -1,0 +1,53 @@
+name: Admit ready pull requests to CI
+
+on:
+  pull_request_target:
+    types: [opened, ready_for_review]
+
+permissions: {}
+
+concurrency:
+  group: auto-ready-for-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  label:
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.id == github.event.pull_request.base.repo.id &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Require event-producing label token
+        env:
+          CI_ADMISSION_TOKEN: ${{ secrets.CI_ADMISSION_TOKEN }}
+        shell: bash
+        run: |
+          if [ -z "$CI_ADMISSION_TOKEN" ]; then
+            echo '::error::CI_ADMISSION_TOKEN must be a repository-scoped App token or fine-grained token with issues:write and pull_requests:read. GITHUB_TOKEN label events do not start CI.'
+            exit 1
+          fi
+      - name: Label an eligible current pull request
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ secrets.CI_ADMISSION_TOKEN }}
+          script: |
+            if (!['opened', 'ready_for_review'].includes(context.payload.action)) return;
+            const { data: pr } = await github.rest.pulls.get({
+              ...context.repo,
+              pull_number: context.issue.number,
+            });
+            const repository = `${context.repo.owner}/${context.repo.repo}`;
+            if (pr.state !== 'open' || pr.draft !== false ||
+                !pr.head.repo || pr.head.repo.id !== pr.base.repo.id ||
+                pr.head.repo.full_name !== repository ||
+                pr.base.repo.full_name !== repository) return;
+            if (pr.labels.some(label => label.name === 'ready-for-ci')) return;
+            await github.rest.issues.addLabels({
+              ...context.repo,
+              issue_number: pr.number,
+              labels: ['ready-for-ci'],
+            });
