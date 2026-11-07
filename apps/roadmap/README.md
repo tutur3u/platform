@@ -11,18 +11,20 @@ forms, provider credentials or private fleet dependencies.
 ## Public evidence
 
 `scripts/refresh-snapshot.mjs` reads immutable tracked source for the fixed allowlist
-of public customer-facing products. Run it manually; it has no watcher, network
+of public customer-facing products and three explicitly admitted public route entries. Run it manually; it has no watcher, network
 fetch, database, provider credentials or private fleet dependencies.
 
 ```sh
-node apps/roadmap/scripts/refresh-snapshot.mjs <source-sha> [public-evidence.json] [observation-ISO-time]
+node apps/roadmap/scripts/refresh-snapshot.mjs <source-sha> apps/roadmap/evidence/public-inputs.json [observation-ISO-time]
 node --test apps/roadmap/src/roadmap-data.test.ts
 ```
 
 The optional input is bounded to 128 KiB and validated by
-`src/migration-evidence.ts`: `{ "schemaVersion": 1, "apps": {} }` is an empty
-input. App keys must belong to the public allowlist. Each value has exactly `pr`
-and `production`, each nullable. The snapshot records these normalized inputs,
+`src/migration-evidence.ts`: `{ "schemaVersion": 2, "apps": {} }` is an empty
+input. App keys must belong to the public allowlist. Each value has exactly `source`, `pr` and `production`, each nullable.
+Source records pin the cohort and app subtree; PR records include the exact public
+GitHub API provenance URL and observation time. Historic review and checks stay
+UNKNOWN or empty when they were not observed, rather than implying current green. The snapshot records these normalized inputs,
 the input SHA-256, source commit, observation time and source-verified merge
 inclusion. Reproduce it with the same source, input bytes and observation time.
 Review public evidence inputs before generating; never include private products,
@@ -35,7 +37,7 @@ Supplied migration PR and production receipt links accompany source links when
 actual stage proof is available; no PR is inferred from configuration.
 
 A PR record identifies its public first-party PR URL, `migration_completion`
-scope, open/merged/closed state, current head, draft flag, review decision and
+or roadmap-only `root_assets_correction` scope, open/merged/closed state, current head, draft flag, review decision and
 reviewed head, observation time, required check names, check names/head/conclusions,
 and nullable merge SHA/time. Only use a PR that completes the product migration;
 configuration scaffolding or an unrelated feature PR is not completion evidence.
@@ -52,20 +54,47 @@ establish readiness. An evidenced merged migration waits for production verifica
 Blocked is a separate public-safe flag derived from the publication hold, never
 a replacement stage; the checkbox combines with any lifecycle filter and search.
 
-A production record must have kind `production_readback`, a named canonical
-`https://tuturuuu.com/<app>/` URL, immutable public repository `receiptUrl`, deployed
-and response SHAs matching the merged migration SHA, acceptance result and
-observation time. Only record actual production readback and acceptance; builds,
-source artifacts and publication permissions are not production proof. Unsupported
-live claims are rejected. Stale or unaccepted readbacks cannot establish live.
-The model conservatively requires an exact merged SHA; later deployment SHAs need
-a separately reviewed ancestry-proof extension.
+A production record must have kind `production_readback`, an app scope, a named
+accepted public target, immutable public repository `receiptUrl` and SHA-256,
+deployed and response SHAs, version UUID, acceptance result and observation time.
+Response and deployed SHA must match exactly. The equivalence proof retains the
+separate pinned source, merge and deployed commits plus app identity and subtree.
+The generator checks merge ancestry and reads all three app subtrees from Git;
+only exact app-tree equality permits a different deployment cohort. Whole commits
+are never treated as equal because one app matches. A receipt may predate the
+merge when the independently released cohort has identical app source; the
+24-hour freshness fence still applies.
 
-The committed snapshot has no PR completion or production inputs. Its source
-configuration and publication-policy evidence are real immutable source facts;
-completion metadata remains explicitly missing. It asserts no merged-completion
-or live stages. Evidence is shown as of its observation time, with a stale notice
-after 24 hours. No percentages, estimated progress or inferred live claims appear.
+The generator reads the immutable receipt blob without fetching it and checks
+its bounded bytes and digest. Its JSON must exactly equal the production record
+without the `receiptUrl` and `receiptSha256` pointer fields. An archive/build,
+unknown receipt, wrong app/host/cohort/merge/subtree, or mismatched response cannot
+establish live. This validates provenance and source consistency; it does not
+authenticate provider metadata. Independent source and receipt review remains
+required before integration.
+
+For roadmap, only the admitted `/roadmap/` URLs at `roadmap.tuturuuu.com` and
+`tuturuuu-roadmap.tuturuuu-e89.workers.dev` can carry production proof. The canonical
+apex URL is not an accepted serving target. The original 14 products retain their exact apex target restrictions; Playground
+and Shortener have no admitted production target in this input and remain
+merge-backed only. All evidence categories retain canonical RFC3986 HTTPS
+and exact-host validation.
+
+The committed public inputs contain merge-backed Playground #7647, Shortener
+#7788 and roadmap #7797 facts observed through the public GitHub API, plus source
+app subtrees at `a3a26468748d9660851b809bb4a43f7ab94610d3`. They support waiting
+for production verification, not live. Their product links point to source-verified
+public route definitions rather than invented marketing pages; the original 14
+public product entries are retained. No other fleet entries are included.
+
+Roadmap cohort `299ed1dfd72870685cf47291a2e35efe876d8ff9` and merge `a3a26468`
+have verified app subtree `3b8d0a012d919d1a2ccb00755e077b2c727847fe`. The required
+immutable public production receipt, digest and recorded observation/provenance
+are not supplied in this input, so roadmap live remains unclaimed. No raw provider
+operations or private receipts belong in the evidence directory. A future public
+receipt must contain only sanitized admitted production fields, without credentials,
+account identifiers, local paths or private fleet details.
+
 Pure Node tests cover every stage, orthogonal blocking, filters/counts, bilingual
 labels, public boundaries and invalid/stale/head-mismatched evidence.
 

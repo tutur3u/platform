@@ -6,6 +6,7 @@ import {
   object,
   parseEvidence,
   publicProducts,
+  productUrl as expectedProductUrl,
   sha,
   stages,
   text,
@@ -54,10 +55,12 @@ export function parseSnapshot(input: unknown) {
       typeof app.mergeIncluded !== 'boolean'
     )
       throw new Error('Invalid public flags');
-    const productUrl = `https://tuturuuu.com/products/${id === 'contacts' ? 'crm' : id === 'meet' ? 'meet-together' : id}`;
+    const productUrl = expectedProductUrl(id, sourceCommit);
     if (app.productUrl !== productUrl || app.checkedAt !== checkedAt)
       throw new Error('Invalid product URL or observation');
     const stageEvidence = parseEvidence(app.stageEvidence, id);
+    if (stageEvidence.source && stageEvidence.source.commit !== sourceCommit)
+      throw new Error('Evidence source cohort mismatch');
     if (app.mergeIncluded !== Boolean(stageEvidence.pr?.merge))
       throw new Error('Invalid merge inclusion');
     const stage = deriveStage(
@@ -146,4 +149,16 @@ export function stageCounts(products: readonly RoadmapApp[]) {
     stage,
     count: products.filter((app) => app.stage === stage).length,
   }));
+}
+
+export function rowSummaryKey(app: RoadmapApp) {
+  if (
+    app.id === 'roadmap' &&
+    app.stage === 'waiting_for_production_sync' &&
+    app.mergeIncluded &&
+    app.stageEvidence.pr?.state === 'merged' &&
+    app.stageEvidence.production === null
+  )
+    return 'pendingPublicProductionReceipt';
+  return app.stage;
 }
