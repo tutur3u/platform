@@ -552,9 +552,8 @@ export function withSessionAuth<T = unknown>(
       });
 
       try {
-        const { checkUserSuspension } = await import(
-          '@tuturuuu/utils/abuse-protection/user-suspension'
-        );
+        const { checkUserSuspension } =
+          await import('@tuturuuu/utils/abuse-protection/user-suspension');
         const suspension = await checkUserSuspension(tempUser.id);
         if (suspension.suspended) {
           return NextResponse.json(
@@ -643,9 +642,8 @@ export function withSessionAuth<T = unknown>(
         });
 
         try {
-          const { checkUserSuspension } = await import(
-            '@tuturuuu/utils/abuse-protection/user-suspension'
-          );
+          const { checkUserSuspension } =
+            await import('@tuturuuu/utils/abuse-protection/user-suspension');
           const suspension = await checkUserSuspension(appSessionUser.id);
           if (suspension.suspended) {
             return NextResponse.json(
@@ -759,9 +757,8 @@ export function withSessionAuth<T = unknown>(
 
     // 5. Check user suspension
     try {
-      const { checkUserSuspension } = await import(
-        '@tuturuuu/utils/abuse-protection/user-suspension'
-      );
+      const { checkUserSuspension } =
+        await import('@tuturuuu/utils/abuse-protection/user-suspension');
       const suspension = await checkUserSuspension(user.id);
       if (suspension.suspended) {
         return NextResponse.json(

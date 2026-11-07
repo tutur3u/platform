@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Store credentials and GitHub token exist only in the beta release job.
 import { execFileSync } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';

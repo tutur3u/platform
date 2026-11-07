@@ -31,7 +31,9 @@ export async function table(
   return (await getAdminClient()).schema('private').from(name as never) as any;
 }
 export async function listAccounts(ctx: MailRouteContext) {
-  const { data, error } = await (await table('mail_connected_accounts'))
+  const { data, error } = await (
+    await table('mail_connected_accounts')
+  )
     .select('id,address,provider')
     .eq('user_id', ctx.user.id)
     .eq('ws_id', ctx.normalizedWsId);
@@ -42,7 +44,9 @@ export async function getAccount(
   ctx: MailRouteContext,
   id: string
 ): Promise<ConnectedAccount> {
-  const { data, error } = await (await table('mail_connected_accounts'))
+  const { data, error } = await (
+    await table('mail_connected_accounts')
+  )
     .select('*')
     .eq('id', id)
     .eq('user_id', ctx.user.id)
@@ -125,7 +129,9 @@ async function winningRefresh(
   previousToken: string,
   force: boolean
 ): Promise<RefreshedCredentials> {
-  const { data, error } = await (await table('mail_connected_accounts'))
+  const { data, error } = await (
+    await table('mail_connected_accounts')
+  )
     .select('credentials,revision')
     .eq('id', account.id)
     .eq('user_id', account.user_id)
@@ -190,7 +196,9 @@ export async function accessToken(account: ConnectedAccount, force = false) {
     );
     const encrypted = seal(updated, account.user_id);
     const revision = account.revision + 1;
-    const { data, error } = await (await table('mail_connected_accounts'))
+    const { data, error } = await (
+      await table('mail_connected_accounts')
+    )
       .update({ credentials: encrypted, revision })
       .eq('id', account.id)
       .eq('user_id', account.user_id)

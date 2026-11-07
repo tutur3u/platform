@@ -30,7 +30,6 @@ export function releasePrReady(pr, counts, head, committedAt, now) {
 
 async function main() {
   const repo = process.env.GITHUB_REPOSITORY;
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: direct CI orchestration input, never a cached Turbo task
   const branch = process.env.MERGED_BRANCH;
   if (!repo || !branch?.startsWith('origin/release-please--branches--'))
     throw new Error('Expected a generated release branch');

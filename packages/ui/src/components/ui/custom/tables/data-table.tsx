@@ -84,12 +84,7 @@ function isInteractiveTarget(target: EventTarget | null) {
  * @template TData - The row data type (used for type inference in implementations)
  * @template TValue - The column value type (used for type inference in implementations)
  */
-export interface ColumnGeneratorOptions<
-  // biome-ignore lint/correctness/noUnusedVariables: Type params enable consumer type inference
-  TData = unknown,
-  // biome-ignore lint/correctness/noUnusedVariables: Type params enable consumer type inference
-  TValue = unknown,
-> {
+export interface ColumnGeneratorOptions<TData = unknown, TValue = unknown> {
   t: any;
   namespace: string | undefined;
   extraColumns?: any[];

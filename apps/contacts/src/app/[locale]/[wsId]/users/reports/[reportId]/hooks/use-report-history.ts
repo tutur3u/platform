@@ -40,7 +40,6 @@ export function useReportHistory({
   const [selectedLog, setSelectedLog] = useState<SelectedLog | null>(null);
 
   // Reset selected log when report changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reportId is used as a trigger to reset selected log
   useEffect(() => {
     setSelectedLog(null);
   }, [reportId]);

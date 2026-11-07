@@ -49,12 +49,10 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   WorkspaceStorageError: class extends Error {},
 }));
 
-const { PUT } = await import(
-  '@/app/api/v1/workspaces/[wsId]/topic-announcements/schedule/route'
-);
-const { POST: CLONE } = await import(
-  '@/app/api/v1/workspaces/[wsId]/topic-announcements/schedule/clone/route'
-);
+const { PUT } =
+  await import('@/app/api/v1/workspaces/[wsId]/topic-announcements/schedule/route');
+const { POST: CLONE } =
+  await import('@/app/api/v1/workspaces/[wsId]/topic-announcements/schedule/clone/route');
 
 const params = { params: Promise.resolve({ wsId: WS }) };
 const P1 = '00000000-0000-4000-8000-0000000000f1';

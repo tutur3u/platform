@@ -142,9 +142,8 @@ describe('whiteboard route', () => {
       error: null,
     });
 
-    const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/[boardId]/route'
-    );
+    const { PATCH } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/[boardId]/route');
 
     const response = await PATCH(
       new Request(
@@ -215,9 +214,8 @@ describe('whiteboard route', () => {
       error: null,
     });
 
-    const { DELETE } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/[boardId]/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/[boardId]/route');
 
     const response = await DELETE(
       new Request(

@@ -182,7 +182,6 @@ export function SaleLineItems({
         >
           <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-md border bg-muted/40">
             {line.imageUrl ? (
-              // biome-ignore lint/performance/noImgElement: workspace media can be a signed first-party URL.
               <img
                 alt=""
                 className="h-full w-full object-cover"

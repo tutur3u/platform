@@ -36,8 +36,7 @@ export interface AnalyticsFiltersActions {
 }
 
 export interface UseAnalyticsFiltersReturn
-  extends AnalyticsFiltersState,
-    AnalyticsFiltersActions {
+  extends AnalyticsFiltersState, AnalyticsFiltersActions {
   // Computed values
   displayRange: string;
   apiDateRange: DateRange;

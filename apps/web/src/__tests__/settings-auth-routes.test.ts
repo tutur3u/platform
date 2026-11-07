@@ -47,9 +47,8 @@ describe('settings auth routes', () => {
       error: null,
     });
 
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/identities/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/identities/route');
     const response = await (route.GET as any)(
       new NextRequest('http://localhost/api/v1/users/me/identities'),
       { supabase: mocks.supabase }
@@ -71,9 +70,8 @@ describe('settings auth routes', () => {
       error: null,
     });
 
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/identities/link/[provider]/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/identities/link/[provider]/route');
     const response = await (route.GET as any)(
       new NextRequest(
         'http://localhost/api/v1/users/me/identities/link/google?returnTo=%2Fen%2Fworkspace%3Ffoo%3D1'
@@ -101,9 +99,8 @@ describe('settings auth routes', () => {
       error: null,
     });
 
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/identities/link/[provider]/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/identities/link/[provider]/route');
     const response = await (route.GET as any)(
       new NextRequest(
         'http://localhost/api/v1/users/me/identities/link/apple?returnTo=%2Fen%2Fsettings'
@@ -131,9 +128,8 @@ describe('settings auth routes', () => {
       error: null,
     });
 
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/identities/link/[provider]/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/identities/link/[provider]/route');
     const response = await (route.GET as any)(
       new NextRequest(
         'http://localhost/api/v1/users/me/identities/link/azure?returnTo=%2Fen%2Fsettings'
@@ -154,9 +150,8 @@ describe('settings auth routes', () => {
       },
     });
 
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/password/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/password/route');
     const response = await (route.POST as any)(
       new NextRequest('http://localhost/api/v1/users/me/password', {
         method: 'POST',

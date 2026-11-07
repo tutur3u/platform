@@ -53,7 +53,6 @@ function audioHarness() {
     'AudioContext',
     class {
       constructor() {
-        // biome-ignore lint/correctness/noConstructorReturn: Web Audio test constructor returns a controlled clock.
         return context;
       }
     }

@@ -6,8 +6,10 @@ import {
   resolveWorkspaceContextState,
 } from '../workspace-context';
 
-interface WorkspaceMemberWithUsers
-  extends Pick<Tables<'workspace_members'>, 'user_id' | 'created_at'> {
+interface WorkspaceMemberWithUsers extends Pick<
+  Tables<'workspace_members'>,
+  'user_id' | 'created_at'
+> {
   users: Tables<'users'>[] | Tables<'users'> | null;
 }
 

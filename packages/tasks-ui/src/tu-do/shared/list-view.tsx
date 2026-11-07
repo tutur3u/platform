@@ -748,8 +748,8 @@ function InteractiveListView({
                   });
                   const taskIsPastDue = Boolean(
                     task.end_date &&
-                      isPast(new Date(task.end_date)) &&
-                      taskDueDateVisible
+                    isPast(new Date(task.end_date)) &&
+                    taskDueDateVisible
                   );
                   const isExternalSource = Boolean(
                     task.source_board_id && task.source_board_id !== boardId

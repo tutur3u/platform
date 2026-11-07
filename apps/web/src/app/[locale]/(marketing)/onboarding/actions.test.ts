@@ -80,7 +80,6 @@ function createFakeClient(resolve: (call: Call) => QueryResult) {
     };
     builder.single = finish;
     builder.maybeSingle = finish;
-    // biome-ignore lint/suspicious/noThenProperty: mimics the awaitable query builder.
     builder.then = (
       onFulfilled: (value: QueryResult) => unknown,
       onRejected?: (reason: unknown) => unknown

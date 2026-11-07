@@ -394,9 +394,9 @@ export function EditSessionDialog({
                 !formState.title.trim() ||
                 Boolean(
                   session &&
-                    !isOlderThanThreshold &&
-                    formState.startTime &&
-                    isStartTimeInvalid
+                  !isOlderThanThreshold &&
+                  formState.startTime &&
+                  isStartTimeInvalid
                 ) ||
                 Object.keys(validationErrors).length > 0
               }

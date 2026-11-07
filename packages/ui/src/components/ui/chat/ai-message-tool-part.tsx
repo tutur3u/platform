@@ -237,7 +237,6 @@ function QrCodeToolResult({
         onClick={() => setPreviewOpen(true)}
         type="button"
       >
-        {/* biome-ignore lint/performance/noImgElement: signed tool output image URL */}
         <img
           alt={labels.generatedQrCode}
           className="max-h-56 w-full object-contain p-3"
@@ -260,7 +259,6 @@ function QrCodeToolResult({
             {labels.generatedQrCode}
           </DialogTitle>
           <div className="flex min-h-[50vh] items-center justify-center p-4">
-            {/* biome-ignore lint/performance/noImgElement: signed tool output image URL */}
             <img
               alt={labels.generatedQrCode}
               className="max-h-[90vh] max-w-full object-contain"

@@ -604,7 +604,7 @@ export interface TutoringPolicyConfigRow {
 export function serializeTutoringPolicyConfigRows(policy: TutoringPolicy) {
   const json = JSON.stringify(policy);
   const chunks: TutoringPolicyConfigRow[] = [];
-  for (let index = 0; index < json.length; ) {
+  for (let index = 0; index < json.length;) {
     let end = Math.min(index + CONFIG_VALUE_LIMIT, json.length);
     const lastCodeUnit = json.charCodeAt(end - 1);
     if (end < json.length && lastCodeUnit >= 0xd800 && lastCodeUnit <= 0xdbff)

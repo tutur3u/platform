@@ -18,7 +18,7 @@ function context(existing = [], overrides = {}) {
   const files = new Set(existing);
   return {
     base: 'abc123',
-    biomeBinary: '/repo/node_modules/.bin/biome',
+    oxfmtBinary: '/repo/node_modules/.bin/oxfmt',
     branch: 'chore/gate',
     exists: (file) => files.has(file),
     hasVitest: (workspace) => workspace !== 'apps/no-vitest',
@@ -53,6 +53,7 @@ test('always runs cheap repository guards and flags bad branch names', () => {
     'source-size',
     'docs-inventory',
     'app-seo',
+    'oxfmt',
   ]);
   assert.equal(plan.steps[0].inline(), false);
   assert.deepEqual(plan.steps[1].args, [
@@ -68,7 +69,7 @@ test('detached HEAD skips branch validation', () => {
   assert.deepEqual(plan.skipped[0], ['branch-name', 'detached HEAD']);
 });
 
-test('TypeScript changes map to biome, oxlint, guards, vitest and type-check', () => {
+test('TypeScript changes map to oxc, oxlint, guards, vitest and type-check', () => {
   const plan = planChecks(
     changed('packages/utils/src/date.ts', 'apps/web/src/app/page.tsx'),
     context(['packages/utils/src/date.test.ts'])
@@ -79,7 +80,7 @@ test('TypeScript changes map to biome, oxlint, guards, vitest and type-check', (
     'docs-inventory',
     'app-seo',
     'sdk-portable',
-    'biome',
+    'oxfmt',
     'oxlint',
     'server-console',
     'internal-app-auth',
@@ -89,11 +90,11 @@ test('TypeScript changes map to biome, oxlint, guards, vitest and type-check', (
     'type-check:apps/web',
     'type-check:packages/utils',
   ]);
-  const biome = plan.steps.find((step) => step.id === 'biome');
-  assert.equal(biome.command, '/repo/node_modules/.bin/biome');
-  assert.ok(biome.args.includes('--error-on-warnings'));
+  const oxc = plan.steps.find((step) => step.id === 'oxfmt');
+  assert.equal(oxc.command, '/repo/node_modules/.bin/oxfmt');
+  assert.ok(oxc.args.includes('--check'));
   const oxlint = plan.steps.find((step) => step.id === 'oxlint');
-  assert.equal(oxlint.advisory, true);
+  assert.equal(Boolean(oxlint.advisory), false);
   const vitest = plan.steps.find((step) => step.id === 'vitest:packages/utils');
   assert.equal(vitest.cwd, 'packages/utils');
   assert.deepEqual(vitest.args.slice(-1), ['src/date.test.ts']);
@@ -147,14 +148,14 @@ test('bun:test suites run with bun test from their workspace, never Vitest or no
   assert.equal(ids(bare).includes('vitest:apps/no-vitest'), false);
 });
 
-test('falls back to pinned npx Biome when the local version differs', () => {
+test('falls back to pinned npx Oxc when the local version differs', () => {
   const plan = planChecks(
     changed('scripts/x.js'),
-    context([], { biomeBinary: null })
+    context([], { oxfmtBinary: null })
   );
-  const biome = plan.steps.find((step) => step.id === 'biome');
-  assert.equal(biome.command, 'npx');
-  assert.deepEqual(biome.args.slice(0, 2), ['--yes', '@biomejs/biome@2.5.13']);
+  const oxc = plan.steps.find((step) => step.id === 'oxfmt');
+  assert.equal(oxc.command, 'npx');
+  assert.deepEqual(oxc.args.slice(0, 2), ['--yes', 'oxfmt@0.74.0']);
 });
 
 test('deleted and paused-runtime files never reach file-level tools', () => {
@@ -165,7 +166,7 @@ test('deleted and paused-runtime files never reach file-level tools', () => {
     ],
     context()
   );
-  assert.equal(ids(plan).includes('biome'), false);
+  assert.equal(ids(plan).includes('oxfmt'), false);
   assert.equal(ids(plan).includes('type-check:apps/tanstack-web'), false);
   // A deletion can still break importers in its workspace.
   assert.ok(ids(plan).includes('type-check:packages/ui'));
@@ -188,7 +189,7 @@ test('mobile changes run gen-l10n first, dart format and flutter analyze', () =>
   );
   assert.deepEqual(mobile[1].args.slice(-1), ['lib/features/a.dart']);
   assert.deepEqual(mobile[2].args, ['analyze', 'lib', 'test']);
-  assert.equal(ids(plan).includes('biome'), false);
+  assert.equal(ids(plan).includes('oxfmt'), false);
   assert.ok(ids(plan).includes('mobile-api-mappings'));
   assert.ok(ids(plan).includes('mobile-shadcn-ratchet'));
 });
@@ -317,8 +318,6 @@ test('REV-6467-2: shared changes type-check transitive reverse dependents', () =
 test('REV-6467-2: root/shared configuration explicitly requires CI coverage', () => {
   for (const file of [
     'tsconfig.json',
-    'biome.json',
-    'biome.jsonc',
     'turbo.json',
     'package.json',
     'bun.lock',
@@ -352,7 +351,7 @@ test('REV-6467-6: Git app dash route directories remain valid tool arguments', (
   const file = 'apps/git/src/app/[locale]/-/[wsId]/page.tsx';
   const plan = planChecks(changed(file), context([file]));
   assert.ok(plan.steps.some((step) => step.id === 'type-check:apps/git'));
-  assert.ok(plan.steps.find((step) => step.id === 'biome').args.includes(file));
+  assert.ok(plan.steps.find((step) => step.id === 'oxfmt').args.includes(file));
 });
 
 test('staging host isolation always runs', () => {
@@ -361,4 +360,13 @@ test('staging host isolation always runs', () => {
     plan.steps.find((step) => step.id === 'staging-hosts').args,
     ['scripts/check-staging-hosts.js']
   );
+});
+
+test('emitted Worker acceptance remains with its owning build', () => {
+  const plan = planChecks(
+    changed('apps/apps/cloudflare/native-built-worker.test.mjs'),
+    context()
+  );
+  assert.ok(plan.skipped.some(([id]) => id === 'emitted-worker-tests'));
+  assert.ok(!plan.steps.find((step) => step.id === 'script-tests'));
 });

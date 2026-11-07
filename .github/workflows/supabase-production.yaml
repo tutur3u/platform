@@ -1,5 +1,4 @@
 name: Supabase Production Migration
-
 on:
   workflow_run:
     workflows:
@@ -24,15 +23,12 @@ on:
         description: "Expected production project reference required for migration recovery"
         type: string
         default: ""
-
 concurrency:
   group: ${{ ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')) || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_run' || github.event.workflow_run.event == 'workflow_dispatch'))))) && 'supabase-production-migration' || format('supabase-production-migration-ignored-{0}', github.run_id) }}
   cancel-in-progress: false
   queue: max
-
 permissions:
   contents: read
-
 jobs:
   evaluate-prerequisites:
     name: Evaluate production prerequisites
@@ -379,6 +375,8 @@ jobs:
               ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item);
           const repo = process.env.GITHUB_REPOSITORY;
           const target = process.env.TARGET_SHA;
+          let source = target;
+          let sourceTree;
           const token = process.env.GH_TOKEN;
           const api = (process.env.GITHUB_API_URL || 'https://api.github.com').replace(/\/$/, '');
           const server = (process.env.GITHUB_SERVER_URL || 'https://github.com').replace(/\/$/, '');
@@ -387,7 +385,6 @@ jobs:
           const environment = 'supabase-staging';
           const deadline = Date.now() + 120000;
           let requests = 0;
-
           async function get(route) {
             assert(route.startsWith('/repos/') && ++requests <= 50, 'request-budget');
             const remaining = deadline - Date.now();
@@ -420,7 +417,6 @@ jobs:
               next: /rel="next"/.test(response.headers.get('link') || ''),
             };
           }
-
           async function inventory(route, key) {
             const result = [];
             const ids = new Set();
@@ -447,18 +443,35 @@ jobs:
             }
             throw new Error('inventory-overflow');
           }
-
           function payload(deployment) {
             const p = typeof deployment.payload === 'string'
               ? JSON.parse(deployment.payload) : deployment.payload;
             assert(p && typeof p === 'object' && !Array.isArray(p), 'marker-payload');
             return p;
           }
-
           async function latestMarker(repository, workflow, selectedId) {
-            const rows = await inventory(`${base}/deployments?environment=${environment}&sha=${target}`);
+            let rows = await inventory(`${base}/deployments?environment=${environment}&sha=${source}`);
+            if (rows.length === 0 && source === target && !selectedId) {
+              const { data: commit } = await get(`${base}/git/commits/${target}`);
+              assert(commit.sha === target && sha(commit.tree?.sha) &&
+                Array.isArray(commit.parents) && commit.parents.length > 0 &&
+                commit.parents.length <= 8 && commit.parents.every(p => sha(p.sha)), 'target-commit');
+              for (const parent of commit.parents) {
+                const { data: candidate } = await get(`${base}/git/commits/${parent.sha}`);
+                assert(candidate.sha === parent.sha && sha(candidate.tree?.sha), 'parent-commit');
+                if (candidate.tree.sha !== commit.tree.sha) continue;
+                const { data: comparison } = await get(`${base}/compare/refs%2Fheads%2Fmain...${parent.sha}`);
+                if (!['identical', 'behind'].includes(comparison.status)) continue;
+                const markers = await inventory(`${base}/deployments?environment=${environment}&sha=${parent.sha}`);
+                if (markers.length === 0) continue;
+                source = parent.sha;
+                sourceTree = candidate.tree.sha;
+                rows = markers;
+                break;
+              }
+            }
             assert(rows.length > 0, 'marker-missing');
-            assert(rows.every(d => d.sha === target && d.environment === environment && stamp(d.created_at)),
+            assert(rows.every(d => d.sha === source && d.environment === environment && stamp(d.created_at)),
               'marker-inventory-source');
             rows.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id - a.id);
             for (const marker of rows) {
@@ -467,18 +480,17 @@ jobs:
               const { data: run } = await get(`${base}/actions/runs/${p.runId}`);
               if (run.event === 'workflow_dispatch') {
                 checkRunIdentity(run, p, repository, workflow);
-                assert(run.head_sha === target, 'manual-source');
+                assert(run.head_sha === source, 'manual-source');
                 if (directPushContracts.has(await checkContracts(run.head_sha))) continue;
               }
               return { marker, p, run };
             }
             throw new Error('eligible-marker-missing');
           }
-
           function checkMarker(d) {
             const p = payload(d);
-            assert(positive(d.id) && d.sha === target && d.ref === target &&
-              d.environment === environment && p.sha === target && p.markerKind === 'deployment' &&
+            assert(positive(d.id) && d.sha === source && d.ref === source &&
+              d.environment === environment && p.sha === source && p.markerKind === 'deployment' &&
               p.workflowName === workflowName && p.refName === 'main' && p.ref === 'refs/heads/main',
               'marker-source-contract');
             assert(typeof p.runId === 'string' && /^[1-9][0-9]*$/.test(p.runId) &&
@@ -487,7 +499,6 @@ jobs:
             assert(p.runUrl === `${server}/${repo}/actions/runs/${p.runId}`, 'marker-run-url');
             return p;
           }
-
           function checkRunIdentity(run, p, repository, workflow) {
             assert(run.id === Number(p.runId) && run.workflow_id === workflow.id &&
               run.path === workflowPath && run.head_branch === 'main' && sha(run.head_sha) &&
@@ -501,9 +512,8 @@ jobs:
               ['push', 'workflow_run', 'workflow_dispatch'].includes(run.event) &&
               run.status === 'completed' && run.conclusion === 'success', 'producer-current-attempt-contract');
             // Legacy wrappers bind TARGET_SHA independently; direct runs check out their own head.
-            assert(!['push', 'workflow_dispatch'].includes(run.event) || run.head_sha === target, 'direct-source');
+            assert(!['push', 'workflow_dispatch'].includes(run.event) || run.head_sha === source, 'direct-source');
           }
-
           // Append future push producers here as well as in the source allowlist.
           const directPushContracts = new Set(['74fb269fcc135b0467c19d82286f1c3484c7d4f7']);
           const contracts = [
@@ -517,7 +527,7 @@ jobs:
             let producerWorkflow;
             for (const [path, allowed] of contracts) {
               const unique = new Set();
-              for (const revision of new Set([target, producerHead])) {
+              for (const revision of new Set([source, producerHead])) {
                 const { data: entry } = await get(`${base}/contents/${path}?ref=${revision}`);
                 assert(entry.type === 'file' && entry.path === path && allowed.includes(entry.sha),
                   'unknown-producer-contract');
@@ -540,7 +550,6 @@ jobs:
             sourceContracts.set(producerHead, producerWorkflow);
             return producerWorkflow;
           }
-
           async function latestStatus(id, p) {
             const { data } = await get(`${base}/deployments/${id}/statuses?per_page=1&page=1`);
             assert(Array.isArray(data) && data.length === 1 && positive(data[0].id) &&
@@ -548,7 +557,6 @@ jobs:
               data[0].log_url === p.runUrl, 'marker-latest-status');
             return data[0];
           }
-
           let base;
           async function main() {
             assert(typeof repo === 'string' && /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo) &&
@@ -572,7 +580,7 @@ jobs:
             const status = await latestStatus(marker.id, p);
             const producerWorkflow = await checkContracts(run.head_sha);
             assert(directPushContracts.has(producerWorkflow)
-              ? run.event === 'push' && run.head_sha === target
+              ? run.event === 'push' && run.head_sha === source
               : ['workflow_run', 'workflow_dispatch'].includes(run.event), 'producer-event-contract');
             const jobs = await inventory(`${runRoute}/attempts/${p.runAttempt}/jobs`, 'jobs');
             assert(jobs.length === 1, 'migration-job-inventory');
@@ -607,8 +615,20 @@ jobs:
             const { data: rereadRun } = await get(runRoute);
             checkRun(rereadRun, p, repository, workflow);
             assert(snapshot(rereadRun) === snapshot(run), 'producer-changed');
+            if (source !== target) {
+              const { data: targetCommit } = await get(`${base}/git/commits/${target}`);
+              const { data: sourceCommit } = await get(`${base}/git/commits/${source}`);
+              assert(targetCommit.sha === target && sourceCommit.sha === source &&
+                targetCommit.parents?.some(parent => parent.sha === source) &&
+                sha(sourceTree) && targetCommit.tree?.sha === sourceTree &&
+                sourceCommit.tree?.sha === sourceTree, 'staging-source-tree');
+              const { data: comparison } = await get(`${base}/compare/refs%2Fheads%2Fmain...${source}`);
+              assert(['identical', 'behind'].includes(comparison.status), 'staging-source-main');
+            }
             assert(Date.now() <= deadline, 'proof-deadline');
-            console.log(`Staging source proof: source=${target} producer=${run.id} attempt=${run.run_attempt} deployment=${marker.id}`);
+            console.log(source === target
+              ? `Staging source proof: source=${target} producer=${run.id} attempt=${run.run_attempt} deployment=${marker.id}`
+              : `Staging source proof: source=${source} target=${target} tree=${sourceTree}`);
           }
           main().catch(() => {
             // Never echo API bodies, exceptions, credentials, or environment values.

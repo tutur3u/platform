@@ -33,9 +33,8 @@ describe('Infrastructure admin access', () => {
       membershipType: 'MEMBER',
       containsPermission: vi.fn().mockReturnValue(false),
     });
-    const { authorizeInfrastructureAdminRequest } = await import(
-      './infrastructure-admin-access'
-    );
+    const { authorizeInfrastructureAdminRequest } =
+      await import('./infrastructure-admin-access');
 
     const result = await authorizeInfrastructureAdminRequest(
       'manage_workspace_roles'
@@ -57,9 +56,8 @@ describe('Infrastructure admin access', () => {
         (permission: string) => permission === 'manage_workspace_roles'
       ),
     });
-    const { authorizeInfrastructureAdminRequest } = await import(
-      './infrastructure-admin-access'
-    );
+    const { authorizeInfrastructureAdminRequest } =
+      await import('./infrastructure-admin-access');
 
     const result = await authorizeInfrastructureAdminRequest(
       'manage_workspace_roles'
@@ -76,9 +74,8 @@ describe('Infrastructure admin access', () => {
         (permission: string) => permission === 'manage_workspace_secrets'
       ),
     });
-    const { authorizeInfrastructureAdminRequest } = await import(
-      './infrastructure-admin-access'
-    );
+    const { authorizeInfrastructureAdminRequest } =
+      await import('./infrastructure-admin-access');
 
     const result = await authorizeInfrastructureAdminRequest([
       'manage_workspace_roles',
@@ -103,9 +100,8 @@ describe('Infrastructure admin access', () => {
     mocks.getPermissions.mockImplementation(async ({ wsId }) =>
       wsId === ROOT_WORKSPACE_ID ? rootPermissions : targetPermissions
     );
-    const { authorizeInfrastructureWorkspaceSecretsRequest } = await import(
-      './infrastructure-admin-access'
-    );
+    const { authorizeInfrastructureWorkspaceSecretsRequest } =
+      await import('./infrastructure-admin-access');
 
     const result = await authorizeInfrastructureWorkspaceSecretsRequest();
 
@@ -124,9 +120,8 @@ describe('Infrastructure admin access', () => {
       membershipType: 'MEMBER',
       containsPermission: vi.fn().mockReturnValue(false),
     });
-    const { authorizeInfrastructureWorkspaceSecretsRequest } = await import(
-      './infrastructure-admin-access'
-    );
+    const { authorizeInfrastructureWorkspaceSecretsRequest } =
+      await import('./infrastructure-admin-access');
 
     const result = await authorizeInfrastructureWorkspaceSecretsRequest();
 
@@ -151,9 +146,8 @@ describe('Infrastructure admin access', () => {
       mocks.getPermissions.mockImplementation(async ({ wsId }) =>
         wsId === ROOT_WORKSPACE_ID ? rootPermissions : targetPermissions
       );
-      const { authorizeInfrastructureWorkspaceSecretsRequest } = await import(
-        './infrastructure-admin-access'
-      );
+      const { authorizeInfrastructureWorkspaceSecretsRequest } =
+        await import('./infrastructure-admin-access');
 
       const result = await authorizeInfrastructureWorkspaceSecretsRequest();
 
@@ -173,9 +167,8 @@ describe('Infrastructure Bearer session authorization', () => {
       containsPermission: vi.fn().mockReturnValue(true),
       membershipType: 'MEMBER',
     });
-    const { authorizeInfrastructureAdminRequest } = await import(
-      './infrastructure-admin-access'
-    );
+    const { authorizeInfrastructureAdminRequest } =
+      await import('./infrastructure-admin-access');
     const result = await authorizeInfrastructureAdminRequest(
       'view_infrastructure',
       true,
@@ -202,9 +195,8 @@ describe('Infrastructure Bearer session authorization', () => {
       containsPermission: vi.fn().mockReturnValue(true),
       membershipType: 'GUEST',
     });
-    const { authorizeInfrastructureAdminRequest } = await import(
-      './infrastructure-admin-access'
-    );
+    const { authorizeInfrastructureAdminRequest } =
+      await import('./infrastructure-admin-access');
     const result = await authorizeInfrastructureAdminRequest(
       'view_infrastructure',
       true,
@@ -228,9 +220,8 @@ describe('Infrastructure Bearer session authorization', () => {
       mocks.getSatelliteAppSessionUser.mockResolvedValue({
         id: 'cookie-actor',
       });
-      const { authorizeInfrastructureAdminRequest } = await import(
-        './infrastructure-admin-access'
-      );
+      const { authorizeInfrastructureAdminRequest } =
+        await import('./infrastructure-admin-access');
       expect(
         (
           await authorizeInfrastructureAdminRequest(

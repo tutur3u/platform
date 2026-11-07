@@ -84,21 +84,19 @@ export async function listDesktopVaultState(
           : null,
       activeVersionId: row.active_version_id,
     })),
-    versions: (versions.data ?? []).map(
-      (row): DesktopVaultVersion => ({
-        id: row.id,
-        platform: row.platform as 'windows' | 'macos',
-        version: row.version,
-        status: row.status as 'draft' | 'active',
-        revision: row.revision,
-        validatedRevision: row.validated_revision,
-        validationErrors: row.validation_errors,
-        createdAt: row.created_at,
-        resources: (resources.data ?? [])
-          .filter((resource) => resource.version_id === row.id)
-          .map((resource) => resource.name),
-      })
-    ),
+    versions: (versions.data ?? []).map((row): DesktopVaultVersion => ({
+      id: row.id,
+      platform: row.platform as 'windows' | 'macos',
+      version: row.version,
+      status: row.status as 'draft' | 'active',
+      revision: row.revision,
+      validatedRevision: row.validated_revision,
+      validationErrors: row.validation_errors,
+      createdAt: row.created_at,
+      resources: (resources.data ?? [])
+        .filter((resource) => resource.version_id === row.id)
+        .map((resource) => resource.name),
+    })),
     tokens: (tokens.data ?? []).map((row) => ({
       id: row.id,
       platform: row.platform as 'windows' | 'macos',

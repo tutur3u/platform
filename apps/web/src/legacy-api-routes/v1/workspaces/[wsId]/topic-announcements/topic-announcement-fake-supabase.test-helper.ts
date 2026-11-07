@@ -206,7 +206,6 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
         },
         select: () => chain,
         single: async () => ({ data: run()[0] ?? null, error: null }),
-        // biome-ignore lint/suspicious/noThenProperty: mimics the awaitable PostgREST builder.
         then: (resolve: (value: unknown) => unknown, reject: () => unknown) =>
           Promise.resolve({ data: run(), error: null }).then(resolve, reject),
         update: (value: Row) => {

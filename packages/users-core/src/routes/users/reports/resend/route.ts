@@ -82,9 +82,9 @@ const classOutOfReach = (
 ) =>
   Boolean(
     target.target === 'scope' &&
-      target.groupId &&
-      accessibleGroupIds &&
-      !accessibleGroupIds.includes(target.groupId)
+    target.groupId &&
+    accessibleGroupIds &&
+    !accessibleGroupIds.includes(target.groupId)
   );
 
 async function periodTimezone(

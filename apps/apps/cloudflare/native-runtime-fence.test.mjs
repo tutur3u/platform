@@ -180,9 +180,8 @@ test('closed role policies reject substitutions and injected forwarding handlers
 });
 
 test('HTTP policy rejects lookalikes, credentials, wrong methods/query and bounded overflow', async () => {
-  const { APPS_FIXTURE_MAX_OPERATIONS, APPS_FIXTURE_MAX_BODY } = await import(
-    './native-runtime-fence.mjs'
-  );
+  const { APPS_FIXTURE_MAX_OPERATIONS, APPS_FIXTURE_MAX_BODY } =
+    await import('./native-runtime-fence.mjs');
   const forwarded = [];
   const fence = fixtureEgress(
     'http://127.0.0.1:12345',

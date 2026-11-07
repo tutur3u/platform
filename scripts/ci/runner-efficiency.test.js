@@ -22,7 +22,6 @@ test('translation checks run once per PR update and still cover both protected b
   assert.equal(
     workflow.concurrency.group,
     'i18n-check-' +
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
       "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}" +
       UNADMITTED_GROUP_SUFFIX
   );
@@ -41,7 +40,6 @@ test('E2E reuses shared exact Supabase images without changing its paused cohort
   const job = workflow.jobs.e2e;
   assert.equal(
     job.strategy.matrix,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
     '${{ fromJSON(needs.relevance.outputs.matrix) }}',
     'E2E must allocate the dynamic, uncached cohorts from the planner'
   );
@@ -79,7 +77,6 @@ test('failed invitation cohorts retain distinct diagnostic artifacts', () => {
   const upload = job.steps.find(
     (step) => step.name === 'Upload E2E failure artifact'
   );
-  // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
   assert.equal(upload.with.name, 'e2e-failure-${{ matrix.id }}');
   const names = DEFAULT_MATRIX.map((entry) => `e2e-failure-${entry.id}`);
   assert.equal(new Set(names).size, names.length);
@@ -91,7 +88,6 @@ test('superseded PR runs cancel, production release evidence does not', () => {
     const policy = concurrency['cancel-in-progress'];
     assert.equal(
       policy,
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
       "${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}"
     );
     assert.equal(
@@ -99,7 +95,6 @@ test('superseded PR runs cancel, production release evidence does not', () => {
       // Reusable callees carry a workflow prefix so their groups cannot collide
       // with the caller's group.
       (name === 'i18n-check.yaml' ? 'i18n-check-' : '') +
-        // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
         "${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}" +
         (name === 'i18n-check.yaml' ? UNADMITTED_GROUP_SUFFIX : '')
     );

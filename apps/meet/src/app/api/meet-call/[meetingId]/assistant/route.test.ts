@@ -264,9 +264,8 @@ it('rejects invalid timezones before generation', async () => {
 it.each(['invalid JSON', JSON.stringify({ messages: [], context: {} })])(
   'settles a claimed review when its saved continuation is malformed: %s',
   async (continuation) => {
-    const { generateMeetAssistant } = await import(
-      '@tuturuuu/meet-core/features/call/server/assistant-generation'
-    );
+    const { generateMeetAssistant } =
+      await import('@tuturuuu/meet-core/features/call/server/assistant-generation');
     const review = {
       workspaceId: 'workspace',
       continuation,

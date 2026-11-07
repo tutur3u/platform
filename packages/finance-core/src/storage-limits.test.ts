@@ -50,9 +50,8 @@ describe('finance transaction storage limits', () => {
   });
 
   it('ignores non-finance storage paths', async () => {
-    const { validateFinanceTransactionAttachmentUploadRequest } = await import(
-      './storage-limits'
-    );
+    const { validateFinanceTransactionAttachmentUploadRequest } =
+      await import('./storage-limits');
 
     await expect(
       validateFinanceTransactionAttachmentUploadRequest({
@@ -89,9 +88,8 @@ describe('finance transaction storage limits', () => {
       storageObjects(10)
     );
 
-    const { validateFinanceTransactionAttachmentUploadRequest } = await import(
-      './storage-limits'
-    );
+    const { validateFinanceTransactionAttachmentUploadRequest } =
+      await import('./storage-limits');
 
     await expect(
       validateFinanceTransactionAttachmentUploadRequest({
@@ -142,9 +140,8 @@ describe('finance transaction storage limits', () => {
       storageObjects(11)
     );
 
-    const { validateFinalizedFinanceTransactionAttachment } = await import(
-      './storage-limits'
-    );
+    const { validateFinalizedFinanceTransactionAttachment } =
+      await import('./storage-limits');
 
     await expect(
       validateFinalizedFinanceTransactionAttachment({

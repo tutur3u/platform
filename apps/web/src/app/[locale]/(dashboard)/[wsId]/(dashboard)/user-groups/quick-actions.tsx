@@ -15,18 +15,16 @@ export default async function UserGroupQuickActions({
     return null;
   }
 
-  const { default: UserGroupQuickActionsContent } = await import(
-    './quick-actions-content'
-  );
+  const { default: UserGroupQuickActionsContent } =
+    await import('./quick-actions-content');
 
   return <UserGroupQuickActionsContent wsId={wsId} />;
 }
 
 async function checkFeatureEnabled(wsId: string): Promise<boolean> {
   try {
-    const { createAdminClient } = await import(
-      '@tuturuuu/supabase/next/server'
-    );
+    const { createAdminClient } =
+      await import('@tuturuuu/supabase/next/server');
     const sbAdmin = await createAdminClient();
 
     const { data } = await sbAdmin

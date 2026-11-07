@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Protected store credentials are hydrated only inside the beta release job.
 import { sign } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { setTimeout as wait } from 'node:timers/promises';

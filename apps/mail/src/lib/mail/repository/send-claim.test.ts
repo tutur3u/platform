@@ -65,7 +65,6 @@ it('only the atomic draft claim winner creates a job and invokes the provider', 
         if (won) status = 'sending';
         return { data: won ? { id: 'reply' } : null, error: null };
       },
-      // biome-ignore lint/suspicious/noThenProperty: Model the awaited Supabase query builder.
       then(resolve: (value: unknown) => void) {
         if (update.status) status = update.status;
         resolve({ error: null });
@@ -99,7 +98,6 @@ it('only the atomic draft claim winner creates a job and invokes the provider', 
           error: null,
         };
       },
-      // biome-ignore lint/suspicious/noThenProperty: Model the awaited Supabase query builder.
       then(resolve: (value: unknown) => void) {
         resolve({ error: null });
       },

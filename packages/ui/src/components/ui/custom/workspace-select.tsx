@@ -145,9 +145,7 @@ export function WorkspaceSelect({
   });
   const hasListedCurrentWorkspace = Boolean(
     resolvedWorkspaceId &&
-      listedWorkspaces?.some(
-        (workspace) => workspace.id === resolvedWorkspaceId
-      )
+    listedWorkspaces?.some((workspace) => workspace.id === resolvedWorkspaceId)
   );
   const { data: currentWorkspaceFallback } = useQuery({
     queryKey: [

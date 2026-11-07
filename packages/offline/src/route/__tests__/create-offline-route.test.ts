@@ -39,9 +39,8 @@ describe('createOfflineRoute', () => {
   it('can install only the public fallback and icons without precaching app bundles', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     const { createOfflineRoute } = await import('../create-offline-route.js');
-    const { createPrecacheManifest } = await import(
-      '../../precache/create-precache-manifest.js'
-    );
+    const { createPrecacheManifest } =
+      await import('../../precache/create-precache-manifest.js');
     await createOfflineRoute({
       precacheStaticAssets: false,
       publicPrecachePatterns: ['public/android-chrome-*.png'],
@@ -114,9 +113,8 @@ describe('createOfflineRoute', () => {
   it('builds a precache manifest with the offline fallback', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     const { createOfflineRoute } = await import('../create-offline-route.js');
-    const { createPrecacheManifest } = await import(
-      '../../precache/create-precache-manifest.js'
-    );
+    const { createPrecacheManifest } =
+      await import('../../precache/create-precache-manifest.js');
     const result = createOfflineRoute({
       offlineFallbackUrl: '/custom-offline',
       revision: 'revision-1',
@@ -137,9 +135,8 @@ describe('createOfflineRoute', () => {
   it('supports disabling public asset precaching', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     const { createOfflineRoute } = await import('../create-offline-route.js');
-    const { createPrecacheManifest } = await import(
-      '../../precache/create-precache-manifest.js'
-    );
+    const { createPrecacheManifest } =
+      await import('../../precache/create-precache-manifest.js');
     const result = createOfflineRoute({ publicPrecachePatterns: false });
 
     await result.GET(new Request('https://example.com'), {

@@ -594,7 +594,6 @@ export function PromptForm({
                           className="group flex items-center gap-2 rounded"
                         >
                           <div className="size-8">
-                            {/** biome-ignore lint/performance/noImgElement: <Raw image> */}
                             <img
                               src={URL.createObjectURL(f.rawFile)}
                               alt={f.rawFile.name}

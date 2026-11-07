@@ -108,8 +108,8 @@ export async function collectAllWith(
             item.instanceId === instanceId ||
             Boolean(
               cache.accountIdentityHash &&
-                item.provider === provider &&
-                item.accountIdentityHash === cache.accountIdentityHash
+              item.provider === provider &&
+              item.accountIdentityHash === cache.accountIdentityHash
             )
         )
         .map((item) => item.instanceId);

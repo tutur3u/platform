@@ -151,18 +151,18 @@ export function MailSettingsDialog({
   const settings = settingsQuery.data?.settings;
   const settingsDirty = Boolean(
     settings &&
-      (senderName !== settings.senderName ||
-        signatureText !== (settings.signatureText ?? '') ||
-        signatureHtml !== (settings.signatureHtml ?? '') ||
-        outboundProvider !== (settings.outboundProviderOverride ?? 'default') ||
-        aiInstructions !== settings.aiInstructions ||
-        autoDraftEnabled !== settings.autoDraftEnabled)
+    (senderName !== settings.senderName ||
+      signatureText !== (settings.signatureText ?? '') ||
+      signatureHtml !== (settings.signatureHtml ?? '') ||
+      outboundProvider !== (settings.outboundProviderOverride ?? 'default') ||
+      aiInstructions !== settings.aiInstructions ||
+      autoDraftEnabled !== settings.autoDraftEnabled)
   );
   const catchAllDirty = Boolean(
     catchAllQuery.data &&
-      (targetMailboxId !== catchAllQuery.data.targetMailboxId ||
-        catchAllEnabled !== catchAllQuery.data.enabled ||
-        catchAllAutoDraft !== catchAllQuery.data.autoDraftEnabled)
+    (targetMailboxId !== catchAllQuery.data.targetMailboxId ||
+      catchAllEnabled !== catchAllQuery.data.enabled ||
+      catchAllAutoDraft !== catchAllQuery.data.autoDraftEnabled)
   );
   const navItems = useMemo(
     () => [

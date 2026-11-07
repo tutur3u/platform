@@ -38,9 +38,8 @@ const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
 async function deriveTaskDescriptionYjsState(
   description: string | null | undefined
 ) {
-  const { deriveTaskDescriptionYjsState: deriveYjsState } = await import(
-    '@tuturuuu/utils/yjs-task-description'
-  );
+  const { deriveTaskDescriptionYjsState: deriveYjsState } =
+    await import('@tuturuuu/utils/yjs-task-description');
 
   return deriveYjsState(description);
 }

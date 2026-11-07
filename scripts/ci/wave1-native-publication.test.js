@@ -183,9 +183,8 @@ test('workflow routes only staging credentials and exact admission into the test
   );
 });
 test('staging configs reject production resource identities derived from every production profile', async (t) => {
-  const { profiles, profileFor, assertStagingIsolation } = await import(
-    './wave1-native-profile.mjs'
-  );
+  const { profiles, profileFor, assertStagingIsolation } =
+    await import('./wave1-native-profile.mjs');
   const { prepare, verify } = await import('./wave1-native-artifact.mjs');
   for (const app of Object.keys(profiles.apps)) {
     const dir = fixture(t, app);

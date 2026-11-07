@@ -217,11 +217,9 @@ async function writeRunnerWrapper({
     // Lets the agent check its own credential directory (path only).
     `export TUTURUUU_DEVBOX_TOKEN_FILE=${shellQuote(tokenFile)}`,
     ...(dockerHost ? [`export DOCKER_HOST=${shellQuote(dockerHost)}`] : []),
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: shell parameter expansion in the generated script.
     ': "${TUTURUUU_DEVBOX_AUTO_UPGRADE:=false}"',
     'export TUTURUUU_DEVBOX_AUTO_UPGRADE',
     `cd ${shellQuote(checkoutDir)}`,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: shell parameter expansion.
     'if [ -n "${HOME:-}" ] && [ -x "$HOME/.bun/bin/ttr" ]; then',
     ...(executionMode === 'judge-only'
       ? ['  "$HOME/.bun/bin/ttr" box agent policy --no-update-check >/dev/null']

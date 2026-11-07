@@ -36,7 +36,6 @@ function fixture(memberIds = [assigneeId], board: unknown = { id: 'board' }) {
       is: vi.fn(),
       in: vi.fn(),
       maybeSingle: async () => ({ data, error: null }),
-      // biome-ignore lint/suspicious/noThenProperty: Supabase builders are awaitable.
       then: (resolve: (value: unknown) => unknown) =>
         Promise.resolve(resolve({ data, error: null })),
     };

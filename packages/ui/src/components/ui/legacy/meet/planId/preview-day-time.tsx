@@ -219,7 +219,6 @@ function PreviewDayTime({
             <TooltipProvider key={`${date}-${i}`} delayDuration={0}>
               <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
-                  {/* biome-ignore lint/a11y/useKeyWithMouseEvents: hover preview is intentional UX for tooltip - keyboard users can use tab navigation */}
                   <div
                     onMouseOver={
                       disabled

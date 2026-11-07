@@ -262,11 +262,10 @@ const MAX_EXPORT_RANGE_DAYS = 366;
 function isClosedExportRange(query: TutoringDateBounds) {
   return Boolean(
     query.fromDate &&
-      query.toDate &&
-      query.fromDate <= query.toDate &&
-      (Date.parse(query.toDate) - Date.parse(query.fromDate)) / 86_400_000 +
-        1 <=
-        MAX_EXPORT_RANGE_DAYS
+    query.toDate &&
+    query.fromDate <= query.toDate &&
+    (Date.parse(query.toDate) - Date.parse(query.fromDate)) / 86_400_000 + 1 <=
+      MAX_EXPORT_RANGE_DAYS
   );
 }
 

@@ -34,7 +34,6 @@ function chain(rows: () => unknown[]) {
     'range',
   ])
     self[method] = () => self;
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
   self.then = (
     resolve: (value: unknown) => unknown,
     reject: (error: unknown) => unknown

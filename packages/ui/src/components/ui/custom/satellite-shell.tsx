@@ -8,11 +8,10 @@ import {
 } from './satellite-brand';
 import { Structure } from './structure';
 
-export interface SatelliteShellProps
-  extends Omit<
-    ComponentProps<typeof Structure>,
-    'sidebarHeader' | 'mobileHeader'
-  > {
+export interface SatelliteShellProps extends Omit<
+  ComponentProps<typeof Structure>,
+  'sidebarHeader' | 'mobileHeader'
+> {
   brand: SatelliteBrandProps;
   homeLabel: string;
   collapsedLogo?: SatelliteBrandProps['logo'];
