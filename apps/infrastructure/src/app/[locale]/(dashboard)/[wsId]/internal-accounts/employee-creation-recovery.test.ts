@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import type { EmployeeRejectionRecoveryState } from '@tuturuuu/internal-api/infrastructure';
 import { beforeEach, expect, it, vi } from 'vitest';

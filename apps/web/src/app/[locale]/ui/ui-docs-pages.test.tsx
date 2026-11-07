@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import { Suspense } from 'react';
 import { describe, expect, it, vi } from 'vitest';
