@@ -245,6 +245,8 @@ export function publicationConfig(base, profile, { main, assets, sourceSha }) {
                 }
               : {}),
             MICROSOFT_REDIRECT_URI: `https://${profile.host}/api/v1/calendar/auth/microsoft/callback`,
+            // Shared helpers read it through an aliased process.env the bundler cannot inline.
+            NODE_ENV: 'production',
           }
         : {}),
       ...(profile.app === 'mail'

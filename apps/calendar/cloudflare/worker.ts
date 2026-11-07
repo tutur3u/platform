@@ -1,8 +1,12 @@
 import { handleCalendarRequest } from '#calendar-handler';
+import { missingSecretsResponse } from '../src/runtime/required-secrets';
 import type {
   CalendarExecutionContext,
   CalendarWorkerEnvironment,
 } from '../src/runtime/worker-contract';
+
+// A literal from the Vite define; the Worker tsconfig has no Node types.
+declare const process: { env: { CALENDAR_DEPLOYMENT_PROFILE?: string } };
 
 export default {
   fetch(
@@ -10,6 +14,9 @@ export default {
     env: CalendarWorkerEnvironment,
     ctx: CalendarExecutionContext
   ) {
-    return handleCalendarRequest(request, env, ctx);
+    return (
+      missingSecretsResponse(process.env.CALENDAR_DEPLOYMENT_PROFILE, env) ??
+      handleCalendarRequest(request, env, ctx)
+    );
   },
 } satisfies ExportedHandler<CloudflareEnv>;
