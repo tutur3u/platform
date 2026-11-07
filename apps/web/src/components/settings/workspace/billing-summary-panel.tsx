@@ -4,11 +4,23 @@ import { useQuery } from '@tanstack/react-query';
 import { ExternalLink, Loader2 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import { useLocale, useTranslations } from 'next-intl';
 import { getPayBillingUrl } from '@/lib/pay-app-url';
 import { loadWorkspaceBillingSummary } from './billing-summary-action';
 
-export function WorkspaceBillingSummaryPanel({ wsId }: { wsId: string }) {
+export function WorkspaceBillingSummaryPanel({
+  showTitle = false,
+  wsId,
+}: {
+  /** For standalone routes; the settings dialog renders its own page title. */
+  showTitle?: boolean;
+  wsId: string;
+}) {
   const locale = useLocale();
   const t = useTranslations('billing');
   const summaryQuery = useQuery({
@@ -27,18 +39,22 @@ export function WorkspaceBillingSummaryPanel({ wsId }: { wsId: string }) {
 
   if (summaryQuery.isError) {
     return (
-      <div className="space-y-3 rounded-lg border border-destructive/50 bg-destructive/10 p-5">
-        <p className="font-medium text-destructive">
-          {t('billing-loading-error')}
-        </p>
-        <Button
-          onClick={() => summaryQuery.refetch()}
-          size="sm"
-          variant="outline"
+      <SettingsSection>
+        <SettingsSectionMessage
+          tone="error"
+          action={
+            <Button
+              onClick={() => summaryQuery.refetch()}
+              size="sm"
+              variant="outline"
+            >
+              {t('retry')}
+            </Button>
+          }
         >
-          {t('retry')}
-        </Button>
-      </div>
+          {t('billing-loading-error')}
+        </SettingsSectionMessage>
+      </SettingsSection>
     );
   }
 
@@ -52,69 +68,64 @@ export function WorkspaceBillingSummaryPanel({ wsId }: { wsId: string }) {
     ? `${subscription.seatCount ?? '—'} / ${subscription.maxSeats ?? '∞'}`
     : '—';
 
-  return (
-    <section className="space-y-5 rounded-lg border border-border bg-background p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="font-semibold text-xl">{t('billing')}</h2>
-          <p className="max-w-2xl text-muted-foreground text-sm">
-            {t('manage-billing-on-pay')}
-          </p>
-        </div>
-        <Button asChild>
-          <a
-            href={getPayBillingUrl(wsId)}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            {t('open-billing')}
-            <ExternalLink className="ml-2 h-4 w-4" />
-          </a>
-        </Button>
-      </div>
+  const openBilling = (
+    <Button asChild size="sm">
+      <a
+        href={getPayBillingUrl(wsId)}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        {t('open-billing')}
+        <ExternalLink className="ml-2 h-4 w-4" />
+      </a>
+    </Button>
+  );
 
+  return (
+    <SettingsSection
+      description={t('manage-billing-on-pay')}
+      title={showTitle ? t('billing') : undefined}
+    >
       {subscription ? (
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="font-semibold text-lg">{subscription.name}</p>
-            {subscription.tier && (
-              <Badge variant="secondary">{subscription.tier}</Badge>
-            )}
-            <Badge variant="outline">{subscription.status}</Badge>
-            {subscription.cancelAtPeriodEnd && (
-              <Badge variant="destructive">
-                {t('subscription-ending-soon')}
-              </Badge>
-            )}
-          </div>
-          <dl className="grid gap-4 sm:grid-cols-3">
-            <SummaryItem
-              label={t('subscription-cycle')}
-              value={subscription.billingCycle ?? '—'}
-            />
-            <SummaryItem label={t('next-billing')} value={renewalDate} />
-            <SummaryItem label={t('seat-usage')} value={seatUsage} />
-          </dl>
-        </div>
+        <>
+          <SettingItemTab
+            title={
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span>{subscription.name}</span>
+                {subscription.tier && (
+                  <Badge variant="outline">{subscription.tier}</Badge>
+                )}
+                <Badge variant="outline">{subscription.status}</Badge>
+                {subscription.cancelAtPeriodEnd && (
+                  <Badge variant="destructive">
+                    {t('subscription-ending-soon')}
+                  </Badge>
+                )}
+              </div>
+            }
+          >
+            {openBilling}
+          </SettingItemTab>
+          <SummaryItem
+            label={t('subscription-cycle')}
+            value={subscription.billingCycle ?? '—'}
+          />
+          <SummaryItem label={t('next-billing')} value={renewalDate} />
+          <SummaryItem label={t('seat-usage')} value={seatUsage} />
+        </>
       ) : (
-        <div className="rounded-md border border-border border-dashed p-5">
-          <p className="font-medium">{t('no-plan')}</p>
-          <p className="mt-1 text-muted-foreground text-sm">
-            {t('billing-info')}
-          </p>
-        </div>
+        <SettingItemTab description={t('billing-info')} title={t('no-plan')}>
+          {openBilling}
+        </SettingItemTab>
       )}
-    </section>
+    </SettingsSection>
   );
 }
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md bg-muted/40 p-4">
-      <dt className="text-muted-foreground text-xs uppercase tracking-wide">
-        {label}
-      </dt>
-      <dd className="mt-1 font-medium text-sm">{value}</dd>
-    </div>
+    <SettingItemTab title={label}>
+      <span className="text-sm tabular-nums">{value}</span>
+    </SettingItemTab>
   );
 }

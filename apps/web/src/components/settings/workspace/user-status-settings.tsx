@@ -3,6 +3,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Form,
   FormControl,
@@ -71,24 +76,24 @@ export default function UserStatusSettings({ wsId }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="font-medium text-lg">{t('title')}</h3>
-        <p className="text-muted-foreground text-sm">{t('description')}</p>
-      </div>
-
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <SettingsSection description={t('description')}>
           <FormField
             control={form.control}
             name="archived"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('archived_label')}</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
+                <SettingItemTab
+                  controlClassName="space-y-2"
+                  controlWidth="xl"
+                  title={<FormLabel>{t('archived_label')}</FormLabel>}
+                >
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </SettingItemTab>
               </FormItem>
             )}
           />
@@ -98,11 +103,16 @@ export default function UserStatusSettings({ wsId }: Props) {
             name="archived_until"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('archived_until_label')}</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
+                <SettingItemTab
+                  controlClassName="space-y-2"
+                  controlWidth="xl"
+                  title={<FormLabel>{t('archived_until_label')}</FormLabel>}
+                >
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </SettingItemTab>
               </FormItem>
             )}
           />
@@ -112,20 +122,29 @@ export default function UserStatusSettings({ wsId }: Props) {
             name="permanently_archived"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('permanently_archived_label')}</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
+                <SettingItemTab
+                  controlClassName="space-y-2"
+                  controlWidth="xl"
+                  title={
+                    <FormLabel>{t('permanently_archived_label')}</FormLabel>
+                  }
+                >
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </SettingItemTab>
               </FormItem>
             )}
           />
 
-          <Button type="submit" disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? t('saving') : t('save')}
-          </Button>
-        </form>
-      </Form>
-    </div>
+          <SettingsSectionFooter>
+            <Button size="sm" type="submit" disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? t('saving') : t('save')}
+            </Button>
+          </SettingsSectionFooter>
+        </SettingsSection>
+      </form>
+    </Form>
   );
 }
