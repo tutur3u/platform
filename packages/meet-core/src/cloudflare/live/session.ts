@@ -99,7 +99,7 @@ export class MeetLiveDurableObject {
     });
   }
   private async allowed(
-    session: Parameters<typeof liveWorkspaceAllowed>[1] = this.saved
+    session: Parameters<typeof liveWorkspacePolicyAllowed>[1] = this.saved
   ) {
     return (
       liveWorkspaceAllowed(this.env, session) &&

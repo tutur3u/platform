@@ -143,6 +143,22 @@ export async function POST(
       expiresAt: Date.now() + 120000,
     };
     const workspaceId = command.workspaceId ?? claims.billingWorkspaceId;
+    // Personal Live bills the actor's personal workspace and reads tools from
+    // the selected workspace; each policy must admit the verified requester
+    // before any catalog or workspace data is loaded.
+    if (command.mode === 'personal')
+      for (const policyWsId of new Set([billingWorkspaceId, workspaceId]))
+        if (
+          !(await workspaceAiAllowed(
+            policyWsId,
+            'learner-data',
+            access.user.id
+          ))
+        )
+          throw new MeetCallAccessError(
+            403,
+            'Meet AI is temporarily unavailable'
+          );
     const workspace =
       command.mode === 'personal'
         ? {

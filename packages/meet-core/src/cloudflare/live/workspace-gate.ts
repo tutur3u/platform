@@ -27,12 +27,40 @@ export function liveWorkspaceAllowed(
   );
 }
 
+type LivePolicySession =
+  | {
+      claims: { app?: string; billingWorkspaceId?: string | null };
+      identity: { workspaceId?: string | null };
+      workspace?: { id?: string | null } | null;
+    }
+  | undefined;
+
+/**
+ * Every workspace a session touches is bound at initialization and rechecked
+ * at each checkpoint: the meeting workspace, the personal tool target and the
+ * billing workspace. Any missing, malformed or refused workspace fails closed.
+ */
 export async function liveWorkspacePolicyAllowed(
   env: LiveEnvironment,
-  session: Parameters<typeof liveWorkspaceAllowed>[1]
+  session: LivePolicySession
 ) {
-  const wsId = session?.identity.workspaceId;
-  if (!wsId || !/^[0-9a-f-]{36}$/i.test(wsId)) return false;
+  const meetingWsId = session?.identity.workspaceId;
+  if (!meetingWsId) return false;
+  const ids = new Set([meetingWsId]);
+  if (session.workspace) ids.add(session.workspace.id ?? '');
+  if (session.claims.billingWorkspaceId !== undefined)
+    ids.add(session.claims.billingWorkspaceId ?? '');
+  if ([...ids].some((wsId) => !/^[0-9a-f-]{36}$/i.test(wsId))) return false;
+  const results = await Promise.all(
+    [...ids].map((wsId) => singleWorkspacePolicyAllowed(env, wsId))
+  );
+  return results.every(Boolean);
+}
+
+async function singleWorkspacePolicyAllowed(
+  env: LiveEnvironment,
+  wsId: string
+) {
   try {
     const rows = await liveDatabase<Array<{ name: string; value: string }>>(
       env,

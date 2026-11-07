@@ -6,7 +6,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -21,7 +21,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -36,7 +36,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -51,7 +51,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -66,7 +66,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -81,7 +81,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -96,7 +96,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -111,7 +111,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -126,7 +126,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -141,7 +141,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -186,7 +186,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -201,7 +201,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -216,7 +216,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -462,12 +462,12 @@
   },
   {
     "path": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/suggestions/route.ts",
-    "sha256": "2be9f73b5d3dd3512cf23f573ec44f5ee7c1ff111c9188f75844db64d14544a3",
+    "sha256": "d7d35617e58d20958f11c4077363e86547dfc9f05e527207679d2860a51b9270",
     "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
     "boundaries": [
       {
         "path": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/suggestions/route.ts",
-        "sha256": "2be9f73b5d3dd3512cf23f573ec44f5ee7c1ff111c9188f75844db64d14544a3"
+        "sha256": "d7d35617e58d20958f11c4077363e86547dfc9f05e527207679d2860a51b9270"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1035,12 +1035,12 @@
   },
   {
     "path": "packages/ai/src/chat/google/route.ts",
-    "sha256": "2521c9ba3d3e64f6b26ccb0a2b9fc6bae5ede2059cdb8b0a386c63b15bd48d42",
+    "sha256": "7373af2765425b79ad4b1182c9e2e213fb5f84bc72a311168bf7bef8855fac84",
     "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
     "boundaries": [
       {
         "path": "packages/ai/src/chat/google/route.ts",
-        "sha256": "2521c9ba3d3e64f6b26ccb0a2b9fc6bae5ede2059cdb8b0a386c63b15bd48d42"
+        "sha256": "7373af2765425b79ad4b1182c9e2e213fb5f84bc72a311168bf7bef8855fac84"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1402,7 +1402,7 @@
     "boundaries": [
       {
         "path": "apps/ai/src/lib/public-api.ts",
-        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+        "sha256": "eef0a284e8c362b9ea59ae1c702c5071ec9d7167b0fa323b48bd415ada7c1315"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1417,7 +1417,7 @@
     "boundaries": [
       {
         "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
-        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+        "sha256": "5b8c7f9ba440d68d5206f4ccc15f64c1924b77f5ad42a6e723ec2ef081c73be8"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1432,7 +1432,7 @@
     "boundaries": [
       {
         "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
-        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+        "sha256": "5b8c7f9ba440d68d5206f4ccc15f64c1924b77f5ad42a6e723ec2ef081c73be8"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1447,7 +1447,7 @@
     "boundaries": [
       {
         "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
-        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+        "sha256": "5b8c7f9ba440d68d5206f4ccc15f64c1924b77f5ad42a6e723ec2ef081c73be8"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1462,7 +1462,7 @@
     "boundaries": [
       {
         "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
-        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+        "sha256": "5b8c7f9ba440d68d5206f4ccc15f64c1924b77f5ad42a6e723ec2ef081c73be8"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1477,7 +1477,7 @@
     "boundaries": [
       {
         "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
-        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+        "sha256": "5b8c7f9ba440d68d5206f4ccc15f64c1924b77f5ad42a6e723ec2ef081c73be8"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1492,7 +1492,7 @@
     "boundaries": [
       {
         "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
-        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+        "sha256": "5b8c7f9ba440d68d5206f4ccc15f64c1924b77f5ad42a6e723ec2ef081c73be8"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1507,7 +1507,7 @@
     "boundaries": [
       {
         "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
-        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+        "sha256": "5b8c7f9ba440d68d5206f4ccc15f64c1924b77f5ad42a6e723ec2ef081c73be8"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1517,12 +1517,12 @@
   },
   {
     "path": "packages/meet-core/src/cloudflare/live/session.ts",
-    "sha256": "d567eb603895b72aab8b772d32286cfda3b90cb7aa69af25422f12758328cb17",
+    "sha256": "8aaa5d47493eff256450acf8c997b82884e0bb9fbd8be1232a18dc2fbec67084",
     "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
     "boundaries": [
       {
         "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
-        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+        "sha256": "5b8c7f9ba440d68d5206f4ccc15f64c1924b77f5ad42a6e723ec2ef081c73be8"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1537,7 +1537,7 @@
     "boundaries": [
       {
         "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
-        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+        "sha256": "5b8c7f9ba440d68d5206f4ccc15f64c1924b77f5ad42a6e723ec2ef081c73be8"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1552,7 +1552,7 @@
     "boundaries": [
       {
         "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
-        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+        "sha256": "5b8c7f9ba440d68d5206f4ccc15f64c1924b77f5ad42a6e723ec2ef081c73be8"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1567,7 +1567,7 @@
     "boundaries": [
       {
         "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
-        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+        "sha256": "5b8c7f9ba440d68d5206f4ccc15f64c1924b77f5ad42a6e723ec2ef081c73be8"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1582,7 +1582,7 @@
     "boundaries": [
       {
         "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
-        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+        "sha256": "5b8c7f9ba440d68d5206f4ccc15f64c1924b77f5ad42a6e723ec2ef081c73be8"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1597,7 +1597,7 @@
     "boundaries": [
       {
         "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
-        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+        "sha256": "5b8c7f9ba440d68d5206f4ccc15f64c1924b77f5ad42a6e723ec2ef081c73be8"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -1629,7 +1629,7 @@
   },
   {
     "path": "packages/sdk/src/operational-search/index.ts",
-    "sha256": "800309eab6cba9678aba8d50352351f78c006721ba6f8aea03f6029d8e49ff39",
+    "sha256": "eaf22c0fb2d9c67ca474bf3a823e88404b48235650db3ea97c7b32e32f721458",
     "workspace": "Offline operational search uses an injected local embedding runtime and Python model installation, outside hosted workspace AI. No hosted provider key or application workspace is accepted by this adapter.",
     "boundaries": [
       {
@@ -1673,7 +1673,7 @@
   },
   {
     "path": "packages/utils/src/internal-domains.ts",
-    "sha256": "b330b09a82793a130f207eedd653320a5fad2170a39b821820d5019e910b641d",
+    "sha256": "758ea60fe4932c98c98d48f0a736f07fa631baca94e71f17ec1058056696f399",
     "workspace": "Static navigation URL or product metadata, no provider invocation or credentials.",
     "boundaries": [
       {

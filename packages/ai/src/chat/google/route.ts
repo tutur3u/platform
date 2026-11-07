@@ -58,6 +58,7 @@ import {
   persistRequestScopedUserMessage,
   prepareProcessedMessages,
 } from './route-message-preparation';
+import { admitInitialMiraWorkspaceContext } from './route-mira-context-gate';
 import { prepareMiraRuntime } from './route-mira-runtime';
 import type { ChatRouteOptions } from './route-options';
 import { validateSubscriptionRoute } from './route-subscription-boundary';
@@ -130,24 +131,6 @@ export function createPOST(_options: ChatRouteOptions = {}) {
         (await _options.resolveAuth?.(req)) ?? (await resolveAiRouteAuth(req));
       if (!auth.ok) return auth.response;
       const { messageInsertMode = 'rpc', supabase, user } = auth;
-      let subscriptionModel: LanguageModel | undefined;
-      if (_options.subscription) {
-        try {
-          subscriptionModel = await _options.subscription.resolveModel(
-            user.id,
-            model
-          );
-        } catch (error) {
-          const failure = _options.subscription.errorResponse?.(error);
-          return NextResponse.json(
-            {
-              error: failure?.message ?? _options.subscription.onError(),
-              code: failure?.code ?? 'CHATGPT_CONNECTION_REQUIRED',
-            },
-            { status: failure?.status ?? 403 }
-          );
-        }
-      }
 
       if (isMiraMode && !(await isInternalTuturuuuAiUser(auth))) {
         return NextResponse.json(
@@ -179,12 +162,44 @@ export function createPOST(_options: ChatRouteOptions = {}) {
         normalizedWsId = workspaceAuthorization.wsId;
       }
 
+      const locale = req.headers.get('accept-language') ?? 'en';
       const aiPolicyRefusal = await workspaceAiPolicyResponse(
         normalizedWsId,
         user.id,
-        req.headers.get('accept-language') ?? 'en'
+        locale
       );
       if (aiPolicyRefusal) return aiPolicyRefusal;
+
+      const initialMira = await admitInitialMiraWorkspaceContext({
+        isMiraMode,
+        locale,
+        supabase: sbAdmin as typeof supabase,
+        userId: user.id,
+        workspaceContextId,
+        wsId: normalizedWsId,
+      });
+      if (initialMira.refusal) return initialMira.refusal;
+
+      // Subscription model lookup can refresh stored credentials and contact
+      // the provider, so it runs only after workspace authorization and policy.
+      let subscriptionModel: LanguageModel | undefined;
+      if (_options.subscription) {
+        try {
+          subscriptionModel = await _options.subscription.resolveModel(
+            user.id,
+            model
+          );
+        } catch (error) {
+          const failure = _options.subscription.errorResponse?.(error);
+          return NextResponse.json(
+            {
+              error: failure?.message ?? _options.subscription.onError(),
+              code: failure?.code ?? 'CHATGPT_CONNECTION_REQUIRED',
+            },
+            { status: failure?.status ?? 403 }
+          );
+        }
+      }
       try {
         requestedCreditWsId = rawCreditWsId
           ? await normalizeWorkspaceId(rawCreditWsId, supabase, req)
@@ -490,6 +505,7 @@ export function createPOST(_options: ChatRouteOptions = {}) {
           isMiraMode,
           wsId: normalizedWsId ?? undefined,
           workspaceContextId,
+          initialWorkspaceContext: initialMira.context,
           creditWsId: billingWsId ?? normalizedWsId ?? undefined,
           request: req,
           user,

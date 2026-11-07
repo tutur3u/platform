@@ -1,7 +1,7 @@
 ---
 title: Model Catalog
 description: How Tuturuuu publishes, browses, and syncs AI gateway model metadata.
-updatedAt: "2026-11-03"
+updatedAt: "2026-11-07"
 audience: developers
 ---
 
@@ -90,6 +90,19 @@ New feature work must call `workspaceAiPolicyResponse` after resolving its works
 and before credits, usage, memory or provider selection. Background work uses
 `workspaceAiAllowed` at execution time. Database failures refuse access. Route
 refusals use HTTP 403 and `WORKSPACE_AI_DISABLED`, with English and Vietnamese copy.
+Every workspace whose data reaches a provider is checked, not only the route
+workspace. Shared chat resolves the initial Mira context workspace once and refuses
+it, with the same policy as a later context switch, before reading its data,
+reserving credits or selecting a model. Subscription (ChatGPT plan) routes resolve
+their account model only after workspace authorization and policy, so a refused
+workspace never refreshes stored credentials or contacts the provider. Personal Meet
+Live checks the requester's personal billing workspace and the selected tool
+workspace before loading the tool catalog, rechecks the tool workspace before an
+approved tool runs and before its result reaches the provider, and its session
+checkpoints recheck the meeting, tool and billing workspaces together. Coverage:
+`packages/ai/src/chat/google/route.workspace-policy.test.ts`,
+`packages/meet-core/src/routes/api/meet-live/[meetingId]/route.personal-policy.test.ts`
+and `packages/meet-core/src/cloudflare/live/workspace-gate.test.ts`.
 Existing saved output remains readable. Meet admission composes with `MEET_AI_*`;
 Live session checkpoints recheck policy and stop disabled sessions. Provider-issued
 browser Live tokens cannot be revoked by this switch; operators must drain active

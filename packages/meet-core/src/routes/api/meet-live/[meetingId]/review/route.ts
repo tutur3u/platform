@@ -62,9 +62,14 @@ export async function POST(
       toolName: string;
       args: unknown;
     };
+    // The tool target can differ from the meeting workspace; its policy is
+    // checked before execution and again before the provider gets the result.
+    const targetAllowed = () =>
+      workspaceAiAllowed(input.workspaceId, 'learner-data', access.user.id);
     let result: string;
     let failed = false;
     try {
+      if (!(await targetAllowed())) throw new Error('Workspace AI unavailable');
       // Recheck membership and permissions at execution time, never trust a cached catalog.
       const tools = await liveWorkspaceTools(
         access,
@@ -84,6 +89,7 @@ export async function POST(
         messages: [],
       });
       result = JSON.stringify(output).slice(0, 48000);
+      if (!(await targetAllowed())) throw new Error('Workspace AI unavailable');
     } catch {
       failed = true;
       result =
