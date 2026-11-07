@@ -19,7 +19,12 @@ describe('commercial inventory coverage', () => {
   it('keeps the public roadmap pending without selling a tier entitlement', () => {
     const roadmap = COMPARISON_FEATURES.filter((row) => row.app === 'roadmap');
     expect(roadmap).toHaveLength(1);
-    expect(roadmap[0]?.values).toEqual(['pending', 'pending', 'pending', 'pending']);
+    expect(roadmap[0]?.values).toEqual([
+      'pending',
+      'pending',
+      'pending',
+      'pending',
+    ]);
     expect(roadmap[0]?.gate).toBeUndefined();
     expect(roadmap[0]?.pending).toBe(true);
   });

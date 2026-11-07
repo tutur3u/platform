@@ -473,14 +473,35 @@ test('roadmap artifact admission rejects unlabelled PRs and preserves main dispa
   const jobs = workflows['roadmap-cloudflare.yaml'].jobs;
   const decide = (event, labels, ref, relevant = true) => {
     const context = {
-      github: { event_name: event, ref, event: { pull_request: { labels: labels.map((name) => ({ name })) } } },
+      github: {
+        event_name: event,
+        ref,
+        event: { pull_request: { labels: labels.map((name) => ({ name })) } },
+      },
       needs: { 'check-ci': { outputs: { should_run: String(relevant) } } },
     };
-    return Object.fromEntries(Object.entries(jobs).map(([id, job]) => [id, evaluateExpression(job.if, context)]));
+    return Object.fromEntries(
+      Object.entries(jobs).map(([id, job]) => [
+        id,
+        evaluateExpression(job.if, context),
+      ])
+    );
   };
-  assert.deepEqual(decide('pull_request', [], 'refs/pull/42/merge'), { 'check-ci': false, build: false });
-  assert.deepEqual(decide('pull_request', [READY_LABEL], 'refs/pull/42/merge'), { 'check-ci': true, build: true });
-  assert.equal(decide('pull_request', [READY_LABEL], 'refs/pull/42/merge', false).build, false);
+  assert.deepEqual(decide('pull_request', [], 'refs/pull/42/merge'), {
+    'check-ci': false,
+    build: false,
+  });
+  assert.deepEqual(
+    decide('pull_request', [READY_LABEL], 'refs/pull/42/merge'),
+    { 'check-ci': true, build: true }
+  );
+  assert.equal(
+    decide('pull_request', [READY_LABEL], 'refs/pull/42/merge', false).build,
+    false
+  );
   assert.equal(decide('workflow_dispatch', [], 'refs/heads/main').build, true);
-  assert.equal(decide('workflow_dispatch', [], 'refs/heads/unreviewed').build, false);
+  assert.equal(
+    decide('workflow_dispatch', [], 'refs/heads/unreviewed').build,
+    false
+  );
 });

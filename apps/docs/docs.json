@@ -536,9 +536,7 @@
           },
           {
             "group": "Smart Scheduling API",
-            "pages": [
-              "platform/features/smart-scheduling/api-reference"
-            ]
+            "pages": ["platform/features/smart-scheduling/api-reference"]
           }
         ]
       },

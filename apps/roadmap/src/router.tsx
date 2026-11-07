@@ -2,9 +2,15 @@ import { createRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen';
 
 export function getRouter() {
-  return createRouter({ routeTree, basepath: '/roadmap', scrollRestoration: true });
+  return createRouter({
+    routeTree,
+    basepath: '/roadmap',
+    scrollRestoration: true,
+  });
 }
 
 declare module '@tanstack/react-router' {
-  interface Register { router: ReturnType<typeof getRouter>; }
+  interface Register {
+    router: ReturnType<typeof getRouter>;
+  }
 }

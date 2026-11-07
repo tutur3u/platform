@@ -12,7 +12,9 @@ function flags() {
   if (typeof fs.constants.O_NOFOLLOW !== 'number') {
     throw new Error('No-follow artifact access is unavailable');
   }
-  return fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK;
+  return (
+    fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK
+  );
 }
 
 export function openArtifactEntry(path) {
@@ -44,7 +46,11 @@ export function readRegularFile(fd, remainingBytes = MAX_BYTES) {
     throw new Error('Artifact grew while sealing');
   }
   assertStat(fs.fstatSync(fd, { bigint: true }), before);
-  return { data, bytes: data.length, sha256: createHash('sha256').update(data).digest('hex') };
+  return {
+    data,
+    bytes: data.length,
+    sha256: createHash('sha256').update(data).digest('hex'),
+  };
 }
 
 function descriptorPath(fd, name = '') {
@@ -66,11 +72,14 @@ function openRoot(root) {
   try {
     for (const name of [sep, ...resolve(root).split(sep).filter(Boolean)]) {
       const parent = chain.at(-1)?.fd;
-      const fd = openArtifactEntry(parent === undefined ? name : descriptorPath(parent, name));
+      const fd = openArtifactEntry(
+        parent === undefined ? name : descriptorPath(parent, name)
+      );
       const entry = { fd, parent, name };
       chain.push(entry);
       entry.stat = fs.fstatSync(fd, { bigint: true });
-      if (!entry.stat.isDirectory()) throw new Error('Artifact ancestor is not a directory');
+      if (!entry.stat.isDirectory())
+        throw new Error('Artifact ancestor is not a directory');
     }
     return chain;
   } catch (error) {
@@ -80,9 +89,12 @@ function openRoot(root) {
 }
 
 export function sealArtifact(root, source) {
-  if (!/^[a-f0-9]{40}$/.test(source ?? '')) throw new Error('Supply the exact build source SHA');
+  if (!/^[a-f0-9]{40}$/.test(source ?? ''))
+    throw new Error('Supply the exact build source SHA');
   if (process.platform !== 'linux') {
-    throw new Error('Descriptor-anchored sealing requires the qualified Linux /proc filesystem');
+    throw new Error(
+      'Descriptor-anchored sealing requires the qualified Linux /proc filesystem'
+    );
   }
   const ancestors = openRoot(root);
   const appFd = ancestors.at(-1).fd;
@@ -91,7 +103,8 @@ export function sealArtifact(root, source) {
   let totalBytes = 0;
   function walk(fd, prefix) {
     const before = fs.fstatSync(fd, { bigint: true });
-    if (!before.isDirectory()) throw new Error('Artifact directory is not regular');
+    if (!before.isDirectory())
+      throw new Error('Artifact directory is not regular');
     for (const name of fs.readdirSync(descriptorPath(fd)).sort()) {
       const child = openArtifactEntry(descriptorPath(fd, name));
       try {
@@ -100,7 +113,8 @@ export function sealArtifact(root, source) {
         if (stat.isDirectory()) {
           walk(child, path);
         } else {
-          if (files.length >= MAX_FILES) throw new Error('Artifact file bound exceeded');
+          if (files.length >= MAX_FILES)
+            throw new Error('Artifact file bound exceeded');
           const file = readRegularFile(child, MAX_BYTES - totalBytes);
           totalBytes += file.bytes;
           contents.set(path, file.data);
@@ -122,18 +136,50 @@ export function sealArtifact(root, source) {
     } finally {
       fs.closeSync(dist);
     }
-    const configs = files.filter((file) => /(?:^|\/)wrangler\.json$/.test(file.path));
-    if (configs.length !== 1) throw new Error('Require one actual emitted JSON Worker configuration');
+    const configs = files.filter((file) =>
+      /(?:^|\/)wrangler\.json$/.test(file.path)
+    );
+    if (configs.length !== 1)
+      throw new Error('Require one actual emitted JSON Worker configuration');
     const config = JSON.parse(contents.get(configs[0].path).toString('utf8'));
-    if (config.name !== 'tuturuuu-roadmap' || !config.main || !config.assets) throw new Error('Unexpected emitted Worker identity or assets');
-    if (config.assets.base_path !== '/roadmap') throw new Error('Emitted asset mount must equal /roadmap');
-    if (!files.some((file) => file.path.startsWith('dist/client/') && file.path.endsWith('.js'))) throw new Error('Client assets are missing');
-    if (!files.some((file) => /\.[cm]?js$/.test(file.path) && contents.get(file.path).includes(source))) throw new Error('Source identity missing from emitted code');
+    if (config.name !== 'tuturuuu-roadmap' || !config.main || !config.assets)
+      throw new Error('Unexpected emitted Worker identity or assets');
+    if (config.assets.base_path !== '/roadmap')
+      throw new Error('Emitted asset mount must equal /roadmap');
+    if (
+      !files.some(
+        (file) =>
+          file.path.startsWith('dist/client/') && file.path.endsWith('.js')
+      )
+    )
+      throw new Error('Client assets are missing');
+    if (
+      !files.some(
+        (file) =>
+          /\.[cm]?js$/.test(file.path) &&
+          contents.get(file.path).includes(source)
+      )
+    )
+      throw new Error('Source identity missing from emitted code');
     for (const entry of ancestors) {
-      if (entry.parent !== undefined) assertEntry(entry.parent, entry.name, entry.stat);
+      if (entry.parent !== undefined)
+        assertEntry(entry.parent, entry.name, entry.stat);
     }
-    const manifest = { source, worker: config.name, basePath: '/roadmap', emittedConfig: configs[0].path, files };
-    const output = fs.openSync(descriptorPath(appFd, 'roadmap-artifact.json'), fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW, 0o600);
+    const manifest = {
+      source,
+      worker: config.name,
+      basePath: '/roadmap',
+      emittedConfig: configs[0].path,
+      files,
+    };
+    const output = fs.openSync(
+      descriptorPath(appFd, 'roadmap-artifact.json'),
+      fs.constants.O_WRONLY |
+        fs.constants.O_CREAT |
+        fs.constants.O_EXCL |
+        fs.constants.O_NOFOLLOW,
+      0o600
+    );
     try {
       fs.writeFileSync(output, `${JSON.stringify(manifest, null, 2)}\n`);
       fs.fsyncSync(output);
@@ -146,8 +192,16 @@ export function sealArtifact(root, source) {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+  process.argv[1] &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
   const source = process.argv[2];
-  const manifest = sealArtifact(fileURLToPath(new URL('../', import.meta.url)), source);
-  console.log(`Sealed ${manifest.files.length} emitted files for ${source}; this does not attest runtime or deployment`);
+  const manifest = sealArtifact(
+    fileURLToPath(new URL('../', import.meta.url)),
+    source
+  );
+  console.log(
+    `Sealed ${manifest.files.length} emitted files for ${source}; this does not attest runtime or deployment`
+  );
 }

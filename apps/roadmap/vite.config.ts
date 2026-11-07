@@ -6,7 +6,9 @@ import { voidPlugin } from 'void';
 export default defineConfig(({ command }) => {
   const source = process.env.ROADMAP_SOURCE_SHA ?? process.env.GITHUB_SHA;
   if (command === 'build' && !/^[a-f0-9]{40}$/.test(source ?? '')) {
-    throw new Error('A roadmap build requires its immutable ROADMAP_SOURCE_SHA');
+    throw new Error(
+      'A roadmap build requires its immutable ROADMAP_SOURCE_SHA'
+    );
   }
   return {
     base: '/roadmap/',
