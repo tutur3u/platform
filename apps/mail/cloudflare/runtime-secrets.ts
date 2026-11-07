@@ -1,5 +1,5 @@
 import { assertWorkerStartup } from '@tuturuuu/start-bridge/startup';
-import { assertSnsVerification } from './sns-startup';
+import { assertSnsVerification } from './sns-startup.ts';
 
 export const requiredRuntimeSecrets = [
   'NEXT_PUBLIC_SUPABASE_URL',
