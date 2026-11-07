@@ -46,7 +46,8 @@ export type MeetAiChunk = {
 };
 export type MeetAiSession = {
   id: string;
-  user_id: string;
+  /** Session host; null once the host's profile is deleted. */
+  user_id: string | null;
   created_at: string;
   ended_at: string | null;
   notes_started_at: string | null;
