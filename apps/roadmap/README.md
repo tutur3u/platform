@@ -29,8 +29,9 @@ than 24 hours display a freshness notice.
 ## Build and publication
 
 Use the frozen dependency versions in this workspace manifest. In an admitted CI
-checkout with the complete lockfile, run the app's `build` script before its
-`type-check` script so TanStack's route generator produces `src/routeTree.gen.ts`.
+checkout with the complete lockfile, the app's `type-check` script generates
+`src/routeTree.gen.ts` through the shared TanStack generator before checking types.
+It does not require a release build or run a formatter.
 Set `ROADMAP_SOURCE_SHA` to the exact checkout commit, then run `build:cloudflare`.
 Run `seal:cloudflare -- <same-sha>` after the build to hash the actual emitted
 files into `roadmap-artifact.json`. The sealer requires one emitted Worker JSON
@@ -39,6 +40,13 @@ code. It does not attest runtime behavior or deployment. SSR HTML exposes the
 build identity as `data-source-sha` for the release readback.
 Run the data tests directly through Node; no database or app server is needed.
 No local machine release build is required.
+
+The pull-request artifact job builds and seals its triggering CI merge cohort
+without deployment credentials. Release artifacts come from a separate manual run.
+Dispatch `roadmap-cloudflare.yaml` on `main` with `source_sha` equal to the
+reviewed merged commit. The workflow checks out its triggering `github.sha` and
+rejects a mismatching requested source before checkout or dependency execution.
+A moved main requires fresh exact-source qualification rather than a silent rebuild.
 
 The Void plugin precedes the Start and React plugins. Vite asset base, Start
 basepath and the router basepath all match `/roadmap`. Before production traffic,
