@@ -5,5 +5,6 @@
   },
   "github": {
     "enabled": false
-  }
+  },
+  "buildCommand": "cd ../.. && bun turbo:local run build --filter=\"@tuturuuu/external^...\" && bun run --cwd apps/external build:legacy"
 }
