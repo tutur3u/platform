@@ -7,9 +7,11 @@ const decorate = createRootResponsePolicy({
   seo: 'noindex, nofollow, nosnippet',
 });
 
+const production = process.env.VITE_DRIVE_NATIVE_PROFILE === 'production';
+
 export default defineBridgeAppConfig({
   mounts: {
-    rootHosts: ['drive.tutur3u.com', 'drive.tuturuuu.com'],
+    rootHosts: [production ? 'drive.tuturuuu.com' : 'drive.tutur3u.com'],
     mountHosts: [],
     unknownHost: 'reject',
   },
