@@ -492,6 +492,11 @@ jobs:
         run: bun turbo:local run build --filter=@tuturuuu/apps --concurrency=2
       - name: Prepare route-free production artifact for Rex
         run: node scripts/ci/cf2-cutover-artifact.mjs prepare apps "$SOURCE_SHA"
+      - name: Exercise anonymous entry and startup refusals on emitted Worker
+        timeout-minutes: 3
+        env:
+          CI: 'true'
+        run: node scripts/ci/cf2-cutover-runtime.mjs apps "$SOURCE_SHA"
       - name: Seal and pack the exact Worker, assets and config
         run: node scripts/ci/cf2-cutover-artifact.mjs pack apps "$SOURCE_SHA" "$RUNNER_TEMP/apps-cutover"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

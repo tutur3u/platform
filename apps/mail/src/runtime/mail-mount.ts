@@ -6,7 +6,8 @@ import {
 
 export const mailMounts = {
   app: 'mail',
-  rootHosts: ['mail.tuturuuu.com'],
+  unknownHost: 'reject',
+  rootHosts: ['mail.tuturuuu.com', 'mail.tutur3u.com'],
   mountHosts: ['tuturuuu.com', 'web.tutur3u.com'],
   basePath: '/mail',
 } satisfies AppMountConfig;
