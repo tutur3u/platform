@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  ArrowLeft,
-  ChevronDown,
-  ChevronRight,
-  Compass,
-  Search,
-  X,
-} from '@tuturuuu/icons';
+import { ArrowLeft, ChevronDown, Compass, Search, X } from '@tuturuuu/icons';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -17,11 +10,6 @@ import {
   BreadcrumbSeparator,
 } from '@tuturuuu/ui/breadcrumb';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@tuturuuu/ui/collapsible';
 import {
   Command,
   CommandEmpty,
@@ -45,18 +33,11 @@ import {
   DrawerTrigger,
 } from '@tuturuuu/ui/drawer';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
-import { Separator } from '@tuturuuu/ui/separator';
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarInput,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarProvider,
 } from '@tuturuuu/ui/sidebar';
 import { cn } from '@tuturuuu/utils/format';
@@ -65,6 +46,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { resolveSettingsTab } from '../../../hooks/settings-dialog-url';
 import type { createSettingsSearchEngine } from './settings-dialog-search';
 import { loadSettingsSearchEngine } from './settings-dialog-search-loader';
+import { SettingsSidebarGroup } from './settings-sidebar-group';
 
 export interface SettingsNavItem {
   name: string;
@@ -397,7 +379,7 @@ export function SatelliteSettingsDialogShell({
   return (
     <DialogContent
       presentation="fullscreen"
-      className="flex-col"
+      className="settings-surface flex-col"
       onKeyDown={handleKeyboardNavigation}
       showCloseButton={false}
     >
@@ -408,81 +390,41 @@ export function SatelliteSettingsDialogShell({
       <SidebarProvider className="flex h-full min-h-0 items-start">
         <Sidebar
           collapsible="none"
-          className="hidden h-full w-72 flex-col border-r bg-muted/30 md:flex"
+          className="hidden h-full w-64 flex-col border-r bg-muted/30 md:flex"
         >
-          <SidebarHeader className="z-10 gap-3 p-4 pb-0">
+          <SidebarHeader className="z-10 gap-2 p-3 pb-0">
             <DialogClose asChild>
               <Button
                 type="button"
                 variant="ghost"
-                className="h-9 justify-start px-2 text-muted-foreground"
+                className="h-9 justify-start px-2 font-normal text-foreground/80"
               >
                 <ArrowLeft className="h-4 w-4" />
                 {t('settings.back_to_app')}
               </Button>
             </DialogClose>
             <div className="relative">
-              <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
               <SidebarInput
                 ref={desktopSearchInputRef}
                 placeholder={t('settings.search_settings_placeholder')}
-                className="bg-background pl-8"
+                className="h-9 bg-background pl-8.5"
                 value={searchQuery}
                 onChange={(e) => updateSearchQuery(e.target.value)}
                 onFocus={ensureSearchEngine}
               />
             </div>
           </SidebarHeader>
-          <SidebarContent className="overflow-y-auto p-4">
+          <SidebarContent className="gap-4 overflow-y-auto p-3">
             {filteredNavItems.map((group, index) => (
-              <Collapsible
-                key={`${group.label}-${searchQuery ? 'search' : 'browse'}-${expandAllAccordions ? 'expanded' : 'collapsed'}`}
+              <SettingsSidebarGroup
+                activeTab={activeTab}
+                collapsible={!expandAllAccordions && !searchQuery}
                 defaultOpen={isGroupExpandedByDefault(group.label, index)}
-                open={expandAllAccordions ? true : undefined}
-                className="group/collapsible"
-              >
-                <SidebarGroup className="p-0">
-                  <SidebarGroupLabel
-                    asChild
-                    className="group/label w-full cursor-pointer text-sidebar-foreground text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  >
-                    <CollapsibleTrigger>
-                      {group.label}
-                      <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                    </CollapsibleTrigger>
-                  </SidebarGroupLabel>
-                  <CollapsibleContent>
-                    <SidebarGroupContent>
-                      <SidebarMenu>
-                        {group.items.map((item) => (
-                          <SidebarMenuItem key={item.name}>
-                            <SidebarMenuButton
-                              disabled={item.disabled}
-                              isActive={activeTab === item.name}
-                              onClick={() => {
-                                if (!item.disabled) {
-                                  selectActiveTab(item.name);
-                                }
-                              }}
-                              className={cn(
-                                'h-9 w-full justify-start px-2 transition-colors',
-                                item.disabled &&
-                                  'cursor-not-allowed opacity-50',
-                                activeTab === item.name
-                                  ? 'bg-accent font-medium text-accent-foreground'
-                                  : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
-                              )}
-                            >
-                              <item.icon className="mr-2 h-4 w-4" />
-                              <span>{item.label}</span>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        ))}
-                      </SidebarMenu>
-                    </SidebarGroupContent>
-                  </CollapsibleContent>
-                </SidebarGroup>
-              </Collapsible>
+                group={group}
+                key={group.label}
+                onSelect={selectActiveTab}
+              />
             ))}
           </SidebarContent>
         </Sidebar>
@@ -608,23 +550,20 @@ export function SatelliteSettingsDialogShell({
               </Button>
             </DialogClose>
           </header>
-          <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-2 md:p-6">
-            <div className="mx-auto w-full max-w-4xl space-y-6">
+          <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6 md:px-10 md:py-10">
+            <div className="mx-auto w-full max-w-3xl space-y-8">
               {showContentHeader && (
-                <>
-                  <div className="space-y-1">
-                    <h2 className="font-semibold text-lg tracking-tight">
-                      {activeItem?.label}
-                    </h2>
-                    <p className="text-muted-foreground text-sm">
-                      {activeItem?.description ||
-                        t('settings.manage_settings', {
-                          label: activeItem?.label?.toLowerCase() ?? '',
-                        })}
-                    </p>
-                  </div>
-                  <Separator />
-                </>
+                <div className="space-y-1">
+                  <h2 className="font-semibold text-2xl tracking-tight">
+                    {activeItem?.label}
+                  </h2>
+                  <p className="text-muted-foreground text-sm">
+                    {activeItem?.description ||
+                      t('settings.manage_settings', {
+                        label: activeItem?.label?.toLowerCase() ?? '',
+                      })}
+                  </p>
+                </div>
               )}
               {activeTab === 'onboarding_guide' ? onboardingPanel : children}
             </div>

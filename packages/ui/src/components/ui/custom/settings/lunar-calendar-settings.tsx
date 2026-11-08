@@ -1,5 +1,6 @@
 'use client';
 
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { useLocale, useTranslations } from 'next-intl';
 import { Label } from '../../label';
@@ -15,22 +16,17 @@ export function LunarCalendarSettings() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <Label htmlFor="show-lunar-calendar">
-            {t('show_lunar_calendar')}
-          </Label>
-          <p className="text-muted-foreground text-sm">
-            {t('show_lunar_calendar_description')}
-          </p>
-        </div>
-        <Switch
-          id="show-lunar-calendar"
-          checked={showLunar}
-          onCheckedChange={setShowLunar}
-        />
-      </div>
-    </div>
+    <SettingItemTab
+      title={
+        <Label htmlFor="show-lunar-calendar">{t('show_lunar_calendar')}</Label>
+      }
+      description={t('show_lunar_calendar_description')}
+    >
+      <Switch
+        id="show-lunar-calendar"
+        checked={showLunar}
+        onCheckedChange={setShowLunar}
+      />
+    </SettingItemTab>
   );
 }

@@ -5,7 +5,7 @@ import NotificationPreferencesTable from '@/components/notifications/notificatio
 
 export default function NotificationsCard() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Browser Permission */}
       <BrowserNotificationPermission />
 

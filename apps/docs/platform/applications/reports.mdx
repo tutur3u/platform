@@ -131,6 +131,24 @@ that month or the first days of the next one.
   estimated month: created after day 10 of the month and up to day 10 of the next
   month, in the workspace timezone (else the viewer's, else UTC). A report written
   on 28 Oct or on 2 Nov is therefore listed under October.
+- **Sent stage: send month.** Sent reports (`report_stage = 'sent'`) belong to
+  the month they were actually sent, not the month they cover: `delivered_at`
+  from the 1st at 00:00 to the 1st of the next month in `Asia/Ho_Chi_Minh`, for
+  every workspace and viewer timezone (`buildReportStageMonthFilter`). October
+  2026 is `[2026-09-30T17:00:00Z, 2026-10-31T17:00:00Z)`. A report covering
+  October but sent on 30 Sep is in September's Sent list; title, saved period and
+  creation date are never used for Sent. Every other stage, including a blocked
+  report with a provider-accepted `delivered_at`, keeps its covered month. The
+  list, its pages and the stage cards share one filter, so the Sent card matches
+  the Sent list. Row month labels, the month picker default, new-report periods,
+  titles, Custom date range and All months are unchanged.
+- **Sent without a send date.** A Sent report with no `delivered_at` is in no
+  month and appears only under All months. The month filter excludes these rows
+  in the database, before the 20,000-row cap, so they never make a month read
+  fail or count toward a month's totals. A month read therefore never sees them:
+  `undatedSentCount` is always `null` (unknown, never 0), including when the
+  actor has no accessible group, and Contacts shows no count notice. All months
+  reads them with the existing cap. Records are not backfilled.
 - **New reports** save `period_start`/`period_end` as the chosen month's calendar
   bounds with `cadence: monthly`. The workspace default title (`<title> MM/YYYY`)
   follows the chosen month until the teacher edits the title.
@@ -155,7 +173,8 @@ that month or the first days of the next one.
   already has a report returns 409; so does a unique-constraint race on insert.
 
 Regression coverage: `report-month.test.ts`, `report-period-filter.test.ts`,
-`report-month-scope.test.ts`, `report-month-edit.test.ts`,
+`report-month-scope.test.ts`, `report-summary-scope.test.ts`,
+`report-month-edit.test.ts`,
 `explicit-approval.test.ts` (users-core);
 `periodic-report-filters.test.ts`, `periodic-reports-panel-counts.test.tsx`,
 `periodic-report-row-month.test.tsx`, `report-month.test.tsx`,

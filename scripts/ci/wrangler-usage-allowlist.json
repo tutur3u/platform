@@ -163,6 +163,26 @@
       },
       "digest": "9277cfdb4d2c575212c57c3969b41d019932f379df4a9e677f27a655e310fb5a"
     },
+    ".github/workflows/playground-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7647",
+        "reason": "PR7647 references the legacy metrics opt-out and the existing Void-emitted-config packaging label. This source record authorizes neither CLI publication nor provider credentials or deployment."
+      },
+      "digest": "1beb88e2772be3324b55b9f33dcfe4b0c818fa7898de666878c61b1d0080214f"
+    },
+    ".github/workflows/roadmap-cloudflare.yaml": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7786",
+        "reason": "PR7786 read-only artifact workflow disables legacy CLI metrics for the pinned Void-emitted build; it has no Cloudflare credential, CLI publication or deployment step."
+      },
+      "digest": "21b728d557b8a474e2fc8b23403773fe19ea5135689d950499755feef54151b7"
+    },
     ".github/workflows/rust-backend.yml": {
       "lines": 14,
       "uses": 18,
@@ -1112,6 +1132,46 @@
         "reason": "Playground follows the Wave 1 Start + Void template (codemod): Void rebuilds on deploy, so the exact Void-emitted Worker is qualified with the pinned Wrangler adapter (generated .void-wrangler.jsonc ignored, built-Worker harness, dependency pin). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/roadmap/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7786",
+        "reason": "PR7786 ignores the pinned Void/Cloudflare toolchain state directory; data-only ignore, no CLI or provider action."
+      },
+      "digest": "fb576a0a285ec483f842c79f48d22e695b41ec7df3f3f3afc9ab5e01b846a24d"
+    },
+    "apps/roadmap/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7786",
+        "reason": "PR7786 pins Wrangler 4.151.2 for the actual Void-emitted artifact format and assets.base_path support. Qualified stateless prebuilt versions publication is Rex-owned; Void deploy rebuilds and pinned cf expects a different Build Output contract."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/roadmap/scripts/seal-artifact.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7786",
+        "reason": "PR7786 recognizes the actual Void-emitted configuration filename and seals descriptor-bound source/config/assets bytes; no Worker module, provider SDK or CLI execution."
+      },
+      "digest": "f479ed938be0fab6e630eb665e5718d2d80fe58956598186df591f44655e22ae"
+    },
+    "apps/roadmap/scripts/seal-artifact.test.mjs": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7797",
+        "reason": "Synthetic fixture references the emitted configuration filename for successful root-base asset mapping and rejected non-root mapping; no compiler, provider, SDK or CLI invocation is added."
+      },
+      "digest": "fe37858bda0354e17c57d35ee1796ee164eeac39a8ad0793989fbf2942f8d5fe"
     },
     "apps/shortener/cloudflare/native-built-worker.test.mjs": {
       "lines": 1,
