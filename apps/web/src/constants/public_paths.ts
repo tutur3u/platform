@@ -7,6 +7,7 @@ export const APP_PUBLIC_PATHS = [
   '/login',
   '/logout',
   '/pricing',
+  '/roadmap',
   '/pitch',
   '/portfolio',
   '/about',

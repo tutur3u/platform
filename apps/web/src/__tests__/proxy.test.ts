@@ -1350,6 +1350,108 @@ describe('web proxy api handling', () => {
     expect(authOptions?.isPublicPath?.('/auth/recovery-token')).toBe(false);
   });
 
+  it('serves anonymous roadmap requests from the worker without login or cookies', async () => {
+    vi.useRealTimers();
+    const fetchMock = vi.fn(
+      async () =>
+        new Response('<html>roadmap</html>', {
+          headers: {
+            'cache-control': 'public, max-age=300',
+            'cdn-cache-control': 'public, s-maxage=60',
+            'content-type': 'text/html; charset=utf-8',
+            'set-cookie': 'session=secret',
+          },
+          status: 200,
+        })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { config, proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/roadmap/', {
+        headers: {
+          accept: 'text/html',
+          authorization: 'Bearer secret',
+          cookie: 'sb-auth=secret',
+        },
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('cache-control')).toBe('public, max-age=300');
+    expect(response.headers.get('cdn-cache-control')).toBe(
+      'public, s-maxage=60'
+    );
+    expect(response.headers.get('set-cookie')).toBeNull();
+    expect(await response.text()).toBe('<html>roadmap</html>');
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(String(url)).toBe('https://roadmap.tuturuuu.com/roadmap/');
+    const sent = new Headers((init as RequestInit | undefined)?.headers);
+    expect(sent.get('cookie')).toBeNull();
+    expect(sent.get('authorization')).toBeNull();
+    expect(sent.get('accept')).toBe('text/html');
+
+    const authOptions = mocks.createCentralizedAuthProxy.mock.calls[0]?.[0] as
+      | {
+          isPublicPath?: (pathname: string) => boolean;
+          publicPaths?: string[];
+        }
+      | undefined;
+    expect(authOptions?.isPublicPath?.('/roadmap')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/roadmap/')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/roadmap/assets/app.js')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/en/roadmap/assets/app.js')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/personal')).toBe(false);
+    expect(authOptions?.isPublicPath?.('/roadmap-private')).toBe(false);
+    expect(authOptions?.publicPaths).not.toEqual(
+      expect.arrayContaining(['/roadmap'])
+    );
+    expect(config.matcher).toEqual(
+      expect.arrayContaining(['/roadmap', '/roadmap/:path*'])
+    );
+    vi.unstubAllGlobals();
+  });
+
+  it('redirects a bare roadmap path to the mounted slash path', async () => {
+    vi.useRealTimers();
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/roadmap?view=now')
+    );
+
+    expect(response.status).toBe(308);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/roadmap/?view=now'
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps a neighbouring private path behind login', async () => {
+    vi.useRealTimers();
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    mocks.authProxy.mockResolvedValue(
+      NextResponse.redirect('http://localhost/login')
+    );
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(new NextRequest('http://localhost/personal'));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('http://localhost/login');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mocks.authProxy).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
   it('keeps the legacy signup entry public for its login redirect', async () => {
     const { proxy } = await import('../proxy');
     await proxy(new NextRequest('http://localhost/signup'));
