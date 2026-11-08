@@ -5,6 +5,8 @@ import { Check, Edit3, Fingerprint, Plus, Trash2, X } from '@tuturuuu/icons';
 import { createAuthClient } from '@tuturuuu/supabase/next/auth-browser';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSectionMessage } from '@tuturuuu/ui/custom/settings-section';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
@@ -133,17 +135,15 @@ export default function PasskeysSettings() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <p className="font-medium text-sm">{t('passkeys-title')}</p>
-          <p className="text-muted-foreground text-sm">
-            {t('passkeys-description')}
-          </p>
-        </div>
+    <>
+      <SettingItemTab
+        title={t('passkeys-title')}
+        description={t('passkeys-description')}
+      >
         <Button
           type="button"
           size="sm"
+          variant="outline"
           onClick={() => registerMutation.mutate()}
           disabled={isMutating}
         >
@@ -154,149 +154,130 @@ export default function PasskeysSettings() {
           )}
           <span>{t('passkeys-add')}</span>
         </Button>
-      </div>
+      </SettingItemTab>
 
       {passkeysQuery.isLoading ? (
-        <div className="flex items-center gap-2 rounded-lg border p-4 text-muted-foreground text-sm">
-          <LoadingIndicator className="size-4" />
-          <span>{t('passkeys-loading')}</span>
-        </div>
+        <SettingsSectionMessage icon={<LoadingIndicator className="size-4" />}>
+          {t('passkeys-loading')}
+        </SettingsSectionMessage>
       ) : passkeysQuery.isError ? (
-        <div className="space-y-3 rounded-lg border border-dynamic-red/25 bg-dynamic-red/5 p-4">
-          <p className="font-medium text-dynamic-red text-sm">
-            {t('passkeys-load-error')}
-          </p>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => passkeysQuery.refetch()}
-          >
-            {t('passkeys-retry')}
-          </Button>
-        </div>
+        <SettingsSectionMessage
+          action={
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => passkeysQuery.refetch()}
+            >
+              {t('passkeys-retry')}
+            </Button>
+          }
+          tone="error"
+        >
+          {t('passkeys-load-error')}
+        </SettingsSectionMessage>
       ) : passkeys.length === 0 ? (
-        <div className="flex items-start gap-3 rounded-lg border p-4">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-dynamic-blue/10 text-dynamic-blue">
-            <Fingerprint className="size-4" />
-          </div>
-          <div className="space-y-1">
-            <p className="font-medium text-sm">{t('passkeys-empty-title')}</p>
-            <p className="text-muted-foreground text-sm">
-              {t('passkeys-empty-description')}
-            </p>
-          </div>
-        </div>
+        <SettingsSectionMessage>
+          <p className="font-medium text-foreground">
+            {t('passkeys-empty-title')}
+          </p>
+          <p className="mt-0.5">{t('passkeys-empty-description')}</p>
+        </SettingsSectionMessage>
       ) : (
-        <div className="space-y-3">
-          {passkeys.map((passkey) => {
-            const isEditing = editingPasskeyId === passkey.id;
-            const displayName = passkey.friendly_name || t('passkeys-unnamed');
-            const createdAt = formatPasskeyDate(passkey.created_at);
-            const lastUsedAt = formatPasskeyDate(passkey.last_used_at);
+        passkeys.map((passkey) => {
+          const isEditing = editingPasskeyId === passkey.id;
+          const displayName = passkey.friendly_name || t('passkeys-unnamed');
+          const createdAt = formatPasskeyDate(passkey.created_at);
+          const lastUsedAt = formatPasskeyDate(passkey.last_used_at);
+          const createdLabel = createdAt
+            ? t('passkeys-created-at', { date: createdAt })
+            : t('passkeys-created');
+          const lastUsedLabel = lastUsedAt
+            ? ` · ${t('passkeys-last-used-at', { date: lastUsedAt })}`
+            : '';
 
-            return (
-              <div
-                key={passkey.id}
-                className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="flex min-w-0 items-start gap-3">
-                  <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-dynamic-blue/10 text-dynamic-blue">
-                    <Fingerprint className="size-4" />
-                  </div>
-                  <div className="min-w-0 space-y-1">
-                    {isEditing ? (
-                      <Input
-                        aria-label={t('passkeys-name-label')}
-                        value={editingName}
-                        onChange={(event) => setEditingName(event.target.value)}
-                        className="h-9 max-w-sm"
-                        disabled={updateMutation.isPending}
-                      />
-                    ) : (
-                      <p className="truncate font-medium text-sm">
-                        {displayName}
-                      </p>
-                    )}
-                    <p className="text-muted-foreground text-xs">
-                      {createdAt
-                        ? t('passkeys-created-at', { date: createdAt })
-                        : t('passkeys-created')}
-                      {lastUsedAt
-                        ? ` · ${t('passkeys-last-used-at', {
-                            date: lastUsedAt,
-                          })}`
-                        : ''}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  {isEditing ? (
-                    <>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        aria-label={t('passkeys-save')}
-                        disabled={
-                          !editingName.trim() || updateMutation.isPending
-                        }
-                        onClick={saveRename}
-                      >
-                        {updateMutation.isPending ? (
-                          <LoadingIndicator className="size-4" />
-                        ) : (
-                          <Check className="size-4" />
-                        )}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        aria-label={t('passkeys-cancel-rename')}
-                        disabled={updateMutation.isPending}
-                        onClick={() => {
-                          setEditingPasskeyId(null);
-                          setEditingName('');
-                        }}
-                      >
-                        <X className="size-4" />
-                      </Button>
-                    </>
-                  ) : (
+          return (
+            <SettingItemTab
+              key={passkey.id}
+              title={
+                isEditing ? (
+                  <Input
+                    aria-label={t('passkeys-name-label')}
+                    value={editingName}
+                    onChange={(event) => setEditingName(event.target.value)}
+                    className="h-9 max-w-sm font-normal"
+                    disabled={updateMutation.isPending}
+                  />
+                ) : (
+                  <span className="truncate">{displayName}</span>
+                )
+              }
+              description={`${createdLabel}${lastUsedLabel}`}
+              icon={<Fingerprint className="size-4" />}
+            >
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <>
                     <Button
                       type="button"
                       size="icon"
                       variant="ghost"
-                      aria-label={t('passkeys-rename')}
-                      disabled={isMutating}
-                      onClick={() => startRename(passkey)}
+                      aria-label={t('passkeys-save')}
+                      disabled={!editingName.trim() || updateMutation.isPending}
+                      onClick={saveRename}
                     >
-                      <Edit3 className="size-4" />
+                      {updateMutation.isPending ? (
+                        <LoadingIndicator className="size-4" />
+                      ) : (
+                        <Check className="size-4" />
+                      )}
                     </Button>
-                  )}
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label={t('passkeys-cancel-rename')}
+                      disabled={updateMutation.isPending}
+                      onClick={() => {
+                        setEditingPasskeyId(null);
+                        setEditingName('');
+                      }}
+                    >
+                      <X className="size-4" />
+                    </Button>
+                  </>
+                ) : (
                   <Button
                     type="button"
                     size="icon"
                     variant="ghost"
-                    aria-label={t('passkeys-delete')}
+                    aria-label={t('passkeys-rename')}
                     disabled={isMutating}
-                    onClick={() => deleteMutation.mutate(passkey.id)}
-                    className="text-dynamic-red hover:text-dynamic-red"
+                    onClick={() => startRename(passkey)}
                   >
-                    {deleteMutation.isPending ? (
-                      <LoadingIndicator className="size-4" />
-                    ) : (
-                      <Trash2 className="size-4" />
-                    )}
+                    <Edit3 className="size-4" />
                   </Button>
-                </div>
+                )}
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  aria-label={t('passkeys-delete')}
+                  disabled={isMutating}
+                  onClick={() => deleteMutation.mutate(passkey.id)}
+                  className="text-dynamic-red hover:text-dynamic-red"
+                >
+                  {deleteMutation.isPending ? (
+                    <LoadingIndicator className="size-4" />
+                  ) : (
+                    <Trash2 className="size-4" />
+                  )}
+                </Button>
               </div>
-            );
-          })}
-        </div>
+            </SettingItemTab>
+          );
+        })
       )}
-    </div>
+    </>
   );
 }

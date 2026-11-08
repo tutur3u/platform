@@ -60,6 +60,8 @@ const APP_NAMESPACE_ALLOWLIST = new Map([
   ],
   // Colab uses framework-independent primitives with labels supplied by its own locale context.
   ['apps/colab', new Set()],
+  // Roadmap's public shell and primitives receive labels from its locale dictionaries.
+  ['apps/roadmap', new Set()],
   ['apps/storefront', new Set(['common'])],
   ['apps/shortener', new Set(['common'])],
 ]);

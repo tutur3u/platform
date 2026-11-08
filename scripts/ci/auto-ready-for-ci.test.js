@@ -1,10 +1,16 @@
 const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
 const test = require('node:test');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 const workflow = readWorkflow('auto-ready-for-ci.yaml', { raw: true });
 const job = workflow.jobs.label;
-const script = job.steps[1].with.script;
+const labelStep = job.steps.find((step) =>
+  step.uses?.startsWith('actions/github-script@')
+);
+const appTokenStep = job.steps.find((step) => step.id === 'app-token');
+const configurationStep = job.steps.find((step) => step.run);
+const script = labelStep.with.script;
 const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
 
 async function exercise(overrides = {}, action = 'opened') {
@@ -78,19 +84,71 @@ test('trusted workflow uses hosted metadata only and no token fallback', () => {
     /head\.repo\.id == github\.event\.pull_request\.base\.repo\.id/
   );
   assert.match(job.if, /head\.repo\.full_name == github\.repository/);
-  assert.match(job.steps[0].run, /-z "\$CI_ADMISSION_TOKEN"/);
-  assert.match(job.steps[0].run, /exit 1/);
+  assert.deepEqual(configurationStep.env, {
+    CI_ADMISSION_APP_ID: '${{ vars.CI_ADMISSION_APP_ID }}',
+    CI_ADMISSION_APP_PRIVATE_KEY: '${{ secrets.CI_ADMISSION_APP_PRIVATE_KEY }}',
+  });
+  assert.equal(configurationStep.shell, 'bash');
+  assert.match(configurationStep.run, /-z "\$CI_ADMISSION_APP_ID"/);
+  assert.match(configurationStep.run, /-z "\$CI_ADMISSION_APP_PRIVATE_KEY"/);
+  assert.match(configurationStep.run, /::error::/);
+  assert.match(configurationStep.run, /exit 1/);
+  assert.equal(
+    appTokenStep.uses,
+    'actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510'
+  );
+  assert.deepEqual(appTokenStep.with, {
+    'app-id': '${{ vars.CI_ADMISSION_APP_ID }}',
+    'private-key': '${{ secrets.CI_ADMISSION_APP_PRIVATE_KEY }}',
+    owner: 'tutur3u',
+    repositories: 'platform',
+    'permission-issues': 'write',
+    'permission-pull-requests': 'write',
+  });
+  assert.equal(appTokenStep.with['skip-token-revoke'], undefined);
+  assert.equal(
+    labelStep.with['github-token'],
+    '${{ steps.app-token.outputs.token }}'
+  );
+  assert.equal(job.steps.indexOf(configurationStep), 0);
+  assert.equal(job.steps.indexOf(appTokenStep), 1);
+  assert.equal(job.steps.indexOf(labelStep), 2);
   assert.doesNotMatch(
     JSON.stringify(job.steps),
-    /checkout@|persist-credentials|\|\| github\.token/
+    /checkout@|persist-credentials|CI_ADMISSION_TOKEN|\|\| github\.token/
   );
   assert.ok(
     require('./pr-label-gate').ADMISSION_PR_WORKFLOWS.includes(
       'auto-ready-for-ci.yaml'
     )
   );
-  assert.equal(job.steps.length, 2);
+  assert.equal(job.steps.length, 3);
   assert.equal(workflow.concurrency['cancel-in-progress'], true);
   assert.equal(workflow.concurrency.queue, undefined);
-  assert.match(job.steps[1].uses, /^actions\/github-script@[0-9a-f]{40}/);
+  assert.match(labelStep.uses, /^actions\/github-script@[0-9a-f]{40}/);
+});
+
+test('missing App configuration fails closed without exposing supplied values', () => {
+  for (const env of [
+    {},
+    { CI_ADMISSION_APP_ID: '123' },
+    { CI_ADMISSION_APP_PRIVATE_KEY: 'synthetic-private-key' },
+  ]) {
+    const result = spawnSync('bash', ['-e', '-c', configurationStep.run], {
+      env,
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 1);
+    assert.match(result.stdout, /::error::CI_ADMISSION_APP_(ID|PRIVATE_KEY)/);
+    assert.doesNotMatch(result.stdout + result.stderr, /synthetic-private-key/);
+  }
+  const result = spawnSync('bash', ['-e', '-c', configurationStep.run], {
+    env: {
+      CI_ADMISSION_APP_ID: '123',
+      CI_ADMISSION_APP_PRIVATE_KEY: 'synthetic-private-key',
+    },
+    encoding: 'utf8',
+  });
+  assert.equal(result.status, 0);
+  assert.equal(result.stdout + result.stderr, '');
 });

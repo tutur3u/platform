@@ -71,6 +71,25 @@ the transitive dependency on preflight for every protected or secret-bearing job
 - Domain libraries stay framework-independent. Inject request identity,
   storage, navigation and localization at the adapter.
 
+### Request-scoped satellite authentication
+
+`@tuturuuu/satellite/auth-request` exposes the shared satellite session and
+profile helpers without importing Next request globals. Native adapters pass the
+current `request`, the registered `targetApp`, and a request-bound
+`getSupabaseSessionUser` callback. That callback must use the existing verified
+Supabase session resolver; a caller-provided actor ID is not authentication.
+App-session verification retains its target scope and takes precedence over the
+Supabase fallback for session and user reads. Profile reads retain the existing
+central API forwarding and fallback behavior.
+
+Next callers keep `@tuturuuu/satellite/auth`, which obtains headers and the
+Supabase resolver from the Next adapter. The shared Start preset already owns
+the Next aliases, RSC/SSR ports and mount handling; apps should reuse those
+ports rather than create alternate identity or navigation implementations.
+`packages/satellite/src/auth-request.test.ts` covers explicit request/target
+forwarding, rejected identities, profile fallback and interleaved requests;
+`auth.test.ts` covers the Next adapter.
+
 ## basePath readiness
 
 Each app must serve both its subdomain and `tuturuuu.com/<app>` from the same

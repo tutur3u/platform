@@ -1164,14 +1164,14 @@
       "digest": "f479ed938be0fab6e630eb665e5718d2d80fe58956598186df591f44655e22ae"
     },
     "apps/roadmap/scripts/seal-artifact.test.mjs": {
-      "lines": 2,
-      "uses": 2,
+      "lines": 3,
+      "uses": 3,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7786",
-        "reason": "PR7786 synthetic local fixture uses the actual Void-emitted configuration filename to test sealing and replacement refusal; no compiler/provider/CLI execution or runtime acceptance."
+        "decision": "https://github.com/tutur3u/platform/pull/7797",
+        "reason": "Synthetic fixture references the emitted configuration filename for successful root-base asset mapping and rejected non-root mapping; no compiler, provider, SDK or CLI invocation is added."
       },
-      "digest": "2c9efdb3a4526a9ef456565070a9255d00c1c39417b554b3bf5e66d909770c1a"
+      "digest": "fe37858bda0354e17c57d35ee1796ee164eeac39a8ad0793989fbf2942f8d5fe"
     },
     "apps/shortener/cloudflare/native-built-worker.test.mjs": {
       "lines": 1,

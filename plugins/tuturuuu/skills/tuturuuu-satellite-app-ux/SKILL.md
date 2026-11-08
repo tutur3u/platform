@@ -68,3 +68,16 @@ for broad prose rewrites or value-only updates. Finish with `bun validate` for
 TypeScript, JavaScript, messages, or repo config changes unless an unrelated
 pre-existing blocker prevents it. Finite builds needed to validate the authorized change may run. Start long-lived
 servers only when requested or needed for explicitly requested runtime verification.
+
+## Public documents
+
+For explicitly public surfaces, use `@tuturuuu/satellite/public`, its theme-only
+provider and injected Link/Image adapters. Avoid the authenticated default barrel,
+providers and account controls in the public document graph. Public labels come
+from explicit app translations; sign-in is a link, never a session lookup.
+See `packages/satellite/README.md` and the public-document decision in
+`apps/docs/platform/architecture/satellite-apps.mdx`. The owning app supplies its
+existing UI CSS processor; dependency and lockfile changes require normal custody.
+Source graph/SSR tests do not replace emitted bundle inspection or hosted cache-hit
+acceptance. Header-only policy must retain unsafe headers and preserve MIME,
+streaming/status and native asset ownership.
