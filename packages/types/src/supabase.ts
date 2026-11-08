@@ -42768,6 +42768,8 @@ export type Database = {
           is_public: boolean | null;
           legacy_content: string | null;
           name: string | null;
+          parent_id: string | null;
+          position: number | null;
           ws_id: string | null;
         };
         ComputedFields: never;
@@ -42778,6 +42780,8 @@ export type Database = {
           is_public?: boolean | null;
           legacy_content?: string | null;
           name?: string | null;
+          parent_id?: string | null;
+          position?: number | null;
           ws_id?: string | null;
         };
         Update: {
@@ -42787,9 +42791,18 @@ export type Database = {
           is_public?: boolean | null;
           legacy_content?: string | null;
           name?: string | null;
+          parent_id?: string | null;
+          position?: number | null;
           ws_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_documents_parent_id_fkey';
+            columns: ['parent_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_documents';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'workspace_documents_ws_id_fkey';
             columns: ['ws_id'];
