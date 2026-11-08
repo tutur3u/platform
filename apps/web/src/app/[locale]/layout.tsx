@@ -1,4 +1,5 @@
 import { AppThemeProvider, Providers } from '@/components/providers';
+import { PrivacyConsent } from '@/components/privacy-consent';
 import { siteConfig } from '@/constants/configs';
 import { supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
@@ -30,7 +31,10 @@ async function PublicClientProviders({ children }: { children: ReactNode }) {
 
   return (
     <NuqsAdapter>
-      <Providers messages={publicClientMessages}>{children}</Providers>
+      <Providers messages={publicClientMessages}>
+        {children}
+        <PrivacyConsent />
+      </Providers>
     </NuqsAdapter>
   );
 }

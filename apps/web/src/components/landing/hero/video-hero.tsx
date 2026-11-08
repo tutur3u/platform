@@ -46,6 +46,7 @@ function FrameChrome({ tabLabel }: { tabLabel: string }) {
 
 export function VideoHero() {
   const t = useTranslations('landing.hero.video');
+  const privacy = useTranslations('privacy-consent');
   const [isPlaying, setIsPlaying] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -89,6 +90,7 @@ export function VideoHero() {
           </div>
         ) : (
           <button
+            aria-label={privacy('play_youtube')}
             className="group relative block aspect-video w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
             onClick={handlePlay}
             type="button"
@@ -96,7 +98,7 @@ export function VideoHero() {
             <img
               alt={t('thumbnail')}
               className="absolute inset-0 block h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-              src={`https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/maxresdefault.jpg`}
+              src="/media/privacy/product-tour.jpg"
             />
 
             {/* Scrim keeps the control legible over any frame */}
