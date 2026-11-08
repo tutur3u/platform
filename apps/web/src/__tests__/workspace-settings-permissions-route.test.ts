@@ -103,9 +103,8 @@ function permissionsResult(wsId: string, permissions: string[]) {
 }
 
 async function callRoute(wsId = 'ws-1') {
-  const { GET } = await import(
-    '@/app/api/v1/workspaces/[wsId]/settings/permissions/route'
-  );
+  const { GET } =
+    await import('@/app/api/v1/workspaces/[wsId]/settings/permissions/route');
 
   return GET(
     new NextRequest(
@@ -121,9 +120,8 @@ async function callCheckRoute(
   permission = 'manage_workspace_settings',
   wsId = 'ws-1'
 ) {
-  const { GET } = await import(
-    '@/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/check/route'
-  );
+  const { GET } =
+    await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/check/route');
 
   return GET(
     new NextRequest(
@@ -136,9 +134,8 @@ async function callCheckRoute(
 }
 
 async function callMemberSettingsRoute(wsId = 'ws-1') {
-  const { GET } = await import(
-    '@/legacy-api-routes/v1/workspaces/[wsId]/settings/members/route'
-  );
+  const { GET } =
+    await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/members/route');
 
   return GET(
     new NextRequest(

@@ -116,7 +116,6 @@ export function setupAppsLauncherTestEnvironment() {
     configurable: true,
     value: 1024,
   });
-  // biome-ignore lint/suspicious/noDocumentCookie: Reset the client preference between JSDOM tests.
   document.cookie = `${APP_OPEN_MODE_PREFERENCE_KEY}=; Max-Age=0; path=/`;
   Object.defineProperty(window, 'localStorage', {
     configurable: true,

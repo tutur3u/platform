@@ -63,7 +63,6 @@ function dbWith(results: unknown[]) {
         ? Promise.reject(result)
         : Promise.resolve(result);
     chain.single = () => Promise.resolve(result);
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     chain.then = (
       resolve: (value: unknown) => void,
       reject: (reason: unknown) => void

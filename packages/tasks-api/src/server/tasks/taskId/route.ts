@@ -25,6 +25,7 @@ import {
   type TaskDetailRouteAuthContext,
   type TaskDetailRouteContext,
 } from './access';
+import { getWorkspaceTask } from './load-workspace-task';
 import {
   restoreTaskSchema,
   type TaskPriority,
@@ -37,90 +38,13 @@ const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
 async function deriveTaskDescriptionYjsState(
   description: string | null | undefined
 ) {
-  const { deriveTaskDescriptionYjsState: deriveYjsState } = await import(
-    '@tuturuuu/utils/yjs-task-description'
-  );
+  const { deriveTaskDescriptionYjsState: deriveYjsState } =
+    await import('@tuturuuu/utils/yjs-task-description');
 
   return deriveYjsState(description);
 }
 
 export type { TaskDetailRouteAuthContext } from './access';
-
-async function getWorkspaceTask(
-  supabase: TypedSupabaseClient,
-  wsId: string,
-  taskId: string
-): Promise<{ error: Error | null; task: TaskRecord | null }> {
-  const { data: task, error } = await supabase
-    .from('tasks')
-    .select(
-      `
-      id,
-      display_number,
-      name,
-      description,
-      priority,
-      completed,
-      completed_at,
-      start_date,
-      end_date,
-      estimation_points,
-      sort_key,
-      created_at,
-      closed_at,
-      deleted_at,
-      list_id,
-      task_lists!inner (
-        id,
-        name,
-        status,
-        board_id,
-        workspace_boards!inner (
-          id,
-          ws_id,
-          name,
-          workspace:workspaces (
-            personal
-          )
-        )
-      ),
-      assignees:task_assignees(
-        ...users(
-          id,
-          display_name,
-          avatar_url
-        )
-      ),
-      labels:task_labels(
-        ...workspace_task_labels(
-          id,
-          name,
-          color,
-          created_at
-        )
-      ),
-      projects:task_project_tasks(
-        ...task_projects(
-          id,
-          name,
-          status
-        )
-      )
-    `
-    )
-    .eq('id', taskId)
-    .maybeSingle();
-
-  if (error) {
-    return { error, task: null };
-  }
-
-  if (!task || task.task_lists?.workspace_boards?.ws_id !== wsId) {
-    return { error: null, task: null };
-  }
-
-  return { error: null, task: task as TaskRecord };
-}
 
 function isPersonalOverlayOnlyUpdate(body: Record<string, unknown>) {
   const allowedKeys = new Set(['label_ids', 'project_ids']);

@@ -1,6 +1,9 @@
 'use client';
 import { MessageSquareText, Play, RotateCcw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from './settings-item-tab';
+import { SettingsSection } from './settings-section';
+
 export function SatelliteOnboardingSettingsPanel({
   t,
   pending,
@@ -47,34 +50,25 @@ export function SatelliteOnboardingSettingsPanel({
   ];
 
   return (
-    <div className="space-y-3">
+    <SettingsSection>
       {actions.map((action) => (
-        <div
+        <SettingItemTab
           key={action.label}
-          className="flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
+          description={action.description}
+          icon={<action.icon className="size-4" />}
+          title={action.label}
         >
-          <div className="flex gap-3">
-            <div className="grid size-9 shrink-0 place-items-center rounded-lg border bg-muted/40">
-              <action.icon className="size-4" />
-            </div>
-            <div>
-              <p className="font-medium text-sm">{action.label}</p>
-              <p className="mt-1 max-w-xl text-muted-foreground text-sm">
-                {action.description}
-              </p>
-            </div>
-          </div>
           <Button
             type="button"
             variant="outline"
+            size="sm"
             disabled={action.pending}
             onClick={action.onClick}
           >
-            <action.icon className="size-4" />
             {action.label}
           </Button>
-        </div>
+        </SettingItemTab>
       ))}
-    </div>
+    </SettingsSection>
   );
 }

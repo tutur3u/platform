@@ -75,7 +75,6 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
               single() {
                 return Promise.resolve(roleResult());
               },
-              // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
               then(resolve: (value: unknown) => unknown) {
                 return Promise.resolve({
                   data: roleExists
@@ -147,7 +146,6 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
           select() {
             const query: Record<string, unknown> = {};
             for (const op of ['eq', 'in']) query[op] = () => query;
-            // biome-ignore lint/suspicious/noThenProperty: mimics the awaitable query builder.
             query.then = (resolve: (value: unknown) => unknown) =>
               Promise.resolve({ data: [], error: null }).then(resolve);
             return query;

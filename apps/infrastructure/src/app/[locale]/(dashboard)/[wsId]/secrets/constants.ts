@@ -229,6 +229,13 @@ export const KNOWN_SECRETS: SecretDefinition[] = [
     defaultValue: 'false',
   },
   {
+    name: 'ENABLE_FEE_LOCK',
+    description:
+      'Enables monthly fee locking (chốt học phí), notice templates and the fee-lock Excel export in Finance.',
+    type: 'boolean',
+    defaultValue: 'false',
+  },
+  {
     name: 'ENABLE_EMAIL_SENDING',
     description: 'Enables email sending capabilities.',
     type: 'boolean',

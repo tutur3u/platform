@@ -89,7 +89,6 @@ function useSidebarRemoteBehaviorBridge() {
   useEffect(() => {
     let active = true;
 
-    // biome-ignore lint/suspicious/noTsIgnore: NodeNext requires .js, but Next/Turbopack resolves workspace TypeScript source here before package emit.
     // @ts-ignore
     void import('./sidebar-remote-behavior-bridge').then((module) => {
       if (active) {

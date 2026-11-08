@@ -118,9 +118,8 @@ describe('strict employee client', () => {
 });
 
 it('observes the original operation with one uncached GET and binds completion identity', async () => {
-  const { getInternalEmployeeCreationOperation } = await import(
-    './employee-creation'
-  );
+  const { getInternalEmployeeCreationOperation } =
+    await import('./employee-creation');
   const transport = vi
     .fn<typeof fetch>()
     .mockResolvedValue(Response.json(reply));

@@ -139,7 +139,6 @@ describe('AI agent chat discovery', () => {
       limit: vi.fn(() => messagesQuery),
       order: vi.fn(() => messagesQuery),
       select: vi.fn(() => messagesQuery),
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
       then: (resolve: (value: unknown) => unknown) =>
         Promise.resolve(resolve({ data: [], error: null })),
     };

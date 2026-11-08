@@ -89,7 +89,6 @@ test('CI Admitted is always on, read-only and immune to PR edits', () => {
   const checkout = job.steps[0];
   assert.match(checkout.uses, /^actions\/checkout@[0-9a-f]{40}$/u);
   // The script comes from the base commit, never the pull request head.
-  // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
   assert.equal(checkout.with.ref, '${{ github.event.pull_request.base.sha }}');
   assert.equal(checkout.with['persist-credentials'], false);
   for (const step of job.steps.slice(1)) {

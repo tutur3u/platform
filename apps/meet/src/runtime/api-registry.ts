@@ -27,9 +27,7 @@ const api10 = () => import('../app/api/meet-call/[meetingId]/costs/route');
 const api11 = () => import('../app/api/meet-call/[meetingId]/document/route');
 const api12 = () => import('../app/api/meet-call/[meetingId]/files/route');
 const api13 = () =>
-  import(
-    '../app/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route'
-  );
+  import('../app/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route');
 const api14 = () =>
   import('../app/api/meet-call/[meetingId]/programming/route');
 const api15 = () =>

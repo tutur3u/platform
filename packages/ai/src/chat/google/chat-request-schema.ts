@@ -115,13 +115,11 @@ export function mapToUIMessages(
 ): UIMessage[] {
   if (!messages) return [];
 
-  return messages.map(
-    (message): UIMessage => ({
-      id: message.id ?? generateRandomUUID(),
-      role: message.role,
-      parts: mapToUIMessageParts(message.parts, message.role),
-      ...(message.name ? { name: message.name } : {}),
-      ...(message.metadata ? { metadata: message.metadata } : {}),
-    })
-  );
+  return messages.map((message): UIMessage => ({
+    id: message.id ?? generateRandomUUID(),
+    role: message.role,
+    parts: mapToUIMessageParts(message.parts, message.role),
+    ...(message.name ? { name: message.name } : {}),
+    ...(message.metadata ? { metadata: message.metadata } : {}),
+  }));
 }

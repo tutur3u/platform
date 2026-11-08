@@ -1,9 +1,13 @@
 'use client';
 
-import { InfoIcon, Loader2, PlusIcon, Trash2 } from '@tuturuuu/icons';
+import { Loader2, PlusIcon, Trash2 } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import { Input } from '@tuturuuu/ui/input';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -245,47 +249,41 @@ export function CategoryColorsSettings({
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <SettingsSectionBlock className="space-y-6">
         <Skeleton className="h-24 w-full rounded-lg" />
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-32 w-full rounded-lg" />
           ))}
         </div>
-      </div>
+      </SettingsSectionBlock>
     );
   }
 
   if (isError) {
     return (
-      <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
-        <p className="font-medium text-destructive">
-          {t('categories.failed_to_load')}
-        </p>
-        <p className="mt-1 text-muted-foreground text-sm">
+      <SettingsSectionMessage tone="error">
+        <p className="font-medium">{t('categories.failed_to_load')}</p>
+        <p className="mt-1 text-muted-foreground">
           {t('categories.try_refreshing')}
         </p>
-      </div>
+      </SettingsSectionMessage>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-md bg-muted/30 p-4">
-        <div className="flex items-start gap-2">
-          <InfoIcon className="mt-0.5 h-4 w-4 text-muted-foreground" />
-          <div className="text-muted-foreground text-sm">
-            <p>{t('categories.info_text')}</p>
-            <p className="mt-1">{t('categories.info_example')}</p>
-          </div>
-        </div>
-      </div>
+    <>
+      <SettingsSectionBlock className="space-y-1 text-muted-foreground text-sm">
+        <p>{t('categories.info_text')}</p>
+        <p>{t('categories.info_example')}</p>
+      </SettingsSectionBlock>
 
       <Tabs
+        className="gap-0"
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as 'categories' | 'suggestions')}
       >
-        <div className="mb-4 flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-4 md:px-5">
           <TabsList>
             <TabsTrigger value="categories" className="px-4">
               {t('categories.your_categories')}
@@ -358,30 +356,31 @@ export function CategoryColorsSettings({
 
         <TabsContent value="categories" className="mt-0">
           {localCategories.length === 0 ? (
-            <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-md border border-dashed">
-              <p className="text-muted-foreground">
-                {t('categories.no_categories')}
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveTab('suggestions')}
-              >
-                {t('categories.browse_suggestions')}
-              </Button>
-            </div>
+            <SettingsSectionMessage
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveTab('suggestions')}
+                >
+                  {t('categories.browse_suggestions')}
+                </Button>
+              }
+            >
+              {t('categories.no_categories')}
+            </SettingsSectionMessage>
           ) : (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="divide-y">
               {localCategories.map((category, index) => (
                 <div
                   key={category.id}
-                  className="group w-full overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all"
+                  className="w-full"
                   draggable
                   onDragStart={() => handleDragStart(index)}
                   onDragOver={(e) => handleDragOver(e, index)}
                   onDragEnd={handleDragEnd}
                 >
-                  <div className="p-3">
+                  <div className="px-4 py-3 md:px-5">
                     <div className="mb-2 flex items-center justify-between">
                       <div className="flex flex-1 items-center gap-3">
                         <div
@@ -423,7 +422,7 @@ export function CategoryColorsSettings({
                         ) : (
                           <div className="flex flex-1 items-center justify-between">
                             <div
-                              className="cursor-pointer truncate font-medium"
+                              className="cursor-pointer truncate font-medium text-sm"
                               onClick={() => setEditingCategory(category.id)}
                             >
                               {category.name}
@@ -511,7 +510,7 @@ export function CategoryColorsSettings({
         </TabsContent>
 
         <TabsContent value="suggestions" className="mt-0">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 px-4 py-4 sm:grid-cols-3 md:grid-cols-4 md:px-5">
             {CATEGORY_SUGGESTIONS.map((suggestion, index) => {
               // Check if this category name or color already exists
               const exists = localCategories.some(
@@ -527,9 +526,9 @@ export function CategoryColorsSettings({
                 <div
                   key={index}
                   className={cn(
-                    'overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all',
+                    'overflow-hidden rounded-lg border transition-all',
                     exists
-                      ? 'opacity-50'
+                      ? 'cursor-not-allowed text-muted-foreground'
                       : 'cursor-pointer hover:ring-1 hover:ring-primary'
                   )}
                   onClick={() => !exists && addSuggestedCategory(suggestion)}
@@ -539,7 +538,7 @@ export function CategoryColorsSettings({
                       <div
                         className={cn('h-4 w-4 rounded-full', colorInfo.cbg)}
                       />
-                      <div className="font-medium">
+                      <div className="font-medium text-sm">
                         {t(
                           `categories.suggestion_names.${suggestion.translationKey}`
                         )}
@@ -563,7 +562,7 @@ export function CategoryColorsSettings({
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+    </>
   );
 }
 

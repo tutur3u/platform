@@ -23,7 +23,7 @@ const PROTECTED_PUSH_BRANCHES = [
   'release-please--branches--**',
 ];
 const PUSH_TO_PR = {
-  'biome-check.yaml': PROTECTED_PUSH_BRANCHES,
+  'oxc-check.yaml': PROTECTED_PUSH_BRANCHES,
   'discord-python-ci.yml': PROTECTED_PUSH_BRANCHES,
   'supabase-baseline.yaml': ['main', 'release-please--branches--**'],
   'turbo-unit-tests.yaml': PROTECTED_PUSH_BRANCHES,
@@ -77,6 +77,7 @@ const HEAVY_PR_WORKFLOWS = [
   'programming-database-contract.yaml',
   'report-review-receipts-contract.yaml',
   'required-account-mfa-contract.yaml',
+  'roadmap-cloudflare.yaml',
   'sdk-package-qualification.yaml',
   'security-egress-contract.yaml',
   'shortener-cloudflare.yaml',
@@ -104,10 +105,10 @@ const ALWAYS_ON_PR_WORKFLOWS = [
   'security-review-classifier.yaml',
 ];
 
-// The mixed entrypoint always reports admission and selects its validation callers.
-const ADMISSION_PR_WORKFLOWS = ['pr-checks.yaml'];
+// Admission controls run before label-gated validation can start.
+const ADMISSION_PR_WORKFLOWS = ['auto-ready-for-ci.yaml', 'pr-checks.yaml'];
 const REUSABLE_GATED_WORKFLOWS = [
-  'biome-check.yaml',
+  'oxc-check.yaml',
   'docs-seo-check.yaml',
   'i18n-check.yaml',
 ];

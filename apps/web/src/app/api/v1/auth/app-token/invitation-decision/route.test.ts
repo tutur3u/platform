@@ -1,4 +1,7 @@
-import { createAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
+import {
+  createAppCoordinationToken,
+  verifyAppCoordinationToken,
+} from '@tuturuuu/auth/app-coordination';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -100,7 +103,15 @@ const appSecret = 'ttr_app_secret_test';
 const userId = '11111111-1111-4111-8111-111111111111';
 const workspaceId = '22222222-2222-4222-8222-222222222222';
 
-function createAdminMock() {
+function createAdminMock({
+  authEmailConfirmed = true,
+  authLookupFails = false,
+  profileEmail = 'victim@example.com',
+}: {
+  authEmailConfirmed?: boolean;
+  authLookupFails?: boolean;
+  profileEmail?: string;
+} = {}) {
   const tableCalls: string[] = [];
   const inserts: Array<{ table: string; value: unknown }> = [];
   const privateTableCalls: string[] = [];
@@ -149,7 +160,7 @@ function createAdminMock() {
               id: userId,
               user_private_details: {
                 id: userId,
-                email: 'victim@example.com',
+                email: profileEmail,
                 full_name: 'Victim Full Name',
               },
             },
@@ -206,24 +217,37 @@ function createAdminMock() {
     return builder;
   }
 
+  const authUser = {
+    id: userId,
+    email: 'victim@example.com',
+    email_confirmed_at: authEmailConfirmed ? '2026-06-01T00:00:00.000Z' : null,
+    user_metadata: {
+      avatar_url: 'https://example.com/auth-avatar.png',
+      display_name: 'Auth Victim',
+      full_name: 'Auth Victim Full Name',
+    },
+  };
+
   return {
     admin: {
       auth: {
         admin: {
-          getUserById: vi.fn().mockResolvedValue({
-            data: {
-              user: {
-                id: userId,
-                email: 'victim@example.com',
-                user_metadata: {
-                  avatar_url: 'https://example.com/auth-avatar.png',
-                  display_name: 'Auth Victim',
-                  full_name: 'Auth Victim Full Name',
-                },
-              },
-            },
-            error: null,
-          }),
+          getUserById: authLookupFails
+            ? // The required-MFA gate reads Auth first; later reads fail.
+              vi
+                .fn()
+                .mockResolvedValueOnce({
+                  data: { user: authUser },
+                  error: null,
+                })
+                .mockResolvedValue({
+                  data: { user: null },
+                  error: { message: 'lookup failed' },
+                })
+            : vi.fn().mockResolvedValue({
+                data: { user: authUser },
+                error: null,
+              }),
         },
       },
       from: vi.fn((table: string) => {
@@ -696,5 +720,70 @@ describe('app token invitation decision route', () => {
     });
     expect(JSON.stringify(body)).not.toContain('select ');
     expect(JSON.stringify(body)).not.toContain(appSecret);
+  });
+  it('issues the session with the confirmed Auth email, never a differing profile email (SR-926)', async () => {
+    const profileEmail = 'sr926-profile-claim@attacker.example';
+    const { admin } = createAdminMock({ profileEmail });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const response = await POST(createDecisionRequest());
+    const body = (await response.json()) as {
+      accessToken: string;
+      refreshToken: string;
+      user: Record<string, unknown>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.user.email).toBe('victim@example.com');
+    expect(JSON.stringify(body)).not.toContain(profileEmail);
+    for (const token of [body.accessToken, body.refreshToken]) {
+      const verification = verifyAppCoordinationToken(token, {
+        secret: 'test-secret',
+      });
+      expect(verification.ok).toBe(true);
+      if (verification.ok) {
+        expect(verification.claims.email).toBe('victim@example.com');
+        expect(JSON.stringify(verification.claims)).not.toContain(profileEmail);
+      }
+    }
+  });
+
+  it('does not fall back to the profile or token email when Auth email is unconfirmed (SR-926)', async () => {
+    const profileEmail = 'sr926-profile-claim@attacker.example';
+    const { admin } = createAdminMock({
+      authEmailConfirmed: false,
+      profileEmail,
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const response = await POST(createDecisionRequest());
+    const body = (await response.json()) as {
+      accessToken: string;
+      user: Record<string, unknown>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.user.email).toBeNull();
+    expect(JSON.stringify(body)).not.toContain(profileEmail);
+    const verification = verifyAppCoordinationToken(body.accessToken, {
+      secret: 'test-secret',
+    });
+    expect(verification.ok).toBe(true);
+    if (verification.ok) {
+      expect(verification.claims.email ?? null).toBeNull();
+    }
+  });
+
+  it('fails closed without a session when the Auth identity cannot be verified (SR-926)', async () => {
+    const { admin } = createAdminMock({ authLookupFails: true });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const response = await POST(createDecisionRequest());
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(503);
+    expect(body.code).toBe('AUTH_IDENTITY_UNAVAILABLE');
+    expect(body.accessToken).toBeUndefined();
+    expect(body.refreshToken).toBeUndefined();
   });
 });

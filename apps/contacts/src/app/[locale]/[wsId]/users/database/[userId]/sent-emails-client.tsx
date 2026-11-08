@@ -270,7 +270,7 @@ export default function SentEmailsClient({
             <div className="min-h-0 flex-1 overflow-y-auto">
               <div
                 className="prose prose-sm max-w-none"
-                // biome-ignore lint/security/noDangerouslySetInnerHtml: content is already sanitized
+                // eslint-disable-next-line react/no-danger -- DOMPurify sanitizes selectedEmail content before this sink.
                 dangerouslySetInnerHTML={{
                   __html: sanitizedContent,
                 }}

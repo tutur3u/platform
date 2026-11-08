@@ -10,6 +10,11 @@ import {
 } from '@tuturuuu/internal-api/workspace-configs';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
@@ -179,7 +184,7 @@ export default function UsersManagementSettings({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -189,76 +194,79 @@ export default function UsersManagementSettings({
             autoAddNewGroups: autoAddNewGroupsToDefaultIncludedGroups,
           });
         }}
-        className="space-y-4"
       >
-        <GroupSelectionSettingCard
-          label={t('default_included_groups_label')}
-          help={t('default_included_groups_help')}
-          selection={includedSelectionState.selection}
-          setSelection={includedSelectionState.setSelection}
-          options={includedSelectionState.options}
-          hasUnresolvedSelectedGroups={
-            includedSelectionState.hasUnresolvedSelectedGroups
-          }
-          isLoadingOptions={includedSelectionState.isLoadingOptions}
-          setSearchQuery={includedSelectionState.setSearchQuery}
-          hasNextPage={includedSelectionState.hasNextPage}
-          fetchNextPage={includedSelectionState.fetchNextPage}
-          isFetchingNextPage={includedSelectionState.isFetchingNextPage}
-          placeholder={t('select_groups_placeholder')}
-          searchPlaceholder={t('search_groups')}
-          emptyText={t('no_groups_found')}
-          selectedGroupsCountLabel={t('selected_groups_count', {
-            count: includedSelectionState.selection.length,
-          })}
-          loadMoreText={commonT('load_more')}
-          loadingMoreText={commonT('loading')}
-        />
-
-        <GroupSelectionSettingCard
-          label={t('default_excluded_groups_label')}
-          help={t('default_excluded_groups_help')}
-          selection={excludedSelection}
-          setSelection={setExcludedSelection}
-          options={excludedOptions}
-          hasUnresolvedSelectedGroups={hasUnresolvedExcludedGroups}
-          isLoadingOptions={isLoadingExcludedOptions}
-          setSearchQuery={setExcludedSearchQuery}
-          hasNextPage={hasNextExcludedPage}
-          fetchNextPage={fetchNextExcludedPage}
-          isFetchingNextPage={isFetchingNextExcludedPage}
-          placeholder={t('select_groups_placeholder')}
-          searchPlaceholder={t('search_groups')}
-          emptyText={t('no_groups_found')}
-          selectedGroupsCountLabel={t('selected_groups_count', {
-            count: excludedSelection.length,
-          })}
-          loadMoreText={commonT('load_more')}
-          loadingMoreText={commonT('loading')}
-        />
-
-        <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-          <div className="space-y-0.5">
-            <div className="font-medium text-base">
-              {t('auto_add_new_groups_to_default_included_groups_label')}
-            </div>
-            <div className="text-muted-foreground text-sm">
-              {t('auto_add_new_groups_to_default_included_groups_help')}
-            </div>
-          </div>
-          <Switch
-            checked={autoAddNewGroupsToDefaultIncludedGroups}
-            onCheckedChange={(checked) => {
-              setHasEditedAutoAddNewGroups(true);
-              setAutoAddNewGroups(checked);
-            }}
-            disabled={updateMutation.isPending}
+        <SettingsSection>
+          <GroupSelectionSettingCard
+            label={t('default_included_groups_label')}
+            help={t('default_included_groups_help')}
+            selection={includedSelectionState.selection}
+            setSelection={includedSelectionState.setSelection}
+            options={includedSelectionState.options}
+            hasUnresolvedSelectedGroups={
+              includedSelectionState.hasUnresolvedSelectedGroups
+            }
+            isLoadingOptions={includedSelectionState.isLoadingOptions}
+            setSearchQuery={includedSelectionState.setSearchQuery}
+            hasNextPage={includedSelectionState.hasNextPage}
+            fetchNextPage={includedSelectionState.fetchNextPage}
+            isFetchingNextPage={includedSelectionState.isFetchingNextPage}
+            placeholder={t('select_groups_placeholder')}
+            searchPlaceholder={t('search_groups')}
+            emptyText={t('no_groups_found')}
+            selectedGroupsCountLabel={t('selected_groups_count', {
+              count: includedSelectionState.selection.length,
+            })}
+            loadMoreText={commonT('load_more')}
+            loadingMoreText={commonT('loading')}
           />
-        </div>
 
-        <Button type="submit" disabled={updateMutation.isPending || !isDirty}>
-          {updateMutation.isPending ? t('saving') : t('save')}
-        </Button>
+          <GroupSelectionSettingCard
+            label={t('default_excluded_groups_label')}
+            help={t('default_excluded_groups_help')}
+            selection={excludedSelection}
+            setSelection={setExcludedSelection}
+            options={excludedOptions}
+            hasUnresolvedSelectedGroups={hasUnresolvedExcludedGroups}
+            isLoadingOptions={isLoadingExcludedOptions}
+            setSearchQuery={setExcludedSearchQuery}
+            hasNextPage={hasNextExcludedPage}
+            fetchNextPage={fetchNextExcludedPage}
+            isFetchingNextPage={isFetchingNextExcludedPage}
+            placeholder={t('select_groups_placeholder')}
+            searchPlaceholder={t('search_groups')}
+            emptyText={t('no_groups_found')}
+            selectedGroupsCountLabel={t('selected_groups_count', {
+              count: excludedSelection.length,
+            })}
+            loadMoreText={commonT('load_more')}
+            loadingMoreText={commonT('loading')}
+          />
+
+          <SettingItemTab
+            title={t('auto_add_new_groups_to_default_included_groups_label')}
+            description={t(
+              'auto_add_new_groups_to_default_included_groups_help'
+            )}
+          >
+            <Switch
+              checked={autoAddNewGroupsToDefaultIncludedGroups}
+              onCheckedChange={(checked) => {
+                setHasEditedAutoAddNewGroups(true);
+                setAutoAddNewGroups(checked);
+              }}
+              disabled={updateMutation.isPending}
+            />
+          </SettingItemTab>
+
+          <SettingsSectionFooter>
+            <Button
+              type="submit"
+              disabled={updateMutation.isPending || !isDirty}
+            >
+              {updateMutation.isPending ? t('saving') : t('save')}
+            </Button>
+          </SettingsSectionFooter>
+        </SettingsSection>
       </form>
 
       <DefaultGroupSettings wsId={wsId} />
@@ -306,11 +314,7 @@ function GroupSelectionSettingCard({
   loadingMoreText,
 }: GroupSelectionSettingCardProps) {
   return (
-    <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-      <div className="space-y-0.5">
-        <div className="font-medium text-base">{label}</div>
-        <div className="text-muted-foreground text-sm">{help}</div>
-      </div>
+    <SettingItemTab title={label} description={help} controlWidth="md">
       {isLoadingOptions ? (
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       ) : (
@@ -339,9 +343,8 @@ function GroupSelectionSettingCard({
               ? selectedGroupsCountLabel
               : undefined
           }
-          className="w-64"
         />
       )}
-    </div>
+    </SettingItemTab>
   );
 }

@@ -23,7 +23,6 @@ function query(data: unknown) {
     lte: vi.fn(() => builder),
     order: vi.fn(() => builder),
     select: vi.fn(() => builder),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
     then: result.then.bind(result),
   };
   return builder;

@@ -41,7 +41,6 @@ beforeEach(() => {
         return query;
       },
       single: async () => ({ data: { creator_id: 'creator' }, error: null }),
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
       then: (resolve: (value: unknown) => void) => {
         if (table === 'poll_guest_votes' && deleting)
           state.votes = state.votes.filter(

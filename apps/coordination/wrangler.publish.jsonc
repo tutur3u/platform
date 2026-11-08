@@ -12,25 +12,25 @@
     "logs": {
       "enabled": true,
       "head_sampling_rate": 0.05,
-      "invocation_logs": true
-    }
+      "invocation_logs": true,
+    },
   },
   "durable_objects": {
     "bindings": [
       {
         "name": "COORDINATION",
-        "class_name": "CoordinationObject"
-      }
-    ]
+        "class_name": "CoordinationObject",
+      },
+    ],
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["CoordinationObject"]
-    }
+      "new_sqlite_classes": ["CoordinationObject"],
+    },
   ],
   "secrets": {
-    "required": ["COORDINATION_TOKEN"]
+    "required": ["COORDINATION_TOKEN"],
   },
-  "preview_urls": true
+  "preview_urls": true,
 }

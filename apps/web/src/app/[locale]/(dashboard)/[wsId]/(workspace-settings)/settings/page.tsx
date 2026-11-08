@@ -21,6 +21,7 @@ import AdminTaskEmbeddings from './admin-task-embeddings';
 import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';
 import ExternalEmailPolicy from './external-email-policy';
+import NewsletterSettings from './newsletter-settings';
 import WorkspaceLogoSettings from './logo';
 import ProfileLinkDefaultsSettings from './profile-link-defaults';
 import RemoveYourself from './remove-yourself';
@@ -140,6 +141,12 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
         )}
 
         {canManageWorkspace && <ProfileLinkDefaultsSettings wsId={wsId} />}
+
+        {canManageWorkspace && (
+          <div className="lg:col-span-2">
+            <NewsletterSettings wsId={wsId} />
+          </div>
+        )}
 
         {enableSecurity && externalProjectBinding?.enabled ? (
           <ExternalEmailPolicy

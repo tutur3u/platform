@@ -45,7 +45,6 @@ function query(initial: Row[]) {
     order: () => q,
     limit: () => q,
     maybeSingle: async () => ({ data: result[0] ?? null, error: null }),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase builders are awaitable.
     then: (resolve: (value: { data: Row[]; error: null }) => unknown) =>
       Promise.resolve(resolve({ data: result, error: null })),
   };

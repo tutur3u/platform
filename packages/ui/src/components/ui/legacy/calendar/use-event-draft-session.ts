@@ -13,7 +13,6 @@ export function useEventDraftSession({
   initialize: () => void;
 }) {
   const initializeDraft = useEffectEvent(initialize);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Event and workspace identity define a new editing session.
   useEffect(() => {
     if (isOpen) initializeDraft();
   }, [isOpen, eventId, workspaceId]);

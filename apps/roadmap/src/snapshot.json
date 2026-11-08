@@ -1,0 +1,517 @@
+{
+  "sourceCommit": "a3a26468748d9660851b809bb4a43f7ab94610d3",
+  "checkedAt": "2026-11-07T17:34:22.620Z",
+  "evidenceInputSha256": "09f9ba10a19aaabbf63fd664625ca7bf2ab27f64313b1deb4844b7fe98a36f7e",
+  "apps": [
+    {
+      "id": "ai",
+      "name": "AI",
+      "productUrl": "https://tuturuuu.com/products/ai",
+      "stage": "rolling_out",
+      "blocked": false,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/ai/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/ai/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "calendar",
+      "name": "Calendar",
+      "productUrl": "https://tuturuuu.com/products/calendar",
+      "stage": "rolling_out",
+      "blocked": false,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/calendar/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/calendar/vite.config.mts"
+        },
+        {
+          "label": "Public publication policy",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/tuturuuu.ci.ts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "chat",
+      "name": "Chat",
+      "productUrl": "https://tuturuuu.com/products/chat",
+      "stage": "planned",
+      "blocked": false,
+      "workInSource": false,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/chat/page.tsx"
+        },
+        {
+          "label": "Migration target",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/docs/build/devops/native-start-migration.mdx"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "contacts",
+      "name": "CRM",
+      "productUrl": "https://tuturuuu.com/products/crm",
+      "stage": "rolling_out",
+      "blocked": false,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/crm/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/contacts/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "drive",
+      "name": "Drive",
+      "productUrl": "https://tuturuuu.com/products/drive",
+      "stage": "rolling_out",
+      "blocked": false,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/drive/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/drive/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "finance",
+      "name": "Finance",
+      "productUrl": "https://tuturuuu.com/products/finance",
+      "stage": "rolling_out",
+      "blocked": false,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/finance/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/finance/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "forms",
+      "name": "Forms",
+      "productUrl": "https://tuturuuu.com/products/forms",
+      "stage": "rolling_out",
+      "blocked": false,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/forms/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/forms/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "hive",
+      "name": "Hive",
+      "productUrl": "https://tuturuuu.com/products/hive",
+      "stage": "planned",
+      "blocked": false,
+      "workInSource": false,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/hive/page.tsx"
+        },
+        {
+          "label": "Migration target",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/docs/build/devops/native-start-migration.mdx"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "inventory",
+      "name": "Inventory",
+      "productUrl": "https://tuturuuu.com/products/inventory",
+      "stage": "rolling_out",
+      "blocked": false,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/inventory/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/inventory/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "mail",
+      "name": "Mail",
+      "productUrl": "https://tuturuuu.com/products/mail",
+      "stage": "rolling_out",
+      "blocked": true,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/mail/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/mail/vite.config.ts"
+        },
+        {
+          "label": "Public publication policy",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/tuturuuu.ci.ts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "meet",
+      "name": "Meet",
+      "productUrl": "https://tuturuuu.com/products/meet-together",
+      "stage": "rolling_out",
+      "blocked": false,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/meet-together/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/meet/vite.config.ts"
+        },
+        {
+          "label": "Public publication policy",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/tuturuuu.ci.ts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "playground",
+      "name": "Playground",
+      "productUrl": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/playground/src/routes/index.tsx",
+      "stage": "waiting_for_production_sync",
+      "blocked": false,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": {
+          "commit": "a3a26468748d9660851b809bb4a43f7ab94610d3",
+          "appSubtree": "2bd480e32b3f4884f4a5d63bb88a33ec3a92182d"
+        },
+        "pr": {
+          "url": "https://github.com/tutur3u/platform/pull/7647",
+          "scope": "migration_completion",
+          "provenanceUrl": "https://api.github.com/repos/tutur3u/platform/pulls/7647",
+          "state": "merged",
+          "headSha": "d7b76ef372dad454b7d274aa2880e850fe3d19d7",
+          "draft": false,
+          "review": "UNKNOWN",
+          "reviewedHeadSha": null,
+          "observedAt": "2026-11-07T17:33:36.434Z",
+          "requiredChecks": [],
+          "checks": [],
+          "merge": {
+            "sha": "0388a48840a23f33cdb973bea0f94051014c7457",
+            "at": "2026-11-07T14:25:25Z"
+          }
+        },
+        "production": null
+      },
+      "mergeIncluded": true,
+      "evidence": [
+        {
+          "label": "Migration PR",
+          "url": "https://github.com/tutur3u/platform/pull/7647"
+        },
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/playground/src/routes/index.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/playground/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "roadmap",
+      "name": "Roadmap",
+      "productUrl": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/roadmap/src/routes/index.tsx",
+      "stage": "waiting_for_production_sync",
+      "blocked": false,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": {
+          "commit": "a3a26468748d9660851b809bb4a43f7ab94610d3",
+          "appSubtree": "3b8d0a012d919d1a2ccb00755e077b2c727847fe"
+        },
+        "pr": {
+          "url": "https://github.com/tutur3u/platform/pull/7797",
+          "scope": "root_assets_correction",
+          "provenanceUrl": "https://api.github.com/repos/tutur3u/platform/pulls/7797",
+          "state": "merged",
+          "headSha": "15c05f5ffa32d1a0596e9d4f43396f4476197624",
+          "draft": false,
+          "review": "UNKNOWN",
+          "reviewedHeadSha": null,
+          "observedAt": "2026-11-07T17:33:37.753Z",
+          "requiredChecks": [],
+          "checks": [],
+          "merge": {
+            "sha": "a3a26468748d9660851b809bb4a43f7ab94610d3",
+            "at": "2026-11-07T17:07:39Z"
+          }
+        },
+        "production": null
+      },
+      "mergeIncluded": true,
+      "evidence": [
+        {
+          "label": "Migration PR",
+          "url": "https://github.com/tutur3u/platform/pull/7797"
+        },
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/roadmap/src/routes/index.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/roadmap/vite.config.ts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "shortener",
+      "name": "Shortener",
+      "productUrl": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/shortener/src/routes/%24slug.tsx",
+      "stage": "waiting_for_production_sync",
+      "blocked": true,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": {
+          "commit": "a3a26468748d9660851b809bb4a43f7ab94610d3",
+          "appSubtree": "2cf32f97d9722e91f10320399515d692d3f31dfe"
+        },
+        "pr": {
+          "url": "https://github.com/tutur3u/platform/pull/7788",
+          "scope": "migration_completion",
+          "provenanceUrl": "https://api.github.com/repos/tutur3u/platform/pulls/7788",
+          "state": "merged",
+          "headSha": "e4fee69106b0f6f2215228a960b7e13dc482b3b9",
+          "draft": false,
+          "review": "UNKNOWN",
+          "reviewedHeadSha": null,
+          "observedAt": "2026-11-07T17:33:37.004Z",
+          "requiredChecks": [],
+          "checks": [],
+          "merge": {
+            "sha": "7fbc5805671c8f28ff96b514264fbcb497d46604",
+            "at": "2026-11-07T14:03:55Z"
+          }
+        },
+        "production": null
+      },
+      "mergeIncluded": true,
+      "evidence": [
+        {
+          "label": "Migration PR",
+          "url": "https://github.com/tutur3u/platform/pull/7788"
+        },
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/shortener/src/routes/%24slug.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/shortener/vite.config.mts"
+        },
+        {
+          "label": "Public publication policy",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/tuturuuu.ci.ts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "storefront",
+      "name": "Storefront",
+      "productUrl": "https://tuturuuu.com/products/storefront",
+      "stage": "rolling_out",
+      "blocked": false,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/storefront/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/storefront/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "tasks",
+      "name": "Tasks",
+      "productUrl": "https://tuturuuu.com/products/tasks",
+      "stage": "rolling_out",
+      "blocked": false,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/tasks/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/tasks/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    },
+    {
+      "id": "track",
+      "name": "Track",
+      "productUrl": "https://tuturuuu.com/products/track",
+      "stage": "rolling_out",
+      "blocked": false,
+      "workInSource": true,
+      "stageEvidence": {
+        "source": null,
+        "pr": null,
+        "production": null
+      },
+      "mergeIncluded": false,
+      "evidence": [
+        {
+          "label": "Public product",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/web/src/app/%5Blocale%5D/%28marketing%29/products/track/page.tsx"
+        },
+        {
+          "label": "Source configuration",
+          "url": "https://github.com/tutur3u/platform/blob/a3a26468748d9660851b809bb4a43f7ab94610d3/apps/track/vite.config.mts"
+        }
+      ],
+      "checkedAt": "2026-11-07T17:34:22.620Z"
+    }
+  ]
+}

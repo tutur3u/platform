@@ -92,13 +92,11 @@ export default async function Layout({ children, params }: LayoutProps) {
               wsId={wsId}
               workspace={workspace}
               defaultCollapsed={defaultCollapsed}
-              links={
-                await getNavigationLinks({
-                  workspaceSlug: toWorkspaceSlug(wsId, {
-                    personal: !!workspace.personal,
-                  }),
-                })
-              }
+              links={await getNavigationLinks({
+                workspaceSlug: toWorkspaceSlug(wsId, {
+                  personal: !!workspace.personal,
+                }),
+              })}
               actions={
                 <Suspense
                   key={user.id}

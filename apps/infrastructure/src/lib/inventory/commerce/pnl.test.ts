@@ -33,7 +33,6 @@ function chain(result: unknown) {
   for (const method of ['select', 'eq', 'in', 'order', 'limit']) {
     c[method] = vi.fn(() => c);
   }
-  // biome-ignore lint/suspicious/noThenProperty: intentional thenable stub so the chain can be awaited like a terminal Supabase query builder.
   c.then = (resolve: (value: unknown) => unknown) => resolve(result);
   return c;
 }

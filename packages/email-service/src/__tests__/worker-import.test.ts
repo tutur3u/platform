@@ -16,9 +16,8 @@ it('imports without timers and expires credentials and fallback rate limits duri
   });
   let now = 1_000_000;
   vi.spyOn(Date, 'now').mockImplementation(() => now);
-  const { getCachedCredential, clearCredentialCache } = await import(
-    '../security'
-  );
+  const { getCachedCredential, clearCredentialCache } =
+    await import('../security');
   const { EmailRateLimiter } = await import('../protection/rate-limiter');
   const fetcher = vi.fn(async () => 'credential');
   await getCachedCredential('worker-import', fetcher, 1000);

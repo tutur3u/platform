@@ -152,4 +152,108 @@ describe('inventory sales defaults route', () => {
     expect(response.status).toBe(403);
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
+
+  it('leaves a saved auto-default untouched when the field is omitted', async () => {
+    const { PUT } = await import('./route');
+    const response = await PUT(request(), context);
+    const rows = mocks.upsert.mock.calls[0]?.[0] as Array<{ id: string }>;
+
+    expect(response.status).toBe(200);
+    expect(rows.map((row) => row.id)).toEqual([
+      'inventory_default_finance_category_id',
+      'inventory_default_revenue_wallet_id',
+      'inventory_default_sales_period_id',
+    ]);
+  });
+
+  it('persists an explicit auto-default without rewriting the other defaults', async () => {
+    const admin = createAdmin();
+    mocks.createAdminClient.mockResolvedValue(admin);
+    const { PUT } = await import('./route');
+    const response = await PUT(
+      request({ autoSetNewSalesPeriodAsDefault: false }),
+      context
+    );
+
+    expect(response.status).toBe(200);
+    expect(admin.schema).not.toHaveBeenCalled();
+    expect(mocks.upsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          id: 'inventory_auto_set_new_sales_period_as_default',
+          value: 'false',
+          ws_id: 'workspace-1',
+        }),
+      ],
+      { onConflict: 'ws_id,id' }
+    );
+  });
+
+  it('stores an enabled auto-default on the authorized workspace', async () => {
+    const { PUT } = await import('./route');
+    const response = await PUT(
+      request({ autoSetNewSalesPeriodAsDefault: true }),
+      { params: Promise.resolve({ wsId: 'path-alias' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.upsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          id: 'inventory_auto_set_new_sales_period_as_default',
+          value: 'true',
+          ws_id: 'workspace-1',
+        }),
+      ],
+      { onConflict: 'ws_id,id' }
+    );
+  });
+
+  it('rejects an empty sales-defaults body', async () => {
+    const { PUT } = await import('./route');
+    const response = await PUT(request({}), context);
+
+    expect(response.status).toBe(400);
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it('does not let a sales creator change the auto-default', async () => {
+    mocks.authorize.mockResolvedValue({
+      ok: true,
+      value: {
+        permissions: permissions(['create_inventory_sales']),
+        wsId: 'workspace-1',
+      },
+    });
+    const { PUT } = await import('./route');
+    const response = await PUT(
+      request({ autoSetNewSalesPeriodAsDefault: true }),
+      context
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it.each(['update_invoices', 'create_inventory', 'manage_inventory_setup'])(
+    'allows %s to save the auto-default',
+    async (permission) => {
+      mocks.authorize.mockResolvedValue({
+        ok: true,
+        value: {
+          permissions: permissions([permission]),
+          wsId: 'workspace-1',
+        },
+      });
+      const { PUT } = await import('./route');
+      const response = await PUT(
+        request({ autoSetNewSalesPeriodAsDefault: true }),
+        context
+      );
+
+      expect(response.status).toBe(200);
+      expect(mocks.upsert).toHaveBeenCalled();
+    }
+  );
 });

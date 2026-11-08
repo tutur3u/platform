@@ -16,7 +16,7 @@ export function validateNotesVoiceAudio(bytes: Uint8Array) {
     throw new NotesVoiceError(415, 'invalid_wav');
   let format = false;
   let dataBytes = 0;
-  for (let offset = 12; offset < bytes.length; ) {
+  for (let offset = 12; offset < bytes.length;) {
     if (offset + 8 > bytes.length)
       throw new NotesVoiceError(415, 'invalid_wav');
     const length = view.getUint32(offset + 4, true);

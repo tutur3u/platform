@@ -63,9 +63,8 @@ describe('storage auto-extract callback route', () => {
   });
 
   it('accepts extracted file bytes and writes them server-side', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/auto-extract/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/auto-extract/route');
 
     const response = await POST(
       new Request(
@@ -115,9 +114,8 @@ describe('storage auto-extract callback route', () => {
       signedUrl: 'https://storage.example.com/upload',
       token: undefined,
     });
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/auto-extract/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/auto-extract/route');
 
     const response = await POST(
       new Request(
@@ -168,9 +166,8 @@ describe('storage auto-extract callback route', () => {
 
   it('rejects extracted files targeting the mobile deployment vault', async () => {
     mocks.normalizeWorkspaceId.mockResolvedValue(ROOT_WORKSPACE_ID);
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/auto-extract/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/auto-extract/route');
 
     const response = await POST(
       new Request(
@@ -201,9 +198,8 @@ describe('storage auto-extract callback route', () => {
   });
 
   it('rejects oversized direct file callback bodies with valid tokens', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/auto-extract/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/auto-extract/route');
 
     const response = await POST(
       new Request(

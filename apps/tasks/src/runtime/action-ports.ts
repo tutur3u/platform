@@ -19,9 +19,8 @@ export const fetchSatelliteWorkspaces = fetchWorkspaces;
 export const listPublicBoardTemplates = createServerFn({
   method: 'POST',
 }).handler(async () => {
-  const { listAuthorizedPublicBoardTemplates } = await import(
-    './action-ports.server'
-  );
+  const { listAuthorizedPublicBoardTemplates } =
+    await import('./action-ports.server');
   return listAuthorizedPublicBoardTemplates();
 });
 
@@ -36,9 +35,8 @@ const realtimeLogInput = z.object({
 const recordRealtimeLog = createServerFn({ method: 'POST' })
   .validator(realtimeLogInput)
   .handler(async ({ data }) => {
-    const { recordAuthorizedRealtimeLog } = await import(
-      './action-ports.server'
-    );
+    const { recordAuthorizedRealtimeLog } =
+      await import('./action-ports.server');
     return recordAuthorizedRealtimeLog(data);
   });
 

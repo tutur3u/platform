@@ -307,9 +307,7 @@ export default function FollowUpClient({
     const { render } = await import('@react-email/render');
     const React = await import('react');
     const LeadGenerationEmailTemplate = (
-      await import(
-        '@/components/email/templates/lead-generation-email-template'
-      )
+      await import('@/components/email/templates/lead-generation-email-template')
     ).default;
 
     // Get config helper

@@ -55,16 +55,13 @@ vi.mock('./email', () => ({
   sendTopicAnnouncement: mocks.sendTopicAnnouncement,
 }));
 
-const { GET: LIST, POST: CREATE } = await import(
-  '@/app/api/v1/workspaces/[wsId]/topic-announcements/route'
-);
-const { POST: NOTIFY } = await import(
-  '@/app/api/v1/workspaces/[wsId]/topic-announcements/notify-teachers/route'
-);
+const { GET: LIST, POST: CREATE } =
+  await import('@/app/api/v1/workspaces/[wsId]/topic-announcements/route');
+const { POST: NOTIFY } =
+  await import('@/app/api/v1/workspaces/[wsId]/topic-announcements/notify-teachers/route');
 const { PATCH } = await import('./announcements/[announcementId]/route');
-const { POST: SEND } = await import(
-  './announcements/[announcementId]/send/route'
-);
+const { POST: SEND } =
+  await import('./announcements/[announcementId]/send/route');
 const { POST: IMPORT } = await import('./import/route');
 
 const params = { params: Promise.resolve({ wsId: WS_ID }) };

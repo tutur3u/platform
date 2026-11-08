@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: standalone CI-only release cleanup */
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { readDraftRelease } from './draft-release.mjs';

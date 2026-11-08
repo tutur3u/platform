@@ -1,8 +1,13 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
-const { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } =
-  require('node:fs');
+const {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {
@@ -102,7 +107,6 @@ for (const [name, source, expected] of [
   ],
   [
     'template with a zone constant',
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: source text fixture
     "const ZONE = 'tuturuuu.com';\nconst h = `preview.${ZONE}`;",
     'preview.tuturuuu.com',
   ],
@@ -113,7 +117,6 @@ for (const [name, source, expected] of [
   ],
   [
     'template with a label constant',
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: source text fixture
     "const env = 'dev';\nconst h = `https://${env}.tuturuuu.com`;",
     'dev.tuturuuu.com',
   ],
@@ -136,11 +139,7 @@ test('catches non-production labels in a regex alternation', () => {
     violations(String.raw`const HOSTS = /^(calendar|pay)\.tuturuuu\.com$/;`),
     []
   );
-  assert.deepEqual(
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: source text fixture
-    violations('const u = `https://${app}.tuturuuu.com`;'),
-    []
-  );
+  assert.deepEqual(violations('const u = `https://${app}.tuturuuu.com`;'), []);
 });
 
 test('staging allowlists reject the production zone in any case or name', () => {

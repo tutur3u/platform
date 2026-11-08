@@ -139,7 +139,6 @@ export function createFakeVaultDb(seed: Partial<FakeVaultDb['tables']> = {}) {
         return builder;
       },
       // Supabase query builders are awaited directly, so this is intentional.
-      // biome-ignore lint/suspicious/noThenProperty: mimics the real client.
       then: (
         resolve: (value: ReturnType<typeof execute>) => unknown,
         reject?: (reason: unknown) => unknown

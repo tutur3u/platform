@@ -3,8 +3,7 @@
 import { cn } from '@tuturuuu/utils/format';
 import * as React from 'react';
 
-interface FormRequiredIndicatorProps
-  extends React.HTMLAttributes<HTMLSpanElement> {
+interface FormRequiredIndicatorProps extends React.HTMLAttributes<HTMLSpanElement> {
   show?: boolean;
 }
 

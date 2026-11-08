@@ -37,7 +37,9 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const { data: category, error } = await (await createAdminClient())
+  const { data: category, error } = await (
+    await createAdminClient()
+  )
     .from('product_categories')
     .update(parsed.data)
     .eq('id', id)
@@ -77,7 +79,9 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { data: category, error } = await (await createAdminClient())
+  const { data: category, error } = await (
+    await createAdminClient()
+  )
     .from('product_categories')
     .delete()
     .eq('id', id)

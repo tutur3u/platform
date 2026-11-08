@@ -41,8 +41,8 @@ type ExistingTransferTransaction = {
 function isConfidentialTransaction(transaction: ExistingTransferTransaction) {
   return Boolean(
     transaction.is_amount_confidential ||
-      transaction.is_description_confidential ||
-      transaction.is_category_confidential
+    transaction.is_description_confidential ||
+    transaction.is_category_confidential
   );
 }
 

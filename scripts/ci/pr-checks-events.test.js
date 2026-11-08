@@ -8,9 +8,9 @@ const {
 } = require('./github-expression-test-helper');
 const workflow = readWorkflow('pr-checks.yaml', { raw: true });
 const admission = readWorkflow('ci-admitted.yaml', { raw: true });
-const categories = ['biome', 'i18n', 'docs', 'migrations', 'mobile', 'plugin'];
+const categories = ['oxc', 'i18n', 'docs', 'migrations', 'mobile', 'plugin'];
 const callers = [
-  'biome',
+  'oxc',
   'i18n',
   'docs',
   'migration-timestamps',
@@ -110,7 +110,7 @@ test('ready-for-ci label changes retain full selection and readiness admission',
     const ctx = context(action, 'ready-for-ci', ready);
     assert.equal(runnable('scope', ctx), true);
     assert.equal(runnable('branch-name', ctx), true);
-    for (const id of ['biome', 'i18n', 'docs'])
+    for (const id of ['oxc', 'i18n', 'docs'])
       assert.equal(runnable(id, ctx), ready, id);
     for (const id of ['migration-timestamps', 'migrations', 'mobile', 'plugin'])
       assert.equal(runnable(id, ctx), true, id);

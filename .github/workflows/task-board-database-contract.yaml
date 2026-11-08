@@ -6,7 +6,12 @@ on:
       - 'apps/database/supabase/migrations/**'
       - 'apps/database/supabase/seed.sql'
       - 'apps/database/supabase/tests/task-board-*.sql'
+      - 'apps/database/supabase/tests/task-project-ticket-keys.sql'
       - 'apps/database/scripts/verify-task-board-database-contract.mjs'
+      - 'apps/database/scripts/task-board-contract-profile*.mjs'
+      - 'apps/database/supabase/tests/task-cycle-workspace-guard.sql'
+      - 'apps/tasks/src/app/api/v1/workspaces/**/sprints/_lib.ts'
+      - 'apps/tasks/src/app/api/v1/workspaces/**/sprints/release-barrier.test.ts'
       - 'apps/database/scripts/run-supabase*.js'
       - '.github/actions/cache-supabase-images/**'
       - 'scripts/ci/supabase-image-cache*'
@@ -54,8 +59,10 @@ jobs:
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - uses: ./.github/actions/cache-supabase-images
-      - name: Apply complete schema, run strict task board pgTAP, generate actual types
-        run: node apps/database/scripts/verify-task-board-database-contract.mjs
+      - name: Check explicit task board contract profiles
+        run: node --test apps/database/scripts/task-board-contract-profile.test.mjs
+      - name: Apply complete retained schema, run strict cycle and ticket pgTAP, generate actual types
+        run: node apps/database/scripts/verify-task-board-database-contract.mjs --profile=retained-workspace-cycles
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: task-board-types-${{ github.event.pull_request.head.sha || github.sha }}

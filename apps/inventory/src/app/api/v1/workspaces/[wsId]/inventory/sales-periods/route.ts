@@ -5,10 +5,16 @@ import {
   canViewInventorySales,
 } from '@tuturuuu/inventory-core/permissions';
 import {
+  INVENTORY_AUTO_SET_NEW_SALES_PERIOD_CONFIG_ID,
+  INVENTORY_DEFAULT_SALES_PERIOD_CONFIG_ID,
+  planSalesPeriodAutoDefault,
+} from '@tuturuuu/inventory-core/sales-period-default-policy';
+import {
   createInventorySalesPeriod,
   listInventorySalesPeriods,
 } from '@tuturuuu/inventory-core/sales-periods';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -99,7 +105,12 @@ export async function POST(request: Request, { params }: Params) {
       sbAdmin,
       wsId: authorization.value.wsId,
     });
-    return NextResponse.json({ data }, { status: 201 });
+    const salesDefault = await applySavedSalesPeriodAutoDefault({
+      period: data,
+      sbAdmin,
+      wsId: authorization.value.wsId,
+    });
+    return NextResponse.json({ data, salesDefault }, { status: 201 });
   } catch (error) {
     if (
       typeof error === 'object' &&
@@ -120,5 +131,45 @@ export async function POST(request: Request, { params }: Params) {
       },
       { status: pricingErrorStatus(error) }
     );
+  }
+}
+
+async function applySavedSalesPeriodAutoDefault({
+  period,
+  sbAdmin,
+  wsId,
+}: {
+  period: { id?: string | null; ws_id?: string | null };
+  sbAdmin: Awaited<ReturnType<typeof createAdminClient<Database>>>;
+  wsId: string;
+}) {
+  try {
+    const read = await sbAdmin
+      .from('workspace_configs')
+      .select('value')
+      .eq('ws_id', wsId)
+      .eq('id', INVENTORY_AUTO_SET_NEW_SALES_PERIOD_CONFIG_ID)
+      .maybeSingle();
+    const plan = planSalesPeriodAutoDefault({
+      periodId: period.id,
+      periodWsId: period.ws_id,
+      policyReadFailed: Boolean(read.error),
+      policyStored: read.data?.value ?? null,
+      wsId,
+    });
+    if (plan.action !== 'update') return { status: plan.action };
+    const write = await sbAdmin.from('workspace_configs').upsert(
+      {
+        id: INVENTORY_DEFAULT_SALES_PERIOD_CONFIG_ID,
+        updated_at: new Date().toISOString(),
+        value: plan.periodId,
+        ws_id: plan.wsId,
+      },
+      { onConflict: 'ws_id,id' }
+    );
+    if (write.error) return { status: 'failed' as const };
+    return { status: 'updated' as const };
+  } catch {
+    return { status: 'failed' as const };
   }
 }

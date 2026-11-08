@@ -19,7 +19,7 @@ export function MeetThemeProvider({
         data-cfasync="false"
         nonce={props.nonce}
         suppressHydrationWarning
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: Static initializer with JSON-encoded, HTML-escaped configuration.
+        // eslint-disable-next-line react/no-danger -- meetThemeBootstrap JSON-encodes and HTML-escapes its configuration.
         dangerouslySetInnerHTML={{ __html: meetThemeBootstrap(props) }}
       />
       {children}

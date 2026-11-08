@@ -21,7 +21,6 @@ def embed_resources(output):
     source = Path(__file__).parent
     adapter = (source / "python-adapter.py").read_bytes()
     generated = "// Generated from python-adapter.py by prepare-python-runtime.py.\n"
-    generated += "// biome-ignore-all format: deterministic generated resources\n"
     generated += "export const PYTHON_ADAPTER_CODE = " + json.dumps(adapter.decode()) + ";\n"
     generated += "export const PYTHON_ADAPTER_HASH = " + json.dumps(hashlib.sha256(adapter).hexdigest()) + ";\n"
     for constant, filename in [("PYTHON_RUNTIME_MANIFEST", "python-runtime-manifest.json"),
