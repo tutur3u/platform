@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/tutur3u/platform/compare/cloudflare-v0.2.0...cloudflare-v0.2.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/turnstile-v0.1.3...turnstile-v0.2.0) (2026-10-24)
 
 
