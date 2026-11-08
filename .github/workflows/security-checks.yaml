@@ -231,8 +231,12 @@ jobs:
 
       - name: Install checksum-verified gitleaks
         id: gitleaks
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          release_token="$GH_TOKEN"
+          unset GH_TOKEN GITHUB_TOKEN
           archive="$RUNNER_TEMP/gitleaks-archive/gitleaks.tar.gz"
           image_binary="$RUNNER_TEMP/gitleaks-image/gitleaks"
           image="ghcr.io/gitleaks/gitleaks@sha256:${GITLEAKS_IMAGE_DIGEST}"
@@ -260,21 +264,37 @@ jobs:
             cp "$image_binary" "$RUNNER_TEMP/gitleaks"
             source=image
           }
+          download_release() {
+            delay=1
+            for attempt in 1 2 3 4; do
+              rm -f "$archive"
+              if GH_TOKEN="$release_token" timeout 120 gh release download "v${GITLEAKS_VERSION}" \
+                --repo gitleaks/gitleaks \
+                --pattern "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+                --output "$archive"; then
+                return 0
+              fi
+              if [ "$attempt" -lt 4 ]; then
+                sleep "$delay"
+                delay=$((delay * 2))
+              fi
+            done
+            return 1
+          }
           if [ -f "$archive" ]; then
             from_archive
           elif [ -f "$image_binary" ]; then
             from_image
           else
             mkdir -p "$(dirname "$archive")"
-            if curl --fail --silent --show-error --location --retry 3 \
-              "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-              --output "$archive"; then
+            if download_release; then
               from_archive
             else
               rm -f "$archive"
               from_image
             fi
           fi
+          unset release_token
           version="$("$RUNNER_TEMP/gitleaks" version)"
           test "${version#v}" = "$GITLEAKS_VERSION"
           echo "source=$source" >> "$GITHUB_OUTPUT"
