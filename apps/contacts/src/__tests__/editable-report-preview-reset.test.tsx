@@ -15,6 +15,7 @@ let latestApprovedLogState: LatestApprovedLog = null;
 const mutationMocks = vi.hoisted(() => ({
   createMutate: vi.fn(),
   updateMutate: vi.fn(),
+  options: vi.fn(),
 }));
 
 vi.mock('next-intl', () => ({
@@ -52,7 +53,8 @@ vi.mock(
 vi.mock(
   '@/app/[locale]/[wsId]/users/reports/[reportId]/hooks/use-report-mutations',
   () => ({
-    useReportMutations: () => ({
+    useReportMutations: (options: unknown) => ({
+      ...mutationMocks.options(options),
       createMutation: { mutate: mutationMocks.createMutate, isPending: false },
       updateMutation: { mutate: mutationMocks.updateMutate, isPending: false },
       deleteMutation: { mutate: vi.fn(), isPending: false },
@@ -303,6 +305,49 @@ describe('EditableReportPreview form reset behavior', () => {
       });
     });
     expect(mutationMocks.updateMutate).not.toHaveBeenCalled();
+  });
+
+  it('creates a report for the previous month during the first 10 days', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-02T09:00:00+07:00'));
+    try {
+      render(
+        <EditableReportPreview
+          wsId="ws-1"
+          report={{
+            user_id: 'user-1',
+            group_id: 'group-1',
+            title: '',
+            content: '',
+            feedback: '',
+            scores: [],
+          }}
+          configs={[]}
+          isNew
+          canCreateReports
+        />
+      );
+      expect(screen.getByText('report_month')).toBeInTheDocument();
+      fireEvent.change(screen.getByLabelText('user-report-data-table.title'), {
+        target: { value: 'October report' },
+      });
+      fireEvent.submit(
+        screen
+          .getByRole('button', { name: 'ws-reports.create_report' })
+          .closest('form')!
+      );
+      await waitFor(() => {
+        expect(mutationMocks.createMutate).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'October report' })
+        );
+      });
+      // The create call saves this month as the report's period.
+      expect(mutationMocks.options).toHaveBeenLastCalledWith(
+        expect.objectContaining({ isNew: true, reportMonth: '2026-10' })
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('keeps field keyboard input away from page-level shortcut handlers', () => {

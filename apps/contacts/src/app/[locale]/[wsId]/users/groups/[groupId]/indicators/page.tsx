@@ -156,16 +156,14 @@ async function getGroupIndicators(groupId: string) {
   const metricCategoriesByMetricId =
     groupMetricCategoriesByMetricId(metricCategoryLinks);
 
-  return data.map(
-    (indicator): GroupIndicator => ({
-      id: indicator.id,
-      name: indicator.name,
-      factor: indicator.factor,
-      unit: indicator.unit,
-      is_weighted: indicator.is_weighted,
-      categories: mapMetricCategories(metricCategoriesByMetricId, indicator.id),
-    })
-  );
+  return data.map((indicator): GroupIndicator => ({
+    id: indicator.id,
+    name: indicator.name,
+    factor: indicator.factor,
+    unit: indicator.unit,
+    is_weighted: indicator.is_weighted,
+    categories: mapMetricCategories(metricCategoriesByMetricId, indicator.id),
+  }));
 }
 
 async function getMetricCategories(wsId: string) {

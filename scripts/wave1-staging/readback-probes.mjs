@@ -103,7 +103,7 @@ export async function hostProbes({
     method: 'OPTIONS',
     readBody: true,
     headers: {
-      origin: 'https://calendar.staging.tutur3u.com',
+      origin: 'https://calendar.tutur3u.com',
       'access-control-request-method': 'POST',
     },
   });
@@ -212,7 +212,7 @@ export async function workersDevProbes({ target, subdomain, fetcher }) {
 
 /** N10: an unknown sibling under the staging parent does not resolve. */
 export async function wildcardDnsProbe({ resolver = dns } = {}) {
-  const name = `n10-${randomBytes(6).toString('hex')}.staging.tutur3u.com`;
+  const name = `n10-${randomBytes(6).toString('hex')}.tutur3u.com`;
   for (const type of ['A', 'AAAA', 'CNAME']) {
     try {
       const records = await resolver.resolve(name, type);

@@ -84,9 +84,8 @@ function createTemplateDatastore() {
 }
 
 async function getBackground(templateId = TEMPLATE) {
-  const { GET } = await import(
-    '@/app/api/v1/workspaces/[wsId]/templates/[templateId]/background-url/route'
-  );
+  const { GET } =
+    await import('@/app/api/v1/workspaces/[wsId]/templates/[templateId]/background-url/route');
   return GET(
     new NextRequest(
       `http://localhost/api/v1/workspaces/${WORKSPACE}/templates/${templateId}/background-url`

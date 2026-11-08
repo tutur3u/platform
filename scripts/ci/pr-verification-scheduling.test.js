@@ -29,6 +29,7 @@ const heavy = {
   ],
   'external-internal-packages.yaml': ['Build'],
   'external-project-storage-analytics-contract.yaml': ['contract'],
+  'fee-lock-database-contract.yaml': ['contract'],
   'inventory-offline-contract.yaml': ['contract'],
   'required-account-mfa-contract.yaml': ['contract'],
   'lettin-cloudflare.yaml': ['validate'],
@@ -50,8 +51,9 @@ const heavy = {
   'programming-database-contract.yaml': ['contract'],
   'report-review-receipts-contract.yaml': ['contract'],
   'sdk-package-qualification.yaml': ['qualify'],
-  'shortener-cloudflare.yaml': ['native'],
+  'shortener-cloudflare.yaml': ['native', 'native-production'],
   'sso-persistence-contract.yaml': ['contract'],
+  'task-board-database-contract.yaml': ['contract'],
   'time-tracker-control-contract.yaml': ['contract'],
   'topic-delivery-foundation-contract.yaml': ['contract'],
   'tsrs-shadow.yaml': ['shadow'],
@@ -209,7 +211,7 @@ test('conversion to draft replaces superseded security runs with admitted securi
   }
 });
 
-test('mobile aggregate still requires every quality, test and parity result', () => {
+test('mobile aggregate retains quality and parity and requires applicable tests', () => {
   const job = workflows['mobile.yaml'].jobs.build;
   assert.deepEqual(job.needs, [
     'check-ci',
@@ -220,10 +222,11 @@ test('mobile aggregate still requires every quality, test and parity result', ()
   const guard = job.steps.find(
     (step) => step.name === 'Require every mobile check'
   );
-  assert.equal(
-    guard.run,
-    'test "$QUALITY_RESULT" = success && test "$TEST_RESULT" = success && test "$REALTIME_RESULT" = success'
-  );
+  assert.match(guard.run, /test "\$QUALITY_RESULT" = success/);
+  assert.match(guard.run, /test "\$REALTIME_RESULT" = success/);
+  assert.match(guard.run, /test "\$TEST_REQUIRED" = false/);
+  assert.match(guard.run, /test "\$TEST_RESULT" = skipped/);
+  assert.match(guard.env.TEST_REQUIRED, /run_attempt > 1/);
 });
 
 test('nightly, release and manual Apple/Windows checks retain platform builds', () => {

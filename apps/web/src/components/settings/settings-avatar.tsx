@@ -344,7 +344,7 @@ export default function UserAvatar({ user }: AvatarProps) {
           <DialogTrigger asChild>
             <div className="flex items-center justify-center">
               <div className="relative flex w-fit flex-col items-center justify-center gap-4">
-                <Avatar className="h-32 w-32 cursor-pointer overflow-visible border border-foreground font-semibold text-3xl">
+                <Avatar className="h-16 w-16 cursor-pointer overflow-visible border font-semibold text-xl">
                   <AvatarImage
                     src={previewSrc || undefined}
                     alt="Avatar"
@@ -352,15 +352,15 @@ export default function UserAvatar({ user }: AvatarProps) {
                   />
                   <AvatarFallback className="font-semibold">
                     {getInitials(user?.display_name || user?.email) || (
-                      <UserIcon className="h-12 w-12" />
+                      <UserIcon className="h-6 w-6" />
                     )}
                   </AvatarFallback>
                 </Avatar>
                 <Button
                   size="icon"
-                  className="absolute right-0 bottom-0 rounded-full backdrop-blur-lg"
+                  className="absolute -right-1 -bottom-1 size-7 rounded-full backdrop-blur-lg"
                 >
-                  <Settings className="h-5 w-5" />
+                  <Settings className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>

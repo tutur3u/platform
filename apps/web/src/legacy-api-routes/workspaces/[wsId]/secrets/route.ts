@@ -75,7 +75,7 @@ export async function POST(req: Request, { params }: Params) {
   const touchesManagedCron = isManagedCronEnableSecretName(name);
   if (touchesManagedCron && !(await canMutateManagedCronEnableSecret(req))) {
     return NextResponse.json(
-      { message: 'Only Tuturuuu employees can enable managed cron jobs.' },
+      { message: 'Only Tuturuuu employees can change this workspace secret.' },
       { status: 403 }
     );
   }

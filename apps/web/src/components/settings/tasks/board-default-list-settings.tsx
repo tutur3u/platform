@@ -4,6 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
+  SettingsSection,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -90,62 +94,58 @@ export function BoardDefaultListSettings({ wsId }: { wsId: string }) {
   const boards = data?.boards ?? [];
 
   return (
-    <SettingItemTab
+    <SettingsSection
       title={t('board_default_list')}
       description={t('board_default_list_description')}
     >
       {isLoading ? (
-        <div className="flex justify-center py-6">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
+        <SettingsSectionMessage className="justify-center">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </SettingsSectionMessage>
       ) : boards.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
+        <SettingsSectionMessage>
           {t('board_default_list_empty')}
-        </p>
+        </SettingsSectionMessage>
       ) : (
-        <div className="grid gap-3">
-          {boards.map((board) => {
-            const lists = (board.task_lists ?? []).filter(
-              (list) => !list.deleted
-            );
+        boards.map((board) => {
+          const lists = (board.task_lists ?? []).filter(
+            (list) => !list.deleted
+          );
 
-            return (
-              <div
-                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-                key={board.id}
+          return (
+            <SettingItemTab
+              controlWidth="sm"
+              key={board.id}
+              title={board.name || t('board_default_list_untitled_board')}
+            >
+              <Select
+                disabled={lists.length === 0 || updateMutation.isPending}
+                onValueChange={(value) =>
+                  updateMutation.mutate({
+                    boardId: board.id,
+                    defaultListId: value === NONE_VALUE ? null : value,
+                  })
+                }
+                value={board.default_list_id ?? NONE_VALUE}
               >
-                <span className="truncate font-medium text-sm">
-                  {board.name || t('board_default_list_untitled_board')}
-                </span>
-                <Select
-                  disabled={lists.length === 0 || updateMutation.isPending}
-                  onValueChange={(value) =>
-                    updateMutation.mutate({
-                      boardId: board.id,
-                      defaultListId: value === NONE_VALUE ? null : value,
-                    })
-                  }
-                  value={board.default_list_id ?? NONE_VALUE}
-                >
-                  <SelectTrigger className="w-full sm:w-56">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE_VALUE}>
-                      {t('board_default_list_none')}
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_VALUE}>
+                    {t('board_default_list_none')}
+                  </SelectItem>
+                  {lists.map((list) => (
+                    <SelectItem key={list.id} value={list.id}>
+                      {list.name || t('board_default_list_untitled_list')}
                     </SelectItem>
-                    {lists.map((list) => (
-                      <SelectItem key={list.id} value={list.id}>
-                        {list.name || t('board_default_list_untitled_list')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            );
-          })}
-        </div>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SettingItemTab>
+          );
+        })
       )}
-    </SettingItemTab>
+    </SettingsSection>
   );
 }

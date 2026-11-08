@@ -2,6 +2,8 @@
 import {
   EASY_CENTER_TUTORING_POLICY,
   readTutoringPolicyConfigRows,
+  serializeTutoringPolicyConfigRows,
+  type TutoringPolicy,
 } from '@tuturuuu/internal-api/tutoring-policy';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -71,6 +73,38 @@ describe('tutoring policy API', () => {
     });
     expect(response.status).toBe(400);
     expect(query.upsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid count-from date before writing', async () => {
+    for (const absenceCountFromDate of ['2026-02-30', '2099-01-01', 20261101]) {
+      const response = await request('PUT', {
+        ...EASY_CENTER_TUTORING_POLICY,
+        absenceCountFromDate,
+      });
+      expect(response.status).toBe(400);
+    }
+    expect(query.upsert).not.toHaveBeenCalled();
+  });
+
+  it('reads a bad stored count-from date as unset without resetting the policy', async () => {
+    const stored = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      preset: 'custom' as const,
+      absenceCountFromDate: '2026-02-30',
+    };
+    query.like.mockResolvedValueOnce({
+      data: serializeTutoringPolicyConfigRows(
+        stored as unknown as TutoringPolicy
+      ),
+      error: null,
+    } as never);
+    const response = await request('GET');
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.policy).toEqual({ ...stored, absenceCountFromDate: null });
+    expect(body.policy.groupExclusions).toEqual(
+      EASY_CENTER_TUTORING_POLICY.groupExclusions
+    );
   });
 
   it('requires settings permission to save', async () => {

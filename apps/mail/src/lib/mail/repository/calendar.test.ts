@@ -85,7 +85,6 @@ beforeEach(() => {
       data: { id: 'message' },
       error: null,
     });
-    // biome-ignore lint/suspicious/noThenProperty: Model the awaited Supabase query builder.
     builder.then = (resolve: (value: unknown) => void) =>
       resolve({ error: null });
     return builder;

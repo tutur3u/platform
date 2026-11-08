@@ -117,11 +117,7 @@ export type {
   BatchProgress,
   BatchResult,
 } from './batch';
-export {
-  createBatch,
-  EmailBatch,
-  sendToMany,
-} from './batch';
+export { createBatch, EmailBatch, sendToMany } from './batch';
 
 // =============================================================================
 // Providers

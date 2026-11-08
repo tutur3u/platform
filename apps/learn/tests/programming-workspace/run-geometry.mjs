@@ -252,9 +252,9 @@ try {
     .filter((n) => /^(coding-.*\.tsx|coding-font\.ts)$/.test(n))
     .map((n) => path.join(coding, n));
   const lint = spawnSync(
-    require.resolve('@biomejs/biome/bin/biome'),
+    require.resolve('oxfmt/bin/oxfmt'),
     [
-      'check',
+      '--check',
       ...files,
       path.join(repo, 'packages/ui/src/components/ui/custom/structure.tsx'),
       path.join(repo, 'packages/ui/src/components/ui/resizable.tsx'),

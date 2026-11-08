@@ -1,0 +1,347 @@
+---
+title: 'Easy Center replies and email deliverability design'
+description: 'Draft workspace inbox, signed reply routing, SES suppression, privacy and bounded Cloudflare processing.'
+---
+
+## Scope and status
+
+Draft design for Easy Center daily and periodic reports and staff replies. All
+examples are synthetic. This page proposes behavior; it does not enable receiving,
+change senders, provision infrastructure, or apply a schema migration. Invitations
+and paid custom-domain entitlements are separate designs.
+
+Parents should reply to a report and reach authorized center staff, who can read,
+assign, answer and resolve the conversation beside its student and parent records.
+Undeliverable addresses must stop consuming sends. Defaults below require product,
+security and privacy acceptance before activation. Preserve report approval,
+unsubscribe, workspace permissions and unknown-send-outcome fences.
+
+## Verified source baseline
+
+Paths and lines below refer to commit
+`691e9f70ad7a8c071c57b85752a4b8b56b8e4bc6`, inspected without customer data.
+The supplied brief identifies `Easy Center <notifications@tuturuuu.com>` and SES
+`ap-southeast-1` as the operational sender/region. Code supports configurable
+workspace credentials; this inspection does not establish live configuration.
+
+| Evidence (repository file:line) | Existing behavior and design consequence |
+| --- | --- |
+| `apps/web/src/lib/user-report-automation/processor.ts:238` and `:244` | Periodic reports create `EmailService.fromWorkspace` and call `sendReportEmail`; metadata ties the send to workspace and report. |
+| `apps/web/src/lib/user-report-automation/processor.ts:312` | Sent audit uses configured source with `notifications@tuturuuu.com` fallback. This is not proof of the actual provider From address. |
+| `apps/web/src/lib/post-email-queue/batch-processing.ts:665` | Daily user-group posts call `emailService.send`; they need the same reply identity and suppression policy, with post/recipient context instead of a periodic report ID. |
+| `packages/email-service/src/email-service.ts:699`; `packages/email-service/src/providers/ses.ts:192`; `packages/email-service/src/constants.ts:135` | Workspace credentials select SES and its source name/address; SES falls back to `ap-southeast-1`. |
+| `packages/email-service/src/providers/ses.ts:141` and `:267` | Raw and structured sends already support Reply-To. Add configuration-set attribution to both paths and qualify both. |
+| `packages/users-core/src/reports/email-reply-identity.ts:70` and `:113` | Existing identity is an opaque random token, encrypted with authenticated scope and emitted as `r-<token>@domain`; it is not the signed address format proposed below. |
+| `apps/database/supabase/migrations/20261009120000_report_email_reply_identity.sql:5` and `:75` | Private identities preserve report generation/outcome. Receiving readiness returns false; configuration alone must never activate replies. |
+| `packages/users-core/src/reports/email-reply-ingress.ts:51` | Disconnected admission policy already checks transport, identity and scope. Preserve these checks when wiring a real receiver. |
+| `apps/mail/src/email-worker/index.ts:143` and `:306`; `apps/mail/src/lib/mail/inbound/parser.ts:166` | Existing Cloudflare receiver signs ingest transport and derives delivery identity; parser extracts threading headers. Reuse verified primitives, not an unrestricted mailbox forward. |
+| `apps/mail/src/app/api/v1/webhooks/mail/ses/route.ts:14`; `apps/mail/src/lib/mail/inbound/sns.ts:7` | Existing mail-receipt route verifies SNS. Receipt ingestion is not evidence that SES outbound bounce/delay events are connected. |
+| `apps/database/supabase/migrations/20260527115441_create_private_mail_platform.sql:89`, `:115`, `:178`, `:262`, `:290` | Private mail threads, messages, attachments and inbound/outbound jobs exist. Extend these behind workspace access rather than create a parallel mailbox engine. |
+| `apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/blacklist/route.ts:69` | Mail's manual blacklist writes `public.email_blacklist`. Import from that canonical store, not screenshots or copied customer mail. |
+| `apps/database/supabase/migrations/20251210100001_email_bounce_complaints.sql:84` | Existing bounce lookup uses a 30-day window, immediate hard/complaint blocking and three soft strikes. Persistent hard/complaint suppression and scoped WATCHED lifecycle need explicit evolution. |
+| `packages/email-service/src/protection/blacklist-checker.ts:83` and `:112` | Shared service checks authoritative block statuses and fails closed on lookup uncertainty. Keep this boundary for every send. |
+
+See the [report reply foundation](/build/mail/report-email-replies) and
+[report behavior](/platform/applications/reports). This proposal extends their
+contracts; it must not be interpreted as changing the disabled foundation today.
+
+## Reply address and delivery flow
+
+Keep the currently approved From identity until the project owner approves a
+change. Configure one verified inbound subdomain, illustrated only as
+`replies.example.test`, with a workspace routing policy. Verify DNS ownership, MX
+routing and a synthetic ingress canary before readiness can become true. Sending
+identities require SES verification and SPF/DKIM/DMARC alignment independently
+of inbound MX verification. No DNS or sender change is authorized by this draft.
+
+Proposed address: `r2.<opaque-id>.<mac>@replies.example.test`. Use a 128-bit random
+identifier and a truncated 128-bit HMAC-SHA256, base64url encoded; the resulting
+local part fits 64 bytes. MAC input is a canonical versioned tuple containing the
+opaque ID, workspace, report/post generation, recipient binding, expiry and key
+version, resolved from private storage. No student name, address or record ID
+appears in the address. Constant-time verification, a versioned keyring, expiry
+and revocation prevent tampering and support rotation. Store a lookup digest and
+encrypted reconstruction material; never expose token values in logs or UI.
+
+Extend the existing identity API with a versioned codec; do not silently change
+its 48-hex parser. Retain legacy decoding only for legitimately issued identities
+with their original scope and validity. Preserve immutable accepted/unknown send
+history. Proposed token validity is 180 days; expired replies enter a bounded
+staff-only exception queue without disclosing report contents or sending a bounce
+loop. Validate this lifecycle against the eventual retention decision.
+
+Cloudflare Email Routing hands raw mail to a Worker. The Worker verifies the exact
+envelope domain and token, authenticates transport provenance, validates the
+current workspace/record relationship, and admits durable work. Token possession
+allows routing only: it does not authenticate a parent or authorize disclosure.
+Require the bound parent address and verified sender-authentication evidence;
+forwarded mail, changed guardians, ambiguous identity or failed authentication go
+to restricted review. Never trust caller-supplied Authentication-Results headers.
+A staff member must verify a changed contact through the existing contact process.
+
+Use the token binding to select the workspace before matching `In-Reply-To` or
+`References` against stored outbound/inbound Internet Message-IDs in that same
+workspace and conversation. Store SES provider IDs separately from RFC IDs.
+Conflicting token/header targets go to review; missing headers may start a thread
+under the valid bound report. Subject matching alone must never join students or
+workspaces. Deduplicate by transport event and raw digest, with collision review
+for reused Message-IDs. Persist before acknowledging; failed persistence retries
+within the configured budget. An acceptance timeout is reconciled, not resent.
+
+## Staff inbox and safe replies
+
+Provide an Easy Center Inbox within the workspace report/contact experience,
+linked to the student, verified parent relationship, original report/post and
+read-only report snapshot. Reuse mail storage but grant no access to the shared
+notifications mailbox. Staff roles are viewer, responder, manager and suppression
+administrator; membership alone is insufficient. Enforce workspace and record
+permissions on reads, writes, search, attachment downloads and realtime events.
+
+Support unassigned/mine/team queues, assign/reassign with optimistic concurrency,
+reply drafts with approved templates and report context, and open/pending/resolved
+states. Replies use the center's approved sender and the same protected send path;
+never allow arbitrary From, recipient, CC or BCC fields to create an open relay.
+Show send failures and suppression reasons, and preserve drafts. Accepted by SES
+is distinct from delivered. New eligible parent replies reopen resolved threads.
+
+Proposed SLA: first human response within one business day, using the workspace
+timezone and staff calendar. Measure from the oldest unanswered eligible inbound
+message, pause only for explicit waiting-on-parent state, and alert assigned staff
+and then the manager once per escalation level. Auto-replies never satisfy SLA.
+Provide unread, status, assignment, report period, student, overdue and delivery
+filters; keep global suppression details hidden from ordinary workspace staff.
+
+Detect `Auto-Submitted`, mailing-list/precedence signals, vacation headers, DSN MIME
+and empty-envelope bounces. Classify OOO/auto-replies separately, avoid reopening
+or generating automatic acknowledgements, and allow manual reclassification.
+Only authenticated SES events may create infrastructure suppression; a forged
+bounce-shaped email cannot blacklist an address. Human reports of abuse enter
+staff review. Add bilingual reply instructions only after qualified routing:
+“Reply to this email to reach Easy Center” and
+“Trả lời email này để liên hệ Easy Center”.
+
+Quarantine attachments before display or forwarding. Check MIME signatures,
+allowlisted types, decompressed size, archive depth and malware verdict; reject
+executables and password-protected archives unless a separate safe review process
+exists. Default to 10 MB per message, 5 attachments, 20 MB expanded total and one
+archive layer. A timeout or unavailable scanner stays quarantined. Use a private
+object store, short-lived authorized downloads, sanitized HTML and blocked remote
+images. No public scanner uploads of parent/student data. A compatible scanning
+service and its processor agreement are rollout prerequisites.
+
+## SES events and suppression
+
+Configure a dedicated SES configuration set in `ap-southeast-1`, publishing send,
+delivery, bounce, complaint and delivery-delay events to a Standard SNS topic.
+Attach the set and opaque correlation tags on every relevant send, including raw
+MIME staff replies. Limit SNS publish permission to the SES source account and
+configuration set. AWS documents this [configuration-set destination](https://docs.aws.amazon.com/ses/latest/dg/event-publishing-add-event-destination-sns.html).
+
+SNS delivers to a Cloudflare HTTPS webhook. Verify the signature over AWS's
+canonical envelope, require the expected topic/account/region, and validate the
+certificate chain and exact HTTPS SNS certificate host/path with redirects
+disabled. Verify subscription confirmations before confirming through a pinned
+AWS endpoint; never fetch arbitrary SubscribeURL or certificate URLs. Prefer
+signature version 2 and reject unconfigured versions. Follow AWS's
+[SNS signature verification](https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html).
+Bound payloads, reject malformed events, deduplicate topic + SNS message ID, and
+also deduplicate semantic delivery events by provider send/recipient/type.
+Timestamp policy must accommodate documented retries; old unrecognized events
+require reconciliation rather than silently restoring sending.
+
+Resolve the trusted send ledger to workspace and recipient; event tags alone are
+not authority. Atomically persist the event and hard-bounce/complaint suppression
+before acknowledging success. Materialize suppression synchronously on this path;
+queue expensive analysis afterwards. If persistence is unavailable, return a
+retryable failure and halt affected outbound admission until event health recovers.
+Unknown send IDs enter a restricted reconciliation queue and raise an alert.
+
+| Event/state | Proposed transition |
+| --- | --- |
+| Permanent hard bounce or complaint | Immediate global address suppression plus workspace reason; no automatic expiry. Cancel unsent jobs. A workspace cannot override a global block. |
+| Soft bounce, mailbox full or delay | Enter WATCHED; count one strike per distinct provider send and recipient, even if delay and bounce both arrive. Three distinct strikes in rolling 30 days create a workspace blacklist entry. |
+| WATCHED below threshold | Hold for 24 hours after the latest transient event. Recheck DNS and authoritative suppression without sending a probe; permit at most one already-authorized due message per day after recheck. |
+| WATCHED expiry | Expire strikes individually after 30 days; clear WATCHED only when no valid strikes remain and checks pass. Do not send on expiry. |
+| Three-strike blacklist | Recheck after 30 days from last strike. Require staff-approved restore with recorded evidence before the next ordinary due send; no automatic test campaign. |
+| Manual/global hard or complaint block | Remains until authorized audited restoration with address correction or renewed lawful permission as applicable, and SES-side reconciliation. A later delivery never clears it automatically. |
+
+Apply conservative address normalization consistently (trim, domain normalization,
+existing case policy); do not collapse plus tags or provider-specific dots.
+Role-based and disposable addresses are WATCHED/review signals rather than blanket
+rejections of legitimate guardian contacts. Aggregate domain failure signals with
+minimum volume and a bounded hold; security operators may impose a global domain
+block with evidence. One center's soft failures must not block unrelated centers.
+
+Use a single authoritative pre-send decision at enqueue for feedback and again
+immediately before provider invocation for races. Return `skipped` with reason
+codes such as `workspace_blacklist`, `global_hard_bounce`, `complaint`,
+`watch_cooldown`, `unsubscribed` or `suppression_unavailable`; distinguish retryable
+holds from terminal skips. Suppression committed before admission wins; mail
+already accepted by SES cannot be recalled. Serialize per-recipient admission
+with suppression updates and minimize the remaining provider handoff window.
+Never let a generic retry, test-send or manual reply bypass protection.
+
+Import the existing manual `email_blacklist` idempotently using a private export
+or server-side read, checkpoint and dry-run counts. Preserve email/domain/pattern
+scope, provenance, reason and original block semantics; ambiguous patterns require
+review and remain enforced by the legacy checker. Keep existing global blocks
+global. Reconcile counts/checksums and concurrent writes before switching readers;
+dual-read the union during transition, never use last-write-wins to clear blocks.
+No customer export, address list or raw SNS payload belongs in a PR or log.
+
+## Dashboard and alerts
+
+Workspace staff see sent, accepted, delivered, skipped with reason, WATCHED,
+blocked, unanswered and overdue counts. Operators see configuration-set/account
+health, webhook lag, last verified event, queue age, DLQ, scanner failures and
+remaining work budgets. Display time window and denominator with bounce/complaint
+rates; use provider-send/recipient counts and exclude duplicates. Keep SES account
+reputation metrics distinct from workspace application rates.
+
+Proposed early warnings are 2% hard-bounce and 0.05% complaint rates (minimum 100
+sends for rate warnings; any complaint still suppresses immediately), or 80% of
+current SES quota. These are internal proposals, not claims about AWS limits.
+Infrastructure and security on-call own alerts near account limits. Add a
+five-minute stale-event warning while traffic exists, and deduplicate/escalate
+alerts through existing operational channels. Audited restore shows actor, scope,
+reason, evidence, previous state and result; ordinary staff see only actionable
+workspace information, never another workspace's history.
+
+## Cloudflare ownership and cost stop fences
+
+Follow [Cloudflare backend ownership](/build/devops/cloudflare-backend-ownership):
+Workers handle ingress and send admission; Queues isolate parsing/scanning and
+outbound jobs; existing Cron Control handles bounded SLA, retention and recheck
+batches. Supabase remains the system of record. Next routes provide authenticated
+UI/API adapters only. Do not add Vercel background work, pg_cron, Edge Functions
+or Trigger.dev processors, or run duplicate legacy and new queue owners.
+
+Before pilot, approve workspace and global daily/monthly limits for sends,
+accepted bytes, object storage, scan bytes, queue operations, database calls and
+alerts. An unconfigured budget means disabled. Reserve worst-case units atomically
+before work, including retry amplification; reconcile actual use without refunding
+unknown outcomes. Initial qualification bounds: batches of 50, three attempts per
+job within 24 hours, one scan per content hash/version, one SLA alert per escalation
+level, finite DLQ retention, and operator-approved replay with its own budget.
+
+Maintain a durable global/workspace stop state and monotonic epoch checked before
+every paid operation, provider submission, retry, alarm and queue re-enqueue.
+Recheck after leases or waits; restarting must not reset counters or stop state.
+Completed, suppressed, expired, exhausted and cancelled jobs schedule no further
+work. Stop outbound sends first; reserve a separate bounded budget for receiving
+suppression events. If that budget is exhausted, keep sends stopped and persist
+an explicit reconciliation gap. Automatic SNS/queue retries must have finite
+policies; total shutdown disables upstream subscriptions/routing after durable
+capture or explicitly recorded loss, not endless failure responses.
+
+An application fence cannot eliminate unavoidable ingress invocations or bytes
+already accepted by providers. Include an operator upstream-disable runbook and
+measure those residual costs. Billing alerts, ingress rate limits and CPU caps
+alone do not prove a spending cap. Before activation record service-specific
+operation counts, failure/restart tests and stop evidence in the
+[adoption guidance](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance).
+
+## Privacy and retention
+
+Treat parent and minor correspondence, student links and suppression fingerprints
+as personal data. Vietnam's [PDPL, Law 91/2025/QH15](https://chinhphu.vn/?classid=1&docid=214590&orggroupid=1&pageid=27160)
+is effective from 1 January 2026. Privacy counsel must confirm applicable rules,
+controller/processor roles, lawful basis, child/guardian requirements, notices,
+rights handling and cross-border processing before pilot; this is a design gate,
+not a legal determination. Permission to receive reports does not automatically
+authorize marketing, AI training or unrelated reuse of replies.
+
+Proposed configurable retention: raw MIME/quarantine 7 days, attachments 30 days,
+conversation content 180 days after resolution, and minimized operational audit
+365 days. These are product defaults for review, not statutory periods. Minimize
+report snapshots; keep content out of telemetry and alert payloads. Encrypt content
+and contact addresses; use keyed address digests for matching, with key rotation
+and restricted access. Pseudonymized data remains protected.
+
+Delete expired objects, derived text, search indexes and attachments with bounded
+Cloudflare jobs; propagate deletion tombstones through retries and backups under
+a documented backup-expiry policy. Existing immutable reply identities need a
+reviewed retention-specific purge mechanism; never weaken send-outcome fences by
+ordinary deletion/requeue. Retain only justified minimal suppression fingerprints
+and reasons while necessary to prevent unwanted contact, review necessity annually,
+and have counsel decide erasure exceptions and legal holds. Staff-only RLS and
+record authorization apply to service RPCs too; test tenant isolation, removed
+staff, changed guardians, signed-download expiry and access audits.
+
+## Schema sketch only
+
+Conceptual extensions, not executable SQL or a migration. Final names, constraints,
+RLS and retention must be reviewed alongside the existing private mail schema.
+
+| Entity | Proposed fields and invariants |
+| --- | --- |
+| Workspace mail policy | `ws_id`, verified inbound domain, approved sender reference, enabled/readiness state, SLA calendar, retention and budget policy versions. |
+| Reply identity (extend existing) | versioned codec, opaque digest, MAC key version, encrypted reconstruction, expiry/revocation; immutable workspace, recipient and report/post generation. Unique generation binding, separate test/live identities; accepted/unknown cannot be reset. |
+| Inbox conversation link | `ws_id`, existing mailbox/thread IDs, student ID, parent relationship ID, report-or-post reference, status, assignee, revision, oldest unanswered time, SLA due time. Composite tenant foreign keys; one context per thread. |
+| Mail message/attachment (extend existing) | provider event ID, RFC Message-ID, parent headers, classification, dedupe digest, scan status/version, private object reference, retention deadline. Quarantine is default. |
+| Delivery event | provider/account/region, event ID, send ID, recipient digest, workspace resolved from ledger, type, event/received times, redacted reason. Unique transport and semantic dedupe keys. |
+| Suppression state and strikes | scope (`global` or workspace), address/domain/pattern digest, state, reason, source, expiry/recheck, restoration audit; unique explicit scope key (avoid nullable uniqueness loopholes). Strikes unique per send/recipient/scope. Hard/complaint has no automatic expiry. |
+| Import checkpoint and audit | source row ID/version, import run, digest/count, cursor, actor, operation and outcome; preserve legacy reasons in restricted storage. |
+| Work control | scope, stop epoch, budget period/reservations, job idempotency key, attempts, deadline, lease, terminal state and reconciliation status. |
+
+All workspace relationships require matching tenant keys and checked current
+permissions. Only infrastructure operators manage global state. Scoped staff APIs
+return block decisions without leaking other tenants' events. Keep existing
+blacklist/bounce functions as adapters during rollout; one policy evaluator owns
+all sends, so old and new schemas cannot disagree permissively.
+
+## Effort ranges and phased rollout
+
+Ranges are incremental engineering dev-days for one experienced engineer per
+slice, including implementation, focused tests and review fixes. They assume
+reuse of the foundations above; DNS/provider approvals, legal review and calendar
+waiting are excluded. Scanner integration and schema reconciliation drive the
+upper bounds. Total sequential effort is **33–54 dev-days**, not elapsed time.
+
+| Slice | Dev-days | Acceptance before advancing |
+| --- | --- | --- |
+| A. Policy/schema and privacy contract | 3–5 | Approved sender/domain direction, parent binding, retention, isolation and migration plan. |
+| B. SES event ingestion, suppression and manual import | 6–9 | Signed event forgery/replay tests, immediate hard/complaint block, three-strike boundaries and import reconciliation. |
+| C. Signed reply routing and safe attachments | 7–12 | Versioned codec, durable ingress, threading, cross-tenant rejection, OOO/DSN filtering and scanner failure tests. |
+| D. Staff inbox, assignments, replies and SLA | 8–12 | Authorized staff can complete a synthetic conversation; send and resolve races, permissions and bilingual UX pass. |
+| E. Dashboard, alerts and cost fences | 4–7 | Correct denominators, audited restore, stop/restart and operation-count evidence. |
+| F. Pilot, migration rehearsal and rollback | 5–9 | Exact-commit CI and Worker acceptance, bounded staged traffic, restore rehearsal and release-owner sign-off. |
+
+1. **Foundation/shadow:** A then B, with policy simulation on synthetic events;
+   preserve existing suppressions and reconcile the manual import. Production
+   shadowing requires separate authorization and private telemetry.
+2. **Suppression canary:** enforce B for one admitted workspace, initially behind
+   explicit enablement. Land E's stop/budget controls before any billable pilot.
+   Verify that queued sends skip immediately after accepted adverse events.
+3. **Reply canary:** C and D on synthetic recipients; qualify both daily and
+   periodic reports, token rotation/expiry, retries, scans and staff permissions.
+   Only then enable Reply-To and instructional copy together.
+4. **Controlled rollout:** F with user approval before real-parent mail. Expand
+   workspace cohorts based on observed delivery and inbox handling, retaining
+   per-workspace stop switches and an accountable staff owner.
+
+Rollback disables new Reply-To issuance and outbound replies while retaining
+already-issued address receiving for its validity/retention window. Keep all
+suppression enforcement active. Cancel or quarantine unsent jobs; reconcile
+accepted/unknown sends before any replay. Schema rollout is additive until
+migration and retention rehearsals pass; do not drop historical identity tables.
+If security requires stopping receiving too, use the upstream stop runbook and
+record the gap for staff recovery rather than claiming replies remain available.
+
+Required regression coverage also includes out-of-order delivery after complaint,
+delay-plus-bounce dedupe, exactly three strikes at the 30-day boundary, concurrent
+manual blacklist writes, no automatic expiry of hard blocks, removal of staff
+access, private attachment URLs, deletion fencing, unknown SES acceptance, stop
+during a lease and exhausted retry budgets. This draft executes none of those
+runtime checks; implementation PRs must supply evidence before activation.
+
+## Decisions to resolve before implementation/pilot
+
+The project owner must approve the outbound display name/address (recommend keep
+the existing approved identity initially), inbound subdomain/DNS owner, and real
+parent pilot cohort. Product must accept SLA hours, WATCHED cooldown/restore rules
+and domain-risk policy. Privacy/security must approve lawful basis, retention,
+minor/guardian handling, scanner processor/location and global restoration
+controls. Operations must approve numerical spend budgets, alert ownership and
+stop procedures. Collect sender/domain approval once per project through the
+program owner; no real mail or provider change is needed to review this design.

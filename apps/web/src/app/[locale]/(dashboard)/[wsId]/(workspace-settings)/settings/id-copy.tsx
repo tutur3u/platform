@@ -2,6 +2,7 @@
 
 import { CheckCheck, Copy } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
@@ -26,19 +27,32 @@ export default function WorkspaceIDCopy({ wsId }: Props) {
   };
 
   return (
-    <div className="grid gap-2">
-      <Label htmlFor="workspace-id">{t('id')}</Label>
+    <SettingItemTab
+      controlWidth="xl"
+      title={<Label htmlFor="workspace-id">{t('id')}</Label>}
+    >
       <div className="flex items-center gap-2">
-        <Input id="workspace-id" value={wsId} disabled />
+        <Input
+          className="text-xs md:text-xs"
+          id="workspace-id"
+          value={wsId}
+          disabled
+        />
 
-        <Button onClick={copyId} size="icon" disabled={!showCopy}>
+        <Button
+          onClick={copyId}
+          size="icon"
+          variant="outline"
+          className="shrink-0"
+          disabled={!showCopy}
+        >
           {showCopy ? (
-            <Copy className="h-5 w-5" />
+            <Copy className="h-4 w-4" />
           ) : (
-            <CheckCheck className="h-5 w-5" />
+            <CheckCheck className="h-4 w-4" />
           )}
         </Button>
       </div>
-    </div>
+    </SettingItemTab>
   );
 }

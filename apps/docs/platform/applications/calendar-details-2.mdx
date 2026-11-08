@@ -438,9 +438,9 @@ Run `bun packages/start-bridge/src/codegen/cli.ts generate apps/calendar`
 after changing a route, then run the same command with `check` for validation.
 
 The cutover candidate admits only `calendar.tuturuuu.com` and
-`<app>.staging.tutur3u.com`, configured in `start-bridge.config.ts`.
+`<app>.tutur3u.com`, configured in `start-bridge.config.ts`.
 Apex `/calendar`, workers.dev and unknown hosts return 404 before dispatch.
-The Wave 1 staging profile uses `<app>.staging.tutur3u.com` for public build
+The Wave 1 staging profile uses `<app>.tutur3u.com` for public build
 inputs, OAuth callback URLs, the seal and original/restored local runtime probes.
 It keeps workers.dev, preview URLs and staging routes disabled; qualification
 does not create a custom domain or change DNS.
@@ -465,3 +465,15 @@ The offline worker caches only bounded public assets and fallback files.
 Existing crons stay on Infrastructure's Vercel gateway at Calendar's canonical
 URL. Production publication remains held until exact-source build, sealed
 artifact, signed-root EN/VI, browser and provider acceptance, with rollback ready.
+
+## Web summary description rendering
+
+The dashboard upcoming-event list and legacy calendar grid render descriptions as
+React text, including supplied HTML markup. React escapes the content consistently
+on the server and client; these summary views do not invoke a browser-only sanitizer
+or interpret description text as HTML. Line breaks are preserved. Stored descriptions,
+provider payloads and full event editing remain unchanged.
+
+Regression coverage:
+`apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/calendar/event-description.ssr.test.tsx`
+and `packages/ui/src/components/ui/legacy/calendar/event-card.test.tsx`.

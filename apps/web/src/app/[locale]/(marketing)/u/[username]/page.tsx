@@ -39,7 +39,6 @@ async function Profile({ params }: Props) {
       <article className="overflow-hidden rounded-2xl border bg-card">
         <div className="h-48 bg-muted sm:h-64">
           {banner && (
-            /* biome-ignore lint/performance/noImgElement: User media is externally hosted and revocable. */
             <img
               src={banner}
               alt=""
@@ -51,7 +50,6 @@ async function Profile({ params }: Props) {
         <div className="relative space-y-5 px-6 pb-8 sm:px-10">
           <div className="-mt-12 flex size-24 items-center justify-center overflow-hidden rounded-full border-4 border-card bg-muted">
             {avatar ? (
-              /* biome-ignore lint/performance/noImgElement: User media is externally hosted and revocable. */
               <img
                 src={avatar}
                 alt=""

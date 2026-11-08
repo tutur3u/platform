@@ -259,12 +259,17 @@ test('known unrelated publisher retains normal selection even with malformed pro
   );
 });
 
-test('Calendar admission opens only its frontend while other wave-1 apps remain held', (t) => {
+test('Calendar admission opens only its publisher while Meet and other wave-1 apps remain held', (t) => {
   const root = fixture(t);
   assert.equal(
     runPolicy(root, 'calendar-cloudflare.yaml').output,
     'allowed=true\n'
   );
+  for (const workflow of [
+    'meet-cloudflare.yaml',
+    'vercel-production-meet.yaml',
+  ])
+    assert.equal(runPolicy(root, workflow).output, 'allowed=false\n');
   for (const event of ['push', 'workflow_dispatch']) {
     const [native, legacy] = plan(
       root,
@@ -273,16 +278,23 @@ test('Calendar admission opens only its frontend while other wave-1 apps remain 
     );
     assert.equal(native.shouldRun, true);
     assert.equal(legacy.shouldRun, false);
+    const [meetNative, meetLegacy] = plan(
+      root,
+      ['meet-cloudflare.yaml', 'vercel-production-meet.yaml'],
+      event
+    );
+    assert.equal(meetNative.shouldRun, false);
+    assert.equal(meetNative.held, true);
+    assert.equal(meetNative.changeResult.source, 'publication-hold');
+    assert.equal(meetLegacy.shouldRun, false);
+    assert.equal(meetLegacy.held, true);
+    assert.equal(meetLegacy.changeResult.source, 'publication-hold');
   }
-  for (const app of ['meet', 'mail', 'apps']) {
+  for (const app of ['mail', 'apps'])
     assert.equal(
-      runPolicy(
-        root,
-        app === 'meet' ? 'meet-cloudflare.yaml' : `${app}-cloudflare.yaml`
-      ).output,
+      runPolicy(root, `${app}-cloudflare.yaml`).output,
       'allowed=false\n'
     );
-  }
 });
 
 const publishers = [

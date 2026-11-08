@@ -3,6 +3,8 @@ part of 'app.dart';
 extension _AppPushNavigation on _AppState {
   Future<void> _loadWorkspacesWithReminders() async {
     await _workspaceCubit.loadWorkspaces();
+    if (!mounted) return;
+    _syncOfflinePreparationScope();
     final userId = _authCubit.state.user?.id;
     if (userId != null) {
       await ReminderService.instance.startWorkspaceSession(
@@ -13,6 +15,7 @@ extension _AppPushNavigation on _AppState {
   }
 
   void _handleLifecycleState(AppLifecycleState state) {
+    _mobileFlags.setForeground(foreground: state == AppLifecycleState.resumed);
     _mastermind.irisLifecycle(state);
     if (state == AppLifecycleState.paused ||
         (state == AppLifecycleState.inactive &&

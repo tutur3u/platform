@@ -16,7 +16,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createDetachedClient: unreachable('createDetachedClient'),
 }));
 
-vi.mock('@tuturuuu/turnstile/server', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile/server', () => ({
   isTurnstileError: vi.fn(() => false),
   resolveTurnstileToken: unreachable('resolveTurnstileToken'),
   verifyTurnstileToken: unreachable('verifyTurnstileToken'),

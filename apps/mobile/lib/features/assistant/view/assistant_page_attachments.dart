@@ -66,17 +66,33 @@ extension _AssistantAttachments on _AssistantPageState {
     }
     final timezone = await getCurrentTimezoneIdentifier();
     if (!isCurrent() || _voiceCapture.sessionToken != captureToken) return;
-    await _chatCubit.addComposerAttachments(
+    if (!sendNow) {
+      await _chatCubit.addComposerAttachments(
+        wsId: wsId!,
+        files: [file],
+        modelId: _shellCubit.state.selectedModel.value,
+        timezone: timezone,
+        expectedWorkspaceVersion: scopeVersion,
+        isCurrentActor: isCurrent,
+      );
+      return;
+    }
+    if (!mounted) return;
+    final shell = _shellCubit.state;
+    await _chatCubit.sendVoiceMessage(
       wsId: wsId!,
-      files: [file],
-      modelId: _shellCubit.state.selectedModel.value,
+      file: file,
+      modelId: shell.selectedModel.value,
       timezone: timezone,
-      expectedWorkspaceVersion: scopeVersion,
+      message: context.l10n.assistantVoiceMessagePrompt,
+      thinkingMode: shell.thinkingMode,
+      creditSource: shell.creditSource,
+      workspaceContextId: shell.workspaceContextId,
+      creditWsId: shell.creditSource == AssistantCreditSource.personal
+          ? shell.personalWorkspaceId
+          : wsId,
       isCurrentActor: isCurrent,
     );
-    if (sendNow && isCurrent()) {
-      await _handleSend(wsId);
-    }
   }
 
   Future<void> _pickFiles(String wsId) async {

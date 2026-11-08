@@ -18,16 +18,14 @@ export function TeachWorkspaceSelect({
       cacheScope={cacheScope}
       disableCreateNewWorkspace
       fetchWorkspaces={async () =>
-        workspaces.map(
-          (workspace): InternalApiWorkspaceSummary => ({
-            access_type: 'member',
-            avatar_url: workspace.avatar_url,
-            id: workspace.id,
-            logo_url: workspace.logo_url,
-            name: workspace.name,
-            personal: false,
-          })
-        )
+        workspaces.map((workspace): InternalApiWorkspaceSummary => ({
+          access_type: 'member',
+          avatar_url: workspace.avatar_url,
+          id: workspace.id,
+          logo_url: workspace.logo_url,
+          name: workspace.name,
+          personal: false,
+        }))
       }
       resolveNextPathname={({ nextSlug }) => `/${nextSlug}`}
       showTierBadges={false}

@@ -84,7 +84,7 @@ COPY packages/tasks-api/package.json ./packages/tasks-api/package.json
 COPY packages/tasks-ui/package.json ./packages/tasks-ui/package.json
 COPY packages/transactional/package.json ./packages/transactional/package.json
 COPY packages/trigger/package.json ./packages/trigger/package.json
-COPY packages/turnstile/package.json ./packages/turnstile/package.json
+COPY packages/cloudflare/package.json ./packages/cloudflare/package.json
 COPY packages/types/package.json ./packages/types/package.json
 COPY packages/typescript-config/package.json ./packages/typescript-config/package.json
 COPY packages/ui/package.json ./packages/ui/package.json

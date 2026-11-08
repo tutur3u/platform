@@ -48,7 +48,7 @@ async function token(
 }
 
 const request = (jwt?: string) =>
-  new Request('https://calendar.staging.tutur3u.com/', {
+  new Request('https://calendar.tutur3u.com/', {
     headers: jwt ? { 'cf-access-jwt-assertion': jwt } : {},
   });
 
@@ -156,7 +156,7 @@ describe('stripCloudflareAccessCredentials', () => {
 });
 
 describe('withCloudflareAccessServiceToken', () => {
-  const issuer = 'https://web.staging.tutur3u.com';
+  const issuer = 'https://web.tutur3u.com';
   const credentials = { clientId: 'id', clientSecret: 'secret' };
   it('requires an exact origin and a non-following redirect mode', () => {
     const ok = withCloudflareAccessServiceToken(

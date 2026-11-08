@@ -44,7 +44,6 @@ function createAttendanceQuery(result: {
       data: result.data?.[0] ?? null,
       error: result.error,
     })),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     then: (
       resolve: (value: typeof result) => unknown,
       reject?: (reason: unknown) => unknown

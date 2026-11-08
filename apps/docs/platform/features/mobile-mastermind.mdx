@@ -8,6 +8,16 @@ audience: users
 Mastermind is an internal fleet overview. The mobile section reads one sanitized snapshot from the Mastermind hub Worker. This page records the
 product rules of the shell entry, the Home tab and the Inbox; later tabs extend it.
 
+## Offline preparation
+
+The default-off `offline_read_mastermind` flag registers the existing signed
+snapshot flow with mobile offline preparation. Downloads verify that the
+existing store can reopen the accepted snapshot; rejected exports, access loss,
+and failed persistence do not count as ready. The section shows the stored
+receipt time as Last synced while this flag is on. Flag-off reads retain their
+existing behavior. Coverage: `mastermind_offline_preparation_test.dart`,
+`file_snapshot_store_test.dart`, and the existing hub header/freshness suites.
+
 ## Who sees it
 
 - **Scope:** the Apps hub offers Mastermind when the active workspace is the

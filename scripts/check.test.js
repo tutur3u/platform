@@ -14,7 +14,7 @@ const {
   getChangedFiles,
   getCheckQueuePaths,
   listTrackedCheckProcesses,
-  parseBiomeIssueStats,
+  parseOxcIssueStats,
   runCheck,
   touchesDiscordPython,
   touchesPlatformReleaseVersion,
@@ -152,18 +152,18 @@ test('bun validate includes platform release sync validation for release-please 
   ]);
 });
 
-test('Biome check treats warnings as blocking local check issues', () => {
-  const biomeCheck = checks.find((check) => check.name === 'biome');
+test('Oxc check treats warnings as blocking local check issues', () => {
+  const oxcCheck = checks.find((check) => check.name === 'oxc');
 
-  assert.ok(biomeCheck);
-  assert.deepEqual(biomeCheck.args, ['biome', 'check', '--error-on-warnings']);
+  assert.ok(oxcCheck);
+  assert.deepEqual(oxcCheck.args, ['format-and-lint']);
 
   const output = [
     'Checked 120 files in 300ms. No fixes applied.',
     'Found 2 lint issues.',
     '0 errors, 2 warnings, 0 infos',
   ].join('\n');
-  const stats = parseBiomeIssueStats(output);
+  const stats = parseOxcIssueStats(output);
 
   assert.deepEqual(stats, {
     errors: 0,
@@ -172,10 +172,10 @@ test('Biome check treats warnings as blocking local check issues', () => {
     totalIssues: 2,
     warnings: 2,
   });
-  assert.equal(biomeCheck.parseOutput(output), '120 files checked');
+  assert.equal(oxcCheck.parseOutput(output), '120 files checked');
   assert.equal(
-    biomeCheck.validateOutput(output),
-    'Found 2 Biome issue(s): 0 error(s), 2 warning(s), 0 info(s)'
+    oxcCheck.validateOutput(output),
+    'Found 2 Oxc issue(s): 0 error(s), 2 warning(s), 0 info(s)'
   );
 });
 

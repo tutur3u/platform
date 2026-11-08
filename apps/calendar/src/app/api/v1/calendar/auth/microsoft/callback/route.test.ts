@@ -40,9 +40,8 @@ vi.mock('next/headers', () => ({
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', async () => {
-  const { sharedFakeCalendarOAuthNonceLedger } = await import(
-    '@/lib/calendar/calendar-oauth-nonce-ledger.test-utils'
-  );
+  const { sharedFakeCalendarOAuthNonceLedger } =
+    await import('@/lib/calendar/calendar-oauth-nonce-ledger.test-utils');
   return {
     createAdminClient: vi.fn(
       async () => sharedFakeCalendarOAuthNonceLedger().client

@@ -160,9 +160,8 @@ describe('wallet details page', () => {
   });
 
   it('loads wallet details through the internal API helper', async () => {
-    const { default: WalletDetailsPageModule } = await import(
-      './wallet-details-page.js'
-    );
+    const { default: WalletDetailsPageModule } =
+      await import('./wallet-details-page.js');
     const WalletDetailsPage = WalletDetailsPageModule as unknown as (props: {
       wsId: string;
       walletId: string;
@@ -190,9 +189,8 @@ describe('wallet details page', () => {
       balance: -120,
     });
 
-    const { default: WalletDetailsPageModule } = await import(
-      './wallet-details-page.js'
-    );
+    const { default: WalletDetailsPageModule } =
+      await import('./wallet-details-page.js');
     const WalletDetailsPage = WalletDetailsPageModule as unknown as (props: {
       wsId: string;
       walletId: string;

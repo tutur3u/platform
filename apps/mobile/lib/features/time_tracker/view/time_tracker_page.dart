@@ -1,6 +1,6 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
@@ -15,6 +15,7 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/features/time_tracker/utils/history_period.dart';
 import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
 import 'package:mobile/features/time_tracker/widgets/history_tab.dart';
 import 'package:mobile/features/time_tracker/widgets/stats_tab.dart';
@@ -26,26 +27,13 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 enum TimeTrackerSection { timer, history, stats }
 
-const List<int> _weekdayByIndex = [
-  DateTime.sunday,
-  DateTime.monday,
-  DateTime.tuesday,
-  DateTime.wednesday,
-  DateTime.thursday,
-  DateTime.friday,
-  DateTime.saturday,
-];
-
 int _resolvedFirstDayOfWeek(
   BuildContext context,
-  CalendarSettingsCubit calendarSettingsCubit,
-) {
-  final localeCode = Localizations.localeOf(context).languageCode;
-  final firstDayOfWeekIndex = calendarSettingsCubit.state.resolvedFirstDayIndex(
-    localeCode,
-  );
-  return _weekdayByIndex[firstDayOfWeekIndex % 7];
-}
+  CalendarSettingsCubit settings,
+) => timeTrackerFirstDayOfWeek(
+  settings.state,
+  Localizations.localeOf(context).languageCode,
+);
 
 class TimeTrackerPage extends StatefulWidget {
   const TimeTrackerPage({

@@ -2,6 +2,12 @@
 
 import { Check, ExternalLink, ShieldCheck } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import { useTranslations } from 'next-intl';
 import { buildWebAccountSettingsUrl } from './account-settings-links';
 import type { WebManagedAccountTabId } from './account-settings-navigation';
@@ -59,37 +65,38 @@ export function AccountSettingsLinkOut({
   const href = buildWebAccountSettingsUrl(centralUrl, tab);
 
   return (
-    <div className="grid gap-4 rounded-xl border bg-card/40 p-4 md:p-6">
-      <div className="flex items-start gap-3">
-        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-green" />
-        <div className="space-y-1">
-          <p className="font-medium">{t('managed_centrally_title')}</p>
-          <p className="text-muted-foreground text-sm">
-            {t('managed_centrally_description', { section: tabLabel(t, tab) })}
-          </p>
-          {signedInEmail && (
-            <p className="text-muted-foreground text-sm">
-              {t('signed_in_as', { email: signedInEmail })}
-            </p>
-          )}
-        </div>
-      </div>
-      <ul className="grid gap-2 text-sm">
-        {tabFeatures(t, tab).map((feature) => (
-          <li className="flex items-center gap-2" key={feature}>
-            <Check className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span>{feature}</span>
-          </li>
-        ))}
-      </ul>
-      <div>
-        <Button asChild>
-          <a href={href} rel="noopener noreferrer" target="_blank">
-            {t('open_in_tuturuuu')}
-            <ExternalLink className="h-4 w-4" />
-          </a>
-        </Button>
-      </div>
+    <div className="space-y-8">
+      <SettingsSection>
+        <SettingItemTab
+          description={t('managed_centrally_description', {
+            section: tabLabel(t, tab),
+          })}
+          icon={<ShieldCheck className="size-4" />}
+          title={t('managed_centrally_title')}
+        >
+          <Button asChild>
+            <a href={href} rel="noopener noreferrer" target="_blank">
+              {t('open_in_tuturuuu')}
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </Button>
+        </SettingItemTab>
+        <SettingsSectionBlock>
+          <ul className="grid gap-2 text-sm">
+            {tabFeatures(t, tab).map((feature) => (
+              <li className="flex items-center gap-2" key={feature}>
+                <Check className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </SettingsSectionBlock>
+        {signedInEmail && (
+          <SettingsSectionMessage className="py-4">
+            {t('signed_in_as', { email: signedInEmail })}
+          </SettingsSectionMessage>
+        )}
+      </SettingsSection>
     </div>
   );
 }

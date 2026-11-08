@@ -3,6 +3,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import {
   Select,
@@ -244,9 +250,11 @@ export default function InvoiceSettings({ workspaceId }: Props) {
 
   if (configsError) {
     return (
-      <p role="alert" className="text-destructive text-sm">
-        {t('invoice_settings_load_error')}
-      </p>
+      <SettingsSection>
+        <SettingsSectionMessage tone="error">
+          {t('invoice_settings_load_error')}
+        </SettingsSectionMessage>
+      </SettingsSection>
     );
   }
 
@@ -262,89 +270,63 @@ export default function InvoiceSettings({ workspaceId }: Props) {
     JSON.stringify(currentValues) !== JSON.stringify(initialValues);
 
   return (
-    <div className="space-y-6">
+    <SettingsSection>
       <form
         onSubmit={(e) => {
           e.preventDefault();
           updateMutation.mutate(currentValues);
         }}
-        className="space-y-4"
       >
-        <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-          <div className="space-y-0.5">
-            <div className="font-medium text-base">
-              {t('invoice_promotion_label')}
-            </div>
-            <div className="text-muted-foreground text-sm">
-              {t('invoice_promotion_help')}
-            </div>
-          </div>
-          <div>
-            <Switch
-              checked={currentValues.allow_promotions}
-              onCheckedChange={(checked) =>
-                setCurrentValues((prev) => ({
-                  ...prev,
-                  allow_promotions: checked,
-                }))
-              }
-            />
-          </div>
-        </div>
+        <SettingItemTab
+          title={t('invoice_promotion_label')}
+          description={t('invoice_promotion_help')}
+        >
+          <Switch
+            checked={currentValues.allow_promotions}
+            onCheckedChange={(checked) =>
+              setCurrentValues((prev) => ({
+                ...prev,
+                allow_promotions: checked,
+              }))
+            }
+          />
+        </SettingItemTab>
 
-        <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-          <div className="space-y-0.5">
-            <div className="font-medium text-base">
-              {t('invoice_attendance_label')}
-            </div>
-            <div className="text-muted-foreground text-sm">
-              {t('invoice_attendance_help')}
-            </div>
-          </div>
-          <div>
-            <Switch
-              checked={currentValues.use_attendance_based}
-              onCheckedChange={(checked) =>
-                setCurrentValues((prev) => ({
-                  ...prev,
-                  use_attendance_based: checked,
-                }))
-              }
-            />
-          </div>
-        </div>
+        <SettingItemTab
+          title={t('invoice_attendance_label')}
+          description={t('invoice_attendance_help')}
+        >
+          <Switch
+            checked={currentValues.use_attendance_based}
+            onCheckedChange={(checked) =>
+              setCurrentValues((prev) => ({
+                ...prev,
+                use_attendance_based: checked,
+              }))
+            }
+          />
+        </SettingItemTab>
 
-        <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-          <div className="space-y-0.5">
-            <div className="font-medium text-base">
-              {t('invoice_pending_group_label')}
-            </div>
-            <div className="text-muted-foreground text-sm">
-              {t('invoice_pending_group_help')}
-            </div>
-          </div>
-          <div>
-            <Switch
-              checked={currentValues.group_pending_by_user}
-              onCheckedChange={(checked) =>
-                setCurrentValues((prev) => ({
-                  ...prev,
-                  group_pending_by_user: checked,
-                }))
-              }
-            />
-          </div>
-        </div>
+        <SettingItemTab
+          title={t('invoice_pending_group_label')}
+          description={t('invoice_pending_group_help')}
+        >
+          <Switch
+            checked={currentValues.group_pending_by_user}
+            onCheckedChange={(checked) =>
+              setCurrentValues((prev) => ({
+                ...prev,
+                group_pending_by_user: checked,
+              }))
+            }
+          />
+        </SettingItemTab>
 
-        <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-          <div className="space-y-0.5">
-            <div className="font-medium text-base">
-              {t('default_subscription_category_label')}
-            </div>
-            <div className="text-muted-foreground text-sm">
-              {t('default_subscription_category_help')}
-            </div>
-          </div>
+        <SettingItemTab
+          title={t('default_subscription_category_label')}
+          description={t('default_subscription_category_help')}
+          controlWidth="md"
+        >
           <Select
             value={currentValues.default_subscription_category_id ?? 'none'}
             onValueChange={(value) =>
@@ -355,7 +337,7 @@ export default function InvoiceSettings({ workspaceId }: Props) {
               }))
             }
           >
-            <SelectTrigger className="w-64">
+            <SelectTrigger>
               <SelectValue
                 placeholder={t('default_subscription_category_placeholder')}
               />
@@ -369,7 +351,7 @@ export default function InvoiceSettings({ workspaceId }: Props) {
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </SettingItemTab>
 
         <BlockedCreationGroups
           workspaceId={workspaceId}
@@ -392,15 +374,15 @@ export default function InvoiceSettings({ workspaceId }: Props) {
           }
         />
 
-        <div className="flex justify-end">
+        <SettingsSectionFooter>
           <Button
             type="submit"
             disabled={isLoading || updateMutation.isPending || !isDirty}
           >
             {updateMutation.isPending ? t('saving') : t('save')}
           </Button>
-        </div>
+        </SettingsSectionFooter>
       </form>
-    </div>
+    </SettingsSection>
   );
 }

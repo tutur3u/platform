@@ -17,7 +17,7 @@ describe('dormant Contacts profile', () => {
     expect(source).not.toMatch(
       /\b(?:routes|queues|durable_objects|triggers|d1_databases|r2_buckets)\s*:/u
     );
-    expect(stagingProfile.host).toBe('contacts.staging.tutur3u.com');
+    expect(stagingProfile.host).toBe('contacts.tutur3u.com');
   });
   it('has no usable upstream or credential in the template', () => {
     const source = readFileSync(

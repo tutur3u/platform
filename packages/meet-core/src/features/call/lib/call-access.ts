@@ -18,19 +18,41 @@ export class MeetCallAccessError extends Error {
   }
 }
 
+type MeetCallMeetingRow = {
+  id: string;
+  name: string;
+  creator_id: string;
+  ws_id: string;
+  workspaces: { personal: boolean } | null;
+};
+
+/**
+ * Lookups a caller has already started for the same meeting. They replace the
+ * identical reads below; every access decision still runs here, in order.
+ */
+export type MeetCallAccessSources = {
+  meeting?: () => PromiseLike<{
+    data: MeetCallMeetingRow | null;
+    error: unknown;
+  }>;
+  isParleySession?: (required: boolean) => Promise<boolean>;
+};
+
 /** Invite possession permits this call only, never workspace or archive access. */
 export async function getMeetCallAccess(
   meetingId: string,
-  fallbackName: string
+  fallbackName: string,
+  sources?: MeetCallAccessSources
 ) {
   const user = await getSatelliteAppSessionUser(MEETING_APP);
-  return getMeetCallAccessForUser(meetingId, fallbackName, user);
+  return getMeetCallAccessForUser(meetingId, fallbackName, user, sources);
 }
 /** Actor injection lets the platform authenticate mobile Bearer sessions once. */
 export async function getMeetCallAccessForUser(
   meetingId: string,
   fallbackName: string,
-  user: Awaited<ReturnType<typeof getSatelliteAppSessionUser>>
+  user: Awaited<ReturnType<typeof getSatelliteAppSessionUser>>,
+  sources: MeetCallAccessSources = {}
 ) {
   if (!z.uuid().safeParse(meetingId).success)
     throw new MeetCallAccessError(404, 'Meeting not found');
@@ -38,18 +60,19 @@ export async function getMeetCallAccessForUser(
   if (MEETING_APP === 'parley' && !(await hasParleyAccess(user.id)))
     throw new MeetCallAccessError(403, 'Parley access required');
   const db = await createAdminClient({ noCookie: true });
-  const { data: meeting, error } = await db
-    .from('workspace_meetings')
-    .select('id, name, creator_id, ws_id, workspaces(personal)')
-    .eq('id', meetingId)
-    .maybeSingle();
+  const { data: meeting, error } = sources.meeting
+    ? await sources.meeting()
+    : await db
+        .from('workspace_meetings')
+        .select('id, name, creator_id, ws_id, workspaces(personal)')
+        .eq('id', meetingId)
+        .maybeSingle();
   if (error) throw new MeetCallAccessError(500, 'Meeting lookup failed');
   if (!meeting?.creator_id)
     throw new MeetCallAccessError(404, 'Meeting not found');
-  const parleySession = await isParleySession(
-    meetingId,
-    MEETING_APP === 'parley'
-  );
+  const parleySession = sources.isParleySession
+    ? await sources.isParleySession(MEETING_APP === 'parley')
+    : await isParleySession(meetingId, MEETING_APP === 'parley');
   if (MEETING_APP === 'parley' && !parleySession)
     throw new MeetCallAccessError(404, 'Scenario session not found');
   if (parleySession && MEETING_APP !== 'parley')

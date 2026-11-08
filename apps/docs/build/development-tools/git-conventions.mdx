@@ -117,7 +117,7 @@ Tuturuuu uses the following branch types:
 | `release`    | For preparing releases                 | `release/v1.2.0`                |
 | `chore`      | For maintenance tasks                  | `chore/update-dependencies`     |
 | `docs`       | For documentation-only work            | `docs/git-conventions-refresh`  |
-| `style`      | For formatting or stylistic cleanups   | `style/biome-pass`              |
+| `style`      | For formatting or stylistic cleanups   | `style/oxc-pass`                |
 | `refactor`   | For internal code restructuring        | `refactor/task-query-shell`     |
 | `perf`       | For performance-focused changes        | `perf/workspace-user-search`    |
 | `dependabot` | Automated dependency update branches   | `dependabot/npm_and_yarn/next`  |
@@ -488,3 +488,10 @@ comfortably, split it into a chain of dependent PRs — see [Stacked Pull
 Requests](/build/development-tools/stacked-pull-requests).
 
 For more information, refer to the official documentation for [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) and [Conventional Branch](https://conventional-branch.github.io/).
+
+## Trunk-based delivery
+
+Integrate small changes into main behind flags that default OFF. Add and verify
+the kill switch before enabling a feature. During an incident, disable the kill
+switch first, then roll back if needed. Track each flag owner and removal date in
+the [feature-flag registry](/build/development-tools/feature-flags).

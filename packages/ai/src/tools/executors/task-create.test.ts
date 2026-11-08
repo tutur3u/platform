@@ -14,7 +14,6 @@ function fixture(results: Array<{ data?: unknown; error?: unknown }>) {
       return query;
     };
     query.single = query.maybeSingle = () => Promise.resolve(result);
-    // biome-ignore lint/suspicious/noThenProperty: Supabase builders are awaitable queries.
     query.then = (resolve: (value: unknown) => unknown) =>
       Promise.resolve(result).then(resolve);
     return query;

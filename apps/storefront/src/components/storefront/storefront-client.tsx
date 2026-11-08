@@ -111,7 +111,7 @@ export function StorefrontClient({
     setCheckoutMethod,
     walletId: effectiveCashWalletId,
   } = useStorefrontCashCheckout({
-    initialCashOnly: initialStorefront?.storefront.checkoutMode === 'cash',
+    initialCashOnly: initialStorefront?.storefront?.checkoutMode === 'cash',
     isDemoStorefront,
     storefront,
     storeSlug,

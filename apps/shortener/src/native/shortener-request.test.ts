@@ -130,6 +130,16 @@ describe('canonical host fence and domain aliases', () => {
   });
 });
 
+describe('unknown hosts', () => {
+  it('rejects them once canonical hosts are enabled', async () => {
+    const { call, clicks } = setup({ SHORTENER_CANONICAL_HOST_ENABLED: '1' });
+    const response = await call(`${origin}/abc123`);
+    expect(response.status).toBe(404);
+    expect(response.headers.get('location')).toBeNull();
+    expect(clicks).toEqual([]);
+  });
+});
+
 describe('short-link documents', () => {
   it('redirects with 307 to the exact stored target and records one click', async () => {
     const { call, clicks } = setup();

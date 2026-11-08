@@ -75,9 +75,8 @@ describe('user group indicators route', () => {
   });
 
   it('creates metrics through the actor-aware audit RPC', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/route');
 
     const response = await POST(
       new NextRequest(
@@ -121,9 +120,8 @@ describe('user group indicators route', () => {
 
   it('denies PATCH without score-update permission before privileged work', async () => {
     mocks.withoutPermission.mockReturnValue(true);
-    const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/route'
-    );
+    const { PATCH } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/route');
 
     const response = await PATCH(
       new NextRequest(
@@ -156,9 +154,8 @@ describe('user group indicators route', () => {
         value: 88,
       },
     ];
-    const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/route'
-    );
+    const { PATCH } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/route');
 
     const response = await PATCH(
       new NextRequest(

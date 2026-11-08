@@ -2,11 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:mobile/core/feature_flags/mobile_flags.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/presentation/freshness.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/mastermind/view/mastermind_states.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 typedef MastermindContentBuilder =
     Widget Function(
@@ -132,17 +135,46 @@ class _AttachedSectionState extends State<_AttachedSection>
 
   // The strip depends on connectivity as well as the snapshot, so it listens
   // to the scheduler's online state rather than reading it at build time.
+  Widget _withSyncTime(
+    BuildContext context,
+    MastermindSnapshotReady ready,
+    Widget child,
+  ) {
+    if (!(context.watch<MobileFlags?>()?.enabled(
+          MobileFlag.offlineReadMastermind,
+        ) ??
+        false)) {
+      return child;
+    }
+    return Column(
+      children: [
+        Text(
+          context.l10n.offlineStatusLastSynced(
+            DateFormat.yMd(
+              Localizations.localeOf(context).toLanguageTag(),
+            ).add_jm().format(ready.receivedAt.toLocal()),
+          ),
+        ),
+        Expanded(child: child),
+      ],
+    );
+  }
+
   Widget _content(MastermindSnapshotReady ready) => RefreshIndicator(
     onRefresh: _pull,
     child: ValueListenableBuilder<bool>(
       valueListenable: _runtime.scheduler.online,
-      builder: (context, online, _) => widget.builder(
+      builder: (context, online, _) => _withSyncTime(
         context,
         ready,
-        MastermindFreshness.of(
+        widget.builder(
+          context,
           ready,
-          clock: _runtime.snapshot.clock,
-          online: online,
+          MastermindFreshness.of(
+            ready,
+            clock: _runtime.snapshot.clock,
+            online: online,
+          ),
         ),
       ),
     ),

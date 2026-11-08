@@ -1,5 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import { seriesSchema } from './contract-v2';
+import { orgSchema } from './contract-v3';
 import {
   initializeDecisions,
   readDecisions,
@@ -45,6 +46,11 @@ export class OpsHub extends DurableObject<Env> {
       CREATE INDEX IF NOT EXISTS events_ts ON events(ts);
       CREATE TABLE IF NOT EXISTS needs_you(id TEXT PRIMARY KEY, version INTEGER NOT NULL, data TEXT NOT NULL, completedAt INTEGER);
     `);
+    const columns = this.ctx.storage.sql
+      .exec<{ name: string }>('PRAGMA table_info(snapshot)')
+      .toArray();
+    if (!columns.some((column) => column.name === 'org'))
+      this.ctx.storage.sql.exec('ALTER TABLE snapshot ADD COLUMN org TEXT');
     initializeDecisions(this.ctx.storage.sql);
     initializeObservability(this.ctx.storage.sql);
   }
@@ -64,10 +70,20 @@ export class OpsHub extends DurableObject<Env> {
   }
   private snapshot(now: number): HubSnapshot | null {
     const row = this.ctx.storage.sql
-      .exec<Stored>('SELECT data FROM snapshot WHERE id=1')
+      .exec<Stored & { org: string | null }>(
+        'SELECT data,org FROM snapshot WHERE id=1'
+      )
       .toArray()[0];
     if (!row) return null;
     const stored = snapshotSchema.parse(JSON.parse(row.data));
+    if (row.org !== null) {
+      try {
+        const org = orgSchema.safeParse(JSON.parse(row.org));
+        if (org.success) stored.org = org.data;
+      } catch {
+        // Preserve the base snapshot when optional org storage is malformed.
+      }
+    }
     return { ...stored, needsYou: this.items(now) };
   }
   async fetch(request: Request) {
@@ -76,7 +92,8 @@ export class OpsHub extends DurableObject<Env> {
     let flags = this.flags();
     if (request.method === 'GET' && url.pathname === '/status') {
       return json({
-        v: 2,
+        v: 3,
+        versions: [2, 3],
         enabled: Boolean(flags.enabled),
         erased: Boolean(flags.erased),
         seq: flags.seq,
@@ -88,7 +105,16 @@ export class OpsHub extends DurableObject<Env> {
     }
     if (!flags.enabled) return json({ error: 'Hub paused' }, 503);
     if (request.method === 'POST' && url.pathname === '/ingest') {
-      const parsed = ingestSchema.safeParse(await request.json());
+      const payload: unknown = await request.json();
+      if (
+        typeof payload === 'object' &&
+        payload !== null &&
+        'v' in payload &&
+        payload.v !== 2 &&
+        payload.v !== 3
+      )
+        return json({ error: 'Unsupported version', versions: [2, 3] }, 400);
+      const parsed = ingestSchema.safeParse(payload);
       if (!parsed.success) return json({ error: 'Invalid payload' }, 400);
       flags = this.flags();
       if (!flags.enabled) return json({ error: 'Hub paused' }, 503);
@@ -175,9 +201,12 @@ export class OpsHub extends DurableObject<Env> {
             'DELETE FROM events WHERE seq NOT IN (SELECT seq FROM events ORDER BY seq DESC LIMIT 1000)'
           );
         if (body.snapshot) {
+          // Keep data readable by a rolled-back v2 Worker. REPLACE clears org on old writers.
+          const { org, ...legacy }: HubSnapshot = body.snapshot;
           this.ctx.storage.sql.exec(
-            'INSERT OR REPLACE INTO snapshot(id,data) VALUES(1,?)',
-            JSON.stringify({ ...body.snapshot, needsYou: [] })
+            'INSERT OR REPLACE INTO snapshot(id,data,org) VALUES(1,?,?)',
+            JSON.stringify({ ...legacy, needsYou: [] }),
+            org ? JSON.stringify(org) : null
           );
           for (const item of incoming) {
             this.ctx.storage.sql.exec(
@@ -202,7 +231,7 @@ export class OpsHub extends DurableObject<Env> {
           ingests
         );
       });
-      return json({ seq: body.seq, v: 2 });
+      return json({ seq: body.seq, v: body.v });
     }
     if (request.method === 'DELETE' && url.pathname === '/hub') {
       // Preserve only a disabled replay tombstone: old signed requests cannot recreate erased data.

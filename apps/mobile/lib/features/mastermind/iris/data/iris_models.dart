@@ -156,6 +156,7 @@ enum IrisFailureKind {
   offline,
   unauthorized,
   forbidden,
+  sendDisabled,
   rateLimited,
   killed,
   notFound,

@@ -89,7 +89,6 @@ function ReactionBadge({
         className
       )}
     >
-      {/* biome-ignore lint/performance/noImgElement: Facebook reaction assets are intentionally rendered as images */}
       <img
         src={FACEBOOK_REACTION_ASSET_MAP[variant]}
         alt=""
@@ -235,7 +234,6 @@ function renderAvatar(imageUrl: string | null, alt: string, fallback: string) {
   if (imageUrl) {
     return (
       <>
-        {/* biome-ignore lint/performance/noImgElement: local mockup assets and object URLs are rendered directly */}
         <img src={imageUrl} alt={alt} className="h-full w-full object-cover" />
       </>
     );
@@ -589,7 +587,6 @@ export const FacebookMockupPreview = forwardRef<
 
               <div className={cn('overflow-hidden border-y', theme.divider)}>
                 {state.creativeImageUrl ? (
-                  /* biome-ignore lint/performance/noImgElement: local mockup assets and object URLs are rendered directly */
                   <img
                     src={state.creativeImageUrl}
                     alt={t('facebook_mockup.preview.creative_alt')}

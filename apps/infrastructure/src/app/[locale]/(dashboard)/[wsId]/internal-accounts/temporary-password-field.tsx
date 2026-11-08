@@ -34,7 +34,6 @@ export function TemporaryPasswordField({
   const [failure, setFailure] = useState<'copy' | 'generation' | null>(null);
   const copyAttempt = useRef(0);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Changing the controlled secret invalidates transient feedback without retaining its previous value.
   useLayoutEffect(() => {
     // oxlint-disable-next-line react/set-state-in-effect -- Clear transient feedback before a replacement secret is painted.
     setFailure(null);

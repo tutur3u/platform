@@ -180,12 +180,10 @@ export function InvoicePaymentSettings({
         </Label>
         <Combobox
           t={t}
-          options={categories.map(
-            (category): ComboboxOption => ({
-              value: category.id || '',
-              label: category.name || t('ws-invoices.unnamed_category'),
-            })
-          )}
+          options={categories.map((category): ComboboxOption => ({
+            value: category.id || '',
+            label: category.name || t('ws-invoices.unnamed_category'),
+          }))}
           selected={selectedCategoryId}
           onChange={(value) => onCategoryChange(value as string)}
           placeholder={t('ws-invoices.select_category_required')}

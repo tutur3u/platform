@@ -31,6 +31,7 @@ class DecisionCardActions extends StatelessWidget {
         if (pending != null) {
           return ReplyUndoBar(
             option: plainOptionLabel(item, pending.optionIndex),
+            onSendNow: () => replies.sendNow(item.id),
             onUndo: pending.committed
                 ? null
                 : () => replies.undoOption(item.id),

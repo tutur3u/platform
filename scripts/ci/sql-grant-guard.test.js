@@ -202,7 +202,7 @@ test('allow-anon-grant exempts on the same or preceding line with a reason', () 
   );
 });
 
-test('GRANT text in comments, literals and dollar-quoted bodies is ignored', () => {
+test('GRANT text in comments and ordinary literals is ignored; body grants are rejected', () => {
   const sql = [
     '-- grant execute on function public.f() to anon;',
     '/* grant select on public.t to public; /* nested */ still a comment',
@@ -222,7 +222,10 @@ test('GRANT text in comments, literals and dollar-quoted bodies is ignored', () 
     '$body$;',
     'revoke all on function public.g() from public, anon;',
   ].join('\n');
-  assert.deepEqual(grants(sql), []);
+  assert.deepEqual(
+    grants(sql).map((finding) => finding.line),
+    [9, 13]
+  );
 });
 
 test('a SECURITY DEFINER function without a revoke fails', () => {

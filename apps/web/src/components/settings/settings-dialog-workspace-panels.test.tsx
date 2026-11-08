@@ -109,7 +109,6 @@ describe('WorkspaceMembersSettingsPanel', () => {
     expect(inviteLinksMock).toHaveBeenCalledWith({
       canManageMembers: true,
       disableInvite: true,
-      embedded: true,
       wsId: 'ws_1',
     });
     expect(standardWorkspaceAccessMock).toHaveBeenCalledWith(

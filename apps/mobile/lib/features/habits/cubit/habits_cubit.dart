@@ -13,6 +13,7 @@ import 'package:mobile/features/habits/cubit/habits_snapshot_access.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 
 part 'habits_cache_json.dart';
+part 'habits_offline_snapshot.dart';
 part 'habits_cubit_loading.dart';
 part 'habits_cubit_mutations.dart';
 part 'habits_cubit_optimistic.dart';

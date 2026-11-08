@@ -12,8 +12,8 @@ export function AccountAssuranceRefresh() {
   const pathname = usePathname();
   const protectedPage = Boolean(
     pathname &&
-      !/^\/(?:en|vi)?\/?$/.test(pathname) &&
-      !/(?:^|\/)(?:login|verify-token|auth)(?:\/|$)/.test(pathname)
+    !/^\/(?:en|vi)?\/?$/.test(pathname) &&
+    !/(?:^|\/)(?:login|verify-token|auth)(?:\/|$)/.test(pathname)
   );
   useQuery({
     queryKey: ['account-assurance-refresh'],

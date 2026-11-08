@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Direct CI entrypoint; deployment credentials never enter Turbo builds.
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -33,7 +32,7 @@ const access =
 const foreignHost =
   app === 'calendar'
     ? environment === 'production'
-      ? 'calendar.staging.tutur3u.com'
+      ? 'calendar.tutur3u.com'
       : 'calendar.tuturuuu.com'
     : null;
 let clean = false;
@@ -179,9 +178,7 @@ try {
         const target = new URL(page.headers.get('location'));
         assert.equal(
           target.hostname,
-          environment === 'production'
-            ? 'tuturuuu.com'
-            : 'web.staging.tutur3u.com'
+          environment === 'production' ? 'tuturuuu.com' : 'web.tutur3u.com'
         );
         assert.ok(target.pathname.includes('login'));
       }

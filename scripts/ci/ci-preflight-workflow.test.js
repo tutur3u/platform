@@ -148,7 +148,7 @@ function evaluateValidationGate(job, needs, isCancelled = false, github = {}) {
   )(needs, () => isCancelled, github);
 }
 
-for (const [workflowName, jobs] of [['biome-check.yaml', ['format', 'lint']]]) {
+for (const [workflowName, jobs] of [['oxc-check.yaml', ['format', 'lint']]]) {
   const workflow = readWorkflow(workflowName);
   for (const id of jobs) {
     test(`${workflowName}/${id} runs without a successful explicit duplicate proof`, () => {
@@ -197,7 +197,7 @@ for (const [workflowName, jobs] of [['biome-check.yaml', ['format', 'lint']]]) {
       needs['check-ci'].outputs.run_checks = 'false';
       assert.equal(
         evaluateValidationGate(workflow.jobs[id], needs),
-        workflowName === 'biome-check.yaml'
+        workflowName === 'oxc-check.yaml'
       );
       if (id === 'test' || id === 'build') {
         needs['check-ci'].outputs.run_checks = 'true';

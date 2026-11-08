@@ -96,7 +96,7 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
       <div className="rounded-lg border border-border bg-card p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-primary/10 text-primary">
+            <span className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground">
               <KeyRound className="h-4 w-4" />
             </span>
             <div className="min-w-0">
@@ -170,7 +170,7 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
                 value={t(`environment.${selectedProductionEnvironment}`)}
               />
             </div>
-            <p className="mt-3 text-muted-foreground text-xs">
+            <p className="mt-3 text-muted-foreground text-sm">
               {t('readOnlyHint')}
             </p>
           </>
@@ -179,7 +179,7 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
 
       <Collapsible className="rounded-lg border border-border bg-card">
         <CollapsibleTrigger className="group flex w-full min-w-0 items-start gap-3 p-4 text-left">
-          <span className="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-primary/10 text-primary">
+          <span className="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground">
             <Webhook className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
@@ -206,7 +206,7 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
               {t('webhookCopy')}
             </Button>
           </div>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground text-sm">
             {t('webhookGuidance')}
           </p>
         </CollapsibleContent>

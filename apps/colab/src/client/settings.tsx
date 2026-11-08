@@ -5,6 +5,11 @@ import { SatelliteLanguageItem } from '@tuturuuu/ui/custom/satellite-language-it
 import { SatelliteOnboardingSettingsPanel } from '@tuturuuu/ui/custom/satellite-onboarding-settings-panel';
 import { SatelliteSettingsDialogShell } from '@tuturuuu/ui/custom/satellite-settings-dialog-shell';
 import { SatelliteThemeDropdownItems } from '@tuturuuu/ui/custom/satellite-theme-dropdown-items';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   type SidebarBehavior,
   useSidebar,
@@ -96,23 +101,26 @@ export function ColabSettings({
       }
     >
       {activeTab === 'profile' ? (
-        <Button variant="outline" asChild>
-          <a
-            href="https://tuturuuu.com/personal?settingsDialog=open&settingsTab=profile"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <UserRound className="h-4 w-4" />
-            {c.manageProfile}
-          </a>
-        </Button>
+        <SettingsSection>
+          <SettingsSectionBlock>
+            <Button variant="outline" asChild>
+              <a
+                href="https://tuturuuu.com/personal?settingsDialog=open&settingsTab=profile"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <UserRound className="h-4 w-4" />
+                {c.manageProfile}
+              </a>
+            </Button>
+          </SettingsSectionBlock>
+        </SettingsSection>
       ) : (
-        <div className="space-y-4">
-          <div className="settings-row">
-            <span className="flex items-center gap-2 text-sm">
-              <Globe className="h-4 w-4" />
-              {c.language}
-            </span>
+        <SettingsSection>
+          <SettingItemTab
+            title={c.language}
+            icon={<Globe className="h-4 w-4" />}
+          >
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
@@ -143,12 +151,11 @@ export function ColabSettings({
                 />
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-          <div className="settings-row">
-            <span className="flex items-center gap-2 text-sm">
-              <Palette className="h-4 w-4" />
-              {t('common.theme')}
-            </span>
+          </SettingItemTab>
+          <SettingItemTab
+            title={t('common.theme')}
+            icon={<Palette className="h-4 w-4" />}
+          >
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">{t('common.theme')}</Button>
@@ -157,19 +164,19 @@ export function ColabSettings({
                 <SatelliteThemeDropdownItems t={(key) => t(`common.${key}`)} />
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-          <div className="settings-row">
-            <span className="flex items-center gap-2 text-sm">
-              <PanelLeft className="h-4 w-4" />
-              {t('common.sidebar')}
-            </span>
+          </SettingItemTab>
+          <SettingItemTab
+            title={t('common.sidebar')}
+            icon={<PanelLeft className="h-4 w-4" />}
+            controlWidth="xs"
+          >
             <Select
               value={sidebar.behavior}
               onValueChange={(value) =>
                 sidebar.handleBehaviorChange(value as SidebarBehavior)
               }
             >
-              <SelectTrigger className="w-full min-[761px]:w-48">
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -184,8 +191,8 @@ export function ColabSettings({
                 )}
               </SelectContent>
             </Select>
-          </div>
-        </div>
+          </SettingItemTab>
+        </SettingsSection>
       )}
     </SatelliteSettingsDialogShell>
   );

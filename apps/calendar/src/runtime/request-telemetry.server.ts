@@ -42,8 +42,7 @@ export async function createCalendarTelemetryPort(
     ['0', 'false', 'off'].includes(enabled ?? '')
   )
     return undefined;
-  const { createLegacyTelemetryPort } = await import(
-    './legacy-telemetry-supplier.server'
-  );
+  const { createLegacyTelemetryPort } =
+    await import('./legacy-telemetry-supplier.server');
   return createLegacyTelemetryPort(retainBackground);
 }

@@ -17,7 +17,9 @@ const ctx = {
 function setAccess(
   role: string,
   personalStatus = 'active',
-  sendAs: 'members' | 'managers' = 'managers'
+  sendAs: 'members' | 'managers' = 'managers',
+  authEmail = 'user@example.com',
+  authConfirmed = true
 ) {
   const results = [
     { role },
@@ -31,14 +33,35 @@ function setAccess(
     },
     { status: personalStatus },
   ];
+  const addressFilters: unknown[] = [];
   const query = {
     select: () => query,
-    eq: () => query,
+    eq: (column: string, value: unknown) => {
+      if (column === 'address') addressFilters.push(value);
+      return query;
+    },
     maybeSingle: async () => ({ data: results.shift(), error: null }),
   };
   vi.mocked(getAdminClient).mockResolvedValue({
+    auth: {
+      admin: {
+        getUserById: async (id: string) => ({
+          data: {
+            user: {
+              email: authEmail,
+              email_confirmed_at: authConfirmed
+                ? '2026-06-01T00:00:00.000Z'
+                : null,
+              id,
+            },
+          },
+          error: null,
+        }),
+      },
+    },
     schema: () => ({ from: () => query }),
   } as never);
+  return { addressFilters };
 }
 describe('group access', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -68,6 +91,30 @@ describe('group access', () => {
     setAccess('owner', 'disabled');
     expect(await requireMailboxAccess(ctx, 'group')).toBeNull();
   });
+  it('checks the group personal-mailbox gate by the confirmed Auth email, not the claim (SR-926)', async () => {
+    const forgedCtx = {
+      user: { id: 'user', email: 'victim@example.com' },
+    } as MailRouteContext;
+    const { addressFilters } = setAccess(
+      'viewer',
+      'active',
+      'members',
+      'User@Example.com'
+    );
+    expect(await requireMailboxAccess(forgedCtx, 'group')).not.toBeNull();
+    expect(addressFilters).toEqual(['user@example.com']);
+  });
+  it('denies group access when the Auth email is unconfirmed, whatever the claim says (SR-926)', async () => {
+    const { addressFilters } = setAccess(
+      'owner',
+      'active',
+      'members',
+      'user@example.com',
+      false
+    );
+    expect(await requireMailboxAccess(ctx, 'group')).toBeNull();
+    expect(addressFilters).toEqual([]);
+  });
 });
 
 it('counts the same non-archived mailboxes from the authenticated user membership query', async () => {
@@ -83,7 +130,6 @@ it('counts the same non-archived mailboxes from the authenticated user membershi
       eq(...args);
       return query;
     },
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
     then: (resolve: (value: object) => unknown) =>
       Promise.resolve({ data: [{ mailbox_id: 'allowed' }], error: null }).then(
         resolve

@@ -11,6 +11,7 @@ import {
   createBridgeHandler,
 } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
+import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
 import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
@@ -20,8 +21,9 @@ import {
 } from '../src/start-candidate/staging-policy';
 import appConfig from '../start-bridge.config';
 
-export interface DriveEnvironment
-  extends Partial<Record<keyof typeof stagingVars, string>> {
+export interface DriveEnvironment extends Partial<
+  Record<keyof typeof stagingVars, string>
+> {
   ASSETS: AssetsBinding;
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;
@@ -62,7 +64,7 @@ const createHandler = () =>
       publicAssets,
       assets: (env) => env.ASSETS,
       centralApiOrigin: (env) =>
-        env.INTERNAL_WEB_API_ORIGIN ?? 'https://staging.tutur3u.com',
+        env.INTERNAL_WEB_API_ORIGIN ?? 'https://web.tutur3u.com',
     })
   );
 
@@ -71,11 +73,16 @@ let handler: ReturnType<typeof createHandler> | undefined;
 export default {
   async fetch(request: Request, env: DriveEnvironment, ctx: WorkerContext) {
     if (!resolveAppBase(new URL(request.url), mounts)) {
-      return (
-        appConfig.wrapResponse?.(new Response('Not Found', { status: 404 }), {
+      const notFound = new Response('Not Found', {
+        status: 404,
+        headers: { 'Strict-Transport-Security': 'max-age=63072000' },
+      });
+      return enforceStagingCookiePolicy(
+        request,
+        (await appConfig.wrapResponse?.(notFound, {
           request,
           env,
-        }) ?? new Response('Not Found', { status: 404 })
+        })) ?? notFound
       );
     }
     if (!isDriveStagingEnvironment(env)) {
@@ -97,14 +104,17 @@ export default {
       console.error('[start-bridge] worker failed', error);
       response = bridgeErrorResponse();
     }
-    return appConfig.wrapResponse
-      ? appConfig.wrapResponse(response, {
-          request,
-          env,
-          mounts,
-          publicAssets,
-          framablePaths: appConfig.framablePaths,
-        })
-      : response;
+    return enforceStagingCookiePolicy(
+      request,
+      appConfig.wrapResponse
+        ? await appConfig.wrapResponse(response, {
+            request,
+            env,
+            mounts,
+            publicAssets,
+            framablePaths: appConfig.framablePaths,
+          })
+        : response
+    );
   },
 };

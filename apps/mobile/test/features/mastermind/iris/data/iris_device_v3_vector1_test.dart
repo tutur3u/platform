@@ -7,9 +7,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mastermind/iris/data/request_signer.dart';
 import 'package:pointycastle/export.dart';
 
-/// Forge's shared v3 vector 1 (test-only key, public parts only). ECDSA is
+/// Forge's shared v3 vectors (test-only keys, public parts only). ECDSA is
 /// randomized, so the signature is verified, never compared with a fresh one.
-const _path = 'test/fixtures/iris/iris-device-v3-vector1.json';
+const _paths = [
+  'test/fixtures/iris/iris-device-v3-vector1.json',
+  'test/fixtures/iris/iris-device-v3-vector2-get.json',
+];
 
 Uint8List _b64(String s) => base64Url.decode(base64Url.normalize(s));
 
@@ -17,7 +20,13 @@ BigInt _int(List<int> bytes) =>
     bytes.fold(BigInt.zero, (v, b) => (v << 8) | BigInt.from(b));
 
 void main() {
-  final v = jsonDecode(File(_path).readAsStringSync()) as Map<String, dynamic>;
+  for (final path in _paths) {
+    group(path, () => _vector(path));
+  }
+}
+
+void _vector(String path) {
+  final v = jsonDecode(File(path).readAsStringSync()) as Map<String, dynamic>;
   final i = v['inputs'] as Map<String, dynamic>;
 
   String canonical() => irisCanonicalRequest(
@@ -26,12 +35,19 @@ void main() {
     body: utf8.encode(i['body'] as String),
     ts: i['ts'] as String,
     nonce: i['nonce'] as String,
-    deviceId: i['deviceId'] as String,
-    idempotencyKey: i['idempotencyKey'] as String,
+    deviceId: (i['deviceId'] ?? i['device_id']) as String,
+    idempotencyKey: (i['idempotencyKey'] ?? i['idempotency_key']) as String?,
   );
 
   test('the app builds the exact canonical bytes and hash', () {
     final built = canonical();
+    if (i['method'] == 'GET') {
+      expect(i['path'], '/v1/iris/feed?after=0&limit=50');
+      expect(i['body'], isEmpty);
+      expect(i['idempotency_key'], isNull);
+      expect(built.split('\n').last, isEmpty);
+      expect(utf8.encode(built).last, 0x0a);
+    }
     expect(built, v['canonical']);
     expect(utf8.encode(built), utf8.encode(v['canonical'] as String));
     expect(

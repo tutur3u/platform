@@ -260,9 +260,8 @@ describe('inventory item mutation workspace scope', () => {
       method: 'PUT',
     });
 
-    const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/product-categories/[categoryId]/route'
-    );
+    const { PUT } =
+      await import('@/app/api/v1/workspaces/[wsId]/product-categories/[categoryId]/route');
     const response = await PUT(request, {
       params: Promise.resolve({
         categoryId: 'category-from-workspace-b',
@@ -291,9 +290,8 @@ describe('inventory item mutation workspace scope', () => {
       method: 'DELETE',
     });
 
-    const { DELETE } = await import(
-      '@/app/api/v1/workspaces/[wsId]/product-categories/[categoryId]/route'
-    );
+    const { DELETE } =
+      await import('@/app/api/v1/workspaces/[wsId]/product-categories/[categoryId]/route');
     const response = await DELETE(request, {
       params: Promise.resolve({
         categoryId: 'category-from-workspace-b',
@@ -317,9 +315,8 @@ describe('inventory item mutation workspace scope', () => {
       method: 'PUT',
     });
 
-    const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/product-warehouses/[warehouseId]/route'
-    );
+    const { PUT } =
+      await import('@/app/api/v1/workspaces/[wsId]/product-warehouses/[warehouseId]/route');
     const response = await PUT(request, {
       params: Promise.resolve({
         warehouseId: 'warehouse-from-workspace-b',
@@ -350,9 +347,8 @@ describe('inventory item mutation workspace scope', () => {
       method: 'DELETE',
     });
 
-    const { DELETE } = await import(
-      '@/app/api/v1/workspaces/[wsId]/product-warehouses/[warehouseId]/route'
-    );
+    const { DELETE } =
+      await import('@/app/api/v1/workspaces/[wsId]/product-warehouses/[warehouseId]/route');
     const response = await DELETE(request, {
       params: Promise.resolve({
         warehouseId: 'warehouse-from-workspace-b',
@@ -376,9 +372,8 @@ describe('inventory item mutation workspace scope', () => {
       method: 'PUT',
     });
 
-    const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/product-units/[unitId]/route'
-    );
+    const { PUT } =
+      await import('@/app/api/v1/workspaces/[wsId]/product-units/[unitId]/route');
     const response = await PUT(request, {
       params: Promise.resolve({
         unitId: 'unit-from-workspace-b',
@@ -411,9 +406,8 @@ describe('inventory item mutation workspace scope', () => {
       method: 'DELETE',
     });
 
-    const { DELETE } = await import(
-      '@/app/api/v1/workspaces/[wsId]/product-units/[unitId]/route'
-    );
+    const { DELETE } =
+      await import('@/app/api/v1/workspaces/[wsId]/product-units/[unitId]/route');
     const response = await DELETE(request, {
       params: Promise.resolve({
         unitId: 'unit-from-workspace-b',
