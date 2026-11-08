@@ -93,9 +93,17 @@ jobs:
         with:
           ref: ${{ env.SOURCE_SHA }}
           persist-credentials: false
+      - name: Restore Finance native input caches
+        if: inputs.app == 'finance'
+        uses: ./.github/actions/cache-finance-native-inputs
+        with:
+          save: ${{ inputs['profile-env'] == '' && 'true' || 'false' }}
+          bun-version: 1.4.4
+          node-version: 24.22.0
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
+          package-cache-enabled: ${{ inputs.app != 'finance' && 'true' || 'false' }}
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.22.0
@@ -258,9 +266,17 @@ jobs:
         with:
           ref: ${{ env.SOURCE_SHA }}
           persist-credentials: false
+      - name: Restore Finance native input caches
+        if: inputs.app == 'finance'
+        uses: ./.github/actions/cache-finance-native-inputs
+        with:
+          save: "false"
+          bun-version: 1.4.4
+          node-version: 24.22.0
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
+          package-cache-enabled: ${{ inputs.app != 'finance' && 'true' || 'false' }}
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.22.0
