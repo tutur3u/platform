@@ -12,7 +12,7 @@ test('unpublish atomically clears the pointer and audit, denies editors, and fai
   try {
     await db.exec(
       await read(
-        'supabase/migrations/20261104143000_external_project_page_unpublish.sql'
+        'supabase/migrations/20261109010200_external_project_page_unpublish.sql'
       )
     );
     const fixture = await read(
@@ -74,7 +74,7 @@ test('unpublish atomically clears the pointer and audit, denies editors, and fai
     await db.exec('reset role;');
     await db.exec(
       await read(
-        'rollbacks/20261104143000_external_project_page_unpublish.rollback.sql'
+        'rollbacks/20261109010200_external_project_page_unpublish.rollback.sql'
       )
     );
   } finally {
