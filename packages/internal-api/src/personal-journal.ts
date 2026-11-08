@@ -189,3 +189,75 @@ export function parseJournalSourceReference(
 ): JournalSourceReference {
   return journalSourceReferenceSchema.parse(value);
 }
+
+export const JOURNAL_MOOD_SCORES = {
+  very_low: 1,
+  low: 2,
+  neutral: 3,
+  good: 4,
+  great: 5,
+} as const satisfies Record<NonNullable<JournalDocument['mood']>, number>;
+
+export function journalMoodScore(mood: JournalDocument['mood']): number | null {
+  if (mood === null) return null;
+  const score = JOURNAL_MOOD_SCORES[mood];
+  if (score === undefined) throw new Error('Unsupported mood');
+  return score;
+}
+
+export type JournalMoodPoint = {
+  period: string;
+  sum: number;
+  count: number;
+};
+
+export function journalMoodSeries(
+  entries: readonly Pick<JournalDocument, 'occurredAt' | 'mood'>[],
+  timezone: string,
+  period: JournalPeriod
+): JournalMoodPoint[] {
+  const totals = new Map<string, { sum: number; count: number }>();
+  for (const entry of entries) {
+    const score = journalMoodScore(entry.mood);
+    if (score === null) continue;
+    const key = journalPeriodKey(entry.occurredAt, timezone, period);
+    const current = totals.get(key) ?? { sum: 0, count: 0 };
+    current.sum += score;
+    current.count += 1;
+    totals.set(key, current);
+  }
+  return [...totals.keys()].sort().map((key) => {
+    const point = totals.get(key);
+    if (!point) throw new Error('Missing mood point');
+    return { period: key, sum: point.sum, count: point.count };
+  });
+}
+
+export const journalExportSchema = z
+  .object({
+    kind: z.literal('tuturuuu.personal-journal'),
+    version: z.literal(1),
+    complete: z.boolean(),
+    exportedAt: z.iso.datetime({ precision: 3 }),
+    entries: z.array(journalEntrySchema).max(10_000),
+  })
+  .strict();
+export type JournalExport = z.infer<typeof journalExportSchema>;
+
+export function journalExportPayload(
+  entries: readonly JournalEntry[],
+  options: { complete: boolean; exportedAt: string }
+): JournalExport {
+  return journalExportSchema.parse({
+    kind: 'tuturuuu.personal-journal',
+    version: 1,
+    complete: options.complete,
+    exportedAt: options.exportedAt,
+    entries: entries.map((entry) => journalEntrySchema.parse(entry)),
+  });
+}
+
+export function journalExportFilename(exportedAt: string): string {
+  const parsed = z.iso.datetime({ precision: 3 }).parse(exportedAt);
+  return `personal-journal-${parsed.slice(0, 10)}.json`;
+}

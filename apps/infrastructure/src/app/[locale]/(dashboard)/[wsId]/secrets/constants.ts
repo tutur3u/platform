@@ -223,6 +223,13 @@ export const KNOWN_SECRETS: SecretDefinition[] = [
     defaultValue: 'false',
   },
   {
+    name: 'ENABLE_JOURNAL_MOOD_TRACKING',
+    description:
+      'Shows a private mood chart and a JSON export on the personal journal. Defaults off.',
+    type: 'boolean',
+    defaultValue: 'false',
+  },
+  {
     name: 'ENABLE_FINANCE',
     description: 'Enables finance management features.',
     type: 'boolean',

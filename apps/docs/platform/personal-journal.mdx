@@ -1,7 +1,7 @@
 ---
 title: 'Personal journal'
 description: 'Private original journal entries, self-reported mood, and a timezone-aware life and work timeline.'
-updatedAt: "2026-10-12"
+updatedAt: "2026-11-09"
 audience: users
 ---
 
@@ -13,8 +13,18 @@ chosen IANA timezone, an optional self-reported mood and context, life/work doma
 and reflection/good moment/challenge/milestone category. No mood is inferred and
 no diagnostic interpretation is made. Existing Notes, mobile profile activity,
 calendar attribution, public profiles, and shared activity consent are unchanged.
-Mobile editing, search, deletion/reopening, source-linked AI reflections, finance,
-social context, and proactive actions remain separate delivery units.
+A mood chart and a JSON export of the owner's own entries sit behind the
+workspace flag `ENABLE_JOURNAL_MOOD_TRACKING`, which defaults off. While the
+flag is on, the server also requires a confirmed `@tuturuuu.com` account. That check is
+temporary until the shared experimental-audience rule lands. The chart carries
+a plain Experimental badge. Chart points
+contain the period, score sum, and count. They omit title, body, and mood
+context. The export downloads in the browser and is not written to a second
+store. Mobile editing, search, deletion/reopening, source-linked AI reflections,
+finance, social context, rich media, and end-to-end encryption remain separate
+delivery units. The encryption design is accepted for a later change: title,
+body, mood context, and the mood value are encrypted on the device, and the
+chart decrypts in the browser. This slice does not add that storage.
 
 The live storage provider is deliberately unavailable until the migration has
 been applied in ROOT's isolated environment and fresh generated Supabase types
@@ -95,7 +105,8 @@ copy private original journal content into another consent store.
 
 ## Regression evidence
 
-`packages/internal-api/src/personal-journal.test.ts` checks original-source
+`packages/internal-api/src/personal-journal.test.ts` and
+`personal-journal-mood.test.ts` check original-source
 validation, timezone boundaries and malformed success payloads.
 `apps/web/src/lib/personal-journal/` tests cover actor/workspace guards and denied
 unqualified storage. Draft and metadata tests cover exact receipt matching and
