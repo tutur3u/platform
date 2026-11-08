@@ -2,7 +2,8 @@
 
 import { Switch } from '@tuturuuu/ui/switch';
 import { useRef, useState, useTransition } from 'react';
-import { mutateFeatureFlag, reconcileFeatureFlag } from './actions';
+import { reconcileFeatureFlag } from './actions';
+import { mutateFeatureFlag } from './mutation';
 
 interface ToggleCopy {
   conflict: string;

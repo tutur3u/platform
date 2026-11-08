@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { featureFlagCatalog, registry } from './index';
 
 const migrationPath = new URL(
-  '../../../apps/database/supabase/migrations/20261109170000_platform_feature_flag_state_audit.sql',
+  '../../../apps/database/supabase/migrations/20261109185000_platform_feature_flag_state_audit.sql',
   import.meta.url
 );
 const rollbackPath = new URL(
-  '../../../apps/database/rollbacks/20261109170000_platform_feature_flag_state_audit.rollback.sql',
+  '../../../apps/database/rollbacks/20261109185000_platform_feature_flag_state_audit.rollback.sql',
   import.meta.url
 );
 const sql = readFileSync(migrationPath, 'utf8');
