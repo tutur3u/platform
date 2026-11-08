@@ -1,4 +1,4 @@
--- Invoice compensating cleanup (20261104130500): only an invoice created by the same actor in the
+-- Invoice compensating cleanup (20261109050500): only an invoice created by the same actor in the
 -- same request, not paid outside it, is discarded; the link and then the invoice go in one
 -- transaction, or neither does; every discard is audited without amounts. Synthetic fixtures.
 begin;
