@@ -1,8 +1,10 @@
 import InvoicesPage from '@tuturuuu/ui/finance/invoices/invoice-page';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { InvoiceAccessDenied } from '@/components/invoices/invoice-access-denied';
+import { isFeeLockEnabled } from '@/lib/fee-lock-access';
 import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 interface Props {
@@ -37,6 +39,11 @@ export default async function WorkspaceInvoicesPage({
     return <InvoiceAccessDenied user={context.user} />;
   }
 
+  const [feeLockEnabled, t] = await Promise.all([
+    isFeeLockEnabled(context.wsId),
+    getTranslations('ws-fee-lock'),
+  ]);
+
   return (
     <Suspense>
       <InvoicesPage
@@ -49,6 +56,10 @@ export default async function WorkspaceInvoicesPage({
           'delete_invoices'
         )}
         currency={context.currency}
+        feeLockHref={
+          feeLockEnabled ? `/${context.wsId}/invoices/fee-lock` : undefined
+        }
+        feeLockLabel={t('open_from_pending')}
         financePrefix=""
         permissions={context.permissions}
         userId={context.user.id}
