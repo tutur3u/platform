@@ -15,4 +15,5 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlagMap = {
   PREVENT_WORKSPACE_DELETION: false,
   ENABLE_AVATAR: false,
   ENABLE_LOGO: false,
+  newsletter_sending: false,
 };
