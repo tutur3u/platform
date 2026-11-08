@@ -41,7 +41,9 @@ test('Cloudflare release relevance shares the existing config job and gates vali
     assert.equal(workflow.jobs['check-ci'].with.workflow_name, file);
     assert.deepEqual(
       workflow.jobs.validate.needs,
-      app === 'meet' ? ['check-ci', 'production-policy'] : ['check-ci']
+      app === 'meet'
+        ? ['check-ci', 'production-policy']
+        : ['check-ci', 'affected-gate']
     );
     assert.match(
       workflow.jobs.validate.if,
@@ -75,6 +77,10 @@ test('Cloudflare release relevance shares the existing config job and gates vali
                   'production-policy': {
                     result: 'success',
                     outputs: { allowed },
+                  },
+                  'affected-gate': {
+                    result: 'success',
+                    outputs: { run: 'true' },
                   },
                 },
               },
