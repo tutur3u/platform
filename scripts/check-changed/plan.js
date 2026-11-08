@@ -2,6 +2,7 @@
 // often missed before pushing. Pure functions only; the runner executes steps.
 
 const path = require('node:path');
+const { selectLocalChecks } = require('../ci/check-map.js');
 const { reverseDependents, assertSafePaths } = require('./workspaces.js');
 const { AUTH_GUARDS } = require('../auth-guards.js');
 const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
@@ -194,6 +195,7 @@ function planChecks(changes, context) {
     .map((change) => change.file)
     .filter((file) => !isPausedPath(file));
   const any = (pattern) => all.some((file) => pattern.test(file));
+  const selected = selectLocalChecks(all);
   const steps = [];
   const skipped = [];
   const sharedConfig = all.filter((file) =>
@@ -238,13 +240,13 @@ function planChecks(changes, context) {
       '--check',
     ])
   );
-  if (any(/^apps\/docs\//)) {
+  if (selected.has('docs-audit')) {
     steps.push(
       nodeStep('docs-audit', 'docs navigation audit', ['scripts/docs-audit.js'])
     );
   }
 
-  if (any(/^packages\/(internal-api|sdk|utils|types)\//)) {
+  if (selected.has('sdk-portable')) {
     steps.push(
       nodeStep('sdk-portable', 'SDK portable source approval (no emit)', [
         'packages/sdk/scripts/portable-build.cjs',
@@ -311,11 +313,7 @@ function planChecks(changes, context) {
       steps.push(nodeStep(name, name, [script]));
     }
   }
-  if (
-    any(
-      /^packages\/[^/]+\/package\.json$|^\.github\/workflows\/release-.+-package\.ya?ml$|^scripts\/ci\/package-release-(dependency-guard|readiness)\.js$/
-    )
-  ) {
+  if (selected.has('package-release-dependencies')) {
     steps.push(
       nodeStep(
         'package-release-dependencies',
@@ -324,7 +322,7 @@ function planChecks(changes, context) {
       )
     );
   }
-  if (any(/^apps\/[^/]+\/messages\/.*\.json$/)) {
+  if (selected.has('i18n')) {
     steps.push(
       nodeStep('i18n-sort', 'i18n sort', ['scripts/i18n-sort.js', '--check']),
       nodeStep('i18n-key-parity', 'i18n en/vi parity', [
@@ -332,14 +330,14 @@ function planChecks(changes, context) {
       ])
     );
   }
-  if (any(/^apps\/database\/supabase\/migrations\//)) {
+  if (selected.has('migration-timestamps')) {
     steps.push(
       nodeStep('migration-timestamps', 'migration timestamps', [
         'scripts/check-migration-timestamps.js',
       ])
     );
   }
-  if (any(/^apps\/web\/src\/(app\/api|legacy-api-routes)\//)) {
+  if (selected.has('api-route-wrappers')) {
     steps.push(
       nodeStep('api-route-wrappers', 'legacy API route wrappers', [
         'scripts/generate-web-api-route-wrappers.js',
@@ -347,29 +345,21 @@ function planChecks(changes, context) {
       ])
     );
   }
-  if (
-    any(
-      /^(bun\.lock$|apps\/mobile\/(lib\/core\/ui\/icons\/generated|assets\/fonts\/lucide|test\/fixtures\/lucide)\/|scripts\/(mobile-lucide\/|check-mobile-lucide-sync\.js$))/
-    )
-  ) {
+  if (selected.has('mobile-lucide-sync')) {
     steps.push(
       nodeStep('mobile-lucide-sync', 'mobile Lucide icons match web', [
         'scripts/check-mobile-lucide-sync.js',
       ])
     );
   }
-  if (
-    any(
-      /^(apps\/mobile\/(lib|test)\/|apps\/mobile\/tool\/shadcn_import_allowlist\.txt$|scripts\/(check-mobile-shadcn-imports|dart-directive-uris)\.js$)/
-    )
-  ) {
+  if (selected.has('mobile-shadcn-ratchet')) {
     steps.push(
       nodeStep('mobile-shadcn-ratchet', 'mobile shadcn import ratchet', [
         'scripts/check-mobile-shadcn-imports.js',
       ])
     );
   }
-  if (any(/^(apps\/mobile\/lib|apps\/web\/src\/app\/api)\//)) {
+  if (selected.has('mobile-api-mappings')) {
     steps.push(
       nodeStep('mobile-api-mappings', 'mobile API mappings', [
         'scripts/check-mobile-api-mappings.js',

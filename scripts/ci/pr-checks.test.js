@@ -9,17 +9,8 @@ const {
 } = require('./github-expression-test-helper');
 const workflows = readAllWorkflows(undefined, { raw: true });
 const workflow = workflows['pr-checks.yaml'];
-const filters = JSON.parse(
-  execFileSync(
-    'bun',
-    [
-      '-e',
-      'console.log(JSON.stringify(Bun.YAML.parse(process.argv[1])))',
-      workflow.jobs.scope.steps[0].with.filters,
-    ],
-    { encoding: 'utf8' }
-  )
-);
+const { ciFilters } = require('./check-map.js');
+const filters = ciFilters();
 const converted = [
   'oxc-check.yaml',
   'i18n-check.yaml',
@@ -212,7 +203,7 @@ test('security scope remains always on for every security-relevant path without 
 
 test('all new third-party actions are immutable and callees cannot cancel their parent', () => {
   assert.match(
-    workflow.jobs.scope.steps[0].uses,
+    workflow.jobs.scope.steps.find((step) => step.id === 'paths').uses,
     /^dorny\/paths-filter@[a-f0-9]{40}$/u
   );
   const context = {
