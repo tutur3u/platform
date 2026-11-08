@@ -14,6 +14,7 @@ import {
   wrapDirectClientForProxyOnlyTables,
   wrapRequestClientForProxyOnlyTables,
 } from './protected-tables';
+import { sessionUserAgentHeaders } from './session-user-agent';
 
 const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
 const APP_SESSION_BEARER_PREFIX = 'ttr_app_';
@@ -126,9 +127,19 @@ function resolveRequestUrlFromRequest(
   return resolveRequestUrlFromHeaders(request.headers) ?? request.url ?? null;
 }
 
+async function readIncomingHeaderStore() {
+  try {
+    const { headers } = await import('next/headers');
+    return await headers();
+  } catch {
+    return null;
+  }
+}
+
 async function createGenericClient<T = Database>(
   isAdmin: boolean,
-  requestUrl?: string | URL | null
+  requestUrl?: string | URL | null,
+  headerStore?: { get(name: string): string | null }
 ): Promise<SupabaseClient<T>> {
   const { url, key } = checkEnvVariables({ useSecretKey: isAdmin });
   // Lazy `next/headers` import — see getRequestUrlFromHeaders above. Keeps the
@@ -137,7 +148,11 @@ async function createGenericClient<T = Database>(
   const cookieStore = await cookies();
   const resolvedRequestUrl = requestUrl ?? (await getRequestUrlFromHeaders());
   const cookieOptions = getSupabaseCookieOptions(url, resolvedRequestUrl);
+  const sessionHeaders = isAdmin
+    ? undefined
+    : sessionUserAgentHeaders(headerStore ?? (await readIncomingHeaderStore()));
   return createServerClient<T>(url, key, {
+    ...(sessionHeaders ? { global: { headers: sessionHeaders } } : {}),
     cookieOptions,
     cookies: isAdmin
       ? {
@@ -334,7 +349,8 @@ export async function createClient<T = Database>(
 
     const userClient = await createGenericClient<T>(
       false,
-      resolveRequestUrlFromRequest(request)
+      resolveRequestUrlFromRequest(request),
+      request.headers
     );
 
     return wrapRequestClientForProxyOnlyTables(
@@ -392,7 +408,8 @@ export async function createDynamicClient<T = Database>(
 
     const userClient = await createGenericClient<T>(
       false,
-      resolveRequestUrlFromRequest(request)
+      resolveRequestUrlFromRequest(request),
+      request.headers
     );
 
     return wrapRequestClientForProxyOnlyTables(
@@ -413,9 +430,15 @@ export async function createDynamicClient<T = Database>(
  * where you need session tokens returned in the response body
  * rather than set as cookies.
  */
-export function createDetachedClient<T = Database>(): SupabaseClient<T> {
+export function createDetachedClient<T = Database>(options?: {
+  userAgent?: string | null;
+}): SupabaseClient<T> {
   const { url, key } = checkEnvVariables({ useSecretKey: false });
+  const sessionHeaders = sessionUserAgentHeaders(
+    new Headers({ 'user-agent': options?.userAgent ?? '' })
+  );
   return createServerClient<T>(url, key, {
+    ...(sessionHeaders ? { global: { headers: sessionHeaders } } : {}),
     cookieOptions: getSupabaseCookieOptions(url),
     cookies: {
       getAll() {
