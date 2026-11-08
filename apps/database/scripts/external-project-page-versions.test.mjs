@@ -10,13 +10,13 @@ import { pgtap } from '@electric-sql/pglite-pgtap';
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 const MIGRATION =
-  'supabase/migrations/20261104140000_external_project_page_versions.sql';
+  'supabase/migrations/20261109010100_external_project_page_versions.sql';
 const PERMISSION =
-  'supabase/migrations/20261104135900_external_project_edit_permission.sql';
+  'supabase/migrations/20261109010000_external_project_edit_permission.sql';
 const PERMISSION_ROLLBACK =
-  'rollbacks/20261104135900_external_project_edit_permission.rollback.sql';
+  'rollbacks/20261109010000_external_project_edit_permission.rollback.sql';
 const ROLLBACK =
-  'rollbacks/20261104140000_external_project_page_versions.rollback.sql';
+  'rollbacks/20261109010100_external_project_page_versions.rollback.sql';
 
 async function canonical(migration, start, end) {
   const source = await read(`supabase/migrations/${migration}`);

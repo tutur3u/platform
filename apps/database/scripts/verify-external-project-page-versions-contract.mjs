@@ -20,8 +20,8 @@ import {
 
 export const pageVersionsFixture = 'external-project-page-versions.sql';
 export const pageVersionsMigrations = [
-  'apps/database/supabase/migrations/20261104135900_external_project_edit_permission.sql',
-  'apps/database/supabase/migrations/20261104140000_external_project_page_versions.sql',
+  'apps/database/supabase/migrations/20261109010000_external_project_edit_permission.sql',
+  'apps/database/supabase/migrations/20261109010100_external_project_page_versions.sql',
 ];
 export const pageVersionsAssertionCount = 43;
 
