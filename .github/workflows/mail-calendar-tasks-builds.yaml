@@ -553,3 +553,113 @@ jobs:
         run: node --test src/runtime/offline-artifact.runtime.mjs
       - name: Verify final restored artifact seal
         run: node scripts/ci/calendar-native-artifact.mjs verify apps/calendar "$SOURCE_SHA" apps/calendar/calendar-artifact.json
+  # Produce a sealed production-profile archive; publication needs an admitted executor.
+  tasks-cutover-artifact:
+    needs: check-ci
+    if: (needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').tasks) != 'false') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://tasks-ci.supabase.invalid' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tasks_ci_placeholder' }}
+      NEXT_PUBLIC_APP_URL: https://tasks.tuturuuu.com
+      NEXT_PUBLIC_TASKS_APP_URL: https://tasks.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      WRANGLER_SEND_METRICS: 'false'
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - name: Generate build metadata
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build shared dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="@tuturuuu/tasks^..." --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || (github.event_name != 'pull_request' && secrets.TURBO_TEAM)) || '' }}
+      - name: Build the Start Worker
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/tasks && bun run build:cloudflare
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || (github.event_name != 'pull_request' && secrets.TURBO_TEAM)) || '' }}
+      - name: Record bounded emitted config receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/tasks "$SOURCE_SHA" "$RUNNER_TEMP/tasks-emitted-config.json"
+      - name: Retain emitted config receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tasks-cutover-config-receipt-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tasks-emitted-config.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Qualify the staging output before rewriting
+        run: python3 scripts/ci/tasks-native-artifact.py config apps/tasks
+      - name: Write the production wrangler config
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const path = 'apps/tasks/dist/server/wrangler.json';
+          const c = JSON.parse(readFileSync(path, 'utf8'));
+          c.topLevelName = 'tuturuuu-tasks';
+          c.name = 'tuturuuu-tasks';
+          c.workers_dev = false;
+          c.preview_urls = false;
+          c.upload_source_maps = false;
+          c.vars = {
+            TUTURUUU_NOINDEX: '0',
+            NODE_ENV: 'production',
+            TUTURUUU_REQUIRE_SECRETS: '1',
+            NEXT_PUBLIC_APP_URL: 'https://tasks.tuturuuu.com',
+            NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
+          };
+          writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);
+          JS
+          if [ "$(node -p "require('./apps/tasks/dist/server/wrangler.json').preview_urls")" != false ]; then exit 1; fi
+          test -f apps/tasks/dist/server/index.mjs
+          test -d apps/tasks/dist/client
+      - name: Validate, seal and pack the final production output
+        env:
+          TASKS_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          python3 scripts/ci/tasks-native-artifact.py --profile production config apps/tasks
+          python3 scripts/ci/tasks-native-artifact.py --profile production seal apps/tasks --receipt "$RUNNER_TEMP/tasks-production-artifact.json"
+          python3 scripts/ci/tasks-native-artifact.py --profile production pack apps/tasks --receipt "$RUNNER_TEMP/tasks-production-artifact.json" --archive "$RUNNER_TEMP/tasks-production-artifact.tar.gz"
+      - name: Verify the sealed archive after restore and before upload
+        env:
+          TASKS_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: |
+          restored="$(mktemp -d "$RUNNER_TEMP/tasks-production-restore.XXXXXX")"
+          trap 'rm -rf -- "$restored"' EXIT
+          mkdir "$restored/public"
+          cp -a apps/tasks/public/. "$restored/public/"
+          python3 scripts/ci/tasks-native-artifact.py --profile production restore "$restored" --archive "$RUNNER_TEMP/tasks-production-artifact.tar.gz" --receipt "$restored/tasks-production-artifact.json"
+          cmp "$RUNNER_TEMP/tasks-production-artifact.json" "$restored/tasks-production-artifact.json"
+          python3 scripts/ci/tasks-native-artifact.py --profile production verify "$restored" --receipt "$restored/tasks-production-artifact.json"
+          python3 scripts/ci/tasks-native-artifact.py --profile production verify apps/tasks --receipt "$RUNNER_TEMP/tasks-production-artifact.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tasks-cutover-${{ env.TRUSTED == 'true' && 'production' || 'fixture' }}-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/tasks-production-artifact.tar.gz
+          retention-days: 14
+          if-no-files-found: error

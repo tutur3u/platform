@@ -37,7 +37,9 @@ const flagsIn = (family: string) =>
 
 function workspaceUtilsFlags() {
   const data = repoFile('packages/utils/src/feature-flags/data.ts');
-  return [...data.matchAll(/^\s+([A-Z_]+): '\1',$/gm)].map((m) => m[1]);
+  return [...data.matchAll(/^\s+([A-Za-z][A-Za-z0-9_]*): '\1',$/gm)].map(
+    (m) => m[1]
+  );
 }
 
 function infraFeatureBooleans() {

@@ -492,7 +492,19 @@ test('Turbo team inputs retain variables and trusted-event secret fallback', () 
   const fields = strings(workflows['mail-calendar-tasks-builds.yaml']).filter(
     ([, value]) => value.includes('secrets.TURBO_TEAM')
   );
-  assert.equal(fields.length, 5);
+  assert.equal(fields.length, 7);
+  assert.deepEqual(
+    fields.map(([field]) => field),
+    [
+      '.jobs.build-mail.steps.5.with.team',
+      '.jobs.build-tasks.steps.5.with.team',
+      '.jobs.build-web.steps.4.with.team',
+      '.jobs.calendar-native.steps.6.with.team',
+      '.jobs.calendar-native.steps.19.with.team',
+      '.jobs.tasks-cutover-artifact.steps.5.with.team',
+      '.jobs.tasks-cutover-artifact.steps.6.with.team',
+    ]
+  );
   for (const [, value] of fields) {
     for (const event of ['push', 'workflow_dispatch', 'pull_request']) {
       for (const team of ['', 'public-team']) {
@@ -510,5 +522,26 @@ test('Turbo team inputs retain variables and trusted-event secret fallback', () 
         assert.equal(evaluate(value, scope), '');
       }
     }
+  }
+});
+
+test('Tasks cutover cache steps reject an unguarded Turbo team fallback', () => {
+  for (const index of [5, 6]) {
+    const workflow = structuredClone(
+      workflows['mail-calendar-tasks-builds.yaml']
+    );
+    const step = workflow.jobs['tasks-cutover-artifact'].steps[index];
+    assert.match(
+      step.with.team,
+      /github.event_name != 'pull_request' && secrets.TURBO_TEAM/
+    );
+    step.with.team = step.with.team.replace(
+      "github.event_name != 'pull_request' && ",
+      ''
+    );
+    assert.throws(
+      () => assertPrTurboTeamWithheld(workflow),
+      /reads TURBO_TEAM on a PR/
+    );
   }
 });

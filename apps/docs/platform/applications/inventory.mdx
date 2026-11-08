@@ -1,7 +1,7 @@
 ---
 title: 'Inventory'
 description: 'How inventory.tuturuuu.com is wired as the inventory satellite app, operator console, public storefront, checkout reservation, and audit operations surface.'
-updatedAt: '2026-10-03'
+updatedAt: '2026-11-08'
 audience: users
 ---
 
@@ -20,6 +20,15 @@ period-choice rules apply instead. If browser storage is blocked, the selection
 still survives consecutive sales while the dialog remains mounted.
 `sale-period-selection.test.ts` covers persistence and scope isolation;
 `season-sale-integration.test.tsx` covers two consecutive Keep open sales.
+
+Creating a sales period does not change the workspace default unless the
+workspace has saved the choice to set new sales periods as the default. That
+choice is off when no value is stored. Sales defaults settings and the sales
+period creation screen show the same saved choice. Only the existing
+sales-defaults permission can change it, and a create request cannot turn it
+on. If the period is created and the default update fails, the period remains
+and the failure is reported separately. A period remembered in this browser
+stays selected.
 
 Record sale shows one selectable row per product, unit and warehouse identity.
 Overlapping loaded pages and repeated stock entries do not create duplicate rows
