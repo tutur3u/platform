@@ -86,6 +86,7 @@ test('generated config targets the staging Worker and keeps Next build', (t) => 
     fs.readFileSync(path.join(root, 'apps/demo', file), 'utf8');
   assert.match(read('void.config.ts'), /name: 'tuturuuu-demo-vite-staging'/);
   assert.match(read('void.config.ts'), /TUTURUUU_NOINDEX: '1'/);
+  assert.match(read('vite.config.mts'), /'process\.env\.NODE_ENV': JSON\.stringify\('production'\)/);
   assert.match(
     read('vite.config.mts'),
     /startBridgePreset\(\{\n {2}appRoot: import\.meta\.url,\n {2}app: 'demo',/
