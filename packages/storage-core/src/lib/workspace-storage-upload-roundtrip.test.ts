@@ -116,9 +116,8 @@ describe('workspace storage upload round trip', () => {
   it('returns the logical folder key for delimiter and Vietnamese parents', async () => {
     const storage = fakeStorage();
     mocks.createDynamicAdminClient.mockResolvedValue(storage.client);
-    const { createWorkspaceStorageFolderObject } = await import(
-      './workspace-storage-provider'
-    );
+    const { createWorkspaceStorageFolderObject } =
+      await import('./workspace-storage-provider');
 
     await expect(
       createWorkspaceStorageFolderObject('ws-1', 'docs?draft#final', 'Tài liệu')

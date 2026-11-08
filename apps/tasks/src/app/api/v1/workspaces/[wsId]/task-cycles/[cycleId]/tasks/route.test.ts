@@ -74,14 +74,24 @@ function single(data: () => unknown) {
 }
 
 function listQuery() {
-  const builder: Record<string, unknown> = {};
-  for (const method of ['select', 'eq', 'is', 'in', 'not', 'order']) {
-    builder[method] = (...args: unknown[]) => {
+  const methods = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    is: vi.fn(),
+    in: vi.fn(),
+    not: vi.fn(),
+    order: vi.fn(),
+  };
+  const builder = Object.assign(Promise.resolve(mocks.listResult), methods, {
+    limit: vi.fn(),
+  });
+  for (const [method, mock] of Object.entries(methods)) {
+    mock.mockImplementation((...args: unknown[]) => {
       mocks.listCalls.push([method, ...args]);
       return builder;
-    };
+    });
   }
-  builder.limit = async () => mocks.listResult;
+  builder.limit.mockReturnValue(builder);
   return builder;
 }
 

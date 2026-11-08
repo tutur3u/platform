@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/playground",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
@@ -9,7 +9,7 @@
     "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-3003} --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
-    "build": "next build --turbopack",
+    "build": "vp build --configLoader runner",
     "start": "next start",
     "preview": "next build --turbopack && next start -p 3003 --turbopack",
     "stop": "cd ../database && bun sb:stop",
@@ -29,7 +29,8 @@
     "preview:cloudflare": "vp preview --configLoader runner --host 127.0.0.1 --port ${PORT:-3003}",
     "routes:check": "bun ../../packages/start-bridge/src/codegen/cli.ts check .",
     "type-check:cloudflare": "tsc --noEmit -p tsconfig.cloudflare.json",
-    "test:runtime": "node --test cloudflare/*.runtime.mjs"
+    "test:runtime": "node --test cloudflare/*.runtime.mjs",
+    "build:legacy": "next build --turbopack"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.102",
@@ -58,7 +59,6 @@
     "@types/node": "^26.6.5",
     "@types/react": "~19.2.18",
     "@types/react-dom": "~19.2.7",
-    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitejs/plugin-react": "6.1.2",
     "@vitejs/plugin-rsc": "0.5.38",
     "babel-plugin-react-compiler": "^1.0.0",

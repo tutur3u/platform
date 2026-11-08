@@ -108,9 +108,8 @@ describe('task drafts route', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/task-drafts/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/task-drafts/route');
     const response = await GET(
       new NextRequest('http://localhost/api/v1/workspaces/ws-1/task-drafts'),
       {
@@ -142,9 +141,8 @@ describe('task drafts route', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/task-drafts/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/task-drafts/route');
     const response = await GET(
       new NextRequest(
         'http://localhost/api/v1/workspaces/ws-1/task-drafts?boardId=board-1&includeUnassignedForBoard=true'
@@ -180,9 +178,8 @@ describe('task drafts route', () => {
     'denies draft reads before admin query when membership returns %s',
     async (error, status, message) => {
       mocks.membershipSingle.mockResolvedValue({ data: null, error });
-      const { GET } = await import(
-        '@/app/api/v1/workspaces/[wsId]/task-drafts/route'
-      );
+      const { GET } =
+        await import('@/app/api/v1/workspaces/[wsId]/task-drafts/route');
       const response = await GET(
         new NextRequest('http://localhost/api/v1/workspaces/ws-1/task-drafts'),
         { params: Promise.resolve({ wsId: 'ws-1' }) }

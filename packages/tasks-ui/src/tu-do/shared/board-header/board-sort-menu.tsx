@@ -31,11 +31,13 @@ export function BoardSortMenu({
         <ToneButton
           active={Boolean(current)}
           aria-label={t('common.sort')}
-          tone="purple"
+          tone="neutral"
         >
-          <Flag />
-          {current ? labels[current] : t('common.sort')}
-          <ChevronDown className="opacity-60" />
+          <ArrowUpDown />
+          <span className="@xl/board-header:inline hidden">
+            {current ? labels[current] : t('common.sort')}
+          </span>
+          <ChevronDown className="@sm/board-header:block hidden opacity-60" />
         </ToneButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">

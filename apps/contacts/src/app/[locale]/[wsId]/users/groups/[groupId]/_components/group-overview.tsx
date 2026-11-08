@@ -23,8 +23,7 @@ import {
   StorageCardServer,
 } from './overview-cards';
 
-export interface GroupOverviewSearchParams
-  extends UserGroupActivityLogSearchParams {
+export interface GroupOverviewSearchParams extends UserGroupActivityLogSearchParams {
   excludedGroups?: string | string[];
   month?: string;
   page?: string;

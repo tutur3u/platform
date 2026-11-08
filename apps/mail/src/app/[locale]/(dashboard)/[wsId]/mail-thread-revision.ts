@@ -21,8 +21,8 @@ export function sameThreadRevision(
 ) {
   return Boolean(
     before &&
-      current.latestMessageId === before.latestMessageId &&
-      current.messageCount === before.messageCount &&
-      current.lastMessageAt === before.lastMessageAt
+    current.latestMessageId === before.latestMessageId &&
+    current.messageCount === before.messageCount &&
+    current.lastMessageAt === before.lastMessageAt
   );
 }

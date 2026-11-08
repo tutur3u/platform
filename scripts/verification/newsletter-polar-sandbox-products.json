@@ -1,0 +1,46 @@
+[
+  {
+    "name": "Newsletter tier_1 feasibility sandbox",
+    "description": "Feasibility only. No customer entitlement or newsletter sending enabled.",
+    "visibility": "draft",
+    "recurringInterval": "month",
+    "recurringIntervalCount": 1,
+    "prices": [
+      {
+        "amountType": "fixed",
+        "priceAmount": 200,
+        "priceCurrency": "usd"
+      }
+    ],
+    "metadata": {
+      "product_type": "newsletter_tier",
+      "tier": "tier_1",
+      "daily_limit": 200,
+      "monthly_pool": 2000,
+      "exclusive_group": "newsletter",
+      "feasibility_only": true
+    }
+  },
+  {
+    "name": "Newsletter tier_2 feasibility sandbox",
+    "description": "Feasibility only. No customer entitlement or newsletter sending enabled.",
+    "visibility": "draft",
+    "recurringInterval": "month",
+    "recurringIntervalCount": 1,
+    "prices": [
+      {
+        "amountType": "fixed",
+        "priceAmount": 1000,
+        "priceCurrency": "usd"
+      }
+    ],
+    "metadata": {
+      "product_type": "newsletter_tier",
+      "tier": "tier_2",
+      "daily_limit": 500,
+      "monthly_pool": 0,
+      "exclusive_group": "newsletter",
+      "feasibility_only": true
+    }
+  }
+]

@@ -55,9 +55,8 @@ afterEach(() => {
 
 it('keeps unconfigured capabilities accepted by both heartbeat contracts', async () => {
   vi.stubEnv('TUTURUUU_PLAYGROUND_POOL_ID', '');
-  const { createDevboxAgentCapabilities } = await import(
-    './devbox-agent-capabilities'
-  );
+  const { createDevboxAgentCapabilities } =
+    await import('./devbox-agent-capabilities');
   const capabilities = await createDevboxAgentCapabilities();
   expect(capabilities).not.toHaveProperty('playground');
   const webRoute = new URL(

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Archive,
   CalendarDays,
@@ -8,16 +8,21 @@ import {
   Plus,
   RotateCcw,
 } from '@tuturuuu/icons';
+import { loadedSalesPeriodAutoDefault } from '@tuturuuu/inventory-core/sales-period-default-policy';
 import type {
+  InventoryProductFormOptionsResponse,
   InventoryProductSummary,
   InventorySaleSummary,
   InventorySalesPeriod,
+  InventorySalesPeriodCreateResponse,
   InventorySalesPeriodProductScope,
 } from '@tuturuuu/internal-api/inventory';
 import {
   createInventorySalesPeriod,
   deleteInventorySalesPeriod,
+  getInventoryProductFormOptions,
   setInventorySalePeriod,
+  updateInventorySalesDefaults,
   updateInventorySalesPeriod,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
@@ -38,6 +43,7 @@ import { SelectValueField } from './operator-form-fields';
 import { LifecyclePanel } from './operator-lifecycle';
 import { UNASSIGNED_SALES_PERIOD_FILTER } from './operator-types';
 import { SalesExportDropdown } from './sales-export-dropdown';
+import { SalesPeriodAutoDefaultField } from './sales-period-auto-default-field';
 import { SalesPeriodProductRules } from './sales-period-product-rules';
 import { SeasonPricesDialog } from './season-prices-dialog';
 
@@ -221,8 +227,29 @@ function SalesPeriodDialog({
     period?.product_ids ?? []
   );
   const isEditing = Boolean(period);
+  const policyOptions = useQuery({
+    enabled: open && !isEditing,
+    queryFn: () => getInventoryProductFormOptions(wsId),
+    queryKey: ['inventory', wsId, 'form-options'],
+  });
+  const policyMutation = useMutation({
+    mutationFn: (enabled: boolean) =>
+      updateInventorySalesDefaults(wsId, {
+        autoSetNewSalesPeriodAsDefault: enabled,
+      }),
+    onError: () => toast.error(t('autoDefaultSaveError')),
+    onSuccess: (_result, enabled) => {
+      queryClient.setQueryData<InventoryProductFormOptionsResponse>(
+        ['inventory', wsId, 'form-options'],
+        (existing) =>
+          existing
+            ? { ...existing, autoSetNewSalesPeriodAsDefault: enabled }
+            : existing
+      );
+    },
+  });
   const mutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (): Promise<InventorySalesPeriodCreateResponse> =>
       period
         ? updateInventorySalesPeriod(wsId, period.id, {
             pricing_mode: pricingMode,
@@ -246,8 +273,21 @@ function SalesPeriodDialog({
           }),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('saveError')),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      const salesDefault = result.salesDefault;
       toast.success(t(isEditing ? 'updatedSuccess' : 'createdSuccess'));
+      if (!isEditing && salesDefault?.status === 'failed') {
+        toast.error(t('createdDefaultFailed'));
+      }
+      if (!isEditing && salesDefault?.status === 'updated') {
+        queryClient.setQueryData<InventoryProductFormOptionsResponse>(
+          ['inventory', wsId, 'form-options'],
+          (existing) =>
+            existing
+              ? { ...existing, defaultSalesPeriodId: result.data.id }
+              : existing
+        );
+      }
       setOpen(false);
       if (!isEditing) {
         setName('');
@@ -260,6 +300,11 @@ function SalesPeriodDialog({
       queryClient.invalidateQueries({
         queryKey: ['inventory', wsId, 'sales-periods'],
       });
+      if (!isEditing) {
+        queryClient.invalidateQueries({
+          queryKey: ['inventory', wsId, 'form-options'],
+        });
+      }
     },
   });
   const deleteMutation = useMutation({
@@ -309,6 +354,7 @@ function SalesPeriodDialog({
           className="flex min-h-0 flex-1 flex-col"
           onSubmit={(event: FormEvent) => {
             event.preventDefault();
+            if (policyMutation.isPending) return;
             mutation.mutate();
           }}
         >
@@ -382,6 +428,19 @@ function SalesPeriodDialog({
                 value={description}
               />
             </label>
+            {period ? null : (
+              <SalesPeriodAutoDefaultField
+                canEdit={policyOptions.data?.canEditSalesDefaults === true}
+                enabled={loadedSalesPeriodAutoDefault(
+                  policyOptions.data?.autoSetNewSalesPeriodAsDefault
+                )}
+                onCheckedChange={(checked) => {
+                  if (policyOptions.data?.canEditSalesDefaults !== true) return;
+                  policyMutation.mutate(checked);
+                }}
+                pending={policyMutation.isPending}
+              />
+            )}
             {period ? (
               <LifecyclePanel
                 deleteDisabled={period.sale_count > 0}
@@ -407,7 +466,8 @@ function SalesPeriodDialog({
                 !name.trim() ||
                 Boolean(startsAt && endsAt && startsAt > endsAt) ||
                 (productScope !== 'all' && productIds.length === 0) ||
-                mutation.isPending
+                mutation.isPending ||
+                policyMutation.isPending
               }
               type="submit"
             >

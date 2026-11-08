@@ -353,7 +353,7 @@ function readDockerControlStatus({
   return {
     configured: Boolean(
       process.env.PLATFORM_DOCKER_CONTROL_URL &&
-        process.env.PLATFORM_DOCKER_CONTROL_TOKEN
+      process.env.PLATFORM_DOCKER_CONTROL_TOKEN
     ),
     lastRecovery: normalizeDockerControlRecovery(record?.lastRecovery),
     status: normalizeStatusHealth(updatedAt, now),

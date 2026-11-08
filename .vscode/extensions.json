@@ -1,6 +1,6 @@
 {
   "recommendations": [
-    "biomejs.biome", // Biome
+    "oxc.oxc-vscode", // Oxc
     "bradlc.vscode-tailwindcss", // Tailwind CSS IntelliSense
     "pflannery.vscode-versionlens", // Version Lens
     "usernamehw.errorlens", // Error Lens

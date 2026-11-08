@@ -15,9 +15,8 @@ interface CalendarPreferencesSettingsBridgeProps {
 }
 
 async function loadUserCalendarSettings() {
-  const { getUserCalendarSettings } = await import(
-    '@tuturuuu/internal-api/users'
-  );
+  const { getUserCalendarSettings } =
+    await import('@tuturuuu/internal-api/users');
 
   return getUserCalendarSettings();
 }
@@ -25,9 +24,8 @@ async function loadUserCalendarSettings() {
 async function loadWorkspaceCalendarSettings(wsId?: string) {
   if (!wsId) return null;
 
-  const { getWorkspaceCalendarSettings } = await import(
-    '@tuturuuu/internal-api/settings'
-  );
+  const { getWorkspaceCalendarSettings } =
+    await import('@tuturuuu/internal-api/settings');
 
   return getWorkspaceCalendarSettings(wsId);
 }

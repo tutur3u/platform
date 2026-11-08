@@ -73,7 +73,6 @@ test('workflow fails closed on disabled gate and selects exact head/schema paths
   assert.equal(steps[0].run, 'test "$CONTRACT_ENABLED" = true');
   assert.equal(
     steps.find((s) => s.uses?.startsWith('actions/checkout@')).with.ref,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: compare the literal GitHub workflow expression.
     '${{ github.event.pull_request.head.sha || github.sha }}'
   );
   assert.equal(steps.at(-1).with['if-no-files-found'], 'error');

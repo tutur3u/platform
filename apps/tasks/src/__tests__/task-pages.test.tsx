@@ -169,9 +169,8 @@ describe('tasks app task pages', () => {
   });
 
   it('redirects /tasks to the configured default board', async () => {
-    const { default: Page } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/tasks/page'
-    );
+    const { default: Page } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/tasks/page');
 
     await expect(
       Page({ params: Promise.resolve({ wsId: 'workspace-1' }) })
@@ -189,9 +188,8 @@ describe('tasks app task pages', () => {
   it('falls back to the first accessible board when the configured board is missing', async () => {
     mocks.getUserWorkspaceConfig.mockResolvedValue({ value: 'missing-board' });
 
-    const { default: Page } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/tasks/page'
-    );
+    const { default: Page } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/tasks/page');
 
     await expect(
       Page({ params: Promise.resolve({ wsId: 'workspace-1' }) })
@@ -203,9 +201,8 @@ describe('tasks app task pages', () => {
   it('creates a board with translated default list names when no board exists', async () => {
     mocks.listWorkspaceTaskBoards.mockResolvedValue({ boards: [], count: 0 });
 
-    const { default: Page } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/tasks/page'
-    );
+    const { default: Page } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/tasks/page');
 
     await expect(
       Page({ params: Promise.resolve({ wsId: 'workspace-1' }) })
@@ -249,9 +246,8 @@ describe('tasks app task pages', () => {
       });
     mocks.createWorkspaceTaskBoard.mockRejectedValue(new Error('conflict'));
 
-    const { default: Page } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/tasks/page'
-    );
+    const { default: Page } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/tasks/page');
 
     await expect(
       Page({ params: Promise.resolve({ wsId: 'workspace-1' }) })
@@ -277,9 +273,8 @@ describe('tasks app task pages', () => {
       });
     mocks.createWorkspaceTaskBoard.mockResolvedValue({ board: null });
 
-    const { default: Page } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/tasks/page'
-    );
+    const { default: Page } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/tasks/page');
 
     await expect(
       Page({ params: Promise.resolve({ wsId: 'workspace-1' }) })
@@ -301,9 +296,8 @@ describe('tasks app task pages', () => {
         })
     );
     mocks.listWorkspaceTaskLists.mockResolvedValue({ lists: [] });
-    const { resolveTaskBoardEntrypoint } = await import(
-      '@/lib/tasks/task-board-entrypoint'
-    );
+    const { resolveTaskBoardEntrypoint } =
+      await import('@/lib/tasks/task-board-entrypoint');
 
     const first = resolveTaskBoardEntrypoint('workspace-concurrent', {
       baseUrl: 'http://first.test',
@@ -326,9 +320,8 @@ describe('tasks app task pages', () => {
   it('uses an explicit proxy locale when creating a default board', async () => {
     mocks.listWorkspaceTaskBoards.mockResolvedValue({ boards: [], count: 0 });
     mocks.listWorkspaceTaskLists.mockResolvedValue({ lists: [] });
-    const { resolveTaskBoardEntrypoint } = await import(
-      '@/lib/tasks/task-board-entrypoint'
-    );
+    const { resolveTaskBoardEntrypoint } =
+      await import('@/lib/tasks/task-board-entrypoint');
 
     await expect(
       resolveTaskBoardEntrypoint(
@@ -352,9 +345,8 @@ describe('tasks app task pages', () => {
       personal: true,
     });
 
-    const { default: Page } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/tasks/page'
-    );
+    const { default: Page } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/tasks/page');
 
     await expect(
       Page({ params: Promise.resolve({ wsId: 'personal' }) })
@@ -368,9 +360,8 @@ describe('tasks app task pages', () => {
   });
 
   it('forces the board detail route to open kanban by default', async () => {
-    const { default: Page } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/boards/[boardId]/page'
-    );
+    const { default: Page } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/boards/[boardId]/page');
 
     const params = Promise.resolve({ boardId: 'board-1', wsId: 'workspace-1' });
     const result = await Page({ params });
@@ -388,9 +379,8 @@ describe('tasks app task pages', () => {
   });
 
   it('uses the shared full-bleed board loading state for board route loading', async () => {
-    const { default: Loading } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/boards/[boardId]/loading'
-    );
+    const { default: Loading } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/boards/[boardId]/loading');
 
     const result = Loading();
 
@@ -404,9 +394,8 @@ describe('tasks app task pages', () => {
   });
 
   it('redirects /boards through the same task board entrypoint', async () => {
-    const { default: Page } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/boards/page'
-    );
+    const { default: Page } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/boards/page');
 
     await expect(
       Page({ params: Promise.resolve({ wsId: 'workspace-1' }) })
@@ -439,9 +428,8 @@ describe('tasks app task pages', () => {
   });
 
   it('exposes autonomous task intelligence as first-class destinations', async () => {
-    const { getNavigationLinks } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/navigation'
-    );
+    const { getNavigationLinks } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/navigation');
 
     const links = await getNavigationLinks({ personalOrWsId: 'workspace-1' });
 
@@ -489,9 +477,8 @@ describe('tasks app task pages', () => {
   });
 
   it('enables Cycles only for members who can manage projects', async () => {
-    const { getNavigationLinks } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/navigation'
-    );
+    const { getNavigationLinks } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/navigation');
 
     const links = await getNavigationLinks({
       personalOrWsId: 'workspace-1',
@@ -539,9 +526,8 @@ describe('tasks app task pages', () => {
   it('redirects unauthenticated entrypoint users to login', async () => {
     mocks.getSatelliteAppSessionUser.mockResolvedValue(null);
 
-    const { default: Page } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/tasks/page'
-    );
+    const { default: Page } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/tasks/page');
 
     await expect(
       Page({ params: Promise.resolve({ wsId: 'workspace-1' }) })
@@ -553,9 +539,8 @@ describe('tasks app task pages', () => {
   it('returns notFound for a missing workspace before resolving boards', async () => {
     mocks.getWorkspace.mockResolvedValue(null);
 
-    const { default: Page } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/tasks/page'
-    );
+    const { default: Page } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/tasks/page');
 
     await expect(
       Page({ params: Promise.resolve({ wsId: 'workspace-1' }) })
@@ -572,9 +557,8 @@ describe('tasks app task pages', () => {
       joined: false,
       personal: false,
     });
-    const { default: Page } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/tasks/page'
-    );
+    const { default: Page } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/tasks/page');
     await expect(
       Page({ params: Promise.resolve({ wsId: 'workspace-1' }) })
     ).rejects.toMatchObject({ href: '/' });

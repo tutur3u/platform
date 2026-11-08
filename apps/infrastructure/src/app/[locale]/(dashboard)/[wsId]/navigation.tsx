@@ -11,6 +11,7 @@ import {
   Database,
   ExternalLink,
   FileText,
+  Flag,
   GitBranch,
   Globe,
   History,
@@ -181,6 +182,11 @@ function getTopLevelNavigation({
           href: href(wsId, '/mobile-versions'),
           icon: icon(Smartphone),
           title: t('infrastructure-tabs.mobile_versions'),
+        },
+        {
+          href: href(wsId, '/feature-flags'),
+          icon: icon(Flag),
+          title: t('infrastructure-tabs.feature_flags'),
         },
         {
           href: href(wsId, '/migrations'),

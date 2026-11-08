@@ -1,0 +1,80 @@
+name: Roadmap Cloudflare Artifact
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths:
+      - 'apps/roadmap/**'
+      - 'bun.lock'
+      - 'package.json'
+      - 'tuturuuu.ci.ts'
+      - 'scripts/generate-tanstack-route-tree.js'
+      - '.github/actions/setup-bun-with-retry/**'
+      - '.github/workflows/roadmap-cloudflare.yaml'
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Reviewed immutable roadmap source commit
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: roadmap-artifact-${{ github.event_name }}-${{ github.event.pull_request.number || github.sha }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  check-ci:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: roadmap-cloudflare.yaml
+  build:
+    needs: check-ci
+    if: (needs.check-ci.outputs.should_run == 'true' && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EVENT_NAME: ${{ github.event_name }}
+      EXPECTED_SOURCE_SHA: ${{ inputs.source_sha }}
+      SOURCE_SHA: ${{ github.sha }}
+      ROADMAP_SOURCE_SHA: ${{ github.sha }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - name: Validate immutable source input
+        run: |
+          if [[ "$EVENT_NAME" == workflow_dispatch ]]; then
+            [[ "$EXPECTED_SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]
+            test "$EXPECTED_SOURCE_SHA" = "$SOURCE_SHA"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify checkout identity
+        run: 'test "$(git rev-parse HEAD)" = "$SOURCE_SHA"'
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: bun install --frozen-lockfile
+      - name: Check public roadmap data
+        run: node --test apps/roadmap/src/roadmap-data.test.ts apps/roadmap/scripts/seal-artifact.test.mjs
+      - name: Build the exact roadmap Worker
+        run: bun run --cwd apps/roadmap build:cloudflare
+      - name: Check generated-route types
+        run: bun run --cwd apps/roadmap type-check
+      - name: Seal emitted source and files
+        run: node apps/roadmap/scripts/seal-artifact.mjs "$SOURCE_SHA"
+      - name: Archive the exact Worker and client output
+        run: tar -czf "$RUNNER_TEMP/roadmap-worker.tar.gz" -C apps/roadmap dist roadmap-artifact.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: roadmap-worker-${{ github.sha }}
+          path: ${{ runner.temp }}/roadmap-worker.tar.gz
+          if-no-files-found: error
+          retention-days: 7

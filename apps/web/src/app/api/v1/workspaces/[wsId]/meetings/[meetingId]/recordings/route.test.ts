@@ -58,7 +58,6 @@ vi.mock('@tuturuuu/supabase/next/server', () => {
   chain.single = async () => ({
     data: { id: MEETING_ID, creator_id: mocks.hostId },
   });
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
   chain.then = (resolve: (value: unknown) => void) =>
     resolve({ data: sessions, error: null });
   return {

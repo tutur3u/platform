@@ -15,7 +15,15 @@ const { dirname, join } = require('node:path');
 const { repoRoot } = require('./workflow-config-test-helpers.js');
 const { readWorkflow } = require('./workflow-yaml-test-helper.js');
 
-const apps = ['meet', 'calendar', 'mail', 'apps', 'shortener', 'mastermind'];
+const apps = [
+  'forms',
+  'meet',
+  'calendar',
+  'mail',
+  'apps',
+  'shortener',
+  'mastermind',
+];
 const heldPolicy = Object.fromEntries(
   apps.map((app) => [
     app,
@@ -259,10 +267,17 @@ test('known unrelated publisher retains normal selection even with malformed pro
   );
 });
 
-test('Calendar and Meet admissions open only their publishers while other wave-1 apps remain held', (t) => {
+test('Calendar admission opens only its publisher while Meet and other wave-1 apps remain held', (t) => {
   const root = fixture(t);
-  for (const workflow of ['calendar-cloudflare.yaml', 'meet-cloudflare.yaml'])
-    assert.equal(runPolicy(root, workflow).output, 'allowed=true\n');
+  assert.equal(
+    runPolicy(root, 'calendar-cloudflare.yaml').output,
+    'allowed=true\n'
+  );
+  for (const workflow of [
+    'meet-cloudflare.yaml',
+    'vercel-production-meet.yaml',
+  ])
+    assert.equal(runPolicy(root, workflow).output, 'allowed=false\n');
   for (const event of ['push', 'workflow_dispatch']) {
     const [native, legacy] = plan(
       root,
@@ -276,8 +291,12 @@ test('Calendar and Meet admissions open only their publishers while other wave-1
       ['meet-cloudflare.yaml', 'vercel-production-meet.yaml'],
       event
     );
-    assert.equal(meetNative.shouldRun, true);
+    assert.equal(meetNative.shouldRun, false);
+    assert.equal(meetNative.held, true);
+    assert.equal(meetNative.changeResult.source, 'publication-hold');
     assert.equal(meetLegacy.shouldRun, false);
+    assert.equal(meetLegacy.held, true);
+    assert.equal(meetLegacy.changeResult.source, 'publication-hold');
   }
   for (const app of ['mail', 'apps'])
     assert.equal(

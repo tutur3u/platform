@@ -63,7 +63,6 @@ export function ImagePreviewDialog({
         {imageUrls[selectedImageIndex] && (
           <div className="flex flex-1 flex-col space-y-4 overflow-hidden">
             <div className="flex flex-1 items-center justify-center overflow-hidden rounded-lg bg-muted/10">
-              {/* biome-ignore lint/performance/noImgElement: Dynamic blob URL from Supabase storage */}
               <img
                 src={imageUrls[selectedImageIndex]}
                 alt={`Full view - Attachment ${selectedImageIndex + 1}`}

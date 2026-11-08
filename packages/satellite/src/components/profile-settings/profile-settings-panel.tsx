@@ -7,6 +7,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useCopyToClipboard } from '@tuturuuu/ui/hooks/use-copy-to-clipboard';
 import { Input } from '@tuturuuu/ui/input';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
@@ -48,86 +49,106 @@ export function SatelliteProfileSettingsPanel({
   if (!profile) return <ProfileSkeleton />;
 
   return (
-    <div className="grid gap-6">
-      <SettingItemTab title={t('avatar')} description={t('avatar-description')}>
-        <ProfileAvatarEditor profile={profile} />
-      </SettingItemTab>
-      <div className="rounded-xl border bg-card/40 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="font-medium">{t('account-status')}</p>
-            <p className="text-muted-foreground text-sm">
-              {t('account-status-description')}
-            </p>
+    <div className="space-y-8">
+      <SettingsSection>
+        <SettingItemTab
+          title={t('avatar')}
+          description={t('avatar-description')}
+        >
+          <ProfileAvatarEditor profile={profile} />
+        </SettingItemTab>
+      </SettingsSection>
+
+      <SettingsSection>
+        <SettingItemTab
+          controlWidth="2xl"
+          title={t('display-name')}
+          description={t('display-name-description')}
+        >
+          <ProfileFieldForm
+            field="display_name"
+            initialValue={profile.display_name}
+          />
+        </SettingItemTab>
+        <SettingItemTab
+          controlWidth="2xl"
+          title={t('full-name')}
+          description={t('full-name-description')}
+        >
+          <ProfileFieldForm
+            field="full_name"
+            initialValue={profile.full_name}
+            placeholder={
+              profile.full_name
+                ? undefined
+                : (profile.display_name ?? undefined)
+            }
+          />
+        </SettingItemTab>
+        <SettingItemTab
+          controlWidth="2xl"
+          title={t('email-address')}
+          description={t('email-description')}
+        >
+          <div className="w-full space-y-2">
+            <ProfileEmailLinkOut
+              centralUrl={centralUrl}
+              email={profile.email}
+            />
+            {profile.new_email ? (
+              <p className="text-muted-foreground text-sm">
+                {t('check-email-verify', { email: profile.new_email })}
+              </p>
+            ) : null}
           </div>
+        </SettingItemTab>
+      </SettingsSection>
+
+      <SettingsSection>
+        <SettingItemTab
+          title={t('account-status')}
+          description={t('account-status-description')}
+        >
           <div className="flex gap-2">
-            <Badge>{t('active')}</Badge>
+            <Badge
+              className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
+              variant="outline"
+            >
+              {t('active')}
+            </Badge>
             <Badge variant="secondary">{t('verified')}</Badge>
           </div>
-        </div>
-      </div>
-      <SettingItemTab
-        title={t('user-id')}
-        description={t('user-id-description')}
-      >
-        <div className="flex w-full items-center gap-2">
-          <Input disabled value={profile.id} />
-          <Button
-            className="shrink-0"
-            size="icon"
-            type="button"
-            variant="outline"
-            onClick={() => copyToClipboard(profile.id)}
-          >
-            {isCopied ? (
-              <Check className="size-4" />
-            ) : (
-              <Copy className="size-4" />
-            )}
-          </Button>
-        </div>
-      </SettingItemTab>
-      <SettingItemTab
-        title={t('display-name')}
-        description={t('display-name-description')}
-      >
-        <ProfileFieldForm
-          field="display_name"
-          initialValue={profile.display_name}
-        />
-      </SettingItemTab>
-      <SettingItemTab
-        title={t('full-name')}
-        description={t('full-name-description')}
-      >
-        <ProfileFieldForm
-          field="full_name"
-          initialValue={profile.full_name}
-          placeholder={
-            profile.full_name ? undefined : (profile.display_name ?? undefined)
-          }
-        />
-      </SettingItemTab>
-      <SettingItemTab
-        title={t('email-address')}
-        description={t('email-description')}
-      >
-        <div className="w-full space-y-2">
-          <ProfileEmailLinkOut centralUrl={centralUrl} email={profile.email} />
-          {profile.new_email ? (
-            <p className="text-muted-foreground text-xs">
-              {t('check-email-verify', { email: profile.new_email })}
-            </p>
-          ) : null}
-        </div>
-      </SettingItemTab>
+        </SettingItemTab>
+        <SettingItemTab
+          controlWidth="2xl"
+          title={t('user-id')}
+          description={t('user-id-description')}
+        >
+          <div className="flex w-full items-center gap-2">
+            <Input disabled value={profile.id} />
+            <Button
+              className="shrink-0"
+              size="icon"
+              type="button"
+              variant="outline"
+              onClick={() => copyToClipboard(profile.id)}
+            >
+              {isCopied ? (
+                <Check className="size-4" />
+              ) : (
+                <Copy className="size-4" />
+              )}
+            </Button>
+          </div>
+        </SettingItemTab>
+      </SettingsSection>
     </div>
   );
 }
 
 function ProfileSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Skeleton className="h-24 w-full" />
       <Skeleton className="h-16 w-full" />
       <Skeleton className="h-16 w-full" />

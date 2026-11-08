@@ -1,7 +1,6 @@
 {
   "code_actions_on_format": {
-    "source.organizeImports.biome": true,
-    "source.fixAll.biome": true
+    "source.fixAll.oxlint": true
   },
   "file_scan_exclusions": [
     "**/.git",
@@ -34,7 +33,12 @@
   ],
   "languages": {
     "TypeScript": {
-      "formatter": { "language_server": { "name": "biome" } },
+      "formatter": {
+        "external": {
+          "command": "./node_modules/.bin/oxfmt",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      },
       "language_servers": [
         "typescript-ls",
         "vtsls",
@@ -44,35 +48,74 @@
       "semantic_tokens": "combined"
     },
     "JavaScript": {
-      "formatter": { "language_server": { "name": "biome" } },
+      "formatter": {
+        "external": {
+          "command": "./node_modules/.bin/oxfmt",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      },
       "language_servers": [
         "typescript-ls",
         "vtsls",
-        "!typescript-language-server"
+        "!typescript-language-server",
+        "oxlint"
       ],
       "semantic_tokens": "combined"
     },
     "JSX": {
-      "formatter": { "language_server": { "name": "biome" } },
+      "formatter": {
+        "external": {
+          "command": "./node_modules/.bin/oxfmt",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      },
       "language_servers": [
         "typescript-ls",
         "vtsls",
-        "!typescript-language-server"
+        "!typescript-language-server",
+        "oxlint"
       ],
       "semantic_tokens": "combined"
     },
     "TSX": {
-      "formatter": { "language_server": { "name": "biome" } },
+      "formatter": {
+        "external": {
+          "command": "./node_modules/.bin/oxfmt",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      },
       "language_servers": [
         "typescript-ls",
         "vtsls",
-        "!typescript-language-server"
+        "!typescript-language-server",
+        "oxlint"
       ],
       "semantic_tokens": "combined"
     },
-    "JSON": { "formatter": { "language_server": { "name": "biome" } } },
-    "JSONC": { "formatter": { "language_server": { "name": "biome" } } },
-    "CSS": { "formatter": { "language_server": { "name": "biome" } } }
+    "JSON": {
+      "formatter": {
+        "external": {
+          "command": "./node_modules/.bin/oxfmt",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      }
+    },
+    "JSONC": {
+      "formatter": {
+        "external": {
+          "command": "./node_modules/.bin/oxfmt",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      }
+    },
+    "CSS": {
+      "formatter": {
+        "external": {
+          "command": "./node_modules/.bin/oxfmt",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      }
+    }
   },
   "lsp": {
     "tailwindcss-language-server": {

@@ -63,6 +63,16 @@
     }
   },
   "files": {
+    ".github/workflows/ai-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7592",
+        "reason": "REV-7592: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "12cbcfd4c7e76ca6c4a7bce663b2c928b2b6c5556c161ab628f06cea548fad6c"
+    },
     ".github/workflows/apps-cloudflare.yaml": {
       "lines": 9,
       "uses": 9,
@@ -72,6 +82,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "24ed53e4bdf4d2c96fcef553a50a4d1286b78bf56c22f3f0d4d0c2456a7f1442"
+    },
+    ".github/workflows/cms-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7618",
+        "reason": "REV-7618: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "12cbcfd4c7e76ca6c4a7bce663b2c928b2b6c5556c161ab628f06cea548fad6c"
     },
     ".github/workflows/colab-cloudflare.yaml": {
       "lines": 2,
@@ -88,10 +108,10 @@
       "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7120",
-        "reason": "Contacts native candidate (#7120) pins the Wrangler devDependency, runs its emitted-Worker runtime check in the Wrangler SDK, ignores .void-wrangler.jsonc and sets WRANGLER_SEND_METRICS in its default-off candidate workflow; Contacts on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "21b728d557b8a474e2fc8b23403773fe19ea5135689d950499755feef54151b7"
+      "digest": "fd80840e0ca9aeb24af8ad5857f1f12fe9748dd81423e412cc05154218cb2241"
     },
     ".github/workflows/coordination-cloudflare.yaml": {
       "lines": 12,
@@ -113,6 +133,26 @@
       },
       "digest": "4c6ff97c6fb7094a52e42757868d6c78f550f049b11add0f570bc9c02c0a3578"
     },
+    ".github/workflows/finance-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7621",
+        "reason": "REV-7621: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "12cbcfd4c7e76ca6c4a7bce663b2c928b2b6c5556c161ab628f06cea548fad6c"
+    },
+    ".github/workflows/forms-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7600",
+        "reason": "REV-7600: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "12bb1c7c1a654e1c2291d0970d35c323328f40829b89d576b4fcd659dabc73ca"
+    },
     ".github/workflows/lettin-cloudflare.yaml": {
       "lines": 1,
       "uses": 2,
@@ -124,14 +164,14 @@
       "digest": "a5e511a92544ac9fdf20c4f5933836f11d10fe388be6d4c5c7902dbadf16ea02"
     },
     ".github/workflows/mail-calendar-tasks-builds.yaml": {
-      "lines": 7,
-      "uses": 7,
+      "lines": 11,
+      "uses": 11,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6637",
-        "reason": "Calendar runs cf-inferred standalone binding generation; CI retains the legacy reference oracle until exact-artifact qualification. Publication and runtime gaps remain unchanged."
+        "decision": "https://github.com/tutur3u/platform/pull/7644",
+        "reason": "REV-7644: production config qualification, sealed archive restore and matching emitted-config regression fixtures; no new Wrangler command. Existing publication gap and removal condition remain."
       },
-      "digest": "ab93d38ca88f0b634967f90a6e829b02f43b3b50a9ab31c00dfe42d91d6a925f"
+      "digest": "2392f6d063d1996a39fb80caa64386e54f450ead750e9b353484a6eab3cc92c7"
     },
     ".github/workflows/meet-cloudflare.yaml": {
       "lines": 30,
@@ -148,10 +188,10 @@
       "uses": 8,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6753",
-        "reason": "Reusable native Start app validation moves Shortener's admitted Wave 1 qualification (emitted binding types, deploy --dry-run without publication, built-Worker harness, artifact receipts) into one shared template; Shortener's own workflow no longer uses Wrangler. Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "ae29e4eed3d835907be955f5b148c2ef37c053c6d8da4b817e67e5cd7930487e"
+      "digest": "cb1eac45554ff87ab8162c58fab72a218b6d4efffe8fbddbd3d6cfb272fabd5c"
     },
     ".github/workflows/parley-cloudflare.yaml": {
       "lines": 3,
@@ -162,6 +202,26 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "9277cfdb4d2c575212c57c3969b41d019932f379df4a9e677f27a655e310fb5a"
+    },
+    ".github/workflows/playground-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7647",
+        "reason": "PR7647 references the legacy metrics opt-out and the existing Void-emitted-config packaging label. This source record authorizes neither CLI publication nor provider credentials or deployment."
+      },
+      "digest": "1beb88e2772be3324b55b9f33dcfe4b0c818fa7898de666878c61b1d0080214f"
+    },
+    ".github/workflows/roadmap-cloudflare.yaml": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7786",
+        "reason": "PR7786 read-only artifact workflow disables legacy CLI metrics for the pinned Void-emitted build; it has no Cloudflare credential, CLI publication or deployment step."
+      },
+      "digest": "21b728d557b8a474e2fc8b23403773fe19ea5135689d950499755feef54151b7"
     },
     ".github/workflows/rust-backend.yml": {
       "lines": 14,
@@ -182,6 +242,36 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "3aa9f9648e96a936f50ed5e36a0a9daa53e3dcbb8489b00eb549840c7737c782"
+    },
+    ".github/workflows/storefront-cloudflare.yaml": {
+      "lines": 5,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7643",
+        "reason": "REV-7643: cutover artifact writes the emitted wrangler.json for an operator. No wrangler command is added. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "cb3f9de3f9f565368ee118a6600074ef472469d84e9b363fdfb666c21ad78051"
+    },
+    ".github/workflows/tools-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7590",
+        "reason": "REV-7590: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "1beb88e2772be3324b55b9f33dcfe4b0c818fa7898de666878c61b1d0080214f"
+    },
+    ".github/workflows/track-cloudflare.yaml": {
+      "lines": 5,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7645",
+        "reason": "REV-7645: cutover artifact writes the emitted wrangler.json for an operator. No wrangler command is added. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "3076d6bae5cbe568450a5ae440c193c50a50d7611fee76af034112302bf1986e"
     },
     ".github/workflows/wave1-native-app.yaml": {
       "lines": 4,
@@ -218,10 +308,10 @@
       "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7090",
-        "reason": "Web native candidate (#7090, #7102) pins the Wrangler devDependency, runs its emitted-Worker runtime check in the Wrangler SDK, ignores .void-wrangler.jsonc and sets WRANGLER_SEND_METRICS in its default-off candidate workflow; Web on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "21b728d557b8a474e2fc8b23403773fe19ea5135689d950499755feef54151b7"
+      "digest": "fd80840e0ca9aeb24af8ad5857f1f12fe9748dd81423e412cc05154218cb2241"
     },
     ".gitignore": {
       "lines": 2,
@@ -308,10 +398,10 @@
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6821",
-        "reason": "API Worker (#6761, #6783) builds with @cloudflare/vite-plugin from wrangler.jsonc and runs its runtime test through the wrangler test harness; it has no publisher yet and moves to cloudflare.config.ts in its per-service parity PR."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "bca6d616f58f1eb6fa7d940fa33951afb092b4b1825e26735010de00fe57965d"
+      "digest": "18a58b4e27e730a68df945dcc8bfcdf7caf858b5d6d912f423a2be14d424ba37"
     },
     "apps/apps/cloudflare/gateway-built-worker.test.mjs": {
       "lines": 3,
@@ -338,10 +428,10 @@
       "uses": 2,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "6d6556e5136dec3fe17467ddb04a9ceec72abac2a8fc67dbc7722f2870f470f3"
+      "digest": "7e0ea5e7bdb9bdc55d8b329a819e376c5a7a846cb135feb651efae4bceadc896"
     },
     "apps/backend/wrangler.jsonc": {
       "lines": 2,
@@ -428,20 +518,20 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "6767060afa89f93578d66a2dc9bbdf99bbdc60e553b1abffabaff0dd95a9d4fe"
+      "digest": "492c56d06195f691e5e6758d4e1eafd7335846c33404cee10bf0e4cb0d9767da"
     },
     "apps/colab/wrangler.jsonc": {
       "lines": 2,
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "a17ce10f9c0d158ccc88b2c98fcfa861b50b8724ab134e2fa90ad6cf28b98ee6"
+      "digest": "bb7e047f841314ea97f3bb9194a91c233151bb1f131388a1ea5f1fc8b4cf70e8"
     },
     "apps/contacts/cloudflare/.gitignore": {
       "lines": 2,
@@ -476,22 +566,22 @@
     "apps/coordination/wrangler.publish.jsonc": {
       "gap": "do-publication-rehearsal",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6487",
-        "reason": "REV-6487-1: retain Wrangler production publication with applied v1 tags until a separately reviewed rehearsal-backed cutover."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
       "lines": 2,
       "uses": 2,
-      "digest": "bcf522b59db5e53edd34048ed5c20f3d9821a45cb0ca0d2be0e7726b91f4aa34"
+      "digest": "dece38d7b364201d5af7964e8ad41898b8cee8f577c1cda89ee03b495f47fccd"
     },
     "apps/devbox-control/wrangler.publish.jsonc": {
       "gap": "do-publication-rehearsal",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6487",
-        "reason": "REV-6487-1: retain Wrangler production publication with applied v1 tags until a separately reviewed rehearsal-backed cutover."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
       "lines": 2,
       "uses": 2,
-      "digest": "020b34ea92ac676f6c33d3c150563c4ede845910adff3f06d109fbaa26aefdb7"
+      "digest": "881d8e2948b0027db6efc91d2283650b49615d479dee22ed914159733d483473"
     },
     "apps/docs/docs.json": {
       "lines": 1,
@@ -668,10 +758,10 @@
       "uses": 2,
       "gap": "opennext-adapter",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "3218514f9ed29e05a05534f9ddbf401e27d7c17877b40e37662203509e06cf29"
+      "digest": "bc730d0a7db93203b2d72c1120aadb0ab31cd4efa0c06e1381a6558e697fc77c"
     },
     "apps/mail/package.json": {
       "lines": 2,
@@ -688,10 +778,10 @@
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "bf3f28a750c92bb8c300492836fa2eff1e326b561e156a39a00ba5f68d6cef44"
+      "digest": "5bcb3befdab6e9694274dcf0de7c88d88d1df12cde285b29781d3096a53b7bc8"
     },
     "apps/mastermind/.gitignore": {
       "gap": "shared-toolchain",
@@ -778,10 +868,10 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "ce756e82cafb120fa76fd7f092f86c404244243374fc6221b19d7458ca160699"
+      "digest": "d9ff9c02bb71ad743f6a7fc61a30b6661b63946407f102d70ab9e16f33508898"
     },
     "apps/meet-realtime/test-fixtures/collaboration-retry/verify.mjs": {
       "lines": 2,
@@ -798,10 +888,10 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "0bc922c0774e719f0e0a093349e7bbfd17ec8185f09e2cac1b9e7528175caf09"
+      "digest": "4c4c5887629debbe9cfe1d9617c076f55e94e69d5adca85caf4811cc78bf37c6"
     },
     "apps/meet-realtime/tests/channels-local-check.ts": {
       "lines": 1,
@@ -868,20 +958,20 @@
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7530",
-        "reason": "Pin the live Meet AI containment vars (MEET_AI_DISABLED, MEET_AI_ENABLED_WORKSPACE_IDS) so a deploy cannot re-enable Meet AI; Wrangler line and use counts unchanged."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "24b73c6a77214480f9b159ac49ed398e5b92de1c45b56e44a32c054efcff23da"
+      "digest": "d77319a27c20140e51c2df07807641f514c65ec1170aa64c7e426cf714e65c00"
     },
     "apps/meet-realtime/wrangler.staging.jsonc": {
       "lines": 2,
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "d2b4325f281ea21cc110263f86567b31b71095d0d36937e4f841e58f438b9c04"
+      "digest": "36c1e9c53da6060b9c88a11c630d46be9790a8c1d61d55c9e4d4c074bf6ebfb7"
     },
     "apps/meet/.gitignore": {
       "lines": 1,
@@ -908,20 +998,20 @@
       "uses": 5,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6821",
-        "reason": "Meet (#6789) added a trailing comma to its existing wrangler types line when appending type-check:config; usage counts are unchanged."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "10d46d6fa952540b627a5f823ecdcc979c7b9fe7700e9b9a619eb299eba01cbb"
+      "digest": "f20bc9871d28778c9d7e1d3022499fae778a809c73a0be506fdd1edc0b8fec3b"
     },
     "apps/meet/wrangler.legacy.jsonc": {
       "lines": 2,
       "uses": 2,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "77f45040daaf542945632c42fecae933033ec540b3bcdb453c79ce096bbc6bb6"
+      "digest": "e053a5366eb6908d11db6e014eddfa7afb456c4aaccd8d5f6d76fe925dfc06dc"
     },
     "apps/nova/.gitignore": {
       "lines": 1,
@@ -988,10 +1078,10 @@
       "uses": 2,
       "gap": "opennext-adapter",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "756f05b052825d513704165407c366e1c41677707b9592ed0822bf0baff2f7ec"
+      "digest": "c30a371f8a83a533219e7896e4c4ddfb612820564130e0ea7be9df68ae75e332"
     },
     "apps/parley/scripts/configure-realtime.ts": {
       "lines": 1,
@@ -1008,30 +1098,30 @@
       "uses": 2,
       "gap": "opennext-adapter",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "5f3d56f22cff389c04465ee767d9cf93e510b8a7131255df42c1324e165634a6"
+      "digest": "a59a1fffc1b79c6413d42bbdaeb8a76fbc8e5118ab76f98444b967cc82b3b715"
     },
     "apps/parley/test-fixtures/built-worker/wrangler.jsonc": {
       "lines": 1,
       "uses": 1,
       "gap": "opennext-adapter",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "acd8b935822a8b9b9fb4be36ae2132337d14010b7775483da044d323607dd9f5"
+      "digest": "d600eac5fb3215dcc566bc34f0859ee75644aa1aef708c968447109dbf0511ce"
     },
     "apps/parley/wrangler.jsonc": {
       "lines": 2,
       "uses": 2,
       "gap": "opennext-adapter",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "b6dc0cd6589acfa0a56eace8fba5d57323ed82f22f8b0f44dea1132509ea8063"
+      "digest": "b09ddd7f8548b2d84d4f4ad630fb4d5fee9375b9d842235c99057e187585c9be"
     },
     "apps/pay/.gitignore": {
       "lines": 1,
@@ -1112,6 +1202,46 @@
         "reason": "Playground follows the Wave 1 Start + Void template (codemod): Void rebuilds on deploy, so the exact Void-emitted Worker is qualified with the pinned Wrangler adapter (generated .void-wrangler.jsonc ignored, built-Worker harness, dependency pin). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/roadmap/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7786",
+        "reason": "PR7786 ignores the pinned Void/Cloudflare toolchain state directory; data-only ignore, no CLI or provider action."
+      },
+      "digest": "fb576a0a285ec483f842c79f48d22e695b41ec7df3f3f3afc9ab5e01b846a24d"
+    },
+    "apps/roadmap/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7786",
+        "reason": "PR7786 pins Wrangler 4.151.2 for the actual Void-emitted artifact format and assets.base_path support. Qualified stateless prebuilt versions publication is Rex-owned; Void deploy rebuilds and pinned cf expects a different Build Output contract."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/roadmap/scripts/seal-artifact.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7786",
+        "reason": "PR7786 recognizes the actual Void-emitted configuration filename and seals descriptor-bound source/config/assets bytes; no Worker module, provider SDK or CLI execution."
+      },
+      "digest": "f479ed938be0fab6e630eb665e5718d2d80fe58956598186df591f44655e22ae"
+    },
+    "apps/roadmap/scripts/seal-artifact.test.mjs": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7797",
+        "reason": "Synthetic fixture references the emitted configuration filename for successful root-base asset mapping and rejected non-root mapping; no compiler, provider, SDK or CLI invocation is added."
+      },
+      "digest": "fe37858bda0354e17c57d35ee1796ee164eeac39a8ad0793989fbf2942f8d5fe"
     },
     "apps/shortener/cloudflare/native-built-worker.test.mjs": {
       "lines": 1,
@@ -1378,10 +1508,10 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "bcbb803436432247ed4dc192bb85735f75fc20f1be4a53fa2aa8497b86b24ad0"
+      "digest": "4283b03fe4c29d3e83ff34ba068277dfb043a2bb44e5f58bf7242eadb16c1290"
     },
     "packages/sdk/src/cli/storage-scratch.ts": {
       "lines": 1,
@@ -1452,6 +1582,16 @@
         "decision": "https://github.com/tutur3u/platform/pull/7249",
         "reason": "test fixture strings, not invocations"
       }
+    },
+    "scripts/ci/ai-cutover-smoke.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7592",
+        "reason": "REV-7592: local smoke loads wrangler unstable_startWorker with remote disabled, denied provider auth, and no publication. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "998eab277701cfe7eb3e4c9670cf831bc372faada4dd8b603cf69d6cbbd808a6"
     },
     "scripts/ci/apps-native-artifact.py": {
       "lines": 2,
@@ -1773,6 +1913,26 @@
       },
       "digest": "870ee7dc37ba959b9cf0e198972ba5843606a36acbccdcc3bb58c4bf40b73626"
     },
+    "scripts/ci/cms-cutover-smoke.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7618",
+        "reason": "REV-7618: local smoke loads wrangler unstable_startWorker with remote disabled, denied provider auth, and no publication. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "998eab277701cfe7eb3e4c9670cf831bc372faada4dd8b603cf69d6cbbd808a6"
+    },
+    "scripts/ci/finance-cutover-smoke.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7621",
+        "reason": "REV-7621: local smoke loads wrangler unstable_startWorker with remote disabled, denied provider auth, and no publication. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "998eab277701cfe7eb3e4c9670cf831bc372faada4dd8b603cf69d6cbbd808a6"
+    },
     "scripts/ci/finance-native-artifact.test.py": {
       "lines": 7,
       "uses": 8,
@@ -2068,10 +2228,10 @@
       "uses": 10,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
-      "digest": "e6d1f79164c3903655c47bbd1520c97c1df50d6a337f113effd24f0c797874c6"
+      "digest": "182c2ce64caf805cab43e946c8e9caea1c50e26c0339e456b2843857cf522508"
     },
     "scripts/ci/native-wrangler-runtime.mjs": {
       "lines": 15,
@@ -2204,14 +2364,14 @@
       "digest": "06dc1c0c44ba14771d1cc73b5b7eae49f602a795d50959122913be5847fad3fd"
     },
     "scripts/ci/tasks-native-artifact.test.py": {
-      "lines": 7,
-      "uses": 8,
+      "lines": 11,
+      "uses": 12,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6849",
-        "reason": "Tasks native artifact regressions (#6849) build the same emitted-config fixture as Finance's: the .void-wrangler.jsonc producer metadata, the deploy pointer and the emitted wrangler.json; Tasks on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+        "decision": "https://github.com/tutur3u/platform/pull/7644",
+        "reason": "REV-7644: production config qualification, sealed archive restore and matching emitted-config regression fixtures; no new Wrangler command. Existing publication gap and removal condition remain."
       },
-      "digest": "9ea2206674d3b1e3377608f589805a6ced065510d62b53a861625a083edc4e3a"
+      "digest": "4631db45929dc1645af9ca37d74fb366606d1bf9d9447528077f513622452644"
     },
     "scripts/ci/turbo-cache-config.test.js": {
       "lines": 2,
@@ -2308,10 +2468,10 @@
       "uses": 4,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7785",
+        "reason": "Read the existing Meet staging and production JSONC fixtures with the established JSONC parser. Existing isolation assertions and Wrangler occurrence counts are preserved; no CLI invocation is added."
       },
-      "digest": "13de163bf53ff57255e072479452cbb55c1be49feea0e78079f3927d9b651471"
+      "digest": "6a0bde07ebebad80901e7a2bb5cc71436ed1ce6a749367f0b494c2cc13e8a599"
     },
     "scripts/ci/wave1-native-runtime.mjs": {
       "lines": 2,

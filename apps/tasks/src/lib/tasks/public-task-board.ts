@@ -166,16 +166,14 @@ export function buildPublicTaskBoardPayload({
         new Date(b.created_at ?? 0).getTime()
       );
     })
-    .map(
-      (list): PublicTaskBoardList => ({
-        id: list.id,
-        name: list.name ?? null,
-        status: list.status ?? null,
-        color: list.color ?? null,
-        position: list.position ?? null,
-        created_at: list.created_at ?? null,
-      })
-    );
+    .map((list): PublicTaskBoardList => ({
+      id: list.id,
+      name: list.name ?? null,
+      status: list.status ?? null,
+      color: list.color ?? null,
+      position: list.position ?? null,
+      created_at: list.created_at ?? null,
+    }));
   const publicListIds = new Set(publicLists.map((list) => list.id));
   const labelsByTask = byTaskId(
     labels.map((row) => ({
@@ -207,25 +205,23 @@ export function buildPublicTaskBoardPayload({
 
   const publicTasks = tasks
     .filter((task) => task.list_id && publicListIds.has(task.list_id))
-    .map(
-      (task): PublicTaskBoardTask => ({
-        id: task.id,
-        list_id: task.list_id,
-        name: task.name,
-        display_number: task.display_number ?? null,
-        priority: task.priority ?? null,
-        start_date: task.start_date ?? null,
-        end_date: task.end_date ?? null,
-        created_at: task.created_at ?? null,
-        completed_at: task.completed_at ?? null,
-        closed_at: task.closed_at ?? null,
-        estimation_points: task.estimation_points ?? null,
-        sort_key: task.sort_key ?? null,
-        labels: labelsByTask.get(task.id) ?? [],
-        projects: projectsByTask.get(task.id) ?? [],
-        assignees: assigneesByTask.get(task.id) ?? [],
-      })
-    );
+    .map((task): PublicTaskBoardTask => ({
+      id: task.id,
+      list_id: task.list_id,
+      name: task.name,
+      display_number: task.display_number ?? null,
+      priority: task.priority ?? null,
+      start_date: task.start_date ?? null,
+      end_date: task.end_date ?? null,
+      created_at: task.created_at ?? null,
+      completed_at: task.completed_at ?? null,
+      closed_at: task.closed_at ?? null,
+      estimation_points: task.estimation_points ?? null,
+      sort_key: task.sort_key ?? null,
+      labels: labelsByTask.get(task.id) ?? [],
+      projects: projectsByTask.get(task.id) ?? [],
+      assignees: assigneesByTask.get(task.id) ?? [],
+    }));
 
   return {
     board: {

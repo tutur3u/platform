@@ -196,7 +196,6 @@ function query(initial: Row[]) {
     range: (_from: number, _to: number) => q,
     maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
     single: async () => ({ data: rows[0] ?? null, error: null }),
-    // biome-ignore lint/suspicious/noThenProperty: Model Supabase query builders, which are intentionally awaitable.
     then: (
       resolve: (value: { data: Row[]; count: number; error: null }) => unknown
     ) =>
@@ -500,9 +499,8 @@ describe('workspace user read authorization', () => {
   });
   it('passes an explicit Contacts actor into shared attendance permissions', async () => {
     setPermissions('check_user_attendance');
-    const { handleGetUserAttendanceRequest } = await import(
-      '../../src/routes/users/attendance'
-    );
+    const { handleGetUserAttendanceRequest } =
+      await import('../../src/routes/users/attendance');
     const actor = { id: 'contacts-actor', email: 'actor@example.invalid' };
     const req = request('users/student-a/attendance?month=2026-10');
     const response = await handleGetUserAttendanceRequest(

@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import {
   normalizeTaskDialogPresentation,
@@ -94,19 +93,17 @@ export function TaskDialogPresentationSettings() {
 
   return (
     <>
-      {PREFERENCES.map(([configId, label, fallback], index) => (
-        <div key={configId} className="contents">
-          {index > 0 && <Separator />}
-          <PresentationSelect
-            configId={configId}
-            fallback={
-              configId === TASK_DIALOG_EDIT_PRESENTATION_CONFIG_ID
-                ? normalizeTaskDialogPresentation(legacyTaskEditPresentation)
-                : fallback
-            }
-            label={label}
-          />
-        </div>
+      {PREFERENCES.map(([configId, label, fallback]) => (
+        <PresentationSelect
+          configId={configId}
+          fallback={
+            configId === TASK_DIALOG_EDIT_PRESENTATION_CONFIG_ID
+              ? normalizeTaskDialogPresentation(legacyTaskEditPresentation)
+              : fallback
+          }
+          key={configId}
+          label={label}
+        />
       ))}
     </>
   );

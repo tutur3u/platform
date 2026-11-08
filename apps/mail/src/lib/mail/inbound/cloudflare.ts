@@ -194,11 +194,11 @@ export function isCanonicalCloudflareIngress({
   const observed = splitRecipient(observedRecipient);
   return Boolean(
     canonical &&
-      observed &&
-      eventDomain === canonicalDomain &&
-      canonical.domain === canonicalDomain &&
-      observed.domain === ingressDomain &&
-      canonical.localPart === observed.localPart
+    observed &&
+    eventDomain === canonicalDomain &&
+    canonical.domain === canonicalDomain &&
+    observed.domain === ingressDomain &&
+    canonical.localPart === observed.localPart
   );
 }
 

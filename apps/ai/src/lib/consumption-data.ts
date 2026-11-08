@@ -54,17 +54,15 @@ export async function getAiStudioConsumptionBreakdown({
   if (ledger.error) return ledger;
 
   const legacyRows =
-    legacy.data?.map(
-      (row): BreakdownRow => ({
-        ...row,
-        // The legacy breakdown predates both dimensions: everything it covers was
-        // user-triggered, and nothing on it ran unmetered.
-        execution_mode: 'interactive',
-        latency_sample_count: row.request_count,
-        search_units: 0,
-        unmetered_credits: 0,
-      })
-    ) ?? [];
+    legacy.data?.map((row): BreakdownRow => ({
+      ...row,
+      // The legacy breakdown predates both dimensions: everything it covers was
+      // user-triggered, and nothing on it ran unmetered.
+      execution_mode: 'interactive',
+      latency_sample_count: row.request_count,
+      search_units: 0,
+      unmetered_credits: 0,
+    })) ?? [];
 
   return {
     data: mergeConsumptionBreakdowns(legacyRows, ledger.data ?? []),
@@ -173,36 +171,34 @@ export async function listAiStudioConsumptionEvents({
   if (ledger.error) return ledger;
 
   const legacyEvents =
-    legacy.data?.map(
-      (run): ConsumptionEvent => ({
-        billed_credits: run.billed_credits,
-        completed_at: run.completed_at,
-        created_at: run.created_at,
-        embedding_units: run.embedding_units,
-        error_class: run.error_class,
-        event_id: run.id,
-        execution_mode: resolveLegacyExecutionMode(run.metadata),
-        feature: run.feature,
-        first_token_latency_ms: run.first_token_latency_ms,
-        image_units: run.image_units,
-        input_tokens: run.input_tokens,
-        latency_ms: run.latency_ms,
-        model_id: run.model_id,
-        output_tokens: run.output_tokens,
-        provider_cost_usd: run.provider_cost_usd,
-        reasoning_tokens: run.reasoning_tokens,
-        request_id: run.request_id,
-        search_units: resolveLegacySearchCount(run.metadata),
-        source_id: resolveLegacySourceId(
-          run.api_key_id,
-          run.actor_id,
-          run.metadata
-        ),
-        source_type: resolveLegacySourceType(run.api_key_id, run.metadata),
-        status: run.status,
-        unmetered_credits: run.unmetered_credits,
-      })
-    ) ?? [];
+    legacy.data?.map((run): ConsumptionEvent => ({
+      billed_credits: run.billed_credits,
+      completed_at: run.completed_at,
+      created_at: run.created_at,
+      embedding_units: run.embedding_units,
+      error_class: run.error_class,
+      event_id: run.id,
+      execution_mode: resolveLegacyExecutionMode(run.metadata),
+      feature: run.feature,
+      first_token_latency_ms: run.first_token_latency_ms,
+      image_units: run.image_units,
+      input_tokens: run.input_tokens,
+      latency_ms: run.latency_ms,
+      model_id: run.model_id,
+      output_tokens: run.output_tokens,
+      provider_cost_usd: run.provider_cost_usd,
+      reasoning_tokens: run.reasoning_tokens,
+      request_id: run.request_id,
+      search_units: resolveLegacySearchCount(run.metadata),
+      source_id: resolveLegacySourceId(
+        run.api_key_id,
+        run.actor_id,
+        run.metadata
+      ),
+      source_type: resolveLegacySourceType(run.api_key_id, run.metadata),
+      status: run.status,
+      unmetered_credits: run.unmetered_credits,
+    })) ?? [];
 
   return {
     data: [...legacyEvents, ...(ledger.data ?? [])]

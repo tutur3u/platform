@@ -350,7 +350,7 @@ export function TimeRangePicker({
                       'h-9 w-9 p-0',
                       !safeTimeRanges[key]?.enabled &&
                         activeDay !== key &&
-                        'opacity-50'
+                        'text-muted-foreground'
                     )}
                     onClick={() => setActiveDay(key)}
                   >
@@ -471,7 +471,7 @@ export function TimeRangePicker({
                 {safeTimeRanges[key]?.timeBlocks?.map((block, blockIndex) => (
                   <div
                     key={blockIndex}
-                    className="flex items-center gap-2 rounded-md border border-muted bg-muted/10 p-3 shadow-sm transition-colors hover:bg-muted/30"
+                    className="flex items-center gap-2 rounded-md bg-muted/30 p-3"
                   >
                     <div className="grid flex-1 grid-cols-2 gap-2">
                       <div className="space-y-1">
@@ -581,11 +581,9 @@ export function TimeRangePicker({
 
             {/* Disabled day message */}
             {!safeTimeRanges[key]?.enabled && (
-              <div className="rounded-md border border-dashed bg-muted/10 p-4 text-center">
-                <p className="text-muted-foreground text-sm">
-                  {t('time_range.disabled_day')}
-                </p>
-              </div>
+              <p className="text-muted-foreground text-sm">
+                {t('time_range.disabled_day')}
+              </p>
             )}
           </div>
         ))}

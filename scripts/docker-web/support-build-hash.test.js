@@ -127,17 +127,21 @@ test('closes the descriptor on read failure and hashes one complete missing mark
   assert.equal(closed, 1);
 });
 
-test('preserves tracked symlink inputs and hashes the target bytes under the alias', {
-  skip: process.platform === 'win32',
-}, async (t) => {
-  const { rootDir, file } = fixture(t);
-  const target = path.join(rootDir, 'target');
-  fs.renameSync(file, target);
-  fs.symlinkSync(target, file);
-  assert.equal(await hash(rootDir), expected(original));
-  fs.writeFileSync(target, replacement);
-  assert.equal(await hash(rootDir), expected(replacement));
-});
+test(
+  'preserves tracked symlink inputs and hashes the target bytes under the alias',
+  {
+    skip: process.platform === 'win32',
+  },
+  async (t) => {
+    const { rootDir, file } = fixture(t);
+    const target = path.join(rootDir, 'target');
+    fs.renameSync(file, target);
+    fs.symlinkSync(target, file);
+    assert.equal(await hash(rootDir), expected(original));
+    fs.writeFileSync(target, replacement);
+    assert.equal(await hash(rootDir), expected(replacement));
+  }
+);
 
 test('skips directories and keeps the existing missing-file marker', async (t) => {
   const { rootDir, file } = fixture(t);

@@ -300,13 +300,11 @@ export default function PeriodicReportsPanel({
           : ids,
     });
   };
-  const counts = currentRows ? ownedData?.pages[0]?.counts : undefined;
-  const summaryPartial =
-    currentRows && ownedData?.pages[0]?.summaryPartial === true;
-  const categoryCounts = currentRows
-    ? ownedData?.pages[0]?.categoryCounts
-    : undefined;
-  const totalReports = currentRows ? ownedData?.pages[0]?.total : undefined;
+  const firstPage = currentRows ? ownedData?.pages[0] : undefined;
+  const counts = firstPage?.counts;
+  const summaryPartial = firstPage?.summaryPartial === true;
+  const categoryCounts = firstPage?.categoryCounts;
+  const totalReports = firstPage?.total;
   // All stages in scope, so the group stays visible on the default view.
   const heldCount = counts?.held;
   const changeCategory = (category: DeliveryCategory | null) => {
@@ -430,6 +428,7 @@ export default function PeriodicReportsPanel({
           <div className="space-y-3">
             <PeriodicReportsScopeHeader
               month={reportMonth}
+              page={firstPage}
               periodStart={periodStart}
               periodEnd={periodEnd}
               onRefresh={() => reportsQuery.refetch()}

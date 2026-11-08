@@ -212,7 +212,7 @@ export default function TOTPDialog() {
               <Card key={factor.id}>
                 <CardContent className="flex items-center justify-between p-4">
                   <div className="flex items-center space-x-3">
-                    <Shield className="h-5 w-5 text-green-600" />
+                    <Shield className="h-5 w-5 text-dynamic-green" />
                     <div>
                       <p className="font-medium">{factor.friendly_name}</p>
                       <div className="flex items-center space-x-2">

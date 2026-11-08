@@ -100,7 +100,7 @@ COPY packages/vercel/package.json ./packages/vercel/package.json
 COPY packages/workflows/package.json ./packages/workflows/package.json
 
 # Keep this install command in sync with scripts/check-docker-web.js.
-# Retries mitigate flaky BuildKit cache / disk pressure (e.g. Biome CLI tarball extract).
+# Retries mitigate flaky BuildKit cache / disk pressure (e.g. Oxc CLI tarball extract).
 RUN --mount=type=cache,id=platform-web-bun-install,target=/root/.bun/install/cache \
   set -eu; \
   attempt=1; \

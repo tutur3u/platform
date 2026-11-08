@@ -6,7 +6,6 @@
       "name": "tutur3u",
       "devDependencies": {
         "@babel/parser": "7.29.9",
-        "@biomejs/biome": "^2.5.13",
         "@lingual/i18n-check": "0.9.5",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^26.6.5",
@@ -63,7 +62,7 @@
     },
     "apps/ai": {
       "name": "@tuturuuu/ai-studio",
-      "version": "0.19.0",
+      "version": "0.20.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.102",
         "@tanstack/react-query": "^5.104.5",
@@ -128,7 +127,7 @@
     },
     "apps/apps": {
       "name": "@tuturuuu/apps",
-      "version": "0.25.1",
+      "version": "0.26.0",
       "dependencies": {
         "@fontsource-variable/noto-sans": "5.3.0",
         "@tanstack/react-query": "5.104.5",
@@ -169,7 +168,7 @@
     },
     "apps/calendar": {
       "name": "@tuturuuu/calendar",
-      "version": "0.36.0",
+      "version": "0.37.0",
       "dependencies": {
         "@fontsource-variable/noto-sans": "5.3.0",
         "@formatjs/intl-localematcher": "^0.9.0",
@@ -244,7 +243,7 @@
     },
     "apps/chat": {
       "name": "@tuturuuu/chat",
-      "version": "0.28.0",
+      "version": "0.29.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@tanstack/react-query": "^5.104.5",
@@ -287,7 +286,7 @@
     },
     "apps/cms": {
       "name": "@tuturuuu/cms",
-      "version": "0.38.0",
+      "version": "0.39.0",
       "dependencies": {
         "@hookform/resolvers": "^5.9.2",
         "@tanstack/react-query": "^5.104.5",
@@ -378,7 +377,7 @@
     },
     "apps/contacts": {
       "name": "@tuturuuu/contacts",
-      "version": "0.29.0",
+      "version": "0.30.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@hookform/resolvers": "^5.9.2",
@@ -473,7 +472,7 @@
     },
     "apps/database": {
       "name": "@tuturuuu/database",
-      "version": "1.44.0",
+      "version": "1.45.0",
       "devDependencies": {
         "@electric-sql/pglite": "0.5.11",
         "@electric-sql/pglite-pgtap": "0.0.12",
@@ -495,7 +494,7 @@
     },
     "apps/drive": {
       "name": "@tuturuuu/drive",
-      "version": "0.33.0",
+      "version": "0.34.0",
       "dependencies": {
         "@hookform/resolvers": "^5.9.2",
         "@tanstack/react-query": "^5.104.5",
@@ -585,7 +584,7 @@
     },
     "apps/finance": {
       "name": "@tuturuuu/finance",
-      "version": "0.35.0",
+      "version": "0.36.0",
       "dependencies": {
         "@hookform/resolvers": "^5.9.2",
         "@tanstack/react-query": "^5.104.5",
@@ -649,7 +648,7 @@
     },
     "apps/forms": {
       "name": "@tuturuuu/forms",
-      "version": "0.20.0",
+      "version": "0.21.0",
       "dependencies": {
         "@cloudflare/pages-plugin-vercel-og": "0.1.2",
         "@dnd-kit/core": "^6.3.1",
@@ -720,7 +719,7 @@
     },
     "apps/git": {
       "name": "@tuturuuu/git",
-      "version": "0.15.0",
+      "version": "0.16.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@octokit/auth-app": "^8.3.1",
@@ -767,7 +766,7 @@
     },
     "apps/hive": {
       "name": "@tuturuuu/hive",
-      "version": "0.26.2",
+      "version": "0.27.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.102",
         "@formatjs/intl-localematcher": "^0.9.0",
@@ -822,7 +821,7 @@
     },
     "apps/hive-realtime": {
       "name": "@tuturuuu/hive-realtime",
-      "version": "0.13.0",
+      "version": "0.13.1",
       "dependencies": {
         "@tuturuuu/realtime": "workspace:*",
         "jose": "^6.2.13",
@@ -838,7 +837,7 @@
     },
     "apps/infrastructure": {
       "name": "@tuturuuu/infrastructure",
-      "version": "0.38.0",
+      "version": "0.39.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.102",
         "@aws-sdk/client-s3": "3.1154.0",
@@ -856,6 +855,7 @@
         "@tuturuuu/cloudflare": "workspace:*",
         "@tuturuuu/devbox": "workspace:*",
         "@tuturuuu/email-service": "workspace:*",
+        "@tuturuuu/feature-flags": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/meet-core": "workspace:*",
@@ -911,7 +911,7 @@
     },
     "apps/inventory": {
       "name": "@tuturuuu/inventory",
-      "version": "0.37.0",
+      "version": "0.38.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.102",
         "@tanstack/react-query": "^5.104.5",
@@ -975,7 +975,7 @@
     },
     "apps/learn": {
       "name": "@tuturuuu/learn",
-      "version": "0.32.0",
+      "version": "0.33.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@gsap/react": "^2.1.2",
@@ -1071,7 +1071,7 @@
     },
     "apps/mail": {
       "name": "@tuturuuu/mail",
-      "version": "0.31.0",
+      "version": "0.32.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.102",
         "@aws-sdk/client-s3": "3.1154.0",
@@ -1168,7 +1168,7 @@
     },
     "apps/meet": {
       "name": "@tuturuuu/meet",
-      "version": "0.35.0",
+      "version": "0.36.0",
       "dependencies": {
         "@cloudflare/pages-plugin-vercel-og": "0.1.2",
         "@fontsource-variable/noto-sans": "5.3.0",
@@ -1214,7 +1214,6 @@
         "zod": "^4.6.7",
       },
       "devDependencies": {
-        "@biomejs/biome": "2.5.13",
         "@cloudflare/workers-types": "5.20261022.1",
         "@opennextjs/cloudflare": "https://registry.npmjs.org/@opennextjs/cloudflare/-/cloudflare-1.20.6.tgz",
         "@tailwindcss/postcss": "^4.3.3",
@@ -1252,7 +1251,7 @@
     },
     "apps/mind": {
       "name": "@tuturuuu/mind",
-      "version": "0.26.0",
+      "version": "0.27.0",
       "dependencies": {
         "@json-render/core": "^0.20.0",
         "@json-render/react": "^0.20.0",
@@ -1310,7 +1309,7 @@
     },
     "apps/nova": {
       "name": "@tuturuuu/nova",
-      "version": "0.42.2",
+      "version": "0.43.0",
       "dependencies": {
         "@cloudflare/pages-plugin-vercel-og": "0.1.2",
         "@dnd-kit/core": "^6.3.1",
@@ -1402,7 +1401,7 @@
     },
     "apps/parley": {
       "name": "@tuturuuu/parley",
-      "version": "1.5.0",
+      "version": "1.6.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@google/genai": "^2.30.0",
@@ -1442,7 +1441,6 @@
         "zod": "^4.6.7",
       },
       "devDependencies": {
-        "@biomejs/biome": "2.5.13",
         "@cloudflare/workers-types": "^5.20261022.1",
         "@opennextjs/cloudflare": "https://registry.npmjs.org/@opennextjs/cloudflare/-/cloudflare-1.20.6.tgz",
         "@tailwindcss/postcss": "^4.3.3",
@@ -1463,7 +1461,7 @@
     },
     "apps/pay": {
       "name": "@tuturuuu/pay",
-      "version": "0.21.2",
+      "version": "0.22.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@tanstack/react-query": "^5.104.5",
@@ -1516,7 +1514,7 @@
     },
     "apps/playground": {
       "name": "@tuturuuu/playground",
-      "version": "0.6.1",
+      "version": "0.7.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.102",
         "@tanstack/react-router": "1.170.45",
@@ -1544,7 +1542,6 @@
         "@types/node": "^26.6.5",
         "@types/react": "~19.2.18",
         "@types/react-dom": "~19.2.7",
-        "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
         "@vitejs/plugin-rsc": "0.5.38",
         "babel-plugin-react-compiler": "^1.0.0",
@@ -1566,7 +1563,7 @@
     },
     "apps/rewise": {
       "name": "@tuturuuu/rewise",
-      "version": "0.45.0",
+      "version": "0.46.0",
       "dependencies": {
         "@deepgram/sdk": "^5.15.0",
         "@emotion/react": "^11.14.0",
@@ -1633,9 +1630,33 @@
         "vitest": "^5.0.5",
       },
     },
+    "apps/roadmap": {
+      "name": "@tuturuuu/roadmap",
+      "dependencies": {
+        "@tanstack/react-router": "1.170.45",
+        "@tanstack/react-start": "1.169.3",
+        "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/satellite": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "react": "19.2.8",
+        "react-dom": "19.2.8",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "4.3.3",
+        "@types/node": "26.6.5",
+        "@types/react": "19.2.18",
+        "@types/react-dom": "19.2.7",
+        "@vitejs/plugin-react": "6.1.2",
+        "typescript": "7.0.2",
+        "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
+        "vite-plus": "1.3.0",
+        "void": "1.1.12",
+        "wrangler": "4.151.2",
+      },
+    },
     "apps/shortener": {
       "name": "@tuturuuu/shortener",
-      "version": "0.25.0",
+      "version": "0.26.0",
       "dependencies": {
         "@tanstack/react-router": "1.170.45",
         "@tanstack/react-start": "1.169.3",
@@ -1684,7 +1705,7 @@
     },
     "apps/storefront": {
       "name": "@tuturuuu/storefront",
-      "version": "0.32.0",
+      "version": "0.33.0",
       "dependencies": {
         "@tanstack/react-query": "^5.104.5",
         "@tanstack/react-router": "1.170.45",
@@ -1787,7 +1808,7 @@
     },
     "apps/tasks": {
       "name": "@tuturuuu/tasks",
-      "version": "0.40.0",
+      "version": "0.41.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.102",
         "@fontsource-variable/noto-sans": "5.3.0",
@@ -1855,7 +1876,7 @@
     },
     "apps/teach": {
       "name": "@tuturuuu/teach",
-      "version": "0.28.0",
+      "version": "0.29.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.102",
         "@dnd-kit/core": "^6.3.1",
@@ -1911,7 +1932,7 @@
     },
     "apps/tools": {
       "name": "@tuturuuu/tools",
-      "version": "0.22.1",
+      "version": "0.23.0",
       "dependencies": {
         "@tanstack/react-query": "^5.104.5",
         "@tanstack/react-router": "1.170.45",
@@ -1953,7 +1974,7 @@
     },
     "apps/track": {
       "name": "@tuturuuu/track",
-      "version": "0.31.0",
+      "version": "0.32.0",
       "dependencies": {
         "@hookform/resolvers": "^5.9.2",
         "@mantine/charts": "^9.7.3",
@@ -2232,14 +2253,14 @@
     },
     "packages/agent-quota": {
       "name": "@tuturuuu/agent-quota",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "devDependencies": {
         "typescript": "7.0.2",
       },
     },
     "packages/ai": {
       "name": "@tuturuuu/ai",
-      "version": "0.18.3",
+      "version": "0.19.0",
       "dependencies": {
         "@ai-sdk/amazon-bedrock": "^5.0.121",
         "@ai-sdk/anthropic": "^4.0.85",
@@ -2333,7 +2354,7 @@
     },
     "packages/apis": {
       "name": "@tuturuuu/apis",
-      "version": "0.13.1",
+      "version": "0.13.2",
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
@@ -2354,7 +2375,7 @@
     },
     "packages/auth": {
       "name": "@tuturuuu/auth",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -2376,10 +2397,25 @@
     },
     "packages/cloudflare": {
       "name": "@tuturuuu/cloudflare",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^26.6.5",
+        "typescript": "7.0.2",
+        "vitest": "^5.0.5",
+      },
+    },
+    "packages/cms-blocks": {
+      "name": "@tuturuuu/cms-blocks",
+      "version": "1.0.0",
+      "dependencies": {
+        "react": "^19.2.8",
+        "zod": "^4.6.7",
+      },
+      "devDependencies": {
+        "@types/react": "~19.2.18",
+        "@types/react-dom": "~19.2.7",
+        "react-dom": "^19.2.8",
         "typescript": "7.0.2",
         "vitest": "^5.0.5",
       },
@@ -2426,7 +2462,7 @@
     },
     "packages/education-core": {
       "name": "@tuturuuu/education-core",
-      "version": "0.5.0",
+      "version": "0.5.1",
       "dependencies": {
         "@tuturuuu/storage-core": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
@@ -2466,7 +2502,7 @@
     },
     "packages/feature-flags": {
       "name": "@tuturuuu/feature-flags",
-      "version": "0.0.0",
+      "version": "1.0.0",
       "devDependencies": {
         "@types/node": "^26.6.5",
         "typescript": "7.0.2",
@@ -2475,7 +2511,7 @@
     },
     "packages/finance-core": {
       "name": "@tuturuuu/finance-core",
-      "version": "0.4.2",
+      "version": "0.5.0",
       "dependencies": {
         "@tuturuuu/apis": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
@@ -2603,7 +2639,7 @@
     },
     "packages/internal-api": {
       "name": "@tuturuuu/internal-api",
-      "version": "0.55.0",
+      "version": "0.56.0",
       "dependencies": {
         "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
@@ -2620,7 +2656,7 @@
     },
     "packages/inventory-core": {
       "name": "@tuturuuu/inventory-core",
-      "version": "0.11.1",
+      "version": "0.11.2",
       "dependencies": {
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/cloudflare": "workspace:*",
@@ -2673,7 +2709,7 @@
     },
     "packages/meet-core": {
       "name": "@tuturuuu/meet-core",
-      "version": "1.4.2",
+      "version": "1.5.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@google/genai": "^2.30.0",
@@ -2714,7 +2750,6 @@
         "zod": "^4.6.7",
       },
       "devDependencies": {
-        "@biomejs/biome": "2.5.13",
         "@cloudflare/workers-types": "^5.20261022.1",
         "@opennextjs/cloudflare": "^1.20.6",
         "@tailwindcss/postcss": "^4.3.3",
@@ -2837,7 +2872,7 @@
     },
     "packages/payment": {
       "name": "@tuturuuu/payment",
-      "version": "0.4.2",
+      "version": "0.4.3",
       "dependencies": {
         "@polar-sh/checkout": "^0.4.1",
         "@polar-sh/nextjs": "^0.9.6",
@@ -2851,7 +2886,7 @@
     },
     "packages/payment-core": {
       "name": "@tuturuuu/payment-core",
-      "version": "0.6.1",
+      "version": "0.6.2",
       "dependencies": {
         "@tuturuuu/payment": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
@@ -2896,7 +2931,7 @@
     },
     "packages/realtime": {
       "name": "@tuturuuu/realtime",
-      "version": "0.10.2",
+      "version": "0.11.0",
       "dependencies": {
         "lib0": "^0.2.119",
         "mdast-util-from-markdown": "^2.1.0",
@@ -2916,7 +2951,7 @@
     },
     "packages/satellite": {
       "name": "@tuturuuu/satellite",
-      "version": "0.26.0",
+      "version": "0.27.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@radix-ui/react-dialog": "^1.3.1",
@@ -2955,7 +2990,7 @@
     },
     "packages/sdk": {
       "name": "tuturuuu",
-      "version": "0.29.0",
+      "version": "0.30.0",
       "bin": {
         "ttr": "./bin/ttr.cjs",
         "tuturuuu": "./bin/ttr.cjs",
@@ -3001,7 +3036,7 @@
     },
     "packages/start-bridge": {
       "name": "@tuturuuu/start-bridge",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "bin": {
         "start-bridge-routes": "./src/codegen/cli.ts",
       },
@@ -3037,7 +3072,7 @@
     },
     "packages/storage-core": {
       "name": "@tuturuuu/storage-core",
-      "version": "0.3.3",
+      "version": "0.3.4",
       "dependencies": {
         "@aws-sdk/client-s3": "3.1154.0",
         "@aws-sdk/s3-request-presigner": "^3.1154.0",
@@ -3056,7 +3091,7 @@
     },
     "packages/supabase": {
       "name": "@tuturuuu/supabase",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": {
         "@supabase/ssr": "^0.12.7",
         "@supabase/supabase-js": "^2.117.1",
@@ -3084,7 +3119,7 @@
     },
     "packages/tasks-api": {
       "name": "@tuturuuu/tasks-api",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "dependencies": {
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
@@ -3104,7 +3139,7 @@
     },
     "packages/tasks-ui": {
       "name": "@tuturuuu/tasks-ui",
-      "version": "0.17.3",
+      "version": "0.18.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -3189,7 +3224,7 @@
     },
     "packages/types": {
       "name": "@tuturuuu/types",
-      "version": "0.37.0",
+      "version": "0.38.0",
       "dependencies": {
         "@tiptap/react": "3.32.0",
         "react": "^19.2.8",
@@ -3213,7 +3248,7 @@
     },
     "packages/ui": {
       "name": "@tuturuuu/ui",
-      "version": "0.40.0",
+      "version": "0.41.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -3381,7 +3416,7 @@
     },
     "packages/users-core": {
       "name": "@tuturuuu/users-core",
-      "version": "0.11.2",
+      "version": "0.12.0",
       "dependencies": {
         "@tuturuuu/apis": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
@@ -3442,7 +3477,7 @@
     },
     "packages/utils": {
       "name": "@tuturuuu/utils",
-      "version": "0.38.1",
+      "version": "0.39.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@js-temporal/polyfill": "^0.5.1",
@@ -3491,7 +3526,7 @@
     },
     "packages/vercel": {
       "name": "@tuturuuu/vercel",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "dependencies": {
         "@vercel/analytics": "^2.0.1",
         "@vercel/speed-insights": "^2.0.0",
@@ -3857,24 +3892,6 @@
     "@better-auth/utils": ["@better-auth/utils@0.5.0", "", { "dependencies": { "@noble/hashes": "^2.0.1" } }, "sha512-BL8W4EfIZFwlu0r54m3v1ztjDhu6dDe/amLTm0xybmbZaNgYUqhD3SjpAsnq0q8YD6/ki4iwIgxJNLP/N3TxiA=="],
 
     "@better-fetch/fetch": ["@better-fetch/fetch@1.3.2", "", {}, "sha512-Gs7n99b5tqUC6cQAPbV0uED3IraHB6xQbHLQ/C3l7ZFafHScOx9pQ+DYmP5blbLFShVWLqxNUlI9wi4xU/X+ow=="],
-
-    "@biomejs/biome": ["@biomejs/biome@2.5.13", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "2.5.13", "@biomejs/cli-darwin-x64": "2.5.13", "@biomejs/cli-linux-arm64": "2.5.13", "@biomejs/cli-linux-arm64-musl": "2.5.13", "@biomejs/cli-linux-x64": "2.5.13", "@biomejs/cli-linux-x64-musl": "2.5.13", "@biomejs/cli-win32-arm64": "2.5.13", "@biomejs/cli-win32-x64": "2.5.13" }, "bin": { "biome": "bin/biome" } }, "sha512-+SEC/mFk1a+5mvUANZgbZTaiZXs1nj4iMhL/PHiqDT5TPUEPFIlliEtkKKZB4N862yylHC3UI+/Sj2I0HJEqhA=="],
-
-    "@biomejs/cli-darwin-arm64": ["@biomejs/cli-darwin-arm64@2.5.13", "", { "os": "darwin", "cpu": "arm64" }, "sha512-nYSuDJ6zgVqZUkAkJkvhXxsF2PYIrUk/g638K4voCXz7foI9f7b6C2/7+oAihsHQlivZNMUrm/y8ywlcHQtZOw=="],
-
-    "@biomejs/cli-darwin-x64": ["@biomejs/cli-darwin-x64@2.5.13", "", { "os": "darwin", "cpu": "x64" }, "sha512-KVy1ceEDuJ3AzFxjT9kkxbVy+UANw1pjEMUS6lvKfxjJ+fmkRvc7sQn1Xo6ETgseEI7wUQoV03KSga3XfE8YRQ=="],
-
-    "@biomejs/cli-linux-arm64": ["@biomejs/cli-linux-arm64@2.5.13", "", { "os": "linux", "cpu": "arm64" }, "sha512-VlNMtoxOqs0dUR6drxxHr18SNUvI7xxAuHZlH4s/dstYSf3g6RaqVgo8JRnhcOhKz9afWrvtJTboNG1JuYlIDQ=="],
-
-    "@biomejs/cli-linux-arm64-musl": ["@biomejs/cli-linux-arm64-musl@2.5.13", "", { "os": "linux", "cpu": "arm64" }, "sha512-CH32xpep3dNS5EVJpAHlYchkBYznxyVZQrx0b6YYYlPL9u9ZeD2NtqiK/6s64+HFS2a7hGnryLlqqZAOh8ax5g=="],
-
-    "@biomejs/cli-linux-x64": ["@biomejs/cli-linux-x64@2.5.13", "", { "os": "linux", "cpu": "x64" }, "sha512-Fi6gIxbUaJ3ZCIXeG3ggIBPF76O2DjDN67WrPX/ODRv54GeXPm2gbEPC96Yb0yrJoiH0Eax1JLx1Pi0XbsNFZQ=="],
-
-    "@biomejs/cli-linux-x64-musl": ["@biomejs/cli-linux-x64-musl@2.5.13", "", { "os": "linux", "cpu": "x64" }, "sha512-F3pmwl+VHoUuVJN/tbNLKeLt0SVK3EIyN1jXlMcNyQGYRQQTVqXF+GgkP0/CjGXFN87e/mv0sBfUnWqWza5PKQ=="],
-
-    "@biomejs/cli-win32-arm64": ["@biomejs/cli-win32-arm64@2.5.13", "", { "os": "win32", "cpu": "arm64" }, "sha512-+WD13qshXrr0Icv4BfsAdzm8Fs3TL+nZ59zEQxsYNd8lcgZJ0A5+OrlwsL1PipVCmWeRpxgIPD6DAcEd7smkCQ=="],
-
-    "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.5.13", "", { "os": "win32", "cpu": "x64" }, "sha512-VOofU/nW761XWzUeUNE8zzYNyPrxuMuNFMizL0qz7J75yeV8N7WFheUlk1/K6dOkaFpH9wJ+lDKlwjAbw0346w=="],
 
     "@bitbasti/chat-adapter-webex": ["@bitbasti/chat-adapter-webex@0.1.0", "", { "dependencies": { "@chat-adapter/shared": "^4.15.0" }, "peerDependencies": { "chat": "^4.15.0" } }, "sha512-Cl/gy3ifh18y0fs4f/qVNmHXfn+3v40x6QUjOUGZ5mEds2zYiqeVAalRkL+feBdjEz1tE8aQtzf1OUhRGPQeFw=="],
 
@@ -5448,6 +5465,8 @@
 
     "@tuturuuu/cms": ["@tuturuuu/cms@workspace:apps/cms"],
 
+    "@tuturuuu/cms-blocks": ["@tuturuuu/cms-blocks@workspace:packages/cms-blocks"],
+
     "@tuturuuu/colab": ["@tuturuuu/colab@workspace:apps/colab"],
 
     "@tuturuuu/contacts": ["@tuturuuu/contacts@workspace:apps/contacts"],
@@ -5557,6 +5576,8 @@
     "@tuturuuu/redis": ["@tuturuuu/redis@workspace:apps/redis"],
 
     "@tuturuuu/rewise": ["@tuturuuu/rewise@workspace:apps/rewise"],
+
+    "@tuturuuu/roadmap": ["@tuturuuu/roadmap@workspace:apps/roadmap"],
 
     "@tuturuuu/satellite": ["@tuturuuu/satellite@workspace:packages/satellite"],
 
@@ -8890,6 +8911,10 @@
 
     "@tuturuuu/playground/wrangler": ["wrangler@4.151.2", "", { "dependencies": { "@cloudflare/kv-asset-handler": "0.5.0", "@cloudflare/unenv-preset": "2.16.2", "blake3-wasm": "2.1.5", "esbuild": "0.28.2", "miniflare": "5.20261019.0-beta", "path-to-regexp": "6.3.0", "unenv": "2.0.0-rc.24", "workerd": "1.20261019.1" }, "optionalDependencies": { "fsevents": "2.3.3" }, "peerDependencies": { "@cloudflare/workers-types": "^5.20261019.1" }, "optionalPeers": ["@cloudflare/workers-types"], "bin": { "wrangler": "bin/wrangler.js", "wrangler2": "bin/wrangler.js", "cf-wrangler": "bin/cf-wrangler.js" } }, "sha512-yIT5Q08eVP2ZSE4XHGZ81Y+Y1b25uzp7LANwV2siaEt/O7TpeiFiEih/xHwARHGQo8sufs2ZaILGxCccHgjQPg=="],
 
+    "@tuturuuu/roadmap/vite": ["@voidzero-dev/vite-plus-core@1.3.0", "", { "dependencies": { "@oxc-project/runtime": "=0.154.0", "@oxc-project/types": "=0.154.0", "lightningcss": "^1.33.0", "postcss": "^8.5.29", "yuku-parser": "0.19.0" }, "optionalDependencies": { "@voidzero-dev/vite-plus-darwin-arm64": "1.3.0", "@voidzero-dev/vite-plus-darwin-x64": "1.3.0", "@voidzero-dev/vite-plus-linux-arm64-gnu": "1.3.0", "@voidzero-dev/vite-plus-linux-arm64-musl": "1.3.0", "@voidzero-dev/vite-plus-linux-x64-gnu": "1.3.0", "@voidzero-dev/vite-plus-linux-x64-musl": "1.3.0", "@voidzero-dev/vite-plus-win32-arm64-msvc": "1.3.0", "@voidzero-dev/vite-plus-win32-x64-msvc": "1.3.0", "fsevents": "~2.3.3" }, "peerDependencies": { "@arethetypeswrong/core": "^0.18.1", "@types/node": "^20.19.0 || >=22.12.0", "@typescript/native-preview": "*", "@vitejs/devtools": "^0.7.1", "@volar/typescript": "~2.4.0", "@vue/language-core": "~3.2.0 || ~3.3.0", "esbuild": "^0.27.0 || ^0.28.0", "jiti": ">=1.21.0", "less": "^4.0.0", "publint": "^0.3.8", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "typescript": "^5.0.0 || ^6.0.0 || ^7.0.0", "unplugin-unused": ">=0.5.0", "unrun": "*", "vue-tsc": "~3.2.0 || ~3.3.0", "yaml": "^2.4.2" }, "optionalPeers": ["@arethetypeswrong/core", "@types/node", "@typescript/native-preview", "@vitejs/devtools", "@volar/typescript", "@vue/language-core", "esbuild", "jiti", "less", "publint", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "typescript", "unplugin-unused", "unrun", "vue-tsc", "yaml"] }, "sha512-Bk/LBwNrxoB8XbGUtGJE3r+U9P4puvdZ6UH36ekygE1J+on/ytwM/yBgQwBnvmX6/MVax+2xxj8wk0N/KkyNeA=="],
+
+    "@tuturuuu/roadmap/wrangler": ["wrangler@4.151.2", "", { "dependencies": { "@cloudflare/kv-asset-handler": "0.5.0", "@cloudflare/unenv-preset": "2.16.2", "blake3-wasm": "2.1.5", "esbuild": "0.28.2", "miniflare": "5.20261019.0-beta", "path-to-regexp": "6.3.0", "unenv": "2.0.0-rc.24", "workerd": "1.20261019.1" }, "optionalDependencies": { "fsevents": "2.3.3" }, "peerDependencies": { "@cloudflare/workers-types": "^5.20261019.1" }, "optionalPeers": ["@cloudflare/workers-types"], "bin": { "wrangler": "bin/wrangler.js", "wrangler2": "bin/wrangler.js", "cf-wrangler": "bin/cf-wrangler.js" } }, "sha512-yIT5Q08eVP2ZSE4XHGZ81Y+Y1b25uzp7LANwV2siaEt/O7TpeiFiEih/xHwARHGQo8sufs2ZaILGxCccHgjQPg=="],
+
     "@tuturuuu/shortener/vite": ["@voidzero-dev/vite-plus-core@1.3.0", "", { "dependencies": { "@oxc-project/runtime": "=0.154.0", "@oxc-project/types": "=0.154.0", "lightningcss": "^1.33.0", "postcss": "^8.5.29", "yuku-parser": "0.19.0" }, "optionalDependencies": { "@voidzero-dev/vite-plus-darwin-arm64": "1.3.0", "@voidzero-dev/vite-plus-darwin-x64": "1.3.0", "@voidzero-dev/vite-plus-linux-arm64-gnu": "1.3.0", "@voidzero-dev/vite-plus-linux-arm64-musl": "1.3.0", "@voidzero-dev/vite-plus-linux-x64-gnu": "1.3.0", "@voidzero-dev/vite-plus-linux-x64-musl": "1.3.0", "@voidzero-dev/vite-plus-win32-arm64-msvc": "1.3.0", "@voidzero-dev/vite-plus-win32-x64-msvc": "1.3.0", "fsevents": "~2.3.3" }, "peerDependencies": { "@arethetypeswrong/core": "^0.18.1", "@types/node": "^20.19.0 || >=22.12.0", "@typescript/native-preview": "*", "@vitejs/devtools": "^0.7.1", "@volar/typescript": "~2.4.0", "@vue/language-core": "~3.2.0 || ~3.3.0", "esbuild": "^0.27.0 || ^0.28.0", "jiti": ">=1.21.0", "less": "^4.0.0", "publint": "^0.3.8", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "typescript": "^5.0.0 || ^6.0.0 || ^7.0.0", "unplugin-unused": ">=0.5.0", "unrun": "*", "vue-tsc": "~3.2.0 || ~3.3.0", "yaml": "^2.4.2" }, "optionalPeers": ["@arethetypeswrong/core", "@types/node", "@typescript/native-preview", "@vitejs/devtools", "@volar/typescript", "@vue/language-core", "esbuild", "jiti", "less", "publint", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "typescript", "unplugin-unused", "unrun", "vue-tsc", "yaml"] }, "sha512-Bk/LBwNrxoB8XbGUtGJE3r+U9P4puvdZ6UH36ekygE1J+on/ytwM/yBgQwBnvmX6/MVax+2xxj8wk0N/KkyNeA=="],
 
     "@tuturuuu/shortener/wrangler": ["wrangler@4.151.2", "", { "dependencies": { "@cloudflare/kv-asset-handler": "0.5.0", "@cloudflare/unenv-preset": "2.16.2", "blake3-wasm": "2.1.5", "esbuild": "0.28.2", "miniflare": "5.20261019.0-beta", "path-to-regexp": "6.3.0", "unenv": "2.0.0-rc.24", "workerd": "1.20261019.1" }, "optionalDependencies": { "fsevents": "2.3.3" }, "peerDependencies": { "@cloudflare/workers-types": "^5.20261019.1" }, "optionalPeers": ["@cloudflare/workers-types"], "bin": { "wrangler": "bin/wrangler.js", "wrangler2": "bin/wrangler.js", "cf-wrangler": "bin/cf-wrangler.js" } }, "sha512-yIT5Q08eVP2ZSE4XHGZ81Y+Y1b25uzp7LANwV2siaEt/O7TpeiFiEih/xHwARHGQo8sufs2ZaILGxCccHgjQPg=="],
@@ -9646,6 +9671,8 @@
 
     "@tuturuuu/playground/wrangler/miniflare": ["miniflare@5.20261019.0-beta", "", { "dependencies": { "@cspotcode/source-map-support": "0.8.1", "sharp": "0.35.5", "undici": "7.29.1", "workerd": "1.20261019.1", "ws": "8.21.0", "youch": "4.1.0-beta.10" } }, "sha512-NmE6Yz7MSdjrfr3lMaMAVO55rIm3+6YXllOkJOMy6pPQITDuDeo0PYRedp7pju2olNWmrAlf1i1LIWYfGQvvuw=="],
 
+    "@tuturuuu/roadmap/wrangler/miniflare": ["miniflare@5.20261019.0-beta", "", { "dependencies": { "@cspotcode/source-map-support": "0.8.1", "sharp": "0.35.5", "undici": "7.29.1", "workerd": "1.20261019.1", "ws": "8.21.0", "youch": "4.1.0-beta.10" } }, "sha512-NmE6Yz7MSdjrfr3lMaMAVO55rIm3+6YXllOkJOMy6pPQITDuDeo0PYRedp7pju2olNWmrAlf1i1LIWYfGQvvuw=="],
+
     "@tuturuuu/shortener/wrangler/miniflare": ["miniflare@5.20261019.0-beta", "", { "dependencies": { "@cspotcode/source-map-support": "0.8.1", "sharp": "0.35.5", "undici": "7.29.1", "workerd": "1.20261019.1", "ws": "8.21.0", "youch": "4.1.0-beta.10" } }, "sha512-NmE6Yz7MSdjrfr3lMaMAVO55rIm3+6YXllOkJOMy6pPQITDuDeo0PYRedp7pju2olNWmrAlf1i1LIWYfGQvvuw=="],
 
     "@tuturuuu/storefront/wrangler/miniflare": ["miniflare@5.20261019.0-beta", "", { "dependencies": { "@cspotcode/source-map-support": "0.8.1", "sharp": "0.35.5", "undici": "7.29.1", "workerd": "1.20261019.1", "ws": "8.21.0", "youch": "4.1.0-beta.10" } }, "sha512-NmE6Yz7MSdjrfr3lMaMAVO55rIm3+6YXllOkJOMy6pPQITDuDeo0PYRedp7pju2olNWmrAlf1i1LIWYfGQvvuw=="],
@@ -10093,6 +10120,8 @@
     "@tuturuuu/pay/wrangler/miniflare/undici": ["undici@7.29.1", "", {}, "sha512-RYONW2MeafgYlkVOKYKkA/Ag7BmXqgIWCa8t1m0JcxrQg9pI9lEqRhAOruOBCbAohOa/gkCF+iPi9hrgvTzu6Q=="],
 
     "@tuturuuu/playground/wrangler/miniflare/undici": ["undici@7.29.1", "", {}, "sha512-RYONW2MeafgYlkVOKYKkA/Ag7BmXqgIWCa8t1m0JcxrQg9pI9lEqRhAOruOBCbAohOa/gkCF+iPi9hrgvTzu6Q=="],
+
+    "@tuturuuu/roadmap/wrangler/miniflare/undici": ["undici@7.29.1", "", {}, "sha512-RYONW2MeafgYlkVOKYKkA/Ag7BmXqgIWCa8t1m0JcxrQg9pI9lEqRhAOruOBCbAohOa/gkCF+iPi9hrgvTzu6Q=="],
 
     "@tuturuuu/shortener/wrangler/miniflare/undici": ["undici@7.29.1", "", {}, "sha512-RYONW2MeafgYlkVOKYKkA/Ag7BmXqgIWCa8t1m0JcxrQg9pI9lEqRhAOruOBCbAohOa/gkCF+iPi9hrgvTzu6Q=="],
 

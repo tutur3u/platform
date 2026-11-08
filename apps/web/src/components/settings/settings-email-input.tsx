@@ -126,6 +126,8 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
           <Button
             type="submit"
             size="icon"
+            variant="outline"
+            className="shrink-0"
             disabled={!isDirty || saving || disabled}
           >
             {saving ? (

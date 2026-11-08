@@ -28,7 +28,6 @@ export function ResolvedUserAvatar({
   };
 
   return (
-    // biome-ignore lint/performance/noImgElement: Supabase public avatars are served directly to avoid Next image proxy failures.
     <img
       src={src}
       alt={alt}

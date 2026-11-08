@@ -108,7 +108,6 @@ function createAccess({
         return query;
       };
     }
-    // biome-ignore lint/suspicious/noThenProperty: mimics the awaitable query builder.
     query.then = (resolve: (value: unknown) => unknown) =>
       Promise.resolve(result()).then(resolve);
     return query;

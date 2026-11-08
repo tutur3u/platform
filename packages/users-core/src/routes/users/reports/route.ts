@@ -28,8 +28,8 @@ import {
   summarizeReportList,
 } from './report-list-query';
 import {
-  buildReportMonthFilter,
   buildReportPeriodFilter,
+  buildReportStageMonthFilter,
   resolveReportPeriodTimezone,
 } from './report-period-filter';
 import {
@@ -71,7 +71,8 @@ const ListReportsSchema = z.object({
     .optional(),
   periodStart: z.iso.date().optional(),
   periodEnd: z.iso.date().optional(),
-  // The month reports cover: saved period, else estimated from created_at.
+  // Sent reports: the month they were sent. Other stages: the month they
+  // cover (saved period, else estimated from created_at).
   month: z.string().refine(isReportMonth).optional(),
   cadence: z
     .enum(['all', 'weekly', 'monthly', 'quarterly', 'yearly'])
@@ -163,6 +164,7 @@ export async function GET(request: Request, { params }: Params) {
         pageSize: parsed.data.pageSize,
         summaryPartial: false,
         total: 0,
+        undatedSentCount: null,
         workspace: { id: wsId, timezone: null },
       });
     }
@@ -187,7 +189,7 @@ export async function GET(request: Request, { params }: Params) {
     // Awaited below; never an unhandled rejection if the list fails first.
     timezonePromise.catch(() => {});
     const periodFilter = parsed.data.month
-      ? buildReportMonthFilter({
+      ? buildReportStageMonthFilter({
           month: parsed.data.month,
           timezone: await timezonePromise,
         })
@@ -419,6 +421,9 @@ export async function GET(request: Request, { params }: Params) {
       pageSize: parsed.data.pageSize,
       summaryPartial,
       total: listResult.count,
+      // Sent reports without a send date match no month, so a month read
+      // never sees them and their number is unknown: always null, never 0.
+      undatedSentCount: null,
       workspace: workspaceResult.data,
     });
   } catch (error) {

@@ -45,7 +45,7 @@ vi.mock('../request-emoji-limit', () => ({
   validateRequestEmojiLimit: async () => null,
 }));
 
-let guardApiProxyRequest: typeof import('../api-proxy-guard')['guardApiProxyRequest'];
+let guardApiProxyRequest: (typeof import('../api-proxy-guard'))['guardApiProxyRequest'];
 
 import { OFFLINE_DOWNLOAD_HEADER } from '../offline-download-guard';
 

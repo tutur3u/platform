@@ -19,9 +19,16 @@ export const isTestOnlyFile = (file) =>
   /(?:^|\/)(?:vitest|playwright|jest)\.config\.[cm]?[jt]s$/.test(file);
 
 export function listWorkspaceDirs(cwd) {
-  const out = execFileSync('git', ['-C', cwd, 'ls-files', '-z', 'apps', 'packages'], { encoding: 'utf8', maxBuffer: 1 << 28 });
+  const out = execFileSync(
+    'git',
+    ['-C', cwd, 'ls-files', '-z', 'apps', 'packages'],
+    { encoding: 'utf8', maxBuffer: 1 << 28 }
+  );
   const files = out.split('\0').filter(Boolean);
-  return { files, dirs: new Set(files.map((file) => file.split('/').slice(0, 2).join('/'))) };
+  return {
+    files,
+    dirs: new Set(files.map((file) => file.split('/').slice(0, 2).join('/'))),
+  };
 }
 
 export function scanCrossWorkspaceImports(cwd) {
@@ -39,7 +46,8 @@ export function scanCrossWorkspaceImports(cwd) {
     for (const match of source.matchAll(RELATIVE_LITERAL)) {
       const target = path.posix.join(path.posix.dirname(file), match[2]);
       const workspace = ownerOf(target);
-      if (importer && workspace && workspace !== importer) found.push({ importer, file, target, workspace });
+      if (importer && workspace && workspace !== importer)
+        found.push({ importer, file, target, workspace });
     }
   }
   return found;
@@ -47,7 +55,9 @@ export function scanCrossWorkspaceImports(cwd) {
 
 // `importer` must be re-evaluated when anything under `target` changes.
 export function undeclaredImports(found, declared) {
-  return found.filter(({ importer, workspace }) => !declared(importer, workspace));
+  return found.filter(
+    ({ importer, workspace }) => !declared(importer, workspace)
+  );
 }
 
 // Longest shared directory (with trailing slash) of the given paths, never shorter than the workspace dir.
@@ -74,17 +84,31 @@ export function suggestEdges(missing) {
   const edges = {};
   for (const { importer, workspace, targets } of pairs.values()) {
     const prefix = commonDirectory(workspace, targets);
-    (edges[prefix] ??= new Set()).add(importer);
+    edges[prefix] ??= new Set();
+    edges[prefix].add(importer);
   }
-  return Object.fromEntries(Object.keys(edges).sort().map((prefix) => [prefix, [...edges[prefix]].sort()]));
+  return Object.fromEntries(
+    Object.keys(edges)
+      .sort()
+      .map((prefix) => [prefix, [...edges[prefix]].sort()])
+  );
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   // Usage: node scripts/ci/affected-apps-imports.mjs  -> prints suggested entries for undeclared imports.
-  const { loadGraph, loadExtraEdges, coveredByExtraEdges } = await import('./affected-apps.mjs');
+  const { loadGraph, loadExtraEdges, coveredByExtraEdges } =
+    await import('./affected-apps.mjs');
   const cwd = process.cwd();
   const graph = loadGraph(cwd);
-  const missing = undeclaredImports(scanCrossWorkspaceImports(cwd), graph.declares)
-    .filter(({ importer, target }) => !coveredByExtraEdges(loadExtraEdges(), target, importer));
+  const missing = undeclaredImports(
+    scanCrossWorkspaceImports(cwd),
+    graph.declares
+  ).filter(
+    ({ importer, target }) =>
+      !coveredByExtraEdges(loadExtraEdges(), target, importer)
+  );
   console.log(JSON.stringify(suggestEdges(missing), null, 2));
 }

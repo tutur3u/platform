@@ -200,9 +200,9 @@ function isMarkdownTableStart(lines: string[], index: number) {
 
   return Boolean(
     headerCells &&
-      headerCells.length > 0 &&
-      delimiterCells &&
-      delimiterCells.length === headerCells.length
+    headerCells.length > 0 &&
+    delimiterCells &&
+    delimiterCells.length === headerCells.length
   );
 }
 

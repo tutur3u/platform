@@ -1,7 +1,8 @@
 'use client';
 
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useUpdateUserConfig } from '@tuturuuu/ui/hooks/use-user-config';
-import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   DEFAULT_REQUIRE_ATTENTION_COLOR,
@@ -29,31 +30,21 @@ export function RequireAttentionColorSettings() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="font-medium text-lg">{t('require_attention_color')}</h3>
-        <p className="text-muted-foreground text-sm">
-          {t('require_attention_color_description')}
-        </p>
-      </div>
-
-      <div className="space-y-3 rounded-lg border p-4">
-        <Label>{t('require_attention_color_label')}</Label>
+    <SettingsSection>
+      <SettingItemTab
+        layout="stacked"
+        title={t('require_attention_color_label')}
+        description={t('require_attention_color_help')}
+      >
         <ColorPicker value={color} onChange={handleChange} />
-        <p className="text-muted-foreground text-sm">
-          {t('require_attention_color_help')}
-        </p>
-      </div>
+      </SettingItemTab>
 
-      <div className="rounded-lg border border-dynamic-orange/20 bg-muted/30 p-4">
-        <p className="mb-1 text-muted-foreground text-xs uppercase tracking-[0.2em]">
-          {t('preview')}
-        </p>
+      <SettingItemTab layout="stacked" title={t('preview')}>
         <p className="text-sm">
           {t('preview_copy')}{' '}
           <span className={textClassName}>{t('preview_name')}</span>
         </p>
-      </div>
-    </div>
+      </SettingItemTab>
+    </SettingsSection>
   );
 }

@@ -44,6 +44,12 @@ does not authorize promotion.
   attempt and its successful checkout/apply/marker steps; wrapper heads may differ.
   Verify allowlisted, rehashed producer/emitter contracts at target and wrapper, use bounded
   complete inventories, and reread after inspection. Unknown evidence denies migration.
+  If the exact-target staging marker is absent, admit only a direct parent with
+  an identical commit tree and `identical`/`behind` comparison against fully
+  qualified `refs/heads/main`. Apply every existing contract to that source and
+  reread its proof; failed or superseded evidence never counts. Keep the platform
+  marker bound to the production target. Cover fallback failures in
+  `scripts/ci/production-marker-tree-parent.test.js`.
   Keep the verifier inline when old target checkouts lack new helpers. Database
   migration paths must select the platform deployment so that marker exists.
   Every enabled admitted staging target must apply and emit its exact-target marker,
