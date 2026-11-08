@@ -80,7 +80,9 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await (await createAdminClient())
+  const { error } = await (
+    await createAdminClient()
+  )
     .from('product_categories')
     .insert({
       ...data,

@@ -6,7 +6,7 @@ on:
       workflow_name:
         required: true
         type: string
-        description: "The name of the workflow file (e.g., biome-check.yaml)"
+        description: "The name of the workflow file (e.g., oxc-check.yaml)"
       check_release_only:
         required: false
         type: boolean

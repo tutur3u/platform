@@ -60,6 +60,8 @@ const APP_NAMESPACE_ALLOWLIST = new Map([
   ],
   // Colab uses framework-independent primitives with labels supplied by its own locale context.
   ['apps/colab', new Set()],
+  // Roadmap's public shell and primitives receive labels from its locale dictionaries.
+  ['apps/roadmap', new Set()],
   ['apps/storefront', new Set(['common'])],
   ['apps/shortener', new Set(['common'])],
 ]);
@@ -219,7 +221,6 @@ function scanPackageNamespaces(pkg) {
     // Reset regex lastIndex for each file
     NAMESPACE_REGEX.lastIndex = 0;
 
-    // biome-ignore lint/suspicious/noAssignInExpressions: <>
     while ((match = NAMESPACE_REGEX.exec(content)) !== null) {
       const topLevel = getTopLevelNamespace(match[1]);
       if (!namespaces.has(topLevel)) {

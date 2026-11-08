@@ -17,9 +17,9 @@ export function StorefrontMerchSections({
       const sectionHref = getSafeStorefrontHttpUrl(section.href);
       return Boolean(
         section.title?.trim() ||
-          section.description?.trim() ||
-          section.imageUrl?.trim() ||
-          sectionHref
+        section.description?.trim() ||
+        section.imageUrl?.trim() ||
+        sectionHref
       );
     })
     .sort((a, b) => a.sortOrder - b.sortOrder);

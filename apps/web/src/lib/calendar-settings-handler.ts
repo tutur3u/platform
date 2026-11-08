@@ -38,9 +38,8 @@ export async function handleCalendarSettings(
     if (!auth.ok) return auth.response;
     if (wsId === undefined) {
       try {
-        const { checkUserSuspension } = await import(
-          '@tuturuuu/utils/abuse-protection/user-suspension'
-        );
+        const { checkUserSuspension } =
+          await import('@tuturuuu/utils/abuse-protection/user-suspension');
         const suspension = await checkUserSuspension(auth.user.id);
         if (suspension.suspended)
           return NextResponse.json(

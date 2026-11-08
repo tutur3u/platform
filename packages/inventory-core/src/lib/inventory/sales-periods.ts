@@ -610,7 +610,7 @@ export async function getInventoryCommerceSummary({
   if (error) throw error;
 
   const sales = [...firstPage.data];
-  for (let offset = sales.length; offset < firstPage.count; ) {
+  for (let offset = sales.length; offset < firstPage.count;) {
     const page = await listInventoryCommerceSales({
       limit: pageSize,
       offset,

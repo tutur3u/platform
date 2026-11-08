@@ -206,7 +206,6 @@ export function FormsImageDialog({
               cursor: isDragging ? 'grabbing' : scale > 1 ? 'grab' : 'zoom-in',
             }}
           >
-            {/* biome-ignore lint/performance/noImgElement: signed URLs are not compatible with Next.js image optimization */}
             <img
               ref={imageRef}
               src={src}
@@ -288,7 +287,6 @@ export function FormsImageDialog({
                   height: MINIMAP_SIZE,
                 }}
               >
-                {/* biome-ignore lint/performance/noImgElement: signed URLs, minimap preview */}
                 <img
                   src={src}
                   alt=""

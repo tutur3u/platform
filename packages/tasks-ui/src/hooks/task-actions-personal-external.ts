@@ -170,12 +170,12 @@ export async function moveExternalTaskToPersonalList({
   );
   const shouldInspectSourceList = Boolean(
     !terminalStatus &&
-      (sourceStatus ||
-        hasKnownSourceStatusChange ||
-        (!task.source_list_status &&
-          task.source_list_id &&
-          sourceWorkspaceId &&
-          sourceBoardId))
+    (sourceStatus ||
+      hasKnownSourceStatusChange ||
+      (!task.source_list_status &&
+        task.source_list_id &&
+        sourceWorkspaceId &&
+        sourceBoardId))
   );
 
   try {

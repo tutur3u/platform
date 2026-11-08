@@ -101,9 +101,8 @@ describe('workspace logo route', () => {
 
   it('rejects traversal logo paths before storing them', async () => {
     const workspaceClient = createWorkspaceClient();
-    const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/logo/route'
-    );
+    const { PATCH } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/logo/route');
 
     const response = await routeHandler(PATCH)(
       request('PATCH', {
@@ -123,9 +122,8 @@ describe('workspace logo route', () => {
   it('stores logo paths that match the upload-url route shape', async () => {
     const workspaceClient = createWorkspaceClient();
     const safePath = `${WORKSPACE_ID}/logos/logo-1770000000000.webp`;
-    const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/logo/route'
-    );
+    const { PATCH } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/logo/route');
 
     const response = await routeHandler(PATCH)(
       request('PATCH', { filePath: safePath }),
@@ -145,9 +143,8 @@ describe('workspace logo route', () => {
     const workspaceClient = createWorkspaceClient({
       logoUrl: `${WORKSPACE_ID}/../${VICTIM_WORKSPACE_ID}/logos/logo-1.png`,
     });
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/logo/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/logo/route');
 
     const response = await routeHandler(GET)(
       request('GET'),
@@ -164,9 +161,8 @@ describe('workspace logo route', () => {
   it('signs safe stored logo paths', async () => {
     const safePath = `${WORKSPACE_ID}/logos/logo-1770000000000.png`;
     const workspaceClient = createWorkspaceClient({ logoUrl: safePath });
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/logo/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/logo/route');
 
     const response = await routeHandler(GET)(
       request('GET'),
@@ -186,9 +182,8 @@ describe('workspace logo route', () => {
     const workspaceClient = createWorkspaceClient({
       logoUrl: `${WORKSPACE_ID}/../${VICTIM_WORKSPACE_ID}/logos/logo-1.png`,
     });
-    const { DELETE } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/logo/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/logo/route');
 
     const response = await routeHandler(DELETE)(
       request('DELETE'),

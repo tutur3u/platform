@@ -10,6 +10,7 @@ import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import appConfig from '../start-bridge.config';
+import { startupRefusal } from './startup';
 
 export interface TrackEnvironment {
   ASSETS: AssetsBinding;
@@ -57,6 +58,8 @@ const handler = (
 
 export default {
   async fetch(request: Request, env: TrackEnvironment, ctx: WorkerContext) {
+    const refused = startupRefusal(env);
+    if (refused) return refused;
     const response = await (await handler)(request, env, ctx);
     return appConfig.wrapResponse
       ? appConfig.wrapResponse(response, { request, env })

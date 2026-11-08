@@ -95,9 +95,8 @@ async function ProductionDatabaseIndicator() {
     return null;
   }
 
-  const { ProductionIndicator } = await import(
-    '@tuturuuu/ui/custom/production-indicator'
-  );
+  const { ProductionIndicator } =
+    await import('@tuturuuu/ui/custom/production-indicator');
 
   return <ProductionIndicator />;
 }

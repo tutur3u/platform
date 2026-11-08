@@ -28,7 +28,6 @@ function builder(responses: unknown[]) {
     'in',
   ])
     query[method] = vi.fn(() => query);
-  // biome-ignore lint/suspicious/noThenProperty: Model the Supabase thenable query builder.
   query.then = vi.fn((resolve: (value: unknown) => unknown) =>
     Promise.resolve(responses[Math.min(page++, responses.length - 1)]).then(
       resolve

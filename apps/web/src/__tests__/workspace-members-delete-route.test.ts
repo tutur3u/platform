@@ -253,9 +253,8 @@ describe('workspace members delete route', () => {
   });
 
   it('revokes the Polar seat using the Polar customer id during member removal', async () => {
-    const { DELETE } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/members/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/members/route');
 
     const response = await DELETE(
       new NextRequest(

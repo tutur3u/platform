@@ -64,7 +64,6 @@ const mocks = vi.hoisted(() => {
         // No requested role holds a creator-grant permission here.
         const query: Record<string, unknown> = {};
         for (const op of ['eq', 'in', 'select']) query[op] = vi.fn(() => query);
-        // biome-ignore lint/suspicious/noThenProperty: mimics the awaitable query builder.
         query.then = (resolve: (value: unknown) => unknown) =>
           Promise.resolve({ data: [], error: null }).then(resolve);
         return query;
@@ -172,9 +171,8 @@ async function postInvite({
   body?: unknown;
   requestedWsId?: string;
 } = {}) {
-  const { POST } = await import(
-    '@/app/api/workspaces/[wsId]/members/invite/route'
-  );
+  const { POST } =
+    await import('@/app/api/workspaces/[wsId]/members/invite/route');
 
   return POST(
     new Request(

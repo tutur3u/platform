@@ -46,7 +46,6 @@ beforeEach(() => {
         state.writes();
         return query;
       },
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
       then: (resolve: (value: unknown) => void) =>
         resolve({
           data:

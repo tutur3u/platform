@@ -2,7 +2,6 @@
   "name": "tutur3u",
   "devDependencies": {
     "@babel/parser": "7.29.9",
-    "@biomejs/biome": "^2.5.13",
     "@lingual/i18n-check": "0.9.5",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.6.5",
@@ -263,13 +262,13 @@
     "migration:tanstack:gates": "node scripts/paused-runtimes.js migration",
     "migration:tanstack:progress": "node scripts/paused-runtimes.js migration",
     "migration:tanstack:readme": "node scripts/paused-runtimes.js migration",
-    "format": "biome format",
-    "format:fix": "biome format --write",
-    "ff": "biome format --write && biome lint --write && biome check --write",
-    "lint": "biome lint",
-    "lint:fix": "biome lint --write",
-    "format-and-lint": "biome check",
-    "format-and-lint:fix": "biome check --write",
+    "format": "oxfmt --check .",
+    "format:fix": "oxfmt --write .",
+    "ff": "oxlint --fix . && oxfmt --write .",
+    "lint": "oxlint --deny-warnings --threads 2 .",
+    "lint:fix": "oxlint --fix .",
+    "format-and-lint": "oxfmt --check . && oxlint --deny-warnings --threads 2 .",
+    "format-and-lint:fix": "oxlint --fix . && oxfmt --write .",
     "i18n:add": "node scripts/i18n-add-key.js",
     "i18n:setup-check": "node scripts/check-next-intl-setup.js",
     "i18n:check": "node scripts/run-i18n-check.js -l apps/web/messages apps/apps/messages apps/calendar/messages apps/chat/messages apps/cms/messages apps/drive/messages apps/finance/messages apps/inventory/messages apps/storefront/messages apps/mail/messages apps/nova/messages apps/rewise/messages apps/shortener/messages apps/tasks/messages apps/meet/messages apps/track/messages apps/learn/messages apps/teach/messages apps/hive/messages apps/mind/messages apps/tools/messages -s en -f i18next -o missingKeys invalidKeys -i landing.pricing.plans.enterprise.period",
@@ -326,7 +325,10 @@
     "supabase",
     "unrs-resolver"
   ],
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "optionalDependencies": {
     "@typescript/typescript-aix-ppc64": "7.0.2",
     "@typescript/typescript-darwin-arm64": "7.0.2",

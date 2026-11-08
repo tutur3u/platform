@@ -325,10 +325,7 @@ export async function GET(
       }
     }
     return acc;
-  }, new Map<
-    string,
-    { viewing_window: string | null; custom_days: number | null }
-  >());
+  }, new Map<string, { viewing_window: string | null; custom_days: number | null }>());
 
   const walletRows = (wallets ?? []) as Array<
     { id: string } & Record<string, unknown>

@@ -54,7 +54,6 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
               : { id: 'session-1', ...(mocks.inserts.at(-1) as object) },
             error: mocks.insertError,
           }),
-          // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
           then: (resolve: (value: unknown) => unknown) =>
             Promise.resolve({
               count: filters.includes('created_at')

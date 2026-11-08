@@ -30,7 +30,7 @@ const notificationApps = readdirSync(appsRoot).filter((app) => {
   const bundle = readBundle(app, 'en');
   return Boolean(
     bundle?.notifications?.types?.task_assigned &&
-      bundle.notifications.settings?.events?.task_assigned
+    bundle.notifications.settings?.events?.task_assigned
   );
 });
 

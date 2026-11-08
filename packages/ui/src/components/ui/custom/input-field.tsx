@@ -9,8 +9,7 @@ interface InputFieldProps {
   placeholder?: string;
 }
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 // Merge the two interfaces
 type Props = InputFieldProps & InputProps;

@@ -72,7 +72,6 @@ function reportQuery() {
       single = true;
       return q;
     },
-    // biome-ignore lint/suspicious/noThenProperty: emulate the real lazy PostgREST query contract.
     then: (resolve: (value: ReturnType<typeof result>) => unknown) =>
       Promise.resolve(result()).then(resolve),
   };
@@ -84,7 +83,6 @@ function publicQuery(data: unknown[]) {
     select: () => q,
     eq: () => q,
     order: () => q,
-    // biome-ignore lint/suspicious/noThenProperty: emulate the real lazy PostgREST query contract.
     then: (
       resolve: (value: {
         data: unknown[];

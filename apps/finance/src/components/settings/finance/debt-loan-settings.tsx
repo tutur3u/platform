@@ -160,13 +160,11 @@ export default function DebtLoanSettings({ workspaceId }: Props) {
     };
     const filteredCategories = categories
       .filter((c) => c.id && c.is_expense !== false)
-      .map(
-        (category): ComboboxOption => ({
-          value: category.id as string,
-          label: category.name || tCategories('unnamed_category'),
-          icon: getCategoryIcon(category),
-        })
-      );
+      .map((category): ComboboxOption => ({
+        value: category.id as string,
+        label: category.name || tCategories('unnamed_category'),
+        icon: getCategoryIcon(category),
+      }));
     return [noneOption, ...filteredCategories];
   }, [categories, t, tCategories]);
 
@@ -177,13 +175,11 @@ export default function DebtLoanSettings({ workspaceId }: Props) {
     };
     const filteredCategories = categories
       .filter((c) => c.id && c.is_expense === false)
-      .map(
-        (category): ComboboxOption => ({
-          value: category.id as string,
-          label: category.name || tCategories('unnamed_category'),
-          icon: getCategoryIcon(category),
-        })
-      );
+      .map((category): ComboboxOption => ({
+        value: category.id as string,
+        label: category.name || tCategories('unnamed_category'),
+        icon: getCategoryIcon(category),
+      }));
     return [noneOption, ...filteredCategories];
   }, [categories, t, tCategories]);
 

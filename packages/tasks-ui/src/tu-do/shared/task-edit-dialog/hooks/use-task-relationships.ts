@@ -336,18 +336,21 @@ export function useTaskRelationships({
           ? selectedProjects.filter((entry) => entry.id !== project.id)
           : [...selectedProjects, project];
 
-        await updateWorkspaceTask(metadataWorkspaceId, taskId, {
+        const saved = await updateWorkspaceTask(metadataWorkspaceId, taskId, {
           project_ids: nextSelectedProjects.map((entry) => entry.id),
         });
 
-        setSelectedProjects(nextSelectedProjects);
+        // The saved copy carries the key and number the server gave a new link.
+        setSelectedProjects(saved.task.projects ?? nextSelectedProjects);
         patchTaskInVisibleCaches({
           queryClient,
           boardId,
           taskId,
           updater: (task) => ({
             ...task,
-            projects: normalizeTaskProjects(nextSelectedProjects),
+            projects:
+              saved.task.projects ??
+              normalizeTaskProjects(nextSelectedProjects),
           }),
         });
         queryClient.invalidateQueries({ queryKey: ['task-history'] });
@@ -499,18 +502,21 @@ export function useTaskRelationships({
       } else if (taskId) {
         const nextSelectedProjects = [...selectedProjects, newProject];
 
-        await updateWorkspaceTask(metadataWorkspaceId, taskId, {
+        const saved = await updateWorkspaceTask(metadataWorkspaceId, taskId, {
           project_ids: nextSelectedProjects.map((entry) => entry.id),
         });
 
-        setSelectedProjects(nextSelectedProjects);
+        // The saved copy carries the key and number the server gave a new link.
+        setSelectedProjects(saved.task.projects ?? nextSelectedProjects);
         patchTaskInVisibleCaches({
           queryClient,
           boardId,
           taskId,
           updater: (task) => ({
             ...task,
-            projects: normalizeTaskProjects(nextSelectedProjects),
+            projects:
+              saved.task.projects ??
+              normalizeTaskProjects(nextSelectedProjects),
           }),
         });
         broadcast?.('task:relations-changed', { taskId });

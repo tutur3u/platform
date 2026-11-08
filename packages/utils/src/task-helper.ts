@@ -9,6 +9,7 @@ export * from './task-helper/relationships';
 export {
   getTaskIdentifierForSearch,
   getTaskTicketLabel,
+  getTaskTicketProject,
   getTicketIdentifier,
   isTicketIdentifierLikeQuery,
   normalizeTaskSearchValue,

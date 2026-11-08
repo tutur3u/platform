@@ -68,9 +68,9 @@ export function SatelliteWorkspaceSettingsPanel({
   const memberSettingsQuery = useQuery({
     enabled: Boolean(
       workspace?.id &&
-        activeTab === 'workspace_members' &&
-        (permissionsQuery.data?.manage_workspace_members ||
-          permissionsQuery.data?.manage_workspace_roles)
+      activeTab === 'workspace_members' &&
+      (permissionsQuery.data?.manage_workspace_members ||
+        permissionsQuery.data?.manage_workspace_roles)
     ),
     queryFn: () => getWorkspaceMemberSettings(workspace?.id ?? ''),
     queryKey: ['workspace-member-settings', workspace?.id],

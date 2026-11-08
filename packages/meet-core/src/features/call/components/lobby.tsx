@@ -195,7 +195,6 @@ export function Lobby({
   const cameraBlockedMessage = t('camera_blocked');
   const micBlockedMessage = t('lobby_mic_blocked');
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: cameraAttempt re-acquires the system default camera after its track ended.
   useEffect(() => {
     if (!videoEnabled || mediaHandedOff) return;
     if (
@@ -261,7 +260,6 @@ export function Lobby({
     videoEnabled,
   ]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: micAttempt re-acquires the system default microphone after its track ended.
   useEffect(() => {
     if (!audioEnabled || mediaHandedOff) return;
     if (

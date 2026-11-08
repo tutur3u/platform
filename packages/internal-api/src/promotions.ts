@@ -11,8 +11,7 @@ export interface WorkspaceReferralSettingsPayload {
   referral_reward_type: 'REFERRER' | 'RECEIVER' | 'BOTH';
 }
 
-export interface WorkspaceReferralSettings
-  extends WorkspaceReferralSettingsPayload {
+export interface WorkspaceReferralSettings extends WorkspaceReferralSettingsPayload {
   id?: string;
   ws_id?: string;
 }

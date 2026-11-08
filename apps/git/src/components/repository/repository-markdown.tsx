@@ -52,7 +52,6 @@ export function RepositoryMarkdown({
             return (
               // Repository Markdown can reference arbitrary aspect ratios, so
               // a native lazy image is more appropriate than next/image here.
-              // biome-ignore lint/performance/noImgElement: repository content has no trusted dimensions
               <img
                 {...props}
                 alt={alt}

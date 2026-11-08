@@ -135,8 +135,8 @@ async function isStillEditableUnsent(
   if (error) throw error;
   return Boolean(
     data &&
-      !data.sent_at &&
-      (SCHEDULE_EDITABLE_STATUSES as readonly string[]).includes(data.status)
+    !data.sent_at &&
+    (SCHEDULE_EDITABLE_STATUSES as readonly string[]).includes(data.status)
   );
 }
 

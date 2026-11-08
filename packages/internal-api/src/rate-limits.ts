@@ -7,10 +7,7 @@ import type {
   RateLimitMode,
 } from './infrastructure';
 
-export type {
-  RateLimitAbsoluteLimits,
-  RateLimitMode,
-} from './infrastructure';
+export type { RateLimitAbsoluteLimits, RateLimitMode } from './infrastructure';
 
 export interface RateLimitWindowTriple {
   day: number;

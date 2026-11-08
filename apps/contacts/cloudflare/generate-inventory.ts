@@ -10,8 +10,8 @@ const out = fileURLToPath(
 );
 const inventory = generateInventory(repo);
 const content = execFileSync(
-  resolve(repo, 'node_modules/.bin/biome'),
-  ['format', '--stdin-file-path', out],
+  resolve(repo, 'node_modules/.bin/oxfmt'),
+  ['--stdin-filepath', out],
   {
     input: JSON.stringify(routeManifest(inventory)),
     encoding: 'utf8',

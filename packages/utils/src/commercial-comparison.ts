@@ -10,6 +10,14 @@ import { features2 } from './commercial-comparison-2';
 const gateOrder = ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'];
 const advanced: ComparisonFeature[] = [
   {
+    id: 'roadmap_0',
+    app: 'roadmap',
+    category: 'developer',
+    detail: 'publicRoadmap',
+    values: ['pending', 'pending', 'pending', 'pending'],
+    pending: true,
+  },
+  {
     id: 'cronControl',
     app: 'cron-control',
     category: 'internal',

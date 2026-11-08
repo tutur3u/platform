@@ -21,7 +21,7 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      biome: ${{ steps.paths.outputs.biome }}
+      oxc: ${{ steps.paths.outputs.oxc }}
       i18n: ${{ steps.paths.outputs.i18n }}
       docs: ${{ steps.paths.outputs.docs }}
       migrations: ${{ steps.paths.outputs.migrations }}
@@ -30,14 +30,14 @@ jobs:
     steps:
       - name: Select affected checks
         id: paths
-        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
           filters: |
-            biome:
+            oxc:
               - &control '.github/**'
               - &manifest 'package.json'
               - &lock 'bun.lock'
-              - '**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx,json,jsonc,css,graphql,gql}'
+              - '**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx,json,jsonc,css,graphql,gql,md,mdx,yaml,yml,html}'
               - '.editorconfig'
               - '.gitignore'
             i18n:
@@ -150,10 +150,10 @@ jobs:
       issues: read
       pull-requests: read
 
-  biome:
+  oxc:
     needs: scope
-    if: needs.scope.outputs.biome == 'true' && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
-    uses: ./.github/workflows/biome-check.yaml
+    if: needs.scope.outputs.oxc == 'true' && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    uses: ./.github/workflows/oxc-check.yaml
     permissions:
       actions: read
       contents: write
@@ -211,8 +211,21 @@ jobs:
 
   gate:
     name: ${{ (github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'ready-for-ci') && 'Cheap PR Checks (label event)' || 'Cheap PR Checks' }}
-    if: '!cancelled()'
-    needs: [scope, branch-name, staging-hosts, admitted, biome, i18n, docs, migration-timestamps, migrations, mobile, plugin]
+    if: "!cancelled()"
+    needs:
+      [
+        scope,
+        branch-name,
+        staging-hosts,
+        admitted,
+        oxc,
+        i18n,
+        docs,
+        migration-timestamps,
+        migrations,
+        mobile,
+        plugin,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions: {}
@@ -233,7 +246,7 @@ jobs:
             'branch-name': full,
             'staging-hosts': full,
             admitted: true,
-            biome: full && scope.biome === 'true' && process.env.READY === 'true',
+            oxc: full && scope.oxc === 'true' && process.env.READY === 'true',
             i18n: full && scope.i18n === 'true' && process.env.READY === 'true',
             docs: full && scope.docs === 'true' && process.env.READY === 'true',
             'migration-timestamps': full && scope.migrations === 'true',

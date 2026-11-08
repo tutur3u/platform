@@ -1,0 +1,24 @@
+/* The owning adapter supplies @tuturuuu/ui/globals.css and its CSS processor. */
+.public-satellite-shell {
+  min-height: 100dvh;
+  background: var(--root-background);
+  color: var(--foreground);
+}
+.public-satellite-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  min-height: 5rem;
+  border-bottom: 1px solid var(--border);
+}
+.public-satellite-header nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.public-satellite-header img {
+  display: block;
+}

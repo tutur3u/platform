@@ -61,7 +61,6 @@ function builder() {
     data: { id: GUEST_ID, plan_id: PLAN_ID },
     error: null,
   }));
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
   query.then = (resolve: (value: unknown) => unknown) =>
     Promise.resolve({ data: [{ id: 'tb-1' }], error: null }).then(resolve);
   return query;
@@ -181,9 +180,8 @@ describe('Meet guest availability plan access', () => {
 
   it('leaves the signed-in branches on the existing plan policy', async () => {
     mocks.getPlan.mockResolvedValue(null);
-    const { createTimeblocks, deleteTimeblock } = await import(
-      './timeblocks.js'
-    );
+    const { createTimeblocks, deleteTimeblock } =
+      await import('./timeblocks.js');
 
     await createTimeblocks(PLAN_ID, { timeblocks: [timeblock] });
     await deleteTimeblock(PLAN_ID, 'tb-1');

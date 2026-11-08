@@ -62,9 +62,8 @@ describe('processMessagesWithFiles', () => {
       error: null,
     });
 
-    const { processMessagesWithFiles } = await import(
-      './message-file-processing'
-    );
+    const { processMessagesWithFiles } =
+      await import('./message-file-processing');
     const inputMessages: ModelMessage[] = [
       {
         role: 'user',
@@ -109,9 +108,8 @@ describe('processMessagesWithFiles', () => {
       data: new Blob([M4A_HEAD]),
       error: null,
     });
-    const { processMessagesWithFiles } = await import(
-      './message-file-processing'
-    );
+    const { processMessagesWithFiles } =
+      await import('./message-file-processing');
     const result = await processMessagesWithFiles(
       [{ role: 'user', content: 'Summarize my recording' }],
       'ws-1',
@@ -154,9 +152,8 @@ describe('processMessagesWithFiles attachment guard', () => {
       data: new Blob([new Uint8Array(bytes)]),
       error: null,
     });
-    const { processMessagesWithFiles } = await import(
-      './message-file-processing'
-    );
+    const { processMessagesWithFiles } =
+      await import('./message-file-processing');
     const [message] = await processMessagesWithFiles(
       [{ role: 'user', content: 'Look' }],
       'ws-1',
@@ -215,9 +212,8 @@ describe('processMessagesWithFiles attachment guard', () => {
 
 describe('resolveAttachmentMediaType', () => {
   it('trusts a media type storage actually recorded', async () => {
-    const { resolveAttachmentMediaType } = await import(
-      './message-file-processing'
-    );
+    const { resolveAttachmentMediaType } =
+      await import('./message-file-processing');
     expect(resolveAttachmentMediaType('shot.png', 'image/png')).toBe(
       'image/png'
     );
@@ -229,9 +225,8 @@ describe('resolveAttachmentMediaType', () => {
   it('infers from the extension when storage lost the type', async () => {
     // An image stored as application/octet-stream used to miss the image/
     // check and reached the model as an "unsupported format" note.
-    const { resolveAttachmentMediaType } = await import(
-      './message-file-processing'
-    );
+    const { resolveAttachmentMediaType } =
+      await import('./message-file-processing');
     expect(
       resolveAttachmentMediaType('shot.png', 'application/octet-stream')
     ).toBe('image/png');
@@ -247,9 +242,8 @@ describe('resolveAttachmentMediaType', () => {
   });
 
   it('stays unknown when the extension means nothing', async () => {
-    const { resolveAttachmentMediaType } = await import(
-      './message-file-processing'
-    );
+    const { resolveAttachmentMediaType } =
+      await import('./message-file-processing');
     expect(resolveAttachmentMediaType('archive.xyz', undefined)).toBe(
       'application/octet-stream'
     );
@@ -271,9 +265,8 @@ describe('listAllChatResourceFiles', () => {
   }
 
   it('pages past the 100-row storage default', async () => {
-    const { listAllChatResourceFiles } = await import(
-      './message-file-processing'
-    );
+    const { listAllChatResourceFiles } =
+      await import('./message-file-processing');
     // The default limit is 100, so a chat with more resources than that used to
     // lose everything on later pages with no error.
     const firstPage = Array.from({ length: 100 }, (_, index) => ({
@@ -295,9 +288,8 @@ describe('listAllChatResourceFiles', () => {
   });
 
   it('stops after a short page without another request', async () => {
-    const { listAllChatResourceFiles } = await import(
-      './message-file-processing'
-    );
+    const { listAllChatResourceFiles } =
+      await import('./message-file-processing');
     const { client, list } = clientReturning([[{ name: 'only.png' }]]);
 
     const { files } = await listAllChatResourceFiles(
@@ -310,9 +302,8 @@ describe('listAllChatResourceFiles', () => {
   });
 
   it('keeps what it already paged when a later page errors', async () => {
-    const { listAllChatResourceFiles } = await import(
-      './message-file-processing'
-    );
+    const { listAllChatResourceFiles } =
+      await import('./message-file-processing');
     const list = vi.fn(
       async (_path: string, options: Record<string, unknown>) =>
         (options.offset as number) === 0

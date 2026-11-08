@@ -15,9 +15,8 @@ beforeEach(() => {
 
 describe('tasks app redirects', () => {
   it('redirects old web task routes to the tasks app with query parameters', async () => {
-    const { default: TasksRedirectPage } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/tasks/[[...slug]]/page'
-    );
+    const { default: TasksRedirectPage } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/tasks/[[...slug]]/page');
 
     await TasksRedirectPage({
       params: Promise.resolve({
@@ -37,9 +36,8 @@ describe('tasks app redirects', () => {
   });
 
   it('maps old standalone task sections to first-class tasks app routes', async () => {
-    const { default: TasksRedirectPage } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/tasks/[[...slug]]/page'
-    );
+    const { default: TasksRedirectPage } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/tasks/[[...slug]]/page');
 
     await TasksRedirectPage({
       params: Promise.resolve({
@@ -56,9 +54,8 @@ describe('tasks app redirects', () => {
   });
 
   it('redirects old habit routes to the tasks app habit surface', async () => {
-    const { default: HabitsRedirectPage } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/habits/[[...slug]]/page'
-    );
+    const { default: HabitsRedirectPage } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/habits/[[...slug]]/page');
 
     await HabitsRedirectPage({
       params: Promise.resolve({
@@ -75,9 +72,8 @@ describe('tasks app redirects', () => {
   });
 
   it('redirects public shared task URLs to the tasks app', async () => {
-    const { default: SharedTaskPage } = await import(
-      '@/app/[locale]/shared/task/[shareCode]/page'
-    );
+    const { default: SharedTaskPage } =
+      await import('@/app/[locale]/shared/task/[shareCode]/page');
 
     await SharedTaskPage({
       params: Promise.resolve({ locale: 'en', shareCode: 'share/code' }),
@@ -90,9 +86,8 @@ describe('tasks app redirects', () => {
   });
 
   it('redirects public shared task board URLs to the tasks app', async () => {
-    const { default: PublicTaskBoardPage } = await import(
-      '@/app/[locale]/shared/task-boards/[code]/page'
-    );
+    const { default: PublicTaskBoardPage } =
+      await import('@/app/[locale]/shared/task-boards/[code]/page');
 
     await PublicTaskBoardPage({
       params: Promise.resolve({ code: 'board code', locale: 'vi' }),

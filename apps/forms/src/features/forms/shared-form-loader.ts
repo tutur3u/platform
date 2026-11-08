@@ -259,9 +259,9 @@ export async function loadSharedFormForPage(
           readOnlyResponseSessionId: readOnlyAnswers.sessionId,
           canRequestResponseCopy: Boolean(
             responder.authenticatedEmail &&
-              readOnlyAnswers.responseId &&
-              readOnlyAnswers.sessionId &&
-              !responseCopyAlreadySent
+            readOnlyAnswers.responseId &&
+            readOnlyAnswers.sessionId &&
+            !responseCopyAlreadySent
           ),
           responseCopyAlreadySent,
         };

@@ -164,7 +164,7 @@ partial-options test in a separate corrected-head worktree. Confirm the temporar
 legacy characterization file is absent first. Run with `flutter test --no-pub --concurrency=1` through the
 same bounded FIFO. The recorded run contains 40 unique passing mobile tests and
 scoped fatal-info Dart analysis reports No issues found. The new receipt route
-has 7 passing Vitest tests with one worker and no file parallelism; Biome is clean.
+has 7 passing Vitest tests with one worker and no file parallelism; Oxc is clean.
 
 The checked-in narrow Node runner removes executor-specific Vitest configuration.
 From the repository root, with already installed compatible dependencies:

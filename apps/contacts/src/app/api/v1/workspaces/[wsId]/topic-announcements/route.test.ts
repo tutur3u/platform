@@ -140,7 +140,6 @@ function admin() {
         data: { personal: fixture.personal, name: 'Synthetic workspace' },
         error: null,
       })),
-      // biome-ignore lint/suspicious/noThenProperty: Model the Supabase query builder await contract.
       then: (resolve: (value: unknown) => unknown) =>
         Promise.resolve({ data: rows(), error: null }).then(resolve),
     };

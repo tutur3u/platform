@@ -273,9 +273,8 @@ describe('folder export link revocation', () => {
     expect(mocks.revokeWorkspaceStorageExportLinks).not.toHaveBeenCalled();
   });
   it('does not report success when a marker write fails', async () => {
-    const { WorkspaceStorageError } = await import(
-      '@tuturuuu/storage-core/workspace-storage-provider'
-    );
+    const { WorkspaceStorageError } =
+      await import('@tuturuuu/storage-core/workspace-storage-provider');
     mocks.revokeWorkspaceStorageExportLinks.mockRejectedValue(
       new WorkspaceStorageError('Unavailable', 503)
     );

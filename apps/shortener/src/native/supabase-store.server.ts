@@ -23,7 +23,9 @@ export function createSupabaseLinkStore(
   };
   return {
     async findBySlug(slug) {
-      const { data, error } = await (await admin())
+      const { data, error } = await (
+        await admin()
+      )
         .from('shortened_links')
         .select('id, link, password_hash, password_hint')
         .eq('slug', slug)
@@ -31,7 +33,9 @@ export function createSupabaseLinkStore(
       return error || !data ? null : data;
     },
     async findById(id) {
-      const { data, error } = await (await admin())
+      const { data, error } = await (
+        await admin()
+      )
         .from('shortened_links')
         .select('id, link, password_hash')
         .eq('id', id)
@@ -39,7 +43,9 @@ export function createSupabaseLinkStore(
       return error || !data ? null : data;
     },
     async recordClick(record) {
-      const { error } = await (await admin())
+      const { error } = await (
+        await admin()
+      )
         .from('link_analytics')
         .insert(record);
       if (error) throw error;

@@ -40,7 +40,6 @@ function query(data: unknown) {
     order: vi.fn(),
     limit: vi.fn(),
     maybeSingle: vi.fn(),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
     then: (resolve: (result: unknown) => unknown) =>
       Promise.resolve(resolve({ data, error: null })),
   };

@@ -24,7 +24,6 @@ function fixture(membershipError = false) {
               : [{ task_id: 'project-ticket' }],
           error: null,
         })),
-        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
         then: (resolve: (value: unknown) => unknown) =>
           Promise.resolve({
             data: [{ ws_id: 'source' }],
