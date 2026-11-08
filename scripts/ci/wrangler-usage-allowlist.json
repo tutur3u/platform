@@ -693,6 +693,36 @@
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
+    "apps/git/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7638",
+        "reason": "REV-7638: the gitignore names .void-wrangler.jsonc so generated local adapter state stays untracked. It does not invoke wrangler. The shared-toolchain gap and its removal condition remain."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/git/cloudflare/anonymous.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7639",
+        "reason": "REV-7639: local unstable_startWorker checks anonymous ingress on the emitted config. Remote is disabled and provider auth is denied. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/git/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7638",
+        "reason": "REV-7638: the pinned Wrangler devDependency supplies unstable_startWorker for the local emitted-Worker fixture. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
     "apps/inventory/.gitignore": {
       "lines": 1,
       "uses": 1,
