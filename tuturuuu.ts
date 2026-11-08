@@ -292,6 +292,12 @@ export const vercelWorkflowTargets = [
 ] satisfies VercelWorkflowTarget[];
 
 export const cloudflareProductionTargets = [
+  {
+    app: 'chat',
+    appPath: 'apps/chat',
+    packageName: '@tuturuuu/chat',
+    productionWorkflow: 'chat-cloudflare.yaml',
+  },
   ...(['calendar', 'mail', 'apps'] as const).map((app) => ({
     app,
     appPath: `apps/${app}`,
