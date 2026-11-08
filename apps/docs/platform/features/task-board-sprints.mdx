@@ -10,10 +10,22 @@ today's views. A workspace member who can edit the board turns sprints on from
 Board settings by picking a length of one or two weeks; Off turns them off again
 and keeps every past sprint and report.
 
-Board cycles ship dark. Until verified Tuturuuu staff set the workspace secret
-`ENABLE_BOARD_CYCLES=true`, the Board settings card stays hidden, and turning
-sprints on, editing goals, moving tasks, starting and ending all return 403
-`BOARD_CYCLES_NOT_ENABLED`. Reading sprints and turning them off still work.
+The retained-schema release has a source barrier that keeps board cycles off,
+including when `ENABLE_BOARD_CYCLES=true`. Reads return the unavailable shape
+without querying sprint tables or RPCs. Every sprint write, including turning
+sprints off, returns 403 `BOARD_CYCLES_NOT_ENABLED` before database access.
+`release-barrier.test.ts` covers member and guest requests. Workspace cycles
+remain available through the legacy-compatible `assign_task_cycle` RPC.
+
+The Task board database contract explicitly selects
+`--profile=retained-workspace-cycles` for this schema. It replays the complete
+retained migration chain, checks that sprint schema and RPCs are absent, tests
+workspace-cycle assignment and workspace guards, runs the unchanged project
+ticket fixture, and generates actual types. The profile pins the release barrier
+and its negative tests, and refuses held sprint migration versions. Changing
+those pins requires independent review. With no profile argument, the driver
+runs the full board-sprint fixtures unchanged; those fixtures require the
+separately admitted sprint schema.
 
 A sprint is a task cycle with a `board_id`. A board has at most five open
 sprints: one running and the sprints planned after it. The earliest planned
@@ -195,7 +207,13 @@ personal planner still writes `tasks.end_date` for the day it plans, so planner
 tasks count as having their own due date.
 
 Regression coverage: `apps/database/supabase/tests/task-board-sprints.sql`
-(run by the Task board database contract workflow),
+remains in the unchanged default full-sprint profile, which requires the
+separately admitted sprint schema. The retained Task board database contract
+workflow runs `apps/database/supabase/tests/task-board-retained-cycles.sql`,
+`apps/database/supabase/tests/task-cycle-workspace-guard.sql` and
+`apps/database/supabase/tests/task-project-ticket-keys.sql`.
+
+Additional coverage:
 `apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/sprints/route.test.ts`,
 `apps/tasks/src/app/api/v1/workspaces/[wsId]/task-cycles/[cycleId]/route.test.ts`,
 `packages/utils/src/task-helper/sprints.test.ts` and

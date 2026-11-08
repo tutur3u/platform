@@ -38,13 +38,48 @@ vi.mock('../lists/access', () => ({
     requireBoardAccessMock(...args),
 }));
 
-import { serializeSprint } from './_lib';
-import { POST as END } from './[sprintId]/end/route';
-import { DELETE, PATCH } from './[sprintId]/route';
-import { POST as START } from './[sprintId]/start/route';
-import { POST as MOVE } from './[sprintId]/tasks/route';
-import { POST as ADD, GET, PUT } from './route';
-import { POST as UNPLAN } from './unplanned/route';
+import { serializeSprint, type SprintRouteParams } from './_lib';
+import {
+  addBoardSprint,
+  endBoardSprint,
+  moveBoardSprintTasks,
+  readBoardSprintState,
+  removeBoardSprint,
+  unplanBoardSprintTasks,
+  updateBoardSprint,
+  updateBoardSprintLength,
+} from './_operations';
+import { POST as HTTP_END } from './[sprintId]/end/route';
+import { DELETE as HTTP_DELETE, PATCH as HTTP_PATCH } from './[sprintId]/route';
+import { POST as HTTP_START } from './[sprintId]/start/route';
+import { POST as HTTP_MOVE } from './[sprintId]/tasks/route';
+import { POST as HTTP_ADD, PUT as HTTP_PUT } from './route';
+import { POST as HTTP_UNPLAN } from './unplanned/route';
+
+type SprintOperation = (
+  context: Parameters<typeof readBoardSprintState>[0]
+) => Promise<Response>;
+
+function businessUnit(operation: SprintOperation) {
+  return async (
+    request: NextRequest,
+    context: { params: Promise<SprintRouteParams> }
+  ) =>
+    operation({
+      request,
+      params: await context.params,
+      access: await requireBoardAccessMock(),
+    });
+}
+
+const GET = businessUnit(readBoardSprintState);
+const PUT = businessUnit(updateBoardSprintLength);
+const ADD = businessUnit(addBoardSprint);
+const PATCH = businessUnit(updateBoardSprint);
+const DELETE = businessUnit(removeBoardSprint);
+const END = businessUnit(endBoardSprint);
+const MOVE = businessUnit(moveBoardSprintTasks);
+const UNPLAN = businessUnit(unplanBoardSprintTasks);
 
 const BOARD_ID = '00000000-0000-4000-8000-000000000b01';
 const SPRINT_ID = '00000000-0000-4000-8000-000000000c14';
@@ -194,7 +229,7 @@ const params = (sprintId?: string) => ({
   params: Promise.resolve({ wsId: 'ws-1', boardId: BOARD_ID, sprintId }),
 });
 
-describe('board sprint routes', () => {
+describe('board sprint business routines with prepared board access', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -337,12 +372,12 @@ describe('board sprint routes', () => {
     const sbAdmin = createAdmin({});
     grantAccess(sbAdmin, 'guest');
 
-    const length = await PUT(
+    const length = await HTTP_PUT(
       request('PUT', { sprint_length_weeks: 1 }),
       params()
     );
-    const start = await START(request('POST', {}), params(SPRINT_ID));
-    const end = await END(request('POST', {}), params(SPRINT_ID));
+    const start = await HTTP_START(request('POST', {}), params(SPRINT_ID));
+    const end = await HTTP_END(request('POST', {}), params(SPRINT_ID));
 
     expect([length.status, start.status, end.status]).toEqual([403, 403, 403]);
     expect(sbAdmin.rpc).not.toHaveBeenCalled();
@@ -539,9 +574,9 @@ describe('board sprint routes', () => {
     grantAccess(sbAdmin);
 
     const responses = [
-      await ADD(request('POST', {}), params()),
-      await DELETE(request('DELETE'), params(SPRINT_ID)),
-      await UNPLAN(request('POST', { task_ids: [TASK_A] }), params()),
+      await HTTP_ADD(request('POST', {}), params()),
+      await HTTP_DELETE(request('DELETE'), params(SPRINT_ID)),
+      await HTTP_UNPLAN(request('POST', { task_ids: [TASK_A] }), params()),
     ];
 
     for (const response of responses) {
@@ -584,11 +619,11 @@ describe('board sprint routes', () => {
       grantAccess(sbAdmin);
 
       const responses = await Promise.all([
-        PUT(request('PUT', { sprint_length_weeks: 1 }), params()),
-        PATCH(request('PATCH', { goal: 'Ship' }), params(SPRINT_ID)),
-        START(request('POST', {}), params(SPRINT_ID)),
-        END(request('POST', {}), params(SPRINT_ID)),
-        MOVE(request('POST', { task_ids: [TASK_A] }), params(SPRINT_ID)),
+        HTTP_PUT(request('PUT', { sprint_length_weeks: 1 }), params()),
+        HTTP_PATCH(request('PATCH', { goal: 'Ship' }), params(SPRINT_ID)),
+        HTTP_START(request('POST', {}), params(SPRINT_ID)),
+        HTTP_END(request('POST', {}), params(SPRINT_ID)),
+        HTTP_MOVE(request('POST', { task_ids: [TASK_A] }), params(SPRINT_ID)),
       ]);
 
       expect(responses.map((response) => response.status)).toEqual([
@@ -607,7 +642,7 @@ describe('board sprint routes', () => {
       });
       grantAccess(sbAdmin);
 
-      const response = await START(request('POST', {}), params(SPRINT_ID));
+      const response = await HTTP_START(request('POST', {}), params(SPRINT_ID));
 
       expect(response.status).toBe(403);
       expect(sbAdmin.rpc).not.toHaveBeenCalled();

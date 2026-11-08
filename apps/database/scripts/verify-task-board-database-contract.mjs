@@ -2,6 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { taskBoardContractFixtures } from './task-board-contract-profile.mjs';
 import { ensureSupabaseBinary, runCommand } from './run-supabase.js';
 import {
   chooseAvailablePortBlock,
@@ -20,6 +21,24 @@ const identity = deriveIsolatedIdentity({
   headSha,
   repositoryPath: repositoryRoot,
 });
+const contractFiles = execFileSync(
+  'git',
+  ['ls-files', '-z', 'apps/database/supabase', 'apps/database/rollbacks'],
+  { encoding: 'utf8' }
+)
+  .split('\0')
+  .filter(Boolean);
+const trackedFiles = contractFiles.filter((file) =>
+  file.startsWith('apps/database/supabase/')
+);
+const fixtures = taskBoardContractFixtures({
+  args: process.argv.slice(2),
+  trackedFiles: contractFiles,
+  readSource: (file) => readFileSync(path.resolve(repositoryRoot, file)),
+});
+console.log(
+  `Task board contract profile: ${process.argv[2] ?? 'full-board-sprints'}`
+);
 const names = execFileSync('docker', ['ps', '-a', '--format', '{{.Names}}'], {
   encoding: 'utf8',
 })
@@ -27,22 +46,6 @@ const names = execFileSync('docker', ['ps', '-a', '--format', '{{.Names}}'], {
   .split('\n');
 if (hasProjectCollision(identity.projectId, names))
   throw new Error('Owned isolated project collision');
-const trackedFiles = execFileSync(
-  'git',
-  ['ls-files', '-z', 'apps/database/supabase'],
-  { encoding: 'utf8' }
-)
-  .split('\0')
-  .filter(Boolean);
-// Task board SQL fixtures: board sprints, their RPCs, every sprint
-// membership transition, planning several sprints ahead and project ticket
-// keys.
-const fixtures = [
-  'task-board-sprints.sql',
-  'task-board-sprint-transitions.sql',
-  'task-board-sprint-horizon.sql',
-  'task-project-ticket-keys.sql',
-];
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
   repositoryRoot,

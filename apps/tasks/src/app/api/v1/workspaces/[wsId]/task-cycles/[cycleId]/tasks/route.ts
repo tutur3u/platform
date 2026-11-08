@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
   cyclePlanningTaskSelect,
+  isCycleBoardScopeUnavailable,
   isCurrentlyInCycle,
   type RawPlanningTask,
   toCyclePlanningTask,
@@ -105,17 +106,28 @@ export const GET = withSessionAuth<RouteParams>(
       // in_cycle narrows the fetch to tasks linked to this cycle; cycle_links
       // keeps only links to live workspace cycles, so board-sprint history
       // rows and deleted cycles never decide where a task is listed.
-      const { data, error } = await sbAdmin
-        .from('tasks')
-        .select(cyclePlanningTaskSelect('cycle'))
-        .eq('in_cycle.cycle_id', cycleId)
-        .is('cycle_links.cycle.board_id', null)
-        .not('cycle_links.cycle.deleted', 'is', true)
-        .eq('list.board.ws_id', access.wsId)
-        .in('list.status', [...CYCLE_PLANNABLE_LIST_STATUSES])
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false })
-        .limit(MAX_CYCLE_TASKS);
+      const queryTasks = async (withBoardScope: boolean) => {
+        let query = sbAdmin
+          .from('tasks')
+          .select(cyclePlanningTaskSelect('cycle'))
+          .eq('in_cycle.cycle_id', cycleId)
+          .not('cycle_links.cycle.deleted', 'is', true)
+          .eq('list.board.ws_id', access.wsId)
+          .in('list.status', [...CYCLE_PLANNABLE_LIST_STATUSES])
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false })
+          .limit(MAX_CYCLE_TASKS);
+
+        if (withBoardScope) {
+          query = query.is('cycle_links.cycle.board_id', null);
+        }
+        return query;
+      };
+      let result = await queryTasks(true);
+      if (isCycleBoardScopeUnavailable(result.error)) {
+        result = await queryTasks(false);
+      }
+      const { data, error } = result;
 
       if (error) return failed('Failed to fetch cycle tasks', error);
 

@@ -21,17 +21,22 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 function query() {
-  const builder: Record<string, unknown> = {};
-  for (const method of ['select', 'eq', 'is', 'in', 'not', 'order']) {
-    builder[method] = (...args: unknown[]) => {
+  const methods = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    is: vi.fn(),
+    in: vi.fn(),
+    not: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn(),
+  };
+  const builder = Object.assign(Promise.resolve(mocks.result), methods);
+  for (const [method, mock] of Object.entries(methods)) {
+    mock.mockImplementation((...args: unknown[]) => {
       mocks.calls.push([method, ...args]);
       return builder;
-    };
+    });
   }
-  builder.limit = (...args: unknown[]) => {
-    mocks.calls.push(['limit', ...args]);
-    return Promise.resolve(mocks.result);
-  };
   return builder;
 }
 
