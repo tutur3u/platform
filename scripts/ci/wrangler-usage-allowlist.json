@@ -213,6 +213,16 @@
       },
       "digest": "cb1eac45554ff87ab8162c58fab72a218b6d4efffe8fbddbd3d6cfb272fabd5c"
     },
+    ".github/workflows/nova-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7846",
+        "reason": "REV-7846: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "12bb1c7c1a654e1c2291d0970d35c323328f40829b89d576b4fcd659dabc73ca"
+    },
     ".github/workflows/parley-cloudflare.yaml": {
       "lines": 3,
       "uses": 4,
@@ -630,6 +640,36 @@
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/7085",
         "reason": "Drive follows the Wave 1 Start + Void template: Void rebuilds on deploy, so the exact Void-emitted Worker is qualified with the pinned Wrangler adapter (generated .void-wrangler.jsonc ignored, dependency pin). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/external/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7625",
+        "reason": "REV-7625: the gitignore names .void-wrangler.jsonc so generated local adapter state stays untracked. It does not invoke wrangler. The shared-toolchain gap and its removal condition remain."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/external/cloudflare/anonymous.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7627",
+        "reason": "REV-7627: local unstable_startWorker checks anonymous ingress on the emitted config. Remote is disabled and provider auth is denied. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/external/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7625",
+        "reason": "REV-7625: the pinned Wrangler devDependency supplies unstable_startWorker for the local emitted-Worker fixture. The void-emitted runtime gap and its removal condition remain."
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
