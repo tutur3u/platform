@@ -7358,6 +7358,63 @@
       "tablet": "Tablet"
     }
   },
+  "feature-flags": {
+    "columns": {
+      "apps": "Apps",
+      "created": "Created",
+      "flag": "Flag",
+      "kind": "Kind",
+      "owner": "Owner",
+      "remove_by": "Remove by",
+      "verified": "Verified on prod"
+    },
+    "environments": {
+      "development": "Development",
+      "production": "Production",
+      "staging": "Staging"
+    },
+    "families": {
+      "mobile_build": "Mobile build",
+      "mobile_runtime": "Mobile runtime",
+      "workspace_secret": "Workspace settings"
+    },
+    "kinds": {
+      "kill_switch": "Kill switch",
+      "operational": "Operational",
+      "release": "Release",
+      "safety_control": "Safety control",
+      "workspace_gate": "Workspace gate"
+    },
+    "lifecycle": {
+      "awaiting_verification": "Awaiting verification",
+      "overdue": "Overdue",
+      "retained": "Retained",
+      "scheduled": "Scheduled"
+    },
+    "scopes": {
+      "build": "Build time",
+      "global": "Global",
+      "workspace": "Per workspace"
+    },
+    "summary": {
+      "awaitingVerification": "Awaiting prod verification",
+      "legacy": "Legacy metadata",
+      "overdue": "Overdue",
+      "scheduled": "Removal scheduled",
+      "total": "Flags"
+    },
+    "title": "Feature Flags",
+    "values": {
+      "default_off": "Default off",
+      "default_on": "Default on",
+      "legacy_unknown": "Unknown (legacy)",
+      "not_recorded": "Not recorded",
+      "not_verified": "Not verified",
+      "partial": "Partial",
+      "unknown": "Unknown",
+      "untraced": "Untraced"
+    }
+  },
   "finance": {
     "expense": "Expense",
     "failed_to_load_categories": "Failed to load categories",
@@ -8915,6 +8972,7 @@
     "email_templates": "Email Templates",
     "entity_creation_limits": "Entity Creation Limits",
     "external_apps": "External Apps",
+    "feature_flags": "Feature Flags",
     "features": "Features",
     "fleet": "Fleet",
     "fleet_runs": "Runs",

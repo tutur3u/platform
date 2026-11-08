@@ -855,6 +855,7 @@
         "@tuturuuu/cloudflare": "workspace:*",
         "@tuturuuu/devbox": "workspace:*",
         "@tuturuuu/email-service": "workspace:*",
+        "@tuturuuu/feature-flags": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/meet-core": "workspace:*",
