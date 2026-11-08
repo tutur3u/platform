@@ -3,7 +3,7 @@ import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
 export const generateMetadata = createLocalizedMarketingMetadata({
   namespace: 'marketingSeo.meet',
-  pathname: '/meet',
+  pathname: '/products/meet',
 });
 
 interface TumeetPageProps {
@@ -15,5 +15,7 @@ interface TumeetPageProps {
 }
 
 export default async function TumeetPage({ searchParams }: TumeetPageProps) {
-  return <MeetTogetherPage searchParams={searchParams} />;
+  return (
+    <MeetTogetherPage searchParams={searchParams} path="/products/meet/plans" />
+  );
 }
