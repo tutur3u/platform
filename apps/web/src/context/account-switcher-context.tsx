@@ -334,7 +334,12 @@ export function AccountSwitcherProvider({
   }, [logoutMutation, navigateAfterMutation]);
 
   const logoutAll = useCallback(async () => {
-    window.localStorage.removeItem(LEGACY_MULTI_SESSION_STORAGE_KEY);
+    try {
+      window.localStorage.removeItem(LEGACY_MULTI_SESSION_STORAGE_KEY);
+    } catch {
+      // Storage can throw SecurityError. Server revocation still has to run.
+    }
+
     const response = await logoutAllMutation.mutateAsync();
     await navigateAfterMutation(toAccountOperationResult(response));
   }, [logoutAllMutation, navigateAfterMutation]);
