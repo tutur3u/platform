@@ -9,6 +9,7 @@ const {
   buildWorkflowRunsUrl,
   dispatchDependentWorkflows,
   dispatchRelatedWorkflow,
+  getWorkflowActivationState,
   gateChangedPackageVersions,
   gatePackageRelease,
   getChangedFiles,
@@ -480,6 +481,225 @@ test('dependent workflow dispatch targets direct unpublished dependents only', a
     }),
     /Refusing to dispatch dependent workflows before @tuturuuu\/internal-api@2\.0\.0 is visible on npm/
   );
+});
+
+function writeUnpublishedDependents(rootDir) {
+  writeJson(path.join(rootDir, 'packages/ui/package.json'), {
+    dependencies: {
+      '@tuturuuu/internal-api': 'workspace:*',
+    },
+    name: '@tuturuuu/ui',
+    version: '5.0.0',
+  });
+  writeJson(path.join(rootDir, 'packages/sdk/package.json'), {
+    dependencies: {
+      '@tuturuuu/internal-api': 'workspace:*',
+    },
+    name: 'tuturuuu',
+    version: '6.0.0',
+  });
+  writeWorkflow(rootDir, 'release-ui-package.yaml', 'packages/ui');
+  writeWorkflow(rootDir, 'release-sdk-package.yaml', 'packages/sdk');
+}
+
+test('dependent workflow dispatch skips an inactive workflow before posting', async () => {
+  const rootDir = createFixtureRoot();
+  const dispatchedWorkflows = [];
+  const logs = [];
+
+  writeUnpublishedDependents(rootDir);
+
+  const dispatched = await dispatchDependentWorkflows({
+    dispatchWorkflow: async ({ workflowName }) => {
+      dispatchedWorkflows.push(workflowName);
+    },
+    getWorkflowState: async ({ workflowName }) => ({
+      state:
+        workflowName === 'release-sdk-package.yaml'
+          ? 'disabled_manually'
+          : 'active',
+    }),
+    logger: {
+      log(message) {
+        logs.push(message);
+      },
+    },
+    packageDir: 'packages/internal-api',
+    repoRoot: rootDir,
+    versionExists: createVersionExists(
+      new Set(['@tuturuuu/internal-api@2.0.0'])
+    ),
+  });
+
+  assert.deepEqual(dispatchedWorkflows, ['release-ui-package.yaml']);
+  assert.deepEqual(
+    dispatched.map((dependent) => dependent.workflowName),
+    ['release-ui-package.yaml']
+  );
+  assert.match(
+    logs.join('\n'),
+    /Skipping release-sdk-package\.yaml: workflow state is disabled_manually\./
+  );
+});
+
+test('dependent workflow dispatch logs a disabled-workflow 422 and still fails other errors', async () => {
+  const rootDir = createFixtureRoot();
+  const logs = [];
+
+  writeUnpublishedDependents(rootDir);
+
+  const dispatched = await dispatchDependentWorkflows({
+    dispatchWorkflow: async ({ workflowName }) => {
+      if (workflowName === 'release-sdk-package.yaml') {
+        throw new Error(
+          'Unable to dispatch release-sdk-package.yaml on production: 422 Unprocessable Entity {"message":"Cannot trigger workflow_dispatch on a disabled workflow"}'
+        );
+      }
+    },
+    getWorkflowState: async () => ({ state: 'active' }),
+    logger: {
+      log(message) {
+        logs.push(message);
+      },
+    },
+    packageDir: 'packages/internal-api',
+    repoRoot: rootDir,
+    versionExists: createVersionExists(
+      new Set(['@tuturuuu/internal-api@2.0.0'])
+    ),
+  });
+
+  assert.deepEqual(
+    dispatched.map((dependent) => dependent.workflowName),
+    ['release-ui-package.yaml']
+  );
+  assert.match(logs.join('\n'), /Skipping release-sdk-package\.yaml: .*422/);
+  assert.match(logs.join('\n'), /disabled workflow/);
+
+  await assert.rejects(
+    dispatchDependentWorkflows({
+      dispatchWorkflow: async () => {
+        throw new Error(
+          'Unable to dispatch release-sdk-package.yaml on production: 422 Unprocessable Entity {"message":"Workflow does not have workflow_dispatch trigger"}'
+        );
+      },
+      getWorkflowState: async () => ({ state: 'unknown' }),
+      logger: silentLogger,
+      packageDir: 'packages/internal-api',
+      repoRoot: rootDir,
+      versionExists: createVersionExists(
+        new Set(['@tuturuuu/internal-api@2.0.0'])
+      ),
+    }),
+    /Workflow does not have workflow_dispatch trigger/
+  );
+
+  await assert.rejects(
+    dispatchDependentWorkflows({
+      dispatchWorkflow: async () => {
+        throw new Error('Unable to dispatch release-ui-package.yaml: 403 Forbidden');
+      },
+      getWorkflowState: async () => ({ state: 'active' }),
+      logger: silentLogger,
+      packageDir: 'packages/internal-api',
+      repoRoot: rootDir,
+      versionExists: createVersionExists(
+        new Set(['@tuturuuu/internal-api@2.0.0', 'tuturuuu@6.0.0'])
+      ),
+    }),
+    /403 Forbidden/
+  );
+});
+
+test('reads workflow activation state and fails on other lookup errors', async () => {
+  const env = {
+    GH_TOKEN: 'token',
+    GITHUB_API_URL: 'https://api.github.test',
+    GITHUB_REPOSITORY: 'tutur3u/platform',
+  };
+  const calls = [];
+
+  const disabled = await getWorkflowActivationState({
+    env,
+    fetchImpl: async (url, options) => {
+      calls.push({ options, url });
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        async text() {
+          return JSON.stringify({ state: 'disabled_manually' });
+        },
+      };
+    },
+    workflowName: 'release-sdk-package.yaml',
+  });
+
+  assert.deepEqual(disabled, { state: 'disabled_manually' });
+  assert.equal(
+    calls[0].url,
+    'https://api.github.test/repos/tutur3u/platform/actions/workflows/release-sdk-package.yaml'
+  );
+  assert.equal(calls[0].options.headers.Authorization, 'Bearer token');
+
+  const fromDispatchError = await getWorkflowActivationState({
+    env,
+    fetchImpl: async () => ({
+      ok: false,
+      status: 422,
+      statusText: 'Unprocessable Entity',
+      async text() {
+        return JSON.stringify({
+          message: 'Cannot trigger workflow_dispatch on a disabled workflow',
+        });
+      },
+    }),
+    workflowName: 'release-sdk-package.yaml',
+  });
+
+  assert.deepEqual(fromDispatchError, { state: 'disabled' });
+
+  await assert.rejects(
+    getWorkflowActivationState({
+      env,
+      fetchImpl: async () => ({
+        ok: false,
+        status: 500,
+        statusText: 'Server Error',
+        async text() {
+          return 'boom';
+        },
+      }),
+      workflowName: 'release-sdk-package.yaml',
+    }),
+    /Unable to read release-sdk-package\.yaml: 500 Server Error boom/
+  );
+
+  await assert.rejects(
+    getWorkflowActivationState({
+      env,
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        async text() {
+          return '{}';
+        },
+      }),
+      workflowName: 'release-sdk-package.yaml',
+    }),
+    /workflow state is missing/
+  );
+
+  const unknown = await getWorkflowActivationState({
+    env: {},
+    fetchImpl: async () => {
+      throw new Error('lookup should not run without credentials');
+    },
+    workflowName: 'release-sdk-package.yaml',
+  });
+
+  assert.deepEqual(unknown, { state: 'unknown' });
 });
 
 test('platform changed package gate reports ready when changed versions are visible', async () => {

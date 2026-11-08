@@ -631,9 +631,85 @@ async function gatePackageRelease({
   return outputs;
 }
 
+function isDisabledWorkflowDispatchError(error) {
+  const message = String(error?.message ?? error ?? '');
+
+  return /\b422\b/.test(message) && /disabled workflow/i.test(message);
+}
+
+function buildWorkflowUrl({ env = process.env, workflowName }) {
+  if (!env.GITHUB_REPOSITORY || !workflowName) return null;
+
+  const apiUrl = (env.GITHUB_API_URL || DEFAULT_GITHUB_API_URL).replace(
+    /\/$/u,
+    ''
+  );
+
+  return `${apiUrl}/repos/${env.GITHUB_REPOSITORY}/actions/workflows/${encodeURIComponent(workflowName)}`;
+}
+
+async function getWorkflowActivationState({
+  env = process.env,
+  fetchImpl = globalThis.fetch,
+  workflowName,
+}) {
+  const url = buildWorkflowUrl({ env, workflowName });
+  const token = getGitHubToken(env);
+
+  if (!url || !token || typeof fetchImpl !== 'function') {
+    return { state: 'unknown' };
+  }
+
+  const response = await fetchImpl(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'tuturuuu-package-release-readiness',
+    },
+  });
+  let body = '';
+
+  try {
+    body = await response.text();
+  } catch {
+    body = '';
+  }
+
+  if (!response.ok) {
+    const error = new Error(
+      `Unable to read ${workflowName}: ${response.status} ${response.statusText}${
+        body ? ` ${body}` : ''
+      }`
+    );
+
+    if (isDisabledWorkflowDispatchError(error)) {
+      return { state: 'disabled' };
+    }
+
+    throw error;
+  }
+
+  let workflowState = '';
+
+  try {
+    workflowState = JSON.parse(body).state || '';
+  } catch {
+    workflowState = '';
+  }
+
+  if (!workflowState) {
+    throw new Error(
+      `Unable to read ${workflowName}: workflow state is missing.`
+    );
+  }
+
+  return { state: workflowState };
+}
+
 async function dispatchDependentWorkflows({
   dispatchWorkflow = dispatchRelatedWorkflow,
   env = process.env,
+  getWorkflowState = async () => ({ state: 'unknown' }),
   logger = console,
   packageDir,
   registry = DEFAULT_REGISTRY,
@@ -671,11 +747,34 @@ async function dispatchDependentWorkflows({
   }
 
   for (const dependent of dependents) {
-    await dispatchWorkflow({
+    const activation = await getWorkflowState({
       env,
-      logger,
       workflowName: dependent.workflowName,
     });
+    const workflowState = activation?.state || 'unknown';
+
+    if (workflowState !== 'active' && workflowState !== 'unknown') {
+      logger.log(
+        `Skipping ${dependent.workflowName}: workflow state is ${workflowState}.`
+      );
+      continue;
+    }
+
+    try {
+      await dispatchWorkflow({
+        env,
+        logger,
+        workflowName: dependent.workflowName,
+      });
+    } catch (error) {
+      if (!isDisabledWorkflowDispatchError(error)) {
+        throw error;
+      }
+
+      logger.log(`Skipping ${dependent.workflowName}: ${error.message}`);
+      continue;
+    }
+
     dispatched.push(dependent);
   }
 
@@ -1054,6 +1153,7 @@ async function runCli(argv = process.argv.slice(2), env = process.env) {
     await dispatchDependentWorkflows({
       ...waitOptions,
       env,
+      getWorkflowState: getWorkflowActivationState,
       packageDir,
       repoRoot,
     });
@@ -1154,6 +1254,7 @@ module.exports = {
   buildWorkflowDispatchUrl,
   dispatchDependentWorkflows,
   dispatchRelatedWorkflow,
+  getWorkflowActivationState,
   gateChangedPackageVersions,
   gatePackageRelease,
   getBeforeRefFromEventPayload,

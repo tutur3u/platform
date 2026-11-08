@@ -362,28 +362,82 @@ jobs:
             throw new Error('Missing GitHub token, repository, or ref for dependent dispatch.');
           }
 
+          function isDisabledWorkflowResponse(status, body) {
+            return status === 422 && /disabled workflow/i.test(body);
+          }
+
           (async () => {
             for (const workflowName of workflows) {
-              const url =
+              const workflowUrl =
                 'https://api.github.com/repos/' +
                 repository +
                 '/actions/workflows/' +
-                encodeURIComponent(workflowName) +
-                '/dispatches';
+                encodeURIComponent(workflowName);
+              const headers = {
+                Authorization: `Bearer ${token}`,
+                'X-GitHub-Api-Version': '2022-11-28',
+                'User-Agent': 'tuturuuu-package-release-dispatch',
+              };
+              const workflowResponse = await fetch(workflowUrl, { headers });
+              const workflowBody = await workflowResponse.text().catch(() => '');
 
-              const response = await fetch(url, {
+              if (!workflowResponse.ok) {
+                if (
+                  isDisabledWorkflowResponse(workflowResponse.status, workflowBody)
+                ) {
+                  console.log(
+                    `Skipping ${workflowName}: workflow is disabled (${workflowResponse.status}).`
+                  );
+                  continue;
+                }
+
+                throw new Error(
+                  `Unable to read ${workflowName}: ${workflowResponse.status} ${workflowResponse.statusText}${
+                    workflowBody ? ` ${workflowBody}` : ''
+                  }`
+                );
+              }
+
+              let workflowState = '';
+
+              try {
+                workflowState = JSON.parse(workflowBody).state || '';
+              } catch {
+                workflowState = '';
+              }
+
+              if (!workflowState) {
+                throw new Error(
+                  `Unable to read ${workflowName}: workflow state is missing.`
+                );
+              }
+
+              if (workflowState !== 'active') {
+                console.log(
+                  `Skipping ${workflowName}: workflow state is ${workflowState}.`
+                );
+                continue;
+              }
+
+              const response = await fetch(workflowUrl + '/dispatches', {
                 body: JSON.stringify({ ref }),
                 headers: {
-                  Authorization: `Bearer ${token}`,
+                  ...headers,
                   'Content-Type': 'application/json',
-                  'X-GitHub-Api-Version': '2022-11-28',
-                  'User-Agent': 'tuturuuu-package-release-dispatch',
                 },
                 method: 'POST',
               });
 
               if (!response.ok) {
                 const body = await response.text().catch(() => '');
+
+                if (isDisabledWorkflowResponse(response.status, body)) {
+                  console.log(
+                    `Skipping ${workflowName}: workflow is disabled (${response.status}).`
+                  );
+                  continue;
+                }
+
                 throw new Error(
                   `Unable to dispatch ${workflowName} on ${ref}: ${response.status} ${response.statusText}${
                     body ? ` ${body}` : ''
