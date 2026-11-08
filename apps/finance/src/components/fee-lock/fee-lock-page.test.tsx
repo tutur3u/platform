@@ -137,6 +137,7 @@ describe('FeeLockPage', () => {
       export: 'export',
       export_all: 'export_all',
       export_failed: 'export_failed',
+      export_include_notice: 'export_include_notice',
       export_locked_only: 'export_locked_only',
       export_title: 'export_title',
     });
