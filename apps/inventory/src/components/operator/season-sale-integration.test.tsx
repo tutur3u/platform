@@ -133,6 +133,7 @@ beforeAll(() => {
 });
 beforeEach(() => {
   vi.clearAllMocks();
+  sessionStorage.clear();
   Object.defineProperty(navigator, 'onLine', {
     configurable: true,
     value: true,
@@ -163,6 +164,45 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 describe('mounted season sales integrations', () => {
+  it('retains a manual period across two consecutive Keep open sales and remount', async () => {
+    const sale = (
+      <SaleCreateDialog
+        wsId="ws"
+        workspaceCurrency="VND"
+        products={products}
+        periods={[{ ...period, pricing_mode: 'legacy' }]}
+        options={options}
+      />
+    );
+    const first = mount(sale);
+    fireEvent.click(screen.getByRole('button', { name: 'Record sale' }));
+    fireEvent.click(screen.getByRole('combobox', { name: 'Sales period' }));
+    fireEvent.click(await screen.findByRole('option', { name: period.name }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Keep open' }));
+    await add('Alpha');
+    review();
+    await waitFor(() => expect(api.sale).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: /Items/ })).toHaveAttribute(
+        'data-state',
+        'active'
+      )
+    );
+    await add('Beta');
+    review();
+    await waitFor(() => expect(api.sale).toHaveBeenCalledTimes(2));
+    expect(api.sale.mock.calls.map((call) => call[1].period_id)).toEqual([
+      period.id,
+      period.id,
+    ]);
+    first.unmount();
+    mount(sale);
+    fireEvent.click(screen.getByRole('button', { name: 'Record sale' }));
+    expect(
+      await screen.findByRole('button', { name: 'Add Alpha' })
+    ).toBeTruthy();
+  });
+
   it.each(['scheduled', 'legacy'] as const)(
     'keeps A while searching B and submitting both in %s mode',
     async (mode) => {
