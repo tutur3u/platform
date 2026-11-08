@@ -43,7 +43,7 @@ export function UiDocsCommandMenu({
 
   function navigate(slug: string) {
     onOpenChange(false);
-    router.push(`/${locale}/ui/components/${slug}`);
+    router.push(`/${locale}/design/components/${slug}`);
   }
 
   return (

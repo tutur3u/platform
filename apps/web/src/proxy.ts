@@ -46,6 +46,11 @@ import {
 } from './lib/calendar-preference-guard';
 import { getChatAppOrigin } from './lib/chat-app-url';
 import { getContactsAppOrigin } from './lib/contacts-app-url';
+import {
+  applyDesignDocumentCache,
+  designRedirectResponse,
+  isDesignPublicPath,
+} from './lib/design-public-redirect';
 import { getDriveAppOrigin } from './lib/drive-app-url';
 import { isVersionedExternalProjectAssetDeliveryRequest } from './lib/external-projects/asset-delivery-request';
 import { getFinanceAppOrigin } from './lib/finance-app-url';
@@ -430,6 +435,9 @@ function handleWorkspaceSatelliteRedirectRoute(
 function handlePublicMarketingRedirectRoute(
   req: NextRequest
 ): NextResponse | null {
+  const designRedirect = designRedirectResponse(req);
+  if (designRedirect) return designRedirect;
+
   const { locale, pathnameWithoutLocale } = getLocaleAwarePathname(
     req.nextUrl.pathname
   );
@@ -909,11 +917,11 @@ async function blockSuspiciousAnonymousApiRequest(
 
 const authProxy = createCentralizedAuthProxy({
   webAppUrl: WEB_APP_URL,
-  // publicPaths is a raw prefix list. `/roadmap` stays on APP_PUBLIC_PATHS
-  // for exact checks, and isAuthProxyPublicPath authorizes `/roadmap/*`
-  // so `/roadmap-private` does not become public.
-  publicPaths: PUBLIC_PATHS.filter((path) => !isRoadmapPublicPath(path)),
-  isPublicPath: isAuthProxyPublicPath,
+  publicPaths: PUBLIC_PATHS.filter(
+    (path) => !isRoadmapPublicPath(path) && !isDesignPublicPath(path)
+  ),
+  isPublicPath: (pathname) =>
+    isAuthProxyPublicPath(pathname) || isDesignPublicPath(pathname),
   skipApiRoutes: true,
 });
 
@@ -1376,6 +1384,9 @@ async function webProxy(req: NextRequest): Promise<NextResponse> {
   // Continue with locale handling
   const localeRes = handleLocale({ req });
   propagateAuthCookies(authRes, localeRes);
+  if (isDesignPublicPath(req.nextUrl.pathname)) {
+    applyDesignDocumentCache(localeRes, hasSupabaseSessionCookie(req));
+  }
   return localeRes;
 }
 

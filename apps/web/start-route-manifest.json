@@ -852,6 +852,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/[locale]/design/[[...slug]]",
+      "source": "apps/web/src/app/[locale]/(marketing)/design/[[...slug]]/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/[locale]/docs",
       "source": "apps/web/src/app/[locale]/(marketing)/docs/page.tsx",
       "category": "page",

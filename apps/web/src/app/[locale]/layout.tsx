@@ -136,7 +136,7 @@ export default async function RootLayout({ children }: Props) {
     <html lang={locale} suppressHydrationWarning data-scroll-behavior="smooth">
       <body
         className={cn(
-          'overflow-y-auto bg-root-background antialiased',
+          'overflow-y-auto bg-root-background antialiased [scrollbar-gutter:stable]',
           font.className
         )}
       >

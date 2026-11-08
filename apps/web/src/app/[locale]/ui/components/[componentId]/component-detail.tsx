@@ -51,7 +51,7 @@ export function ComponentDetail({
     id,
     label: t(`detail.toc.${id}`),
   }));
-  const baseHref = `/${locale}/ui/components`;
+  const baseHref = `/${locale}/design/components`;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_12rem] xl:gap-10">
