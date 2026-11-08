@@ -35,7 +35,6 @@ function createMutationBuilder(
       operation.filters.push({ column, value });
       return builder;
     }),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaited as thenables in route code.
     then: vi.fn((resolve, reject) =>
       Promise.resolve({ error: null }).then(resolve, reject)
     ),

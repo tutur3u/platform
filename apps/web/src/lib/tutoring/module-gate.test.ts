@@ -38,9 +38,8 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   }),
 }));
 
-const { isTutoringConfigEnabled, isTutoringEnabledForWorkspace } = await import(
-  './module-gate'
-);
+const { isTutoringConfigEnabled, isTutoringEnabledForWorkspace } =
+  await import('./module-gate');
 
 beforeEach(() => {
   state.configError = null;

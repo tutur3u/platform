@@ -58,7 +58,7 @@ export async function PUT(req: Request, { params }: Params) {
     ))
   ) {
     return NextResponse.json(
-      { message: 'Only Tuturuuu employees can enable managed cron jobs.' },
+      { message: 'Only Tuturuuu employees can change this workspace secret.' },
       { status: 403 }
     );
   }
@@ -115,7 +115,7 @@ export async function DELETE(_: Request, { params }: Params) {
 
   if (!(await canMutateInfrastructureSecret(auth, existingSecret.name))) {
     return NextResponse.json(
-      { message: 'Only Tuturuuu employees can disable managed cron jobs.' },
+      { message: 'Only Tuturuuu employees can change this workspace secret.' },
       { status: 403 }
     );
   }

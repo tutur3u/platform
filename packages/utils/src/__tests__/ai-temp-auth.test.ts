@@ -43,9 +43,8 @@ describe('ai temp auth', () => {
   });
 
   it('invalidates an existing cached identity immediately after policy changes', async () => {
-    const { mintAiTempAuthToken, validateAiTempAuthRequest } = await import(
-      '../ai-temp-auth.js'
-    );
+    const { mintAiTempAuthToken, validateAiTempAuthRequest } =
+      await import('../ai-temp-auth.js');
     const minted = await mintAiTempAuthToken({ user: { id: 'actor' } });
     const payload = mocks.redis.set.mock.calls[0]![1];
     mocks.redis.get.mockImplementation(async (key: string) =>
@@ -83,9 +82,8 @@ describe('ai temp auth', () => {
   });
 
   it('validates an unrevoked token and returns its cached identity context', async () => {
-    const { mintAiTempAuthToken, validateAiTempAuthRequest } = await import(
-      '../ai-temp-auth.js'
-    );
+    const { mintAiTempAuthToken, validateAiTempAuthRequest } =
+      await import('../ai-temp-auth.js');
 
     const minted = await mintAiTempAuthToken({
       user: { id: 'user-1', email: 'user@test.com' },
@@ -114,9 +112,8 @@ describe('ai temp auth', () => {
   });
 
   it('rejects a token when the user auth version has changed', async () => {
-    const { mintAiTempAuthToken, validateAiTempAuthRequest } = await import(
-      '../ai-temp-auth.js'
-    );
+    const { mintAiTempAuthToken, validateAiTempAuthRequest } =
+      await import('../ai-temp-auth.js');
 
     const minted = await mintAiTempAuthToken({
       user: { id: 'user-1', email: null },
@@ -138,9 +135,8 @@ describe('ai temp auth', () => {
 
   it('falls back when Redis is unavailable', async () => {
     mocks.getRedis.mockResolvedValue(null);
-    const { mintAiTempAuthToken, validateAiTempAuthRequest } = await import(
-      '../ai-temp-auth.js'
-    );
+    const { mintAiTempAuthToken, validateAiTempAuthRequest } =
+      await import('../ai-temp-auth.js');
 
     await expect(
       mintAiTempAuthToken({ user: { id: 'user-1', email: null } })
@@ -155,9 +151,8 @@ describe('ai temp auth', () => {
   });
 
   it('falls back when Redis token reads or writes fail', async () => {
-    const { mintAiTempAuthToken, validateAiTempAuthRequest } = await import(
-      '../ai-temp-auth.js'
-    );
+    const { mintAiTempAuthToken, validateAiTempAuthRequest } =
+      await import('../ai-temp-auth.js');
 
     mocks.redis.set.mockRejectedValueOnce(new Error('redis write failed'));
     await expect(

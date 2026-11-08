@@ -133,9 +133,8 @@ describe('fetchWorkspaceSummaries', () => {
       ],
       error: null,
     });
-    const { fetchWorkspaceSummaries } = await import(
-      '@tuturuuu/ui/lib/workspace-actions'
-    );
+    const { fetchWorkspaceSummaries } =
+      await import('@tuturuuu/ui/lib/workspace-actions');
     const summaries = await fetchWorkspaceSummaries();
     expect(summaries).toEqual([
       expect.objectContaining({ id: 'archived-workspace', deleted: true }),
@@ -191,9 +190,8 @@ describe('fetchWorkspaceSummaries', () => {
       error: null,
     });
 
-    const { fetchWorkspaceSummaries } = await import(
-      '@tuturuuu/ui/lib/workspace-actions'
-    );
+    const { fetchWorkspaceSummaries } =
+      await import('@tuturuuu/ui/lib/workspace-actions');
 
     const workspaces = await fetchWorkspaceSummaries();
 
@@ -253,9 +251,8 @@ describe('fetchWorkspaceSummaries', () => {
       { data: [], error: null }
     );
 
-    const { fetchWorkspaceSummaries } = await import(
-      '@tuturuuu/ui/lib/workspace-actions'
-    );
+    const { fetchWorkspaceSummaries } =
+      await import('@tuturuuu/ui/lib/workspace-actions');
 
     await expect(fetchWorkspaceSummaries()).resolves.toEqual([
       expect.objectContaining({
@@ -302,9 +299,8 @@ describe('fetchWorkspaceSummaries', () => {
       { data: [], error: null }
     );
 
-    const { fetchWorkspaceSummaries } = await import(
-      '@tuturuuu/ui/lib/workspace-actions'
-    );
+    const { fetchWorkspaceSummaries } =
+      await import('@tuturuuu/ui/lib/workspace-actions');
 
     await expect(fetchWorkspaceSummaries()).resolves.toEqual([
       expect.objectContaining({
@@ -324,9 +320,8 @@ describe('fetchWorkspaceSummaries', () => {
       error: null,
     });
 
-    const { fetchWorkspaceSummaries } = await import(
-      '@tuturuuu/ui/lib/workspace-actions'
-    );
+    const { fetchWorkspaceSummaries } =
+      await import('@tuturuuu/ui/lib/workspace-actions');
 
     const request = new Request('https://example.com/api/v1/workspaces', {
       headers: {
@@ -345,9 +340,8 @@ describe('fetchWorkspaceSummaries', () => {
       error: null,
     });
 
-    const { fetchWorkspaceSummaries } = await import(
-      '@tuturuuu/ui/lib/workspace-actions'
-    );
+    const { fetchWorkspaceSummaries } =
+      await import('@tuturuuu/ui/lib/workspace-actions');
 
     await fetchWorkspaceSummaries({
       supabase: mocks.sessionSupabase as never,
@@ -399,9 +393,8 @@ describe('fetchWorkspaceSummaries', () => {
       error: null,
     });
 
-    const { fetchWorkspaceSummaries } = await import(
-      '@tuturuuu/ui/lib/workspace-actions'
-    );
+    const { fetchWorkspaceSummaries } =
+      await import('@tuturuuu/ui/lib/workspace-actions');
 
     await expect(
       fetchWorkspaceSummaries({ limit: 1, query: 'zeta' })

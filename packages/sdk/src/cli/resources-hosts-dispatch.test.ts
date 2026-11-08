@@ -166,95 +166,99 @@ describe('--hosts job class (REV-6503-4)', () => {
   });
 });
 
-describe('nested --hosts under an admitted reservation (REV-6503-5)', {
-  timeout: 30_000,
-}, () => {
-  it('runs a nested light job under its ancestor reservation instead of deadlocking', async () => {
-    const path = await home();
-    const registry: HostRegistry = {
-      ...base,
-      hosts: [{ ...base.hosts[0]!, slots: { light: 1, heavy: 0 } }],
-    };
-    const nestedRan = join(path, 'nested.ran');
-    const nested = join(path, 'nested.ts');
-    await writeFile(
-      nested,
-      `import {hostsRun} from ${JSON.stringify(dispatchModule)};import {writeFileSync} from 'node:fs';
+describe(
+  'nested --hosts under an admitted reservation (REV-6503-5)',
+  {
+    timeout: 30_000,
+  },
+  () => {
+    it('runs a nested light job under its ancestor reservation instead of deadlocking', async () => {
+      const path = await home();
+      const registry: HostRegistry = {
+        ...base,
+        hosts: [{ ...base.hosts[0]!, slots: { light: 1, heavy: 0 } }],
+      };
+      const nestedRan = join(path, 'nested.ran');
+      const nested = join(path, 'nested.ts');
+      await writeFile(
+        nested,
+        `import {hostsRun} from ${JSON.stringify(dispatchModule)};import {writeFileSync} from 'node:fs';
       process.exitCode=await hostsRun({home:${JSON.stringify(path)},command:'inner',args:[],jobClass:'light',registry:${JSON.stringify(registry)},deps:{
         fleet:async()=>undefined,commitPlan:async()=>undefined,localDiskFreeGiB:async()=>100,localDiskGate:async()=>({admit:true}),pollMs:10,log:()=>{},
         runLocal:async({reservation})=>{writeFileSync(${JSON.stringify(nestedRan)},reservation.token);return 0},runRemote:async()=>1}});`
-    );
-    let outerToken = '';
-    const code = await hostsRun({
-      home: path,
-      command: 'outer',
-      args: [],
-      jobClass: 'light',
-      registry,
-      deps: {
-        ...quiet,
-        fleet,
-        commitPlan: async () => undefined,
-        localDiskGate: async () => ({ admit: true, freeGiB: 100 }),
-        runRemote: async () => 1,
-        runLocal: ({ reservation, marker }) =>
-          new Promise<number>((done) => {
-            outerToken = reservation.token;
-            const child = spawn(bun, [nested], {
-              env: { ...process.env, ...marker },
-              stdio: 'ignore',
-            });
-            children.push(child);
-            child.once('exit', (exit) => done(exit ?? 1));
-          }),
-      },
+      );
+      let outerToken = '';
+      const code = await hostsRun({
+        home: path,
+        command: 'outer',
+        args: [],
+        jobClass: 'light',
+        registry,
+        deps: {
+          ...quiet,
+          fleet,
+          commitPlan: async () => undefined,
+          localDiskGate: async () => ({ admit: true, freeGiB: 100 }),
+          runRemote: async () => 1,
+          runLocal: ({ reservation, marker }) =>
+            new Promise<number>((done) => {
+              outerToken = reservation.token;
+              const child = spawn(bun, [nested], {
+                env: { ...process.env, ...marker },
+                stdio: 'ignore',
+              });
+              children.push(child);
+              child.once('exit', (exit) => done(exit ?? 1));
+            }),
+        },
+      });
+      expect(code).toBe(0);
+      // The nested job ran under the outer reservation, not a second slot.
+      expect(await readFile(nestedRan, 'utf8')).toBe(outerToken);
+      expect((await hostLedger(path)).reservations).toEqual([]);
     });
-    expect(code).toBe(0);
-    // The nested job ran under the outer reservation, not a second slot.
-    expect(await readFile(nestedRan, 'utf8')).toBe(outerToken);
-    expect((await hostLedger(path)).reservations).toEqual([]);
-  });
 
-  it('ignores a copied marker outside the reservation owner process tree', async () => {
-    const path = await home();
-    const unrelated = spawn('sleep', ['30'], { stdio: 'ignore' });
-    children.push(unrelated);
-    const token = randomUUID();
-    await atomicJson(reservationPath(path, 'm4', token), {
-      token,
-      pid: unrelated.pid,
-      hostId: 'm4',
-      jobClass: 'light',
-      project: 'p',
-      scope: 'host',
-      createdAt: new Date().toISOString(),
+    it('ignores a copied marker outside the reservation owner process tree', async () => {
+      const path = await home();
+      const unrelated = spawn('sleep', ['30'], { stdio: 'ignore' });
+      children.push(unrelated);
+      const token = randomUUID();
+      await atomicJson(reservationPath(path, 'm4', token), {
+        token,
+        pid: unrelated.pid,
+        hostId: 'm4',
+        jobClass: 'light',
+        project: 'p',
+        scope: 'host',
+        createdAt: new Date().toISOString(),
+      });
+      expect(
+        await nestedHostReservation(
+          path,
+          { [hostReservationMarker]: token },
+          true
+        )
+      ).toBeUndefined();
+      // A project-scoped entry never acts as a host reservation either.
+      await atomicJson(reservationPath(path, 'm4', token), {
+        token,
+        pid: process.pid,
+        hostId: 'm4',
+        jobClass: 'light',
+        project: 'p',
+        scope: 'project',
+        createdAt: new Date().toISOString(),
+      });
+      expect(
+        await nestedHostReservation(
+          path,
+          { [hostReservationMarker]: token },
+          true
+        )
+      ).toBeUndefined();
     });
-    expect(
-      await nestedHostReservation(
-        path,
-        { [hostReservationMarker]: token },
-        true
-      )
-    ).toBeUndefined();
-    // A project-scoped entry never acts as a host reservation either.
-    await atomicJson(reservationPath(path, 'm4', token), {
-      token,
-      pid: process.pid,
-      hostId: 'm4',
-      jobClass: 'light',
-      project: 'p',
-      scope: 'project',
-      createdAt: new Date().toISOString(),
-    });
-    expect(
-      await nestedHostReservation(
-        path,
-        { [hostReservationMarker]: token },
-        true
-      )
-    ).toBeUndefined();
-  });
-});
+  }
+);
 
 describe('remote dispatch safeguards', { timeout: 30_000 }, () => {
   it('rechecks Apple OS telemetry before dispatch, retaining the original ticket when requeued', async () => {

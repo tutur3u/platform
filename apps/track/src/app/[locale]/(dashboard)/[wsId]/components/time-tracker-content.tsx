@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/a11y/noSvgWithoutTitle: <> */
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -967,7 +966,6 @@ export default function TimeTrackerContent({
                                                 }
                                               >
                                                 {assignee.avatar_url ? (
-                                                  // biome-ignore lint/performance/noImgElement: <>
                                                   <img
                                                     src={assignee.avatar_url}
                                                     alt={

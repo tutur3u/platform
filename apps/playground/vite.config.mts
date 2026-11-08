@@ -24,7 +24,12 @@ const bridge = startBridgePreset({
 
 export default defineConfig(({ command }) => ({
   base: bridge.base,
-  define: bridge.define,
+  define: {
+    ...bridge.define,
+    ...(command === 'build'
+      ? { 'process.env.NODE_ENV': JSON.stringify('production') }
+      : {}),
+  },
   plugins: [
     startBridgeRscPlugin({
       rscEntries: {

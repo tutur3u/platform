@@ -528,9 +528,8 @@ export function TaskDialogProvider({
       }
 
       try {
-        const { getTaskDialogHydration } = await import(
-          '@tuturuuu/internal-api/tasks'
-        );
+        const { getTaskDialogHydration } =
+          await import('@tuturuuu/internal-api/tasks');
 
         const response = await getTaskDialogHydration(
           taskId,
@@ -732,9 +731,8 @@ export function TaskDialogProvider({
       assignee_ids?: string[];
       project_ids?: string[];
     }) => {
-      const { resolveTaskProjectWorkspaceId } = await import(
-        '@tuturuuu/internal-api/tasks'
-      );
+      const { resolveTaskProjectWorkspaceId } =
+        await import('@tuturuuu/internal-api/tasks');
       const workspaceId = await resolveTaskProjectWorkspaceId({
         boardId: draft.board_id ?? undefined,
         projectIds: draft.project_ids,
@@ -752,9 +750,8 @@ export function TaskDialogProvider({
         created_at: string;
       }> = [];
       if (draft.label_ids && draft.label_ids.length > 0) {
-        const { listWorkspaceLabels } = await import(
-          '@tuturuuu/internal-api/tasks'
-        );
+        const { listWorkspaceLabels } =
+          await import('@tuturuuu/internal-api/tasks');
         const data = await listWorkspaceLabels(workspaceId);
         labels = data
           .filter((label: WorkspaceLabelSummary) =>
@@ -776,9 +773,8 @@ export function TaskDialogProvider({
         avatar_url?: string | null;
       }> = [];
       if (draft.assignee_ids && draft.assignee_ids.length > 0) {
-        const { listWorkspaceMembers } = await import(
-          '@tuturuuu/internal-api/workspaces'
-        );
+        const { listWorkspaceMembers } =
+          await import('@tuturuuu/internal-api/workspaces');
         const data = await listWorkspaceMembers(workspaceId);
         assignees = data
           .filter((user: WorkspaceMemberSummary) =>
@@ -799,9 +795,8 @@ export function TaskDialogProvider({
         status: string | null;
       }> = [];
       if (draft.project_ids && draft.project_ids.length > 0) {
-        const { listWorkspaceTaskProjectsByIds } = await import(
-          '@tuturuuu/internal-api/tasks'
-        );
+        const { listWorkspaceTaskProjectsByIds } =
+          await import('@tuturuuu/internal-api/tasks');
         const workspaceProjects = await listWorkspaceTaskProjectsByIds(
           workspaceId,
           draft.project_ids

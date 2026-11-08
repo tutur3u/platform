@@ -96,7 +96,6 @@ export function PartnerCard({
       />
 
       <div className="relative flex items-start gap-3">
-        {/* biome-ignore lint/performance/noImgElement: the marketing bundle is kept off next/image by the public shell compile graph. */}
         <img
           alt=""
           className={cn(

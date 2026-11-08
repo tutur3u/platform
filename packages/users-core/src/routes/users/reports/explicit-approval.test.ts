@@ -72,7 +72,6 @@ function database(approvalEnabled = false, existing = true) {
       };
     builder.maybeSingle = async () => result();
     builder.single = async () => result();
-    // biome-ignore lint/suspicious/noThenProperty: faithfully emulate the awaited PostgREST builder.
     builder.then = (resolve: (value: unknown) => unknown) => {
       const response = result();
       if (table === 'external_user_monthly_reports' && writes)

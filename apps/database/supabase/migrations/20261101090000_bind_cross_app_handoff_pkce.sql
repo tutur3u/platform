@@ -1,8 +1,8 @@
--- Bind cross-app login handoff tokens to the browser that started the login
--- (security finding M1). A client may send an RFC 7636 S256 code_challenge with
--- the login redirect; the token then redeems only with the matching
--- code_verifier, so an intercepted token is useless on its own.
---
+-- tuturuuu: reviewed(dynamic-sql-review): fixed SET LOCAL and bounded NOWAIT lock; no EXECUTE or data writes.
+DO $pkce_lock$ BEGIN SET LOCAL lock_timeout = '5s'; SET LOCAL statement_timeout = '60s';
+  LOCK TABLE private.cross_app_tokens IN ACCESS EXCLUSIVE MODE NOWAIT;
+END; $pkce_lock$;
+-- Bind login handoff redemption to the initiating browser with RFC 7636 S256 PKCE.
 -- * private.cross_app_tokens stores the optional challenge.
 -- * generate_cross_app_token_pkce mints a token that stores it; the existing
 --   generate_cross_app_token overloads are unchanged.
@@ -263,3 +263,69 @@ revoke all on function public.validate_cross_app_token_with_session_pkce(text, t
   from public, anon, authenticated, service_role;
 grant execute on function public.validate_cross_app_token_with_session_pkce(text, text, text)
   to service_role;
+
+-- Catalog acceptance runs in the same CLI batch as the migration history insert.
+-- tuturuuu: reviewed(dynamic-sql-review): catalog-only acceptance; no EXECUTE or data writes.
+DO $$
+DECLARE n integer;
+BEGIN
+  SELECT count(*) INTO n FROM pg_catalog.pg_attribute
+  WHERE attrelid = to_regclass('private.cross_app_tokens')
+    AND attname IN ('code_challenge','code_challenge_method')
+    AND atttypid = 'text'::regtype AND NOT attnotnull
+    AND attnum > 0 AND NOT attisdropped;
+  IF n <> 2 THEN RAISE EXCEPTION 'PKCE column acceptance failed'; END IF;
+
+  SELECT count(*) INTO n FROM pg_catalog.pg_constraint
+  WHERE conrelid = to_regclass('private.cross_app_tokens')
+    AND conname = 'cross_app_tokens_code_challenge_check'
+    AND contype = 'c' AND convalidated;
+  IF n <> 1 THEN RAISE EXCEPTION 'PKCE constraint acceptance failed'; END IF;
+
+  WITH expected(signature, body_sha256) AS (VALUES
+  ('public.generate_cross_app_token_pkce(uuid,text,text,integer,jsonb,text,text)','9bdfc02294e73fd8ac7ca52ed4f928b7c8f1df680bf231c0c8d169bdeb8de9e7'),
+  ('private.redeem_cross_app_token(text,text,text)','302afbc9c71bb386ea54cb971e56d7dfb3e1018ef5fd3950d87e16c06d279962'),
+  ('public.validate_cross_app_token_with_session(text,text)','8b49e2a3e785ecc92c41279e4a4b4fdceda8d39654972609798ec9509600d84d'),
+  ('public.validate_cross_app_token_with_session_pkce(text,text,text)','dc8f0054c644fbc14eb4a95e07081b9266071b3a75c5c36afe692bce19c13c16')
+  )
+  SELECT count(*) INTO n FROM expected e
+  JOIN pg_catalog.pg_proc p ON p.oid = to_regprocedure(e.signature)
+  WHERE encode(pg_catalog.sha256(convert_to(p.prosrc,'UTF8')), 'hex') = e.body_sha256
+    AND p.proconfig @> ARRAY['search_path=pg_catalog, pg_temp']
+    AND p.prolang = (SELECT oid FROM pg_catalog.pg_language WHERE lanname = 'plpgsql')
+    AND pg_catalog.pg_get_function_result(p.oid) = CASE
+      WHEN e.signature LIKE 'public.generate_cross_app_token_pkce(%' THEN 'text'
+      ELSE 'TABLE(user_id uuid, session_data jsonb)' END
+    AND p.prosecdef = (e.signature NOT LIKE 'private.redeem_cross_app_token(%');
+  IF n <> 4 THEN RAISE EXCEPTION 'PKCE function identity acceptance failed'; END IF;
+
+  WITH expected(signature, role_name, allowed) AS (VALUES
+   ('public.generate_cross_app_token_pkce(uuid,text,text,integer,jsonb,text,text)','anon',false),
+   ('public.generate_cross_app_token_pkce(uuid,text,text,integer,jsonb,text,text)','authenticated',true),
+   ('public.generate_cross_app_token_pkce(uuid,text,text,integer,jsonb,text,text)','service_role',false),
+   ('private.redeem_cross_app_token(text,text,text)','anon',false),
+   ('private.redeem_cross_app_token(text,text,text)','authenticated',false),
+   ('private.redeem_cross_app_token(text,text,text)','service_role',false),
+   ('public.validate_cross_app_token_with_session(text,text)','anon',true),
+   ('public.validate_cross_app_token_with_session(text,text)','authenticated',true),
+   ('public.validate_cross_app_token_with_session(text,text)','service_role',true),
+   ('public.validate_cross_app_token_with_session_pkce(text,text,text)','anon',false),
+   ('public.validate_cross_app_token_with_session_pkce(text,text,text)','authenticated',false),
+   ('public.validate_cross_app_token_with_session_pkce(text,text,text)','service_role',true)
+  )
+  SELECT count(*) INTO n FROM expected
+  WHERE has_function_privilege(role_name,to_regprocedure(signature),'EXECUTE')
+        IS DISTINCT FROM allowed;
+  IF n <> 0 THEN RAISE EXCEPTION 'PKCE effective role ACL acceptance failed'; END IF;
+
+  SELECT count(*) INTO n FROM pg_catalog.pg_proc p
+  CROSS JOIN LATERAL aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a
+  WHERE p.oid IN (
+   to_regprocedure('public.generate_cross_app_token_pkce(uuid,text,text,integer,jsonb,text,text)'),
+   to_regprocedure('private.redeem_cross_app_token(text,text,text)'),
+   to_regprocedure('public.validate_cross_app_token_with_session(text,text)'),
+   to_regprocedure('public.validate_cross_app_token_with_session_pkce(text,text,text)'))
+    AND a.grantee=0 AND a.privilege_type='EXECUTE';
+  IF n <> 0 THEN RAISE EXCEPTION 'PKCE PUBLIC ACL acceptance failed'; END IF;
+END;
+$$;

@@ -74,7 +74,6 @@ export function cappedSessionDatabase(
       update: writes,
       delete: writes,
       upsert: writes,
-      // biome-ignore lint/suspicious/noThenProperty: Actual Supabase queries are thenable.
       then: (
         resolve: (value: {
           data: PagingRow[] | null;

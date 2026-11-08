@@ -137,14 +137,12 @@ export async function POST(req: Request, { params }: Params) {
     .insert(
       permissions
         .filter((permission) => !isExplicitGrantPermission(permission.id))
-        .map(
-          (permission): TablesInsert<'workspace_role_permissions'> => ({
-            ws_id: resolvedWsId,
-            role_id: role.id,
-            permission: permission.id as WorkspaceRolePermissionValue,
-            enabled: permission.enabled,
-          })
-        )
+        .map((permission): TablesInsert<'workspace_role_permissions'> => ({
+          ws_id: resolvedWsId,
+          role_id: role.id,
+          permission: permission.id as WorkspaceRolePermissionValue,
+          enabled: permission.enabled,
+        }))
     );
 
   if (permissionsError) {

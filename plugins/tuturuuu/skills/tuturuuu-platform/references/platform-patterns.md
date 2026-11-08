@@ -45,6 +45,9 @@ and its focused regression coverage before adding a reason or changing middlewar
   own hosts and SEO/security headers. Preserve forwarded WebGL sandbox CSP without
   handler-level CSP. Limit asset caching to GET/HEAD paths; keep config imports strippable.
   Suppliers authorize direct calls; preserve disabled service-worker registration.
+  Native request adapters use `@tuturuuu/satellite/auth-request` with the current
+  request, registered target and verified Supabase resolver. Next callers retain
+  `@tuturuuu/satellite/auth`; do not duplicate its actor/profile fallback policy.
   Use the [Nova/Inventory qualification guide](../../../../../apps/docs/build/devops/nova-inventory-start-bridge.mdx)
   for action/offline parity and separate raw-Host, header and browser acceptance.
 
@@ -174,6 +177,11 @@ and its focused regression coverage before adding a reason or changing middlewar
   `neutral`: stale or missing telemetry and unreachable workers render as
   unknown, never as zero or healthy. `OpsPageHeader` shares FeatureSummary's
   surface for read-only pages; keep FeatureSummary for create/settings flows.
+- Settings panels use `SettingsSection` for grouped cards and `SettingItemTab`
+  rows (`layout="inline"` for compact controls, stacked for lists and textareas)
+  inside the shared shell, which owns the page title. `.settings-surface` scopes
+  dialog contrast tokens, so a panel embedded elsewhere must still read well
+  without it. See [settings dialog](../../../../../apps/docs/platform/features/settings-dialog.mdx#layout-and-contrast).
 - If a client admin surface grows large, keep the main shell focused on query
   state, mutations, and routing; extract heavy render branches nearby.
 - **Tiptap extensions are fixed at editor creation.** `Editor.setOptions({

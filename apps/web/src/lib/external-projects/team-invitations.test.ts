@@ -39,7 +39,6 @@ function createAccess() {
       if (table === 'workspace_role_permissions') {
         const query: Record<string, unknown> = {};
         for (const op of ['eq', 'in', 'select']) query[op] = () => query;
-        // biome-ignore lint/suspicious/noThenProperty: mimics the awaitable query builder.
         query.then = (resolve: (value: unknown) => unknown) =>
           Promise.resolve({ data: [], error: null }).then(resolve);
         return query;

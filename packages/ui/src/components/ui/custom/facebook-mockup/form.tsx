@@ -220,7 +220,6 @@ function ReactionVisibilityToggle({
         className="inline-flex size-6 shrink-0 overflow-hidden rounded-full"
         aria-hidden="true"
       >
-        {/* biome-ignore lint/performance/noImgElement: public reaction assets are intentionally rendered as images */}
         <img
           src={`/media/facebook-reactions/${reaction}.png`}
           alt=""

@@ -17,7 +17,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import type { TaskDialogPresentation } from '../../task-dialog-presentation';
 import { TaskViewerAvatarsComponent } from '../../user-presence-avatars';
 import { TaskDialogActions } from '../task-dialog-actions';
@@ -91,6 +91,41 @@ const getRelationshipHeaderConfig = (t: any) => ({
 /**
  * Helper to generate dialog header info based on task context
  */
+/** Header info memoized on its inputs, for the task dialog. */
+export function useTaskDialogHeaderInfo(
+  options: Parameters<typeof getTaskDialogHeaderInfo>[0],
+  t: Parameters<typeof getTaskDialogHeaderInfo>[1]
+): DialogHeaderInfo {
+  const {
+    isCreateMode,
+    parentTaskId,
+    parentTaskName,
+    pendingRelationship,
+    draftId,
+  } = options;
+  return useMemo(
+    () =>
+      getTaskDialogHeaderInfo(
+        {
+          isCreateMode,
+          parentTaskId,
+          parentTaskName,
+          pendingRelationship,
+          draftId,
+        },
+        t
+      ),
+    [
+      isCreateMode,
+      parentTaskId,
+      parentTaskName,
+      pendingRelationship,
+      draftId,
+      t,
+    ]
+  );
+}
+
 export function getTaskDialogHeaderInfo(
   options: {
     isCreateMode: boolean;
@@ -323,14 +358,15 @@ export function TaskDialogHeader({
   const showScrollTitle = !isTitleVisible && !!trimmedTaskName;
   const ticketId = !isCreateMode ? ticketLabel : null;
 
-  // The side panel is narrow at any viewport, so its actions wrap under the title.
+  // The resizable side panel keeps one header line: the title truncates and
+  // the sync label and viewers drop out as the panel narrows.
   const isPanel = presentation === 'panel';
 
   return (
     <div
       className={cn(
         'flex items-center justify-between border-b px-4 py-2',
-        isPanel ? 'flex-wrap gap-y-1' : 'md:px-8'
+        isPanel ? '@container/task-panel-header gap-2' : 'md:px-8'
       )}
     >
       <div className="flex min-w-0 items-center gap-2">
@@ -371,7 +407,7 @@ export function TaskDialogHeader({
       <div
         className={cn(
           'flex items-center gap-1 md:gap-2',
-          isPanel && 'ml-auto flex-wrap justify-end'
+          isPanel && 'shrink-0'
         )}
       >
         {/* Collaboration Sync Status */}
@@ -398,7 +434,12 @@ export function TaskDialogHeader({
                         : 'animate-pulse bg-dynamic-yellow'
                   )}
                 />
-                <span className="font-medium">
+                <span
+                  className={cn(
+                    'font-medium',
+                    isPanel && '@md/task-panel-header:inline hidden'
+                  )}
+                >
                   {synced && connected
                     ? t('ws-task-boards.dialog.synced')
                     : !connected
@@ -450,11 +491,13 @@ export function TaskDialogHeader({
 
         {/* Online Users - shown for all tiers when realtimeEnabled */}
         {realtimeEnabled && isOpen && !isCreateMode && user && taskId && (
-          <TaskViewerAvatarsComponent
-            taskId={taskId}
-            compact={false}
-            onClickUser={onScrollToUserCursor}
-          />
+          <div className={cn(isPanel && '@sm/task-panel-header:block hidden')}>
+            <TaskViewerAvatarsComponent
+              taskId={taskId}
+              compact={false}
+              onClickUser={onScrollToUserCursor}
+            />
+          </div>
         )}
 
         {isCreateMode && !draftId && (

@@ -145,9 +145,10 @@ export async function loadScheduleSessions({
     .select(SESSION_COLUMNS)
     .eq('ws_id', normalizedWsId)
     .eq('source_type', SCHEDULE_SOURCE_TYPE);
-  const { data: rows, error } = await (status === 'cancelled'
-    ? query.eq('status', 'cancelled')
-    : query.neq('status', 'cancelled')
+  const { data: rows, error } = await (
+    status === 'cancelled'
+      ? query.eq('status', 'cancelled')
+      : query.neq('status', 'cancelled')
   )
     .gte('session_date', start)
     .lte('session_date', end)

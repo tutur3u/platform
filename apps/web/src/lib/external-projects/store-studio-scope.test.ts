@@ -112,9 +112,8 @@ describe('scoped external-project studio data', () => {
   });
 
   it('loads source collections plus relation targets without unrelated content', async () => {
-    const { getWorkspaceExternalProjectScopedStudioData } = await import(
-      './store-studio-scope'
-    );
+    const { getWorkspaceExternalProjectScopedStudioData } =
+      await import('./store-studio-scope');
     const studio = await getWorkspaceExternalProjectScopedStudioData(
       'workspace-id',
       ['stories', 'tags'],

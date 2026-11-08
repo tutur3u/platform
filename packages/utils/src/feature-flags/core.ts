@@ -45,6 +45,7 @@ export async function getFeatureFlags(
     PREVENT_WORKSPACE_DELETION,
     ENABLE_AVATAR,
     ENABLE_LOGO,
+    newsletter_sending,
   ] = await Promise.all([
     verifySecret({
       forceAdmin,
@@ -130,6 +131,12 @@ export async function getFeatureFlags(
       name: FEATURE_FLAGS.ENABLE_LOGO,
       value: 'true',
     }),
+    verifySecret({
+      forceAdmin,
+      wsId,
+      name: FEATURE_FLAGS.newsletter_sending,
+      value: 'true',
+    }),
   ]);
 
   return {
@@ -147,6 +154,7 @@ export async function getFeatureFlags(
     PREVENT_WORKSPACE_DELETION,
     ENABLE_AVATAR,
     ENABLE_LOGO,
+    newsletter_sending,
   };
 }
 

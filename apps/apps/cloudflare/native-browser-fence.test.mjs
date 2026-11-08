@@ -359,121 +359,126 @@ test('late handler failure during page shutdown still fails acceptance', async (
   await expectFailure(f, async () => 'loaded', 'Browser fence continue failed');
 });
 
-test('page-close rejection keeps interception until pending navigation target closes and handlers drain', {
-  timeout: 2000,
-}, async () => {
-  let rejectNavigation;
-  let beginContextClose;
-  let finishContextClose;
-  let finishHandler;
-  let settled = false;
-  const primary = new Error('navigation interrupted at confirmed closure');
-  const navigation = new Promise((_, reject) => {
-    rejectNavigation = reject;
-  });
-  const contextStarted = new Promise((resolve) => {
-    beginContextClose = resolve;
-  });
-  const contextGate = new Promise((resolve) => {
-    finishContextClose = resolve;
-  });
-  const handlerGate = new Promise((resolve) => {
-    finishHandler = resolve;
-  });
-  const f = fixture({
-    close: async () => {
-      throw new Error('page close rejected with live target');
-    },
-    contextClose: async () => {
-      beginContextClose();
-      await contextGate;
-      rejectNavigation(primary);
-    },
-    // On the old implementation this succeeds and releases a still-live fence.
-    detach: async () => {
-      rejectNavigation(primary);
-    },
-    send: async (method) => {
-      if (method === 'Fetch.continueRequest') throw new Error('start cleanup');
-      if (method === 'Fetch.failRequest') await handlerGate;
-    },
-  });
-  const outcome = withNativeBrowserFence(
-    f.browser,
-    origin,
-    [destination],
-    async () => {
-      f.session.emit('Fetch.requestPaused', paused('initial', `${origin}/`));
-      return navigation;
-    },
-    { cleanupTimeoutMs: 1000 }
-  );
-  void outcome.then(
-    () => {
-      settled = true;
-    },
-    () => {
-      settled = true;
-    }
-  );
-  try {
-    await Promise.race([
-      contextStarted,
-      outcome.then(
-        () => assert.fail('returned before owned closure'),
-        () => assert.fail('returned before owned closure')
-      ),
-    ]);
-    assert.equal(f.page.isClosed(), false);
-    assert.equal(f.session.listenerCount('Fetch.requestPaused'), 1);
-    assert.equal(
-      f.calls.some(([method]) => method === 'detach'),
-      false
+test(
+  'page-close rejection keeps interception until pending navigation target closes and handlers drain',
+  {
+    timeout: 2000,
+  },
+  async () => {
+    let rejectNavigation;
+    let beginContextClose;
+    let finishContextClose;
+    let finishHandler;
+    let settled = false;
+    const primary = new Error('navigation interrupted at confirmed closure');
+    const navigation = new Promise((_, reject) => {
+      rejectNavigation = reject;
+    });
+    const contextStarted = new Promise((resolve) => {
+      beginContextClose = resolve;
+    });
+    const contextGate = new Promise((resolve) => {
+      finishContextClose = resolve;
+    });
+    const handlerGate = new Promise((resolve) => {
+      finishHandler = resolve;
+    });
+    const f = fixture({
+      close: async () => {
+        throw new Error('page close rejected with live target');
+      },
+      contextClose: async () => {
+        beginContextClose();
+        await contextGate;
+        rejectNavigation(primary);
+      },
+      // On the old implementation this succeeds and releases a still-live fence.
+      detach: async () => {
+        rejectNavigation(primary);
+      },
+      send: async (method) => {
+        if (method === 'Fetch.continueRequest')
+          throw new Error('start cleanup');
+        if (method === 'Fetch.failRequest') await handlerGate;
+      },
+    });
+    const outcome = withNativeBrowserFence(
+      f.browser,
+      origin,
+      [destination],
+      async () => {
+        f.session.emit('Fetch.requestPaused', paused('initial', `${origin}/`));
+        return navigation;
+      },
+      { cleanupTimeoutMs: 1000 }
     );
-    f.session.emit(
-      'Fetch.requestPaused',
-      paused('during-cleanup', 'https://denied.invalid/')
+    void outcome.then(
+      () => {
+        settled = true;
+      },
+      () => {
+        settled = true;
+      }
     );
-    await tick();
-    assert.ok(
-      f.calls.some(
-        ([method, params]) =>
-          method === 'Fetch.failRequest' &&
-          params.requestId === 'during-cleanup' &&
-          params.errorReason === 'BlockedByClient'
-      )
-    );
-    finishContextClose();
-    await tick();
-    assert.equal(f.page.isClosed(), true);
-    assert.equal(
-      settled,
-      false,
-      'Confirmed closure alone cannot skip handler drain'
-    );
-    assert.equal(f.session.listenerCount('Fetch.requestPaused'), 1);
-    finishHandler();
-    await assert.rejects(outcome, (error) => {
-      assert.equal(error.errors[0], primary);
+    try {
+      await Promise.race([
+        contextStarted,
+        outcome.then(
+          () => assert.fail('returned before owned closure'),
+          () => assert.fail('returned before owned closure')
+        ),
+      ]);
+      assert.equal(f.page.isClosed(), false);
+      assert.equal(f.session.listenerCount('Fetch.requestPaused'), 1);
+      assert.equal(
+        f.calls.some(([method]) => method === 'detach'),
+        false
+      );
+      f.session.emit(
+        'Fetch.requestPaused',
+        paused('during-cleanup', 'https://denied.invalid/')
+      );
+      await tick();
       assert.ok(
-        error.errors.some(
-          (item) => item.message === 'Browser fence page close failed'
+        f.calls.some(
+          ([method, params]) =>
+            method === 'Fetch.failRequest' &&
+            params.requestId === 'during-cleanup' &&
+            params.errorReason === 'BlockedByClient'
         )
       );
-      return true;
-    });
-    assert.equal(f.session.listenerCount('Fetch.requestPaused'), 0);
-    assert.equal(
-      f.calls.some(([method]) => method === 'detach'),
-      false
-    );
-  } finally {
-    finishContextClose();
-    finishHandler();
-    rejectNavigation(primary);
-    await outcome.catch(() => {});
+      finishContextClose();
+      await tick();
+      assert.equal(f.page.isClosed(), true);
+      assert.equal(
+        settled,
+        false,
+        'Confirmed closure alone cannot skip handler drain'
+      );
+      assert.equal(f.session.listenerCount('Fetch.requestPaused'), 1);
+      finishHandler();
+      await assert.rejects(outcome, (error) => {
+        assert.equal(error.errors[0], primary);
+        assert.ok(
+          error.errors.some(
+            (item) => item.message === 'Browser fence page close failed'
+          )
+        );
+        return true;
+      });
+      assert.equal(f.session.listenerCount('Fetch.requestPaused'), 0);
+      assert.equal(
+        f.calls.some(([method]) => method === 'detach'),
+        false
+      );
+    } finally {
+      finishContextClose();
+      finishHandler();
+      rejectNavigation(primary);
+      await outcome.catch(() => {});
+    }
   }
-});
+);
 
 test('page and context close rejection fall back to owned browser before release', async () => {
   const f = fixture({
@@ -506,65 +511,70 @@ test('page and context close rejection fall back to owned browser before release
   assert.equal(f.page.isClosed(), true);
 });
 
-test('unsettled closure and navigation return a bounded failure while retaining interception', {
-  timeout: 1000,
-}, async () => {
-  let rejectNavigation;
-  const navigation = new Promise((_, reject) => {
-    rejectNavigation = reject;
-  });
-  const never = () => new Promise(() => {});
-  const f = fixture({
-    close: never,
-    contextClose: never,
-    browserClose: never,
-    send: async (method) => {
-      if (method === 'Fetch.continueRequest') throw new Error('start cleanup');
-    },
-  });
-  try {
-    await assert.rejects(
-      withNativeBrowserFence(
-        f.browser,
-        origin,
-        [],
-        async () => {
-          f.session.emit('Fetch.requestPaused', paused('one', `${origin}/`));
-          return navigation;
-        },
-        { cleanupTimeoutMs: 30 }
-      ),
-      (error) => {
-        const messages = error.errors.map((item) => item.message);
-        for (const category of [
-          'page close failed',
-          'context close failed',
-          'browser close failed',
-          'navigation settlement failed',
-        ])
+test(
+  'unsettled closure and navigation return a bounded failure while retaining interception',
+  {
+    timeout: 1000,
+  },
+  async () => {
+    let rejectNavigation;
+    const navigation = new Promise((_, reject) => {
+      rejectNavigation = reject;
+    });
+    const never = () => new Promise(() => {});
+    const f = fixture({
+      close: never,
+      contextClose: never,
+      browserClose: never,
+      send: async (method) => {
+        if (method === 'Fetch.continueRequest')
+          throw new Error('start cleanup');
+      },
+    });
+    try {
+      await assert.rejects(
+        withNativeBrowserFence(
+          f.browser,
+          origin,
+          [],
+          async () => {
+            f.session.emit('Fetch.requestPaused', paused('one', `${origin}/`));
+            return navigation;
+          },
+          { cleanupTimeoutMs: 30 }
+        ),
+        (error) => {
+          const messages = error.errors.map((item) => item.message);
+          for (const category of [
+            'page close failed',
+            'context close failed',
+            'browser close failed',
+            'navigation settlement failed',
+          ])
+            assert.ok(
+              messages.includes(`Browser fence ${category} deadline exceeded`)
+            );
           assert.ok(
-            messages.includes(`Browser fence ${category} deadline exceeded`)
+            messages.includes(
+              'Browser fence target closure unconfirmed; handlers retained'
+            )
           );
-        assert.ok(
-          messages.includes(
-            'Browser fence target closure unconfirmed; handlers retained'
-          )
-        );
-        return true;
-      }
-    );
-    assert.equal(f.page.isClosed(), false);
-    assert.equal(
-      f.calls.some(([method]) => method === 'detach'),
-      false
-    );
-    assert.equal(f.session.listenerCount('Fetch.requestPaused'), 1);
-  } finally {
-    f.confirmClosure();
-    rejectNavigation(new Error('late navigation closure'));
+          return true;
+        }
+      );
+      assert.equal(f.page.isClosed(), false);
+      assert.equal(
+        f.calls.some(([method]) => method === 'detach'),
+        false
+      );
+      assert.equal(f.session.listenerCount('Fetch.requestPaused'), 1);
+    } finally {
+      f.confirmClosure();
+      rejectNavigation(new Error('late navigation closure'));
+    }
+    assert.equal(f.session.listenerCount('Fetch.requestPaused'), 0);
   }
-  assert.equal(f.session.listenerCount('Fetch.requestPaused'), 0);
-});
+);
 
 test('confirmed target closure retains primary when session detach fails', async () => {
   const primary = new Error('navigation primary');
@@ -593,49 +603,53 @@ test('confirmed target closure retains primary when session detach fails', async
   assert.equal(f.session.listenerCount('Fetch.requestPaused'), 0);
 });
 
-test('handler drain deadline retains listeners until late handler settlement', {
-  timeout: 1000,
-}, async () => {
-  let finishHandler;
-  const handler = new Promise((resolve) => {
-    finishHandler = resolve;
-  });
-  const f = fixture({
-    send: async (method) => {
-      if (method === 'Fetch.continueRequest') await handler;
-    },
-  });
-  try {
-    await assert.rejects(
-      withNativeBrowserFence(
-        f.browser,
-        origin,
-        [],
-        async () => {
-          f.session.emit('Fetch.requestPaused', paused('one', `${origin}/`));
-        },
-        { cleanupTimeoutMs: 30 }
-      ),
-      (error) => {
-        assert.ok(
-          error.errors.some(
-            (item) =>
-              item.message ===
-              'Browser fence handler drain failed deadline exceeded'
-          )
-        );
-        return true;
-      }
-    );
-    assert.equal(f.page.isClosed(), true);
-    assert.equal(f.session.listenerCount('Fetch.requestPaused'), 1);
-    assert.equal(
-      f.calls.some(([method]) => method === 'detach'),
-      false
-    );
-  } finally {
-    finishHandler();
-    await tick();
+test(
+  'handler drain deadline retains listeners until late handler settlement',
+  {
+    timeout: 1000,
+  },
+  async () => {
+    let finishHandler;
+    const handler = new Promise((resolve) => {
+      finishHandler = resolve;
+    });
+    const f = fixture({
+      send: async (method) => {
+        if (method === 'Fetch.continueRequest') await handler;
+      },
+    });
+    try {
+      await assert.rejects(
+        withNativeBrowserFence(
+          f.browser,
+          origin,
+          [],
+          async () => {
+            f.session.emit('Fetch.requestPaused', paused('one', `${origin}/`));
+          },
+          { cleanupTimeoutMs: 30 }
+        ),
+        (error) => {
+          assert.ok(
+            error.errors.some(
+              (item) =>
+                item.message ===
+                'Browser fence handler drain failed deadline exceeded'
+            )
+          );
+          return true;
+        }
+      );
+      assert.equal(f.page.isClosed(), true);
+      assert.equal(f.session.listenerCount('Fetch.requestPaused'), 1);
+      assert.equal(
+        f.calls.some(([method]) => method === 'detach'),
+        false
+      );
+    } finally {
+      finishHandler();
+      await tick();
+    }
+    assert.equal(f.session.listenerCount('Fetch.requestPaused'), 0);
   }
-  assert.equal(f.session.listenerCount('Fetch.requestPaused'), 0);
-});
+);

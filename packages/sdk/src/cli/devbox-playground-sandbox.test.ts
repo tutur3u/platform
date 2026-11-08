@@ -64,9 +64,8 @@ describe('managed playground removal ownership', () => {
   });
 
   it('retains production log suppression but allows bounded synthetic startup logs', async () => {
-    const { createPlaygroundDockerArgs } = await import(
-      './devbox-playground-sandbox'
-    );
+    const { createPlaygroundDockerArgs } =
+      await import('./devbox-playground-sandbox');
     const args = () =>
       createPlaygroundDockerArgs(
         first,
@@ -97,9 +96,8 @@ describe('managed playground removal ownership', () => {
   });
 
   it('applies the same guest and host ceilings to readiness probes', async () => {
-    const { getPlaygroundReadiness } = await import(
-      './devbox-playground-sandbox'
-    );
+    const { getPlaygroundReadiness } =
+      await import('./devbox-playground-sandbox');
     expect((await getPlaygroundReadiness()).ready).toBe(true);
     const calls = docker.mock.calls.filter(([args]) => args[0] === 'run');
     expect(calls).toHaveLength(1);
@@ -110,9 +108,8 @@ describe('managed playground removal ownership', () => {
   });
 
   it('keeps capacity owned when removal fails and the container remains', async () => {
-    const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
-      './devbox-playground-sandbox'
-    );
+    const { runPlaygroundJob, playgroundEnvironmentCount } =
+      await import('./devbox-playground-sandbox');
     await runPlaygroundJob(payload(), limits);
     docker.mockImplementation(async (args: string[]) => {
       if (args[0] === 'rm') return result(1);
@@ -135,9 +132,8 @@ describe('managed playground removal ownership', () => {
   });
 
   it('does not release capacity when Docker inventory is unavailable', async () => {
-    const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
-      './devbox-playground-sandbox'
-    );
+    const { runPlaygroundJob, playgroundEnvironmentCount } =
+      await import('./devbox-playground-sandbox');
     await runPlaygroundJob(payload(), limits);
     docker.mockResolvedValue(result(1));
     await expect(
@@ -147,9 +143,8 @@ describe('managed playground removal ownership', () => {
   });
 
   it('releases capacity after healthy inventory confirms an already absent container', async () => {
-    const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
-      './devbox-playground-sandbox'
-    );
+    const { runPlaygroundJob, playgroundEnvironmentCount } =
+      await import('./devbox-playground-sandbox');
     await runPlaygroundJob(payload(), limits);
     docker.mockImplementation(async (args: string[]) =>
       result(args[0] === 'rm' ? 1 : 0)
@@ -177,9 +172,8 @@ describe('managed playground removal ownership', () => {
   });
 
   it('waits for an admitted start before stop confirms removal', async () => {
-    const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
-      './devbox-playground-sandbox'
-    );
+    const { runPlaygroundJob, playgroundEnvironmentCount } =
+      await import('./devbox-playground-sandbox');
     let release!: () => void;
     const startup = new Promise<void>((resolve) => {
       release = resolve;
@@ -249,9 +243,8 @@ describe('managed playground removal ownership', () => {
     release();
     await run;
     // The timed-out stop did not forget or release the eventual environment.
-    const { playgroundEnvironmentCount } = await import(
-      './devbox-playground-sandbox'
-    );
+    const { playgroundEnvironmentCount } =
+      await import('./devbox-playground-sandbox');
     expect(playgroundEnvironmentCount()).toBe(1);
     await runPlaygroundJob(payload(first, 'stop'), limits);
     expect(playgroundEnvironmentCount()).toBe(0);
@@ -390,9 +383,8 @@ describe('managed playground removal ownership', () => {
     }
   });
   it('uses the image PATH for Python helpers and readiness', async () => {
-    const { getPlaygroundReadiness, runPlaygroundJob } = await import(
-      './devbox-playground-sandbox'
-    );
+    const { getPlaygroundReadiness, runPlaygroundJob } =
+      await import('./devbox-playground-sandbox');
     await getPlaygroundReadiness();
     const smoke = docker.mock.calls.find(
       ([args]) => args[0] === 'run'
@@ -516,9 +508,8 @@ describe('managed playground removal ownership', () => {
   ])(
     'removes partially started containers for failed startup %j',
     async (failure) => {
-      const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
-        './devbox-playground-sandbox'
-      );
+      const { runPlaygroundJob, playgroundEnvironmentCount } =
+        await import('./devbox-playground-sandbox');
       const normal = docker.getMockImplementation()!;
       docker.mockImplementation(async (args: string[]) =>
         args[0] === 'run' ? { ...result(), ...failure } : normal(args)
@@ -537,9 +528,8 @@ describe('managed playground removal ownership', () => {
     vi.stubEnv('TUTURUUU_PLAYGROUND_POOL_ID', 'ci-123-1');
     vi.stubEnv('TTR_PLAYGROUND_ACCEPTANCE', 'true');
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
-      './devbox-playground-sandbox'
-    );
+    const { runPlaygroundJob, playgroundEnvironmentCount } =
+      await import('./devbox-playground-sandbox');
     const normal = docker.getMockImplementation()!;
     docker.mockImplementation(async (args: string[]) =>
       args[0] === 'run'
@@ -562,9 +552,8 @@ describe('managed playground removal ownership', () => {
     log.mockRestore();
   });
   it('retains unconfirmed partial startup capacity and retries removal before reuse', async () => {
-    const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
-      './devbox-playground-sandbox'
-    );
+    const { runPlaygroundJob, playgroundEnvironmentCount } =
+      await import('./devbox-playground-sandbox');
     const normal = docker.getMockImplementation()!;
     let started = false;
     docker.mockImplementation(async (args: string[]) => {

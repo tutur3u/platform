@@ -265,9 +265,8 @@ async function deleteKeysWithCount(...keys: string[]): Promise<number> {
  */
 async function getSupabaseAdmin(): Promise<SupabaseClient<Database> | null> {
   try {
-    const { createAdminClient } = await import(
-      '@tuturuuu/supabase/next/server'
-    );
+    const { createAdminClient } =
+      await import('@tuturuuu/supabase/next/server');
     return (await createAdminClient()) as SupabaseClient<Database>;
   } catch (error) {
     logAbuseError(

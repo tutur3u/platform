@@ -90,9 +90,8 @@ describe('external project sync apply route', () => {
       },
     });
 
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/sync/apply/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/sync/apply/route');
 
     const response = await POST(
       new NextRequest(
@@ -141,9 +140,8 @@ describe('external project sync apply route', () => {
       )
     );
 
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/sync/apply/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/sync/apply/route');
 
     const response = await POST(
       new NextRequest(
@@ -168,9 +166,8 @@ describe('external project sync apply route', () => {
   });
 
   it('rejects manifests with non-external-project storage paths', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/sync/apply/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/sync/apply/route');
 
     const response = await POST(
       new NextRequest(

@@ -6,6 +6,7 @@ import PeriodicReportsPanel from './periodic-reports-panel';
 type QueryPage = {
   queryScope: string;
   summaryPartial?: boolean;
+  undatedSentCount?: number | null;
   data: { id: string }[];
   counts: typeof counts;
   categoryCounts: typeof categoryCounts;
@@ -481,5 +482,51 @@ it('offers per-row and bulk resend only to admins, for resendable rows', async (
   act(() => worklist.onResendScope());
   expect(state.resend.mock.lastCall?.[0]).toMatchObject({
     intent: { kind: 'scope', cadence: 'monthly' },
+  });
+});
+
+describe('Sent reports without a send date', () => {
+  const show = async (undatedSentCount: number | null) => {
+    const view = render(
+      <PeriodicReportsPanel wsId="workspace" permissions={permissions} />
+    );
+    const result = await state.options.queryFn({ pageParam: 1 });
+    state.query.data = {
+      pages: [{ ...page(result.queryScope), undatedSentCount }],
+    };
+    view.rerender(
+      <PeriodicReportsPanel wsId="workspace" permissions={permissions} />
+    );
+    return view;
+  };
+
+  it('tells a month view how many Sent reports no month includes', async () => {
+    await show(3);
+    expect(state.list.mock.lastCall?.[1].month).toMatch(/^\d{4}-\d{2}$/);
+    expect(screen.getByText('undated_sent_notice')).toHaveAttribute(
+      'role',
+      'status'
+    );
+  });
+
+  it.each([0, null])('stays quiet when the count is %s', async (count) => {
+    await show(count);
+    expect(screen.queryByText('undated_sent_notice')).not.toBeInTheDocument();
+  });
+
+  it('stays quiet under All months, which lists them', async () => {
+    state.filters = { ...state.filters, month: 'all' };
+    await show(3);
+    expect(state.list.mock.lastCall?.[1].month).toBeUndefined();
+    expect(screen.queryByText('undated_sent_notice')).not.toBeInTheDocument();
+  });
+
+  it('hides a previous month count while another month loads', async () => {
+    const view = await show(3);
+    state.query.isPlaceholderData = true;
+    view.rerender(
+      <PeriodicReportsPanel wsId="workspace" permissions={permissions} />
+    );
+    expect(screen.queryByText('undated_sent_notice')).not.toBeInTheDocument();
   });
 });

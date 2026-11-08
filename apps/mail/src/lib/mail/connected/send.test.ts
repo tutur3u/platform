@@ -51,7 +51,6 @@ beforeEach(() => {
     delete: mocks.delete,
     maybeSingle: mocks.maybeSingle,
     single: mocks.receipt,
-    // biome-ignore lint/suspicious/noThenProperty: emulate the awaited PostgREST mutation builder
     then: (resolve: (value: unknown) => void) => resolve(mocks.mutation()),
   };
   chain.eq.mockReturnValue(chain);

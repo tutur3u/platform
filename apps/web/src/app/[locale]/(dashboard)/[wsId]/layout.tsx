@@ -117,9 +117,8 @@ async function NavbarActionsSlot({
 }
 
 async function NotificationPopoverSlot({ userId }: { userId: string }) {
-  const { default: NotificationPopover } = await import(
-    '../../notification-popover'
-  );
+  const { default: NotificationPopover } =
+    await import('../../notification-popover');
 
   return <NotificationPopover userId={userId} />;
 }

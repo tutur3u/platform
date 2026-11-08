@@ -50,9 +50,9 @@ export async function guardRequiredAccountMfa(
   const cookies = request.headers.get('cookie') ?? '';
   const hasInteractiveCredential = Boolean(
     authorization?.match(/^Bearer\s+(?:eyJ|ttr_app_)/i) ||
-      /(?:^|;\s*)(?:sb-[^=]+-auth-token(?:\.\d+)?|tuturuuu_(?:web_)?app_session)=/.test(
-        cookies
-      )
+    /(?:^|;\s*)(?:sb-[^=]+-auth-token(?:\.\d+)?|tuturuuu_(?:web_)?app_session)=/.test(
+      cookies
+    )
   );
   if (!hasInteractiveCredential) return null;
   const result = await checkRequiredAccountMfa(

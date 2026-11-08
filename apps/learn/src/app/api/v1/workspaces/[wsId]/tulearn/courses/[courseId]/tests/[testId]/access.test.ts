@@ -93,9 +93,8 @@ it.each(endpoints)(
     expect(state.from).not.toHaveBeenCalledWith('course_tests');
     expect(state.from).not.toHaveBeenCalledWith('course_test_attempts');
     expect(state.submit).not.toHaveBeenCalled();
-    const { getAssignedCourseIds } = await import(
-      '@tuturuuu/education-core/tulearn/service'
-    );
+    const { getAssignedCourseIds } =
+      await import('@tuturuuu/education-core/tulearn/service');
     expect(getAssignedCourseIds).toHaveBeenCalledWith({
       db: expect.anything(),
       wsId: 'resolved-workspace',

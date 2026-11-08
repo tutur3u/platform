@@ -11,11 +11,11 @@ import { BoardViews } from '../board-views';
 const listWorkspaceTasksMock = vi.hoisted(() => vi.fn());
 const listBoardSprintsMock = vi.hoisted(() => vi.fn());
 let boardHeaderProps:
-  | React.ComponentProps<typeof import('../board-header')['BoardHeader']>
+  | React.ComponentProps<(typeof import('../board-header'))['BoardHeader']>
   | undefined;
 let kanbanBoardProps:
   | React.ComponentProps<
-      typeof import('../../boards/boardId/kanban')['KanbanBoard']
+      (typeof import('../../boards/boardId/kanban'))['KanbanBoard']
     >
   | undefined;
 

@@ -93,7 +93,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Run type-check
         uses: ./.github/actions/run-with-turbo-remote-cache
@@ -125,7 +125,7 @@ jobs:
           package-manager-cache: false
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Check whether the version already exists on npm
         id: version-check

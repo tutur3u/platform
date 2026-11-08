@@ -133,7 +133,6 @@ export default function UserFeedbackSection({
   const hasMore = feedbackHistory?.hasMore || false;
 
   // Reset pagination when user changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: user?.id is intentionally included to reset currentPage when user context changes
   useEffect(() => {
     setCurrentPage(1);
     setShowAddForm(false);

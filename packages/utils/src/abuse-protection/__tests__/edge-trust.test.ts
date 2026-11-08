@@ -158,9 +158,8 @@ describe('edge-trust cache', () => {
     mocks.mget.mockResolvedValue([null]);
     mocks.set.mockResolvedValue('OK');
 
-    const { writeVerifiedSessionCacheForSubjects } = await import(
-      '../edge-trust.js'
-    );
+    const { writeVerifiedSessionCacheForSubjects } =
+      await import('../edge-trust.js');
     await writeVerifiedSessionCacheForSubjects(
       ['session:aaa', 'cidr:1.2.3.0/24'],
       600
@@ -179,9 +178,8 @@ describe('edge-trust cache', () => {
     mocks.mget.mockResolvedValue([3, null]);
     mocks.set.mockResolvedValue('OK');
 
-    const { writeVerifiedSessionCacheForSubjects } = await import(
-      '../edge-trust.js'
-    );
+    const { writeVerifiedSessionCacheForSubjects } =
+      await import('../edge-trust.js');
     await writeVerifiedSessionCacheForSubjects(
       ['session:elevated', 'session:neutral'],
       600

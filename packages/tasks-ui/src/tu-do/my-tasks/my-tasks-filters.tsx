@@ -178,7 +178,9 @@ export function MyTasksFilters({
                 }
                 tooltipContent={workspaceLabels
                   ?.filter((l: any) => taskFilters.labelIds.includes(l.id))
-                  .map((l: any) => <div key={l.id}>{l.name}</div>)}
+                  .map((l: any) => (
+                    <div key={l.id}>{l.name}</div>
+                  ))}
                 showTooltip={taskFilters.labelIds.length > 1}
               >
                 {taskFilters.labelIds.length > 1
@@ -198,7 +200,9 @@ export function MyTasksFilters({
                 }
                 tooltipContent={workspaceProjects
                   ?.filter((p: any) => taskFilters.projectIds.includes(p.id))
-                  .map((p: any) => <div key={p.id}>{p.name}</div>)}
+                  .map((p: any) => (
+                    <div key={p.id}>{p.name}</div>
+                  ))}
                 showTooltip={taskFilters.projectIds.length > 1}
               >
                 {taskFilters.projectIds.length > 1

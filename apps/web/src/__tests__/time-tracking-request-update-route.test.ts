@@ -142,9 +142,8 @@ describe('time tracking request update route', () => {
   });
 
   it('updates request rows through the admin RPC while forwarding the authenticated actor id', async () => {
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/requests/[id]/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/requests/[id]/route');
 
     const response = await PUT(
       new NextRequest(
@@ -182,9 +181,8 @@ describe('time tracking request update route', () => {
   });
 
   it('passes actor auth uid to RPC for CONTENT_UPDATED trigger actor attribution', async () => {
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/requests/[id]/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/requests/[id]/route');
 
     const response = await PUT(
       new NextRequest(
@@ -230,9 +228,8 @@ describe('time tracking request update route', () => {
       error: { message: 'new row violates row-level security policy' },
     });
 
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/requests/[id]/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/requests/[id]/route');
 
     const response = await PUT(
       new NextRequest(

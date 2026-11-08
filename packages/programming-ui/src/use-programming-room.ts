@@ -33,7 +33,6 @@ export function useProgrammingRoom(
     null
   );
   // The room key is an isolation boundary even when the transport implementation is identical.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Recreate the document when its authorized room changes.
   useEffect(() => {
     setStatus('connecting');
     setPresence([]);

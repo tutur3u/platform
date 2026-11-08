@@ -54,7 +54,6 @@ export function SalePickerPagination({
     },
     [fetchNextPage, hasNextPage, isFetchingNextPage, failed, isError]
   );
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Re-observe each loaded page even when filtering leaves the visible row count unchanged.
   const attach = useCallback(
     (node: HTMLDivElement | null) => {
       observer.current?.disconnect();

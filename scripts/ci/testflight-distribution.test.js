@@ -121,12 +121,10 @@ test('upload and retry workflows pass the same external repository opt-in', () =
     );
     assert.equal(
       step.env.TESTFLIGHT_EXTERNAL_BETA_GROUPS,
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal Actions expression
       "${{ vars.TESTFLIGHT_EXTERNAL_BETA_GROUPS || '' }}"
     );
     assert.equal(
       step.env.TESTFLIGHT_BETA_GROUPS,
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal Actions expression
       "${{ vars.TESTFLIGHT_BETA_GROUPS || '' }}"
     );
   }

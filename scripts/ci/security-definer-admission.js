@@ -166,7 +166,7 @@ function addedMigrations(root, base, head) {
     MIGRATIONS,
   ]).split('\0');
   const added = new Set();
-  for (let index = 0; index < fields.length - 1; ) {
+  for (let index = 0; index < fields.length - 1;) {
     const status = fields[index];
     const paths = /^[RC]/.test(status) ? 2 : 1;
     if (status === 'A') added.add(fields[index + 1]);
@@ -199,7 +199,7 @@ function modifiedMigrations(root, base, head) {
     MIGRATIONS,
   ]).split('\0');
   const modified = new Set();
-  for (let index = 0; index < fields.length - 1; ) {
+  for (let index = 0; index < fields.length - 1;) {
     const status = fields[index];
     const paths = /^[RC]/.test(status) ? 2 : 1;
     if (status === 'M') modified.add(fields[index + 1]);

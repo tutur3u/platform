@@ -89,13 +89,13 @@ export function PeriodicDeliveryBatchDialog({
     safety.current.invalid = true;
   const valid = Boolean(
     !safety.current.invalid &&
-      intent &&
-      intent.actor === actor &&
-      intent.wsId === wsId &&
-      intent.epoch === epoch &&
-      canSend &&
-      intent.reports.length > 0 &&
-      intent.reports.length <= MAX_SELECTED_DELIVERIES
+    intent &&
+    intent.actor === actor &&
+    intent.wsId === wsId &&
+    intent.epoch === epoch &&
+    canSend &&
+    intent.reports.length > 0 &&
+    intent.reports.length <= MAX_SELECTED_DELIVERIES
   );
   const assertScope = () => {
     const now = latest.current;

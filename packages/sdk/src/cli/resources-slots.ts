@@ -429,10 +429,10 @@ export async function hasSetupMaintenanceLease(
   const owner = await readOwner(join(home, 'admission', 'owner.json'));
   return Boolean(
     owner?.tool === 'rollout' &&
-      owner.scheduler === 2 &&
-      owner.token === token &&
-      processAlive(owner.pid) &&
-      processLineage(true)?.pids.has(owner.pid)
+    owner.scheduler === 2 &&
+    owner.token === token &&
+    processAlive(owner.pid) &&
+    processLineage(true)?.pids.has(owner.pid)
   );
 }
 

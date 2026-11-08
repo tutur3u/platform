@@ -61,9 +61,8 @@ it('removes direct Supabase source links from public delivery JSON', () => {
 });
 
 it('removes nested Supabase provenance links from public asset metadata', async () => {
-  const { safeExternalProjectDeliveryMetadata } = await import(
-    './asset-delivery-url'
-  );
+  const { safeExternalProjectDeliveryMetadata } =
+    await import('./asset-delivery-url');
   const source =
     'https://storage.example.test/storage/v1/object/sign/workspaces/ws-1/a?token=private';
   expect(

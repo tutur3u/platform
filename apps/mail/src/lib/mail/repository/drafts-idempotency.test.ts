@@ -69,7 +69,6 @@ vi.mock('./shared', () => {
         db.messages.set(id, saved);
         return { data: saved, error: null };
       },
-      // biome-ignore lint/suspicious/noThenProperty: Model the awaited Supabase query builder.
       then(resolve: (value: unknown) => void) {
         resolve({ error: null });
       },

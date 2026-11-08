@@ -1,7 +1,6 @@
 'use client';
 
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Separator } from '@tuturuuu/ui/separator';
 import LinkedIdentitiesCard from './linked-identities-card';
 import SecuritySettingsCard from './security-settings-card';
 
@@ -17,10 +16,8 @@ export default function SecuritySettings({
   onOpenSessions,
 }: SecuritySettingsProps) {
   return (
-    <div className="space-y-8">
-      <SecuritySettingsCard user={user} onOpenSessions={onOpenSessions} />
-      <Separator />
+    <SecuritySettingsCard user={user} onOpenSessions={onOpenSessions}>
       <LinkedIdentitiesCard linkedProvider={linkedProvider} />
-    </div>
+    </SecuritySettingsCard>
   );
 }

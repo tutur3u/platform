@@ -59,51 +59,55 @@ describe('ancestry without a trusted ps (REV-6492-7)', () => {
     else expect(lineage).toBeUndefined();
   });
 
-  it('fails with an actionable error instead of waiting forever behind its own ancestor', {
-    timeout: 20_000,
-  }, async () => {
-    host.noPs = true;
-    host.noProc = true;
-    const home = await realpath(
-      await mkdtemp(join(tmpdir(), 'ttr-resources-ancestry-'))
-    );
-    dirs.push(home);
-    await atomicJson(join(home, 'config.json'), {
-      ...defaultResourceConfig(),
-      roots: [home],
-    });
-    // The only lane is held by a live owner whose marker this waiter
-    // carries, so it is almost certainly nested inside that job.
-    const owner = { ...newOwner('outer'), pid: process.pid };
-    await atomicJson(join(home, 'slots', '0', 'owner.json'), owner);
-    const previous = {
-      wait: ancestryWait.ms,
-      marker: process.env.TTR_RESOURCES_ADMITTED,
-    };
-    ancestryWait.ms = 1_500;
-    process.env.TTR_RESOURCES_ADMITTED = owner.token;
-    const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
-    try {
-      const started = Date.now();
-      await expect(
-        queuedResourceCommand(
-          home,
-          process.execPath,
-          ['-e', ''],
-          { ...process.env, TTR_RESOURCES_IGNORE_DISK: '1' },
-          true,
-          1
-        )
-      ).rejects.toThrow(
-        /Cannot verify process ancestry.*TTR_RESOURCES_BYPASS=1/su
+  it(
+    'fails with an actionable error instead of waiting forever behind its own ancestor',
+    {
+      timeout: 20_000,
+    },
+    async () => {
+      host.noPs = true;
+      host.noProc = true;
+      const home = await realpath(
+        await mkdtemp(join(tmpdir(), 'ttr-resources-ancestry-'))
       );
-      expect(Date.now() - started).toBeLessThan(10_000);
-    } finally {
-      stderr.mockRestore();
-      ancestryWait.ms = previous.wait;
-      if (previous.marker === undefined)
-        delete process.env.TTR_RESOURCES_ADMITTED;
-      else process.env.TTR_RESOURCES_ADMITTED = previous.marker;
+      dirs.push(home);
+      await atomicJson(join(home, 'config.json'), {
+        ...defaultResourceConfig(),
+        roots: [home],
+      });
+      // The only lane is held by a live owner whose marker this waiter
+      // carries, so it is almost certainly nested inside that job.
+      const owner = { ...newOwner('outer'), pid: process.pid };
+      await atomicJson(join(home, 'slots', '0', 'owner.json'), owner);
+      const previous = {
+        wait: ancestryWait.ms,
+        marker: process.env.TTR_RESOURCES_ADMITTED,
+      };
+      ancestryWait.ms = 1_500;
+      process.env.TTR_RESOURCES_ADMITTED = owner.token;
+      const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+      try {
+        const started = Date.now();
+        await expect(
+          queuedResourceCommand(
+            home,
+            process.execPath,
+            ['-e', ''],
+            { ...process.env, TTR_RESOURCES_IGNORE_DISK: '1' },
+            true,
+            1
+          )
+        ).rejects.toThrow(
+          /Cannot verify process ancestry.*TTR_RESOURCES_BYPASS=1/su
+        );
+        expect(Date.now() - started).toBeLessThan(10_000);
+      } finally {
+        stderr.mockRestore();
+        ancestryWait.ms = previous.wait;
+        if (previous.marker === undefined)
+          delete process.env.TTR_RESOURCES_ADMITTED;
+        else process.env.TTR_RESOURCES_ADMITTED = previous.marker;
+      }
     }
-  });
+  );
 });

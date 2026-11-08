@@ -106,8 +106,7 @@ export interface WorkspaceCalendarPayload {
   position?: number;
 }
 
-export interface WorkspaceCalendarUpdatePayload
-  extends Partial<WorkspaceCalendarPayload> {
+export interface WorkspaceCalendarUpdatePayload extends Partial<WorkspaceCalendarPayload> {
   id: string;
 }
 
@@ -159,8 +158,7 @@ export interface SchedulePreviewRequestPayload {
   clientTimezone?: string;
 }
 
-export interface ScheduleApplyRequestPayload
-  extends SchedulePreviewRequestPayload {
+export interface ScheduleApplyRequestPayload extends SchedulePreviewRequestPayload {
   forceReschedule?: boolean;
   mode?: 'safe-apply' | 'full-apply';
   scope?: 'impacted-only' | 'full-window';
@@ -238,8 +236,7 @@ export interface CalendarConnectionPayload {
   syncOutboundEnabled?: boolean;
 }
 
-export interface CalendarConnectionUpdatePayload
-  extends Partial<CalendarConnectionPayload> {
+export interface CalendarConnectionUpdatePayload extends Partial<CalendarConnectionPayload> {
   id?: string;
   wsId?: string;
 }

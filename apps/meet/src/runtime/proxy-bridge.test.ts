@@ -209,9 +209,8 @@ describe('Meet request bridge', () => {
 });
 
 it('R21 passes the exact navigation callback through initial, forwarded and spread model contexts', async () => {
-  const { createLoginRedirectProbe } = await import(
-    './login-redirect-diagnostics'
-  );
+  const { createLoginRedirectProbe } =
+    await import('./login-redirect-diagnostics');
   const { redirect } = await import('./next-navigation');
   const { isRedirect } = await import('@tanstack/react-router');
   const probe = createLoginRedirectProbe('https://meet.tuturuuu.com/login');

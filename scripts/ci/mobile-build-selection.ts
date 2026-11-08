@@ -1,5 +1,47 @@
 import type { WorkflowDecisionInput } from '../../tuturuuu.ts';
 
+export function getMobileTestsAffected({
+  changedFiles,
+  eventName,
+  workspaceManifests = [],
+}: Pick<
+  WorkflowDecisionInput,
+  'changedFiles' | 'eventName' | 'workspaceManifests'
+>): { tests: boolean } {
+  if (eventName !== 'pull_request' || !changedFiles?.length) {
+    return { tests: true };
+  }
+  const files = changedFiles.map((file) =>
+    file.replace(/\\/g, '/').replace(/^\.\//, '')
+  );
+  if (!files.includes('bun.lock')) return { tests: true };
+
+  const nodeWorkspaces = new Set(
+    workspaceManifests.map((manifest) => manifest.path)
+  );
+  const unrelated = files.every((file) => {
+    if (file.split('/').includes('..')) return false;
+    if (
+      /^(apps\/mobile|apps\/meet-realtime|packages\/realtime)(\/|$)/.test(
+        file
+      ) ||
+      /\.(dart|arb)$|(^|\/)pubspec\.(yaml|lock)$/.test(file)
+    ) {
+      return false;
+    }
+    if (file === 'bun.lock' || file === 'package.json') return true;
+    if (
+      /^[^/]+\.mdx?$/.test(file) ||
+      /^(docs\/|plugins\/tuturuuu\/skills\/).*\.mdx?$/.test(file)
+    ) {
+      return true;
+    }
+    const workspace = /^(apps\/[^/]+|packages\/[^/]+)\//.exec(file)?.[1];
+    return workspace !== undefined && nodeWorkspaces.has(workspace);
+  });
+  return { tests: !unrelated };
+}
+
 const platforms = new Map([
   ['mobile-build-ios.yaml', 'ios'],
   ['mobile-build-macos.yaml', 'macos'],

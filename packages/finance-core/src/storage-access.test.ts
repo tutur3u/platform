@@ -112,9 +112,8 @@ describe('finance transaction storage access', () => {
   });
 
   it('ignores paths outside finance transaction storage', async () => {
-    const { canAccessFinanceTransactionStoragePath } = await import(
-      './storage-access'
-    );
+    const { canAccessFinanceTransactionStoragePath } =
+      await import('./storage-access');
 
     await expect(
       canAccessFinanceTransactionStoragePath({
@@ -132,9 +131,8 @@ describe('finance transaction storage access', () => {
   });
 
   it('uses finance transaction visibility for attachment reads', async () => {
-    const { canAccessFinanceTransactionStoragePath } = await import(
-      './storage-access'
-    );
+    const { canAccessFinanceTransactionStoragePath } =
+      await import('./storage-access');
 
     await expect(
       canAccessFinanceTransactionStoragePath({
@@ -164,9 +162,8 @@ describe('finance transaction storage access', () => {
       error: null,
     });
 
-    const { canAccessFinanceTransactionStoragePath } = await import(
-      './storage-access'
-    );
+    const { canAccessFinanceTransactionStoragePath } =
+      await import('./storage-access');
 
     await expect(
       canAccessFinanceTransactionStoragePath({
@@ -182,9 +179,8 @@ describe('finance transaction storage access', () => {
   });
 
   it('allows transaction creators to attach files to their own transaction', async () => {
-    const { canAccessFinanceTransactionStoragePath } = await import(
-      './storage-access'
-    );
+    const { canAccessFinanceTransactionStoragePath } =
+      await import('./storage-access');
 
     await expect(
       canAccessFinanceTransactionStoragePath({
@@ -207,9 +203,8 @@ describe('finance transaction storage access', () => {
       error: { message: 'permission lookup failed' },
     });
 
-    const { canAccessFinanceTransactionStoragePath } = await import(
-      './storage-access'
-    );
+    const { canAccessFinanceTransactionStoragePath } =
+      await import('./storage-access');
 
     await expect(
       canAccessFinanceTransactionStoragePath({

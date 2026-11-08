@@ -88,9 +88,8 @@ describe('public inventory order route', () => {
   });
 
   it('returns completed order details for signed simulated order tokens', async () => {
-    const { createSimulatedOrderToken } = await import(
-      '@tuturuuu/inventory-core/commerce/simulated-checkout'
-    );
+    const { createSimulatedOrderToken } =
+      await import('@tuturuuu/inventory-core/commerce/simulated-checkout');
     const publicToken = createSimulatedOrderToken({
       currency: 'USD',
       customerEmail: 'buyer@example.com',

@@ -25,7 +25,6 @@ function builder() {
     missing()
       ? { data: null, error }
       : { data: state.rows[0] ?? null, error: null };
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
   query.then = (resolve: (value: unknown) => unknown) =>
     resolve(
       missing() ? { data: null, error } : { data: state.rows, error: null }

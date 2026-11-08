@@ -5,6 +5,11 @@ import { Loader2 } from '@tuturuuu/icons';
 import { updateWorkspaceConfig } from '@tuturuuu/internal-api/workspace-configs';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useInfiniteWorkspaceUserGroups } from '@tuturuuu/users-ui/hooks/use-workspace-user-groups';
@@ -110,56 +115,54 @@ export default function DefaultGroupSettings({ wsId }: Props) {
   const isDirty = currentValue !== initialValue;
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        updateMutation.mutate(currentValue);
-      }}
-      className="space-y-4"
-    >
-      <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-        <div className="space-y-0.5">
-          <div className="font-medium text-base">
-            {t('default_group_label')}
-          </div>
-          <div className="text-muted-foreground text-sm">
-            {t('default_group_help')}
-          </div>
-        </div>
-        <Combobox
-          options={groupOptions}
-          selected={currentValue ?? ''}
-          onChange={(value) => setCurrentValue((value as string) || null)}
-          placeholder={t('default_group_placeholder')}
-          searchPlaceholder={t('search_groups')}
-          emptyText={t('no_groups_found')}
-          onSearchChange={setSearchQuery}
-          hasMore={Boolean(hasNextPage)}
-          onLoadMore={() => {
-            if (!isFetchingNextPage) {
-              void fetchNextPage();
-            }
-          }}
-          loadingMore={isFetchingNextPage}
-          loadMoreText={commonT('load_more')}
-          loadingMoreText={commonT('loading')}
-          actions={[
-            {
-              key: 'clear-default-group',
-              label: t('no_default_group'),
-              onSelect: () => setCurrentValue(null),
-            },
-          ]}
-          className="w-64"
-        />
-      </div>
-
-      <Button
-        type="submit"
-        disabled={isLoading || updateMutation.isPending || !isDirty}
+    <SettingsSection>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          updateMutation.mutate(currentValue);
+        }}
       >
-        {updateMutation.isPending ? t('saving') : t('save')}
-      </Button>
-    </form>
+        <SettingItemTab
+          title={t('default_group_label')}
+          description={t('default_group_help')}
+          controlWidth="md"
+        >
+          <Combobox
+            options={groupOptions}
+            selected={currentValue ?? ''}
+            onChange={(value) => setCurrentValue((value as string) || null)}
+            placeholder={t('default_group_placeholder')}
+            searchPlaceholder={t('search_groups')}
+            emptyText={t('no_groups_found')}
+            onSearchChange={setSearchQuery}
+            hasMore={Boolean(hasNextPage)}
+            onLoadMore={() => {
+              if (!isFetchingNextPage) {
+                void fetchNextPage();
+              }
+            }}
+            loadingMore={isFetchingNextPage}
+            loadMoreText={commonT('load_more')}
+            loadingMoreText={commonT('loading')}
+            actions={[
+              {
+                key: 'clear-default-group',
+                label: t('no_default_group'),
+                onSelect: () => setCurrentValue(null),
+              },
+            ]}
+          />
+        </SettingItemTab>
+
+        <SettingsSectionFooter>
+          <Button
+            type="submit"
+            disabled={isLoading || updateMutation.isPending || !isDirty}
+          >
+            {updateMutation.isPending ? t('saving') : t('save')}
+          </Button>
+        </SettingsSectionFooter>
+      </form>
+    </SettingsSection>
   );
 }

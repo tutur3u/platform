@@ -35,6 +35,7 @@ export async function financeRuntime(t, options = {}) {
   const { configPath, config } = readNativeRuntimeConfig(app);
   assert.equal(config.name, profile.workerName);
   assert.equal(config.workers_dev, false);
+  assert.equal(config.preview_urls, false);
   assert.equal(config.no_bundle, true);
   assert.equal(config.assets.run_worker_first, true);
   assert.equal(config.assets.not_found_handling, 'none');

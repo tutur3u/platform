@@ -22,7 +22,6 @@ it('scopes real members to the destination and applies name/email privacy before
       in: vi.fn(),
       order: vi.fn(),
       limit: vi.fn(),
-      // biome-ignore lint/suspicious/noThenProperty: Supabase builders are awaitable.
       then: (resolve: (result: unknown) => unknown) =>
         Promise.resolve(resolve({ data, error: null })),
     };
