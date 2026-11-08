@@ -364,7 +364,11 @@ describe('meeting transcription route input bounds', () => {
               message: canary,
               text: canary,
               cause: providerError,
-              response: {},
+              response: {
+                id: 'provider-id',
+                modelId: 'model',
+                timestamp: new Date(),
+              },
               usage: {
                 inputTokens: 0,
                 outputTokens: 0,
