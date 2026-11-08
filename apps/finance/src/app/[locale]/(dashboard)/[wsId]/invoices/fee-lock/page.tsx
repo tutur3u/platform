@@ -18,11 +18,13 @@ export default async function WorkspaceFeeLockPage({
   await connection();
   const { wsId } = await params;
   const context = await getFinanceWorkspaceContext(wsId);
-  if (!context || !(await isFeeLockEnabled(context.wsId))) notFound();
+  if (!context) notFound();
 
+  // Permission before the flag read. isFeeLockEnabled loads workspace secrets.
   if (context.permissions.withoutPermission('view_invoices')) {
     return <InvoiceAccessDenied user={context.user} />;
   }
+  if (!(await isFeeLockEnabled(context.wsId))) notFound();
 
   const { month } = await searchParams;
   return (

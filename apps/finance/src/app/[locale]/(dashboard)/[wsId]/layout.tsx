@@ -71,11 +71,15 @@ export default async function Layout({ children, params }: LayoutProps) {
   const workspaceSlug = toWorkspaceSlug(wsId, {
     personal: !!workspace.personal,
   });
-  const [permissions, currency, feeLockEnabled] = await Promise.all([
+  const [permissions, currency] = await Promise.all([
     getPermissions({ user, wsId }),
     getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
-    isFeeLockEnabled(wsId),
   ]);
+  // Skip the secret read unless this member can see invoices.
+  const feeLockEnabled =
+    permissions && !permissions.withoutPermission('view_invoices')
+      ? await isFeeLockEnabled(wsId)
+      : false;
   const resolvedCurrency = resolveSupportedCurrency(currency);
 
   const cookieStore = await cookies();

@@ -50,13 +50,16 @@ describe('fee-lock page gating', () => {
     setup(false);
     await expect(render()).rejects.toThrow('not-found');
     expect(mocks.enabled).toHaveBeenCalledWith(WS_ID);
+    mocks.enabled.mockClear();
     mocks.context.mockResolvedValue(null);
     await expect(render()).rejects.toThrow('not-found');
+    expect(mocks.enabled).not.toHaveBeenCalled();
   });
 
   it('needs view_invoices and normalizes the month', async () => {
     setup(true, false);
     expect((await render()).type).toBe(mocks.accessDenied);
+    expect(mocks.enabled).not.toHaveBeenCalled();
     setup(true);
     const page = await render('2026-12');
     expect(page.type).toBe(mocks.feeLockPage);
