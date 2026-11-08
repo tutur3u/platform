@@ -57,7 +57,6 @@ function cleanup(state) {
 }
 
 if (require.main === module) {
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: GitHub post-action state is outside Turbo.
   const state = process.env.STATE_pr_runner;
   if (state) cleanup(JSON.parse(state));
   else prepare();

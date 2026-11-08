@@ -86,12 +86,10 @@ function fixture() {
       subjectUserId,
       accessible: true,
     })),
-    verifySender: vi.fn(
-      async (): Promise<ReportReplySenderVerification> => ({
-        status: 'verified',
-        proof: sender,
-      })
-    ),
+    verifySender: vi.fn(async (): Promise<ReportReplySenderVerification> => ({
+      status: 'verified',
+      proof: sender,
+    })),
     resolveAncestors: vi.fn(
       async (_ids: readonly string[]) => [id] as readonly string[]
     ),

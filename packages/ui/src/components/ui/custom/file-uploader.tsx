@@ -330,7 +330,6 @@ function FilePreview({ file }: { file: StatedFile }) {
     <>
       {isImage && (
         <a href={file.url} target="_blank" rel="noopener noreferrer">
-          {/* biome-ignore lint/performance/noImgElement: blob url preview */}
           <img
             src={file.url}
             alt={file.rawFile.name}

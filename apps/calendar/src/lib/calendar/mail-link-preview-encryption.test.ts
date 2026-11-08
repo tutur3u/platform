@@ -108,7 +108,6 @@ function database() {
           return query;
         },
         maybeSingle: async () => ({ data: data[0] ?? null, error: null }),
-        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders intentionally implement PromiseLike.
         then: (resolve: (value: unknown) => void) =>
           Promise.resolve({ data, error: null }).then(resolve),
       };

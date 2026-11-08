@@ -103,26 +103,23 @@ beforeEach(() => {
 
 describe('platform administration permission boundaries', () => {
   it('SR-223 denies email-only whitelist access and permits root operators', async () => {
-    const { hasAIWhitelistAccess } = await import(
-      './ai-whitelist/authorization'
-    );
+    const { hasAIWhitelistAccess } =
+      await import('./ai-whitelist/authorization');
     expect(await hasAIWhitelistAccess(req())).toBe(false);
     mocks.permissions.add('manage_workspace_roles');
     expect(await hasAIWhitelistAccess(req())).toBe(true);
   });
   it('SR-224 denies email-only cron access and permits secret managers', async () => {
-    const { getManagedCronAdminUser } = await import(
-      './managed-cron/authorization'
-    );
+    const { getManagedCronAdminUser } =
+      await import('./managed-cron/authorization');
     expect(await getManagedCronAdminUser(req())).toBeNull();
     mocks.permissions.add('manage_workspace_secrets');
     expect(await getManagedCronAdminUser(req())).toEqual(mocks.actor.user);
   });
   it('SR-225 rejects root links without the queue read permission', async () => {
     mocks.permissions.clear();
-    const { requirePostEmailQueueRootAdmin } = await import(
-      '@/app/api/v1/infrastructure/post-email-queue/auth'
-    );
+    const { requirePostEmailQueueRootAdmin } =
+      await import('@/app/api/v1/infrastructure/post-email-queue/auth');
     const result = await requirePostEmailQueueRootAdmin(req());
     expect(result.error?.status).toBe(403);
   });
@@ -132,9 +129,8 @@ describe('platform administration permission boundaries', () => {
     expect(mocks.snapshot).not.toHaveBeenCalled();
   });
   it('SR-251 denies project sync to viewers before accessing GitHub', async () => {
-    const { POST } = await import(
-      '@/app/api/v1/infrastructure/projects/[projectId]/sync/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/infrastructure/projects/[projectId]/sync/route');
     expect(
       (await POST(req(), { params: Promise.resolve({ projectId: 'project' }) }))
         .status
@@ -142,9 +138,8 @@ describe('platform administration permission boundaries', () => {
     expect(mocks.sync).not.toHaveBeenCalled();
   });
   it('SR-228 rejects entity-limit mutations for root viewers before the RPC', async () => {
-    const { addPlatformEntityCreationLimitTable } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/entity-creation-limits/actions'
-    );
+    const { addPlatformEntityCreationLimitTable } =
+      await import('@/app/[locale]/(dashboard)/[wsId]/entity-creation-limits/actions');
     const form = new FormData();
     form.set('targetTable', 'tasks');
     await expect(
@@ -189,9 +184,8 @@ describe.each([
 });
 
 it('SR-225 rejects viewer-triggered queue drains before processing', async () => {
-  const { requirePostEmailQueueRootAdmin } = await import(
-    '@/app/api/v1/infrastructure/post-email-queue/auth'
-  );
+  const { requirePostEmailQueueRootAdmin } =
+    await import('@/app/api/v1/infrastructure/post-email-queue/auth');
   expect(
     (await requirePostEmailQueueRootAdmin(req(), 'manage_workspace_roles'))
       .error?.status
@@ -204,9 +198,8 @@ it('SR-225 rejects viewer-triggered queue drains before processing', async () =>
 
 it('SR-228 retains root alias admission for authorized entity-limit operators', async () => {
   mocks.permissions.add('manage_workspace_roles');
-  const { addPlatformEntityCreationLimitTable } = await import(
-    '@/app/[locale]/(dashboard)/[wsId]/entity-creation-limits/actions'
-  );
+  const { addPlatformEntityCreationLimitTable } =
+    await import('@/app/[locale]/(dashboard)/[wsId]/entity-creation-limits/actions');
   const form = new FormData();
   form.set('targetTable', 'tasks');
   await expect(
@@ -220,12 +213,10 @@ describe.each(['GUEST', undefined])('root membership %s', (membershipType) => {
     mocks.membershipType = membershipType;
     mocks.permissions.add('manage_workspace_roles');
     mocks.permissions.add('manage_workspace_secrets');
-    const { hasAIWhitelistAccess } = await import(
-      './ai-whitelist/authorization'
-    );
-    const { getManagedCronAdminUser } = await import(
-      './managed-cron/authorization'
-    );
+    const { hasAIWhitelistAccess } =
+      await import('./ai-whitelist/authorization');
+    const { getManagedCronAdminUser } =
+      await import('./managed-cron/authorization');
     expect(await hasAIWhitelistAccess(req())).toBe(false);
     expect(await getManagedCronAdminUser(req())).toBeNull();
   });

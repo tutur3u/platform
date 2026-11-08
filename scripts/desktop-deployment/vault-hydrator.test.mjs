@@ -453,47 +453,51 @@ test('wire-valid large material fails portable environment admission before sign
   }
 });
 
-test('cancellation kills a real TERM-resistant descendant with the still-owned process group', {
-  skip: process.platform === 'win32',
-  timeout: 5000,
-}, async () => {
-  const root = await mkdtemp(join(tmpdir(), 'desktop-process-group-test-'));
-  const marker = join(root, 'survived');
-  let parent;
-  let readyResolve;
-  const ready = new Promise((resolve) => {
-    readyResolve = resolve;
-  });
-  const descendantSource =
-    "require('node:process').on('SIGTERM',()=>{});process.stdout.write('ready');setTimeout(()=>require('node:fs').writeFileSync(process.argv[1],'survived'),400);setInterval(()=>{},10000)";
-  const parentSource =
-    "const child=require('node:child_process').spawn(process.execPath,['-e',process.argv[1],process.argv[2]],{stdio:['ignore','pipe','ignore']});child.stdout.on('data',chunk=>process.stdout.write(chunk));setInterval(()=>{},10000)";
-  const completion = packageChild(
-    { DESKTOP_PLATFORM: 'macos' },
-    {
-      launch: (_command, _args, options) => {
-        const args = ['-e', parentSource, descendantSource, marker];
-        parent = spawn(process.execPath, args, {
-          ...options,
-          env: {},
-          stdio: ['ignore', 'pipe', 'ignore'],
-        });
-        parent.stdout.once('data', () => readyResolve());
-        return parent;
-      },
+test(
+  'cancellation kills a real TERM-resistant descendant with the still-owned process group',
+  {
+    skip: process.platform === 'win32',
+    timeout: 5000,
+  },
+  async () => {
+    const root = await mkdtemp(join(tmpdir(), 'desktop-process-group-test-'));
+    const marker = join(root, 'survived');
+    let parent;
+    let readyResolve;
+    const ready = new Promise((resolve) => {
+      readyResolve = resolve;
+    });
+    const descendantSource =
+      "require('node:process').on('SIGTERM',()=>{});process.stdout.write('ready');setTimeout(()=>require('node:fs').writeFileSync(process.argv[1],'survived'),400);setInterval(()=>{},10000)";
+    const parentSource =
+      "const child=require('node:child_process').spawn(process.execPath,['-e',process.argv[1],process.argv[2]],{stdio:['ignore','pipe','ignore']});child.stdout.on('data',chunk=>process.stdout.write(chunk));setInterval(()=>{},10000)";
+    const completion = packageChild(
+      { DESKTOP_PLATFORM: 'macos' },
+      {
+        launch: (_command, _args, options) => {
+          const args = ['-e', parentSource, descendantSource, marker];
+          parent = spawn(process.execPath, args, {
+            ...options,
+            env: {},
+            stdio: ['ignore', 'pipe', 'ignore'],
+          });
+          parent.stdout.once('data', () => readyResolve());
+          return parent;
+        },
+      }
+    );
+    // Attach the assertion before cancellation so a fast close cannot be unhandled.
+    const rejected = assert.rejects(completion, /signing child failed/);
+    try {
+      await ready;
+      process.emit('SIGTERM');
+      await rejected;
+      await delay(550);
+      await assert.rejects(stat(marker), { code: 'ENOENT' });
+    } finally {
+      if (parent?.exitCode === null && parent?.signalCode === null)
+        stopSignerTree(parent, 'macos');
+      await rm(root, { recursive: true, force: true });
     }
-  );
-  // Attach the assertion before cancellation so a fast close cannot be unhandled.
-  const rejected = assert.rejects(completion, /signing child failed/);
-  try {
-    await ready;
-    process.emit('SIGTERM');
-    await rejected;
-    await delay(550);
-    await assert.rejects(stat(marker), { code: 'ENOENT' });
-  } finally {
-    if (parent?.exitCode === null && parent?.signalCode === null)
-      stopSignerTree(parent, 'macos');
-    await rm(root, { recursive: true, force: true });
   }
-});
+);

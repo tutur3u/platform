@@ -36,11 +36,10 @@ interface PresenceState {
   presence_ref: string;
 }
 
-export interface ChatPanelProps
-  extends Pick<
-    UseChatHelpers<UIMessage>,
-    'sendMessage' | 'status' | 'messages' | 'stop'
-  > {
+export interface ChatPanelProps extends Pick<
+  UseChatHelpers<UIMessage>,
+  'sendMessage' | 'status' | 'messages' | 'stop'
+> {
   id?: string;
   chat: Partial<AIChat> | undefined;
   chats?: AIChat[];

@@ -29,6 +29,9 @@ export interface PublicTaskBoardLabel {
 }
 
 export interface PublicTaskBoardProject {
+  ticket_key?: string;
+  ticket_number?: number;
+  created_at?: string;
   id: string;
   name: string;
   status: string | null;
@@ -99,6 +102,8 @@ type JoinedLabelRow = {
 };
 
 type JoinedProjectRow = {
+  ticket_number?: number;
+  created_at?: string;
   task_id?: string | null;
   task_projects?: PublicTaskBoardProject | PublicTaskBoardProject[] | null;
 };
@@ -161,16 +166,14 @@ export function buildPublicTaskBoardPayload({
         new Date(b.created_at ?? 0).getTime()
       );
     })
-    .map(
-      (list): PublicTaskBoardList => ({
-        id: list.id,
-        name: list.name ?? null,
-        status: list.status ?? null,
-        color: list.color ?? null,
-        position: list.position ?? null,
-        created_at: list.created_at ?? null,
-      })
-    );
+    .map((list): PublicTaskBoardList => ({
+      id: list.id,
+      name: list.name ?? null,
+      status: list.status ?? null,
+      color: list.color ?? null,
+      position: list.position ?? null,
+      created_at: list.created_at ?? null,
+    }));
   const publicListIds = new Set(publicLists.map((list) => list.id));
   const labelsByTask = byTaskId(
     labels.map((row) => ({
@@ -181,7 +184,16 @@ export function buildPublicTaskBoardPayload({
   const projectsByTask = byTaskId(
     projects.map((row) => ({
       taskId: row.task_id ?? null,
-      item: getJoinedOne(row.task_projects) ?? null,
+      item: (() => {
+        const project = getJoinedOne(row.task_projects);
+        return project
+          ? {
+              ...project,
+              ticket_number: row.ticket_number,
+              created_at: row.created_at,
+            }
+          : null;
+      })(),
     }))
   );
   const assigneesByTask = byTaskId(
@@ -193,25 +205,23 @@ export function buildPublicTaskBoardPayload({
 
   const publicTasks = tasks
     .filter((task) => task.list_id && publicListIds.has(task.list_id))
-    .map(
-      (task): PublicTaskBoardTask => ({
-        id: task.id,
-        list_id: task.list_id,
-        name: task.name,
-        display_number: task.display_number ?? null,
-        priority: task.priority ?? null,
-        start_date: task.start_date ?? null,
-        end_date: task.end_date ?? null,
-        created_at: task.created_at ?? null,
-        completed_at: task.completed_at ?? null,
-        closed_at: task.closed_at ?? null,
-        estimation_points: task.estimation_points ?? null,
-        sort_key: task.sort_key ?? null,
-        labels: labelsByTask.get(task.id) ?? [],
-        projects: projectsByTask.get(task.id) ?? [],
-        assignees: assigneesByTask.get(task.id) ?? [],
-      })
-    );
+    .map((task): PublicTaskBoardTask => ({
+      id: task.id,
+      list_id: task.list_id,
+      name: task.name,
+      display_number: task.display_number ?? null,
+      priority: task.priority ?? null,
+      start_date: task.start_date ?? null,
+      end_date: task.end_date ?? null,
+      created_at: task.created_at ?? null,
+      completed_at: task.completed_at ?? null,
+      closed_at: task.closed_at ?? null,
+      estimation_points: task.estimation_points ?? null,
+      sort_key: task.sort_key ?? null,
+      labels: labelsByTask.get(task.id) ?? [],
+      projects: projectsByTask.get(task.id) ?? [],
+      assignees: assigneesByTask.get(task.id) ?? [],
+    }));
 
   return {
     board: {
@@ -342,7 +352,9 @@ export async function loadPublicTaskBoard(
       .in('task_id', taskIds),
     sbAdmin
       .from('task_project_tasks')
-      .select('task_id, task_projects(id, name, status)')
+      .select(
+        'task_id, ticket_number, created_at, task_projects(id, name, status, ticket_key)'
+      )
       .in('task_id', taskIds),
     sbAdmin
       .from('task_assignees')

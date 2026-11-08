@@ -217,8 +217,8 @@ export function EntryDetailClient({
   const coverAsset = imageAssets[0] ?? null;
   const supportsWebglPackage = Boolean(
     cmsGamesEnabled &&
-      activeCollection &&
-      isGameLikeCollection(activeCollection)
+    activeCollection &&
+    isGameLikeCollection(activeCollection)
   );
   const webglPackagePlayerPath = webglPackageAsset
     ? `${getCmsWorkspaceBasePath(pathname)}/content/entries/${entryId}/webgl/${webglPackageAsset.id}`

@@ -6,11 +6,11 @@
   "r2_buckets": [
     {
       "binding": "MAIL_R2_BUCKET",
-      "bucket_name": "tuturuuu-mail"
-    }
+      "bucket_name": "tuturuuu-mail",
+    },
   ],
   "vars": {
     "MAIL_INGEST_URL": "https://mail.tuturuuu.com/api/v1/webhooks/mail/cloudflare",
-    "MAIL_R2_BUCKET_NAME": "tuturuuu-mail"
-  }
+    "MAIL_R2_BUCKET_NAME": "tuturuuu-mail",
+  },
 }

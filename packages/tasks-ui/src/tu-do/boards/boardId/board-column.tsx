@@ -194,6 +194,7 @@ interface BoardColumnProps {
   onSpecialPinnedChange?: (pinned: boolean) => void;
   onHoverTaskList?: (listId: string) => void;
   readOnly?: boolean;
+  pagesCovered?: boolean; // The board holds every task: no more pages.
 }
 
 export function BoardColumn({
@@ -227,6 +228,7 @@ export function BoardColumn({
   onSpecialPinnedChange,
   onHoverTaskList,
   readOnly = false,
+  pagesCovered = false,
 }: BoardColumnProps) {
   const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
@@ -376,11 +378,10 @@ export function BoardColumn({
     onTaskListCollapsedChange,
   });
 
-  // Load more pages (infinite scroll callback)
   const handleLoadMore = useCallback(() => {
-    if (!listState || listState.isLoading || !listState.hasMore) return;
+    if (pagesCovered || !listState?.hasMore || listState.isLoading) return;
     loadColumnPage(listState.page + 1);
-  }, [listState, loadColumnPage]);
+  }, [listState, loadColumnPage, pagesCovered]);
 
   const handleRefreshList = useCallback(async () => {
     if (isRefreshingList) return;
@@ -484,11 +485,10 @@ export function BoardColumn({
     tasks,
   ]);
 
-  const badgeCount = listState
-    ? listState.hasMore
+  const badgeCount =
+    listState?.hasMore && !pagesCovered && !hasActiveFilters
       ? Math.max(listState.totalCount, visibleTasks.length)
-      : visibleTasks.length
-    : visibleTasks.length;
+      : visibleTasks.length;
   const selectedVisibleTaskCount = visibleTasks.reduce(
     (count, task) => count + (selectedTasks?.has(task.id) ? 1 : 0),
     0
@@ -961,7 +961,7 @@ export function BoardColumn({
           optimisticUpdateInProgress={optimisticUpdateInProgress}
           bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
           onLoadMore={handleLoadMore}
-          hasMore={listState?.hasMore ?? false}
+          hasMore={!pagesCovered && !!listState?.hasMore}
           isLoadingMore={Boolean(listState?.isLoading && listState.page > 0)}
           readOnly={readOnly}
         />

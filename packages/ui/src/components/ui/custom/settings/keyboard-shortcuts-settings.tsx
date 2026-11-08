@@ -1,5 +1,7 @@
 'use client';
 
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { Kbd } from '@tuturuuu/ui/kbd';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { useTranslations } from 'next-intl';
@@ -27,27 +29,22 @@ function ShortcutKeys({ sequences }: { sequences: string[][] }) {
 }
 
 function ShortcutGroup({
+  description,
   rows,
   title,
 }: {
+  description?: string;
   rows: ShortcutRow[];
   title: string;
 }) {
   return (
-    <section className="space-y-3">
-      <h3 className="font-medium text-sm">{title}</h3>
-      <div className="divide-y rounded-md border">
-        {rows.map((row) => (
-          <div
-            className="grid min-h-12 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-3 py-2"
-            key={row.label}
-          >
-            <span className="text-sm">{row.label}</span>
-            <ShortcutKeys sequences={row.keys} />
-          </div>
-        ))}
-      </div>
-    </section>
+    <SettingsSection description={description} title={title}>
+      {rows.map((row) => (
+        <SettingItemTab key={row.label} title={row.label}>
+          <ShortcutKeys sequences={row.keys} />
+        </SettingItemTab>
+      ))}
+    </SettingsSection>
   );
 }
 
@@ -100,10 +97,11 @@ export function KeyboardShortcutsSettings() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <ShortcutGroup rows={globalRows} title={t('global')} />
       <ShortcutGroup
         title={t('calendar_views')}
+        description={t('page_shortcuts_hint')}
         rows={[
           { label: t('calendar_day'), keys: [['D']] },
           { label: t('calendar_four_days'), keys: [['4']] },
@@ -113,9 +111,6 @@ export function KeyboardShortcutsSettings() {
           { label: t('calendar_agenda'), keys: [['A']] },
         ]}
       />
-      <p className="text-muted-foreground text-sm">
-        {t('page_shortcuts_hint')}
-      </p>
       <ShortcutGroup rows={dialogRows} title={t('settings_dialog')} />
     </div>
   );

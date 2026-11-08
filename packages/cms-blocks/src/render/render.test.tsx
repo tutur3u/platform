@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { allBlocks, samplePage } from '../schema/fixtures.test-utils';
+import { cmsPageSchema } from '../schema/schema';
 import { CmsPageRenderer, renderCmsBlock, safeUrl } from './render';
 
 describe('cms block renderers', () => {
@@ -34,5 +35,76 @@ describe('cms block renderers', () => {
       })
     );
     expect(html).not.toContain('javascript:');
+  });
+
+  it('renders parsed pages without coercing malformed TipTap attributes', () => {
+    const malformed = { toString: 0, valueOf: 0 };
+    const page = cmsPageSchema.parse({
+      ...samplePage,
+      content: [
+        {
+          props: {
+            doc: {
+              content: [
+                {
+                  attrs: { level: malformed },
+                  content: [{ text: 'Paragraph', type: 'text' }],
+                  type: 'paragraph',
+                },
+                {
+                  attrs: { level: malformed },
+                  content: [{ text: 'Heading', type: 'text' }],
+                  type: 'heading',
+                },
+                {
+                  content: [
+                    {
+                      marks: [{ attrs: { href: malformed }, type: 'link' }],
+                      text: 'Unlinked',
+                      type: 'text',
+                    },
+                  ],
+                  type: 'paragraph',
+                },
+              ],
+              type: 'doc',
+            },
+            id: 'malformed-attributes',
+          },
+          type: 'RichText',
+        },
+      ],
+    });
+    const html = renderToStaticMarkup(<CmsPageRenderer page={page} />);
+    expect(html).toContain('<p>Paragraph</p><h2>Heading</h2><p>Unlinked</p>');
+    expect(html).not.toContain('<a');
+  });
+
+  it('preserves numeric headings and string link URLs', () => {
+    const block = {
+      props: {
+        doc: {
+          content: [
+            {
+              attrs: { level: 3 },
+              content: [
+                {
+                  marks: [{ attrs: { href: '/events' }, type: 'link' }],
+                  text: 'Events',
+                  type: 'text',
+                },
+              ],
+              type: 'heading',
+            },
+          ],
+          type: 'doc',
+        },
+        id: 'normal-attributes',
+      },
+      type: 'RichText',
+    } satisfies Parameters<typeof renderCmsBlock>[0];
+    const html = renderToStaticMarkup(renderCmsBlock(block));
+    expect(html).toContain('<h3><a href="/events"');
+    expect(html).toContain('>Events</a></h3>');
   });
 });

@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Direct CI entrypoint.
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 
@@ -52,6 +51,7 @@ export async function preflight({ env, mode, app, fetcher = fetch }) {
       environment.protection_rules?.some(
         (rule) =>
           rule.type === 'required_reviewers' &&
+          rule.prevent_self_review === true &&
           Array.isArray(rule.reviewers) &&
           rule.reviewers.length > 0 &&
           rule.reviewers.every(

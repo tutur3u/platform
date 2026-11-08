@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Direct CI entrypoint; credentials never enter Turbo builds.
 // Credential-free admission for the staging Web publisher: the exact SHA is
 // admitted by WAVE1_STAGING_PUBLICATION_ADMISSION and its Web Start candidate
 // qualification (`web-start-candidate.yaml` job `candidate`) passed at that

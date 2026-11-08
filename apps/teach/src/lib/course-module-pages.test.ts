@@ -260,7 +260,6 @@ class Query {
       count: data.length,
     };
   }
-  // biome-ignore lint/suspicious/noThenProperty: Supabase builders execute when awaited.
   then<TResult1 = ReturnType<Query['execute']>, TResult2 = never>(
     resolve?:
       | ((

@@ -210,9 +210,8 @@ async function loadHabits({ ctx, wsId, dateKey }: DayContext) {
     Effect.forEach(
       shown,
       (tracker) =>
-        Effect.tryPromise(
-          (): Promise<HabitTrackerEntry[]> =>
-            listWorkspaceHabitTrackerEntries(wsId, tracker.id, api.options)
+        Effect.tryPromise((): Promise<HabitTrackerEntry[]> =>
+          listWorkspaceHabitTrackerEntries(wsId, tracker.id, api.options)
         ).pipe(
           Effect.map((entries) => ({
             id: tracker.id,

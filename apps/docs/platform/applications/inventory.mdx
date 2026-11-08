@@ -11,6 +11,16 @@ Inventory lives in `apps/inventory` and runs locally through Portless at
 
 ## Web sale item picker
 
+Record sale remembers the last explicitly selected sales period in the current
+browser session, separately for each workspace and signed-in actor. Completing a sale,
+Keep open, reopening the dialog and reloading do not replace that selection with
+the workspace default. An explicit No period selection is also remembered.
+Archived or removed periods are not selected; the existing workspace default and
+period-choice rules apply instead. If browser storage is blocked, the selection
+still survives consecutive sales while the dialog remains mounted.
+`sale-period-selection.test.ts` covers persistence and scope isolation;
+`season-sale-integration.test.tsx` covers two consecutive Keep open sales.
+
 Record sale shows one selectable row per product, unit and warehouse identity.
 Overlapping loaded pages and repeated stock entries do not create duplicate rows
 or add stock quantities. The later provided complete product snapshot supplies

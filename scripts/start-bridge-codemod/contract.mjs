@@ -32,7 +32,7 @@ export const BRIDGE = {
 /** Route-registry config read by the bridge codegen (`planRegistries`). */
 export const ROUTES_CONFIG_FILE = 'start-bridge.routes.json';
 export const GENERATED_DIR = 'src/start-bridge';
-// `*.bridge.gen.ts` is excluded from Biome by the bridge.
+// `*.bridge.gen.ts` is excluded from Oxc by the bridge.
 export const API_REGISTRY = `${GENERATED_DIR}/api-registry.bridge.gen.ts`;
 export const PAGE_MANIFEST = `${GENERATED_DIR}/page-registry.bridge.gen.ts`;
 export const PAGE_MODULES = `${GENERATED_DIR}/page-modules.bridge.gen.ts`;

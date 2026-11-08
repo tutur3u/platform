@@ -1136,20 +1136,18 @@ export async function readObservabilityCronRuns(
         filterText(row.path, q) ||
         filterText(row.error_message, q)
     )
-    .map(
-      (row): ObservabilityCronRun => ({
-        durationMs: row.duration_ms,
-        endedAt: toMs(row.ended_at) ?? Date.now(),
-        errorMessage: row.error_message,
-        httpStatus: row.http_status,
-        id: row.id,
-        jobId: row.job_id,
-        path: row.path,
-        requestId: row.request_id,
-        startedAt: toMs(row.started_at) ?? Date.now(),
-        status: row.status,
-      })
-    );
+    .map((row): ObservabilityCronRun => ({
+      durationMs: row.duration_ms,
+      endedAt: toMs(row.ended_at) ?? Date.now(),
+      errorMessage: row.error_message,
+      httpStatus: row.http_status,
+      id: row.id,
+      jobId: row.job_id,
+      path: row.path,
+      requestId: row.request_id,
+      startedAt: toMs(row.started_at) ?? Date.now(),
+      status: row.status,
+    }));
 
   return paginate(items, {
     page: clampPage(filters.page),

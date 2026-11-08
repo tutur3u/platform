@@ -305,7 +305,6 @@ export default function GroupMemberActions({
                       const inMembers = memberIds.has(u.id);
                       const inManagers = managerIds.has(u.id);
                       return (
-                        // biome-ignore lint/a11y/useSemanticElements: <reason>
                         <div
                           role="button"
                           tabIndex={0}

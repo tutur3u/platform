@@ -337,8 +337,13 @@ Nova at `https://nova.ai.vn` is a registered internal satellite even though
 its production domain is outside `tuturuuu.com`. Central login, cross-app
 return validation, and token targeting accept that exact HTTPS origin alongside
 its registered Tuturuuu subdomain. Rewise is served only at
-`https://rewise.tuturuuu.com`; the expired `rewise.me` domain is not trusted
-anywhere and stays reserved so no managed project can claim it.
+`https://rewise.tuturuuu.com`. Tuturuuu released `rewise.me` and
+`rewise.school`, so `@tuturuuu/utils/retired-app-hosts` rejects them and every
+subdomain in return validation, configured external apps, registered external
+app origins, CSP sources and the internal API origin, even when a stale
+environment value or database row still names them. Both stay reserved
+managed-project hostnames so no customer project can claim them; reserved is
+not trusted.
 The external production origin requires an exact origin match: HTTP, custom
 ports, subdomains, hostname look-alikes, and URLs containing user credentials
 are rejected. Unregistered preview hosts such as `cms-tuturuuu.vercel.app` remain

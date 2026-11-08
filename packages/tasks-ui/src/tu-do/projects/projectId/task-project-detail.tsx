@@ -221,6 +221,8 @@ export function TaskProjectDetail({
                 setIsEditingDescription: projectForm.setIsEditingDescription,
                 showConfiguration: projectForm.showConfiguration,
                 setShowConfiguration: projectForm.setShowConfiguration,
+                editedTicketKey: projectForm.editedTicketKey,
+                setEditedTicketKey: projectForm.setEditedTicketKey,
                 editedStatus: projectForm.editedStatus,
                 setEditedStatus: projectForm.setEditedStatus,
                 editedPriority: projectForm.editedPriority,

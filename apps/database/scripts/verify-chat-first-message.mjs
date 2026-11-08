@@ -105,8 +105,8 @@ const format = (file) =>
   writeFileSync(
     file,
     execFileSync(
-      path.join(root, 'node_modules/.bin/biome'),
-      ['format', '--stdin-file-path', 'packages/types/src/supabase.ts'],
+      path.join(root, 'node_modules/.bin/oxfmt'),
+      ['--stdin-filepath', 'packages/types/src/supabase.ts'],
       {
         input: readFileSync(file),
         encoding: 'utf8',

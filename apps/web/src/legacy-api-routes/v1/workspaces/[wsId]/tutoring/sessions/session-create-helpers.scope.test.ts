@@ -41,7 +41,6 @@ function fakeClient(results: Result[]) {
       };
     }
     builder.maybeSingle = () => Promise.resolve(result());
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
     builder.then = (
       resolve: (value: Result) => unknown,
       reject: (reason: unknown) => unknown

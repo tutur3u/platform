@@ -89,9 +89,8 @@ describe('OTP route diagnostics', () => {
   it('returns and logs a diagnostic code for OTP verify route throws', async () => {
     mocks.verifyOtp.mockRejectedValue(new Error('verify provider failed'));
 
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/auth/otp/verify/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/auth/otp/verify/route');
     const response = await POST(
       new NextRequest('http://localhost/api/v1/auth/otp/verify', {
         body: JSON.stringify({
@@ -159,9 +158,8 @@ describe('OTP route diagnostics', () => {
       status: 429,
     });
 
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/auth/otp/verify/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/auth/otp/verify/route');
     const response = await POST(
       new NextRequest('http://localhost/api/v1/auth/otp/verify', {
         body: JSON.stringify({

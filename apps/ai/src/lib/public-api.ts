@@ -308,27 +308,28 @@ export async function settleMeteredExecution(
     context,
     { usage, status, metadata },
     async (io, setPhase) => {
-      const cost = await (context.calculateCost
-        ? context.calculateCost(usage, context.credential.workspaceId, io)
-        : calculateAiStudioUsageCost(
-            {
-              imageCount: usage.imageUnits,
-              inputTokens: usage.inputTokens,
-              modelId: context.modelId,
-              // AI SDK outputTokens already includes reasoning; the cost RPC adds its
-              // reasoning argument separately. Keep the audit total inclusive below.
-              outputTokens:
-                usage.outputTokens === undefined
-                  ? undefined
-                  : Math.max(
-                      0,
-                      usage.outputTokens - (usage.reasoningTokens ?? 0)
-                    ),
-              reasoningTokens: usage.reasoningTokens,
-              workspaceId: context.credential.workspaceId,
-            },
-            io
-          )
+      const cost = await (
+        context.calculateCost
+          ? context.calculateCost(usage, context.credential.workspaceId, io)
+          : calculateAiStudioUsageCost(
+              {
+                imageCount: usage.imageUnits,
+                inputTokens: usage.inputTokens,
+                modelId: context.modelId,
+                // AI SDK outputTokens already includes reasoning; the cost RPC adds its
+                // reasoning argument separately. Keep the audit total inclusive below.
+                outputTokens:
+                  usage.outputTokens === undefined
+                    ? undefined
+                    : Math.max(
+                        0,
+                        usage.outputTokens - (usage.reasoningTokens ?? 0)
+                      ),
+                reasoningTokens: usage.reasoningTokens,
+                workspaceId: context.credential.workspaceId,
+              },
+              io
+            )
       ).then((cost) => {
         if (
           context.requirePricedUsage &&

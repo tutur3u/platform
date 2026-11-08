@@ -9,7 +9,7 @@ import { DEPENDENCIES } from './contract.mjs';
 import { unifiedDiff } from './diff.mjs';
 import { VERCEL_WORKFLOW } from './fixture-repo.mjs';
 import {
-  addBiomeRouteTreeOverride,
+  addOxcRouteTreeOverride,
   addCiWorkflow,
   addGitignoreEntries,
   addHeldRecord,
@@ -94,8 +94,8 @@ test('anchors that disappear fail loudly', () => {
   assert.throws(() => addProtectedSurface('', 'tools'), /protectedSurfaces/);
   assert.throws(() => addPolicyTestApp('', 'tools'), /held app list/);
   assert.throws(
-    () => addBiomeRouteTreeOverride('{\n  "overrides": []\n}\n'),
-    /add the route tree override/
+    () => addOxcRouteTreeOverride('{\n  "overrides": []\n}\n'),
+    /missing ignorePatterns/
   );
 });
 
@@ -183,42 +183,38 @@ test('the Vercel publisher gains the shared policy gate before deploying', () =>
   );
 });
 
-test('biome.json carries the route tree override, written as Biome formats it', () => {
-  const source = real('biome.json');
-  assert.equal(addBiomeRouteTreeOverride(source), source);
-  const stripped = source.replace(
-    /,\n {2}"overrides": \[[\s\S]*\n {2}\]\n\}\n$/u,
-    '\n}\n'
+test('Oxfmt config excludes generated route trees and repairs missing exclusion', () => {
+  const source = real('.oxfmtrc.json');
+  assert.equal(addOxcRouteTreeOverride(source), source);
+  const config = JSON.parse(source);
+  config.ignorePatterns = config.ignorePatterns.filter(
+    (p) => p !== '**/routeTree.gen.ts'
   );
-  assert.notEqual(stripped, source);
-  assert.equal(addBiomeRouteTreeOverride(stripped), source);
+  assert.ok(
+    JSON.parse(
+      addOxcRouteTreeOverride(JSON.stringify(config))
+    ).ignorePatterns.includes('**/routeTree.gen.ts')
+  );
 });
 
-test('check:changed Biome skips an explicit routeTree.gen.ts but checks other files', (t) => {
-  const biome = path.join(ROOT, 'node_modules/.bin/biome');
-  if (!fs.existsSync(biome)) return t.skip('Biome is not installed');
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'start-bridge-biome-'));
+test('check:changed Oxc skips an explicit routeTree.gen.ts but checks other files', (t) => {
+  const oxc = path.join(ROOT, 'node_modules/.bin/oxfmt');
+  if (!fs.existsSync(oxc)) return t.skip('Oxc is not installed');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'start-bridge-oxc-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  const config = JSON.parse(real('biome.json'));
-  config.vcs.enabled = false;
-  fs.writeFileSync(path.join(root, 'biome.json'), JSON.stringify(config));
+  const config = JSON.parse(real('.oxfmtrc.json'));
+  fs.writeFileSync(path.join(root, '.oxfmtrc.json'), JSON.stringify(config));
   const unformatted = 'const   tree = {a:1}\nexport   default tree\n';
   fs.mkdirSync(path.join(root, 'apps/probe/src'), { recursive: true });
   for (const name of ['routeTree.gen.ts', 'other.ts'])
     fs.writeFileSync(path.join(root, 'apps/probe/src', name), unformatted);
   // The exact flags check:changed passes, with the file named explicitly.
+  fs.writeFileSync(path.join(root, 'formatted.ts'), 'export const x = 1;\n');
   const check = (file) =>
-    spawnSync(
-      biome,
-      [
-        'check',
-        '--error-on-warnings',
-        '--no-errors-on-unmatched',
-        '--files-ignore-unknown=true',
-        file,
-      ],
-      { cwd: root, encoding: 'utf8' }
-    ).status;
+    spawnSync(oxc, ['--check', 'formatted.ts', file], {
+      cwd: root,
+      encoding: 'utf8',
+    }).status;
   assert.equal(check('apps/probe/src/routeTree.gen.ts'), 0);
   assert.notEqual(check('apps/probe/src/other.ts'), 0);
 });

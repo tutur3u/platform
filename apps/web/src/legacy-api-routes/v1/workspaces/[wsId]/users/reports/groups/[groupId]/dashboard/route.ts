@@ -413,16 +413,14 @@ export async function GET(request: Request, { params }: Params) {
           new Date(left.user_group_metrics.created_at ?? 0).getTime() -
           new Date(right.user_group_metrics.created_at ?? 0).getTime()
       )
-      .map(
-        (item: any): UserGroupMetricRow => ({
-          id: item.user_group_metrics.id,
-          name: item.user_group_metrics.name,
-          unit: item.user_group_metrics.unit,
-          factor: item.user_group_metrics.factor,
-          is_weighted: item.user_group_metrics.is_weighted,
-          value: item.value,
-        })
-      );
+      .map((item: any): UserGroupMetricRow => ({
+        id: item.user_group_metrics.id,
+        name: item.user_group_metrics.name,
+        unit: item.user_group_metrics.unit,
+        factor: item.user_group_metrics.factor,
+        is_weighted: item.user_group_metrics.is_weighted,
+        value: item.value,
+      }));
 
     return NextResponse.json({
       group: groupResult.data,

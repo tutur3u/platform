@@ -59,9 +59,8 @@ describe('external project entry bundle route', () => {
 
   it('preserves offset timestamps and database microseconds for concurrency', async () => {
     const expectedUpdatedAt = '2026-07-12T23:20:06.973736+00:00';
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/[entryId]/bundle/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/[entryId]/bundle/route');
 
     const response = await PUT(createRequest(expectedUpdatedAt), {
       params: Promise.resolve({
@@ -84,9 +83,8 @@ describe('external project entry bundle route', () => {
   });
 
   it('rejects malformed concurrency timestamps', async () => {
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/[entryId]/bundle/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/[entryId]/bundle/route');
 
     const response = await PUT(createRequest('not-a-timestamp'), {
       params: Promise.resolve({

@@ -62,6 +62,8 @@ const navItems: SettingsNavGroup[] = [
 function renderShell(
   activeGroupBreadcrumb?: ReactNode,
   options?: {
+    expandAllAccordions?: boolean;
+    navItems?: SettingsNavGroup[];
     onUrlUpdate?: OnUrlUpdateFunction;
     searchParams?: string;
   }
@@ -74,8 +76,9 @@ function renderShell(
         <SettingsDialogShell
           activeTab={activeTab}
           activeGroupBreadcrumb={activeGroupBreadcrumb}
+          expandAllAccordions={options?.expandAllAccordions}
           keyboardNavigation
-          navItems={navItems}
+          navItems={options?.navItems ?? navItems}
           onActiveTabChange={setActiveTab}
         >
           <input aria-label="Editable field" />
@@ -150,7 +153,7 @@ describe('SettingsDialogShell keyboard navigation', () => {
     expect(closeButton?.parentElement).toHaveClass('px-2');
     expect(
       screen.getByTestId('active-tab').parentElement?.parentElement
-    ).toHaveClass('p-2', 'md:p-6');
+    ).toHaveClass('px-4', 'md:px-10');
   });
 
   it('keeps settings groups expanded by default', () => {
@@ -159,6 +162,43 @@ describe('SettingsDialogShell keyboard navigation', () => {
     expect(screen.getAllByText('Profile').length).toBeGreaterThan(0);
     expect(screen.getByText('Appearance')).toBeVisible();
     expect(screen.getByText('Forms')).toBeVisible();
+  });
+
+  it('renders plain group labels while the expand-all preference keeps groups open', () => {
+    renderShell();
+
+    expect(
+      screen.queryByRole('button', { name: 'Preferences' })
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Preferences')).toBeVisible();
+  });
+
+  it('keeps groups collapsible when the expand-all preference is off', () => {
+    renderShell(undefined, { expandAllAccordions: false });
+
+    const trigger = screen.getByRole('button', { name: 'Preferences' });
+
+    expect(screen.queryByText('Appearance')).not.toBeInTheDocument();
+    fireEvent.click(trigger);
+    expect(screen.getByText('Appearance')).toBeVisible();
+    fireEvent.click(trigger);
+    expect(screen.queryByText('Appearance')).not.toBeInTheDocument();
+  });
+
+  it('hides a group label that only repeats its single item', () => {
+    renderShell(undefined, {
+      navItems: [
+        {
+          label: 'Forms',
+          items: [{ icon: TestIcon, label: 'Forms', name: 'forms' }],
+        },
+      ],
+    });
+
+    expect(
+      screen.getByRole('dialog').querySelector('[data-sidebar="group-label"]')
+    ).toBeNull();
+    expect(screen.getByRole('button', { name: 'Forms' })).toBeVisible();
   });
 
   it('can replace the active group crumb with an interactive context control', () => {

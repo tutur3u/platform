@@ -71,7 +71,6 @@ const mocks = vi.hoisted(() => {
       single: vi.fn(() =>
         Promise.resolve(nextResponse(table, operation, 'single'))
       ),
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
       then: (onFulfilled, onRejected) =>
         Promise.resolve(nextResponse(table, operation, 'query')).then(
           onFulfilled,

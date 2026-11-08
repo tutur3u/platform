@@ -38,13 +38,11 @@ function renderBudgetCard() {
 
 describe('BudgetCard', () => {
   beforeEach(() => {
-    // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
       'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;Secure';
   });
 
   it('masks budget amounts, usage percentage, and progress when finance numbers are hidden', () => {
-    // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
     document.cookie = 'finance-confidential-mode=true;path=/;Secure';
 
     const { container } = renderBudgetCard();
@@ -57,7 +55,6 @@ describe('BudgetCard', () => {
   });
 
   it('shows budget amounts, usage percentage, and progress when finance numbers are visible', () => {
-    // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
     document.cookie = 'finance-confidential-mode=false;path=/;Secure';
 
     const { container } = renderBudgetCard();

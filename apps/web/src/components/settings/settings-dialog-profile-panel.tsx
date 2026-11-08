@@ -2,7 +2,7 @@
 
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
-import { Separator } from '@tuturuuu/ui/separator';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useTranslations } from 'next-intl';
 import AccountStatusSection from './account/account-status-section';
 import UserAvatar from './settings-avatar';
@@ -17,7 +17,7 @@ export function ProfileSettingsPanel({ user }: { user: WorkspaceUser }) {
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-6">
+      <SettingsSection>
         <SettingItemTab
           title={t('settings-account.avatar')}
           description={t('settings-account.avatar-description')}
@@ -25,38 +25,47 @@ export function ProfileSettingsPanel({ user }: { user: WorkspaceUser }) {
           <UserAvatar user={user} />
         </SettingItemTab>
         <SettingItemTab
+          layout="stacked"
           title={t('settings-account.banner')}
           description={t('settings-account.banner-description')}
         >
           <UserBanner key={user.id} userId={user.id} />
         </SettingItemTab>
-        <AccountStatusSection user={user} />
-        <Separator />
+      </SettingsSection>
+
+      <SettingsSection>
         <SettingItemTab
-          title={t('settings-account.user-id')}
-          description={t('settings-account.user-id-description')}
-        >
-          <UserIdInput userId={user.id} />
-        </SettingItemTab>
-        <SettingItemTab
+          controlWidth="xl"
           title={t('settings-account.display-name')}
           description={t('settings-account.display-name-description')}
         >
           <DisplayNameInput defaultValue={user.display_name} />
         </SettingItemTab>
         <SettingItemTab
+          controlWidth="xl"
           title={t('settings-account.full-name')}
           description={t('settings-account.full-name-description')}
         >
           <FullNameInput defaultValue={user.full_name} />
         </SettingItemTab>
         <SettingItemTab
+          controlWidth="xl"
           title="Email"
           description={t('settings-account.email-description')}
         >
           <EmailInput oldEmail={user.email} newEmail={user.new_email} />
         </SettingItemTab>
-      </div>
+      </SettingsSection>
+
+      <AccountStatusSection user={user}>
+        <SettingItemTab
+          controlWidth="2xl"
+          title={t('settings-account.user-id')}
+          description={t('settings-account.user-id-description')}
+        >
+          <UserIdInput userId={user.id} />
+        </SettingItemTab>
+      </AccountStatusSection>
     </div>
   );
 }

@@ -88,9 +88,8 @@ export async function POST() {
           processed++;
           if (!dbPolarIds.has(polarSub.id)) {
             // Validate workspace existence before syncing
-            const wsId = (polarSub.metadata as Record<string, unknown>)?.wsId as
-              | string
-              | undefined;
+            const wsId = (polarSub.metadata as Record<string, unknown>)
+              ?.wsId as string | undefined;
 
             let isOrphan = false;
 

@@ -114,9 +114,8 @@ describe('task upload-url route', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/upload-url/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/tasks/upload-url/route');
     const response = await (GET as UploadRouteHandler)(
       new NextRequest(
         'http://localhost/api/v1/workspaces/ws-1/tasks/upload-url'
@@ -148,9 +147,8 @@ describe('task upload-url route', () => {
         permission === 'manage_drive_tasks_directory',
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/upload-url/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/tasks/upload-url/route');
     const response = await (POST as UploadRouteHandler)(
       new NextRequest(
         'http://localhost/api/v1/workspaces/ws-1/tasks/upload-url',
@@ -178,9 +176,8 @@ describe('task upload-url route', () => {
       withoutPermission: () => false,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/upload-url/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/tasks/upload-url/route');
     const response = await (POST as UploadRouteHandler)(
       new NextRequest(
         'http://localhost/api/v1/workspaces/ws-1/tasks/upload-url',
@@ -209,9 +206,8 @@ describe('task upload-url route', () => {
     });
     mocks.taskMaybeSingle.mockResolvedValue({ data: null, error: null });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/upload-url/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/tasks/upload-url/route');
     const response = await (POST as UploadRouteHandler)(
       new NextRequest(
         'http://localhost/api/v1/workspaces/ws-1/tasks/upload-url',
@@ -257,9 +253,8 @@ describe('task upload-url route', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/upload-url/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/tasks/upload-url/route');
     const response = await (POST as UploadRouteHandler)(
       new NextRequest(
         'http://localhost/api/v1/workspaces/ws-1/tasks/upload-url',

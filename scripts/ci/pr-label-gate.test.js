@@ -32,7 +32,7 @@ const PROTECTED_TRIGGERS = {
   'ai-cloudflare.yaml': '2b1f1ae8795d0216',
   'api-worker.yaml': '058d68d5d261d527',
   'apps-cloudflare.yaml': '257f752668dce766',
-  'biome-check.yaml': '6c39e758f15186ed',
+  'oxc-check.yaml': '6c39e758f15186ed',
   'calendar-cloudflare.yaml': 'e3e096233a6e8a60',
   'calendar-generation-contract.yaml': '0a3cc2c97958f5cd',
   'cms-cloudflare.yaml': 'c43009624296a37c',
@@ -50,7 +50,8 @@ const PROTECTED_TRIGGERS = {
   'external-internal-packages.yaml': '4d532cf88497bbd2',
   'external-project-storage-analytics-contract.yaml': '02e3e1d0d939ac56',
   'fee-lock-database-contract.yaml': '0a3cc2c97958f5cd',
-  'finance-cloudflare.yaml': 'c9f3cfad0a28a7d8',
+  // Finance also watches its owning input-cache action; other trigger fields stay fixed.
+  'finance-cloudflare.yaml': 'fabf7d45e110e58d',
   'forms-cloudflare.yaml': '0e554fe52a0af9c8',
   'i18n-check.yaml': '78c7f5ff99020ac9',
   'inventory-cloudflare.yaml': '56aef454e313add1',
@@ -66,11 +67,12 @@ const PROTECTED_TRIGGERS = {
   'mobile-build-linux.yaml': '7469a02578f1c4c3',
   'mobile-build-macos.yaml': 'cca5083fd78920dc',
   'mobile-build-windows.yaml': 'ff0b86edd5297973',
-  'mobile.yaml': '2bd82a7675ba9ab3',
+  // Add only the checksum-pinned native input action to push/PR paths.
+  'mobile.yaml': 'ed6d793aecbe7293',
   'nova-cloudflare.yaml': 'a2d9cd99b1329afe',
   'ops-hub-cloudflare.yaml': '0a3cc2c97958f5cd',
   'parley-cloudflare.yaml': 'f1777123fb48e37c',
-  'pay-cloudflare.yaml': '8037389e72881e88',
+  'pay-cloudflare.yaml': 'a31b0975203c9817',
   'periodic-report-delivery-contract.yaml': 'dc372af9059d0c07',
   'playground-cloudflare.yaml': '7c22fc6d616e6d01',
   'playground-runtime-acceptance.yaml': '0a3cc2c97958f5cd',
@@ -78,6 +80,7 @@ const PROTECTED_TRIGGERS = {
   'programming-database-contract.yaml': '0a3cc2c97958f5cd',
   'report-review-receipts-contract.yaml': '433352a4fb0e56e6',
   'required-account-mfa-contract.yaml': 'f803778bc2859492',
+  'roadmap-cloudflare.yaml': '226a232389cbc09b',
   'sdk-package-qualification.yaml': '0a3cc2c97958f5cd',
   'security-egress-contract.yaml': '0a3cc2c97958f5cd',
   'shortener-cloudflare.yaml': '91506e88fa4e6dd8',
@@ -449,7 +452,7 @@ test('reported build push selectors preserve protected refs and release branches
   for (const file of [
     'turbo-unit-tests.yaml',
     'type-check.yaml',
-    'biome-check.yaml',
+    'oxc-check.yaml',
   ]) {
     assert.deepEqual(
       events(workflows[file]).push.branches,
@@ -465,5 +468,42 @@ test('reported build push selectors preserve protected refs and release branches
   assert.match(
     JSON.stringify(release),
     /release-please--branches--production--release-notes/u
+  );
+});
+
+test('roadmap artifact admission rejects unlabelled PRs and preserves main dispatch', () => {
+  const jobs = workflows['roadmap-cloudflare.yaml'].jobs;
+  const decide = (event, labels, ref, relevant = true) => {
+    const context = {
+      github: {
+        event_name: event,
+        ref,
+        event: { pull_request: { labels: labels.map((name) => ({ name })) } },
+      },
+      needs: { 'check-ci': { outputs: { should_run: String(relevant) } } },
+    };
+    return Object.fromEntries(
+      Object.entries(jobs).map(([id, job]) => [
+        id,
+        evaluateExpression(job.if, context),
+      ])
+    );
+  };
+  assert.deepEqual(decide('pull_request', [], 'refs/pull/42/merge'), {
+    'check-ci': false,
+    build: false,
+  });
+  assert.deepEqual(
+    decide('pull_request', [READY_LABEL], 'refs/pull/42/merge'),
+    { 'check-ci': true, build: true }
+  );
+  assert.equal(
+    decide('pull_request', [READY_LABEL], 'refs/pull/42/merge', false).build,
+    false
+  );
+  assert.equal(decide('workflow_dispatch', [], 'refs/heads/main').build, true);
+  assert.equal(
+    decide('workflow_dispatch', [], 'refs/heads/unreviewed').build,
+    false
   );
 });

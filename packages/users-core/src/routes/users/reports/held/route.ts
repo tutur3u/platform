@@ -65,8 +65,8 @@ function classOutOfReach(
 ) {
   return Boolean(
     scope.groupId &&
-      accessibleGroupIds &&
-      !accessibleGroupIds.includes(scope.groupId)
+    accessibleGroupIds &&
+    !accessibleGroupIds.includes(scope.groupId)
   );
 }
 

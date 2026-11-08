@@ -105,7 +105,6 @@ class FakeQuery implements PromiseLike<{ count?: number; error: null }> {
 
   // Postgrest builders are thenables: `await db.from(t).update(v).eq(...)` is
   // how the vault writes, so the stand-in must be awaitable mid-chain too.
-  // biome-ignore lint/suspicious/noThenProperty: deliberately a thenable
   then<TResult1, TResult2 = never>(
     onFulfilled?:
       | ((value: {
@@ -452,9 +451,8 @@ describe('web account logout revokes derived credentials before sign-out', () =>
   });
 
   async function expectRevokedThenSignedOut() {
-    const { revokeUserAiTempAuthTokens } = await import(
-      '@tuturuuu/utils/ai-temp-auth'
-    );
+    const { revokeUserAiTempAuthTokens } =
+      await import('@tuturuuu/utils/ai-temp-auth');
 
     expect(revokeUserAiTempAuthTokens).toHaveBeenCalledWith('user-a');
     expect(rpc).toHaveBeenCalledWith('revoke_all_cross_app_tokens', {

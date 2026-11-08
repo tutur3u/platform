@@ -113,7 +113,6 @@ export function Masonry({
 
   // ResizeObserver-based measurement for balanced strategy.
   // Merged: reset heights + observe items + debounce redistribution in one effect.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-run when children count or columns change
   useEffect(() => {
     if (strategy !== 'balanced') return;
 
@@ -283,7 +282,6 @@ export function Masonry({
   }, [strategy, children.length, currentColumns]);
 
   // Calculate average height from measured items
-  // biome-ignore lint/correctness/useExhaustiveDependencies: redistributionKey triggers intentional recalculation
   const averageHeight = useMemo(() => {
     if (itemHeightsRef.current.size === 0) return 200;
     const measuredHeights = Array.from(itemHeightsRef.current.values()).filter(
@@ -296,7 +294,6 @@ export function Masonry({
   }, [redistributionKey]);
 
   // Memoized distribution — delegates to pure functions in distribute.ts
-  // biome-ignore lint/correctness/useExhaustiveDependencies: redistributionKey triggers recalculation
   const columnWrappers = useMemo(() => {
     if (strategy === 'balanced' && itemHeightsRef.current.size > 0) {
       return distributeBalanced(

@@ -2,6 +2,7 @@
 
 import { Check, Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
   Form,
   FormControl,
@@ -76,35 +77,41 @@ export default function NameInput({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)}>
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('name')}</FormLabel>
-              <div className="flex min-w-0 items-center gap-2">
-                <FormControl className="min-w-0 flex-1">
-                  <Input
-                    placeholder={t('name_placeholder')}
-                    disabled={disabled}
-                    {...field}
-                  />
-                </FormControl>
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="shrink-0"
-                  disabled={!isDirty || saving || disabled}
-                >
-                  {saving ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Check className="h-5 w-5" />
-                  )}
-                </Button>
-              </div>
-              <FormMessage />
+              <SettingItemTab
+                controlClassName="space-y-2"
+                controlWidth="xl"
+                title={<FormLabel>{t('name')}</FormLabel>}
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <FormControl className="min-w-0 flex-1">
+                    <Input
+                      placeholder={t('name_placeholder')}
+                      disabled={disabled}
+                      {...field}
+                    />
+                  </FormControl>
+                  <Button
+                    type="submit"
+                    size="icon"
+                    variant="outline"
+                    className="shrink-0"
+                    disabled={!isDirty || saving || disabled}
+                  >
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <FormMessage />
+              </SettingItemTab>
             </FormItem>
           )}
         />

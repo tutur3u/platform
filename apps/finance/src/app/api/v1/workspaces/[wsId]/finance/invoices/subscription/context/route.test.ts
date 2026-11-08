@@ -57,7 +57,6 @@ function createThenableQuery<T>(response: T) {
     order: vi.fn(() => query),
     select: vi.fn(() => query),
     single: vi.fn(async () => response),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
     then: promise.then.bind(promise),
     catch: promise.catch.bind(promise),
     finally: promise.finally.bind(promise),

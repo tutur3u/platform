@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noTemplateCurlyInString: GitHub expressions are tested as literal YAML values.
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
 const {

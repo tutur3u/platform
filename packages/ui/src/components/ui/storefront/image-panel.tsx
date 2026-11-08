@@ -16,7 +16,6 @@ export function StorefrontImagePanel({
 }) {
   if (imageUrl) {
     return (
-      // biome-ignore lint/performance/noImgElement: storefront images are workspace-controlled external URLs
       <img
         alt=""
         className={cn('w-full object-cover', className)}

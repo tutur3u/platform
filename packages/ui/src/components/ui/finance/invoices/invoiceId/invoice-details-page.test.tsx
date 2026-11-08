@@ -96,7 +96,6 @@ function createQueryBuilder(table: string, schema?: string) {
       operation.select = select;
       return builder;
     }),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaited as thenables in component code.
     then: vi.fn((resolve, reject) =>
       Promise.resolve(resultForTable(table)).then(resolve, reject)
     ),

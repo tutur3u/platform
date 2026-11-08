@@ -108,14 +108,12 @@ export default async function Layout({ children, params }: LayoutProps) {
             </Suspense>
           }
           defaultCollapsed={defaultCollapsed}
-          links={
-            await getNavigationLinks({
-              canManageInternalAccounts: permissions.containsPermission(
-                'manage_internal_accounts' as PermissionId
-              ),
-              personalOrWsId: workspaceSlug,
-            })
-          }
+          links={await getNavigationLinks({
+            canManageInternalAccounts: permissions.containsPermission(
+              'manage_internal_accounts' as PermissionId
+            ),
+            personalOrWsId: workspaceSlug,
+          })}
           notificationPopover={<NotificationPopover userId={user.id} />}
           userPopover={
             <Suspense

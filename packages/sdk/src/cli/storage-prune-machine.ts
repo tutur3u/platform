@@ -341,8 +341,8 @@ function ownedRealDirectory(path: string) {
   const uid = process.getuid?.();
   return Boolean(
     info?.isDirectory() &&
-      !info.isSymbolicLink() &&
-      (uid === undefined || info.uid === uid)
+    !info.isSymbolicLink() &&
+    (uid === undefined || info.uid === uid)
   );
 }
 

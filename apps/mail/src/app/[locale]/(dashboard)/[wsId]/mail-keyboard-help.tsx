@@ -1,5 +1,6 @@
 'use client';
 
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
   Dialog,
   DialogContent,
@@ -16,19 +17,19 @@ export function MailKeyboardSetting() {
   const t = useTranslations('mail');
   const [enabled, setEnabled] = useMailKeyboardPreference();
   return (
-    <Label className="flex items-center justify-between gap-4 rounded-lg border border-dynamic p-3">
-      <span>
-        <span className="block font-medium">{t('keyboard_enabled')}</span>
-        <span className="mt-1 block text-muted-foreground text-xs leading-5">
-          {t('keyboard_enabled_description')}
-        </span>
-      </span>
+    <SettingItemTab
+      title={
+        <Label htmlFor="mail-keyboard-enabled">{t('keyboard_enabled')}</Label>
+      }
+      description={t('keyboard_enabled_description')}
+    >
       <Switch
+        id="mail-keyboard-enabled"
         checked={enabled}
         onCheckedChange={setEnabled}
         aria-label={t('keyboard_enabled')}
       />
-    </Label>
+    </SettingItemTab>
   );
 }
 

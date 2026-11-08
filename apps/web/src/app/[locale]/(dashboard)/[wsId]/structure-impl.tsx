@@ -211,9 +211,8 @@ async function loadUserConfig(
 }
 
 async function loadUserWorkspaceConfig(wsId: string, configId: string) {
-  const { getUserWorkspaceConfig } = await import(
-    '@tuturuuu/internal-api/users'
-  );
+  const { getUserWorkspaceConfig } =
+    await import('@tuturuuu/internal-api/users');
   const response = await getUserWorkspaceConfig(wsId, configId);
 
   return response.value;
@@ -223,9 +222,8 @@ async function updateWorkspaceNavigationLayoutConfig(
   wsId: string,
   value: string
 ) {
-  const { updateUserWorkspaceConfig } = await import(
-    '@tuturuuu/internal-api/users'
-  );
+  const { updateUserWorkspaceConfig } =
+    await import('@tuturuuu/internal-api/users');
 
   await updateUserWorkspaceConfig(
     wsId,
