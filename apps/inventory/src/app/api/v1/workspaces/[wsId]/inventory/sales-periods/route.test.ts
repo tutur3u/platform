@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   createAdminClient: vi.fn(),
   list: vi.fn(),
+  policyMaybeSingle: vi.fn(),
+  policyUpsert: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
@@ -24,12 +26,34 @@ function permissions(granted: string[]) {
   };
 }
 
+function adminClient() {
+  const read = {
+    eq: vi.fn(() => read),
+    maybeSingle: () => mocks.policyMaybeSingle(),
+    select: vi.fn(() => read),
+  };
+  return {
+    from: vi.fn((table: string) => {
+      if (table !== 'workspace_configs') {
+        throw new Error(`Unexpected table ${table}`);
+      }
+      return {
+        ...read,
+        upsert: (...args: unknown[]) => mocks.policyUpsert(...args),
+      };
+    }),
+    id: 'admin',
+  };
+}
+
 const context = { params: Promise.resolve({ wsId: 'personal' }) };
 
 describe('inventory sales periods collection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.createAdminClient.mockResolvedValue({ id: 'admin' });
+    mocks.policyMaybeSingle.mockResolvedValue({ data: null, error: null });
+    mocks.policyUpsert.mockResolvedValue({ error: null });
+    mocks.createAdminClient.mockResolvedValue(adminClient());
     mocks.authorize.mockResolvedValue({
       ok: true,
       value: {
@@ -61,7 +85,7 @@ describe('inventory sales periods collection', () => {
     expect(response.status).toBe(200);
     expect(mocks.list).toHaveBeenCalledWith({
       includeArchived: true,
-      sbAdmin: { id: 'admin' },
+      sbAdmin: expect.objectContaining({ id: 'admin' }),
       wsId: 'ws-real',
     });
   });
@@ -89,9 +113,14 @@ describe('inventory sales periods collection', () => {
         product_scope: 'all',
         starts_at: '2027-03-01',
       },
-      sbAdmin: { id: 'admin' },
+      sbAdmin: expect.objectContaining({ id: 'admin' }),
       wsId: 'ws-real',
     });
+    await expect(response.json()).resolves.toMatchObject({
+      data: { id: 'period-2' },
+      salesDefault: { status: 'unchanged' },
+    });
+    expect(mocks.policyUpsert).not.toHaveBeenCalled();
   });
 
   it('rejects reversed date ranges', async () => {
@@ -127,5 +156,198 @@ describe('inventory sales periods collection', () => {
 
     expect(response.status).toBe(400);
     expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('sets the new period as the default only when the saved policy is on', async () => {
+    mocks.policyMaybeSingle.mockResolvedValue({
+      data: { value: 'true' },
+      error: null,
+    });
+    mocks.create.mockResolvedValue({
+      id: 'period-2',
+      name: 'Spring 2027',
+      sale_count: 0,
+      ws_id: 'ws-real',
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sales-periods', {
+        body: JSON.stringify({ name: 'Spring 2027' }),
+        method: 'POST',
+      }),
+      context
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      data: { id: 'period-2' },
+      salesDefault: { status: 'updated' },
+    });
+    expect(mocks.policyUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'inventory_default_sales_period_id',
+        value: 'period-2',
+        ws_id: 'ws-real',
+      }),
+      { onConflict: 'ws_id,id' }
+    );
+  });
+
+  it('ignores a client auto-default flag when the saved policy is off', async () => {
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sales-periods', {
+        body: JSON.stringify({
+          autoSetNewSalesPeriodAsDefault: true,
+          name: 'Spring 2027',
+        }),
+        method: 'POST',
+      }),
+      context
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.create.mock.calls[0]?.[0].payload).toEqual({
+      name: 'Spring 2027',
+      product_scope: 'all',
+    });
+    await expect(response.json()).resolves.toMatchObject({
+      salesDefault: { status: 'unchanged' },
+    });
+    expect(mocks.policyUpsert).not.toHaveBeenCalled();
+  });
+
+  it('keeps a saved false policy from changing later periods', async () => {
+    mocks.policyMaybeSingle.mockResolvedValue({
+      data: { value: 'false' },
+      error: null,
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sales-periods', {
+        body: JSON.stringify({ name: 'Spring 2027' }),
+        method: 'POST',
+      }),
+      context
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      salesDefault: { status: 'unchanged' },
+    });
+    expect(mocks.policyUpsert).not.toHaveBeenCalled();
+  });
+
+  it('reports a config failure after the period exists', async () => {
+    mocks.policyMaybeSingle.mockResolvedValue({
+      data: { value: 'true' },
+      error: null,
+    });
+    mocks.policyUpsert.mockResolvedValue({
+      error: { message: 'write failed' },
+    });
+    mocks.create.mockResolvedValue({
+      id: 'period-2',
+      ws_id: 'ws-real',
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sales-periods', {
+        body: JSON.stringify({ name: 'Spring 2027' }),
+        method: 'POST',
+      }),
+      context
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toEqual({
+      data: { id: 'period-2', ws_id: 'ws-real' },
+      salesDefault: { status: 'failed' },
+    });
+  });
+
+  it('reports a policy read failure without writing another default', async () => {
+    mocks.policyMaybeSingle.mockResolvedValue({
+      data: null,
+      error: { message: 'read failed' },
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sales-periods', {
+        body: JSON.stringify({ name: 'Spring 2027' }),
+        method: 'POST',
+      }),
+      context
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      data: { id: 'period-2' },
+      salesDefault: { status: 'failed' },
+    });
+    expect(mocks.policyUpsert).not.toHaveBeenCalled();
+  });
+
+  it('does not write a period id from another workspace', async () => {
+    mocks.policyMaybeSingle.mockResolvedValue({
+      data: { value: 'true' },
+      error: null,
+    });
+    mocks.create.mockResolvedValue({ id: 'period-2', ws_id: 'other-ws' });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sales-periods', {
+        body: JSON.stringify({ name: 'Spring 2027' }),
+        method: 'POST',
+      }),
+      context
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      salesDefault: { status: 'failed' },
+    });
+    expect(mocks.policyUpsert).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the created period has no id', async () => {
+    mocks.policyMaybeSingle.mockResolvedValue({
+      data: { value: 'true' },
+      error: null,
+    });
+    mocks.create.mockResolvedValue({ ws_id: 'ws-real' });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sales-periods', {
+        body: JSON.stringify({ name: 'Spring 2027' }),
+        method: 'POST',
+      }),
+      context
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      salesDefault: { status: 'failed' },
+    });
+    expect(mocks.policyUpsert).not.toHaveBeenCalled();
+  });
+
+  it('reports a thrown config read after the period exists', async () => {
+    mocks.policyMaybeSingle.mockRejectedValue(new Error('config unavailable'));
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sales-periods', {
+        body: JSON.stringify({ name: 'Spring 2027' }),
+        method: 'POST',
+      }),
+      context
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      data: { id: 'period-2' },
+      salesDefault: { status: 'failed' },
+    });
+    expect(mocks.policyUpsert).not.toHaveBeenCalled();
   });
 });
