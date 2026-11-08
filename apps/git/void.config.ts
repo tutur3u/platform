@@ -8,7 +8,7 @@ export default defineConfig({
   cloudflare: {
     name: 'tuturuuu-git',
     main: './cloudflare/worker.ts',
-    compatibility_date: '2026-11-04',
+    compatibility_date: '2026-10-12',
     compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
     workers_dev: false,
     preview_urls: false,
