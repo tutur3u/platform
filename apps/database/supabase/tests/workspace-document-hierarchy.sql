@@ -241,22 +241,21 @@ begin
     execute p_sql;
     r := 'ok';
   exception when others then
-    r := sqlstate;
+    r := sqlstate || ' ' || sqlerrm;
   end;
   execute 'reset role';
   perform set_config('request.jwt.claims', '', true);
   return r;
 end $$;
 
-select is(
+select ok(
   pg_temp.as_role(
     format(
       'update public.workspace_documents set parent_id = %L where id = %L',
       pg_temp.doc(23), pg_temp.doc(20)
     ),
     'service_role'
-  ),
-  '42501',
+  ) like '42501%',
   'service role cannot cross workspaces either');
 select is(
   pg_temp.as_role(
@@ -269,7 +268,7 @@ select is(
   ),
   'ok',
   'a member can parent a page inside the workspace');
-select is(
+select ok(
   pg_temp.as_role(
     format(
       'update public.workspace_documents set parent_id = %L where id = %L',
@@ -277,8 +276,7 @@ select is(
     ),
     'authenticated',
     pg_temp.doc(1)
-  ),
-  '42501',
+  ) like '42501%',
   'a member cannot parent a page across workspaces');
 select is(
   (select parent_id from public.workspace_documents where id = pg_temp.doc(21)),

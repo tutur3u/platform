@@ -108,7 +108,7 @@ BEGIN
       JOIN descendants ON next_child.parent_id = descendants.id
       WHERE descendants.edge < 16
     )
-    SELECT pg_catalog.coalesce(pg_catalog.max(descendants.edge), 0)
+    SELECT coalesce(pg_catalog.max(descendants.edge), 0)
       INTO v_extra
     FROM descendants;
 
