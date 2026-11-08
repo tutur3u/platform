@@ -21,6 +21,7 @@ export const appApiPatterns = [
   "/api/v1/workspaces/[wsId]/finance/fee-locks/lock-batch",
   "/api/v1/workspaces/[wsId]/finance/fee-locks/suggestion",
   "/api/v1/workspaces/[wsId]/finance/fee-locks/template",
+  "/api/v1/workspaces/[wsId]/finance/fee-locks/template/preview",
   "/api/v1/workspaces/[wsId]/finance/filter-users",
   "/api/v1/workspaces/[wsId]/finance/invoices",
   "/api/v1/workspaces/[wsId]/finance/invoices/[invoiceId]",
