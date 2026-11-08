@@ -178,7 +178,6 @@ export function FinanceCommandProvider({
           title: action.title,
         })),
       })),
-    // biome-ignore lint/correctness/useExhaustiveDependencies: `permissions` is the rest-spread of stable boolean props; its identity churns each render but the memo body is a cheap synchronous mapping.
     [permissions, pushFinanceHref, tCommand, tFinance]
   );
 

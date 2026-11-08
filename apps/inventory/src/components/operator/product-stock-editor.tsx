@@ -465,13 +465,13 @@ function createDraftStockRow(key: string): ProductStockRowState {
 function hasStockRowInput(row: ProductStockRowState) {
   return Boolean(
     row.amount.trim() ||
-      row.minAmount.trim() ||
-      row.price.trim() ||
-      row.revenueSharePartnerId ||
-      row.revenueShareSplitPercent.trim() ||
-      row.unitId ||
-      row.unlimitedStock ||
-      row.warehouseId
+    row.minAmount.trim() ||
+    row.price.trim() ||
+    row.revenueSharePartnerId ||
+    row.revenueShareSplitPercent.trim() ||
+    row.unitId ||
+    row.unlimitedStock ||
+    row.warehouseId
   );
 }
 

@@ -220,7 +220,9 @@ async function claimedSend(
       submissionStarted = true;
     });
     submissionAccepted = true;
-    const { error } = await (await table('mail_connected_sends'))
+    const { error } = await (
+      await table('mail_connected_sends')
+    )
       .update({ status: 'sent' })
       .eq('account_id', account.id)
       .eq('request_id', requestId);
@@ -249,7 +251,9 @@ async function claimedSend(
       if (releaseError || !data)
         throw new Error('Failed to release unsent mail claim');
     } else {
-      await (await table('mail_connected_sends'))
+      await (
+        await table('mail_connected_sends')
+      )
         .update({ status: 'uncertain' })
         .eq('account_id', account.id)
         .eq('request_id', requestId)

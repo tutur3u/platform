@@ -132,13 +132,13 @@ export function satisfiesRequiredMfaPolicy(
   if (!policy.required) return true;
   return Boolean(
     isMfaSessionProof(proof) &&
-      proof.verifiedAt > policy.verifiedAfter &&
-      proof.verifiedAt <= nowSeconds &&
-      (policy.primaryVerifiedAfter === undefined ||
-        (proof.primaryVerifiedAt !== undefined &&
-          proof.primaryVerifiedAt > policy.primaryVerifiedAfter &&
-          proof.primaryVerifiedAt <= nowSeconds)) &&
-      (proof.expiresAt === undefined || proof.expiresAt > nowSeconds)
+    proof.verifiedAt > policy.verifiedAfter &&
+    proof.verifiedAt <= nowSeconds &&
+    (policy.primaryVerifiedAfter === undefined ||
+      (proof.primaryVerifiedAt !== undefined &&
+        proof.primaryVerifiedAt > policy.primaryVerifiedAfter &&
+        proof.primaryVerifiedAt <= nowSeconds)) &&
+    (proof.expiresAt === undefined || proof.expiresAt > nowSeconds)
   );
 }
 

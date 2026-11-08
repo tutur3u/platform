@@ -38,12 +38,48 @@ vi.mock('../lists/access', () => ({
     requireBoardAccessMock(...args),
 }));
 
-import { serializeSprint } from './_lib';
-import { POST as END } from './[sprintId]/end/route';
-import { PATCH } from './[sprintId]/route';
-import { POST as START } from './[sprintId]/start/route';
-import { POST as MOVE } from './[sprintId]/tasks/route';
-import { GET, PUT } from './route';
+import { serializeSprint, type SprintRouteParams } from './_lib';
+import {
+  addBoardSprint,
+  endBoardSprint,
+  moveBoardSprintTasks,
+  readBoardSprintState,
+  removeBoardSprint,
+  unplanBoardSprintTasks,
+  updateBoardSprint,
+  updateBoardSprintLength,
+} from './_operations';
+import { POST as HTTP_END } from './[sprintId]/end/route';
+import { DELETE as HTTP_DELETE, PATCH as HTTP_PATCH } from './[sprintId]/route';
+import { POST as HTTP_START } from './[sprintId]/start/route';
+import { POST as HTTP_MOVE } from './[sprintId]/tasks/route';
+import { POST as HTTP_ADD, PUT as HTTP_PUT } from './route';
+import { POST as HTTP_UNPLAN } from './unplanned/route';
+
+type SprintOperation = (
+  context: Parameters<typeof readBoardSprintState>[0]
+) => Promise<Response>;
+
+function businessUnit(operation: SprintOperation) {
+  return async (
+    request: NextRequest,
+    context: { params: Promise<SprintRouteParams> }
+  ) =>
+    operation({
+      request,
+      params: await context.params,
+      access: await requireBoardAccessMock(),
+    });
+}
+
+const GET = businessUnit(readBoardSprintState);
+const PUT = businessUnit(updateBoardSprintLength);
+const ADD = businessUnit(addBoardSprint);
+const PATCH = businessUnit(updateBoardSprint);
+const DELETE = businessUnit(removeBoardSprint);
+const END = businessUnit(endBoardSprint);
+const MOVE = businessUnit(moveBoardSprintTasks);
+const UNPLAN = businessUnit(unplanBoardSprintTasks);
 
 const BOARD_ID = '00000000-0000-4000-8000-000000000b01';
 const SPRINT_ID = '00000000-0000-4000-8000-000000000c14';
@@ -61,8 +97,15 @@ const CYCLES_GATE = {
   error: 'Board cycles are not enabled for this workspace',
 };
 
+/** An RPC result, as supabase-js resolves it. */
+function rpcResult(result: TableResult) {
+  return Promise.resolve(result);
+}
+
 function createAdmin(tables: Record<string, TableResult>) {
-  const rpc = vi.fn(async () => ({ data: null, error: null }));
+  const rpc = vi.fn((..._args: unknown[]) =>
+    rpcResult({ data: null, error: null })
+  );
   const update = vi.fn();
   const filters: [string, string, unknown][] = [];
   const from = vi.fn((table: string) => {
@@ -186,7 +229,7 @@ const params = (sprintId?: string) => ({
   params: Promise.resolve({ wsId: 'ws-1', boardId: BOARD_ID, sprintId }),
 });
 
-describe('board sprint routes', () => {
+describe('board sprint business routines with prepared board access', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -226,6 +269,47 @@ describe('board sprint routes', () => {
       },
     ]);
     expect(body.sprints[1].report).toBeNull();
+    expect(body.unplannedTaskIds).toEqual([]);
+  });
+
+  it('lists the open tasks parked outside every sprint', async () => {
+    const sbAdmin = createAdmin({
+      workspace_boards: { data: { sprint_length_weeks: 2 }, error: null },
+      task_cycles: { data: sprintRows, error: null },
+      task_sprint_reports: { data: [], error: null },
+    });
+    sbAdmin.rpc.mockReturnValueOnce(
+      rpcResult({ data: [TASK_B], error: null } as TableResult)
+    );
+    grantAccess(sbAdmin);
+
+    const body = await (await GET(request('GET'), params())).json();
+
+    expect(sbAdmin.rpc).toHaveBeenCalledWith('list_board_unplanned_task_ids', {
+      p_board_id: BOARD_ID,
+      p_ws_id: 'ws-1',
+    });
+    expect(body.unplannedTaskIds).toEqual([TASK_B]);
+  });
+
+  it('reads every parked task in one snapshot, past the API row cap', async () => {
+    const sbAdmin = createAdmin({
+      workspace_boards: { data: { sprint_length_weeks: 2 }, error: null },
+      task_cycles: { data: sprintRows, error: null },
+      task_sprint_reports: { data: [], error: null },
+    });
+    const ids = Array.from({ length: 1001 }, (_, index) => `task-${index}`);
+    sbAdmin.rpc.mockReturnValueOnce(rpcResult({ data: ids, error: null }));
+    grantAccess(sbAdmin);
+
+    const body = await (await GET(request('GET'), params())).json();
+
+    expect(
+      sbAdmin.rpc.mock.calls.filter(
+        ([name]) => name === 'list_board_unplanned_task_ids'
+      )
+    ).toHaveLength(1);
+    expect(body.unplannedTaskIds).toEqual(ids);
   });
 
   it('marks finished members done and leaves deleted tasks out of a sprint', () => {
@@ -280,6 +364,7 @@ describe('board sprint routes', () => {
       schemaAvailable: false,
       sprintLengthWeeks: null,
       sprints: [],
+      unplannedTaskIds: [],
     });
   });
 
@@ -287,12 +372,12 @@ describe('board sprint routes', () => {
     const sbAdmin = createAdmin({});
     grantAccess(sbAdmin, 'guest');
 
-    const length = await PUT(
+    const length = await HTTP_PUT(
       request('PUT', { sprint_length_weeks: 1 }),
       params()
     );
-    const start = await START(request('POST', {}), params(SPRINT_ID));
-    const end = await END(request('POST', {}), params(SPRINT_ID));
+    const start = await HTTP_START(request('POST', {}), params(SPRINT_ID));
+    const end = await HTTP_END(request('POST', {}), params(SPRINT_ID));
 
     expect([length.status, start.status, end.status]).toEqual([403, 403, 403]);
     expect(sbAdmin.rpc).not.toHaveBeenCalled();
@@ -344,10 +429,12 @@ describe('board sprint routes', () => {
       ...CYCLES_ON,
       task_cycles: { data: { id: SPRINT_ID, status: 'active' }, error: null },
     });
-    sbAdmin.rpc.mockResolvedValueOnce({
-      data: null,
-      error: { code: '55000', message: 'SPRINT_NOT_ACTIVE' },
-    } as never);
+    sbAdmin.rpc.mockReturnValueOnce(
+      rpcResult({
+        data: null,
+        error: { code: '55000', message: 'SPRINT_NOT_ACTIVE' },
+      } as TableResult)
+    );
     grantAccess(sbAdmin);
 
     const response = await END(
@@ -373,7 +460,9 @@ describe('board sprint routes', () => {
 
   it('moves unique task ids into a sprint for board editors', async () => {
     const sbAdmin = createAdmin({ ...CYCLES_ON });
-    sbAdmin.rpc.mockResolvedValueOnce({ data: 2, error: null } as never);
+    sbAdmin.rpc.mockReturnValueOnce(
+      rpcResult({ data: 2, error: null } as TableResult)
+    );
     grantAccess(sbAdmin, 'guest');
 
     const response = await MOVE(
@@ -388,6 +477,113 @@ describe('board sprint routes', () => {
       p_cycle_id: SPRINT_ID,
       p_task_ids: [TASK_A, TASK_B],
     });
+  });
+
+  it('plans one more sprint and refuses past the open sprint limit', async () => {
+    const sbAdmin = createAdmin({
+      ...CYCLES_ON,
+      workspace_boards: { data: { sprint_length_weeks: 2 }, error: null },
+      task_cycles: { data: sprintRows, error: null },
+      task_sprint_reports: { data: [], error: null },
+    });
+    grantAccess(sbAdmin, 'guest');
+    sbAdmin.rpc.mockReturnValueOnce(
+      rpcResult({
+        data: { id: SPRINT_ID },
+        error: null,
+      } as TableResult)
+    );
+
+    const added = await ADD(request('POST', {}), params());
+    expect(added.status).toBe(200);
+    expect((await added.json()).addedSprintId).toBe(SPRINT_ID);
+    expect(sbAdmin.rpc).toHaveBeenCalledWith('add_board_sprint', {
+      p_actor_id: 'user-1',
+      p_board_id: BOARD_ID,
+      p_ws_id: 'ws-1',
+    });
+
+    sbAdmin.rpc.mockReturnValueOnce(
+      rpcResult({
+        data: null,
+        error: { code: '55000', message: 'SPRINT_LIMIT_REACHED' },
+      } as TableResult)
+    );
+    const refused = await ADD(request('POST', {}), params());
+    expect(refused.status).toBe(409);
+    expect(await refused.json()).toEqual({
+      code: 'SPRINT_LIMIT_REACHED',
+      error: 'SPRINT_LIMIT_REACHED',
+    });
+  });
+
+  it('removes a planned sprint of this board only', async () => {
+    const sbAdmin = createAdmin({
+      ...CYCLES_ON,
+      task_cycles: { data: { id: SPRINT_ID, status: 'planned' }, error: null },
+    });
+    sbAdmin.rpc.mockReturnValueOnce(
+      rpcResult({
+        data: null,
+        error: { code: '55000', message: 'SPRINT_NOT_LAST' },
+      } as TableResult)
+    );
+    grantAccess(sbAdmin);
+
+    const response = await DELETE(request('DELETE'), params(SPRINT_ID));
+
+    expect(sbAdmin.rpc).toHaveBeenCalledWith('remove_board_sprint', {
+      p_actor_id: 'user-1',
+      p_board_id: BOARD_ID,
+      p_cycle_id: SPRINT_ID,
+      p_ws_id: 'ws-1',
+    });
+    expect(response.status).toBe(409);
+
+    const elsewhere = createAdmin({
+      ...CYCLES_ON,
+      task_cycles: { data: null, error: null },
+    });
+    grantAccess(elsewhere);
+    const missing = await DELETE(request('DELETE'), params(SPRINT_ID));
+    expect(missing.status).toBe(404);
+    expect(elsewhere.rpc).not.toHaveBeenCalled();
+  });
+
+  it('takes unique tasks out of every sprint', async () => {
+    const sbAdmin = createAdmin({ ...CYCLES_ON });
+    sbAdmin.rpc.mockReturnValueOnce(
+      rpcResult({ data: 2, error: null } as TableResult)
+    );
+    grantAccess(sbAdmin, 'guest');
+
+    const response = await UNPLAN(
+      request('POST', { task_ids: [TASK_A, TASK_B, TASK_A] }),
+      params()
+    );
+
+    expect(await response.json()).toEqual({ moved: 2 });
+    expect(sbAdmin.rpc).toHaveBeenCalledWith('move_tasks_to_board_sprint', {
+      p_board_id: BOARD_ID,
+      p_task_ids: [TASK_A, TASK_B],
+    });
+  });
+
+  it('keeps adding, removing and parking behind the board cycles flag', async () => {
+    const sbAdmin = createAdmin({});
+    grantAccess(sbAdmin);
+
+    const responses = [
+      await HTTP_ADD(request('POST', {}), params()),
+      await HTTP_DELETE(request('DELETE'), params(SPRINT_ID)),
+      await HTTP_UNPLAN(request('POST', { task_ids: [TASK_A] }), params()),
+    ];
+
+    for (const response of responses) {
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual(CYCLES_GATE);
+    }
+    expect(sbAdmin.rpc).not.toHaveBeenCalled();
   });
 
   it('updates the goal of an open sprint only', async () => {
@@ -423,11 +619,11 @@ describe('board sprint routes', () => {
       grantAccess(sbAdmin);
 
       const responses = await Promise.all([
-        PUT(request('PUT', { sprint_length_weeks: 1 }), params()),
-        PATCH(request('PATCH', { goal: 'Ship' }), params(SPRINT_ID)),
-        START(request('POST', {}), params(SPRINT_ID)),
-        END(request('POST', {}), params(SPRINT_ID)),
-        MOVE(request('POST', { task_ids: [TASK_A] }), params(SPRINT_ID)),
+        HTTP_PUT(request('PUT', { sprint_length_weeks: 1 }), params()),
+        HTTP_PATCH(request('PATCH', { goal: 'Ship' }), params(SPRINT_ID)),
+        HTTP_START(request('POST', {}), params(SPRINT_ID)),
+        HTTP_END(request('POST', {}), params(SPRINT_ID)),
+        HTTP_MOVE(request('POST', { task_ids: [TASK_A] }), params(SPRINT_ID)),
       ]);
 
       expect(responses.map((response) => response.status)).toEqual([
@@ -446,7 +642,7 @@ describe('board sprint routes', () => {
       });
       grantAccess(sbAdmin);
 
-      const response = await START(request('POST', {}), params(SPRINT_ID));
+      const response = await HTTP_START(request('POST', {}), params(SPRINT_ID));
 
       expect(response.status).toBe(403);
       expect(sbAdmin.rpc).not.toHaveBeenCalled();

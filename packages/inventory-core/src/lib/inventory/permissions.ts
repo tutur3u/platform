@@ -129,6 +129,14 @@ export function canUpdateInventorySales(
   return hasAnyPermission(permissions, ['update_invoices']);
 }
 
+export function canEditInventorySalesDefaults(
+  permissions: Pick<PermissionsResult, 'containsPermission'>
+) {
+  return (
+    canManageInventorySetup(permissions) || canUpdateInventorySales(permissions)
+  );
+}
+
 export function canDeleteInventorySales(
   permissions: Pick<PermissionsResult, 'containsPermission'>
 ) {

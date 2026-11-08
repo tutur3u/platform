@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: deploy-only command, never cached by Turbo.
 // Deploy-only readback. All requests are bounded GETs; fixtures inject fetch.
 // API reference: https://developers.cloudflare.com/api/resources/workers/
 import assert from 'node:assert/strict';

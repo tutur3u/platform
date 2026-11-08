@@ -51,9 +51,8 @@ describe('habit trackers route', () => {
       viewerUserId: 'user-1',
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/habit-trackers/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/habit-trackers/route');
 
     const response = await GET(
       new NextRequest(
@@ -80,9 +79,8 @@ describe('habit trackers route', () => {
       created: true,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/habit-trackers/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/habit-trackers/route');
 
     const response = await POST(
       new NextRequest(
@@ -146,9 +144,8 @@ describe('habit trackers route', () => {
       created: false,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/habit-trackers/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/habit-trackers/route');
 
     const response = await POST(
       new NextRequest(
@@ -190,9 +187,8 @@ describe('habit trackers route', () => {
       new HabitTrackerError('Not found', 404)
     );
 
-    const { GET, POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/habit-trackers/route'
-    );
+    const { GET, POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/habit-trackers/route');
 
     const response = await GET(
       new NextRequest('http://localhost/api/v1/workspaces/ws-1/habit-trackers'),

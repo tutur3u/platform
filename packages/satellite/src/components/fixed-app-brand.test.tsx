@@ -13,10 +13,7 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('@tuturuuu/ui/custom/tuturuuu-logo', () => ({
-  TuturuuLogo: (props: ComponentProps<'img'>) => (
-    // biome-ignore lint/performance/noImgElement: test double for next/image
-    <img alt="" {...props} />
-  ),
+  TuturuuLogo: (props: ComponentProps<'img'>) => <img alt="" {...props} />,
 }));
 
 afterEach(cleanup);

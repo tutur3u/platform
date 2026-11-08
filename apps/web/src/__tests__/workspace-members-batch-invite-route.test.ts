@@ -97,9 +97,8 @@ function routeAccess({
 }
 
 async function postBatchInvite(body: unknown, wsId = 'workspace-1') {
-  const { POST } = await import(
-    '@/app/api/v1/workspaces/[wsId]/members/batch-invite/route'
-  );
+  const { POST } =
+    await import('@/app/api/v1/workspaces/[wsId]/members/batch-invite/route');
 
   return POST(
     new Request(

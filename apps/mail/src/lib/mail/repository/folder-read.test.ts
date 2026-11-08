@@ -98,7 +98,6 @@ describe('folder-wide mark read', () => {
           cursor = value;
           return query;
         },
-        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
         then: (resolve: (value: unknown) => unknown) =>
           Promise.resolve({
             data: source.filter((row) => row.id > cursor).slice(0, 250),

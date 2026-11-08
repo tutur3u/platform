@@ -249,7 +249,7 @@ export async function GET(
                 left: '50%',
               }}
             />
-            {/** biome-ignore lint/performance/noImgElement: <cannot use Next.js Image on server> */}
+
             <img
               alt="User Avatar"
               width="320"

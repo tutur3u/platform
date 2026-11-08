@@ -193,9 +193,9 @@ export function reconcileChildren(
         : NaN;
       const writerDrained = Boolean(
         evidence?.drained &&
-          age >= 0 &&
-          age <= 5000 &&
-          thread.activeWriterNodes === 0
+        age >= 0 &&
+        age <= 5000 &&
+        thread.activeWriterNodes === 0
       );
       const blockers = [
         ...(active ? ['run-not-idle'] : []),

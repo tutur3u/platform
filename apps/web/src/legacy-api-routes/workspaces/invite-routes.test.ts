@@ -99,9 +99,8 @@ describe('workspace invitation API routes', () => {
         personal: false,
       },
     });
-    const { GET } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/invite-status/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/invite-status/route');
 
     const response = await GET(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'workspace-alpha' }),
@@ -127,9 +126,8 @@ describe('workspace invitation API routes', () => {
       status: 'none',
       workspace: null,
     });
-    const { GET } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/invite-status/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/invite-status/route');
 
     const response = await GET(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'workspace-alpha' }),
@@ -158,9 +156,8 @@ describe('workspace invitation API routes', () => {
         },
       },
     ]);
-    const { GET } = await import(
-      '@/legacy-api-routes/workspaces/invitations/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/workspaces/invitations/route');
 
     const response = await GET(
       new NextRequest('http://localhost/test', {

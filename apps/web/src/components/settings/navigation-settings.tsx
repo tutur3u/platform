@@ -11,7 +11,12 @@ import {
 } from '@tuturuuu/internal-api';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
-import { Label } from '@tuturuuu/ui/label';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Select,
   SelectContent,
@@ -19,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
@@ -268,48 +272,41 @@ export default function NavigationSettings({ user }: NavigationSettingsProps) {
   });
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-2">
-        <h3 className="font-medium text-lg">{t('title')}</h3>
-        <p className="text-muted-foreground text-sm">{t('description')}</p>
-      </div>
-
-      <div className="rounded-lg border p-4">
-        <div className="space-y-3">
-          <Label>{t('default_workspace_label')}</Label>
-          <DefaultWorkspaceSetting
-            defaultWorkspaceId={user?.default_workspace_id}
-            onSelectedWorkspaceChange={setSelectedDefaultWorkspaceId}
-            user={user}
-          />
-          <p className="text-muted-foreground text-xs">
-            {t('default_workspace_help')}
-          </p>
-        </div>
-      </div>
-
-      <Separator />
+    <SettingsSection title={t('title')} description={t('description')}>
+      <SettingItemTab
+        title={t('default_workspace_label')}
+        description={t('default_workspace_help')}
+        controlWidth="lg"
+      >
+        <DefaultWorkspaceSetting
+          defaultWorkspaceId={user?.default_workspace_id}
+          onSelectedWorkspaceChange={setSelectedDefaultWorkspaceId}
+          user={user}
+        />
+      </SettingItemTab>
 
       {!startPageWorkspaceId ? (
-        <p className="text-muted-foreground text-sm">
+        <SettingsSectionMessage>
           {t('workspace_required')}
-        </p>
+        </SettingsSectionMessage>
       ) : isConfigLoading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <SettingsSectionMessage className="justify-center">
+          <Loader2 className="h-5 w-5 animate-spin" />
+        </SettingsSectionMessage>
       ) : isConfigError ? (
-        <p className="text-muted-foreground text-sm">{t('load_error')}</p>
+        <SettingsSectionMessage>{t('load_error')}</SettingsSectionMessage>
       ) : (
         <form
-          className="space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
             saveMutation.mutate();
           }}
         >
-          <div className="grid gap-2">
-            <Label>{t('root_target_label')}</Label>
+          <SettingItemTab
+            title={t('root_target_label')}
+            description={t('root_target_help')}
+            controlWidth="lg"
+          >
             <Select
               value={safeTarget}
               onValueChange={(value) => {
@@ -339,14 +336,13 @@ export default function NavigationSettings({ user }: NavigationSettingsProps) {
                 <SelectItem value="finance">{t('targets.finance')}</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-muted-foreground text-xs">
-              {t('root_target_help')}
-            </p>
-          </div>
+          </SettingItemTab>
 
           {safeTarget === 'tasks' && (
-            <div className="grid gap-2">
-              <Label>{t('tasks_submodule_label')}</Label>
+            <SettingItemTab
+              title={t('tasks_submodule_label')}
+              controlWidth="lg"
+            >
               <Select
                 value={safeSubmoduleForTasks}
                 onValueChange={(value) => {
@@ -376,48 +372,51 @@ export default function NavigationSettings({ user }: NavigationSettingsProps) {
                   </SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </SettingItemTab>
           )}
 
           {safeTarget === 'tasks' && safeSubmoduleForTasks === 'boards' && (
-            <div className="grid gap-2">
-              <Label>{t('tasks_board_label')}</Label>
-              <Select
-                value={safeBoardId}
-                onValueChange={(value) =>
-                  setDraftConfig((previous) =>
-                    previous
-                      ? {
-                          ...previous,
-                          boardId: value,
-                        }
-                      : previous
-                  )
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('tasks_board_any')}</SelectItem>
-                  {boards.map((board) => (
-                    <SelectItem key={board.id} value={board.id}>
-                      {board.name || t('unnamed_board')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {!selectedBoardExists && (
-                <p className="text-dynamic-amber text-xs">
-                  {t('stale_board_warning')}
-                </p>
-              )}
-            </div>
+            <SettingItemTab title={t('tasks_board_label')} controlWidth="lg">
+              <div className="space-y-2">
+                <Select
+                  value={safeBoardId}
+                  onValueChange={(value) =>
+                    setDraftConfig((previous) =>
+                      previous
+                        ? {
+                            ...previous,
+                            boardId: value,
+                          }
+                        : previous
+                    )
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t('tasks_board_any')}</SelectItem>
+                    {boards.map((board) => (
+                      <SelectItem key={board.id} value={board.id}>
+                        {board.name || t('unnamed_board')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!selectedBoardExists && (
+                  <p className="text-dynamic-yellow text-sm">
+                    {t('stale_board_warning')}
+                  </p>
+                )}
+              </div>
+            </SettingItemTab>
           )}
 
           {safeTarget === 'finance' && (
-            <div className="grid gap-2">
-              <Label>{t('finance_submodule_label')}</Label>
+            <SettingItemTab
+              title={t('finance_submodule_label')}
+              controlWidth="lg"
+            >
               <Select
                 value={safeSubmoduleForFinance}
                 onValueChange={(value) => {
@@ -453,19 +452,21 @@ export default function NavigationSettings({ user }: NavigationSettingsProps) {
                   </SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </SettingItemTab>
           )}
 
-          <Button
-            type="submit"
-            disabled={!canEditConfig || !isDirty || saveMutation.isPending}
-          >
-            {saveMutation.isPending
-              ? tCommon('saving')
-              : tCommon('save_changes')}
-          </Button>
+          <SettingsSectionFooter>
+            <Button
+              type="submit"
+              disabled={!canEditConfig || !isDirty || saveMutation.isPending}
+            >
+              {saveMutation.isPending
+                ? tCommon('saving')
+                : tCommon('save_changes')}
+            </Button>
+          </SettingsSectionFooter>
         </form>
       )}
-    </div>
+    </SettingsSection>
   );
 }

@@ -102,13 +102,11 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
             </Suspense>
           }
           defaultCollapsed={defaultCollapsed}
-          links={
-            await getNavigationLinks({
-              canManageAiKeys:
-                access.permissions.containsPermission('manage_ai_keys'),
-              personalOrWsId,
-            })
-          }
+          links={await getNavigationLinks({
+            canManageAiKeys:
+              access.permissions.containsPermission('manage_ai_keys'),
+            personalOrWsId,
+          })}
           notificationPopover={<NotificationPopover userId={user.id} />}
           userPopover={
             <Suspense

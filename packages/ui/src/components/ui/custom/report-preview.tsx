@@ -481,7 +481,6 @@ export default function ReportPreview({
           <div className="flex min-w-0 flex-1 items-start gap-4">
             <div className="flex min-w-0 items-start">
               {brandLogo ? (
-                /* biome-ignore lint/performance/noImgElement: configured external brand logos are runtime URLs */
                 <img
                   src={brandLogo}
                   alt="logo"

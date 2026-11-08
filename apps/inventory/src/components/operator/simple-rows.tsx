@@ -389,7 +389,6 @@ function EntityIdentity({
     <div className="flex min-w-0 items-center gap-3">
       <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-muted/40">
         {imageUrl ? (
-          // biome-ignore lint/performance/noImgElement: thumbnails use arbitrary signed workspace media URLs.
           <img
             alt={title}
             className="h-full w-full object-cover"

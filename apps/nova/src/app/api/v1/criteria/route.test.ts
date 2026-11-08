@@ -61,7 +61,6 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
             query.operation = 'update';
             return builder;
           },
-          // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
           then: (resolve: (value: unknown) => unknown) =>
             Promise.resolve({
               data:

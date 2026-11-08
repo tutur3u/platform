@@ -104,9 +104,8 @@ describe('workspace setting config route', () => {
   });
 
   it('reads default included groups from the dedicated store', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route');
 
     const response = await GET(
       new NextRequest(
@@ -132,9 +131,8 @@ describe('workspace setting config route', () => {
   });
 
   it('writes default included groups through the dedicated store', async () => {
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route');
 
     const response = await PUT(
       new NextRequest(
@@ -172,9 +170,8 @@ describe('workspace setting config route', () => {
       errorMessage: 'Failed to save default included groups',
     });
 
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route');
 
     const response = await PUT(
       new NextRequest(

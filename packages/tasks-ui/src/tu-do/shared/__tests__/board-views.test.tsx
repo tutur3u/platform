@@ -25,19 +25,19 @@ const createTaskMock = vi.fn();
 const loadListPageMock = vi.fn();
 let progressivePagination: Record<string, unknown> = {};
 let boardHeaderProps:
-  | React.ComponentProps<typeof import('../board-header')['BoardHeader']>
+  | React.ComponentProps<(typeof import('../board-header'))['BoardHeader']>
   | undefined;
 let kanbanBoardProps:
   | React.ComponentProps<
-      typeof import('../../boards/boardId/kanban')['KanbanBoard']
+      (typeof import('../../boards/boardId/kanban'))['KanbanBoard']
     >
   | undefined;
 let listViewProps:
-  | React.ComponentProps<typeof import('../list-view')['ListView']>
+  | React.ComponentProps<(typeof import('../list-view'))['ListView']>
   | undefined;
 let timelineBoardProps:
   | React.ComponentProps<
-      typeof import('../../boards/boardId/timeline-board')['TimelineBoard']
+      (typeof import('../../boards/boardId/timeline-board'))['TimelineBoard']
     >
   | undefined;
 vi.mock('next-intl', () => ({
@@ -1059,47 +1059,6 @@ describe('BoardViews', () => {
           sourceWorkspaceIds: ['ws-2'],
         })
       );
-    });
-  });
-
-  it('uses server-side search counts to hide task lists without matching tasks', async () => {
-    listWorkspaceTasksMock.mockImplementation(async (_workspaceId, options) => {
-      if (options?.includeListCounts) {
-        return {
-          listCounts: [{ count: 1, list_id: 'list-1' }],
-          tasks: [],
-        };
-      }
-
-      return { tasks: [mockTasks[0]!] };
-    });
-
-    renderBoardViews();
-
-    act(() => {
-      boardHeaderProps?.onFiltersChange({
-        ...boardHeaderProps.filters,
-        estimationRange: { max: 5, min: 2 },
-        searchQuery: 'TIMELINE',
-      });
-    });
-
-    await waitFor(() => {
-      expect(listWorkspaceTasksMock).toHaveBeenCalledWith(
-        'ws-1',
-        expect.objectContaining({
-          boardId: 'board-1',
-          estimationMax: 5,
-          estimationMin: 2,
-          includeListCounts: true,
-          limit: 0,
-          q: 'TIMELINE',
-        })
-      );
-    });
-
-    await waitFor(() => {
-      expect(kanbanBoardProps?.lists).toEqual([mockLists[0]]);
     });
   });
 

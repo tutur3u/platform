@@ -11,10 +11,13 @@ import {
   TUTORING_CAMPUS_LABEL_MAX_LENGTH,
 } from './tutoring-campus-options';
 import {
+  filterTutoringEligibleGroups,
   hasTutoringTagExclusions,
   isTutoringGroupExcluded,
   parseTutoringGroupExclusions,
+  type TutoringExclusionReason,
   type TutoringGroupExclusion,
+  tutoringExclusionReason,
 } from './tutoring-group-rules';
 
 export {
@@ -44,8 +47,13 @@ export interface TutoringTimeRule {
   label?: string;
 }
 
-export type { TutoringGroupExclusion };
-export { hasTutoringTagExclusions, isTutoringGroupExcluded };
+export type { TutoringExclusionReason, TutoringGroupExclusion };
+export {
+  filterTutoringEligibleGroups,
+  hasTutoringTagExclusions,
+  isTutoringGroupExcluded,
+  tutoringExclusionReason,
+};
 
 export interface TutoringPolicy {
   preset: 'standard' | 'easy_center' | 'custom';
@@ -596,7 +604,7 @@ export interface TutoringPolicyConfigRow {
 export function serializeTutoringPolicyConfigRows(policy: TutoringPolicy) {
   const json = JSON.stringify(policy);
   const chunks: TutoringPolicyConfigRow[] = [];
-  for (let index = 0; index < json.length; ) {
+  for (let index = 0; index < json.length;) {
     let end = Math.min(index + CONFIG_VALUE_LIMIT, json.length);
     const lastCodeUnit = json.charCodeAt(end - 1);
     if (end < json.length && lastCodeUnit >= 0xd800 && lastCodeUnit <= 0xdbff)

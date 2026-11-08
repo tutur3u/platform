@@ -111,7 +111,7 @@ Run from the repository root (OpenSSL must be on PATH for disposable test certs)
 ```sh
 ttr resources run -- bun run --cwd packages/sso test
 ttr resources run -- bun run --cwd packages/sso type-check
-bunx --no-install biome check packages/sso apps/docs/docs.json
+node scripts/oxc-check.js packages/sso apps/docs/docs.json
 ```
 
 Tests generate an RSA key in memory and pipe it to OpenSSL to issue a temporary

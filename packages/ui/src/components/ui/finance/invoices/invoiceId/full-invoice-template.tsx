@@ -58,7 +58,6 @@ export function FullInvoiceTemplate({
       <div className="mb-8 flex flex-wrap items-center justify-between gap-8">
         <div className="flex-1">
           {getConfig('BRAND_LOGO_URL') && (
-            // biome-ignore lint/performance/noImgElement: <>
             <img
               src={getConfig('BRAND_LOGO_URL')!}
               alt={brandLogoAlt}

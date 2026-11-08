@@ -95,13 +95,13 @@ test('root test and type-check commands exclude the paused TanStack package', ()
   }
 });
 
-test('Biome CI excludes both paused migration source trees', () => {
-  const biomeConfig = JSON.parse(
-    fs.readFileSync(path.join(REPO_ROOT, 'biome.json'), 'utf8')
+test('Oxc CI excludes both paused migration source trees', () => {
+  const oxcConfig = JSON.parse(
+    fs.readFileSync(path.join(REPO_ROOT, '.oxfmtrc.json'), 'utf8')
   );
 
-  assert.ok(biomeConfig.files.includes.includes('!apps/backend'));
-  assert.ok(biomeConfig.files.includes.includes('!apps/tanstack-web'));
+  assert.ok(oxcConfig.ignorePatterns.includes('apps/backend/**'));
+  assert.ok(oxcConfig.ignorePatterns.includes('apps/tanstack-web/**'));
 });
 
 test('Docker setup CI is paused even for manual dispatch', () => {

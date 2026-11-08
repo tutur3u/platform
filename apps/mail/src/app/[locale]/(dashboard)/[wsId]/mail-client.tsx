@@ -562,8 +562,8 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         onRead={() => {
           const unread = Boolean(
             detailQuery.data?.thread.unreadCount ||
-              selectedSummary?.unreadCount ||
-              detailQuery.data?.messages.some((message) => message.unread)
+            selectedSummary?.unreadCount ||
+            detailQuery.data?.messages.some((message) => message.unread)
           );
           if (!unread) void setThreadId(null);
           mutateThread(unread ? 'mark_read' : 'mark_unread');

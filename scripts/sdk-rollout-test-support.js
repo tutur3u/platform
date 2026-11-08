@@ -8,7 +8,6 @@ const vm = require('node:vm');
 // revisions, so RED evidence exercises the same swap and assertions as GREEN.
 function loadRollout(name, overrides = {}) {
   const filename = path.join(__dirname, `sdk-rollout-${name}.js`);
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: Historical-source checks run directly with node --test, outside Turbo.
   const sourceRef = process.env.SDK_ROLLOUT_TEST_REF;
   const source = sourceRef
     ? cp.execFileSync(

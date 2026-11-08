@@ -35,7 +35,7 @@ export default async function MarketingPage({
     <main className="relative mx-auto -mt-20 w-full overflow-x-hidden">
       <script
         type="application/ld+json"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD is serialized with HTML script terminators escaped.
+        // eslint-disable-next-line react/no-danger -- serializeStructuredData escapes HTML script terminators in JSON-LD.
         dangerouslySetInnerHTML={{
           __html: serializeStructuredData(structuredData),
         }}

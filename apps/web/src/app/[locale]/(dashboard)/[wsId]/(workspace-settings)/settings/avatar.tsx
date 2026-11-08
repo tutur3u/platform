@@ -2,6 +2,7 @@
 
 import type { User, UserPrivateDetails, Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { useTranslations } from 'next-intl';
 import AvatarInput from './avatar-input';
 
@@ -17,18 +18,21 @@ export default function WorkspaceAvatarSettings({
   allowEdit,
 }: Props) {
   const t = useTranslations('ws-settings');
+  const tAccount = useTranslations('settings-account');
 
   if (!workspace) return null;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h3 className="font-semibold text-lg">{t('workspace_avatar')}</h3>
-        <p className="text-muted-foreground text-sm">
-          {t('workspace_avatar_description')}
-        </p>
-      </div>
-
+    <SettingItemTab
+      className="self-start"
+      controlWidth="xl"
+      description={
+        allowEdit
+          ? t('workspace_avatar_description')
+          : `${t('workspace_avatar_description')}\n${tAccount('insufficient_permissions_avatar')}`
+      }
+      title={t('workspace_avatar')}
+    >
       <AvatarInput
         workspace={
           workspace.personal
@@ -38,6 +42,6 @@ export default function WorkspaceAvatarSettings({
         defaultValue={workspace.name}
         disabled={!allowEdit}
       />
-    </div>
+    </SettingItemTab>
   );
 }

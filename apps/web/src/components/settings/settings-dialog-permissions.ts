@@ -80,7 +80,7 @@ export function getSettingsDialogAvailability({
     'api_keys',
     Boolean(
       workspacePermissions?.enable_api_keys &&
-        workspacePermissions?.manage_api_keys
+      workspacePermissions?.manage_api_keys
     )
   );
   const canAccessSecrets = isSettingsEntryAvailable(

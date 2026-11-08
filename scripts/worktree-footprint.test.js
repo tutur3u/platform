@@ -171,26 +171,32 @@ test('measureTreeAllocated attributes files to listed buckets once per inode', (
   assert.equal(result[nodeModules].privateBytes, null);
 });
 
-test('APFS walker reports zero private bytes for clonefile copies', {
-  skip: !canMeasureApfsPrivate(),
-}, () => {
-  const { root } = makeRepo();
-  const original = path.join(root, 'cache/blob');
-  const clone = path.join(root, 'clone/blob');
-  writeFile(original, Buffer.alloc(256 * 1024, 7));
-  fs.mkdirSync(path.dirname(clone));
-  // Node's COPYFILE_FICLONE_FORCE is unsupported on macOS; cp -c clones.
-  execFileSync('cp', ['-c', original, clone]);
-  const [cloned, unique] = measureTreesApfsPrivate([
-    { root: path.dirname(clone) },
-    { root: path.join(root, 'cache') },
-  ]);
-  assert.equal(cloned[path.dirname(clone)].privateBytes, 0);
-  assert.equal(unique[path.join(root, 'cache')].privateBytes, 0);
-  fs.rmSync(clone);
-  const [alone] = measureTreesApfsPrivate([{ root: path.join(root, 'cache') }]);
-  assert.ok(alone[path.join(root, 'cache')].privateBytes >= 256 * 1024);
-});
+test(
+  'APFS walker reports zero private bytes for clonefile copies',
+  {
+    skip: !canMeasureApfsPrivate(),
+  },
+  () => {
+    const { root } = makeRepo();
+    const original = path.join(root, 'cache/blob');
+    const clone = path.join(root, 'clone/blob');
+    writeFile(original, Buffer.alloc(256 * 1024, 7));
+    fs.mkdirSync(path.dirname(clone));
+    // Node's COPYFILE_FICLONE_FORCE is unsupported on macOS; cp -c clones.
+    execFileSync('cp', ['-c', original, clone]);
+    const [cloned, unique] = measureTreesApfsPrivate([
+      { root: path.dirname(clone) },
+      { root: path.join(root, 'cache') },
+    ]);
+    assert.equal(cloned[path.dirname(clone)].privateBytes, 0);
+    assert.equal(unique[path.join(root, 'cache')].privateBytes, 0);
+    fs.rmSync(clone);
+    const [alone] = measureTreesApfsPrivate([
+      { root: path.join(root, 'cache') },
+    ]);
+    assert.ok(alone[path.join(root, 'cache')].privateBytes >= 256 * 1024);
+  }
+);
 
 test('planPrune selects only clean, merged, idle, unheld linked worktrees', () => {
   const { repo, root } = makeRepo();

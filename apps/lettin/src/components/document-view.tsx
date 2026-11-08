@@ -36,7 +36,6 @@ export function DocumentView({
     >
       <ContentNotice notice={draft.contentNotice} />
       {draft.image && (
-        // biome-ignore lint/performance/noImgElement: Artwork must bypass optimizer caching so private media access can be revoked.
         <img
           src={draft.image}
           alt={draft.title}

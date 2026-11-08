@@ -140,9 +140,8 @@ describe('workspace settings configs route', () => {
       withoutPermission: vi.fn(() => true),
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route');
 
     const response = await GET(
       new NextRequest(
@@ -176,9 +175,8 @@ describe('workspace settings configs route', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route');
 
     const response = await GET(
       new NextRequest(
@@ -216,9 +214,8 @@ describe('workspace settings configs route', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route');
 
     const response = await GET(
       new NextRequest(
@@ -245,9 +242,8 @@ describe('workspace settings configs route', () => {
   });
 
   it('allows settings managers to read configs', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route');
 
     const response = await GET(
       new NextRequest(
@@ -274,9 +270,8 @@ describe('workspace settings configs route', () => {
   });
 
   it('includes dedicated default included groups in batch config reads', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route');
 
     const response = await GET(
       new NextRequest(
@@ -307,9 +302,8 @@ describe('workspace settings configs route', () => {
       error: { message: 'membership lookup failed' },
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route');
 
     const response = await GET(
       new NextRequest(
@@ -333,9 +327,8 @@ describe('workspace settings configs route', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route');
 
     const response = await GET(
       new NextRequest(
@@ -359,9 +352,8 @@ describe('workspace settings configs route', () => {
       withoutPermission: vi.fn(() => true),
     });
 
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route');
 
     const response = await PUT(
       new NextRequest(
@@ -400,9 +392,8 @@ describe('workspace settings configs route', () => {
       error: { message: 'membership lookup failed' },
     });
 
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route');
 
     const response = await PUT(
       new NextRequest(
@@ -433,9 +424,8 @@ describe('workspace settings configs route', () => {
       error: null,
     });
 
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route');
 
     const response = await PUT(
       new NextRequest(
@@ -473,9 +463,8 @@ describe('workspace settings configs route', () => {
     const WALLET_ID = '6f1c1c5e-2b0a-4c38-9a53-4f1f0a4c1d2e';
 
     const putConfigs = async (body: Record<string, string>) => {
-      const { PUT } = await import(
-        '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
-      );
+      const { PUT } =
+        await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route');
 
       return PUT(
         new NextRequest(

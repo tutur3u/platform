@@ -12,9 +12,8 @@ export const realtimeLogInput = z.object({
 const recordRealtimeLog = createServerFn({ method: 'POST' })
   .validator(realtimeLogInput)
   .handler(async ({ data }) => {
-    const { recordAuthorizedRealtimeLog } = await import(
-      './realtime-log-supplier.server'
-    );
+    const { recordAuthorizedRealtimeLog } =
+      await import('./realtime-log-supplier.server');
     return recordAuthorizedRealtimeLog(data);
   });
 

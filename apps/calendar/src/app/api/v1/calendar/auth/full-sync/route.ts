@@ -10,9 +10,8 @@ const fullSyncSchema = z.object({
 });
 
 async function loadPerformFullSyncForWorkspace() {
-  const { performFullSyncForWorkspace } = await import(
-    '@tuturuuu/trigger/google-calendar-full-sync'
-  );
+  const { performFullSyncForWorkspace } =
+    await import('@tuturuuu/trigger/google-calendar-full-sync');
 
   return performFullSyncForWorkspace;
 }

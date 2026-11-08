@@ -14,9 +14,8 @@ const publicEnv = {
 Object.assign(process.env, publicEnv);
 
 async function publisher(t, app = 'mail', { preFetch } = {}) {
-  const { prepare, artifactDigest } = await import(
-    './wave1-native-artifact.mjs'
-  );
+  const { prepare, artifactDigest } =
+    await import('./wave1-native-artifact.mjs');
   const { profiles } = await import('./wave1-native-profile.mjs');
   const ingress = await import('./wave1-ingress-fixture.mjs');
   const dir = fixture(t, app);

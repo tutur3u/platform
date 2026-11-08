@@ -365,9 +365,9 @@ describe('browser decisions and signed response', () => {
       ...f,
       idp: { ...f.idp, entityId: `${base}/metadata`, ssoUrl: `${base}/sso` },
     };
-    const accepted = await (await serviceProvider(spFixture)).accept(
-      Buffer.from(encoded, 'base64').toString()
-    );
+    const accepted = await (
+      await serviceProvider(spFixture)
+    ).accept(Buffer.from(encoded, 'base64').toString());
     expect(accepted.nameID).toBe('ab'.repeat(32));
     expect(events).toEqual(['approved', 'signed']);
     expect(response.headers.get('content-security-policy')).toContain(

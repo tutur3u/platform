@@ -1401,7 +1401,7 @@ deployment kind, and a re-entrant token for nested helper calls).
   the reviewed lockfile update, and deploy that commit. Do not let the
   production host rewrite `bun.lock` as part of the auto-deploy path. If tarball
   extraction still fails (for example
-  `@biomejs/cli-linux-x64`), the blue/green helper prunes BuildKit exec cache
+  `@oxcjs/cli-linux-x64`), the blue/green helper prunes BuildKit exec cache
   mounts, recreates the Compose-owned `buildkit` service, and retries once with
   `docker compose build --no-cache` so a cached failed deps stage is not reused.
   If BuildKit has already lost transport and the exec-cache prune command exits
@@ -1690,7 +1690,7 @@ Operational notes:
   inactive. Use explicit caps only when you want to bypass the remembered local
   profile for a one-off run.
 - If Bun fails during an image install with a tarball extraction error such as
-  `Fail extracting tarball for "@biomejs/cli-linux-x64"`, the blue/green helper
+  `Fail extracting tarball for "@oxcjs/cli-linux-x64"`, the blue/green helper
   treats it as BuildKit exec-cache corruption once per deployment attempt. It
   prunes BuildKit exec cache mounts, recreates the Compose-owned `buildkit`
   service, and retries the build once with `--no-cache`. If the prune command
@@ -2501,7 +2501,7 @@ test suite.
 When `scripts/check-docker-web.js` or similar root validators need to assert a
 literal Dockerfile template placeholder like `${process.env.PORT || 7803}`,
 prefer a regex or another explicitly escaped matcher instead of a plain string
-literal. Biome treats raw `${...}` text inside normal strings as
+literal. Oxc treats raw `${...}` text inside normal strings as
 `lint/suspicious/noTemplateCurlyInString`, which can break CI even when the
 runtime behavior is unchanged.
 

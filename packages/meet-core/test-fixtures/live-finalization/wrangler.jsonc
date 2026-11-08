@@ -8,14 +8,14 @@
     "bindings": [
       {
         "name": "FIXTURE",
-        "class_name": "FinalizationFixture"
-      }
-    ]
+        "class_name": "FinalizationFixture",
+      },
+    ],
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["FinalizationFixture"]
-    }
-  ]
+      "new_sqlite_classes": ["FinalizationFixture"],
+    },
+  ],
 }

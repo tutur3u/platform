@@ -9,9 +9,12 @@ import {
   getIconComponentByKey,
   type PlatformIconKey,
 } from '@tuturuuu/ui/custom/icon-picker';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
-import { Label } from '@tuturuuu/ui/label';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
@@ -160,13 +163,11 @@ export default function DebtLoanSettings({ workspaceId }: Props) {
     };
     const filteredCategories = categories
       .filter((c) => c.id && c.is_expense !== false)
-      .map(
-        (category): ComboboxOption => ({
-          value: category.id as string,
-          label: category.name || tCategories('unnamed_category'),
-          icon: getCategoryIcon(category),
-        })
-      );
+      .map((category): ComboboxOption => ({
+        value: category.id as string,
+        label: category.name || tCategories('unnamed_category'),
+        icon: getCategoryIcon(category),
+      }));
     return [noneOption, ...filteredCategories];
   }, [categories, t, tCategories]);
 
@@ -177,13 +178,11 @@ export default function DebtLoanSettings({ workspaceId }: Props) {
     };
     const filteredCategories = categories
       .filter((c) => c.id && c.is_expense === false)
-      .map(
-        (category): ComboboxOption => ({
-          value: category.id as string,
-          label: category.name || tCategories('unnamed_category'),
-          icon: getCategoryIcon(category),
-        })
-      );
+      .map((category): ComboboxOption => ({
+        value: category.id as string,
+        label: category.name || tCategories('unnamed_category'),
+        icon: getCategoryIcon(category),
+      }));
     return [noneOption, ...filteredCategories];
   }, [categories, t, tCategories]);
 
@@ -208,19 +207,14 @@ export default function DebtLoanSettings({ workspaceId }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="font-medium text-lg">{t('title')}</h3>
-        <p className="text-muted-foreground text-sm">{t('description')}</p>
-      </div>
-
-      <form onSubmit={onSubmit} className="space-y-6">
+    <SettingsSection>
+      <form onSubmit={onSubmit}>
         {/* Debt Category - This is INCOME (money coming in when you borrow) */}
-        <div className="grid gap-2">
-          <Label>{t('debt_category')}</Label>
-          <p className="text-muted-foreground text-xs">
-            {t('debt_category_description')}
-          </p>
+        <SettingItemTab
+          title={t('debt_category')}
+          description={t('debt_category_description')}
+          controlWidth="lg"
+        >
           <Combobox
             options={incomeOptions}
             selected={selectedValues.debt_category_id}
@@ -231,14 +225,14 @@ export default function DebtLoanSettings({ workspaceId }: Props) {
             searchPlaceholder={t('search_categories')}
             emptyText={t('no_categories_found')}
           />
-        </div>
+        </SettingItemTab>
 
         {/* Loan Category - This is EXPENSE (money going out when you lend) */}
-        <div className="grid gap-2">
-          <Label>{t('loan_category')}</Label>
-          <p className="text-muted-foreground text-xs">
-            {t('loan_category_description')}
-          </p>
+        <SettingItemTab
+          title={t('loan_category')}
+          description={t('loan_category_description')}
+          controlWidth="lg"
+        >
           <Combobox
             options={expenseOptions}
             selected={selectedValues.loan_category_id}
@@ -249,16 +243,14 @@ export default function DebtLoanSettings({ workspaceId }: Props) {
             searchPlaceholder={t('search_categories')}
             emptyText={t('no_categories_found')}
           />
-        </div>
-
-        <Separator />
+        </SettingItemTab>
 
         {/* Repayment Category - This is an EXPENSE (paying back your debt) */}
-        <div className="grid gap-2">
-          <Label>{t('repayment_category')}</Label>
-          <p className="text-muted-foreground text-xs">
-            {t('repayment_category_description')}
-          </p>
+        <SettingItemTab
+          title={t('repayment_category')}
+          description={t('repayment_category_description')}
+          controlWidth="lg"
+        >
           <Combobox
             options={expenseOptions}
             selected={selectedValues.repayment_category_id}
@@ -269,14 +261,14 @@ export default function DebtLoanSettings({ workspaceId }: Props) {
             searchPlaceholder={t('search_categories')}
             emptyText={t('no_categories_found')}
           />
-        </div>
+        </SettingItemTab>
 
         {/* Debt Collection Category - This is INCOME (receiving repayment from loans you gave) */}
-        <div className="grid gap-2">
-          <Label>{t('debt_collection_category')}</Label>
-          <p className="text-muted-foreground text-xs">
-            {t('debt_collection_category_description')}
-          </p>
+        <SettingItemTab
+          title={t('debt_collection_category')}
+          description={t('debt_collection_category_description')}
+          controlWidth="lg"
+        >
           <Combobox
             options={incomeOptions}
             selected={selectedValues.debt_collection_category_id}
@@ -287,15 +279,17 @@ export default function DebtLoanSettings({ workspaceId }: Props) {
             searchPlaceholder={t('search_categories')}
             emptyText={t('no_categories_found')}
           />
-        </div>
+        </SettingItemTab>
 
-        <Button
-          type="submit"
-          disabled={isLoading || updateMutation.isPending || !isDirty}
-        >
-          {updateMutation.isPending ? t('saving') : t('save')}
-        </Button>
+        <SettingsSectionFooter>
+          <Button
+            type="submit"
+            disabled={isLoading || updateMutation.isPending || !isDirty}
+          >
+            {updateMutation.isPending ? t('saving') : t('save')}
+          </Button>
+        </SettingsSectionFooter>
       </form>
-    </div>
+    </SettingsSection>
   );
 }

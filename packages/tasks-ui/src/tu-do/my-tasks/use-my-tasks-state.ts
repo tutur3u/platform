@@ -723,9 +723,8 @@ export function useMyTasksState({
 
     setCommandBarLoading(true);
     try {
-      const { createTask: createTaskFn } = await import(
-        '@tuturuuu/utils/task-helper'
-      );
+      const { createTask: createTaskFn } =
+        await import('@tuturuuu/utils/task-helper');
 
       const mergedAssigneeIds = new Set(options?.assigneeIds ?? []);
       if (autoAssignToMe) mergedAssigneeIds.add(userId);

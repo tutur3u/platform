@@ -1,19 +1,18 @@
 'use client';
 
-import {
-  Bell,
-  ChevronDown,
-  ChevronRight,
-  Loader2,
-  Search,
-} from '@tuturuuu/icons';
+import { ChevronDown, ChevronRight, Loader2, Search } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import { Input } from '@tuturuuu/ui/input';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   ACCOUNT_EVENT_GROUPS,
   WORKSPACE_EVENT_GROUPS,
@@ -40,6 +39,9 @@ interface NotificationPreferencesTableProps {
 }
 
 const CHANNELS: NotificationChannel[] = ['web', 'email', 'push'];
+
+const TABLE_ROW_GRID =
+  'grid grid-cols-[minmax(0,1fr)_repeat(3,3.5rem)] items-center gap-x-2 px-4 md:px-5';
 
 export default function NotificationPreferencesTable({
   scope,
@@ -394,19 +396,9 @@ export default function NotificationPreferencesTable({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="rounded-full bg-dynamic-blue/20 p-2.5">
-          <Bell className="h-5 w-5 text-dynamic-blue" />
-        </div>
-        <div className="space-y-1">
-          <h3 className="font-semibold text-lg">{t('title')}</h3>
-          <p className="text-muted-foreground text-sm">{t('description')}</p>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        {/* Search bar */}
+    <SettingsSection title={t('title')} description={t('description')}>
+      {/* Search bar */}
+      <SettingsSectionBlock className="py-3">
         <div className="relative">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -417,178 +409,161 @@ export default function NotificationPreferencesTable({
             aria-label={t('search-events')}
           />
         </div>
+      </SettingsSectionBlock>
 
-        {/* Table */}
-        <div className="space-y-4">
-          {/* Sticky header */}
-          <div className="sticky -top-6 z-10 grid grid-cols-4 gap-4 border-b bg-background p-2">
-            <div className="font-medium text-sm">{t('event')}</div>
-            {CHANNELS.map((channel) => (
-              <div key={channel} className="text-center font-medium text-sm">
-                {tChannels(channel)}
-              </div>
-            ))}
+      {/* Sticky header offsets the settings scroller padding */}
+      <div
+        className={`${TABLE_ROW_GRID} sticky -top-6 z-10 bg-card py-2.5 md:-top-10`}
+      >
+        <div className="font-medium text-sm">{t('event')}</div>
+        {CHANNELS.map((channel) => (
+          <div key={channel} className="text-center font-medium text-sm">
+            {tChannels(channel)}
           </div>
-
-          {/* Event groups */}
-          {filteredGroups.map((group) => {
-            const { enabled, total } = getGroupEnabledCount(group.id);
-            const allEnabled = enabled === total;
-            const noneEnabled = enabled === 0;
-
-            return (
-              <div key={group.id} className="space-y-2">
-                {/* Group header */}
-                <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
-                  <button
-                    type="button"
-                    onClick={() => toggleGroupCollapse(group.id)}
-                    className="flex items-center gap-2 font-semibold text-sm hover:text-foreground/80"
-                    aria-expanded={!collapsedGroups.has(group.id)}
-                    aria-label={`${collapsedGroups.has(group.id) ? 'Expand' : 'Collapse'} ${tGroups(group.labelKey as any)}`}
-                  >
-                    {collapsedGroups.has(group.id) ? (
-                      <ChevronRight className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                    <group.icon className="h-4 w-4" />
-                    <span>{tGroups(group.labelKey as any)}</span>
-                    <span
-                      className={`text-xs ${
-                        allEnabled
-                          ? 'text-dynamic-green'
-                          : noneEnabled
-                            ? 'text-muted-foreground'
-                            : 'text-dynamic-yellow'
-                      }`}
-                    >
-                      ({enabled}/{total})
-                    </span>
-                  </button>
-
-                  {/* Bulk actions */}
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleBulkAction(group.id, 'enable_all')}
-                      disabled={
-                        bulkLoadingStates.has(group.id) ||
-                        areAllEnabled(group.id)
-                      }
-                      className="h-7 text-xs"
-                      aria-label={`Enable all notifications in ${tGroups(group.labelKey as any)}`}
-                    >
-                      {bulkLoadingStates.get(group.id) === 'enable_all' && (
-                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                      )}
-                      {t('enable-all')}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleBulkAction(group.id, 'disable_all')}
-                      disabled={
-                        bulkLoadingStates.has(group.id) ||
-                        areAllDisabled(group.id)
-                      }
-                      className="h-7 text-xs"
-                      aria-label={`Disable all notifications in ${tGroups(group.labelKey as any)}`}
-                    >
-                      {bulkLoadingStates.get(group.id) === 'disable_all' && (
-                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                      )}
-                      {t('disable-all')}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Group events */}
-                {!collapsedGroups.has(group.id) && (
-                  <div className="space-y-2">
-                    {group.events.map((eventType) => (
-                      <div
-                        key={eventType}
-                        className="grid grid-cols-4 items-center gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                      >
-                        <div className="space-y-0.5">
-                          <p className="font-medium text-sm">
-                            {tEvents(eventType as any)}
-                          </p>
-                        </div>
-                        {CHANNELS.map((channel) => {
-                          const savingKey = `${eventType}-${channel}`;
-                          const isSaving = savingStates.has(savingKey);
-
-                          return (
-                            <div key={channel} className="flex justify-center">
-                              <div className="relative">
-                                <Switch
-                                  checked={
-                                    localPreferences[eventType]?.[channel] ??
-                                    true
-                                  }
-                                  onCheckedChange={() =>
-                                    handleToggle(eventType, channel)
-                                  }
-                                  disabled={isSaving}
-                                  aria-label={`${tChannels(channel)} notifications for ${tEvents(eventType as any)}`}
-                                />
-                                {isSaving && (
-                                  <div className="absolute top-1/2 -right-5 -translate-y-1/2">
-                                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {filteredGroups.length === 0 && (
-            <div className="rounded-lg border border-dashed p-8 text-center">
-              <p className="text-muted-foreground text-sm">
-                {t('no-events-found')}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Info text */}
-        <div className="rounded-lg bg-muted/50 p-4">
-          <p className="text-muted-foreground text-xs">{t('auto-save-info')}</p>
-        </div>
+        ))}
       </div>
-    </div>
+
+      {/* Event groups */}
+      {filteredGroups.map((group) => {
+        const { enabled, total } = getGroupEnabledCount(group.id);
+        const allEnabled = enabled === total;
+        const noneEnabled = enabled === 0;
+
+        return (
+          <Fragment key={group.id}>
+            {/* Group header */}
+            <SettingsSectionBlock className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 bg-muted/50 py-2">
+              <button
+                type="button"
+                onClick={() => toggleGroupCollapse(group.id)}
+                className="flex items-center gap-2 font-semibold text-sm hover:text-foreground/80"
+                aria-expanded={!collapsedGroups.has(group.id)}
+                aria-label={`${collapsedGroups.has(group.id) ? 'Expand' : 'Collapse'} ${tGroups(group.labelKey as any)}`}
+              >
+                {collapsedGroups.has(group.id) ? (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+                <group.icon className="h-4 w-4 text-muted-foreground" />
+                <span>{tGroups(group.labelKey as any)}</span>
+                <span
+                  className={`font-normal text-xs ${
+                    allEnabled
+                      ? 'text-dynamic-green'
+                      : noneEnabled
+                        ? 'text-muted-foreground'
+                        : 'text-dynamic-yellow'
+                  }`}
+                >
+                  ({enabled}/{total})
+                </span>
+              </button>
+
+              {/* Bulk actions */}
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleBulkAction(group.id, 'enable_all')}
+                  disabled={
+                    bulkLoadingStates.has(group.id) || areAllEnabled(group.id)
+                  }
+                  className="h-7 text-xs"
+                  aria-label={`Enable all notifications in ${tGroups(group.labelKey as any)}`}
+                >
+                  {bulkLoadingStates.get(group.id) === 'enable_all' && (
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  )}
+                  {t('enable-all')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleBulkAction(group.id, 'disable_all')}
+                  disabled={
+                    bulkLoadingStates.has(group.id) || areAllDisabled(group.id)
+                  }
+                  className="h-7 text-xs"
+                  aria-label={`Disable all notifications in ${tGroups(group.labelKey as any)}`}
+                >
+                  {bulkLoadingStates.get(group.id) === 'disable_all' && (
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  )}
+                  {t('disable-all')}
+                </Button>
+              </div>
+            </SettingsSectionBlock>
+
+            {/* Group events */}
+            {!collapsedGroups.has(group.id) &&
+              group.events.map((eventType) => (
+                <div
+                  key={eventType}
+                  className={`${TABLE_ROW_GRID} py-3 transition-colors hover:bg-muted/50`}
+                >
+                  <p className="min-w-0 font-medium text-sm">
+                    {tEvents(eventType as any)}
+                  </p>
+                  {CHANNELS.map((channel) => {
+                    const savingKey = `${eventType}-${channel}`;
+                    const isSaving = savingStates.has(savingKey);
+
+                    return (
+                      <div key={channel} className="flex justify-center">
+                        <div className="relative">
+                          <Switch
+                            checked={
+                              localPreferences[eventType]?.[channel] ?? true
+                            }
+                            onCheckedChange={() =>
+                              handleToggle(eventType, channel)
+                            }
+                            disabled={isSaving}
+                            aria-label={`${tChannels(channel)} notifications for ${tEvents(eventType as any)}`}
+                          />
+                          {isSaving && (
+                            <div className="absolute top-1/2 -right-5 -translate-y-1/2">
+                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+          </Fragment>
+        );
+      })}
+
+      {filteredGroups.length === 0 && (
+        <SettingsSectionMessage>{t('no-events-found')}</SettingsSectionMessage>
+      )}
+
+      {/* Info text */}
+      <SettingsSectionMessage className="py-3">
+        {t('auto-save-info')}
+      </SettingsSectionMessage>
+    </SettingsSection>
   );
 }
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-10 w-10 rounded-full" />
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-5 w-48" />
-          <Skeleton className="h-4 w-64" />
-        </div>
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <Skeleton className="h-5 w-48" />
+        <Skeleton className="h-4 w-64" />
       </div>
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-full" />
-        <div className="space-y-4">
-          <Skeleton className="h-12 w-full" />
+      <SettingsSection>
+        <SettingsSectionBlock className="space-y-3">
+          <Skeleton className="h-9 w-full" />
           {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full" />
+            <Skeleton key={i} className="h-10 w-full" />
           ))}
-        </div>
-      </div>
+        </SettingsSectionBlock>
+      </SettingsSection>
     </div>
   );
 }

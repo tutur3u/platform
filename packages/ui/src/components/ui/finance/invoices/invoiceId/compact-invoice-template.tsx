@@ -48,7 +48,6 @@ export function CompactInvoiceTemplate({
       <div className="flex items-center justify-between gap-8">
         <div className="flex-1">
           {BRAND_LOGO_URL && (
-            // biome-ignore lint/performance/noImgElement: <>
             <img
               src={BRAND_LOGO_URL!}
               alt={brandLogoAlt}

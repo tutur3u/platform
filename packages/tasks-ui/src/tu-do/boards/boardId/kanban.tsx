@@ -20,7 +20,14 @@ import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferen
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import { useBoardConfig, useReorderTask } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useOptionalWorkspacePresenceContext } from '../../providers/workspace-presence-provider';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
@@ -82,6 +89,10 @@ interface Props {
   onHoveredTaskListChange?: (listId: string | null) => void;
   readOnly?: boolean;
   onFiltersChange?: (filters: TaskFilters) => void;
+  /** Shown in the no-results state, e.g. matches in other sprints. */
+  searchEmptyAction?: ReactNode;
+  /** The board already holds every task; columns load no more pages. */
+  pagesCovered?: boolean;
 }
 
 export function KanbanBoard({
@@ -107,6 +118,8 @@ export function KanbanBoard({
   onHoveredTaskListChange,
   readOnly = false,
   onFiltersChange,
+  searchEmptyAction,
+  pagesCovered,
 }: Props) {
   const tLayout = useTranslations('ws-task-boards.layout_settings');
   const tTasks = useTranslations('ws-tasks');
@@ -422,6 +435,7 @@ export function KanbanBoard({
   ) {
     return (
       <TaskSearchEmptyState
+        action={isSearchError ? undefined : searchEmptyAction}
         failed={isSearchError}
         query={filters?.searchQuery ?? ''}
         onClear={
@@ -496,6 +510,7 @@ export function KanbanBoard({
           autoScroll={false}
         >
           <KanbanColumns
+            pagesCovered={pagesCovered}
             columns={orderedColumns}
             tasks={tasks}
             boardId={boardId ?? ''}

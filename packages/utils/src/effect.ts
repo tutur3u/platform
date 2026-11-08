@@ -70,8 +70,7 @@ export interface TuturuuuEffectRetryOptions<E = unknown> {
   readonly while?: (error: E) => boolean;
 }
 
-export interface TuturuuuEffectTimeoutOptions
-  extends TuturuuuEffectErrorOptions {
+export interface TuturuuuEffectTimeoutOptions extends TuturuuuEffectErrorOptions {
   readonly duration: Duration.DurationInput;
 }
 

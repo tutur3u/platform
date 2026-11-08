@@ -5,7 +5,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { getTicketIdentifier } from '@tuturuuu/utils/task-helper';
+import { getTaskTicketLabel } from '@tuturuuu/utils/task-helper';
 import { isTaskOverdueByOwnDate } from '@tuturuuu/utils/task-helper/sprints';
 import { useLocale, useTranslations } from 'next-intl';
 import type { BoardMember } from '../../board-members-query';
@@ -25,36 +25,40 @@ export function BoardPlanTabs({
   return (
     <Tabs onValueChange={(value) => onTabChange(value as BoardTab)} value={tab}>
       <TabsList aria-label={t('tabs_label')} className="h-8 p-0.5">
-        <TabsTrigger className="h-7 px-2.5 text-xs" value="plan">
+        <TabsTrigger
+          aria-label={t('plan_tab')}
+          className="h-7 px-2.5 text-xs"
+          value="plan"
+        >
           <ListChecks className="size-3.5" />
-          {t('plan_tab')}
+          <span className="@md/board-header:inline hidden">
+            {t('plan_tab')}
+          </span>
         </TabsTrigger>
-        <TabsTrigger className="h-7 px-2.5 text-xs" value="board">
+        <TabsTrigger
+          aria-label={t('board_tab')}
+          className="h-7 px-2.5 text-xs"
+          value="board"
+        >
           <KanbanSquare className="size-3.5" />
-          {t('board_tab')}
+          <span className="@md/board-header:inline hidden">
+            {t('board_tab')}
+          </span>
         </TabsTrigger>
       </TabsList>
     </Tabs>
   );
 }
 
-/** "[DEV-248] Title", the ID in the same color as the title. */
+/** "[PLA-12] Title" from the task's first project; no prefix without a project. */
 export function PlanTaskTitle({
   className,
   task,
-  ticketPrefix,
 }: {
   className?: string;
   task: Task;
-  ticketPrefix?: string | null;
 }) {
-  const prefix =
-    (task as Task & { ticket_prefix?: string | null }).ticket_prefix ??
-    ticketPrefix;
-  const id =
-    typeof task.display_number === 'number' && task.display_number > 0
-      ? getTicketIdentifier(prefix, task.display_number)
-      : null;
+  const id = getTaskTicketLabel(task);
   return (
     <span className={cn('min-w-0 break-words', className)}>
       {id ? (
@@ -115,6 +119,33 @@ export function writePlanDrag(
 ) {
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData(PLAN_DRAG_TYPE, JSON.stringify({ from, taskId }));
+}
+
+/**
+ * Drags a backlog card as the Board drags one: the card alone, raised with a
+ * ring, rather than a snapshot of the row around it.
+ */
+export function setPlanCardDragImage(event: React.DragEvent<HTMLElement>) {
+  const card = event.currentTarget.querySelector<HTMLElement>('[data-task-id]');
+  if (!card || !event.dataTransfer.setDragImage) return;
+  const rect = card.getBoundingClientRect();
+  const image = card.cloneNode(true) as HTMLElement;
+  image.classList.add('shadow-lg', 'ring-2', 'ring-primary/50');
+  Object.assign(image.style, {
+    background: 'var(--card)',
+    left: '-10000px',
+    position: 'fixed',
+    top: '0',
+    width: `${rect.width}px`,
+  });
+  document.body.append(image);
+  event.dataTransfer.setDragImage(
+    image,
+    event.clientX - rect.left,
+    event.clientY - rect.top
+  );
+  // The browser copies the image when the drag starts.
+  requestAnimationFrame(() => image.remove());
 }
 
 export function readPlanDrag(

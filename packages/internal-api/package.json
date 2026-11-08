@@ -10,7 +10,10 @@
   "main": "./dist/index.js",
   "sideEffects": false,
   "types": "./dist/index.d.ts",
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -137,6 +140,11 @@
       "types": "./dist/finance-exchange-rates.d.ts",
       "import": "./dist/finance-exchange-rates.js",
       "require": "./dist/finance-exchange-rates.js"
+    },
+    "./finance-fee-lock-contracts": {
+      "types": "./dist/finance-fee-lock-contracts.d.ts",
+      "import": "./dist/finance-fee-lock-contracts.js",
+      "require": "./dist/finance-fee-lock-contracts.js"
     },
     "./finance-subscription-analytics": {
       "types": "./dist/finance-subscription-analytics.d.ts",
@@ -312,6 +320,11 @@
       "types": "./dist/tutoring-queue-rules.d.ts",
       "import": "./dist/tutoring-queue-rules.js",
       "require": "./dist/tutoring-queue-rules.js"
+    },
+    "./task-cycles": {
+      "types": "./dist/task-cycles.d.ts",
+      "import": "./dist/task-cycles.js",
+      "require": "./dist/task-cycles.js"
     },
     "./task-templates": {
       "types": "./dist/task-templates.d.ts",

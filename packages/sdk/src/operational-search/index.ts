@@ -128,17 +128,17 @@ export async function buildIndex({
   const prior = previous ? cacheSchema.parse(previous) : undefined;
   const sameSource = Boolean(
     prior &&
-      prior.sourceDatabaseId === source.sourceDatabaseId &&
-      prior.projectionVersion === source.projectionVersion
+    prior.sourceDatabaseId === source.sourceDatabaseId &&
+    prior.projectionVersion === source.projectionVersion
   );
   const reuseEligible = Boolean(
     runtime &&
-      prior &&
-      sameSource &&
-      prior.modelFingerprint === runtime.fingerprint &&
-      prior.revision <= source.revision &&
-      (prior.revision !== source.revision ||
-        prior.snapshotHash === source.snapshotHash)
+    prior &&
+    sameSource &&
+    prior.modelFingerprint === runtime.fingerprint &&
+    prior.revision <= source.revision &&
+    (prior.revision !== source.revision ||
+      prior.snapshotHash === source.snapshotHash)
   );
   const priorVectors = new Map(
     prior?.vectors.map((vector) => [vector.id, vector])

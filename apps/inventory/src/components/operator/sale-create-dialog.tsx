@@ -51,6 +51,12 @@ import {
   updateSaleCartQuantity,
 } from './sale-create-items';
 import {
+  browserSalePeriodStorage,
+  rememberSalePeriod,
+  resolveSalePeriod,
+  type SalePeriodSelection,
+} from './sale-period-selection';
+import {
   SaleProductPicker,
   type SaleProductSort,
   sortSaleStockOptions,
@@ -59,6 +65,7 @@ import { useSeasonSalePrices } from './season-sale-prices';
 import { useHybridSearchResults } from './use-hybrid-search-results';
 
 const SALE_TABS = ['items', 'checkout'] as const;
+const EMPTY_STOCK_OPTIONS: SaleStockOption[] = [];
 const SALE_PRODUCT_SEARCH_SCOPE = {
   category: '',
   owner: '',
@@ -105,9 +112,15 @@ export function SaleCreateDialog({
   const [notes, setNotes] = useState('');
   const [walletId, setWalletId] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [periodId, setPeriodId] = useState('choose');
+  const [periodSelection, setPeriodSelection] =
+    useState<SalePeriodSelection | null>(null);
   const [requestId, setRequestId] = useState('');
   const actorId = useInventoryActor();
+  const periodId =
+    periodSelection?.wsId === wsId && periodSelection.actorId === actorId
+      ? periodSelection.id
+      : 'choose';
+  const setPeriodId = (id: string) => setPeriodSelection({ wsId, actorId, id });
   const selectedPeriod = periods.find((period) => period.id === periodId);
   const [keepOpenAfterSale, setKeepOpenAfterSale] = useState(false);
   const [serverQuery] = useDebounce(query, 280);
@@ -171,7 +184,8 @@ export function SaleCreateDialog({
     options: getSaleStockOptions(productSearch.results),
     currency: workspaceCurrency,
   });
-  const stockOptions = periodId === 'choose' ? [] : seasonPricing.options;
+  const stockOptions =
+    periodId === 'choose' ? EMPTY_STOCK_OPTIONS : seasonPricing.options;
 
   const filteredOptions = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -250,14 +264,13 @@ export function SaleCreateDialog({
     (sum, line) => sum + line.price * line.quantity,
     0
   );
-  const canSubmit = Boolean(
+  const canSubmit =
     lines.length > 0 &&
-      content.trim() &&
-      walletId &&
-      categoryId &&
-      periodId !== 'choose' &&
-      seasonPricing.cartIsCurrent(lines)
-  );
+    content.trim() !== '' &&
+    walletId !== '' &&
+    categoryId !== '' &&
+    periodId !== 'choose' &&
+    seasonPricing.cartIsCurrent(lines);
   const tabIndex = SALE_TABS.indexOf(tab as (typeof SALE_TABS)[number]);
   const canGoNext = lines.length > 0;
 
@@ -282,7 +295,16 @@ export function SaleCreateDialog({
         (categories.length === 1 ? (categories[0]!.id ?? '') : '')
     );
     setRequestId(crypto.randomUUID());
-    setPeriodId(defaultSalesPeriod(periods, options?.defaultSalesPeriodId));
+    setPeriodId(
+      resolveSalePeriod({
+        wsId,
+        actorId,
+        current: periodSelection,
+        periods,
+        fallback: defaultSalesPeriod(periods, options?.defaultSalesPeriodId),
+        storage: browserSalePeriodStorage(),
+      })
+    );
   };
 
   const mutation = useMutation({
@@ -311,6 +333,10 @@ export function SaleCreateDialog({
       });
     },
     onSuccess: (result) => {
+      rememberSalePeriod(
+        { wsId, actorId, id: periodId },
+        browserSalePeriodStorage()
+      );
       toast.success(t('createSuccess'));
       if (result.period_assignment_warning) {
         toast.warning(result.period_assignment_warning);
@@ -339,6 +365,7 @@ export function SaleCreateDialog({
   const changePeriod = (id: string) => {
     if (id === periodId) return;
     setPeriodId(id);
+    rememberSalePeriod({ wsId, actorId, id }, browserSalePeriodStorage());
     setLines([]);
     setRequestId(crypto.randomUUID());
   };
@@ -403,9 +430,9 @@ export function SaleCreateDialog({
             ) : null}
             {seasonPricing.scheduled &&
             (seasonPricing.prices.isError || !stockOptions.length) ? (
-              <p role="status" className="text-muted-foreground text-sm">
+              <output className="text-muted-foreground text-sm">
                 {t('missingSeasonPrice')}
-              </p>
+              </output>
             ) : null}
             {!seasonPricing.cartIsCurrent(lines) ? (
               <Button

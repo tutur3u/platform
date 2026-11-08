@@ -36,9 +36,8 @@ async function getRedisClient(): Promise<RedisClient | null> {
 
 async function getSupabaseAdmin() {
   try {
-    const { createAdminClient } = await import(
-      '@tuturuuu/supabase/next/server'
-    );
+    const { createAdminClient } =
+      await import('@tuturuuu/supabase/next/server');
     return await createAdminClient();
   } catch {
     return null;

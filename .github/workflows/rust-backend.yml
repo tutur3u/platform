@@ -6,6 +6,10 @@ on:
   pull_request:
     paths:
       - "apps/backend/**"
+      - "packages/internal-api/src/__fixtures__/tutoring-queue-parity.json"
+      - "packages/internal-api/src/tutoring-group-rules.ts"
+      - "packages/internal-api/src/tutoring-policy.ts"
+      - "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/queue/queue-membership.ts"
       - "apps/tanstack-web/**"
       - "apps/backend/README.md"
       - ".github/workflows/rust-backend.yml"
@@ -23,6 +27,10 @@ on:
     branches: ["main", "production"]
     paths:
       - "apps/backend/**"
+      - "packages/internal-api/src/__fixtures__/tutoring-queue-parity.json"
+      - "packages/internal-api/src/tutoring-group-rules.ts"
+      - "packages/internal-api/src/tutoring-policy.ts"
+      - "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/queue/queue-membership.ts"
       - "apps/tanstack-web/**"
       - "apps/backend/README.md"
       - ".github/workflows/rust-backend.yml"
@@ -56,6 +64,12 @@ on:
         options:
           - dry-run
           - deploy
+
+concurrency:
+  # PR runs: one per PR, superseded runs cancelled. Every other event gets a unique
+  # group (run_id), so push/dispatch/deploy runs keep their previous behaviour.
+  group: ${{ github.event_name == 'pull_request' && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-run-{1}', github.workflow, github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -154,7 +168,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Restore secretless TanStack Turbo fallback
         uses: ./.github/actions/setup-turbo-fallback-cache
@@ -325,7 +339,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Check Cloudflare deployment config
         run: node scripts/check-cloudflare-workers.js
@@ -479,7 +493,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
@@ -540,7 +554,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Check Cloudflare deployment config
         run: node scripts/check-cloudflare-workers.js
@@ -586,7 +600,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Check Cloudflare deployment config
         run: node scripts/check-cloudflare-workers.js

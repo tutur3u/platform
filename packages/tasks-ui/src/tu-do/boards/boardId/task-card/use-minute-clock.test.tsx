@@ -30,29 +30,31 @@ describe('useMinuteClock', () => {
   });
 
   it('does not re-render cards that opt out', () => {
-    let renders = 0;
+    const rendered = vi.fn();
     function Counter() {
       useMinuteClock(false);
-      renders += 1;
+      rendered();
       return null;
     }
     render(<Counter />);
     act(() => {
       vi.advanceTimersByTime(120_000);
     });
-    expect(renders).toBe(1);
+    expect(rendered).toHaveBeenCalledTimes(1);
   });
 
   it('gives a card that opts out the time it mounted, not a stale shared one', () => {
     // The shared clock last ticked long ago; nothing has subscribed since.
     vi.setSystemTime(new Date('2026-11-06T12:00:00Z'));
-    let seen = 0;
+    const seen = vi.fn();
     function Probe() {
-      seen = useMinuteClock(false);
+      seen(useMinuteClock(false));
       return null;
     }
     render(<Probe />);
-    expect(seen).toBe(new Date('2026-11-06T12:00:00Z').getTime());
+    expect(seen).toHaveBeenLastCalledWith(
+      new Date('2026-11-06T12:00:00Z').getTime()
+    );
   });
 });
 
