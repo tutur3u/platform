@@ -103,7 +103,7 @@ test('trusted workflow uses hosted metadata only and no token fallback', () => {
     owner: 'tutur3u',
     repositories: 'platform',
     'permission-issues': 'write',
-    'permission-pull-requests': 'read',
+    'permission-pull-requests': 'write',
   });
   assert.equal(appTokenStep.with['skip-token-revoke'], undefined);
   assert.equal(
