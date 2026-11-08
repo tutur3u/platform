@@ -76,10 +76,22 @@ warning mode, which exits 0. `--strict` exits 1 on any report; `--now <iso>` and
 
 ### Dashboard
 
-Infrastructure `/<wsId>/feature-flags` renders the catalog for root workspace
-members with `view_infrastructure`. It is read-only: each environment shows the
-declared default beside an **Unknown** effective state, because the page reads no
-override store, workspace secret or build setting.
+Infrastructure `/<wsId>/feature-flags` renders every catalog flag for root
+workspace members with `view_infrastructure`. A root member with
+`manage_workspace_roles` can override the 16 mobile-runtime registry keys per
+`development`, `staging`, and `production`. The page shows the declared default
+and the effective value after the `mobile_offline` master gate. Workspace-secret
+flags stay read-only, with the label "Managed per workspace in Secrets" and a
+link to `/<wsId>/workspaces`. Mobile-build flags stay read-only and are labeled
+build-time. `cookieConsentBanner` is a separate export and is not a registry
+toggle. Saved-state or audit failure stays explicit. The page does not invent a
+persisted OFF value, and it does not select a workspace or write workspace
+secrets.
+
+Platform state is one row per flag key and environment. Resetting to the declared
+default keeps the revision and stores an empty override. Audit is append-only.
+Merging this documentation does not apply the database migration or expose the
+private functions; that deployment is separate.
 
 ## Mobile endpoint
 
@@ -111,16 +123,28 @@ parameters cannot select a user. The handler uses
 Both `CDN-Cache-Control` and `Vercel-CDN-Cache-Control` are `no-store`, including
 304 and error responses.
 
-## v0 semantics
+## Evaluation
 
-v0 returns defaults; store-backed targeting (user/%/workspace, kill switch, audit)
-replaces v0 behind the same contract. The endpoint supplies no overrides. The
-pure evaluator accepts future overrides for known keys only and applies the kill
+After authentication and membership, the endpoint reads platform overrides for
+one server-selected environment. `VERCEL_ENV=production` selects production,
+`preview` selects staging, and `development` selects development. An unknown
+`VERCEL_ENV` selects production. When `VERCEL_ENV` is unset, `NODE_ENV` of
+`development` or `test` selects development and every other value selects
+production. A query or body field cannot select the environment.
+
+Missing or unreachable storage uses each registry default. An authorization
+failure or a malformed payload returns an error and does not substitute defaults.
+The pure evaluator accepts overrides for known keys only and applies the kill
 switch last: `mobile_offline: false` forces every `offline_` key OFF, including
-reads, writes and status UI. Context currently has no effect. This endpoint does
-not enable offline functionality or grant access to underlying data.
+reads, writes and status UI. Context currently has no effect on the boolean
+result. This endpoint does not enable offline functionality or grant access to
+underlying data.
 
 Regression coverage lives in `packages/feature-flags/src/index.test.ts`,
 `packages/feature-flags/src/{catalog,lifecycle,check-lifecycle}.test.ts`,
 `apps/web/src/app/api/v1/mobile/feature-flags/route.test.ts` and the Infrastructure
 `feature-flags` page and table tests.
+
+Cookie-authenticated state mutations require the Infrastructure origin and the
+`x-tuturuuu-feature-flag-action: 1` header. Bearer API requests use verified token
+authentication without a cookie fallback.
