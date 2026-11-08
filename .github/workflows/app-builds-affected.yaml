@@ -1,0 +1,108 @@
+name: App builds (affected)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
+  schedule:
+    - cron: '17 19 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+jobs:
+  check-ci:
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    permissions:
+      contents: read
+      deployments: read
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: app-builds-affected.yaml
+  affected:
+    needs: check-ci
+    if: (always() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.selection.outputs.mode }}
+      apps: ${{ steps.selection.outputs.apps }}
+      code_changed: ${{ steps.selection.outputs.code_changed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: selection
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "$EVENT_NAME" = schedule ] || [ "$EVENT_NAME" = workflow_dispatch ]; then
+            json='{"mode":"all","apps":[],"reason":"full build trigger"}'
+            changed=true
+          else
+            git fetch --no-tags origin "$BASE_REF"
+            json=$(node scripts/ci/affected-apps.mjs --base "origin/$BASE_REF")
+            changed=$(git diff --quiet "origin/$BASE_REF...HEAD" -- 'apps/**' 'packages/**' && echo false || echo true)
+          fi
+          SELECTION="$json" CODE_CHANGED="$changed" node scripts/ci/select-programming-apps.mjs
+  build:
+    needs: [check-ci, affected]
+    if: (always() && needs.check-ci.result == 'success' && needs.affected.result == 'success' && needs.affected.outputs.apps != '[]') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.affected.outputs.apps) }}
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://programming-ci.supabase.invalid
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_programming_ci_placeholder
+      NEXT_PUBLIC_APP_URL: https://programming-ci.invalid
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      NODE_OPTIONS: --max-old-space-size=8192
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Require a programming app name
+        env:
+          APP: ${{ matrix.app }}
+        run: |
+          case "$APP" in
+            web|learn|infrastructure|mail|contacts|tasks) echo "Building @tuturuuu/$APP" ;;
+            *) echo "::error::Unexpected app: $APP"; exit 1 ;;
+          esac
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Build application and shared dependencies without deployment
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/${{ matrix.app }}
+          token: ''
+          team: ''
+  App-builds-affected:
+    name: App builds (affected)
+    needs: [check-ci, affected, build]
+    if: (always() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Enforce affected build verdict
+        env:
+          MODE: ${{ needs.affected.outputs.mode }}
+          APPS: ${{ needs.affected.outputs.apps }}
+          CODE_CHANGED: ${{ needs.affected.outputs.code_changed }}
+          AFFECTED_RESULT: ${{ needs.affected.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: node --input-type=module -e 'import { verdict } from "./scripts/ci/affected-apps.mjs"; const apps=JSON.parse(process.env.APPS||"[]"); const r=verdict({mode:process.env.MODE,apps,codeChanged:process.env.CODE_CHANGED==="true",results:Object.fromEntries(apps.map(a=>[a,process.env.BUILD_RESULT==="success"?"success":process.env.BUILD_RESULT]))}); if(process.env.AFFECTED_RESULT!=="success"||!r.pass) { console.error(r.reason); process.exit(1) }'

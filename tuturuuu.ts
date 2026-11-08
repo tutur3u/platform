@@ -293,6 +293,12 @@ export const vercelWorkflowTargets = [
 
 export const cloudflareProductionTargets = [
   {
+    app: 'git',
+    appPath: 'apps/git',
+    packageName: '@tuturuuu/git',
+    productionWorkflow: 'git-cloudflare.yaml',
+  },
+  {
     app: 'external',
     appPath: 'apps/external',
     packageName: '@tuturuuu/external',

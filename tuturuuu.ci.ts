@@ -30,6 +30,7 @@ export const ci = {
   'report-review-receipts-contract.yaml': true,
   'workspace-permission-scope-contract.yaml': true,
   'programming-app-builds.yaml': true,
+  'app-builds-affected.yaml': true,
   'mail-calendar-tasks-builds.yaml': true,
   'playground-runtime-acceptance.yaml': true,
   'codecov.yaml': true,
@@ -138,6 +139,7 @@ export const ci = {
   'tools-cloudflare.yaml': true,
   'pay-cloudflare.yaml': true,
   'playground-cloudflare.yaml': true,
+  'git-cloudflare.yaml': true,
   'external-cloudflare.yaml': true,
 };
 
@@ -154,6 +156,12 @@ export const productionPublicationPolicy = {
     state: 'admitted',
     reason:
       'Inventory native Start route-free upload with smoke and pinned rollback',
+    surfaces: ['frontend'],
+  },
+  nova: {
+    state: 'admitted',
+    reason:
+      'Nova native Start route-free upload with smoke and pinned rollback',
     surfaces: ['frontend'],
   },
   mastermind: {

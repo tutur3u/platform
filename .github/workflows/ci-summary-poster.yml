@@ -4,7 +4,9 @@ name: CI summary poster
 # is contents: read only. A dedicated GitHub App installation token, minted
 # from CI_SUMMARY_APP_ID and CI_SUMMARY_APP_PRIVATE_KEY, performs the post.
 # Those secrets are absent until the repository owner creates that app and
-# installs it here; the job then fails and posts nothing.
+# installs it here. The poster job then skips with an "App not configured"
+# notice and posts nothing. It does not use another app's credentials.
+# A partial or malformed configuration still fails closed.
 #
 # pull_request_target and schedule both run this file from the default branch.
 # The job checks out that branch and does not check out or execute pull request
@@ -33,8 +35,30 @@ permissions:
   contents: read
 
 jobs:
+  configuration:
+    name: CI summary configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      configured: ${{ steps.detect.outputs.configured }}
+    steps:
+      - name: Detect the CI summary app
+        id: detect
+        env:
+          CI_SUMMARY_APP_ID: ${{ secrets.CI_SUMMARY_APP_ID }}
+          CI_SUMMARY_APP_PRIVATE_KEY: ${{ secrets.CI_SUMMARY_APP_PRIVATE_KEY }}
+        run: |
+          if [ -z "${CI_SUMMARY_APP_ID}" ] && [ -z "${CI_SUMMARY_APP_PRIVATE_KEY}" ]; then
+            echo "App not configured. The CI summary poster is skipped until CI_SUMMARY_APP_ID and CI_SUMMARY_APP_PRIVATE_KEY exist."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
   summary:
     name: CI summary (poster)
+    needs: configuration
+    if: needs.configuration.outputs.configured == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
