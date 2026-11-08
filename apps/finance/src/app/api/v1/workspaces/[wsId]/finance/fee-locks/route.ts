@@ -10,6 +10,7 @@ import {
   getFeeLockCurrency,
   getFeeLockRouteContext,
 } from './access';
+import { readAllInChunks, readAllPages } from './read-pages';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -64,25 +65,35 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   const currency = await getFeeLockCurrency(wsId);
+  // Every read pages past PostgREST max_rows (1000) with .range() on a stable order.
   const [baseline, locks] = await Promise.all([
-    sbAdmin.schema('private').rpc('fee_lock_baseline', {
-      p_ws_id: wsId,
-      p_month: periodMonth,
-      p_currency: currency,
-    }),
-    sbAdmin
-      .from('fee_locks')
-      .select(
-        'id, student_id, status, revision, version, total_amount, updated_at, updated_by'
-      )
-      .eq('ws_id', wsId)
-      .eq('period_month', periodMonth),
+    readAllPages((from, to) =>
+      sbAdmin
+        .schema('private')
+        .rpc('fee_lock_baseline', {
+          p_ws_id: wsId,
+          p_month: periodMonth,
+          p_currency: currency,
+        })
+        .range(from, to)
+    ),
+    readAllPages((from, to) =>
+      sbAdmin
+        .from('fee_locks')
+        .select(
+          'id, student_id, status, revision, version, total_amount, updated_at, updated_by'
+        )
+        .eq('ws_id', wsId)
+        .eq('period_month', periodMonth)
+        .order('id')
+        .range(from, to)
+    ),
   ]);
   if (baseline.error) return feeLockErrorResponse(baseline.error);
   if (locks.error) return feeLockErrorResponse(locks.error);
 
   const rows = new Map<string, FeeLockListRow>();
-  for (const cls of baseline.data ?? []) {
+  for (const cls of baseline.rows) {
     const row = rows.get(cls.student_id) ?? {
       student_id: cls.student_id,
       student_name: cls.student_name ?? '',
@@ -104,29 +115,36 @@ export async function GET(request: Request, { params }: Params) {
     rows.set(cls.student_id, row);
   }
 
-  const lockRows = locks.data ?? [];
-  const missingStudentIds = lockRows
-    .map((lock) => lock.student_id)
-    .filter((id) => !rows.has(id));
+  const lockRows = locks.rows;
+  const missingStudentIds = [
+    ...new Set(lockRows.map((lock) => lock.student_id)),
+  ].filter((id) => !rows.has(id));
   const editorIds = [
     ...new Set(lockRows.flatMap((lock) => lock.updated_by ?? [])),
   ];
   const [students, editors] = await Promise.all([
-    missingStudentIds.length
-      ? sbAdmin
-          .from('workspace_users')
-          .select('id, full_name, display_name')
-          .eq('ws_id', wsId)
-          .in('id', missingStudentIds)
-      : { data: [], error: null },
-    editorIds.length
-      ? sbAdmin.from('users').select('id, display_name').in('id', editorIds)
-      : { data: [], error: null },
+    readAllInChunks(missingStudentIds, (ids, from, to) =>
+      sbAdmin
+        .from('workspace_users')
+        .select('id, full_name, display_name')
+        .eq('ws_id', wsId)
+        .in('id', ids)
+        .order('id')
+        .range(from, to)
+    ),
+    readAllInChunks(editorIds, (ids, from, to) =>
+      sbAdmin
+        .from('users')
+        .select('id, display_name')
+        .in('id', ids)
+        .order('id')
+        .range(from, to)
+    ),
   ]);
   if (students.error) return feeLockErrorResponse(students.error);
   if (editors.error) return feeLockErrorResponse(editors.error);
 
-  for (const student of students.data ?? []) {
+  for (const student of students.rows) {
     rows.set(student.id, {
       student_id: student.id,
       student_name: student.full_name ?? student.display_name ?? '',
@@ -136,7 +154,7 @@ export async function GET(request: Request, { params }: Params) {
     });
   }
   const editorNames = new Map(
-    (editors.data ?? []).map((user) => [user.id, user.display_name ?? null])
+    editors.rows.map((user) => [user.id, user.display_name ?? null])
   );
   for (const lock of lockRows) {
     const row = rows.get(lock.student_id);

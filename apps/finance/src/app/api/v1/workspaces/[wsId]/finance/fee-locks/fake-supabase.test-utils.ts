@@ -2,29 +2,43 @@ import { vi } from 'vitest';
 
 type Result = { data?: unknown; error?: unknown };
 
-/** Admin-client fake: `from(table)` chains resolve to `tables[table]`, filters are recorded, `rpc(fn)` resolves to `rpc[fn]`. */
+/**
+ * Admin-client fake: `from(table)` and `rpc(fn)` chains resolve to `tables[table]` / `rpc[fn]`,
+ * sliced by `.range()` and capped at 1000 rows like PostgREST max_rows; filters are recorded.
+ */
 export function fakeSupabase(
   tables: Record<string, Result> = {},
   rpc: Record<string, Result> = {}
 ) {
   const calls: Array<{ table: string; method: string; args: unknown[] }> = [];
   const rpcCalls: Array<{ fn: string; args: unknown }> = [];
-  const builder = (table: string): unknown => {
-    const result = Promise.resolve({
-      data: null,
-      error: null,
-      ...tables[table],
-    });
+  const builder = (table: string, source: Result | undefined): unknown => {
+    let range: [number, number] | null = null;
+    const resolve = () => {
+      const base = { data: null as unknown, error: null, ...source };
+      // PostgREST max_rows: an unranged response holds at most 1000 rows.
+      const [from, to] = range ?? [0, 999];
+      return Array.isArray(base.data)
+        ? { ...base, data: base.data.slice(from, to + 1) }
+        : base;
+    };
     const chain: unknown = new Proxy(
       {},
       {
         get(_, method) {
-          if (method === 'then') return result.then.bind(result);
+          if (method === 'then') {
+            return (
+              ok: (v: unknown) => unknown,
+              ko?: (e: unknown) => unknown
+            ) => Promise.resolve(resolve()).then(ok, ko);
+          }
           if (method === 'maybeSingle' || method === 'single') {
-            return () => result;
+            return () => Promise.resolve(resolve());
           }
           return (...args: unknown[]) => {
             calls.push({ table, method: String(method), args });
+            if (method === 'range')
+              range = [args[0] as number, args[1] as number];
             return chain;
           };
         },
@@ -32,12 +46,12 @@ export function fakeSupabase(
     );
     return chain;
   };
-  const callRpc = vi.fn(async (fn: string, args: unknown) => {
+  const callRpc = vi.fn((fn: string, args: unknown): unknown => {
     rpcCalls.push({ fn, args });
-    return { data: null, error: null, ...rpc[fn] };
+    return builder(`rpc:${fn}`, rpc[fn]);
   });
   const client = {
-    from: vi.fn(builder),
+    from: vi.fn((table: string) => builder(table, tables[table])),
     rpc: callRpc,
     schema: vi.fn(() => ({ rpc: callRpc })),
   };
