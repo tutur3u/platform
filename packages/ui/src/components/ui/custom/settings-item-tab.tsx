@@ -20,9 +20,10 @@ interface SettingItemTabProps {
   /**
    * `inline` keeps the label and a compact control on one line, and falls back
    * to stacked when the row is too narrow. `stacked` gives the control the full
-   * row width, for tile pickers, textareas and lists.
+   * row width, for tile pickers, textareas and lists. `compact` keeps a small
+   * action at the top right even when the row is narrow.
    */
-  layout?: 'inline' | 'stacked';
+  layout?: 'compact' | 'inline' | 'stacked';
   /** Width of the control in a wide inline row, such as a text field. */
   controlWidth?: keyof typeof CONTROL_WIDTHS;
   className?: string;
@@ -43,6 +44,7 @@ export function SettingItemTab({
   className,
   controlClassName,
 }: SettingItemTabProps) {
+  const compact = layout === 'compact';
   const inline = layout === 'inline';
 
   return (
@@ -55,13 +57,14 @@ export function SettingItemTab({
     >
       <div
         className={cn(
-          'flex flex-col gap-3',
+          'flex gap-3',
+          compact ? 'flex-row items-start justify-between' : 'flex-col',
           inline &&
             '@lg:flex-row @lg:items-center @lg:justify-between @lg:gap-8'
         )}
       >
         <div className="min-w-0 flex-1 space-y-0.5">
-          <div className="flex items-center gap-2 font-medium text-foreground text-sm">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 font-medium text-foreground text-sm">
             {icon && (
               <span className="shrink-0 text-muted-foreground">{icon}</span>
             )}
@@ -78,6 +81,7 @@ export function SettingItemTab({
             className={cn(
               'min-w-0',
               inline && '@lg:shrink-0',
+              compact && 'shrink-0',
               controlWidth && CONTROL_WIDTHS[controlWidth],
               controlClassName
             )}
