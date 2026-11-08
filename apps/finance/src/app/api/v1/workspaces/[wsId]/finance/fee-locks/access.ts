@@ -7,6 +7,7 @@ import {
   isFeeLockEnabled,
 } from '@tuturuuu/finance-core/fee-lock/access';
 import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
+import { FEE_LOCK_VERSION_CONFLICT_CODE } from '@tuturuuu/internal-api/finance-fee-lock-contracts';
 import type { PermissionId } from '@tuturuuu/types';
 import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
@@ -89,5 +90,56 @@ export function feeLockErrorResponse(error: DbError) {
   return NextResponse.json(
     { message: 'Internal server error' },
     { status: 500 }
+  );
+}
+
+/** Parses a JSON body with a zod schema; null when the body is not valid JSON or fails the schema. */
+export async function parseFeeLockBody<T>(
+  request: Request,
+  schema: { safeParse: (value: unknown) => { success: boolean; data?: T } }
+): Promise<T | null> {
+  const body = await request.json().catch(() => undefined);
+  const parsed = schema.safeParse(body);
+  return parsed.success ? (parsed.data as T) : null;
+}
+
+export const invalidFeeLockBody = () =>
+  NextResponse.json({ message: 'Invalid request body' }, { status: 400 });
+
+/**
+ * Write errors: a stale `expected_version` (PT409) answers 409 with the
+ * current header so the UI can show "changed by someone else"; a wrong status
+ * (55000) answers 409; the rest goes through feeLockErrorResponse.
+ */
+export async function feeLockWriteErrorResponse(
+  sbAdmin: FinanceRouteContext['sbAdmin'],
+  wsId: string,
+  error: DbError,
+  lookup: { id: string } | { student_id: string; period_month: string }
+) {
+  if (error?.code === '55000') {
+    return NextResponse.json(
+      { code: 'FEE_LOCK_WRONG_STATUS', message: 'Wrong fee lock status' },
+      { status: 409 }
+    );
+  }
+  if (error?.code !== 'PT409') return feeLockErrorResponse(error);
+
+  let query = sbAdmin.from('fee_locks').select('*').eq('ws_id', wsId);
+  query =
+    'id' in lookup
+      ? query.eq('id', lookup.id)
+      : query
+          .eq('student_id', lookup.student_id)
+          .eq('period_month', lookup.period_month);
+  const { data: current } = await query.maybeSingle();
+  if (!current) return feeLockErrorResponse({ code: 'PT404' });
+  return NextResponse.json(
+    {
+      code: FEE_LOCK_VERSION_CONFLICT_CODE,
+      message: 'This fee lock was changed by someone else',
+      current,
+    },
+    { status: 409 }
   );
 }

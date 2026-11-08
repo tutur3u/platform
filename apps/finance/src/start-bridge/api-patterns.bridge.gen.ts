@@ -15,6 +15,8 @@ export const appApiPatterns = [
   "/api/v1/workspaces/[wsId]/finance/debts/summary",
   "/api/v1/workspaces/[wsId]/finance/fee-locks",
   "/api/v1/workspaces/[wsId]/finance/fee-locks/[lockId]",
+  "/api/v1/workspaces/[wsId]/finance/fee-locks/[lockId]/lock",
+  "/api/v1/workspaces/[wsId]/finance/fee-locks/[lockId]/reopen",
   "/api/v1/workspaces/[wsId]/finance/filter-users",
   "/api/v1/workspaces/[wsId]/finance/invoices",
   "/api/v1/workspaces/[wsId]/finance/invoices/[invoiceId]",
