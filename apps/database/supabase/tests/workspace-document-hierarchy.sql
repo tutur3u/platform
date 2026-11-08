@@ -138,7 +138,7 @@ select is(
      from public.workspace_documents child
      join chain on child.parent_id = chain.id
    )
-   select max(depth) from chain),
+   select max(depth)::integer from chain),
   16,
   'a 16-level chain is stored');
 select throws_ok(
@@ -192,7 +192,7 @@ select is(
   'the child row survives parent deletion');
 select is(
   (select parent_id from public.workspace_documents where id = pg_temp.doc(51)),
-  null,
+  null::uuid,
   'the child becomes a root');
 
 insert into public.workspace_documents (id, ws_id, name)
