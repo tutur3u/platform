@@ -31,6 +31,7 @@ async function access() {
     new NextRequest('http://localhost/api/v1/mastermind/access')
   );
   expect(response.status).toBe(200);
+  expect(response.headers.get('Cache-Control')).toBe('private, no-store');
   return (await response.json()) as { enabled: boolean };
 }
 
@@ -88,4 +89,17 @@ describe('GET /api/v1/mastermind/access', () => {
 
     await expect(access()).resolves.toEqual({ enabled: false });
   });
+  it('observes root-grant revocation on the next request without an env change', async () => {
+    vi.stubEnv('MASTERMIND_REQUIRE_EXPLICIT_GRANT', 'true');
+    holds('manage_mastermind');
+    await expect(access()).resolves.toEqual({ enabled: true });
+    holds();
+    await expect(access()).resolves.toEqual({ enabled: false });
+    expect(mocks.getPermissions).toHaveBeenCalledTimes(2);
+    expect(mocks.getPermissions).toHaveBeenLastCalledWith({
+      user: expect.objectContaining({ id: 'user-1' }),
+      wsId: ROOT_WORKSPACE_ID,
+    });
+  });
+
 });

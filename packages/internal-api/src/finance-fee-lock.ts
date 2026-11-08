@@ -5,11 +5,13 @@ import {
   withFinanceApiBaseUrl,
 } from './client';
 import {
+  FEE_LOCK_EXPORT_TOO_MANY_CODE,
   FEE_LOCK_VERSION_CONFLICT_CODE,
   type FeeLockBatchItemResult,
   type FeeLockBatchLockRequest,
   type FeeLockConflictBody,
   type FeeLockDetail,
+  type FeeLockExportRequest,
   type FeeLockHeader,
   type FeeLockListQuery,
   type FeeLockListResponse,
@@ -140,4 +142,45 @@ export function lockFeeLockBatch(
     body: JSON.stringify(payload),
     cache: 'no-store',
   });
+}
+
+/** The export answers with the workbook, or `tooMany` rows (filter by class). */
+export type FeeLockExportResult =
+  | { ok: true; blob: Blob; fileName: string; rowCount: number }
+  | { ok: false; tooMany: number };
+
+/** `POST /finance/fee-locks/export`: the server-built .xlsx as a Blob. */
+export async function exportFeeLocks(
+  workspaceId: string,
+  payload: FeeLockExportRequest,
+  options?: InternalApiClientOptions
+): Promise<FeeLockExportResult> {
+  const response = await getInternalApiClient(
+    withFinanceApiBaseUrl(options)
+  ).fetch(feeLocksPath(workspaceId, '/export'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+  });
+  if (response.status === 400) {
+    const body = (await response
+      .clone()
+      .json()
+      .catch(() => null)) as { code?: string; count?: number } | null;
+    if (body?.code === FEE_LOCK_EXPORT_TOO_MANY_CODE) {
+      return { ok: false, tooMany: Number(body.count) || 0 };
+    }
+  }
+  if (!response.ok) throw await parseInternalApiError(response);
+  const disposition = response.headers.get('content-disposition') ?? '';
+  return {
+    ok: true,
+    blob: await response.blob(),
+    // The server builds the name from a validated month and the ws id only.
+    fileName:
+      /filename="([\w.-]+\.xlsx)"/.exec(disposition)?.[1] ??
+      'chot-hoc-phi.xlsx',
+    rowCount: Number(response.headers.get('x-fee-lock-row-count')) || 0,
+  };
 }
