@@ -78,6 +78,7 @@ const PROTECTED_TRIGGERS = {
   'programming-database-contract.yaml': '0a3cc2c97958f5cd',
   'report-review-receipts-contract.yaml': '433352a4fb0e56e6',
   'required-account-mfa-contract.yaml': 'f803778bc2859492',
+  'roadmap-cloudflare.yaml': '226a232389cbc09b',
   'sdk-package-qualification.yaml': '0a3cc2c97958f5cd',
   'security-egress-contract.yaml': '0a3cc2c97958f5cd',
   'shortener-cloudflare.yaml': '91506e88fa4e6dd8',
@@ -465,5 +466,42 @@ test('reported build push selectors preserve protected refs and release branches
   assert.match(
     JSON.stringify(release),
     /release-please--branches--production--release-notes/u
+  );
+});
+
+test('roadmap artifact admission rejects unlabelled PRs and preserves main dispatch', () => {
+  const jobs = workflows['roadmap-cloudflare.yaml'].jobs;
+  const decide = (event, labels, ref, relevant = true) => {
+    const context = {
+      github: {
+        event_name: event,
+        ref,
+        event: { pull_request: { labels: labels.map((name) => ({ name })) } },
+      },
+      needs: { 'check-ci': { outputs: { should_run: String(relevant) } } },
+    };
+    return Object.fromEntries(
+      Object.entries(jobs).map(([id, job]) => [
+        id,
+        evaluateExpression(job.if, context),
+      ])
+    );
+  };
+  assert.deepEqual(decide('pull_request', [], 'refs/pull/42/merge'), {
+    'check-ci': false,
+    build: false,
+  });
+  assert.deepEqual(
+    decide('pull_request', [READY_LABEL], 'refs/pull/42/merge'),
+    { 'check-ci': true, build: true }
+  );
+  assert.equal(
+    decide('pull_request', [READY_LABEL], 'refs/pull/42/merge', false).build,
+    false
+  );
+  assert.equal(decide('workflow_dispatch', [], 'refs/heads/main').build, true);
+  assert.equal(
+    decide('workflow_dispatch', [], 'refs/heads/unreviewed').build,
+    false
   );
 });
