@@ -2,6 +2,7 @@
 title: Tuturuuu Mail
 updatedAt: '2026-09-18'
 description: Multi-mailbox client with permanent SES and Cloudflare transports.
+audience: users
 ---
 
 `apps/mail` is the standalone Tuturuuu mailbox app. It runs on
@@ -867,9 +868,9 @@ mailbox access.
 The mobile inbox restores its last mailbox, folder, search, labels, and message
 list from encrypted, account- and workspace-scoped storage. Snapshots expire
 after seven days. Opening Mail rechecks access and refreshes messages; cached
-send permissions are never trusted. A denied access response clears the cached
-view and prevents late requests from restoring it. Draft editing and attachment
-downloads continue to use authenticated network requests.
+send permissions are never trusted. Preparation shares the reader's genuine 401/403 purge
+and MFA exceptions. Pre-request key/scope revisions fence durable publication and readiness;
+late responses cannot restore purged data (see `mail_offline_preparation_test.dart`). Draft editing and attachment downloads still require authenticated network requests.
 
 Opening a mobile message shows the reader immediately from the inbox row and
 keeps its detail request active while the inbox revalidates. Cached thread

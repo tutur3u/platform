@@ -237,3 +237,7 @@ b4ed5bcadb892097a20d83a0b7e248e8835e0be1:scripts/ci/sql-grant-guard-legacy.json:
 b10217339a73ba4275d36908e31cd2630d7bdb57:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:46
 b10217339a73ba4275d36908e31cd2630d7bdb57:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:54
 b10217339a73ba4275d36908e31cd2630d7bdb57:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:63
+99e3b92c4bebde248509c44f8c1b432c0ba89750:apps/mobile/android/app/src/development/google-services.json:gcp-api-key:18
+99e3b92c4bebde248509c44f8c1b432c0ba89750:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:46
+99e3b92c4bebde248509c44f8c1b432c0ba89750:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:54
+99e3b92c4bebde248509c44f8c1b432c0ba89750:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:63

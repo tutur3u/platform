@@ -1,6 +1,8 @@
 ---
 title: 'Satellite Apps'
 description: 'How satellite apps (contacts, forms, pay, tasks, …) authenticate, proxy their APIs, render under Cache Components, and take ownership of a feature from apps/web.'
+updatedAt: "2026-10-28"
+audience: developers
 ---
 
 ## What a satellite is
@@ -573,3 +575,33 @@ unit tests replace request log draining with a typed pass-through to keep detach
 log persistence outside the unit-test provider boundary. These tests require an
 admitted isolated execution environment; source presence alone is not execution
 evidence.
+
+## Opt-in public documents
+
+`@tuturuuu/satellite/public` is the explicit public shell entry. The authenticated
+default barrel, providers, app-session actors and tenant/permission guards keep
+their existing contract. Public documents import only this entry and inject
+framework Link/Image adapters; the shell uses shared UI branding and a theme-only
+provider. It performs no session-cookie, Supabase or actor lookup. Sign-in is a
+navigation affordance. User-specific content belongs to a separate private,
+no-store endpoint, outside shared document caching.
+
+Roadmap adopts this mode for its public snapshot at the apex `/roadmap/` and
+standalone root, with an apex canonical URL. EN/VI selection and filters stay
+local to the public snapshot. Stage/evidence rules and the missing-public-receipt
+reason remain authoritative. No other satellite automatically opts into this mode.
+
+Roadmap's response wrapper admits shared caching only for exact successful
+GET/HEAD HTML representations without query variants or unsafe response headers.
+Auth, server functions, errors and unknown representations stay private/no-store;
+native asset policy and MIME remain with the asset supplier. The wrapper adds no
+storage or background work. Actual immutable assets and hosted edge hits require
+separate exact-artifact release acceptance.
+
+Regression coverage: `packages/satellite/tests/public-boundary.node-test.mjs`
+fences the first-party import graph and authenticated byte preimages;
+`packages/satellite/src/components/public-satellite-shell.test.tsx` exercises SSR;
+`apps/roadmap/src/cache-policy.test.ts` covers cache boundaries and stream/header
+preservation. `apps/roadmap/src/roadmap-data.test.ts` covers stages, bilingual
+pending-receipt copy and conservative evidence. Emitted auth-free bundles and
+host-aware hydration remain required artifact checks.

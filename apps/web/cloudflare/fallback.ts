@@ -97,3 +97,20 @@ export async function proxyNext(
     headers: output,
   });
 }
+
+export function notMigrated() {
+  return new Response(
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><meta name="color-scheme" content="light dark"><title>Not migrated yet</title><style>body{font:1rem system-ui;margin:15vh auto;padding:2rem;max-width:40rem;color:CanvasText;background:Canvas}h1{font-size:2rem}</style></head><body><main><h1>Not migrated yet</h1></main></body></html>`,
+    {
+      status: 404,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'no-store',
+        'x-tuturuuu-native': 'not-migrated',
+        'content-security-policy':
+          "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+        'x-content-type-options': 'nosniff',
+      },
+    }
+  );
+}

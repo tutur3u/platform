@@ -30,6 +30,9 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
+          # History stays (merge-base/diff/show of base SHAs); blobs are fetched
+          # lazily. Self-hosted runs persist no credentials, so keep a full fetch.
+          filter: ${{ runner.environment != 'self-hosted' && 'blob:none' || '' }}
           clean: true
           persist-credentials: ${{ runner.environment != 'self-hosted' }}
       - name: Isolate persistent runner state
@@ -121,7 +124,8 @@ jobs:
             echo "::error file=bun.lock::bun.lock must be committed."
             exit 1
           fi
-          bun install --lockfile-only
+          # unfrozen-bun-install: regenerates bun.lock only to prove the committed one is canonical
+          bun install --lockfile-only --ignore-scripts
           # Assign separately so a failing `git status` aborts under `-e`.
           lock_status="$(git status --porcelain -- bun.lock)"
           if [ -n "$lock_status" ]; then
@@ -167,6 +171,9 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
+          # History stays (merge-base/diff/show of base SHAs); blobs are fetched
+          # lazily. Self-hosted runs persist no credentials, so keep a full fetch.
+          filter: ${{ runner.environment != 'self-hosted' && 'blob:none' || '' }}
           clean: true
           persist-credentials: ${{ runner.environment != 'self-hosted' }}
       - name: Isolate persistent runner state
@@ -258,7 +265,8 @@ jobs:
             echo "::error file=bun.lock::bun.lock must be committed."
             exit 1
           fi
-          bun install --lockfile-only
+          # unfrozen-bun-install: regenerates bun.lock only to prove the committed one is canonical
+          bun install --lockfile-only --ignore-scripts
           # Assign separately so a failing `git status` aborts under `-e`.
           lock_status="$(git status --porcelain -- bun.lock)"
           if [ -n "$lock_status" ]; then

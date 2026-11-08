@@ -37,7 +37,6 @@ function query(data: unknown[]) {
   for (const method of ['select', 'eq', 'order']) {
     chain[method] = vi.fn(() => chain);
   }
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query test double.
   chain.then = (resolve: (result: unknown) => unknown) =>
     resolve({ data, error: null });
   return chain;

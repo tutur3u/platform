@@ -9,6 +9,7 @@ import {
 } from '../../../hooks/use-workspace-visibility';
 import { Button } from '../button';
 import { Dialog, DialogTrigger } from '../dialog';
+import { SettingItemTab } from './settings-item-tab';
 import { WorkspacePickerContent } from './workspace-picker-content';
 
 /** Private Settings restore editor; restoring never changes current/default scope. */
@@ -27,23 +28,28 @@ export function HiddenWorkspacesSettings() {
     },
   });
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" disabled={!actor}>
-          {t('hidden_workspaces')}
-        </Button>
-      </DialogTrigger>
-      <WorkspacePickerContent
-        listLoading={list.isLoading}
-        listError={list.error}
-        onRetryList={() => {
-          void list.refetch();
-        }}
-        restoreOnly
-        workspaces={list.data ?? []}
-        visibility={visibility}
-        onSelect={() => {}}
-      />
-    </Dialog>
+    <SettingItemTab
+      description={t('hidden_workspaces_description')}
+      title={t('hidden_workspaces')}
+    >
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" disabled={!actor}>
+            {t('hidden_workspaces')}
+          </Button>
+        </DialogTrigger>
+        <WorkspacePickerContent
+          listLoading={list.isLoading}
+          listError={list.error}
+          onRetryList={() => {
+            void list.refetch();
+          }}
+          restoreOnly
+          workspaces={list.data ?? []}
+          visibility={visibility}
+          onSelect={() => {}}
+        />
+      </Dialog>
+    </SettingItemTab>
   );
 }

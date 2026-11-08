@@ -23,8 +23,13 @@ const status = (result: unknown) =>
   result instanceof Response ? result.status : 'settings';
 
 describe('room-state settings write (authoritative note-sharing gate)', () => {
-  it('denies enabling note sharing for unlisted or unconfigured workspaces', () => {
-    for (const env of [undefined, {}, { MEET_AI_ENABLED_WORKSPACE_IDS: 'x' }]) {
+  it('denies enabling note sharing for disabled workspaces', () => {
+    for (const env of [
+      { MEET_AI_DISABLED: 'true' },
+      { MEET_AI_DISABLED: 'garbage' },
+      { MEET_AI_DISABLED_WORKSPACE_IDS: wsId },
+      { MEET_AI_ENABLED_WORKSPACE_IDS: 'x' },
+    ]) {
       for (const body of [
         { shareNotes: true },
         { shareNotesAfterMeeting: true },
@@ -34,12 +39,23 @@ describe('room-state settings write (authoritative note-sharing gate)', () => {
         ).toBe(403);
     }
   });
-  it('allows enabling for a listed workspace', () => {
+  it('explains temporary unavailability', async () => {
     const result = resolveRoomSettingsPatch(
       { shareNotes: true },
       undefined,
       host,
-      listed
+      { MEET_AI_DISABLED: 'true' }
+    );
+    expect(result).toBeInstanceOf(Response);
+    if (result instanceof Response)
+      expect(await result.text()).toBe('Meet AI is temporarily unavailable');
+  });
+  it('allows enabling with no configuration', () => {
+    const result = resolveRoomSettingsPatch(
+      { shareNotes: true },
+      undefined,
+      host,
+      undefined
     );
     expect(result).toMatchObject({ shareNotes: true });
   });
@@ -49,11 +65,13 @@ describe('room-state settings write (authoritative note-sharing gate)', () => {
         { shareNotes: false },
         { shareNotes: true },
         host,
-        undefined
+        { MEET_AI_DISABLED: 'true' }
       )
     ).toMatchObject({ shareNotes: false });
     expect(
-      resolveRoomSettingsPatch({ saveChat: true }, undefined, host, undefined)
+      resolveRoomSettingsPatch({ saveChat: true }, undefined, host, {
+        MEET_AI_DISABLED: 'true',
+      })
     ).toMatchObject({ saveChat: true });
   });
   it('keeps the host-only and validation rules', () => {
@@ -71,7 +89,7 @@ describe('room-state settings write (authoritative note-sharing gate)', () => {
   it('derives command eligibility from the injected binding only', () => {
     const message = { type: 'presence.join' as const };
     expect(roomCommand(message, host, listed).notesEligible).toBe(true);
-    expect(roomCommand(message, host, undefined).notesEligible).toBe(false);
+    expect(roomCommand(message, host, undefined).notesEligible).toBe(true);
     expect(
       roomCommand(message, host, { MEET_AI_ENABLED_WORKSPACE_IDS: 'x' })
         .notesEligible

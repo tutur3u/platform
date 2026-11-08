@@ -42,8 +42,8 @@ test('dry run reads only and plans the full owned file set', (t) => {
     'apps/demo/src/start-bridge/page-registry.bridge.gen.ts',
   ])
     assert.ok(created.includes(file), file);
-  // The repository's biome.json already keeps generated route trees out.
-  assert.equal(created.includes('biome.json'), false);
+  // The repository's .oxfmtrc.json already keeps generated route trees out.
+  assert.equal(created.includes('.oxfmtrc.json'), false);
   // Production stays untouched without --hold.
   for (const file of HOLD_FILES) assert.ok(!created.includes(file), file);
   assert.equal(
@@ -132,7 +132,6 @@ test('generated config targets the staging Worker and keeps Next build', (t) => 
   );
   assert.equal(
     manifest.scripts['dev:cloudflare'],
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: shell parameter expansion
     'vp dev --configLoader runner --host 127.0.0.1 --port ${PORT:-7899}'
   );
   assert.deepEqual(manifest.dependencies, {
@@ -408,19 +407,19 @@ test('hand-maintained route config entries survive a re-run', (t) => {
   );
 });
 
-test('a Biome-formatted route config is unchanged; a changed one is formatted', (t) => {
+test('a Oxc-formatted route config is unchanged; a changed one is formatted', (t) => {
   const root = createFixtureRepo(t);
   applyPlan(root, plan(root), { spawn: noCommands });
   const file = path.join(root, 'apps/demo/start-bridge.routes.json');
   const config = JSON.parse(fs.readFileSync(file, 'utf8'));
   config.api.forwarded = ['/api/v1/inventory/[...path]'];
-  // Biome keeps a short array on one line (Storefront's api.forwarded).
-  const biomeLayout = `${JSON.stringify(config, null, 2).replace(
+  // Oxc keeps a short array on one line (Storefront's api.forwarded).
+  const oxcLayout = `${JSON.stringify(config, null, 2).replace(
     /\[\n\s+("\/api\/v1\/inventory\/\[\.\.\.path\]")\n\s+\]/u,
     '[$1]'
   )}\n`;
-  assert.match(biomeLayout, /"forwarded": \["\/api\/v1\/inventory/u);
-  fs.writeFileSync(file, biomeLayout);
+  assert.match(oxcLayout, /"forwarded": \["\/api\/v1\/inventory/u);
+  fs.writeFileSync(file, oxcLayout);
   const formatted = [];
   const format = (relativePath, content) => {
     formatted.push(relativePath);
@@ -431,7 +430,7 @@ test('a Biome-formatted route config is unchanged; a changed one is formatted', 
     pendingWrites(again).some((write) => write.path.endsWith('routes.json')),
     false
   );
-  assert.equal(fs.readFileSync(file, 'utf8'), biomeLayout);
+  assert.equal(fs.readFileSync(file, 'utf8'), oxcLayout);
 
   // Key order is layout too.
   const reordered = `${JSON.stringify(

@@ -1,9 +1,11 @@
+import 'package:mobile/features/mastermind/asks/ask_v2_fields.dart';
 import 'package:mobile/features/mastermind/catchup/catchup_models.dart';
 import 'package:mobile/features/mastermind/machines/machine_snapshot.dart';
 import 'package:mobile/features/mastermind/model/enums.dart';
 import 'package:mobile/features/mastermind/presentation/hub_field.dart';
 import 'package:mobile/features/mastermind/presentation/usage_gaps.dart';
 
+export 'package:mobile/features/mastermind/asks/ask_v2_fields.dart';
 export 'package:mobile/features/mastermind/model/enums.dart';
 
 part 'items_types_0.dart';

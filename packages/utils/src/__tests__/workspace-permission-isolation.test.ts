@@ -27,7 +27,6 @@ function fixture({ creator = false, guest = false } = {}) {
       filters.set(field, value);
       return roleQuery;
     }),
-    // biome-ignore lint/suspicious/noThenProperty: Model Supabase builders that resolve after filters are collected.
     then: (resolve: (value: object) => unknown) =>
       Promise.resolve(
         resolve({
@@ -79,7 +78,6 @@ function fixture({ creator = false, guest = false } = {}) {
   const defaults = {
     select: vi.fn(),
     eq: vi.fn(),
-    // biome-ignore lint/suspicious/noThenProperty: Model Supabase builders that resolve after filters are collected.
     then: (resolve: (value: object) => unknown) =>
       Promise.resolve(resolve({ data: [], error: null })),
   };

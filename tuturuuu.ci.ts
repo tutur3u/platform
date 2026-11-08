@@ -1,17 +1,20 @@
 import type { ProductionPublicationPolicy } from './scripts/ci/production-publication-policy.ts';
 
 export const ci = {
+  'roadmap-cloudflare.yaml': true,
   'mastermind-cloudflare.yaml': true,
   'contacts-start-candidate.yaml': true,
   'sso-persistence-contract.yaml': true,
   'employee-schema-contract.yaml': true,
   'actions-storage-report.yaml': true,
-  'biome-check.yaml': true,
+  'oxc-check.yaml': true,
   'branch-name-check.yaml': true,
   'calendar-generation-contract.yaml': true,
   'periodic-report-delivery-contract.yaml': true,
   'security-egress-contract.yaml': true,
   'creator-identity-contract.yaml': true,
+  'task-board-database-contract.yaml': true,
+  'fee-lock-database-contract.yaml': true,
   'connected-mail-accounts-contract.yaml': true,
   'mail-profile-runtime-contract.yaml': true,
   'check-and-bump-versions.yaml': true,
@@ -70,6 +73,8 @@ export const ci = {
   'release-sdk-package.yaml': true,
   'release-supabase-package.yaml': true,
   'release-please.yaml': true,
+  'release-realtime-package.yaml': true,
+  'release-cloudflare-package.yaml': true,
   'release-types-package.yaml': true,
   'release-typescript-config-package.yaml': true,
   'release-ui-package.yaml': true,
@@ -130,6 +135,9 @@ export const ci = {
   'web-start-candidate.yaml': true,
   'nova-cloudflare.yaml': true,
   'inventory-cloudflare.yaml': true,
+  'tools-cloudflare.yaml': true,
+  'pay-cloudflare.yaml': true,
+  'playground-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.

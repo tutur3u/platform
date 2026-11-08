@@ -140,9 +140,8 @@ describe('time tracking sessions route task workspace binding', () => {
     });
     mocks.createAdminClient.mockResolvedValue(adminClient);
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/sessions/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/sessions/route');
 
     const response = await GET(
       new NextRequest(
@@ -173,9 +172,8 @@ describe('time tracking sessions route task workspace binding', () => {
     });
     mocks.createAdminClient.mockResolvedValue(adminClient);
 
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/sessions/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/sessions/route');
 
     const response = await POST(
       new NextRequest(

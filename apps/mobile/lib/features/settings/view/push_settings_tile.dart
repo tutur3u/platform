@@ -55,7 +55,8 @@ class _PushSettingsTileState extends State<PushSettingsTile> {
       title: l10n.settingsPushNotifications,
       subtitle: _failed
           ? l10n.settingsTelemetryError
-          : l10n.settingsPushFirebaseDisclosure,
+          : l10n.settingsPushSummary,
+      details: l10n.settingsPushFirebaseDisclosure,
       showChevron: false,
       trailing: AppSwitch(
         value: _enabled ?? false,

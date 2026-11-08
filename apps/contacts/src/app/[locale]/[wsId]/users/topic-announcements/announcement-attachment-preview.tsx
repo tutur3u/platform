@@ -23,7 +23,6 @@ export function AnnouncementAttachmentPreview({
 }) {
   if (attachment.previewUrl && isImageAttachment(attachment)) {
     return (
-      // biome-ignore lint/performance/noImgElement: Blob previews are local object URLs that next/image cannot optimize.
       <img
         alt={attachment.fileName}
         className={cn(

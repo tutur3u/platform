@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/ask_card_source.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
@@ -41,6 +42,7 @@ class ItemReplySection extends StatelessWidget {
             replies: replies,
           );
         }
+        if (isRiskyAsk(item)) return _RiskyComingSoon(item: item);
         if (state.canReply) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -56,6 +58,52 @@ class ItemReplySection extends StatelessWidget {
           onRetry: () => replies.loadCapabilities(force: true),
         );
       },
+    );
+  }
+}
+
+/// A risky ask is answered only with a device-key-signed write, which is not
+/// enabled yet: the options stay read-only and nothing is sent.
+class _RiskyComingSoon extends StatelessWidget {
+  const _RiskyComingSoon({required this.item});
+
+  final NeedsYou item;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final options = selectableOptions(item);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (options.isNotEmpty)
+          MastermindGroup(
+            caption: l10n.mastermindReplyOptionsTitle,
+            dividerInset: AppLayout.rowHorizontalPadding,
+            children: [
+              for (final (index, option) in options)
+                MastermindListRow(
+                  title: option,
+                  subtitle: item.optionRecommended(index)
+                      ? l10n.mastermindRecommended
+                      : null,
+                ),
+            ],
+          ),
+        MastermindGroup(
+          children: [
+            AppGroupedRow(
+              key: const ValueKey('risky-ask-coming-soon'),
+              leading: const AppIconTile(
+                icon: LucideIcons.fingerprint,
+                tone: AppTone.warning,
+              ),
+              title: Text(l10n.mastermindRiskyComingSoon),
+              subtitle: Text(l10n.mastermindRiskyComingSoonHint),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

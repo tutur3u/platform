@@ -148,5 +148,70 @@ class TasksArtifactTest(unittest.TestCase):
         self.assertEqual(json.loads(receipt.read_text())["sourceSha"], SHA)
 
 
+    def production_fixture(self):
+        app, config = self.fixture()
+        config.update({
+            "name": "tuturuuu-tasks", "topLevelName": "tuturuuu-tasks",
+            "preview_urls": False, "upload_source_maps": False,
+            "vars": {
+                "TUTURUUU_NOINDEX": "0", "NODE_ENV": "production",
+                "TUTURUUU_REQUIRE_SECRETS": "1",
+                "NEXT_PUBLIC_APP_URL": "https://tasks.tuturuuu.com",
+                "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+            },
+        })
+        (app / "dist/native/wrangler.json").write_text(json.dumps(config))
+        return app, config
+
+    def test_production_profile_seals_and_restores_final_bytes(self):
+        production = wrapper.load("production")
+        app, _ = self.production_fixture()
+        with self.assertRaises(ValueError):
+            artifact.validate_output(app)
+        receipt = production.artifact(app, SHA)
+        self.assertEqual(receipt["worker"], "tuturuuu-tasks")
+        self.assertIn("dist/native/wrangler.json", receipt["files"])
+        receipt_path, archive = app / "receipt.json", app / "artifact.tar.gz"
+        receipt_path.write_text(json.dumps(receipt))
+        production.pack(app, receipt_path, archive, SHA)
+        target = app / "restored"
+        (target / "public").mkdir(parents=True)
+        for name in wrapper.PUBLIC_FILES:
+            (target / "public" / name).parent.mkdir(parents=True, exist_ok=True)
+            (target / "public" / name).write_bytes((app / "public" / name).read_bytes())
+        production.restore(target, archive, target / "receipt.json", SHA)
+        production.verify(target, receipt, SHA)
+        with self.assertRaises(ValueError):
+            production.verify(target, receipt, "c" * 40)
+        with self.assertRaises(ValueError):
+            artifact.verify(target, receipt, SHA)
+        (target / "dist/native/index.js").write_text("tampered after restore")
+        with self.assertRaises(ValueError):
+            production.verify(target, receipt, SHA)
+
+    def test_production_profile_preserves_strict_boundaries(self):
+        production = wrapper.load("production")
+        staging, _ = self.fixture()
+        with self.assertRaises(ValueError):
+            production.validate_output(staging)
+        app, config = self.production_fixture()
+        for drift in (
+            {"services": [{"binding": "PRIVATE", "service": "unexpected"}]},
+            {"preview_urls": True}, {"upload_source_maps": True},
+            {"vars": {}}, {"workers_dev": True},
+            {"definedEnvironments": ["production"]},
+            {"unreviewed": True}, {"configPath": "relative.json"},
+        ):
+            with self.subTest(drift=drift):
+                (app / "dist/native/wrangler.json").write_text(json.dumps({**config, **drift}))
+                with self.assertRaises(ValueError):
+                    production.artifact(app, SHA)
+        (app / "dist/native/wrangler.json").write_text(json.dumps(config))
+        production.artifact(app, SHA)
+        (app / "dist/client/.env.production").write_text("synthetic forbidden member")
+        with self.assertRaisesRegex(ValueError, "environment artifact forbidden"):
+            production.artifact(app, SHA)
+
+
 if __name__ == "__main__":
     unittest.main()

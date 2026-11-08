@@ -143,7 +143,6 @@ export function YearPicker({
           </Button>
         </div>
 
-        {/* biome-ignore lint/a11y/useSemanticElements: role="grid" is intentional for keyboard navigation in pickers */}
         <div
           className="grid w-full grid-cols-3 gap-2"
           role="grid"

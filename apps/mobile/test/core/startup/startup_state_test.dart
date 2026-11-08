@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/startup/optional_startup.dart';
 import 'package:mobile/core/startup/startup_state.dart';
 
 void main() {
@@ -143,4 +145,124 @@ void main() {
       expect(surfaced, isTrue);
     },
   );
+
+  group('initializeBootstrapServices', () {
+    test('platform services and preferences start together', () async {
+      final platform = Completer<void>();
+      final preferences = Completer<String>();
+      final events = <String>[];
+      var finished = false;
+      final startup =
+          initializeBootstrapServices<String>(
+            initializePlatformServices: () {
+              events.add('platform');
+              return platform.future;
+            },
+            loadLocalPreferences: () {
+              events.add('preferences');
+              return preferences.future;
+            },
+          ).then((value) {
+            finished = true;
+            return value;
+          });
+
+      // A sequential implementation would not have started preferences yet.
+      expect(events, ['platform', 'preferences']);
+      preferences.complete('route');
+      await pumpEventQueue();
+      expect(finished, isFalse);
+      platform.complete();
+      expect(await startup, 'route');
+    });
+
+    test('waits for the slower preferences branch too', () async {
+      final preferences = Completer<String>();
+      var finished = false;
+      final startup =
+          initializeBootstrapServices<String>(
+            initializePlatformServices: () async {},
+            loadLocalPreferences: () => preferences.future,
+          ).then((value) {
+            finished = true;
+            return value;
+          });
+      await pumpEventQueue();
+      expect(finished, isFalse);
+      preferences.complete('late');
+      expect(await startup, 'late');
+    });
+
+    test('a failing branch surfaces only after its sibling settles', () async {
+      final error = StateError('preferences failed');
+      final platform = Completer<void>();
+      var surfaced = false;
+      final startup =
+          initializeBootstrapServices<String>(
+            initializePlatformServices: () => platform.future,
+            loadLocalPreferences: () => Future<String>.error(error),
+          ).then<void>(
+            (_) => fail('Expected failure'),
+            onError: (Object e, StackTrace _) {
+              surfaced = true;
+              expect(e, same(error));
+            },
+          );
+      await pumpEventQueue();
+      expect(surfaced, isFalse);
+      platform.complete();
+      await startup;
+      expect(surfaced, isTrue);
+    });
+  });
+
+  group('startPushForCurrentAccount', () {
+    test('signed-in launch starts the session for that account', () async {
+      final calls = <String>[];
+      await startPushForCurrentAccount(
+        currentUserId: () => 'user-1',
+        initialize: () async => calls.add('initialize'),
+        startSession: (userId) async => calls.add('session:$userId'),
+      );
+      // startSession initializes push itself.
+      expect(calls, ['session:user-1']);
+    });
+
+    test('signed-out launch still initializes push', () async {
+      final calls = <String>[];
+      await startPushForCurrentAccount(
+        currentUserId: () => null,
+        initialize: () async => calls.add('initialize'),
+        startSession: (userId) async => calls.add('session:$userId'),
+      );
+      expect(calls, ['initialize']);
+    });
+
+    test('reads the account when it runs, not when scheduled', () async {
+      var userId = 'user-1';
+      final calls = <String>[];
+      Future<void> start() => startPushForCurrentAccount(
+        currentUserId: () => userId,
+        initialize: () async => calls.add('initialize'),
+        startSession: (id) async => calls.add('session:$id'),
+      );
+      userId = 'user-2';
+      await start();
+      expect(calls, ['session:user-2']);
+    });
+  });
+
+  testWidgets('deferred push setup runs after the first frame', (tester) async {
+    final calls = <String>[];
+    scheduleOptionalStartup(
+      () => startPushForCurrentAccount(
+        currentUserId: () => 'user-1',
+        initialize: () async => calls.add('initialize'),
+        startSession: (id) async => calls.add('session:$id'),
+      ),
+    );
+    expect(calls, isEmpty);
+    await tester.pumpWidget(const SizedBox());
+    expect(calls, ['session:user-1']);
+  });
 }

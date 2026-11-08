@@ -30,9 +30,11 @@ const serialized = [
   'release-please-auto-merge.yaml',
   'release-please-transient-retry.yaml',
   'release-please.yaml',
+  'release-realtime-package.yaml',
   'release-sdk-dev.yaml',
   'release-sdk-package.yaml',
   'release-supabase-package.yaml',
+  'release-cloudflare-package.yaml',
   'release-types-package.yaml',
   'release-typescript-config-package.yaml',
   'release-ui-package.yaml',
@@ -92,7 +94,7 @@ const mainExceptions = {
     'Staging publication consumes the durable attempt ledger',
   'mail-cloudflare.yaml':
     'Staging publication consumes the durable attempt ledger',
-  'biome-check.yaml':
+  'oxc-check.yaml':
     'Job-level validation and separate repository mutation locks',
   'tanstack-route-manifest.yaml': 'TanStack runtime is paused',
   'codeql.yml':
@@ -230,8 +232,8 @@ for (const [file, workflow] of Object.entries(workflows)) {
   for (const event of ['pull_request', 'pull_request_target']) {
     if (!Object.hasOwn(events(workflow), event)) continue;
     test(`${file}: ${event} revisions supersede or have an explicit exception`, () => {
-      if (file === 'biome-check.yaml') {
-        // Biome keeps mutation locks outside any parent group, so each
+      if (file === 'oxc-check.yaml') {
+        // Oxc keeps mutation locks outside any parent group, so each
         // validation job supersedes its own PR revisions.
         for (const id of [
           'check-ci',
@@ -322,12 +324,10 @@ test('regression controls reject missing, non-cancelling, SHA-specific and cross
     { ...workflow.concurrency, 'cancel-in-progress': false },
     {
       ...workflow.concurrency,
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
       group: '${{ github.workflow }}-${{ github.sha }}',
     },
     {
       ...workflow.concurrency,
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
       group: '${{ github.workflow }}-${{ github.ref }}',
     },
     { ...workflow.concurrency, queue: 'max' },
@@ -443,7 +443,7 @@ for (const [file, workflow] of Object.entries(workflows)) {
     });
   }
 }
-test('main validation inventory requires isolated qualification, including Biome jobs', () => {
+test('main validation inventory requires isolated qualification, including Oxc jobs', () => {
   for (const [file, workflow] of Object.entries(workflows)) {
     if (mainExceptions[file] || file.startsWith('vercel-preview-')) continue;
     if (!Object.hasOwn(events(workflow), 'push')) continue;
@@ -497,8 +497,8 @@ function assertMutationLocks(workflow) {
     assertQualification(job.concurrency, workflow.name);
   }
 }
-test('Biome repository writes are outside every cancelling parent and validation group', () => {
-  const workflow = workflows['biome-check.yaml'];
+test('Oxc repository writes are outside every cancelling parent and validation group', () => {
+  const workflow = workflows['oxc-check.yaml'];
   assertMutationLocks(workflow);
   assert.throws(() =>
     assertMutationLocks({

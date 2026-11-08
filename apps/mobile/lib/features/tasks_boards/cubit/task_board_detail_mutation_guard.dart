@@ -20,6 +20,7 @@ mixin _TaskBoardMutationRunner on Cubit<TaskBoardDetailState> {
     required String wsId,
     required String boardId,
     bool forceRefresh = false,
+    bool retainError = false,
   });
 
   /// Call before an optimistic change, so a rejected mutation changes

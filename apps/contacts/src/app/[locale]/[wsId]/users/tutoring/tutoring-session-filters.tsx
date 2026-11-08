@@ -5,6 +5,7 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -117,6 +118,8 @@ export function TutoringSessionFiltersBar({
 
   const dateRangeLabels: Record<TutoringDateRange, string> = {
     all: t('range_all'),
+    custom: t('range_custom'),
+    lastMonth: t('range_lastMonth'),
     month: t('range_month'),
     past: t('range_past'),
     today: t('range_today'),
@@ -139,6 +142,28 @@ export function TutoringSessionFiltersBar({
           }))}
           value={filters.dateRange}
         />
+        {filters.dateRange === 'custom' && (
+          <>
+            <label>
+              {t('payroll_from')}
+              <Input
+                type="date"
+                value={filters.fromDate ?? ''}
+                max={filters.toDate}
+                onChange={(e) => onChange({ fromDate: e.target.value })}
+              />
+            </label>
+            <label>
+              {t('payroll_to')}
+              <Input
+                type="date"
+                value={filters.toDate ?? ''}
+                min={filters.fromDate}
+                onChange={(e) => onChange({ toDate: e.target.value })}
+              />
+            </label>
+          </>
+        )}
         <SegmentedControl
           ariaLabel={t('status')}
           onChange={(value: string) => onChange({ attendanceStatus: value })}

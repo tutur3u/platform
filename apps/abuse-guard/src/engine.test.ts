@@ -116,6 +116,63 @@ describe('win.hit', () => {
       })[0]
     ).toMatchObject({ ok: true, windows: [{ remaining: 8 }] });
   });
+
+  it('charges a weighted cost atomically and denies one that overflows', () => {
+    const { run } = setup();
+    const charge = (now: number, cost: number, algo: 'fixed' | 'sliding') =>
+      run(now, {
+        op: 'win.hit',
+        windows: [{ ...minute(algo, 100, `cost-${algo}`), cost }],
+      })[0];
+    for (const algo of ['fixed', 'sliding'] as const) {
+      expect(charge(1000, 60, algo)).toMatchObject({
+        ok: true,
+        windows: [{ remaining: 40 }],
+      });
+      // 60 + 41 > 100: denied, and the denial charges nothing.
+      expect(charge(2000, 41, algo)).toMatchObject({ ok: false });
+      expect(charge(3000, 40, algo)).toMatchObject({
+        ok: true,
+        windows: [{ remaining: 0 }],
+      });
+      expect(charge(4000, 1, algo)).toMatchObject({ ok: false });
+    }
+  });
+
+  it('weights the sliding previous bucket against a weighted cost', () => {
+    const { run } = setup();
+    const charge = (now: number, cost: number) =>
+      run(now, {
+        op: 'win.hit',
+        windows: [{ ...minute('sliding', 100, 'slide-cost'), cost }],
+      })[0];
+    expect(charge(59_000, 80)).toMatchObject({ ok: true });
+    // 30s into the next bucket, half of 80 (40) still counts: 40 + 61 > 100.
+    expect(charge(90_000, 61)).toMatchObject({ ok: false });
+    expect(charge(90_000, 60)).toMatchObject({
+      ok: true,
+      windows: [{ remaining: 0 }],
+    });
+  });
+
+  it('treats an absent cost as one unit (unchanged behavior)', () => {
+    const { run } = setup();
+    const hit = (now: number, cost?: number) =>
+      run(now, {
+        op: 'win.hit',
+        windows: [
+          cost === undefined
+            ? minute('fixed', 2, 'unit')
+            : { ...minute('fixed', 2, 'unit'), cost },
+        ],
+      })[0];
+    expect(hit(1000)).toMatchObject({ ok: true, windows: [{ remaining: 1 }] });
+    expect(hit(2000, 1)).toMatchObject({
+      ok: true,
+      windows: [{ remaining: 0 }],
+    });
+    expect(hit(3000)).toMatchObject({ ok: false });
+  });
 });
 
 describe('kv commands', () => {

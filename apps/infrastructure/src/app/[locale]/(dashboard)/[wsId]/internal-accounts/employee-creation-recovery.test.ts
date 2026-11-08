@@ -338,8 +338,9 @@ it('retries only an explicit fresh eligible adjudication with the original event
 });
 
 it('denies overlapping dispatch and actor retirement during fresh inspection', async () => {
-  let resolveInspection: (value: EmployeeRejectionRecoveryState) => void =
-    () => {};
+  let resolveInspection: (
+    value: EmployeeRejectionRecoveryState
+  ) => void = () => {};
   const inspectRejection = vi.fn(
     () =>
       new Promise<EmployeeRejectionRecoveryState>((resolve) => {

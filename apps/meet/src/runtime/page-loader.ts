@@ -12,9 +12,18 @@ export const loadMeetPage = createServerFn({ method: 'GET' })
     })
   )
   .handler(async ({ data }) => {
-    const { loadPageModel } = await observeMeetSsr(
-      'loader-import',
-      () => import('./page-model.server')
+    const [{ loadPageModel }, { loadServerLocaleMessages }] =
+      await observeMeetSsr('loader-import', () =>
+        Promise.all([
+          import('./page-model.server'),
+          import('./locale-messages.server'),
+        ])
+      );
+    const model = await observeMeetSsr('loader-model', () =>
+      loadPageModel(data.path)
     );
-    return observeMeetSsr('loader-model', () => loadPageModel(data.path));
+    // Warm the locale chunk so the SSR render reads its messages without
+    // suspending on the first request an isolate serves.
+    await loadServerLocaleMessages(model.locale);
+    return model;
   });

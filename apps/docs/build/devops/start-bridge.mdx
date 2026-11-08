@@ -1,6 +1,8 @@
 ---
 title: "Start bridge (@tuturuuu/start-bridge)"
 description: "The frozen v0 contract for running Next App Router satellites on TanStack Start + Vite+ on Cloudflare, including the basePath and per-app session cookie rules."
+updatedAt: "2026-10-28"
+audience: developers
 ---
 
 `@tuturuuu/start-bridge` is the shared layer that lets a satellite's existing
@@ -122,7 +124,7 @@ map to one URL shape (including `[id]` vs `[slug]`, or a page and a route), or a
 dropped from patterns. The page manifest exports `PagePattern`; type the page
 model as `satisfies Record<PagePattern, Loader>` so a new page fails
 type-check until it is handled. `*.bridge.gen.ts` files are excluded from
-Biome.
+Oxc.
 
 ## basePath contract
 
@@ -379,15 +381,15 @@ dependency closure including `packages/start-bridge/**`, its artifact helper,
 `bun.lock`, the caller and the template), concurrency and the `ci-check.yml`
 gate, then calls the template with:
 
-| Input | Example (Shortener) |
-| --- | --- |
-| `app`, `package` | `shortener`, `@tuturuuu/shortener` |
-| `artifact-script` | `scripts/ci/shortener-native-artifact.py` (config/seal/verify/pack/restore) |
-| `env-interface`, `worker-environment-type` | `ShortenerGeneratedEnv`, `ShortenerEnvironment` |
-| `public-env` | Newline-separated `NEXT_PUBLIC_*`/`TUTURUUU_NOINDEX` build fixtures; anything else is rejected |
-| `format-paths` | Owning paths for Biome |
-| `helper-tests`, `unit-command`, `runtime-command` | Optional overrides |
-| `runtime-setup-command` | Optional prerequisite install (for example Playwright browsers) run in its own 10-minute step before each runtime step, so slow mirrors cannot consume the tight runtime timeout |
+| Input                                             | Example (Shortener)                                                                                                                                                              |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app`, `package`                                  | `shortener`, `@tuturuuu/shortener`                                                                                                                                               |
+| `artifact-script`                                 | `scripts/ci/shortener-native-artifact.py` (config/seal/verify/pack/restore)                                                                                                      |
+| `env-interface`, `worker-environment-type`        | `ShortenerGeneratedEnv`, `ShortenerEnvironment`                                                                                                                                  |
+| `public-env`                                      | Newline-separated `NEXT_PUBLIC_*`/`TUTURUUU_NOINDEX` build fixtures; anything else is rejected                                                                                   |
+| `format-paths`                                    | Owning paths for Oxc                                                                                                                                                             |
+| `helper-tests`, `unit-command`, `runtime-command` | Optional overrides                                                                                                                                                               |
+| `runtime-setup-command`                           | Optional prerequisite install (for example Playwright browsers) run in its own 10-minute step before each runtime step, so slow mirrors cannot consume the tight runtime timeout |
 
 Runtime setup uses `.github/actions/install-native-runtime-prerequisites` in
 both validation and restore acceptance. On the disposable Ubuntu runner it
@@ -404,7 +406,7 @@ then rerun the failed job after resolving transport failures. Regression coverag
 
 The template validates the inputs and runs, on the exact source SHA: frozen
 install, dependency build, build identity, the registry check, unit tests,
-Biome, the Void build, route-tree drift, type-check, emitted-config validation,
+Oxc, the Void build, route-tree drift, type-check, emitted-config validation,
 emitted binding-type compatibility (a scoped harness: the generated bindings
 become a module importing only the Workers types they name, checked under the
 app's own tsconfig, so global runtime types never retype app code), Wrangler `deploy --dry-run`, then seal →

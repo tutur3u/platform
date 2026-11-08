@@ -2,7 +2,7 @@
 
 Use the canonical [runbook](../../../../../apps/docs/build/devops/contacts-start-candidate.mdx)
 for owner inputs, acceptance commands, cost/stop bounds and release evidence.
-Contacts is the Easy Center tutoring surface. Its staging-only Worker is additive;
+Contacts is a learning centre's tutoring surface. Its staging-only Worker is additive;
 only the inert `/__contacts1` probe is native, and all customer/API requests retain
 Contacts Next fallback. Do not route `/api/*` straight to central Web: that would
 bypass Contacts-owned feedback, payments and app-session handlers.

@@ -23,6 +23,7 @@ import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
+import 'package:mobile/features/assistant/widgets/assistant_creation_hold_banner.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -47,7 +48,127 @@ const _sessionPath =
     '/api/v1/live/session?wsId=$_workspace&scopeKey=synthetic-scope';
 const _envelopeKey = '$_actor::mira-conversation-envelope::v1::$_workspace';
 
+const ValueKey<String> _banner = ValueKey('assistant-creation-hold-banner');
+const ValueKey<String> _bannerHistory = ValueKey(
+  'assistant-creation-hold-history',
+);
+const ValueKey<String> _bannerNew = ValueKey('assistant-creation-hold-new');
+const ValueKey<String> _bannerDismiss = ValueKey(
+  'assistant-creation-hold-dismiss',
+);
+
+Future<Map<String, dynamic>> _envelope(_ResetHarness h) async =>
+    jsonDecode((await h.host.getAll())['flutter.$_envelopeKey']! as String)
+        as Map<String, dynamic>;
+
 void main() {
+  testWidgets('Held creation opens with a banner and no modal', (tester) async {
+    final h = await _mount(tester);
+    expect(find.byKey(_banner), findsOneWidget);
+    expect(find.textContaining('may not have been saved'), findsOneWidget);
+    expect(find.byType(AppDialog), findsNothing);
+    expect(find.text('Check your chat history'), findsNothing);
+    expect(h.chat.state.creationOutcomeUnknown, isTrue);
+    expect(h.host.writes, 0);
+    expect(
+      await h.preferences.resetStore(_workspace).hasUnknownCreation(),
+      isTrue,
+    );
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('Resume keeps the banner and raises no modal', (tester) async {
+    final h = await _mount(tester);
+    [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ].forEach(tester.binding.handleAppLifecycleStateChanged);
+    await tester.pumpAndSettle();
+    expect(find.byKey(_banner), findsOneWidget);
+    expect(find.byType(AppDialog), findsNothing);
+    expect(h.host.writes, 0);
+  });
+  testWidgets('Unheld creation shows no banner', (tester) async {
+    await _mount(tester, held: false);
+    expect(find.byKey(_banner), findsNothing);
+    expect(find.byType(AppDialog), findsNothing);
+  });
+  testWidgets('Banner Check history opens history only', (tester) async {
+    final h = await _mount(tester);
+    await tester.tap(find.byKey(_bannerHistory));
+    await tester.pumpAndSettle();
+    expect(find.byType(AssistantHistorySheetBody), findsOneWidget);
+    expect(find.byType(AppDialog), findsNothing);
+    expect(h.host.writes, 0);
+    expect(h.chat.state.creationOutcomeUnknown, isTrue);
+    expect(h.chat.state.storedChatId, _saved);
+  });
+  testWidgets('Banner dismiss hides it for this session only', (tester) async {
+    final h = await _mount(tester);
+    await tester.tap(find.byKey(_bannerDismiss));
+    await tester.pumpAndSettle();
+    expect(find.byKey(_banner), findsNothing);
+    // The durable hold and every stored byte are untouched.
+    expect(h.host.writes, 0);
+    expect(h.chat.state.creationOutcomeUnknown, isTrue);
+    expect(
+      await h.preferences.resetStore(_workspace).hasUnknownCreation(),
+      isTrue,
+    );
+    expect((await _envelope(h))['creation'], {
+      'status': 'unknown',
+      'attemptId': null,
+    });
+    // A new app session has no dismissal memory.
+    AssistantCreationHoldBanner.resetDismissals();
+    await h.chat.loadWorkspace(_workspace);
+    await tester.pumpAndSettle();
+    expect(find.byKey(_banner), findsOneWidget);
+  });
+  testWidgets('Opening another chat keeps the creation hold', (tester) async {
+    final h = await _mount(tester);
+    await h.openHistory(tester);
+    await h.selectHistory(tester, _other);
+    await tester.pumpAndSettle();
+    expect(h.chat.state.creationOutcomeUnknown, isTrue);
+    expect(
+      await h.preferences.resetStore(_workspace).hasUnknownCreation(),
+      isTrue,
+    );
+    expect(((await _envelope(h))['creation'] as Map)['status'], 'unknown');
+  });
+  for (final viaBanner in [false, true]) {
+    testWidgets('Start a new chat from ${viaBanner ? 'banner' : 'history'} '
+        'writes the same informed reset receipt', (tester) async {
+      final h = await _mount(tester);
+      final draft = h.controller.text;
+      if (viaBanner) {
+        await tester.tap(find.byKey(_bannerNew));
+        await tester.pumpAndSettle();
+        // The banner tap is the explicit consent; no second prompt appears.
+        expect(find.byType(AppDialog), findsNothing);
+      } else {
+        await h.openHistory(tester);
+        await h.begin(tester);
+        expect(find.byType(AppDialog), findsOneWidget);
+        await h.confirm(tester);
+      }
+      expect(h.host.writes, 2);
+      expect(h.chat.state.storedChatId, isNull);
+      final record = await _envelope(h);
+      expect(record['selectedChatId'], isNull);
+      expect(record['creation'], {'status': 'unknown', 'attemptId': null});
+      final consent = record['resetConsent'] as Map<String, dynamic>;
+      expect(consent['informed'], isTrue);
+      expect(consent['phase'], 'committed');
+      expect(consent['operationId'], isNotEmpty);
+      expect(consent['priorHold'], containsPair('status', 'unknown'));
+      if (viaBanner) expect(h.controller.text, draft);
+    });
+  }
   testWidgets('Unheld reset skips consent', (tester) async {
     final h = await _mount(tester, held: false);
     await h.openHistory(tester);

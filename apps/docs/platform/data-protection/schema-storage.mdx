@@ -1,26 +1,10 @@
 ---
-title: "Personal data candidates: storage schema"
-description: "All generated table columns, inventory families and static policy evidence for the storage schema."
-updatedAt: "2026-10-25"
+title: "What data we hold: files and media"
+description: "Data categories and the purposes they serve."
+audience: developers
+updatedAt: "2026-11-01"
 ---
 
-## How to read this appendix
+Uploaded files, images, attachments, recordings and associated ownership information support content delivery and collaboration. Upload progress information supports reliable transfers. Derived search information supports finding stored content.
 
-This source census contains 10 `storage` tables and 89 columns at `8d6a13e58762aedff6b1ea5eabb6de474a257e99`. It includes non-personal catalogs as candidates. See the [inventory](/platform/data-protection/inventory) for each family's data category, purpose, current retention/deletion path and export/erasure coverage. All generated `Row` columns are listed so indirect identifiers, free text and JSON are not hidden by a name filter.
-
-The access column indexes migration declarations by table name, including prior schema locations. A declaration is evidence to inspect, not a certified effective grant. It does not evaluate predicates, policy drops, schema moves, dynamic SQL, default grants, RPC privileges or RLS bypass. `Not indexed` means unresolved. Private tables normally use server capabilities, but this appendix does not assume that every private table has identical privileges. Applied-schema negative tests are a phase-2 gate.
-
-For reproducible counts, use the source-only census command on the inventory page. Table GRANT/REVOKE links show up to two recent distinct literal declarations, including their original schema. These are not resolved effective privileges. Policy links come from literal `CREATE POLICY` and `ALTER TABLE ... ENABLE/DISABLE ROW LEVEL SECURITY` statements in lexically ordered migration files. The latest matching RLS declaration and up to three recent distinct role/action declarations are shown with their original schema. SQL links also identify the first and last migration mentioning the table token when no policy was indexed. This is a conservative review index, not a SQL interpreter.
-
-| Table | Inventory family | Columns | Access evidence to inspect |
-| --- | --- | --- | --- |
-| `storage.buckets` | Storage metadata | `allowed_mime_types`, `avif_autodetection`, `created_at`, `file_size_limit`, `id`, `name`, `owner`, `owner_id`, `public`, `type`, `updated_at`, `versioning_status` | [storage: authenticated INSERT](https://github.com/tutur3u/platform/blob/8d6a13e58762aedff6b1ea5eabb6de474a257e99/apps/database/supabase/migrations/20230329155454_add_workspace_presets_and_username.sql#L84) |
-| `storage.buckets_analytics` | Storage metadata | `created_at`, `deleted_at`, `format`, `id`, `name`, `type`, `updated_at` | Policy not indexed |
-| `storage.buckets_vectors` | Storage metadata | `created_at`, `id`, `type`, `updated_at` | Policy not indexed |
-| `storage.iceberg_namespaces` | Storage metadata | `bucket_name`, `catalog_id`, `created_at`, `id`, `metadata`, `name`, `updated_at` | Policy not indexed |
-| `storage.iceberg_tables` | Storage metadata | `bucket_name`, `catalog_id`, `created_at`, `id`, `location`, `name`, `namespace_id`, `remote_table_id`, `shard_id`, `shard_key`, `updated_at` | Policy not indexed |
-| `storage.migrations` | Storage metadata | `executed_at`, `hash`, `id`, `name` | Policy not indexed; [first mention](https://github.com/tutur3u/platform/blob/8d6a13e58762aedff6b1ea5eabb6de474a257e99/apps/database/supabase/migrations/20261025125750_guard_habit_tracker_creation_key_index.sql) |
-| `storage.objects` | Storage metadata | `archived_at`, `bucket_id`, `created_at`, `id`, `is_delete_marker`, `is_versioned`, `last_accessed_at`, `metadata`, `name`, `owner`, `owner_id`, `path_tokens`, `updated_at`, `user_metadata`, `version` | [storage: anon,authenticated UPDATE](https://github.com/tutur3u/platform/blob/8d6a13e58762aedff6b1ea5eabb6de474a257e99/apps/database/supabase/migrations/20261004004100_profile_media_upload_limits.sql#L14); [storage: anon,authenticated INSERT](https://github.com/tutur3u/platform/blob/8d6a13e58762aedff6b1ea5eabb6de474a257e99/apps/database/supabase/migrations/20261004004100_profile_media_upload_limits.sql#L12); [storage: PUBLIC DELETE](https://github.com/tutur3u/platform/blob/8d6a13e58762aedff6b1ea5eabb6de474a257e99/apps/database/supabase/migrations/20251129000002_add_changelog_storage_bucket.sql#L49) |
-| `storage.s3_multipart_uploads` | Storage metadata | `bucket_id`, `created_at`, `id`, `in_progress_size`, `key`, `metadata`, `owner_id`, `upload_signature`, `user_metadata`, `version` | Policy not indexed |
-| `storage.s3_multipart_uploads_parts` | Storage metadata | `bucket_id`, `created_at`, `etag`, `id`, `key`, `owner_id`, `part_number`, `size`, `upload_id`, `version` | Policy not indexed |
-| `storage.vector_indexes` | Storage metadata | `bucket_id`, `created_at`, `data_type`, `dimension`, `distance_metric`, `id`, `metadata_configuration`, `name`, `updated_at` | Policy not indexed |
+See the [personal data inventory](/platform/data-protection/inventory) and [data protection standard](/platform/data-protection-standard) for scope, rights and retention limits.

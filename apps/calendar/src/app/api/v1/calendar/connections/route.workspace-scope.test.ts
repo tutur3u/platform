@@ -105,7 +105,6 @@ function createSupabaseMock(
           ? { data: row, error: null }
           : { data: null, error: { code: 'PGRST116' } };
       }),
-      // biome-ignore lint/suspicious/noThenProperty: mirrors the awaitable Supabase builder.
       then: (resolve: (value: unknown) => unknown) =>
         resolve({ data: settle(), error: null }),
     };

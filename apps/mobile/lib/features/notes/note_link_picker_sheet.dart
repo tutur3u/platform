@@ -10,6 +10,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 
 enum NoteLinkKind { task, event, finance, note, meeting }
@@ -28,37 +29,46 @@ class NoteLinkOption {
   final String url;
 }
 
+/// Opens the task/document link picker for [wsId].
+///
+/// [apiClient] exists for tests only: it injects a fake client that the
+/// sheet does not dispose. Production callers leave it null.
 Future<NoteLinkOption?> showNoteLinkPickerSheet(
   BuildContext context, {
   required String wsId,
+  ApiClient? apiClient,
 }) => showAdaptiveSheet<NoteLinkOption>(
   context: context,
   maxDialogWidth: 520,
-  builder: (_) => _NoteLinkPickerSheet(wsId: wsId),
+  builder: (_) => _NoteLinkPickerSheet(wsId: wsId, apiClient: apiClient),
 );
 
 class _NoteLinkPickerSheet extends StatefulWidget {
-  const _NoteLinkPickerSheet({required this.wsId});
+  const _NoteLinkPickerSheet({required this.wsId, this.apiClient});
 
   final String wsId;
+  final ApiClient? apiClient;
 
   @override
   State<_NoteLinkPickerSheet> createState() => _NoteLinkPickerSheetState();
 }
 
 class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.apiClient ?? ApiClient();
   final _search = TextEditingController();
   Timer? _debounce;
   NoteLinkKind _kind = NoteLinkKind.task;
   List<NoteLinkOption> _options = const [];
   bool _loading = false;
+  bool _initialized = false;
   bool _failed = false;
   int _requestId = 0;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
     unawaited(_load());
   }
 
@@ -67,7 +77,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
     _requestId++;
     _debounce?.cancel();
     _search.dispose();
-    _api.dispose();
+    if (widget.apiClient == null) _api.dispose();
     super.dispose();
   }
 
@@ -85,6 +95,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
     required String rowKey,
     required String pendingPath,
     bool listResponse = false,
+    bool forceRefresh = false,
     bool overlayPending = true,
   }) async {
     List<dynamic>? fetched;
@@ -96,6 +107,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
           namespace: namespace,
           workspaceId: widget.wsId,
           path: path,
+          forceRefresh: forceRefresh,
         );
       } else {
         final response = await readThroughJson(
@@ -103,6 +115,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
           namespace: namespace,
           workspaceId: widget.wsId,
           path: path,
+          forceRefresh: forceRefresh,
         );
         fetched = response[rowKey] as List<dynamic>? ?? const [];
       }
@@ -155,13 +168,14 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
     return rows;
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool refresh = false}) async {
+    if (refresh) _debounce?.cancel();
     final requestId = ++_requestId;
     final wsId = Uri.encodeComponent(widget.wsId);
     final search = _search.text.trim();
     final language = Localizations.localeOf(context).languageCode;
     setState(() {
-      _loading = true;
+      _loading = !refresh;
       _failed = false;
     });
     try {
@@ -175,6 +189,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
             },
           ).query;
           final rows = await _readRows(
+            forceRefresh: refresh,
             namespace: 'tasks.list',
             path: '/api/v1/workspaces/$wsId/tasks?$query',
             rowKey: 'tasks',
@@ -208,6 +223,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
             },
           ).query;
           final rows = await _readRows(
+            forceRefresh: refresh,
             namespace: 'calendar.events',
             path: '/api/v1/workspaces/$wsId/calendar/events?$query',
             rowKey: 'data',
@@ -232,6 +248,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
               .toList();
         case NoteLinkKind.finance:
           final response = await _readRows(
+            forceRefresh: refresh,
             namespace: 'finance.wallets',
             path: '/api/v1/workspaces/$wsId/wallets',
             rowKey: '',
@@ -258,6 +275,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
         case NoteLinkKind.note:
           final responses = await Future.wait([
             _readRows(
+              forceRefresh: refresh,
               namespace: 'notes.list',
               path: '/api/v1/workspaces/$wsId/notes',
               rowKey: '',
@@ -266,6 +284,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
               overlayPending: false,
             ),
             _readRows(
+              forceRefresh: refresh,
               namespace: 'notes.archive',
               path: '/api/v1/workspaces/$wsId/notes?archived=true',
               rowKey: '',
@@ -301,6 +320,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
             },
           ).query;
           final rows = await _readRows(
+            forceRefresh: refresh,
             namespace: 'meet.list',
             path: '/api/v1/workspaces/$wsId/meetings?$query',
             rowKey: 'meetings',
@@ -413,33 +433,45 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
                 child: _loading && _options.isEmpty
                     ? const AppLoadingIndicator.page()
                     : _failed && _options.isEmpty
-                    ? Center(child: Text(context.l10n.notesLoadError))
+                    ? NovaRefreshIndicator.state(
+                        onRefresh: () => _load(refresh: true),
+                        child: Center(child: Text(context.l10n.notesLoadError)),
+                      )
                     : _options.isEmpty
-                    ? Center(child: Text(context.l10n.notesNoLinkResults))
-                    : ListView.builder(
-                        itemCount: _options.length,
-                        itemBuilder: (context, index) {
-                          final option = _options[index];
-                          return PendingSyncFrame(
-                            workspaceId: widget.wsId,
-                            entityId: option.id,
-                            feature: switch (option.kind) {
-                              NoteLinkKind.task => 'tasks',
-                              NoteLinkKind.event => 'calendar',
-                              NoteLinkKind.finance => 'finance',
-                              NoteLinkKind.note => 'notes',
-                              NoteLinkKind.meeting => 'meet',
-                            },
-                            child: ListTile(
-                              title: Text(
-                                option.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                    ? NovaRefreshIndicator.state(
+                        onRefresh: () => _load(refresh: true),
+                        child: Center(
+                          child: Text(context.l10n.notesNoLinkResults),
+                        ),
+                      )
+                    : NovaRefreshIndicator(
+                        onRefresh: () => _load(refresh: true),
+                        child: ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: _options.length,
+                          itemBuilder: (context, index) {
+                            final option = _options[index];
+                            return PendingSyncFrame(
+                              workspaceId: widget.wsId,
+                              entityId: option.id,
+                              feature: switch (option.kind) {
+                                NoteLinkKind.task => 'tasks',
+                                NoteLinkKind.event => 'calendar',
+                                NoteLinkKind.finance => 'finance',
+                                NoteLinkKind.note => 'notes',
+                                NoteLinkKind.meeting => 'meet',
+                              },
+                              child: ListTile(
+                                title: Text(
+                                  option.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                onTap: () => Navigator.of(context).pop(option),
                               ),
-                              onTap: () => Navigator.of(context).pop(option),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
               ),
             ],

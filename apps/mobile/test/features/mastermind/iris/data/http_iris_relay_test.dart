@@ -199,7 +199,7 @@ void main() {
 
     test('the fake signer signs the canonical string', () async {
       final fake = FakeIrisRequestSigner(
-        deviceId: 'dev_x',
+        deviceId: _device,
         clock: () => DateTime.utc(2026, 10, 31),
       );
       final headers = await fake.sign(
@@ -214,7 +214,7 @@ void main() {
         body: utf8.encode('{}'),
         ts: headers[IrisHeaders.ts]!,
         nonce: headers[IrisHeaders.nonce]!,
-        deviceId: 'dev_x',
+        deviceId: _device,
         idempotencyKey: fixedId,
       );
       expect(
@@ -234,13 +234,26 @@ void main() {
       (_) => json(body ?? {'error': 'x'}, status: status, h: h),
     ).summary()).failureOrNull!;
 
+    test('send_disabled is specific to POST send and never retries', () async {
+      final source = relay(
+        (_) => json({'error': 'send_disabled'}, status: 403),
+      );
+      final result = await source.send('hello', idempotencyKey: fixedId);
+      expect(result.failureOrNull?.kind, IrisFailureKind.sendDisabled);
+      expect(result.failureOrNull?.transient, isFalse);
+      expect(
+        (await source.summary()).failureOrNull?.kind,
+        IrisFailureKind.forbidden,
+      );
+    });
+
     test('maps auth, rate limit and kill switch', () async {
       expect((await failure(403)).kind, IrisFailureKind.forbidden);
       final limited = await failure(429, h: {'retry-after': '30'});
       expect(limited.kind, IrisFailureKind.rateLimited);
       expect(limited.retryAfter, const Duration(seconds: 30));
       expect(
-        (await failure(423, body: {'error': 'killed'})).kind,
+        (await failure(503, body: {'error': 'killed'})).kind,
         IrisFailureKind.killed,
       );
       expect(
@@ -248,6 +261,49 @@ void main() {
         IrisFailureKind.killed,
       );
       expect((await failure(503)).kind, IrisFailureKind.unavailable);
+      // The old 423 is no longer the kill switch.
+      expect(
+        (await failure(423, body: {'error': 'killed'})).kind,
+        IrisFailureKind.unavailable,
+      );
+    });
+
+    test('device 401s are typed and earn no token refresh', () async {
+      tokens = FakeTokens(refreshed: 'synthetic-token-2');
+      expect(
+        (await failure(
+          401,
+          body: {'error': 'clock_skew', 'server_time': 1798800000},
+        )).kind,
+        IrisFailureKind.clockSkew,
+      );
+      expect(
+        (await failure(401, body: {'error': 'device_revoked'})).kind,
+        IrisFailureKind.deviceRevoked,
+      );
+      expect(
+        (await failure(401, body: {'error': 'unknown_device'})).kind,
+        IrisFailureKind.deviceRevoked,
+      );
+      expect(tokens.refreshes, 0);
+      expect(requests, hasLength(3));
+    });
+
+    test('a bad signature is a plain 401 and refreshes once', () async {
+      tokens = FakeTokens(refreshed: 'synthetic-token-2');
+      expect(
+        (await failure(401, body: {'error': 'unauthorized'})).kind,
+        IrisFailureKind.unauthorized,
+      );
+      expect(tokens.refreshes, 1);
+      expect(requests, hasLength(2));
+    });
+
+    test('only the error field names the class', () async {
+      expect(
+        (await failure(401, body: {'code': 'device_revoked'})).kind,
+        IrisFailureKind.unauthorized,
+      );
     });
 
     test('a lost session is unauthorized', () async {
@@ -305,3 +361,5 @@ void main() {
     );
   });
 }
+
+const _device = '0f1e2d3c-4b5a-8978-8695-a4b3c2d1e0f0';

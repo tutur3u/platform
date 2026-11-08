@@ -73,7 +73,7 @@ def load(name=None):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     module.IDENTITY = {
-        **module.IDENTITY, "name": worker, "workers_dev": False,
+        **module.IDENTITY, "name": worker, "workers_dev": False, "preview_urls": False,
         "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
         "vars": dict(selected["vars"]),
     }

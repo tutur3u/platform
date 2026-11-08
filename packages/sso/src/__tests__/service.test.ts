@@ -62,9 +62,9 @@ describe('one-use issuance orchestration', () => {
     const result = await decideLogin(tx, true, d);
     expect(result.kind).toBe('issued');
     if (result.kind !== 'issued') throw Error('expected issuance');
-    const accepted = await (await serviceProvider(f)).accept(
-      result.response.xml
-    );
+    const accepted = await (
+      await serviceProvider(f)
+    ).accept(result.response.xml);
     expect(accepted.nameID).toBe('ab'.repeat(32));
     expect(accepted.attributes).toEqual({
       id: 'ab'.repeat(32),

@@ -310,12 +310,12 @@ export class EmployeeCreationRecovery {
     const value = this.reference;
     return Boolean(
       this.active &&
-        value &&
-        value.state === 'pending' &&
-        value.reads < 6 &&
-        (value.startedAt === null ||
-          (this.now() >= value.startedAt &&
-            this.now() - value.startedAt < 30_000))
+      value &&
+      value.state === 'pending' &&
+      value.reads < 6 &&
+      (value.startedAt === null ||
+        (this.now() >= value.startedAt &&
+          this.now() - value.startedAt < 30_000))
     );
   }
   async read(): Promise<EmployeeCreationObservation | null> {

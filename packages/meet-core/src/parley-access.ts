@@ -18,7 +18,9 @@ export async function hasParleyAccess(userId: string): Promise<boolean> {
   )
     return false;
   if (isVerifiedTuturuuuStaffSession(data.user)) return true;
-  const { data: entry, error: accessError } = await (await parleyDatabase())
+  const { data: entry, error: accessError } = await (
+    await parleyDatabase()
+  )
     .schema('private')
     .from('parley_members')
     .select('enabled')

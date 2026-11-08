@@ -8,6 +8,8 @@ import {
   type ExternalAppSecretField,
   generateAppSecret,
   hashAppSecret,
+  isCallbackPath,
+  normalizeCallbackPaths,
   normalizeOrigin,
   normalizeOrigins,
   normalizeScopes,
@@ -21,12 +23,16 @@ import {
 export type ExternalAppRegistration = {
   allowedScopes: string[];
   allowedWorkspaceIds: string[];
+  /** Exact return URL paths; empty keeps the legacy origin-only check. */
+  callbackPaths: string[];
   createdAt: string | null;
   createdBy: string | null;
   displayName: string;
   enabled: boolean;
   id: string;
   origins: string[];
+  /** Handoffs must carry an S256 code challenge and redeem with its verifier. */
+  requirePkce: boolean;
   secretIssuedAt: string | null;
   secretLastFour: string | null;
   updatedAt: string | null;
@@ -36,11 +42,14 @@ export type ExternalAppRegistration = {
 export type UpsertExternalAppPayload = {
   allowedScopes?: string[];
   allowedWorkspaceIds?: string[];
+  /** Omitted fields keep their stored value. */
+  callbackPaths?: string[];
   displayName: string;
   enabled: boolean;
   id: string;
   issueSecret?: boolean;
   origins: string[];
+  requirePkce?: boolean;
 };
 
 export type UpsertExternalAppResult = {
@@ -91,12 +100,16 @@ function buildExternalAppRegistrations(rows: SecretRow[]) {
       return {
         allowedScopes,
         allowedWorkspaceIds,
+        callbackPaths: normalizeCallbackPaths(
+          parseJsonStringArray(values.callbackPaths)
+        ),
         createdAt: values.createdAt || null,
         createdBy: values.createdBy || null,
         displayName,
         enabled: values.enabled !== 'false',
         id,
         origins,
+        requirePkce: values.requirePkce === 'true',
         secretIssuedAt: values.secretIssuedAt || null,
         secretLastFour: values.secretLastFour || null,
         updatedAt: values.updatedAt || null,
@@ -280,6 +293,20 @@ export async function upsertExternalApp({
     updatedAt: now,
     updatedBy: actorUserId,
   };
+
+  if (payload.requirePkce !== undefined) {
+    fields.requirePkce = payload.requirePkce ? 'true' : 'false';
+  }
+
+  if (payload.callbackPaths !== undefined) {
+    if (!payload.callbackPaths.every((path) => isCallbackPath(path.trim()))) {
+      throw new Error('invalid_callback_paths');
+    }
+
+    fields.callbackPaths = JSON.stringify(
+      normalizeCallbackPaths(payload.callbackPaths)
+    );
+  }
 
   if (nextSecret) {
     fields.secretHash = hashAppSecret(nextSecret);

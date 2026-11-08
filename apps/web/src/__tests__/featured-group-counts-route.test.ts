@@ -45,9 +45,8 @@ describe('featured group counts route', () => {
       },
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/users/groups/featured-counts/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/users/groups/featured-counts/route');
     const response = await GET(
       new NextRequest(
         'http://localhost/api/v1/workspaces/ws-1/users/groups/featured-counts?featuredGroupIds=group-a&featuredGroupIds=group-b'

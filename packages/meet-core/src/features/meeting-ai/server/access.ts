@@ -18,7 +18,9 @@ export class MeetAiError extends Error {
   constructor(
     public status: number,
     message: string,
-    public code?: string
+    public code?: string,
+    /** Sent as `Retry-After` (seconds) on 429 and 503 refusals. */
+    public retryAfterSeconds?: number
   ) {
     super(message);
   }
@@ -71,7 +73,7 @@ export async function meetAiAccess(
   if (mutation && !(await meetAiAvailable(wsId)))
     throw new MeetAiError(
       403,
-      'Meeting AI is not available for this workspace',
+      'Meet AI is temporarily unavailable',
       'MEET_AI_WORKSPACE_NOT_ENABLED'
     );
   const membership = await verifyWorkspaceMembershipType({
@@ -156,7 +158,13 @@ export async function meetAiResponse(work: () => Promise<unknown>) {
           error instanceof MeetAiError || error instanceof MeetAiGenerationError
             ? error.status
             : 500,
-        headers: { 'Cache-Control': 'no-store' },
+        headers: {
+          'Cache-Control': 'no-store',
+          ...(error instanceof MeetAiError &&
+          error.retryAfterSeconds !== undefined
+            ? { 'Retry-After': String(error.retryAfterSeconds) }
+            : {}),
+        },
       }
     );
   }

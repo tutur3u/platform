@@ -1,5 +1,6 @@
 {
   "schemaVersion": 2,
+  "stagingUnmigrated": "not-migrated-404",
   "generatedBy": "bun apps/web/cloudflare/generate-inventory.ts",
   "serviceWorker": {
     "url": "/serwist/sw.js",
@@ -42,9 +43,9 @@
     }
   ],
   "summary": {
-    "total": 842,
+    "total": 844,
     "categories": {
-      "api": 648,
+      "api": 650,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -53,7 +54,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 830 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 832 }
   },
   "routes": [
     {
@@ -2870,6 +2871,14 @@
     {
       "pattern": "/api/v1/mira/xp",
       "source": "apps/web/src/app/api/v1/mira/xp/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mobile/feature-flags",
+      "source": "apps/web/src/app/api/v1/mobile/feature-flags/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -5718,6 +5727,14 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/tutoring/export",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/export/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/tutoring/payroll",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/payroll/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

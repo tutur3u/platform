@@ -1,6 +1,8 @@
 ---
 title: Mobile settings shell
 description: Shared shell chrome, profile settings routes and accessible edit entry
+updatedAt: "2026-10-27"
+audience: users
 ---
 
 ## Settings row grid
@@ -816,3 +818,13 @@ Regression coverage: `settings_appearance_shell_checks.dart`,
 `cache_storage_review_test.dart`, `offline_stored_items_test.dart`,
 `offline_module_page_test.dart`, `offline_search_chrome_test.dart` and
 `settings_assistant_entrypoint_checks.dart`.
+
+## Reminders offline opening
+
+The Reminders settings screen opens from local per-user preferences and the
+in-memory reminder service status. Opening the screen does not read Tasks or
+Calendar or request the network; those caches feed reminder planning during
+service refresh. No additional Reminders cache or flag-dependent behavior is
+needed. Explicit refresh and OS scheduling remain separate from opening settings.
+`reminder_offline_open_test.dart` blocks network access and verifies persisted
+settings with `offline_read_reminders` both off and on.

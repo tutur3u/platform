@@ -19,7 +19,10 @@ vi.mock('@tuturuuu/auth/proxy', async () => ({
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: mocks.guard,
 }));
-vi.mock('@tuturuuu/utils/shared-cookie', () => ({
+vi.mock('@tuturuuu/utils/shared-cookie', async (importOriginal) => ({
+  // Partial mock: keep the real exports (internal-domains imports more of
+  // them) and stub only the options helper this suite controls.
+  ...(await importOriginal<typeof import('@tuturuuu/utils/shared-cookie')>()),
   getTuturuuuSharedCookieOptions: vi.fn(),
 }));
 vi.mock('next-intl/middleware', () => ({ default: () => vi.fn() }));

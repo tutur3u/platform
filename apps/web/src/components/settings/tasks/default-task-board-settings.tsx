@@ -6,6 +6,7 @@ import { listWorkspaceTaskBoards } from '@tuturuuu/internal-api/tasks';
 import { TASK_DEFAULT_BOARD_ID_CONFIG_ID } from '@tuturuuu/internal-api/users';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import {
   useUpdateUserWorkspaceConfig,
   useUserWorkspaceConfig,
@@ -59,14 +60,15 @@ export function DefaultTaskBoardSettings({ wsId }: { wsId: string }) {
   const selected = defaultBoardId || AUTO_DEFAULT_BOARD_VALUE;
 
   return (
-    <div className="grid gap-6">
+    <SettingsSection>
       <SettingItemTab
+        controlWidth="lg"
         title={t('settings.tasks.default_board')}
         description={t('settings.tasks.default_board_description')}
       >
         <Combobox
           ariaLabel={t('settings.tasks.default_board')}
-          className="w-full max-w-md"
+          className="w-full"
           contentWidth="lg"
           disabled={isLoading || updateConfig.isPending}
           emptyText={t('settings.tasks.default_board_empty')}
@@ -96,6 +98,6 @@ export function DefaultTaskBoardSettings({ wsId }: { wsId: string }) {
         />
       </SettingItemTab>
       <RememberLastBoardSettings wsId={wsId} />
-    </div>
+    </SettingsSection>
   );
 }

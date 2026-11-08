@@ -9,12 +9,12 @@ import { fileURLToPath } from 'node:url';
 
 export const expectedRootHosts = {
   production: ['calendar.tuturuuu.com'],
-  staging: ['calendar.staging.tutur3u.com'],
+  staging: ['calendar.tutur3u.com'],
 };
 // Public production identifier pinned by supabase-production.yaml; never a credential.
 const productionSupabaseRef = 'nzamlzqfdwaaxdefwraj';
 const forbidden = {
-  production: ['calendar.staging.tutur3u.com'],
+  production: ['calendar.tutur3u.com'],
   staging: [productionSupabaseRef],
 };
 // Production hosts (tuturuuu.com and every app subdomain). Shared registries
@@ -32,7 +32,7 @@ export const forwardingSources = [
 ];
 // The retired smoke host. Former production-zone staging names are covered
 // by root-cutover.test.ts and the staging-host guard, not repeated here.
-const retired = ['calendar-cutover.staging.tutur3u.com'];
+const retired = ['calendar-cutover.tutur3u.com'];
 const textExtensions = new Set([
   '.js',
   '.mjs',

@@ -9,7 +9,7 @@ const EMBED_PAGE = /^\/embed\/[^/]+(?:\/|$)/u;
 
 export default defineBridgeAppConfig<FormsEnvironment>({
   mounts: {
-    rootHosts: ['forms.tuturuuu.com', 'forms.staging.tutur3u.com'],
+    rootHosts: ['forms.tuturuuu.com', 'forms.tutur3u.com'],
     mountHosts: [],
     unknownHost: 'reject',
   },

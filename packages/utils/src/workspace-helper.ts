@@ -601,6 +601,8 @@ export async function verifyHasSecrets(
   wsId: string,
   requiredSecrets: string[]
 ) {
+  // Fail closed: an empty wsId would drop the workspace filter in getSecrets.
+  if (!wsId?.trim()) return false;
   const secrets = await getSecrets({ wsId, forceAdmin: true });
   if (!secrets) return false;
 
@@ -630,6 +632,7 @@ export async function verifySecret({
   name: string;
   value: string;
 }) {
+  if (!wsId?.trim()) return false;
   const secrets = await getSecrets({ wsId, forceAdmin });
   if (!secrets) return false;
   const secret = getSecret(name, secrets);

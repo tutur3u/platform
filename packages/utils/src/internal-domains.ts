@@ -3,6 +3,7 @@ import {
   getTuturuuuPortlessAppOrigin,
   TUTURUUU_PORTLESS_APP_HOSTS,
 } from './portless';
+import { isRetiredAppHostname, isRetiredAppUrl } from './retired-app-hosts';
 import { getConfiguredSharedCookieDomainOverride } from './shared-cookie';
 
 export const PRODUCTION_INTERNAL_APP_DOMAINS = [
@@ -70,7 +71,6 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     name: 'rewise',
     url: 'https://rewise.tuturuuu.com',
   },
-  { name: 'rewise', url: 'https://rewise.me', requiresExactOrigin: true },
   {
     name: 'tasks',
     url: 'https://tasks.tuturuuu.com',
@@ -432,6 +432,10 @@ function parseExternalAppDomainEntry(entry: string): AppDomain | null {
     return null;
   }
 
+  if (isRetiredAppUrl(url)) {
+    return null;
+  }
+
   try {
     return {
       kind: 'external',
@@ -661,7 +665,7 @@ function canonicalizeAppDomainUrl(value: URL, domain: AppDomain) {
 export function getAppDomainByUrl(value: string): AppDomainUrlMatch | null {
   const url = parseHttpUrl(value);
 
-  if (!url) {
+  if (!url || isRetiredAppHostname(url.hostname)) {
     return null;
   }
 

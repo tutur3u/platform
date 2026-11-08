@@ -14,6 +14,7 @@ import {
   type TutoringClassTimeSession,
 } from '@tuturuuu/utils/tutoring-message-values';
 import { NextResponse } from 'next/server';
+import { resolveTutoringReadScope } from '@/lib/tutoring/read-scope';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 
 interface Params {
@@ -47,10 +48,8 @@ function shiftIsoDate(date: string, days: number) {
 
 export async function POST(request: Request, { params }: Params) {
   const { wsId, id } = await params;
-  const { normalizedWsId, permissions } = await resolveTutoringRouteAccess(
-    request,
-    wsId
-  );
+  const access = await resolveTutoringRouteAccess(request, wsId);
+  const { normalizedWsId, permissions } = access;
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -64,8 +63,11 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const scope = await resolveTutoringReadScope({ request, access, sbAdmin });
+  if (!scope.allowed)
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   const tutoringSessionsClient = sbAdmin.schema('private');
-  const { data, error } = await tutoringSessionsClient
+  let sessionQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .select(
       `
@@ -80,8 +82,10 @@ export async function POST(request: Request, { params }: Params) {
     `
     )
     .eq('id', id)
-    .eq('ws_id', normalizedWsId)
-    .maybeSingle();
+    .eq('ws_id', normalizedWsId);
+  if (scope.teacherId)
+    sessionQuery = sessionQuery.eq('teacher_user_id', scope.teacherId);
+  const { data, error } = await sessionQuery.maybeSingle();
 
   if (error) {
     console.error('Failed to load tutoring session for preview', error);
@@ -210,11 +214,16 @@ export async function POST(request: Request, { params }: Params) {
     weekday: getTutoringWeekdayLabel(data.session_date),
   });
 
-  const { error: updateError } = await tutoringSessionsClient
+  let updateQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .update({ parent_message_preview: preview })
     .eq('id', id)
     .eq('ws_id', normalizedWsId);
+  if (scope.teacherId)
+    updateQuery = updateQuery.eq('teacher_user_id', scope.teacherId);
+  const { data: updated, error: updateError } = await updateQuery
+    .select('id')
+    .maybeSingle();
 
   if (updateError) {
     console.error('Failed to save tutoring message preview', updateError);
@@ -224,5 +233,7 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
+  if (!updated)
+    return NextResponse.json({ message: 'Session not found' }, { status: 404 });
   return NextResponse.json({ preview });
 }

@@ -50,10 +50,22 @@ class ProfileActivitySection extends StatefulWidget {
   final Future<String> Function()? timezoneLoader;
 
   @override
-  State<ProfileActivitySection> createState() => _ProfileActivitySectionState();
+  State<ProfileActivitySection> createState() => ProfileActivitySectionState();
 }
 
-class _ProfileActivitySectionState extends State<ProfileActivitySection> {
+class ProfileActivitySectionState extends State<ProfileActivitySection> {
+  Future<void> refresh() async {
+    final user = context.read<AuthCubit>().state.user;
+    final workspace = verifiedPersonalProfileWorkspace(
+      userId: user?.id,
+      cacheUserId: (widget.cacheUserId ?? currentPersonalProfileUserId)(),
+      workspaces: context.read<WorkspaceCubit>(),
+    );
+    if (user != null && workspace != null) {
+      await _load(workspace.id, user.id, workspace.personal);
+    }
+  }
+
   final _api = ApiClient();
   final _http = http.Client();
   late final _repository = TimeTrackerRepository(

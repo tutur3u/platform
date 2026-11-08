@@ -77,9 +77,8 @@ describe('user group metric category migrate route', () => {
   });
 
   it('migrates valid categories through the private workspace-bound RPC', async () => {
-    const { PUT } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/users/indicators/groups/migrate/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/users/indicators/groups/migrate/route');
 
     const response = await PUT(
       createRequest({
@@ -119,12 +118,10 @@ describe('user group metric category migrate route', () => {
   });
 
   it('rejects malformed category payloads before creating an admin client', async () => {
-    const { createAdminClient } = await import(
-      '@tuturuuu/supabase/next/server'
-    );
-    const { PUT } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/users/indicators/groups/migrate/route'
-    );
+    const { createAdminClient } =
+      await import('@tuturuuu/supabase/next/server');
+    const { PUT } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/users/indicators/groups/migrate/route');
 
     const response = await PUT(
       createRequest({
@@ -139,12 +136,10 @@ describe('user group metric category migrate route', () => {
   });
 
   it('rejects duplicate category IDs before creating an admin client', async () => {
-    const { createAdminClient } = await import(
-      '@tuturuuu/supabase/next/server'
-    );
-    const { PUT } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/users/indicators/groups/migrate/route'
-    );
+    const { createAdminClient } =
+      await import('@tuturuuu/supabase/next/server');
+    const { PUT } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/users/indicators/groups/migrate/route');
 
     const response = await PUT(
       createRequest({
@@ -167,12 +162,10 @@ describe('user group metric category migrate route', () => {
 
   it('rejects callers without score creation permission before creating an admin client', async () => {
     mocks.hasPermission.mockReturnValueOnce(false);
-    const { createAdminClient } = await import(
-      '@tuturuuu/supabase/next/server'
-    );
-    const { PUT } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/users/indicators/groups/migrate/route'
-    );
+    const { createAdminClient } =
+      await import('@tuturuuu/supabase/next/server');
+    const { PUT } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/users/indicators/groups/migrate/route');
 
     const response = await PUT(
       createRequest({
@@ -191,9 +184,8 @@ describe('user group metric category migrate route', () => {
       data: null,
       error: { code: 'P0002', message: 'metric_category_not_found' },
     });
-    const { PUT } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/users/indicators/groups/migrate/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/users/indicators/groups/migrate/route');
 
     const response = await PUT(
       createRequest({
@@ -209,12 +201,10 @@ describe('user group metric category migrate route', () => {
   });
 
   it('rejects malformed JSON before creating an admin client', async () => {
-    const { createAdminClient } = await import(
-      '@tuturuuu/supabase/next/server'
-    );
-    const { PUT } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/users/indicators/groups/migrate/route'
-    );
+    const { createAdminClient } =
+      await import('@tuturuuu/supabase/next/server');
+    const { PUT } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/users/indicators/groups/migrate/route');
 
     const response = await PUT(createRequest('{'), createParams());
 

@@ -1,8 +1,20 @@
 import { Inter } from 'next/font/google';
-import Image from 'next/image';
 import styles from './meet-loading.module.css';
 
 const inter = Inter({ subsets: ['latin', 'vietnamese'], display: 'swap' });
+
+function BrandMark({ src, theme }: { src: string; theme: 'light' | 'dark' }) {
+  return (
+    <div
+      role="img"
+      aria-label="Tuturuuu"
+      className={`aspect-[2369/512] w-full bg-center bg-contain bg-no-repeat ${
+        theme === 'light' ? 'dark:hidden' : 'hidden dark:block'
+      }`}
+      style={{ backgroundImage: `url(${src})` }}
+    />
+  );
+}
 
 /** Static markup: available before translations and client providers resolve. */
 export function MeetLoading({
@@ -17,22 +29,10 @@ export function MeetLoading({
       <div aria-hidden="true" className={styles.backdrop} />
       <section className="relative flex w-full max-w-sm flex-col items-center text-center">
         <div className="mb-9 w-52 sm:w-60">
-          <Image
-            src="/media/branding/brand-mark-light.svg"
-            alt="Tuturuuu"
-            width={2369}
-            height={512}
-            className="h-auto w-full dark:hidden"
-            unoptimized
-          />
-          <Image
-            src="/media/branding/brand-mark-dark.svg"
-            alt="Tuturuuu"
-            width={2369}
-            height={512}
-            className="hidden h-auto w-full dark:block"
-            unoptimized
-          />
+          {/* CSS backgrounds, not <img>: this static server markup cannot handle
+              `onError`, and a missing background never shows a broken glyph. */}
+          <BrandMark src="/media/branding/brand-mark-light.svg" theme="light" />
+          <BrandMark src="/media/branding/brand-mark-dark.svg" theme="dark" />
         </div>
         <h1 className="font-medium text-4xl tracking-tight sm:text-5xl">
           {labels.title}

@@ -2,7 +2,7 @@
 
 Keep migration adapters in `apps/web/cloudflare`; the retired
 `apps/tanstack-web` runtime remains paused. Read the
-[owning runbook](../../../../../docs-internal/build/devops/web-start-candidate.mdx)
+[owning runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/web-start-candidate.mdx)
 for native route scope, staging inputs, rollback and release prerequisites.
 
 Public legal documents reuse `@tuturuuu/legal` through a React/Start adapter.

@@ -6,6 +6,7 @@ import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventCard } from './event-card';
 
@@ -397,4 +398,31 @@ describe('EventCard read-only adapter events', () => {
       'outline-dashed'
     );
   });
+});
+
+it('server-renders a real event card description without document or window', () => {
+  const description = 'Budget < 10 & notes\nNext line';
+  vi.stubGlobal('document', undefined);
+  vi.stubGlobal('window', undefined);
+  try {
+    const queryClient = new QueryClient();
+    const output = renderToStaticMarkup(
+      <QueryClientProvider client={queryClient}>
+        <EventCard
+          dates={[new Date('2026-06-26T00:00:00Z')]}
+          event={{
+            id: 'ssr-description',
+            title: 'SSR',
+            description,
+            start_at: '2026-06-26T08:00:00Z',
+            end_at: '2026-06-26T10:00:00Z',
+          }}
+          wsId="workspace-1"
+        />
+      </QueryClientProvider>
+    );
+    expect(output).toContain('Budget &lt; 10 &amp; notes\nNext line');
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

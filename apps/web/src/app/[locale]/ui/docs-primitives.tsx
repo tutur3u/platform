@@ -143,7 +143,7 @@ export async function CodeBlock({
         className="[&_pre]:!bg-transparent overflow-x-auto p-4 pr-14 text-sm leading-6"
         // Shiki output is generated server-side from trusted, static code
         // strings in the component registry, so it is safe to inject.
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted shiki output
+        // eslint-disable-next-line react/no-danger -- Shiki escapes static registry code and produces the highlighting markup.
         dangerouslySetInnerHTML={{ __html: highlighted }}
       />
       <CopyButton code={code} />

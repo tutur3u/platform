@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Coffee, Edit2, Plus, Trash2 } from '@tuturuuu/icons';
+import { Edit2, Plus, Trash2 } from '@tuturuuu/icons';
 import {
   createWorkspaceBreakType,
   deleteWorkspaceBreakType,
@@ -19,8 +19,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Dialog,
   DialogContent,
@@ -39,7 +44,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
@@ -254,256 +258,240 @@ export function WorkspaceBreakTypesSettings({
 
   return (
     <div className="space-y-8">
-      <SettingItemTab
-        title={t('title')}
+      <SettingsSection
         description={t('description_overview')}
-      >
-        <div className="mt-4 flex flex-col gap-6">
-          <div className="flex justify-end">
-            <Dialog
-              open={isCreateDialogOpen}
-              onOpenChange={setIsCreateDialogOpen}
-            >
-              <DialogTrigger asChild>
-                <Button size="sm" onClick={handleOpenCreate} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  {t('create')}
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingId ? t('edit') : t('create')}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {editingId
-                      ? t('edit_description')
-                      : t('create_description')}
-                  </DialogDescription>
-                </DialogHeader>
+        action={
+          <Dialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+          >
+            <DialogTrigger asChild>
+              <Button size="sm" onClick={handleOpenCreate} className="gap-2">
+                <Plus className="h-4 w-4" />
+                {t('create')}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editingId ? t('edit') : t('create')}</DialogTitle>
+                <DialogDescription>
+                  {editingId ? t('edit_description') : t('create_description')}
+                </DialogDescription>
+              </DialogHeader>
 
-                <div className="space-y-4 py-4">
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">{t('name')}</Label>
+                  <Input
+                    id="name"
+                    value={formState.name}
+                    onChange={(e) =>
+                      setFormState({ ...formState, name: e.target.value })
+                    }
+                    placeholder={t('name_placeholder')}
+                    maxLength={50}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">{t('description')}</Label>
+                  <Textarea
+                    id="description"
+                    value={formState.description}
+                    onChange={(e) =>
+                      setFormState({
+                        ...formState,
+                        description: e.target.value,
+                      })
+                    }
+                    placeholder={t('description_placeholder')}
+                    className="resize-none"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">{t('name')}</Label>
-                    <Input
-                      id="name"
-                      value={formState.name}
-                      onChange={(e) =>
-                        setFormState({ ...formState, name: e.target.value })
+                    <Label htmlFor="color">{t('color')}</Label>
+                    <Select
+                      value={formState.color}
+                      onValueChange={(value) =>
+                        setFormState({ ...formState, color: value })
                       }
-                      placeholder={t('name_placeholder')}
-                      maxLength={50}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">{t('description')}</Label>
-                    <Textarea
-                      id="description"
-                      value={formState.description}
-                      onChange={(e) =>
-                        setFormState({
-                          ...formState,
-                          description: e.target.value,
-                        })
-                      }
-                      placeholder={t('description_placeholder')}
-                      className="resize-none"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="color">{t('color')}</Label>
-                      <Select
-                        value={formState.color}
-                        onValueChange={(value) =>
-                          setFormState({ ...formState, color: value })
-                        }
-                      >
-                        <SelectTrigger id="color">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {COLOR_OPTIONS.map((color) => {
-                            const colorToken = getBreakTypeColor(color);
-                            const colorClasses =
-                              BREAK_COLOR_CLASSES[colorToken];
-                            return (
-                              <SelectItem key={color} value={color}>
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className={`h-3 w-3 rounded-full ${colorClasses.badgeBg}`}
-                                  />
-                                  {color}
-                                </div>
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="icon">{t('icon')}</Label>
-                      <Select
-                        value={formState.icon}
-                        onValueChange={(value) =>
-                          setFormState({ ...formState, icon: value })
-                        }
-                      >
-                        <SelectTrigger id="icon">
-                          <div className="flex items-center gap-2">
-                            <SelectValue />
-                          </div>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ICON_OPTIONS.map((icon) => {
-                            const IconComponent = getIconComponent(icon);
-                            return (
-                              <SelectItem key={icon} value={icon}>
-                                <div className="flex items-center gap-2">
-                                  <IconComponent className="h-4 w-4" />
-                                  {icon}
-                                </div>
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="is_default"
-                      checked={formState.is_default}
-                      onCheckedChange={(checked) =>
-                        setFormState({
-                          ...formState,
-                          is_default: checked,
-                        })
-                      }
-                    />
-                    <Label
-                      htmlFor="is_default"
-                      className="cursor-pointer font-normal"
                     >
-                      {t('set_as_default')}
-                    </Label>
+                      <SelectTrigger id="color">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COLOR_OPTIONS.map((color) => {
+                          const colorToken = getBreakTypeColor(color);
+                          const colorClasses = BREAK_COLOR_CLASSES[colorToken];
+                          return (
+                            <SelectItem key={color} value={color}>
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className={`h-3 w-3 rounded-full ${colorClasses.badgeBg}`}
+                                />
+                                {color}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="icon">{t('icon')}</Label>
+                    <Select
+                      value={formState.icon}
+                      onValueChange={(value) =>
+                        setFormState({ ...formState, icon: value })
+                      }
+                    >
+                      <SelectTrigger id="icon">
+                        <div className="flex items-center gap-2">
+                          <SelectValue />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ICON_OPTIONS.map((icon) => {
+                          const IconComponent = getIconComponent(icon);
+                          return (
+                            <SelectItem key={icon} value={icon}>
+                              <div className="flex items-center gap-2">
+                                <IconComponent className="h-4 w-4" />
+                                {icon}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsCreateDialogOpen(false)}
-                    disabled={
-                      createMutation.isPending || updateMutation.isPending
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="is_default"
+                    checked={formState.is_default}
+                    onCheckedChange={(checked) =>
+                      setFormState({
+                        ...formState,
+                        is_default: checked,
+                      })
                     }
+                  />
+                  <Label
+                    htmlFor="is_default"
+                    className="cursor-pointer font-normal"
                   >
-                    {tCommon('cancel')}
-                  </Button>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={
-                      createMutation.isPending || updateMutation.isPending
-                    }
-                  >
-                    {editingId ? t('update') : t('create')}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="grid gap-4">
-            {breakTypes && breakTypes.length > 0 ? (
-              <div className="grid gap-3">
-                {breakTypes.map((breakType) => (
-                  <div
-                    key={breakType.id}
-                    className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-full ${BREAK_COLOR_CLASSES[getBreakTypeColor(breakType.color)].badgeBg} ${BREAK_COLOR_CLASSES[getBreakTypeColor(breakType.color)].text}`}
-                      >
-                        {getIconComponent(breakType.icon) &&
-                          (() => {
-                            const IconComponent = getIconComponent(
-                              breakType.icon
-                            );
-                            return <IconComponent className="h-5 w-5" />;
-                          })()}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium">{breakType.name}</h4>
-                          {breakType.is_default && (
-                            <span className="rounded-full bg-dynamic-blue/10 px-2 py-0.5 font-medium text-dynamic-blue text-xs">
-                              {t('default')}
-                            </span>
-                          )}
-                        </div>
-                        {breakType.description && (
-                          <p className="mt-1 text-muted-foreground text-sm">
-                            {breakType.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleOpenEdit(breakType)}
-                        disabled={
-                          deleteMutation.isPending ||
-                          createMutation.isPending ||
-                          updateMutation.isPending
-                        }
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setDeleteId(breakType.id)}
-                        disabled={
-                          deleteMutation.isPending ||
-                          createMutation.isPending ||
-                          updateMutation.isPending
-                        }
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                    {t('set_as_default')}
+                  </Label>
+                </div>
               </div>
-            ) : (
-              <div className="rounded-lg border border-border border-dashed p-12 text-center">
-                <Coffee className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-20" />
-                <h3 className="font-semibold text-lg">{t('no_break_types')}</h3>
-                <p className="mt-1 text-muted-foreground text-sm">
-                  {t('no_break_types_hint')}
-                </p>
+
+              <DialogFooter>
                 <Button
                   variant="outline"
-                  size="sm"
-                  onClick={handleOpenCreate}
-                  className="mt-4"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                  disabled={
+                    createMutation.isPending || updateMutation.isPending
+                  }
                 >
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t('create')}
+                  {tCommon('cancel')}
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={
+                    createMutation.isPending || updateMutation.isPending
+                  }
+                >
+                  {editingId ? t('update') : t('create')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        }
+      >
+        {breakTypes && breakTypes.length > 0 ? (
+          breakTypes.map((breakType) => (
+            <SettingsSectionBlock
+              className="flex items-center justify-between gap-3 py-3"
+              key={breakType.id}
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <div
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${BREAK_COLOR_CLASSES[getBreakTypeColor(breakType.color)].badgeBg} ${BREAK_COLOR_CLASSES[getBreakTypeColor(breakType.color)].text}`}
+                >
+                  {getIconComponent(breakType.icon) &&
+                    (() => {
+                      const IconComponent = getIconComponent(breakType.icon);
+                      return <IconComponent className="h-4 w-4" />;
+                    })()}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-sm">{breakType.name}</p>
+                    {breakType.is_default && (
+                      <Badge variant="outline">{t('default')}</Badge>
+                    )}
+                  </div>
+                  {breakType.description && (
+                    <p className="mt-0.5 text-muted-foreground text-sm">
+                      {breakType.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleOpenEdit(breakType)}
+                  disabled={
+                    deleteMutation.isPending ||
+                    createMutation.isPending ||
+                    updateMutation.isPending
+                  }
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setDeleteId(breakType.id)}
+                  disabled={
+                    deleteMutation.isPending ||
+                    createMutation.isPending ||
+                    updateMutation.isPending
+                  }
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
-            )}
-          </div>
-        </div>
-      </SettingItemTab>
+            </SettingsSectionBlock>
+          ))
+        ) : (
+          <SettingsSectionMessage>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">
+                {t('no_break_types')}
+              </p>
+              <p>{t('no_break_types_hint')}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenCreate}
+                className="mt-3 text-foreground"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {t('create')}
+              </Button>
+            </div>
+          </SettingsSectionMessage>
+        )}
+      </SettingsSection>
 
       <AlertDialog
         open={!!deleteId}
@@ -527,8 +515,6 @@ export function WorkspaceBreakTypesSettings({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <Separator />
     </div>
   );
 }

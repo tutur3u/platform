@@ -158,12 +158,10 @@ export function LinkedProductAddDialog({
             </Label>
             <Combobox
               t={t}
-              options={availableProducts.map(
-                (p): ComboboxOptions => ({
-                  value: p.id,
-                  label: `${p.name || t('ws-inventory-products.unnamed_product')}${p.manufacturer ? ` - ${p.manufacturer}` : ''}${p.description ? ` (${p.description})` : ''}`,
-                })
-              )}
+              options={availableProducts.map((p): ComboboxOptions => ({
+                value: p.id,
+                label: `${p.name || t('ws-inventory-products.unnamed_product')}${p.manufacturer ? ` - ${p.manufacturer}` : ''}${p.description ? ` (${p.description})` : ''}`,
+              }))}
               selected={product}
               onChange={(value) => {
                 setProduct(value as string);

@@ -5,6 +5,8 @@ import type { WorkspaceDefaultPermissionMemberType } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
+import { SettingItemTab } from '../settings-item-tab';
+import { SettingsSection, SettingsSectionBlock } from '../settings-section';
 import type { WorkspaceAccessRole } from './types';
 import {
   enabledPermissionCount,
@@ -36,37 +38,26 @@ export function WorkspaceAccessDefaultRoleCard({
   );
   const pct =
     permissionCount > 0 ? Math.round((enabled / permissionCount) * 100) : 0;
-  const accent = isGuest
-    ? 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue'
-    : 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green';
-  const barColor = isGuest ? 'bg-dynamic-blue' : 'bg-dynamic-green';
 
   return (
-    <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 gap-3">
-          <div
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${accent}`}
-          >
-            {isGuest ? (
-              <KeyRound className="h-5 w-5" />
-            ) : (
-              <ShieldUser className="h-5 w-5" />
-            )}
-          </div>
-          <div className="min-w-0">
-            <div className="font-semibold text-base">
-              {isGuest
-                ? t('ws-roles.guest_defaults')
-                : t('ws-roles.member_defaults')}
-            </div>
-            <p className="mt-0.5 max-w-md text-muted-foreground text-sm">
-              {isGuest
-                ? t('ws-roles.guest_defaults_description')
-                : t('ws-roles.member_defaults_description')}
-            </p>
-          </div>
-        </div>
+    <SettingsSection>
+      <SettingItemTab
+        description={
+          isGuest
+            ? t('ws-roles.guest_defaults_description')
+            : t('ws-roles.member_defaults_description')
+        }
+        icon={
+          isGuest ? (
+            <KeyRound className="size-4" />
+          ) : (
+            <ShieldUser className="size-4" />
+          )
+        }
+        title={
+          isGuest ? t('ws-roles.guest_defaults') : t('ws-roles.member_defaults')
+        }
+      >
         {canManageRoles ? (
           <Button
             variant="outline"
@@ -79,30 +70,28 @@ export function WorkspaceAccessDefaultRoleCard({
             <span className="sr-only sm:hidden">{t('common.edit')}</span>
           </Button>
         ) : null}
-      </div>
+      </SettingItemTab>
 
-      <div className="mt-4 space-y-3">
+      <SettingsSectionBlock className="space-y-3">
         {isLoading ? (
           <Skeleton className="h-24 rounded-lg" />
         ) : (
           <>
             <div>
-              <div className="flex items-baseline justify-between gap-1.5">
-                <div className="flex items-baseline gap-1.5">
-                  <span className="font-bold text-2xl tabular-nums">
-                    {enabled}
-                  </span>
-                  <span className="text-base text-muted-foreground">
+              <div className="flex items-baseline justify-between gap-1.5 text-sm">
+                <span className="font-medium tabular-nums">
+                  {enabled}{' '}
+                  <span className="font-normal text-muted-foreground">
                     / {permissionCount}
                   </span>
-                </div>
-                <span className="text-muted-foreground text-sm">
+                </span>
+                <span className="text-muted-foreground">
                   {t('ws-roles.permissions')}
                 </span>
               </div>
-              <div className="mt-2 h-1.5 max-w-md overflow-hidden rounded-full bg-foreground/10">
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-foreground/10">
                 <div
-                  className={`h-full rounded-full ${barColor}`}
+                  className="h-full rounded-full bg-primary"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -121,7 +110,7 @@ export function WorkspaceAccessDefaultRoleCard({
             ) : null}
           </>
         )}
-      </div>
-    </div>
+      </SettingsSectionBlock>
+    </SettingsSection>
   );
 }

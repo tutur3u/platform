@@ -46,8 +46,10 @@ export interface MeetRoomEnv extends TurnEnv {
   CLOUDFLARE_REALTIME_APP_SECRET: string;
   MEET_REALTIME_TOKEN_SECRET: string;
   MEET_ROOM: DurableObjectNamespace;
-  /** Meet AI pilot allowlist; absent denies every workspace. */
+  /** Server-only Meet AI controls; absent allows every workspace. */
   MEET_AI_ENABLED_WORKSPACE_IDS?: string;
+  MEET_AI_DISABLED?: string;
+  MEET_AI_DISABLED_WORKSPACE_IDS?: string;
 }
 const SNAPSHOT_KEY = 'snapshot';
 const PRESENCE_SWEEP_MS = 10_000;

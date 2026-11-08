@@ -55,9 +55,8 @@ describe('workspace members enhanced route', () => {
   });
 
   it('authorizes the caller before loading members through the admin-backed path', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/members/enhanced/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/members/enhanced/route');
     const request = new NextRequest(
       `http://localhost/api/workspaces/${WORKSPACE_ID}/members/enhanced?status=joined`
     );
@@ -85,9 +84,8 @@ describe('workspace members enhanced route', () => {
   });
 
   it('uses the workspace id resolved by shared authorization for handles', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/members/enhanced/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/members/enhanced/route');
     const request = new NextRequest(
       'http://localhost/api/workspaces/Team-Handle/members/enhanced'
     );
@@ -116,9 +114,8 @@ describe('workspace members enhanced route', () => {
       ),
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/members/enhanced/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/members/enhanced/route');
     const request = new NextRequest(
       `http://localhost/api/workspaces/${WORKSPACE_ID}/members/enhanced`
     );
@@ -143,9 +140,8 @@ describe('workspace members enhanced route', () => {
       ),
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/members/enhanced/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/members/enhanced/route');
     const request = new NextRequest(
       'http://localhost/api/workspaces/private-team/members/enhanced'
     );
@@ -168,9 +164,8 @@ describe('workspace members enhanced route', () => {
       user: { id: 'user-1' },
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/members/enhanced/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/members/enhanced/route');
     const request = new NextRequest(
       'http://localhost/api/workspaces/[locale]/members/enhanced'
     );

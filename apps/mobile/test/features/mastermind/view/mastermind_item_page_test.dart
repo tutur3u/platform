@@ -352,7 +352,7 @@ void main() {
       expect(find.text('Defer'), findsNothing);
       expect(find.text('Recommended'), findsOneWidget);
       await chooseAndSend(tester, 'Later');
-      await tester.pump(const Duration(seconds: 5));
+      await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(page.transport.sent.single.optionIndex, 1);
       expect(page.transport.sent.single.optionLabel, 'Later');

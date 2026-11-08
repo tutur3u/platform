@@ -76,7 +76,6 @@ export default async function Image({ params }: Props) {
             justifyContent: 'space-between',
           }}
         >
-          {/* biome-ignore lint/performance/noImgElement: next/og ImageResponse renders plain img tags. */}
           <img
             alt="Tuturuuu"
             height="86"
@@ -153,7 +152,6 @@ export default async function Image({ params }: Props) {
               backgroundColor: '#FFFFFF',
             }}
           >
-            {/* biome-ignore lint/performance/noImgElement: next/og ImageResponse renders plain img tags. */}
             <img
               alt="Tuturuuu mark"
               height="132"

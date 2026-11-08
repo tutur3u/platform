@@ -154,7 +154,6 @@ function WorldShelfContent({ wsId, shelf }: WorldShelfProps) {
               className={`studio-world-art studio-world-art-${index % 3} flex h-52 items-center justify-center overflow-hidden`}
             >
               {world.draft.image ? (
-                // biome-ignore lint/performance/noImgElement: Artwork access must remain revocable without optimizer caching.
                 <img
                   src={world.draft.image}
                   alt=""

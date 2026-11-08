@@ -58,6 +58,18 @@ class ArtifactTest(unittest.TestCase):
         (app / "dist/native/wrangler.json").write_text(json.dumps(config))
         (app / artifact.REDIRECT).write_text(json.dumps(pointer))
 
+    def test_explicit_preview_urls_must_be_disabled(self):
+        app, config, pointer = self.fixture()
+        config["preview_urls"] = False
+        self.save(app, config, pointer)
+        artifact.validate_output(app)
+        for value in (True, "false", 0, None, {}, []):
+            with self.subTest(value=value):
+                config["preview_urls"] = value
+                self.save(app, config, pointer)
+                with self.assertRaisesRegex(ValueError, "contract drift: preview_urls"):
+                    artifact.validate_output(app)
+
     def test_real_adapter_metadata_and_relocated_seal_restore(self):
         app, config, _ = self.fixture()
         self.assertIs(config["upload_source_maps"], True)
@@ -212,7 +224,8 @@ class ArtifactTest(unittest.TestCase):
                         for path in (app / "dist").rglob("*") if path.is_file()
                     }
                     with tempfile.TemporaryDirectory() as destination, tempfile.TemporaryDirectory() as outside:
-                        target, external = Path(destination), Path(outside)
+                        # Match restore() canonicalization, including macOS /var aliases.
+                        target, external = Path(destination).resolve(), Path(outside).resolve()
                         restored_receipt = target / "receipt.json"
                         original_move = artifact.shutil.move
                         moved_dist = []

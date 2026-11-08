@@ -1,8 +1,13 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
-const { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } =
-  require('node:fs');
+const {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {
@@ -35,7 +40,7 @@ for (const host of [
 }
 test('production and isolated staging allowed', () => {
   assert.deepEqual(
-    violations('tuturuuu.com pay.tuturuuu.com pay.staging.tutur3u.com'),
+    violations('tuturuuu.com pay.tuturuuu.com pay.tutur3u.com'),
     []
   );
 });
@@ -102,7 +107,6 @@ for (const [name, source, expected] of [
   ],
   [
     'template with a zone constant',
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: source text fixture
     "const ZONE = 'tuturuuu.com';\nconst h = `preview.${ZONE}`;",
     'preview.tuturuuu.com',
   ],
@@ -113,7 +117,6 @@ for (const [name, source, expected] of [
   ],
   [
     'template with a label constant',
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: source text fixture
     "const env = 'dev';\nconst h = `https://${env}.tuturuuu.com`;",
     'dev.tuturuuu.com',
   ],
@@ -136,11 +139,7 @@ test('catches non-production labels in a regex alternation', () => {
     violations(String.raw`const HOSTS = /^(calendar|pay)\.tuturuuu\.com$/;`),
     []
   );
-  assert.deepEqual(
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: source text fixture
-    violations('const u = `https://${app}.tuturuuu.com`;'),
-    []
-  );
+  assert.deepEqual(violations('const u = `https://${app}.tuturuuu.com`;'), []);
 });
 
 test('staging allowlists reject the production zone in any case or name', () => {
@@ -173,9 +172,11 @@ test('scans every configuration location, not only app and script sources', () =
     'apps/mobile/lib/config.dart',
   ])
     assert.equal(scannedFile(file), true, file);
+  assert.equal(scannedFile('docs-internal/build/devops/runbook.mdx'), true);
+  assert.equal(scannedFile('docs-internal/README.md'), true);
   for (const file of [
     'scripts/check-staging-hosts.test.js',
-    'docs-internal/build/devops/wave1-native-publishers.mdx',
+    'apps/docs/build/devops/environments-release-flow.mdx',
     'packages/x/__tests__/hosts.ts',
     'bun.lock',
     'apps/web/public/logo.png',
@@ -303,10 +304,7 @@ test('detects hosts concatenated across comments', () => {
     );
   }
   assert.ok(violations('const host = "https://dev.tuturuuu.com";').length);
-  assert.equal(
-    violations('const host = "https://dev.staging.tutur3u.com";').length,
-    0
-  );
+  assert.equal(violations('const host = "https://dev.tutur3u.com";').length, 0);
 });
 
 test('regex literals cannot open a block comment that hides a host', () => {

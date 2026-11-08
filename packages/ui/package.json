@@ -114,7 +114,6 @@
     "@tuturuuu/hooks": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
-    "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@types/debug": "^4.1.13",
@@ -388,6 +387,10 @@
     "./custom/version-badge": {
       "types": "./src/components/ui/custom/version-badge.tsx",
       "import": "./src/components/ui/custom/version-badge.tsx"
+    },
+    "./custom/settings-section": {
+      "types": "./src/components/ui/custom/settings-section.tsx",
+      "import": "./src/components/ui/custom/settings-section.tsx"
     },
     "./custom/settings/*": "./src/components/ui/custom/settings/*.tsx",
     "./custom/missed-entry/*": "./src/components/ui/custom/missed-entry/*.tsx",

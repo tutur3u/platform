@@ -16,6 +16,7 @@ export const ABUSE_GUARD_FAMILIES = [
   'password',
   'proxy',
   'replay',
+  'meet',
 ] as const;
 export type AbuseGuardFamily = (typeof ABUSE_GUARD_FAMILIES)[number];
 
@@ -67,6 +68,8 @@ export const guardWindowSchema = z.object({
   limit,
   windowMs: z.number().int().min(1000).max(ABUSE_GUARD_LIMITS.maxWindowMs),
   algo: z.enum(['fixed', 'sliding']),
+  /** Units this hit charges (e.g. audio seconds); absent charges one. */
+  cost: limit.optional(),
 });
 
 export const guardCommandSchema = z.discriminatedUnion('op', [

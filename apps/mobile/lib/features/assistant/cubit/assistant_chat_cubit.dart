@@ -28,6 +28,7 @@ import '../models/assistant_models.dart';
 import 'assistant_tool_output.dart';
 
 part 'assistant_chat_attachments.dart';
+part 'assistant_chat_voice_send.dart';
 part 'assistant_chat_restore.dart';
 part 'assistant_chat_reset.dart';
 part 'assistant_chat_state.dart';
@@ -87,6 +88,8 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   final OperationalErrorReporter _operationalReporter;
   final AssistantMediaOptimizer _mediaOptimizer;
   // Local sources of composer attachments that may still need a retry.
+  final _voiceRetries = <String, Future<void> Function()>{};
+  final _voiceUploads = <String>{};
   final _attachmentSources = <String, AssistantFilePickerResult>{};
   final AssistantRepository _repository;
   final AssistantPreferences _preferences;
@@ -143,8 +146,27 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   int? _pendingAttachmentWorkspaceVersion;
 
   void _emitIfOpen(AssistantChatState nextState) {
+    var published = nextState;
     if (!isClosed) {
-      emit(nextState);
+      final request = _activeSubmissionRequestId;
+      if (nextState.status == AssistantChatStatus.error &&
+          _voiceRetries.containsKey(request)) {
+        published = nextState.copyWith(
+          attachmentsByMessageId: {
+            ...nextState.attachmentsByMessageId,
+            request!: [
+              for (final attachment
+                  in nextState.attachmentsByMessageId[request] ??
+                      <AssistantAttachment>[])
+                attachment.copyWith(
+                  uploadState: AssistantAttachmentUploadState.error,
+                  failure: AssistantAttachmentFailure.server,
+                ),
+            ],
+          },
+        );
+      }
+      emit(published);
     }
   }
 

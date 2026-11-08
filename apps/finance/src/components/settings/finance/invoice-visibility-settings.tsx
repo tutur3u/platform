@@ -2,9 +2,13 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
-import { Label } from '@tuturuuu/ui/label';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
@@ -184,105 +188,79 @@ export default function InvoiceVisibilitySettings({
   return (
     <div className="space-y-8">
       {/* User Personal Preference Section */}
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <h3 className="font-medium text-lg">
-            {t('personal_invoices_title')}
-          </h3>
-          <p className="text-muted-foreground text-sm">
-            {t('personal_invoices_description')}
-          </p>
-        </div>
+      <SettingsSection
+        title={t('personal_invoices_title')}
+        description={t('personal_invoices_description')}
+      >
+        <SettingItemTab
+          title={t('use_workspace_default_invoices')}
+          description={t('use_workspace_default_invoices_help', {
+            status:
+              (savedWorkspaceValue ?? workspaceDefault)
+                ? tCommon('enabled').toLowerCase()
+                : (tCommon as (key: string) => string)(
+                    'disabled'
+                  ).toLowerCase(),
+          })}
+        >
+          <Switch
+            checked={useWorkspaceDefaultUser}
+            onCheckedChange={(checked) => {
+              if (checked) {
+                handleUseWorkspaceDefault();
+              } else {
+                // When disabling "use workspace default", set to current effective value
+                handleUserToggle(effectiveEnabled);
+              }
+            }}
+            disabled={updateUserConfig.isPending}
+          />
+        </SettingItemTab>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>{t('use_workspace_default_invoices')}</Label>
-              <p className="text-muted-foreground text-xs">
-                {t('use_workspace_default_invoices_help', {
-                  status:
-                    (savedWorkspaceValue ?? workspaceDefault)
-                      ? tCommon('enabled').toLowerCase()
-                      : (tCommon as (key: string) => string)(
-                          'disabled'
-                        ).toLowerCase(),
-                })}
-              </p>
-            </div>
+        {!useWorkspaceDefaultUser && (
+          <SettingItemTab
+            title={t('show_invoices_label')}
+            description={t('show_invoices_personal_help')}
+          >
             <Switch
-              checked={useWorkspaceDefaultUser}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  handleUseWorkspaceDefault();
-                } else {
-                  // When disabling "use workspace default", set to current effective value
-                  handleUserToggle(effectiveEnabled);
-                }
-              }}
+              checked={userEnabled}
+              onCheckedChange={handleUserToggle}
               disabled={updateUserConfig.isPending}
             />
-          </div>
-
-          {!useWorkspaceDefaultUser && (
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <Label>{t('show_invoices_label')}</Label>
-                <p className="text-muted-foreground text-xs">
-                  {t('show_invoices_personal_help')}
-                </p>
-              </div>
-              <Switch
-                checked={userEnabled}
-                onCheckedChange={handleUserToggle}
-                disabled={updateUserConfig.isPending}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      <Separator />
+          </SettingItemTab>
+        )}
+      </SettingsSection>
 
       {/* Workspace Default Section */}
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <h3 className="font-medium text-lg">
-            {t('workspace_invoices_title')}
-          </h3>
-          <p className="text-muted-foreground text-sm">
-            {t('workspace_invoices_description')}
-          </p>
-        </div>
+      <SettingsSection
+        title={t('workspace_invoices_title')}
+        description={t('workspace_invoices_description')}
+      >
+        <SettingItemTab
+          title={t('show_invoices_label')}
+          description={t('show_invoices_workspace_help')}
+        >
+          <Switch
+            checked={workspaceEnabled}
+            onCheckedChange={handleWorkspaceToggle}
+            disabled={updateWorkspaceConfig.isPending}
+          />
+        </SettingItemTab>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <Label>{t('show_invoices_label')}</Label>
-              <p className="text-muted-foreground text-xs">
-                {t('show_invoices_workspace_help')}
-              </p>
-            </div>
-            <Switch
-              checked={workspaceEnabled}
-              onCheckedChange={handleWorkspaceToggle}
-              disabled={updateWorkspaceConfig.isPending}
-            />
-          </div>
-
-          {isWorkspaceDirty && (
-            <button
+        {isWorkspaceDirty && (
+          <SettingsSectionFooter>
+            <Button
               type="button"
               onClick={handleWorkspaceSave}
               disabled={updateWorkspaceConfig.isPending}
-              className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 font-medium text-primary-foreground text-sm shadow hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
             >
               {updateWorkspaceConfig.isPending
                 ? tCommon('saving')
                 : tCommon('save_changes')}
-            </button>
-          )}
-        </div>
-      </div>
+            </Button>
+          </SettingsSectionFooter>
+        )}
+      </SettingsSection>
     </div>
   );
 }

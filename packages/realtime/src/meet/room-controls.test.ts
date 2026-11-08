@@ -54,7 +54,7 @@ describe('persistent room controls', () => {
   it('remembers an admitted identity across leaving and permits host revocation', () => {
     const state = admitted();
     expect(state.approved?.[guestId]).toMatchObject({
-      displayName: 'speaker',
+      displayName: 'speaker (guest)',
       avatarUrl: guest.avatarUrl,
     });
     const left = releaseParticipant(
@@ -291,4 +291,178 @@ it('does not restore a connected participant’s forgotten approval when the roo
   const ended = run(state, { type: 'room.end' }).state;
   expect(canReadRoomNotes(ended, visitor)).toBe(false);
   expect(ended.approved?.[guestId]).toBeUndefined();
+});
+
+it('lets a waiting guest update their lobby display name before host admission', () => {
+  const held = admitOrHold(
+    admitOrHold(createMeetRoomSnapshot(), host, now).state,
+    guest,
+    now
+  );
+  const renamed = run(
+    held.state,
+    { type: 'presence.join', displayName: 'Alex Guest' },
+    guest
+  );
+  expect(renamed.state.waiting[guestId]?.displayName).toBe(
+    'Alex Guest (guest)'
+  );
+  expect(renamed.toManagers).toEqual([
+    {
+      type: 'admission.pending',
+      participants: [
+        expect.objectContaining({
+          userId: guestId,
+          displayName: 'Alex Guest (guest)',
+        }),
+      ],
+    },
+  ]);
+  const approved = run(renamed.state, {
+    type: 'admission.decide',
+    userId: guestId,
+    admit: true,
+  });
+  expect(approved.state.presence[guestId]?.displayName).toBe(
+    'Alex Guest (guest)'
+  );
+});
+
+it('binds lobby renaming to the authenticated sender, ignoring a supplied target', () => {
+  const other = { ...guest, userId: 'other-guest' };
+  const held = admitOrHold(
+    admitOrHold(createMeetRoomSnapshot(), guest, now).state,
+    other,
+    now
+  ).state;
+  const message = meetRealtimeClientMessageSchema.parse({
+    type: 'presence.join',
+    userId: other.userId,
+    displayName: 'Mine',
+  });
+  const renamed = run(held, message, guest).state;
+  expect(renamed.waiting[guestId]?.displayName).toBe('Mine (guest)');
+  expect(renamed.waiting[other.userId]?.displayName).toBe('speaker (guest)');
+});
+
+it('sanitizes lobby names and rejects empty or oversized input', () => {
+  const held = admitOrHold(createMeetRoomSnapshot(), guest, now).state;
+  const message = meetRealtimeClientMessageSchema.parse({
+    type: 'presence.join',
+    displayName: '  A\u0000\u202elex\u2069  ',
+  });
+  expect(run(held, message, guest).state.waiting[guestId]?.displayName).toBe(
+    'Alex (guest)'
+  );
+  for (const displayName of ['x'.repeat(121), ' \u0000\u202e ']) {
+    expect(
+      meetRealtimeClientMessageSchema.safeParse({
+        type: 'presence.join',
+        displayName,
+      }).success
+    ).toBe(false);
+  }
+  for (const displayName of ['x'.repeat(120), '😀'.repeat(60)]) {
+    expect(
+      run(held, { type: 'presence.join', displayName }, guest).state.waiting[
+        guestId
+      ]?.displayName.length
+    ).toBeLessThanOrEqual(120);
+  }
+});
+
+it('freezes a lobby name after admission, including presence replay', () => {
+  const held = admitOrHold(
+    admitOrHold(createMeetRoomSnapshot(), host, now).state,
+    guest,
+    now
+  ).state;
+  const renamed = run(
+    held,
+    { type: 'presence.join', displayName: 'Alex' },
+    guest
+  ).state;
+  const approved = run(renamed, {
+    type: 'admission.decide',
+    userId: guestId,
+    admit: true,
+  }).state;
+  expect(
+    run(approved, { type: 'presence.join', displayName: 'Changed' }, guest)
+      .state.presence[guestId]?.displayName
+  ).toBe('Alex (guest)');
+  const left = releaseParticipant(approved, guestId, 'test').state;
+  expect(
+    run(
+      admitOrHold(left, guest, now).state,
+      { type: 'presence.join', displayName: 'Changed' },
+      guest
+    ).state.presence[guestId]?.displayName
+  ).toBe('Alex (guest)');
+});
+
+it.each(['host', 'Member Name'])(
+  'marks an impersonating guest as guest: %s',
+  (displayName) => {
+    const member = {
+      ...guest,
+      userId: 'member',
+      accountId: 'member',
+      displayName,
+      admission: 'open' as const,
+    };
+    const held = admitOrHold(
+      admitOrHold(
+        admitOrHold(createMeetRoomSnapshot(), host, now).state,
+        member,
+        now
+      ).state,
+      guest,
+      now
+    ).state;
+    const renamed = run(held, { type: 'presence.join', displayName }, guest);
+    expect(renamed.state.waiting[guestId]?.displayName).toBe(
+      `${displayName} (guest)`
+    );
+    expect(renamed.toManagers[0]).toMatchObject({
+      participants: [
+        expect.objectContaining({ displayName: `${displayName} (guest)` }),
+      ],
+    });
+  }
+);
+
+it('marks first-party lobby tokens with an accountId as guests', () => {
+  const visitor = {
+    ...guest,
+    accountId: guestId,
+    displayName: host.displayName,
+  };
+  const held = admitOrHold(
+    admitOrHold(createMeetRoomSnapshot(), host, now).state,
+    visitor,
+    now
+  );
+  expect(held.state.waiting[guestId]?.displayName).toBe('host (guest)');
+  const renamed = run(
+    held.state,
+    { type: 'presence.join', displayName: 'host' },
+    visitor
+  );
+  expect(renamed.state.waiting[guestId]?.displayName).toBe('host (guest)');
+  // An unchanged name does not re-notify managers.
+  expect(renamed.toManagers).toHaveLength(0);
+  const changed = run(
+    renamed.state,
+    { type: 'presence.join', displayName: 'host\u3000\u3000again' },
+    visitor
+  );
+  expect(changed.state.waiting[guestId]?.displayName).toBe(
+    'host again (guest)'
+  );
+  expect(changed.toManagers[0]).toMatchObject({
+    participants: [
+      expect.objectContaining({ displayName: 'host again (guest)' }),
+    ],
+  });
 });

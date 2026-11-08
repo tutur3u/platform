@@ -188,6 +188,11 @@ class IrisFeedCubit extends Cubit<IrisFeedState> {
             nextBefore: () => value.nextBefore,
           ),
         );
+      case IrisErr(:final failure)
+          when failure.kind == IrisFailureKind.notFound:
+        // The relay no longer knows the cursor: there is nothing older to
+        // page back to, so drop it rather than failing the feed.
+        emit(state.copyWith(loadingOlder: false, nextBefore: () => null));
       case IrisErr(:final failure):
         emit(state.copyWith(loadingOlder: false, failure: () => failure));
     }

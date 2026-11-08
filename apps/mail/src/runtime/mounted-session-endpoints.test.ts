@@ -82,7 +82,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-for (const host of ['tuturuuu.com', 'web.staging.tutur3u.com']) {
+for (const host of ['tuturuuu.com', 'web.tutur3u.com']) {
   for (const mode of ['off', 'shadow', 'on']) {
     for (const prefix of variants) {
       for (const suffix of ['', '/', '///?next=%2Fmail%2Flogin']) {
@@ -162,7 +162,7 @@ it.each([
   'verify-app-token-other',
 ])('leaves the neighbouring mounted %s route to dispatch', async (endpoint) => {
   const response = await handleMailRequest(
-    new Request(`https://web.staging.tutur3u.com/mail/api/auth/${endpoint}`),
+    new Request(`https://web.tutur3u.com/mail/api/auth/${endpoint}`),
     env,
     ctx
   );
@@ -193,7 +193,7 @@ it.each(['off', 'shadow', 'on'])(
 it.each([
   'https://tuturuuu.com/api/auth/logout',
   'https://tuturuuu.com/mailbox/api/auth/logout',
-  'https://web.staging.tutur3u.com/calendar/api/auth/logout',
+  'https://web.tutur3u.com/calendar/api/auth/logout',
 ])('rejects the unowned path %s before routing or dispatch', async (url) => {
   const response = await handleMailRequest(new Request(url), env, ctx);
   expect(response.status).toBe(404);
@@ -216,7 +216,7 @@ it.each(['DELETE', 'PUT', 'PATCH'])(
 
 it.each([
   'https://mail.tuturuuu.com/login',
-  'https://web.staging.tutur3u.com/mail/login',
+  'https://web.tutur3u.com/mail/login',
 ])(
   'keeps document security headers after bridge dispatch on %s',
   async (url) => {

@@ -1136,7 +1136,7 @@ export function StudentTestDetailPage({
                       {quizzes.map((q, idx) => {
                         const isAnswered = Boolean(
                           localAnswers[q.id]?.selectedOptionId ||
-                            localAnswers[q.id]?.answer
+                          localAnswers[q.id]?.answer
                         );
                         return (
                           <button

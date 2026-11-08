@@ -7,7 +7,7 @@ describe('Mail host and app mount boundaries', () => {
     ['https://mail.tuturuuu.com/vi/personal/inbox', '/vi/personal/inbox'],
     ['https://tuturuuu.com/mail/vi/personal/inbox', '/vi/personal/inbox'],
     [
-      'https://web.staging.tutur3u.com/mail/api/v1/webhooks/mail/ses',
+      'https://web.tutur3u.com/mail/api/v1/webhooks/mail/ses',
       '/api/v1/webhooks/mail/ses',
     ],
     [

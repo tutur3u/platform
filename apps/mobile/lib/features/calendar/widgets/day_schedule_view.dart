@@ -183,6 +183,7 @@ class _DayScheduleViewState extends State<DayScheduleView> {
                 final availableWidth = constraints.maxWidth - gutterW - 16;
 
                 return SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   key: _timelineViewportKey,
                   controller: _scrollController,
                   // The calendar canvas passes the dock clearance through, so

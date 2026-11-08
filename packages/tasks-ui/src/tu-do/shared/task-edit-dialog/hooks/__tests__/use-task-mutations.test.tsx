@@ -84,9 +84,10 @@ describe('useTaskMutations', () => {
   }
 
   function getPersonalOverlayCacheTask() {
-    return queryClient.getQueryData<Task[]>(['tasks', 'personal-board'])?.[0] as
-      | (Task & { _localMutationAt?: number })
-      | undefined;
+    return queryClient.getQueryData<Task[]>([
+      'tasks',
+      'personal-board',
+    ])?.[0] as (Task & { _localMutationAt?: number }) | undefined;
   }
 
   beforeEach(() => {

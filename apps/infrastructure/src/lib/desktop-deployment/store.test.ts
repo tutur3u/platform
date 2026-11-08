@@ -20,7 +20,6 @@ function database(
       order: () => chain,
       in: () => chain,
       limit: () => chain,
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are deliberately awaitable.
       then: (resolve: (value: unknown) => unknown) =>
         Promise.resolve({
           data: rows[table] ?? [],

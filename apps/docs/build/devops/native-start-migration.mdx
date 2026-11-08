@@ -2,6 +2,7 @@
 title: "Native Start migration runbook"
 description: "How each web app except apps/web moves to TanStack Start + Void + Vite+ on Cloudflare Workers: ownership, the bridge, basePath readiness, acceptance gates, held publication, direct cutover with an instant rollback, and the post-deploy watch."
 updatedAt: '2026-10-25'
+audience: developers
 ---
 
 Every web app except `apps/web` moves to its own TanStack Start + Void + Vite+
@@ -28,6 +29,33 @@ attestation fails closed after forwarding, and does not replace that ownership
 check. These requirements must land before staging is published; source approval
 alone does not authorize publication or provisioning.
 
+## Staging workflow protection preflight
+
+The Web staging publisher and reusable native staging publisher run
+`scripts/ci/wave1-staging-preflight.mjs` before any job references a deployment
+environment or provider secret. The preflight checks both
+`wave1-web-next-staging` and `wave1-web-staging` for Web, or
+`wave1-<app>-staging` for a native app. Each environment must already exist,
+have required reviewers, and allow only the exact `main` branch through a custom
+branch policy. Tags, wildcard patterns, additional policies, missing fields and
+API errors refuse the run. The preflight never creates environments.
+
+Repository `WAVE1_STAGING_PUBLISH_ENABLED` must equal the string `true`.
+Web also requires a nonempty `WEB_STAGING_NEXT_ADMISSION`; native publication
+requires a nonempty `WAVE1_STAGING_PUBLICATION_ADMISSION`. Existing admission
+checks still validate the exact source and artifact. Empty or unset variables
+refuse publication before a protected job starts.
+
+The preflight uses only the automatic GitHub token, with `actions: read` for
+the environment API and `contents: read` for checkout. Provisioning or changing
+protection remains the release owner's responsibility. Protection is checked at
+run admission; owners must preserve it throughout the run.
+
+Verify this gate with
+`node --test scripts/ci/wave1-staging-preflight.test.mjs`. Mocked API tests cover
+missing environments, reviewers and branch restrictions; workflow tests enforce
+the transitive dependency on preflight for every protected or secret-bearing job.
+
 ## Ownership
 
 - **One integration writer per app.** Only that lane edits the app's runtime,
@@ -42,6 +70,25 @@ alone does not authorize publication or provisioning.
   native code, or ignored with a reason.
 - Domain libraries stay framework-independent. Inject request identity,
   storage, navigation and localization at the adapter.
+
+### Request-scoped satellite authentication
+
+`@tuturuuu/satellite/auth-request` exposes the shared satellite session and
+profile helpers without importing Next request globals. Native adapters pass the
+current `request`, the registered `targetApp`, and a request-bound
+`getSupabaseSessionUser` callback. That callback must use the existing verified
+Supabase session resolver; a caller-provided actor ID is not authentication.
+App-session verification retains its target scope and takes precedence over the
+Supabase fallback for session and user reads. Profile reads retain the existing
+central API forwarding and fallback behavior.
+
+Next callers keep `@tuturuuu/satellite/auth`, which obtains headers and the
+Supabase resolver from the Next adapter. The shared Start preset already owns
+the Next aliases, RSC/SSR ports and mount handling; apps should reuse those
+ports rather than create alternate identity or navigation implementations.
+`packages/satellite/src/auth-request.test.ts` covers explicit request/target
+forwarding, rejected identities, profile fallback and interleaved requests;
+`auth.test.ts` covers the Next adapter.
 
 ## basePath readiness
 

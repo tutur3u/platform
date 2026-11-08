@@ -1,0 +1,36 @@
+---
+title: Native-only Web staging
+description: Publish the isolated Web Worker and return an explicit 404 for unmigrated paths.
+---
+
+The owner-provisioned Web staging host is native-only. Paths admitted by the
+native legal and security flags render through Start; the probe stays native.
+All other paths, including login, APIs, assets and disabled native routes,
+return HTTP 404 with a static **Not migrated yet** page and
+`x-tuturuuu-native: not-migrated`. The page supports light and dark themes,
+uses no external assets, disallows indexing and is never cached.
+
+This decision applies only to staging. Production Web retains its existing
+Next deployment and routing. Staging has no Vercel deployment, Next fallback
+origin or container. The Worker verifies Access before serving native content
+or the 404; local OPTIONS handling retains the existing staging CORS policy.
+A static 404 needs no upstream Supabase attestation. The staging public build
+identity, cookie isolation, request sanitizers and client-IP trust are retained.
+
+Dispatch `wave1-web-staging.yaml` from main with a full admitted source SHA.
+Admission requires green candidate qualification and an exact
+`WAVE1_STAGING_PUBLICATION_ADMISSION` record. The record uses the shared staging
+schema with `app: web`, exact `sourceSha` and `artifactSha256`; there is no
+`nextDeploymentId` field. Seal the candidate, restore and accept the same emitted
+bytes, then publish. If sealing produces a new digest, the release owner admits
+that exact digest and reruns. No provider credential enters the build steps.
+
+The publisher retains stop fences, exact artifact admission, protected publishing
+environment, Access ingress preflight, attempt ledger, bounded upload and
+post-publication readback. It never creates domains, changes Access or DNS, or
+sets serving intent. A failed ingress check rolls back only the staging Worker.
+Native route flags default off; enabling them is a separate release decision.
+
+Regression coverage lives in `scripts/ci/wave1-web-staging-workflow.test.js`,
+`wave1-web-publication.test.js`, `wave1-web-seal.test.mjs`, and the
+`apps/web/cloudflare` handler, native document and emitted runtime tests.

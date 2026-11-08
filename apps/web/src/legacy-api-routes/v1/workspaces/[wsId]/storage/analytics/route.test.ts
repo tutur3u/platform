@@ -90,9 +90,8 @@ describe('workspace storage analytics route', () => {
   it('returns 401 when permissions cannot be resolved', async () => {
     mocks.getPermissions.mockResolvedValue(null);
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/analytics/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/analytics/route');
 
     const response = await GET(
       new NextRequest(
@@ -110,9 +109,8 @@ describe('workspace storage analytics route', () => {
       withoutPermission: (permission: string) => permission === 'manage_drive',
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/analytics/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/analytics/route');
 
     const response = await GET(
       new NextRequest(
@@ -145,9 +143,8 @@ describe('workspace storage analytics route', () => {
       },
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/storage/analytics/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/storage/analytics/route');
 
     const response = await GET(
       new NextRequest(

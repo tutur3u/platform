@@ -48,6 +48,7 @@ class YearView extends StatelessWidget {
     // The calendar canvas passes the dock clearance through; the year grid
     // reads it via the page insets.
     return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverAppPage(
           kind: AppPageKind.root,

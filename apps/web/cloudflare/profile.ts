@@ -1,9 +1,11 @@
 import { cloudflareAccessIssuer } from '@tuturuuu/utils/cloudflare-access';
+import { isStagingAppHostname } from '@tuturuuu/utils/staging-hosts';
 
 export const stagingProfile = {
-  host: 'web.staging.tutur3u.com',
+  host: 'web.tutur3u.com',
   zone: 'tutur3u.com',
   cookieDomain: '.staging.tutur3u.com',
+  cookiePrefix: '__Host-',
   supabaseUrl: 'https://fxefojytwimjiqxseqag.supabase.co',
   supabaseRef: 'fxefojytwimjiqxseqag',
   upstreamProjectHeader: 'x-tuturuuu-staging-supabase-ref',
@@ -12,11 +14,13 @@ export const stagingProfile = {
 
 export interface WebCandidateEnv {
   WEB_START_CANDIDATE?: string;
+  WEB_STAGING_SOURCE_SHA?: string;
   WEB_START_NATIVE_LEGAL?: string;
   WEB_START_NATIVE_SECURITY?: string;
   NEXT_FALLBACK_ORIGIN?: string;
   NEXT_PUBLIC_SUPABASE_URL?: string;
   AUTH_COOKIE_DOMAIN?: string;
+  AUTH_COOKIE_PREFIX?: string;
   TRUSTED_PROXY_ORIGIN_SECRET?: string;
   /** Vercel Protection Bypass for Automation; sent only to the admitted origin. */
   VERCEL_AUTOMATION_BYPASS_SECRET?: string;
@@ -61,11 +65,42 @@ export function admittedOrigin(request: Request, env: WebCandidateEnv) {
       upstream.hostname === 'tuturuuu.com' ||
       upstream.hostname.endsWith('.tuturuuu.com') ||
       (!/^tuturuuu(?:-[a-z0-9-]+)?\.vercel\.app$/u.test(upstream.hostname) &&
-        !upstream.hostname.endsWith('.staging.tutur3u.com'))
+        !isStagingAppHostname(upstream.hostname))
     )
       return null;
     return upstream.origin;
   } catch {
     return null;
   }
+}
+
+/** Native staging needs Access and its isolated identity, never an upstream. */
+export function admittedNativeStaging(request: Request, env: WebCandidateEnv) {
+  return (
+    env.WEB_START_CANDIDATE === 'staging' &&
+    new URL(request.url).origin === `https://${stagingProfile.host}` &&
+    env.NEXT_PUBLIC_SUPABASE_URL === stagingProfile.supabaseUrl &&
+    !env.AUTH_COOKIE_DOMAIN &&
+    env.AUTH_COOKIE_PREFIX === stagingProfile.cookiePrefix &&
+    !!cloudflareAccessIssuer(env.CF_ACCESS_TEAM_DOMAIN) &&
+    !!env.CF_ACCESS_AUD?.trim()
+  );
+}
+
+/** Native staging has no shared parent cookie and only accepts scoped app sessions. */
+export function hasHostOnlyStagingCookies(headers: Headers) {
+  return headers.getSetCookie().every((cookie) => {
+    if (/;\s*domain\s*=/iu.test(cookie)) return false;
+    const name = cookie.split('=', 1)[0] ?? '';
+    if (
+      /^(?:__Host-)?tuturuuu_(?:web_)?app_session(?:_refresh)?$/u.test(name) &&
+      !name.startsWith('__Host-')
+    )
+      return false;
+    return (
+      !name.startsWith('__Host-') ||
+      (/;\s*Secure\s*(?:;|$)/iu.test(cookie) &&
+        /;\s*Path=\/\s*(?:;|$)/iu.test(cookie))
+    );
+  });
 }

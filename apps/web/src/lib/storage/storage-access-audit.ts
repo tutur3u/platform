@@ -33,9 +33,8 @@ export function getStorageAccessAuditor(): StorageAccessAuditor {
     async insert(rows) {
       // The private schema is service-role only; generated types do not
       // include this append-only table, so use the untyped schema client.
-      const { createAdminClient } = await import(
-        '@tuturuuu/supabase/next/server'
-      );
+      const { createAdminClient } =
+        await import('@tuturuuu/supabase/next/server');
       const sbAdmin = (await createAdminClient()) as unknown as SupabaseClient;
       const { error } = await sbAdmin
         .schema('private')

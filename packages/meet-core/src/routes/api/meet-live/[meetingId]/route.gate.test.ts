@@ -76,6 +76,7 @@ const bind = (allowlist?: string) =>
       MEET_REALTIME_TOKEN_SECRET: 'secret',
       GOOGLE_GENERATIVE_AI_API_KEY: 'key',
       MEET_AI_ENABLED_WORKSPACE_IDS: allowlist,
+      MEET_AI_DISABLED: allowlist ? undefined : 'true',
     },
   });
 

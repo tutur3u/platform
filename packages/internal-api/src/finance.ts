@@ -213,8 +213,7 @@ export interface WalletCheckpointAuditStatus {
   wallet_id: string;
 }
 
-export interface WalletCheckpointHistoryInterval
-  extends WalletCheckpointInterval {
+export interface WalletCheckpointHistoryInterval extends WalletCheckpointInterval {
   currency: string;
   wallet_id: string;
   wallet_name: string | null;
@@ -265,8 +264,7 @@ export interface WalletCheckpointSummaryResponse {
   wallets: WalletCheckpointSummaryWallet[];
 }
 
-export interface WalletCheckpointHistoryResponse
-  extends WalletCheckpointSummaryResponse {
+export interface WalletCheckpointHistoryResponse extends WalletCheckpointSummaryResponse {
   audit_statuses: WalletCheckpointAuditStatus[];
   checkpoints: WalletCheckpoint[];
   intervals: WalletCheckpointHistoryInterval[];
@@ -746,8 +744,7 @@ export interface RecurringTransactionPayload {
   end_date?: string | null;
 }
 
-export interface RecurringTransactionRecord
-  extends RecurringTransactionPayload {
+export interface RecurringTransactionRecord extends RecurringTransactionPayload {
   id: string;
   next_occurrence: string;
   is_active: boolean;
@@ -1049,8 +1046,7 @@ export type {
 } from './finance-invoice-contracts';
 
 import type { CreateFinanceInvoicePayload } from './finance-invoice-contracts';
-export interface CreateSubscriptionFinanceInvoicePayload
-  extends CreateFinanceInvoicePayload {
+export interface CreateSubscriptionFinanceInvoicePayload extends CreateFinanceInvoicePayload {
   customer_id: string;
   group_ids: string[];
   prepaid_month_count?: number;

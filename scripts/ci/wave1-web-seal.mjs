@@ -1,12 +1,4 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Direct CI entrypoint; credentials never enter Turbo builds.
-// Seals the Web Start candidate with the verified Next fallback (design §2.2).
-// The fallback origin is a sealed var, so the artifact digest binds the exact
-// Worker/Next pair that the Worker admission must name.
-//
-//   prepare  <sha> <deploymentId> <origin>  # after next-verify, credential-free
-//   restored <sha>                          # recreate the Void pointer, verify
-//   verify   <sha>                          # byte and profile re-verification
-//
+// Seals the native-only staging Web artifact; no upstream deployment.
 // Append `--dry-run` to print the intended actions; nothing is read or written.
 import assert from 'node:assert/strict';
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -19,13 +11,12 @@ export const WEB_APP_ROOT = 'apps/web/cloudflare';
 
 function report(env, receipt) {
   const digest = artifactDigest(receipt);
-  const { deploymentId, origin } = receipt.profile.nextFallback;
   if (env.GITHUB_OUTPUT)
     appendFileSync(env.GITHUB_OUTPUT, `artifact_sha256=${digest}\n`);
   if (env.GITHUB_STEP_SUMMARY)
     appendFileSync(
       env.GITHUB_STEP_SUMMARY,
-      `## Web issuer artifact\n\n- sourceSha: \`${receipt.sha}\`\n- artifactSha256: \`${digest}\`\n- nextDeploymentId: \`${deploymentId}\`\n- NEXT_FALLBACK_ORIGIN: \`${origin}\`\n\nAdmit exactly this pair in WAVE1_STAGING_PUBLICATION_ADMISSION (app \`web\`), then re-run failed jobs.\n`
+      `## Web issuer artifact\n\n- sourceSha: \`${receipt.sha}\`\n- artifactSha256: \`${digest}\`\n\nAdmit exactly this artifact in WAVE1_STAGING_PUBLICATION_ADMISSION (app \`web\`), then re-run failed jobs.\n`
     );
   return digest;
 }
@@ -35,16 +26,10 @@ export function main(
   env = process.env,
   root = WEB_APP_ROOT
 ) {
-  const [mode, sha, deploymentId, origin] = argv;
+  const [mode, sha] = argv;
   if (mode === 'prepare') {
-    assert.ok(
-      !env.CLOUDFLARE_STAGING_API_TOKEN && !env.VERCEL_TOKEN_WEB_STAGING,
-      'Sealing is credential-free'
-    );
-    return report(
-      env,
-      prepare(root, 'web', 'staging', undefined, sha, { deploymentId, origin })
-    );
+    assert.ok(!env.CLOUDFLARE_STAGING_API_TOKEN, 'Sealing is credential-free');
+    return report(env, prepare(root, 'web', 'staging', undefined, sha));
   }
   if (mode === 'restored') {
     // The archive carries dist and the seal; restore the Void pointer the
@@ -68,13 +53,13 @@ export function main(
 
 // Prints the intended actions without touching the filesystem (`--dry-run`).
 export function describeSealPlan(argv, root = WEB_APP_ROOT) {
-  const [mode, sha, deploymentId, origin] = argv;
+  const [mode, sha] = argv;
   if (mode === 'prepare')
     return [
-      `[dry-run] Would seal the Web Start candidate under ${root}:`,
-      `  - bind source ${sha} to Next deployment ${deploymentId} at ${origin}`,
+      `[dry-run] Would seal the native staging Web artifact under ${root}:`,
+      `  - bind source ${sha} for app web, environment staging`,
       '  - write the sealed artifact and append artifact_sha256 to $GITHUB_OUTPUT',
-      '  - require no CLOUDFLARE_STAGING_API_TOKEN / VERCEL_TOKEN_WEB_STAGING',
+      '  - require no CLOUDFLARE_STAGING_API_TOKEN',
       '[dry-run] Nothing was written.',
     ];
   if (mode === 'restored')

@@ -6,6 +6,7 @@ import {
   freezeLinkedLessonContent,
   LINKED_CONTENT_NOT_STORED,
 } from '@/lib/tutoring/linked-content';
+import { resolveTutoringWriteScope } from '@/lib/tutoring/read-scope';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 
 interface Params {
@@ -14,8 +15,8 @@ interface Params {
 
 export async function POST(request: Request, { params }: Params) {
   const { wsId, id } = await params;
-  const { normalizedWsId, permissions, user } =
-    await resolveTutoringRouteAccess(request, wsId);
+  const access = await resolveTutoringRouteAccess(request, wsId);
+  const { normalizedWsId, permissions, user } = access;
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -46,17 +47,45 @@ export async function POST(request: Request, { params }: Params) {
   const resolvedAt =
     parsed.data.attendanceStatus === 'DONE' ? new Date().toISOString() : null;
   const sbAdmin = await createAdminClient();
+  const scope = await resolveTutoringWriteScope({ request, access, sbAdmin });
+  if (!scope.allowed)
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   const tutoringSessionsClient = sbAdmin.schema('private');
-  const { data, error } = await tutoringSessionsClient
+  // Without the manager permission only the actor's own sessions are in scope;
+  // the same filter pins the write so a reassignment cannot slip past it.
+  if (scope.teacherId) {
+    const { data: owned, error: lookupError } = await tutoringSessionsClient
+      .from('workspace_tutoring_sessions')
+      .select('id')
+      .eq('id', id)
+      .eq('ws_id', normalizedWsId)
+      .eq('teacher_user_id', scope.teacherId)
+      .maybeSingle();
+    if (lookupError) {
+      console.error('Failed to load tutoring session for marking', lookupError);
+      return NextResponse.json(
+        { message: 'Failed to mark session' },
+        { status: 500 }
+      );
+    }
+    if (!owned) {
+      return NextResponse.json(
+        { message: 'Session not found' },
+        { status: 404 }
+      );
+    }
+  }
+  let updateQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .update({
       attendance_status: parsed.data.attendanceStatus,
       resolved_at: resolvedAt,
     })
     .eq('id', id)
-    .eq('ws_id', normalizedWsId)
-    .select('id')
-    .maybeSingle();
+    .eq('ws_id', normalizedWsId);
+  if (scope.teacherId)
+    updateQuery = updateQuery.eq('teacher_user_id', scope.teacherId);
+  const { data, error } = await updateQuery.select('id').maybeSingle();
 
   if (error) {
     console.error('Failed to mark tutoring session', error);

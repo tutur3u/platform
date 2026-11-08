@@ -2,6 +2,7 @@
 title: "TanStack Start And Rust Migration"
 description: "Migration contract for replacing apps/web with apps/tanstack-web plus the Rust backend"
 updatedAt: "2026-10-02"
+audience: developers
 ---
 
 <Warning>
@@ -25,7 +26,7 @@ contracts documented in `apps/backend/api/openapi.yaml`.
   combined `rust-backend.yml` CI/Cloudflare workflow, route-manifest CI, and
   automatic TanStack Vercel production builds are disabled in `tuturuuu.ci.ts`.
   Direct TanStack preview/production dispatches also skip their build jobs.
-  Shared type-check, unit-test, coverage, and Biome workflows exclude both
+  Shared type-check, unit-test, coverage, and Oxc workflows exclude both
   migration source trees; Docker CI skips the TanStack/Rust image and dual-stack
   steps; and maintained Next.js E2E disables the Rust support service while the
   migration matrix remains skipped. `apps/backend` is not deployed and receives
@@ -453,7 +454,7 @@ bun migration:tanstack:routes
 This command preserves the TanStack Start `Register` augmentation footer that
 `bun check:cloudflare` validates for the Cloudflare-compatible Start runtime,
 then formats the generated `routeTree.gen.ts` with the generator's isolated
-Biome config so repeated route-tree generation does not leave persistent dirty
+Oxc config so repeated route-tree generation does not leave persistent dirty
 output. The Rust/TanStack Cloudflare workflow runs
 `scripts/generate-tanstack-route-tree.test.js` whenever the generator changes.
 

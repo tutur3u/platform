@@ -46,9 +46,8 @@ test('pinned adapter transforms the installed Next CJS and ESM module loading co
 });
 
 test('pinned adapter transforms the installed Next production scheduler', () => {
-  const path = require.resolve(
-    'next/dist/compiled/next-server/app-page-turbo.runtime.prod.js'
-  );
+  const path =
+    require.resolve('next/dist/compiled/next-server/app-page-turbo.runtime.prod.js');
   assert.ok(patches.cacheComponentsSchedulerFileFilter.test(path));
   const patched = patches.patchCacheComponentsScheduler(
     readFileSync(path, 'utf8'),
@@ -81,9 +80,8 @@ test('candidate preserves both repository PPR resume and manifest fixes', () => 
 });
 
 test('transformed Next signal retains constructor arguments and isolates request subscriptions', async () => {
-  const path = require.resolve(
-    'next/dist/server/app-render/module-loading/track-module-loading.instance.js'
-  );
+  const path =
+    require.resolve('next/dist/server/app-render/module-loading/track-module-loading.instance.js');
   const contextKey = Symbol.for('__cloudflare-context__');
   const scopes = [{}, {}];
   const constructors = [];

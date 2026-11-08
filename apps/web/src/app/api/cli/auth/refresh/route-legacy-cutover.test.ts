@@ -72,10 +72,16 @@ describe('CLI refresh across the replay-store cutover', () => {
     vi.mocked(createAdminClient).mockResolvedValue({
       auth: {
         admin: {
-          getUserById: vi.fn().mockResolvedValue({
-            data: { user: { email: 'agent@example.com', id: 'user' } },
+          getUserById: vi.fn(async (id: string) => ({
+            data: {
+              user: {
+                email: 'agent@example.com',
+                email_confirmed_at: '2026-06-01T00:00:00.000Z',
+                id,
+              },
+            },
             error: null,
-          }),
+          })),
         },
       },
     } as never);

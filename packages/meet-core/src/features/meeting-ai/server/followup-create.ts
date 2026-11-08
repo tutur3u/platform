@@ -79,7 +79,7 @@ async function createFollowupAttempt(
   if (!(await meetAiAvailable(access.wsId)))
     throw new MeetAiError(
       403,
-      'Meeting AI is not available for this workspace',
+      'Meet AI is temporarily unavailable',
       'MEET_AI_WORKSPACE_NOT_ENABLED'
     );
   if (input.userId !== access.user.id)

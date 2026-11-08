@@ -12,8 +12,10 @@ import {
 } from '../../dropdown-menu';
 import type { Column } from './data-table';
 
-interface DataTableColumnHeaderProps<TData extends RowData, TValue>
-  extends React.HTMLAttributes<HTMLDivElement> {
+interface DataTableColumnHeaderProps<
+  TData extends RowData,
+  TValue,
+> extends React.HTMLAttributes<HTMLDivElement> {
   t: any;
   column: Column<TData, TValue>;
   title?: string;

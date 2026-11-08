@@ -11,6 +11,8 @@ const codes = new Set([
   'MEET_AI_CREDITS_DAILY_LIMIT',
   'MEET_AI_MODEL_NOT_ON_PLAN',
   'MEET_AI_CREDITS_UNAVAILABLE',
+  'MEET_AI_RATE_LIMITED',
+  'MEET_AI_LIMITER_UNAVAILABLE',
 ]);
 const creditReasons: Record<string, MeetingAiCreditReason> = {
   MEET_AI_CREDITS_EXHAUSTED: 'credits_exhausted',

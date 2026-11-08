@@ -363,3 +363,17 @@ export async function listTutoringTeachers(
     totalPages: number;
   }>(`${basePath(workspaceId)}/teachers`, { cache: 'no-store', query: params });
 }
+
+export { calculateTutoringPayroll } from './tutoring-payroll';
+export type TutoringPayrollReportRow = ReturnType<
+  typeof import('./tutoring-payroll').calculateTutoringPayroll
+>[number];
+export async function getTutoringPayroll(
+  workspaceId: string,
+  params: InternalApiQuery,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: TutoringPayrollReportRow[];
+  }>(`${basePath(workspaceId)}/payroll`, { cache: 'no-store', query: params });
+}

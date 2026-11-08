@@ -59,6 +59,8 @@ function utf8Bytes(value: string) {
 function createBudget() {
   let bytes = 0;
   return (value: string) => {
+    if (value.length > MAX_ACTION_BYTES - bytes)
+      throw new ActionTooLargeError();
     bytes += utf8Bytes(value);
     if (bytes > MAX_ACTION_BYTES) throw new ActionTooLargeError();
   };
@@ -173,9 +175,8 @@ export async function installServerActionCallback(
   call: (input: ServerActionCall) => Promise<unknown>
 ) {
   if (typeof window === 'undefined') return;
-  const { encodeReply, setServerCallback } = await import(
-    '@vitejs/plugin-rsc/browser'
-  );
+  const { encodeReply, setServerCallback } =
+    await import('@vitejs/plugin-rsc/browser');
   setServerCallback(async (id: string, args: unknown[]) => {
     const input = await encodeActionCall(id, await encodeReply(args));
     const result = (await call(input)) as ServerActionResult | undefined;
@@ -188,9 +189,8 @@ export async function runServerAction(
   input: ServerActionCall
 ): Promise<ServerActionResult> {
   const reply = decodeActionCall(input);
-  const { decodeReply, loadServerAction } = await import(
-    '@vitejs/plugin-rsc/rsc'
-  );
+  const { decodeReply, loadServerAction } =
+    await import('@vitejs/plugin-rsc/rsc');
   const action: unknown = await loadServerAction(input.id);
   if (!isRegisteredAction(action, input.id))
     throw new Error('Unknown server action');

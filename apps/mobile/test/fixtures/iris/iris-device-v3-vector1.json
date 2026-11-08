@@ -1,0 +1,26 @@
+{
+  "name": "tuturuuu-iris-device-v3 shared vector 1 (2026-11-02, Forge)",
+  "note": "TEST-ONLY key; never enrol it. ECDSA is randomized: app tests must VERIFY sig_raw_b64url against public_key_spki_b64url, and assert canonical bytes/sha256 exactly; do not compare freshly produced signatures.",
+  "inputs": {
+    "method": "POST",
+    "path": "/v1/iris/send?note=a+b&dir=x%2Fy",
+    "body": "{\"text\":\"hi Lisa / test\"}",
+    "ts": "1793550000",
+    "nonce": "0123456789abcdef0123456789abcdef",
+    "deviceId": "5f0c6a52-3a7e-4d2b-9c1e-8b7a6d5e4f30",
+    "idempotencyKey": "9b2d7c41-6e3f-4a58-8d90-1c2b3a4f5e6d"
+  },
+  "body_sha256_hex": "90779c7d865760376317cbd63dadfa2b9cde7e49827fc24aed08cd40c970d56f",
+  "canonical": "tuturuuu-iris-device-v3\nPOST\n/v1/iris/send?note=a+b&dir=x%2Fy\n90779c7d865760376317cbd63dadfa2b9cde7e49827fc24aed08cd40c970d56f\n1793550000\n0123456789abcdef0123456789abcdef\n5f0c6a52-3a7e-4d2b-9c1e-8b7a6d5e4f30\n9b2d7c41-6e3f-4a58-8d90-1c2b3a4f5e6d",
+  "canonical_sha256_hex": "8f88b151b8538609e621328f2b4d449133008a286bfe4e55879cf1bd534659b0",
+  "headers": {
+    "X-Iris-Ts": "1793550000",
+    "X-Iris-Nonce": "0123456789abcdef0123456789abcdef",
+    "Idempotency-Key": "9b2d7c41-6e3f-4a58-8d90-1c2b3a4f5e6d",
+    "X-Iris-Sig": "pxupusO9FoCy8tYbQ9xnDc74kRB7mOqq_wOx6EOQFjyogSup-Dlf05I13rv8ERShF1scHA5_F1dEFjat1zdHmQ"
+  },
+  "public_key_spki_b64url": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEtgClwyUjBZxnyRk9QMAoUXzrCsyY9GsBWakS-abTB10FkAs0QgPvrBxa8o7bNC_4xzUmlDxa2MSTTPCeZPiKkA",
+  "fingerprint_sha256_hex": "8ca5d753825f390baeb0f12cb6ebf860f15af6fd3874a0426039d5145d4c24d4",
+  "sig_raw_b64url": "pxupusO9FoCy8tYbQ9xnDc74kRB7mOqq_wOx6EOQFjyogSup-Dlf05I13rv8ERShF1scHA5_F1dEFjat1zdHmQ",
+  "sig_der_b64url": "MEYCIQCnG6m6w70WgLLy1htD3GcNzviREHuY6qr_A7HoQ5AWPAIhAKiBK6n4OV_TkjXeu_wRFKEXWxwcDn8XV0QWNq3XN0eZ"
+}

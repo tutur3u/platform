@@ -337,6 +337,75 @@ describe('hitWindows', () => {
       ])
     ).resolves.toMatchObject({ ok: false, resetAt: 90_000, subjectIndex: 1 });
   });
+
+  it('sends a weighted cost only when one is given', async () => {
+    const sent: GuardRpc[] = [];
+    const client = createAbuseGuardClient({
+      family: 'meet',
+      pepper: PEPPER,
+      transport: async (rpc) => {
+        sent.push(rpc);
+        const window = { remaining: 1, resetAt: 1 };
+        return {
+          v: 1,
+          steps: [
+            {
+              results: [
+                {
+                  op: 'win.hit',
+                  ok: true,
+                  resetAt: 1,
+                  windows: [window, window],
+                },
+              ],
+            },
+          ],
+        };
+      },
+    });
+    await client.hitWindows([
+      {
+        partition: 'actor:a',
+        windows: [
+          { key: 'req', limit: 5, windowMs: 60_000, algo: 'fixed' },
+          {
+            key: 'audio',
+            limit: 1800,
+            windowMs: 600_000,
+            algo: 'fixed',
+            cost: 15,
+          },
+        ],
+      },
+    ]);
+    const cmd = sent[0]?.steps[0]?.cmds[0];
+    expect(cmd?.op).toBe('win.hit');
+    const windows = cmd?.op === 'win.hit' ? cmd.windows : [];
+    expect(windows[0]).not.toHaveProperty('cost');
+    expect(windows[1]).toMatchObject({ cost: 15 });
+  });
+
+  it('refuses an invalid cost before sending anything', async () => {
+    const transport = vi.fn();
+    const client = createAbuseGuardClient({
+      family: 'meet',
+      pepper: PEPPER,
+      transport,
+    });
+    for (const cost of [0, -1, 1.5, 1_000_001]) {
+      await expect(
+        client.hitWindows([
+          {
+            partition: 'actor:a',
+            windows: [
+              { key: 'a', limit: 5, windowMs: 60_000, algo: 'fixed', cost },
+            ],
+          },
+        ])
+      ).rejects.toMatchObject({ code: 'bad_request' });
+    }
+    expect(transport).not.toHaveBeenCalled();
+  });
 });
 
 describe('createBindingGuardTransport', () => {

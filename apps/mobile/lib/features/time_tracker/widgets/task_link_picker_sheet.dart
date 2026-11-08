@@ -16,6 +16,8 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+part 'task_link_picker_list.dart';
+
 Future<void> showTaskLinkPickerSheet({
   required BuildContext context,
   required TaskRepository taskRepository,
@@ -34,6 +36,8 @@ Future<void> showTaskLinkPickerSheet({
     ),
   );
 }
+
+enum _TaskLinkLoadMode { idle, cold, refresh }
 
 class TaskLinkPickerSheet extends StatefulWidget {
   const TaskLinkPickerSheet({
@@ -65,7 +69,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
 
   final List<TaskLinkOption> _tasks = <TaskLinkOption>[];
   bool _assignedToMeOnly = true;
-  bool _isLoadingInitial = false;
+  _TaskLinkLoadMode _loadMode = _TaskLinkLoadMode.idle;
   bool _isLoadingMore = false;
   bool _hasMore = true;
   int _offset = 0;
@@ -110,16 +114,16 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
     await _closeSheet(context);
   }
 
-  Future<void> _loadInitial() async {
+  Future<void> _loadInitial({bool refresh = false}) async {
     final requestId = ++_requestVersion;
     setState(() {
-      _isLoadingInitial = true;
+      _loadMode = refresh ? _TaskLinkLoadMode.refresh : _TaskLinkLoadMode.cold;
       _isLoadingMore = false;
       _errorMessage = null;
       _offset = 0;
       _totalCount = 0;
       _hasMore = true;
-      _tasks.clear();
+      if (!refresh) _tasks.clear();
     });
 
     try {
@@ -144,7 +148,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
         _offset = loadedTasks.length;
         _totalCount = totalCount;
         _hasMore = _offset < totalCount;
-        _isLoadingInitial = false;
+        _loadMode = _TaskLinkLoadMode.idle;
       });
     } on ApiException catch (error) {
       if (!mounted || requestId != _requestVersion) {
@@ -152,7 +156,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
       }
       final message = error.message.trim();
       setState(() {
-        _isLoadingInitial = false;
+        _loadMode = _TaskLinkLoadMode.idle;
         _errorMessage = message.isNotEmpty
             ? message
             : context.l10n.commonSomethingWentWrong;
@@ -162,14 +166,14 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
         return;
       }
       setState(() {
-        _isLoadingInitial = false;
+        _loadMode = _TaskLinkLoadMode.idle;
         _errorMessage = context.l10n.commonSomethingWentWrong;
       });
     }
   }
 
   Future<void> _loadMore() async {
-    if (_isLoadingInitial || _isLoadingMore || !_hasMore) {
+    if (_loadMode != _TaskLinkLoadMode.idle || _isLoadingMore || !_hasMore) {
       return;
     }
 
@@ -302,7 +306,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
                         onTap: () => _toggleQuickFilter(false),
                       ),
                       const Spacer(),
-                      if (_isLoadingInitial)
+                      if (_loadMode != _TaskLinkLoadMode.idle)
                         const SizedBox(
                           width: 14,
                           height: 14,
@@ -342,86 +346,6 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
           );
         },
       ),
-    );
-  }
-
-  Widget _buildTaskList(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
-
-    if (_isLoadingInitial && _tasks.isEmpty) {
-      return const AppLoadingIndicator.page();
-    }
-
-    if (_errorMessage != null && _tasks.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 24,
-                color: theme.colorScheme.destructive,
-              ),
-              const shad.Gap(8),
-              Text(
-                _errorMessage ?? l10n.commonSomethingWentWrong,
-                textAlign: TextAlign.center,
-              ),
-              const shad.Gap(10),
-              shad.SecondaryButton(
-                onPressed: () => unawaited(_loadInitial()),
-                child: Text(l10n.commonRetry),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_tasks.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Text(
-            l10n.timerTaskPickerNoMatchingTasks,
-            textAlign: TextAlign.center,
-            style: theme.typography.textMuted,
-          ),
-        ),
-      );
-    }
-
-    final itemCount = _tasks.length + (_isLoadingMore ? 1 : 0);
-    return ListView.separated(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      itemCount: itemCount,
-      separatorBuilder: (_, _) => const shad.Gap(8),
-      itemBuilder: (context, index) {
-        if (index >= _tasks.length) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 10),
-            child: Center(
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: NovaLoadingIndicator(size: 20),
-              ),
-            ),
-          );
-        }
-
-        final task = _tasks[index];
-        final selected = task.id == widget.selectedTaskId;
-        return _TaskOptionCard(
-          task: task,
-          selected: selected,
-          onTap: () => unawaited(_selectTask(context, task)),
-        );
-      },
     );
   }
 }

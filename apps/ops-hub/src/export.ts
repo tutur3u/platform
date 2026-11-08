@@ -43,6 +43,7 @@ export function exportPage(
     rows: rows.map((row) => ({
       cursor: row.cursor,
       ...(row.kind ? { series: row.kind } : {}),
+      // Export keeps the v2 data as stored; optional org is deliberately excluded.
       data: JSON.parse(row.data),
     })),
     nextAfter: rows.length === 200 ? (rows.at(-1)?.cursor ?? null) : null,

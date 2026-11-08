@@ -81,9 +81,8 @@ describe('external project team access routes', () => {
   });
 
   it('loads team context through external project access', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/members/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/members/route');
 
     const response = await GET(
       new Request(
@@ -109,15 +108,9 @@ describe('external project team access routes', () => {
   it('loads people, access levels, and defaults without workspace settings routes', async () => {
     const [{ GET: getMembers }, { GET: getRoles }, { GET: getDefaults }] =
       await Promise.all([
-        import(
-          '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/members/enhanced/route'
-        ),
-        import(
-          '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/members/roles/route'
-        ),
-        import(
-          '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/members/roles/default/route'
-        ),
+        import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/members/enhanced/route'),
+        import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/members/roles/route'),
+        import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/members/roles/default/route'),
       ]);
 
     const membersResponse = await getMembers(
@@ -165,9 +158,8 @@ describe('external project team access routes', () => {
       ok: false,
       response: Response.json({ error: 'Forbidden' }, { status: 403 }),
     });
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/members/enhanced/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/members/enhanced/route');
 
     const response = await GET(
       new Request(

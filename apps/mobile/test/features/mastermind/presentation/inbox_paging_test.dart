@@ -13,8 +13,7 @@ MastermindInboxModel _model({int decisions = 5, int actions = 0}) =>
       parsedSnapshot(
         inboxJson([
           for (var i = 1; i <= decisions; i++) inboxItem(i),
-          for (var i = 1; i <= actions; i++)
-            inboxItem(1000 + i, kind: 'action'),
+          for (var i = 1; i <= actions; i++) inboxItem(1000 + i, kind: 'fyi'),
         ], security: false),
       ),
     );

@@ -12,7 +12,7 @@ async function fixture(callback) {
     for (const flavor of ['development', 'staging', 'production']) {
       await writeFile(
         join(root, `macos/Runner/GoogleService-Info-${flavor}.plist`),
-        `<plist><dict><key>GOOGLE_APP_ID</key><string>app-${flavor}</string><key>PROJECT_ID</key><string>tuturuuu-mobile</string></dict></plist>`
+        `<plist><dict><key>GOOGLE_APP_ID</key><string>app-${flavor}</string><key>PROJECT_ID</key><string>${flavor === 'development' ? 'tuturuuu-mobile-dev' : 'tuturuuu-mobile'}</string></dict></plist>`
       );
     }
     await callback(root);
@@ -39,6 +39,8 @@ test('prepares all macOS configurations while preserving other platforms', () =>
     assert.equal(Object.keys(configs).length, 9);
     assert.equal(configs['Release-production'].appId, 'app-production');
     assert.equal(configs['Debug-development'].uploadDebugSymbols, false);
+    assert.equal(configs['Debug-development'].projectId, 'tuturuuu-mobile-dev');
+    assert.equal(configs['Release-staging'].projectId, 'tuturuuu-mobile');
     assert.equal(
       await readFile(
         join(root, 'macos/Runner/GoogleService-Info.plist'),
@@ -63,4 +65,13 @@ test('rejects an unexpected Firebase project without overwriting metadata', () =
       await readFile(join(root, 'firebase.json'), 'utf8'),
       '{"existing":true}'
     );
+  }));
+
+test('rejects the production project for the development flavor', () =>
+  fixture(async (root) => {
+    await writeFile(
+      join(root, 'macos/Runner/GoogleService-Info-development.plist'),
+      '<plist><key>GOOGLE_APP_ID</key><string>app</string><key>PROJECT_ID</key><string>tuturuuu-mobile</string></plist>'
+    );
+    await assert.rejects(prepareMacos(root), /Invalid macOS Firebase identity/);
   }));

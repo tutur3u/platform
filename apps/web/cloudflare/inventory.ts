@@ -182,6 +182,7 @@ export function generateInventory(repo: string) {
   ];
   return {
     schemaVersion: 1,
+    stagingUnmigrated: 'not-migrated-404',
     generatedBy: 'bun apps/web/cloudflare/generate-inventory.ts',
     analysis:
       'Conservative first-party static import closure, including inherited layouts/templates. Signal lines live in modules; unresolved imports remain migration blockers. No runtime parity is implied.',
@@ -227,6 +228,7 @@ export function generateInventory(repo: string) {
 export function routeManifest(inventory: ReturnType<typeof generateInventory>) {
   return {
     schemaVersion: 2,
+    stagingUnmigrated: inventory.stagingUnmigrated,
     generatedBy: inventory.generatedBy,
     serviceWorker: inventory.serviceWorker,
     crons: inventory.crons,

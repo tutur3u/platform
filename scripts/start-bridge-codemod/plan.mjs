@@ -37,7 +37,7 @@ import {
 } from './contract.mjs';
 import { inventoryApp, walk } from './inventory.mjs';
 import {
-  addBiomeRouteTreeOverride,
+  addOxcRouteTreeOverride,
   addCiWorkflow,
   addGitignoreEntries,
   addHeldRecord,
@@ -151,7 +151,7 @@ export function routesConfig(existing, inventory, locale) {
   return merged;
 }
 
-/** Owned app paths the native template's Biome check covers. */
+/** Owned app paths the native template's Oxc check covers. */
 const NATIVE_FORMAT_PATHS = [
   'src/start-bridge',
   'src/routes',
@@ -242,7 +242,7 @@ export function planConversion(repoRoot, app, options = {}) {
     hasBuildInfo,
     fixtureExists: (file) => fs.existsSync(path.join(appRoot, file)),
   });
-  // An unchanged config keeps its bytes (however Biome laid it out); a
+  // An unchanged config keeps its bytes (however Oxc laid it out); a
   // changed one is formatted with the owned output.
   const unchanged =
     existingConfig !== null &&
@@ -365,7 +365,10 @@ export function planConversion(repoRoot, app, options = {}) {
     else
       edited(vercelWorkflow, addVercelProductionPolicyGate(vercelSource, app));
   }
-  edited('biome.json', addBiomeRouteTreeOverride(read(repoRoot, 'biome.json')));
+  edited(
+    '.oxfmtrc.json',
+    addOxcRouteTreeOverride(read(repoRoot, '.oxfmtrc.json'))
+  );
   // Local `vp build` output must not show up as changes (check:changed).
   const gitignorePath = `${appPath}/.gitignore`;
   const gitignore = read(repoRoot, gitignorePath);
@@ -462,28 +465,20 @@ export function planConversion(repoRoot, app, options = {}) {
 const FORMATTABLE = /\.(?:[cm]?[jt]sx?|json)$/u;
 
 /**
- * Formats owned output with the repository's Biome so generated files are
+ * Formats owned output with the repository's Oxc so generated files are
  * lint-clean as written. `*.bridge.gen.ts` and tool output are excluded from
- * Biome and keep their generator bytes.
+ * Oxc and keep their generator bytes.
  */
-export function createBiomeFormatter(repoRoot, spawn = spawnSync) {
+export function createOxcFormatter(repoRoot, spawn = spawnSync) {
   return (relativePath, content) => {
     const result = spawn(
       'bun',
-      [
-        'x',
-        '--no-install',
-        'biome',
-        // Format plus safe fixes (organized imports), as check:changed checks.
-        'check',
-        '--write',
-        `--stdin-file-path=${relativePath}`,
-      ],
+      ['x', '--no-install', 'oxfmt', '--stdin-filepath', relativePath],
       { cwd: repoRoot, input: content, encoding: 'utf8', timeout: 30000 }
     );
     if (result.status !== 0)
       throw new Error(
-        `biome check failed for ${relativePath}: ${(result.stderr ?? '').trim()}`
+        `oxfmt failed for ${relativePath}: ${(result.stderr ?? '').trim()}`
       );
     return result.stdout;
   };

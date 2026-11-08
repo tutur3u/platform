@@ -29,13 +29,16 @@ abstract interface class IrisRelay {
 
   Future<IrisResult<IrisSummary>> summary();
 
-  /// Starts enrolment. The owner then confirms the returned code on the Iris
-  /// enrol page with their passkey; poll [device] until it is confirmed or
-  /// expired.
+  /// Starts enrolment of [deviceId]'s key ([publicKey] is base64url SPKI,
+  /// [fingerprint] its sha256 hex) under the app-chosen 6-digit [code]. The
+  /// owner then confirms the code on the Iris enrol page with their passkey;
+  /// the device identity polls until it is confirmed or expired.
   Future<IrisResult<IrisEnrollment>> enroll(
     String publicKey,
-    String fingerprint,
-  );
+    String fingerprint, {
+    required String deviceId,
+    required String code,
+  });
 
   Future<IrisResult<IrisDevice>> device(String id);
 
@@ -44,13 +47,14 @@ abstract interface class IrisRelay {
   Future<IrisResult<void>> revoke(String id);
 }
 
-/// Signs one relay request. The native device key (Secure Enclave or
-/// Keystore) implements this in a later lane; until then a fake stands in.
+/// Signs one relay request with the device key (`IrisDeviceTrust`: Secure
+/// Enclave or Keystore).
 ///
-/// Returns the `X-Iris-Device`, `X-Iris-Ts`, `X-Iris-Nonce` and `X-Iris-Sig`
-/// headers. The path includes the query string; the signature covers the
-/// method, path, sha256 of the body, timestamp, nonce, device id and, on
-/// writes, the Idempotency-Key.
+/// Returns the `X-Device-Id`, `X-Iris-Ts`, `X-Iris-Nonce` and `X-Iris-Sig`
+/// headers. The path includes the query string; the v3 signature covers the
+/// method, path, sha256 of the body, timestamp, nonce, device id and, on a
+/// write, the `idempotencyKey` (see `irisCanonicalRequest`). Throws
+/// [IrisSignerException] when it cannot sign.
 abstract interface class IrisRequestSigner {
   Future<Map<String, String>> sign(
     String method,
@@ -62,18 +66,33 @@ abstract interface class IrisRequestSigner {
 
 /// Header names every signed request carries.
 abstract final class IrisHeaders {
-  static const device = 'X-Iris-Device';
+  static const device = 'X-Device-Id';
   static const ts = 'X-Iris-Ts';
   static const nonce = 'X-Iris-Nonce';
   static const sig = 'X-Iris-Sig';
   static const List<String> all = [device, ts, nonce, sig];
 }
 
-/// A build with no relay: every call is `notConfigured`.
-final class UnconfiguredIrisRelay implements IrisRelay {
-  const UnconfiguredIrisRelay();
+/// Why a signer could not sign: the relay call fails with [kind] and never
+/// goes out.
+final class IrisSignerException implements Exception {
+  const IrisSignerException(this.kind);
 
-  static const _none = IrisFailure(IrisFailureKind.notConfigured);
+  final IrisFailureKind kind;
+
+  @override
+  String toString() => 'IrisSignerException(${kind.name})';
+}
+
+/// A build with no relay, or no hardware signer: every call fails closed
+/// with [reason] (`notConfigured`, or `notEnrolled` when the device has no
+/// key to sign with).
+final class UnconfiguredIrisRelay implements IrisRelay {
+  const UnconfiguredIrisRelay({this.reason = IrisFailureKind.notConfigured});
+
+  final IrisFailureKind reason;
+
+  IrisFailure get _none => IrisFailure(reason);
 
   @override
   bool get isConfigured => false;
@@ -83,39 +102,39 @@ final class UnconfiguredIrisRelay implements IrisRelay {
     String? before,
     String? after,
     int limit = 50,
-  }) => Future.value(const IrisErr(_none));
+  }) => Future.value(IrisErr(_none));
 
   @override
   Future<IrisResult<IrisReceipt>> send(
     String text, {
     required String idempotencyKey,
-  }) => Future.value(const IrisErr(_none));
+  }) => Future.value(IrisErr(_none));
 
   @override
   Future<IrisResult<IrisReceipt>> receipt(String id) =>
-      Future.value(const IrisErr(_none));
+      Future.value(IrisErr(_none));
 
   @override
-  Future<IrisResult<IrisSummary>> summary() =>
-      Future.value(const IrisErr(_none));
+  Future<IrisResult<IrisSummary>> summary() => Future.value(IrisErr(_none));
 
   @override
   Future<IrisResult<IrisEnrollment>> enroll(
     String publicKey,
-    String fingerprint,
-  ) => Future.value(const IrisErr(_none));
+    String fingerprint, {
+    required String deviceId,
+    required String code,
+  }) => Future.value(IrisErr(_none));
 
   @override
   Future<IrisResult<IrisDevice>> device(String id) =>
-      Future.value(const IrisErr(_none));
+      Future.value(IrisErr(_none));
 
   @override
   Future<IrisResult<List<IrisDevice>>> devices() =>
-      Future.value(const IrisErr(_none));
+      Future.value(IrisErr(_none));
 
   @override
-  Future<IrisResult<void>> revoke(String id) =>
-      Future.value(const IrisErr(_none));
+  Future<IrisResult<void>> revoke(String id) => Future.value(IrisErr(_none));
 }
 
 /// Poll spacing: [base] while healthy, doubling per consecutive failure up to

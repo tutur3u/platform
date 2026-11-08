@@ -263,19 +263,22 @@ class _TransactionListViewState extends State<_TransactionListView> {
 
                 if (state.status == TransactionListStatus.error &&
                     state.transactions.isEmpty) {
-                  return AppPageListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      FinanceEmptyState(
-                        icon: Icons.error_outline,
-                        title: l10n.commonSomethingWentWrong,
-                        body: state.error ?? l10n.financeTransactions,
-                        action: shad.SecondaryButton(
-                          onPressed: _onRefresh,
-                          child: Text(l10n.commonRetry),
+                  return NovaRefreshIndicator(
+                    onRefresh: _onRefresh,
+                    child: AppPageListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        FinanceEmptyState(
+                          icon: Icons.error_outline,
+                          title: l10n.commonSomethingWentWrong,
+                          body: state.error ?? l10n.financeTransactions,
+                          action: shad.SecondaryButton(
+                            onPressed: _onRefresh,
+                            child: Text(l10n.commonRetry),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   );
                 }
 
@@ -284,34 +287,37 @@ class _TransactionListViewState extends State<_TransactionListView> {
                 }
 
                 if (state.transactions.isEmpty) {
-                  return AppPageListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      const shad.Gap(14),
-                      FinanceEmptyState(
-                        icon: state.search.isNotEmpty
-                            ? Icons.search_off_rounded
-                            : Icons.receipt_long_outlined,
-                        title: state.search.isNotEmpty
-                            ? l10n.financeNoSearchResults
-                            : l10n.financeNoTransactions,
-                        body: state.search.isNotEmpty
-                            ? l10n.financeActivitySearchEmptyBody
-                            : l10n.financeOverviewNoTransactionsBody,
-                        action: state.search.isNotEmpty
-                            ? shad.SecondaryButton(
-                                onPressed: () {
-                                  _searchController.clear();
-                                  _onSearchChanged('');
-                                },
-                                child: Text(l10n.financeActivityClearSearch),
-                              )
-                            : shad.SecondaryButton(
-                                onPressed: _onCreateTransaction,
-                                child: Text(l10n.financeAddFirstTransaction),
-                              ),
-                      ),
-                    ],
+                  return NovaRefreshIndicator(
+                    onRefresh: _onRefresh,
+                    child: AppPageListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        const shad.Gap(14),
+                        FinanceEmptyState(
+                          icon: state.search.isNotEmpty
+                              ? Icons.search_off_rounded
+                              : Icons.receipt_long_outlined,
+                          title: state.search.isNotEmpty
+                              ? l10n.financeNoSearchResults
+                              : l10n.financeNoTransactions,
+                          body: state.search.isNotEmpty
+                              ? l10n.financeActivitySearchEmptyBody
+                              : l10n.financeOverviewNoTransactionsBody,
+                          action: state.search.isNotEmpty
+                              ? shad.SecondaryButton(
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    _onSearchChanged('');
+                                  },
+                                  child: Text(l10n.financeActivityClearSearch),
+                                )
+                              : shad.SecondaryButton(
+                                  onPressed: _onCreateTransaction,
+                                  child: Text(l10n.financeAddFirstTransaction),
+                                ),
+                        ),
+                      ],
+                    ),
                   );
                 }
 

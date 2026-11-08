@@ -48,6 +48,7 @@ import {
   type TutoringExportFormat,
 } from './tutoring-export';
 import {
+  canExportTutoringFormat,
   isTutoringSessionFiltered,
   type TutoringSessionFilters,
 } from './tutoring-filters';
@@ -94,6 +95,8 @@ interface Props {
   error: string | null;
   filters: TutoringSessionFilters;
   groups: UserGroup[];
+  /** Class tag names, loaded only when the policy has a tag exclusion rule. */
+  groupTags?: ReadonlyMap<string, readonly string[]>;
   isLoading: boolean;
   isRefreshing: boolean;
   isMarking: boolean;
@@ -156,6 +159,7 @@ export function TutoringSessionsCard({
   error,
   filters,
   groups,
+  groupTags,
   isLoading,
   isRefreshing,
   isMarking,
@@ -178,6 +182,8 @@ export function TutoringSessionsCard({
     useState<TutoringSessionRecord | null>(null);
   const [draftContent, setDraftContent] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const canExportDetailed = canExportTutoringFormat(exportQuery, 'detailed');
+  const canExportPayroll = canExportTutoringFormat(exportQuery, 'payroll');
   const updateContent = useMutation({
     mutationFn: ({ id, content }: { id: string; content: string }) =>
       updateTutoringSession(wsId, id, { content }),
@@ -284,14 +290,30 @@ export function TutoringSessionsCard({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>{t('export_scope')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {EXPORT_FORMATS.map((format) => (
-                <DropdownMenuItem
-                  key={format}
-                  onClick={() => void handleExport(format)}
-                >
-                  {t(`export_${format.replace('-', '_')}`)}
-                </DropdownMenuItem>
-              ))}
+              {EXPORT_FORMATS.map((format) => {
+                const blocked = format.startsWith('payroll')
+                  ? !canExportPayroll
+                  : !canExportDetailed;
+                return (
+                  <DropdownMenuItem
+                    disabled={blocked}
+                    key={format}
+                    onClick={() => void handleExport(format)}
+                  >
+                    {t(`export_${format.replace('-', '_')}`)}
+                  </DropdownMenuItem>
+                );
+              })}
+              {canExportDetailed ? null : (
+                <p className="max-w-64 px-2 py-1.5 text-muted-foreground text-xs">
+                  {t('export_range_required')}
+                </p>
+              )}
+              {canExportPayroll ? null : (
+                <p className="max-w-64 px-2 py-1.5 text-muted-foreground text-xs">
+                  {t('payroll_invalid_range')}
+                </p>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -380,6 +402,7 @@ export function TutoringSessionsCard({
           <TutoringCreateCard
             form={create.form}
             groups={groups}
+            groupTags={groupTags}
             isSubmitting={create.isSubmitting}
             onChange={actions.onCreateFormChange}
             onSubmit={actions.onCreate}

@@ -86,8 +86,8 @@ test('rollback plan names the single write and validates the SHA', () => {
 
 test('seal plan covers every mode and rejects unknown ones like main()', () => {
   assert.match(
-    describeSealPlan(['prepare', sha, 'dpl_x', 'https://o.example']).join('\n'),
-    /dpl_x at https:\/\/o\.example/u
+    describeSealPlan(['prepare', sha]).join('\n'),
+    /bind source .* for app web, environment staging/u
   );
   assert.match(describeSealPlan(['restored', sha]).join('\n'), /config\.json/u);
   assert.match(describeSealPlan(['verify', sha]).join('\n'), /re-verify/u);
@@ -144,7 +144,7 @@ test('--dry-run exits 0 with no environment and no network', () => {
     ['wave1-web-seal.mjs', ['verify', sha, '--dry-run']],
     [
       'wave1-web-seal.mjs',
-      ['prepare', sha, 'dpl_x', 'https://o.example', '--dry-run'],
+      ['prepare', sha, '--dry-run'],
     ],
     [
       'release-please-overflow-recovery.js',

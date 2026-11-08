@@ -38,11 +38,10 @@ import { PromptForm } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
 
-export interface ChatPanelProps
-  extends Pick<
-    UseChatHelpers<UIMessage>,
-    'sendMessage' | 'status' | 'messages' | 'stop'
-  > {
+export interface ChatPanelProps extends Pick<
+  UseChatHelpers<UIMessage>,
+  'sendMessage' | 'status' | 'messages' | 'stop'
+> {
   id?: string;
   wsId: string;
   chat: Partial<AIChat> | undefined;

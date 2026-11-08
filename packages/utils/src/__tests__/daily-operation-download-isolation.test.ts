@@ -28,7 +28,7 @@ vi.mock('../upstash-rest', () => ({
   getUpstashRestRedisClient: mocks.rest,
   getUpstashRatelimitRedisClient: mocks.limiter,
 }));
-vi.mock('@tuturuuu/turnstile/server', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile/server', () => ({
   verifyTurnstileToken: mocks.verify,
 }));
 vi.mock('@upstash/ratelimit', () => ({
@@ -45,7 +45,7 @@ vi.mock('../request-emoji-limit', () => ({
   validateRequestEmojiLimit: async () => null,
 }));
 
-let guardApiProxyRequest: typeof import('../api-proxy-guard')['guardApiProxyRequest'];
+let guardApiProxyRequest: (typeof import('../api-proxy-guard'))['guardApiProxyRequest'];
 
 import { OFFLINE_DOWNLOAD_HEADER } from '../offline-download-guard';
 

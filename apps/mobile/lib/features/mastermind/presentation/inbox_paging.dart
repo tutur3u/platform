@@ -148,7 +148,7 @@ final class InboxItemRow extends InboxRow {
 List<InboxRow> inboxRows(MastermindInboxModel model, int visible) {
   final rows = <InboxRow>[];
   var ordinal = 0;
-  for (final group in model.groups) {
+  for (final group in model.displayGroups) {
     if (ordinal >= visible) break;
     rows.add(InboxHeaderRow(group: group, first: rows.isEmpty));
     for (final (index, item) in group.items.indexed) {

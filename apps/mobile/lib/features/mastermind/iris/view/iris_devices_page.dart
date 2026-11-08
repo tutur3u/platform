@@ -18,7 +18,9 @@ import 'package:mobile/l10n/l10n.dart';
 /// each revocable, and enrolment of this device.
 ///
 /// Revoking asks for a second tap on the same button rather than a native
-/// dialog. Recovery is revoke, then enrol again with a fresh code.
+/// dialog. Recovery is revoke, then enrol again with a fresh code. A relay
+/// without the list route (404) shows the list as unavailable; enrolment
+/// still works.
 class IrisDevicesPage extends StatefulWidget {
   const IrisDevicesPage({required this.relay, this.identity, super.key});
 
@@ -79,9 +81,14 @@ class _IrisDevicesPageState extends State<IrisDevicesPage> {
                       padding: EdgeInsets.all(AppSpacing.lg),
                       child: Center(child: CircularProgressIndicator()),
                     ),
-                    IrisErr() => AppAlert(
+                    IrisErr(:final failure) => AppAlert(
+                      key: const ValueKey('iris-devices-failure'),
                       leading: const Icon(AppIcons.info),
-                      content: Text(l10n.mastermindIrisDevicesLoadFailed),
+                      content: Text(
+                        failure.kind == IrisFailureKind.notFound
+                            ? l10n.mastermindIrisDevicesUnavailable
+                            : l10n.mastermindIrisDevicesLoadFailed,
+                      ),
                     ),
                     IrisOk(:final value) => AppGroupedSection.spaced(
                       caption: l10n.mastermindIrisDevicesTitle,
@@ -122,6 +129,8 @@ class _IrisDevicesPageState extends State<IrisDevicesPage> {
         runSpacing: AppSpacing.xs,
         children: [
           MastermindStatusChip(label: irisDeviceStatusText(l10n, device)),
+          if (device.current)
+            MastermindStatusChip(label: l10n.mastermindIrisDeviceCurrent),
           if (device.qa)
             MastermindStatusChip(label: l10n.mastermindIrisDeviceQa),
           Text(l10n.mastermindIrisDeviceFingerprint(device.fingerprintPrefix)),

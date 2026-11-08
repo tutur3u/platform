@@ -113,7 +113,8 @@ void main() {
       );
       // The first line is the title, so the preview starts after it.
       expect(preview.data, _ask.split('\n').skip(1).join('\n'));
-      expect(preview.maxLines, 2);
+      // The Inbox card clamps the full text at four lines; Home keeps two.
+      expect(preview.maxLines, home ? 2 : 4);
       final row = find.ancestor(
         of: find.byKey(const ValueKey('ask-title-$_id')),
         matching: find.byType(InboxItemTile),

@@ -60,7 +60,7 @@ function world(overrides = {}) {
       assert.equal(init.method ?? 'GET', 'GET', 'readback must never write');
       const app =
         url.includes('calendar') ||
-        url.includes(fixtureAppIds['calendar.staging.tutur3u.com'])
+        url.includes(fixtureAppIds['calendar.tutur3u.com'])
           ? 'calendar'
           : 'web';
       if (u.pathname.endsWith('/deployments'))
@@ -93,13 +93,30 @@ function world(overrides = {}) {
     if (u.hostname.endsWith('.workers.dev'))
       return new Response('nothing here', { status: 404 });
     const headers = new Headers(init.headers);
-    if (headers.get('cf-access-client-id') === env.CF_ACCESS_HEALTH_CLIENT_ID)
-      return Response.json({
-        commitHash: sha,
-        environment: 'staging',
-        appName: 'x',
+    if (
+      headers.get('cf-access-client-id') === env.CF_ACCESS_HEALTH_CLIENT_ID &&
+      u.hostname === 'web.tutur3u.com' &&
+      u.pathname === '/login'
+    )
+      return new Response('Not migrated yet', {
+        status: 404,
+        headers: {
+          'x-tuturuuu-native': 'not-migrated',
+          'cache-control': 'no-store',
+        },
       });
-    if (init.method === 'OPTIONS' && u.hostname === 'web.staging.tutur3u.com')
+    if (headers.get('cf-access-client-id') === env.CF_ACCESS_HEALTH_CLIENT_ID)
+      return Response.json(
+        u.pathname === '/__web1'
+          ? { app: 'web', status: 'candidate', pages: 'not-migrated' }
+          : {
+              commitHash: sha,
+              environment: 'staging',
+              appName: 'x',
+            },
+        { headers: { 'x-tuturuuu-source-sha': sha } }
+      );
+    if (init.method === 'OPTIONS' && u.hostname === 'web.tutur3u.com')
       return new Response(null, { status: 204 });
     return new Response(null, {
       status: 302,
@@ -150,9 +167,32 @@ test('a healthy Access-only topology reads back green with no provider writes', 
 
 const failing = [
   [
+    'a stale native Web source (R4)',
+    (u, i) =>
+      u.hostname === 'web.tutur3u.com' &&
+      u.pathname === '/__web1' &&
+      new Headers(i.headers).has('cf-access-client-id')
+        ? Response.json(
+            { app: 'web', status: 'candidate', pages: 'not-migrated' },
+            { headers: { 'x-tuturuuu-source-sha': '0'.repeat(40) } }
+          )
+        : null,
+    'R4',
+  ],
+  [
+    'a forwarded Web login instead of the local 404 (N17)',
+    (u, i) =>
+      u.hostname === 'web.tutur3u.com' &&
+      u.pathname === '/login' &&
+      new Headers(i.headers).has('cf-access-client-id')
+        ? new Response('Next login')
+        : null,
+    'N17',
+  ],
+  [
     'an anonymous 200 (N1)',
     (u, i) =>
-      u.hostname === 'web.staging.tutur3u.com' &&
+      u.hostname === 'web.tutur3u.com' &&
       !i.method &&
       !new Headers(i.headers).has('cf-access-client-id')
         ? new Response('open')
@@ -162,7 +202,7 @@ const failing = [
   [
     'a served Calendar OPTIONS (N3)',
     (u, i) =>
-      u.hostname === 'calendar.staging.tutur3u.com' && i.method === 'OPTIONS'
+      u.hostname === 'calendar.tutur3u.com' && i.method === 'OPTIONS'
         ? new Response(null, { status: 204 })
         : null,
     'N3',
@@ -170,7 +210,7 @@ const failing = [
   [
     'an issuer OPTIONS with a body (N3)',
     (u, i) =>
-      u.hostname === 'web.staging.tutur3u.com' && i.method === 'OPTIONS'
+      u.hostname === 'web.tutur3u.com' && i.method === 'OPTIONS'
         ? new Response('data', { status: 204 })
         : null,
     'N3',

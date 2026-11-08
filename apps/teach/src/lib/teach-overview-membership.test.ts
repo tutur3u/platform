@@ -25,9 +25,8 @@ it('renders the education overview for an ai_lab-only member without restricted 
       return { select: () => ({ eq: async () => ({ count: 3 }) }) };
     },
   }));
-  const { default: overview } = await import(
-    '@/app/[locale]/(dashboard)/[wsId]/education/(dashboard)/page'
-  );
+  const { default: overview } =
+    await import('@/app/[locale]/(dashboard)/[wsId]/education/(dashboard)/page');
   const errors: unknown[] = [];
   const stream = await renderToReadableStream(await overview(props), {
     onError: (error: unknown) => {
@@ -61,9 +60,8 @@ it('resolves the gate once per overview request while preserving every card perm
           }
         : { select: () => ({ eq: countRead }) },
   }));
-  const { default: overview } = await import(
-    '@/app/[locale]/(dashboard)/[wsId]/education/(dashboard)/page'
-  );
+  const { default: overview } =
+    await import('@/app/[locale]/(dashboard)/[wsId]/education/(dashboard)/page');
   for (let request = 1; request <= 2; request++) {
     const errors: unknown[] = [];
     const stream = await renderToReadableStream(await overview(props), {

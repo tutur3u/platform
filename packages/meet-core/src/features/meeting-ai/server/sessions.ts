@@ -16,6 +16,7 @@ import type { Json } from '@tuturuuu/types';
 import { Effect, Schedule } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
+import { enforceMeetAiUsage } from './usage-limit';
 import { meetAiAvailable } from './workspace-gate';
 
 export async function readMeetAi(request: Request, params: MeetAiParams) {
@@ -271,6 +272,14 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
   ) {
     throw new MeetAiError(409, 'Audio is still processing');
   }
+  // Notes-run limits per user, meeting and workspace, before the claim and
+  // any provider call. Fails closed (503) when the limiter cannot decide.
+  await enforceMeetAiUsage({
+    kind: 'notes',
+    userId: user.id,
+    meetingId,
+    workspaceId: wsId,
+  });
   // Compare-and-set prevents concurrent finalizers from generating duplicate bills.
   const attemptStartedAt = new Date().toISOString();
   const claimed = await db

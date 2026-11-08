@@ -10,6 +10,12 @@ import { z } from 'zod';
 import { checkAiCredits, deductAiCredits } from '../../credits/check-credits';
 import { withAiMemory } from '../../memory';
 import {
+  estimateRecordingSeconds,
+  MEET_AI_LIMITER_RETRY_AFTER_SECONDS,
+  type MeetAiUsageDecision,
+  type MeetAiUsageInput,
+} from '../usage-limit';
+import {
   hasOversizedDeclaredContentLength,
   validateTranscriptionAudioFile,
 } from './input';
@@ -38,7 +44,61 @@ const transcriptSchema = z.object({
     .describe('Total audio duration in seconds'),
 });
 
-export function createPOST() {
+export type MeetingTranscriptionOptions = {
+  /**
+   * Meet AI default-deny workspace gate, injected by the framework adapter
+   * (the allowlist binding lives in the runtime env, which this portable
+   * package must not read). Omitted means deny.
+   */
+  isMeetAiEnabled?: (wsId: string) => boolean | Promise<boolean>;
+  /**
+   * Fail-closed Meet AI usage limiter (`meet` abuse-guard family), injected by
+   * the framework adapter so server-only env stays out of this package.
+   * Omitted, throwing or refusing means no provider call.
+   */
+  limitMeetAiUsage?: (input: MeetAiUsageInput) => Promise<MeetAiUsageDecision>;
+};
+
+const RATE_LIMIT_UNAVAILABLE_RETRY_AFTER_SECONDS = 30;
+
+async function meetAiAllowed(
+  wsId: string,
+  isMeetAiEnabled: MeetingTranscriptionOptions['isMeetAiEnabled']
+) {
+  if (!isMeetAiEnabled) return false;
+  try {
+    return (await isMeetAiEnabled(wsId)) === true;
+  } catch {
+    return false;
+  }
+}
+
+async function meetAiUsageDecision(
+  limit: MeetingTranscriptionOptions['limitMeetAiUsage'],
+  input: MeetAiUsageInput
+): Promise<MeetAiUsageDecision> {
+  const unavailable: MeetAiUsageDecision = {
+    ok: false,
+    status: 503,
+    code: 'MEET_AI_LIMITER_UNAVAILABLE',
+    retryAfterSeconds: MEET_AI_LIMITER_RETRY_AFTER_SECONDS,
+    reason: limit ? 'error' : 'not_configured',
+  };
+  if (!limit) return unavailable;
+  try {
+    const decision = await limit(input);
+    return decision?.ok === true || decision?.ok === false
+      ? decision
+      : unavailable;
+  } catch {
+    return unavailable;
+  }
+}
+
+export function createPOST({
+  isMeetAiEnabled,
+  limitMeetAiUsage,
+}: MeetingTranscriptionOptions = {}) {
   return async function handler(req: Request) {
     try {
       const supabase = await createClient();
@@ -56,12 +116,35 @@ export function createPOST() {
         return new Response('Audio file too large', { status: 413 });
       }
 
-      const limiters = await getRateLimiters('ai:meeting-transcription', {
-        get: [],
-        mutate: [{ duration: '1 m', limit: 10, window: 'minute' }],
-      });
-      for (const { limiter } of limiters?.mutate ?? []) {
-        const result = await limiter.limit(user.id);
+      // Fail closed: a missing or erroring limiter store must not skip the
+      // limit in front of a paid provider call.
+      let limiters: Awaited<ReturnType<typeof getRateLimiters>>;
+      try {
+        limiters = await getRateLimiters('ai:meeting-transcription', {
+          get: [],
+          mutate: [{ duration: '1 m', limit: 10, window: 'minute' }],
+        });
+      } catch {
+        limiters = null;
+      }
+      const buckets = limiters?.mutate ?? [];
+      const rateLimitUnavailable = () => {
+        console.error('Meeting transcription rate limiter unavailable');
+        return new Response('Service temporarily unavailable', {
+          status: 503,
+          headers: {
+            'Retry-After': String(RATE_LIMIT_UNAVAILABLE_RETRY_AFTER_SECONDS),
+          },
+        });
+      };
+      if (buckets.length === 0) return rateLimitUnavailable();
+      for (const { limiter } of buckets) {
+        let result: Awaited<ReturnType<typeof limiter.limit>>;
+        try {
+          result = await limiter.limit(user.id);
+        } catch {
+          return rateLimitUnavailable();
+        }
         if (!result.success) {
           return new Response('Too many requests', {
             status: 429,
@@ -90,6 +173,25 @@ export function createPOST() {
       if (!z.uuid().safeParse(wsId).success) {
         return new Response('Workspace access denied', { status: 403 });
       }
+      const meetingId = formData.get('meetingId');
+      if (
+        !z.uuid().safeParse(meetingId).success ||
+        typeof meetingId !== 'string'
+      ) {
+        return new Response('Meeting ID is required', { status: 400 });
+      }
+      const { data: meeting, error: meetingError } = await supabase
+        .from('workspace_meetings')
+        .select('ws_id')
+        .eq('id', meetingId)
+        .maybeSingle();
+      if (meetingError) {
+        return new Response('Meeting lookup unavailable', { status: 503 });
+      }
+      if (!meeting || meeting.ws_id !== wsId) {
+        return new Response('Meeting access denied', { status: 403 });
+      }
+      wsId = meeting.ws_id;
       const membership = await verifyWorkspaceMembershipType({
         wsId,
         userId: user.id,
@@ -98,6 +200,47 @@ export function createPOST() {
       });
       if (!membership.ok) {
         return new Response('Workspace access denied', { status: 403 });
+      }
+
+      if (!(await meetAiAllowed(wsId, isMeetAiEnabled))) {
+        return new Response('Meet AI is temporarily unavailable', {
+          status: 403,
+        });
+      }
+
+      if (!(audioFile instanceof File)) {
+        return new Response('No audio file provided', { status: 400 });
+      }
+
+      const validation = validateTranscriptionAudioFile(audioFile);
+      if (!validation.ok) {
+        return new Response(validation.message, { status: validation.status });
+      }
+
+      // Per-user, per-meeting and per-workspace daily audio limits, charged
+      // with a conservative duration estimate before the credit check and
+      // the provider call. Fails closed (503) when the limiter cannot decide.
+      const usage = await meetAiUsageDecision(limitMeetAiUsage, {
+        kind: 'recording',
+        userId: user.id,
+        meetingId,
+        workspaceId: wsId,
+        audioSeconds: Math.max(1, estimateRecordingSeconds(audioFile.size)),
+      });
+      if (!usage.ok) {
+        return Response.json(
+          {
+            error:
+              usage.status === 429
+                ? 'Meeting AI usage limit reached; try again later'
+                : 'Meeting AI usage limiter is unavailable',
+            code: usage.code,
+          },
+          {
+            status: usage.status,
+            headers: { 'Retry-After': String(usage.retryAfterSeconds) },
+          }
+        );
       }
 
       const creditCheck = await checkAiCredits(
@@ -111,20 +254,14 @@ export function createPOST() {
       if (!creditCheck.allowed) {
         return Response.json(
           {
-            error: creditCheck.errorMessage || 'AI credits insufficient',
+            error:
+              creditCheck.errorCode === 'CREDITS_EXHAUSTED'
+                ? 'The meeting workspace is out of AI credits'
+                : 'AI credits unavailable for the meeting workspace',
             code: creditCheck.errorCode,
           },
-          { status: 403 }
+          { status: 402 }
         );
-      }
-
-      if (!(audioFile instanceof File)) {
-        return new Response('No audio file provided', { status: 400 });
-      }
-
-      const validation = validateTranscriptionAudioFile(audioFile);
-      if (!validation.ok) {
-        return new Response(validation.message, { status: validation.status });
       }
 
       // Convert file to buffer

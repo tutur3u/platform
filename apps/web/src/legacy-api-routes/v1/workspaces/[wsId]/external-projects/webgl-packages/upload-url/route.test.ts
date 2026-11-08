@@ -61,9 +61,8 @@ describe('WebGL package upload URL route', () => {
   it('rejects upload URL creation when CMS Games is disabled', async () => {
     mocks.isCmsGamesEnabled.mockResolvedValue(false);
 
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload-url/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload-url/route');
 
     const response = await POST(
       new Request(
@@ -92,9 +91,8 @@ describe('WebGL package upload URL route', () => {
   });
 
   it('rejects non-ZIP uploads before creating a signed upload URL', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload-url/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload-url/route');
 
     const response = await POST(
       new Request(
@@ -136,9 +134,8 @@ describe('WebGL package upload URL route', () => {
       token: 'token-1',
     });
 
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload-url/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload-url/route');
 
     const response = await POST(
       new Request(

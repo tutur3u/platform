@@ -8,7 +8,6 @@ vi.mock('next-intl', () => ({
 
 describe('ConfidentialAmount', () => {
   beforeEach(() => {
-    // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
       'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;Secure';
   });
@@ -21,7 +20,6 @@ describe('ConfidentialAmount', () => {
   });
 
   it('shows visible amounts when finance numbers are globally shown', () => {
-    // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
     document.cookie = 'finance-confidential-mode=false;path=/;Secure';
 
     render(<ConfidentialAmount amount={42} isConfidential={false} />);

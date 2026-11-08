@@ -41,7 +41,7 @@ const failFastRequiredChecks = new Set(['tests', 'type-check']);
 // fast, independent quality gates (formatting/lint) are never silently skipped
 // just because tests or type-check are red (e.g. an unrelated pre-existing
 // failure). Prevents format/lint regressions from slipping past `bun validate`.
-const alwaysRunAfterFailFast = new Set(['biome']);
+const alwaysRunAfterFailFast = new Set(['oxc']);
 const DISCORD_PYTHON_PATH_PREFIX = 'apps/discord/';
 const DISCORD_PYTHON_WORKFLOW_PATH = '.github/workflows/discord-python-ci.yml';
 const PLATFORM_RELEASE_VERSION_PATHS = new Set([
@@ -69,7 +69,7 @@ function getLastNumberMatch(output, regex) {
   return lastMatch ? Number.parseInt(lastMatch[1], 10) : 0;
 }
 
-function parseBiomeIssueStats(output) {
+function parseOxcIssueStats(output) {
   const clean = stripAnsi(output);
   const filesChecked = getLastNumberMatch(
     clean,
@@ -93,18 +93,18 @@ function parseBiomeIssueStats(output) {
   };
 }
 
-function formatBiomeIssueStats(stats) {
+function formatOxcIssueStats(stats) {
   return `${stats.errors} error(s), ${stats.warnings} warning(s), ${stats.infos} info(s)`;
 }
 
-function validateBiomeOutput(output) {
-  const stats = parseBiomeIssueStats(output);
+function validateOxcOutput(output) {
+  const stats = parseOxcIssueStats(output);
 
   if (stats.totalIssues === 0) {
     return null;
   }
 
-  return `Found ${stats.totalIssues} Biome issue(s): ${formatBiomeIssueStats(stats)}`;
+  return `Found ${stats.totalIssues} Oxc issue(s): ${formatOxcIssueStats(stats)}`;
 }
 
 /**
@@ -261,16 +261,16 @@ const checks = [
     },
   },
   {
-    name: 'biome',
+    name: 'oxc',
     command: 'bun',
-    args: ['biome', 'check', '--error-on-warnings'],
+    args: ['format-and-lint'],
     parseOutput: (stdout) => {
-      const stats = parseBiomeIssueStats(stdout);
+      const stats = parseOxcIssueStats(stdout);
       return stats.filesChecked > 0
         ? `${stats.filesChecked} files checked`
         : 'Passed';
     },
-    validateOutput: validateBiomeOutput,
+    validateOutput: validateOxcOutput,
   },
   sourceSizeCheck,
   publicSeoCheck,
@@ -286,6 +286,12 @@ const checks = [
     command: 'node',
     args: ['scripts/check-multi-account-vault-owner.js'],
     parseOutput: () => 'Only apps/web carries the multi-account vault',
+  },
+  {
+    name: 'package-release-dependencies',
+    command: 'node',
+    args: ['scripts/ci/package-release-dependency-guard.js'],
+    parseOutput: () => 'Published packages only depend on released packages',
   },
   {
     name: 'legacy-api-route-wrappers',
@@ -1351,7 +1357,7 @@ module.exports = {
   isTrustedCheckQueuePid,
   listTrackedCheckProcesses,
   main,
-  parseBiomeIssueStats,
+  parseOxcIssueStats,
   releaseCheckQueueLock,
   runCheck,
   signalProcess,

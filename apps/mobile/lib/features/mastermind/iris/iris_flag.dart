@@ -8,6 +8,9 @@ bool? _irisOverride;
 /// failed check, leaves it false.
 final ValueNotifier<bool> mastermindIrisCapability = ValueNotifier(false);
 
+/// Whether the hub explicitly permits sending with `iris_send: true`.
+final ValueNotifier<bool> mastermindIrisSendCapability = ValueNotifier(false);
+
 /// Whether Iris (the Inbox Chat segment) is on: the `MASTERMIND_IRIS` define
 /// (dev, staging and tests) or the hub capability (TestFlight and Play
 /// internal). A getter, not a constant, so the flag-on path can run in the

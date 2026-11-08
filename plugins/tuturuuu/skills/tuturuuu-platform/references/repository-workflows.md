@@ -5,7 +5,7 @@ Consult only the section relevant to the current task. Paths are repository-rela
 ## 4. Repository Map
 
 - `apps/web`: maintained Next.js platform on port `7803`; live route owner
-  alongside the owning Next.js satellites. Its [Web 1 Start candidate](../../../../../docs-internal/build/devops/web-start-candidate.mdx)
+  alongside the owning Next.js satellites. Its [Web 1 Start candidate](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/web-start-candidate.mdx)
   is default-off and forwards existing routes to an attested staging Next origin.
   Use `build:candidate` only on an admitted remote host or CI; inventory generation
   and focused proxy tests are build-free. Commit only route-level inventory;

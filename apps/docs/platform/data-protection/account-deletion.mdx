@@ -1,19 +1,16 @@
 ---
 title: "Account and workspace deletion"
-description: "Billing cleanup and deletion failure behavior."
+description: "Deletion behavior, billing cleanup and privacy-request limits."
+audience: developers
+updatedAt: "2026-11-01"
 ---
 
 ## Billing cleanup before deletion
 
-Web account deletion and manual workspace deletion complete billing cleanup before
-deleting workspace or Auth records. A missing Polar customer, a revoked or missing
-seat, and a missing or already canceled subscription count as completed cleanup.
-Use Polar SDK error types and HTTP status codes to identify these terminal states;
-other provider failures, including network errors, timeouts and 5xx responses,
-return 502 before database deletion. Multiple active subscription rows block manual
-workspace deletion with a generic 409 response. Existing permission, personal
-workspace and paid sole-member restrictions still apply.
+Web account deletion and manual workspace deletion complete billing cleanup before deleting workspace or account records. A missing billing customer, a revoked or missing seat, and a missing or already canceled subscription count as completed cleanup.
 
-Regression coverage: the account and workspace deletion route tests under
-`apps/web/src/legacy-api-routes`, and
-`packages/payment-core/src/polar-seat-helper.test.ts`.
+Other provider failures, including network errors, timeouts and service failures, stop database deletion and return a temporary failure. Multiple active subscriptions block manual workspace deletion until the conflict is resolved. Existing permission, personal workspace and paid sole-member restrictions still apply.
+
+## Privacy requests and completion
+
+Billing blockers do not remove the right to submit a privacy request. Account removal and subscription cancellation do not prove complete erasure across files, derived content, processors or backups. The [personal data protection standard](/platform/data-protection-standard) defines applicable deadlines, scoped lawful exceptions and truthful reporting of incomplete work. See the [inventory](/platform/data-protection/inventory) for current coverage limits.

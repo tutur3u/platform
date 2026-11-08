@@ -81,7 +81,14 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
     );
   }
 
-  Future<void> loadLabels(String wsId, {bool forceRefresh = false}) async {
+  /// [retainError] keeps a visible error state and its message while the
+  /// pull-to-refresh gesture reloads; an explicit Retry leaves it false so
+  /// the page re-enters its loading state.
+  Future<void> loadLabels(
+    String wsId, {
+    bool forceRefresh = false,
+    bool retainError = false,
+  }) async {
     final token = ++_currentRequestToken;
     final shouldReplaceLabels = state.wsId != wsId;
     final cacheKey = _cacheKey(wsId);
@@ -108,12 +115,22 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
         ),
       );
     }
+    final keepError =
+        retainError &&
+        forceRefresh &&
+        !shouldReplaceLabels &&
+        state.status == TaskLabelsStatus.error;
     emit(
       state.copyWith(
         status: cached.hasValue
             ? TaskLabelsStatus.loaded
+            : keepError ||
+                  (!shouldReplaceLabels &&
+                      state.status != TaskLabelsStatus.initial &&
+                      state.status != TaskLabelsStatus.error)
+            ? state.status
             : TaskLabelsStatus.loading,
-        error: null,
+        error: keepError ? state.error : null,
         wsId: wsId,
         requestToken: token,
         labels: shouldReplaceLabels && !cached.hasValue

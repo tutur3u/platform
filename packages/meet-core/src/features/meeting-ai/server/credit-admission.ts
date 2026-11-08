@@ -1,8 +1,8 @@
 import 'server-only';
 import { checkAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import { MEET_AI_MODEL } from '@tuturuuu/ai/meetings/usage';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Effect, Either, Schedule } from '@tuturuuu/utils/effect';
-import { personalWorkspace } from '../../call/server/room-service';
 import { MeetAiError } from './access';
 
 export type MeetCreditAdmission = {
@@ -20,14 +20,24 @@ const refusalCodes: Record<string, string> = {
 class TransientCreditCheck extends Error {}
 
 /**
- * Admit the actor's personal-workspace billing before any chunk row exists, so a
+ * Admit the meeting workspace's billing before any chunk row exists, so a
  * refusal never leaves a transcript gap. Only check-infrastructure failures
  * retry: three attempts at most, then a retryable 503 for the client queue.
  */
 export async function admitMeetCredits(
-  userId: string
+  userId: string,
+  meetingId: string
 ): Promise<MeetCreditAdmission> {
-  const workspaceId = await personalWorkspace(userId);
+  const db = await createAdminClient({ noCookie: true });
+  const { data: meeting, error } = await db
+    .from('workspace_meetings')
+    .select('ws_id')
+    .eq('id', meetingId)
+    .maybeSingle();
+  if (error)
+    throw new MeetAiError(503, 'Meeting billing workspace unavailable');
+  if (!meeting) throw new MeetAiError(404, 'Meeting not found');
+  const workspaceId = meeting.ws_id;
   const checked = await Effect.runPromise(
     Effect.either(
       Effect.tryPromise({
@@ -61,7 +71,9 @@ export async function admitMeetCredits(
   if (!allowance.allowed)
     throw new MeetAiError(
       402,
-      'AI credits unavailable',
+      allowance.errorCode === 'CREDITS_EXHAUSTED'
+        ? 'The meeting workspace is out of AI credits'
+        : 'AI credits unavailable for the meeting workspace',
       refusalCodes[allowance.errorCode ?? ''] ?? 'MEET_AI_CREDITS_UNAVAILABLE'
     );
   return { workspaceId, allowance };

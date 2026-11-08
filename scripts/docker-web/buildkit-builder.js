@@ -656,7 +656,6 @@ function isBunTarballExtractionError(error) {
   const message = error instanceof Error ? error.message : String(error);
 
   return (
-    /Fail extracting tarball for "@biomejs\/cli-linux-x64"/iu.test(message) ||
     /Fail extracting tarball for "[^"]+"/iu.test(message) ||
     /failed?\s+to\s+extract(?:ing)?\s+tarball/iu.test(message) ||
     (/Failed to install \d+ packages?/iu.test(message) &&

@@ -59,8 +59,7 @@ export interface TopicAnnouncementAttachmentDraft {
   storageProvider: TopicAnnouncementAttachmentStorageProvider;
 }
 
-export interface TopicAnnouncementAttachment
-  extends TopicAnnouncementAttachmentDraft {
+export interface TopicAnnouncementAttachment extends TopicAnnouncementAttachmentDraft {
   createdAt: string;
   id: string;
 }

@@ -93,9 +93,8 @@ describe('mobile MFA approval helpers', () => {
   });
 
   it('binds a consumed mobile MFA approval to the current Supabase session', async () => {
-    const { pollMfaMobileApprovalChallenge } = await import(
-      './mfa-mobile-approval'
-    );
+    const { pollMfaMobileApprovalChallenge } =
+      await import('./mfa-mobile-approval');
     const row = createChallengeRow({
       approval_metadata: { approvedBy: 'mobile' },
       status: 'approved',
@@ -148,9 +147,8 @@ describe('mobile MFA approval helpers', () => {
   });
 
   it('does not reissue a consumed approval cookie for a different Supabase session', async () => {
-    const { pollMfaMobileApprovalChallenge } = await import(
-      './mfa-mobile-approval'
-    );
+    const { pollMfaMobileApprovalChallenge } =
+      await import('./mfa-mobile-approval');
     const row = createChallengeRow({
       approval_metadata: {
         approverSessionId: 'session-1',

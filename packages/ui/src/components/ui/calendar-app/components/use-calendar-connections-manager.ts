@@ -374,7 +374,6 @@ export function useCalendarConnectionsManager(wsId: string) {
   const googleAuthMutation = useMutation<
     AuthResponse,
     Error,
-    // biome-ignore lint/suspicious/noConfusingVoidType: TanStack makes void variables optional, so plain mutate() callers stay valid.
     { reconnect?: boolean } | void
   >({
     mutationKey: ['calendar', 'google-auth', wsId],

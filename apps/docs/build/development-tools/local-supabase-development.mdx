@@ -2,6 +2,7 @@
 title: 'Local Supabase Development'
 description: 'Learn how to work with Supabase locally in the Tuturuuu development workflow.'
 updatedAt: "2026-10-31"
+audience: developers
 ---
 
 <Info>
@@ -49,7 +50,7 @@ reports a clean skip before fixture setup.
 
 Regenerate `packages/types/src/supabase.ts` from the complete applied migration
 snapshot with the upgraded workspace CLI, using `public,private,storage`, then
-format with the pinned Biome version. The isolated contract lifecycle uses those
+format with the pinned Oxc version. The isolated contract lifecycle uses those
 same schemas. Do not regenerate only the first failing table or hand-edit the
 generated declarations.
 
@@ -73,7 +74,7 @@ focused tests and require the exact pushed commit's TypeScript CI to pass.
 The Connected Mail drift check compares three private tables with the committed
 types. Their upgrade delta is `ComputedFields: never`; their row columns,
 optionality and relationships are unchanged. The new generator also quotes
-property names, which Biome may unquote. Normalize these equivalent AST property
+property names, which Oxc may unquote. Normalize these equivalent AST property
 keys without discarding actual contract differences. Regression coverage is
 `apps/database/scripts/connected-mail-types-drift.test.mjs`, including rejection
 of semantic changes in quoted output.

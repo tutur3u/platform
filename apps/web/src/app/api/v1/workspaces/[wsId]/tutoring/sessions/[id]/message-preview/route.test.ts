@@ -29,6 +29,8 @@ vi.mock('@tuturuuu/internal-api/tutoring-policy', () => ({
   renderTutoringParentMessage: mocks.render,
 }));
 
+let teacherId = 'teacher';
+let reassignOnUpdate = false;
 let template = 'Lịch học chính thức: {{class_time}}';
 let classSessions: {
   data: Record<string, string>[] | null;
@@ -38,6 +40,7 @@ let calls: { args: unknown[]; method: string; table: string }[] = [];
 
 /** A chainable query that records every call and resolves to `result`. */
 function query(table: string, result: () => unknown) {
+  const teacherFilters: unknown[] = [];
   const methods: Record<string, (...args: unknown[]) => unknown> = {};
   for (const method of [
     'eq',
@@ -50,16 +53,24 @@ function query(table: string, result: () => unknown) {
   ]) {
     methods[method] = (...args: unknown[]) => {
       calls.push({ args, method, table });
+      if (method === 'update' && reassignOnUpdate) teacherId = 'other-teacher';
+      if (method === 'eq' && args[0] === 'teacher_user_id')
+        teacherFilters.push(args[1]);
       return chain;
     };
   }
   const chain = Object.assign(Promise.resolve(result()), methods, {
-    maybeSingle: async () => result(),
+    maybeSingle: async () =>
+      table === 'workspace_tutoring_sessions' &&
+      teacherFilters.some((value) => value !== teacherId)
+        ? { data: null, error: null }
+        : result(),
   });
   return chain;
 }
 
 const session = {
+  attendance_status: 'DONE',
   duration_minutes: 45,
   group_id: groupId,
   id: sessionId,
@@ -90,6 +101,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(console, 'error').mockImplementation(() => {});
   calls = [];
+  teacherId = 'teacher';
+  reassignOnUpdate = false;
   template = 'Lịch học chính thức: {{class_time}}';
   classSessions = {
     data: [
@@ -110,7 +123,14 @@ beforeEach(() => {
   });
   const tables: Record<string, () => unknown> = {
     workspace_configs: () => ({ data: [], error: null }),
-    workspace_tutoring_sessions: () => ({ data: session, error: null }),
+    workspace_tutoring_sessions: () => ({
+      data: { ...session, teacher_user_id: teacherId },
+      error: null,
+    }),
+    workspace_user_linked_users: () => ({
+      data: { virtual_user_id: 'teacher' },
+      error: null,
+    }),
     workspace_user_group_sessions: () => classSessions,
     workspace_user_groups: () => ({ data: { name: 'Lớp 6A' }, error: null }),
     workspace_users: () => ({ data: person('Học sinh'), error: null }),
@@ -193,4 +213,64 @@ describe('POST tutoring message preview', () => {
       calls.some((call) => call.table === 'workspace_user_group_sessions')
     ).toBe(false);
   });
+});
+
+describe('preview teacher read scope', () => {
+  function editor() {
+    mocks.resolveAccess.mockResolvedValue({
+      normalizedWsId: wsId,
+      user: { id: 'actor' },
+      permissions: {
+        withoutPermission: (permission: string) =>
+          permission === 'view_payroll',
+      },
+    });
+  }
+  it('denies an editor another teacher completed session without rendering or writing', async () => {
+    editor();
+    teacherId = 'other-teacher';
+    const response = await preview();
+    expect(response.status).toBe(404);
+    expect(mocks.render).not.toHaveBeenCalled();
+    expect(calls.some((call) => call.method === 'update')).toBe(false);
+  });
+  it('allows an editor their own session and scopes both read and write', async () => {
+    editor();
+    expect((await preview()).status).toBe(200);
+    expect(
+      calls
+        .filter(
+          (call) =>
+            call.table === 'workspace_tutoring_sessions' &&
+            call.method === 'eq' &&
+            call.args[0] === 'teacher_user_id'
+        )
+        .map((call) => call.args[1])
+    ).toEqual(['teacher', 'teacher']);
+  });
+  it('allows an editor with view_payroll another teacher session', async () => {
+    teacherId = 'other-teacher';
+    expect((await preview()).status).toBe(200);
+    expect(mocks.render).toHaveBeenCalled();
+    expect(
+      calls.some(
+        (call) => call.method === 'eq' && call.args[0] === 'teacher_user_id'
+      )
+    ).toBe(false);
+  });
+});
+
+it('returns no preview if reassignment makes the self-scoped save miss', async () => {
+  mocks.resolveAccess.mockResolvedValue({
+    normalizedWsId: wsId,
+    user: { id: 'actor' },
+    permissions: {
+      withoutPermission: (permission: string) => permission === 'view_payroll',
+    },
+  });
+  reassignOnUpdate = true;
+  const response = await preview();
+  expect(response.status).toBe(404);
+  expect(await response.json()).not.toHaveProperty('preview');
+  expect(mocks.render).toHaveBeenCalled();
 });

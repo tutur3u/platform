@@ -43,7 +43,6 @@ function query(table: string) {
     ilike: () => q,
     single: async () => ({ data: rows[0] ?? null, error: null }),
     maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase queries are awaitable.
     then: (
       resolve: (value: { data: Row[]; error: null; count: number }) => unknown
     ) =>

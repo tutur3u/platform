@@ -2,6 +2,7 @@
 title: "Development Tools"
 description: "Tools and guides for developing on the Tuturuuu platform"
 updatedAt: "2026-06-21"
+audience: developers
 ---
 
 This section contains tools, guides, and best practices for developing on the Tuturuuu platform.
@@ -27,7 +28,7 @@ This section contains tools, guides, and best practices for developing on the Tu
 
 ### Code Quality
 
-- Formatting and linting are handled by [Biome](https://biomejs.dev/) (`biome.json`),
+- Formatting and linting are handled by [Oxc](https://oxc.rs/) (`.oxfmtrc.json` and `.oxlintrc.json`),
   not ESLint or Prettier. Use `bun ff` to format, lint, and check in one pass.
 - Run focused tests, then the build-free `bun check:changed` gate before every
   push. `bun validate` is not run on agent machines because its Turbo graph can
@@ -175,7 +176,7 @@ bun sb:reset
 
 ### Common Issues
 
-1. **Build / Check Failures**: Run `bun check:changed` to surface TypeScript and Biome errors in changed files, and confirm dependencies are installed with `bun install`
+1. **Build / Check Failures**: Run `bun check:changed` to surface TypeScript and Oxc errors in changed files, and confirm dependencies are installed with `bun install`
 2. **Database Issues**: Ensure the local Supabase stack is running (`bun sb:start`) and migrations are applied (`bun sb:up`)
 3. **Test Failures**: Check environment setup and re-run the focused Vitest workspace before `bun check:changed`; the full `bun validate` gate runs in CI
 4. **Performance Issues**: Use React DevTools and bundle analyzers
@@ -220,11 +221,11 @@ limits, or turn an incomplete or failing check into a pass.
 `bun validate` is the repository aggregate (formerly the custom `bun check`
 script). `bun validate:now` retains the explicit `--force-now` queue behavior.
 Both invoke the same `scripts/check.js`; flags, fail-fast handling, mandatory
-Biome follow-through, queues and child-temp isolation are unchanged. The legacy
+Oxc follow-through, queues and child-temp isolation are unchanged. The legacy
 `tuturuuu-bun-check` queue directory and environment names stay stable so old
 and new runner processes coordinate during the rename.
 
-The aggregate still covers workspace tests, Turbo type-checking, blocking Biome
+The aggregate still covers workspace tests, Turbo type-checking, blocking Oxc
 format/lint, source size, public SEO, server console, internal-app-auth, satellite
 cookie auth, offline Worker wiring, multi-account vault ownership, legacy API
 wrappers, mobile iOS settings and API mappings, script tests, next-intl setup,

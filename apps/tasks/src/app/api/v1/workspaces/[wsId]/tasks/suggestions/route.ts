@@ -471,8 +471,8 @@ function sanitizeSuggestions({
           : maxSplitDurationMinutes;
       const isSplittable = Boolean(
         durationMinutes &&
-          suggestion.isSplittable &&
-          (minSplitDurationMinutes || normalizedMaxSplitDurationMinutes)
+        suggestion.isSplittable &&
+        (minSplitDurationMinutes || normalizedMaxSplitDurationMinutes)
       );
       const priority = isTaskPriority(suggestion.priority)
         ? suggestion.priority

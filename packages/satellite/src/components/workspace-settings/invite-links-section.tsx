@@ -1,15 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  Check,
-  Copy,
-  Link2,
-  Loader2,
-  Plus,
-  Trash2,
-  Users,
-} from '@tuturuuu/icons';
+import { Check, Copy, Loader2, Plus, Trash2, Users } from '@tuturuuu/icons';
 import {
   createWorkspaceInviteLink,
   deleteWorkspaceInviteLink,
@@ -27,6 +19,11 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Dialog,
   DialogContent,
@@ -126,38 +123,29 @@ export function InviteLinksSection({
   };
 
   return (
-    <section className="space-y-3 rounded-2xl border bg-card/40 p-4 sm:p-5">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="rounded-xl border border-dynamic-blue/20 bg-dynamic-blue/10 p-2 text-dynamic-blue">
-            <Link2 />
-          </div>
-          <div>
-            <h3 className="font-semibold">{t('ws-invite-links.title')}</h3>
-            <p className="text-muted-foreground text-sm">
-              {t('ws-invite-links.description')}
-            </p>
-          </div>
-        </div>
-        <Button
-          disabled={disabled}
-          onClick={() => setCreateOpen(true)}
-          size="sm"
-        >
-          <Plus />
-          {t('ws-invite-links.create-link')}
-        </Button>
-      </div>
-
-      {linksQuery.isPending ? (
-        <div className="flex justify-center py-6">
-          <Loader2 className="animate-spin text-muted-foreground" />
-        </div>
-      ) : linksQuery.data?.length ? (
-        <div className="grid gap-2">
-          {linksQuery.data.map((link) => (
-            <div
-              className="flex items-center gap-2 rounded-xl border bg-background/70 p-3"
+    <>
+      <SettingsSection
+        action={
+          <Button
+            disabled={disabled}
+            onClick={() => setCreateOpen(true)}
+            size="sm"
+          >
+            <Plus />
+            {t('ws-invite-links.create-link')}
+          </Button>
+        }
+        description={t('ws-invite-links.description')}
+        title={t('ws-invite-links.title')}
+      >
+        {linksQuery.isPending ? (
+          <SettingsSectionMessage className="justify-center">
+            <Loader2 className="animate-spin" />
+          </SettingsSectionMessage>
+        ) : linksQuery.data?.length ? (
+          linksQuery.data.map((link) => (
+            <SettingsSectionBlock
+              className="flex items-center gap-2 py-3"
               key={link.id}
             >
               <Users className="shrink-0 text-muted-foreground" />
@@ -187,14 +175,14 @@ export function InviteLinksSection({
               >
                 <Trash2 className="text-dynamic-red" />
               </Button>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="rounded-xl border border-dashed p-5 text-center text-muted-foreground text-sm">
-          {t('ws-invite-links.no-links')}
-        </p>
-      )}
+            </SettingsSectionBlock>
+          ))
+        ) : (
+          <SettingsSectionMessage>
+            {t('ws-invite-links.no-links')}
+          </SettingsSectionMessage>
+        )}
+      </SettingsSection>
 
       <Dialog onOpenChange={setCreateOpen} open={createOpen}>
         <DialogContent>
@@ -264,6 +252,6 @@ export function InviteLinksSection({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </section>
+    </>
   );
 }

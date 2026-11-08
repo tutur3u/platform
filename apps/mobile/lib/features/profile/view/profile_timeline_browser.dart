@@ -309,6 +309,7 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
       child: FadeTransition(
         opacity: _fade,
         child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           key: _viewport,
           controller: _scroll,
           slivers: [

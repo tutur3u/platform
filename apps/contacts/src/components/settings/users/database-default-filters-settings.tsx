@@ -2,11 +2,15 @@
 
 import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   useUpdateUserConfig,
   useUserConfig,
 } from '@tuturuuu/ui/hooks/use-user-config';
-import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -120,19 +124,16 @@ export function DatabaseDefaultFiltersSettings() {
   }
 
   return (
-    <form className="space-y-6" onSubmit={handleSave}>
-      <div className="space-y-2">
-        <h3 className="font-medium text-lg">
-          {t('personal_database_filters')}
-        </h3>
-        <p className="text-muted-foreground text-sm">
-          {t('personal_database_filters_description')}
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <div className="space-y-2 rounded-lg border p-4">
-          <Label>{t('default_link_status')}</Label>
+    <form onSubmit={handleSave}>
+      <SettingsSection
+        title={t('personal_database_filters')}
+        description={t('personal_database_filters_description')}
+      >
+        <SettingItemTab
+          title={t('default_link_status')}
+          description={t('default_link_status_help')}
+          controlWidth="md"
+        >
           <Select
             value={linkStatus}
             onValueChange={(value) =>
@@ -152,13 +153,13 @@ export function DatabaseDefaultFiltersSettings() {
               </SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-muted-foreground text-xs">
-            {t('default_link_status_help')}
-          </p>
-        </div>
+        </SettingItemTab>
 
-        <div className="space-y-2 rounded-lg border p-4">
-          <Label>{t('default_group_membership')}</Label>
+        <SettingItemTab
+          title={t('default_group_membership')}
+          description={t('default_group_membership_help')}
+          controlWidth="md"
+        >
           <Select
             value={groupMembership}
             onValueChange={(value) =>
@@ -187,15 +188,17 @@ export function DatabaseDefaultFiltersSettings() {
               </SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-muted-foreground text-xs">
-            {t('default_group_membership_help')}
-          </p>
-        </div>
-      </div>
+        </SettingItemTab>
 
-      <Button type="submit" disabled={!isDirty || updateUserConfig.isPending}>
-        {updateUserConfig.isPending ? t('saving') : t('save')}
-      </Button>
+        <SettingsSectionFooter>
+          <Button
+            type="submit"
+            disabled={!isDirty || updateUserConfig.isPending}
+          >
+            {updateUserConfig.isPending ? t('saving') : t('save')}
+          </Button>
+        </SettingsSectionFooter>
+      </SettingsSection>
     </form>
   );
 }

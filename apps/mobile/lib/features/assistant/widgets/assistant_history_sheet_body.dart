@@ -84,6 +84,7 @@ class _AssistantHistorySheetBodyState extends State<AssistantHistorySheetBody> {
         );
         final searching = _searchController.text.trim().isNotEmpty;
         return AppSheetScaffold(
+          onRefresh: widget.chatCubit.refreshHistory,
           title: l10n.assistantHistoryTitle,
           search: AppSheetSearch(
             controller: _searchController,

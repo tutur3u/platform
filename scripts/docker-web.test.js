@@ -2835,7 +2835,7 @@ test('buildBlueGreenServices recovers Bun tarball extraction once', async () => 
               code: 1,
               signal: null,
               stderr:
-                'error: Fail extracting tarball for "@biomejs/cli-linux-x64"',
+                'error: Fail extracting tarball for "@oxfmt/binding-linux-x64-gnu"',
               stdout: '',
             }
           : { code: 0, signal: null, stderr: '', stdout: '' };

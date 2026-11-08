@@ -69,6 +69,10 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   assert.equal(checkouts.length, 1);
   assert.equal(checkouts[0].with.ref, expression('github.sha'));
   assert.equal(checkouts[0].with['fetch-depth'], 0);
+  assert.equal(
+    checkouts[0].with.filter,
+    expression("runner.environment != 'self-hosted' && 'blob:none' || ''")
+  );
   assert.equal(checkouts[0].with['sparse-checkout'], undefined);
   const setupNode = job.steps.find((step) =>
     step.uses?.startsWith('actions/setup-node@')

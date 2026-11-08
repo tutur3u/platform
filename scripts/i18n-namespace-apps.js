@@ -11,6 +11,7 @@ const SHARED_PACKAGES = [
 // Apps with translation files to check
 const APPS = [
   { name: 'apps/colab', dir: 'apps/colab' },
+  { name: 'apps/roadmap', dir: 'apps/roadmap' },
   { name: 'apps/web', dir: 'apps/web' },
   { name: 'apps/tasks', dir: 'apps/tasks' },
   { name: 'apps/calendar', dir: 'apps/calendar' },

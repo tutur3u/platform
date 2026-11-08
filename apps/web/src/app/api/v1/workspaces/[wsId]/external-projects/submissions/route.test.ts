@@ -14,7 +14,7 @@ class FakeTurnstileError extends Error {
   }
 }
 
-vi.mock('@tuturuuu/turnstile', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile', () => ({
   isTurnstileError: (error: unknown) => error instanceof FakeTurnstileError,
   verifyTurnstileToken: (
     ...args: Parameters<typeof mocks.verifyTurnstileToken>

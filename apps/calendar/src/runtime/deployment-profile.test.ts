@@ -53,9 +53,8 @@ describe('Calendar deployment profile', () => {
   );
 
   it('accepts development only for the dev server, never a build', async () => {
-    const { resolveCalendarDeploymentProfile } = await import(
-      './deployment-profile'
-    );
+    const { resolveCalendarDeploymentProfile } =
+      await import('./deployment-profile');
     expect(resolveCalendarDeploymentProfile('development', 'serve')).toBe(
       'development'
     );
@@ -74,7 +73,7 @@ describe('Calendar deployment profile', () => {
   it('gives each profile exactly one environment root host', async () => {
     for (const [profile, hosts] of [
       ['production', ['calendar.tuturuuu.com']],
-      ['staging', ['calendar.staging.tutur3u.com']],
+      ['staging', ['calendar.tutur3u.com']],
     ] as const) {
       vi.resetModules();
       vi.stubEnv('CALENDAR_DEPLOYMENT_PROFILE', profile);
@@ -88,7 +87,7 @@ describe('Calendar deployment profile', () => {
   // N9: the staging artifact never answers production or retired hosts.
   it.each([
     'calendar.tuturuuu.com',
-    'calendar-cutover.staging.tutur3u.com',
+    'calendar-cutover.tutur3u.com',
     'calendar-staging.tuturuuu.com',
     'tuturuuu-calendar-wave1-staging.fixture.workers.dev',
   ])(
@@ -113,7 +112,7 @@ describe('Calendar deployment profile', () => {
   it('staging serves its own host only after Access verification', async () => {
     const { handleCalendarRequest } = await load('staging');
     const response = await handleCalendarRequest(
-      new Request('https://calendar.staging.tutur3u.com/api/build-info'),
+      new Request('https://calendar.tutur3u.com/api/build-info'),
       env,
       ctx,
       telemetry
@@ -128,7 +127,7 @@ describe('Calendar deployment profile', () => {
     const { handleCalendarRequest } = await load('staging');
     for (const path of ['/api/build-info', '/en/personal', '/api/v1/x']) {
       const response = await handleCalendarRequest(
-        new Request(`https://calendar.staging.tutur3u.com${path}`),
+        new Request(`https://calendar.tutur3u.com${path}`),
         env,
         ctx,
         telemetry

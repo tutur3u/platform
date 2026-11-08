@@ -25,7 +25,6 @@ function query(result: () => Result) {
     in: () => builder,
     order: () => builder,
     range: () => builder,
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
     then(
       resolve: (value: unknown) => unknown,
       reject: (error: unknown) => unknown
@@ -96,10 +95,20 @@ beforeEach(() => {
   });
 });
 
+// The export is bounded: every request carries a date range unless it sets one.
+function withRange(search: string) {
+  const params = new URLSearchParams(search);
+  if (!params.has('fromDate') && !params.has('toDate')) {
+    params.set('fromDate', '2026-11-01');
+    params.set('toDate', '2026-11-30');
+  }
+  return `?${params}`;
+}
+
 async function exportAs(search: string) {
   const { GET } = await import('./route');
   const response = await GET(
-    new Request(`http://localhost/tutoring/export${search}`),
+    new Request(`http://localhost/tutoring/export${withRange(search)}`),
     { params: Promise.resolve({ wsId }) }
   );
   if (!response) throw new Error('Tutoring export returned no response');

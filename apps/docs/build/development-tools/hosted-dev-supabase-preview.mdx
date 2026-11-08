@@ -1,0 +1,106 @@
+---
+title: 'Hosted Dev Supabase Preview'
+description: 'Push migrations to a hosted dev Supabase project and share a running web and Tasks preview through Cloudflare quick tunnels.'
+updatedAt: '2026-10-28'
+---
+
+Use this when a change has to be tried on a real database without a local
+Docker stack, or when someone else has to click through a running build. It
+covers a hosted **dev** Supabase project that the project owner has authorized
+for migration pushes and test data. It never applies to production: production
+migrations still go through the gated `supabase-production.yaml` workflow, and
+`bun sb:push` / `bun sb:linkpush` stay off-limits in agent checkouts.
+
+## Push migrations to the dev project
+
+Run the repo's pinned CLI from `apps/database`. Pass the access token as
+`SUPABASE_ACCESS_TOKEN`: on macOS the pinned binary can otherwise block on a
+Keychain prompt with no output.
+
+```bash
+cd apps/database
+export SUPABASE_ACCESS_TOKEN=<token>   # never commit it
+node_modules/.bin/supabase link --project-ref <dev-ref>
+node_modules/.bin/supabase db push --linked --include-all --dry-run
+node_modules/.bin/supabase db push --linked --include-all
+```
+
+Read the dry run before pushing.
+
+- **Remote-only versions.** "Remote migration versions not found" usually
+  means a migration was renamed in the repo after the dev project applied it.
+  Check that the renamed file is idempotent, then run
+  `supabase migration repair --status reverted <old-version>` and let the
+  renamed file apply.
+- **Unqualified extension functions.** Without a database password, the CLI
+  connects through a temporary `cli_login_postgres` role and switches to
+  `postgres`. That session's `search_path` does not include `extensions`, so
+  a migration that calls an extension function such as `gen_random_bytes`
+  outside a function body fails with `function ... does not exist`. Apply that
+  one file through the Management API (`POST /v1/projects/<ref>/database/query`,
+  which runs as `postgres` with `extensions` on the path) inside a transaction.
+  In the same transaction, insert its row into
+  `supabase_migrations.schema_migrations`. Then resume `db push`.
+- **API schemas.** PostgREST must expose the same schemas as
+  `apps/database/supabase/config.toml` (`public, graphql_public, storage,
+  private`). A project that only exposes `public` fails on `private` RPCs,
+  for example task list counts on a board.
+
+Run SQL suites such as `apps/database/supabase/tests/task-board-sprints.sql`
+with `psql` over the temporary login role (`SET ROLE postgres` first). They
+begin and roll back their own transaction, so the dev data is unchanged.
+
+## Share a running preview
+
+Keep the preview in its own detached worktree under `.worktrees/`, so feature
+branches keep moving while it serves. Build only the workspace packages that
+export from `dist` (`types`, `supabase`, `internal-api`, `devbox`, `editor`,
+`masonry`) with their `tsc` build scripts. These are the dev runtime's
+prerequisites, not release builds.
+
+1. Start two quick tunnels first, because `NEXT_PUBLIC_*` values are read at
+   boot. Do not override the Host header.
+
+   ```bash
+   cloudflared tunnel --no-autoupdate --url http://localhost:7803  # WEB_ORIGIN
+   cloudflared tunnel --no-autoupdate --url http://localhost:7809  # TASKS_ORIGIN
+   ```
+
+2. Write each app's own `.env.local` (not the root one). Both need the
+   Supabase URL, the publishable and secret keys, and the same
+   `TUTURUUU_APP_COORDINATION_SECRET`, plus:
+
+   | App | Variables |
+   | --- | --- |
+   | `apps/web` | `BASE_URL`, `WEB_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL` = WEB_ORIGIN; `TASKS_APP_URL`, `NEXT_PUBLIC_TASKS_APP_URL` = TASKS_ORIGIN; `TUTURUUU_EXTERNAL_APP_DOMAINS=tasks:TASKS_ORIGIN`; `INTERNAL_WEB_API_ORIGIN=http://localhost:7803` |
+   | `apps/tasks` | `TASKS_APP_URL`, `NEXT_PUBLIC_TASKS_APP_URL` = TASKS_ORIGIN; `TTR_URL`, `NEXT_PUBLIC_WEB_APP_URL` = WEB_ORIGIN; `INTERNAL_WEB_API_ORIGIN=http://localhost:7803` |
+
+   With a hosted Supabase URL, dev sign-in requires Turnstile. Use Cloudflare's
+   public always-pass test keys (`NEXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA`,
+   `TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA`) and keep
+   captcha off on the dev project.
+
+3. Next 16 rejects cross-origin dev requests, and HMR reloads the page about
+   every 40 seconds when its socket is refused. In the preview worktree only,
+   add `allowedDevOrigins: ['*.trycloudflare.com']` to the
+   `createTuturuuuNextConfig` call in `apps/web/next.config.ts` and
+   `apps/tasks/next.config.ts`. Never commit it.
+
+4. Start `bun run dev:app` in `apps/web` and `apps/tasks`. Do not use
+   `bun dev`, which wraps them in portless.
+
+Opening TASKS_ORIGIN redirects to web's login. After password sign-in, web
+asks to continue to Tasks and returns through `/verify-token`. Keep the Mac
+awake (`caffeinate -dimsu`) for an overnight preview. Quick-tunnel URLs change
+whenever cloudflared restarts, and the env files and both apps must follow.
+
+## Known limits
+
+- Realtime (live board updates between people, collaborative descriptions in
+  the task panel) needs the `meet-realtime` worker and its token secret. The
+  preview does not run it, so the panel shows "Reconnecting".
+- Sessions are tied to each quick-tunnel host. The app-session refresh fetch
+  targets `https://localhost:<port>` and fails after about eight hours, so
+  people have to sign in again.
+- Quick tunnels allow roughly 200 in-flight requests. The first cold page
+  load in `next dev` may see a few retries.

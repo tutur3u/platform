@@ -1,0 +1,1137 @@
+{
+  "environments": ["development", "staging", "production"],
+  "flags": [
+    {
+      "key": "mobile_offline",
+      "family": "mobile-runtime",
+      "kind": "kill-switch",
+      "scope": "global",
+      "description": "Master switch for mobile offline capabilities.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_read_habits",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline reading of habits.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_read_time_tracker",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline reading of time tracker.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_read_home",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline reading of home.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_read_reminders",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline reading of reminders.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_read_mastermind",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline reading of mastermind.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_read_notes",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline reading of notes.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_read_documents",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline reading of documents.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_read_mail",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline reading of mail.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_read_chat",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline reading of chat.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_read_mira",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline reading of mira.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_read_drive_list",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline reading of drive list.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_edit_finance",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline editing of finance.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_edit_tasks",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline editing of tasks.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_edit_calendar",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Allow offline editing of calendar.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "offline_status_ui",
+      "family": "mobile-runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Show mobile offline status controls.",
+      "owner": "mona",
+      "createdAt": null,
+      "apps": ["mobile", "web"],
+      "appsComplete": true,
+      "sources": [
+        "config/feature-flags.json",
+        "apps/mobile/lib/core/feature_flags/mobile_flag.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true,
+      "legacyRemoveBy": "2027-01-31"
+    },
+    {
+      "key": "ENABLE_AI",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables AI features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["web"],
+      "appsComplete": false,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation-more-tools.tsx",
+        "packages/utils/src/feature-flags/requestable-features.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_EDUCATION",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables education-related features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["teach"],
+      "appsComplete": false,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "packages/education-core/src/tulearn/constants.ts",
+        "packages/utils/src/feature-flags/requestable-features.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_QUIZZES",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables quiz features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "packages/utils/src/feature-flags/requestable-features.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_CHALLENGES",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables challenge features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "packages/utils/src/feature-flags/requestable-features.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_AI_ONLY",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Restricts the workspace to AI-only features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["web"],
+      "appsComplete": false,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation.tsx"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_CHAT",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables chat features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["teach", "web"],
+      "appsComplete": false,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "apps/teach/src/app/api/ai/objects/shared.ts",
+        "apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/page.tsx"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_TASKS",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables task management features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["web"],
+      "appsComplete": false,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation-more-tools.tsx"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_DOCS",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables documentation features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["web"],
+      "appsComplete": false,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation-more-tools.tsx"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_DRIVE",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables file storage (Drive) features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": ["packages/utils/src/feature-flags/data.ts"],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_SLIDES",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": null,
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": ["packages/utils/src/feature-flags/data.ts"],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "DISABLE_INVITE",
+      "family": "workspace-secret",
+      "kind": "safety-control",
+      "scope": "workspace",
+      "description": null,
+      "owner": null,
+      "createdAt": null,
+      "apps": ["web"],
+      "appsComplete": false,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "apps/web/src/app/api/workspaces/[wsId]/members/invite/route.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "PREVENT_WORKSPACE_DELETION",
+      "family": "workspace-secret",
+      "kind": "safety-control",
+      "scope": "workspace",
+      "description": "Prevents the workspace from being deleted.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["web"],
+      "appsComplete": false,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "apps/web/src/legacy-api-routes/workspaces/[wsId]/route.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_AVATAR",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": null,
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": ["packages/utils/src/feature-flags/data.ts"],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_LOGO",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": null,
+      "owner": null,
+      "createdAt": null,
+      "apps": ["web"],
+      "appsComplete": false,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/page.tsx"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_API_KEYS",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables API key management for the workspace.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["web"],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/api-keys/page.tsx"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "EXTERNAL_PROJECT_ENABLED",
+      "family": "workspace-secret",
+      "kind": "operational",
+      "scope": "workspace",
+      "description": "Enables the external project studio binding for this destination workspace when managed by the root registry.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["cms", "web"],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/cms/src/features/cms-studio/constants.ts",
+        "apps/web/src/lib/external-projects/constants.ts",
+        "packages/storage-core/src/lib/external-projects/constants.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_X",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables X (formerly Twitter) integration features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_WHITEBOARDS",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables whiteboard features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_USERS",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables user management features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_TOPIC_ANNOUNCEMENTS",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables reusable topic announcements for user groups.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["contacts", "web"],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/lib/topic-announcements.ts",
+        "apps/contacts/src/lib/topic-announcements-access.ts",
+        "apps/web/src/lib/topic-announcement-send-admission.ts",
+        "packages/utils/src/topic-announcements.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_PROJECTS",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables project management features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_LINK_SHORTENER",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables the link shortener feature.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["web"],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/web/src/app/[locale]/(dashboard)/[wsId]/link-shortener/layout.tsx"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_HABITS",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables habits features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["calendar", "tasks", "web"],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/calendar/src/lib/habits/constants.ts",
+        "apps/tasks/src/lib/habits/constants.ts",
+        "apps/web/src/lib/habits/constants.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_INVENTORY",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables inventory management features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "packages/inventory-core/src/lib/inventory/access.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_FINANCE",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables finance management features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["web"],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/categories/finance.tsx"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_FEE_LOCK",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables monthly fee locking (chốt học phí), notice templates and the fee-lock Excel export in Finance.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["web"],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "packages/finance-core/src/fee-lock/constants.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_EMAIL_SENDING",
+      "family": "workspace-secret",
+      "kind": "operational",
+      "scope": "workspace",
+      "description": "Enables email sending capabilities.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["infrastructure", "web"],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/infrastructure/src/lib/post-email-queue/enqueue-access.ts",
+        "apps/web/src/lib/post-email-queue/enqueue-access.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_REPORT_EMAIL_SENDING",
+      "family": "workspace-secret",
+      "kind": "operational",
+      "scope": "workspace",
+      "description": "Allows approved weekly, monthly, quarterly, and yearly reports to enter the email queue. Requires ENABLE_EMAIL_SENDING too.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["contacts", "web"],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/contacts/src/app/[locale]/[wsId]/reports/report-email-gate-control.tsx",
+        "apps/web/src/lib/user-report-automation/access.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_CALENDAR",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables calendar features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_BLACKBOX",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables blackbox features.",
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ENABLE_AI_PLAYGROUND",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables the AI playground.",
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "ALLOW_CRAWLERS",
+      "family": "workspace-secret",
+      "kind": "safety-control",
+      "scope": "workspace",
+      "description": "Allows web crawlers to access public workspace content.",
+      "owner": null,
+      "createdAt": null,
+      "apps": [],
+      "appsComplete": false,
+      "sources": [
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "MOBILE_TASK_DESCRIPTION_EDITING_ENABLED",
+      "family": "mobile-build",
+      "kind": "release",
+      "scope": "build",
+      "description": "Build-time switch for rich task-description editing.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["mobile"],
+      "appsComplete": true,
+      "sources": [
+        "apps/infrastructure/src/lib/mobile-deployment/constants.ts",
+        "apps/mobile/lib/core/config/env.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "MOBILE_CALENDAR_INTEGRATIONS_ENABLED",
+      "family": "mobile-build",
+      "kind": "release",
+      "scope": "build",
+      "description": "Build-time switch for calendar integrations.",
+      "owner": null,
+      "createdAt": null,
+      "apps": ["mobile"],
+      "appsComplete": true,
+      "sources": [
+        "apps/infrastructure/src/lib/mobile-deployment/constants.ts",
+        "apps/mobile/lib/core/config/env.dart"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": true
+    },
+    {
+      "key": "newsletter_sending",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Staff test send from an approved customer subdomain.",
+      "owner": "platform",
+      "createdAt": "2026-11-08",
+      "apps": ["web"],
+      "appsComplete": true,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "apps/web/src/lib/newsletter/flag.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": false
+    }
+  ]
+}

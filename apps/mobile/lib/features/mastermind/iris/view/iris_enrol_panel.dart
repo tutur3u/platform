@@ -9,13 +9,17 @@ import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_device_identity.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_models.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay.dart';
+import 'package:mobile/features/mastermind/iris/device/iris_key_codec.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Enrols this device: the relay returns a 6-digit code, the app shows it
-/// with the key fingerprint's prefix, and the owner confirms on the Iris enrol
-/// page with their passkey. The app then polls the device until it is
-/// confirmed or expired (15 minutes). No chat message or typed command
-/// confirms a device.
+/// Enrols this device: the app picks a 6-digit code and registers its key
+/// with it, shows the code with the key fingerprint's prefix, and the owner
+/// confirms on the Iris enrol page with their passkey. The app then polls
+/// until it is confirmed or expired (15 minutes). No chat message or typed
+/// command confirms a device.
+///
+/// A code another pending enrolment holds is replaced once, silently. A key
+/// the relay already knows needs a new key, so the owner is offered one.
 class IrisEnrolPanel extends StatefulWidget {
   const IrisEnrolPanel({
     required this.relay,
@@ -39,7 +43,19 @@ class _IrisEnrolPanelState extends State<IrisEnrolPanel> {
   IrisDeviceStatus? _status;
   IrisFailure? _failure;
   bool _starting = false;
+  bool _enrolled = false;
   Timer? _poll;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadEnrolled());
+  }
+
+  Future<void> _loadEnrolled() async {
+    final enrolled = await widget.identity?.isEnrolled() ?? false;
+    if (mounted && enrolled) setState(() => _enrolled = true);
+  }
 
   @override
   void dispose() {
@@ -47,22 +63,36 @@ class _IrisEnrolPanelState extends State<IrisEnrolPanel> {
     super.dispose();
   }
 
-  Future<void> _start() async {
+  Future<void> _start({bool newKey = false}) async {
     final identity = widget.identity;
     if (identity == null || _starting) return;
     setState(() {
       _starting = true;
       _failure = null;
     });
+    if (newKey) await identity.forget();
     final key = await identity.load();
-    final result = key == null
+    Future<IrisResult<IrisEnrollment>> enroll(IrisDeviceKeyMaterial key) =>
+        widget.relay.enroll(
+          key.publicKey,
+          key.fingerprint,
+          deviceId: key.deviceId,
+          code: newIrisEnrolCode(),
+        );
+    var result = key == null
         ? const IrisErr<IrisEnrollment>(
             IrisFailure(IrisFailureKind.notConfigured),
           )
-        : await widget.relay.enroll(key.publicKey, key.fingerprint);
+        : await enroll(key);
+    if (key != null &&
+        result.failureOrNull?.kind == IrisFailureKind.codeConflict) {
+      result = await enroll(key);
+    }
+    if (result case IrisOk(:final value)) await identity.pending(value);
     if (!mounted) return;
     setState(() {
       _starting = false;
+      _enrolled = false;
       _enrolment = result.valueOrNull;
       _failure = result.failureOrNull;
       _status = _enrolment == null ? null : IrisDeviceStatus.pending;
@@ -78,10 +108,10 @@ class _IrisEnrolPanelState extends State<IrisEnrolPanel> {
 
   Future<void> _check() async {
     final enrolment = _enrolment;
-    if (enrolment == null) return;
-    final result = await widget.relay.device(enrolment.deviceId);
+    final identity = widget.identity;
+    if (enrolment == null || identity == null) return;
+    var status = await identity.check(widget.relay, enrolment);
     if (!mounted) return;
-    var status = result.valueOrNull?.status ?? _status;
     if (status == IrisDeviceStatus.pending &&
         !DateTime.now().toUtc().isBefore(enrolment.expiresAt)) {
       status = IrisDeviceStatus.expired;
@@ -141,11 +171,16 @@ class _IrisEnrolPanelState extends State<IrisEnrolPanel> {
           ],
           if (_failure case final failure?) ...[
             AppAlert.destructive(
-              content: Text(
-                failure.kind == IrisFailureKind.rateLimited
-                    ? l10n.mastermindIrisEnrolLimit
-                    : l10n.mastermindIrisEnrolFailed,
-              ),
+              key: const ValueKey('iris-enrol-failure'),
+              content: Text(switch (failure.kind) {
+                IrisFailureKind.rateLimited => l10n.mastermindIrisEnrolLimit,
+                IrisFailureKind.codeConflict =>
+                  l10n.mastermindIrisEnrolCodeConflict,
+                IrisFailureKind.deviceConflict =>
+                  l10n.mastermindIrisEnrolDeviceConflict,
+                IrisFailureKind.relayStopped => l10n.mastermindIrisRelayStopped,
+                _ => l10n.mastermindIrisEnrolFailed,
+              }),
             ),
             const SizedBox(height: AppSpacing.md),
           ],
@@ -154,6 +189,29 @@ class _IrisEnrolPanelState extends State<IrisEnrolPanel> {
               leading: const Icon(AppIcons.info),
               content: Text(l10n.mastermindIrisEnrolUnavailable),
             )
+          else if (_enrolled && _status == null) ...[
+            Text(
+              l10n.mastermindIrisEnrolConfirmed,
+              key: const ValueKey('iris-enrol-status'),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            // A new key replaces this one, so the device needs confirming
+            // again; only after a revoke or a lost key.
+            AppButton.secondary(
+              key: const ValueKey('iris-enrol-again'),
+              onPressed: _starting ? null : () => unawaited(_start()),
+              child: Text(l10n.mastermindIrisEnrolAgain),
+            ),
+          ] else if (_failure?.kind == IrisFailureKind.deviceConflict)
+            AppButton.secondary(
+              key: const ValueKey('iris-enrol-again'),
+              onPressed: _starting
+                  ? null
+                  : () => unawaited(_start(newKey: true)),
+              child: Text(l10n.mastermindIrisEnrolAgain),
+            )
+          else if (_failure?.kind == IrisFailureKind.relayStopped)
+            const SizedBox.shrink()
           else if (!waiting && _status != IrisDeviceStatus.confirmed)
             AppButton.primary(
               key: const ValueKey('iris-enrol-start'),
