@@ -53,7 +53,9 @@ export async function connectedMailRoute(
       return NextResponse.json({ error: 'Invalid account' }, { status: 400 });
     const account = await getAccount(ctx, accountId.data);
     if (segments.length === 1 && request.method === 'DELETE') {
-      const { error } = await (await table('mail_connected_accounts'))
+      const { error } = await (
+        await table('mail_connected_accounts')
+      )
         .delete()
         .eq('id', account.id)
         .eq('user_id', ctx.user.id)

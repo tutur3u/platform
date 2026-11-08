@@ -17,9 +17,8 @@ describe('upstash-rest', () => {
   });
 
   it('returns null when Upstash REST env vars are missing', async () => {
-    const { getUpstashRestRedisClient, hasUpstashRestEnv } = await import(
-      '../upstash-rest.js'
-    );
+    const { getUpstashRestRedisClient, hasUpstashRestEnv } =
+      await import('../upstash-rest.js');
 
     expect(hasUpstashRestEnv()).toBe(false);
     await expect(getUpstashRestRedisClient()).resolves.toBeNull();

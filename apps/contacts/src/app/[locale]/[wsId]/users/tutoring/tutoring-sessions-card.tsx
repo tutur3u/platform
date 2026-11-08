@@ -182,6 +182,7 @@ export function TutoringSessionsCard({
     useState<TutoringSessionRecord | null>(null);
   const [draftContent, setDraftContent] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const canExportDetailed = canExportTutoringFormat(exportQuery, 'detailed');
   const canExportPayroll = canExportTutoringFormat(exportQuery, 'payroll');
   const updateContent = useMutation({
     mutationFn: ({ id, content }: { id: string; content: string }) =>
@@ -290,8 +291,9 @@ export function TutoringSessionsCard({
               <DropdownMenuLabel>{t('export_scope')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {EXPORT_FORMATS.map((format) => {
-                const blocked =
-                  format.startsWith('payroll') && !canExportPayroll;
+                const blocked = format.startsWith('payroll')
+                  ? !canExportPayroll
+                  : !canExportDetailed;
                 return (
                   <DropdownMenuItem
                     disabled={blocked}
@@ -302,6 +304,11 @@ export function TutoringSessionsCard({
                   </DropdownMenuItem>
                 );
               })}
+              {canExportDetailed ? null : (
+                <p className="max-w-64 px-2 py-1.5 text-muted-foreground text-xs">
+                  {t('export_range_required')}
+                </p>
+              )}
               {canExportPayroll ? null : (
                 <p className="max-w-64 px-2 py-1.5 text-muted-foreground text-xs">
                   {t('payroll_invalid_range')}

@@ -126,7 +126,7 @@ export function EmployeeDetailsPanel({
       {/* Profile Header */}
       <div className="text-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {/** biome-ignore lint/performance/noImgElement: <> */}
+
         <img
           src={person.photoUrl}
           alt={person.fullName}

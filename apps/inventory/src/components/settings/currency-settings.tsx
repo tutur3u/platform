@@ -78,15 +78,15 @@ export function InventoryCurrencySettings({ wsId }: { wsId: string }) {
 
   if (!initialized) {
     return (
-      <div className="flex justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
     <form
-      className="grid gap-3"
+      className="flex items-center gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         updateMutation.mutate();
@@ -96,7 +96,7 @@ export function InventoryCurrencySettings({ wsId }: { wsId: string }) {
         onValueChange={(value) => setSelected(value as SupportedCurrency)}
         value={selected}
       >
-        <SelectTrigger className="max-w-sm">
+        <SelectTrigger className="min-w-0 flex-1">
           <SelectValue placeholder={t('currency_placeholder')} />
         </SelectTrigger>
         <SelectContent>
@@ -108,7 +108,6 @@ export function InventoryCurrencySettings({ wsId }: { wsId: string }) {
         </SelectContent>
       </Select>
       <Button
-        className="w-fit"
         disabled={isLoading || updateMutation.isPending || !isDirty}
         type="submit"
       >

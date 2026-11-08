@@ -13,6 +13,11 @@ import {
   updateWorkspaceConfig,
 } from '@tuturuuu/internal-api/workspace-configs';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Form,
   FormControl,
@@ -130,37 +135,31 @@ export default function AttendanceDisplaySettings({ wsId }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="font-medium text-lg">{t('display_title')}</h3>
-        <p className="text-muted-foreground text-sm">
-          {t('display_description')}
-        </p>
-      </div>
-
+    <SettingsSection>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)}>
           <FormField
             control={form.control}
             name="show_managers_in_attendance"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    {t('show_managers_label')}
-                  </FormLabel>
-                  <FormDescription>{t('show_managers_help')}</FormDescription>
-                </div>
-                <FormControl>
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                </FormControl>
+              <FormItem className="gap-0">
+                <SettingItemTab
+                  title={<FormLabel>{t('show_managers_label')}</FormLabel>}
+                  description={
+                    <FormDescription>{t('show_managers_help')}</FormDescription>
+                  }
+                >
+                  <FormControl>
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
+                  </FormControl>
+                </SettingItemTab>
               </FormItem>
             )}
           />
@@ -169,37 +168,42 @@ export default function AttendanceDisplaySettings({ wsId }: Props) {
             control={form.control}
             name="count_managers_in_attendance_totals"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    {t('count_managers_label')}
-                  </FormLabel>
-                  <FormDescription>{t('count_managers_help')}</FormDescription>
-                </div>
-                <FormControl>
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                </FormControl>
+              <FormItem className="gap-0">
+                <SettingItemTab
+                  title={<FormLabel>{t('count_managers_label')}</FormLabel>}
+                  description={
+                    <FormDescription>
+                      {t('count_managers_help')}
+                    </FormDescription>
+                  }
+                >
+                  <FormControl>
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
+                  </FormControl>
+                </SettingItemTab>
               </FormItem>
             )}
           />
 
-          <Button
-            type="submit"
-            disabled={
-              isLoading || updateMutation.isPending || !form.formState.isDirty
-            }
-          >
-            {updateMutation.isPending ? t('saving') : t('save')}
-          </Button>
+          <SettingsSectionFooter>
+            <Button
+              type="submit"
+              disabled={
+                isLoading || updateMutation.isPending || !form.formState.isDirty
+              }
+            >
+              {updateMutation.isPending ? t('saving') : t('save')}
+            </Button>
+          </SettingsSectionFooter>
         </form>
       </Form>
-    </div>
+    </SettingsSection>
   );
 }

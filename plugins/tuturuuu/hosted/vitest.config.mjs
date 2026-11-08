@@ -8,7 +8,6 @@ const webRequire = createRequire(
   new URL('../../../apps/web/package.json', import.meta.url)
 );
 const sdkRoot =
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: This standalone Node test config is not run or cached through Turbo.
   process.env.TUTURUUU_MCP_SDK_DIR ??
   resolve(
     dirname(webRequire.resolve('@modelcontextprotocol/sdk/server/mcp.js')),

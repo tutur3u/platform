@@ -441,12 +441,10 @@ export async function main() {
   let failureReason;
   let metadata;
   let browserResults = [];
-  const isolated = await import(
-    '../../apps/database/scripts/run-supabase-isolated.js'
-  );
-  const { ensureSupabaseBinary } = await import(
-    '../../apps/database/scripts/run-supabase.js'
-  );
+  const isolated =
+    await import('../../apps/database/scripts/run-supabase-isolated.js');
+  const { ensureSupabaseBinary } =
+    await import('../../apps/database/scripts/run-supabase.js');
   try {
     const identity = isolated.deriveIsolatedIdentity({
       headSha: sha,

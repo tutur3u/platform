@@ -119,7 +119,6 @@ function query(initial: Row[]) {
     },
     single: async () => ({ data: rows[0] ?? null, error: null }),
     maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase builders are awaitable.
     then: (
       resolve: (result: { data: Row[]; error: null; count: number }) => unknown
     ) =>

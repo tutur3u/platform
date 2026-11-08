@@ -3,13 +3,13 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
-      - 'apps/web/**'
-      - 'packages/start-bridge/**'
-      - 'packages/legal/**'
-      - 'packages/utils/src/abuse-protection/**'
-      - 'packages/utils/package.json'
-      - 'bun.lock'
-      - '.github/workflows/web-start-candidate.yaml'
+      - "apps/web/**"
+      - "packages/start-bridge/**"
+      - "packages/legal/**"
+      - "packages/utils/src/abuse-protection/**"
+      - "packages/utils/package.json"
+      - "bun.lock"
+      - ".github/workflows/web-start-candidate.yaml"
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      WRANGLER_SEND_METRICS: 'false'
+      WRANGLER_SEND_METRICS: "false"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -57,4 +57,4 @@ jobs:
       - run: bun run --cwd apps/web build:candidate
       - run: bun run --cwd apps/web test:candidate:runtime
       - run: bun run --cwd apps/web type-check:candidate
-      - run: bun x --no-install biome check apps/web/cloudflare apps/web/vite.config.mts apps/web/tsconfig.candidate.json
+      - run: node scripts/oxc-check.js apps/web/cloudflare apps/web/vite.config.mts apps/web/tsconfig.candidate.json

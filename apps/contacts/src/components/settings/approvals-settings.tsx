@@ -9,8 +9,13 @@ import {
   getWorkspacePermissionsSummary,
   type WorkspacePermissionsSummary,
 } from '@tuturuuu/internal-api/settings';
-import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Form,
   FormControl,
@@ -273,50 +278,52 @@ export function ApprovalsSettings({ wsId }: Props) {
 
   if (isPermissionsError) {
     return (
-      <Alert>
-        <AlertDescription>{t('permissions_load_error')}</AlertDescription>
-      </Alert>
+      <SettingsSection>
+        <SettingsSectionMessage role="alert" tone="default">
+          {t('permissions_load_error')}
+        </SettingsSectionMessage>
+      </SettingsSection>
     );
   }
 
   if (!isLoadingPermissions && !canManageWorkspaceSettings) {
     return (
-      <Alert>
-        <AlertDescription>{t('insufficient_permissions')}</AlertDescription>
-      </Alert>
+      <SettingsSection>
+        <SettingsSectionMessage role="alert" tone="default">
+          {t('insufficient_permissions')}
+        </SettingsSectionMessage>
+      </SettingsSection>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <SettingsSection>
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit((v) => updateMutation.mutate(v))}
-          className="space-y-4"
-        >
+        <form onSubmit={form.handleSubmit((v) => updateMutation.mutate(v))}>
           <FormField
             control={form.control}
             name="enable_post_approval"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    {t('enable_post_approval')}
-                  </FormLabel>
-                  <FormDescription>
-                    {t('enable_post_approval_description')}
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                </FormControl>
+              <FormItem className="gap-0">
+                <SettingItemTab
+                  title={<FormLabel>{t('enable_post_approval')}</FormLabel>}
+                  description={
+                    <FormDescription>
+                      {t('enable_post_approval_description')}
+                    </FormDescription>
+                  }
+                >
+                  <FormControl>
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
+                  </FormControl>
+                </SettingItemTab>
               </FormItem>
             )}
           />
@@ -325,40 +332,41 @@ export function ApprovalsSettings({ wsId }: Props) {
             control={form.control}
             name="enable_report_approval"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    {t('enable_report_approval')}
-                  </FormLabel>
-                  <FormDescription>
-                    {t('enable_report_approval_description')}
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={(checked) => {
-                        field.onChange(checked);
+              <FormItem className="gap-0">
+                <SettingItemTab
+                  title={<FormLabel>{t('enable_report_approval')}</FormLabel>}
+                  description={
+                    <FormDescription>
+                      {t('enable_report_approval_description')}
+                    </FormDescription>
+                  }
+                >
+                  <FormControl>
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
 
-                        if (!checked) {
-                          form.setValue(
-                            'enable_report_export_only_approved',
-                            false,
-                            { shouldDirty: true }
-                          );
-                          form.setValue(
-                            'enable_report_pending_watermark',
-                            false,
-                            { shouldDirty: true }
-                          );
-                        }
-                      }}
-                    />
-                  )}
-                </FormControl>
+                          if (!checked) {
+                            form.setValue(
+                              'enable_report_export_only_approved',
+                              false,
+                              { shouldDirty: true }
+                            );
+                            form.setValue(
+                              'enable_report_pending_watermark',
+                              false,
+                              { shouldDirty: true }
+                            );
+                          }
+                        }}
+                      />
+                    )}
+                  </FormControl>
+                </SettingItemTab>
               </FormItem>
             )}
           />
@@ -367,31 +375,33 @@ export function ApprovalsSettings({ wsId }: Props) {
             control={form.control}
             name="enable_report_export_only_approved"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    {t('enable_report_export_only_approved')}
-                  </FormLabel>
-                  <FormDescription>
-                    {t('enable_report_export_only_approved_description')}
-                    {isReportApprovalDisabled && (
-                      <span className="mt-1 block">
-                        {t('requires_report_approval_enabled')}
-                      </span>
+              <FormItem className="gap-0">
+                <SettingItemTab
+                  title={
+                    <FormLabel>
+                      {t('enable_report_export_only_approved')}
+                    </FormLabel>
+                  }
+                  description={
+                    <FormDescription>
+                      {isReportApprovalDisabled
+                        ? `${t('enable_report_export_only_approved_description')}\n${t('requires_report_approval_enabled')}`
+                        : t('enable_report_export_only_approved_description')}
+                    </FormDescription>
+                  }
+                >
+                  <FormControl>
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Switch
+                        checked={field.value}
+                        disabled={isReportApprovalDisabled}
+                        onCheckedChange={field.onChange}
+                      />
                     )}
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Switch
-                      checked={field.value}
-                      disabled={isReportApprovalDisabled}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                </FormControl>
+                  </FormControl>
+                </SettingItemTab>
               </FormItem>
             )}
           />
@@ -400,76 +410,86 @@ export function ApprovalsSettings({ wsId }: Props) {
             control={form.control}
             name="enable_report_pending_watermark"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    {t('enable_report_pending_watermark')}
-                  </FormLabel>
-                  <FormDescription>
-                    {t('enable_report_pending_watermark_description')}
-                    {isReportApprovalDisabled && (
-                      <span className="mt-1 block">
-                        {t('requires_report_approval_enabled')}
-                      </span>
+              <FormItem className="gap-0">
+                <SettingItemTab
+                  title={
+                    <FormLabel>
+                      {t('enable_report_pending_watermark')}
+                    </FormLabel>
+                  }
+                  description={
+                    <FormDescription>
+                      {isReportApprovalDisabled
+                        ? `${t('enable_report_pending_watermark_description')}\n${t('requires_report_approval_enabled')}`
+                        : t('enable_report_pending_watermark_description')}
+                    </FormDescription>
+                  }
+                >
+                  <FormControl>
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Switch
+                        checked={field.value}
+                        disabled={isReportApprovalDisabled}
+                        onCheckedChange={field.onChange}
+                      />
                     )}
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Switch
-                      checked={field.value}
-                      disabled={isReportApprovalDisabled}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                </FormControl>
+                  </FormControl>
+                </SettingItemTab>
               </FormItem>
             )}
           />
 
           {shouldShowAutoApproveWarning && (
-            <Alert>
-              <AlertDescription>
-                <div className="space-y-2 text-sm">
-                  <p className="font-medium">
-                    {t('pending_auto_approve_warning_title')}
+            <SettingsSectionMessage
+              className="py-4"
+              role="alert"
+              tone="default"
+            >
+              <div className="space-y-1">
+                <p className="font-medium text-dynamic-yellow">
+                  {t('pending_auto_approve_warning_title')}
+                </p>
+                <p className="text-muted-foreground">
+                  {t('pending_auto_approve_warning_description')}
+                </p>
+                {(willDisablePostApproval || willDisableReportApproval) &&
+                  isPendingSummaryError && (
+                    <p className="text-muted-foreground">
+                      {t('pending_auto_approve_warning_unknown')}
+                    </p>
+                  )}
+                {willDisablePostApproval && pendingPostsCount > 0 && (
+                  <p className="text-muted-foreground">
+                    {t('pending_auto_approve_posts_count', {
+                      count: pendingPostsCount,
+                    })}
                   </p>
-                  <p>{t('pending_auto_approve_warning_description')}</p>
-                  {(willDisablePostApproval || willDisableReportApproval) &&
-                    isPendingSummaryError && (
-                      <p>{t('pending_auto_approve_warning_unknown')}</p>
-                    )}
-                  {willDisablePostApproval && pendingPostsCount > 0 && (
-                    <p>
-                      {t('pending_auto_approve_posts_count', {
-                        count: pendingPostsCount,
-                      })}
-                    </p>
-                  )}
-                  {willDisableReportApproval && pendingReportsCount > 0 && (
-                    <p>
-                      {t('pending_auto_approve_reports_count', {
-                        count: pendingReportsCount,
-                      })}
-                    </p>
-                  )}
-                </div>
-              </AlertDescription>
-            </Alert>
+                )}
+                {willDisableReportApproval && pendingReportsCount > 0 && (
+                  <p className="text-muted-foreground">
+                    {t('pending_auto_approve_reports_count', {
+                      count: pendingReportsCount,
+                    })}
+                  </p>
+                )}
+              </div>
+            </SettingsSectionMessage>
           )}
 
-          <Button
-            type="submit"
-            disabled={
-              isLoading || updateMutation.isPending || !form.formState.isDirty
-            }
-          >
-            {updateMutation.isPending ? t('saving') : t('save')}
-          </Button>
+          <SettingsSectionFooter>
+            <Button
+              type="submit"
+              disabled={
+                isLoading || updateMutation.isPending || !form.formState.isDirty
+              }
+            >
+              {updateMutation.isPending ? t('saving') : t('save')}
+            </Button>
+          </SettingsSectionFooter>
         </form>
       </Form>
-    </div>
+    </SettingsSection>
   );
 }

@@ -19,9 +19,8 @@ describe('whiteboard image upload optimization', () => {
     const optimizedBlob = new Blob(['optimized'], { type: 'image/png' });
     mocks.imageCompression.mockResolvedValue(optimizedBlob);
 
-    const { optimizeWhiteboardImageUpload } = await import(
-      '@/lib/whiteboards/image-upload'
-    );
+    const { optimizeWhiteboardImageUpload } =
+      await import('@/lib/whiteboards/image-upload');
     const originalFile = new File(['original'], 'diagram.png', {
       type: 'image/png',
     });
@@ -41,9 +40,8 @@ describe('whiteboard image upload optimization', () => {
   });
 
   it('leaves unsupported formats unchanged', async () => {
-    const { optimizeWhiteboardImageUpload } = await import(
-      '@/lib/whiteboards/image-upload'
-    );
+    const { optimizeWhiteboardImageUpload } =
+      await import('@/lib/whiteboards/image-upload');
     const originalFile = new File(['vector'], 'diagram.svg', {
       type: 'image/svg+xml',
     });

@@ -148,7 +148,7 @@ export function ManagerLinkDialog({
             candidates.map((candidate) => {
               const usesExistingProfile = Boolean(
                 candidate.linkedVirtualUserId &&
-                  candidate.linkedVirtualUserId !== manager.id
+                candidate.linkedVirtualUserId !== manager.id
               );
               return (
                 <div

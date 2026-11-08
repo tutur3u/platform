@@ -204,9 +204,8 @@ describe('finance workspace boundaries', () => {
         key === 'wallet_id' ? 'workspace_wallets' : 'transaction_categories'
       ] = [{ id: ID, ws_id: FOREIGN }];
       const { POST } = await import('./recurring-transactions/route');
-      const { PUT } = await import(
-        './recurring-transactions/[recurringTransactionId]/route'
-      );
+      const { PUT } =
+        await import('./recurring-transactions/[recurringTransactionId]/route');
       const body = {
         name: 'Recurring',
         amount: 10,
@@ -227,9 +226,8 @@ describe('finance workspace boundaries', () => {
   it('validates recurring wallets with the admin client on create and update', async () => {
     state.rows.workspace_wallets = [{ id: ID, ws_id: WS }];
     const { POST } = await import('./recurring-transactions/route');
-    const { PUT } = await import(
-      './recurring-transactions/[recurringTransactionId]/route'
-    );
+    const { PUT } =
+      await import('./recurring-transactions/[recurringTransactionId]/route');
     const body = {
       name: 'Recurring',
       amount: 10,
@@ -272,9 +270,8 @@ describe('finance workspace boundaries', () => {
   );
   it('requires finance management before importing ledger data', async () => {
     state.denied.add('manage_finance');
-    const { POST } = await import(
-      '../../../../workspaces/[wsId]/transactions/import/money-lover/route'
-    );
+    const { POST } =
+      await import('../../../../workspaces/[wsId]/transactions/import/money-lover/route');
     const body = new FormData();
     body.set('transactions', '[]');
     expect(

@@ -154,7 +154,6 @@ beforeEach(() => {
       throw new Error('Unexpected synthetic export network request');
     })
   );
-  // biome-ignore lint/suspicious/noDocumentCookie: Synthetic finance visibility fixture.
   document.cookie = 'finance-confidential-mode=false;path=/';
   window.localStorage.clear();
   window.history.replaceState({}, '', '/');
@@ -191,7 +190,6 @@ describe('actual invoice card PNG export account and invoice lifetime', () => {
     await exportPng();
     await waitFor(() => expect(renderer).toHaveBeenCalledOnce());
     act(() => {
-      // biome-ignore lint/suspicious/noDocumentCookie: Real visibility hook reads this synthetic fixture.
       document.cookie = 'finance-confidential-mode=true;path=/';
       window.dispatchEvent(new Event('finance-confidential-mode-change'));
     });

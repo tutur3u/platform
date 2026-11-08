@@ -103,7 +103,6 @@ export function TaskItemCheckboxContent({
           disabled={!isEditable}
           onSelect={setCheckboxState}
         >
-          {/* biome-ignore lint/a11y/useSemanticElements: a button avoids native checkbox state changes while ProseMirror owns the tri-state document update */}
           <button
             type="button"
             role="checkbox"

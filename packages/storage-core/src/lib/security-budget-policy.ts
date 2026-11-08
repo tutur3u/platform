@@ -64,7 +64,9 @@ export async function getSecurityBudgetPolicy(scope: {
       client = undefined;
       throw error;
     });
-    const { data, error } = await (await client)
+    const { data, error } = await (
+      await client
+    )
       .rpc('get_security_budget_entitlement', {
         p_ws_id: workspaceId ?? null,
         p_user_id: userId ?? null,

@@ -7,9 +7,8 @@ export default defineBridgeAppConfig({
     unknownHost: 'reject',
   },
   async wrapResponse(response, { request }) {
-    const { applyResponsePolicy } = await import(
-      './src/start-bridge/response-policy'
-    );
+    const { applyResponsePolicy } =
+      await import('./src/start-bridge/response-policy');
     return applyResponsePolicy(request, response);
   },
 });

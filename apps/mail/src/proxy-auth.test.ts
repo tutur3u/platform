@@ -385,9 +385,8 @@ describe('mounted Mail shared-session boundary', () => {
     ).toEqual([]);
   });
   it('guards mounted functions without refreshing or clearing the shared session', async () => {
-    const { nativeFunctionProxy } = await import(
-      './runtime/native-function-proxy'
-    );
+    const { nativeFunctionProxy } =
+      await import('./runtime/native-function-proxy');
     const request = new NextRequest('https://tuturuuu.com/mail/_fn/fixture', {
       method: 'POST',
       headers: {

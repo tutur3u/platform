@@ -1,7 +1,11 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { getTaskTicketLabel } from '@tuturuuu/utils/task-helper';
 import { describe, expect, it } from 'vitest';
 import {
+  getShownTaskTicketLabel,
+  getShownTicketIdentifier,
+  getTaskCardBadgeProjects,
   getTaskCardHydratingOpenOptions,
   getTaskCardTicketIdentifier,
   isExternalTaskSnapshot,
@@ -221,5 +225,69 @@ describe('getTaskCardTicketIdentifier', () => {
         },
       })
     ).toBe('PLA-12');
+  });
+});
+
+describe('getTaskCardBadgeProjects', () => {
+  const platform = {
+    id: 'p-1',
+    name: 'Platform',
+    ticket_key: 'PLA',
+    ticket_number: 2,
+  };
+  const mobile = {
+    id: 'p-2',
+    name: 'Mobile',
+    ticket_key: 'MOB',
+    ticket_number: 1,
+  };
+  const card = (projects: object[], ticket_projects?: object[]) =>
+    ({ projects, ticket_projects }) as unknown as Task;
+
+  it('drops the badge when the ticket prefix already names the only project', () => {
+    expect(getTaskCardBadgeProjects(card([platform]), 'PLA-2')).toEqual([]);
+  });
+
+  it('keeps every badge when the task has several projects', () => {
+    expect(getTaskCardBadgeProjects(card([platform, mobile]), 'PLA-2')).toEqual(
+      [platform, mobile]
+    );
+  });
+
+  it('keeps the badge when the project has no key, so there is no prefix', () => {
+    expect(getTaskCardBadgeProjects(card([platform]), null)).toEqual([
+      platform,
+    ]);
+  });
+
+  it('keeps a personal project badge when the ticket comes from the source project', () => {
+    expect(
+      getTaskCardBadgeProjects(card([mobile], [platform]), 'PLA-2')
+    ).toEqual([mobile]);
+  });
+
+  it('shows nothing for a task without projects', () => {
+    expect(getTaskCardBadgeProjects(card([]), null)).toEqual([]);
+  });
+});
+
+describe('getShownTicketIdentifier', () => {
+  it('shows no ticket ID in Documents lists, so their project badge stays', () => {
+    expect(getShownTicketIdentifier('PLA-2', 'documents')).toBeNull();
+    expect(getShownTicketIdentifier('PLA-2', 'active')).toBe('PLA-2');
+  });
+
+  it('reads the ticket ID off the task', () => {
+    const task = {
+      id: 't1',
+      projects: [{ id: 'p1', name: 'Platform', ticket_key: 'PLA' }],
+      ticket_projects: [
+        { id: 'p1', name: 'Platform', ticket_key: 'PLA', ticket_number: 2 },
+      ],
+    } as unknown as Task;
+    expect(getShownTaskTicketLabel(task, 'documents')).toBeNull();
+    expect(getShownTaskTicketLabel(task, 'active')).toBe(
+      getTaskTicketLabel(task)
+    );
   });
 });

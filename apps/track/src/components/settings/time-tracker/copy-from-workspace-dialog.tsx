@@ -327,7 +327,7 @@ export function CopyFromWorkspaceDialog({
                   {categories.length > 0 && (
                     <>
                       <div className="sticky top-0 border-b bg-background px-3 py-2">
-                        <h4 className="flex items-center gap-2 font-medium text-green-600 text-sm dark:text-green-400">
+                        <h4 className="flex items-center gap-2 font-medium text-dynamic-green text-sm">
                           <CheckCircle className="h-4 w-4" />
                           {t('copy_dialog.available_to_copy')} (
                           {categories.length})
@@ -381,7 +381,7 @@ export function CopyFromWorkspaceDialog({
                   {existingCategories.length > 0 && (
                     <>
                       <div className="sticky top-0 border-b bg-background px-3 py-2">
-                        <h4 className="flex items-center gap-2 font-medium text-sm text-yellow-600 dark:text-yellow-400">
+                        <h4 className="flex items-center gap-2 font-medium text-dynamic-yellow text-sm">
                           <AlertCircle className="h-4 w-4" />
                           {t('copy_dialog.already_exist_title')} (
                           {existingCategories.length})
@@ -390,7 +390,7 @@ export function CopyFromWorkspaceDialog({
                       {existingCategories.map((category) => (
                         <div
                           key={`existing-${category.id}`}
-                          className="flex w-full items-start space-x-3 rounded-md p-3 text-left opacity-60"
+                          className="flex w-full items-start space-x-3 rounded-md p-3 text-left"
                         >
                           <Checkbox
                             checked={false}
@@ -408,7 +408,7 @@ export function CopyFromWorkspaceDialog({
                             <div className="min-w-0 flex-1">
                               <div className="font-medium text-sm leading-relaxed">
                                 {category.name}
-                                <span className="ml-2 text-xs text-yellow-600 dark:text-yellow-400">
+                                <span className="ml-2 text-dynamic-yellow text-xs">
                                   {t('copy_dialog.already_exists_label')}
                                 </span>
                               </div>

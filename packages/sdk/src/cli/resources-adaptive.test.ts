@@ -150,167 +150,180 @@ describe('pure burst telemetry decision', () => {
   });
 });
 
-describe('adaptive configuration and budgets', {
-  timeout: crossProcessTimeout,
-}, () => {
-  it('keeps absent maximum equal to base and clamps out-of-range maxima', async () => {
-    const path = await fixtures.home(2);
-    const config = (await readResourceConfig(path))!;
-    expect(resourceMaxLanes(config)).toBe(2);
-    for (const [maxValidationLanes, expected] of [
-      [1, 2],
-      [17, 16],
-      [2.5, 2],
-    ] as const) {
+describe(
+  'adaptive configuration and budgets',
+  {
+    timeout: crossProcessTimeout,
+  },
+  () => {
+    it('keeps absent maximum equal to base and clamps out-of-range maxima', async () => {
+      const path = await fixtures.home(2);
+      const config = (await readResourceConfig(path))!;
+      expect(resourceMaxLanes(config)).toBe(2);
+      for (const [maxValidationLanes, expected] of [
+        [1, 2],
+        [17, 16],
+        [2.5, 2],
+      ] as const) {
+        await atomicJson(join(path, 'config.json'), {
+          ...config,
+          maxValidationLanes,
+        });
+        expect(resourceMaxLanes((await readResourceConfig(path))!)).toBe(
+          expected
+        );
+      }
+      for (const maxValidationLanes of ['3', null]) {
+        await atomicJson(join(path, 'config.json'), {
+          ...config,
+          maxValidationLanes,
+        });
+        await expect(readResourceConfig(path)).rejects.toThrow(
+          'maxValidationLanes must be an integer from 1 to 16'
+        );
+      }
       await atomicJson(join(path, 'config.json'), {
         ...config,
-        maxValidationLanes,
+        maxValidationLanes: 8,
       });
-      expect(resourceMaxLanes((await readResourceConfig(path))!)).toBe(
-        expected
+      expect(resourceMaxLanes((await readResourceConfig(path))!)).toBe(8);
+    });
+    it('reserves bounded caps and accounts for recorded allocations', () => {
+      const config = {
+        ...defaultResourceConfig(),
+        maxValidationLanes: 3,
+        vitestWorkers: 3,
+        buildJobs: 3,
+      };
+      const owners: ResourceOwner[] = [];
+      for (let i = 0; i < 3; i++) {
+        const caps = admissionResourceConfig(config, owners)!;
+        expect([
+          caps.vitestWorkers,
+          caps.buildJobs,
+          caps.turboConcurrency,
+        ]).toEqual([1, 1, 1]);
+        owners.push({ ...newOwner('fixture'), limits: caps });
+      }
+      expect(admissionResourceConfig(config, owners)).toBeUndefined();
+      expect(
+        owners.reduce(
+          (sum, owner) => sum + (owner.limits?.vitestWorkers ?? 0),
+          0
+        )
+      ).toBe(3);
+      // A spent aggregate budget still admits a pressure-gated lane with one worker.
+      for (const owner of [
+        { ...newOwner('old'), limits: { vitestWorkers: 3, buildJobs: 3 } },
+        newOwner('missing-caps'),
+      ])
+        expect(admissionResourceConfig(config, [owner])).toMatchObject({
+          vitestWorkers: 1,
+          buildJobs: 1,
+        });
+      expect(
+        laneResourceConfig({ ...config, vitestWorkers: 4 }).vitestWorkers
+      ).toBe(1);
+    });
+    it('keeps fixed setups fixed when reducing base lanes and preserves explicit adaptive ceilings', async () => {
+      const path = await home(2, 2, 2);
+      const options = {
+        home: path,
+        roots: [],
+        shell: 'none',
+        lanes: 1 as const,
+        dryRun: true,
+      };
+      expect((await setupResources(options))?.config.maxValidationLanes).toBe(
+        1
       );
-    }
-    for (const maxValidationLanes of ['3', null]) {
+      const config = (await readResourceConfig(path))!;
+      delete config.maxValidationLanes;
+      await atomicJson(join(path, 'config.json'), config);
+      expect((await setupResources(options))?.config.maxValidationLanes).toBe(
+        1
+      );
       await atomicJson(join(path, 'config.json'), {
         ...config,
-        maxValidationLanes,
+        maxValidationLanes: 3,
       });
-      await expect(readResourceConfig(path)).rejects.toThrow(
-        'maxValidationLanes must be an integer from 1 to 16'
+      expect((await setupResources(options))?.config.maxValidationLanes).toBe(
+        3
       );
-    }
-    await atomicJson(join(path, 'config.json'), {
-      ...config,
-      maxValidationLanes: 8,
+      expect(
+        (await setupResources({ ...options, maxLanes: 1 }))?.config
+          .maxValidationLanes
+      ).toBe(1);
     });
-    expect(resourceMaxLanes((await readResourceConfig(path))!)).toBe(8);
-  });
-  it('reserves bounded caps and accounts for recorded allocations', () => {
-    const config = {
-      ...defaultResourceConfig(),
-      maxValidationLanes: 3,
-      vitestWorkers: 3,
-      buildJobs: 3,
-    };
-    const owners: ResourceOwner[] = [];
-    for (let i = 0; i < 3; i++) {
-      const caps = admissionResourceConfig(config, owners)!;
-      expect([
-        caps.vitestWorkers,
-        caps.buildJobs,
-        caps.turboConcurrency,
-      ]).toEqual([1, 1, 1]);
-      owners.push({ ...newOwner('fixture'), limits: caps });
-    }
-    expect(admissionResourceConfig(config, owners)).toBeUndefined();
-    expect(
-      owners.reduce((sum, owner) => sum + (owner.limits?.vitestWorkers ?? 0), 0)
-    ).toBe(3);
-    // A spent aggregate budget still admits a pressure-gated lane with one worker.
-    for (const owner of [
-      { ...newOwner('old'), limits: { vitestWorkers: 3, buildJobs: 3 } },
-      newOwner('missing-caps'),
-    ])
-      expect(admissionResourceConfig(config, [owner])).toMatchObject({
-        vitestWorkers: 1,
-        buildJobs: 1,
-      });
-    expect(
-      laneResourceConfig({ ...config, vitestWorkers: 4 }).vitestWorkers
-    ).toBe(1);
-  });
-  it('keeps fixed setups fixed when reducing base lanes and preserves explicit adaptive ceilings', async () => {
-    const path = await home(2, 2, 2);
-    const options = {
-      home: path,
-      roots: [],
-      shell: 'none',
-      lanes: 1 as const,
-      dryRun: true,
-    };
-    expect((await setupResources(options))?.config.maxValidationLanes).toBe(1);
-    const config = (await readResourceConfig(path))!;
-    delete config.maxValidationLanes;
-    await atomicJson(join(path, 'config.json'), config);
-    expect((await setupResources(options))?.config.maxValidationLanes).toBe(1);
-    await atomicJson(join(path, 'config.json'), {
-      ...config,
-      maxValidationLanes: 3,
+    it('bounds lanes by the host ceiling when the maximum exceeds both totals', () => {
+      const config = {
+        ...defaultResourceConfig(),
+        maxValidationLanes: 8,
+        vitestWorkers: 3,
+        buildJobs: 2,
+      };
+      // 24 GiB / 10 CPUs: min(8, 24 / 4, 10 - 2) = 6 lanes.
+      expect(hostLaneCeiling()).toBe(6);
+      const owners: ResourceOwner[] = [];
+      for (let i = 0; i < 6; i++) {
+        const caps = admissionResourceConfig(config, owners)!;
+        expect([caps.vitestWorkers, caps.buildJobs]).toEqual([1, 1]);
+        owners.push({ ...newOwner(`lane-${i}`), limits: caps });
+      }
+      expect(admissionResourceConfig(config, owners)).toBeUndefined();
     });
-    expect((await setupResources(options))?.config.maxValidationLanes).toBe(3);
-    expect(
-      (await setupResources({ ...options, maxLanes: 1 }))?.config
-        .maxValidationLanes
-    ).toBe(1);
-  });
-  it('bounds lanes by the host ceiling when the maximum exceeds both totals', () => {
-    const config = {
-      ...defaultResourceConfig(),
-      maxValidationLanes: 8,
-      vitestWorkers: 3,
-      buildJobs: 2,
-    };
-    // 24 GiB / 10 CPUs: min(8, 24 / 4, 10 - 2) = 6 lanes.
-    expect(hostLaneCeiling()).toBe(6);
-    const owners: ResourceOwner[] = [];
-    for (let i = 0; i < 6; i++) {
-      const caps = admissionResourceConfig(config, owners)!;
-      expect([caps.vitestWorkers, caps.buildJobs]).toEqual([1, 1]);
-      owners.push({ ...newOwner(`lane-${i}`), limits: caps });
-    }
-    expect(admissionResourceConfig(config, owners)).toBeUndefined();
-  });
-  it('requires idle owners and zero waiters to change the ceiling', async () => {
-    const path = await home(1, 1, 2);
-    const before = await readFile(join(path, 'config.json'), 'utf8');
-    const a = await run(path, 'a');
-    await ready(path, 'a');
-    for (const dryRun of [true, false])
+    it('requires idle owners and zero waiters to change the ceiling', async () => {
+      const path = await home(1, 1, 2);
+      const before = await readFile(join(path, 'config.json'), 'utf8');
+      const a = await run(path, 'a');
+      await ready(path, 'a');
+      for (const dryRun of [true, false])
+        await expect(
+          setupResources({
+            home: path,
+            roots: [],
+            shell: 'none',
+            maxLanes: 3,
+            dryRun,
+          })
+        ).rejects.toThrow('drain');
+      await finish(path, 'a', a);
+      await atomicJson(join(path, 'queue', '0.json'), newOwner('waiter'));
       await expect(
-        setupResources({
-          home: path,
-          roots: [],
-          shell: 'none',
-          maxLanes: 3,
-          dryRun,
-        })
+        setupResources({ home: path, roots: [], shell: 'none', maxLanes: 3 })
       ).rejects.toThrow('drain');
-    await finish(path, 'a', a);
-    await atomicJson(join(path, 'queue', '0.json'), newOwner('waiter'));
-    await expect(
-      setupResources({ home: path, roots: [], shell: 'none', maxLanes: 3 })
-    ).rejects.toThrow('drain');
-    expect(await readFile(join(path, 'config.json'), 'utf8')).toBe(before);
-    await rm(join(path, 'queue', '0.json'));
-    await expect(
-      setupResources({ home: path, roots: [], shell: 'none', maxLanes: 0 })
-    ).rejects.toThrow('--max-lanes');
-    const setup = await fixtures.laneLaunch(path, [
-      'setup',
-      '--shell',
-      'none',
-      '--max-lanes',
-      '3',
-      '--workers',
-      '3',
-      '--json',
-    ]).done;
-    expect(setup.code, setup.err).toBe(0);
-    expect(JSON.parse(setup.out).config.maxValidationLanes).toBe(3);
-    expect((await readResourceConfig(path))?.maxValidationLanes).toBe(3);
-  });
-  it.each(['2', '3', '8', '-1', '01', 'unexpected'])(
-    'fails closed on unknown or out-of-range slot %s',
-    async (name) => {
-      const path = await home(1, 2, 2);
-      await mkdir(join(path, 'slots', name), { recursive: true });
-      await expect(occupancy(path)).rejects.toThrow('Unknown resource slot');
-      await expect(occupancy(path, true)).rejects.toThrow(
-        'Unknown resource slot'
-      );
-    }
-  );
-});
+      expect(await readFile(join(path, 'config.json'), 'utf8')).toBe(before);
+      await rm(join(path, 'queue', '0.json'));
+      await expect(
+        setupResources({ home: path, roots: [], shell: 'none', maxLanes: 0 })
+      ).rejects.toThrow('--max-lanes');
+      const setup = await fixtures.laneLaunch(path, [
+        'setup',
+        '--shell',
+        'none',
+        '--max-lanes',
+        '3',
+        '--workers',
+        '3',
+        '--json',
+      ]).done;
+      expect(setup.code, setup.err).toBe(0);
+      expect(JSON.parse(setup.out).config.maxValidationLanes).toBe(3);
+      expect((await readResourceConfig(path))?.maxValidationLanes).toBe(3);
+    });
+    it.each(['2', '3', '8', '-1', '01', 'unexpected'])(
+      'fails closed on unknown or out-of-range slot %s',
+      async (name) => {
+        const path = await home(1, 2, 2);
+        await mkdir(join(path, 'slots', name), { recursive: true });
+        await expect(occupancy(path)).rejects.toThrow('Unknown resource slot');
+        await expect(occupancy(path, true)).rejects.toThrow(
+          'Unknown resource slot'
+        );
+      }
+    );
+  }
+);
 
 describe('adaptive queue admission', { timeout: crossProcessTimeout }, () => {
   it('keeps fixed base capacity and caps unchanged without probing burst', async () => {

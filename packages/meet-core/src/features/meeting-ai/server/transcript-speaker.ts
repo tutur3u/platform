@@ -23,24 +23,15 @@ export async function resolveTranscriptSpeaker(input: {
   });
   if (verified.accountId !== input.accountId)
     throw new MeetAiError(403, 'Unknown audio source');
-  const [profile, details] = await Promise.all([
-    input.db
-      .from('users')
-      .select('display_name')
-      .eq('id', verified.accountId)
-      .maybeSingle(),
-    input.db
-      .from('user_private_details')
-      .select('email')
-      .eq('user_id', verified.accountId)
-      .maybeSingle(),
-  ]);
-  if (profile.error || details.error)
-    throw new MeetAiError(503, 'Speaker identity unavailable');
+  const profile = await input.db
+    .from('users')
+    .select('display_name')
+    .eq('id', verified.accountId)
+    .maybeSingle();
+  if (profile.error) throw new MeetAiError(503, 'Speaker identity unavailable');
+  const savedName = profile.data?.display_name?.trim();
   const displayName =
-    profile.data?.display_name?.trim() || details.data?.email?.trim();
-  // Never invent an identity or use an unverified client-supplied name.
-  if (!displayName) return null;
+    savedName && !/\S+@\S+/.test(savedName) ? savedName : 'Participant';
   return {
     accountId: verified.accountId,
     displayName,

@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: CI checkout shape detection, not a Turbo task input.
 // Rejects new Wrangler usage. The default Worker toolchain is cf + Void (Vite+);
 // Wrangler survives only for allowlisted files tied to a recorded gap with an
 // owner and a removal condition. The allowlist is an exact ratchet on two

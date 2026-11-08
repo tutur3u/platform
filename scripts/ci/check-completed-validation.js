@@ -2,7 +2,7 @@
 const { appendFileSync } = require('node:fs');
 
 const VALIDATION_JOBS = {
-  'biome-check.yaml': ['Biome Format Check', 'Biome Lint Check'],
+  'oxc-check.yaml': ['Oxfmt Format Check', 'Oxlint Lint Check'],
   'codecov.yaml': [
     ...Array.from({ length: 4 }, (_, index) => `Coverage shard (${index})`),
     'Run tests and collect coverage',

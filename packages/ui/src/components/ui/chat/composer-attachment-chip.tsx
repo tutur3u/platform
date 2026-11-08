@@ -87,7 +87,6 @@ export function ComposerAttachmentChip({
               <Music className="size-4 text-muted-foreground" />
             </span>
           ) : (
-            /* biome-ignore lint/performance/noImgElement: local blob: URL for a not-yet-sent file; next/image cannot optimize object URLs */
             <img
               alt={attachment.filename}
               className="size-full object-cover"

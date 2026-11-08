@@ -96,41 +96,36 @@ const VERIFY_TOKEN_FALLBACK_PATH = '/onboarding';
 const VERIFY_TOKEN_ROUTE_SEGMENT = 'verify-token';
 
 const Turnstile = lazy(async () => {
-  const { Turnstile: TurnstileComponent } = await import(
-    '@marsidev/react-turnstile'
-  );
+  const { Turnstile: TurnstileComponent } =
+    await import('@marsidev/react-turnstile');
 
   return { default: TurnstileComponent };
 });
 
 const InternalAppAccountConfirmation = lazy(async () => {
-  const { InternalAppAccountConfirmation: Confirmation } = await import(
-    './internal-app-account-confirmation'
-  );
+  const { InternalAppAccountConfirmation: Confirmation } =
+    await import('./internal-app-account-confirmation');
 
   return { default: Confirmation };
 });
 
 const InputOTP = lazy(async () => {
-  const { InputOTP: InputOTPComponent } = await import(
-    '@tuturuuu/ui/input-otp'
-  );
+  const { InputOTP: InputOTPComponent } =
+    await import('@tuturuuu/ui/input-otp');
 
   return { default: InputOTPComponent };
 });
 
 const InputOTPGroup = lazy(async () => {
-  const { InputOTPGroup: InputOTPGroupComponent } = await import(
-    '@tuturuuu/ui/input-otp'
-  );
+  const { InputOTPGroup: InputOTPGroupComponent } =
+    await import('@tuturuuu/ui/input-otp');
 
   return { default: InputOTPGroupComponent };
 });
 
 const InputOTPSlot = lazy(async () => {
-  const { InputOTPSlot: InputOTPSlotComponent } = await import(
-    '@tuturuuu/ui/input-otp'
-  );
+  const { InputOTPSlot: InputOTPSlotComponent } =
+    await import('@tuturuuu/ui/input-otp');
 
   return { default: InputOTPSlotComponent };
 });
@@ -280,8 +275,8 @@ function requiresAccountConfirmationForReturnApp(
 ) {
   return Boolean(
     returnApp &&
-      !['platform', 'web', MANAGED_TUTURUUU_RETURN_APP].includes(returnApp) &&
-      !isRegisteredInternalAppReturn
+    !['platform', 'web', MANAGED_TUTURUUU_RETURN_APP].includes(returnApp) &&
+    !isRegisteredInternalAppReturn
   );
 }
 

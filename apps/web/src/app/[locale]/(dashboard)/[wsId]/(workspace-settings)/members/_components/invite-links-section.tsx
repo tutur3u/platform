@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link2, Loader2, Plus, RefreshCw } from '@tuturuuu/icons';
+import { Loader2, Plus, RefreshCw } from '@tuturuuu/icons';
 import {
   createWorkspaceInviteLink,
   deleteWorkspaceInviteLink,
@@ -11,6 +11,10 @@ import {
   updateWorkspaceInviteLink,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  SettingsSection,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Dialog,
   DialogContent,
@@ -40,7 +44,6 @@ import { InviteLinkMembersDialog } from './invite-link-members-dialog';
 interface Props {
   canManageMembers: boolean;
   disableInvite?: boolean;
-  embedded?: boolean;
   wsId: string;
 }
 
@@ -70,7 +73,6 @@ function toEditValues(link: InviteLinkSummary): InviteLinkFormValues {
 export default function InviteLinksSection({
   canManageMembers,
   disableInvite = false,
-  embedded = false,
   wsId,
 }: Props) {
   const t = useTranslations();
@@ -186,36 +188,12 @@ export default function InviteLinksSection({
   };
 
   const links = linksQuery.data ?? [];
-  const headerPadding = embedded ? 'p-4 sm:p-5' : 'p-5 sm:p-6';
 
   return (
-    <section
-      className="space-y-4"
-      aria-labelledby="workspace-invite-links-title"
-    >
-      <div
-        className={`relative overflow-hidden rounded-2xl border border-border bg-linear-to-br from-background via-background to-dynamic-blue/[0.035] shadow-sm ${headerPadding}`}
-      >
-        <div className="pointer-events-none absolute -top-14 -right-10 h-36 w-36 rounded-full bg-dynamic-blue/10 blur-3xl" />
-        <div className="relative flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue shadow-sm">
-              <Link2 className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <h3
-                id="workspace-invite-links-title"
-                className="font-semibold text-base text-foreground sm:text-lg"
-              >
-                {t('ws-invite-links.title')}
-              </h3>
-              <p className="mt-1 max-w-2xl text-muted-foreground text-sm leading-relaxed">
-                {t('ws-invite-links.description')}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
+    <section aria-labelledby="workspace-invite-links-title">
+      <SettingsSection
+        action={
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="icon"
@@ -223,7 +201,7 @@ export default function InviteLinksSection({
               disabled={linksQuery.isFetching}
               title={t('common.refresh')}
               aria-label={t('common.refresh')}
-              className="h-9 w-9 bg-background/80"
+              className="h-9 w-9"
             >
               <RefreshCw
                 className={`h-4 w-4 ${linksQuery.isFetching ? 'animate-spin' : ''}`}
@@ -233,7 +211,7 @@ export default function InviteLinksSection({
               <Button
                 onClick={() => setCreateOpen(true)}
                 disabled={disableInvite}
-                className="h-9 gap-2 shadow-sm"
+                className="h-9 gap-2"
                 title={
                   disableInvite
                     ? t('ws-members.invite_member_disabled')
@@ -241,51 +219,55 @@ export default function InviteLinksSection({
                 }
               >
                 <Plus className="h-4 w-4" />
-                {disableInvite
-                  ? t('ws-members.invite_member_disabled')
-                  : t('ws-invite-links.create-link')}
+                <span className="sr-only sm:not-sr-only">
+                  {disableInvite
+                    ? t('ws-members.invite_member_disabled')
+                    : t('ws-invite-links.create-link')}
+                </span>
               </Button>
             ) : null}
           </div>
-        </div>
-      </div>
-
-      {linksQuery.isPending ? (
-        <div className="flex min-h-40 items-center justify-center rounded-2xl border border-border bg-background">
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('common.loading')}
-          </div>
-        </div>
-      ) : linksQuery.isError ? (
-        <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-2xl border border-dynamic-red/20 bg-dynamic-red/5 px-6 text-center">
-          <p className="font-medium text-dynamic-red text-sm">
-            {t('ws-invite-links.fetch-error')}
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void linksQuery.refetch()}
+        }
+        description={t('ws-invite-links.description')}
+        title={
+          <span id="workspace-invite-links-title">
+            {t('ws-invite-links.title')}
+          </span>
+        }
+      >
+        {linksQuery.isPending ? (
+          <SettingsSectionMessage
+            icon={<Loader2 className="h-4 w-4 animate-spin" />}
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            {t('common.retry')}
-          </Button>
-        </div>
-      ) : links.length === 0 ? (
-        <div className="rounded-2xl border border-foreground/20 border-dashed bg-foreground/[0.02] px-6 py-10 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-dynamic-blue/10 text-dynamic-blue">
-            <Link2 className="h-5 w-5" />
-          </div>
-          <h4 className="font-semibold text-foreground">
-            {t('ws-invite-links.no-links')}
-          </h4>
-          <p className="mx-auto mt-1 max-w-md text-muted-foreground text-sm">
-            {t('ws-invite-links.no-links-description')}
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-3 xl:grid-cols-2">
-          {links.map((link) => (
+            {t('common.loading')}
+          </SettingsSectionMessage>
+        ) : linksQuery.isError ? (
+          <SettingsSectionMessage
+            tone="error"
+            action={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void linksQuery.refetch()}
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                {t('common.retry')}
+              </Button>
+            }
+          >
+            {t('ws-invite-links.fetch-error')}
+          </SettingsSectionMessage>
+        ) : links.length === 0 ? (
+          <SettingsSectionMessage>
+            <div className="space-y-1">
+              <h4 className="font-medium text-foreground">
+                {t('ws-invite-links.no-links')}
+              </h4>
+              <p>{t('ws-invite-links.no-links-description')}</p>
+            </div>
+          </SettingsSectionMessage>
+        ) : (
+          links.map((link) => (
             <InviteLinkCard
               key={link.id}
               canManageMembers={canManageMembers}
@@ -296,9 +278,9 @@ export default function InviteLinksSection({
               onEdit={() => setEditingLink(link)}
               onViewMembers={() => openLinkDetails(link.id)}
             />
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </SettingsSection>
 
       <InviteLinkFormDialog
         key="create-invite-link"

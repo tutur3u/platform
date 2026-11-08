@@ -33,14 +33,14 @@ on:
         type: string
         required: true
       format-paths:
-        description: Space-separated owning paths for the Biome check
+        description: Space-separated owning paths for the Oxc check
         type: string
         required: true
       helper-tests:
         description: Optional source-only helper regression command
         type: string
         required: false
-        default: ''
+        default: ""
       unit-command:
         type: string
         required: false
@@ -53,17 +53,17 @@ on:
         description: Optional runtime prerequisite install (e.g. browser binaries), run in its own step so network-bound setup cannot consume the runtime step's tight timeout
         type: string
         required: false
-        default: ''
+        default: ""
       profile-env:
         description: Optional VITE_<APP>_NATIVE_PROFILE=<name> selector applied to build, runtime and restore
         type: string
         required: false
-        default: ''
+        default: ""
       artifact-suffix:
         description: Optional suffix that keeps artifacts apart when an app qualifies several profiles
         type: string
         required: false
-        default: ''
+        default: ""
 permissions:
   contents: read
 jobs:
@@ -87,15 +87,23 @@ jobs:
       ARTIFACT_SUFFIX: ${{ inputs.artifact-suffix && format('-{0}', inputs.artifact-suffix) || '' }}
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      WRANGLER_SEND_METRICS: 'false'
+      WRANGLER_SEND_METRICS: "false"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.SOURCE_SHA }}
           persist-credentials: false
+      - name: Restore Finance native input caches
+        if: inputs.app == 'finance'
+        uses: ./.github/actions/cache-finance-native-inputs
+        with:
+          save: ${{ inputs['profile-env'] == '' && 'true' || 'false' }}
+          bun-version: 1.4.4
+          node-version: 24.22.0
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
+          package-cache-enabled: ${{ inputs.app != 'finance' && 'true' || 'false' }}
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.22.0
@@ -139,8 +147,8 @@ jobs:
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run build --filter="${APP_PACKAGE}^..." --concurrency=2
-          token: ''
-          team: ''
+          token: ""
+          team: ""
       - name: Generate exact-checkout build identity
         env:
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
@@ -155,13 +163,13 @@ jobs:
       - name: Check owning source formatting
         run: |
           read -r -a paths <<< "$FORMAT_PATHS"
-          bun x --no-install biome check "${paths[@]}"
+          node scripts/oxc-check.js "${paths[@]}"
       - name: Build native Start SSR with the official Void SDK
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: cd "$APP_DIR" && bun run build:cloudflare
-          token: ''
-          team: ''
+          token: ""
+          team: ""
       - name: Reject tracked route tree drift
         if: always()
         run: |
@@ -173,8 +181,8 @@ jobs:
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: cd "$APP_DIR" && bun run type-check
-          token: ''
-          team: ''
+          token: ""
+          team: ""
       - name: Discover actual emitted config and assert staging resource/static contract
         id: output
         run: python3 "$ARTIFACT_SCRIPT" config "$APP_DIR"
@@ -225,7 +233,7 @@ jobs:
         timeout-minutes: 4
         working-directory: apps/${{ inputs.app }}
         env:
-          CI: 'true'
+          CI: "true"
           CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
         run: bash -c "$RUNTIME_COMMAND"
       - name: Recheck output and pack only qualified bytes
@@ -252,15 +260,23 @@ jobs:
       ARTIFACT_SUFFIX: ${{ inputs.artifact-suffix && format('-{0}', inputs.artifact-suffix) || '' }}
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      WRANGLER_SEND_METRICS: 'false'
+      WRANGLER_SEND_METRICS: "false"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.SOURCE_SHA }}
           persist-credentials: false
+      - name: Restore Finance native input caches
+        if: inputs.app == 'finance'
+        uses: ./.github/actions/cache-finance-native-inputs
+        with:
+          save: "false"
+          bun-version: 1.4.4
+          node-version: 24.22.0
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
+          package-cache-enabled: ${{ inputs.app != 'finance' && 'true' || 'false' }}
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.22.0
@@ -303,7 +319,7 @@ jobs:
         timeout-minutes: 4
         working-directory: apps/${{ inputs.app }}
         env:
-          CI: 'true'
+          CI: "true"
           CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
         run: bash -c "$RUNTIME_COMMAND"
       - name: Confirm qualification did not mutate the restored artifact

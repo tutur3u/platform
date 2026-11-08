@@ -61,7 +61,6 @@ function ChatAttachment({ meetingId, id }: { meetingId: string; id: string }) {
         'image/avif',
       ].includes(contentType) &&
         !previewFailed && (
-          // biome-ignore lint/performance/noImgElement: uploads are served directly, never via an optimizer
           <img
             width={640}
             height={360}

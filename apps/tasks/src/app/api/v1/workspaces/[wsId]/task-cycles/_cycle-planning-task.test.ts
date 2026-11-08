@@ -27,10 +27,10 @@ function task(cycleLinks: RawPlanningTask['cycle_links']): RawPlanningTask {
 }
 
 describe('cyclePlanningTaskSelect', () => {
-  it('selects each link with its cycle so board sprints and deleted cycles can be left out', () => {
+  it('selects each link without requiring optional board-sprint columns', () => {
     for (const scope of ['cycle', 'backlog'] as const) {
       expect(cyclePlanningTaskSelect(scope)).toContain(
-        'cycle_links:task_cycle_tasks!left(cycle_id, created_at, cycle:task_cycles!inner(board_id, deleted))'
+        'cycle_links:task_cycle_tasks!left(cycle_id, created_at, cycle:task_cycles!inner(*))'
       );
     }
   });

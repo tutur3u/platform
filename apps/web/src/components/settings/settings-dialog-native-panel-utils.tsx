@@ -3,6 +3,19 @@
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@tuturuuu/ui/table';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { apiFetch } from '@/lib/api-fetch';
@@ -16,7 +29,7 @@ export function NativePanelFrame({
 }) {
   return (
     <div
-      className="h-full space-y-6"
+      className="h-full space-y-8"
       data-testid={`native-settings-panel-${activeTab}`}
     >
       {children}
@@ -28,9 +41,9 @@ export function NativePanelLoading() {
   const t = useTranslations();
 
   return (
-    <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed">
-      <div className="text-muted-foreground text-sm">{t('common.loading')}</div>
-    </div>
+    <SettingsSection>
+      <SettingsSectionMessage>{t('common.loading')}</SettingsSectionMessage>
+    </SettingsSection>
   );
 }
 
@@ -38,15 +51,21 @@ export function NativePanelError({ onRetry }: { onRetry?: () => void }) {
   const t = useTranslations();
 
   return (
-    <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-      <p className="font-medium text-destructive">{t('common.error')}</p>
-      {onRetry && (
-        <Button onClick={onRetry} size="sm" type="button" variant="secondary">
-          <RefreshCw className="h-4 w-4" />
-          {t('common.refresh')}
-        </Button>
-      )}
-    </div>
+    <SettingsSection>
+      <SettingsSectionMessage
+        action={
+          onRetry && (
+            <Button onClick={onRetry} size="sm" type="button" variant="outline">
+              <RefreshCw className="h-4 w-4" />
+              {t('common.refresh')}
+            </Button>
+          )
+        }
+        tone="error"
+      >
+        {t('common.error')}
+      </SettingsSectionMessage>
+    </SettingsSection>
   );
 }
 
@@ -97,43 +116,44 @@ export function NativeSimpleTable({
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
-        {t('common.empty')}
-      </div>
+      <SettingsSection>
+        <SettingsSectionMessage>{t('common.empty')}</SettingsSectionMessage>
+      </SettingsSection>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-muted-foreground">
-            <tr>
-              {resolvedColumns.map((column) => (
-                <th className="px-3 py-2 text-left font-medium" key={column}>
-                  {column}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr className="border-t" key={String(row.id ?? index)}>
-                {resolvedColumns.map((column) => (
-                  <td
-                    className="max-w-72 truncate px-3 py-2 align-top"
-                    key={column}
-                    title={formatCell(row[column])}
-                  >
-                    {formatCell(row[column])}
-                  </td>
-                ))}
-              </tr>
+    <SettingsSection>
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            {resolvedColumns.map((column) => (
+              <TableHead className="md:px-5" key={column}>
+                {column}
+              </TableHead>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row, index) => (
+            <TableRow
+              className="hover:bg-transparent"
+              key={String(row.id ?? index)}
+            >
+              {resolvedColumns.map((column) => (
+                <TableCell
+                  className="max-w-72 truncate px-4 py-2.5 align-top md:px-5"
+                  key={column}
+                  title={formatCell(row[column])}
+                >
+                  {formatCell(row[column])}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </SettingsSection>
   );
 }
 
@@ -167,15 +187,12 @@ export function NativeMetricGrid({
   items: Array<{ label: string; value: number | string }>;
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <SettingsSection>
       {items.map((item) => (
-        <div className="rounded-lg border bg-card p-4" key={item.label}>
-          <p className="text-muted-foreground text-sm">{item.label}</p>
-          <p className="mt-2 font-semibold text-2xl tabular-nums">
-            {item.value}
-          </p>
-        </div>
+        <SettingItemTab key={item.label} title={item.label}>
+          <span className="font-medium text-sm tabular-nums">{item.value}</span>
+        </SettingItemTab>
       ))}
-    </div>
+    </SettingsSection>
   );
 }

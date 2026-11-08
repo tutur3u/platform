@@ -29,7 +29,6 @@ function query(data: unknown, error: { code: string } | null = null) {
     single: vi.fn().mockResolvedValue(result),
     update: vi.fn(),
     insert: vi.fn(),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
     then: (resolve: (value: typeof result) => unknown) =>
       Promise.resolve(result).then(resolve),
   };

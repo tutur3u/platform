@@ -304,9 +304,8 @@ export async function runStorageCommand(argv: string[]) {
   }
   if (options.action === 'fleet') {
     const box = await import('./resources-box-offload.js');
-    const { fleetStorage, renderFleetStorage } = await import(
-      './storage-fleet.js'
-    );
+    const { fleetStorage, renderFleetStorage } =
+      await import('./storage-fleet.js');
     const client = await box.createSessionClient();
     const rows = fleetStorage(
       await client.devboxes.fleet.snapshot(),

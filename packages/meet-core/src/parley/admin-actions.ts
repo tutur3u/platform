@@ -19,7 +19,9 @@ export async function saveParleyMember(form: FormData) {
         .toLowerCase()
     );
   const enabled = form.get('enabled') === 'true';
-  const { error } = await (await parleyDatabase())
+  const { error } = await (
+    await parleyDatabase()
+  )
     .schema('private')
     .from('parley_members')
     .upsert({ email, enabled, created_by: user.id }, { onConflict: 'email' });
@@ -44,7 +46,9 @@ export async function uploadParleyReference(form: FormData) {
   if (!allowed.includes(file.type)) throw new Error('Unsupported file');
   const bytes = Buffer.from(await file.arrayBuffer());
   const scenarioId = form.get('scenario_id');
-  const { error } = await (await parleyDatabase())
+  const { error } = await (
+    await parleyDatabase()
+  )
     .schema('private')
     .from('parley_references')
     .insert({

@@ -106,7 +106,6 @@ export const EventDescriptionInput = ({
   const [isExpanded, setIsExpanded] = React.useState(() => !showToggle);
 
   // Set default state for expanded/collapsed based on mode and word count
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <>
   React.useEffect(() => {
     if (showToggle) {
       setIsExpanded(false); // Always start clamped if > 60 words
@@ -133,7 +132,6 @@ export const EventDescriptionInput = ({
   };
 
   // Throttle function
-  // biome-ignore lint/complexity/noBannedTypes: <>
   const throttle = (func: Function, limit: number) => {
     let inThrottle: boolean;
     return function (this: any, ...args: any[]) {

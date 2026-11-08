@@ -30,7 +30,6 @@ export function ArtworkViewer({
           aria-label={t('viewArtwork', { number })}
           className="block w-full rounded-lg focus-visible:outline-2 focus-visible:outline-ring"
         >
-          {/* biome-ignore lint/performance/noImgElement: Artwork access must remain revocable without optimizer caching. */}
           <img
             src={image}
             alt={item.alt}
@@ -49,7 +48,6 @@ export function ArtworkViewer({
           <DialogDescription>{t('artworkViewerHint')}</DialogDescription>
         </DialogHeader>
         <figure className="min-w-0">
-          {/* biome-ignore lint/performance/noImgElement: The original media endpoint must recheck access on every request. */}
           <img
             src={image}
             alt={item.alt}

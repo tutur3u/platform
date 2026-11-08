@@ -112,7 +112,6 @@ function fixture(disabled = false) {
       },
       order: () => query,
       maybeSingle: async () => ({ data: data()[0] ?? null, error: null }),
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders intentionally implement awaitable thenables.
       then: (resolve: (value: unknown) => unknown) =>
         Promise.resolve({ data: data(), error: null }).then(resolve),
     };

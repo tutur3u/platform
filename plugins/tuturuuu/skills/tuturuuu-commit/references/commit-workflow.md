@@ -97,7 +97,7 @@ Before choosing no-verify, collect a proof packet:
 - touched files listed explicitly or by a narrow path group that exactly matches
   the staged scope.
 - separated checks run, mapped to the affected `bun validate` components such as
-  tests, type-check, Biome, script tests, i18n checks, migration timestamp
+  tests, type-check, Oxc, script tests, i18n checks, migration timestamp
   checks, server-console checks, or other path-sensitive checks.
 - skipped `bun validate` components listed with path-based rationale, not generic
   confidence.

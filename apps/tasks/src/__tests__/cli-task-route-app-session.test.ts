@@ -251,9 +251,7 @@ describe('workspace task API route app-session bridge', () => {
   });
 
   it('allows platform CLI and Tasks app-session auth on task project detail routes', async () => {
-    await import(
-      '@/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/route'
-    );
+    await import('@/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/route');
 
     expect(mocks.withSessionAuth).toHaveBeenCalledTimes(4);
     for (const call of mocks.withSessionAuth.mock.calls) {
@@ -269,9 +267,7 @@ describe('workspace task API route app-session bridge', () => {
   });
 
   it('allows platform CLI and Tasks app-session auth on project task links', async () => {
-    await import(
-      '@/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/tasks/route'
-    );
+    await import('@/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/tasks/route');
 
     expect(mocks.withSessionAuth).toHaveBeenCalledTimes(2);
     for (const call of mocks.withSessionAuth.mock.calls) {
@@ -287,9 +283,7 @@ describe('workspace task API route app-session bridge', () => {
   });
 
   it('allows platform CLI and Tasks app-session auth when unlinking project tasks', async () => {
-    await import(
-      '@/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/tasks/[taskId]/route'
-    );
+    await import('@/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/tasks/[taskId]/route');
 
     expect(mocks.withSessionAuth).toHaveBeenCalledWith(expect.any(Function), {
       allowAppSessionAuth: {
@@ -299,9 +293,7 @@ describe('workspace task API route app-session bridge', () => {
   });
 
   it('allows platform CLI and Tasks app-session auth on task board viewable member routes', async () => {
-    await import(
-      '@/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/viewable-members/route'
-    );
+    await import('@/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/viewable-members/route');
 
     expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
       1,
@@ -370,9 +362,7 @@ describe('workspace task API route app-session bridge', () => {
   });
 
   it('allows platform CLI and Tasks app-session auth on task board list routes', async () => {
-    await import(
-      '@/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/lists/route'
-    );
+    await import('@/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/lists/route');
 
     expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
       1,
@@ -395,9 +385,7 @@ describe('workspace task API route app-session bridge', () => {
   });
 
   it('allows platform CLI and Tasks app-session auth on task board list item routes', async () => {
-    await import(
-      '@/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/lists/[listId]/route'
-    );
+    await import('@/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/lists/[listId]/route');
 
     expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
       1,
@@ -445,9 +433,8 @@ describe('workspace task API route app-session bridge', () => {
   it('passes app-session auth context into the shared task detail GET handler', async () => {
     mocks.getAppSessionTokenFromRequest.mockReturnValue('ttr_app_access');
 
-    const route = await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/[taskId]/route'
-    );
+    const route =
+      await import('@/app/api/v1/workspaces/[wsId]/tasks/[taskId]/route');
     const response = await route.GET(
       new NextRequest(
         'http://localhost/api/v1/workspaces/personal/tasks/task-1',
@@ -483,9 +470,7 @@ describe('workspace task API route app-session bridge', () => {
   });
 
   it('allows platform CLI and Tasks app-session auth on task description routes', async () => {
-    await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/[taskId]/description/route'
-    );
+    await import('@/app/api/v1/workspaces/[wsId]/tasks/[taskId]/description/route');
 
     expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
       1,
@@ -510,9 +495,8 @@ describe('workspace task API route app-session bridge', () => {
   it('passes app-session auth context into the shared task description PATCH handler', async () => {
     mocks.getAppSessionTokenFromRequest.mockReturnValue('ttr_app_access');
 
-    const route = await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/[taskId]/description/route'
-    );
+    const route =
+      await import('@/app/api/v1/workspaces/[wsId]/tasks/[taskId]/description/route');
     const response = await route.PATCH(
       new NextRequest(
         'http://localhost/api/v1/workspaces/personal/tasks/task-1/description',
@@ -551,9 +535,8 @@ describe('workspace task API route app-session bridge', () => {
   it('passes app-session auth context into task-label association handlers', async () => {
     mocks.getAppSessionTokenFromRequest.mockReturnValue('ttr_app_access');
 
-    const route = await import(
-      '@/app/api/v1/workspaces/[wsId]/tasks/[taskId]/labels/route'
-    );
+    const route =
+      await import('@/app/api/v1/workspaces/[wsId]/tasks/[taskId]/labels/route');
 
     const postResponse = await route.POST(
       new NextRequest(

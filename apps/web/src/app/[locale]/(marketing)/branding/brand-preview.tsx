@@ -227,7 +227,6 @@ export function PreviewAssetVisual({
   }
 
   return (
-    // biome-ignore lint/performance/noImgElement: local branding assets stay native to keep this dev route off next/image.
     <img
       alt={name}
       className={cn(

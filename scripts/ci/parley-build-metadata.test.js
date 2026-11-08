@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noTemplateCurlyInString: GitHub expressions are literal workflow inputs.
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const { readWorkflow } = require('./workflow-yaml-test-helper');

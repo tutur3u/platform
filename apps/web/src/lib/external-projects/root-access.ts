@@ -26,7 +26,7 @@ export function hasRootExternalProjectsAdminPermission(
 ) {
   return Boolean(
     permissions?.containsPermission('manage_external_projects') ||
-      permissions?.containsPermission('manage_workspace_roles')
+    permissions?.containsPermission('manage_workspace_roles')
   );
 }
 
@@ -52,7 +52,7 @@ export async function requireExternalControlPlaneAccess(
       ? hasRootExternalProjectsAdminPermission(permissions)
       : Boolean(
           permissions?.containsPermission('manage_workspace_secrets') ||
-            permissions?.containsPermission('manage_workspace_roles')
+          permissions?.containsPermission('manage_workspace_roles')
         );
   if (!allowed)
     return {

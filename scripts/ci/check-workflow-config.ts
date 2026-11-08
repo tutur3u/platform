@@ -3,6 +3,7 @@ import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { getWorkflowDecision } from '../../tuturuuu.ts';
 import { lockfileWorkspaceDelta } from './lockfile-workspace-delta.ts';
 import { getMailCalendarTasksAffected } from './mail-calendar-tasks-affected.ts';
+import { getMobileTestsAffected } from './mobile-build-selection.ts';
 import {
   readWorkspaceManifests,
   splitChangedFiles,
@@ -83,9 +84,7 @@ const SHA = /^[0-9a-f]{40}$/;
 function readLockfileWorkspaces(
   changedFiles: string[] | null,
   rootDir: string,
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: ci-check step input, outside Turbo.
   baseSha = process.env.CHANGED_BASE_SHA,
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: ci-check step input, outside Turbo.
   headSha = process.env.CHANGED_HEAD_SHA
 ): string[] | null {
   if (!changedFiles?.includes('bun.lock')) return null;
@@ -173,7 +172,13 @@ function main(args = process.argv.slice(2)) {
           eventName: parsedArgs.eventName ?? process.env.GITHUB_EVENT_NAME,
           workspaceManifests,
         })
-      : {};
+      : workflowName === 'mobile.yaml'
+        ? getMobileTestsAffected({
+            changedFiles,
+            eventName: parsedArgs.eventName ?? process.env.GITHUB_EVENT_NAME,
+            workspaceManifests,
+          })
+        : {};
 
   appendGithubOutput({
     affected_jobs: JSON.stringify(affectedJobs),

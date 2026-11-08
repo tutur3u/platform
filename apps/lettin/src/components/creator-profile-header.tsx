@@ -26,22 +26,12 @@ export function CreatorProfileHeader({
   return (
     <section className="creator-identity">
       <div className="creator-identity-banner">
-        {banner && (
-          /* biome-ignore lint/performance/noImgElement: External creator artwork can be revoked. */ <img
-            src={banner}
-            alt=""
-            referrerPolicy="no-referrer"
-          />
-        )}
+        {banner && <img src={banner} alt="" referrerPolicy="no-referrer" />}
       </div>
       <div className="creator-identity-details">
         <div className="creator-identity-avatar">
           {avatar ? (
-            /* biome-ignore lint/performance/noImgElement: The canonical avatar is an external URL. */ <img
-              src={avatar}
-              alt=""
-              referrerPolicy="no-referrer"
-            />
+            <img src={avatar} alt="" referrerPolicy="no-referrer" />
           ) : (
             <UserRound
               aria-hidden="true"
