@@ -149,6 +149,12 @@ export const productionPublicationPolicy = {
       'Forms native Start route-free upload with smoke and pinned rollback',
     surfaces: ['frontend'],
   },
+  inventory: {
+    state: 'admitted',
+    reason:
+      'Inventory native Start route-free upload with smoke and pinned rollback',
+    surfaces: ['frontend'],
+  },
   mastermind: {
     state: 'held',
     reason: 'held for wave-2 cutover: Mastermind security review required',

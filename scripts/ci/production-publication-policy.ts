@@ -7,6 +7,7 @@ import {
 
 const protectedSurfaces = {
   forms: ['frontend'],
+  inventory: ['frontend'],
   mastermind: ['frontend'],
   meet: ['frontend', 'realtime-do'],
   calendar: ['frontend'],
