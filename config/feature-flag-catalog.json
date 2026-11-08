@@ -1110,6 +1110,28 @@
       },
       "verifiedOnProdAt": null,
       "legacy": true
+    },
+    {
+      "key": "newsletter_sending",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Staff test send from an approved customer subdomain.",
+      "owner": "platform",
+      "createdAt": "2026-11-08",
+      "apps": ["web"],
+      "appsComplete": true,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "apps/web/src/lib/newsletter/flag.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": false
     }
   ]
 }

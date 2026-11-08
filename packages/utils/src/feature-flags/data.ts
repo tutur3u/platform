@@ -13,4 +13,5 @@ export const FEATURE_FLAGS = {
   PREVENT_WORKSPACE_DELETION: 'PREVENT_WORKSPACE_DELETION',
   ENABLE_AVATAR: 'ENABLE_AVATAR',
   ENABLE_LOGO: 'ENABLE_LOGO',
+  newsletter_sending: 'newsletter_sending',
 } as const;
