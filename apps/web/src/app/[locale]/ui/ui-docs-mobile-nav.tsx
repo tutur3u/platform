@@ -11,6 +11,7 @@ import {
   SheetTrigger,
 } from '@tuturuuu/ui/sheet';
 import { useState } from 'react';
+import { designFrameClass } from './design-frame';
 import type { SidebarData } from './ui-docs-nav-data';
 import { UiDocsSidebarNav } from './ui-docs-sidebar';
 
@@ -18,15 +19,24 @@ export function UiDocsMobileNav({
   locale,
   data,
   onOpenCommand,
+  placement = 'viewport',
 }: {
   locale: string;
   data: SidebarData;
   onOpenCommand?: () => void;
+  /** `below-header` reserves the same bar the marketing shell already cleared. */
+  placement?: 'below-header' | 'viewport';
 }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="sticky top-0 z-20 border-b bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
+    <div
+      className={
+        placement === 'below-header'
+          ? designFrameClass.mobileBar
+          : 'sticky top-0 z-20 border-b bg-background/95 px-4 py-3 backdrop-blur lg:hidden'
+      }
+    >
       <Sheet onOpenChange={setOpen} open={open}>
         <SheetTrigger asChild>
           <Button size="sm" variant="outline">

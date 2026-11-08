@@ -1350,6 +1350,70 @@ describe('web proxy api handling', () => {
     expect(authOptions?.isPublicPath?.('/auth/recovery-token')).toBe(false);
   });
 
+  it('redirects legacy ui routes to design before auth', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/vi/ui/components/button?view=docs#usage'
+      )
+    );
+
+    expect(response.status).toBe(301);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/vi/design/components/button?view=docs'
+    );
+    expect(response.headers.get('cache-control')).toBe('public, max-age=86400');
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('serves anonymous design documents from the public cache', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/design/components/button')
+    );
+
+    expect(response.status).not.toBe(301);
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('cache-control')).toBe(
+      'public, max-age=0, must-revalidate'
+    );
+    expect(response.headers.get('cdn-cache-control')).toBe(
+      'public, max-age=86400, stale-while-revalidate=604800'
+    );
+  });
+
+  it('keeps a signed-in design document out of the shared cache', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      createSessionRequest('http://localhost/en/design')
+    );
+
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.get('cdn-cache-control')).toBeNull();
+  });
+
+  it('authorizes design by segment and leaves the neighbouring path private', async () => {
+    const { proxy } = await import('../proxy');
+    await proxy(new NextRequest('http://localhost/design'));
+
+    const authOptions = mocks.createCentralizedAuthProxy.mock.calls[0]?.[0] as
+      | {
+          isPublicPath?: (pathname: string) => boolean;
+          publicPaths?: string[];
+        }
+      | undefined;
+
+    expect(authOptions?.isPublicPath?.('/design')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/design/components/button')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/en/design/setup')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/vi/design')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/design-private')).toBe(false);
+    expect(authOptions?.isPublicPath?.('/en/design-private')).toBe(false);
+    expect(authOptions?.publicPaths).not.toEqual(
+      expect.arrayContaining(['/design', '/en/design', '/vi/design'])
+    );
+  });
+
   it('keeps the legacy signup entry public for its login redirect', async () => {
     const { proxy } = await import('../proxy');
     await proxy(new NextRequest('http://localhost/signup'));

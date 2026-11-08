@@ -39,6 +39,7 @@ export const APP_PUBLIC_PATHS = [
   '/share',
   '/tools',
   '/ui',
+  '/design',
   '/u',
   // Forms moved to forms.tuturuuu.com/f/<shareCode>. This path no longer
   // renders anything, but already-distributed links still arrive here and are

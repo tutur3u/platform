@@ -120,7 +120,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       icon: <Paintbrush className="h-4 w-4" />,
     },
     {
-      href: '/ui',
+      href: '/design',
       label: t('common.ui'),
       description: t('common.ui-description'),
       icon: <Paintbrush className="h-4 w-4" />,
