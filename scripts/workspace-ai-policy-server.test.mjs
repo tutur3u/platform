@@ -25,9 +25,8 @@ registerHooks({
     return next(specifier, context);
   },
 });
-const { workspaceAiPolicyResponse } = await import(
-  '../packages/utils/src/workspace-ai-policy-server.ts'
-);
+const { workspaceAiPolicyResponse } =
+  await import('../packages/utils/src/workspace-ai-policy-server.ts');
 function database({
   education = true,
   scope,

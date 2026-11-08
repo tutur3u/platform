@@ -83,9 +83,8 @@ vi.mock('@tuturuuu/ai/meetings/workspace-tools', () => ({
   createMeetWorkspaceTools: vi.fn(),
 }));
 it('R2 refuses an AI-on session tool call targeting AI-off workspace', async () => {
-  const { POST } = await import(
-    '../../../apps/web/src/legacy-api-routes/v1/live/tools/execute/route'
-  );
+  const { POST } =
+    await import('../../../apps/web/src/legacy-api-routes/v1/live/tools/execute/route');
   const response = await POST(
     new Request('https://synthetic.test', {
       method: 'POST',
@@ -105,18 +104,16 @@ it('R2 refuses an AI-on session tool call targeting AI-off workspace', async () 
   );
 });
 it('R3 refuses context switching to an AI-off workspace', async () => {
-  const { executeSetWorkspaceContext } = await import(
-    '../../../packages/ai/src/tools/executors/workspace'
-  );
+  const { executeSetWorkspaceContext } =
+    await import('../../../packages/ai/src/tools/executors/workspace');
   const ctx = { wsId: 'on', userId: 'synthetic-user', supabase: {} };
   const result = await executeSetWorkspaceContext({ workspaceId: 'off' }, ctx);
   expect(result).toHaveProperty('error');
   expect(ctx).not.toHaveProperty('workspaceContext');
 });
 it('R4 refuses an AI-off tool workspace before loading model or workspace data', async () => {
-  const { generateMeetAssistant } = await import(
-    '../../../packages/meet-core/src/features/call/server/assistant-generation'
-  );
+  const { generateMeetAssistant } =
+    await import('../../../packages/meet-core/src/features/call/server/assistant-generation');
   await expect(
     generateMeetAssistant(
       { user: { id: 'synthetic-user' }, meeting: { ws_id: 'on' } },
@@ -125,9 +122,8 @@ it('R4 refuses an AI-off tool workspace before loading model or workspace data',
   ).rejects.toThrow(/AI.*unavailable/);
 });
 it('R4 personal assistant checks policy with requester identity', async () => {
-  const { answerPersonalMeetChat } = await import(
-    '../../../packages/meet-core/src/features/call/server/personal-assistant'
-  );
+  const { answerPersonalMeetChat } =
+    await import('../../../packages/meet-core/src/features/call/server/personal-assistant');
   await expect(
     answerPersonalMeetChat('synthetic-user', {
       question: 'test',
