@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/supabase-v0.6.0...supabase-v0.7.0) (2026-11-08)
+
+
+### Features
+
+* **auth:** guard staging cookie scope with explicit deploy environment ([#7315](https://github.com/tutur3u/platform/issues/7315)) ([25c85aa](https://github.com/tutur3u/platform/commit/25c85aa8b0e9b08a03aace0cab90aaa75ebd6bfd))
+* **drive:** add staging Start candidate ([#7085](https://github.com/tutur3u/platform/issues/7085)) ([a211868](https://github.com/tutur3u/platform/commit/a2118681d88fa5073b6b7421e9357824505650b0))
+
+
+### Bug Fixes
+
+* **auth:** reject conflicting staging cookie signals ([#7316](https://github.com/tutur3u/platform/issues/7316)) ([bfc41ce](https://github.com/tutur3u/platform/commit/bfc41ce8f329130e077e6440c8424d44fc5e274e))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/supabase-v0.5.2...supabase-v0.6.0) (2026-10-17)
 
 

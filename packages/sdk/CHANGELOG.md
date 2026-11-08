@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.30.0](https://github.com/tutur3u/platform/compare/sdk-v0.29.0...sdk-v0.30.0) (2026-11-08)
+
+
+### Features
+
+* **auth:** bind cross-app login handoffs with PKCE and report session assurance ([#7394](https://github.com/tutur3u/platform/issues/7394)) ([1202eb8](https://github.com/tutur3u/platform/commit/1202eb86e09b46a8c7313d6c81c24365eef92a50))
+
+
+### Bug Fixes
+
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+* **sdk:** allow the task project mutations module in the portable build ([7478e67](https://github.com/tutur3u/platform/commit/7478e67f027a6ca4435b3dd7ef40895e8566ea09))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/sdk-v0.28.0...sdk-v0.29.0) (2026-10-24)
 
 

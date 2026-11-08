@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.39.0](https://github.com/tutur3u/platform/compare/utils-v0.38.1...utils-v0.39.0) (2026-11-08)
+
+
+### Features
+
+* **auth:** bind cross-app login handoffs with PKCE and report session assurance ([#7394](https://github.com/tutur3u/platform/issues/7394)) ([1202eb8](https://github.com/tutur3u/platform/commit/1202eb86e09b46a8c7313d6c81c24365eef92a50))
+* **auth:** guard staging cookie scope with explicit deploy environment ([#7315](https://github.com/tutur3u/platform/issues/7315)) ([25c85aa](https://github.com/tutur3u/platform/commit/25c85aa8b0e9b08a03aace0cab90aaa75ebd6bfd))
+* **calendar:** split staging and production hosts and verify Access on staging ([#7318](https://github.com/tutur3u/platform/issues/7318)) ([e1f9a4c](https://github.com/tutur3u/platform/commit/e1f9a4c69f948c9a458b4adc15f01d6e82807ea4))
+* **mastermind:** gate access on an explicit manage_mastermind grant ([#7158](https://github.com/tutur3u/platform/issues/7158)) ([3a886df](https://github.com/tutur3u/platform/commit/3a886dfca89d496fdaaa91c1d333603016cd364d))
+* **meet:** fail-closed per-user Meet AI limiter ([#7417](https://github.com/tutur3u/platform/issues/7417)) ([fca5cb0](https://github.com/tutur3u/platform/commit/fca5cb0b31a5966bab2d8fe16b9d0c8f2f7986fe))
+* **rewise:** make rewise.tuturuuu.com the only canonical URL ([#7757](https://github.com/tutur3u/platform/issues/7757)) ([320ce8f](https://github.com/tutur3u/platform/commit/320ce8fda7a73b510332d630916bf90ef8398d8a))
+* **roadmap:** add the public Cloudflare migration roadmap ([#7786](https://github.com/tutur3u/platform/issues/7786)) ([73ee6e7](https://github.com/tutur3u/platform/commit/73ee6e773b5076e8851cc60ef0ddcb76ef92a915))
+* **tasks:** add per-board sprint data model ([0f20cc9](https://github.com/tutur3u/platform/commit/0f20cc99d46ffa3ae385cdab020f06bcf466f325)) ([#7043](https://github.com/tutur3u/platform/issues/7043)) ([9b08aef](https://github.com/tutur3u/platform/commit/9b08aef8da70cb686870790925d68368afef4f07))
+* **tasks:** apply the preview review round to the header, panel, Details and cards ([#7193](https://github.com/tutur3u/platform/issues/7193)) ([7f7b479](https://github.com/tutur3u/platform/commit/7f7b4793458788e632a3c7967b596baf92c517b5))
+* **tasks:** inline task IDs on cards and drop Overdue/Upcoming columns ([bf67deb](https://github.com/tutur3u/platform/commit/bf67deb9b7c15223ba08f3f718321ca344bccf08)) ([#7041](https://github.com/tutur3u/platform/issues/7041)) ([2fd1dc4](https://github.com/tutur3u/platform/commit/2fd1dc476b059583f5083c093f1559cb973847b1))
+* **tasks:** number tasks per project with editable keys ([39e5342](https://github.com/tutur3u/platform/commit/39e534251f9d4b643463043c6af4e77b480bb8bf))
+* **tasks:** open board tasks in a right side panel ([#7045](https://github.com/tutur3u/platform/issues/7045)) ([33aa40d](https://github.com/tutur3u/platform/commit/33aa40daa9715c8c4277fb63d747cc6f6d30e038))
+* **tasks:** show the board's sprint in the header and Board view ([#7046](https://github.com/tutur3u/platform/issues/7046)) ([f3f31bd](https://github.com/tutur3u/platform/commit/f3f31bde4003f4db9b70f154619eb665a2df5597))
+* **tasks:** simplify sprint planning, summary and board filtering ([#7396](https://github.com/tutur3u/platform/issues/7396)) ([9d45884](https://github.com/tutur3u/platform/commit/9d458840f0064f6c37e43da5d4fca3bccd4fa88c))
+* **web:** harden the staging issuer Worker and its protected Next fallback ([#7319](https://github.com/tutur3u/platform/issues/7319)) ([cb5292d](https://github.com/tutur3u/platform/commit/cb5292dc5fc90c10b2af9e9a241905c3c6f5de99))
+
+
+### Bug Fixes
+
+* align main unit fixtures with authorization and app inventory ([#7265](https://github.com/tutur3u/platform/issues/7265)) ([0eb1e3a](https://github.com/tutur3u/platform/commit/0eb1e3a8d350c5179bfaad63fc7281bfd47ebbf8))
+* **auth:** reject conflicting staging cookie signals ([#7316](https://github.com/tutur3u/platform/issues/7316)) ([bfc41ce](https://github.com/tutur3u/platform/commit/bfc41ce8f329130e077e6440c8424d44fc5e274e))
+* **ci:** enforce migration policies and PR credential boundaries ([#7034](https://github.com/tutur3u/platform/issues/7034)) ([5921faf](https://github.com/tutur3u/platform/commit/5921faf143b1b11c1bf07a79f9984e7545054dbe))
+* **db:** consolidate has_workspace_permission and add manage_mastermind ([#7302](https://github.com/tutur3u/platform/issues/7302)) ([29ef37b](https://github.com/tutur3u/platform/commit/29ef37bf1f47571ade70b0ab3ba879554fa5aa79))
+* **db:** leave one workspace's projects unkeyed and run ticket key migrations in a transaction ([485915b](https://github.com/tutur3u/platform/commit/485915bc4a5b7f7a54b12ff816d548ea890ec2a2))
+* **packages:** make the published [@tuturuuu](https://github.com/tuturuuu) chain installable and guard it ([#7389](https://github.com/tutur3u/platform/issues/7389)) ([b1378ab](https://github.com/tutur3u/platform/commit/b1378abcaa31c02b5861cc16e6aa6bb2f8789c3c))
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+* **security:** reject the released rewise.me and rewise.school domains ([#7756](https://github.com/tutur3u/platform/issues/7756)) ([4397841](https://github.com/tutur3u/platform/commit/43978414c1387d3c748688fd39b36b427fda37da))
+* **security:** reserve the tutur3u.com staging domain from customer hostname claims ([#7388](https://github.com/tutur3u/platform/issues/7388)) ([73135a4](https://github.com/tutur3u/platform/commit/73135a49cdced65cb9079d2a3c141c4b0721f908))
+* **security:** stop trusting the expired rewise.me origin ([#7413](https://github.com/tutur3u/platform/issues/7413)) ([c8f3530](https://github.com/tutur3u/platform/commit/c8f3530fee7bdaa3a86fc23caaafa23112955ee0))
+* **security:** validate project branches and strip guard comments ([#7271](https://github.com/tutur3u/platform/issues/7271)) ([d718355](https://github.com/tutur3u/platform/commit/d718355c2d86bb875e835326f7744b9832673839))
+* **staging:** host-only __Host- cookies and Set-Cookie Domain backstops ([#7429](https://github.com/tutur3u/platform/issues/7429)) ([e058622](https://github.com/tutur3u/platform/commit/e058622ccafe40c0523ad68bdc2b594718bbd735))
+* **tasks:** decide Board view sprint membership in render, not an effect ([e876844](https://github.com/tutur3u/platform/commit/e8768448c4bda288caee4851761b656c6550d074))
+* **tasks:** keep tasks finished during the running sprint on the Board view ([db661c0](https://github.com/tutur3u/platform/commit/db661c0123702bad1f3d387c598c60da2af0088c))
+* **tasks:** let board shortcuts work beside the open side panel ([7cf9764](https://github.com/tutur3u/platform/commit/7cf97647b1a70b842786cdf268f6dc153ac613bd))
+* **tasks:** refresh board sprints on every task membership change ([61fb6c0](https://github.com/tutur3u/platform/commit/61fb6c09b465cc426fb2053081b7886bd2f0cbe8))
+* **tasks:** show English sprint dates day first ([dada6e5](https://github.com/tutur3u/platform/commit/dada6e5c3bea26dddef3791cc3fb67233d159f74))
+* **tasks:** show new sprint tasks at once and count unloaded progress ([978cdfd](https://github.com/tutur3u/platform/commit/978cdfdb6d7332b18fa3e874d946276285cb521d))
+* **time-tracking:** validate request task, category and linked-session scope ([#7068](https://github.com/tutur3u/platform/issues/7068)) ([716b49f](https://github.com/tutur3u/platform/commit/716b49f97999af4df1f20cc97214385e6e3f4f7d))
+* **utils:** list the internal Mastermind app in commercial inventory ([#7327](https://github.com/tutur3u/platform/issues/7327)) ([d6da3f1](https://github.com/tutur3u/platform/commit/d6da3f178d0c7198dc7ad5367138724162367cce))
+* **utils:** resolve ambiguous DST wall times deterministically ([#7397](https://github.com/tutur3u/platform/issues/7397)) ([523a09b](https://github.com/tutur3u/platform/commit/523a09b40567e89769fc6ab139c860ec7817e5cd))
+* **utils:** type the Board view sprint check by the fields it reads ([e4a3b1d](https://github.com/tutur3u/platform/commit/e4a3b1dd2063028c73ff2033f3bd863366e669b6))
+
 ## [0.38.1](https://github.com/tutur3u/platform/compare/utils-v0.38.0...utils-v0.38.1) (2026-10-24)
 
 

@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.18.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.17.3...tasks-ui-v0.18.0) (2026-11-08)
+
+
+### Features
+
+* **satellite:** regroup shared and tasks settings into sections ([#7793](https://github.com/tutur3u/platform/issues/7793)) ([ada23b2](https://github.com/tutur3u/platform/commit/ada23b29059530a6adb56a6107d9372dc92bc834))
+* **tasks:** add cycle and backlog planning view ([dcc9882](https://github.com/tutur3u/platform/commit/dcc9882690857f6dc97a25d58edb64f0b3615af9))
+* **tasks:** apply the preview review round to the header, panel, Details and cards ([#7193](https://github.com/tutur3u/platform/issues/7193)) ([7f7b479](https://github.com/tutur3u/platform/commit/7f7b4793458788e632a3c7967b596baf92c517b5))
+* **tasks:** end sprints from a summary with carry or backlog decisions ([cafc56c](https://github.com/tutur3u/platform/commit/cafc56c3a7590bb000ffd7625022f97a5fee1a59)) ([#7089](https://github.com/tutur3u/platform/issues/7089)) ([6596ff5](https://github.com/tutur3u/platform/commit/6596ff54da29eaebd5c13338223330b30479de2b))
+* **tasks:** inline task IDs on cards and drop Overdue/Upcoming columns ([bf67deb](https://github.com/tutur3u/platform/commit/bf67deb9b7c15223ba08f3f718321ca344bccf08)) ([#7041](https://github.com/tutur3u/platform/issues/7041)) ([2fd1dc4](https://github.com/tutur3u/platform/commit/2fd1dc476b059583f5083c093f1559cb973847b1))
+* **tasks:** match the cycle planning API contract ([d18a025](https://github.com/tutur3u/platform/commit/d18a0250f2019bc282aac34ed642a5cfe100ee83))
+* **tasks:** number tasks per project with editable keys ([39e5342](https://github.com/tutur3u/platform/commit/39e534251f9d4b643463043c6af4e77b480bb8bf))
+* **tasks:** open board tasks in a right side panel ([d97923d](https://github.com/tutur3u/platform/commit/d97923da6a62bfc12e79e249c9874007d6df34e7)) ([#7045](https://github.com/tutur3u/platform/issues/7045)) ([33aa40d](https://github.com/tutur3u/platform/commit/33aa40daa9715c8c4277fb63d747cc6f6d30e038))
+* **tasks:** plan the next sprint from a Plan tab ([457c109](https://github.com/tutur3u/platform/commit/457c10949a77eb7d0494a4d0fad728249d45a9e2)) ([#7088](https://github.com/tutur3u/platform/issues/7088)) ([02844d7](https://github.com/tutur3u/platform/commit/02844d7084d83571607a67c8790cc6b75dacb619))
+* **tasks:** plan up to five sprints ahead and park tasks outside sprints ([#7224](https://github.com/tutur3u/platform/issues/7224)) ([d114c02](https://github.com/tutur3u/platform/commit/d114c02b0f4ea11bb41ea68c057d9d50bf1abf1e))
+* **tasks:** show the board's sprint in the header and Board view ([9d91b1a](https://github.com/tutur3u/platform/commit/9d91b1aae612b205f723542b02d7e43a51a0862e)) ([#7046](https://github.com/tutur3u/platform/issues/7046)) ([f3f31bd](https://github.com/tutur3u/platform/commit/f3f31bde4003f4db9b70f154619eb665a2df5597))
+* **tasks:** show the task's sprint in the task panel ([#7108](https://github.com/tutur3u/platform/issues/7108)) ([978e783](https://github.com/tutur3u/platform/commit/978e7839909bfee471a304e942705f733f215421))
+* **tasks:** simplify sprint planning, summary and board filtering ([#7396](https://github.com/tutur3u/platform/issues/7396)) ([9d45884](https://github.com/tutur3u/platform/commit/9d458840f0064f6c37e43da5d4fca3bccd4fa88c))
+* **tasks:** two-row board header with people, project and focus filters ([8d53440](https://github.com/tutur3u/platform/commit/8d53440a1a2f08b1f1632558bb8e480e5d2bac32)) ([#7042](https://github.com/tutur3u/platform/issues/7042)) ([b48007d](https://github.com/tutur3u/platform/commit/b48007d34f18a714a2d6379273850d813c959998))
+
+
+### Bug Fixes
+
+* **db:** leave one workspace's projects unkeyed and run ticket key migrations in a transaction ([485915b](https://github.com/tutur3u/platform/commit/485915bc4a5b7f7a54b12ff816d548ea890ec2a2))
+* **db:** rename the assign_task_cycle rollback to the re-timed migration ([e495e55](https://github.com/tutur3u/platform/commit/e495e550df36907b7ce9863b37383d7214e3344f))
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+* **tasks:** accept app-typed translators for task mention strings ([5ea90fd](https://github.com/tutur3u/platform/commit/5ea90fd32b8b5ebc9b4628142d1ebe61ffdb0500))
+* **tasks:** close the sprint menu before its actions run ([156e5bc](https://github.com/tutur3u/platform/commit/156e5bca8d35fdca41541e23e566bb2bc0b31fb1))
+* **tasks:** close the sprint menu before opening the summary ([06c37d9](https://github.com/tutur3u/platform/commit/06c37d98b9f09e62f648baebdd3df13b986a9784))
+* **tasks:** count header pills within the current sprint ([4e031e5](https://github.com/tutur3u/platform/commit/4e031e570e7886ecc72ae6c19dd5801a7fb9da0f))
+* **tasks:** create Plan backlog tasks in an open list ([65fc537](https://github.com/tutur3u/platform/commit/65fc537898abaa1f33360d158a788480a720201b))
+* **tasks:** decide Board view sprint membership in render, not an effect ([e876844](https://github.com/tutur3u/platform/commit/e8768448c4bda288caee4851761b656c6550d074))
+* **tasks:** drop the breadcrumb separator on boards without sprints ([35f55d9](https://github.com/tutur3u/platform/commit/35f55d966511ef8dace6447e8b094971e7414157))
+* **tasks:** give cards off the minute clock the time they mounted ([0f2b870](https://github.com/tutur3u/platform/commit/0f2b8705b1f0a51f528c43ebbb70e613e9039e29))
+* **tasks:** ignore deleted lists when deciding header counts are complete ([3b68757](https://github.com/tutur3u/platform/commit/3b68757af356c9c1429f628eff043c9d567483de))
+* **tasks:** keep board cycles off until enabled ([#7553](https://github.com/tutur3u/platform/issues/7553)) ([b1fa689](https://github.com/tutur3u/platform/commit/b1fa689c1289261bc472c810ed733e8c66506566))
+* **tasks:** keep card overdue state live and the ID in the title's name ([5b0f1a5](https://github.com/tutur3u/platform/commit/5b0f1a5ff1613a9bf10a419ec93901aa17925088))
+* **tasks:** keep project tasks and presence filters consistent with the new header ([249e61d](https://github.com/tutur3u/platform/commit/249e61ddb6a94eebc9ab973a10ff2d6fc59c1a88))
+* **tasks:** keep the last Plan move and never strand a new backlog task ([82a36a2](https://github.com/tutur3u/platform/commit/82a36a27a0c2cd0cc3129e59103e9ded206dbe37))
+* **tasks:** label plan and summary tasks by project key, keep member project creation ([fbc8400](https://github.com/tutur3u/platform/commit/fbc84009caf57110f79ec008e54f0cd472d22538))
+* **tasks:** limit one-cycle-per-task to workspace cycles, keep board sprint history ([bbeddd9](https://github.com/tutur3u/platform/commit/bbeddd9958b9d3943f45e8e11253aa049127c598))
+* **tasks:** load sprint tasks in Review lists for Plan and the end summary ([e4a719d](https://github.com/tutur3u/platform/commit/e4a719d496e6e610e69232cfc9fbf695aaf8e075))
+* **tasks:** omit unchanged null project keys on rename ([#7774](https://github.com/tutur3u/platform/issues/7774)) ([4742bbb](https://github.com/tutur3u/platform/commit/4742bbb07f1634b0f7d23d0a69e047616c834a51))
+* **tasks:** open sprint menu actions after the menu has closed ([a66a93b](https://github.com/tutur3u/platform/commit/a66a93b11732f543d777e1693d20f64105a3f1f7))
+* **tasks:** refresh board sprints on every task membership change ([61fb6c0](https://github.com/tutur3u/platform/commit/61fb6c09b465cc426fb2053081b7886bd2f0cbe8))
+* **tasks:** reread owners after overlapping plan moves fail ([5408fce](https://github.com/tutur3u/platform/commit/5408fce22a5edc09ac7db6b2a0a563fdcad262af))
+* **tasks:** reread plan owners only after every move settles ([72d1ef3](https://github.com/tutur3u/platform/commit/72d1ef3a60d382ec677acb6ad9a4f2a2b517f36a))
+* **tasks:** roll back only the failed plan assignment ([5ec5d68](https://github.com/tutur3u/platform/commit/5ec5d68e24c885c872f483b6ef32eef4742aff1e))
+* **tasks:** show new sprint tasks at once and count unloaded progress ([978cdfd](https://github.com/tutur3u/platform/commit/978cdfdb6d7332b18fa3e874d946276285cb521d))
+* **tasks:** show Plan backlog tasks on the Board without a refresh ([6a688a9](https://github.com/tutur3u/platform/commit/6a688a9b0f738cfffbc20cc152bfd7cb2476fe75))
+* **tasks:** trash a new backlog task that cannot leave the running sprint ([d2aa74c](https://github.com/tutur3u/platform/commit/d2aa74c748b56969024ab49d990bd856d95687e4))
+* **tasks:** type the move route's project rows and the dialog title task ([a97c50a](https://github.com/tutur3u/platform/commit/a97c50a6a27ec35fee4978036b8159c28f338981))
+* **tasks:** use the shared tabs for Plan | Board and drop the backlog side bars ([6509141](https://github.com/tutur3u/platform/commit/6509141b6a9d54737117eb0790854d2bc5037032))
+* **tasks:** wait for the sprint's tasks before allowing End ([5b61c32](https://github.com/tutur3u/platform/commit/5b61c329e87a8bfa46f58678d005f9485693e35a))
+* **tasks:** wrap the side panel header and keep board-views at its size ([8729445](https://github.com/tutur3u/platform/commit/87294450e4e1e858fed9bece130d2cb67c36eb61))
+
 ## [0.17.3](https://github.com/tutur3u/platform/compare/tasks-ui-v0.17.2...tasks-ui-v0.17.3) (2026-10-24)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.2](https://github.com/tutur3u/platform/compare/apis-v0.13.1...apis-v0.13.2) (2026-11-08)
+
+
+### Bug Fixes
+
+* **packages:** make the published [@tuturuuu](https://github.com/tuturuuu) chain installable and guard it ([#7389](https://github.com/tutur3u/platform/issues/7389)) ([b1378ab](https://github.com/tutur3u/platform/commit/b1378abcaa31c02b5861cc16e6aa6bb2f8789c3c))
+
 ## [0.13.1](https://github.com/tutur3u/platform/compare/apis-v0.13.0...apis-v0.13.1) (2026-10-24)
 
 
