@@ -216,3 +216,57 @@ Rules:
 The sidebar shows group labels as plain text while the expand-all preference keeps groups open, because a chevron there would promise a toggle that does nothing. Turning the preference off restores collapsible groups. A group label that only repeats its single item is hidden.
 
 Regression coverage: `packages/ui/src/components/ui/custom/__tests__/settings-dialog-shell.test.tsx` and `packages/ui/src/components/ui/custom/__tests__/settings-section.test.tsx`.
+
+
+## Accessible field rows
+
+The section, row, footer, message, and scoped contrast patterns are designed by
+Khôi (@VoMinhKhoii), introduced in
+[settings sections and contrast tokens](https://github.com/tutur3u/platform/pull/7790).
+Reuse those exports from `@tuturuuu/ui`; application panels do not need copies.
+
+`SettingsField` from `@tuturuuu/ui/custom/settings-field` composes a single
+labelled control with `SettingItemTab`. It supplies the control ID, help-text
+association, invalid state, and error association. Spread the supplied props on
+the actual focusable control. Use this render function from a client form component.
+Set an explicit layout so the caller does not
+depend on the row's default.
+
+```tsx
+import { SettingsField } from '@tuturuuu/ui/custom/settings-field';
+import { Input } from '@tuturuuu/ui/input';
+
+<SettingsField
+  label="Display name"
+  description="Visible to your workspace"
+  layout="inline"
+  controlWidth="xl"
+  validation={{ kind: 'invalid', message: 'Enter a display name' }}
+>
+  {(controlProps) => <Input {...controlProps} name="displayName" />}
+</SettingsField>
+```
+
+Use translated labels and messages in application callers. Validation is one
+union: either `{ kind: 'valid' }` or `{ kind: 'invalid', message }`. The invalid
+variant renders an alert and associates it with the control. The component does
+not submit, validate, disable, or change a value. The caller owns those actions
+and its explicit UI state machine. A disabled control remains disabled when the
+caller passes that attribute.
+
+This component fits a native input, textarea, or a control whose focusable trigger
+accepts `id`, `aria-describedby`, and `aria-invalid`. It does not label a whole
+multi-control group. Use a fieldset and legend for that case. For React Hook Form,
+keep `FormField`, `FormLabel`, `FormControl`, and `FormMessage` from
+`@tuturuuu/ui/form`; do not wrap them in a second label/error system.
+
+`SettingsField` inherits spacing, typography, responsive control widths, and
+contrast from the shared row and enclosing `.settings-surface`. It introduces no
+new color tokens. Keep the surface on the enclosing shell. Use `SettingsSection`
+for related fields and `SettingsSectionFooter` for their existing save action.
+
+Behavior regression coverage lives in
+`packages/ui/src/components/ui/custom/__tests__/settings-field.test.tsx`: accessible
+names, combined help and error descriptions, validation recovery without losing
+the draft, unique generated IDs, and disabled control preservation. These tests
+do not establish browser contrast or screenshot acceptance.
