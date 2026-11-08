@@ -1,5 +1,6 @@
 import { registry } from './registry.generated';
 
+export * from './catalog';
 export { registry };
 export type FlagKey = (typeof registry)[number]['key'];
 export type FlagClass = 'read' | 'write' | 'ui' | 'kill';

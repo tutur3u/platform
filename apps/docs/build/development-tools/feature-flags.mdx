@@ -1,6 +1,6 @@
 ---
 title: Feature flags
-description: Default-off registry and the mobile evaluation contract.
+description: Flag policy, lifecycle catalog, admin dashboard and the mobile evaluation contract.
 ---
 
 The root `config/feature-flags.json` owns the flag inventory. Each array entry has
@@ -20,6 +20,61 @@ format the generated file with Oxc and commit it. `@tuturuuu/feature-flags`
 exports `registry`, the generated `FlagKey` union, and the pure
 `evaluateFlags(registry, context, overrides?)` function. Its tests validate the
 registry and detect generated-source drift.
+
+## When to add a flag
+
+Gate new features behind a flag. Routine UX/UI changes and non-critical fixes ship
+without one.
+
+## Lifecycle catalog
+
+`config/feature-flag-catalog.json` lists every platform flag family with its
+lifecycle metadata. `@tuturuuu/feature-flags` exports it as `featureFlagCatalog`
+together with `getFlagLifecycle` and `validateCatalog`.
+
+| Family | Scope | Source of truth |
+| --- | --- | --- |
+| `mobile-runtime` | global | `config/feature-flags.json` and the mobile endpoint |
+| `workspace-secret` | workspace | Workspace secrets read through `@tuturuuu/utils/feature-flags` and Infrastructure secret definitions |
+| `mobile-build` | build | Non-secret mobile deployment settings compiled with `bool.fromEnvironment` |
+
+Each entry records `owner`, `createdAt`, `apps` (with `appsComplete` when every
+consumer app is traced), `sources`, `defaults` per environment (`development`,
+`staging`, `production`) and `verifiedOnProdAt`. Defaults are the declared value
+when no override or workspace setting exists; they are not observed production
+state.
+
+`kind` separates removable feature flags from retained controls:
+
+- `release` flags gate a new feature. Once `verifiedOnProdAt` is recorded,
+  `removeBy` is derived as that instant plus 48 hours and the flag is overdue
+  after it.
+- `kill-switch`, `workspace-gate`, `safety-control` and `operational` entries are
+  retained controls. Verification never makes them removal-due.
+
+Entries adopted without historic metadata have `legacy: true`; their unknown owner
+or creation date stays `null` and renders as unknown. A `legacyRemoveBy` date is
+due through the end of that UTC day. New entries need `legacy: false`, an owner,
+`createdAt`, a description and a complete app list. Record `verifiedOnProdAt`
+only from an actual production verification, never from defaults or CI results.
+
+`packages/feature-flags/src/catalog.test.ts` fails when a source family gains or
+loses a flag without a catalog change, when a recorded source stops naming its
+flag, or when a new entry is marked legacy.
+
+### Overdue check
+
+`node packages/feature-flags/scripts/check-lifecycle.mjs` reports malformed
+metadata and overdue flags as GitHub annotations. Cheap PR Checks runs it in
+warning mode, which exits 0. `--strict` exits 1 on any report; `--now <iso>` and
+`--catalog <path>` pin the clock and input.
+
+### Dashboard
+
+Infrastructure `/<wsId>/feature-flags` renders the catalog for root workspace
+members with `view_infrastructure`. It is read-only: each environment shows the
+declared default beside an **Unknown** effective state, because the page reads no
+override store, workspace secret or build setting.
 
 ## Mobile endpoint
 
@@ -60,5 +115,7 @@ switch last: `mobile_offline: false` forces every `offline_` key OFF, including
 reads, writes and status UI. Context currently has no effect. This endpoint does
 not enable offline functionality or grant access to underlying data.
 
-Regression coverage lives in `packages/feature-flags/src/index.test.ts` and
-`apps/web/src/app/api/v1/mobile/feature-flags/route.test.ts`.
+Regression coverage lives in `packages/feature-flags/src/index.test.ts`,
+`packages/feature-flags/src/{catalog,lifecycle,check-lifecycle}.test.ts`,
+`apps/web/src/app/api/v1/mobile/feature-flags/route.test.ts` and the Infrastructure
+`feature-flags` page and table tests.

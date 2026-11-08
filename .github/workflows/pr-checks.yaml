@@ -143,6 +143,23 @@ jobs:
       - name: Keep staging hosts outside the production cookie zone
         run: node scripts/check-staging-hosts.js
 
+  feature-flag-lifecycle:
+    name: Feature flag lifecycle
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ready-for-ci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Warning-only: overdue or malformed entries annotate the run without failing it.
+      - name: Report overdue feature flags
+        run: node packages/feature-flags/scripts/check-lifecycle.mjs
+
   admitted:
     uses: ./.github/workflows/ci-admitted.yaml
     permissions:
@@ -217,6 +234,7 @@ jobs:
         scope,
         branch-name,
         staging-hosts,
+        feature-flag-lifecycle,
         admitted,
         oxc,
         i18n,
@@ -245,6 +263,8 @@ jobs:
             scope: full,
             'branch-name': full,
             'staging-hosts': full,
+            // Warning-only: a skip never blocks; a checker crash still fails.
+            'feature-flag-lifecycle': false,
             admitted: true,
             oxc: full && scope.oxc === 'true' && process.env.READY === 'true',
             i18n: full && scope.i18n === 'true' && process.env.READY === 'true',

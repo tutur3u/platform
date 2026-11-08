@@ -7358,6 +7358,63 @@
       "tablet": "Tablet"
     }
   },
+  "feature-flags": {
+    "columns": {
+      "apps": "Ứng dụng",
+      "created": "Ngày tạo",
+      "flag": "Cờ",
+      "kind": "Loại",
+      "owner": "Người phụ trách",
+      "remove_by": "Gỡ bỏ trước",
+      "verified": "Xác minh trên production"
+    },
+    "environments": {
+      "development": "Development",
+      "production": "Production",
+      "staging": "Staging"
+    },
+    "families": {
+      "mobile_build": "Bản dựng mobile",
+      "mobile_runtime": "Mobile runtime",
+      "workspace_secret": "Cài đặt không gian làm việc"
+    },
+    "kinds": {
+      "kill_switch": "Công tắc ngắt",
+      "operational": "Vận hành",
+      "release": "Phát hành",
+      "safety_control": "Kiểm soát an toàn",
+      "workspace_gate": "Cổng không gian làm việc"
+    },
+    "lifecycle": {
+      "awaiting_verification": "Chờ xác minh",
+      "overdue": "Quá hạn",
+      "retained": "Giữ lại",
+      "scheduled": "Đã hẹn"
+    },
+    "scopes": {
+      "build": "Lúc dựng bản",
+      "global": "Toàn cục",
+      "workspace": "Theo không gian làm việc"
+    },
+    "summary": {
+      "awaitingVerification": "Chờ xác minh production",
+      "legacy": "Siêu dữ liệu cũ",
+      "overdue": "Quá hạn",
+      "scheduled": "Đã hẹn gỡ bỏ",
+      "total": "Cờ"
+    },
+    "title": "Cờ tính năng",
+    "values": {
+      "default_off": "Mặc định tắt",
+      "default_on": "Mặc định bật",
+      "legacy_unknown": "Không rõ (cũ)",
+      "not_recorded": "Chưa ghi nhận",
+      "not_verified": "Chưa xác minh",
+      "partial": "Một phần",
+      "unknown": "Không rõ",
+      "untraced": "Chưa truy vết"
+    }
+  },
   "finance": {
     "expense": "Chi tiêu",
     "failed_to_load_categories": "Không thể tải danh sách danh mục",
@@ -8915,6 +8972,7 @@
     "email_templates": "Mẫu Email",
     "entity_creation_limits": "Giới hạn tạo thực thể",
     "external_apps": "Ứng dụng bên ngoài",
+    "feature_flags": "Cờ tính năng",
     "features": "Tính năng",
     "fleet": "Đội máy",
     "fleet_runs": "Lượt chạy",
