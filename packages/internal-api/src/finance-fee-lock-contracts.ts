@@ -256,7 +256,61 @@ export interface FeeLockConflictBody {
   current: FeeLockHeader;
 }
 
-export type FeeLockBatchItemResult =
-  | { id: string; result: 'ok'; version: number; revision: number }
-  | { id: string; result: 'conflict'; current_version: number }
-  | { id: string; result: 'not_found' };
+/** `conflict` means ONLY a version race; a rule failure (an empty draft) is `invalid` with its FEE_LOCK_* code. */
+export const FEE_LOCK_EMPTY_CODE = 'FEE_LOCK_EMPTY';
+const batchItem = <T extends z.ZodRawShape>(shape: T) =>
+  z.object({ id: z.guid(), ...shape });
+export const feeLockBatchItemResultSchema = z.discriminatedUnion('result', [
+  batchItem({
+    result: z.literal('ok'),
+    version: versionSchema,
+    revision: z.int().min(1),
+  }),
+  batchItem({ result: z.literal('conflict'), current_version: versionSchema }),
+  batchItem({ result: z.literal('not_found') }),
+  batchItem({
+    result: z.literal('invalid'),
+    code: z.string().regex(/^FEE_LOCK_[A-Z_]+$/),
+  }),
+]);
+export type FeeLockBatchItemResult = z.infer<
+  typeof feeLockBatchItemResultSchema
+>;
+
+// Immutable JSON in `fee_lock_revisions.snapshot`. Bounds match the inputs and M1 columns. Names come from the workspace at lock
+// time; M2 must cap them at FEE_LOCK_MAX_NAME_LENGTH when it writes a snapshot.
+export const FEE_LOCK_MAX_NAME_LENGTH = 200;
+const nameSchema = z.string().max(FEE_LOCK_MAX_NAME_LENGTH);
+export const feeLockSnapshotSchema = z.object({
+  schema_version: z.literal(1),
+  fee_lock_id: z.guid(),
+  ws_id: z.guid(),
+  student_id: z.guid(),
+  student_name: nameSchema,
+  period_month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-01$/),
+  currency: z.string().length(3),
+  revision: z.int().min(1),
+  total_amount: moneySchema.nonnegative(),
+  note: z.string().max(2000).nullable(),
+  locked_by: z.guid().nullable(),
+  locked_at: z.iso.datetime({ offset: true }),
+  lines: z
+    .array(
+      z.object({
+        kind: z.enum(['tuition', 'extra']),
+        group_id: z.guid().nullable(),
+        group_name: nameSchema.nullable(),
+        label: z.string().min(1).max(200),
+        unit_label: z.string().max(40).nullable(),
+        product_id: z.guid().nullable(),
+        unit_price: moneySchema.nonnegative(),
+        quantity: quantitySchema,
+        adjustment_amount: moneySchema,
+        reason: reasonSchema.nullable(),
+        line_amount: moneySchema.nonnegative(),
+        sort_order: z.int().min(0).max(32_767), // SMALLINT
+      })
+    )
+    .max(FEE_LOCK_MAX_LINES),
+});
+export type FeeLockSnapshot = z.infer<typeof feeLockSnapshotSchema>;
