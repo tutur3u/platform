@@ -181,6 +181,97 @@ test('service capabilities separate holds and fail closed on invalid keys/config
   }
 });
 
+test('erase and hold RPC entrypoints do not expose the raw ledger stub', async () => {
+  const bundle = await build({
+    entryPoints: [new URL('./erase-ledger-do.ts', import.meta.url).pathname],
+    bundle: true,
+    write: false,
+    format: 'esm',
+    platform: 'browser',
+    tsconfigRaw: { compilerOptions: { target: 'ES2022' } },
+    external: ['cloudflare:workers'],
+  });
+  const hold = {
+    kind: 'hold_release',
+    operation_key: '22222222-2222-4222-8222-222222222222',
+    ws_id: '11111111-1111-4111-8111-111111111111',
+    meeting_id: null,
+    body: {
+      hold_id: '22222222-2222-4222-8222-222222222222',
+      transition_id: '33333333-3333-4333-8333-333333333333',
+      scope: {
+        ws_id: '11111111-1111-4111-8111-111111111111',
+        meeting_id: null,
+      },
+      kind: 'legal_hold',
+      at: '2026-11-03T00:00:00.000Z',
+      approval_ref: '44444444-4444-4444-8444-444444444444',
+    },
+  };
+  const mf = new Miniflare({
+    workers: [
+      {
+        name: 'ledger',
+        modules: true,
+        script: bundle.outputFiles[0].text,
+        compatibilityDate: '2026-08-06',
+        durableObjects: {
+          MEET_ERASE_LEDGER: { className: 'MeetEraseLedger', useSQLite: true },
+        },
+        r2Buckets: ['LEDGER_BUCKET'],
+        bindings: {
+          MEET_ERASE_LEDGER_KEY_V1: '07'.repeat(32),
+          MEET_AI_PROTECTED_WORKSPACE_IDS:
+            '99999999-9999-4999-8999-999999999999',
+        },
+      },
+      {
+        name: 'caller',
+        modules: true,
+        compatibilityDate: '2026-08-06',
+        serviceBindings: {
+          ERASE: { name: 'ledger', entrypoint: 'EraseLedgerService' },
+          HOLD: { name: 'ledger', entrypoint: 'HoldLedgerService' },
+        },
+        script: `export default {async fetch(request, env) {
+          const { binding, op, value } = await request.json();
+          try {
+            if (op === 'stub') {
+              const raw = await env[binding].ledger();
+              await raw.append(value);
+              return new Response('leaked');
+            }
+            await env[binding].append(value);
+            return new Response('ok');
+          } catch (error) {
+            return new Response(error.message, { status: 500 });
+          }
+        }}`,
+      },
+    ],
+  });
+  try {
+    const caller = await mf.getWorker('caller');
+    const call = async (binding, op, value) =>
+      caller.fetch('http://local', {
+        method: 'POST',
+        body: JSON.stringify({ binding, op, value }),
+      });
+    for (const binding of ['ERASE', 'HOLD']) {
+      const leaked = await call(binding, 'stub', hold);
+      assert.equal(leaked.status, 500);
+      assert.notEqual(await leaked.text(), 'leaked');
+    }
+    const refused = await call('ERASE', 'append', hold);
+    assert.match(
+      await refused.text(),
+      /LEDGER_HOLD_ENTRYPOINT_REQUIRED/
+    );
+  } finally {
+    await mf.dispose();
+  }
+});
+
 test('hold service rejects concurrent creates for the same hold and normalizes errors', async () => {
   const bundle = await build({
     entryPoints: [new URL('./erase-ledger-do.ts', import.meta.url).pathname],

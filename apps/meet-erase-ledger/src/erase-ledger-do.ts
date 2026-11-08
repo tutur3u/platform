@@ -108,30 +108,32 @@ export class MeetEraseLedger extends DurableObject<Env> {
     );
   }
 }
+// Module scope, not a class method: TypeScript private/protected are erased, and
+// Workers RPC exposes prototype methods. A returned Durable Object stub would be serializable.
+function ledgerStub(env: Env) {
+  return env.MEET_ERASE_LEDGER.get(
+    env.MEET_ERASE_LEDGER.idFromName('meet-erase-ledger/v1')
+  );
+}
 // Only the explicitly bound RPC entrypoint grants access. The default export rejects HTTP.
 export class EraseLedgerService extends WorkerEntrypoint<Env> {
-  protected ledger() {
-    return this.env.MEET_ERASE_LEDGER.get(
-      this.env.MEET_ERASE_LEDGER.idFromName('meet-erase-ledger/v1')
-    );
-  }
   verify() {
-    return this.ledger().verify();
+    return ledgerStub(this.env).verify();
   }
   append(value: Append) {
     if (value.kind === 'hold_create' || value.kind === 'hold_release')
       throw Error('LEDGER_HOLD_ENTRYPOINT_REQUIRED');
-    return this.ledger().append(value);
+    return ledgerStub(this.env).append(value);
   }
   read(after: number, limit: number) {
-    return this.ledger().read(after, limit);
+    return ledgerStub(this.env).read(after, limit);
   }
 }
 export class HoldLedgerService extends EraseLedgerService {
   override append(value: Append) {
     if (value.kind !== 'hold_create' && value.kind !== 'hold_release')
       throw Error('LEDGER_HOLD_INPUT_REQUIRED');
-    return this.ledger().append(value);
+    return ledgerStub(this.env).append(value);
   }
 }
 export default {
