@@ -69,18 +69,14 @@ registerHooks({
     return next(specifier, context);
   },
 });
-const { POST } = await import(
-  '../apps/web/src/legacy-api-routes/workspaces/[wsId]/secrets/route.ts'
-);
-const { PUT, DELETE } = await import(
-  '../apps/web/src/legacy-api-routes/workspaces/[wsId]/secrets/[secretId]/route.ts'
-);
-const infraPost = await import(
-  '../apps/infrastructure/src/app/api/workspaces/[wsId]/secrets/route.ts'
-);
-const infraItem = await import(
-  '../apps/infrastructure/src/app/api/workspaces/[wsId]/secrets/[secretId]/route.ts'
-);
+const { POST } =
+  await import('../apps/web/src/legacy-api-routes/workspaces/[wsId]/secrets/route.ts');
+const { PUT, DELETE } =
+  await import('../apps/web/src/legacy-api-routes/workspaces/[wsId]/secrets/[secretId]/route.ts');
+const infraPost =
+  await import('../apps/infrastructure/src/app/api/workspaces/[wsId]/secrets/route.ts');
+const infraItem =
+  await import('../apps/infrastructure/src/app/api/workspaces/[wsId]/secrets/[secretId]/route.ts');
 for (const [api, post, put, remove] of [
   ['secrets UI', POST, PUT, DELETE],
   ['infrastructure', infraPost.POST, infraItem.PUT, infraItem.DELETE],
