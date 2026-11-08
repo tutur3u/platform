@@ -27,6 +27,7 @@ import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
+import { isFeeLockEnabled } from '@/lib/fee-lock-access';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import { getNavigationLinks } from './navigation';
@@ -74,6 +75,11 @@ export default async function Layout({ children, params }: LayoutProps) {
     getPermissions({ user, wsId }),
     getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
   ]);
+  // Skip the secret read unless this member can see invoices.
+  const feeLockEnabled =
+    permissions && !permissions.withoutPermission('view_invoices')
+      ? await isFeeLockEnabled(wsId)
+      : false;
   const resolvedCurrency = resolveSupportedCurrency(currency);
 
   const cookieStore = await cookies();
@@ -94,10 +100,13 @@ export default async function Layout({ children, params }: LayoutProps) {
           wsId={wsId}
           workspace={workspace}
           defaultCollapsed={defaultCollapsed}
-          links={await getNavigationLinks({
-            permissions: permissions ?? undefined,
-            personalOrWsId: workspaceSlug,
-          })}
+          links={
+            await getNavigationLinks({
+              feeLockEnabled,
+              permissions: permissions ?? undefined,
+              personalOrWsId: workspaceSlug,
+            })
+          }
           actions={
             <Suspense
               key={user.id}

@@ -15,7 +15,17 @@ const { dirname, join } = require('node:path');
 const { repoRoot } = require('./workflow-config-test-helpers.js');
 const { readWorkflow } = require('./workflow-yaml-test-helper.js');
 
-const apps = ['meet', 'calendar', 'mail', 'apps', 'shortener', 'mastermind'];
+const apps = [
+  'forms',
+  'inventory',
+  'nova',
+  'meet',
+  'calendar',
+  'mail',
+  'apps',
+  'shortener',
+  'mastermind',
+];
 const heldPolicy = Object.fromEntries(
   apps.map((app) => [
     app,
@@ -441,7 +451,7 @@ test('Mastermind has qualification jobs only and no production publisher', () =>
     false
   );
   const { jobs } = readWorkflow('mastermind-cloudflare.yaml');
-  assert.deepEqual(Object.keys(jobs), ['check-ci', 'native']);
+  assert.deepEqual(Object.keys(jobs), ['affected-gate', 'check-ci', 'native']);
   assert.equal(jobs.native.uses, './.github/workflows/native-start-app.yaml');
   assert.equal(jobs.native.with.app, 'mastermind');
 });

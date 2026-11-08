@@ -35,6 +35,7 @@ on:
         'packages/vercel/**',
         'apps/web/package.json',
         'scripts/ci/finance-native-*',
+        'scripts/ci/finance-cutover-*',
         'scripts/ci/apps-native-artifact.py',
         'scripts/ci/apps-native-runtime-pointer.mjs',
         'scripts/ci/native-emitted-config-receipt.mjs',
@@ -96,6 +97,7 @@ on:
         'packages/vercel/**',
         'apps/web/package.json',
         'scripts/ci/finance-native-*',
+        'scripts/ci/finance-cutover-*',
         'scripts/ci/apps-native-artifact.py',
         'scripts/ci/apps-native-runtime-pointer.mjs',
         'scripts/ci/native-emitted-config-receipt.mjs',
@@ -128,6 +130,40 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
+  affected-gate:
+    # Pull requests only: skip the heavy jobs when finance is unaffected.
+    # Other events never check out or run the gate: they resolve to run=true, so a
+    # gate failure can never block a production deploy. Any error also resolves to run=true.
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    outputs:
+      run: ${{ github.event_name != 'pull_request' && 'true' || steps.app.outputs.run || 'true' }}
+      reason: ${{ steps.app.outputs.reason }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+          sparse-checkout: |
+            /.github/actions/affected-gate/
+            /scripts/ci/affected-apps.mjs
+            /scripts/ci/affected-apps.extra-edges.json
+            /scripts/ci/affected-gate.mjs
+            /apps/*/package.json
+            /packages/*/package.json
+          sparse-checkout-cone-mode: false
+      - id: app
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: ./.github/actions/affected-gate
+        with:
+          app: finance
   check-ci:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     uses: ./.github/workflows/ci-check.yml
@@ -139,8 +175,8 @@ jobs:
   # Qualification only: neither job publishes. Native deploys are operator
   # actions inside an approved custody window.
   native:
-    needs: check-ci
-    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    needs: [check-ci, affected-gate]
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/native-start-app.yaml
     permissions:
       contents: read
@@ -163,9 +199,9 @@ jobs:
       format-paths: >-
         apps/finance/cloudflare apps/finance/src/start-bridge apps/finance/src/routes apps/finance/src/router.tsx apps/finance/src/start.ts apps/finance/vite.config.mts apps/finance/void.config.ts apps/finance/vitest.config.ts apps/finance/tsconfig.json apps/finance/tsconfig.cloudflare.json apps/finance/package.json apps/finance/start-bridge.routes.json apps/finance/start-bridge.config.ts
   native-production:
-    needs: check-ci
+    needs: [check-ci, affected-gate]
     # Production public values are unavailable to fork pull requests.
-    if: (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/native-start-app.yaml
     permissions:
       contents: read
@@ -185,3 +221,76 @@ jobs:
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
       format-paths: >-
         apps/finance/cloudflare apps/finance/src/start-bridge apps/finance/src/routes apps/finance/src/router.tsx apps/finance/src/start.ts apps/finance/vite.config.mts apps/finance/void.config.ts apps/finance/vitest.config.ts apps/finance/tsconfig.json apps/finance/tsconfig.cloudflare.json apps/finance/package.json apps/finance/start-bridge.routes.json apps/finance/start-bridge.config.ts
+  cutover-build:
+    needs: [check-ci, affected-gate]
+    if: ${{ needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [staging, production]
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      FINANCE_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VITE_FINANCE_NATIVE_PROFILE: ${{ matrix.profile }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars[format('{0}_SUPABASE_URL', matrix.profile == 'production' && 'PRODUCTION' || 'STAGING')] }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars[format('{0}_SUPABASE_PUBLISHABLE_KEY', matrix.profile == 'production' && 'PRODUCTION' || 'STAGING')] }}
+      NODE_ENV: production
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Require the selected public build inputs
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -n "$NEXT_PUBLIC_SUPABASE_URL"
+          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Build required workspace suppliers
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="@tuturuuu/finance^..." --concurrency=2
+          token: ''
+          team: ''
+      - name: Generate exact source identity
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: ${{ matrix.profile }}
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build TanStack Start Worker and assets
+        working-directory: apps/finance
+        run: bun run build:cloudflare
+      - name: Record emitted configuration receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/finance "$SOURCE_SHA" "$RUNNER_TEMP/finance-emitted-config.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: finance-cutover-config-${{ matrix.profile }}-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/finance-emitted-config.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Check emitted anonymous redirect and required-secret startup refusal
+        timeout-minutes: 4
+        run: node scripts/ci/finance-cutover-smoke.mjs
+      - name: Package deployable output and emitted Wrangler config
+        run: |
+          python3 scripts/ci/finance-native-artifact.py config apps/finance
+          python3 scripts/ci/finance-native-artifact.py seal apps/finance --receipt "$RUNNER_TEMP/receipt.json"
+          python3 scripts/ci/finance-native-artifact.py pack apps/finance --receipt "$RUNNER_TEMP/receipt.json" --archive "$RUNNER_TEMP/finance-native.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: finance-cutover-${{ matrix.profile }}-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/finance-native.tar.gz
+          retention-days: 7
+          if-no-files-found: error

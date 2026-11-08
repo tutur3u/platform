@@ -10,6 +10,11 @@ import {
   getCalculatedInvoiceValuesFromRpc,
   validateInvoiceCustomer,
 } from '../route';
+import {
+  discardNewSubscriptionInvoice,
+  insertFeeLockLink,
+  resolveFeeLockRef,
+} from './fee-lock-link';
 import { validateSubscriptionReferences } from './workspace-references';
 
 interface Params {
@@ -42,6 +47,8 @@ interface CreateSubscriptionInvoiceRequest {
   frontend_subtotal?: number;
   frontend_discount_amount?: number;
   frontend_total?: number;
+  /** Locked fee revision the form was pre-filled from (design §2.2). */
+  fee_lock_ref?: unknown;
 }
 
 const MAX_SUBSCRIPTION_PREPAID_MONTH_COUNT = 12;
@@ -163,6 +170,16 @@ export async function POST(req: Request, { params }: Params) {
   const { normalizedWsId: wsId, permissions, sbAdmin, user } = access.context;
 
   let createdInvoiceId: string | null = null;
+  let feeLockLinked = false;
+  const requestStartedAt = new Date();
+  const cleanupInvoice = () =>
+    discardNewSubscriptionInvoice(sbAdmin, {
+      wsId,
+      invoiceId: createdInvoiceId,
+      actorId: user.id,
+      requestStartedAt,
+      linked: feeLockLinked,
+    });
 
   const { withoutPermission } = permissions;
 
@@ -188,6 +205,7 @@ export async function POST(req: Request, { params }: Params) {
       frontend_subtotal,
       frontend_discount_amount,
       frontend_total,
+      fee_lock_ref,
     }: CreateSubscriptionInvoiceRequest = await req.json();
 
     const groupIds = Array.isArray(group_ids)
@@ -336,6 +354,13 @@ export async function POST(req: Request, { params }: Params) {
         { status: 400 }
       );
     }
+    const feeLockLink = await resolveFeeLockRef(sbAdmin, {
+      wsId,
+      ref: fee_lock_ref,
+      customerId: resolvedCustomerId,
+      selectedMonth: selected_month,
+    });
+    if (feeLockLink instanceof NextResponse) return feeLockLink;
 
     // Calculate values through the private database RPC
     let calculatedValues: CalculatedValues;
@@ -440,31 +465,6 @@ export async function POST(req: Request, { params }: Params) {
 
     const invoiceId = invoice.id;
     createdInvoiceId = invoiceId;
-
-    const cleanupInvoice = async (): Promise<void> => {
-      if (!createdInvoiceId) return;
-
-      // Best-effort rollback: delete children first, then the invoice itself.
-      await Promise.all([
-        sbAdmin
-          .from('finance_invoice_promotions')
-          .delete()
-          .eq('invoice_id', createdInvoiceId),
-        sbAdmin
-          .from('finance_invoice_products')
-          .delete()
-          .eq('invoice_id', createdInvoiceId),
-        sbAdmin
-          .from('finance_invoice_user_groups')
-          .delete()
-          .eq('invoice_id', createdInvoiceId),
-      ]);
-
-      await sbAdmin
-        .from('finance_invoices')
-        .delete()
-        .eq('id', createdInvoiceId);
-    };
 
     const invoiceGroupRows = groupIds.map((groupId) => ({
       invoice_id: invoiceId,
@@ -608,6 +608,22 @@ export async function POST(req: Request, { params }: Params) {
       }
     }
 
+    // Fee-lock link + event before stock changes: any later failure discards them with the invoice.
+    if (feeLockLink) {
+      feeLockLinked = true;
+      const linkError = await insertFeeLockLink(sbAdmin, {
+        wsId,
+        invoiceId,
+        link: feeLockLink,
+        chargedTotal: storedTotal,
+        actorId: user.id,
+      });
+      if (linkError) {
+        await cleanupInvoice();
+        return linkError;
+      }
+    }
+
     // Stock changes (sell)
     const stockChanges = productValues.map((product) => ({
       product_id: product.product_id,
@@ -673,23 +689,7 @@ export async function POST(req: Request, { params }: Params) {
     });
   } catch (error) {
     console.error('Unexpected error creating subscription invoice:', error);
-    if (createdInvoiceId) {
-      await Promise.allSettled([
-        sbAdmin
-          .from('finance_invoice_promotions')
-          .delete()
-          .eq('invoice_id', createdInvoiceId),
-        sbAdmin
-          .from('finance_invoice_products')
-          .delete()
-          .eq('invoice_id', createdInvoiceId),
-        sbAdmin
-          .from('finance_invoice_user_groups')
-          .delete()
-          .eq('invoice_id', createdInvoiceId),
-        sbAdmin.from('finance_invoices').delete().eq('id', createdInvoiceId),
-      ]);
-    }
+    await cleanupInvoice();
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

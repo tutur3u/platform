@@ -253,6 +253,7 @@ export async function getTutoringData(
       group_name: (row.group as { name: string | null } | null)?.name ?? 'N/A',
       student_name: nameOf(row.student),
       teacher_name: nameOf(row.teacher),
+      teacher_user_id: row.teacher_user_id,
     })),
   });
 }

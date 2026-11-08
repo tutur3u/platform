@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/satellite-v0.26.0...satellite-v0.27.0) (2026-11-08)
+
+
+### Features
+
+* **privacy:** add default-off consent banner and disable analytics ([#7806](https://github.com/tutur3u/platform/issues/7806)) ([992fa5d](https://github.com/tutur3u/platform/commit/992fa5d8516793e49cc87a0bd7c19cd85f482b77))
+* **privacy:** production consent controls with analytics disabled ([#7821](https://github.com/tutur3u/platform/issues/7821)) ([7e56908](https://github.com/tutur3u/platform/commit/7e56908ad59811240fe112939742736cde04a8ad))
+* **roadmap:** adopt public satellite shell and validation ([#7802](https://github.com/tutur3u/platform/issues/7802)) ([f46f587](https://github.com/tutur3u/platform/commit/f46f5875d0fa26a88b654dfec5869e55d92a069d))
+* **satellite:** regroup shared and tasks settings into sections ([#7793](https://github.com/tutur3u/platform/issues/7793)) ([ada23b2](https://github.com/tutur3u/platform/commit/ada23b29059530a6adb56a6107d9372dc92bc834))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/satellite-v0.25.0...satellite-v0.26.0) (2026-10-24)
 
 

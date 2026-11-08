@@ -63,6 +63,16 @@
     }
   },
   "files": {
+    ".github/workflows/ai-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7592",
+        "reason": "REV-7592: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "12cbcfd4c7e76ca6c4a7bce663b2c928b2b6c5556c161ab628f06cea548fad6c"
+    },
     ".github/workflows/apps-cloudflare.yaml": {
       "lines": 9,
       "uses": 9,
@@ -72,6 +82,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "24ed53e4bdf4d2c96fcef553a50a4d1286b78bf56c22f3f0d4d0c2456a7f1442"
+    },
+    ".github/workflows/cms-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7618",
+        "reason": "REV-7618: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "12cbcfd4c7e76ca6c4a7bce663b2c928b2b6c5556c161ab628f06cea548fad6c"
     },
     ".github/workflows/colab-cloudflare.yaml": {
       "lines": 2,
@@ -113,6 +133,36 @@
       },
       "digest": "4c6ff97c6fb7094a52e42757868d6c78f550f049b11add0f570bc9c02c0a3578"
     },
+    ".github/workflows/finance-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7621",
+        "reason": "REV-7621: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "12cbcfd4c7e76ca6c4a7bce663b2c928b2b6c5556c161ab628f06cea548fad6c"
+    },
+    ".github/workflows/forms-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7600",
+        "reason": "REV-7600: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "12bb1c7c1a654e1c2291d0970d35c323328f40829b89d576b4fcd659dabc73ca"
+    },
+    ".github/workflows/inventory-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7620",
+        "reason": "REV-7620: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "12bb1c7c1a654e1c2291d0970d35c323328f40829b89d576b4fcd659dabc73ca"
+    },
     ".github/workflows/lettin-cloudflare.yaml": {
       "lines": 1,
       "uses": 2,
@@ -124,14 +174,24 @@
       "digest": "a5e511a92544ac9fdf20c4f5933836f11d10fe388be6d4c5c7902dbadf16ea02"
     },
     ".github/workflows/mail-calendar-tasks-builds.yaml": {
-      "lines": 7,
-      "uses": 7,
+      "lines": 11,
+      "uses": 11,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6637",
-        "reason": "Calendar runs cf-inferred standalone binding generation; CI retains the legacy reference oracle until exact-artifact qualification. Publication and runtime gaps remain unchanged."
+        "decision": "https://github.com/tutur3u/platform/pull/7644",
+        "reason": "REV-7644: production config qualification, sealed archive restore and matching emitted-config regression fixtures; no new Wrangler command. Existing publication gap and removal condition remain."
       },
-      "digest": "ab93d38ca88f0b634967f90a6e829b02f43b3b50a9ab31c00dfe42d91d6a925f"
+      "digest": "2392f6d063d1996a39fb80caa64386e54f450ead750e9b353484a6eab3cc92c7"
+    },
+    ".github/workflows/mastermind-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7608",
+        "reason": "REV-7608: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "ecd7cdb3ecc244b40fc2d16e412b82af9287148a79307beba4a0758f3e070257"
     },
     ".github/workflows/meet-cloudflare.yaml": {
       "lines": 30,
@@ -152,6 +212,16 @@
         "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
       "digest": "cb1eac45554ff87ab8162c58fab72a218b6d4efffe8fbddbd3d6cfb272fabd5c"
+    },
+    ".github/workflows/nova-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7846",
+        "reason": "REV-7846: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "12bb1c7c1a654e1c2291d0970d35c323328f40829b89d576b4fcd659dabc73ca"
     },
     ".github/workflows/parley-cloudflare.yaml": {
       "lines": 3,
@@ -202,6 +272,36 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "3aa9f9648e96a936f50ed5e36a0a9daa53e3dcbb8489b00eb549840c7737c782"
+    },
+    ".github/workflows/storefront-cloudflare.yaml": {
+      "lines": 5,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7643",
+        "reason": "REV-7643: cutover artifact writes the emitted wrangler.json for an operator. No wrangler command is added. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "cb3f9de3f9f565368ee118a6600074ef472469d84e9b363fdfb666c21ad78051"
+    },
+    ".github/workflows/tools-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7590",
+        "reason": "REV-7590: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "1beb88e2772be3324b55b9f33dcfe4b0c818fa7898de666878c61b1d0080214f"
+    },
+    ".github/workflows/track-cloudflare.yaml": {
+      "lines": 5,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7645",
+        "reason": "REV-7645: cutover artifact writes the emitted wrangler.json for an operator. No wrangler command is added. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "3076d6bae5cbe568450a5ae440c193c50a50d7611fee76af034112302bf1986e"
     },
     ".github/workflows/wave1-native-app.yaml": {
       "lines": 4,
@@ -543,6 +643,36 @@
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
+    "apps/external/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7625",
+        "reason": "REV-7625: the gitignore names .void-wrangler.jsonc so generated local adapter state stays untracked. It does not invoke wrangler. The shared-toolchain gap and its removal condition remain."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/external/cloudflare/anonymous.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7627",
+        "reason": "REV-7627: local unstable_startWorker checks anonymous ingress on the emitted config. Remote is disabled and provider auth is denied. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/external/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7625",
+        "reason": "REV-7625: the pinned Wrangler devDependency supplies unstable_startWorker for the local emitted-Worker fixture. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
     "apps/finance/.gitignore": {
       "lines": 1,
       "uses": 1,
@@ -600,6 +730,36 @@
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/6858",
         "reason": "Forms pins its owning SDK/CLI supplier for the native build, binding types, dry-run and local emitted-Worker acceptance. The Wave 1 owner removes this dependency when equivalent cf + Void exact-artifact qualification/publication is established."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/git/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7638",
+        "reason": "REV-7638: the gitignore names .void-wrangler.jsonc so generated local adapter state stays untracked. It does not invoke wrangler. The shared-toolchain gap and its removal condition remain."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/git/cloudflare/anonymous.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7639",
+        "reason": "REV-7639: local unstable_startWorker checks anonymous ingress on the emitted config. Remote is disabled and provider auth is denied. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/git/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7638",
+        "reason": "REV-7638: the pinned Wrangler devDependency supplies unstable_startWorker for the local emitted-Worker fixture. The void-emitted runtime gap and its removal condition remain."
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
@@ -726,12 +886,12 @@
     "apps/mastermind/cloudflare/native-built-worker.acceptance.mjs": {
       "gap": "void-emitted-runtime",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7301",
-        "reason": "ADMITTED GAP: require(wrangler).unstable_startWorker runs the exact sealed Void-emitted config with bundle/processEntrypoint disabled, disposable bindings, outbound JWKS interception and provider auth denied. The cf/Vite harness requires native cf Build Output and lacks this Void-config fixture contract. No build or publication is admitted."
+        "decision": "https://github.com/tutur3u/platform/pull/7675",
+        "reason": "REV-7675: a second local unstable_startWorker refuses startup when the coordination secret binding is absent. Remote is disabled and provider auth is denied. The void-emitted runtime gap and its removal condition remain."
       },
-      "lines": 1,
-      "uses": 1,
-      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+      "lines": 2,
+      "uses": 2,
+      "digest": "0237422907598ee7a39a10dc713e863717d472bb08d390ffd18cd4500dc1ba87"
     },
     "apps/mastermind/package.json": {
       "gap": "void-emitted-runtime",
@@ -1513,6 +1673,16 @@
         "reason": "test fixture strings, not invocations"
       }
     },
+    "scripts/ci/ai-cutover-smoke.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7592",
+        "reason": "REV-7592: local smoke loads wrangler unstable_startWorker with remote disabled, denied provider auth, and no publication. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "998eab277701cfe7eb3e4c9670cf831bc372faada4dd8b603cf69d6cbbd808a6"
+    },
     "scripts/ci/apps-native-artifact.py": {
       "lines": 2,
       "uses": 2,
@@ -1832,6 +2002,26 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "870ee7dc37ba959b9cf0e198972ba5843606a36acbccdcc3bb58c4bf40b73626"
+    },
+    "scripts/ci/cms-cutover-smoke.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7618",
+        "reason": "REV-7618: local smoke loads wrangler unstable_startWorker with remote disabled, denied provider auth, and no publication. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "998eab277701cfe7eb3e4c9670cf831bc372faada4dd8b603cf69d6cbbd808a6"
+    },
+    "scripts/ci/finance-cutover-smoke.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7621",
+        "reason": "REV-7621: local smoke loads wrangler unstable_startWorker with remote disabled, denied provider auth, and no publication. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "998eab277701cfe7eb3e4c9670cf831bc372faada4dd8b603cf69d6cbbd808a6"
     },
     "scripts/ci/finance-native-artifact.test.py": {
       "lines": 7,
@@ -2264,14 +2454,14 @@
       "digest": "06dc1c0c44ba14771d1cc73b5b7eae49f602a795d50959122913be5847fad3fd"
     },
     "scripts/ci/tasks-native-artifact.test.py": {
-      "lines": 7,
-      "uses": 8,
+      "lines": 11,
+      "uses": 12,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6849",
-        "reason": "Tasks native artifact regressions (#6849) build the same emitted-config fixture as Finance's: the .void-wrangler.jsonc producer metadata, the deploy pointer and the emitted wrangler.json; Tasks on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+        "decision": "https://github.com/tutur3u/platform/pull/7644",
+        "reason": "REV-7644: production config qualification, sealed archive restore and matching emitted-config regression fixtures; no new Wrangler command. Existing publication gap and removal condition remain."
       },
-      "digest": "9ea2206674d3b1e3377608f589805a6ced065510d62b53a861625a083edc4e3a"
+      "digest": "4631db45929dc1645af9ca37d74fb366606d1bf9d9447528077f513622452644"
     },
     "scripts/ci/turbo-cache-config.test.js": {
       "lines": 2,
@@ -2394,14 +2584,14 @@
       "digest": "5ce11fab75df1f5880c6fc88e29b795d31719025350fb56f46e023691532732f"
     },
     "scripts/ci/wave1-web-seal.mjs": {
-      "lines": 1,
-      "uses": 1,
+      "lines": 2,
+      "uses": 2,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7323",
-        "reason": "One path literal, no CLI: after restoring the sealed archive the restored job recreates Void's emitted deploy pointer (.wrangler/deploy/config.json), the location the admitted wave1-native-artifact and apps-native-runtime-pointer readers require, so the emitted workerd suite can re-run on the same bytes. Remove when Void emits a cf Build Output and the wave-1 seal and readers stop reading the Void/Wrangler pointer."
+        "decision": "https://github.com/tutur3u/platform/pull/7378",
+        "reason": "REV-7378: dry-run text names the same emitted deploy pointer and does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
       },
-      "digest": "6e8c3daf68e1f6625b85a7b64999dca62510a364ff8019234f65b53085a7c478"
+      "digest": "9020660847317ff2023a518016fb675010fe193beb53dc782fe05d95b707c1fb"
     },
     "scripts/ci/wave1-web-seal.test.mjs": {
       "lines": 4,

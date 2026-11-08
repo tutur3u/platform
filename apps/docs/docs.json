@@ -212,6 +212,7 @@
                   "build/devops/adaptive-abuse-rate-limits",
                   "build/devops/storage-egress-protection",
                   "build/devops/meet-transcript-retention",
+                  "build/devops/status-api-revocation",
                   "build/devops/critical-app-rollout",
                   "build/devops/github-actions-runbook",
                   "build/devops/caching",
@@ -328,6 +329,7 @@
               {
                 "group": "Application integrations",
                 "pages": [
+                  "platform/applications/ec-reply-deliverability-design",
                   {
                     "group": "Square POS",
                     "pages": [
@@ -456,6 +458,7 @@
                 "group": "API Reference",
                 "pages": [
                   "reference/api-reference/introduction",
+                  "reference/api-reference/status",
                   "reference/api-reference/ai-studio",
                   "reference/api-reference/mastermind-push-events",
                   "reference/api-reference/endpoint/generate"
@@ -519,6 +522,7 @@
                   "reference/repository/routes/rewise",
                   "reference/repository/routes/roadmap",
                   "reference/repository/routes/shortener",
+                  "reference/repository/routes/status-api",
                   "reference/repository/routes/storage-unzip-proxy",
                   "reference/repository/routes/storefront",
                   "reference/repository/routes/supermemory",

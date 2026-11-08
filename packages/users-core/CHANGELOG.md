@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/users-core-v0.11.2...users-core-v0.12.0) (2026-11-08)
+
+
+### Features
+
+* **reports:** choose monthly reports by the month they cover ([#7551](https://github.com/tutur3u/platform/issues/7551)) ([f54ead5](https://github.com/tutur3u/platform/commit/f54ead5eba74f181b5e3721c0c26a49560e8d5ae))
+* **reports:** resend stuck or failed report emails ([#7532](https://github.com/tutur3u/platform/issues/7532)) ([337e73e](https://github.com/tutur3u/platform/commit/337e73ebd9bb19e802598d9c0da7882804581551))
+* **tasks:** add per-board sprint data model ([#7043](https://github.com/tutur3u/platform/issues/7043)) ([9b08aef](https://github.com/tutur3u/platform/commit/9b08aef8da70cb686870790925d68368afef4f07))
+
+
+### Bug Fixes
+
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+* **reports:** hold approved-but-unsent reports for an explicit admin choice ([#7531](https://github.com/tutur3u/platform/issues/7531)) ([14795d9](https://github.com/tutur3u/platform/commit/14795d9eab85d17bc08dad4e12c3bf6684d2175a))
+* **reports:** monthly report summary counts on first load ([#7527](https://github.com/tutur3u/platform/issues/7527)) ([72d124e](https://github.com/tutur3u/platform/commit/72d124ebf98fc35d91a902c8be4787216c0803ae)) ([ff1fb2d](https://github.com/tutur3u/platform/commit/ff1fb2dc5c8aa626ebf76812781e8a5af9dce8c3))
+* **reports:** scope Sent month by delivery time ([#7803](https://github.com/tutur3u/platform/issues/7803)) ([f47ffcd](https://github.com/tutur3u/platform/commit/f47ffcd3129587269fc8875659866b14050e0a6f))
+* **storage:** own upload budget for workspace-managed user avatars ([#7289](https://github.com/tutur3u/platform/issues/7289)) ([25f6903](https://github.com/tutur3u/platform/commit/25f69034808c5aaf26493b9c27cc2f9fe3f75087))
+* **types:** avoid deep rpc instantiation in client bindings ([8e6c343](https://github.com/tutur3u/platform/commit/8e6c34352a609ad8774502af1c716fe1c6348e39))
+
 ## [0.11.2](https://github.com/tutur3u/platform/compare/users-core-v0.11.1...users-core-v0.11.2) (2026-10-24)
 
 

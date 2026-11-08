@@ -144,6 +144,82 @@ export const feeLockListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
 });
+/** `POST /finance/fee-locks/export`: one .xlsx row per student; `groupId` is checked against the workspace. */
+export const feeLockExportRequestSchema = z.object({
+  month: feeLockMonthSchema,
+  groupId: z.guid().optional(),
+  status: z.enum(['locked', 'all']).default('locked'),
+  locale: z.enum(['vi', 'en']).default('vi'),
+  /** Adds "Nội dung thông báo", rendered from the active template (locked rows only). */
+  include_notice: z.boolean().default(false),
+});
+export type FeeLockExportRequest = z.input<typeof feeLockExportRequestSchema>;
+export const FEE_LOCK_EXPORT_TOO_MANY_CODE = 'FEE_LOCK_EXPORT_TOO_MANY';
+
+/**
+ * Notice template fields (M3 bounds). Placeholders are checked at save against
+ * the allowlist (validateFeeNoticeTemplate in @tuturuuu/finance-core); the
+ * output is plain text.
+ */
+export const feeNoticeTemplateInputSchema = z.object({
+  body: z
+    .string()
+    .max(2000)
+    .refine((body) => body.trim().length > 0, 'body_required'),
+  item_format: z.string().max(200),
+  item_separator: z.string().max(20),
+  payment_line: z.string().max(300),
+  notice_grouping: z.enum(['combined', 'per_class']),
+  locale: z.enum(['vi', 'en']),
+});
+export type FeeNoticeTemplateInput = z.infer<
+  typeof feeNoticeTemplateInputSchema
+>;
+/** `PUT /finance/fee-locks/template`; a stale `expected_version` answers 409. */
+export const feeNoticeTemplateSaveRequestSchema =
+  feeNoticeTemplateInputSchema.extend({
+    expected_version: versionSchema.optional(),
+    restored_from: versionSchema.optional(),
+  });
+export type FeeNoticeTemplateSaveRequest = z.input<
+  typeof feeNoticeTemplateSaveRequestSchema
+>;
+export const FEE_NOTICE_TEMPLATE_VERSION_CONFLICT_CODE =
+  'FEE_NOTICE_TEMPLATE_VERSION_CONFLICT';
+export const FEE_NOTICE_TEMPLATE_INVALID_CODE = 'FEE_NOTICE_TEMPLATE_INVALID';
+
+/** `POST /finance/fee-locks/template/preview`: a locked student's notice or a built-in sample; `template` previews unsaved edits. */
+export const feeNoticePreviewRequestSchema = z.object({
+  lockId: z.guid().optional(),
+  template: feeNoticeTemplateInputSchema.optional(),
+});
+export type FeeNoticePreviewRequest = z.input<
+  typeof feeNoticePreviewRequestSchema
+>;
+/** Plain text: render it as a text node, or escape it (escapeFeeNoticeHtml) for HTML. */
+export interface FeeNoticePreviewResponse {
+  source: 'lock' | 'sample';
+  template_version: number | null;
+  notices: Array<{
+    group_id: string | null;
+    text: string;
+    length: number;
+    truncated: boolean;
+  }>;
+}
+
+export interface FeeNoticeTemplateVersion extends FeeNoticeTemplateInput {
+  version: number;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+/** The active template (the built-in default has `version: null`) and the last 20 versions. */
+export interface FeeNoticeTemplateResponse {
+  template: FeeNoticeTemplateInput & { version: number | null };
+  versions: FeeNoticeTemplateVersion[];
+}
+
 /**
  * Escapes `\`, `%` and `_` for LIKE/ILIKE, like `escapeLikePattern` in
  * `@tuturuuu/utils/search-helper`, which this published package cannot import.
@@ -256,7 +332,61 @@ export interface FeeLockConflictBody {
   current: FeeLockHeader;
 }
 
-export type FeeLockBatchItemResult =
-  | { id: string; result: 'ok'; version: number; revision: number }
-  | { id: string; result: 'conflict'; current_version: number }
-  | { id: string; result: 'not_found' };
+/** `conflict` means ONLY a version race; a rule failure (an empty draft) is `invalid` with its FEE_LOCK_* code. */
+export const FEE_LOCK_EMPTY_CODE = 'FEE_LOCK_EMPTY';
+const batchItem = <T extends z.ZodRawShape>(shape: T) =>
+  z.object({ id: z.guid(), ...shape });
+export const feeLockBatchItemResultSchema = z.discriminatedUnion('result', [
+  batchItem({
+    result: z.literal('ok'),
+    version: versionSchema,
+    revision: z.int().min(1),
+  }),
+  batchItem({ result: z.literal('conflict'), current_version: versionSchema }),
+  batchItem({ result: z.literal('not_found') }),
+  batchItem({
+    result: z.literal('invalid'),
+    code: z.string().regex(/^FEE_LOCK_[A-Z_]+$/),
+  }),
+]);
+export type FeeLockBatchItemResult = z.infer<
+  typeof feeLockBatchItemResultSchema
+>;
+
+// Immutable JSON in `fee_lock_revisions.snapshot`. Bounds match the inputs and M1 columns. Names come from the workspace at lock
+// time; M2 must cap them at FEE_LOCK_MAX_NAME_LENGTH when it writes a snapshot.
+export const FEE_LOCK_MAX_NAME_LENGTH = 200;
+const nameSchema = z.string().max(FEE_LOCK_MAX_NAME_LENGTH);
+export const feeLockSnapshotSchema = z.object({
+  schema_version: z.literal(1),
+  fee_lock_id: z.guid(),
+  ws_id: z.guid(),
+  student_id: z.guid(),
+  student_name: nameSchema,
+  period_month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-01$/),
+  currency: z.string().length(3),
+  revision: z.int().min(1),
+  total_amount: moneySchema.nonnegative(),
+  note: z.string().max(2000).nullable(),
+  locked_by: z.guid().nullable(),
+  locked_at: z.iso.datetime({ offset: true }),
+  lines: z
+    .array(
+      z.object({
+        kind: z.enum(['tuition', 'extra']),
+        group_id: z.guid().nullable(),
+        group_name: nameSchema.nullable(),
+        label: z.string().min(1).max(200),
+        unit_label: z.string().max(40).nullable(),
+        product_id: z.guid().nullable(),
+        unit_price: moneySchema.nonnegative(),
+        quantity: quantitySchema,
+        adjustment_amount: moneySchema,
+        reason: reasonSchema.nullable(),
+        line_amount: moneySchema.nonnegative(),
+        sort_order: z.int().min(0).max(32_767), // SMALLINT
+      })
+    )
+    .max(FEE_LOCK_MAX_LINES),
+});
+export type FeeLockSnapshot = z.infer<typeof feeLockSnapshotSchema>;

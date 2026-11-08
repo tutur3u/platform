@@ -33,6 +33,7 @@ const PUSH_TO_PR = {
 const HEAVY_PR_WORKFLOWS = [
   'ai-cloudflare.yaml',
   'api-worker.yaml',
+  'app-builds-affected.yaml',
   'apps-cloudflare.yaml',
   'calendar-cloudflare.yaml',
   'calendar-generation-contract.yaml',
@@ -73,7 +74,6 @@ const HEAVY_PR_WORKFLOWS = [
   'periodic-report-delivery-contract.yaml',
   'playground-cloudflare.yaml',
   'playground-runtime-acceptance.yaml',
-  'programming-app-builds.yaml',
   'programming-database-contract.yaml',
   'report-review-receipts-contract.yaml',
   'required-account-mfa-contract.yaml',
@@ -101,6 +101,7 @@ const HEAVY_PR_WORKFLOWS = [
 
 // Sub-minute, script-only or security checks that stay on for every PR push.
 const ALWAYS_ON_PR_WORKFLOWS = [
+  'ci-summary-poster.yml',
   'security-checks.yaml',
   'security-review-classifier.yaml',
 ];

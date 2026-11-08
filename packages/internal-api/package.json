@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/internal-api",
-  "version": "0.55.0",
+  "version": "0.56.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -140,6 +140,11 @@
       "types": "./dist/finance-exchange-rates.d.ts",
       "import": "./dist/finance-exchange-rates.js",
       "require": "./dist/finance-exchange-rates.js"
+    },
+    "./finance-fee-lock": {
+      "types": "./dist/finance-fee-lock.d.ts",
+      "import": "./dist/finance-fee-lock.js",
+      "require": "./dist/finance-fee-lock.js"
     },
     "./finance-fee-lock-contracts": {
       "types": "./dist/finance-fee-lock-contracts.d.ts",

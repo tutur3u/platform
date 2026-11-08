@@ -62,11 +62,24 @@ jobs:
         # verified records; it then fails closed unless a pinned-attester status
         # on that exact head covers the additions. Rerun this job after posting.
         env:
+          EVENT_NAME: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          # Checkout is the PR head, so the synthetic merge commit (GITHUB_SHA)
+          # is often absent and rev-parse exits 128 before the guard runs.
+          # Use that merge commit's first parent when it is present. Otherwise
+          # keep the event base SHA, which is already the trusted main snapshot.
+          # HEAD_SHA stays the PR head for new-record attestations.
+          if [ "$EVENT_NAME" = pull_request ]; then
+            if merge_parent=$(git rev-parse --verify "${GITHUB_SHA}^1" 2>/dev/null); then
+              BASE_SHA="$merge_parent"
+            else
+              echo "::warning::Merge commit ${GITHUB_SHA} is not in this checkout. Using the pull request base ${BASE_SHA}."
+            fi
+          fi
           dir="$RUNNER_TEMP/definer-guard"
           mkdir -p "$dir"
           if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "$BASE_SHA:scripts/ci/security-definer-guard.js" 2>/dev/null; then

@@ -1,7 +1,7 @@
 ---
 title: "Customer email domains and newsletters: design proposal"
 description: "Draft architecture for approved customer sending, workspace newsletter tiers, Polar billing and a first-class Mail newsletter workspace."
-updatedAt: '2026-10-25'
+updatedAt: '2026-11-08'
 ---
 
 ## Status and intended outcome
@@ -30,6 +30,10 @@ writes are authorized by this draft.
 Sources below were checked on 2026-10-25. Repository inventory is a source snapshot
 at `45fdcb32ca`, not a claim about live provider configuration or deployed health.
 No credentials, live catalog, production database or sandbox organization was read.
+
+## Workspace staff-test gate
+
+The workspace staff-test send is closed unless `newsletter_sending` is on, the customer subdomain is a verified non-apex name outside `tuturuuu.com`, a platform admin has approved the domain and the sender local-part, and the workspace has fewer than 10 accepted sends in the current UTC day. The only recipient is the signed-in actor. Subscriber rows are stored and are not recipients of this send.
 
 ## Existing inventory and reuse boundaries
 
@@ -617,8 +621,8 @@ Every new label/error goes into EN and VI bundles in every shipping shared surfa
 run `bun i18n:sort`. Update each app's `navigation.tsx` aliases, children, icons and
 permissions. Use existing shell hierarchy and accessible status text/focus handling,
 not color-only states, native dialogs or hard-coded hue classes. Keep new files
-under 700 LOC and split components near 200 LOC. Browser verification uses admitted
-M4/other eligible hosts, never sonha for this task.
+under 700 LOC and split components near 200 LOC. Browser verification for this task
+uses an admitted fleet host.
 
 ## Security and threat model
 

@@ -111,18 +111,52 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
-  check-ci:
+  affected-gate:
+    # Pull requests only: skip the heavy jobs when tools is unaffected.
+    # Other events never check out or run the gate: they resolve to run=true, so a
+    # gate failure can never block a production deploy. Any error also resolves to run=true.
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    outputs:
+      run: ${{ github.event_name != 'pull_request' && 'true' || steps.app.outputs.run || 'true' }}
+      reason: ${{ steps.app.outputs.reason }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+          sparse-checkout: |
+            /.github/actions/affected-gate/
+            /scripts/ci/affected-apps.mjs
+            /scripts/ci/affected-apps.extra-edges.json
+            /scripts/ci/affected-gate.mjs
+            /apps/*/package.json
+            /packages/*/package.json
+          sparse-checkout-cone-mode: false
+      - id: app
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: ./.github/actions/affected-gate
+        with:
+          app: tools
+  check-ci:
+    if: github.event_name != 'workflow_dispatch' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
       deployments: read
     with:
       workflow_name: tools-cloudflare.yaml
-  # Qualification only: no staging or production publisher.
+  # Qualify staging and production independently before Rex publishes either.
   native:
-    needs: check-ci
-    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    needs: [check-ci, affected-gate]
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/native-start-app.yaml
     permissions:
       contents: read
@@ -133,7 +167,7 @@ jobs:
       env-interface: ToolsGeneratedEnv
       worker-environment-type: ToolsEnvironment
       # No app test script: run the app's Vitest suite if it has one.
-      unit-command: bun x --no-install vitest run --passWithNoTests
+      unit-command: node --test cloudflare/deployment-profile.test.mjs cloudflare/startup.test.mjs && bun x --no-install vitest run --passWithNoTests
       # Public staging values from repository variables for same-repository
       # events; fork pull requests (and unset variables) build with fixtures.
       public-env: |
@@ -144,3 +178,75 @@ jobs:
         TUTURUUU_NOINDEX=1
       format-paths: >-
         apps/tools/src/start-bridge apps/tools/src/routes apps/tools/src/router.tsx apps/tools/src/start.ts apps/tools/cloudflare apps/tools/vite.config.mts apps/tools/void.config.ts apps/tools/tsconfig.json apps/tools/package.json apps/tools/start-bridge.routes.json
+
+  cutover-artifact:
+    needs: affected-gate
+    if: ${{ needs.affected-gate.outputs.run == 'true' && (github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SOURCE_SHA: ${{ github.sha }}
+      TOOLS_SOURCE_SHA: ${{ github.sha }}
+      VITE_TOOLS_NATIVE_PROFILE: production
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_APP_URL: https://tools.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      TUTURUUU_NOINDEX: '0'
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Build owning workspace dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter='@tuturuuu/tools^...' --concurrency=2
+          token: ''
+          team: ''
+      - name: Generate exact-source build identity
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build production Start Worker
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+        working-directory: apps/tools
+        run: bun run build
+      - name: Record emitted configuration receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/tools "$SOURCE_SHA" "$RUNNER_TEMP/tools-emitted-config.json"
+      - name: Upload emitted configuration receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tools-config-receipt-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tools-emitted-config.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Exercise the built Worker with synthetic runtime bindings
+        working-directory: apps/tools
+        env:
+          CI: 'true'
+          CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: bun run test:runtime
+      - name: Package Worker, assets and emitted Wrangler config
+        run: |
+          python3 scripts/ci/tools-native-artifact.py config apps/tools
+          python3 scripts/ci/tools-native-artifact.py seal apps/tools --receipt "$RUNNER_TEMP/tools-native-artifact.json"
+          python3 scripts/ci/tools-native-artifact.py pack apps/tools --receipt "$RUNNER_TEMP/tools-native-artifact.json" --archive "$RUNNER_TEMP/tools-cutover.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tools-cutover-${{ github.sha }}
+          path: ${{ runner.temp }}/tools-cutover.tar.gz
+          if-no-files-found: error
+          retention-days: 7

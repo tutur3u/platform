@@ -9,6 +9,7 @@ export const pages = [
   { pattern: "/[wsId]/debts/[debtId]", file: "src/app/[locale]/(dashboard)/[wsId]/debts/[debtId]/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/debts", file: "src/app/[locale]/(dashboard)/[wsId]/debts/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/invoices/[invoiceId]", file: "src/app/[locale]/(dashboard)/[wsId]/invoices/[invoiceId]/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/invoices/fee-lock", file: "src/app/[locale]/(dashboard)/[wsId]/invoices/fee-lock/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/invoices/new", file: "src/app/[locale]/(dashboard)/[wsId]/invoices/new/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/invoices", file: "src/app/[locale]/(dashboard)/[wsId]/invoices/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]", file: "src/app/[locale]/(dashboard)/[wsId]/page.tsx", defaults: { "locale": "en" } },
