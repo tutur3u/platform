@@ -1,4 +1,4 @@
--- Rollback: 20261109161000_guard_fee_lock_enabled_secret.sql
+-- Rollback: 20261109051000_guard_fee_lock_enabled_secret.sql
 --
 -- Restores the 20261029005000 guard body (only MANAGED_CRON_ENABLED reserved);
 -- ENABLE_FEE_LOCK is then guarded only by the app-level verified-staff check.
