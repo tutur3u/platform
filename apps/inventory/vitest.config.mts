@@ -26,7 +26,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    exclude: [...configDefaults.exclude, '**/e2e/**'],
+    exclude: [...configDefaults.exclude, '**/cloudflare/**', '**/e2e/**'],
     server: {
       deps: {
         inline: ['next-intl'],
