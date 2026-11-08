@@ -67,10 +67,12 @@ test('PR guard trusts base source and baseline, never PR baseline additions', ()
   // Record admission reads the exact head and verifies the attestation with
   // the read-only job token, from base code; no privileged trigger is added.
   assert.deepEqual(Object.keys(step.env), [
+    'EVENT_NAME',
     'BASE_SHA',
     'HEAD_SHA',
     'GITHUB_TOKEN',
   ]);
+  assert.equal(step.env.EVENT_NAME, '$' + '{{ github.event_name }}');
   assert.match(step.env.HEAD_SHA, /github\.event\.pull_request\.head\.sha/);
   assert.equal(step.env.GITHUB_TOKEN, '$' + '{{ github.token }}');
   assert.match(
