@@ -49,12 +49,26 @@ export default function NewsletterSettingsForm({
           <h2 className="font-semibold text-lg">{t('title')}</h2>
           <p className="text-muted-foreground text-sm">{t('description')}</p>
         </div>
-        <Badge variant={allowed && !saved ? 'success' : approval === 'pending' ? 'warning' : 'error'}>
-          {allowed && !saved ? t('allowed') : approval === 'pending' ? t('pending') : t('blocked')}
+        <Badge
+          variant={
+            allowed && !saved
+              ? 'success'
+              : approval === 'pending'
+                ? 'warning'
+                : 'error'
+          }
+        >
+          {allowed && !saved
+            ? t('allowed')
+            : approval === 'pending'
+              ? t('pending')
+              : t('blocked')}
         </Badge>
       </div>
       {loadError ? <p className="text-sm">{t('save_error')}</p> : null}
-      {showForm ? <p className="text-muted-foreground text-sm">{t('empty')}</p> : null}
+      {showForm ? (
+        <p className="text-muted-foreground text-sm">{t('empty')}</p>
+      ) : null}
       {saved ? <p className="text-sm">{t('saved')}</p> : null}
       {showForm ? (
         <form action={action} className="flex flex-col gap-3">
@@ -97,8 +111,13 @@ export default function NewsletterSettingsForm({
             </thead>
             <tbody>
               {records.map((record) => (
-                <tr className="border-border border-t" key={`${record.type}-${record.host}`}>
-                  <td className="py-2 pr-3 font-mono text-xs break-all">{record.host}</td>
+                <tr
+                  className="border-border border-t"
+                  key={`${record.type}-${record.host}`}
+                >
+                  <td className="py-2 pr-3 font-mono text-xs break-all">
+                    {record.host}
+                  </td>
                   <td className="py-2 pr-3">{record.type}</td>
                   <td className="py-2 font-mono text-xs break-all">
                     {record.value ?? t('value_hidden')}

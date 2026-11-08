@@ -557,10 +557,7 @@ test('the poster workflow is read-only and is not a workflow_run consumer', () =
     workflow.jobs.summary.if,
     "needs.configuration.outputs.configured == 'true'"
   );
-  assert.match(
-    workflow.jobs.configuration.steps[0].run,
-    /App not configured/
-  );
+  assert.match(workflow.jobs.configuration.steps[0].run, /App not configured/);
   assert.doesNotMatch(
     workflow.jobs.configuration.steps[0].run,
     /GITHUB_TOKEN|GH_TOKEN|github\.token/

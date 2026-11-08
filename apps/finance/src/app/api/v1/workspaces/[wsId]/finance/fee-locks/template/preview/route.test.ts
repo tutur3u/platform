@@ -21,11 +21,33 @@ const template = {
 };
 // biome-ignore format: compact fixture
 const snapshot = (over: Record<string, unknown> = {}) => ({
-  schema_version: 1, fee_lock_id: LOCK, ws_id: WS, student_id: '00000000-0000-4000-8000-0000000fe401',
-  student_name: '<script>x</script>', period_month: '2026-12-01', currency: 'VND', revision: 2,
-  total_amount: 800_000, note: null, locked_by: null, locked_at: '2026-11-25T10:00:00+07:00',
+  schema_version: 1,
+  fee_lock_id: LOCK,
+  ws_id: WS,
+  student_id: '00000000-0000-4000-8000-0000000fe401',
+  student_name: '<script>x</script>',
+  period_month: '2026-12-01',
+  currency: 'VND',
+  revision: 2,
+  total_amount: 800_000,
+  note: null,
+  locked_by: null,
+  locked_at: '2026-11-25T10:00:00+07:00',
   lines: [
-    { kind: 'tuition', group_id: null, group_name: 'Lớp A', label: 'Học phí', unit_label: 'buổi', product_id: null, unit_price: 100_000, quantity: 8, adjustment_amount: 0, reason: null, line_amount: 800_000, sort_order: 0 },
+    {
+      kind: 'tuition',
+      group_id: null,
+      group_name: 'Lớp A',
+      label: 'Học phí',
+      unit_label: 'buổi',
+      product_id: null,
+      unit_price: 100_000,
+      quantity: 8,
+      adjustment_amount: 0,
+      reason: null,
+      line_amount: 800_000,
+      sort_order: 0,
+    },
   ],
   ...over,
 });

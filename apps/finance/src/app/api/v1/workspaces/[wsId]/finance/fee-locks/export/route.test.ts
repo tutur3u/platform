@@ -32,7 +32,14 @@ const entry = (over: Partial<FeeLockExportEntry>): FeeLockExportEntry => ({
 });
 // biome-ignore format: compact fixture
 const ENTRIES: Array<[string, FeeLockExportEntry]> = [
-  [DRAFT, entry({ status: 'draft', revision: null, student_name: '=HYPERLINK("https://evil.test")' })],
+  [
+    DRAFT,
+    entry({
+      status: 'draft',
+      revision: null,
+      student_name: '=HYPERLINK("https://evil.test")',
+    }),
+  ],
   [LOCKED, entry({})],
 ];
 
@@ -183,8 +190,17 @@ describe('POST /finance/fee-locks/export', () => {
   it('adds one notice cell per locked student from the active template (per-class notices joined)', async () => {
     // biome-ignore format: compact lines
     const tuition = (group: string, sort: number) => ({
-      kind: 'tuition' as const, group_id: group, group_name: group, label: 'Học phí', unit_label: 'buổi',
-      unit_price: 100_000, quantity: 4, adjustment_amount: 0, reason: null, line_amount: 400_000, sort_order: sort,
+      kind: 'tuition' as const,
+      group_id: group,
+      group_name: group,
+      label: 'Học phí',
+      unit_label: 'buổi',
+      unit_price: 100_000,
+      quantity: 4,
+      adjustment_amount: 0,
+      reason: null,
+      line_amount: 400_000,
+      sort_order: sort,
     });
     mocks.load.mockResolvedValue({
       entries: [
@@ -203,7 +219,20 @@ describe('POST /finance/fee-locks/export', () => {
     const db = allow({
       workspaces: { data: { name: 'Trung tâm X' } },
       fee_notice_templates: {
-        data: [{ version: 3, is_active: true, body: '{{student_name}} {{class_name}}: {{total}}đ', item_format: '', item_separator: ', ', payment_line: '', notice_grouping: 'per_class', locale: 'vi', created_by: null, created_at: 't' }],
+        data: [
+          {
+            version: 3,
+            is_active: true,
+            body: '{{student_name}} {{class_name}}: {{total}}đ',
+            item_format: '',
+            item_separator: ', ',
+            payment_line: '',
+            notice_grouping: 'per_class',
+            locale: 'vi',
+            created_by: null,
+            created_at: 't',
+          },
+        ],
       },
     });
     const response = await post({

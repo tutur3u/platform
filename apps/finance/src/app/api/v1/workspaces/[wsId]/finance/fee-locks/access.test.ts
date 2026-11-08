@@ -20,9 +20,8 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getWorkspaceConfig: vi.fn(async () => null),
 }));
 
-const { feeLockErrorResponse, getFeeLockRouteContext } = await import(
-  './access'
-);
+const { feeLockErrorResponse, getFeeLockRouteContext } =
+  await import('./access');
 const request = new Request('https://finance.test/api');
 const context = (granted: string[]) => ({
   context: {

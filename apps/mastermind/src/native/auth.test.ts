@@ -34,7 +34,9 @@ beforeEach(async () => {
     })
   );
   permissionFetch.mockReset();
-  permissionFetch.mockImplementation(async () => Response.json({ enabled: true }));
+  permissionFetch.mockImplementation(async () =>
+    Response.json({ enabled: true })
+  );
   vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) =>
     String(input) === 'https://tuturuuu.com/api/v1/mastermind/access'
       ? permissionFetch(input, init)
@@ -332,7 +334,9 @@ test('live permission revocation denies the next request with unchanged env and 
     return new Response(memo.get(owner));
   };
   expect((await mastermindRequest(request, env, render, now)).status).toBe(200);
-  permissionFetch.mockImplementation(async () => Response.json({ enabled: false }));
+  permissionFetch.mockImplementation(async () =>
+    Response.json({ enabled: false })
+  );
   expect((await mastermindRequest(request, env, render, now)).status).toBe(403);
   expect(reads).toBe(1);
   expect(permissionFetch).toHaveBeenCalledTimes(2);
@@ -352,7 +356,8 @@ test.each(['error', 'timeout', 'unauthorized', 'malformed', 'wrong type'])(
   async (kind) => {
     permissionFetch.mockImplementation(async () => {
       if (kind === 'error') throw new Error('Offline');
-      if (kind === 'timeout') throw new DOMException('Timed out', 'TimeoutError');
+      if (kind === 'timeout')
+        throw new DOMException('Timed out', 'TimeoutError');
       if (kind === 'unauthorized') return new Response(null, { status: 401 });
       return Response.json(kind === 'malformed' ? {} : { enabled: 'true' });
     });
@@ -363,7 +368,9 @@ test.each(['error', 'timeout', 'unauthorized', 'malformed', 'wrong type'])(
         Authorization: `Bearer ${session()}`,
       },
     });
-    expect((await mastermindRequest(request, env, render, now)).status).toBe(403);
+    expect((await mastermindRequest(request, env, render, now)).status).toBe(
+      403
+    );
     expect(render).not.toHaveBeenCalled();
   }
 );

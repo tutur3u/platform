@@ -20,7 +20,17 @@ describe('escapeFeeNoticeHtml', () => {
         currency: 'VND',
         total_amount: 800_000,
         lines: [
-          { kind: 'tuition', group_id: null, group_name: '<b>Lớp A</b>', label: 'Học phí', unit_label: 'buổi', unit_price: 100_000, quantity: 8, line_amount: 800_000, sort_order: 0 },
+          {
+            kind: 'tuition',
+            group_id: null,
+            group_name: '<b>Lớp A</b>',
+            label: 'Học phí',
+            unit_label: 'buổi',
+            unit_price: 100_000,
+            quantity: 8,
+            line_amount: 800_000,
+            sort_order: 0,
+          },
         ],
       },
       DEFAULT_FEE_NOTICE_TEMPLATE,

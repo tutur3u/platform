@@ -27,11 +27,33 @@ const line = (over: Partial<FeeLockExportEntry['lines'][number]>) => ({
 });
 // biome-ignore format: compact fixture
 const twoClasses: FeeLockExportEntry = {
-  status: 'locked', revision: 2, student_name: 'Học viên Một', period_month: '2026-12-01', currency: 'VND', total_amount: 1_350_000,
+  status: 'locked',
+  revision: 2,
+  student_name: 'Học viên Một',
+  period_month: '2026-12-01',
+  currency: 'VND',
+  total_amount: 1_350_000,
   lines: [
-    line({ kind: 'extra', group_name: null, label: 'Sách', unit_label: 'bộ', unit_price: 150_000, quantity: 1, line_amount: 150_000, sort_order: 2 }),
+    line({
+      kind: 'extra',
+      group_name: null,
+      label: 'Sách',
+      unit_label: 'bộ',
+      unit_price: 150_000,
+      quantity: 1,
+      line_amount: 150_000,
+      sort_order: 2,
+    }),
     line({}),
-    line({ group_name: 'Lớp B', label: 'Học phí Lớp B', quantity: 5, adjustment_amount: -100_000, reason: 'Thành tích', line_amount: 400_000, sort_order: 1 }),
+    line({
+      group_name: 'Lớp B',
+      label: 'Học phí Lớp B',
+      quantity: 5,
+      adjustment_amount: -100_000,
+      reason: 'Thành tích',
+      line_amount: 400_000,
+      sort_order: 1,
+    }),
   ],
 };
 const draft: FeeLockExportEntry = {
@@ -50,8 +72,19 @@ describe('buildFeeLockExportSheets', () => {
     expect(summary).toHaveLength(3);
     // biome-ignore format: one expected row
     expect(summary[1]).toEqual([
-      1, 'Học viên Một', 'Lớp A, Lớp B', '12/2026', 13, 1_300_000, -100_000,
-      'Lớp B: Thành tích', 'Sách × 1 bộ', 150_000, 1_350_000, 'Đã chốt', 2,
+      1,
+      'Học viên Một',
+      'Lớp A, Lớp B',
+      '12/2026',
+      13,
+      1_300_000,
+      -100_000,
+      'Lớp B: Thành tích',
+      'Sách × 1 bộ',
+      150_000,
+      1_350_000,
+      'Đã chốt',
+      2,
     ]);
     expect(summary[2]?.slice(-2)).toEqual(['Bản nháp', null]);
     expect(detail).toHaveLength(1 + 3 + 1);
@@ -71,9 +104,24 @@ describe('buildFeeLockExportSheets', () => {
     );
     expect(summary[0]).toHaveLength(14);
     expect(summary[0]?.[13]).toBe('Nội dung thông báo');
-    expect([summary[1]?.[13], summary[2]?.[13]]).toEqual(['=HYPERLINK("x")', null]);
-    const book = XLSX.read(writeFeeLockWorkbook(buildFeeLockExportSheets([{ ...twoClasses, notice: '=HYPERLINK("x")' }], 'vi', true)), { type: 'array' });
-    expect(book.Sheets['Tổng hợp']?.N2).toMatchObject({ t: 's', v: `'=HYPERLINK("x")` });
+    expect([summary[1]?.[13], summary[2]?.[13]]).toEqual([
+      '=HYPERLINK("x")',
+      null,
+    ]);
+    const book = XLSX.read(
+      writeFeeLockWorkbook(
+        buildFeeLockExportSheets(
+          [{ ...twoClasses, notice: '=HYPERLINK("x")' }],
+          'vi',
+          true
+        )
+      ),
+      { type: 'array' }
+    );
+    expect(book.Sheets['Tổng hợp']?.N2).toMatchObject({
+      t: 's',
+      v: `'=HYPERLINK("x")`,
+    });
   });
 
   it('keeps the agreed 13 summary columns and has English headers', () => {
