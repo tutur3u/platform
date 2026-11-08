@@ -28,7 +28,9 @@ vi.mock('@tuturuuu/ui/xlsx', () => ({
   },
 }));
 
+import type { Cell } from 'exceljs';
 import {
+  detailedStudentNeedsAttention,
   runTutoringExport,
   toDetailedExportRows,
   toPayrollExportRows,
@@ -54,6 +56,23 @@ const payrollRow = {
   total_cong: 3,
 } as TutoringPayrollExportRow;
 
+function session(
+  id: string,
+  studentName: string,
+  teacherName: string,
+  time: string,
+  teacherId?: string | null
+): TutoringDetailedExportRow {
+  return {
+    ...detailedRow,
+    id,
+    student_name: studentName,
+    teacher_name: teacherName,
+    teacher_user_id: teacherId,
+    time,
+  };
+}
+
 describe('tutoring export mappers', () => {
   it('renames detailed API fields to display headers', () => {
     expect(toDetailedExportRows([detailedRow])[0]).toEqual({
@@ -76,6 +95,41 @@ describe('tutoring export mappers', () => {
       TotalMinutes: 135,
       TotalCong: 3,
     });
+  });
+
+  it('flags a missing teacher and a missing clock time separately', () => {
+    expect(detailedStudentNeedsAttention(detailedRow)).toBe(false);
+    expect(
+      detailedStudentNeedsAttention(
+        session('blank-teacher', 'Lan', '', '18:00', null)
+      )
+    ).toBe(true);
+    expect(
+      detailedStudentNeedsAttention(session('blank-time', 'Hoa', 'Binh', ''))
+    ).toBe(true);
+    expect(
+      detailedStudentNeedsAttention(
+        session('sentinel-teacher', 'An', 'N/A', '09:30', null)
+      )
+    ).toBe(true);
+    expect(
+      detailedStudentNeedsAttention(
+        session('named-unassigned', 'Cuc', 'Unassigned', '07:15')
+      )
+    ).toBe(false);
+    expect(
+      detailedStudentNeedsAttention(
+        session('placeholder-time', 'Dao', 'Binh', 'Chưa xác định')
+      )
+    ).toBe(true);
+    expect(
+      detailedStudentNeedsAttention(session('midnight', 'Gio', 'Binh', '00:00'))
+    ).toBe(false);
+    expect(
+      detailedStudentNeedsAttention(
+        session('unnamed-student', 'N/A', 'Binh', '18:00')
+      )
+    ).toBe(false);
   });
 });
 
@@ -129,5 +183,92 @@ describe('runTutoringExport', () => {
     await expect(
       runTutoringExport({ format: 'detailed-csv', query: {}, wsId: 'ws-1' })
     ).rejects.toThrow('Unexpected export mode');
+  });
+
+  it('writes a red Student font only for a missing teacher or clock time', async () => {
+    const rows = [
+      session('complete', 'Mai', 'Binh', '18:00'),
+      session('blank-teacher', 'Lan', '', '18:00', null),
+      session('blank-time', 'Hoa', 'Binh', ''),
+      session('sentinel-teacher', 'An', 'N/A', '09:30', null),
+      session('named-unassigned', 'Cuc', 'Unassigned', '07:15'),
+      session('placeholder-time', 'Dao', 'Binh', 'Chưa xác định'),
+      session('midnight', 'Gio', 'Binh', '00:00'),
+      session('unnamed-student', 'N/A', 'Binh', '18:00'),
+      session('unnamed-teacher', 'Kim', 'N/A', '18:00', 'teacher-1'),
+      session('legacy-unnamed-teacher', 'Linh', 'N/A', '18:00'),
+      session('detached-teacher', 'Lien', 'Binh', '18:00', null),
+    ];
+    exportTutoringSessions.mockResolvedValue({
+      data: rows,
+      mode: 'detailed',
+    });
+    let captured: Blob | undefined;
+    globalThis.URL.createObjectURL = vi.fn((blob: Blob) => {
+      captured = blob;
+      return 'blob:detailed';
+    });
+
+    await expect(
+      runTutoringExport({ format: 'detailed-xlsx', query: {}, wsId: 'ws-1' })
+    ).resolves.toBe(rows.length);
+    expect(writeFile).not.toHaveBeenCalled();
+    if (!(captured instanceof Blob)) {
+      throw new Error('Detailed export did not download a workbook');
+    }
+
+    const { ValueType, Workbook } = await import('exceljs');
+    const workbook = new Workbook();
+    const bytes = await captured.arrayBuffer();
+    await workbook.xlsx.load(
+      bytes as unknown as Parameters<typeof workbook.xlsx.load>[0]
+    );
+    const sheet = workbook.getWorksheet('Detailed');
+    expect(sheet).toBeDefined();
+    if (!sheet) return;
+
+    const headerRow = sheet.getRow(1);
+    const columnOf = (header: string) => {
+      for (let column = 1; column <= headerRow.cellCount; column += 1) {
+        if (headerRow.getCell(column).value === header) return column;
+      }
+      throw new Error(`Missing ${header} column`);
+    };
+    const studentColumn = columnOf('Student');
+    const teacherColumn = columnOf('Teacher');
+    const contentColumn = columnOf('Content');
+    const durationColumn = columnOf('DurationMinutes');
+    const fontArgb = (cell: Cell) => cell.font?.color?.argb;
+
+    expect(fontArgb(headerRow.getCell(studentColumn))).toBeUndefined();
+
+    const rowByStudent = (name: string) => {
+      for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber += 1) {
+        const row = sheet.getRow(rowNumber);
+        if (row.getCell(studentColumn).value === name) return row;
+      }
+      throw new Error(`Missing student ${name}`);
+    };
+
+    for (const name of ['Mai', 'Cuc', 'Gio', 'N/A', 'Kim', 'Linh']) {
+      const row = rowByStudent(name);
+      expect(fontArgb(row.getCell(studentColumn))).toBeUndefined();
+      expect(fontArgb(row.getCell(teacherColumn))).toBeUndefined();
+    }
+
+    for (const name of ['Lan', 'Hoa', 'An', 'Dao', 'Lien']) {
+      const row = rowByStudent(name);
+      expect(fontArgb(row.getCell(studentColumn))).toBe('FFFF0000');
+      expect(fontArgb(row.getCell(teacherColumn))).toBeUndefined();
+      expect(fontArgb(row.getCell(contentColumn))).toBeUndefined();
+    }
+
+    const complete = rowByStudent('Mai');
+    const content = complete.getCell(contentColumn);
+    expect(content.value).toBe('=cmd|/c calc');
+    expect(content.type).not.toBe(ValueType.Formula);
+    expect(complete.getCell(durationColumn).value).toBe(45);
+    expect(rowByStudent('Lan').getCell(teacherColumn).value).toBe('');
+    expect(rowByStudent('An').getCell(teacherColumn).value).toBe('N/A');
   });
 });
