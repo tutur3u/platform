@@ -1,6 +1,8 @@
 // Plain ESM so the CI lifecycle checker runs under Node without a TypeScript
 // toolchain or installed dependencies. Types live in lifecycle.d.mts.
 
+import { validateFeatureRollout } from './audience.mjs';
+
 export const FLAG_ENVIRONMENTS = Object.freeze([
   'development',
   'staging',
@@ -98,6 +100,15 @@ export function validateFlag(flag, environments = FLAG_ENVIRONMENTS) {
   const key = typeof flag.key === 'string' ? flag.key : '<missing key>';
   const fail = (message) => errors.push(`${key}: ${message}`);
 
+  if (flag.rollout !== undefined) {
+    for (const error of validateFeatureRollout(flag.rollout)) fail(error);
+  }
+  if (
+    flag.legacy === false &&
+    flag.kind === 'release' &&
+    flag.rollout === undefined
+  )
+    fail('new release flags require rollout stage, owner and removeBy');
   if (!KEY_PATTERN.test(flag.key ?? '')) fail('key is invalid');
   if (!FLAG_FAMILIES.includes(flag.family)) fail('family is invalid');
   if (!FLAG_KINDS.includes(flag.kind)) fail('kind is invalid');

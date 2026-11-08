@@ -59,6 +59,7 @@ export function FeatureFlagsTable({
             <TableRow>
               <TableHead>{t('columns.flag')}</TableHead>
               <TableHead>{t('columns.kind')}</TableHead>
+              <TableHead>{t('columns.stage')}</TableHead>
               <TableHead>{t('columns.apps')}</TableHead>
               {environments.map(({ environment }) => (
                 <TableHead key={environment}>

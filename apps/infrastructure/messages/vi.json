@@ -7372,6 +7372,7 @@
       "kind": "Loại",
       "owner": "Người phụ trách",
       "remove_by": "Gỡ bỏ trước",
+      "stage": "Giai đoạn",
       "verified": "Xác minh trên production"
     },
     "controls": {
@@ -7417,6 +7418,12 @@
       "build": "Lúc dựng bản",
       "global": "Toàn cục",
       "workspace": "Theo không gian làm việc"
+    },
+    "stages": {
+      "ga": "Phát hành rộng rãi",
+      "internal": "Nội bộ",
+      "rollout": "Triển khai dần",
+      "unconfigured": "Chưa cấu hình"
     },
     "summary": {
       "awaitingVerification": "Chờ xác minh production",

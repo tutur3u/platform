@@ -1,4 +1,17 @@
 import { registry } from './registry.generated';
+export {
+  DEFAULT_FEATURE_EMAIL_DOMAINS,
+  FEATURE_ROLLOUT_STAGES,
+  isFeatureEnabled,
+  isInternalFeatureAudience,
+  validateFeatureRollout,
+} from './audience.mjs';
+export type {
+  FeatureAudienceConfiguration,
+  FeatureAudienceContext,
+  FeatureAudienceUser,
+  FeatureRollout,
+} from './audience.mjs';
 
 export * from './catalog';
 export { registry };
