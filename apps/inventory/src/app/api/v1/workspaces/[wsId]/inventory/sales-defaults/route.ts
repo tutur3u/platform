@@ -1,17 +1,28 @@
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { canEditInventorySalesDefaults } from '@tuturuuu/inventory-core/permissions';
 import {
-  canManageInventorySetup,
-  canUpdateInventorySales,
-} from '@tuturuuu/inventory-core/permissions';
+  INVENTORY_AUTO_SET_NEW_SALES_PERIOD_CONFIG_ID,
+  serializeSalesPeriodAutoDefault,
+} from '@tuturuuu/inventory-core/sales-period-default-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-const SalesDefaultsSchema = z.object({
-  defaultFinanceCategoryId: z.uuid().nullable(),
-  defaultRevenueWalletId: z.uuid().nullable(),
-  defaultSalesPeriodId: z.uuid().nullable(),
-});
+const SalesDefaultsSchema = z
+  .object({
+    autoSetNewSalesPeriodAsDefault: z.boolean().optional(),
+    defaultFinanceCategoryId: z.uuid().nullable().optional(),
+    defaultRevenueWalletId: z.uuid().nullable().optional(),
+    defaultSalesPeriodId: z.uuid().nullable().optional(),
+  })
+  .refine(
+    (payload) =>
+      payload.autoSetNewSalesPeriodAsDefault !== undefined ||
+      payload.defaultFinanceCategoryId !== undefined ||
+      payload.defaultRevenueWalletId !== undefined ||
+      payload.defaultSalesPeriodId !== undefined,
+    { message: 'Choose at least one sales default' }
+  );
 
 const CONFIG_IDS = {
   defaultFinanceCategoryId: 'inventory_default_finance_category_id',
@@ -29,10 +40,7 @@ export async function PUT(request: Request, { params }: Params) {
   if (!authorization.ok) return authorization.response;
 
   const { permissions, wsId } = authorization.value;
-  if (
-    !canManageInventorySetup(permissions) &&
-    !canUpdateInventorySales(permissions)
-  ) {
+  if (!canEditInventorySalesDefaults(permissions)) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
@@ -47,6 +55,7 @@ export async function PUT(request: Request, { params }: Params) {
   try {
     const sbAdmin = await createAdminClient();
     const {
+      autoSetNewSalesPeriodAsDefault,
       defaultFinanceCategoryId,
       defaultRevenueWalletId,
       defaultSalesPeriodId,
@@ -103,15 +112,49 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const { error } = await sbAdmin.from('workspace_configs').upsert(
-      Object.entries(CONFIG_IDS).map(([key, id]) => ({
-        id,
-        updated_at: new Date().toISOString(),
-        value: parsed.data[key as keyof typeof CONFIG_IDS] ?? '',
+    const updatedAt = new Date().toISOString();
+    const rows: Array<{
+      id: string;
+      updated_at: string;
+      value: string;
+      ws_id: string;
+    }> = [];
+    if (defaultFinanceCategoryId !== undefined) {
+      rows.push({
+        id: CONFIG_IDS.defaultFinanceCategoryId,
+        updated_at: updatedAt,
+        value: defaultFinanceCategoryId ?? '',
         ws_id: wsId,
-      })),
-      { onConflict: 'ws_id,id' }
-    );
+      });
+    }
+    if (defaultRevenueWalletId !== undefined) {
+      rows.push({
+        id: CONFIG_IDS.defaultRevenueWalletId,
+        updated_at: updatedAt,
+        value: defaultRevenueWalletId ?? '',
+        ws_id: wsId,
+      });
+    }
+    if (defaultSalesPeriodId !== undefined) {
+      rows.push({
+        id: CONFIG_IDS.defaultSalesPeriodId,
+        updated_at: updatedAt,
+        value: defaultSalesPeriodId ?? '',
+        ws_id: wsId,
+      });
+    }
+    if (autoSetNewSalesPeriodAsDefault !== undefined) {
+      rows.push({
+        id: INVENTORY_AUTO_SET_NEW_SALES_PERIOD_CONFIG_ID,
+        updated_at: updatedAt,
+        value: serializeSalesPeriodAutoDefault(autoSetNewSalesPeriodAsDefault),
+        ws_id: wsId,
+      });
+    }
+
+    const { error } = await sbAdmin
+      .from('workspace_configs')
+      .upsert(rows, { onConflict: 'ws_id,id' });
     if (error) throw error;
 
     return NextResponse.json({ message: 'success' });

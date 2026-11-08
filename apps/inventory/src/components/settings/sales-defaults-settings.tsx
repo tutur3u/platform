@@ -2,6 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Save, Tags, Wallet } from '@tuturuuu/icons';
+import {
+  autoSetWriteValue,
+  canEditLoadedSalesDefaults,
+  loadedSalesPeriodAutoDefault,
+} from '@tuturuuu/inventory-core/sales-period-default-policy';
 import type {
   InventoryProductFormOptionsResponse,
   InventorySalesDefaultsPayload,
@@ -19,6 +24,7 @@ import {
   SettingsSectionBlock,
 } from '@tuturuuu/ui/custom/settings-section';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { SelectField } from '@/components/operator/operator-form-fields';
@@ -35,6 +41,7 @@ export function InventorySalesDefaultsSettings({ wsId }: { wsId: string }) {
   const t = useTranslations('settings.inventory.sales_defaults');
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [autoDraft, setAutoDraft] = useState<boolean | null>(null);
   const options = useQuery({
     queryFn: () => getInventoryProductFormOptions(wsId),
     queryKey: ['inventory', wsId, 'form-options'],
@@ -52,39 +59,71 @@ export function InventorySalesDefaultsSettings({ wsId }: { wsId: string }) {
       NONE,
   };
   const current = draft ?? initial;
+  const loadedAutoDefault = loadedSalesPeriodAutoDefault(
+    options.data?.autoSetNewSalesPeriodAsDefault
+  );
+  const shownAutoDefault = autoDraft ?? loadedAutoDefault;
+  const canEditAutoDefault = canEditLoadedSalesDefaults(
+    options.data?.canEditSalesDefaults
+  );
+  const policyUnavailable =
+    options.isError || (options.isSuccess && loadedAutoDefault === null);
   const updateDraft = (key: keyof Draft, value: string) =>
     setDraft((existing) => ({ ...(existing ?? initial), [key]: value }));
 
   const mutation = useMutation({
     mutationFn: () => {
+      const policyWrite = autoSetWriteValue({
+        canEdit: options.data?.canEditSalesDefaults,
+        enabled: autoDraft,
+      });
       const payload: InventorySalesDefaultsPayload = {
-        defaultFinanceCategoryId:
-          current.categoryId === NONE ? null : current.categoryId,
-        defaultRevenueWalletId:
-          current.walletId === NONE ? null : current.walletId,
-        defaultSalesPeriodId:
-          current.periodId === NONE ? null : current.periodId,
+        ...(draft
+          ? {
+              defaultFinanceCategoryId:
+                current.categoryId === NONE ? null : current.categoryId,
+              defaultRevenueWalletId:
+                current.walletId === NONE ? null : current.walletId,
+              defaultSalesPeriodId:
+                current.periodId === NONE ? null : current.periodId,
+            }
+          : {}),
+        ...(policyWrite === undefined
+          ? {}
+          : { autoSetNewSalesPeriodAsDefault: policyWrite }),
       };
       return updateInventorySalesDefaults(wsId, payload);
     },
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('save_error')),
     onSuccess: () => {
+      const policyWrite = autoSetWriteValue({
+        canEdit: options.data?.canEditSalesDefaults,
+        enabled: autoDraft,
+      });
       queryClient.setQueryData<InventoryProductFormOptionsResponse>(
         ['inventory', wsId, 'form-options'],
         (existing) =>
           existing
             ? {
                 ...existing,
-                defaultFinanceCategoryId:
-                  current.categoryId === NONE ? null : current.categoryId,
-                defaultRevenueWalletId:
-                  current.walletId === NONE ? null : current.walletId,
-                defaultSalesPeriodId:
-                  current.periodId === NONE ? null : current.periodId,
+                ...(policyWrite === undefined
+                  ? {}
+                  : { autoSetNewSalesPeriodAsDefault: policyWrite }),
+                ...(draft
+                  ? {
+                      defaultFinanceCategoryId:
+                        current.categoryId === NONE ? null : current.categoryId,
+                      defaultRevenueWalletId:
+                        current.walletId === NONE ? null : current.walletId,
+                      defaultSalesPeriodId:
+                        current.periodId === NONE ? null : current.periodId,
+                    }
+                  : {}),
               }
             : existing
       );
+      setAutoDraft(null);
       setDraft(null);
       toast.success(t('save_success'));
     },
@@ -166,11 +205,35 @@ export function InventorySalesDefaultsSettings({ wsId }: { wsId: string }) {
           value={current.periodId}
         />
       </DefaultField>
+      <SettingItemTab
+        title={t('auto_default')}
+        description={
+          policyUnavailable
+            ? t('auto_default_unavailable')
+            : t('auto_default_description')
+        }
+        icon={<CalendarDays className="h-4 w-4" />}
+        controlWidth="lg"
+      >
+        <Switch
+          aria-label={t('auto_default')}
+          checked={shownAutoDefault === true}
+          disabled={
+            isLoading ||
+            mutation.isPending ||
+            !canEditAutoDefault ||
+            shownAutoDefault === null
+          }
+          onCheckedChange={(checked) => setAutoDraft(checked)}
+        />
+      </SettingItemTab>
 
       <SettingsSectionBlock className="flex items-center justify-between gap-3 py-3">
         <p className="text-muted-foreground text-sm">{t('hint')}</p>
         <Button
-          disabled={!draft || mutation.isPending || isLoading}
+          disabled={
+            (!draft && autoDraft === null) || mutation.isPending || isLoading
+          }
           onClick={() => mutation.mutate()}
           size="sm"
           type="button"
