@@ -1,3 +1,4 @@
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { after, connection, NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { notesVoiceWorkspace } from '@/lib/notes-voice/access';
@@ -26,6 +27,13 @@ export const POST = withSessionAuth<{ wsId: string }>(
         auth.user,
         params.wsId
       );
+      const refusal = await workspaceAiPolicyResponse(
+        wsId,
+        auth.user.id,
+        request.headers.get('accept-language') ?? 'en',
+        'learner-data'
+      );
+      if (refusal) return refusal;
       const form = await readVoiceForm(request);
       const parsed = voiceRequestSchema.safeParse({
         requestId: form.get('requestId'),

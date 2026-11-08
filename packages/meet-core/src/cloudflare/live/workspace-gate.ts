@@ -2,6 +2,8 @@ import {
   isMeetAiEnabledForWorkspace,
   type MeetAiGateEnv,
 } from '@tuturuuu/realtime/meet';
+import { evaluateWorkspaceAiPolicy } from '@tuturuuu/utils/workspace-ai-policy';
+import { type LiveEnvironment, liveDatabase } from './storage';
 
 /**
  * Live is transcription: the assistant's input and output audio is transcribed
@@ -23,4 +25,71 @@ export function liveWorkspaceAllowed(
     session.claims.app === 'parley' ||
     isMeetAiEnabledForWorkspace(session.identity.workspaceId, env)
   );
+}
+
+type LivePolicySession =
+  | {
+      claims: { app?: string; billingWorkspaceId?: string | null };
+      identity: { workspaceId?: string | null };
+      workspace?: { id?: string | null } | null;
+    }
+  | undefined;
+
+/**
+ * Every workspace a session touches is bound at initialization and rechecked
+ * at each checkpoint: the meeting workspace, the personal tool target and the
+ * billing workspace. Any missing, malformed or refused workspace fails closed.
+ */
+export async function liveWorkspacePolicyAllowed(
+  env: LiveEnvironment,
+  session: LivePolicySession
+) {
+  const meetingWsId = session?.identity.workspaceId;
+  if (!meetingWsId) return false;
+  const ids = new Set([meetingWsId]);
+  if (session.workspace) ids.add(session.workspace.id ?? '');
+  if (session.claims.billingWorkspaceId !== undefined)
+    ids.add(session.claims.billingWorkspaceId ?? '');
+  if ([...ids].some((wsId) => !/^[0-9a-f-]{36}$/i.test(wsId))) return false;
+  const results = await Promise.all(
+    [...ids].map((wsId) => singleWorkspacePolicyAllowed(env, wsId))
+  );
+  return results.every(Boolean);
+}
+
+async function singleWorkspacePolicyAllowed(
+  env: LiveEnvironment,
+  wsId: string
+) {
+  try {
+    const rows = await liveDatabase<Array<{ name: string; value: string }>>(
+      env,
+      `workspace_secrets?ws_id=eq.${wsId}&name=in.(AI_ENABLED,AI_EDUCATION_SCOPE,ENABLE_EDUCATION)&select=name,value`
+    );
+    if (
+      !Array.isArray(rows) ||
+      rows.some((row) => row.value === null) ||
+      new Set(rows.map((row) => row.name)).size !== rows.length
+    )
+      return false;
+    const value = (name: string) =>
+      rows.find((row) => row.name === name)?.value;
+    const education = value('ENABLE_EDUCATION');
+    if (
+      education !== undefined &&
+      education !== 'true' &&
+      education !== 'false'
+    )
+      return false;
+    return evaluateWorkspaceAiPolicy(
+      {
+        enabled: value('AI_ENABLED'),
+        education: education === 'true',
+        scope: value('AI_EDUCATION_SCOPE'),
+      },
+      'learner-data'
+    );
+  } catch {
+    return false;
+  }
 }

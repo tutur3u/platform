@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { convertToModelMessages, generateText, type UIMessage } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
@@ -65,6 +66,12 @@ export function createPATCH(
         });
       }
 
+      const aiPolicyRefusal = await workspaceAiPolicyResponse(
+        selectedWsId,
+        auth.user.id,
+        req.headers.get('accept-language') ?? 'en'
+      );
+      if (aiPolicyRefusal) return aiPolicyRefusal;
       const { data: ownedChat, error: chatAccessError } = await supabase
         .from('ai_chats')
         .select('id')

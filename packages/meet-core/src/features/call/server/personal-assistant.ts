@@ -1,3 +1,4 @@
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import 'server-only';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
 import { checkAiCredits } from '@tuturuuu/ai/credits/check-credits';
@@ -33,6 +34,8 @@ export async function answerPersonalMeetChat(
   const estimatedContextTokens = contextBytes;
   const inputBudget = 3 * (estimatedContextTokens + 6000) + 8192;
   const wsId = await personalWorkspace(userId);
+  if (!(await workspaceAiAllowed(wsId, 'learner-data', userId)))
+    throw new MeetCallAccessError(403, 'Workspace AI is unavailable');
   const model = await getMeetChatModel(wsId);
   const allowance = await checkAiCredits(wsId, model.id, 'chat', {
     userId,

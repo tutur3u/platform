@@ -1,3 +1,4 @@
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { meetingProviderTransport } from './provider-transport';
 import 'server-only';
 import { generateMeetArtifact } from '@tuturuuu/ai/meetings/gemini';
@@ -29,6 +30,12 @@ export async function generateBilledMeetArtifact(
 ) {
   const { workspaceId, allowance } =
     admission ?? (await admitMeetCredits(actor.userId, actor.meetingId));
+  if (!(await workspaceAiAllowed(workspaceId, 'learner-data', actor.userId)))
+    throw new MeetAiError(
+      403,
+      'AI is disabled by workspace policy.',
+      'WORKSPACE_AI_DISABLED'
+    );
   const modelId = `google/${MEET_AI_MODEL}`;
   const db = await createAdminClient({ noCookie: true });
   const { data: allocation, error } = await db

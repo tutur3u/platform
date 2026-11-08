@@ -11,6 +11,7 @@ import { revalidateCourseModuleQuizPaths } from '@tuturuuu/education-core/educat
 import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json } from '@tuturuuu/types';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -100,6 +101,12 @@ export const POST = withSessionAuth(
         wsId,
       });
       if (access instanceof NextResponse) return access;
+      const aiPolicyRefusal = await workspaceAiPolicyResponse(
+        access.normalizedWsId,
+        context.user.id,
+        request.headers.get('accept-language') ?? 'en'
+      );
+      if (aiPolicyRefusal) return aiPolicyRefusal;
 
       const normalizedWsId = access.normalizedWsId;
       const sbAdmin = access.sbAdmin as TypedSupabaseClient;

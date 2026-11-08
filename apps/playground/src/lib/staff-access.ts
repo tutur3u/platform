@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server';
 const PLAYGROUND_APP = 'playground';
 
 export type PlaygroundAccess =
-  | { ok: true; userId: string }
+  | { ok: true; userId: string; wsId: string }
   | { ok: false; status: 401 | 403 };
 
 /**
@@ -34,7 +34,7 @@ export async function getPlaygroundAccess(): Promise<PlaygroundAccess> {
     wsId: ROOT_WORKSPACE_ID,
   });
   return membership.ok
-    ? { ok: true, userId: user.id }
+    ? { ok: true, userId: user.id, wsId: ROOT_WORKSPACE_ID }
     : { ok: false, status: 403 };
 }
 

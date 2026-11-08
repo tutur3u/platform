@@ -37,12 +37,15 @@
   "apps/web/e2e/helpers/": ["apps/inventory", "apps/lettin"],
   "apps/web/messages/": ["apps/contacts", "apps/tanstack-web", "packages/ui"],
   "apps/web/src/": ["packages/users-core"],
+  "apps/web/src/legacy-api-routes/v1/live/tools/execute/": ["packages/ai"],
   "apps/web/src/lib/seo/": ["packages/utils"],
   "packages/internal-api/src/": ["packages/apis", "packages/education-core"],
   "packages/inventory-core/": ["apps/database"],
   "packages/inventory-core/src/lib/infrastructure/employee-sql/": [
     "apps/infrastructure"
   ],
+  "packages/meet-core/src/features/call/server/": ["packages/ai"],
+  "packages/meet-core/src/features/meeting-ai/server/": ["packages/ai"],
   "packages/realtime/src/": ["apps/chat-realtime"],
   "packages/satellite/src/": ["packages/users-core"],
   "packages/sdk/src/cli/": ["packages/education-core"],

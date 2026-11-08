@@ -2,10 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   provider: vi.fn(),
+  database: vi.fn(),
   room: vi.fn(),
   cleanup: vi.fn(),
   finalize: vi.fn(),
   begin: vi.fn(),
+}));
+vi.mock('./storage', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./storage')>()),
+  liveDatabase: mocks.database,
 }));
 vi.mock('./room', () => ({ liveRoomCommand: mocks.room }));
 vi.mock('./session-cleanup', () => ({
@@ -110,7 +115,30 @@ const control = (object: MeetLiveDurableObject, action: string) =>
 describe('Live (transcription) workspace gate', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mocks.database.mockResolvedValue([]);
     mocks.begin.mockResolvedValue({ costUsd: 0 });
+  });
+
+  it.each(['full', 'learner-data-only'])(
+    'refuses education Live before persistence, credits and provider work in %s scope',
+    async (scope) => {
+      mocks.database.mockResolvedValue([
+        { name: 'ENABLE_EDUCATION', value: 'true' },
+        { name: 'AI_EDUCATION_SCOPE', value: scope },
+      ]);
+      const { object, storage } = fixture(team);
+      expect((await initialize(object, team)).status).toBe(403);
+      expect(storage.put).not.toHaveBeenCalled();
+      expect(mocks.begin).not.toHaveBeenCalled();
+      expect(mocks.provider).not.toHaveBeenCalled();
+    }
+  );
+  it('fails closed on a workspace-policy lookup error', async () => {
+    mocks.database.mockRejectedValue(new Error('synthetic lookup failure'));
+    const { object } = fixture(team);
+    expect((await initialize(object, team)).status).toBe(403);
+    expect(mocks.begin).not.toHaveBeenCalled();
+    expect(mocks.provider).not.toHaveBeenCalled();
   });
 
   it('allows by default, requires a session and exempts Parley sessions', () => {
@@ -195,6 +223,65 @@ describe('Live (transcription) workspace gate', () => {
         )
       ).status
     ).toBe(403);
+    expect((await control(object, 'stop')).status).toBe(200);
+    expect(mocks.finalize).toHaveBeenCalled();
+  });
+
+  it('refuses initialization when the bound tool or billing workspace refuses AI', async () => {
+    for (const refused of [other, owner]) {
+      mocks.database.mockImplementation(async (_env: unknown, path: string) =>
+        path.includes(`ws_id=eq.${refused}&`)
+          ? [{ name: 'AI_ENABLED', value: 'false' }]
+          : []
+      );
+      const { object, storage } = fixture(team);
+      const response = await object.fetch(
+        post('/initialize', {
+          claims,
+          identity: identity(team),
+          workspace: { id: other, tools: [] },
+          timezone: 'UTC',
+          sharedContext: '{}',
+        })
+      );
+      expect(response.status).toBe(403);
+      expect(storage.put).not.toHaveBeenCalled();
+      expect(mocks.begin).not.toHaveBeenCalled();
+      expect(mocks.provider).not.toHaveBeenCalled();
+    }
+  });
+
+  it('refuses tool result delivery once the bound tool workspace refuses AI, but never stop', async () => {
+    const { object } = fixture(team);
+    const started = await object.fetch(
+      post('/initialize', {
+        claims,
+        identity: identity(team),
+        workspace: { id: other, tools: [] },
+        timezone: 'UTC',
+        sharedContext: '{}',
+      })
+    );
+    expect(started.status).toBe(200);
+    mocks.database.mockImplementation(async (_env: unknown, path: string) =>
+      path.includes(`ws_id=eq.${other}&`)
+        ? [
+            { name: 'ENABLE_EDUCATION', value: 'true' },
+            { name: 'AI_EDUCATION_SCOPE', value: 'full' },
+          ]
+        : []
+    );
+    const finished = await object.fetch(
+      post('/workspace-review', {
+        action: 'finish',
+        ownerId: owner,
+        meetingId,
+        reviewId: sessionId,
+        result: 'target-workspace-data',
+      })
+    );
+    expect(finished.status).toBe(403);
+    expect(mocks.provider).not.toHaveBeenCalled();
     expect((await control(object, 'stop')).status).toBe(200);
     expect(mocks.finalize).toHaveBeenCalled();
   });

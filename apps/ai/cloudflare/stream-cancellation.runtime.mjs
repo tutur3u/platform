@@ -49,6 +49,12 @@ test(
               expires_at: null,
               external_app_id: null,
             });
+          if (resource === 'workspaces')
+            return json({ id: workspace, personal: false, creator_id: actor });
+          if (resource === 'workspace_secrets')
+            return json([
+              { ws_id: workspace, name: 'AI_ENABLED', value: 'true' },
+            ]);
           if (resource === 'ai_gateway_models')
             return json({ type: 'language' });
           if (resource === 'calculate_ai_studio_usage_cost')

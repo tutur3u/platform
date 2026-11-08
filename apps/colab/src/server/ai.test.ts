@@ -5,6 +5,15 @@ import {
 } from '@tuturuuu/multiplayer';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { compileSkills, makeScenario, runAgent } from './ai';
+
+vi.mock('./sponsored-ai', () => ({
+  sponsoredGeneration: async (
+    env: { AI: { run: (system: string, input: unknown) => Promise<unknown> } },
+    system: string,
+    input: unknown
+  ) => env.AI.run(system, input),
+}));
+
 import type { Env } from './env';
 
 function model(...values: unknown[]) {
@@ -14,7 +23,7 @@ function model(...values: unknown[]) {
   return { env: { AI: { run } } as unknown as Env, run };
 }
 describe('AI output boundaries', () => {
-  it('accepts parsed JSON returned by Workers AI JSON mode', async () => {
+  it('accepts parsed JSON returned by the sponsored transport', async () => {
     const env = {
       AI: {
         run: async () => ({
@@ -34,7 +43,7 @@ describe('AI output boundaries', () => {
       'draft'
     );
   });
-  it('unwraps Workers AI responses that include usage metadata', async () => {
+  it('unwraps sponsored responses that include usage metadata', async () => {
     const env = {
       AI: {
         run: async () => ({
@@ -167,18 +176,8 @@ describe('AI output boundaries', () => {
     const { env, run } = model(scenario, scenario);
     await makeScenario(env, '', true);
     await makeScenario(env, '', false);
-    const surpriseRequest = run.mock.calls[0]?.[1] as {
-      messages: Array<{ role: string; content: string }>;
-    };
-    const promptedRequest = run.mock.calls[1]?.[1] as {
-      messages: Array<{ role: string; content: string }>;
-    };
-    const surpriseInput = JSON.parse(surpriseRequest.messages[1]!.content) as {
-      creativeSeed?: string;
-    };
-    const promptedInput = JSON.parse(promptedRequest.messages[1]!.content) as {
-      creativeSeed?: string;
-    };
+    const surpriseInput = run.mock.calls[0]?.[1] as { creativeSeed?: string };
+    const promptedInput = run.mock.calls[1]?.[1] as { creativeSeed?: string };
     expect(surpriseInput.creativeSeed).toBeTruthy();
     expect(promptedInput.creativeSeed).toBeUndefined();
   });

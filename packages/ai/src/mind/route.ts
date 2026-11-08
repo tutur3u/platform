@@ -1,5 +1,6 @@
 import { google } from '@ai-sdk/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -34,6 +35,7 @@ import {
 } from '../credits/resolve-plan-model';
 import { withAiMemory } from '../memory';
 import { createMiraStreamTools } from '../tools/mira-tools';
+import { MindChatBodySchema } from './request-schema';
 import { createMindStreamTools, type MindToolCallbacks } from './tools';
 
 type AuthOk = Extract<AiRouteAuthResult, { ok: true }>;
@@ -42,20 +44,6 @@ type MindUsage = Partial<
 > & {
   outputTokenDetails?: Partial<LanguageModelUsage['outputTokenDetails']>;
 };
-
-const MindChatBodySchema = z.object({
-  boardId: z.guid().nullable().optional(),
-  clientRunId: z.string().trim().min(1).max(120).optional(),
-  creditSource: z.enum(['personal', 'workspace']).optional(),
-  creditWsId: z.string().optional(),
-  messages: z.array(z.unknown()).optional(),
-  model: z.string().optional(),
-  thinkingMode: z.enum(['fast', 'thinking']).optional(),
-  threadId: z.guid().optional(),
-  timezone: z.string().optional(),
-  writeMode: z.enum(['direct', 'review']).optional(),
-  wsId: z.string().min(1),
-});
 
 export type MindRouteCallbacks = MindToolCallbacks & {
   ensureThread(input: {
@@ -325,6 +313,12 @@ export function createPOST(callbacks: MindRouteCallbacks) {
       });
       if (!access.ok) return access.response;
 
+      const aiPolicyRefusal = await workspaceAiPolicyResponse(
+        access.wsId,
+        auth.user.id,
+        request.headers.get('accept-language') ?? 'en'
+      );
+      if (aiPolicyRefusal) return aiPolicyRefusal;
       const sbAdmin = await createAdminClient();
       const requestedCreditSource: SharedCreditSource =
         parsedBody.creditSource ?? 'workspace';

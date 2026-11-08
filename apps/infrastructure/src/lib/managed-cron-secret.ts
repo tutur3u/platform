@@ -6,6 +6,9 @@ import type { authorizeInfrastructureWorkspaceSecretsRequest } from './infrastru
 const STAFF_ONLY_SECRET_NAMES = new Set([
   'MANAGED_CRON_ENABLED',
   'ENABLE_BOARD_CYCLES',
+  'AI_ENABLED',
+  'AI_EDUCATION_SCOPE',
+  'ENABLE_EDUCATION',
 ]);
 
 type AuthorizedRequest = Extract<

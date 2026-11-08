@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/ai/studio/request';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Json } from '@tuturuuu/types';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import {
   authenticatePublicAiRequest,
   EXTERNAL_AI_SCOPE,
@@ -179,6 +180,16 @@ export async function prepareMeteredExecution({
   const credential =
     providedCredential ??
     (await authenticatePublicAiRequest(request, requiredExternalScope));
+  const policyRefusal = await workspaceAiPolicyResponse(
+    credential.workspaceId,
+    credential.actorId,
+    request.headers.get('accept-language') ?? 'en'
+  );
+  if (policyRefusal)
+    throw new AiStudioError((await policyRefusal.json()).error, {
+      code: 'WORKSPACE_AI_DISABLED',
+      status: 403,
+    });
   if (requiredModelType) {
     await assertAiStudioModelType(modelId, requiredModelType);
   }

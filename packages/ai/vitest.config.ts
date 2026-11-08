@@ -7,6 +7,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: 'server-only',
+        replacement: resolve(__dirname, './src/test/server-only-stub.ts'),
+      },
+      {
         find: /^@tuturuuu\/internal-api\/(.*)$/,
         replacement: resolve(__dirname, '../internal-api/src/$1.ts'),
       },

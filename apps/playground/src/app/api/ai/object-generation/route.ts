@@ -1,5 +1,6 @@
 import { google } from '@ai-sdk/google';
 import { generateObject } from '@tuturuuu/ai/core';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { NextResponse } from 'next/server';
 import z from 'zod';
 import {
@@ -30,6 +31,11 @@ export const GET = async () => {
   const access = await getPlaygroundAccess();
   if (!access.ok) return playgroundDeniedResponse(access.status);
 
+  const policyRefusal = await workspaceAiPolicyResponse(
+    access.wsId,
+    access.userId
+  );
+  if (policyRefusal) return policyRefusal;
   if (!prompt) return NextResponse.json({ tasks: [] });
 
   const tasks = await generateObject({

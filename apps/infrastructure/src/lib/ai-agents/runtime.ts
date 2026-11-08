@@ -26,6 +26,7 @@ import {
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { PermissionId } from '@tuturuuu/types';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import {
   type LanguageModelUsage,
@@ -404,6 +405,15 @@ async function respondWithAgent({
   if (!mappedUser.ok) {
     return await thread.post(mappedUser.reason);
   }
+
+  if (
+    !(await workspaceAiAllowed(
+      channel.workspaceId,
+      'unknown',
+      mappedUser.userId
+    ))
+  )
+    return null;
 
   const execution = await prepareAiAgentModelExecution({
     agent,

@@ -3,6 +3,7 @@ import {
   deductAiCredits,
 } from '@tuturuuu/ai/credits/check-credits';
 import { resolveAiMemoryWorkspaceIdForUser } from '@tuturuuu/ai/memory/workspace';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
@@ -150,10 +151,17 @@ async function generateSpeech(
       ? `Read this vocabulary word in clear American English. Speak only the word: ${text}`
       : `Read this example sentence in clear American English. Speak only the sentence: ${text}`;
   const billingWorkspaceId = await resolveAiMemoryWorkspaceIdForUser({
-    fallbackWsId: '',
     supabase,
     userId: user.id,
   });
+  const aiPolicyRefusal = await workspaceAiPolicyResponse(
+    billingWorkspaceId,
+    user.id,
+    request.headers.get('accept-language') ?? 'en',
+    'learner-data',
+    true
+  );
+  if (aiPolicyRefusal) return aiPolicyRefusal;
   const creditCheck = await checkAiCredits(
     billingWorkspaceId,
     GOOGLE_TTS_MODEL,

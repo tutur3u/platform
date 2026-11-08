@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/supabase/next/user';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { generateObject } from 'ai';
 import type { NextRequest } from 'next/server';
 import { resolveMailRouteContext } from '@/lib/mail/auth';
@@ -75,6 +76,12 @@ export async function POST(req: NextRequest) {
       wsId = access.wsId;
     }
 
+    const aiPolicyRefusal = await workspaceAiPolicyResponse(
+      wsId,
+      undefined,
+      req.headers.get('accept-language') ?? 'en'
+    );
+    if (aiPolicyRefusal) return aiPolicyRefusal;
     const {
       context,
       recipients,

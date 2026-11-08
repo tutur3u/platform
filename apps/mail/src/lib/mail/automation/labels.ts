@@ -3,6 +3,7 @@ import {
   resolveAiMemoryWorkspaceIdForUser,
   withAiMemory,
 } from '@tuturuuu/ai/memory';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { type AnyRecord, privateTable } from '../repository/shared';
@@ -64,6 +65,8 @@ export async function autoLabelMessage(
       supabase: admin as never,
       userId: mailbox.created_by,
     });
+    if (!(await workspaceAiAllowed(wsId, 'unknown', mailbox.created_by)))
+      return;
     const model = await withAiMemory({
       model: google(MAIL_LABEL_MODEL),
       product: 'ai_chat',

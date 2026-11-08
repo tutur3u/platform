@@ -1,3 +1,8 @@
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiPolicyResponse: async () => null,
+  workspaceAiAllowed: async () => true,
+}));
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: vi.fn(async (wsId: string) => wsId),
   verifyWorkspaceMembershipType: vi.fn(async () => ({ ok: true })),
