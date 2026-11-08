@@ -13,9 +13,14 @@ import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import appConfig from '../start-bridge.config';
+import { assertStartupEnvironment } from './startup.mjs';
 
 export interface ToolsEnvironment {
   ASSETS: AssetsBinding;
+  TUTURUUU_APP_COORDINATION_SECRET?: string;
+  NEXT_PUBLIC_SUPABASE_URL?: string;
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string;
+
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;
 }
@@ -72,6 +77,7 @@ const handler = (
 
 export default {
   async fetch(request: Request, env: ToolsEnvironment, ctx: WorkerContext) {
+    assertStartupEnvironment(env);
     let response: Response;
     try {
       response = await (await handler)(request, env, ctx);
