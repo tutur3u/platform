@@ -121,6 +121,7 @@ export default function FullNameInput({ defaultValue = '', disabled }: Props) {
             <Button
               type="submit"
               size="icon"
+              variant="outline"
               onClick={form.handleSubmit(onSubmit)}
               disabled={saving || disabled}
               className="shrink-0"

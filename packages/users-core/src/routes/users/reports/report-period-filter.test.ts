@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildReportMonthFilter,
   buildReportPeriodFilter,
+  buildReportStageMonthFilter,
   resolveReportPeriodTimezone,
 } from './report-period-filter';
 
@@ -72,5 +73,41 @@ describe('month filter', () => {
     expect(buildReportMonthFilter({ month: '2026-12', timezone: 'UTC' })).toBe(
       'and(period_start.gte.2026-12-01,period_start.lte.2026-12-31),and(period_start.is.null,created_at.gte."2026-12-11T00:00:00.000Z",created_at.lt."2027-01-11T00:00:00.000Z")'
     );
+  });
+});
+
+describe('month filter by stage', () => {
+  const october = (timezone: string) =>
+    buildReportStageMonthFilter({ month: '2026-10', timezone });
+
+  it('keeps coverage months for every stage except Sent', () => {
+    expect(october('Asia/Ho_Chi_Minh')).toBe(
+      `and(report_stage.neq.sent,or(${buildReportMonthFilter({ month: '2026-10', timezone: 'Asia/Ho_Chi_Minh' })})),and(report_stage.eq.sent,delivered_at.gte."2026-09-30T17:00:00.000Z",delivered_at.lt."2026-10-31T17:00:00.000Z")`
+    );
+  });
+
+  it.each(['UTC', 'America/New_York', 'Pacific/Kiritimati'])(
+    'bounds Sent reports by Vietnam time with the coverage month in %s',
+    (timezone) => {
+      const filter = october(timezone);
+      expect(filter).toContain(
+        'delivered_at.gte."2026-09-30T17:00:00.000Z",delivered_at.lt."2026-10-31T17:00:00.000Z"'
+      );
+      expect(filter).toContain(
+        `or(${buildReportMonthFilter({ month: '2026-10', timezone })})`
+      );
+    }
+  );
+
+  it('rolls the Sent window into the next year for December', () => {
+    expect(
+      buildReportStageMonthFilter({ month: '2026-12', timezone: 'UTC' })
+    ).toContain(
+      'delivered_at.gte."2026-11-30T17:00:00.000Z",delivered_at.lt."2026-12-31T17:00:00.000Z"'
+    );
+  });
+
+  it('never matches a Sent report without a send date', () => {
+    expect(october('Asia/Ho_Chi_Minh')).not.toContain('delivered_at.is.null');
   });
 });

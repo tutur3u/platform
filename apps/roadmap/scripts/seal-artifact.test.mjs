@@ -1,3 +1,12 @@
+import {
+  hydrationBasepath,
+  mountHeader,
+  prepareRoadmapRequest,
+  selectedBasepath,
+} from '../src/request-boundary.ts';
+import { roadmapBoundary } from '../src/request-boundary.ts';
+import { assertEmittedMapping } from './asset-mapping.mjs';
+import { packageAssets } from './package-assets.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -27,9 +36,9 @@ function read(path, remaining) {
 function artifact(t) {
   const root = fixture(t);
   fs.mkdirSync(join(root, 'dist/server'), { recursive: true });
-  fs.mkdirSync(join(root, 'dist/client'), { recursive: true });
+  fs.mkdirSync(join(root, 'dist/client/roadmap'), { recursive: true });
   fs.writeFileSync(
-    join(root, 'dist/client/app.js'),
+    join(root, 'dist/client/roadmap/app.js'),
     `export const source = '${source}';`
   );
   fs.writeFileSync(join(root, 'dist/server/worker.js'), 'export default {};');
@@ -38,7 +47,12 @@ function artifact(t) {
     JSON.stringify({
       name: 'tuturuuu-roadmap',
       main: 'worker.js',
-      assets: { directory: '../client', base_path: '/roadmap' },
+      assets: {
+        directory: '../client',
+        binding: 'ASSETS',
+        run_worker_first: true,
+        not_found_handling: 'none',
+      },
     })
   );
   return root;
@@ -123,20 +137,23 @@ test(
     assert.throws(() => sealArtifact(root, source), /EEXIST/);
     const bad = artifact(t);
     fs.writeFileSync(
-      join(bad, 'dist/client/app.js'),
+      join(bad, 'dist/client/roadmap/app.js'),
       'export const missing = true;'
     );
     assert.throws(() => sealArtifact(bad, source), /Source identity missing/);
-    fs.writeFileSync(join(bad, 'dist/client/app.js'), source);
+    fs.writeFileSync(join(bad, 'dist/client/roadmap/app.js'), source);
     fs.writeFileSync(
       join(bad, 'dist/server/wrangler.json'),
       JSON.stringify({
         name: 'tuturuuu-roadmap',
         main: 'worker.js',
-        assets: { base_path: '/' },
+        assets: { base_path: '/roadmap' },
       })
     );
-    assert.throws(() => sealArtifact(bad, source), /mount must equal/);
+    assert.throws(
+      () => sealArtifact(bad, source),
+      /base must be absent or root/
+    );
   }
 );
 
@@ -172,7 +189,7 @@ test(
   linux,
   (t) => {
     const root = artifact(t),
-      file = join(root, 'dist/client/app.js');
+      file = join(root, 'dist/client/roadmap/app.js');
     const original = fs.fstatSync;
     let changed = false;
     t.mock.method(fs, 'fstatSync', (fd, ...args) => {
@@ -200,3 +217,252 @@ test(
     );
   }
 );
+
+function mappingConfig() {
+  return {
+    name: 'tuturuuu-roadmap',
+    main: 'worker.js',
+    assets: {
+      directory: '../client',
+      binding: 'ASSETS',
+      run_worker_first: true,
+      not_found_handling: 'none',
+    },
+  };
+}
+const mappedPaths = [
+  'dist/server/worker.js',
+  'dist/client/roadmap/assets/app.js',
+];
+const checkMapping = (config, paths = mappedPaths) =>
+  assertEmittedMapping(config, 'dist/server/wrangler.json', paths, '/build');
+
+test('root and bare mount canonicalize with query; mounted URLs pass through', () => {
+  for (const path of ['/', '/?x=1', '/roadmap', '/roadmap?x=1&x=2']) {
+    const request = new Request(`https://example.test${path}`);
+    const response = roadmapBoundary(request);
+    assert.equal(response.status, 308);
+    assert.equal(
+      response.headers.get('Location'),
+      `/roadmap/${new URL(request.url).search}`
+    );
+  }
+  for (const path of [
+    '/roadmap/',
+    '/roadmap/?x=1',
+    '/roadmap/assets/app.js',
+    '/roadmap/_serverFn/abc?x=1',
+  ]) {
+    assert.equal(
+      roadmapBoundary(new Request(`https://example.test${path}`)),
+      undefined
+    );
+  }
+  for (const path of ['/other', '/roadmap-other', '/assets/app.js']) {
+    assert.equal(
+      roadmapBoundary(new Request(`https://example.test${path}`)).status,
+      404
+    );
+  }
+});
+
+test('encoded path aliases cannot reach the asset fallback', () => {
+  for (const path of [
+    '/roadmap/%2fother',
+    '/roadmap/%ZZ',
+    '/%72oadmap/assets/app.js',
+  ]) {
+    assert.equal(
+      roadmapBoundary(new Request(`https://example.test${path}`)).status,
+      400
+    );
+  }
+});
+
+test('root provider base maps every physical client key to the public mount', () => {
+  checkMapping(mappingConfig());
+  const root = mappingConfig();
+  root.assets.base_path = '/';
+  checkMapping(root);
+  root.assets.html_handling = 'auto-trailing-slash';
+  checkMapping(root);
+  for (const delta of [
+    { base_path: '/roadmap' },
+    { base_path: null },
+    { directory: '../other' },
+    { directory: '/outside' },
+    { binding: 'OTHER' },
+    { run_worker_first: false },
+    { not_found_handling: 'single-page-application' },
+    { html_handling: 'none' },
+  ]) {
+    const config = mappingConfig();
+    Object.assign(config.assets, delta);
+    assert.throws(() => checkMapping(config));
+  }
+  for (const key of [
+    'app.js',
+    'roadmap-other/app.js',
+    'roadmap/../app.js',
+    'roadmap/%2fapp.js',
+    'roadmap//app.js',
+    'roadmap/app.js?x=1',
+  ]) {
+    assert.throws(() =>
+      checkMapping(mappingConfig(), [
+        'dist/server/worker.js',
+        `dist/client/${key}`,
+      ])
+    );
+  }
+  for (const config of [
+    null,
+    {},
+    { ...mappingConfig(), main: '../outside.js' },
+    { ...mappingConfig(), assets: [] },
+  ]) {
+    assert.throws(() => checkMapping(config));
+  }
+  assert.throws(
+    () => checkMapping(mappingConfig(), ['dist/server/worker.js']),
+    /missing/
+  );
+  assert.throws(() => sealArtifact('/unused', ''), /exact build source/);
+});
+
+test('packaging moves real bytes once and refuses unsafe or missing clients', (t) => {
+  const root = fixture(t);
+  fs.mkdirSync(join(root, 'dist/client/assets'), { recursive: true });
+  fs.writeFileSync(join(root, 'dist/client/assets/app.js'), 'client bytes');
+  fs.writeFileSync(join(root, 'dist/client/styles.css'), 'styles');
+  assert.deepEqual(packageAssets(root).sort(), [
+    'roadmap/assets/app.js',
+    'roadmap/styles.css',
+  ]);
+  assert.equal(
+    fs.readFileSync(join(root, 'dist/client/roadmap/assets/app.js'), 'utf8'),
+    'client bytes'
+  );
+  assert.deepEqual(fs.readdirSync(join(root, 'dist/client')), ['roadmap']);
+  assert.throws(() => packageAssets(root), /already exists/);
+  const bad = fixture(t);
+  fs.mkdirSync(join(bad, 'dist/client'), { recursive: true });
+  assert.throws(() => packageAssets(bad), /missing/);
+  fs.symlinkSync(
+    join(root, 'dist/client/roadmap/assets/app.js'),
+    join(bad, 'dist/client/app.js')
+  );
+  assert.throws(() => packageAssets(bad), /single-link/);
+});
+
+test('dedicated exact host serves root and canonicalizes legacy pages without redirecting transport', async () => {
+  const request = (path, options) =>
+    new Request(`https://roadmap.tuturuuu.com${path}`, options);
+  for (const [path, target] of [
+    ['/roadmap', '/'],
+    ['/roadmap/?x=1&x=2', '/?x=1&x=2'],
+    ['/roadmap/deep?x=%2F', '/deep?x=%2F'],
+  ]) {
+    const response = roadmapBoundary(request(path));
+    assert.equal(response.status, 308);
+    assert.equal(response.headers.get('Location'), target);
+    assert.ok(!target.startsWith('//'));
+  }
+  for (const path of [
+    '/',
+    '/?x=1',
+    '/deep',
+    '/roadmap/assets/app.js',
+    '/roadmap/_serverFn/abc?x=1',
+  ]) {
+    const original = request(path);
+    const basepath = selectedBasepath(original);
+    assert.equal(basepath, '/');
+    assert.equal(roadmapBoundary(original, basepath), undefined);
+    const prepared = prepareRoadmapRequest(original, basepath);
+    const expected = path.startsWith('/roadmap/')
+      ? original.url
+      : `https://roadmap.tuturuuu.com/roadmap${path}`;
+    assert.equal(prepared.url, expected);
+    assert.equal(prepared.headers.get(mountHeader), '/');
+    assert.equal(
+      hydrationBasepath({ roadmapBasepath: prepared.headers.get(mountHeader) }),
+      '/'
+    );
+  }
+  const post = request('/roadmap/_serverFn/abc?x=1', {
+    method: 'POST',
+    body: 'payload',
+    headers: { [mountHeader]: '/roadmap', 'content-type': 'text/plain' },
+  });
+  const prepared = prepareRoadmapRequest(post, selectedBasepath(post));
+  assert.equal(prepared.method, 'POST');
+  assert.equal(await prepared.text(), 'payload');
+  assert.equal(prepared.headers.get(mountHeader), '/');
+  assert.equal(prepared.headers.get('content-type'), 'text/plain');
+});
+
+test('host selection ignores forwarded spoofing and preserves mounted fallback hosts', () => {
+  for (const host of [
+    'tuturuuu.com',
+    'sample.workers.dev',
+    'unknown.test',
+    'roadmap.tuturuuu.com.evil.test',
+    'roadmap.tuturuuu.com:8443',
+  ]) {
+    const request = new Request(`https://${host}/?x=1`, {
+      headers: {
+        'x-forwarded-host': 'roadmap.tuturuuu.com',
+        [mountHeader]: '/',
+      },
+    });
+    assert.equal(selectedBasepath(request), '/roadmap');
+    assert.equal(
+      roadmapBoundary(request).headers.get('Location'),
+      '/roadmap/?x=1'
+    );
+    const mounted = new Request(`https://${host}/roadmap/?x=1`, {
+      headers: request.headers,
+    });
+    assert.equal(roadmapBoundary(mounted), undefined);
+    const prepared = prepareRoadmapRequest(mounted, selectedBasepath(mounted));
+    assert.equal(prepared.url, mounted.url);
+    assert.equal(prepared.headers.get(mountHeader), '/roadmap');
+  }
+  const mismatch = new Request('https://roadmap.tuturuuu.com/', {
+    headers: { host: 'roadmap.tuturuuu.com:8443' },
+  });
+  assert.equal(selectedBasepath(mismatch), '/roadmap');
+  const spoof = new Request('https://unknown.test/', {
+    headers: { host: 'roadmap.tuturuuu.com' },
+  });
+  assert.equal(selectedBasepath(spoof), '/roadmap');
+  const forwarded = new Request('https://roadmap.tuturuuu.com/', {
+    headers: { 'x-forwarded-host': 'evil.test' },
+  });
+  assert.equal(selectedBasepath(forwarded), '/');
+  for (const data of [
+    null,
+    {},
+    { roadmapBasepath: '//evil.test' },
+    { roadmapBasepath: '/wrong' },
+  ])
+    assert.throws(() => hydrationBasepath(data));
+});
+
+test('both host modes reject encoded aliases, backslashes and protocol-relative redirect targets', () => {
+  for (const host of ['roadmap.tuturuuu.com', 'sample.workers.dev']) {
+    for (const path of [
+      '//evil.test',
+      '/roadmap//evil.test',
+      '/roadmap/%5Cevil',
+      '/roadmap/%2Fevil',
+      '/%ZZ',
+      '/roadmap/\\\\evil.test',
+    ]) {
+      const response = roadmapBoundary(new Request(`https://${host}${path}`));
+      assert.equal(response.status, 400);
+      assert.equal(response.headers.get('Location'), null);
+    }
+  }
+});

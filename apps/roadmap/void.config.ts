@@ -5,10 +5,11 @@ export default defineConfig({
   inference: {
     bindings: { db: false, kv: false, storage: false, ai: false, email: false },
     scanDirs: [],
-    build: 'vp build',
+    build: 'vp build && node scripts/package-assets.mjs',
   },
   cloudflare: {
     name: 'tuturuuu-roadmap',
+    main: './src/worker.ts',
     compatibility_date: '2026-11-07',
     compatibility_flags: ['nodejs_compat'],
     routes: [
@@ -19,7 +20,6 @@ export default defineConfig({
     assets: {
       directory: './dist/client',
       binding: 'ASSETS',
-      base_path: '/roadmap',
       run_worker_first: true,
       not_found_handling: 'none',
     },
