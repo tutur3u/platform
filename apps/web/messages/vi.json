@@ -3,6 +3,7 @@
     "accept_optional": "Chấp nhận mục tùy chọn",
     "analytics": "Phân tích và hiệu suất",
     "analytics_disabled": "Tính năng phân tích hiện đang tắt. Lựa chọn của bạn không kích hoạt nhà cung cấp nào.",
+    "choice_outdated": "Lựa chọn đã lưu không còn hợp lệ. Vui lòng chọn lại.",
     "close": "Đóng",
     "customize": "Tùy chỉnh",
     "description": "Chúng tôi dùng cookie và bộ nhớ trình duyệt cần thiết để trang web hoạt động. Phân tích và tiếp thị tùy chọn cần có sự cho phép của bạn.",
@@ -16,6 +17,7 @@
     "save_failed": "Không thể lưu lựa chọn trong trình duyệt này. Việc thu thập tùy chọn vẫn tắt. Hãy kiểm tra cài đặt bộ nhớ trình duyệt và thử lại.",
     "settings": "Cài đặt quyền riêng tư",
     "settings_description": "Chọn các mục đích sử dụng bộ nhớ trình duyệt tùy chọn. Bạn có thể quay lại đây bất cứ lúc nào để thay đổi hoặc rút lại lựa chọn.",
+    "storage_unavailable": "Bộ nhớ trình duyệt không khả dụng. Việc thu thập tùy chọn vẫn tắt. Hãy bật bộ nhớ trình duyệt nếu bạn muốn lưu lựa chọn.",
     "title": "Lựa chọn quyền riêng tư"
   },
   "about": {
