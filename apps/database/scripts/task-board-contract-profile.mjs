@@ -8,12 +8,18 @@ export const fullSprintFixtures = [
 ];
 
 const retainedBarrierSources = {
-  "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/sprints/_lib.ts": "7d06cbe344c1f84ca3a5bfc19464c8e811474debf702ddc048ece9e27fc830e9",
-  "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/sprints/release-barrier.test.ts": "8977c1f6671a8504918d803c4a91777ff944bcdac0951d449aae6533a075e5c7"
+  'apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/sprints/_lib.ts':
+    '7d06cbe344c1f84ca3a5bfc19464c8e811474debf702ddc048ece9e27fc830e9',
+  'apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/sprints/release-barrier.test.ts':
+    '8977c1f6671a8504918d803c4a91777ff944bcdac0951d449aae6533a075e5c7',
 };
 const heldSprintVersions = [
-  '20261101100000', '20261101100010', '20261101100020',
-  '20261101100030', '20261105082000', '20261105082010',
+  '20261101100000',
+  '20261101100010',
+  '20261101100020',
+  '20261101100030',
+  '20261105082000',
+  '20261105082010',
 ];
 
 export function taskBoardContractFixtures({ args, trackedFiles, readSource }) {
@@ -27,11 +33,18 @@ export function taskBoardContractFixtures({ args, trackedFiles, readSource }) {
       throw new Error(`Retained board-cycle release barrier changed: ${file}`);
     }
   }
-  if (trackedFiles.some((file) =>
-    /\/(migrations|rollbacks)\//.test(file) &&
-    heldSprintVersions.some((version) => file.split('/').at(-1).startsWith(version))
-  )) {
-    throw new Error('Retained profile contains a held sprint migration or rollback');
+  if (
+    trackedFiles.some(
+      (file) =>
+        /\/(migrations|rollbacks)\//.test(file) &&
+        heldSprintVersions.some((version) =>
+          file.split('/').at(-1).startsWith(version)
+        )
+    )
+  ) {
+    throw new Error(
+      'Retained profile contains a held sprint migration or rollback'
+    );
   }
   const fixtures = [
     'task-board-retained-cycles.sql',
@@ -45,7 +58,8 @@ export function taskBoardContractFixtures({ args, trackedFiles, readSource }) {
     'apps/database/supabase/migrations/20261029050300_guard_task_cycle_task_workspace.sql',
   ];
   for (const file of required) {
-    if (!trackedFiles.includes(file)) throw new Error(`Missing contract source: ${file}`);
+    if (!trackedFiles.includes(file))
+      throw new Error(`Missing contract source: ${file}`);
     readSource(file);
   }
   return fixtures;

@@ -36,7 +36,9 @@ const fixtures = taskBoardContractFixtures({
   trackedFiles: contractFiles,
   readSource: (file) => readFileSync(path.resolve(repositoryRoot, file)),
 });
-console.log(`Task board contract profile: ${process.argv[2] ?? 'full-board-sprints'}`);
+console.log(
+  `Task board contract profile: ${process.argv[2] ?? 'full-board-sprints'}`
+);
 const names = execFileSync('docker', ['ps', '-a', '--format', '{{.Names}}'], {
   encoding: 'utf8',
 })
