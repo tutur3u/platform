@@ -248,12 +248,47 @@ export interface WebAccountsResponse {
   error?: string;
 }
 
+export type WebAccountErrorCode =
+  | 'account_limit'
+  | 'device_unavailable'
+  | 'save_failed'
+  | 'session_missing';
+
 export interface WebAccountMutationResponse extends WebAccountsResponse {
   accountId?: string;
+  errorCode?: WebAccountErrorCode;
   redirectTo?: string;
   /** The stored session is unusable; that account has to be signed into again. */
   requiresReauth?: boolean;
   success: boolean;
+}
+
+export function webAccountErrorMessageKey(
+  errorCode: string | null | undefined
+): WebAccountErrorCode | null {
+  if (
+    errorCode === 'account_limit' ||
+    errorCode === 'device_unavailable' ||
+    errorCode === 'save_failed' ||
+    errorCode === 'session_missing'
+  ) {
+    return errorCode;
+  }
+
+  return null;
+}
+
+export function describeWebAccountSaveError(
+  result: { error?: string | null; errorCode?: string | null },
+  translate: (key: string) => string
+) {
+  const key = webAccountErrorMessageKey(result.errorCode);
+
+  if (key) {
+    return translate(`account_switcher.${key}`);
+  }
+
+  return result.error || translate('account_switcher.account_added_error');
 }
 
 export interface BrowserSessionLogoutResponse {

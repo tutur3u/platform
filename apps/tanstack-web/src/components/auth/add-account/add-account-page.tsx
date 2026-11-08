@@ -3,7 +3,10 @@
 import { useMutation } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import { Check } from '@tuturuuu/icons/lucide';
-import { saveCurrentWebAccountWithInternalApi } from '@tuturuuu/internal-api/auth';
+import {
+  describeWebAccountSaveError,
+  saveCurrentWebAccountWithInternalApi,
+} from '@tuturuuu/internal-api/auth';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -24,6 +27,7 @@ export function AddAccountPage({
   locale: string;
   returnUrl: string | null;
 }) {
+  const t = useTranslations();
   const [status, setStatus] = useState<AddAccountStatus>('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const hasRun = useRef(false);
@@ -41,7 +45,7 @@ export function AddAccountPage({
 
       if (!result.success) {
         setStatus('error');
-        setErrorMessage(result.error || 'Failed to add account');
+        setErrorMessage(describeWebAccountSaveError(result, t));
         return;
       }
 
@@ -54,7 +58,7 @@ export function AddAccountPage({
         error instanceof Error ? error.message : 'An unexpected error occurred'
       );
     }
-  }, [locale, returnUrl, saveCurrentAccount]);
+  }, [locale, returnUrl, saveCurrentAccount, t]);
 
   useEffect(() => {
     if (hasRun.current) {
@@ -69,6 +73,11 @@ export function AddAccountPage({
     <AddAccountCard
       errorMessage={errorMessage}
       homeHref={`/${locale}`}
+      onRetry={() => {
+        setStatus('loading');
+        setErrorMessage('');
+        void addAccount();
+      }}
       status={status}
     />
   );
@@ -81,10 +90,12 @@ export function AddAccountFallback() {
 function AddAccountCard({
   errorMessage,
   homeHref,
+  onRetry,
   status,
 }: {
   errorMessage: string;
   homeHref: string;
+  onRetry?: () => void;
   status: AddAccountStatus;
 }) {
   const t = useTranslations();
@@ -128,7 +139,12 @@ function AddAccountCard({
               <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 p-4">
                 <p className="text-dynamic-red text-sm">{errorMessage}</p>
               </div>
-              <Button asChild className="w-full">
+              {onRetry ? (
+                <Button type="button" onClick={onRetry} className="w-full">
+                  {t('account_switcher.retry')}
+                </Button>
+              ) : null}
+              <Button asChild className="w-full" variant="outline">
                 <a href={homeHref}>{t('common.back-to-home')}</a>
               </Button>
             </div>

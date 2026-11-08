@@ -68,6 +68,81 @@ async function getPrivateDb() {
   ) as PrivateDb;
 }
 
+interface CanonicalProfile {
+  avatar_url: string | null;
+  display_name: string | null;
+}
+
+async function readCanonicalProfiles(userIds: string[]) {
+  const uniqueIds = [...new Set(userIds)];
+  const profiles = new Map<string, CanonicalProfile>();
+
+  if (uniqueIds.length === 0) {
+    return profiles;
+  }
+
+  try {
+    const admin = await createAdminClient({ noCookie: true });
+    const { data, error } = await admin
+      .from('users')
+      .select('id, display_name, avatar_url')
+      .in('id', uniqueIds);
+
+    if (error || !data) {
+      return profiles;
+    }
+
+    for (const row of data) {
+      profiles.set(row.id, {
+        avatar_url: row.avatar_url,
+        display_name: row.display_name,
+      });
+    }
+  } catch {
+    return profiles;
+  }
+
+  return profiles;
+}
+
+function profileFields(
+  profile: CanonicalProfile | undefined,
+  fallback: { avatarUrl: string | null; displayName: string | null }
+) {
+  if (!profile) {
+    return {
+      avatar_url: fallback.avatarUrl,
+      display_name: fallback.displayName,
+    };
+  }
+
+  const displayName = profile.display_name?.trim();
+
+  return {
+    avatar_url: profile.avatar_url,
+    display_name: displayName ? displayName : fallback.displayName,
+  };
+}
+
+function applyCanonicalProfile(
+  summary: WebAccountSummary,
+  profile: CanonicalProfile | undefined
+): WebAccountSummary {
+  const fields = profileFields(profile, {
+    avatarUrl: summary.metadata.avatarUrl,
+    displayName: summary.metadata.displayName,
+  });
+
+  return {
+    ...summary,
+    metadata: {
+      ...summary.metadata,
+      avatarUrl: fields.avatar_url,
+      displayName: fields.display_name,
+    },
+  };
+}
+
 function toTimestamp(value: string | null | undefined) {
   return value ? new Date(value).getTime() : null;
 }
@@ -211,7 +286,10 @@ async function listAccountsForDevice(
   }
 
   const rows = await getAccountRows(device.deviceId);
-  const accounts = rows.map(rowToAccountSummary);
+  const profiles = await readCanonicalProfiles(rows.map((row) => row.user_id));
+  const accounts = rows.map((row) =>
+    applyCanonicalProfile(rowToAccountSummary(row), profiles.get(row.user_id))
+  );
   const activeAccountExists = accounts.some(
     (account) => account.id === device.activeUserId
   );
@@ -277,7 +355,7 @@ async function upsertStoredSession(
   deviceId: string,
   session: SupabaseSession,
   payload: SaveCurrentAccountPayload
-) {
+): Promise<{ accountId: string } | { limit: true }> {
   const db = await getPrivateDb();
   const userId = session.user.id;
   const existing = await getStoredSession(deviceId, userId);
@@ -299,17 +377,22 @@ async function upsertStoredSession(
     }
 
     if ((count ?? 0) >= MAX_WEB_ACCOUNT_SESSIONS) {
-      throw new Error('Maximum account limit reached');
+      return { limit: true };
     }
   }
 
   const now = new Date().toISOString();
+  const profiles = await readCanonicalProfiles([userId]);
+  const identity = profileFields(profiles.get(userId), {
+    avatarUrl: getSessionAvatarUrl(session),
+    displayName: getSessionDisplayName(session),
+  });
 
   await db.from('web_account_sessions').upsert(
     {
-      avatar_url: getSessionAvatarUrl(session),
+      avatar_url: identity.avatar_url,
       device_id: deviceId,
-      display_name: getSessionDisplayName(session),
+      display_name: identity.display_name,
       email: session.user.email ?? null,
       last_active_at: now,
       last_route: route,
@@ -323,7 +406,7 @@ async function upsertStoredSession(
   );
   await updateDeviceActiveUser(deviceId, userId);
 
-  return userId;
+  return { accountId: userId };
 }
 
 export async function saveCurrentWebAccount(
@@ -339,23 +422,40 @@ export async function saveCurrentWebAccount(
   if (error || !session) {
     return {
       ...(await listAccountsForDevice(null)),
-      error: error?.message ?? 'Session not found',
+      error: 'session_missing',
+      errorCode: 'session_missing',
       success: false,
-    } as WebAccountMutationResponse & { error: string };
+    };
   }
 
   const device = await resolveDevice(request, { create: true });
 
   if (!device) {
-    throw new Error('Failed to create account device');
+    return {
+      ...(await listAccountsForDevice(null)),
+      error: 'device_unavailable',
+      errorCode: 'device_unavailable',
+      success: false,
+    };
   }
 
-  const accountId = await upsertStoredSession(
+  const saved = await upsertStoredSession(
     request,
     device.deviceId,
     session,
     payload
   );
+
+  if ('limit' in saved) {
+    return {
+      ...(await listAccountsForDevice(device)),
+      error: 'account_limit',
+      errorCode: 'account_limit',
+      success: false,
+    };
+  }
+
+  const accountId = saved.accountId;
   const accounts = await listAccountsForDevice({
     ...device,
     activeUserId: accountId,
@@ -489,9 +589,18 @@ async function switchToStoredWebAccount(
   }
 
   const now = new Date().toISOString();
+  const switchedProfile = (await readCanonicalProfiles([accountId])).get(
+    accountId
+  );
+  const switchedIdentity = profileFields(switchedProfile, {
+    avatarUrl: stored.metadata.avatarUrl,
+    displayName: stored.metadata.displayName,
+  });
   await db
     .from('web_account_sessions')
     .update({
+      avatar_url: switchedIdentity.avatar_url,
+      display_name: switchedIdentity.display_name,
       last_active_at: now,
       session_ciphertext: encryptSession(data.session),
       session_expires_at: getSessionExpiresAt(data.session),
