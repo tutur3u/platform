@@ -82,14 +82,14 @@ it('does not look up profiles when admission or actor verification fails', async
     })
   ).rejects.toMatchObject({ status: 409 });
 });
-it('keeps historical sources unattributed', async () => {
+it('refuses unidentified audio sources', async () => {
   const db = database(null, null);
-  expect(
-    await resolveTranscriptSpeaker({
+  await expect(
+    resolveTranscriptSpeaker({
       db: db as never,
       meetingId: actorId,
       actorId,
     })
-  ).toBeNull();
+  ).rejects.toMatchObject({ status: 403 });
   expect(db.from).not.toHaveBeenCalled();
 });

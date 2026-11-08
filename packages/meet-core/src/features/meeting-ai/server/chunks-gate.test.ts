@@ -1,3 +1,5 @@
+vi.mock('./chunk-consent', () => ({ requireChunkConsent: async () => {} }));
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Real meetAiAccess and transcribeMeetChunk; only the outer services are doubles.
