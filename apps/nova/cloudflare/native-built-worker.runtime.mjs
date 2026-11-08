@@ -26,7 +26,9 @@ import { effectiveWorkerConfig } from '../../../scripts/start-bridge-codemod/wor
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
-const WORKER = 'tuturuuu-nova-vite-staging';
+const { deploymentProfile } = await import('./deployment-profile.ts');
+const PROFILE = deploymentProfile();
+const WORKER = PROFILE.name;
 const PUBLIC_FILES = [
   'android-chrome-192x192.png',
   'android-chrome-512x512.png',
@@ -149,7 +151,11 @@ test(
       WORKER_CONFIG.compatibilityFlags
     );
     assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
-    assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
+    assert.equal(config.preview_urls, false);
+    assert.equal(
+      config.vars?.TUTURUUU_NOINDEX,
+      PROFILE.vars.TUTURUUU_NOINDEX
+    );
     for (const name of PUBLIC_FILES)
       assert.equal(
         await sha256(join(app, 'dist/client', name)),
@@ -165,6 +171,30 @@ test(
       envFiles: [staged.envFile],
       sendMetrics: false,
       bindings: {
+        UPSTASH_REDIS_REST_URL: {
+          type: 'plain_text',
+          value: 'synthetic-runtime-only',
+        },
+        UPSTASH_REDIS_REST_TOKEN: {
+          type: 'plain_text',
+          value: 'synthetic-runtime-only',
+        },
+        TUTURUUU_APP_COORDINATION_SECRET: {
+          type: 'plain_text',
+          value: 'synthetic-runtime-only-coordination',
+        },
+        SUPABASE_SECRET_KEY: {
+          type: 'plain_text',
+          value: 'synthetic-runtime-only-supabase',
+        },
+        NEXT_PUBLIC_SUPABASE_URL: {
+          type: 'plain_text',
+          value: 'https://runtime.supabase.invalid',
+        },
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: {
+          type: 'plain_text',
+          value: 'sb_publishable_runtime_fixture',
+        },
         INTERNAL_WEB_API_ORIGIN: {
           type: 'plain_text',
           value: 'https://central.invalid',

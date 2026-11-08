@@ -553,6 +553,18 @@ test('the poster workflow is read-only and is not a workflow_run consumer', () =
   assert.equal(workflow.on.workflow_run, undefined);
   assert.equal(workflow.permissions.contents, 'read');
   assert.equal(workflow.permissions.checks, undefined);
+  assert.equal(
+    workflow.jobs.summary.if,
+    "needs.configuration.outputs.configured == 'true'"
+  );
+  assert.match(
+    workflow.jobs.configuration.steps[0].run,
+    /App not configured/
+  );
+  assert.doesNotMatch(
+    workflow.jobs.configuration.steps[0].run,
+    /GITHUB_TOKEN|GH_TOKEN|github\.token/
+  );
   assert.deepEqual(workflow.jobs.summary.permissions, { contents: 'read' });
   assert.equal(
     workflow.jobs.summary.steps.at(-1).env.CI_SUMMARY_APP_ID,

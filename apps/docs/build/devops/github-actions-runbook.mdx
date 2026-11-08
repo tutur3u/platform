@@ -61,7 +61,7 @@ The check stays in progress while the pull request is a draft, an expected workf
 
 `pull_request_target` posts the current picture. A schedule at minutes 7, 22, 37, and 52 refreshes every open pull request. GitHub may delay or drop a scheduled run, so a settled result can lag.
 
-The poster fails and posts nothing until these repository secrets exist:
+Until these repository secrets exist, the poster job skips and logs "App not configured". It posts nothing and does not borrow another app's credentials. A partial or malformed configuration still fails closed:
 
 - `CI_SUMMARY_APP_ID`: the GitHub App's numeric id.
 - `CI_SUMMARY_APP_PRIVATE_KEY`: that app's PEM private key.
