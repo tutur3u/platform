@@ -97,14 +97,18 @@ export async function GET(request: Request, { params }: Params) {
     .eq('revision', lock.revision)
     .maybeSingle();
   if (revisionError) return feeLockErrorResponse(revisionError);
-  const snapshot = feeLockSnapshotSchema.safeParse(revision?.snapshot);
+  if (!revision) {
+    console.error('[fee-locks] unreadable snapshot', lock.id, lock.revision);
+    return feeLockErrorResponse({ code: 'XX000' });
+  }
+  const snapshot = feeLockSnapshotSchema.safeParse(revision.snapshot);
   if (!snapshot.success) {
     console.error('[fee-locks] unreadable snapshot', lock.id, lock.revision);
     return feeLockErrorResponse({ code: 'XX000' });
   }
 
   // feeLockSnapshotSchema strips unit and warehouse ids; read them from the raw lines.
-  const rawLines = (revision?.snapshot as { lines?: unknown[] }).lines ?? [];
+  const rawLines = (revision.snapshot as { lines?: unknown[] })?.lines ?? [];
   const suggestion: FeeLockSuggestion = {
     fee_lock_id: lock.id,
     revision: snapshot.data.revision,

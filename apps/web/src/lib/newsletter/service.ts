@@ -27,10 +27,13 @@ import {
   getNewsletterSesIdentityClient,
   type NewsletterSesIdentityClient,
 } from './ses';
-import { asNewsletterAdmin, callNewsletter, type NewsletterAdmin } from './store';
+import {
+  asNewsletterAdmin,
+  callNewsletter,
+  type NewsletterAdmin,
+} from './store';
 
-const UUID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type NewsletterSenderView = SenderGateSnapshot;
 
@@ -198,9 +201,8 @@ export async function createNewsletterClaim(input: {
     dkimVerified = snapshot.dkimVerified;
     mailFromVerified = snapshot.mailFromVerified;
     txtVerified = snapshot.ownershipTxtVerified;
-    mailFromDomain = records.find(
-      (record) => record.purpose === 'mail_from_mx'
-    )?.host ?? null;
+    mailFromDomain =
+      records.find((record) => record.purpose === 'mail_from_mx')?.host ?? null;
     writeVerify = true;
   } else {
     records = [ownershipDnsRecord(subdomain, token)];
@@ -253,7 +255,11 @@ export async function setNewsletterApproval(input: {
   actorId: string;
   action: 'approve' | 'suspend' | 'remove';
   localPart: string | null;
-}): Promise<{ approval: ApprovalState; localPart: string | null; subdomain: string }> {
+}): Promise<{
+  approval: ApprovalState;
+  localPart: string | null;
+  subdomain: string;
+}> {
   assertUuid(input.wsId, 'not_found');
   assertUuid(input.actorId, 'store_failed');
   const localPart =
@@ -320,7 +326,8 @@ export async function sendNewsletterStaffTest(input: {
       p_flag_enabled: flagEnabled,
     })
   );
-  if (typeof reserved.id !== 'string') throw new NewsletterGateError('store_failed');
+  if (typeof reserved.id !== 'string')
+    throw new NewsletterGateError('store_failed');
   try {
     await mailer.send({
       from: decision.from,

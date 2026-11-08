@@ -63,22 +63,39 @@ describe('FeeLockExportDialog', () => {
       .spyOn(HTMLAnchorElement.prototype, 'click')
       .mockImplementation(() => {});
     const blob = new Blob(['x']);
-    mocks.export.mockResolvedValue({ ok: true, blob, fileName: 'chot-hoc-phi-2026-12-00000000.xlsx', rowCount: 3 });
+    mocks.export.mockResolvedValue({
+      ok: true,
+      blob,
+      fileName: 'chot-hoc-phi-2026-12-00000000.xlsx',
+      rowCount: 3,
+    });
     mount();
     open();
     submit();
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('done:3'));
-    expect(mocks.export).toHaveBeenCalledWith(WS, { month: '2026-12', groupId: GROUP, status: 'locked', include_notice: false });
+    expect(mocks.export).toHaveBeenCalledWith(WS, {
+      month: '2026-12',
+      groupId: GROUP,
+      status: 'locked',
+      include_notice: false,
+    });
     expect(URL.createObjectURL).toHaveBeenCalledWith(blob);
     const link = click.mock.contexts[0] as HTMLAnchorElement;
     expect(link.download).toBe('chot-hoc-phi-2026-12-00000000.xlsx');
 
     open();
     fireEvent.click(screen.getByRole('radio', { name: 'Gồm cả bản nháp' }));
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Kèm nội dung thông báo' }));
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'Kèm nội dung thông báo' })
+    );
     submit();
     await waitFor(() => expect(mocks.export).toHaveBeenCalledTimes(2));
-    expect(mocks.export).toHaveBeenLastCalledWith(WS, { month: '2026-12', groupId: GROUP, status: 'all', include_notice: true });
+    expect(mocks.export).toHaveBeenLastCalledWith(WS, {
+      month: '2026-12',
+      groupId: GROUP,
+      status: 'all',
+      include_notice: true,
+    });
   });
 
   it('shows the too-many message and a failure without saving anything', async () => {

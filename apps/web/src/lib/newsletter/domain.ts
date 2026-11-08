@@ -149,7 +149,11 @@ export type SenderGateSnapshot = {
   approval: ApprovalState;
 };
 
-export type DnsPurpose = 'ownership' | 'dkim' | 'mail_from_spf' | 'mail_from_mx';
+export type DnsPurpose =
+  | 'ownership'
+  | 'dkim'
+  | 'mail_from_spf'
+  | 'mail_from_mx';
 
 export type DnsRecord = {
   purpose: DnsPurpose;
@@ -213,11 +217,7 @@ export function normalizeSendingSubdomain(input: string): string {
     fail('invalid_subdomain');
   }
   const labels = name.split('.');
-  if (
-    labels.some(
-      (label) => !LABEL.test(label) || label.startsWith('xn--')
-    )
-  ) {
+  if (labels.some((label) => !LABEL.test(label) || label.startsWith('xn--'))) {
     fail('invalid_subdomain');
   }
   if (name === 'localhost' || name.endsWith('.localhost')) fail('localhost');
@@ -296,7 +296,10 @@ export function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
-function assertMailFromChild(subdomain: string, mailFromDomain: string): string {
+function assertMailFromChild(
+  subdomain: string,
+  mailFromDomain: string
+): string {
   if (typeof mailFromDomain !== 'string') fail('ses_records');
   const name = mailFromDomain.trim().toLowerCase();
   const parent = `.${subdomain}`;
@@ -317,7 +320,9 @@ function assertSesSnapshot(
   if (!tokens || tokens.length !== 3 || new Set(tokens).size !== 3) {
     fail('ses_records');
   }
-  if (tokens.some((token) => typeof token !== 'string' || !DKIM_TOKEN.test(token))) {
+  if (
+    tokens.some((token) => typeof token !== 'string' || !DKIM_TOKEN.test(token))
+  ) {
     fail('ses_records');
   }
   if (
@@ -404,7 +409,10 @@ export function buildDnsPlan(
   ];
 }
 
-export function ownershipDnsRecord(subdomain: string, token: string): DnsRecord {
+export function ownershipDnsRecord(
+  subdomain: string,
+  token: string
+): DnsRecord {
   const normalized = normalizeSendingSubdomain(subdomain);
   if (!UNSUBSCRIBE_TOKEN_PATTERN.test(token)) fail('ses_records');
   return {
@@ -449,7 +457,11 @@ function senderGateCode(
   sender: SenderGateSnapshot | null,
   localPart: string
 ): NewsletterGateCode | null {
-  if (!sender || sender.approval === 'removed' || sender.localPart !== localPart) {
+  if (
+    !sender ||
+    sender.approval === 'removed' ||
+    sender.localPart !== localPart
+  ) {
     return 'sender_missing';
   }
   if (sender.approval === 'suspended') return 'sender_suspended';
@@ -468,16 +480,23 @@ export function decideStaffTestSend(input: {
 }): StaffSendDecision {
   if (!input.flagEnabled) return { ok: false, code: 'flag_disabled' };
   const localPart =
-    typeof input.localPart === 'string' ? input.localPart.trim().toLowerCase() : '';
-  if (!LOCAL_PART.test(localPart)) return { ok: false, code: 'invalid_local_part' };
+    typeof input.localPart === 'string'
+      ? input.localPart.trim().toLowerCase()
+      : '';
+  if (!LOCAL_PART.test(localPart))
+    return { ok: false, code: 'invalid_local_part' };
   if (DENIED_LOCAL_PARTS.has(localPart)) {
     return { ok: false, code: 'local_part_denied' };
   }
   const domainCode = domainGateCode(input.domain);
-  if (domainCode || !input.domain) return { ok: false, code: domainCode ?? 'domain_missing' };
+  if (domainCode || !input.domain)
+    return { ok: false, code: domainCode ?? 'domain_missing' };
   const senderCode = senderGateCode(input.sender, localPart);
   if (senderCode) return { ok: false, code: senderCode };
-  if (typeof input.actorEmail !== 'string' || typeof input.recipient !== 'string') {
+  if (
+    typeof input.actorEmail !== 'string' ||
+    typeof input.recipient !== 'string'
+  ) {
     return { ok: false, code: 'recipient_not_actor' };
   }
   if (

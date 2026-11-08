@@ -9,9 +9,10 @@ import { describeRollbackPlan } from './wave1-web-rollback.mjs';
 import { describeSealPlan } from './wave1-web-seal.mjs';
 
 const require = createRequire(import.meta.url);
-const { describeOverflowRecoveryPlan, parseArgs } = require(
-  './release-please-overflow-recovery.js'
-);
+const {
+  describeOverflowRecoveryPlan,
+  parseArgs,
+} = require('./release-please-overflow-recovery.js');
 const sha = 'a'.repeat(40);
 
 // Credential-free environment: a dry run must succeed with nothing set, and
@@ -142,10 +143,7 @@ test('--dry-run exits 0 with no environment and no network', () => {
     ['wave1-web-admit.mjs', ['--dry-run', sha]],
     ['wave1-web-rollback.mjs', [sha, '--dry-run']],
     ['wave1-web-seal.mjs', ['verify', sha, '--dry-run']],
-    [
-      'wave1-web-seal.mjs',
-      ['prepare', sha, '--dry-run'],
-    ],
+    ['wave1-web-seal.mjs', ['prepare', sha, '--dry-run']],
     [
       'release-please-overflow-recovery.js',
       ['--target-branch', 'production', '--repository', 'o/r', '--dry-run'],
