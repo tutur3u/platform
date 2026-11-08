@@ -114,6 +114,26 @@ describe('satellite workspace settings route handlers', () => {
     expect(createAdminClient).not.toHaveBeenCalled();
   });
 
+  it.each(['meet', 'calendar', 'ai'])(
+    'reserves the %s marketing and app handle',
+    async (handle) => {
+      const response = await createSatelliteWorkspaceRouteHandlers(
+        'calendar'
+      ).PUT(
+        new Request('https://calendar.test/api/workspaces/workspace-one', {
+          body: JSON.stringify({ handle, name: 'Workspace' }),
+          method: 'PUT',
+        }),
+        context
+      );
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({
+        message: 'Invalid or reserved workspace handle',
+      });
+      expect(createAdminClient).not.toHaveBeenCalled();
+    }
+  );
+
   it('updates only the resolved authorized workspace', async () => {
     const workspaceSingle = vi.fn().mockResolvedValue({
       data: { personal: false },
