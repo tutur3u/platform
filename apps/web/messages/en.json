@@ -1,25 +1,4 @@
 {
-  "privacy-consent": {
-    "accept_optional": "Accept optional",
-    "analytics": "Analytics and performance",
-    "analytics_disabled": "Analytics is currently disabled. Your preference does not activate a provider.",
-    "choice_outdated": "Your saved preference is no longer valid. Please choose again.",
-    "close": "Close",
-    "customize": "Customize",
-    "description": "We use necessary cookies and browser storage to keep the site working. Optional analytics and marketing need your permission.",
-    "marketing": "Marketing",
-    "necessary": "Strictly necessary",
-    "necessary_description": "Always on for sign-in, security and essential site functions.",
-    "play_youtube": "Play product tour on YouTube (external service)",
-    "privacy_policy": "Privacy policy",
-    "reject": "Reject optional",
-    "save": "Save preferences",
-    "save_failed": "We could not save your choice in this browser. Optional collection stays off. Check your browser storage settings and try again.",
-    "settings": "Privacy settings",
-    "settings_description": "Choose optional uses of browser storage. You can return here at any time to change or withdraw your choice.",
-    "storage_unavailable": "Browser storage is unavailable. Optional collection stays off. Enable browser storage if you want your choice to be remembered.",
-    "title": "Your privacy choices"
-  },
   "about": {
     "community": {
       "contributions": {
@@ -13730,6 +13709,27 @@
     "subject": "Subject",
     "undeliverable": "Undeliverable",
     "view_post": "View Post"
+  },
+  "privacy-consent": {
+    "accept_optional": "Accept optional",
+    "analytics": "Analytics and performance",
+    "analytics_disabled": "Analytics is currently disabled. Your preference does not activate a provider.",
+    "choice_outdated": "Your saved preference is no longer valid. Please choose again.",
+    "close": "Close",
+    "customize": "Customize",
+    "description": "We use necessary cookies and browser storage to keep the site working. Optional analytics and marketing need your permission.",
+    "marketing": "Marketing",
+    "necessary": "Strictly necessary",
+    "necessary_description": "Always on for sign-in, security and essential site functions.",
+    "play_youtube": "Play product tour on YouTube (external service)",
+    "privacy_policy": "Privacy policy",
+    "reject": "Reject optional",
+    "save": "Save preferences",
+    "save_failed": "We could not save your choice in this browser. Optional collection stays off. Check your browser storage settings and try again.",
+    "settings": "Privacy settings",
+    "settings_description": "Choose optional uses of browser storage. You can return here at any time to change or withdraw your choice.",
+    "storage_unavailable": "Browser storage is unavailable. Optional collection stays off. Enable browser storage if you want your choice to be remembered.",
+    "title": "Your privacy choices"
   },
   "product-data-table": {
     "category": "Category",
