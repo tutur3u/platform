@@ -51,6 +51,9 @@ describe('satellite workspace settings panels', () => {
     expect(source).toContain('target="_blank"');
     expect(source).toContain('billing_current_plan');
     expect(source).toContain('billing_ai_credits');
+    expect(source).toContain('<PlanName tier={creditStatus.tier} />');
+    expect(source).not.toContain('>{creditStatus.tier}<');
+    expect(source).not.toContain('getPlanTranslationKey');
   });
 
   it('disables guest access and omits invitation tools in personal workspaces', () => {
