@@ -3,7 +3,6 @@ import {
   buildReportMonthFilter,
   buildReportPeriodFilter,
   buildReportStageMonthFilter,
-  isUndatedSentReport,
   resolveReportPeriodTimezone,
 } from './report-period-filter';
 
@@ -83,7 +82,7 @@ describe('month filter by stage', () => {
 
   it('keeps coverage months for every stage except Sent', () => {
     expect(october('Asia/Ho_Chi_Minh')).toBe(
-      `and(report_stage.neq.sent,or(${buildReportMonthFilter({ month: '2026-10', timezone: 'Asia/Ho_Chi_Minh' })})),and(report_stage.eq.sent,delivered_at.gte."2026-09-30T17:00:00.000Z",delivered_at.lt."2026-10-31T17:00:00.000Z"),and(report_stage.eq.sent,delivered_at.is.null)`
+      `and(report_stage.neq.sent,or(${buildReportMonthFilter({ month: '2026-10', timezone: 'Asia/Ho_Chi_Minh' })})),and(report_stage.eq.sent,delivered_at.gte."2026-09-30T17:00:00.000Z",delivered_at.lt."2026-10-31T17:00:00.000Z")`
     );
   });
 
@@ -108,13 +107,7 @@ describe('month filter by stage', () => {
     );
   });
 
-  it.each([
-    [{ report_stage: 'sent', delivered_at: null }, true],
-    [{ report_stage: 'sent' }, true],
-    [{ report_stage: 'sent', delivered_at: '2026-10-01T00:00:00Z' }, false],
-    [{ report_stage: 'blocked', delivered_at: null }, false],
-    [{ report_stage: 'blocked', delivered_at: '2026-10-01T00:00:00Z' }, false],
-  ])('treats %o as undated Sent: %s', (report, expected) => {
-    expect(isUndatedSentReport(report)).toBe(expected);
+  it('never matches a Sent report without a send date', () => {
+    expect(october('Asia/Ho_Chi_Minh')).not.toContain('delivered_at.is.null');
   });
 });

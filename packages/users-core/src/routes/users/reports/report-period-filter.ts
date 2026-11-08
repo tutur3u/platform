@@ -89,9 +89,9 @@ export const REPORT_SENT_MONTH_TIMEZONE = 'Asia/Ho_Chi_Minh';
  * `buildReportMonthFilter`. Sent reports belong to the month they were
  * actually sent: `delivered_at` from the 1st at 00:00 to the 1st of the next
  * month in `REPORT_SENT_MONTH_TIMEZONE`, whatever the workspace or viewer
- * timezone. Sent reports without `delivered_at` are also returned so the
- * caller can count them with `isUndatedSentReport` and leave them out of the
- * month; they appear only under All months.
+ * timezone. Sent reports without `delivered_at` match no month and are
+ * excluded in the database, so they never count toward the row cap of a
+ * month read; they appear only under All months.
  */
 export function buildReportStageMonthFilter({
   month,
@@ -106,13 +106,5 @@ export function buildReportStageMonthFilter({
     REPORT_SENT_MONTH_TIMEZONE
   );
   const coverage = buildReportMonthFilter({ month, timezone });
-  return `and(report_stage.neq.sent,or(${coverage})),and(report_stage.eq.sent,delivered_at.gte."${from}",delivered_at.lt."${to}"),and(report_stage.eq.sent,delivered_at.is.null)`;
-}
-
-/** A Sent report with no recorded send date, so it has no send month. */
-export function isUndatedSentReport(row: {
-  report_stage?: string | null;
-  delivered_at?: string | null;
-}) {
-  return row.report_stage === 'sent' && !row.delivered_at;
+  return `and(report_stage.neq.sent,or(${coverage})),and(report_stage.eq.sent,delivered_at.gte."${from}",delivered_at.lt."${to}")`;
 }

@@ -143,12 +143,12 @@ that month or the first days of the next one.
   the Sent list. Row month labels, the month picker default, new-report periods,
   titles, Custom date range and All months are unchanged.
 - **Sent without a send date.** A Sent report with no `delivered_at` is in no
-  month and appears only under All months. A month view counts these from the
-  same complete read as the list and returns `undatedSentCount`; Contacts shows
-  "N sent reports have no recorded send date" above the list. The count is
-  `null` (no notice) when it is unknown, such as when the all-stage summary read
-  failed or hit the 20,000-row cap; it is never shown as 0. Records are not
-  backfilled.
+  month and appears only under All months. The month filter excludes these rows
+  in the database, before the 20,000-row cap, so they never make a month read
+  fail or count toward a month's totals. A month read therefore never sees them:
+  `undatedSentCount` is always `null` (unknown, never 0), including when the
+  actor has no accessible group, and Contacts shows no count notice. All months
+  reads them with the existing cap. Records are not backfilled.
 - **New reports** save `period_start`/`period_end` as the chosen month's calendar
   bounds with `cadence: monthly`. The workspace default title (`<title> MM/YYYY`)
   follows the chosen month until the teacher edits the title.

@@ -251,8 +251,8 @@ describe('selected month', () => {
     const [list, summary] = queries.map((url) => url.searchParams.getAll('or'));
     expect(list).toEqual(summary);
     expect(list?.[0]).toContain('and(report_stage.eq.sent,delivered_at.gte.');
-    // Every Sent report in this fixture has a send date.
-    expect(body.undatedSentCount).toBe(0);
+    expect(list?.[0]).not.toContain('delivered_at.is.null');
+    expect(body.undatedSentCount).toBeNull();
     expect(body.summaryPartial).toBe(false);
   });
 
@@ -268,13 +268,12 @@ describe('selected month', () => {
     }
   );
 
-  it('counts undated Sent reports from the list itself on the Sent stage', async () => {
+  it('keeps the undated Sent count unknown on the Sent stage', async () => {
     state.summaryFailure = 'error';
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
     const body = await (await get('stage=sent&month=2026-10')).json();
-    // The Sent list is a complete read even when the other stages are not.
     expect(body.summaryPartial).toBe(true);
-    expect(body.undatedSentCount).toBe(0);
+    expect(body.undatedSentCount).toBeNull();
     expect(body.total).toBe(1);
     errors.mockRestore();
   });

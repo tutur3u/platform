@@ -30,7 +30,6 @@ import {
 import {
   buildReportPeriodFilter,
   buildReportStageMonthFilter,
-  isUndatedSentReport,
   resolveReportPeriodTimezone,
 } from './report-period-filter';
 import {
@@ -165,7 +164,7 @@ export async function GET(request: Request, { params }: Params) {
         pageSize: parsed.data.pageSize,
         summaryPartial: false,
         total: 0,
-        undatedSentCount: parsed.data.month ? 0 : null,
+        undatedSentCount: null,
         workspace: { id: wsId, timezone: null },
       });
     }
@@ -368,30 +367,13 @@ export async function GET(request: Request, { params }: Params) {
             (row) => periodicDeliveryCategory(row) === parsed.data.category
           )
         : rows;
-    // A month leaves out Sent reports with no send date. They are counted
-    // from the same complete read so the month can say how many it omits;
-    // null when that read was unavailable or no month is selected.
-    const inMonth = <Row extends Parameters<typeof isUndatedSentReport>[0]>(
-      rows: Row[]
-    ) =>
-      parsed.data.month
-        ? rows.filter((row) => !isUndatedSentReport(row))
-        : rows;
-    const sentScopeRows: SummaryRow[] | null =
-      !parsed.data.stage || parsed.data.stage === 'sent'
-        ? allRows
-        : stageSummaryRows;
-    const undatedSentCount =
-      parsed.data.month && sentScopeRows
-        ? inCategory(sentScopeRows).filter(isUndatedSentReport).length
-        : null;
-    const filteredRows = inCategory(inMonth(allRows));
+    const filteredRows = inCategory(allRows);
     // Category counts follow the listed rows; stage counts cover every stage
     // unless the summary read was unavailable (`summaryPartial`).
     const summaryPartial = Boolean(parsed.data.stage) && !stageSummaryRows;
     const { categoryCounts } = summarizeReportList(filteredRows);
     const { counts } = summarizeReportList(
-      stageSummaryRows ? inCategory(inMonth(stageSummaryRows)) : filteredRows
+      stageSummaryRows ? inCategory(stageSummaryRows) : filteredRows
     );
     const listResult = {
       data: filteredRows.slice(from, from + parsed.data.pageSize),
@@ -439,7 +421,9 @@ export async function GET(request: Request, { params }: Params) {
       pageSize: parsed.data.pageSize,
       summaryPartial,
       total: listResult.count,
-      undatedSentCount,
+      // Sent reports without a send date match no month, so a month read
+      // never sees them and their number is unknown: always null, never 0.
+      undatedSentCount: null,
       workspace: workspaceResult.data,
     });
   } catch (error) {

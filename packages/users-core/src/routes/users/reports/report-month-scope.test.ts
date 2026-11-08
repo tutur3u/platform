@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../lib/user-groups/groups-utils', () => ({
-  getUserGroupMembershipsForActor: async () => ['group-1'],
+  getUserGroupMembershipsForActor: async () => state.groups,
 }));
 vi.mock('@tuturuuu/supabase/next/server', async (original) => {
   const actual =
@@ -174,12 +174,14 @@ function selectRows(url: URL, rows: Row[]) {
 
 const state = vi.hoisted(() => ({
   urls: [] as URL[],
+  groups: ['group-1'],
   rows: [] as Record<string, string | null>[],
   workspaceTimezone: 'Asia/Ho_Chi_Minh' as string | null,
 }));
 
 beforeEach(() => {
   state.urls = [];
+  state.groups = ['group-1'];
   state.rows = baseRows;
   state.workspaceTimezone = 'Asia/Ho_Chi_Minh';
   vi.stubEnv('SUPABASE_SERVER_URL', 'https://reports-month.test');
@@ -239,7 +241,7 @@ const OCTOBER_COVERAGE =
   'and(period_start.gte.2026-10-01,period_start.lte.2026-10-31),and(period_start.is.null,created_at.gte."2026-10-10T17:00:00.000Z",created_at.lt."2026-11-10T17:00:00.000Z")';
 const OCTOBER_SENT =
   'delivered_at.gte."2026-09-30T17:00:00.000Z",delivered_at.lt."2026-10-31T17:00:00.000Z"';
-const OCTOBER_FILTER = `(and(report_stage.neq.sent,or(${OCTOBER_COVERAGE})),and(report_stage.eq.sent,${OCTOBER_SENT}),and(report_stage.eq.sent,delivered_at.is.null))`;
+const OCTOBER_FILTER = `(and(report_stage.neq.sent,or(${OCTOBER_COVERAGE})),and(report_stage.eq.sent,${OCTOBER_SENT}))`;
 
 it('selects October by saved period and by estimated month, on the list and the summary read', async () => {
   const response = await get('stage=pending&cadence=monthly&month=2026-10');
@@ -311,7 +313,7 @@ describe('Sent reports in a month', () => {
     expect(body.total).toBe(2);
     expect(body.counts.stages.sent).toBe(2);
     expect(body.counts.delivered).toBe(2);
-    expect(body.undatedSentCount).toBe(1);
+    expect(body.undatedSentCount).toBeNull();
     // Row metadata keeps the covered month.
     expect(body.data[0]).toMatchObject({ report_month: '2026-09' });
   });
@@ -355,7 +357,7 @@ describe('Sent reports in a month', () => {
       const body = await (await get(`${query}&month=2026-10`)).json();
       expect(body.counts.stages.sent).toBe(list.total);
       expect(body.counts).toEqual(list.counts);
-      expect(body.undatedSentCount).toBe(1);
+      expect(body.undatedSentCount).toBeNull();
     }
     const all = await (await get('month=2026-10')).json();
     expect(ids(all).filter((id: string) => id.startsWith('sent-'))).toEqual(
@@ -416,7 +418,7 @@ describe('Sent reports in a month', () => {
       ...baseRows,
       ...synthetic('bulk-oct', 1_200, '2026-10-20T03:00:00Z'),
       ...synthetic('bulk-sep', 1_000, '2026-09-25T03:00:00Z'),
-      // Past the first 1,000-row chunk: counted from the complete read.
+      // Never part of a month read.
       ...synthetic('bulk-undated', 3, null),
     ];
     const seen: string[] = [];
@@ -426,7 +428,7 @@ describe('Sent reports in a month', () => {
       ).json();
       expect(body.total).toBe(1_202);
       expect(body.counts.stages.sent).toBe(1_202);
-      expect(body.undatedSentCount).toBe(4);
+      expect(body.undatedSentCount).toBeNull();
       seen.push(...ids(body));
     }
     expect(new Set(seen).size).toBe(1_202);
@@ -440,11 +442,78 @@ describe('Sent reports in a month', () => {
       expect(url.searchParams.getAll('or')).toEqual([OCTOBER_FILTER]);
   });
 
-  it('rejects a month whose collected rows exceed the cap instead of sampling', async () => {
+  it('rejects a month whose dated rows exceed the cap instead of sampling', async () => {
     state.rows = Array.from({ length: 20_001 }, (_, index) =>
-      row(`cap-${index}`, 'sent', '2026-10-05T03:00:00Z')
+      row(`cap-${index}`, 'sent', '2026-10-05T03:00:00Z', {
+        deliveredAt: '2026-10-20T03:00:00Z',
+      })
     );
     const response = await get('stage=sent&month=2026-10');
     expect(response.status).toBe(422);
+  });
+
+  it('leaves undated Sent reports out of a month read before the row cap', async () => {
+    const undated = Array.from({ length: 20_001 }, (_, index) =>
+      row(`undated-${index}`, 'sent', '2026-10-05T03:00:00Z', {
+        period: '2026-10',
+      })
+    );
+    const dated = Array.from({ length: 150 }, (_, index) =>
+      row(`dated-${index}`, 'sent', '2026-10-05T03:00:00Z', {
+        period: '2026-09',
+        deliveredAt: '2026-10-20T03:00:00Z',
+      })
+    );
+    state.rows = [...undated, ...dated, ...unsent];
+
+    const seen: string[] = [];
+    for (const page of [1, 2]) {
+      const response = await get(
+        `stage=sent&month=2026-10&pageSize=100&page=${page}`
+      );
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.total).toBe(150);
+      expect(body.counts.stages.sent).toBe(150);
+      expect(body.counts.total).toBe(153);
+      expect(body.summaryPartial).toBe(false);
+      expect(body.undatedSentCount).toBeNull();
+      seen.push(...ids(body));
+    }
+    expect(new Set(seen).size).toBe(150);
+    expect(seen.every((id) => id.startsWith('dated-'))).toBe(true);
+
+    const allStages = await get('month=2026-10');
+    expect(allStages.status).toBe(200);
+    const allBody = await allStages.json();
+    expect(allBody.total).toBe(153);
+    expect(allBody.counts.stages).toMatchObject({ sent: 150, pending: 2 });
+    expect(allBody.undatedSentCount).toBeNull();
+
+    // A month with no dated Sent reports reads as empty, not as capped.
+    for (const query of ['stage=sent&month=2026-08', 'month=2026-08']) {
+      const response = await get(query);
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.total).toBe(0);
+      expect(body.counts.stages.sent).toBe(0);
+      expect(body.undatedSentCount).toBeNull();
+    }
+
+    // All months still reads every Sent report and keeps the cap.
+    expect((await get('stage=sent')).status).toBe(422);
+    expect((await get('')).status).toBe(422);
+    for (const url of reportQueries())
+      expect(url.searchParams.getAll('or').join()).not.toContain(
+        'delivered_at.is.null'
+      );
+  });
+
+  it('reports the undated Sent count as unknown without any accessible group', async () => {
+    state.groups = [];
+    const body = await (await get('stage=sent&month=2026-10')).json();
+    expect(body.total).toBe(0);
+    expect(body.undatedSentCount).toBeNull();
+    expect(reportQueries()).toHaveLength(0);
   });
 });
