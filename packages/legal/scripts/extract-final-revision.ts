@@ -16,11 +16,12 @@
 // - verifies that the extracted lines, with every tag removed, are exactly the
 //   FINAL's lines with the same tags removed.
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { format } from 'oxfmt';
+import { emitRevisionSources } from '../src/revision-2026-11-11/output';
 
 const FINAL_SHA256 =
   'a42bc6135831e94eaf0e872f3bced491143c666024dcea03b0e9f07921da7006';
@@ -551,26 +552,12 @@ export const revisionSource: RevisionSource = {
 const formatOptions = JSON.parse(
   readFileSync(new URL('../../../.oxfmtrc.json', import.meta.url), 'utf8')
 );
-const formatted = await Promise.all(
-  [...outputs].map(async ([name, source]) => {
-    const result = await format(name, source, formatOptions);
-    if (result.errors.length)
-      throw new Error(
-        `Cannot format ${name}: ${JSON.stringify(result.errors)}`
-      );
-    return { name, code: result.code };
-  })
-);
-if (values.check) {
-  for (const { name, code } of formatted) {
-    if (readFileSync(new URL(name, dir), 'utf8') !== code)
-      throw new Error(`Generated legal source is stale: ${name}`);
-  }
-} else {
-  mkdirSync(dir, { recursive: true });
-  for (const { name, code } of formatted)
-    writeFileSync(new URL(name, dir), code);
-}
+await emitRevisionSources({
+  sources: outputs,
+  directory: dir,
+  check: values.check,
+  formatSource: (name, source) => format(name, source, formatOptions),
+});
 console.log(
   `${values.check ? 'verified' : 'wrote'} ${dir.pathname} from ${sha}`
 );
