@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import type { CatalogFlag, FeatureFlagCatalog } from '@tuturuuu/feature-flags';
 import { featureFlagCatalog } from '@tuturuuu/feature-flags';
 import { render, screen, within } from '@testing-library/react';
