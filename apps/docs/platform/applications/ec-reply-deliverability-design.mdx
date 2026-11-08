@@ -1,11 +1,11 @@
 ---
-title: 'Easy Center replies and email deliverability design'
+title: 'Workspace replies and email deliverability design'
 description: 'Draft workspace inbox, signed reply routing, SES suppression, privacy and bounded Cloudflare processing.'
 ---
 
 ## Scope and status
 
-Draft design for Easy Center daily and periodic reports and staff replies. All
+Draft design for a center's daily and periodic reports and staff replies. All
 examples are synthetic. This page proposes behavior; it does not enable receiving,
 change senders, provision infrastructure, or apply a schema migration. Invitations
 and paid custom-domain entitlements are separate designs.
@@ -20,7 +20,7 @@ unsubscribe, workspace permissions and unknown-send-outcome fences.
 
 Paths and lines below refer to commit
 `691e9f70ad7a8c071c57b85752a4b8b56b8e4bc6`, inspected without customer data.
-The supplied brief identifies `Easy Center <notifications@tuturuuu.com>` and SES
+The supplied brief identifies `notifications@tuturuuu.com` and SES
 `ap-southeast-1` as the operational sender/region. Code supports configurable
 workspace credentials; this inspection does not establish live configuration.
 
@@ -90,7 +90,7 @@ within the configured budget. An acceptance timeout is reconciled, not resent.
 
 ## Staff inbox and safe replies
 
-Provide an Easy Center Inbox within the workspace report/contact experience,
+Provide a workspace inbox within the report and contact experience,
 linked to the student, verified parent relationship, original report/post and
 read-only report snapshot. Reuse mail storage but grant no access to the shared
 notifications mailbox. Staff roles are viewer, responder, manager and suppression
@@ -117,8 +117,8 @@ or generating automatic acknowledgements, and allow manual reclassification.
 Only authenticated SES events may create infrastructure suppression; a forged
 bounce-shaped email cannot blacklist an address. Human reports of abuse enter
 staff review. Add bilingual reply instructions only after qualified routing:
-“Reply to this email to reach Easy Center” and
-“Trả lời email này để liên hệ Easy Center”.
+“Reply to this email to reach the center” and
+“Trả lời email này để liên hệ trung tâm”.
 
 Quarantine attachments before display or forwarding. Check MIME signatures,
 allowlisted types, decompressed size, archive depth and malware verdict; reject
