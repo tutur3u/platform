@@ -328,6 +328,7 @@
               {
                 "group": "Application integrations",
                 "pages": [
+                  "platform/applications/ec-reply-deliverability-design",
                   {
                     "group": "Square POS",
                     "pages": [
