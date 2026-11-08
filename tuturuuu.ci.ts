@@ -155,6 +155,12 @@ export const productionPublicationPolicy = {
       'Inventory native Start route-free upload with smoke and pinned rollback',
     surfaces: ['frontend'],
   },
+  nova: {
+    state: 'admitted',
+    reason:
+      'Nova native Start route-free upload with smoke and pinned rollback',
+    surfaces: ['frontend'],
+  },
   mastermind: {
     state: 'held',
     reason: 'held for wave-2 cutover: Mastermind security review required',

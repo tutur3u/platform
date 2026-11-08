@@ -18,6 +18,7 @@ const { readWorkflow } = require('./workflow-yaml-test-helper.js');
 const apps = [
   'forms',
   'inventory',
+  'nova',
   'meet',
   'calendar',
   'mail',
