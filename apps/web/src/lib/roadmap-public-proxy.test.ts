@@ -8,7 +8,7 @@ import {
 describe('roadmap public proxy', () => {
   it('proxies roadmap children and keeps the worker cache headers', async () => {
     const fetchImpl = vi.fn(
-      async () =>
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
         new Response('asset', {
           headers: {
             'cache-control': 'public, max-age=86400',
@@ -35,7 +35,10 @@ describe('roadmap public proxy', () => {
     );
     expect(response?.headers.get('set-cookie')).toBeNull();
     expect(await response?.text()).toBe('asset');
-    const [url, init] = fetchImpl.mock.calls[0] ?? [];
+    const invocation = fetchImpl.mock.calls[0];
+    expect(invocation).toBeDefined();
+    if (!invocation) return;
+    const [url, init] = invocation;
     expect(String(url)).toBe(
       'https://roadmap.tuturuuu.com/roadmap/assets/app.js'
     );

@@ -1353,7 +1353,7 @@ describe('web proxy api handling', () => {
   it('serves anonymous roadmap requests from the worker without login or cookies', async () => {
     vi.useRealTimers();
     const fetchMock = vi.fn(
-      async () =>
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
         new Response('<html>roadmap</html>', {
           headers: {
             'cache-control': 'public, max-age=300',
@@ -1387,7 +1387,10 @@ describe('web proxy api handling', () => {
     expect(await response.text()).toBe('<html>roadmap</html>');
     expect(mocks.authProxy).not.toHaveBeenCalled();
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    const invocation = fetchMock.mock.calls[0];
+    expect(invocation).toBeDefined();
+    if (!invocation) return;
+    const [url, init] = invocation;
     expect(String(url)).toBe('https://roadmap.tuturuuu.com/roadmap/');
     const sent = new Headers((init as RequestInit | undefined)?.headers);
     expect(sent.get('cookie')).toBeNull();
