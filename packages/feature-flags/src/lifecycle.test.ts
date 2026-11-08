@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import committedCatalog from '../../../config/feature-flag-catalog.json';
 import {
   type CatalogFlag,
   deriveRemoveBy,
+  type FeatureFlagCatalog,
+  findOverdueFlags,
   getFlagLifecycle,
   validateCatalog,
   validateFlag,
@@ -81,6 +84,63 @@ describe('getFlagLifecycle', () => {
         getFlagLifecycle({ ...verified, kind }, '2030-01-01T00:00:00Z')
       ).toEqual({ removeBy: null, removeBySource: null, status: 'retained' });
     }
+  });
+
+  it('ignores legacy and verified deadlines on retained controls', () => {
+    const retained = [
+      'kill-switch',
+      'workspace-gate',
+      'safety-control',
+      'operational',
+    ] as const;
+    const flags = retained.map((kind) => ({
+      ...verified,
+      key: kind.replaceAll('-', '_'),
+      kind,
+      legacy: true,
+      legacyRemoveBy: '2026-11-01',
+    }));
+    for (const flag of flags) {
+      expect(getFlagLifecycle(flag, '2030-01-01T00:00:00Z')).toEqual({
+        removeBy: null,
+        removeBySource: null,
+        status: 'retained',
+      });
+    }
+    const catalog: FeatureFlagCatalog = {
+      environments: ['development', 'staging', 'production'],
+      flags: [...flags, { ...verified, key: 'due_release' }],
+    };
+    expect(
+      findOverdueFlags(catalog, '2030-01-01T00:00:00Z').map(
+        ({ flag }) => flag.key
+      )
+    ).toEqual(['due_release']);
+  });
+
+  it('keeps the committed mobile_offline kill switch retained', () => {
+    const catalog = committedCatalog as FeatureFlagCatalog;
+    const killSwitch = catalog.flags.find(
+      (flag) => flag.key === 'mobile_offline'
+    );
+    expect(killSwitch).toMatchObject({
+      kind: 'kill-switch',
+      legacyRemoveBy: '2027-01-31',
+    });
+    expect(getFlagLifecycle(killSwitch!, '2027-02-01T00:00:00Z')).toEqual({
+      removeBy: null,
+      removeBySource: null,
+      status: 'retained',
+    });
+    const overdue = findOverdueFlags(catalog, '2027-02-01T00:00:00Z').map(
+      ({ flag }) => flag.key
+    );
+    expect(overdue).not.toContain('mobile_offline');
+    expect(overdue).toHaveLength(
+      catalog.flags.filter(
+        (flag) => flag.kind === 'release' && flag.legacyRemoveBy
+      ).length
+    );
   });
 
   it('honours a legacy date through the end of that UTC day', () => {

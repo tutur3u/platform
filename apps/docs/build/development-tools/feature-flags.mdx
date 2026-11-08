@@ -3,15 +3,18 @@ title: Feature flags
 description: Flag policy, lifecycle catalog, admin dashboard and the mobile evaluation contract.
 ---
 
-The root `config/feature-flags.json` owns the flag inventory. Each array entry has
+The root `config/feature-flags.json` owns the mobile runtime flag inventory. Each
+array entry has
 `key` (unique snake_case), `description`, `owner`, `class` (`read`, `write`, `ui`,
 `kill`), `default: false`, and `removeBy` (ISO date). The initial 16 mobile flags
-belong to `mona` and expire on `2027-01-31`.
+belong to `mona` and retain legacy removal-date metadata of `2027-01-31`.
+Removal eligibility follows the catalog kind below.
 
 ## Add a flag
 
 Name the flag in its PR, add its registry entry with default OFF, assign an owner
-and removal date, and wire its kill switch before enabling the feature. Follow the
+and lifecycle metadata, and wire its kill switch before enabling the feature.
+Follow the
 [trunk-based delivery rule](/build/development-tools/git-conventions#trunk-based-delivery):
 flags default OFF; kill switch first, rollback second.
 
@@ -50,11 +53,13 @@ state.
   `removeBy` is derived as that instant plus 48 hours and the flag is overdue
   after it.
 - `kill-switch`, `workspace-gate`, `safety-control` and `operational` entries are
-  retained controls. Verification never makes them removal-due.
+  retained controls. Neither verification nor legacy deadline metadata makes them
+  removal-due.
 
 Entries adopted without historic metadata have `legacy: true`; their unknown owner
-or creation date stays `null` and renders as unknown. A `legacyRemoveBy` date is
-due through the end of that UTC day. New entries need `legacy: false`, an owner,
+or creation date stays `null` and renders as unknown. For release flags only, a
+`legacyRemoveBy` date is due through the end of that UTC day. New entries need
+`legacy: false`, an owner,
 `createdAt`, a description and a complete app list. Record `verifiedOnProdAt`
 only from an actual production verification, never from defaults or CI results.
 

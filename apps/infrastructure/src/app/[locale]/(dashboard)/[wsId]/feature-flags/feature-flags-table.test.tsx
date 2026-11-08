@@ -88,6 +88,21 @@ describe('feature flags read model and table', () => {
     expect(cells.getByText('2026-11-10 04:00 UTC')).toBeInTheDocument();
   });
 
+  it('renders offset verification instants in UTC', () => {
+    renderGroups('2026-11-09T00:00:00Z', {
+      ...fixture,
+      flags: [{ ...base, verifiedOnProdAt: '2026-11-08T11:00:00+07:00' }],
+    });
+    const verified = within(row('verified_release')).getByText(
+      '2026-11-08 04:00 UTC'
+    );
+    expect(verified).toHaveAttribute('datetime', '2026-11-08T11:00:00+07:00');
+    expect(
+      within(row('verified_release')).getByText('2026-11-10 04:00 UTC')
+    ).toBeInTheDocument();
+    expect(screen.queryByText('2026-11-08 11:00 UTC')).not.toBeInTheDocument();
+  });
+
   it('marks overdue releases and never labels legacy gaps as verified', () => {
     renderGroups('2026-11-10T04:00:01Z');
     expect(

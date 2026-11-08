@@ -29,7 +29,8 @@ const LIFECYCLE_VARIANT: Record<
 const messageKey = (value: string) => value.replaceAll('-', '_');
 
 function formatInstant(value: string) {
-  return `${value.slice(0, 10)} ${value.slice(11, 16)} UTC`;
+  const utc = new Date(value).toISOString();
+  return `${utc.slice(0, 10)} ${utc.slice(11, 16)} UTC`;
 }
 
 function Missing({ legacy, t }: { legacy: boolean; t: FeatureFlagTranslator }) {

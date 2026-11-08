@@ -61,9 +61,12 @@ function legacyDeadline(date) {
 }
 
 export function getFlagLifecycle(flag, now) {
+  // Only release flags expire; retained controls ignore both deadline sources.
+  if (flag.kind !== 'release') {
+    return { removeBy: null, removeBySource: null, status: 'retained' };
+  }
   const nowMs = now instanceof Date ? now.getTime() : Date.parse(now);
-  const derived =
-    flag.kind === 'release' ? deriveRemoveBy(flag.verifiedOnProdAt) : null;
+  const derived = deriveRemoveBy(flag.verifiedOnProdAt);
   const legacy = legacyDeadline(flag.legacyRemoveBy ?? null);
   const removeBy = derived ?? legacy;
   const removeBySource = derived ? 'verified' : legacy ? 'legacy' : null;
@@ -72,7 +75,7 @@ export function getFlagLifecycle(flag, now) {
     return {
       removeBy: null,
       removeBySource: null,
-      status: flag.kind === 'release' ? 'awaiting-verification' : 'retained',
+      status: 'awaiting-verification',
     };
   }
 
