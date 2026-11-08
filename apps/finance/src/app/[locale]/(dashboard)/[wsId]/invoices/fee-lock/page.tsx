@@ -28,9 +28,9 @@ export default async function WorkspaceFeeLockPage({
 
   const { month } = await searchParams;
   // Export needs both: the list itself (view_invoices) and the bulk download.
-  const canExport = !['export_finance_data', 'view_invoices'].some(
-    (permission) => context.permissions.withoutPermission(permission)
-  );
+  const canExport =
+    !context.permissions.withoutPermission('export_finance_data') &&
+    !context.permissions.withoutPermission('view_invoices');
   return (
     <FeeLockPage
       key={context.wsId}
