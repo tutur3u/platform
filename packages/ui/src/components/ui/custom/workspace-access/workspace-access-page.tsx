@@ -14,6 +14,8 @@ import {
 } from '@tuturuuu/utils/permissions';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { SettingItemTab } from '../settings-item-tab';
+import { SettingsSection, SettingsSectionMessage } from '../settings-section';
 import {
   filterWorkspaceMembers,
   getMemberFilterOptions,
@@ -425,27 +427,19 @@ export function WorkspaceAccessPage({
       canManageRoles &&
       defaultAdminEnabled &&
       adapter.hardenDefaultAdmin ? (
-        <div className="flex flex-col gap-3 rounded-xl border border-dynamic-orange/25 bg-dynamic-orange/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            <TriangleAlert className="mt-0.5 size-4 shrink-0 text-dynamic-orange" />
-            <div>
-              <div className="font-medium text-sm">
-                {t('ws-roles.admin_enabled_title')}
-              </div>
-              <p className="mt-1 text-muted-foreground text-sm">
-                {t('ws-members.pos_operator_admin_migration_note')}
-              </p>
-            </div>
-          </div>
+        <SettingItemTab
+          description={t('ws-members.pos_operator_admin_migration_note')}
+          icon={<TriangleAlert className="size-4 text-dynamic-orange" />}
+          title={t('ws-roles.admin_enabled_title')}
+        >
           <Button
             size="sm"
-            className="shrink-0"
             disabled={hardenDefaultAdminMutation.isPending}
             onClick={() => hardenDefaultAdminMutation.mutate()}
           >
             {t('ws-roles.create')}: {t('ws-roles.admin')}
           </Button>
-        </div>
+        </SettingItemTab>
       ) : null}
 
       <Tabs
@@ -463,48 +457,50 @@ export function WorkspaceAccessPage({
           search={search}
         />
 
-        <TabsContent value="people" className="mt-4 space-y-3 sm:mt-6">
-          <WorkspaceAccessPeopleFilters
-            filterOptions={filterOptions}
-            filters={filters}
-            labels={labels}
-            onFiltersChange={setFilters}
-            onStatusChange={setStatus}
-            status={status}
-          />
+        <TabsContent value="people" className="mt-4 sm:mt-6">
+          <SettingsSection>
+            <WorkspaceAccessPeopleFilters
+              filterOptions={filterOptions}
+              filters={filters}
+              labels={labels}
+              onFiltersChange={setFilters}
+              onStatusChange={setStatus}
+              status={status}
+            />
 
-          <WorkspaceAccessMembers
-            canEditProfiles={Boolean(adapter.updateMemberProfile)}
-            canManageMembers={canManageMembers}
-            canManageRoles={canManageRoles}
-            canUpdateInvitationRoles={
-              canManageRoles && Boolean(adapter.updateInvitationRole)
-            }
-            defaultAdminEnabled={defaultAdminEnabled}
-            isLoading={membersQuery.isPending}
-            isMutating={
-              removeMemberMutation.isPending ||
-              roleMembershipMutation.isPending ||
-              invitationRoleMutation.isPending ||
-              updateMemberProfileMutation.isPending
-            }
-            labels={labels}
-            members={visibleMembers}
-            onAssignRole={(payload) =>
-              roleMembershipMutation.mutate({ ...payload, action: 'add' })
-            }
-            onEditMemberProfile={setProfileMember}
-            onRemoveMember={(payload) => removeMemberMutation.mutate(payload)}
-            onRemoveRole={(payload) =>
-              roleMembershipMutation.mutate({ ...payload, action: 'remove' })
-            }
-            onUpdateInvitationRole={(payload) =>
-              invitationRoleMutation.mutate(payload)
-            }
-            roles={inviteRolesQuery.data?.data ?? roles}
-            searchTerm={search}
-            status={status}
-          />
+            <WorkspaceAccessMembers
+              canEditProfiles={Boolean(adapter.updateMemberProfile)}
+              canManageMembers={canManageMembers}
+              canManageRoles={canManageRoles}
+              canUpdateInvitationRoles={
+                canManageRoles && Boolean(adapter.updateInvitationRole)
+              }
+              defaultAdminEnabled={defaultAdminEnabled}
+              isLoading={membersQuery.isPending}
+              isMutating={
+                removeMemberMutation.isPending ||
+                roleMembershipMutation.isPending ||
+                invitationRoleMutation.isPending ||
+                updateMemberProfileMutation.isPending
+              }
+              labels={labels}
+              members={visibleMembers}
+              onAssignRole={(payload) =>
+                roleMembershipMutation.mutate({ ...payload, action: 'add' })
+              }
+              onEditMemberProfile={setProfileMember}
+              onRemoveMember={(payload) => removeMemberMutation.mutate(payload)}
+              onRemoveRole={(payload) =>
+                roleMembershipMutation.mutate({ ...payload, action: 'remove' })
+              }
+              onUpdateInvitationRole={(payload) =>
+                invitationRoleMutation.mutate(payload)
+              }
+              roles={inviteRolesQuery.data?.data ?? roles}
+              searchTerm={search}
+              status={status}
+            />
+          </SettingsSection>
         </TabsContent>
 
         <TabsContent value="roles" className="mt-4 sm:mt-6">
@@ -632,10 +628,14 @@ export function WorkspaceAccessPage({
       ) : null}
 
       {contextQuery.isError ? (
-        <div className="flex items-center gap-2 rounded-xl border border-dynamic-red/20 bg-dynamic-red/5 p-4 text-dynamic-red text-sm">
-          <TriangleAlert className="h-4 w-4 shrink-0" />
-          {t('common.error')}
-        </div>
+        <SettingsSection>
+          <SettingsSectionMessage
+            icon={<TriangleAlert className="h-4 w-4 shrink-0" />}
+            tone="error"
+          >
+            {t('common.error')}
+          </SettingsSectionMessage>
+        </SettingsSection>
       ) : null}
     </div>
   );
