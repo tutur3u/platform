@@ -114,6 +114,8 @@ for roles, independent review, publication, receipts and retirement.
 
 ## 3. Mandatory Actions
 
+- Before writing web UI source, read the [UI design skill](plugins/tuturuuu/skills/tuturuuu-ui-design/SKILL.md) and follow its linked component map and review checklist.
+
 - Run `git status --short` before editing. If dirty or untracked paths exist,
   treat them as user-owned or other-agent-owned until proven otherwise.
 - Treat security as a default; Tuturuuu is open source. Follow the
