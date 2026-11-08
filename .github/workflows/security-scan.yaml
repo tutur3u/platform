@@ -27,15 +27,32 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
+      - name: Restore pinned Gitleaks archive
+        id: gitleaks-archive
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/gitleaks-archive/gitleaks.tar.gz
+          key: gitleaks-archive-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.GITLEAKS_VERSION }}-${{ env.GITLEAKS_SHA256 }}
+
       - name: Install checksum-verified gitleaks
         run: |
           set -euo pipefail
-          archive="$RUNNER_TEMP/gitleaks.tar.gz"
-          curl --fail --silent --show-error --location --retry 2 --max-time 120 \
-            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-            --output "$archive"
+          archive="$RUNNER_TEMP/gitleaks-archive/gitleaks.tar.gz"
+          if [ ! -f "$archive" ]; then
+            mkdir -p "$(dirname "$archive")"
+            curl --fail --silent --show-error --location --retry 2 --max-time 120 \
+              "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+              --output "$archive"
+          fi
           echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum --check --strict
           tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
+
+      - name: Save verified Gitleaks archive
+        if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.gitleaks-archive.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/gitleaks-archive/gitleaks.tar.gz
+          key: gitleaks-archive-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.GITLEAKS_VERSION }}-${{ env.GITLEAKS_SHA256 }}
       - name: Scan last 36 hours and retain only redacted locations
         run: |
           set -euo pipefail
