@@ -50,7 +50,8 @@ const PROTECTED_TRIGGERS = {
   'external-internal-packages.yaml': '4d532cf88497bbd2',
   'external-project-storage-analytics-contract.yaml': '02e3e1d0d939ac56',
   'fee-lock-database-contract.yaml': '0a3cc2c97958f5cd',
-  'finance-cloudflare.yaml': 'c9f3cfad0a28a7d8',
+  // Finance also watches its owning input-cache action; other trigger fields stay fixed.
+  'finance-cloudflare.yaml': 'fabf7d45e110e58d',
   'forms-cloudflare.yaml': '0e554fe52a0af9c8',
   'i18n-check.yaml': '78c7f5ff99020ac9',
   'inventory-cloudflare.yaml': '56aef454e313add1',
