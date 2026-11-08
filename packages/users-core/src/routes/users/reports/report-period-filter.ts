@@ -79,3 +79,40 @@ export function buildReportMonthFilter({
   const to = startOfDay(`${shiftReportMonth(month, 1)}-${firstDay}`, timezone);
   return `and(period_start.gte.${start},period_start.lte.${end}),and(period_start.is.null,created_at.gte."${from}",created_at.lt."${to}")`;
 }
+
+/** Send months are always counted in Vietnam local time. */
+export const REPORT_SENT_MONTH_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+/**
+ * PostgREST `or` filter for one month (`YYYY-MM`) across every report stage.
+ * Reports in any stage except Sent keep the coverage month of
+ * `buildReportMonthFilter`. Sent reports belong to the month they were
+ * actually sent: `delivered_at` from the 1st at 00:00 to the 1st of the next
+ * month in `REPORT_SENT_MONTH_TIMEZONE`, whatever the workspace or viewer
+ * timezone. Sent reports without `delivered_at` are also returned so the
+ * caller can count them with `isUndatedSentReport` and leave them out of the
+ * month; they appear only under All months.
+ */
+export function buildReportStageMonthFilter({
+  month,
+  timezone,
+}: {
+  month: string;
+  timezone: string;
+}) {
+  const from = startOfDay(`${month}-01`, REPORT_SENT_MONTH_TIMEZONE);
+  const to = startOfDay(
+    `${shiftReportMonth(month, 1)}-01`,
+    REPORT_SENT_MONTH_TIMEZONE
+  );
+  const coverage = buildReportMonthFilter({ month, timezone });
+  return `and(report_stage.neq.sent,or(${coverage})),and(report_stage.eq.sent,delivered_at.gte."${from}",delivered_at.lt."${to}"),and(report_stage.eq.sent,delivered_at.is.null)`;
+}
+
+/** A Sent report with no recorded send date, so it has no send month. */
+export function isUndatedSentReport(row: {
+  report_stage?: string | null;
+  delivered_at?: string | null;
+}) {
+  return row.report_stage === 'sent' && !row.delivered_at;
+}

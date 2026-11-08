@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../lib/user-groups/groups-utils', () => ({
   getUserGroupMembershipsForActor: async () => ['group-1'],
@@ -236,4 +236,51 @@ it('uses the viewer timezone for the range when the workspace has none', async (
   expect(query?.searchParams.getAll('or').join('')).toContain(
     'created_at.gte."2026-09-30T17:00:00.000Z",created_at.lt."2026-11-03T17:00:00.000Z"'
   );
+});
+
+describe('selected month', () => {
+  const get = (query: string) =>
+    GET(new Request(`https://example.test/reports?${query}`), {
+      params: Promise.resolve({ wsId: 'workspace' }),
+    });
+
+  it('reads the list and the all-stage summary with the same month filter', async () => {
+    const body = await (await get('stage=pending&month=2026-10')).json();
+    const queries = reportQueries();
+    expect(queries).toHaveLength(2);
+    const [list, summary] = queries.map((url) => url.searchParams.getAll('or'));
+    expect(list).toEqual(summary);
+    expect(list?.[0]).toContain('and(report_stage.eq.sent,delivered_at.gte.');
+    // Every Sent report in this fixture has a send date.
+    expect(body.undatedSentCount).toBe(0);
+    expect(body.summaryPartial).toBe(false);
+  });
+
+  it.each(['cap', 'error'] as const)(
+    'reports the undated Sent count as unknown when the summary read fails (%s)',
+    async (failure) => {
+      state.summaryFailure = failure;
+      const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const body = await (await get('stage=pending&month=2026-10')).json();
+      expect(body.summaryPartial).toBe(true);
+      expect(body.undatedSentCount).toBeNull();
+      errors.mockRestore();
+    }
+  );
+
+  it('counts undated Sent reports from the list itself on the Sent stage', async () => {
+    state.summaryFailure = 'error';
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const body = await (await get('stage=sent&month=2026-10')).json();
+    // The Sent list is a complete read even when the other stages are not.
+    expect(body.summaryPartial).toBe(true);
+    expect(body.undatedSentCount).toBe(0);
+    expect(body.total).toBe(1);
+    errors.mockRestore();
+  });
+
+  it('has no undated Sent count without a month', async () => {
+    const body = await (await get('stage=pending')).json();
+    expect(body.undatedSentCount).toBeNull();
+  });
 });

@@ -28,8 +28,9 @@ import {
   summarizeReportList,
 } from './report-list-query';
 import {
-  buildReportMonthFilter,
   buildReportPeriodFilter,
+  buildReportStageMonthFilter,
+  isUndatedSentReport,
   resolveReportPeriodTimezone,
 } from './report-period-filter';
 import {
@@ -71,7 +72,8 @@ const ListReportsSchema = z.object({
     .optional(),
   periodStart: z.iso.date().optional(),
   periodEnd: z.iso.date().optional(),
-  // The month reports cover: saved period, else estimated from created_at.
+  // Sent reports: the month they were sent. Other stages: the month they
+  // cover (saved period, else estimated from created_at).
   month: z.string().refine(isReportMonth).optional(),
   cadence: z
     .enum(['all', 'weekly', 'monthly', 'quarterly', 'yearly'])
@@ -163,6 +165,7 @@ export async function GET(request: Request, { params }: Params) {
         pageSize: parsed.data.pageSize,
         summaryPartial: false,
         total: 0,
+        undatedSentCount: parsed.data.month ? 0 : null,
         workspace: { id: wsId, timezone: null },
       });
     }
@@ -187,7 +190,7 @@ export async function GET(request: Request, { params }: Params) {
     // Awaited below; never an unhandled rejection if the list fails first.
     timezonePromise.catch(() => {});
     const periodFilter = parsed.data.month
-      ? buildReportMonthFilter({
+      ? buildReportStageMonthFilter({
           month: parsed.data.month,
           timezone: await timezonePromise,
         })
@@ -365,13 +368,30 @@ export async function GET(request: Request, { params }: Params) {
             (row) => periodicDeliveryCategory(row) === parsed.data.category
           )
         : rows;
-    const filteredRows = inCategory(allRows);
+    // A month leaves out Sent reports with no send date. They are counted
+    // from the same complete read so the month can say how many it omits;
+    // null when that read was unavailable or no month is selected.
+    const inMonth = <Row extends Parameters<typeof isUndatedSentReport>[0]>(
+      rows: Row[]
+    ) =>
+      parsed.data.month
+        ? rows.filter((row) => !isUndatedSentReport(row))
+        : rows;
+    const sentScopeRows: SummaryRow[] | null =
+      !parsed.data.stage || parsed.data.stage === 'sent'
+        ? allRows
+        : stageSummaryRows;
+    const undatedSentCount =
+      parsed.data.month && sentScopeRows
+        ? inCategory(sentScopeRows).filter(isUndatedSentReport).length
+        : null;
+    const filteredRows = inCategory(inMonth(allRows));
     // Category counts follow the listed rows; stage counts cover every stage
     // unless the summary read was unavailable (`summaryPartial`).
     const summaryPartial = Boolean(parsed.data.stage) && !stageSummaryRows;
     const { categoryCounts } = summarizeReportList(filteredRows);
     const { counts } = summarizeReportList(
-      stageSummaryRows ? inCategory(stageSummaryRows) : filteredRows
+      stageSummaryRows ? inCategory(inMonth(stageSummaryRows)) : filteredRows
     );
     const listResult = {
       data: filteredRows.slice(from, from + parsed.data.pageSize),
@@ -419,6 +439,7 @@ export async function GET(request: Request, { params }: Params) {
       pageSize: parsed.data.pageSize,
       summaryPartial,
       total: listResult.count,
+      undatedSentCount,
       workspace: workspaceResult.data,
     });
   } catch (error) {
