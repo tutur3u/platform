@@ -66,7 +66,7 @@ export function SidebarNavigationLayoutSection({
   );
 
   const content = (
-    <div className="space-y-1.5">
+    <div className="divide-y">
       {items.map((item, index) => {
         const previousSectionLabel = items[index - 1]?.sectionLabel;
         const shouldShowSectionLabel =
@@ -77,7 +77,7 @@ export function SidebarNavigationLayoutSection({
         return (
           <Fragment key={item.id}>
             {shouldShowSectionLabel && (
-              <div className="px-1 pt-2 text-[11px] text-muted-foreground uppercase tracking-wider">
+              <div className="pt-3 pb-1.5 text-muted-foreground text-xs uppercase tracking-wider">
                 {item.sectionLabel}
               </div>
             )}
@@ -108,9 +108,7 @@ export function SidebarNavigationLayoutSection({
         );
       })}
       {items.length === 0 && (
-        <p className="rounded-md border border-dashed p-3 text-muted-foreground text-sm">
-          {emptyLabel}
-        </p>
+        <p className="py-2 text-muted-foreground text-sm">{emptyLabel}</p>
       )}
     </div>
   );

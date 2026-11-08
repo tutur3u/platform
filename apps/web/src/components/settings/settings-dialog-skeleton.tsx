@@ -1,5 +1,7 @@
 'use client';
 
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import {
   DialogContent,
   DialogDescription,
@@ -13,7 +15,7 @@ export function SettingsDialogFullscreenSkeleton() {
 
   return (
     <DialogContent
-      className="flex-col"
+      className="settings-surface flex-col"
       data-testid="settings-dialog-skeleton"
       presentation="fullscreen"
       showCloseButton={false}
@@ -23,12 +25,12 @@ export function SettingsDialogFullscreenSkeleton() {
         {t('common.settings')}
       </DialogDescription>
       <div className="flex h-full min-h-0 items-start">
-        <aside className="hidden h-full w-72 flex-col border-r bg-muted/30 md:flex">
-          <div className="space-y-3 p-4 pb-0">
+        <aside className="hidden h-full w-64 flex-col border-r bg-muted/30 md:flex">
+          <div className="space-y-2 p-3 pb-0">
             <Skeleton className="h-9 w-32" />
-            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-9 w-full" />
           </div>
-          <div className="space-y-6 overflow-hidden p-4">
+          <div className="space-y-4 overflow-hidden p-3">
             {Array.from({ length: 4 }).map((_, groupIndex) => (
               <div className="space-y-2" key={groupIndex}>
                 <Skeleton className="h-4 w-24" />
@@ -47,27 +49,23 @@ export function SettingsDialogFullscreenSkeleton() {
               <Skeleton className="h-4 w-24" />
             </div>
           </div>
-          <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8 md:px-8">
-            <div className="space-y-3">
+          <div className="mx-auto w-full max-w-3xl space-y-8 px-4 py-6 md:px-0 md:py-10">
+            <div className="space-y-2">
               <Skeleton className="h-8 w-40" />
               <Skeleton className="h-5 w-80 max-w-full" />
             </div>
-            <Skeleton className="h-px w-full" />
-            <div className="space-y-4">
-              <Skeleton className="h-14 w-full rounded-lg" />
-              <Skeleton className="h-12 w-full rounded-lg" />
-              <div className="rounded-lg border p-5">
-                <div className="space-y-3">
-                  <Skeleton className="h-6 w-36" />
-                  <Skeleton className="h-4 w-72 max-w-full" />
-                </div>
-                <div className="mt-8 grid gap-4 md:grid-cols-2">
-                  <Skeleton className="h-11 w-full" />
-                  <Skeleton className="h-11 w-full" />
-                  <Skeleton className="h-11 w-full md:col-span-2" />
-                </div>
-              </div>
-            </div>
+            <SettingsSection>
+              {Array.from({ length: 4 }).map((_, rowIndex) => (
+                <SettingItemTab
+                  description={<Skeleton className="h-4 w-64 max-w-full" />}
+                  key={rowIndex}
+                  layout="inline"
+                  title={<Skeleton className="h-4 w-32" />}
+                >
+                  <Skeleton className="h-9 w-40" />
+                </SettingItemTab>
+              ))}
+            </SettingsSection>
           </div>
         </main>
       </div>
