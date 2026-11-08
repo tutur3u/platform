@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.56.0](https://github.com/tutur3u/platform/compare/internal-api-v0.55.0...internal-api-v0.56.0) (2026-11-08)
+
+
+### Features
+
+* **auth:** bind cross-app login handoffs with PKCE and report session assurance ([#7394](https://github.com/tutur3u/platform/issues/7394)) ([1202eb8](https://github.com/tutur3u/platform/commit/1202eb86e09b46a8c7313d6c81c24365eef92a50))
+* **contacts:** add tutoring teacher công report ([#7297](https://github.com/tutur3u/platform/issues/7297)) ([770665b](https://github.com/tutur3u/platform/commit/770665b7303ead6264845c9e7679f09cb09c169e))
+* **meet:** fail-closed per-user Meet AI limiter ([#7417](https://github.com/tutur3u/platform/issues/7417)) ([fca5cb0](https://github.com/tutur3u/platform/commit/fca5cb0b31a5966bab2d8fe16b9d0c8f2f7986fe))
+* **meet:** gate Meet AI behind a default-deny workspace allowlist ([#7354](https://github.com/tutur3u/platform/issues/7354)) ([c1ec761](https://github.com/tutur3u/platform/commit/c1ec761dedcdd01041e4b6b82f53aa62f001655f))
+* **reports:** choose monthly reports by the month they cover ([#7551](https://github.com/tutur3u/platform/issues/7551)) ([f54ead5](https://github.com/tutur3u/platform/commit/f54ead5eba74f181b5e3721c0c26a49560e8d5ae))
+* **reports:** resend stuck or failed report emails ([#7532](https://github.com/tutur3u/platform/issues/7532)) ([337e73e](https://github.com/tutur3u/platform/commit/337e73ebd9bb19e802598d9c0da7882804581551))
+* **rewise:** make rewise.tuturuuu.com the only canonical URL ([#7757](https://github.com/tutur3u/platform/issues/7757)) ([320ce8f](https://github.com/tutur3u/platform/commit/320ce8fda7a73b510332d630916bf90ef8398d8a))
+* **tasks:** add per-board sprint data model ([0f20cc9](https://github.com/tutur3u/platform/commit/0f20cc99d46ffa3ae385cdab020f06bcf466f325))
+* **tasks:** add per-board sprint data model ([#7043](https://github.com/tutur3u/platform/issues/7043)) ([9b08aef](https://github.com/tutur3u/platform/commit/9b08aef8da70cb686870790925d68368afef4f07))
+* **tasks:** match the cycle planning API contract ([d18a025](https://github.com/tutur3u/platform/commit/d18a0250f2019bc282aac34ed642a5cfe100ee83))
+* **tasks:** number tasks per project with editable keys ([39e5342](https://github.com/tutur3u/platform/commit/39e534251f9d4b643463043c6af4e77b480bb8bf))
+* **tasks:** one cycle per task, backlog helpers and Cycles nav ([4bf9477](https://github.com/tutur3u/platform/commit/4bf9477cbfae8f7129b661d16b86bf5f34fceabb))
+* **tasks:** plan up to five sprints ahead and park tasks outside sprints ([#7224](https://github.com/tutur3u/platform/issues/7224)) ([d114c02](https://github.com/tutur3u/platform/commit/d114c02b0f4ea11bb41ea68c057d9d50bf1abf1e))
+* **tasks:** show the board's sprint in the header and Board view ([#7046](https://github.com/tutur3u/platform/issues/7046)) ([f3f31bd](https://github.com/tutur3u/platform/commit/f3f31bde4003f4db9b70f154619eb665a2df5597))
+* **tasks:** simplify sprint planning, summary and board filtering ([#7396](https://github.com/tutur3u/platform/issues/7396)) ([9d45884](https://github.com/tutur3u/platform/commit/9d458840f0064f6c37e43da5d4fca3bccd4fa88c))
+* **tutoring:** count make-up absences from a chosen date ([#7552](https://github.com/tutur3u/platform/issues/7552)) ([66903a0](https://github.com/tutur3u/platform/commit/66903a0ef8edd1fcb7cfdd1f3251ce9aacfab38d))
+
+
+### Bug Fixes
+
+* **ai:** require workspace access for meeting transcription ([#7357](https://github.com/tutur3u/platform/issues/7357)) ([c2763ae](https://github.com/tutur3u/platform/commit/c2763aeb66c094982c3bf8fa83d5b2da6d5cc3a5))
+* **db:** rename the assign_task_cycle rollback to the re-timed migration ([e495e55](https://github.com/tutur3u/platform/commit/e495e550df36907b7ce9863b37383d7214e3344f))
+* **meet:** bill Meet AI to the meeting workspace's AI credits ([#7408](https://github.com/tutur3u/platform/issues/7408)) ([0f8b6dc](https://github.com/tutur3u/platform/commit/0f8b6dcac84f7b29d4c6a15e574330d7b3ad4349))
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+* **reports:** hold approved-but-unsent reports for an explicit admin choice ([#7531](https://github.com/tutur3u/platform/issues/7531)) ([14795d9](https://github.com/tutur3u/platform/commit/14795d9eab85d17bc08dad4e12c3bf6684d2175a))
+* **reports:** monthly report summary counts on first load ([#7527](https://github.com/tutur3u/platform/issues/7527)) ([72d124e](https://github.com/tutur3u/platform/commit/72d124ebf98fc35d91a902c8be4787216c0803ae))
+* **reports:** monthly report summary counts on first load ([#7527](https://github.com/tutur3u/platform/issues/7527)) ([ff1fb2d](https://github.com/tutur3u/platform/commit/ff1fb2dc5c8aa626ebf76812781e8a5af9dce8c3))
+* **security:** reject the released rewise.me and rewise.school domains ([#7756](https://github.com/tutur3u/platform/issues/7756)) ([4397841](https://github.com/tutur3u/platform/commit/43978414c1387d3c748688fd39b36b427fda37da))
+* **security:** stop trusting the expired rewise.me origin ([#7413](https://github.com/tutur3u/platform/issues/7413)) ([c8f3530](https://github.com/tutur3u/platform/commit/c8f3530fee7bdaa3a86fc23caaafa23112955ee0))
+* **storage:** own upload budget for workspace-managed user avatars ([#7289](https://github.com/tutur3u/platform/issues/7289)) ([25f6903](https://github.com/tutur3u/platform/commit/25f69034808c5aaf26493b9c27cc2f9fe3f75087))
+* **tasks:** keep board cycles off until enabled ([#7553](https://github.com/tutur3u/platform/issues/7553)) ([b1fa689](https://github.com/tutur3u/platform/commit/b1fa689c1289261bc472c810ed733e8c66506566))
+* **tasks:** satisfy changed-file gates for cycle planning ([204930c](https://github.com/tutur3u/platform/commit/204930ced56a62fcef7d9ad974bee5a11054c81d))
+* **tasks:** show new sprint tasks at once and count unloaded progress ([978cdfd](https://github.com/tutur3u/platform/commit/978cdfdb6d7332b18fa3e874d946276285cb521d))
+* **tutoring:** align Rust queue exclusions and current membership ([#7508](https://github.com/tutur3u/platform/issues/7508)) ([5b8b9e4](https://github.com/tutur3u/platform/commit/5b8b9e49917783c2fe1547e19392009c20be9208))
+* **tutoring:** apply class exclusions on every tutoring screen ([2811fcc](https://github.com/tutur3u/platform/commit/2811fccebfa6db61d2950929b834a43f083a6715))
+* **tutoring:** let one teacher tutor many learners in a shared slot ([#7255](https://github.com/tutur3u/platform/issues/7255)) ([daf6835](https://github.com/tutur3u/platform/commit/daf6835daade9216a16efc177a4e8dab6ab0919e))
+* **tutoring:** list learners under current classes and needs-tutoring groups ([#7257](https://github.com/tutur3u/platform/issues/7257)) ([07c85f4](https://github.com/tutur3u/platform/commit/07c85f41c16c9ac86ea3afa5710c93bf934454b0))
+
 ## [0.55.0](https://github.com/tutur3u/platform/compare/internal-api-v0.54.0...internal-api-v0.55.0) (2026-10-24)
 
 

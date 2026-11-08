@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.1](https://github.com/tutur3u/platform/compare/education-core-v0.5.0...education-core-v0.5.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* **tulearn:** interim, parents see no periodic reports (fail-closed) ([#7539](https://github.com/tutur3u/platform/issues/7539)) ([b3b1e48](https://github.com/tutur3u/platform/commit/b3b1e483cc6922ee0fd8480ab43847833c93316b))
+* **tulearn:** interim, parents see no periodic reports (fail-closed) ([#7539](https://github.com/tutur3u/platform/issues/7539)) ([401e689](https://github.com/tutur3u/platform/commit/401e689580cb8a3b0c4fd4bbdd438beb702dd722))
+* **tulearn:** parents see only approved, sent periodic reports ([#7547](https://github.com/tutur3u/platform/issues/7547)) ([487b501](https://github.com/tutur3u/platform/commit/487b5019de6b13be2cf05ead19461062355332fe))
+* **tulearn:** parents see only approved, sent periodic reports ([#7547](https://github.com/tutur3u/platform/issues/7547)) ([8cde8c0](https://github.com/tutur3u/platform/commit/8cde8c0b259c57052beb12432f8480f938385126))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/education-core-v0.4.2...education-core-v0.5.0) (2026-10-04)
 
 

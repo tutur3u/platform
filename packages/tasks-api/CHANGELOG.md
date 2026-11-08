@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/tasks-api-v0.5.2...tasks-api-v0.6.0) (2026-11-08)
+
+
+### Features
+
+* **db:** refuse board ticket prefixes that equal a project key ([a9910e1](https://github.com/tutur3u/platform/commit/a9910e1b8c619af3eb8f204d1802cb378dd15dc9))
+* **tasks:** number tasks per project with editable keys ([39e5342](https://github.com/tutur3u/platform/commit/39e534251f9d4b643463043c6af4e77b480bb8bf))
+
+
+### Bug Fixes
+
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+
 ## [0.5.2](https://github.com/tutur3u/platform/compare/tasks-api-v0.5.1...tasks-api-v0.5.2) (2026-09-20)
 
 

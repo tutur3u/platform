@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/realtime-v0.10.2...realtime-v0.11.0) (2026-11-08)
+
+
+### Features
+
+* **meet:** add transcription state and consent protocol ([#7266](https://github.com/tutur3u/platform/issues/7266)) ([2d601a1](https://github.com/tutur3u/platform/commit/2d601a1620cc8d39d425abb0617774c6eb2184bf))
+* **meet:** default-allow Meet AI with a kill switch ([#7410](https://github.com/tutur3u/platform/issues/7410)) ([a96f160](https://github.com/tutur3u/platform/commit/a96f1609656bed08678af0dd1fb828711af4278a))
+* **meet:** gate Meet AI behind a default-deny workspace allowlist ([#7354](https://github.com/tutur3u/platform/issues/7354)) ([c1ec761](https://github.com/tutur3u/platform/commit/c1ec761dedcdd01041e4b6b82f53aa62f001655f))
+* **meet:** lobby presence and guest display names ([#7415](https://github.com/tutur3u/platform/issues/7415)) ([54661e1](https://github.com/tutur3u/platform/commit/54661e18400be851b3c4d30dbcf0db3e90721d34))
+* **realtime:** let lobby guests set their display name ([5e64a58](https://github.com/tutur3u/platform/commit/5e64a58284c6f8ace6b03f11377af45391b4b4bd))
+
+
+### Bug Fixes
+
+* **packages:** make the published [@tuturuuu](https://github.com/tuturuuu) chain installable and guard it ([#7389](https://github.com/tutur3u/platform/issues/7389)) ([b1378ab](https://github.com/tutur3u/platform/commit/b1378abcaa31c02b5861cc16e6aa6bb2f8789c3c))
+* **realtime:** collapse separator runs in lobby display names ([3bba7ee](https://github.com/tutur3u/platform/commit/3bba7ee0ae2bc202de80569a83ef1f4c9c34c7a7))
+* **realtime:** mark account-backed lobby participants as guests ([d125ff0](https://github.com/tutur3u/platform/commit/d125ff0b451fe1ab7307e53153a88f228ff04e30))
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+
 ## [0.10.2](https://github.com/tutur3u/platform/compare/realtime-v0.10.1...realtime-v0.10.2) (2026-10-17)
 
 
