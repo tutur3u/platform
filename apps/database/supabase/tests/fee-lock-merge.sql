@@ -1,4 +1,4 @@
--- Workspace-user merge keeps fee locks (20261104130400): non-colliding months
+-- Workspace-user merge keeps fee locks (20261109050400): non-colliding months
 -- move to the target, a shared month refuses the merge with
 -- FEE_LOCK_MERGE_CONFLICT and leaves everything in place. Covers the single
 -- call merge and phase 5 of the phased merge. Synthetic fixtures only; ids are
