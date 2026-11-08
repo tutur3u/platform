@@ -1,12 +1,12 @@
 name: CI summary poster
 
 # Posts one "CI summary" check run on a pull request head. The workflow token
-# is contents: read only. A dedicated GitHub App installation token, minted
-# from CI_SUMMARY_APP_ID and CI_SUMMARY_APP_PRIVATE_KEY, performs the post.
-# Those secrets are absent until the repository owner creates that app and
-# installs it here. The poster job then skips with an "App not configured"
-# notice and posts nothing. It does not use another app's credentials.
-# A partial or malformed configuration still fails closed.
+# is contents: read only. The tuturuuu-ci-admission App posts the check.
+# The workflow reads vars.CI_ADMISSION_APP_ID and
+# secrets.CI_ADMISSION_APP_PRIVATE_KEY. When both are absent the poster job
+# skips with an "App not configured" notice and posts nothing. A partial or
+# malformed configuration still fails closed. The poster script refuses an
+# installation token that lacks Checks write permission.
 #
 # pull_request_target and schedule both run this file from the default branch.
 # The job checks out that branch and does not check out or execute pull request
@@ -45,11 +45,11 @@ jobs:
       - name: Detect the CI summary app
         id: detect
         env:
-          CI_SUMMARY_APP_ID: ${{ secrets.CI_SUMMARY_APP_ID }}
-          CI_SUMMARY_APP_PRIVATE_KEY: ${{ secrets.CI_SUMMARY_APP_PRIVATE_KEY }}
+          CI_SUMMARY_APP_ID: ${{ vars.CI_ADMISSION_APP_ID }}
+          CI_SUMMARY_APP_PRIVATE_KEY: ${{ secrets.CI_ADMISSION_APP_PRIVATE_KEY }}
         run: |
           if [ -z "${CI_SUMMARY_APP_ID}" ] && [ -z "${CI_SUMMARY_APP_PRIVATE_KEY}" ]; then
-            echo "App not configured. The CI summary poster is skipped until CI_SUMMARY_APP_ID and CI_SUMMARY_APP_PRIVATE_KEY exist."
+            echo "App not configured. The CI summary poster is skipped until vars.CI_ADMISSION_APP_ID and secrets.CI_ADMISSION_APP_PRIVATE_KEY exist."
             echo "configured=false" >> "$GITHUB_OUTPUT"
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
@@ -85,8 +85,8 @@ jobs:
 
       - name: Post the CI summary
         env:
-          CI_SUMMARY_APP_ID: ${{ secrets.CI_SUMMARY_APP_ID }}
-          CI_SUMMARY_APP_PRIVATE_KEY: ${{ secrets.CI_SUMMARY_APP_PRIVATE_KEY }}
+          CI_SUMMARY_APP_ID: ${{ vars.CI_ADMISSION_APP_ID }}
+          CI_SUMMARY_APP_PRIVATE_KEY: ${{ secrets.CI_ADMISSION_APP_PRIVATE_KEY }}
           EVENT_NAME: ${{ github.event_name }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}

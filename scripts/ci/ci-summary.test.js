@@ -566,10 +566,26 @@ test('the poster workflow is read-only and is not a workflow_run consumer', () =
   );
   assert.deepEqual(workflow.jobs.summary.permissions, { contents: 'read' });
   assert.equal(
+    workflow.jobs.configuration.steps[0].env.CI_SUMMARY_APP_ID,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    '${{ vars.CI_ADMISSION_APP_ID }}'
+  );
+  assert.equal(
+    workflow.jobs.configuration.steps[0].env.CI_SUMMARY_APP_PRIVATE_KEY,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    '${{ secrets.CI_ADMISSION_APP_PRIVATE_KEY }}'
+  );
+  assert.equal(
     workflow.jobs.summary.steps.at(-1).env.CI_SUMMARY_APP_ID,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
-    '${{ secrets.CI_SUMMARY_APP_ID }}'
+    '${{ vars.CI_ADMISSION_APP_ID }}'
   );
+  assert.equal(
+    workflow.jobs.summary.steps.at(-1).env.CI_SUMMARY_APP_PRIVATE_KEY,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    '${{ secrets.CI_ADMISSION_APP_PRIVATE_KEY }}'
+  );
+  assert.doesNotMatch(posterSource, /secrets\.CI_SUMMARY_APP_|vars\.CI_SUMMARY_APP_/);
   assert.match(posterSource, /unset GITHUB_TOKEN GH_TOKEN/);
   assert.doesNotMatch(
     posterSource,
