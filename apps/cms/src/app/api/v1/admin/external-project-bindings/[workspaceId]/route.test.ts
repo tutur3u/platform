@@ -5,11 +5,15 @@ const mocks = vi.hoisted(() => ({
     requireCmsRootExternalProjectsAdmin: vi.fn(),
     resolveWorkspaceExternalProjectBinding: vi.fn(),
   },
+  purge: vi.fn(),
   store: {
     updateWorkspaceExternalProjectBinding: vi.fn(),
   },
 }));
 
+vi.mock('@tuturuuu/utils/cms-renderer-purge', () => ({
+  purgeWorkspaceRenderers: mocks.purge,
+}));
 vi.mock('@/lib/external-projects/admin-access', () => ({
   requireCmsRootExternalProjectsAdmin:
     mocks.access.requireCmsRootExternalProjectsAdmin,
@@ -96,4 +100,27 @@ describe('CMS admin site project connection route', () => {
       workspaceId: 'ws-1',
     });
   });
+});
+
+it('purges the old site when disabling a binding and returns 500 on purge failure', async () => {
+  mocks.access.requireCmsRootExternalProjectsAdmin.mockResolvedValue({
+    ok: true,
+    admin: {},
+    user: { id: 'actor' },
+  });
+  mocks.store.updateWorkspaceExternalProjectBinding.mockResolvedValue({
+    enabled: false,
+  });
+  const request = () =>
+    new Request('https://cms.example', {
+      method: 'PATCH',
+      body: JSON.stringify({ canonicalId: null }),
+    });
+  const context = { params: Promise.resolve({ workspaceId: 'workspace' }) };
+  expect((await PATCH(request(), context)).status).toBe(200);
+  expect(mocks.purge).toHaveBeenCalledWith('workspace');
+  mocks.purge.mockRejectedValueOnce(
+    new Error('Content change committed but renderer cache invalidation failed')
+  );
+  expect((await PATCH(request(), context)).status).toBe(500);
 });

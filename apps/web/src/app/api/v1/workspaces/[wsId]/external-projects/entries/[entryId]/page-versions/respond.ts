@@ -36,14 +36,14 @@ export async function handlePageVersionRequest(
   if (!parsed.success)
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
-  const access = await requireWorkspaceExternalProjectAccess({
-    mode,
-    request,
-    wsId: parsed.data.wsId,
-  });
-  if (!access.ok) return access.response;
-
   try {
+    const access = await requireWorkspaceExternalProjectAccess({
+      mode,
+      request,
+      wsId: parsed.data.wsId,
+    });
+    if (!access.ok) return access.response;
+
     const body = await run(access, {
       entryId: parsed.data.entryId,
       versionId: parsed.data.versionId,

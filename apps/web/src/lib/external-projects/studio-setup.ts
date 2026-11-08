@@ -11,6 +11,7 @@ import {
   getDefaultCanonicalExternalProjectId,
   resolveWorkspaceExternalProjectBinding,
 } from './binding-state';
+import { invalidateWorkspaceExternalProjectCache } from './cache';
 import {
   DEFAULT_EXTERNAL_PROJECT_COLLECTIONS,
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
@@ -195,6 +196,7 @@ async function bindWorkspaceExternalProject({
       { onConflict: 'ws_id' }
     );
   if (bindingError) throw new Error(bindingError.message);
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
 
   const { error: deleteError } = await admin
     .from('workspace_secrets')

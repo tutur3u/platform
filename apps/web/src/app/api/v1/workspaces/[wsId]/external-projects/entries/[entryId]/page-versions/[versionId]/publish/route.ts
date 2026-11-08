@@ -1,4 +1,4 @@
-import { publishPageVersion } from '@/lib/external-projects/page-versions';
+import { publishPageAndPurge } from '@/lib/external-projects/publish-page';
 import {
   handlePageVersionRequest,
   type PageVersionParams,
@@ -10,9 +10,10 @@ export async function POST(request: Request, context: PageVersionParams) {
     context,
     'publish',
     (access, scope) =>
-      publishPageVersion(access.admin, {
+      publishPageAndPurge(access.admin, {
         ...scope,
         actorId: access.user.id,
+        siteId: access.binding.canonical_id ?? '',
         versionId: scope.versionId ?? '',
       })
   );

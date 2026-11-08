@@ -170,6 +170,22 @@ workspace, checks assignment authority and seat limits, and stores roles through
 `create_workspace_email_invitation_with_roles`. Use the external-project member
 routes; ordinary workspace settings routes can reject valid CMS app sessions.
 
+### Configure renderer invalidation
+
+Set `CMS_RENDERER_SITES` on the publishing API to a hostname-keyed map with one
+verified renderer hostname per site: each value has `id` (the connected site
+ID), `workspaceId`, `defaultLocale`, and `purgeToken`. This trusted configuration matches the
+renderer-side `CMS_SITES` mapping. Inject the same `CMS_RENDERER_SITES[host].purgeToken` on the API
+and renderer at deployment time. Never pass it through PR workflows or clients.
+
+Publication returns the replaced version from the atomic publish, then sends
+one authenticated `POST /__cms/purge` for its public path, locale, and version.
+An absent old version needs no purge. The publish response includes
+`cacheInvalidation`: `purged`, `not-needed`, or `failed`. If invalidation fails,
+the publication remains committed; investigate the renderer rather than
+repeating the publish. Missing configuration for an existing page prevents
+publication before any write.
+
 ### Verify gates before enabling the first site
 
 Run these checks with disposable identities in an isolated test environment.
@@ -306,3 +322,38 @@ reference collections in that workspace. Global fields may omit a collection.
 These rules apply to the CMS satellite and Web's shared content store; regression
 coverage lives in the CMS access tests and Web's
 `store-reference-scope.test.ts`.
+
+### Renderer purge credentials
+
+Each trusted origin in `CMS_RENDERER_SITES` must carry its own `purgeToken`,
+a base64url secret generated from at least 32 random bytes. Tokens must be unique
+per site. There is no global token fallback. The renderer stores matching tokens
+in `CMS_PURGE_TOKENS`, keyed by the site id selected from the request host through
+`CMS_SITES`. It must validate the version id, limit requests per site, compare
+SHA-256 digests with `timingSafeEqual`, and evict only that site's cache.
+Invalid publisher configuration fails with HTTP 500 before publication.
+The publish RPC returns `replaced_page_version_id` under the entry lock; that
+returned pointer determines which immutable cache version to purge.
+
+For rotation, add the new token to the renderer's accepted tokens for the site,
+deploy the renderer, update that origin's publisher token and deploy the publisher,
+then remove the old renderer token. Never reuse tokens between sites. Renderer
+support for overlapping tokens must land before starting a rotation.
+
+Workspace mutations also send `{ "scope": "workspace" }` to each configured
+renderer origin for that workspace, even outside Vercel. The renderer must derive
+the site from the host and immediately evict that site's workspace delivery tag
+and rendered paths. This covers legacy unpublish, entry deletion, binding disable,
+and page publication through the shared cache invalidator. A rejected or offline
+renderer causes an error after the mutation commits, with only the site id logged.
+Do not retry the mutation as though it rolled back. With purge failure and the
+current delivery cache policy, stale content can persist for 24 hours plus up to
+12 hours stale-while-revalidate. This is an unresolved release hold for unpublish;
+renderer acceptance and an outage policy are required before enabling cached
+public delivery. A successful publisher request alone does not prove eviction.
+
+Legacy unpublish uses `unpublish_workspace_external_project_page`, which checks
+the actor, locks the entry, inserts the audit and clears the published pointer
+in the same transaction. A failed audit leaves the page published. Deploy this
+migration before enabling the updated route. CMS and Web API servers both need
+the trusted `CMS_RENDERER_SITES` configuration for their mutation paths.
