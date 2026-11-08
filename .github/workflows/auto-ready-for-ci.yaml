@@ -20,19 +20,34 @@ jobs:
     timeout-minutes: 2
     permissions: {}
     steps:
-      - name: Require event-producing label token
+      - name: Require CI admission App configuration
         env:
-          CI_ADMISSION_TOKEN: ${{ secrets.CI_ADMISSION_TOKEN }}
+          CI_ADMISSION_APP_ID: ${{ vars.CI_ADMISSION_APP_ID }}
+          CI_ADMISSION_APP_PRIVATE_KEY: ${{ secrets.CI_ADMISSION_APP_PRIVATE_KEY }}
         shell: bash
         run: |
-          if [ -z "$CI_ADMISSION_TOKEN" ]; then
-            echo '::error::CI_ADMISSION_TOKEN must be a repository-scoped App token or fine-grained token with issues:write and pull_requests:read. GITHUB_TOKEN label events do not start CI.'
+          if [ -z "$CI_ADMISSION_APP_ID" ]; then
+            echo '::error::CI_ADMISSION_APP_ID must identify the GitHub App installed on tutur3u/platform for CI admission.'
             exit 1
           fi
+          if [ -z "$CI_ADMISSION_APP_PRIVATE_KEY" ]; then
+            echo '::error::CI_ADMISSION_APP_PRIVATE_KEY must contain the CI admission GitHub App private key.'
+            exit 1
+          fi
+      - name: Create CI admission App token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.CI_ADMISSION_APP_ID }}
+          private-key: ${{ secrets.CI_ADMISSION_APP_PRIVATE_KEY }}
+          owner: tutur3u
+          repositories: platform
+          permission-issues: write
+          permission-pull-requests: read
       - name: Label an eligible current pull request
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
-          github-token: ${{ secrets.CI_ADMISSION_TOKEN }}
+          github-token: ${{ steps.app-token.outputs.token }}
           script: |
             if (!['opened', 'ready_for_review'].includes(context.payload.action)) return;
             const { data: pr } = await github.rest.pulls.get({
