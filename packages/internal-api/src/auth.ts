@@ -278,9 +278,16 @@ export function webAccountErrorMessageKey(
   return null;
 }
 
+type WebAccountSaveErrorKey =
+  | 'account_switcher.account_added_error'
+  | 'account_switcher.account_limit'
+  | 'account_switcher.device_unavailable'
+  | 'account_switcher.save_failed'
+  | 'account_switcher.session_missing';
+
 export function describeWebAccountSaveError(
   result: { error?: string | null; errorCode?: string | null },
-  translate: (key: string) => string
+  translate: (key: WebAccountSaveErrorKey) => string
 ) {
   const key = webAccountErrorMessageKey(result.errorCode);
 
