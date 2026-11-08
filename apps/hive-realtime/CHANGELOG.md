@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/tutur3u/platform/compare/hive-realtime-v0.13.0...hive-realtime-v0.13.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.12.0...hive-realtime-v0.13.0) (2026-09-25)
 
 

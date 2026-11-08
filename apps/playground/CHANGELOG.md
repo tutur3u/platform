@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/playground-v0.6.1...playground-v0.7.0) (2026-11-08)
+
+
+### Features
+
+* **playground:** prepare the native production cutover ([#7647](https://github.com/tutur3u/platform/issues/7647)) ([0388a48](https://github.com/tutur3u/platform/commit/0388a48840a23f33cdb973bea0f94051014c7457))
+* **playground:** run Playground on TanStack Start + Void through the start bridge ([#7438](https://github.com/tutur3u/platform/issues/7438)) ([#7438](https://github.com/tutur3u/platform/issues/7438)) ([20f1816](https://github.com/tutur3u/platform/commit/20f18166118f08907a6039eaffc47903cc21a68b))
+
+
+### Bug Fixes
+
+* **cloudflare:** harden native runtime and artifact qualification ([d2cd64a](https://github.com/tutur3u/platform/commit/d2cd64afe3758a7c3a1804e4f942f17579b27725))
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+
 ## [0.6.1](https://github.com/tutur3u/platform/compare/playground-v0.6.0...playground-v0.6.1) (2026-10-17)
 
 

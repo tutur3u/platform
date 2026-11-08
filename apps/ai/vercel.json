@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "cd ../.. && bun turbo:local run build --filter=@tuturuuu/ai-studio",
+  "buildCommand": "cd ../.. && bun turbo:local run build --filter=\"@tuturuuu/ai-studio^...\" --concurrency=2 && bun run --cwd apps/ai build:legacy",
   "installCommand": "cd ../.. && bun install --frozen-lockfile --minimum-release-age=0",
   "regions": ["sin1"],
   "git": {

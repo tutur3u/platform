@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/mobile-v0.26.0...mobile-v0.27.0) (2026-11-08)
+
+
+### Highlights
+
+* **mastermind:** add the Inbox ask card and accept the new hub fields ([#7395](https://github.com/tutur3u/platform/issues/7395)) ([fe316e8](https://github.com/tutur3u/platform/commit/fe316e8f95f3e569e26be81faac9fef56c8f8a1f))
+* **mastermind:** add the Inbox ask-v2 contract and shared fixture ([#7390](https://github.com/tutur3u/platform/issues/7390)) ([3371d16](https://github.com/tutur3u/platform/commit/3371d16e41c65551939195fb8e2cdcdfb71ccdcf))
+* **mastermind:** batch sheet v2, risky asks fail closed ([#7427](https://github.com/tutur3u/platform/issues/7427)) ([8b77935](https://github.com/tutur3u/platform/commit/8b779352b34b02e75e24c5174a5c032149fd1683))
+* **mastermind:** gate access on an explicit manage_mastermind grant ([#7158](https://github.com/tutur3u/platform/issues/7158)) ([3a886df](https://github.com/tutur3u/platform/commit/3a886dfca89d496fdaaa91c1d333603016cd364d))
+* **mastermind:** group the Inbox into Urgent, Needs a decision and FYI ([#7412](https://github.com/tutur3u/platform/issues/7412)) ([41fbcc1](https://github.com/tutur3u/platform/commit/41fbcc1a361d1dbc73d09f41e7024a591a562d53))
+* **mastermind:** hold one-tap replies for 30 s with undo-all ([#7414](https://github.com/tutur3u/platform/issues/7414)) ([65cfe55](https://github.com/tutur3u/platform/commit/65cfe557bb4bc009c411497fe0a668502eb475ec))
+* **mastermind:** Iris read-only split with iris_send capability ([#7443](https://github.com/tutur3u/platform/issues/7443)) ([12d513e](https://github.com/tutur3u/platform/commit/12d513ee46dfe4bd250f5df4a5daad423e3327f2))
+* **mastermind:** undo window setting (default 5 s) and Send now ([#7459](https://github.com/tutur3u/platform/issues/7459)) ([13e13fa](https://github.com/tutur3u/platform/commit/13e13fa339d46accdea296550bcae1ffa777bfa7))
+* **mastermind:** wire inbox tiers, ?tier=/?q= and undo-all bar ([#7425](https://github.com/tutur3u/platform/issues/7425)) ([2c5a94c](https://github.com/tutur3u/platform/commit/2c5a94c8f67f02b93e0359884cb6d50081ad268e))
+* **mobile:** add MobileFlags reader and flag-gated offline registration ([#7456](https://github.com/tutur3u/platform/issues/7456)) ([d77a1ad](https://github.com/tutur3u/platform/commit/d77a1ad14de27e80f5c6837b8f257e95fe7f6b39))
+* **mobile:** add read-only Mastermind Machines ([#7227](https://github.com/tutur3u/platform/issues/7227)) ([c753cc1](https://github.com/tutur3u/platform/commit/c753cc19fc6c3c48a5b1f6680ccb1a479095de5e))
+* **mobile:** hardware-backed Iris device key and signer (M0) ([#7364](https://github.com/tutur3u/platform/issues/7364)) ([130e1ed](https://github.com/tutur3u/platform/commit/130e1ed2335678a9990a895baeef357f0886d730))
+* **mobile:** Iris chat, ask-card deltas and relay client behind MASTERMIND_IRIS (M0) ([12871a6](https://github.com/tutur3u/platform/commit/12871a6a2f4d49b180a0565c2fb916e7a8128092))
+* **mobile:** mastermind inbox tier header design (M2b) ([#7436](https://github.com/tutur3u/platform/issues/7436)) ([bd39ef3](https://github.com/tutur3u/platform/commit/bd39ef34d39fc6c2571fb7c11080c17b2d8b9260))
+* **mobile:** offline read for Chat behind offline_read_chat ([#7464](https://github.com/tutur3u/platform/issues/7464)) ([efe5c39](https://github.com/tutur3u/platform/commit/efe5c397791f08cc8380b2a2b05be178b3869d7d))
+* **mobile:** offline read for Habits behind offline_read_habits ([#7466](https://github.com/tutur3u/platform/issues/7466)) ([21cb688](https://github.com/tutur3u/platform/commit/21cb68808ae6be24bb817aac31dbf01e2091f45b))
+* **mobile:** offline read for Home behind offline_read_home ([#7469](https://github.com/tutur3u/platform/issues/7469)) ([0218270](https://github.com/tutur3u/platform/commit/0218270eaf0a384bcb502181380224b746009e77))
+* **mobile:** offline read for Mastermind behind offline_read_mastermind ([#7468](https://github.com/tutur3u/platform/issues/7468)) ([53985be](https://github.com/tutur3u/platform/commit/53985bef4882a3ffd469fd40cb103ec6ef6cdf23))
+* **mobile:** offline read for Time tracker behind offline_read_time_tracker ([#7467](https://github.com/tutur3u/platform/issues/7467)) ([b85c0d2](https://github.com/tutur3u/platform/commit/b85c0d2f783d4ea5d76ddbffd736182f60d66d84))
+* **mobile:** per-app offline status UI behind offline_status_ui ([#7461](https://github.com/tutur3u/platform/issues/7461)) ([afbc3ea](https://github.com/tutur3u/platform/commit/afbc3ea58197052614f3519b67d8e67439f43e74))
+* **mobile:** prepare native Mira conversations for offline reading behind offline_read_mira ([#7470](https://github.com/tutur3u/platform/issues/7470)) ([#7470](https://github.com/tutur3u/platform/issues/7470)) ([5f402e0](https://github.com/tutur3u/platform/commit/5f402e0a970575cb496df5f1db26f2f0ca731e2a))
+* **mobile:** prepare Notes for offline reading behind offline_read_notes ([#7471](https://github.com/tutur3u/platform/issues/7471)) ([#7471](https://github.com/tutur3u/platform/issues/7471)) ([9d8bac8](https://github.com/tutur3u/platform/commit/9d8bac87c2170117a6f525b3b454ec0a3bf1a9a9))
+* **mobile:** prepare the Documents list for offline reading behind offline_read_documents ([#7472](https://github.com/tutur3u/platform/issues/7472)) ([#7472](https://github.com/tutur3u/platform/issues/7472)) ([aa354c2](https://github.com/tutur3u/platform/commit/aa354c20cf09969884f40bb527a509bc7bcb8131))
+* **mobile:** prepare the Mail inbox list for offline reading behind offline_read_mail ([#7473](https://github.com/tutur3u/platform/issues/7473)) ([#7473](https://github.com/tutur3u/platform/issues/7473)) ([41038b6](https://github.com/tutur3u/platform/commit/41038b6e182d564d2752fc42efcbc20fea4dcaca))
+* **mobile:** relative Mastermind times with time zone tooltip ([#7223](https://github.com/tutur3u/platform/issues/7223)) ([4e3e9ce](https://github.com/tutur3u/platform/commit/4e3e9cedcc04af307210f68d8fc890a6d5790cee))
+* **mobile:** replace the Mira history modal with a banner ([#7476](https://github.com/tutur3u/platform/issues/7476)) ([#7476](https://github.com/tutur3u/platform/issues/7476)) ([0cd18e1](https://github.com/tutur3u/platform/commit/0cd18e1941b863105641329de786b38f6bb287bd))
+* **mobile:** SB-100 L2 app-switcher blur and S3 constant security label ([#7240](https://github.com/tutur3u/platform/issues/7240)) ([94d82f3](https://github.com/tutur3u/platform/commit/94d82f3365ef11c2e0e048d5ec197ad8983ba764))
+* **mobile:** telemetry consent prompt and privacy choice ([#7214](https://github.com/tutur3u/platform/issues/7214)) ([63c9d59](https://github.com/tutur3u/platform/commit/63c9d59e6903c47be80bb27a013d7a260307f8db))
+
+
+### Fixes
+
+* **mobile:** close the persisted telemetry-enable gap and add the iOS privacy manifest ([#7294](https://github.com/tutur3u/platform/issues/7294)) ([99e3b92](https://github.com/tutur3u/platform/commit/99e3b92c4bebde248509c44f8c1b432c0ba89750))
+* **mobile:** complete pull-to-refresh across remote lists ([#6980](https://github.com/tutur3u/platform/issues/6980)) ([1fef0b9](https://github.com/tutur3u/platform/commit/1fef0b99603e3ba1395c38869e52753342602d18))
+* **mobile:** Face ID usage text covers Iris approvals ([#7437](https://github.com/tutur3u/platform/issues/7437)) ([78c9d2f](https://github.com/tutur3u/platform/commit/78c9d2fec7da7ea7db6620791dfb8e572fcf3a5d))
+* **mobile:** keep unreadable Mastermind quotas visible ([#7310](https://github.com/tutur3u/platform/issues/7310)) ([9b8eaf7](https://github.com/tutur3u/platform/commit/9b8eaf72810de3c3e7fe43fe707511fe93e76f86))
+* **mobile:** offline downloads no longer stall on one busy product ([#7444](https://github.com/tutur3u/platform/issues/7444)) ([4f1ccf3](https://github.com/tutur3u/platform/commit/4f1ccf34eced731b5934cd80417cb74b7639e608))
+* **mobile:** one-line settings descriptions with Learn more ([#7458](https://github.com/tutur3u/platform/issues/7458)) ([8aaf190](https://github.com/tutur3u/platform/commit/8aaf19072c062d717e24b63db56b6faa2e9c0954))
+* **mobile:** overlap local reads with consent-gated startup and defer push past first frame ([#7241](https://github.com/tutur3u/platform/issues/7241)) ([0543bda](https://github.com/tutur3u/platform/commit/0543bdad6e4c1f970a213ac4d32b4ce2b78b4777))
+* **mobile:** register push tokens only after notification permission ([#7277](https://github.com/tutur3u/platform/issues/7277)) ([b967fc7](https://github.com/tutur3u/platform/commit/b967fc7cb56c569c9d60f7c1af331da4ffc0751e))
+* **mobile:** send Mira voice notes directly as an optimistic message ([#7446](https://github.com/tutur3u/platform/issues/7446)) ([de6414a](https://github.com/tutur3u/platform/commit/de6414a49adb647229db1cc66781f2018b89f238))
+* **mobile:** wait for quick-action mutations to finish ([#7322](https://github.com/tutur3u/platform/issues/7322)) ([7a9a2c2](https://github.com/tutur3u/platform/commit/7a9a2c223be2e650be76727066c76e269f1fc211))
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/mobile-v0.25.1...mobile-v0.26.0) (2026-10-24)
 
 
