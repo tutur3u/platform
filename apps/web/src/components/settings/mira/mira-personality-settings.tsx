@@ -3,6 +3,7 @@
 import { Sparkles } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Select,
@@ -11,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
@@ -120,174 +120,172 @@ export function MiraPersonalitySettings() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Persona Templates */}
-      <SettingItemTab
-        title={t('persona_templates')}
-        description={t('persona_templates_description')}
-        icon={<Sparkles className="h-4 w-4" />}
-      >
-        <div className="grid grid-cols-2 gap-2">
-          {PERSONA_TEMPLATES.map((template) => (
-            <Button
-              key={template.key}
-              variant="outline"
-              size="sm"
-              className="h-auto justify-start px-3 py-2 text-left"
-              disabled={isPending}
-              onClick={() => handleApplyTemplate(template)}
-            >
-              <div>
-                <div className="font-medium text-xs">
-                  {t(`template_${template.key}` as Parameters<typeof t>[0])}
+      <SettingsSection>
+        <SettingItemTab
+          layout="stacked"
+          title={t('persona_templates')}
+          description={t('persona_templates_description')}
+          icon={<Sparkles className="h-4 w-4" />}
+        >
+          <div className="grid @md:grid-cols-2 gap-2">
+            {PERSONA_TEMPLATES.map((template) => (
+              <Button
+                key={template.key}
+                variant="outline"
+                size="sm"
+                className="h-auto justify-start whitespace-normal px-3 py-2 text-left"
+                disabled={isPending}
+                onClick={() => handleApplyTemplate(template)}
+              >
+                <div>
+                  <div className="font-medium text-sm">
+                    {t(`template_${template.key}` as Parameters<typeof t>[0])}
+                  </div>
+                  <div className="mt-0.5 font-normal text-muted-foreground text-sm">
+                    {template.personality}
+                  </div>
                 </div>
-                <div className="mt-0.5 text-muted-foreground text-xs leading-tight">
-                  {template.personality}
-                </div>
-              </div>
-            </Button>
-          ))}
-        </div>
-      </SettingItemTab>
-
-      <Separator />
-
-      {/* Name */}
-      <SettingItemTab
-        title={t('name_label')}
-        description={t('name_description')}
-      >
-        <Input
-          defaultValue={soul?.name ?? 'Mira'}
-          maxLength={50}
-          disabled={isPending}
-          onBlur={(e) => {
-            const value = e.target.value.trim();
-            if (value && value !== soul?.name) {
-              handleUpdate('name', value);
-            }
-          }}
-        />
-      </SettingItemTab>
-
-      <Separator />
-
-      {/* Tone */}
-      <SettingItemTab
-        title={t('tone_label')}
-        description={t('tone_description')}
-      >
-        <Select
-          value={soul?.tone ?? 'balanced'}
-          onValueChange={(value) => handleUpdate('tone', value)}
-          disabled={isPending}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {TONE_OPTIONS.map((option) => (
-              <SelectItem key={option} value={option}>
-                {option.charAt(0).toUpperCase() + option.slice(1)}
-              </SelectItem>
+              </Button>
             ))}
-          </SelectContent>
-        </Select>
-      </SettingItemTab>
+          </div>
+        </SettingItemTab>
+      </SettingsSection>
 
-      <Separator />
-
-      {/* Personality */}
-      <SettingItemTab
-        title={t('personality_label')}
-        description={t('personality_description_field')}
-      >
-        <Textarea
-          defaultValue={soul?.personality ?? ''}
-          maxLength={2000}
-          rows={3}
-          disabled={isPending}
-          className="resize-none"
-          onBlur={(e) => {
-            const value = e.target.value.trim();
-            if (value !== (soul?.personality ?? '')) {
-              handleUpdate('personality', value);
-            }
-          }}
-        />
-      </SettingItemTab>
-
-      <Separator />
-
-      {/* Boundaries */}
-      <SettingItemTab
-        title={t('boundaries_label')}
-        description={t('boundaries_description')}
-      >
-        <Textarea
-          defaultValue={soul?.boundaries ?? ''}
-          maxLength={2000}
-          rows={3}
-          disabled={isPending}
-          className="resize-none"
-          onBlur={(e) => {
-            const value = e.target.value.trim();
-            if (value !== (soul?.boundaries ?? '')) {
-              handleUpdate('boundaries', value);
-            }
-          }}
-        />
-      </SettingItemTab>
-
-      <Separator />
-
-      {/* Vibe */}
-      <SettingItemTab
-        title={t('vibe_label')}
-        description={t('vibe_description')}
-      >
-        <Select
-          value={soul?.vibe ?? 'warm'}
-          onValueChange={(value) => handleUpdate('vibe', value)}
-          disabled={isPending}
+      <SettingsSection title={t('identity_title')}>
+        {/* Name */}
+        <SettingItemTab
+          title={t('name_label')}
+          description={t('name_description')}
+          controlWidth="xl"
         >
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {VIBE_OPTIONS.map((option) => (
-              <SelectItem key={option} value={option}>
-                {option.charAt(0).toUpperCase() + option.slice(1)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </SettingItemTab>
+          <Input
+            defaultValue={soul?.name ?? 'Mira'}
+            maxLength={50}
+            disabled={isPending}
+            onBlur={(e) => {
+              const value = e.target.value.trim();
+              if (value && value !== soul?.name) {
+                handleUpdate('name', value);
+              }
+            }}
+          />
+        </SettingItemTab>
 
-      <Separator />
-
-      {/* Chat Tone */}
-      <SettingItemTab
-        title={t('chat_tone_label')}
-        description={t('chat_tone_description')}
-      >
-        <Select
-          value={soul?.chat_tone ?? 'thorough'}
-          onValueChange={(value) => handleUpdate('chat_tone', value)}
-          disabled={isPending}
+        {/* Vibe */}
+        <SettingItemTab
+          title={t('vibe_label')}
+          description={t('vibe_description')}
         >
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {CHAT_TONE_OPTIONS.map((option) => (
-              <SelectItem key={option} value={option}>
-                {option.charAt(0).toUpperCase() + option.slice(1)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </SettingItemTab>
+          <Select
+            value={soul?.vibe ?? 'warm'}
+            onValueChange={(value) => handleUpdate('vibe', value)}
+            disabled={isPending}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {VIBE_OPTIONS.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option.charAt(0).toUpperCase() + option.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingItemTab>
+
+        {/* Personality */}
+        <SettingItemTab
+          layout="stacked"
+          title={t('personality_label')}
+          description={t('personality_description_field')}
+        >
+          <Textarea
+            defaultValue={soul?.personality ?? ''}
+            maxLength={2000}
+            rows={3}
+            disabled={isPending}
+            className="resize-none"
+            onBlur={(e) => {
+              const value = e.target.value.trim();
+              if (value !== (soul?.personality ?? '')) {
+                handleUpdate('personality', value);
+              }
+            }}
+          />
+        </SettingItemTab>
+      </SettingsSection>
+
+      <SettingsSection title={t('behavior_title')}>
+        {/* Tone */}
+        <SettingItemTab
+          title={t('tone_label')}
+          description={t('tone_description')}
+        >
+          <Select
+            value={soul?.tone ?? 'balanced'}
+            onValueChange={(value) => handleUpdate('tone', value)}
+            disabled={isPending}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TONE_OPTIONS.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option.charAt(0).toUpperCase() + option.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingItemTab>
+
+        {/* Chat Tone */}
+        <SettingItemTab
+          title={t('chat_tone_label')}
+          description={t('chat_tone_description')}
+        >
+          <Select
+            value={soul?.chat_tone ?? 'thorough'}
+            onValueChange={(value) => handleUpdate('chat_tone', value)}
+            disabled={isPending}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CHAT_TONE_OPTIONS.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option.charAt(0).toUpperCase() + option.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingItemTab>
+
+        {/* Boundaries */}
+        <SettingItemTab
+          layout="stacked"
+          title={t('boundaries_label')}
+          description={t('boundaries_description')}
+        >
+          <Textarea
+            defaultValue={soul?.boundaries ?? ''}
+            maxLength={2000}
+            rows={3}
+            disabled={isPending}
+            className="resize-none"
+            onBlur={(e) => {
+              const value = e.target.value.trim();
+              if (value !== (soul?.boundaries ?? '')) {
+                handleUpdate('boundaries', value);
+              }
+            }}
+          />
+        </SettingItemTab>
+      </SettingsSection>
     </div>
   );
 }

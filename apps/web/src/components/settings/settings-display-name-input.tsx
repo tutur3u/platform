@@ -111,6 +111,7 @@ export default function DisplayNameInput({
           <Button
             type="submit"
             size="icon"
+            variant="outline"
             disabled={!isDirty || saving || disabled}
             className="shrink-0"
           >

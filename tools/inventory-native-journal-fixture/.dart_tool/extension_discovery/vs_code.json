@@ -1,1 +1,10 @@
-{"version":2,"entries":[{"package":"sale_journal_fixture","rootUri":"../","packageUri":"lib/"}]}
+{
+  "version": 2,
+  "entries": [
+    {
+      "package": "sale_journal_fixture",
+      "rootUri": "../",
+      "packageUri": "lib/"
+    }
+  ]
+}

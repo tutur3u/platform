@@ -1,13 +1,14 @@
 'use client';
 
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
-import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import type { SidebarBehavior } from '../sidebar-context';
 
 interface SidebarSettingsProps {
@@ -17,9 +18,17 @@ interface SidebarSettingsProps {
     localOverride: boolean;
     setLocalOverride: (value: boolean) => void;
   };
+  /** App-specific `SettingItemTab` rows appended to the same section. */
+  children?: ReactNode;
 }
 
-export default function SidebarSettings({ useSidebar }: SidebarSettingsProps) {
+const BEHAVIOR_TILE_CLASS =
+  'flex cursor-pointer items-center justify-center rounded-lg border bg-background px-3 py-2 font-normal hover:bg-accent hover:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-data-[state=checked]:border-foreground peer-data-[state=checked]:ring-1 peer-data-[state=checked]:ring-foreground';
+
+export default function SidebarSettings({
+  useSidebar,
+  children,
+}: SidebarSettingsProps) {
   const t = useTranslations();
   const { behavior, handleBehaviorChange, localOverride, setLocalOverride } =
     useSidebar();
@@ -36,8 +45,9 @@ export default function SidebarSettings({ useSidebar }: SidebarSettingsProps) {
   } = useUserBooleanConfig('EXPAND_SETTINGS_ACCORDIONS', true);
 
   return (
-    <div className="space-y-8">
+    <SettingsSection>
       <SettingItemTab
+        layout="stacked"
         title={t('settings.preferences.sidebar_behavior')}
         description={t('settings.preferences.sidebar_behavior_description')}
       >
@@ -46,7 +56,7 @@ export default function SidebarSettings({ useSidebar }: SidebarSettingsProps) {
           onValueChange={(value) =>
             handleBehaviorChange(value as SidebarBehavior)
           }
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          className="grid @md:grid-cols-4 grid-cols-2 gap-3"
         >
           <div>
             <RadioGroupItem
@@ -54,10 +64,7 @@ export default function SidebarSettings({ useSidebar }: SidebarSettingsProps) {
               id="expanded"
               className="peer sr-only"
             />
-            <Label
-              htmlFor="expanded"
-              className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-            >
+            <Label htmlFor="expanded" className={BEHAVIOR_TILE_CLASS}>
               {t('settings.preferences.sidebar_expanded')}
             </Label>
           </div>
@@ -67,19 +74,13 @@ export default function SidebarSettings({ useSidebar }: SidebarSettingsProps) {
               id="collapsed"
               className="peer sr-only"
             />
-            <Label
-              htmlFor="collapsed"
-              className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-            >
+            <Label htmlFor="collapsed" className={BEHAVIOR_TILE_CLASS}>
               {t('settings.preferences.sidebar_collapsed')}
             </Label>
           </div>
           <div>
             <RadioGroupItem value="hover" id="hover" className="peer sr-only" />
-            <Label
-              htmlFor="hover"
-              className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-            >
+            <Label htmlFor="hover" className={BEHAVIOR_TILE_CLASS}>
               {t('settings.preferences.sidebar_hover')}
             </Label>
           </div>
@@ -89,10 +90,7 @@ export default function SidebarSettings({ useSidebar }: SidebarSettingsProps) {
               id="hidden"
               className="peer sr-only"
             />
-            <Label
-              htmlFor="hidden"
-              className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-            >
+            <Label htmlFor="hidden" className={BEHAVIOR_TILE_CLASS}>
               {t('settings.preferences.sidebar_hidden')}
             </Label>
           </div>
@@ -105,12 +103,8 @@ export default function SidebarSettings({ useSidebar }: SidebarSettingsProps) {
           'settings.preferences.sidebar_local_override_description'
         )}
       >
-        <div className="flex items-center space-x-2">
-          <Switch checked={localOverride} onCheckedChange={setLocalOverride} />
-        </div>
+        <Switch checked={localOverride} onCheckedChange={setLocalOverride} />
       </SettingItemTab>
-
-      <Separator />
 
       <SettingItemTab
         title={t('settings.preferences.expand_settings_accordions')}
@@ -118,16 +112,12 @@ export default function SidebarSettings({ useSidebar }: SidebarSettingsProps) {
           'settings.preferences.expand_settings_accordions_description'
         )}
       >
-        <div className="flex items-center space-x-2">
-          <Switch
-            checked={expandSettingsAccordions}
-            onCheckedChange={setExpandSettingsAccordions}
-            disabled={isLoadingExpandAccordions}
-          />
-        </div>
+        <Switch
+          checked={expandSettingsAccordions}
+          onCheckedChange={setExpandSettingsAccordions}
+          disabled={isLoadingExpandAccordions}
+        />
       </SettingItemTab>
-
-      <Separator />
 
       <SettingItemTab
         title={t('settings-account.hide-experimental-on-sidebar')}
@@ -135,13 +125,13 @@ export default function SidebarSettings({ useSidebar }: SidebarSettingsProps) {
           'settings-account.hide-experimental-on-sidebar-description'
         )}
       >
-        <div className="flex items-center space-x-2">
-          <Switch
-            checked={hideExperimental}
-            onCheckedChange={setHideExperimental}
-          />
-        </div>
+        <Switch
+          checked={hideExperimental}
+          onCheckedChange={setHideExperimental}
+        />
       </SettingItemTab>
-    </div>
+
+      {children}
+    </SettingsSection>
   );
 }

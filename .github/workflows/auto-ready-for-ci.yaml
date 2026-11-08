@@ -43,7 +43,7 @@ jobs:
           owner: tutur3u
           repositories: platform
           permission-issues: write
-          permission-pull-requests: read
+          permission-pull-requests: write
       - name: Label an eligible current pull request
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
