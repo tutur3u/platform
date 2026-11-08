@@ -7,6 +7,21 @@ import {
   type ExternalProjectSyncEntry,
   type ExternalProjectSyncManifest,
 } from '@tuturuuu/types';
+import { z } from 'zod';
+
+const publishedCmsPageVersionSchema = z.object({
+  id: z.string().min(1),
+  blocks: z.record(z.string(), z.unknown()),
+  schema_version: z.number().int().positive(),
+});
+
+/** Published layout only; legacy entries without a version remain supported. */
+export function readPublishedCmsPageVersion(entry: unknown) {
+  const result = z.object({
+    publishedPageVersion: publishedCmsPageVersionSchema.nullish(),
+  }).safeParse(entry);
+  return result.success ? result.data.publishedPageVersion ?? null : null;
+}
 
 export { CMS_SITE_V1_COLLECTIONS } from '@tuturuuu/types';
 
