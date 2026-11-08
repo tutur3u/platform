@@ -3,6 +3,7 @@ import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { getWorkflowDecision } from '../../tuturuuu.ts';
 import { lockfileWorkspaceDelta } from './lockfile-workspace-delta.ts';
 import { getMailCalendarTasksAffected } from './mail-calendar-tasks-affected.ts';
+import { getMobileTestsAffected } from './mobile-build-selection.ts';
 import {
   readWorkspaceManifests,
   splitChangedFiles,
@@ -171,7 +172,13 @@ function main(args = process.argv.slice(2)) {
           eventName: parsedArgs.eventName ?? process.env.GITHUB_EVENT_NAME,
           workspaceManifests,
         })
-      : {};
+      : workflowName === 'mobile.yaml'
+        ? getMobileTestsAffected({
+            changedFiles,
+            eventName: parsedArgs.eventName ?? process.env.GITHUB_EVENT_NAME,
+            workspaceManifests,
+          })
+        : {};
 
   appendGithubOutput({
     affected_jobs: JSON.stringify(affectedJobs),
