@@ -2,7 +2,10 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { type Locale, supportedLocales } from '@/i18n/routing';
 
-export const ROADMAP_UPSTREAM_ORIGIN = 'https://roadmap.tuturuuu.com';
+/** Non-redirecting worker origin. roadmap.tuturuuu.com 301s to the canonical host. */
+export const ROADMAP_UPSTREAM_ORIGIN =
+  'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev';
+export const ROADMAP_SATELLITE_HOST = 'roadmap.tuturuuu.com';
 
 const FORWARDED_REQUEST_HEADERS = [
   'accept',
@@ -86,6 +89,25 @@ function forwardedRequestHeaders(req: NextRequest): Headers {
   return headers;
 }
 
+function withoutSatelliteLoop(location: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(location, 'https://tuturuuu.com');
+  } catch {
+    return location;
+  }
+  if (parsed.host !== ROADMAP_SATELLITE_HOST) return location;
+
+  const path = parsed.pathname;
+  const mounted =
+    path === '/roadmap' || path.startsWith('/roadmap/')
+      ? path
+      : path === '/'
+        ? '/roadmap/'
+        : `/roadmap${path}`;
+  return `https://tuturuuu.com${mounted}${parsed.search}`;
+}
+
 function roadmapResponseHeaders(upstream: Headers): Headers {
   const headers = new Headers();
 
@@ -95,6 +117,9 @@ function roadmapResponseHeaders(upstream: Headers): Headers {
     }
     headers.append(key, value);
   });
+
+  const location = headers.get('location');
+  if (location) headers.set('location', withoutSatelliteLoop(location));
 
   return headers;
 }

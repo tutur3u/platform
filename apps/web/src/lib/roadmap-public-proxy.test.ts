@@ -40,11 +40,44 @@ describe('roadmap public proxy', () => {
     if (!invocation) return;
     const [url, init] = invocation;
     expect(String(url)).toBe(
-      'https://roadmap.tuturuuu.com/roadmap/assets/app.js'
+      'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/assets/app.js'
     );
     const sent = new Headers((init as RequestInit | undefined)?.headers);
     expect(sent.get('cookie')).toBeNull();
     expect(sent.get('authorization')).toBeNull();
+  });
+
+  it('does not follow a satellite redirect back into the proxy', async () => {
+    const fetchImpl = vi.fn(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        expect(init?.redirect).toBe('manual');
+        return new Response(null, {
+          headers: {
+            location: 'https://roadmap.tuturuuu.com/roadmap/?q=1',
+          },
+          status: 301,
+        });
+      }
+    );
+
+    const response = await proxyRoadmapPublicRequest(
+      new NextRequest('https://tuturuuu.com/roadmap/?q=1'),
+      fetchImpl
+    );
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const invocation = fetchImpl.mock.calls[0];
+    expect(invocation).toBeDefined();
+    if (!invocation) return;
+    const [url] = invocation;
+    expect(String(url)).toBe(
+      'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/?q=1'
+    );
+    expect(String(url)).not.toContain('roadmap.tuturuuu.com');
+    expect(response?.status).toBe(301);
+    expect(response?.headers.get('location')).toBe(
+      'https://tuturuuu.com/roadmap/?q=1'
+    );
   });
 
   it('does not treat a neighbouring private path as the roadmap', async () => {

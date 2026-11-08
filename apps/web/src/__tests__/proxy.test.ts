@@ -1391,7 +1391,10 @@ describe('web proxy api handling', () => {
     expect(invocation).toBeDefined();
     if (!invocation) return;
     const [url, init] = invocation;
-    expect(String(url)).toBe('https://roadmap.tuturuuu.com/roadmap/');
+    expect(String(url)).toBe(
+      'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/'
+    );
+    expect(String(url)).not.toContain('roadmap.tuturuuu.com');
     const sent = new Headers((init as RequestInit | undefined)?.headers);
     expect(sent.get('cookie')).toBeNull();
     expect(sent.get('authorization')).toBeNull();
