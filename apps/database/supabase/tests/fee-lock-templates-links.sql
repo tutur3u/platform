@@ -1,4 +1,4 @@
--- M3 20261104130200 templates and M4 20261104130300 invoice links. Synthetic fixtures only.
+-- M3 20261109050200 templates and M4 20261109050300 invoice links. Synthetic fixtures only.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;

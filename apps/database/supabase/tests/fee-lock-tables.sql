@@ -92,7 +92,7 @@ select throws_ok($$update public.fee_lock_revisions set total_amount = 0 where f
   '55000', 'fee_lock_revisions rows are immutable', 'a locked revision cannot be changed');
 select throws_ok($$delete from public.fee_lock_revisions where fee_lock_id = pg_temp.id('301')$$,
   '55000', 'fee_lock_revisions rows are immutable', 'a locked revision cannot be deleted directly');
--- fee_lock_invoice_links (20261104130300) references revisions, so a plain TRUNCATE is refused by Postgres first.
+-- fee_lock_invoice_links (20261109050300) references revisions, so a plain TRUNCATE is refused by Postgres first.
 select throws_ok($$truncate public.fee_lock_revisions$$, '0A000', null, 'revisions cannot be truncated while links reference them');
 select throws_ok($$truncate public.fee_lock_revisions cascade$$, '55000', 'fee_lock_revisions rows are immutable', 'revisions cannot be truncated, even with cascade');
 select throws_ok($$insert into public.fee_lock_revisions(fee_lock_id, ws_id, revision, total_amount, snapshot) values
