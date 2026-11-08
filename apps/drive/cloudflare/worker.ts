@@ -1,6 +1,7 @@
-import { missingRequiredBindings } from './required-bindings';
-// Drive staging entry. Keep the environment fence before loading bridge routes.
 /// <reference types="@vitejs/plugin-rsc/types" />
+// Drive staging entry. Keep the environment fence before loading bridge routes.
+
+import { missingRequiredBindings } from './required-bindings';
 
 import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
 import { createFunctionProxy } from '@tuturuuu/start-bridge/function-proxy';
