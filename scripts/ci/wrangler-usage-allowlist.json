@@ -113,6 +113,16 @@
       },
       "digest": "4c6ff97c6fb7094a52e42757868d6c78f550f049b11add0f570bc9c02c0a3578"
     },
+    ".github/workflows/finance-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7621",
+        "reason": "REV-7621: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "12cbcfd4c7e76ca6c4a7bce663b2c928b2b6c5556c161ab628f06cea548fad6c"
+    },
     ".github/workflows/lettin-cloudflare.yaml": {
       "lines": 1,
       "uses": 2,
@@ -212,6 +222,16 @@
         "reason": "REV-7643: cutover artifact writes the emitted wrangler.json for an operator. No wrangler command is added. The void-wave1 publication gap and its removal condition remain."
       },
       "digest": "cb3f9de3f9f565368ee118a6600074ef472469d84e9b363fdfb666c21ad78051"
+    },
+    ".github/workflows/track-cloudflare.yaml": {
+      "lines": 5,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7645",
+        "reason": "REV-7645: cutover artifact writes the emitted wrangler.json for an operator. No wrangler command is added. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "3076d6bae5cbe568450a5ae440c193c50a50d7611fee76af034112302bf1986e"
     },
     ".github/workflows/wave1-native-app.yaml": {
       "lines": 4,
@@ -1842,6 +1862,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "870ee7dc37ba959b9cf0e198972ba5843606a36acbccdcc3bb58c4bf40b73626"
+    },
+    "scripts/ci/finance-cutover-smoke.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7621",
+        "reason": "REV-7621: local smoke loads wrangler unstable_startWorker with remote disabled, denied provider auth, and no publication. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "998eab277701cfe7eb3e4c9670cf831bc372faada4dd8b603cf69d6cbbd808a6"
     },
     "scripts/ci/finance-native-artifact.test.py": {
       "lines": 7,
