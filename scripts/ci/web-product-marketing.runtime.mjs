@@ -36,6 +36,7 @@ for (const stream of [child.stdout, child.stderr]) {
 }
 const closed = once(child, 'close');
 child.on('error', () => {});
+let stage = 'startup';
 try {
   const deadline = Date.now() + 45000;
   let ready = false;
@@ -66,6 +67,7 @@ try {
     ['/ai', '/products/ai'],
     ['/vi/ai', '/vi/products/ai'],
   ]) {
+    stage = source;
     const response = await fetch(
       `${origin}${source}?tag=one%2Ftwo&tag=three+four&empty=`,
       {
@@ -90,6 +92,12 @@ try {
       `PASS 307 ${source} -> ${target}, including repeated query values`
     );
   }
+} catch (error) {
+  console.error('Web marketing runtime failure', {
+    stage,
+    serverOutput: output,
+  });
+  throw error;
 } finally {
   if (child.exitCode === null && child.signalCode === null)
     child.kill('SIGTERM');
