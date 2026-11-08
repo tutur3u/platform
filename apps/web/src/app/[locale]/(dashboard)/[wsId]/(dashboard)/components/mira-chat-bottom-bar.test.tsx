@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { AIModelUI } from '@tuturuuu/types';
 import { createRef, type RefObject } from 'react';
