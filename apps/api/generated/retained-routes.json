@@ -1850,6 +1850,16 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/newsletter/unsubscribe",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/newsletter/unsubscribe/route.ts",
+    "sourceSha256": "778899ffb885b121750a367fddc1f6137c1ed90e8bc8692e74127327be8a1588",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/notifications/{id}/metadata",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -4285,6 +4295,46 @@
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mobile/module-flags/route.ts",
     "sourceSha256": "2c8c9b63df2ffd0a620ff63802c28e5fbfeafea84b49dae548bc4d5b761503d6",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/newsletter/approval",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/approval/route.ts",
+    "sourceSha256": "90b1f37ca66ec2eef098b765398920f97a702ed42e1e3018573980f2a9dff9b4",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/newsletter/domain",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/domain/route.ts",
+    "sourceSha256": "498c9c617626397ae6dc77082eebb3c1130216a30ffb9858b9c91a71292ebacb",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/newsletter/subscribers",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/subscribers/route.ts",
+    "sourceSha256": "3fa6e9e0414bea3b6fdd971d8f7248a7ecea3f4cee4a819abe528a49bf40a9bc",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/newsletter/test-send",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/test-send/route.ts",
+    "sourceSha256": "bdd4c5ce2470bbc676ad64eb1f5ebf974906ba107df87fcc866ad11464d54b2b",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

@@ -153,6 +153,16 @@
       },
       "digest": "12bb1c7c1a654e1c2291d0970d35c323328f40829b89d576b4fcd659dabc73ca"
     },
+    ".github/workflows/inventory-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7620",
+        "reason": "REV-7620: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "12bb1c7c1a654e1c2291d0970d35c323328f40829b89d576b4fcd659dabc73ca"
+    },
     ".github/workflows/lettin-cloudflare.yaml": {
       "lines": 1,
       "uses": 2,
@@ -2494,14 +2504,14 @@
       "digest": "5ce11fab75df1f5880c6fc88e29b795d31719025350fb56f46e023691532732f"
     },
     "scripts/ci/wave1-web-seal.mjs": {
-      "lines": 1,
-      "uses": 1,
+      "lines": 2,
+      "uses": 2,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7323",
-        "reason": "One path literal, no CLI: after restoring the sealed archive the restored job recreates Void's emitted deploy pointer (.wrangler/deploy/config.json), the location the admitted wave1-native-artifact and apps-native-runtime-pointer readers require, so the emitted workerd suite can re-run on the same bytes. Remove when Void emits a cf Build Output and the wave-1 seal and readers stop reading the Void/Wrangler pointer."
+        "decision": "https://github.com/tutur3u/platform/pull/7378",
+        "reason": "REV-7378: dry-run text names the same emitted deploy pointer and does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
       },
-      "digest": "6e8c3daf68e1f6625b85a7b64999dca62510a364ff8019234f65b53085a7c478"
+      "digest": "9020660847317ff2023a518016fb675010fe193beb53dc782fe05d95b707c1fb"
     },
     "scripts/ci/wave1-web-seal.test.mjs": {
       "lines": 4,

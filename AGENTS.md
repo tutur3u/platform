@@ -5,6 +5,8 @@
 This file contains cross-cutting repository constraints. Task-specific procedures
 live in `plugins/tuturuuu/skills/*/references/` and `apps/docs`.
 
+Cloudflare migration API and runtime references: [docs/agents/cloudflare](docs/agents/cloudflare/README.md).
+
 Read the root and nearest applicable `AGENTS.md`. Load a focused skill only when
 its capability helps the current task; read linked references by topic rather than
 loading a stack of checklists before every edit. Repository rules supplement the
