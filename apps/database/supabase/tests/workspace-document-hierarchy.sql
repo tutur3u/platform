@@ -248,6 +248,20 @@ begin
   return r;
 end $$;
 
+-- Document writes go through the service role. This grant is rolled back
+-- with the test. authenticated has no table privilege here.
+grant select, insert, update, delete on table public.workspace_documents to service_role;
+
+select is(
+  pg_temp.as_role(
+    format(
+      'update public.workspace_documents set parent_id = %L where id = %L',
+      pg_temp.doc(20), pg_temp.doc(21)
+    ),
+    'service_role'
+  ),
+  'ok',
+  'service role can parent a page inside the workspace');
 select ok(
   pg_temp.as_role(
     format(
@@ -255,7 +269,7 @@ select ok(
       pg_temp.doc(23), pg_temp.doc(20)
     ),
     'service_role'
-  ) like '42501%',
+  ) like '42501%same workspace%',
   'service role cannot cross workspaces either');
 select is(
   pg_temp.as_role(
@@ -266,18 +280,8 @@ select is(
     'authenticated',
     pg_temp.doc(1)
   ),
-  'ok',
-  'a member can parent a page inside the workspace');
-select ok(
-  pg_temp.as_role(
-    format(
-      'update public.workspace_documents set parent_id = %L where id = %L',
-      pg_temp.doc(23), pg_temp.doc(21)
-    ),
-    'authenticated',
-    pg_temp.doc(1)
-  ) like '42501%',
-  'a member cannot parent a page across workspaces');
+  '42501 permission denied for table workspace_documents',
+  'authenticated has no direct grant on workspace documents');
 select is(
   (select parent_id from public.workspace_documents where id = pg_temp.doc(21)),
   pg_temp.doc(20),
