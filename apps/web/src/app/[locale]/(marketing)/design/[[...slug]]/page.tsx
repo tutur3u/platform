@@ -24,8 +24,6 @@ interface Props {
   }>;
 }
 
-export const revalidate = 3600;
-
 export function generateStaticParams() {
   return [
     { slug: [] },
