@@ -11,6 +11,11 @@ const OXC_VERSION = '0.74.0';
 const BRANCH_NAME_PATTERN =
   /^(feature|feat|fix|bugfix|hotfix|release|chore|docs|style|refactor|perf|dependabot|claude)\/.+|^release-please--branches--.+|^imgbot$/;
 const OXC_FILE = /\.(?:[cm]?[jt]sx?|jsonc?|css|graphql|gql|mdx?|ya?ml|html)$/;
+const OXC_IGNORED_FORMATS = new Set(
+  require('../../.oxfmtrc.json')
+    .ignorePatterns.filter((pattern) => /^\*\*\/\*\.[a-z]+$/.test(pattern))
+    .map((pattern) => pattern.slice(5))
+);
 const SCRIPT_FILE = /\.(?:[cm]?js|ts)$/;
 const TS_SOURCE = /\.(?:[cm]?tsx?|d\.ts)$/;
 const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
@@ -251,6 +256,7 @@ function planChecks(changes, context) {
   const formatFiles = present.filter(
     (file) =>
       OXC_FILE.test(file) &&
+      !OXC_IGNORED_FORMATS.has(path.posix.extname(file).slice(1)) &&
       !file.startsWith(MOBILE_PREFIX) &&
       !file.split('/').some((segment) => OXC_EXCLUDED.has(segment)) &&
       !/routeTree\.gen\.ts$|\.bridge\.gen\.ts$/.test(file) &&
@@ -259,6 +265,16 @@ function planChecks(changes, context) {
       ) &&
       file !== 'packages/sdk/src/operational-search/python-adapter-code.ts'
   );
+  if (
+    !formatFiles.length &&
+    present.some(
+      (file) =>
+        OXC_FILE.test(file) &&
+        OXC_IGNORED_FORMATS.has(path.posix.extname(file).slice(1))
+    )
+  ) {
+    skipped.push(['oxfmt', 'changed formats are ignored by .oxfmtrc.json']);
+  }
   if (formatFiles.length) {
     steps.push({
       id: 'oxfmt',

@@ -53,7 +53,6 @@ test('always runs cheap repository guards and flags bad branch names', () => {
     'source-size',
     'docs-inventory',
     'app-seo',
-    'oxfmt',
   ]);
   assert.equal(plan.steps[0].inline(), false);
   assert.deepEqual(plan.steps[1].args, [
@@ -246,6 +245,43 @@ test('workflow edits run workflow policy tests with changed script tests', () =>
     'scripts/ci/bun-workflow-pins.test.js',
     'scripts/ci/check-workflow-config.test.js',
   ]);
+  const formatter = plan.steps.find((entry) => entry.id === 'oxfmt');
+  assert.ok(formatter.args.includes('scripts/oxc.js'));
+  assert.ok(!formatter.args.includes('.github/workflows/type-check.yaml'));
+});
+
+test('ignored formats do not claim formatter execution or omit workflow guards', () => {
+  const files = [
+    '.github/workflows/type-check.yaml',
+    '.github/actions/example/action.yml',
+    'README.md',
+    'docs/example.mdx',
+    'example.html',
+  ];
+  const config = JSON.parse(
+    fs.readFileSync(path.join(ROOT, '.oxfmtrc.json'), 'utf8')
+  );
+  for (const file of files) {
+    assert.ok(config.ignorePatterns.includes(`**/*${path.extname(file)}`));
+  }
+  const policyTests = [
+    'scripts/ci/protected-workflow-concurrency.test.js',
+    'scripts/ci/bun-workflow-pins.test.js',
+    'scripts/ci/check-workflow-config.test.js',
+  ];
+  const plan = planChecks(changed(...files), context(policyTests));
+  assert.equal(ids(plan).includes('oxfmt'), false);
+  assert.ok(
+    plan.skipped.some(
+      ([id, reason]) => id === 'oxfmt' && reason.includes('.oxfmtrc.json')
+    )
+  );
+  const tests = plan.steps.find((entry) => entry.id === 'script-tests');
+  for (const file of policyTests) assert.ok(tests.args.includes(file));
+  assert.ok(
+    ids(plan).includes('staging-hosts') ||
+      plan.steps.some((step) => step.id === 'staging-hosts')
+  );
 });
 
 test('siblingTests finds colocated and __tests__ files', () => {
