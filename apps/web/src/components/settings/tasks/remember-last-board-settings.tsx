@@ -69,7 +69,7 @@ export function RememberLastBoardSettings({
       >
         <div className="min-w-0">
           <p className="font-medium text-sm">{title}</p>
-          <p className="text-muted-foreground text-xs">{description}</p>
+          <p className="text-muted-foreground text-sm">{description}</p>
         </div>
         {switchControl}
       </div>

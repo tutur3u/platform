@@ -1,11 +1,13 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, KanbanSquare, Loader2, Settings2 } from '@tuturuuu/icons';
+import { ArrowRight, KanbanSquare, Loader2 } from '@tuturuuu/icons';
 import { listWorkspaceTaskBoards } from '@tuturuuu/internal-api/tasks';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -18,14 +20,12 @@ function getBrowserInternalApiOptions() {
 interface TaskBoardSettingsPickerProps {
   boardId?: string;
   onOpenBoard: (boardId: string) => void;
-  variant?: 'card' | 'empty';
   wsId: string;
 }
 
 export function TaskBoardSettingsPicker({
   boardId,
   onOpenBoard,
-  variant = 'card',
   wsId,
 }: TaskBoardSettingsPickerProps) {
   const t = useTranslations('settings.tasks');
@@ -60,31 +60,19 @@ export function TaskBoardSettingsPicker({
   const isEmpty = !isLoading && boards.length === 0;
 
   return (
-    <section
-      className={
-        variant === 'empty'
-          ? 'rounded-2xl border border-dashed bg-muted/20 p-5 sm:p-6'
-          : 'rounded-2xl border bg-muted/20 p-4 sm:p-5'
-      }
-    >
-      <div className="flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-background">
-              <Settings2 className="size-4" />
-            </div>
-            <div className="min-w-0 space-y-1">
-              <h3 className="font-semibold">{t('board_picker_title')}</h3>
-              <p className="text-muted-foreground text-sm">
-                {t('board_picker_description')}
-              </p>
-            </div>
-          </div>
-          <Badge className="shrink-0" variant="secondary">
-            {boards.length}
-          </Badge>
-        </div>
-
+    <SettingsSection>
+      <SettingItemTab
+        layout="stacked"
+        description={t('board_picker_description')}
+        title={
+          <>
+            {t('board_picker_title')}
+            <Badge className="shrink-0" variant="secondary">
+              {boards.length}
+            </Badge>
+          </>
+        }
+      >
         <div className="flex flex-col gap-2 sm:flex-row">
           <Combobox
             ariaLabel={t('board_picker_placeholder')}
@@ -117,7 +105,7 @@ export function TaskBoardSettingsPicker({
             {t('board_picker_open')}
           </Button>
         </div>
-      </div>
-    </section>
+      </SettingItemTab>
+    </SettingsSection>
   );
 }
