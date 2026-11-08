@@ -1,4 +1,4 @@
--- ENABLE_FEE_LOCK is reserved like MANAGED_CRON_ENABLED (20261109051000): API
+-- ENABLE_FEE_LOCK is reserved like MANAGED_CRON_ENABLED (20261109161000): API
 -- roles cannot insert, update, delete, or rename to/from it, even as
 -- root-workspace members with manage_workspace_secrets. The service role
 -- (server code after its verified-staff check) and other names are unaffected.

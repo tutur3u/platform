@@ -7,7 +7,7 @@ SET LOCAL statement_timeout = '60s';
 -- MANAGED_CRON_ENABLED, ENABLE_BOARD_CYCLES and ENABLE_FEE_LOCK. API roles cannot
 -- insert, update, delete or rename to/from them; server routes change them after a
 -- verified-staff check with the service role. Same trigger as 20261029005000.
--- Rollback: apps/database/rollbacks/20261109051000_guard_fee_lock_enabled_secret.rollback.sql
+-- Rollback: apps/database/rollbacks/20261109161000_guard_fee_lock_enabled_secret.rollback.sql
 
 -- SECURITY INVOKER on purpose: current_user must reflect the issuing role.
 CREATE OR REPLACE FUNCTION public.guard_workspace_reserved_secrets()
