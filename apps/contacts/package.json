@@ -50,6 +50,7 @@
     "date-fns": "^4.4.0",
     "dayjs": "^1.11.23",
     "dompurify": "^3.4.16",
+    "exceljs": "4.4.0",
     "html2canvas-pro": "^2.5.2",
     "jotai": "^3.0.1",
     "jspdf": "^4.2.1",
