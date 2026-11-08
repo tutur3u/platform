@@ -141,6 +141,7 @@ export const ci = {
   'playground-cloudflare.yaml': true,
   'git-cloudflare.yaml': true,
   'external-cloudflare.yaml': true,
+  'rewise-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
