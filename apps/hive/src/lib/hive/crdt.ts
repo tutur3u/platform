@@ -6,9 +6,8 @@ export async function mergeHiveCrdtUpdate(args: {
   update: Buffer | Uint8Array;
   fallbackWorld?: HiveRealtimeWorld | null;
 }) {
-  const { mergeHiveCrdtUpdate: mergeSharedHiveCrdtUpdate } = await import(
-    '@tuturuuu/realtime/hive/yjs'
-  );
+  const { mergeHiveCrdtUpdate: mergeSharedHiveCrdtUpdate } =
+    await import('@tuturuuu/realtime/hive/yjs');
   const merged = mergeSharedHiveCrdtUpdate({
     currentState: args.currentState ? new Uint8Array(args.currentState) : null,
     fallbackWorld: args.fallbackWorld,

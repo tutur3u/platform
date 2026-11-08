@@ -13,6 +13,8 @@
       "component": "platform",
       "package-name": "platform",
       "release-type": "simple",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": false,
       "version-file": "platform-version.txt",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
@@ -101,7 +103,13 @@
     "apps/mobile": {
       "component": "mobile",
       "package-name": "mobile",
-      "release-type": "dart"
+      "release-type": "dart",
+      "changelog-sections": [
+        { "type": "feat", "section": "Highlights" },
+        { "type": "fix", "section": "Fixes" },
+        { "type": "perf", "section": "Fixes" },
+        { "type": "revert", "section": "Fixes" }
+      ]
     },
     "apps/nova": {
       "component": "nova",
@@ -159,6 +167,10 @@
       "component": "agent-quota",
       "package-name": "@tuturuuu/agent-quota"
     },
+    "packages/start-bridge": {
+      "component": "start-bridge",
+      "package-name": "@tuturuuu/start-bridge"
+    },
     "packages/ai": {
       "component": "ai",
       "package-name": "@tuturuuu/ai"
@@ -182,6 +194,10 @@
     "packages/editor": {
       "component": "editor",
       "package-name": "@tuturuuu/editor"
+    },
+    "packages/feature-flags": {
+      "component": "feature-flags",
+      "package-name": "@tuturuuu/feature-flags"
     },
     "packages/finance-core": {
       "component": "finance-core",
@@ -295,9 +311,9 @@
       "component": "trigger",
       "package-name": "@tuturuuu/trigger"
     },
-    "packages/turnstile": {
-      "component": "turnstile",
-      "package-name": "@tuturuuu/turnstile"
+    "packages/cloudflare": {
+      "component": "cloudflare",
+      "package-name": "@tuturuuu/cloudflare"
     },
     "packages/types": {
       "component": "types",
@@ -342,6 +358,10 @@
     "packages/meet-core": {
       "component": "meet-core",
       "package-name": "@tuturuuu/meet-core"
+    },
+    "packages/cms-blocks": {
+      "component": "cms-blocks",
+      "package-name": "@tuturuuu/cms-blocks"
     }
   }
 }

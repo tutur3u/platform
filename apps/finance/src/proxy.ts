@@ -1,4 +1,3 @@
-import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
@@ -18,13 +17,13 @@ import {
   getCurrentUserDefaultWorkspace,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import { negotiateAcceptLanguage } from '@tuturuuu/satellite/accept-language';
 import {
   guardApiProxyRequest,
   hasAuthenticatedBearerToken,
 } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
-import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
@@ -49,14 +48,28 @@ const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   const finish = (response: NextResponse) =>
     pinFinanceDeployment(req, response);
+  const workspaceUrl = (pathname: string) => {
+    const url = new URL(req.url);
+    url.pathname = `${req.nextUrl.basePath}${pathname}`;
+    return url;
+  };
 
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
+    const isBuildInfoRead =
+      req.nextUrl.pathname === '/api/build-info' &&
+      (req.method === 'GET' || req.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of req.cookies.getAll())
+        req.cookies.delete(cookie.name);
+      req.headers.delete('cookie');
+      req.headers.delete('authorization');
+    }
     const hasBearerApiSession = hasAuthenticatedBearerToken(req.headers);
     const appSessionRefresh =
-      isLocalAuthApi || hasBearerApiSession
+      isLocalAuthApi || isBuildInfoRead || hasBearerApiSession
         ? null
         : await refreshAppSessionForRequest(req, {
             sessionMode: 'supabase-first',
@@ -81,6 +94,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       }
       return finish(preserveMfaRecoveryCookies(req, guardResponse));
     }
+
+    if (isBuildInfoRead)
+      return finish(NextResponse.next({ request: { headers: req.headers } }));
 
     return finish(
       appSessionRefresh?.response ??
@@ -159,8 +175,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     if (newPathSegments[wsIdIndex] !== 'internal') {
       newPathSegments[wsIdIndex] = 'internal';
-      const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
-      redirectUrl.search = req.nextUrl.search;
+      const redirectUrl = workspaceUrl(`/${newPathSegments.join('/')}`);
 
       const rootRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, rootRedirect);
@@ -180,12 +195,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           const wsIdIndex = hasLocaleInPath ? 1 : 0;
           newPathSegments[wsIdIndex] = 'personal';
 
-          const redirectUrl = new URL(
-            `/${newPathSegments.join('/')}`,
-            req.nextUrl
-          );
-          // Preserve query parameters
-          redirectUrl.search = req.nextUrl.search;
+          const redirectUrl = workspaceUrl(`/${newPathSegments.join('/')}`);
 
           const personalRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, personalRedirect);
@@ -227,14 +237,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           : defaultWorkspace.id === ROOT_WORKSPACE_ID
             ? 'internal'
             : defaultWorkspace.id;
-        const redirectUrl = new URL(`/${target}`, req.nextUrl);
+        const redirectUrl = workspaceUrl(`/${target}`);
         const wsRedirect = NextResponse.redirect(redirectUrl);
         propagateAuthCookies(authRes, wsRedirect);
         return finish(wsRedirect);
       }
 
       // Fallback to personal workspace if no default workspace found
-      const redirectUrl = new URL('/personal', req.nextUrl);
+      const redirectUrl = workspaceUrl('/personal');
       const fallbackRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, fallbackRedirect);
       return finish(fallbackRedirect);
@@ -308,21 +318,13 @@ const getDefaultLocale = (
   req: NextRequest
 ): {
   locale: Locale;
-} => {
-  // Get browser languages
-  const headers = {
-    'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
-  };
-
-  const languages = new Negotiator({ headers }).languages();
-  const detectedLocale = match(languages, supportedLocales, defaultLocale);
-
-  return {
-    locale: supportedLocales.includes(detectedLocale as Locale)
-      ? (detectedLocale as Locale)
-      : defaultLocale,
-  };
-};
+} => ({
+  locale: negotiateAcceptLanguage(
+    req.headers.get('accept-language'),
+    supportedLocales,
+    defaultLocale
+  ),
+});
 
 const getLocale = (
   req: NextRequest

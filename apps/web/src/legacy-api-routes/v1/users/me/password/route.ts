@@ -1,6 +1,8 @@
+import { revokeCrossAppTokensForUser } from '@tuturuuu/auth/cross-app';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { supabaseCrossAppTokenStore } from '@/lib/auth/sign-out-credentials';
 
 const UpdatePasswordSchema = z.object({
   password: z.string().min(8),
@@ -15,7 +17,7 @@ function isReauthenticationNeeded(error: { message?: string; code?: string }) {
   );
 }
 
-export const POST = withSessionAuth(async (request, { supabase }) => {
+export const POST = withSessionAuth(async (request, { supabase, user }) => {
   try {
     const body = UpdatePasswordSchema.safeParse(await request.json());
 
@@ -51,6 +53,14 @@ export const POST = withSessionAuth(async (request, { supabase }) => {
         { status: 400 }
       );
     }
+
+    // Outstanding cross-app handoff tokens must not survive a password change.
+    // The password is already changed, so a revocation failure is logged by
+    // the helper and does not fail the request.
+    await revokeCrossAppTokensForUser(
+      user.id,
+      supabaseCrossAppTokenStore(supabase)
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {

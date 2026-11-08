@@ -7,6 +7,11 @@ import {
   updateMailMailboxSettings,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -60,15 +65,15 @@ export function MailAutomationSettings({
       ? automation.forwarding.address
       : automation.forwarding.mode;
   return (
-    <section className="space-y-5 rounded-xl border border-border bg-muted/20 p-4">
-      <div>
-        <h3 className="font-semibold text-sm">{t('smart_inbox')}</h3>
-        <p className="mt-1 text-muted-foreground text-xs leading-relaxed">
-          {t('smart_inbox_description')}
-        </p>
-      </div>
-      <div className="flex items-center justify-between gap-4">
-        <Label htmlFor="mail-smart-labels">{t('automatic_labels')}</Label>
+    <SettingsSection
+      title={t('smart_inbox')}
+      description={t('smart_inbox_description')}
+    >
+      <SettingItemTab
+        title={
+          <Label htmlFor="mail-smart-labels">{t('automatic_labels')}</Label>
+        }
+      >
         <Switch
           id="mail-smart-labels"
           disabled={!canManage}
@@ -77,10 +82,15 @@ export function MailAutomationSettings({
             setAutomation({ ...automation, smartLabelsEnabled })
           }
         />
-      </div>
+      </SettingItemTab>
       {!mailbox.groupPolicy && (
-        <div className="space-y-2 border-border border-t pt-4">
-          <Label htmlFor="mail-forwarding">{t('automatic_forwarding')}</Label>
+        <SettingItemTab
+          title={
+            <Label htmlFor="mail-forwarding">{t('automatic_forwarding')}</Label>
+          }
+          description={t('forwarding_description')}
+          controlWidth="md"
+        >
           <Select
             disabled={!canManage}
             value={selection}
@@ -110,15 +120,11 @@ export function MailAutomationSettings({
               ))}
             </SelectContent>
           </Select>
-          <p className="text-muted-foreground text-xs leading-relaxed">
-            {t('forwarding_description')}
-          </p>
-        </div>
+        </SettingItemTab>
       )}
       {canManage && (
-        <div className="flex justify-end">
+        <SettingsSectionFooter>
           <Button
-            size="sm"
             disabled={
               save.isPending ||
               JSON.stringify(initial) === JSON.stringify(automation)
@@ -127,8 +133,8 @@ export function MailAutomationSettings({
           >
             {t('save')}
           </Button>
-        </div>
+        </SettingsSectionFooter>
       )}
-    </section>
+    </SettingsSection>
   );
 }

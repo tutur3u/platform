@@ -19,7 +19,8 @@ const conclusions = new Set([
   'startup_failure',
 ]);
 const sha = /^[a-f0-9]{40}$/;
-const tag = /^desktop-v\d+\.\d+\.\d+-\d+$/;
+// Legacy betas appended the CI run ID; current tags are desktop-v<version>.
+const tag = /^desktop-v\d+\.\d+\.\d+(?:-\d+)?$/;
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 

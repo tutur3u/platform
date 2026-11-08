@@ -1,3 +1,4 @@
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { ImageResponse } from 'next/og';
@@ -10,6 +11,11 @@ export async function GET(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const actor = await getSatelliteAppSessionUser('nova');
+    if (!actor?.id) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
     const { userId: rawUserId } = await params;
 
     const sbAdmin = await createAdminClient();
@@ -243,7 +249,7 @@ export async function GET(
                 left: '50%',
               }}
             />
-            {/** biome-ignore lint/performance/noImgElement: <cannot use Next.js Image on server> */}
+
             <img
               alt="User Avatar"
               width="320"

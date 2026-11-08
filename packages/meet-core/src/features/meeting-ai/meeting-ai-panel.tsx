@@ -33,10 +33,16 @@ export function MeetingAiPanel({
       {ai.error ? <p role="alert">{t('unavailable')}</p> : null}
       {data ? (
         <>
-          <p className="text-muted-foreground text-xs">
-            {t(inCall ? 'notice' : 'review_notice')}
-          </p>
-          {!data.configured ? <p>{t('not_configured')}</p> : null}
+          {data.available === false ? null : (
+            <p className="text-muted-foreground text-xs">
+              {t(inCall ? 'notice' : 'review_notice')}
+            </p>
+          )}
+          {data.available === false ? (
+            <p role="status">{t('workspace_unavailable')}</p>
+          ) : !data.configured ? (
+            <p>{t('not_configured')}</p>
+          ) : null}
           {active ? (
             <p role="status" className="font-medium text-sm">
               {t(ai.capturing ? 'capturing' : 'active')}
@@ -47,13 +53,17 @@ export function MeetingAiPanel({
               {t('recovering', { count: ai.pendingChunks })}
             </p>
           ) : null}
-          {active && ai.captureError ? (
+          {ai.creditFailure ? (
+            <p role="alert" className="text-destructive text-sm">
+              {t('credits_stopped')} {t(ai.creditFailure)}
+            </p>
+          ) : active && ai.captureError ? (
             <p role="alert" className="text-destructive text-sm">
               {t('partial')}
             </p>
           ) : null}
           {ai.busy ? <p role="status">{t('processing')}</p> : null}
-          {data.canManage && data.configured ? (
+          {data.canManage && data.configured && data.available !== false ? (
             <div className="flex flex-wrap gap-2">
               {inCall && !active ? (
                 <Button disabled={ai.busy} onClick={() => run(ai.start)}>

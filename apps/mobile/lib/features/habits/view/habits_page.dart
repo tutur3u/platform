@@ -158,7 +158,7 @@ class _HabitsViewState extends State<_HabitsView> {
           if (workspace == null) {
             if (workspaceState.status == WorkspaceStatus.initial ||
                 workspaceState.status == WorkspaceStatus.loading) {
-              return const Center(child: NovaLoadingIndicator());
+              return const AppLoadingIndicator.page();
             }
             return Center(child: Text(context.l10n.assistantSelectWorkspace));
           }
@@ -181,21 +181,15 @@ class _HabitsViewState extends State<_HabitsView> {
             builder: (context, state) {
               final shellActions = <ShellActionSpec>[
                 if (_supportsSearch)
-                  ShellActionSpec(
+                  ShellActionSpec.search(
                     id: 'habits-search',
-                    inDock: true,
-                    callbackToken: (_isSearchVisible, state.searchQuery),
-                    icon: _isSearchVisible
-                        ? Icons.close_rounded
-                        : Icons.search_rounded,
+                    active: _isSearchVisible,
+                    hasQuery: state.searchQuery.isNotEmpty,
+                    callbackToken: state.searchQuery,
                     tooltip: _isSearchVisible
                         ? context.l10n.commonClearSearch
                         : context.l10n.habitsSearchHint,
-                    highlighted:
-                        _isSearchVisible || state.searchQuery.isNotEmpty,
-                    searchController: _isSearchVisible
-                        ? _searchController
-                        : null,
+                    controller: _searchController,
                     searchHint: context.l10n.habitsSearchHint,
                     onSearchChanged: (value) =>
                         context.read<HabitsCubit>().setSearchQuery(value),
@@ -239,12 +233,15 @@ class _HabitsViewState extends State<_HabitsView> {
                   builder: (context, state) {
                     if (state.status == HabitsStatus.loading &&
                         state.trackers.isEmpty) {
-                      return const Center(child: NovaLoadingIndicator());
+                      return const AppLoadingIndicator.page();
                     }
                     if (state.status == HabitsStatus.error &&
                         state.trackers.isEmpty) {
-                      return AppPageBody(
-                        child: HabitsErrorView(error: state.error),
+                      return NovaRefreshIndicator.state(
+                        onRefresh: _refreshCurrentSection,
+                        child: AppPageBody(
+                          child: HabitsErrorView(error: state.error),
+                        ),
                       );
                     }
 
@@ -447,6 +444,11 @@ class _HabitsViewState extends State<_HabitsView> {
                   showLeaderboard: !isPersonalWorkspace,
                   onRetry: () =>
                       cubit.loadTrackerDetail(trackerId, refresh: true),
+                  onRefresh: () => cubit.loadTrackerDetail(
+                    trackerId,
+                    refresh: true,
+                    retainError: true,
+                  ),
                   onLogEntry: () => _openTrackerEntryComposer(trackerId),
                   onEditTracker: () async {
                     final tracker = state.detail?.tracker;

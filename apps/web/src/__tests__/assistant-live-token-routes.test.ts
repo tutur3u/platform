@@ -321,6 +321,127 @@ describe('assistant live token routes', () => {
       chatId: undefined,
       model: 'gemini-3.1-flash-live-preview',
     });
+    expect(mocks.loadAssistantLiveSeedHistory).toHaveBeenCalledWith({
+      chat: { id: 'chat-1' },
+      userId: 'user-1',
+    });
+  });
+
+  it('returns stage durations without caching the scoped token', async () => {
+    const response = await assistantLiveTokenPOST(
+      postRequest('/api/v1/assistant/live/token', {
+        wsId: 'personal',
+        forceFresh: true,
+      })
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    const serverTiming = response.headers.get('Server-Timing') ?? '';
+    for (const stage of [
+      'auth',
+      'session',
+      'workspace',
+      'access',
+      'prompt',
+      'history',
+      'mint',
+      'total',
+    ]) {
+      expect(serverTiming).toMatch(new RegExp(`(^|, )${stage};dur=\\d`));
+    }
+    expect(serverTiming).not.toContain('ephemeral-token');
+  });
+
+  it('overlaps independent startup stages instead of awaiting them serially', async () => {
+    const deferred = <T>() => {
+      let resolve!: (value: T) => void;
+      const promise = new Promise<T>((done) => {
+        resolve = done;
+      });
+      return { promise, resolve };
+    };
+    const flush = () => new Promise((done) => setTimeout(done, 0));
+    const membership = deferred<{ ok: boolean }>();
+    const tier = deferred<string>();
+    const prompt = deferred<string>();
+    const chat = deferred<{ id: string }>();
+    mocks.verifyWorkspaceMembershipType.mockReturnValueOnce(membership.promise);
+    mocks.getWorkspaceTier.mockReturnValueOnce(tier.promise);
+    mocks.buildLiveMiraPrompt.mockReturnValueOnce(prompt.promise);
+    mocks.ensureAssistantLiveChat.mockReturnValueOnce(chat.promise);
+
+    const pending = assistantLiveTokenPOST(
+      postRequest('/api/v1/assistant/live/token', {
+        wsId: 'personal',
+        forceFresh: true,
+      })
+    );
+    await flush();
+    // Both access gates start together; nothing past them runs yet.
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledOnce();
+    expect(mocks.getWorkspaceTier).toHaveBeenCalledOnce();
+    membership.resolve({ ok: true });
+    await flush();
+    expect(mocks.ensureAssistantLiveChat).not.toHaveBeenCalled();
+    expect(mocks.buildLiveMiraPrompt).not.toHaveBeenCalled();
+
+    tier.resolve('PRO');
+    await flush();
+    // Prompt and chat preparation both start before either is released.
+    expect(mocks.buildLiveMiraPrompt).toHaveBeenCalledOnce();
+    expect(mocks.ensureAssistantLiveChat).toHaveBeenCalledOnce();
+    expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
+
+    chat.resolve({ id: 'chat-1' });
+    await flush();
+    expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
+    prompt.resolve('prompt');
+    expect((await pending).status).toBe(200);
+    expect(mocks.createConstrainedLiveToken).toHaveBeenCalledOnce();
+  });
+
+  it('does not create a chat or build a prompt for non-members', async () => {
+    mocks.verifyWorkspaceMembershipType.mockResolvedValueOnce({ ok: false });
+    const response = await assistantLiveTokenPOST(
+      postRequest('/api/v1/assistant/live/token', { wsId: 'personal' })
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.ensureAssistantLiveChat).not.toHaveBeenCalled();
+    expect(mocks.buildLiveMiraPrompt).not.toHaveBeenCalled();
+    expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
+  });
+
+  it('does not create a chat or mint a token below the PRO tier', async () => {
+    mocks.isFeatureAvailable.mockReturnValueOnce(false);
+    const response = await assistantLiveTokenPOST(
+      postRequest('/api/v1/assistant/live/token', { wsId: 'personal' })
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.ensureAssistantLiveChat).not.toHaveBeenCalled();
+    expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
+  });
+
+  it('skips seed history when a stored provider handle can resume', async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { session_handle: 'resume-handle' },
+      error: null,
+    });
+    const query = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      gt: vi.fn().mockReturnThis(),
+      maybeSingle,
+    };
+    requestSupabase.from.mockReturnValueOnce(query);
+    const response = await assistantLiveTokenPOST(
+      postRequest('/api/v1/assistant/live/token', { wsId: 'personal' })
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      sessionHandle: 'resume-handle',
+      seedHistory: [],
+    });
+    expect(mocks.loadAssistantLiveSeedHistory).not.toHaveBeenCalled();
   });
 
   it('scopes temporary-auth personalization to the verified actor without cookie auth', async () => {

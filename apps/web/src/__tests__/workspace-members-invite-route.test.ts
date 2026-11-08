@@ -52,13 +52,21 @@ const mocks = vi.hoisted(() => {
       }
 
       if (table === 'workspace_roles') {
+        const query: Record<string, unknown> = {};
+        query.eq = vi.fn(() => query);
+        query.in = roleIn;
         return {
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              in: roleIn,
-            })),
-          })),
+          select: vi.fn(() => query),
         };
+      }
+
+      if (table === 'workspace_role_permissions') {
+        // No requested role holds a creator-grant permission here.
+        const query: Record<string, unknown> = {};
+        for (const op of ['eq', 'in', 'select']) query[op] = vi.fn(() => query);
+        query.then = (resolve: (value: unknown) => unknown) =>
+          Promise.resolve({ data: [], error: null }).then(resolve);
+        return query;
       }
 
       throw new Error(`Unexpected admin table: ${table}`);
@@ -163,9 +171,8 @@ async function postInvite({
   body?: unknown;
   requestedWsId?: string;
 } = {}) {
-  const { POST } = await import(
-    '@/app/api/workspaces/[wsId]/members/invite/route'
-  );
+  const { POST } =
+    await import('@/app/api/workspaces/[wsId]/members/invite/route');
 
   return POST(
     new Request(
@@ -223,7 +230,9 @@ describe('workspace members invite route', () => {
       error: null,
     });
     mocks.roleIn.mockResolvedValue({
-      data: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }],
+      data: [
+        { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', ws_id: 'canonical-ws' },
+      ],
       error: null,
     });
   });
@@ -279,7 +288,7 @@ describe('workspace members invite route', () => {
       'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
     ];
     mocks.roleIn.mockResolvedValue({
-      data: roleIds.map((id) => ({ id })),
+      data: roleIds.map((id) => ({ id, ws_id: 'canonical-ws' })),
       error: null,
     });
     const response = await postInvite({

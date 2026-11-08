@@ -120,36 +120,6 @@ type TerminalListRow = {
   status: string | null;
 };
 
-async function hasCurrentUserTaskVisibility(
-  sbAdmin: any,
-  taskId: string,
-  userId: string
-) {
-  const [
-    { data: assignment, error: assignmentError },
-    { data: override, error: overrideError },
-  ] = await Promise.all([
-    (sbAdmin as any)
-      .from('task_assignees')
-      .select('task_id')
-      .eq('task_id', taskId)
-      .eq('user_id', userId)
-      .maybeSingle(),
-    (sbAdmin as any)
-      .from('task_user_overrides')
-      .select('task_id')
-      .eq('task_id', taskId)
-      .eq('user_id', userId)
-      .maybeSingle(),
-  ]);
-
-  if (assignmentError || overrideError) {
-    return { error: true, ok: false };
-  }
-
-  return { error: false, ok: Boolean(assignment || override) };
-}
-
 function buildPlacedTask(sourceTask: SourceTaskRow, placement: PlacementRow) {
   const sourceList = sourceTask.task_lists;
   const sourceBoard = sourceList?.workspace_boards;
@@ -721,26 +691,41 @@ export const PUT = withSessionAuth<{ taskId: string }>(
       userId: user.id,
       supabase: supabase as any,
     });
-    const sourceVisibility = sourceMembership.ok
-      ? { error: false, ok: true }
-      : await hasCurrentUserTaskVisibility(sbAdmin, taskId, user.id);
 
-    if (
-      sourceMembership.error === 'membership_lookup_failed' ||
-      sourceVisibility.error
-    ) {
+    if (sourceMembership.error === 'membership_lookup_failed') {
       return NextResponse.json(
         { error: 'Failed to verify source task access' },
         { status: 500 }
       );
     }
 
-    if (!sourceVisibility.ok) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
-
     const { personal_board_id, personal_sort_key, terminal_status } =
       parsed.data;
+
+    // Non-members need a board share on the source task. Assignment or
+    // override rows alone are not access: callers can create their own
+    // override rows, and assignments outlive workspace membership.
+    if (!sourceMembership.ok) {
+      const sourceAccess = await resolveTaskBoardAccess({
+        requiredPermission: terminal_status ? 'edit' : 'view',
+        sbAdmin: sbAdmin as any,
+        supabase: supabase as any,
+        taskId,
+        user,
+        wsId: sourceWsId,
+      });
+
+      if ('error' in sourceAccess) {
+        if (sourceAccess.error.status >= 500) {
+          return NextResponse.json(
+            { error: 'Failed to verify source task access' },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
+    }
     const personalListId =
       parsed.data.personal_list_id &&
       !isPersonalExternalStagingListId(parsed.data.personal_list_id)

@@ -44,6 +44,14 @@ void main() {
   late _Repository repository;
   late _Preferences preferences;
   late AssistantChatCubit cubit;
+  void verifyNoUpload() => verifyNever(
+    () => repository.uploadAttachment(
+      wsId: any(named: 'wsId'),
+      chatId: any(named: 'chatId'),
+      file: any(named: 'file'),
+      onProgress: any(named: 'onProgress'),
+    ),
+  );
   const restored = AssistantRestoredChat(
     chat: AssistantChatRecord(id: 'cached'),
     messages: [],
@@ -147,13 +155,7 @@ void main() {
       length.complete(4);
       await upload;
       expect(cubit.state.composerAttachments, isEmpty);
-      verifyNever(
-        () => repository.uploadAttachment(
-          wsId: any(named: 'wsId'),
-          chatId: any(named: 'chatId'),
-          file: any(named: 'file'),
-        ),
-      );
+      verifyNoUpload();
     },
   );
   for (final switchBack in [false, true]) {
@@ -185,13 +187,7 @@ void main() {
       length.complete(4);
       await upload;
       expect(cubit.state.composerAttachments, isEmpty);
-      verifyNever(
-        () => repository.uploadAttachment(
-          wsId: any(named: 'wsId'),
-          chatId: any(named: 'chatId'),
-          file: any(named: 'file'),
-        ),
-      );
+      verifyNoUpload();
     });
   }
   test(
@@ -211,13 +207,7 @@ void main() {
       length.complete(4);
       await upload;
       expect(cubit.state.composerAttachments, isEmpty);
-      verifyNever(
-        () => repository.uploadAttachment(
-          wsId: any(named: 'wsId'),
-          chatId: any(named: 'chatId'),
-          file: any(named: 'file'),
-        ),
-      );
+      verifyNoUpload();
     },
   );
   test(
@@ -235,13 +225,7 @@ void main() {
         expectedWorkspaceVersion: scope,
       );
       expect(cubit.state.composerAttachments, isEmpty);
-      verifyNever(
-        () => repository.uploadAttachment(
-          wsId: any(named: 'wsId'),
-          chatId: any(named: 'chatId'),
-          file: any(named: 'file'),
-        ),
-      );
+      verifyNoUpload();
     },
   );
   test(
@@ -263,6 +247,7 @@ void main() {
           wsId: 'ws',
           chatId: 'persisted',
           file: any(named: 'file'),
+          onProgress: any(named: 'onProgress'),
         ),
       ).thenAnswer((invocation) async {
         final file =
@@ -348,6 +333,7 @@ void main() {
           wsId: 'ws',
           chatId: 'persisted',
           file: any(named: 'file'),
+          onProgress: any(named: 'onProgress'),
         ),
       ).called(1);
     },

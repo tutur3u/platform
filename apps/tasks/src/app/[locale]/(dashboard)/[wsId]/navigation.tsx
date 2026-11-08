@@ -1,7 +1,9 @@
 import {
   BarChart3,
   CalendarDays,
+  CalendarRange,
   Plus,
+  RefreshCcw,
   Target,
   TrendingUp,
   Trophy,
@@ -14,13 +16,32 @@ import { createElement } from 'react';
 
 export type { NavLink } from '@tuturuuu/ui/custom/navigation';
 
+type NavigationTranslator = Parameters<typeof createWorkspaceMembersNavLink>[0];
+
+export interface NavigationAccess {
+  /** Cycles require `manage_projects`, matching the Cycles page guard. */
+  canManageCycles?: boolean;
+}
+
 export async function getNavigationLinks({
   personalOrWsId,
+  access,
 }: {
   personalOrWsId: string;
+  access?: NavigationAccess;
 }): Promise<(NavLink | null)[]> {
-  const t = await getTranslations();
+  return buildNavigationLinks(await getTranslations(), personalOrWsId, access);
+}
 
+/**
+ * The workspace sidebar links for a translator, shared by the Next layout and
+ * the native Start shell (which translates on the client).
+ */
+export function buildNavigationLinks(
+  t: NavigationTranslator,
+  personalOrWsId: string,
+  access: NavigationAccess = {}
+): (NavLink | null)[] {
   return [
     {
       title: t('sidebar_tabs.tasks'),
@@ -32,11 +53,27 @@ export async function getNavigationLinks({
           href: `/${personalOrWsId}/tasks/new`,
           icon: createElement(Plus, { className: 'h-4 w-4' }),
         },
+        {
+          title: t('sidebar_tabs.cycles'),
+          href: `/${personalOrWsId}/cycles`,
+          icon: createElement(RefreshCcw, { className: 'h-4 w-4' }),
+          matchExact: true,
+          disabled: !access.canManageCycles,
+        },
+        {
+          title: t('sidebar_tabs.cycles_planning'),
+          href: `/${personalOrWsId}/cycles/planning`,
+          icon: createElement(CalendarRange, { className: 'h-4 w-4' }),
+          aliases: [`/${personalOrWsId}/cycles/planning/*`],
+          disabled: !access.canManageCycles,
+        },
       ],
       aliases: [
         `/${personalOrWsId}/tasks/*`,
         `/${personalOrWsId}/boards`,
         `/${personalOrWsId}/boards/*`,
+        `/${personalOrWsId}/cycles`,
+        `/${personalOrWsId}/cycles/*`,
       ],
     },
     {

@@ -165,6 +165,53 @@ test('authored positive DO/R2/placement/history and absent defaults qualify inde
   input.queues = { producers: [], consumers: [] };
   checkInputRelation(emitted(), input, record(), identity, secretNames);
 });
+test('identity requires the ABUSE_GUARD service binding exactly', () => {
+  assert.deepEqual(
+    identity.services.find((s) => s.binding === 'ABUSE_GUARD'),
+    {
+      binding: 'ABUSE_GUARD',
+      service: 'tuturuuu-abuse-guard',
+      entrypoint: 'AbuseGuardEntrypoint',
+    }
+  );
+  policy(emitted());
+  const guard = (c) => c.services.find((s) => s.binding === 'ABUSE_GUARD');
+  for (const mutate of [
+    (c) => {
+      c.services = c.services.filter((s) => s.binding !== 'ABUSE_GUARD');
+    },
+    (c) => {
+      guard(c).service = 'tuturuuu-abuse-guard-staging';
+    },
+    (c) => {
+      guard(c).entrypoint = 'default';
+    },
+    (c) => {
+      delete guard(c).entrypoint;
+    },
+    (c) => {
+      guard(c).remote = true;
+    },
+    (c) => {
+      guard(c).binding = 'ABUSE_GUARD_HTTP';
+    },
+    (c) => {
+      c.services.reverse();
+    },
+    (c) => {
+      c.services.push({ ...guard(c) });
+    },
+  ]) {
+    const config = emitted();
+    mutate(config);
+    assert.throws(() => policy(config));
+    const input = authored();
+    mutate(input);
+    assert.throws(() =>
+      checkInputRelation(emitted(), input, record(), identity, secretNames)
+    );
+  }
+});
 for (const field of Object.keys(identity)) {
   test(`rejects authored and emitted ${field} drift`, () => {
     const input = authored();

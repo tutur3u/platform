@@ -154,11 +154,24 @@ test('only Type Check opts in; tasks and credential gates stay independent of ar
     )
       continue;
     const workflow = yaml(workflowPath);
-    for (const job of Object.values(workflow.jobs || {})) {
+    for (const [jobId, job] of Object.entries(workflow.jobs || {})) {
       for (const step of job.steps || []) {
         if (step.uses === './.github/actions/setup-turbo-fallback-cache') {
-          if (step.with?.['cross-lock-restore'] === 'true')
+          if (
+            step.with?.['cross-lock-restore'] === 'true' &&
+            !consumers.includes(file)
+          )
             consumers.push(file);
+        }
+        // The pull request variant is pool-eligible and so names no credential.
+        if (
+          file === 'type-check.yaml' &&
+          jobId === 'type-check-pr' &&
+          step.uses === './.github/actions/run-with-turbo-remote-cache'
+        ) {
+          assert.equal(step.with.token, undefined);
+          assert.equal(step.with.team, undefined);
+          continue;
         }
         if (
           file === 'type-check.yaml' &&

@@ -18,7 +18,7 @@ export function useAutoOAuthLogin(
 
     if (
       !provider ||
-      !AUTH_OAUTH_PROVIDERS.includes(provider as AuthOAuthProvider)
+      !AUTH_OAUTH_PROVIDERS.some((allowed) => allowed === provider)
     ) {
       attemptedProvider.current = null;
       return;

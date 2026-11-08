@@ -27,10 +27,17 @@ const importIds = vi.hoisted(() => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     from: () => {
+      // Keyset read of the workspace's active Google rows; the token is
+      // matched in process against the access token the test passes.
       const query = {
         select: () => query,
         eq: () => query,
-        limit: async () => ({ data: [{ id: importIds.token }], error: null }),
+        gt: () => query,
+        order: () => query,
+        limit: async () => ({
+          data: [{ id: importIds.token, access_token: 'test-access-token' }],
+          error: null,
+        }),
       };
       return query;
     },
@@ -276,9 +283,8 @@ describe('performFullSyncForWorkspace', () => {
 
   describe('Integration with syncWorkspaceBatched', () => {
     it('should call syncWorkspaceBatched when events exist', async () => {
-      const { syncWorkspaceBatched } = await import(
-        '../src/google-calendar-sync.js'
-      );
+      const { syncWorkspaceBatched } =
+        await import('../src/google-calendar-sync.js');
 
       await performFullSyncForWorkspace(
         'primary',
@@ -313,9 +319,8 @@ describe('performFullSyncForWorkspace', () => {
         },
       });
 
-      const { syncWorkspaceBatched } = await import(
-        '../src/google-calendar-sync.js'
-      );
+      const { syncWorkspaceBatched } =
+        await import('../src/google-calendar-sync.js');
 
       await performFullSyncForWorkspace(
         'primary',

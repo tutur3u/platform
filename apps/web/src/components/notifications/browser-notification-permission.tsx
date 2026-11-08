@@ -1,12 +1,25 @@
 'use client';
 
-import { AlertCircle, Bell, CheckCircle2, XCircle } from '@tuturuuu/icons';
+import { Bell } from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 type PermissionState = 'granted' | 'denied' | 'default' | 'unsupported';
+
+const STATUS_BADGE_CLASS: Record<PermissionState, string> = {
+  granted: 'border-dynamic-green/30 text-dynamic-green',
+  denied: 'border-dynamic-red/30 text-dynamic-red',
+  unsupported: 'border-dynamic-yellow/30 text-dynamic-yellow',
+  default: '',
+};
 
 export default function BrowserNotificationPermission() {
   const t = useTranslations('notifications.settings.browser');
@@ -64,32 +77,6 @@ export default function BrowserNotificationPermission() {
     }
   };
 
-  const getStatusIcon = () => {
-    switch (permissionState) {
-      case 'granted':
-        return <CheckCircle2 className="h-5 w-5 text-dynamic-green" />;
-      case 'denied':
-        return <XCircle className="h-5 w-5 text-dynamic-red" />;
-      case 'unsupported':
-        return <AlertCircle className="h-5 w-5 text-dynamic-orange" />;
-      default:
-        return <Bell className="h-5 w-5 text-dynamic-blue" />;
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (permissionState) {
-      case 'granted':
-        return 'bg-dynamic-green/20';
-      case 'denied':
-        return 'bg-dynamic-red/20';
-      case 'unsupported':
-        return 'bg-dynamic-orange/20';
-      default:
-        return 'bg-dynamic-blue/20';
-    }
-  };
-
   const getStatusText = () => {
     switch (permissionState) {
       case 'granted':
@@ -116,60 +103,39 @@ export default function BrowserNotificationPermission() {
     }
   };
 
-  if (permissionState === 'unsupported') {
-    return (
-      <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-4">
-        <div className={`rounded-full ${getStatusColor()} p-2`}>
-          {getStatusIcon()}
-        </div>
-        <div>
-          <h3 className="font-medium text-sm">{t('browser-notifications')}</h3>
-          <p className="text-muted-foreground text-xs">{getStatusText()}</p>
-          <p className="mt-1 text-muted-foreground text-xs">{getHelpText()}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <div className={`rounded-full ${getStatusColor()} p-2`}>
-          {getStatusIcon()}
-        </div>
-        <div className="flex-1">
-          <h3 className="font-medium text-sm">{t('browser-notifications')}</h3>
-          <p className="text-muted-foreground text-xs">{getStatusText()}</p>
-        </div>
-      </div>
-
-      <div className="pl-11">
-        <p className="mb-4 text-muted-foreground text-sm">{getHelpText()}</p>
-
-        {permissionState === 'default' && (
-          <Button
-            onClick={requestPermission}
-            disabled={isRequesting}
-            className="w-full sm:w-auto"
+    <SettingsSection>
+      <SettingItemTab
+        title={t('browser-notifications')}
+        description={getHelpText()}
+        icon={<Bell className="h-4 w-4" />}
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <Badge
+            variant="outline"
+            className={STATUS_BADGE_CLASS[permissionState]}
           >
-            {isRequesting ? t('requesting') : t('enable')}
-          </Button>
-        )}
+            {getStatusText()}
+          </Badge>
+          {permissionState === 'default' && (
+            <Button onClick={requestPermission} disabled={isRequesting}>
+              {isRequesting ? t('requesting') : t('enable')}
+            </Button>
+          )}
+        </div>
+      </SettingItemTab>
 
-        {permissionState === 'denied' && (
-          <div className="rounded-lg bg-destructive/10 p-4">
-            <p className="text-destructive text-sm">
-              {t('denied-instructions')}
-            </p>
-          </div>
-        )}
+      {permissionState === 'denied' && (
+        <SettingsSectionMessage className="py-3">
+          {t('denied-instructions')}
+        </SettingsSectionMessage>
+      )}
 
-        {permissionState === 'granted' && (
-          <div className="rounded-lg bg-dynamic-green/10 p-4">
-            <p className="text-dynamic-green text-sm">{t('granted-info')}</p>
-          </div>
-        )}
-      </div>
-    </div>
+      {permissionState === 'granted' && (
+        <SettingsSectionMessage className="py-3">
+          {t('granted-info')}
+        </SettingsSectionMessage>
+      )}
+    </SettingsSection>
   );
 }

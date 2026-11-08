@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: protected CI-only signing inputs */
 export const BUNDLE_URL =
   'https://infrastructure.tuturuuu.com/api/v1/desktop-deployment/bundle';
 export const AUDIENCE = 'tuturuuu-desktop-deployment';

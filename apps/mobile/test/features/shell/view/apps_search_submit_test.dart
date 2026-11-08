@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -171,7 +172,7 @@ void main() {
 
   final searchField = find.byKey(const ValueKey('shell-search-query'));
   Future<void> search(WidgetTester tester, String query) async {
-    await tester.tap(find.byIcon(Icons.search_rounded).first);
+    await tester.tap(find.byIcon(AppIcons.search).first);
     await _pump(tester);
     expect(searchField, findsOneWidget);
     await tester.enterText(searchField, query);
@@ -183,6 +184,20 @@ void main() {
     await _pump(tester);
   }
 
+  testWidgets('only Apps offers Search; Home has no Apps shortcut', (
+    tester,
+  ) async {
+    await mount(tester);
+    router.go(Routes.home);
+    await _pump(tester);
+    expect(find.byIcon(AppIcons.search), findsNothing);
+    expect(find.byTooltip('Search'), findsNothing);
+
+    router.go(Routes.apps);
+    await _pump(tester);
+    expect(find.byIcon(AppIcons.search), findsOneWidget);
+  });
+
   testWidgets('leaving Apps clears retained query and search chrome', (
     tester,
   ) async {
@@ -193,7 +208,7 @@ void main() {
     router.go(Routes.apps);
     await _pump(tester);
     expect(searchField, findsNothing);
-    await tester.tap(find.byIcon(Icons.search_rounded).first);
+    await tester.tap(find.byIcon(AppIcons.search).first);
     await _pump(tester);
     expect(tester.widget<TextField>(searchField).controller!.text, isEmpty);
   });

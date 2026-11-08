@@ -6,6 +6,7 @@ import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-vi
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import type { LaunchableAppSlug } from '@tuturuuu/utils/launchable-apps';
 import { type ReactNode, Suspense, useState } from 'react';
+import { AppSwitchTracker } from '../components/app-switch-tracker';
 import { GlobalCommandLauncher } from '../components/command-launcher';
 import { createSatelliteQueryClient } from './query-client';
 
@@ -29,6 +30,7 @@ export function ClientProviders({
             <GlobalCommandLauncher currentApp={currentApp} />
           </Suspense>
         )}
+        {currentApp && <AppSwitchTracker currentApp={currentApp} />}
       </TooltipProvider>
     </>
   );

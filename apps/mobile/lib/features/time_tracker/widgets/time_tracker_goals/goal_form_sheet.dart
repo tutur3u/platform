@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
+    show AppSheetHandle;
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
@@ -104,120 +106,103 @@ class _GoalFormSheetState extends State<GoalFormSheet> {
     final selectedCategory = _selectedCategoryName(l10n);
     final selectedCategoryColor = _selectedCategoryColor(context, theme);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        24,
+        16,
+        24,
+        MediaQuery.of(context).viewInsets.bottom + 32,
       ),
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          24,
-          16,
-          24,
-          MediaQuery.of(context).viewInsets.bottom + 32,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.mutedForeground.withValues(
-                    alpha: 0.4,
-                  ),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const shad.Gap(16),
-            Text(
-              widget.title,
-              style: theme.typography.h4.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const shad.Gap(12),
-            Text(l10n.timerGoalsCategory),
-            const shad.Gap(4),
-            shad.OutlineButton(
-              onPressed: _openCategoryPicker,
-              alignment: Alignment.centerLeft,
-              child: Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: selectedCategoryColor,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                  const shad.Gap(8),
-                  Expanded(child: Text(selectedCategory)),
-                ],
-              ),
-            ),
-            const shad.Gap(12),
-            Text(l10n.timerGoalsDailyMinutes),
-            const shad.Gap(4),
-            shad.TextField(
-              selectionControls: platformTextSelectionControls(),
-              contextMenuBuilder: platformTextContextMenuBuilder(),
-              controller: _dailyController,
-              keyboardType: TextInputType.number,
-              placeholder: const Text('480'),
-            ),
-            const shad.Gap(12),
-            Text(l10n.timerGoalsWeeklyMinutesOptional),
-            const shad.Gap(4),
-            shad.TextField(
-              selectionControls: platformTextSelectionControls(),
-              contextMenuBuilder: platformTextContextMenuBuilder(),
-              controller: _weeklyController,
-              keyboardType: TextInputType.number,
-              placeholder: const Text('2400'),
-            ),
-            const shad.Gap(12),
-            Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const AppSheetHandle(),
+          const shad.Gap(16),
+          Text(
+            widget.title,
+            style: theme.typography.h4.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const shad.Gap(12),
+          Text(l10n.timerGoalsCategory),
+          const shad.Gap(4),
+          shad.OutlineButton(
+            onPressed: _openCategoryPicker,
+            alignment: Alignment.centerLeft,
+            child: Row(
               children: [
-                shad.Switch(
-                  value: _isActive,
-                  onChanged: (value) => setState(() => _isActive = value),
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: selectedCategoryColor,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
                 const shad.Gap(8),
-                Text(l10n.timerGoalsActiveLabel),
+                Expanded(child: Text(selectedCategory)),
               ],
             ),
-            if (_error != null) ...[
+          ),
+          const shad.Gap(12),
+          Text(l10n.timerGoalsDailyMinutes),
+          const shad.Gap(4),
+          shad.TextField(
+            selectionControls: platformTextSelectionControls(),
+            contextMenuBuilder: platformTextContextMenuBuilder(),
+            controller: _dailyController,
+            keyboardType: TextInputType.number,
+            placeholder: const Text('480'),
+          ),
+          const shad.Gap(12),
+          Text(l10n.timerGoalsWeeklyMinutesOptional),
+          const shad.Gap(4),
+          shad.TextField(
+            selectionControls: platformTextSelectionControls(),
+            contextMenuBuilder: platformTextContextMenuBuilder(),
+            controller: _weeklyController,
+            keyboardType: TextInputType.number,
+            placeholder: const Text('2400'),
+          ),
+          const shad.Gap(12),
+          Row(
+            children: [
+              shad.Switch(
+                value: _isActive,
+                onChanged: (value) => setState(() => _isActive = value),
+              ),
               const shad.Gap(8),
-              Text(
-                _error!,
-                style: theme.typography.small.copyWith(
-                  color: theme.colorScheme.destructive,
+              Text(l10n.timerGoalsActiveLabel),
+            ],
+          ),
+          if (_error != null) ...[
+            const shad.Gap(8),
+            Text(
+              _error!,
+              style: theme.typography.small.copyWith(
+                color: theme.colorScheme.destructive,
+              ),
+            ),
+          ],
+          const shad.Gap(16),
+          Row(
+            children: [
+              Expanded(
+                child: shad.OutlineButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(l10n.commonCancel),
+                ),
+              ),
+              const shad.Gap(8),
+              Expanded(
+                child: shad.PrimaryButton(
+                  onPressed: _submit,
+                  child: Text(widget.saveLabel),
                 ),
               ),
             ],
-            const shad.Gap(16),
-            Row(
-              children: [
-                Expanded(
-                  child: shad.OutlineButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(l10n.commonCancel),
-                  ),
-                ),
-                const shad.Gap(8),
-                Expanded(
-                  child: shad.PrimaryButton(
-                    onPressed: _submit,
-                    child: Text(widget.saveLabel),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -309,86 +294,69 @@ class _CategoryPickerSheet extends StatelessWidget {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        shrinkWrap: true,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.mutedForeground.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const shad.Gap(16),
-          Text(
-            l10n.timerGoalsCategory,
-            style: theme.typography.h4.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const shad.Gap(12),
-          shad.OutlineButton(
-            onPressed: () => Navigator.of(context).pop('general'),
-            alignment: Alignment.centerLeft,
-            child: Row(
-              children: [
-                Expanded(child: Text(l10n.timerGoalsGeneral)),
-                if (selectedCategory == 'general')
-                  Icon(
-                    LucideIcons.check,
-                    size: 16,
-                    color: theme.colorScheme.foreground,
-                  ),
-              ],
-            ),
-          ),
-          const shad.Gap(8),
-          ...categories.map((category) {
-            final categoryColor = resolveTimeTrackingCategoryColor(
-              context,
-              category.color,
-              fallback: theme.colorScheme.primary,
-            );
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: shad.OutlineButton(
-                onPressed: () => Navigator.of(context).pop(category.id),
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: categoryColor,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                    const shad.Gap(8),
-                    Expanded(
-                      child: Text(category.name ?? l10n.timerNoCategory),
-                    ),
-                    if (selectedCategory == category.id)
-                      Icon(
-                        LucideIcons.check,
-                        size: 16,
-                        color: theme.colorScheme.foreground,
-                      ),
-                  ],
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      shrinkWrap: true,
+      children: [
+        const AppSheetHandle(),
+        const shad.Gap(16),
+        Text(
+          l10n.timerGoalsCategory,
+          style: theme.typography.h4.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const shad.Gap(12),
+        shad.OutlineButton(
+          onPressed: () => Navigator.of(context).pop('general'),
+          alignment: Alignment.centerLeft,
+          child: Row(
+            children: [
+              Expanded(child: Text(l10n.timerGoalsGeneral)),
+              if (selectedCategory == 'general')
+                Icon(
+                  LucideIcons.check,
+                  size: 16,
+                  color: theme.colorScheme.foreground,
                 ),
+            ],
+          ),
+        ),
+        const shad.Gap(8),
+        ...categories.map((category) {
+          final categoryColor = resolveTimeTrackingCategoryColor(
+            context,
+            category.color,
+            fallback: theme.colorScheme.primary,
+          );
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: shad.OutlineButton(
+              onPressed: () => Navigator.of(context).pop(category.id),
+              alignment: Alignment.centerLeft,
+              child: Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: categoryColor,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  const shad.Gap(8),
+                  Expanded(child: Text(category.name ?? l10n.timerNoCategory)),
+                  if (selectedCategory == category.id)
+                    Icon(
+                      LucideIcons.check,
+                      size: 16,
+                      color: theme.colorScheme.foreground,
+                    ),
+                ],
               ),
-            );
-          }),
-        ],
-      ),
+            ),
+          );
+        }),
+      ],
     );
   }
 }

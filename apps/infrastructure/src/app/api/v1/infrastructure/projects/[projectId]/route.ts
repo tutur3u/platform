@@ -5,6 +5,7 @@ import {
 import {
   handleInfrastructureProjectRequest,
   readJsonObject,
+  readSelectedBranch,
   readStringArray,
 } from '../_shared';
 
@@ -39,10 +40,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
             typeof body.redisEnabled === 'boolean'
               ? body.redisEnabled
               : undefined,
-          selectedBranch:
-            typeof body.selectedBranch === 'string'
-              ? body.selectedBranch
-              : undefined,
+          selectedBranch: readSelectedBranch(body.selectedBranch),
         }),
       };
     },

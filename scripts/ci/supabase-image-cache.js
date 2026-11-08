@@ -13,11 +13,11 @@ const {
   tagPinned,
 } = require('./supabase-image-cache-seed.js');
 
-// CLI embeds pkg/config/templates/Dockerfile. `services` omits these images.
-// https://github.com/supabase/cli/blob/v2.117.0/apps/cli-go/pkg/config/templates/Dockerfile
+// Fallback pins from the CLI Dockerfile for images absent from `services`.
+// https://github.com/supabase/cli/blob/v2.121.0/apps/cli-go/pkg/config/templates/Dockerfile
 const SUPPLEMENTAL = {
-  version: '2.117.0',
-  images: { kong: '2.8.1', mailpit: 'v1.30.2', imgproxy: 'v3.8.0' },
+  version: '2.121.0',
+  images: { kong: '2.8.1', mailpit: 'v1.31.3', imgproxy: 'v3.26.0' },
 };
 const MAX_ARCHIVE_BYTES = 6 * 1024 ** 3;
 const PROFILES = {
@@ -66,7 +66,7 @@ function imageList({ services, cliVersion, registry, profile, config = '' }) {
         throw new Error(`Uncached service enabled: ${section}`);
   }
   if (!names) throw new Error('Unknown Supabase image profile');
-  const versions = new Map(Object.entries(SUPPLEMENTAL.images));
+  const versions = new Map();
   for (const service of services) {
     if (
       !/^[a-z0-9-]+\/[a-z0-9-]+$/.test(service.name) ||
@@ -78,7 +78,7 @@ function imageList({ services, cliVersion, registry, profile, config = '' }) {
     versions.set(name, service.local);
   }
   return [...new Set(names)].sort().map((name) => {
-    const tag = versions.get(name);
+    const tag = versions.get(name) ?? SUPPLEMENTAL.images[name];
     if (!tag) throw new Error(`Missing CLI image metadata: ${name}`);
     // GetRegistryImageUrl rewrites even postgrest/postgrest to /supabase/.
     return `${registry}/supabase/${name}:${tag}`;
@@ -266,7 +266,6 @@ async function main(mode) {
   const root = path.resolve(__dirname, '../..');
   const database = path.resolve(
     root,
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     process.env.IMAGE_DATABASE || 'apps/database'
   );
   const directory = path.join(process.env.RUNNER_TEMP, 'supabase-images');
@@ -279,17 +278,13 @@ async function main(mode) {
         [path.join(database, 'scripts/run-supabase.js'), ...args],
         { cwd: database }
       );
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     const registry = process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY;
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     const profile = process.env.IMAGE_PROFILE;
     const trusted = trustedSave(
       process.env.GITHUB_EVENT_NAME,
       process.env.GITHUB_REF
     );
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     const catalog = process.env.IMAGE_SEED_CATALOG;
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     const seedBudget = process.env.IMAGE_PULL_BUDGET_SECONDS;
     const fixed = seedCatalog(catalog, {
       trusted,
@@ -383,7 +378,6 @@ async function main(mode) {
   if (mode !== 'pull')
     throw new Error('Usage: supabase-image-cache.js key|load|load-subset|pull');
   const budget = pullBudget(
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     process.env.IMAGE_PULL_BUDGET_SECONDS,
     process.env.GITHUB_EVENT_NAME,
     process.env.GITHUB_REF
@@ -399,13 +393,10 @@ async function main(mode) {
     platform: process.platform,
     arch: process.arch,
   };
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
   const catalog = process.env.IMAGE_SEED_CATALOG;
   const fixed = seedCatalog(catalog, {
     ...seedContext,
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     profile: process.env.IMAGE_PROFILE,
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
     registry: process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY,
   });
   if (fixed && JSON.stringify(fixed) !== JSON.stringify(images))
@@ -432,7 +423,6 @@ async function main(mode) {
   if (fixed)
     for (const image of images)
       verifyPinned(image, catalogPin(catalog, image), { deadline });
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct composite action input, outside Turbo.
   if (process.env.IMAGE_SAVE !== 'true' || !trusted) return;
   const bytes = images.reduce(
     (sum, image) =>
@@ -479,7 +469,6 @@ if (require.main === module)
       console.error(
         `::warning::Supabase image cache configuration: ${diagnostic}`
       );
-      // biome-ignore lint/suspicious/noUndeclaredEnvVars: GitHub Actions output file, outside Turbo.
       const summary = process.env.GITHUB_STEP_SUMMARY;
       if (summary) {
         try {

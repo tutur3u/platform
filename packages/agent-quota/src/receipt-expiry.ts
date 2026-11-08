@@ -52,7 +52,7 @@ export function clearRecoveredLimits(context: AdmissionContext) {
           (!event.resetsAt ||
             Boolean(
               window.resetsAt &&
-                Date.parse(window.resetsAt) > context.now.getTime()
+              Date.parse(window.resetsAt) > context.now.getTime()
             ))
       )
     )

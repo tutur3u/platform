@@ -6,6 +6,11 @@ import {
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { providerReadonlyProjection } from '@tuturuuu/utils/calendar-provider-readonly';
 import {
+  credentialSyncErrorType,
+  ensureHealthyCalendarCredential,
+} from './credential-health';
+import type { CalendarTokenOutcomeEntry } from './oauth-token-health';
+import {
   checkProviderSyncBudget,
   MAX_SYNC_CONNECTIONS,
   providerSyncSignal,
@@ -19,7 +24,7 @@ import {
   classifyCalendarSyncError,
 } from './sync-errors';
 import { sanitizeWorkspaceCalendarEventFields } from './sync-field-limits';
-import { type CalendarAuthToken, ensureValidToken } from './token-refresh';
+import type { CalendarAuthToken } from './token-refresh';
 
 type CalendarConnectionRow = {
   id: string;
@@ -62,6 +67,7 @@ export async function syncMicrosoftInbound(args: {
   let failedAccounts = 0;
   const failedCalendars: CalendarSyncFailure[] = [];
   let failureType: ReturnType<typeof classifyCalendarSyncError> | null = null;
+  const tokenOutcomes: CalendarTokenOutcomeEntry[] = [];
   const batch = providerSyncSignal()
     ? rotatingSyncBatch(
         [...tokens].sort((a, b) => a.id.localeCompare(b.id)),
@@ -108,15 +114,13 @@ export async function syncMicrosoftInbound(args: {
       if (!enabledConnections.length) continue;
       remainingConnections -= enabledConnections.length;
       pendingConnections = enabledConnections.length;
-      const refreshed = await ensureValidToken(args.sbAdmin, token);
+      const { result: refreshed, outcome } =
+        await ensureHealthyCalendarCredential(args.sbAdmin, token);
+      tokenOutcomes.push(outcome);
       if (refreshed.error) {
         throw new CalendarProviderSyncError(
           'Microsoft calendar credential refresh failed',
-          /invalid_grant|token has been revoked|reconnect calendar/i.test(
-            refreshed.error
-          )
-            ? 'auth'
-            : 'configuration'
+          credentialSyncErrorType(refreshed)
         );
       }
       const graphClient = providerSyncSignal()
@@ -290,5 +294,6 @@ export async function syncMicrosoftInbound(args: {
     failedCalendars,
     deferredConnections,
     deferredAccounts,
+    tokenOutcomes,
   };
 }

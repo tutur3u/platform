@@ -3,8 +3,14 @@ import type { Database } from '@tuturuuu/types';
 
 type CheckWrite = Pick<
   Database['private']['Tables']['user_group_post_checks']['Insert'],
-  'post_id' | 'user_id' | 'is_completed' | 'notes'
->;
+  'post_id' | 'user_id' | 'is_completed'
+> &
+  Partial<
+    Pick<
+      Database['private']['Tables']['user_group_post_checks']['Insert'],
+      'notes'
+    >
+  >;
 
 export async function upsertPostChecks(
   client: TypedSupabaseClient,

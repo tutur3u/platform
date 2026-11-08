@@ -278,9 +278,8 @@ function normalizeTrustDecisionRow(row?: TrustDecisionRow | null) {
 
 async function getSupabaseAdmin(): Promise<SupabaseClient<Database> | null> {
   try {
-    const { createAdminClient } = await import(
-      '@tuturuuu/supabase/next/server'
-    );
+    const { createAdminClient } =
+      await import('@tuturuuu/supabase/next/server');
     return (await createAdminClient({
       noCookie: true,
     })) as SupabaseClient<Database>;
@@ -595,7 +594,7 @@ export async function recordAbuseStepUpChallenge({
           ? new Date().toISOString()
           : null,
       ip_address: normalizeIpAddress(ipAddress),
-      metadata: (metadata ?? {}) as Json,
+      metadata: (metadata ?? {}) as NonNullable<Json>,
       risk_tier: riskTier,
       route: route ?? null,
       status,

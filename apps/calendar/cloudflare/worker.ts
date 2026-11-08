@@ -1,4 +1,3 @@
-import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { handleCalendarRequest } from '#calendar-handler';
 import type {
   CalendarExecutionContext,
@@ -11,9 +10,6 @@ export default {
     env: CalendarWorkerEnvironment,
     ctx: CalendarExecutionContext
   ) {
-    return (
-      workerBuildInfo(request, 'calendar') ??
-      handleCalendarRequest(request, env, ctx)
-    );
+    return handleCalendarRequest(request, env, ctx);
   },
 } satisfies ExportedHandler<CloudflareEnv>;

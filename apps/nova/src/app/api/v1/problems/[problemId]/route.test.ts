@@ -26,7 +26,6 @@ function query(result: QueryResult) {
     maybeSingle: vi.fn(async () => result),
     select: vi.fn(() => builder),
     single: vi.fn(async () => result),
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     then: (resolve: (value: QueryResult) => unknown) =>
       Promise.resolve(result).then(resolve),
   };

@@ -169,9 +169,9 @@ function resolveWorkspace(workspaceId: string, workspaces: ListedWorkspace[]) {
 function hasTaskListScope(flags: Record<string, FlagValue>) {
   return Boolean(
     getFlag(flags, 'board') ||
-      getFlag(flags, 'board-id') ||
-      getFlag(flags, 'list') ||
-      getFlag(flags, 'list-id')
+    getFlag(flags, 'board-id') ||
+    getFlag(flags, 'list') ||
+    getFlag(flags, 'list-id')
   );
 }
 
@@ -514,9 +514,9 @@ function isPersonalExternalTask(task: WorkspaceTaskApiTask | undefined | null) {
     task.is_personal_external === true ||
     Boolean(
       task.source_workspace_id ||
-        task.source_board_id ||
-        task.personal_board_id ||
-        task.personal_list_id
+      task.source_board_id ||
+      task.personal_board_id ||
+      task.personal_list_id
     )
   );
 }
@@ -2039,7 +2039,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
 
   if (group === 'upgrade')
-    return runUpgrade(rawAction, positionals.slice(2), json, flags.keep);
+    return runUpgrade(rawAction, positionals.slice(2), json, flags.keep, flags);
 
   if (group === 'tiptap') {
     await runTiptapCommand({ action: rawAction, flags, json });

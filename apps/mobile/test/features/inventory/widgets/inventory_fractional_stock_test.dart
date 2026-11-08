@@ -14,7 +14,7 @@ import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/inventory/view/inventory_page.dart';
-import 'package:mobile/features/inventory/widgets/inventory_product_card.dart';
+import 'package:mobile/features/inventory/widgets/inventory_item_row.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
@@ -313,9 +313,9 @@ void main() {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                InventoryProductCard(
+                InventoryItemRow(
                   product: _product(amount: 0.04),
-                  currency: 'USD',
+                  stockVisible: true,
                 ),
               ],
             ),
@@ -325,8 +325,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('0.04 available'), findsOneWidget);
-      expect(find.textContaining('0.0 available'), findsNothing);
+      expect(find.text('0.04'), findsOneWidget);
+      expect(find.text('0.0'), findsNothing);
       expect(find.bySemanticsLabel(RegExp('0.04 available')), findsOneWidget);
       expect(tester.takeException(), isNull);
       await _capture(tester, key, 'compact-product-small-precision');

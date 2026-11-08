@@ -38,10 +38,10 @@ export async function getNavigationLinks({
       ]);
   const connectedChatCanManage = Boolean(
     access?.canAccessWorkspace &&
-      access.workspacePermissions?.containsPermission(
-        'manage_external_projects'
-      ) &&
-      access.binding?.canonical_project?.allowed_features.includes('chat')
+    access.workspacePermissions?.containsPermission(
+      'manage_external_projects'
+    ) &&
+    access.binding?.canonical_project?.allowed_features.includes('chat')
   );
   const connectedChatCanView = Boolean(access?.canAccessConnectedChat);
 

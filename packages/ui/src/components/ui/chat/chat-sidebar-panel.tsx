@@ -113,8 +113,8 @@ export function ChatSidebarPanel({
   );
   const requestedConversationPending = Boolean(
     requestedConversationId &&
-      !scopedConversationIdList.includes(requestedConversationId) &&
-      conversationsQuery.isFetching
+    !scopedConversationIdList.includes(requestedConversationId) &&
+    conversationsQuery.isFetching
   );
   const selectedConversationId = resolveChatConversationSelection({
     conversationIds: scopedConversationIdList,

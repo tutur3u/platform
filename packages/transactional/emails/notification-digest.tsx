@@ -1171,8 +1171,8 @@ export const NotificationDigestEmail = ({
                       textAlign: 'center',
                     }}
                   >
-                    ⚠️ {delayText} - These notifications are from an earlier time
-                    period
+                    ⚠️ {delayText} - These notifications are from an earlier
+                    time period
                   </Text>
                 </Section>
               )}

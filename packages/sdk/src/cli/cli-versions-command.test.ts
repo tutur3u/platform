@@ -17,6 +17,7 @@ vi.mock('./cli-versions', () => ({
 }));
 
 import { runUpgrade } from './cli-versions-command';
+import { runCli } from './commands';
 import { getHelpOutput } from './help';
 
 afterEach(() => vi.clearAllMocks());
@@ -34,6 +35,51 @@ describe('ttr upgrade routing', () => {
     );
     expect(mocks.upgradeCli).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['--unknown'],
+    ['--no-update-check', 'list'],
+    ['--no-update-check=invalid'],
+    ['status'],
+    ['show'],
+    ['version'],
+    ['--unknown=value'],
+    ['--json'],
+    ['--keep', '2'],
+    ['list', '--unknown'],
+    ['list', 'extra'],
+    ['install', '1', 'extra'],
+    ['list', '--json=false'],
+    ['activate', '1', '--keep', '2'],
+  ])('rejects unsupported upgrade arguments: %j', async (...argv) => {
+    await expect(runCli(['upgrade', ...argv])).rejects.toThrow(
+      /Usage: ttr upgrade/u
+    );
+    for (const mutation of [
+      mocks.upgradeCli,
+      mocks.installRelease,
+      mocks.activateRelease,
+      mocks.pruneReleases,
+    ])
+      expect(mutation).not.toHaveBeenCalled();
+  });
+
+  it.each([[], ['--json']])(
+    'lists releases without any mutation: %j',
+    async (...argv) => {
+      vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+      mocks.listReleases.mockResolvedValue([]);
+      await runCli(['upgrade', 'list', ...argv]);
+      expect(mocks.listReleases).toHaveBeenCalledOnce();
+      for (const mutation of [
+        mocks.upgradeCli,
+        mocks.installRelease,
+        mocks.activateRelease,
+        mocks.pruneReleases,
+      ])
+        expect(mutation).not.toHaveBeenCalled();
+    }
+  );
 
   it('routes side-by-side subcommands with their arguments', async () => {
     vi.spyOn(process.stdout, 'write').mockImplementation(() => true);

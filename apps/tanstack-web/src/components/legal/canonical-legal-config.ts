@@ -13,7 +13,11 @@ import {
   Shield,
   Users,
 } from '@tuturuuu/icons/lucide';
-import type { LegalDocument, LegalSection } from '@tuturuuu/legal';
+import {
+  type LegalDocument,
+  legalChangesCopy,
+  type LegalSection,
+} from '@tuturuuu/legal';
 import type { LegalPageConfig } from './legal-types';
 
 const icons: Record<LegalSection['icon'], LucideIcon> = {
@@ -35,6 +39,10 @@ export function toLegalPageConfig(document: LegalDocument): LegalPageConfig {
   return {
     badgeIcon: icons[document.sections[0]?.icon ?? 'file'],
     badgeText: document.badge,
+    upcomingChanges: legalChangesCopy[document.locale].linkLine.replace(
+      '](/legal/changes)',
+      document.locale === 'vi' ? '](/vi/legal/changes)' : '](/legal/changes)'
+    ),
     effectiveDate: document.effectiveDate,
     footerText: document.footer,
     highlightedWord: document.highlightedWord,

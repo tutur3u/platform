@@ -45,6 +45,7 @@ abstract final class DesignRender {
       'NotoSans': 'assets/fonts/NotoSans.ttf',
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
       'LucideIcons': 'assets/fonts/lucide/LucideIcons.otf',
+      'LucideLabIcons': 'assets/fonts/lucide/LucideLabIcons.otf',
     }.entries) {
       await (FontLoader(font.key)..addFont(rootBundle.load(font.value))).load();
     }

@@ -6,8 +6,8 @@ const suppliers = vi.hoisted(() => ({
   start: vi.fn<(request: Request) => Promise<Response>>(),
   proxy: vi.fn(),
 }));
-vi.mock('@tanstack/react-start/server-entry', () => ({
-  default: { fetch: suppliers.start },
+vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
+  createBridgeStartHandler: () => ({ fetch: suppliers.start }),
 }));
 vi.mock('@tanstack/react-start/server-only', () => ({}));
 vi.mock('../proxy', () => ({ proxy: suppliers.proxy }));
@@ -48,7 +48,7 @@ beforeEach(() => {
 
 describe('actual Calendar handler to Start handoff', () => {
   it('passes a native JSON mutation once and preserves supplier failure identity', async () => {
-    const request = mutation('/_calendar/functions/fixture');
+    const request = mutation('/_fn/fixture');
     const failure = new Error('unconfirmed Start write');
     suppliers.start.mockImplementationOnce(async (forwarded) => {
       expect(forwarded.url).toBe(request.url);
@@ -109,7 +109,7 @@ it('captures a sanitized owning failure without replacing its identity', async (
   try {
     await expect(
       handleCalendarRequest(
-        new Request('https://calendar.test/verify-token'),
+        new Request('https://calendar.tuturuuu.com/verify-token'),
         env,
         ctx,
         telemetry
@@ -136,7 +136,7 @@ it('captures real asynchronous response-policy rejection after successful asset 
   try {
     await expect(
       handleCalendarRequest(
-        new Request('https://calendar.test/assets/fixture.js'),
+        new Request('https://calendar.tuturuuu.com/assets/fixture.js'),
         { ASSETS: { fetch: fetchAsset } },
         ctx,
         telemetry
@@ -168,7 +168,7 @@ it('retains a returned 500 body and security policy without inventing an owning 
   );
   try {
     const response = await handleCalendarRequest(
-      new Request('https://calendar.test/verify-token'),
+      new Request('https://calendar.tuturuuu.com/verify-token'),
       env,
       ctx,
       telemetry
@@ -206,7 +206,7 @@ describe('actual Calendar handler asset and API owner dispatch', () => {
       );
       const fetchAsset = vi.fn(async (_request: Request) => asset);
       const request = new Request(
-        'https://calendar.test/serwist/sw.js?revision=7',
+        'https://calendar.tuturuuu.com/serwist/sw.js?revision=7',
         { method }
       );
       const response = await handleCalendarRequest(
@@ -236,9 +236,12 @@ describe('actual Calendar handler asset and API owner dispatch', () => {
   it.each(['GET', 'HEAD'])(
     'keeps %s ordinary asset cache policy without granting service worker scope',
     async (method) => {
-      const request = new Request('https://calendar.test/assets/fixture.js', {
-        method,
-      });
+      const request = new Request(
+        'https://calendar.tuturuuu.com/assets/fixture.js',
+        {
+          method,
+        }
+      );
       const fetchAsset = vi.fn(
         async (_request: Request) =>
           new Response(method === 'HEAD' ? null : 'ordinary bytes', {
@@ -300,17 +303,20 @@ describe('actual Calendar handler asset and API owner dispatch', () => {
   it('forwards Tasks PATCH bytes once and preserves owner response data through policy', async () => {
     vi.stubEnv('TASKS_APP_URL', 'https://tasks.test');
     const path = '/api/v1/workspaces/ws/tasks/task';
-    const request = new Request(`https://calendar.test${path}${rawQuery}`, {
-      method: 'PATCH',
-      body: rawBody,
-      headers: {
-        host: 'untrusted.test',
-        cookie: 'app=one; refresh=two',
-        'content-type': 'application/json',
-        'x-forwarded-host': 'spoofed.test',
-        'x-forwarded-proto': 'http',
-      },
-    });
+    const request = new Request(
+      `https://calendar.tuturuuu.com${path}${rawQuery}`,
+      {
+        method: 'PATCH',
+        body: rawBody,
+        headers: {
+          host: 'untrusted.test',
+          cookie: 'app=one; refresh=two',
+          'content-type': 'application/json',
+          'x-forwarded-host': 'spoofed.test',
+          'x-forwarded-proto': 'http',
+        },
+      }
+    );
     const ownerHeaders = new Headers({
       'content-type': 'application/json',
       'x-owner': 'tasks',
@@ -332,7 +338,9 @@ describe('actual Calendar handler asset and API owner dispatch', () => {
         expect(input.method).toBe('PATCH');
         expect(input.redirect).toBe('manual');
         expect(input.headers.get('host')).toBeNull();
-        expect(input.headers.get('x-forwarded-host')).toBe('calendar.test');
+        expect(input.headers.get('x-forwarded-host')).toBe(
+          'calendar.tuturuuu.com'
+        );
         expect(input.headers.get('x-forwarded-proto')).toBe('https');
         expect(input.headers.get('cookie')).toBe('app=one; refresh=two');
         expect(input.headers.get('content-type')).toBe('application/json');
@@ -381,9 +389,12 @@ describe('actual Calendar handler asset and API owner dispatch', () => {
     'forwards Web-owned or unknown API %s without falling through to Start',
     async (path) => {
       vi.stubEnv('INTERNAL_WEB_API_ORIGIN', 'https://web.test');
-      const request = new Request(`https://calendar.test${path}${rawQuery}`, {
-        headers: { cookie: 'app=one; refresh=two' },
-      });
+      const request = new Request(
+        `https://calendar.tuturuuu.com${path}${rawQuery}`,
+        {
+          headers: { cookie: 'app=one; refresh=two' },
+        }
+      );
       const fetchOwner = vi
         .spyOn(globalThis, 'fetch')
         .mockImplementation(async (input) => {
@@ -393,7 +404,9 @@ describe('actual Calendar handler asset and API owner dispatch', () => {
           expect(input.method).toBe('GET');
           expect(input.redirect).toBe('manual');
           expect(input.headers.get('cookie')).toBe('app=one; refresh=two');
-          expect(input.headers.get('x-forwarded-host')).toBe('calendar.test');
+          expect(input.headers.get('x-forwarded-host')).toBe(
+            'calendar.tuturuuu.com'
+          );
           expect(input.headers.get('x-forwarded-proto')).toBe('https');
           return new Response('Web owner redirect', {
             status: 307,
@@ -441,7 +454,7 @@ describe('actual Calendar handler asset and API owner dispatch', () => {
       await expect(
         handleCalendarRequest(
           new Request(
-            `https://calendar.test/api/v1/workspaces/ws/tasks/task${rawQuery}`,
+            `https://calendar.tuturuuu.com/api/v1/workspaces/ws/tasks/task${rawQuery}`,
             {
               method: 'PATCH',
               body: rawBody,
@@ -470,5 +483,54 @@ describe('actual Calendar handler asset and API owner dispatch', () => {
       log.mockRestore();
       vi.unstubAllEnvs();
     }
+  });
+});
+
+describe('root-only Calendar handler ownership', () => {
+  it('serves the root service worker with root control', async () => {
+    const asset = vi.fn(async (request: Request) => {
+      expect(request.url).toBe(
+        'https://calendar.tuturuuu.com/serwist/sw.js?x=1'
+      );
+      return new Response('worker');
+    });
+    const response = await handleCalendarRequest(
+      new Request('https://calendar.tuturuuu.com/serwist/sw.js?x=1'),
+      { ASSETS: { fetch: asset } },
+      ctx,
+      telemetry
+    );
+    expect(response.headers.get('service-worker-allowed')).toBe('/');
+    expect(response.headers.get('cache-control')).toBe('no-cache');
+    expect(await response.text()).toBe('worker');
+    expect(suppliers.proxy).not.toHaveBeenCalled();
+  });
+  it.each([
+    '/calendar',
+    '/calendar/serwist/sw.js',
+    '/calendar/api/build-info',
+    '/calendar/_calendar/functions/fixture',
+    '/api/build-info',
+    '/mail/verify-token',
+    '/calendarish',
+  ])('rejects the held apex path %s without dispatch', async (path) => {
+    const asset = vi.fn(async () => new Response('asset'));
+    const request = new Request(`https://tuturuuu.com${path}`, {
+      method: 'POST',
+      body: rawBody,
+      headers: { 'x-forwarded-host': 'calendar.tuturuuu.com' },
+    });
+    const response = await handleCalendarRequest(
+      request,
+      { ASSETS: { fetch: asset } },
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(404);
+    expect(response.headers.getSetCookie()).toEqual([]);
+    expect(request.bodyUsed).toBe(false);
+    expect(asset).not.toHaveBeenCalled();
+    expect(suppliers.proxy).not.toHaveBeenCalled();
+    expect(suppliers.start).not.toHaveBeenCalled();
   });
 });

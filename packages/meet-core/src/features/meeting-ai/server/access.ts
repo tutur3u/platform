@@ -3,6 +3,7 @@ import { hasParleyAccess } from '@tuturuuu/meet-core/parley-access';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { meetingAiGenerationFailureCode } from '../request-failure';
 import { canReadSharedMeetingNotes } from './room-access';
+import { meetAiAvailable } from './workspace-gate';
 import 'server-only';
 import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
@@ -17,7 +18,9 @@ export class MeetAiError extends Error {
   constructor(
     public status: number,
     message: string,
-    public code?: string
+    public code?: string,
+    /** Sent as `Retry-After` (seconds) on 429 and 503 refusals. */
+    public retryAfterSeconds?: number
   ) {
     super(message);
   }
@@ -65,6 +68,14 @@ export async function meetAiAccess(
       'Workspace resolution failed'
     );
   }
+  // Pilot gate: default deny. Existing notes stay readable; the read response
+  // carries `available` so the UI can explain the disabled controls.
+  if (mutation && !(await meetAiAvailable(wsId)))
+    throw new MeetAiError(
+      403,
+      'Meet AI is temporarily unavailable',
+      'MEET_AI_WORKSPACE_NOT_ENABLED'
+    );
   const membership = await verifyWorkspaceMembershipType({
     supabase: db,
     userId: user.id,
@@ -147,7 +158,13 @@ export async function meetAiResponse(work: () => Promise<unknown>) {
           error instanceof MeetAiError || error instanceof MeetAiGenerationError
             ? error.status
             : 500,
-        headers: { 'Cache-Control': 'no-store' },
+        headers: {
+          'Cache-Control': 'no-store',
+          ...(error instanceof MeetAiError &&
+          error.retryAfterSeconds !== undefined
+            ? { 'Retry-After': String(error.retryAfterSeconds) }
+            : {}),
+        },
       }
     );
   }

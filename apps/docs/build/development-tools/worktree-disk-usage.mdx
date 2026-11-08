@@ -2,6 +2,7 @@
 title: 'Worktree Disk Usage'
 description: 'Measure the real APFS footprint of parallel worktrees and prune rebuildable artifacts safely.'
 updatedAt: '2026-10-24'
+audience: developers
 ---
 
 Parallel agent lanes each get their own Git worktree. On macOS, `du`, Finder
@@ -166,7 +167,7 @@ The machine-level cleanup still handles whole idle checkouts and idle
   checkout.
 - Lanes that only read code, or only edit docs or workflow files, can skip
   the install and rely on exact-commit CI. Run single-file formatters from
-  outside the repository, for example `npx @biomejs/biome@2.5.13 check <path>`
+  outside the repository, for example `npx oxfmt@0.74.0 --check <path>`
   from `/tmp`. Inside the repository, npm rejects the root `catalog:`
   specifiers.
 - The biggest real savings come from removing settled worktrees, with their

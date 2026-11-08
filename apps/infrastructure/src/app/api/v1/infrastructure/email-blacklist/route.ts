@@ -37,7 +37,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const authorization = await authorizeInfrastructureAdminRequest();
+  const authorization = await authorizeInfrastructureAdminRequest(
+    'manage_workspace_roles'
+  );
   if (!authorization.ok) return authorization.response;
   const { sbAdmin: supabase, user } = authorization;
 

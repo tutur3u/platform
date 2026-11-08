@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart' show showAppDialog;
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
@@ -214,7 +215,8 @@ class TaskPortfolioActions {
     if (wsId == null) return;
     final taskPortfolioCubit = context.read<TaskPortfolioCubit>();
 
-    await shad.showDialog<void>(
+    await showAppDialog<void>(
+      useRootNavigator: true,
       context: context,
       builder: (_) => BlocProvider.value(
         value: taskPortfolioCubit,

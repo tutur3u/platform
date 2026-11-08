@@ -9,6 +9,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
@@ -29,7 +30,6 @@ import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'inventory_checkout_cart.dart';
@@ -392,7 +392,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
         title: pageTitle,
         primaryActionLabel: primaryActionLabel,
         onPrimaryPressed: null,
-        child: const Center(child: NovaLoadingIndicator()),
+        child: const AppLoadingIndicator.page(),
       );
     }
 

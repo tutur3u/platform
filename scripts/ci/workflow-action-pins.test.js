@@ -25,6 +25,12 @@ function yamlFiles(dir) {
   });
 }
 
+// Git object types cannot be inferred from hex syntax offline. Reject observed
+// annotated tags; verify new pins with the owning repository's git/commits API.
+const annotatedTagObjects = new Set([
+  '15192bc058cc28a13dbf6cde61f19e18988b7af6',
+]);
+
 function scanUses(source) {
   const unpinned = [];
   let remote = 0;
@@ -36,7 +42,9 @@ function scanUses(source) {
     }
     const value = match[2].replace(/^(['"])(.*)\1$/u, '$2');
     if (remoteRef.test(value)) remote += 1;
-    if (!pinnedUses.test(value)) unpinned.push(`${index + 1}: ${value}`);
+    const sha = /@([a-f0-9]{40})/u.exec(value)?.[1];
+    if (!pinnedUses.test(value) || annotatedTagObjects.has(sha))
+      unpinned.push(`${index + 1}: ${value}`);
   });
   return { remote, unpinned };
 }
@@ -89,4 +97,19 @@ test('pin check rejects mutable and uncommented refs', () => {
   ]) {
     assert.equal(unpinnedUses(rejected).length, 1, rejected);
   }
+});
+
+test('pin check rejects the observed annotated tag object instead of accepting any 40 hex digits', () => {
+  assert.equal(
+    unpinnedUses(
+      '  - uses: dorny/paths-filter@15192bc058cc28a13dbf6cde61f19e18988b7af6 # v3'
+    ).length,
+    1
+  );
+  assert.deepEqual(
+    unpinnedUses(
+      '  - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4'
+    ),
+    []
+  );
 });

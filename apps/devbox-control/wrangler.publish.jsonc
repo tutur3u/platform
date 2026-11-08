@@ -11,29 +11,29 @@
     "logs": {
       "enabled": true,
       "head_sampling_rate": 0.05,
-      "invocation_logs": true
-    }
+      "invocation_logs": true,
+    },
   },
   "durable_objects": {
     "bindings": [
       {
         "name": "RUNNER_WAKE",
-        "class_name": "RunnerWake"
-      }
-    ]
+        "class_name": "RunnerWake",
+      },
+    ],
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["RunnerWake"]
-    }
+      "new_sqlite_classes": ["RunnerWake"],
+    },
   ],
   "secrets": {
     "required": [
       "SUPABASE_URL",
       "SUPABASE_SECRET_KEY",
-      "DEVBOX_CONTROL_INTERNAL_TOKEN"
-    ]
+      "DEVBOX_CONTROL_INTERNAL_TOKEN",
+    ],
   },
-  "preview_urls": true
+  "preview_urls": true,
 }

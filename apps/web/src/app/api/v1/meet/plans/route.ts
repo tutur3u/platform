@@ -31,7 +31,16 @@ export async function POST(request: Request) {
   if (!result.data) {
     return NextResponse.json(
       { error: result.error ?? 'Unable to create plan' },
-      { status: result.error === 'Not authenticated' ? 401 : 400 }
+      {
+        status:
+          result.error === 'Not authenticated'
+            ? 401
+            : result.error === 'Forbidden'
+              ? 403
+              : result.error === 'Failed to verify workspace access'
+                ? 500
+                : 400,
+      }
     );
   }
   return NextResponse.json(result.data, { status: 201 });

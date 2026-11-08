@@ -161,7 +161,7 @@ describe('workspace storage upload-url route', () => {
     expect(mocks.resolveTopicAnnouncementsAccess).toHaveBeenCalledWith(
       expect.any(Request),
       'workspace-1',
-      { requireManage: true }
+      { requireManage: true, teacherAccess: 'update' }
     );
     expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
       'workspace-1',
@@ -282,6 +282,38 @@ describe('workspace storage upload-url route', () => {
     await expect(response.json()).resolves.toEqual({
       message: 'Upload overwrite is not allowed for this path',
     });
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
+
+  it('does not let Drive managers sign Topic Announcement uploads without topic access', async () => {
+    setupAuth({ manageDrive: true });
+    mocks.resolveTopicAnnouncementsAccess.mockResolvedValue({
+      response: Response.json({ message: 'Forbidden' }, { status: 403 }),
+    });
+
+    const response = await postUploadUrl({
+      contentType: 'application/pdf',
+      filename: 'lesson-plan.pdf',
+      path: 'topic-announcements/attachments',
+      size: 1234,
+    });
+
+    expect(response.status).toBe(403);
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
+
+  it('rejects encoded Topic Announcement root aliases as private Drive paths', async () => {
+    setupAuth({ manageDrive: true });
+
+    const response = await postUploadUrl({
+      contentType: 'application/pdf',
+      filename: 'lesson-plan.pdf',
+      path: 'topic%2Dannouncements/attachments',
+      size: 1234,
+    });
+
+    expect(response.status).toBe(403);
+    expect(mocks.resolveTopicAnnouncementsAccess).not.toHaveBeenCalled();
     expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 

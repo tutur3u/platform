@@ -4,6 +4,13 @@ import type {
   InventoryFinanceProvider,
   InventoryFinanceReconciliationSummary,
 } from '@tuturuuu/internal-api/finance-reconciliation';
+import {
+  addMoney,
+  type Money,
+  minorUnitsSchema,
+  moneyToMajor,
+  parseMoneyFromMinor,
+} from '@tuturuuu/utils/finance-money';
 import { z } from 'zod';
 
 export const providerSchema = z.enum([
@@ -66,32 +73,46 @@ export type SummaryRow = {
   status: string;
 };
 
+type CurrencyTotal = { money: Money; count: number };
+
+const summaryMinorSchema = z
+  .union([z.number(), z.string().trim().min(1).transform(Number)])
+  .pipe(minorUnitsSchema);
+const summaryCountSchema = z.number().int().nonnegative();
+
 function addAmount(
-  target: Map<string, InventoryFinanceCurrencyAmount>,
-  row: SummaryRow
-) {
-  const previous = target.get(row.currency);
-  const amount = Number(row.amount ?? 0);
-  const amountMinor = Number(row.amount_minor ?? 0);
-  const count = Number(row.entry_count ?? 0);
-  target.set(row.currency, {
-    amount: (previous?.amount ?? 0) + amount,
-    amountMinor: (previous?.amountMinor ?? 0) + amountMinor,
-    count: (previous?.count ?? 0) + count,
-    currency: row.currency,
-  });
+  previous: CurrencyTotal | undefined,
+  money: Money,
+  count: number
+): CurrencyTotal {
+  const totalCount = (previous?.count ?? 0) + count;
+  if (!Number.isSafeInteger(totalCount))
+    throw new RangeError('Summary count exceeds safe integer range');
+  return {
+    money: previous ? addMoney(previous.money, money) : money,
+    count: totalCount,
+  };
 }
 
-function values(map: Map<string, InventoryFinanceCurrencyAmount>) {
-  return [...map.values()].sort((a, b) => a.currency.localeCompare(b.currency));
+function values(
+  map: Map<string, CurrencyTotal>
+): InventoryFinanceCurrencyAmount[] {
+  return [...map.values()]
+    .map(({ money, count }) => ({
+      amount: moneyToMajor(money),
+      amountMinor: money.minorUnits,
+      currency: money.currency,
+      count,
+    }))
+    .sort((a, b) => a.currency.localeCompare(b.currency));
 }
 
 type SummaryMaps = {
-  chargebackHolds: Map<string, InventoryFinanceCurrencyAmount>;
-  chargebackReleases: Map<string, InventoryFinanceCurrencyAmount>;
-  grossSales: Map<string, InventoryFinanceCurrencyAmount>;
-  netSales: Map<string, InventoryFinanceCurrencyAmount>;
-  refunds: Map<string, InventoryFinanceCurrencyAmount>;
+  chargebackHolds: Map<string, CurrencyTotal>;
+  chargebackReleases: Map<string, CurrencyTotal>;
+  grossSales: Map<string, CurrencyTotal>;
+  netSales: Map<string, CurrencyTotal>;
+  refunds: Map<string, CurrencyTotal>;
 };
 
 function createSummaryMaps(): SummaryMaps {
@@ -104,14 +125,15 @@ function createSummaryMaps(): SummaryMaps {
   };
 }
 
-function addRow(maps: SummaryMaps, row: SummaryRow) {
-  addAmount(maps.netSales, row);
-  if (row.kind === 'sale') addAmount(maps.grossSales, row);
-  if (row.kind === 'refund') addAmount(maps.refunds, row);
-  if (row.kind === 'chargeback_hold') addAmount(maps.chargebackHolds, row);
-  if (row.kind === 'chargeback_release') {
-    addAmount(maps.chargebackReleases, row);
+function rowTargets(maps: SummaryMaps, kind: InventoryFinanceEntryKind) {
+  const targets = [maps.netSales];
+  if (kind === 'sale') targets.push(maps.grossSales);
+  if (kind === 'refund') targets.push(maps.refunds);
+  if (kind === 'chargeback_hold') targets.push(maps.chargebackHolds);
+  if (kind === 'chargeback_release') {
+    targets.push(maps.chargebackReleases);
   }
+  return targets;
 }
 
 function serializeMaps(maps: SummaryMaps) {
@@ -128,20 +150,44 @@ export function buildReconciliationSummary(
   rows: SummaryRow[]
 ): InventoryFinanceReconciliationSummary {
   const totals = createSummaryMaps();
-  const pending = new Map<string, InventoryFinanceCurrencyAmount>();
+  const pending = new Map<string, CurrencyTotal>();
   const providers = new Map<InventoryFinanceProvider, SummaryMaps>();
+  let skippedRows = 0;
 
   for (const row of rows) {
     const provider = providerSchema.safeParse(row.provider);
     const kind = entryKindSchema.safeParse(row.kind);
     if (!provider.success || !kind.success) continue;
-    addRow(totals, row);
-    if (row.status === 'pending' || row.status === 'error') {
-      addAmount(pending, row);
+    try {
+      const money = parseMoneyFromMinor(
+        summaryMinorSchema.parse(row.amount_minor),
+        row.currency
+      );
+      const count = summaryCountSchema.parse(Number(row.entry_count ?? 0));
+      const providerMaps = providers.get(provider.data) ?? createSummaryMaps();
+      const targets = [
+        ...rowTargets(totals, kind.data),
+        ...rowTargets(providerMaps, kind.data),
+      ];
+      if (row.status === 'pending' || row.status === 'error')
+        targets.push(pending);
+      // Validate every affected bucket before committing any part of this row.
+      const updates = targets.map(
+        (target) =>
+          [target, addAmount(target.get(money.currency), money, count)] as const
+      );
+      for (const [target, value] of updates) target.set(money.currency, value);
+      providers.set(provider.data, providerMaps);
+    } catch (error) {
+      if (!(error instanceof z.ZodError || error instanceof RangeError))
+        throw error;
+      skippedRows += 1;
     }
-    const providerMaps = providers.get(provider.data) ?? createSummaryMaps();
-    addRow(providerMaps, row);
-    providers.set(provider.data, providerMaps);
+  }
+  if (skippedRows > 0) {
+    console.warn('Skipped invalid Inventory Finance reconciliation rows', {
+      skippedRows,
+    });
   }
 
   return {

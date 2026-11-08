@@ -217,7 +217,7 @@ class _WalletsViewState extends State<_WalletsView> {
     final l10n = context.l10n;
 
     if (_isLoading && wallets.isEmpty) {
-      return const AppPageBody(child: Center(child: NovaLoadingIndicator()));
+      return const AppPageBody(child: AppLoadingIndicator.page());
     }
 
     if (wallets.isNotEmpty &&

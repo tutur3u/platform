@@ -3,8 +3,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { denyWeakContentEdit } from '@/lib/tutoring/weak-content-access';
 import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 import {
   FeedbackContentSchema,
@@ -17,6 +19,31 @@ interface Params {
     groupId: string;
     userId: string;
   }>;
+}
+
+async function hasFeedbackScope(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string,
+  groupId: string,
+  userId: string
+) {
+  const [user, group] = await Promise.all([
+    sbAdmin
+      .from('workspace_users')
+      .select('id')
+      .eq('id', userId)
+      .eq('ws_id', wsId)
+      .maybeSingle(),
+    sbAdmin
+      .from('workspace_user_groups')
+      .select('id')
+      .eq('id', groupId)
+      .eq('ws_id', wsId)
+      .maybeSingle(),
+  ]);
+  return (
+    !user.error && !group.error && Boolean(user.data) && Boolean(group.data)
+  );
 }
 
 export async function GET(req: Request, { params }: Params) {
@@ -39,6 +66,9 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  if (!(await hasFeedbackScope(sbAdmin, permissions.wsId, groupId, userId))) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
 
   const { data, error, count } = await sbAdmin
     .from('user_feedbacks')
@@ -125,6 +155,16 @@ export async function POST(req: Request, { params }: Params) {
 
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
+  if (!(await hasFeedbackScope(sbAdmin, permissions.wsId, groupId, userId))) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+  const denied = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent: require_attention,
+    wsId: permissions.wsId,
+  });
+  if (denied) return denied;
 
   const { user: authUser } = await resolveAuthenticatedSessionUser(supabase);
   if (!authUser) {
@@ -135,7 +175,7 @@ export async function POST(req: Request, { params }: Params) {
     .from('workspace_user_linked_users')
     .select('virtual_user_id')
     .eq('platform_user_id', authUser.id)
-    .eq('ws_id', wsId)
+    .eq('ws_id', permissions.wsId)
     .maybeSingle();
 
   if (wsUserError || !wsUser) {
@@ -203,11 +243,14 @@ export async function PUT(req: Request, { params }: Params) {
   const { content, require_attention } = parsed.data;
 
   const sbAdmin = await createAdminClient();
+  if (!(await hasFeedbackScope(sbAdmin, permissions.wsId, groupId, userId))) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
 
   // Verify feedback belongs to the workspace and group
   const { data: existingFeedback, error: fetchError } = await sbAdmin
     .from('user_feedbacks')
-    .select('id')
+    .select('id, require_attention')
     .eq('id', feedbackId)
     .eq('group_id', groupId)
     .eq('user_id', userId)
@@ -219,6 +262,14 @@ export async function PUT(req: Request, { params }: Params) {
       { status: 404 }
     );
   }
+
+  const denied = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent: existingFeedback.require_attention || require_attention,
+    wsId: permissions.wsId,
+  });
+  if (denied) return denied;
 
   const { error } = await sbAdmin
     .from('user_feedbacks')
@@ -266,11 +317,14 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  if (!(await hasFeedbackScope(sbAdmin, permissions.wsId, groupId, userId))) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
 
   // Verify feedback belongs to the workspace and group
   const { data: existingFeedback, error: fetchError } = await sbAdmin
     .from('user_feedbacks')
-    .select('id')
+    .select('id, require_attention')
     .eq('id', feedbackId)
     .eq('group_id', groupId)
     .eq('user_id', userId)
@@ -282,6 +336,14 @@ export async function DELETE(req: Request, { params }: Params) {
       { status: 404 }
     );
   }
+
+  const denied = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent: existingFeedback.require_attention,
+    wsId: permissions.wsId,
+  });
+  if (denied) return denied;
 
   const { error } = await sbAdmin
     .from('user_feedbacks')

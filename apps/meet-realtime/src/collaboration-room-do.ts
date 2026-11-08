@@ -13,6 +13,7 @@ import {
   planRetryReservation,
   type RetryBudget,
 } from '../../../packages/realtime/src/core/retry-budget';
+import { serviceRequestHeaders } from '../../../packages/realtime/src/core/service-request';
 import {
   signRealtimePayload,
   verifyRealtimePayload,
@@ -623,10 +624,7 @@ export class CollaborationRoomDurableObject implements DurableObject {
       new URL('/api/v1/realtime/programming/checkpoint', base),
       {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: serviceRequestHeaders(token),
         body: JSON.stringify({
           files: snapshot.files.filter(
             (file) =>

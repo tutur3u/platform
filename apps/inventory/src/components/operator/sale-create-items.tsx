@@ -79,7 +79,6 @@ export function CartEditor({
           <div className="flex min-w-0 items-start gap-2">
             <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-md border bg-muted/40 sm:h-10 sm:w-10">
               {line.imageUrl ? (
-                // biome-ignore lint/performance/noImgElement: workspace media can be a signed first-party URL.
                 <img
                   alt=""
                   className="h-full w-full object-cover"

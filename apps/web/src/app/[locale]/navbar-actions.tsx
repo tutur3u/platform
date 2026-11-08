@@ -59,9 +59,8 @@ export default async function NavbarActions({
     );
   }
 
-  const { default: PublicNavbarActions } = await import(
-    './public-navbar-actions'
-  );
+  const { default: PublicNavbarActions } =
+    await import('./public-navbar-actions');
 
   return <PublicNavbarActions />;
 }

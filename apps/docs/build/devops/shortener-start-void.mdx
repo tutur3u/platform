@@ -1,6 +1,8 @@
 ---
 title: "Shortener on Start + Void"
 description: "Native Shortener runtime, emitted-Worker qualification, and the held cutover and rollback runbook."
+updatedAt: "2026-10-31"
+audience: developers
 ---
 
 Shortener (`apps/shortener`) is the first Wave 2 Vercel exit. Its source runs on
@@ -10,6 +12,11 @@ by `productionPublicationPolicy` in `tuturuuu.ci.ts`: the legacy
 `vercel-production-shortener.yaml` publisher reports the hold and never deploys,
 and the canonical domains keep serving the last Vercel deployment. **Held** is
 not delivery, and no staging publisher exists yet.
+
+Its request context, `next/headers`/`next/server` ports, Vite preset and central
+API forwarding come from [`@tuturuuu/start-bridge`](/build/devops/start-bridge);
+the app keeps only its Worker router, page model and API guard. CI runs
+`start-bridge-routes check apps/shortener` (Shortener has no App Router source).
 
 ## Request ownership
 
@@ -92,7 +99,7 @@ hashes are unchanged.
 
 ## Cutover and rollback runbook
 
-Apply the shared sequence in [Wave-1 native cutover](/build/devops/wave1-native-cutover)
+Apply the shared sequence in Wave-1 native cutover
 with this Shortener profile. Do not switch traffic with an unfilled release record.
 
 ### Before cutover

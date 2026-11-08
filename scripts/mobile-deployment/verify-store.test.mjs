@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Test-owned fixture overrides for the standalone, uncached signing verifier.
 import assert from 'node:assert/strict';
 import { generateKeyPairSync } from 'node:crypto';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -18,15 +17,19 @@ import {
   verifyPlay,
 } from './verify-store.mjs';
 
-test('TestFlight beta distribution defaults to all existing groups and can be limited', () => {
+test('TestFlight beta distribution defaults to internal groups and can be limited', () => {
   const groups = [
-    { id: 'internal', attributes: { name: 'Team' } },
-    { id: 'external', attributes: { name: 'RMIT University' } },
+    { id: 'internal', attributes: { name: 'Team', isInternalGroup: true } },
+    {
+      id: 'external',
+      attributes: { name: 'RMIT University', isInternalGroup: false },
+    },
   ];
-  assert.deepEqual(selectBetaGroups(groups, 'true', 'all'), groups);
-  assert.deepEqual(selectBetaGroups(groups, 'true', 'RMIT University'), [
-    groups[1],
-  ]);
+  assert.deepEqual(selectBetaGroups(groups, 'true', 'all'), [groups[0]]);
+  assert.deepEqual(
+    selectBetaGroups(groups, 'true', '', 'RMIT University'),
+    groups
+  );
   assert.deepEqual(selectBetaGroups(groups, 'true', 'internal'), [groups[0]]);
   assert.deepEqual(selectBetaGroups(groups, 'false', 'all'), []);
   assert.throws(
@@ -37,14 +40,20 @@ test('TestFlight beta distribution defaults to all existing groups and can be li
 
 test('TestFlight distribution assigns missing groups and reads back exact build membership', async () => {
   const groups = [
-    { id: 'internal', attributes: { name: 'Team' } },
-    { id: 'external', attributes: { name: 'RMIT University' } },
+    { id: 'internal', attributes: { name: 'Team', isInternalGroup: true } },
+    {
+      id: 'external',
+      attributes: { name: 'RMIT University', isInternalGroup: false },
+    },
   ];
   const assigned = new Set(['internal']);
   const calls = [];
   const apple = async (path, options = {}) => {
     calls.push({ path, options });
     if (path.includes('/apps/')) return { data: groups };
+    if (path.startsWith('/v1/betaAppReviewSubmissions?')) {
+      return { data: [{ attributes: { betaReviewState: 'APPROVED' } }] };
+    }
     if (path === '/v1/builds/build?include=betaGroups') {
       return {
         data: {
@@ -67,6 +76,7 @@ test('TestFlight distribution assigns missing groups and reads back exact build 
     await distributeTestFlightBuild(apple, 'app', 'build', {
       enabled: 'true',
       groups: 'all',
+      externalGroups: 'external',
     }),
     groups
   );
@@ -507,6 +517,7 @@ test('review retry submits the newest ready build after the prior review ends', 
     await retryDeferredTestFlightReview(apple, 'app', {
       enabled: 'true',
       groups: 'all',
+      externalGroups: 'external',
       whatsNew: 'Test latest',
     }),
     'processed'
@@ -561,6 +572,7 @@ test('review retry waits for a newer build after Apple rejects the latest one', 
     await retryDeferredTestFlightReview(apple, 'app', {
       enabled: 'true',
       groups: 'all',
+      externalGroups: 'external',
       whatsNew: 'Test latest',
     }),
     'rejected'

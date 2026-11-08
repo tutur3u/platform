@@ -18,23 +18,6 @@ class _SettingsOverviewSection extends StatelessWidget {
       title: l10n.settingsGeneralGroup,
       children: [
         SettingsTile(
-          key: const ValueKey('settings-workspace-row'),
-          grouped: true,
-          icon: LucideIcons.building2,
-          title: l10n.settingsNavWorkspace,
-          value:
-              context.select<WorkspaceCubit, String?>(
-                (cubit) => cubit.state.currentWorkspace?.name,
-              ) ??
-              l10n.settingsNoWorkspaceSelected,
-          onTap: () => context.push(Routes.settingsWorkspace),
-        ),
-        const HiddenWorkspacesSettingsRow(
-          key: ValueKey('settings-hidden-workspaces-row'),
-          grouped: true,
-        ),
-        // Profile and account management live under the header's Edit profile.
-        SettingsTile(
           grouped: true,
           icon: LucideIcons.flaskConical,
           title: l10n.settingsExperimentalAppsSectionTitle,

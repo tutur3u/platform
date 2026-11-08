@@ -28,6 +28,7 @@ import { vi } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { TutoringContentHint } from '../../../tutoring/tutoring-content-hint';
 
 interface UserFeedbackDialogProps {
   open: boolean;
@@ -109,7 +110,6 @@ export default function UserFeedbackDialog({
   const hasMore = feedbackHistory?.hasMore || false;
 
   // Reset pagination when user changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: user?.id is intentionally included to reset currentPage when user context changes, even though it's not used inside the effect
   useEffect(() => {
     setCurrentPage(1);
     // Don't reset feedbacks, totalCount, and hasMore here - let React Query handle the data
@@ -282,6 +282,7 @@ export default function UserFeedbackDialog({
                   {tFeedback('requires_attention')}
                 </Label>
               </div>
+              <TutoringContentHint show={formData.require_attention} />
 
               {/* Action buttons */}
               <div className="flex justify-end space-x-2">

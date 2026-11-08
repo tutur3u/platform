@@ -5,6 +5,7 @@ export const ROOT_CLIENT_MESSAGE_NAMESPACES = [
   'common',
   'marketing-nav',
   'desktop_download',
+  'privacy-consent',
 ] as const;
 
 // ClientProviders is mounted by the root layout, so its global rate-limit
@@ -49,6 +50,7 @@ export const RATE_LIMIT_COMMON_MESSAGE_KEYS = [
 ] as const;
 
 export const ROOT_CLIENT_MESSAGE_PATHS = [
+  'privacy-consent',
   'marketing-nav.portfolio',
   'marketing-nav.portfolio_description',
   'desktop_download.badge',
@@ -116,6 +118,9 @@ export const MARKETING_CLIENT_MESSAGE_NAMESPACES = [
   'invite',
   'landing',
   'marketing-models',
+  // The legacy Meet Together UI on /meet renders client components.
+  'meet-together',
+  'meet-together-plan-details',
   'onboarding',
   'products',
   'security-policy',

@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import {
   readRequiredMfaPolicy,
   satisfiesRequiredMfaPolicy,
@@ -80,6 +81,7 @@ export async function POST(request: Request) {
   return NextResponse.json(
     {
       valid: true,
+      staffVerified: isVerifiedTuturuuuStaffSession(user),
       displayName:
         typeof displayName === 'string' ? displayName.slice(0, 120) : undefined,
       avatarUrl:

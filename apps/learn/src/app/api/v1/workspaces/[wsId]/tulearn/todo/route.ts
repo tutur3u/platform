@@ -1,4 +1,5 @@
 import { listEducationTodo } from '@tuturuuu/education-core/todo/service';
+import { readTutoringModuleEnabled } from '@tuturuuu/education-core/todo/tutoring-module';
 import { tulearnAccessErrorResponse } from '@tuturuuu/education-core/tulearn/access';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
@@ -27,8 +28,10 @@ export const GET = withSessionAuth<{ wsId: string }>(
       return NextResponse.json({ message: 'Invalid query' }, { status: 400 });
     try {
       const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+      const db = await createAdminClient();
       const result = await listEducationTodo({
-        db: await createAdminClient(),
+        db,
+        isTutoringEnabled: (id) => readTutoringModuleEnabled(db, id),
         wsId: normalizedWsId,
         userId: user.id,
         app: 'learn',

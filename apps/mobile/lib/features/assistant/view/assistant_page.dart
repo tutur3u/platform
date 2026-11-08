@@ -49,12 +49,14 @@ import 'package:mobile/features/assistant/theme/assistant_theme_scope.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_session_source.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_sheet.dart';
 import 'package:mobile/features/assistant/view/assistant_live_call_screen.dart';
+import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_capture_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_primary_action.dart';
+import 'package:mobile/features/assistant/widgets/assistant_creation_hold_banner.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
@@ -146,6 +148,9 @@ class _AssistantPageState extends State<AssistantPage>
   double? _composerHeight;
   bool _settingsWritePending = false;
   bool _newConversationPending = false;
+  void _dismissCreationBanner(String wsId) => setState(
+    () => AssistantCreationHoldBanner.dismiss(_creationBannerScope(wsId)),
+  );
   bool Function()? _newConversationCurrent;
   final _inputFocusNode = FocusNode();
   final _scrollController = ScrollController();
@@ -157,7 +162,6 @@ class _AssistantPageState extends State<AssistantPage>
     controller: _scrollController,
     onVisibilityChanged: _setScrollToBottomFabVisible,
   );
-  static const _scrollToBottomFabThreshold = 160.0;
 
   late final AssistantShellCubit _shellCubit = AssistantShellCubit(
     repository: _repository,
@@ -522,10 +526,7 @@ class _AssistantPageState extends State<AssistantPage>
       _setComposerVisible(false);
       _composerVisibilityAnchorOffset = position.pixels;
     }
-    _setScrollToBottomFabVisible(
-      (position.maxScrollExtent - position.pixels) >=
-          _scrollToBottomFabThreshold,
-    );
+    // The follower owns "jump to latest" visibility from user intent.
   }
 
   void _syncComposerVisibilityForBuild({required bool keyboardVisible}) {

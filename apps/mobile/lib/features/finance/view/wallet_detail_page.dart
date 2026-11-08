@@ -106,11 +106,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                   child: NovaRefreshIndicator(
                     onRefresh: _onRefresh,
                     child: _isLoadingInitial && wallet == null
-                        ? const AppPageBody(
-                            child: Center(
-                              child: NovaLoadingIndicator(size: 20),
-                            ),
-                          )
+                        ? const AppPageBody(child: AppLoadingIndicator.page())
                         : _error != null
                         ? AppPageListView(
                             physics: const AlwaysScrollableScrollPhysics(),

@@ -44,6 +44,12 @@ does not authorize promotion.
   attempt and its successful checkout/apply/marker steps; wrapper heads may differ.
   Verify allowlisted, rehashed producer/emitter contracts at target and wrapper, use bounded
   complete inventories, and reread after inspection. Unknown evidence denies migration.
+  If the exact-target staging marker is absent, admit only a direct parent with
+  an identical commit tree and `identical`/`behind` comparison against fully
+  qualified `refs/heads/main`. Apply every existing contract to that source and
+  reread its proof; failed or superseded evidence never counts. Keep the platform
+  marker bound to the production target. Cover fallback failures in
+  `scripts/ci/production-marker-tree-parent.test.js`.
   Keep the verifier inline when old target checkouts lack new helpers. Database
   migration paths must select the platform deployment so that marker exists.
   Every enabled admitted staging target must apply and emit its exact-target marker,
@@ -176,7 +182,11 @@ only on GitHub-hosted Windows, uploads the installer and checksum receipt, and
 never publishes. `smoke-windows.ps1` silently installs that installer, checks
 required Flutter files, requires a visible window after Flutter's first frame (never show the runner
 before that callback), records installed file sizes/hashes and installer identity,
-and uninstalls. Strip OIDC request/runtime credentials before launching the app,
+and uninstalls. Include hidden/system files, require the exact `Tuturuuu` title,
+and bound each Inno phase to 120 seconds with a 10-second process-tree stop attempt.
+Reject reparse points and data files with MZ headers; restrict data paths to ICU, AOT and Flutter assets, denying executable/script/debug/credential types. Cache each Inno process handle before waiting so exit codes remain available.
+First frames do not establish service health; credential stripping is not same-user
+process isolation, and slow bootstrap can leave the normal window hidden. Strip OIDC request/runtime credentials before launching the app,
 and preserve the startup error if cleanup also fails. Run the Windows parse and
 smoke fixtures on a Windows runner. Keep placeholder-config smoke results
 separate from production authentication and update acceptance. Public distribution

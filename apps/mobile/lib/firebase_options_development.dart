@@ -17,7 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      return web;
+      throw UnsupportedError('Development Firebase web app is not configured.');
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -27,7 +27,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.macOS:
         return macos;
       case TargetPlatform.windows:
-        return windows;
+        throw UnsupportedError(
+          'Development Firebase Windows app is not configured.',
+        );
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -40,53 +42,29 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAnzaAExi_UAfVE3Viv58eGwYzFebyhVBM',
-    appId: '1:21140998358:web:a7d974d24b56e3e40de177',
-    messagingSenderId: '21140998358',
-    projectId: 'tuturuuu-mobile',
-    authDomain: 'tuturuuu-mobile.firebaseapp.com',
-    storageBucket: 'tuturuuu-mobile.firebasestorage.app',
-    measurementId: 'G-CC7ZQL2TM0',
-  );
-
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyB_STZHQ6BNgMdVtJ0bMuyk31x9xAVw65c',
-    appId: '1:21140998358:android:c20877467f81f34f0de177',
-    messagingSenderId: '21140998358',
-    projectId: 'tuturuuu-mobile',
-    storageBucket: 'tuturuuu-mobile.firebasestorage.app',
+    apiKey: 'AIzaSyCYOJ2VNZ1S2Vjksd1hfM8nVdXgbPH8zY4',
+    appId: '1:90814255724:android:049567a22fe2e1b5283e49',
+    messagingSenderId: '90814255724',
+    projectId: 'tuturuuu-mobile-dev',
+    storageBucket: 'tuturuuu-mobile-dev.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAmL2LveXmjwuwWkJDFMNtLglVqd2mT0zw',
-    appId: '1:21140998358:ios:74917dcd16ea89060de177',
-    messagingSenderId: '21140998358',
-    projectId: 'tuturuuu-mobile',
-    storageBucket: 'tuturuuu-mobile.firebasestorage.app',
-    iosClientId:
-        '21140998358-8gegvnj8kq0v3ek0u2tspibqj8t9s3qe.apps.googleusercontent.com',
+    apiKey: 'AIzaSyCaQBEsmmxPL-Pufa2pGvN16FCKdvg5amI',
+    appId: '1:90814255724:ios:1081d3cc2616ca2a283e49',
+    messagingSenderId: '90814255724',
+    projectId: 'tuturuuu-mobile-dev',
+    storageBucket: 'tuturuuu-mobile-dev.firebasestorage.app',
     iosBundleId: 'com.tuturuuu.app.mobile.dev',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyAmL2LveXmjwuwWkJDFMNtLglVqd2mT0zw',
-    appId: '1:21140998358:ios:74917dcd16ea89060de177',
-    messagingSenderId: '21140998358',
-    projectId: 'tuturuuu-mobile',
-    storageBucket: 'tuturuuu-mobile.firebasestorage.app',
-    iosClientId:
-        '21140998358-8gegvnj8kq0v3ek0u2tspibqj8t9s3qe.apps.googleusercontent.com',
+    apiKey: 'AIzaSyCaQBEsmmxPL-Pufa2pGvN16FCKdvg5amI',
+    appId: '1:90814255724:ios:1081d3cc2616ca2a283e49',
+    messagingSenderId: '90814255724',
+    projectId: 'tuturuuu-mobile-dev',
+    storageBucket: 'tuturuuu-mobile-dev.firebasestorage.app',
     iosBundleId: 'com.tuturuuu.app.mobile.dev',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyAnzaAExi_UAfVE3Viv58eGwYzFebyhVBM',
-    appId: '1:21140998358:web:a8f5ab9478c52e6e0de177',
-    messagingSenderId: '21140998358',
-    projectId: 'tuturuuu-mobile',
-    authDomain: 'tuturuuu-mobile.firebaseapp.com',
-    storageBucket: 'tuturuuu-mobile.firebasestorage.app',
-    measurementId: 'G-JBJ7CWE6HL',
   );
 }

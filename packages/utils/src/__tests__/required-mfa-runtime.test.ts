@@ -170,6 +170,9 @@ describe('connected required MFA request enforcement', () => {
       request({ authorization: 'Bearer eyJprovider' })
     );
     expect(response?.status).toBe(403);
+    expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+      'auth-assurance-required'
+    );
     expect(await response?.json()).toMatchObject({ code: 'MFA_REQUIRED' });
   });
   it('rejects a previously issued satellite cookie after a fresh provider ban', async () => {
@@ -196,6 +199,9 @@ describe('connected required MFA request enforcement', () => {
       )
     );
     expect(response?.status).toBe(401);
+    expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+      'auth-assurance-unauthenticated'
+    );
     expect(await response?.json()).toEqual({
       code: 'UNAUTHENTICATED',
       error: 'Authentication required',
@@ -287,3 +293,29 @@ describe('connected required MFA request enforcement', () => {
     expect(mocks.admin).not.toHaveBeenCalled();
   });
 });
+
+it.each(['throw', 'policy-result'])(
+  'identifies unavailable assurance: %s',
+  async (failure) => {
+    const { getUserById } = setup();
+    if (failure === 'throw')
+      mocks.admin.mockRejectedValue(new Error('offline'));
+    else
+      getUserById.mockResolvedValue({
+        data: { user: null },
+        error: { code: 'offline' },
+      });
+    const response = await enforceRequiredMfaRequest(
+      request({
+        authorization: `Bearer ${failure === 'policy-result' ? createAppCoordinationToken({ userId: 'actor', targetApp: 'infra' }).token : 'eyJprovider'}`,
+      })
+    );
+    expect(response?.status).toBe(503);
+    expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+      'auth-assurance-unavailable'
+    );
+    expect(response?.headers.get('X-Tuturuuu-Auth-Assurance')).toBe(
+      'unavailable'
+    );
+  }
+);

@@ -17,6 +17,7 @@ export default defineConfig({
       binding: 'ASSETS',
       run_worker_first: true,
       not_found_handling: 'none',
+      html_handling: 'none',
     },
     workers_dev: false,
   },

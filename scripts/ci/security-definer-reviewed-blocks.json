@@ -1,0 +1,19 @@
+[
+  {
+    "file": "apps/database/supabase/migrations/20261029030410_restrict_nonpublic_definers.sql",
+    "blockDigest": "8dfd8c64453a0f4c4a96a5c2f7bed5e636c597d1075bea4e327850dc75c1e378",
+    "reason": "Reviewed revoke-only audit hardening: removes anon/authenticated object, schema and default privileges; no GRANT restores access."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029030410_restrict_nonpublic_definers.sql",
+    "blockDigest": "06158b4c4cc31ece33856355a3ba4f1d7febfbe70cb8791116ccb78371080da8",
+    "grantedRoles": ["service_role"],
+    "reason": "hardening block: revokes PUBLIC/anon(/authenticated) and conditionally re-grants service_role(/authenticated); no anon/PUBLIC grant"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029030410_restrict_nonpublic_definers.sql",
+    "blockDigest": "5e1c65ec619a3084f43b9267d124ac5896fa2a7d56ef10e402d86c36c7050e65",
+    "grantedRoles": ["authenticated", "service_role"],
+    "reason": "hardening block: revokes PUBLIC/anon(/authenticated) and conditionally re-grants service_role(/authenticated); no anon/PUBLIC grant"
+  }
+]

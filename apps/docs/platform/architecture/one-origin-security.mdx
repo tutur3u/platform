@@ -1,0 +1,16 @@
+---
+title: "One-origin security model"
+description: "Public scope and session behavior of the proposed shared-origin design."
+audience: developers
+updatedAt: "2026-11-01"
+---
+
+The [one-origin super-app](/platform/architecture/one-origin-super-app) is a proposed design. This page describes its intended behavior, not a completed deployment.
+
+Browsers isolate origins rather than application paths. Apps sharing an origin therefore share a browser security boundary. Moving an app onto that origin requires security review and acceptance; a common URL layout alone provides no isolation guarantee.
+
+## Session cookies
+
+The recorded design uses one shared session across apps on the main origin. Sign-in and logout are intended to apply across those apps. Per-app sessions are not the intended design. The shared-session implementation and each app's admission need separate verification before cutover.
+
+See the [security overview](/platform/architecture/system-design/security-architecture) and [authentication overview](/platform/architecture/authentication).

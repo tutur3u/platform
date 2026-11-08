@@ -637,6 +637,43 @@ void main() {
     );
   }
 
+  test(
+    'Finance resumes a rate-limited cursor without fetching prior pages',
+    () async {
+      var blocked = true;
+      final pages = <String>[];
+      when(() => api.getJsonList(any())).thenAnswer((_) async => <dynamic>[]);
+      when(() => api.getJson(any())).thenAnswer((call) async {
+        final path = call.positionalArguments.first as String;
+        if (path.contains('DEFAULT_CURRENCY')) return {'value': 'USD'};
+        if (path.startsWith(FinanceEndpoints.infiniteTransactions('ws'))) {
+          pages.add(path);
+          if (path.contains('cursor=next')) {
+            if (blocked) {
+              throw const ApiException(
+                message: 'Busy',
+                statusCode: 429,
+                retryAfter: 0,
+              );
+            }
+            return {'data': <dynamic>[], 'hasMore': false};
+          }
+          return {'data': <dynamic>[], 'hasMore': true, 'nextCursor': 'next'};
+        }
+        return <String, dynamic>{};
+      });
+      await expectLater(
+        finance.prepareOffline('ws'),
+        throwsA(isA<ApiException>()),
+      );
+      expect(pages.where((path) => !path.contains('cursor=')).length, 1);
+      blocked = false;
+      await finance.prepareOffline('ws');
+      expect(pages.where((path) => !path.contains('cursor=')).length, 1);
+      expect(pages.last, contains('cursor=next'));
+    },
+  );
+
   test('finance download prepares first-visit summary wallet stats '
       'and global rates', () async {
     when(() => api.getJsonList(any())).thenAnswer(

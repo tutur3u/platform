@@ -2,6 +2,7 @@
 title: "Encapsulation Patterns"
 description: "Strategies for preventing unwanted communication within and between services in Tuturuuu's architecture"
 updatedAt: '2026-10-08'
+audience: developers
 ---
 
 Encapsulation is a critical architectural quality that prevents unwanted coupling and maintains clear boundaries. This document covers patterns for preventing unwanted communication both **within an app** (cross-layer) and **between apps** (cross-service).
@@ -826,17 +827,17 @@ internals. (Add or update these with scoped installs, e.g.
 Status legend: **real** = implemented today; **illustrative/aspirational** =
 teaching pattern not implemented in the repo.
 
-| Encapsulation Type | Pattern | Status | Enforced By | Benefit |
-|--------------------|---------|--------|-------------|---------|
-| **Cross-Layer (Internal)** | Dependency Inversion / ports | Illustrative | Hexagonal layering (not adopted) | Testable, flexible |
-| **Cross-Layer (Internal)** | DTOs | Illustrative | Layer boundaries | Stable APIs |
-| **Cross-Layer (Internal)** | Layered Responsibility | Illustrative | Directory structure (apps/web is flat) | Clear organization |
-| **Cross-Layer (Internal)** | Row-Level Security | Real | Supabase RLS policies | Data scoping at the DB |
-| **Cross-Layer (Internal)** | Package boundaries | Real | `workspace:*` deps + Biome/import rules | No cross-app imports |
-| **Cross-Service (External)** | Background task payloads | Real | Trigger.dev v4 `task()` | Async decoupling |
-| **Cross-Service (External)** | Event Contracts as sole interface | Aspirational | Event schemas | Service autonomy |
-| **Cross-Service (External)** | Broker ACLs | Hypothetical | Broker config (no broker today) | Security, governance |
-| **Cross-Service (External)** | Async background work | Real | Trigger.dev v4 tasks | No cascading failures |
+| Encapsulation Type           | Pattern                           | Status       | Enforced By                            | Benefit                |
+| ---------------------------- | --------------------------------- | ------------ | -------------------------------------- | ---------------------- |
+| **Cross-Layer (Internal)**   | Dependency Inversion / ports      | Illustrative | Hexagonal layering (not adopted)       | Testable, flexible     |
+| **Cross-Layer (Internal)**   | DTOs                              | Illustrative | Layer boundaries                       | Stable APIs            |
+| **Cross-Layer (Internal)**   | Layered Responsibility            | Illustrative | Directory structure (apps/web is flat) | Clear organization     |
+| **Cross-Layer (Internal)**   | Row-Level Security                | Real         | Supabase RLS policies                  | Data scoping at the DB |
+| **Cross-Layer (Internal)**   | Package boundaries                | Real         | `workspace:*` deps + Oxc/import rules  | No cross-app imports   |
+| **Cross-Service (External)** | Background task payloads          | Real         | Trigger.dev v4 `task()`                | Async decoupling       |
+| **Cross-Service (External)** | Event Contracts as sole interface | Aspirational | Event schemas                          | Service autonomy       |
+| **Cross-Service (External)** | Broker ACLs                       | Hypothetical | Broker config (no broker today)        | Security, governance   |
+| **Cross-Service (External)** | Async background work             | Real         | Trigger.dev v4 tasks                   | No cascading failures  |
 
 ## Related Documentation
 

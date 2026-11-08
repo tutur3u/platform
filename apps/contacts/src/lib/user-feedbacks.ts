@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { z } from 'zod';
+import { denyRestrictedWeakContent } from './weak-content-access';
 import { getContactsWorkspaceAccess } from './workspace';
 
 const feedbackSchema = z.object({
@@ -215,6 +216,13 @@ export async function createFeedback(request: Request, scope: FeedbackScope) {
 
   const { userId, groupId, content, require_attention } = parsed.data;
   const sbAdmin = await createAdminClient({ noCookie: true });
+  const denied = await denyRestrictedWeakContent({
+    permissions: auth.access.permissions,
+    sbAdmin,
+    touchesWeakContent: require_attention,
+    wsId: scope.wsId,
+  });
+  if (denied) return denied;
   const [{ data: targetUser }, { data: group }] = await Promise.all([
     sbAdmin
       .from('workspace_users')
@@ -261,13 +269,24 @@ export async function changeFeedback(
   const sbAdmin = await createAdminClient({ noCookie: true });
   let lookup = sbAdmin
     .from('user_feedbacks')
-    .select('id, user:workspace_users!user_feedbacks_user_id_fkey!inner(ws_id)')
+    .select(
+      'id, require_attention, user:workspace_users!user_feedbacks_user_id_fkey!inner(ws_id)'
+    )
     .eq('id', feedbackId)
     .eq('user.ws_id', scope.wsId);
   if (scope.groupId) lookup = lookup.eq('group_id', scope.groupId);
   if (scope.userId) lookup = lookup.eq('user_id', scope.userId);
   const { data: existing, error: lookupError } = await lookup.maybeSingle();
   if (lookupError || !existing) return jsonError('Feedback not found', 404);
+  const denied = await denyRestrictedWeakContent({
+    permissions: auth.access.permissions,
+    sbAdmin,
+    touchesWeakContent:
+      existing.require_attention ||
+      (parsed?.success === true && parsed.data.require_attention),
+    wsId: scope.wsId,
+  });
+  if (denied) return denied;
 
   const { error } =
     method === 'PUT' && parsed?.success

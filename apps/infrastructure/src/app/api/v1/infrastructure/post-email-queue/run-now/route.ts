@@ -21,7 +21,10 @@ function clampInteger(value: unknown, fallback: number, max: number) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requirePostEmailQueueRootAdmin(request);
+  const auth = await requirePostEmailQueueRootAdmin(
+    request,
+    'manage_workspace_roles'
+  );
   if (auth.error) return auth.error;
 
   try {

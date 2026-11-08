@@ -1,0 +1,87 @@
+name: Prepare checksum-pinned LiteRT-LM native input
+description: Restore a verified Linux archive and populate the pinned pub hook's native cache.
+runs:
+  using: composite
+  steps:
+    - name: Resolve native cache location
+      id: location
+      shell: bash
+      run: |
+        set -euo pipefail
+        test "$RUNNER_OS" = Linux
+        test "$RUNNER_ARCH" = X64
+        echo "native-root=$HOME/.cache/flutter_gemma/native" >> "$GITHUB_OUTPUT"
+
+    - name: Restore pinned LiteRT-LM archive
+      id: archive
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/litertlm-native/litertlm-linux_x86_64.tar.gz
+        key: litertlm-native-v1-${{ runner.os }}-${{ runner.arch }}-pub-1.8.7-native-v0.17.1-a-3f7854efdd73c893d48bc43df66102fda5c1de63179295275a37acb9427a949e
+
+    - name: Verify archive and prepare the native hook cache
+      id: native
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        NATIVE_CACHE_ROOT: ${{ steps.location.outputs.native-root }}
+        LITERTLM_SHA256: 3f7854efdd73c893d48bc43df66102fda5c1de63179295275a37acb9427a949e
+      run: |
+        set -euo pipefail
+        release_token="$GH_TOKEN"
+        unset GH_TOKEN GITHUB_TOKEN
+        python3 - "$GITHUB_WORKSPACE/apps/mobile/pubspec.lock" <<'PY'
+        import pathlib, re, sys
+        text = pathlib.Path(sys.argv[1]).read_text()
+        section = re.search(r'^  flutter_edge_ai_litertlm:\n(.*?)(?=^  \S|\Z)', text, re.M | re.S)
+        if not section:
+            raise SystemExit('Missing pinned flutter_edge_ai_litertlm dependency')
+        block = section.group(1)
+        version = re.search(r'^    version: ["\x27]?([^"\x27\n]+)', block, re.M)
+        checksum = re.search(r'^      sha256: ["\x27]?([a-f0-9]{64})', block, re.M)
+        if not version or version.group(1) != '1.8.7' or not checksum or checksum.group(1) != 'b18ca6829f7d11b62328f0345399f4f5c5749cb2457c1d2fcb6d56d9e79f0f66':
+            raise SystemExit('LiteRT-LM package changed; review and update the native asset pins')
+        PY
+        archive="$RUNNER_TEMP/litertlm-native/litertlm-linux_x86_64.tar.gz"
+        if [ ! -f "$archive" ]; then
+          mkdir -p "$(dirname "$archive")"
+          downloaded=false
+          delay=1
+          for attempt in 1 2 3 4; do
+            rm -f "$archive"
+            if GH_TOKEN="$release_token" timeout 120 gh release download native-v0.17.1-a \
+              --repo DenisovAV/flutter_edge_ai \
+              --pattern litertlm-linux_x86_64.tar.gz --output "$archive"; then
+              downloaded=true
+              break
+            fi
+            if [ "$attempt" -lt 4 ]; then
+              sleep "$delay"
+              delay=$((delay * 2))
+            fi
+          done
+          if [ "$downloaded" != true ]; then
+            rm -f "$archive"
+            exit 1
+          fi
+        fi
+        unset release_token
+        echo "${LITERTLM_SHA256}  ${archive}" | sha256sum --check --strict
+        mkdir -p "$NATIVE_CACHE_ROOT"
+        staging="$(mktemp -d "$NATIVE_CACHE_ROOT/.ci-litertlm-XXXXXX")"
+        cleanup() { if [ -n "$staging" ]; then rm -rf "$staging"; fi; }
+        trap cleanup EXIT
+        tar -xzf "$archive" -C "$staging"
+        test -f "$staging/libLiteRtLm.so"
+        rm -rf "$NATIVE_CACHE_ROOT/linux_x86_64"
+        mv "$staging" "$NATIVE_CACHE_ROOT/linux_x86_64"
+        staging=''
+        printf '%s\n' '{"version":"0.17.1-a","owner":"flutter_gemma_litertlm"}' > "$NATIVE_CACHE_ROOT/.flutter_gemma_native_version"
+        echo 'verified=true' >> "$GITHUB_OUTPUT"
+
+    - name: Save verified LiteRT-LM archive from main
+      if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && steps.archive.outputs.cache-hit != 'true' && steps.native.outputs.verified == 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/litertlm-native/litertlm-linux_x86_64.tar.gz
+        key: litertlm-native-v1-${{ runner.os }}-${{ runner.arch }}-pub-1.8.7-native-v0.17.1-a-3f7854efdd73c893d48bc43df66102fda5c1de63179295275a37acb9427a949e

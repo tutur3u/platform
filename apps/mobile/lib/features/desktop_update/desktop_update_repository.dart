@@ -42,7 +42,7 @@ class DesktopUpdateRepository {
               .map((value) => DesktopRelease.parse(value, platform))
               .whereType<DesktopRelease>()
               .toList()
-            ..sort((a, b) => b.run.compareTo(a.run));
+            ..sort((a, b) => b.compareTo(a));
       if (releases.isNotEmpty) return releases.first;
       if (data.length < pageSize) return null;
     }
@@ -139,7 +139,7 @@ class DesktopUpdateRepository {
           .last;
       if (entity is Directory &&
           name != keep.tag &&
-          RegExp(r'^desktop-v\d+\.\d+\.\d+-\d+$').hasMatch(name)) {
+          desktopReleaseTag.hasMatch(name)) {
         try {
           await entity.delete(recursive: true);
         } on FileSystemException {

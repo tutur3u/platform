@@ -252,6 +252,7 @@ test('the register job publishes only the redacted register', () => {
   assert.deepEqual(
     uploads.map((step) => step.with.path).sort(),
     [
+      `${expression('runner.temp')}/definers.json`,
       `${expression('runner.temp')}/register-input/bun-audit.json`,
       `${expression('runner.temp')}/register-input/gitleaks.json`,
       `${expression('runner.temp')}/security-register.json`,

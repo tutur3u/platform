@@ -30,9 +30,7 @@ async function ProfilePage({ params }: PageProps) {
     actor.canManage &&
     (await traceLettinRead('profile creator', async () =>
       isCreator(
-        (
-          await traceLettinRead('profile bindings', () => bindings())
-        ).db,
+        (await traceLettinRead('profile bindings', () => bindings())).db,
         actor
       )
     ));

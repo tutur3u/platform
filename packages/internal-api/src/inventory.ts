@@ -9,7 +9,11 @@ import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromoti
 import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
-import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import type {
+  InventoryProductFormOptionsResponse,
+  InventorySalesDefaultsPayload,
+  InventorySalesPeriodCreateResponse,
+} from './inventory-sales-defaults';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -1765,25 +1769,11 @@ export type InventoryCommerceSummary = {
   unitsSold: number;
 };
 
-export type InventoryProductFormOptionsResponse = {
-  categories: ProductCategory[];
-  defaultFinanceCategoryId?: string | null;
-  defaultRevenueWalletId?: string | null;
-  defaultSalesPeriodId?: string | null;
-  defaultWalletId?: string | null;
-  financeCategories: TransactionCategory[];
-  manufacturers: InventoryManufacturer[];
-  owners: InventoryOwner[];
-  units: ProductUnit[];
-  wallets?: Array<{ id: string; name: string }>;
-  warehouses: ProductWarehouse[];
-};
-
-export type InventorySalesDefaultsPayload = {
-  defaultFinanceCategoryId: string | null;
-  defaultRevenueWalletId: string | null;
-  defaultSalesPeriodId: string | null;
-};
+export type {
+  InventoryProductFormOptionsResponse,
+  InventorySalesDefaultsPayload,
+  InventorySalesPeriodCreateResponse,
+} from './inventory-sales-defaults';
 
 export type InventoryStatisticsResponse = {
   batches: number;
@@ -2777,7 +2767,7 @@ export function createInventorySalesPeriod(
   payload: InventorySalesPeriodPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ data: InventorySalesPeriod }>(
+  return getInternalApiClient(options).json<InventorySalesPeriodCreateResponse>(
     workspaceInventoryPath(wsId, '/sales-periods'),
     {
       body: JSON.stringify(payload),

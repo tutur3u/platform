@@ -165,7 +165,7 @@ select ok(
 );
 
 select is(
-  private.claim_discord_interaction('100000000000000001', 2, 86400)->>'state',
+  private.claim_discord_interaction('100000000000000001', 2::smallint, 86400)->>'state',
   'claimed',
   'the first interaction claim succeeds'
 );
@@ -178,7 +178,7 @@ where interaction_id = '100000000000000001';
 select ok(
   private.renew_discord_interaction_claim(
     '100000000000000001',
-    2,
+    2::smallint,
     (select claim_token from first_claim_snapshot),
     120
   ),
@@ -188,7 +188,7 @@ select ok(
 select is(
   private.renew_discord_interaction_claim(
     '100000000000000001',
-    2,
+    2::smallint,
     gen_random_uuid(),
     120
   ),
@@ -203,7 +203,7 @@ from private.discord_interaction_claims
 where interaction_id = '100000000000000001';
 
 select ok(
-  private.claim_discord_interaction('100000000000000001', 2, 86400)->>'state'
+  private.claim_discord_interaction('100000000000000001', 2::smallint, 86400)->>'state'
     = 'processing'
   and exists (
     select 1
@@ -219,7 +219,7 @@ select ok(
 
 create temporary table expired_claim_snapshot as
 select private.claim_discord_interaction(
-  '100000000000000004', 3, 86400
+  '100000000000000004', 3::smallint, 86400
 ) as claim;
 
 update private.discord_interaction_claims
@@ -231,7 +231,7 @@ where interaction_id = '100000000000000004';
 select is(
   private.renew_discord_interaction_claim(
     '100000000000000004',
-    3,
+    3::smallint,
     ((select claim from expired_claim_snapshot)->>'claimToken')::uuid,
     120
   ),
@@ -242,7 +242,7 @@ select is(
 select ok(
   private.complete_discord_interaction(
     '100000000000000001',
-    2,
+    2::smallint,
     (select claim_token from first_claim_snapshot),
     '{"type": 9, "data": {"title": "Ticket"}}'::jsonb
   ),
@@ -250,13 +250,13 @@ select ok(
 );
 
 select is(
-  private.claim_discord_interaction('100000000000000001', 2, 86400)->'response',
+  private.claim_discord_interaction('100000000000000001', 2::smallint, 86400)->'response',
   '{"type": 9, "data": {"title": "Ticket"}}'::jsonb,
   'a completed duplicate replays the original callback response'
 );
 
 select is(
-  private.claim_discord_interaction('100000000000000003', 5, 86400)->>'state',
+  private.claim_discord_interaction('100000000000000003', 5::smallint, 86400)->>'state',
   'claimed',
   'a second interaction can be claimed before a failed dispatch'
 );
@@ -268,14 +268,14 @@ where interaction_id = '100000000000000003';
 
 select lives_ok(
   format(
-    $$select private.release_discord_interaction('100000000000000003', 5, %L::uuid)$$,
+    $$select private.release_discord_interaction('100000000000000003', 5::smallint, %L::uuid)$$,
     (select claim_token from second_claim_snapshot)
   ),
   'an unfinished interaction claim can be released'
 );
 
 select is(
-  private.claim_discord_interaction('100000000000000003', 5, 86400)->>'state',
+  private.claim_discord_interaction('100000000000000003', 5::smallint, 86400)->>'state',
   'claimed',
   'a released interaction can be claimed by a retry'
 );
@@ -294,7 +294,7 @@ select isnt(
 select is(
   private.complete_discord_interaction(
     '100000000000000003',
-    5,
+    5::smallint,
     (select claim_token from second_claim_snapshot),
     '{"type": 5}'::jsonb
   ),
@@ -304,7 +304,7 @@ select is(
 
 select lives_ok(
   format(
-    $$select private.release_discord_interaction('100000000000000003', 5, %L::uuid)$$,
+    $$select private.release_discord_interaction('100000000000000003', 5::smallint, %L::uuid)$$,
     (select claim_token from second_claim_snapshot)
   ),
   'a stale release is safely ignored'

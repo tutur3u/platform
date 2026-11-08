@@ -3,6 +3,8 @@ import { Providers } from '@tuturuuu/satellite/providers';
 import { createCommonMetadata } from '@tuturuuu/utils/common/metadata';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Link from 'next/link';
+import { Suspense } from 'react';
+import { StaffGate } from '@/components/staff-gate';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -53,7 +55,9 @@ export default function RootLayout({
               </Link>
             </div>
             <h1 className="font-bold text-2xl">Playground</h1>
-            {children}
+            <Suspense fallback={null}>
+              <StaffGate>{children}</StaffGate>
+            </Suspense>
           </div>
         </Providers>
       </body>

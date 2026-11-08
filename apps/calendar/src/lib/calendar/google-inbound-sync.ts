@@ -1,6 +1,16 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
+import {
+  credentialSyncErrorType,
+  ensureHealthyCalendarCredential,
+} from './credential-health';
 import { performIncrementalActiveSync } from './incremental-active-sync';
+import { classifyCalendarOAuthFailure } from './oauth-failure';
+import {
+  type CalendarTokenOutcomeEntry,
+  recordCalendarTokenOutcome,
+} from './oauth-token-health';
+import { quarantineCalendarAuthToken } from './oauth-token-quarantine';
 import {
   checkProviderSyncBudget,
   MAX_SYNC_CONNECTIONS,
@@ -10,11 +20,11 @@ import {
 import type { CalendarSyncFailure } from './sync-diagnostics';
 import {
   CalendarProviderSyncError,
+  type CalendarSyncErrorType,
   classifyCalendarSyncError,
-  isInvalidCalendarGrant,
 } from './sync-errors';
+import type { CalendarAuthToken } from './token-refresh';
 
-type GoogleTokenRow = { id: string; refresh_token: string };
 type CalendarConnectionRow = {
   id: string;
   calendar_name: string;
@@ -35,7 +45,7 @@ export async function syncGoogleInbound(args: {
 }) {
   const { data: tokenRows, error: tokenError } = await args.sbAdmin
     .from('calendar_auth_tokens')
-    .select('id, refresh_token')
+    .select('*')
     .eq('ws_id', args.wsId)
     .eq('provider', 'google')
     .eq('is_active', true);
@@ -44,9 +54,9 @@ export async function syncGoogleInbound(args: {
     throw tokenError;
   }
 
-  const googleTokenIds = ((tokenRows ?? []) as GoogleTokenRow[]).map(
-    (token) => token.id
-  );
+  const googleTokens = (tokenRows ?? []) as CalendarAuthToken[];
+  const googleTokenIds = googleTokens.map((token) => token.id);
+  const tokenOutcomes: CalendarTokenOutcomeEntry[] = [];
 
   if (googleTokenIds.length === 0) {
     return {
@@ -58,6 +68,7 @@ export async function syncGoogleInbound(args: {
       deferredConnections: 0,
       failureType: null,
       failedCalendars: [] as CalendarSyncFailure[],
+      tokenOutcomes,
     };
   }
 
@@ -92,13 +103,31 @@ export async function syncGoogleInbound(args: {
   let firstConnectionError: unknown;
   let authError: unknown;
 
-  const rejectedAccounts = new Set<string>();
+  // Accounts whose credential cannot be used this run, by sync error type.
+  const rejectedAccounts = new Map<string, CalendarSyncErrorType>();
+  // Accounts whose mid-sync credential failure already has an outcome.
+  const reportedAccounts = new Set<string>();
   const batch = providerSyncSignal()
     ? rotatingSyncBatch(
         [...googleConnections].sort((a, b) => a.id.localeCompare(b.id)),
         MAX_SYNC_CONNECTIONS
       )
     : googleConnections;
+
+  // One credential check per account, so a revoked account is rejected once
+  // instead of once per calendar.
+  const batchTokenIds = new Set(batch.map((c) => c.auth_token_id));
+  for (const token of googleTokens) {
+    if (!batchTokenIds.has(token.id) || providerSyncSignal()?.aborted) continue;
+    const { result, outcome } = await ensureHealthyCalendarCredential(
+      args.sbAdmin,
+      token
+    );
+    tokenOutcomes.push(outcome);
+    if (result.error)
+      rejectedAccounts.set(token.id, credentialSyncErrorType(result));
+  }
+
   let skippedByBudget = 0;
   for (const [index, connection] of batch.entries()) {
     if (providerSyncSignal()?.aborted) {
@@ -107,13 +136,13 @@ export async function syncGoogleInbound(args: {
     }
     try {
       checkProviderSyncBudget();
-      if (
-        connection.auth_token_id &&
-        rejectedAccounts.has(connection.auth_token_id)
-      ) {
+      const rejection = connection.auth_token_id
+        ? rejectedAccounts.get(connection.auth_token_id)
+        : undefined;
+      if (rejection) {
         throw new CalendarProviderSyncError(
-          'Reconnect Google calendar',
-          'auth'
+          'Google calendar credential unavailable',
+          rejection
         );
       }
       const result = await performIncrementalActiveSync(
@@ -145,37 +174,73 @@ export async function syncGoogleInbound(args: {
       updated += result.eventsUpdated;
       deleted += result.eventsDeleted;
     } catch (error) {
-      if (isInvalidCalendarGrant(error) && connection.auth_token_id) {
-        rejectedAccounts.add(connection.auth_token_id);
-        const token = (tokenRows as GoogleTokenRow[]).find(
-          (row) => row.id === connection.auth_token_id
-        );
-        if (token) {
-          const { error: disableError } = await args.sbAdmin
-            .from('calendar_auth_tokens')
-            .update({ is_active: false })
-            .eq('id', token.id)
-            .eq('ws_id', args.wsId)
-            .eq('refresh_token', token.refresh_token);
-          if (disableError)
-            console.error(
-              'Failed to disable revoked Google calendar credential'
+      const oauthFailure = classifyCalendarOAuthFailure('google', error);
+      const token = googleTokens.find(
+        (row) => row.id === connection.auth_token_id
+      );
+      // A credential refresh inside the provider call failed. Record one
+      // outcome per account; quarantine and skip the account only for a
+      // permanent failure.
+      if (
+        token &&
+        !reportedAccounts.has(token.id) &&
+        !rejectedAccounts.has(token.id) &&
+        (oauthFailure?.kind === 'permanent' ||
+          oauthFailure?.kind === 'systemic')
+      ) {
+        let outcome: CalendarTokenOutcomeEntry['outcome'] = 'systemic';
+        if (oauthFailure.kind === 'permanent') {
+          try {
+            outcome = await quarantineCalendarAuthToken(
+              args.sbAdmin,
+              token,
+              oauthFailure.reason
             );
+          } catch {
+            console.error('calendar.oauth.quarantine_failed', {
+              provider: 'google',
+              reason: oauthFailure.reason,
+            });
+            outcome = 'transient';
+          }
         }
+        reportedAccounts.add(token.id);
+        if (oauthFailure.kind === 'permanent')
+          rejectedAccounts.set(token.id, 'auth');
+        const entry = recordCalendarTokenOutcome({
+          tokenId: token.id,
+          provider: 'google',
+          outcome,
+          reason:
+            oauthFailure.kind === 'permanent' ? oauthFailure.reason : undefined,
+          providerCode: oauthFailure.providerCode,
+          attempts: 1,
+        });
+        const previous = tokenOutcomes.findIndex(
+          (item) => item.account === entry.account
+        );
+        if (previous >= 0) tokenOutcomes[previous] = entry;
+        else tokenOutcomes.push(entry);
       }
+      // A permanently rejected credential needs a reconnect, whatever HTTP
+      // status carried it, so the calendar reports auth.
+      const code =
+        oauthFailure?.kind === 'permanent'
+          ? 'auth'
+          : classifyCalendarSyncError(error);
       failedConnections += 1;
       failedCalendars.push({
         connectionId: connection.id,
         calendarName: connection.calendar_name,
-        code: classifyCalendarSyncError(error),
+        code,
       });
       firstConnectionError ??= error;
-      if (classifyCalendarSyncError(error) === 'auth') authError ??= error;
+      if (code === 'auth') authError ??= error;
       console.warn('Google calendar connection sync failed', {
         wsId: args.wsId,
         authTokenId: connection.auth_token_id,
         connectionId: connection.id,
-        code: classifyCalendarSyncError(error),
+        code,
       });
     }
   }
@@ -190,7 +255,10 @@ export async function syncGoogleInbound(args: {
     failedConnections,
     failedCalendars,
     failureType: firstConnectionError
-      ? classifyCalendarSyncError(authError ?? firstConnectionError)
+      ? authError
+        ? ('auth' as const)
+        : classifyCalendarSyncError(firstConnectionError)
       : null,
+    tokenOutcomes,
   };
 }

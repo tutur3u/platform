@@ -64,7 +64,6 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.equal(preflight.outputs.has_ci_token, undefined);
   assert.equal(
     preflight.outputs.build_name,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
     '${{ steps.version_name.outputs.build_name }}'
   );
   assert.equal(preflight.defaults.run['working-directory'], 'apps/mobile');
@@ -166,30 +165,22 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   const betaStep = step(ios, 'Verify TestFlight and distribute to beta groups');
   assert.equal(
     betaStep.env.MOBILE_BUILD_NAME,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
     '${{ needs.mobile-credentials-preflight.outputs.build_name }}'
   );
   assert.equal(
     step(preflight, 'Bundle mobile beta release history').env
       .MOBILE_BUILD_NUMBER,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
     '${{ steps.credentials.outputs.build_number }}'
   );
   assert.equal(
     betaStep.env.TESTFLIGHT_BETA_ENABLED,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
     "${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}"
   );
   assert.equal(
     betaStep.env.TESTFLIGHT_BETA_GROUPS,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
-    "${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}"
+    "${{ vars.TESTFLIGHT_BETA_GROUPS || '' }}"
   );
-  assert.equal(
-    betaStep.env.GITHUB_TOKEN,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
-    '${{ github.token }}'
-  );
+  assert.equal(betaStep.env.GITHUB_TOKEN, '${{ github.token }}');
   assert.equal(betaStep.env.TESTFLIGHT_BETA_WHATS_NEW, undefined);
   const retry = parsed.jobs['retry-ios-testflight-review'];
   assert.equal(
@@ -212,7 +203,6 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.equal(step(retry, 'Cleanup iOS release files').if, 'always()');
   assert.equal(
     step(ios, 'Upload iOS IPA artifact').with.path,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
     '${{ steps.ios-ipa.outputs.path }}'
   );
 

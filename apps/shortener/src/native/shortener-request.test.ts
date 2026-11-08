@@ -70,8 +70,8 @@ function setup(env: Partial<ShortenerEnvironment> = {}) {
   };
   const environment: ShortenerEnvironment = {
     ASSETS: {
-      fetch: async (request) => {
-        assets.push(new URL(request.url).pathname);
+      fetch: async (input) => {
+        assets.push(new URL(input).pathname);
         return new Response('asset');
       },
     },
@@ -130,6 +130,16 @@ describe('canonical host fence and domain aliases', () => {
   });
 });
 
+describe('unknown hosts', () => {
+  it('rejects them once canonical hosts are enabled', async () => {
+    const { call, clicks } = setup({ SHORTENER_CANONICAL_HOST_ENABLED: '1' });
+    const response = await call(`${origin}/abc123`);
+    expect(response.status).toBe(404);
+    expect(response.headers.get('location')).toBeNull();
+    expect(clicks).toEqual([]);
+  });
+});
+
 describe('short-link documents', () => {
   it('redirects with 307 to the exact stored target and records one click', async () => {
     const { call, clicks } = setup();
@@ -153,6 +163,31 @@ describe('short-link documents', () => {
     }
     expect(clicks.map((click) => click.link_id)).toEqual(['l1', 'l1', 'l1']);
     expect(clicks[0]).toMatchObject({ user_agent: 'UA' });
+  });
+
+  it('looks up the exact case-sensitive slug and does not let analytics failure block redirect', async () => {
+    const fixture = setup();
+    const findBySlug = vi.fn(
+      async (slug: string) => rows.find((row) => row.id === slugs[slug]) ?? null
+    );
+    const recordClick = vi.fn(async () => {
+      throw new Error('analytics unavailable');
+    });
+    fixture.deps.store = () => ({
+      findBySlug,
+      findById: async (id: string) => rows.find((row) => row.id === id) ?? null,
+      recordClick,
+    });
+    const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const response = await fixture.call(`${origin}/My-Alias_1`);
+    expect(findBySlug).toHaveBeenCalledExactlyOnceWith('My-Alias_1');
+    expect(recordClick).toHaveBeenCalledOnce();
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://example.com/landing?utm=a&utm=b'
+    );
+    expect(logError).toHaveBeenCalled();
+    logError.mockRestore();
   });
 
   it('renders not-found, invalid and password pages through Start', async () => {

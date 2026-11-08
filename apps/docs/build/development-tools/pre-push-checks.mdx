@@ -2,11 +2,12 @@
 title: "Pre-push checks"
 description: "Run the build-free changed-files gate before pushing so cheap CI failures are caught locally in seconds."
 updatedAt: "2026-10-23"
+audience: developers
 ---
 
 ## Why this gate exists
 
-Most avoidable CI failures come from cheap checks skipped before pushing: Biome
+Most avoidable CI failures come from cheap checks skipped before pushing: Oxc
 formatting, `flutter analyze` infos (fatal in CI), TypeScript errors such as
 `TS6059` (a package importing app source outside its `rootDir`), stale generated
 inventories and branch names the checker rejects. `bun validate` is too heavy for
@@ -16,7 +17,7 @@ is not run locally. `bun check:changed` is the replacement before every push.
 ```bash
 bun check:changed                 # working tree vs merge base with origin/main
 bun check:changed --dry-run       # print the planned steps only
-bun check:changed --only biome    # one step (ids or prefixes such as type-check)
+bun check:changed --only oxc    # one step (ids or prefixes such as type-check)
 bun check:changed --skip vitest   # skip a step family
 bun check:changed --committed     # committed changes only (the hook's mode)
 bun check:changed --files a.ts b.ts
@@ -31,22 +32,22 @@ alias still fails closed; a workspace binary is never used as a fallback. A dang
 
 ## What runs for which paths
 
-| Changed paths | Steps |
-| --- | --- |
-| Any | Branch name (same pattern as `branch-name-check.yaml`), source-size ceiling, docs inventory and app SEO `--check` |
-| JS/TS/JSON/CSS outside `apps/mobile` | Biome `check --error-on-warnings` on those files (pinned 2.5.13); Oxlint on JS/TS files as an **advisory** step |
-| `apps/*` or `packages/*` source | App-session, satellite cookie and server-console guards |
-| A workspace's source, `tsconfig*.json` or `package.json` | Type-check of the projects its `type-check` script checks |
-| A workspace's related tests | Changed and colocated tests use `node --test` when they import `node:test` or their package's `test` script uses `node --test`; explicit Vitest imports retain Vitest. Other related tests use the owning workspace's Vitest config. Each file runs under one runner. |
-| `scripts/`, `.github/actions/`, `plugins/` | Changed and sibling `node --test` files |
-| `.github/workflows/` or `.github/actions/` | Workflow concurrency, Bun pin and workflow-config policy tests |
-| `apps/mobile/` | `flutter gen-l10n` first when ARB files changed, `dart format` on changed Dart files, then `flutter analyze lib test` exactly as `mobile.yaml` runs it |
-| `apps/*/messages/*.json` | i18n sort and en/vi key parity |
-| Migrations, docs, web API routes | Migration timestamps, docs audit, legacy route wrappers, mobile API mappings |
+| Changed paths                                                                           | Steps                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Any                                                                                     | Branch name (same pattern as `branch-name-check.yaml`), source-size ceiling, docs inventory and app SEO `--check`                                                                                                                                                                                                                                                                                                        |
+| JS/TS/JSON/CSS outside `apps/mobile`                                                    | Oxfmt `--check` (0.74.0) and blocking Oxlint `--deny-warnings` (1.89.0)                                                                                                                                                                                                                                                                                                                                                  |
+| `packages/internal-api/**`, `packages/sdk/**`, `packages/utils/**`, `packages/types/**` | SDK portable source approval (`sdk-portable`): resolves the source closure and checks its allowlist without emitting files or running TypeScript. Utils and types are conservatively scoped to cover portable imports.                                                                                                                                                                                                   |
+| `apps/*` or `packages/*` source                                                         | App-session, satellite cookie and server-console guards                                                                                                                                                                                                                                                                                                                                                                  |
+| A workspace's source, `tsconfig*.json` or `package.json`                                | Type-check of the projects its `type-check` script checks                                                                                                                                                                                                                                                                                                                                                                |
+| A workspace's related tests                                                             | Changed and colocated tests use `node --test` when they import `node:test` or their package's `test` script uses `node --test`; explicit Vitest imports retain Vitest; files that import `bun:test` run with `bun test` from their workspace directory (the Meet realtime Durable Object suites, which Node cannot load). Other related tests use the owning workspace's Vitest config. Each file runs under one runner. |
+| `scripts/`, `.github/actions/`, `plugins/`                                              | Changed and sibling `node --test` files                                                                                                                                                                                                                                                                                                                                                                                  |
+| `.github/workflows/` or `.github/actions/`                                              | Workflow concurrency, Bun pin and workflow-config policy tests                                                                                                                                                                                                                                                                                                                                                           |
+| `apps/mobile/`                                                                          | `flutter gen-l10n` first when ARB files changed, `dart format` on changed Dart files, then `flutter analyze lib test` exactly as `mobile.yaml` runs it                                                                                                                                                                                                                                                                   |
+| `apps/*/messages/*.json`                                                                | i18n sort and en/vi key parity                                                                                                                                                                                                                                                                                                                                                                                           |
+| Migrations, docs, web API routes                                                        | Migration timestamps, docs audit, legacy route wrappers, mobile API mappings                                                                                                                                                                                                                                                                                                                                             |
 
-Oxlint stays advisory until a scope records Biome parity under the
-[Oxc adoption rules](/build/development-tools/oxc-cloudflare-adoption); Biome
-remains the blocking formatter and linter. Paused runtimes are excluded.
+Oxfmt and Oxlint both block pushes on failures. The root Oxc configs define the
+active scope and explicit rule exclusions; exact-commit CI remains required.
 
 In hook mode, every non-deletion `refs/heads/*` destination from Git's pre-push
 stdin is validated, including additional branches whose commits differ from
@@ -71,6 +72,12 @@ keeping legitimate package links. Remove links only after proving they are
 undeclared orphan symlinks; follow the conditional
 [orphan alias recovery procedure](/reference/packages/sdk#orphan-workspace-aliases).
 
+For Vite/Oxc validation, keep the worktree container outside another checkout.
+An enclosing checkout's TypeScript project references can cause `TSCONFIG_ERROR`
+for a missing config package even when the worktree's own package links resolve.
+Move only the owned worktree with `git worktree move`, retain TTR admission, and
+rerun the failed contract; do not change compiler settings to hide this failure.
+
 ## Type-checking without built declarations
 
 CI builds `@tuturuuu/types`, `supabase`, `internal-api` and `masonry` before
@@ -89,7 +96,7 @@ project and classifies diagnostics:
 
 Shared-package changes also select transitive reverse dependents from workspace
 manifests. Root/shared configuration changes (`package.json`, `bun.lock`, root
-`tsconfig.json`, `biome.json`, `turbo.json`, `bunfig.toml`, `.npmrc`,
+`tsconfig.json`, `.oxfmtrc.json` and `.oxlintrc.json`, `turbo.json`, `bunfig.toml`, `.npmrc`,
 root `vitest.config.ts`, `.oxlintrc.json`, `.oxfmtrc.json`, and
 `packages/typescript-config`)
 print **not covered; CI only** because this focused gate cannot prove their full
@@ -148,4 +155,26 @@ and `scripts/ts-diagnostics.test.js` cover path mapping, the branch pattern's pa
 ttr queueing, cold-declaration classification and tsc confirmation of tsrs
 failures.
 
-Related native `node:test` files, including database script `.test.mjs` siblings, run through `node --test` even in packages whose default is Vitest. An explicit Vitest import selects Vitest when a file also imports Node test helpers or types. This runner partition avoids false “No test suite found” failures.
+Related native `node:test` files, including database script `.test.mjs` siblings, run through `node --test` even in packages whose default is Vitest. The classifier parses actual runtime imports, including CommonJS `require` and dynamic imports. Fixture strings, template text, comments, regular expressions and type-only imports cannot choose a runner. An explicit runtime Vitest import still takes precedence when a file also imports Node test helpers. Without a runner import, the owning package test script supplies the existing fallback. This runner partition avoids false “No test suite found” failures. `scripts/check-changed-runners.test.js` covers the SDK portable-build fixture and both runner directions.
+
+### Keep host configuration types out of app programs
+
+Mail, Calendar and Meet check Vite/Void configuration in a separate
+`tsconfig.config.json` through their normal `type-check` command. Their app
+programs retain runtime and test files. This prevents host tooling such as
+`unplugin` from loading Bun globals into browser app types, where Bun's
+`fetch.preconnect` would incorrectly become mandatory for fetch fixtures and
+ordinary request wrappers. Keep the configuration check in the package gate
+when moving config roots. `scripts/ci/vite-config-type-boundary.test.js` verifies
+the compiler's resolved app/config roots and the package command wiring.
+
+## Web browser and fixture test discovery
+
+Playwright's authenticated project collects only `*.spec.ts`; its setup project
+owns `auth.setup.ts`. Keep Vitest fixture tests out of browser collection.
+Check discovery without starting services with
+`bun run --cwd apps/web test:e2e -- --list` and require a nonzero test count.
+The root Vitest project `web-e2e-fixtures` runs the employee fixture unit tests:
+`bun x vitest run --project web-e2e-fixtures --maxWorkers=1`.
+The chat bridge fixture remains an explicit SQL qualification target requiring
+its envelope; it is not an ordinary unit test.

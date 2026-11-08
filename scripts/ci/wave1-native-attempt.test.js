@@ -3,9 +3,8 @@ const { DatabaseSync } = require('node:sqlite');
 const test = require('node:test');
 
 async function ledgerFixture(t) {
-  const { attemptLedger, signAttemptState } = await import(
-    './wave1-native-attempt.mjs'
-  );
+  const { attemptLedger, signAttemptState } =
+    await import('./wave1-native-attempt.mjs');
   const db = new DatabaseSync(':memory:');
   t.after(() => db.close());
   db.exec(

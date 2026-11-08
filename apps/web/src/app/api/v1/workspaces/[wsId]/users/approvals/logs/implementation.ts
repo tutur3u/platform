@@ -88,6 +88,21 @@ export async function GET(request: Request, { params }: Params) {
         );
       }
 
+      const { data: post, error: postError } = await sbAdmin
+        .schema('private')
+        .from('user_group_posts')
+        .select('id, workspace_user_groups!inner(ws_id)')
+        .eq('id', postId)
+        .eq('workspace_user_groups.ws_id', permissions.wsId)
+        .maybeSingle();
+      if (postError) throw postError;
+      if (!post) {
+        return NextResponse.json(
+          { message: 'Post not found' },
+          { status: 404 }
+        );
+      }
+
       const { data, error } = await sbAdmin
         .schema('private')
         .from('user_group_post_logs')

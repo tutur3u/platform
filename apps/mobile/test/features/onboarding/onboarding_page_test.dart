@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
+import 'package:mobile/features/audience_mode/audience_mode.dart';
+import 'package:mobile/features/audience_mode/audience_mode_cubit.dart';
 import 'package:mobile/features/onboarding/view/onboarding_page.dart';
 import 'package:mobile/features/onboarding/widgets/onboarding_backdrop.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../audience_mode/audience_mode_fakes.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -18,6 +23,7 @@ void main() {
     bool dark = false,
     double textScale = 1,
     bool reducedMotion = false,
+    AudienceModeCubit? modeCubit,
   }) async {
     final router = GoRouter(
       initialLocation: replay ? '/host/guide' : '/guide',
@@ -37,30 +43,33 @@ void main() {
       ],
     );
     addTearDown(router.dispose);
-    await tester.pumpWidget(
-      shad.ShadcnApp.router(
-        theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
-        darkTheme: const shad.ThemeData.dark(
-          colorScheme: shad.ColorSchemes.darkZinc,
-        ),
-        themeMode: dark ? shad.ThemeMode.dark : shad.ThemeMode.light,
-        localizationsDelegates: const [
-          ...AppLocalizations.localizationsDelegates,
-          shad.ShadcnLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        routerConfig: router,
-        builder: (context, child) => ShadcnMaterialBridge.appBuilder(
-          context,
-          MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: TextScaler.linear(textScale),
-              disableAnimations: reducedMotion,
-            ),
-            child: child!,
+    final app = shad.ShadcnApp.router(
+      theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
+      darkTheme: const shad.ThemeData.dark(
+        colorScheme: shad.ColorSchemes.darkZinc,
+      ),
+      themeMode: dark ? shad.ThemeMode.dark : shad.ThemeMode.light,
+      localizationsDelegates: const [
+        ...AppLocalizations.localizationsDelegates,
+        shad.ShadcnLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: router,
+      builder: (context, child) => ShadcnMaterialBridge.appBuilder(
+        context,
+        MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScale),
+            disableAnimations: reducedMotion,
           ),
+          child: child!,
         ),
       ),
+    );
+    await tester.pumpWidget(
+      modeCubit == null
+          ? app
+          : BlocProvider<AudienceModeCubit>.value(value: modeCubit, child: app),
     );
     await tester.pumpAndSettle();
   }
@@ -86,6 +95,7 @@ void main() {
     tester,
   ) async {
     await pumpGuide(tester);
+    await next(tester);
     await next(tester);
     await tester.ensureVisible(find.text('Professional'));
     await tester.pumpAndSettle();
@@ -128,6 +138,55 @@ void main() {
     expect(find.text('Login'), findsNothing);
   });
 
+  Future<AudienceModeCubit> boundModeCubit(
+    FakeAudienceModeRepository repository,
+  ) async {
+    final cubit = AudienceModeCubit(
+      repository: repository,
+      store: MemoryAudienceModeStore(),
+    );
+    addTearDown(cubit.close);
+    await cubit.bind(userId: 'u1', wsId: 'personal');
+    return cubit;
+  }
+
+  testWidgets('choosing Education saves the account preference', (
+    tester,
+  ) async {
+    final repository = FakeAudienceModeRepository();
+    final cubit = await boundModeCubit(repository);
+    await pumpGuide(tester, replay: true, modeCubit: cubit);
+    await next(tester);
+    expect(find.text('How will you use Tuturuuu?'), findsOneWidget);
+    expect(find.text('Classes, attendance and reports first'), findsOneWidget);
+    await tester.ensureVisible(find.text('Education'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Education'));
+    await tester.pumpAndSettle();
+    for (var page = 0; page < 3; page++) {
+      await next(tester);
+    }
+    await tester.tap(find.text('Explore Tuturuuu'));
+    await tester.pumpAndSettle();
+    expect(repository.saves, ['account:education']);
+    expect(cubit.state.mode, AudienceMode.education);
+    expect(find.text('Replay host'), findsOneWidget);
+  });
+
+  testWidgets('skip never writes a mode', (tester) async {
+    final repository = FakeAudienceModeRepository();
+    final cubit = await boundModeCubit(repository);
+    await pumpGuide(tester, replay: true, modeCubit: cubit);
+    await next(tester);
+    await tester.ensureVisible(find.text('Education'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Education'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Skip for now'));
+    await tester.pumpAndSettle();
+    expect(repository.saves, isEmpty);
+  });
+
   for (final dark in [false, true]) {
     testWidgets('compact enlarged text remains usable, dark=$dark', (
       tester,
@@ -137,6 +196,9 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await pumpGuide(tester, dark: dark, textScale: 2, reducedMotion: true);
+      expect(tester.takeException(), isNull);
+      await next(tester);
+      expect(find.text('How will you use Tuturuuu?'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await next(tester);
       expect(find.text('Make Tuturuuu yours'), findsOneWidget);

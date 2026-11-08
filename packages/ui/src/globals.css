@@ -126,7 +126,7 @@
   --secondary-foreground: hsl(0 0% 9%);
 
   --muted: hsl(0 0% 96.1%);
-  --muted-foreground: hsl(0 0% 45.1%);
+  --muted-foreground: hsl(0 0% 40%);
 
   --accent: hsl(0 0% 96.1%);
   --accent-foreground: hsl(0 0% 9%);
@@ -225,6 +225,37 @@
   --calendar-bg-indigo: hsl(250 64% 95%);
   --calendar-bg-cyan: hsl(180 64% 95%);
   --calendar-bg-gray: hsl(0 0% 95%);
+}
+
+/*
+  Settings keeps its own contrast tokens: in dark mode the global border, input,
+  muted and accent colors share one value, which makes form controls disappear
+  against a panel. Scoping them here leaves the rest of the product untouched.
+*/
+.settings-surface {
+  --muted-foreground: hsl(0 0% 34%);
+  --border: hsl(0 0% 88%);
+  --input: hsl(0 0% 82%);
+  --accent: hsl(0 0% 93%);
+}
+
+.dark .settings-surface {
+  --muted-foreground: hsl(0 0% 72%);
+  --card: hsl(0 0% 7%);
+  --border: hsl(0 0% 17%);
+  --input: hsl(0 0% 26%);
+  --accent: hsl(0 0% 15%);
+}
+
+/* A disabled value is often what the user came to read or copy. */
+.settings-surface :is(input, textarea, [data-slot="select-trigger"]):disabled {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+
+.settings-surface :is(button, [role="switch"], [role="checkbox"]):disabled {
+  opacity: 0.6;
 }
 
 .dark {
@@ -605,7 +636,7 @@
      * blow out their brightness. Entrance keyframes use `both`, so removing
      * the animation simply leaves the element in its natural, final state.
      */
-    /* biome-ignore lint/complexity/noImportantStyles: must beat utility-class animations for accessibility */
+
     animation: none !important;
   }
 }

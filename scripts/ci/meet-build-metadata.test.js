@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noTemplateCurlyInString: GitHub expressions are tested as literal YAML values.
 const assert = require('node:assert/strict');
 const { existsSync, readFileSync } = require('node:fs');
 const { cp, mkdtemp, mkdir, rm, writeFile } = require('node:fs/promises');
@@ -557,6 +556,7 @@ test('Meet workflow contracts run in a clean snapshot without Node dependencies'
     for (const file of [
       'scripts/ci/meet-build-metadata.test.js',
       'scripts/ci/workflow-yaml-test-helper.js',
+      'scripts/ci/pr-label-gate.js',
       'scripts/run-script-tests.js',
       'scripts/paused-runtimes.js',
       'scripts/ci/verify-meet-start-output.test.js',

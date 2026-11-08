@@ -1,3 +1,4 @@
+import { loadTaskReadScope } from '@tuturuuu/utils/task-read-scope';
 import type { MiraToolContext } from '../mira-tool-types';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
 
@@ -7,7 +8,14 @@ export async function executeGetTask(
 ) {
   const taskId = args.taskId as string;
   const wsId = getWorkspaceContextWorkspaceId(ctx);
-  const { data, error } = await ctx.supabase
+  const scope = await loadTaskReadScope({
+    sbAdmin: ctx.supabase,
+    userId: ctx.userId,
+    wsId,
+  });
+  if (scope.mode === 'boards' && scope.boardIds.length === 0)
+    return { error: 'Task not found in the current workspace.' };
+  let builder = ctx.supabase
     .from('tasks')
     .select(
       'id, name, description, priority, start_date, end_date, estimation_points, completed, completed_at, board_id, list_id, direct_board:workspace_boards!fk_tasks_board_id(id, name, ws_id), task_lists(id, name, workspace_boards!inner(id, name, ws_id)), task_assignees(user_id), task_labels(label_id)'
@@ -15,8 +23,14 @@ export async function executeGetTask(
     .eq('id', taskId)
     .eq('direct_board.ws_id', wsId)
     .eq('task_lists.workspace_boards.ws_id', wsId)
-    .or('direct_board.not.is.null,and(board_id.is.null,task_lists.not.is.null)')
-    .maybeSingle();
+    .or(
+      'direct_board.not.is.null,and(board_id.is.null,task_lists.not.is.null)'
+    );
+  if (scope.mode === 'boards')
+    builder = builder
+      .in('direct_board.id', scope.boardIds)
+      .in('task_lists.workspace_boards.id', scope.boardIds);
+  const { data, error } = await builder.maybeSingle();
   return error
     ? { error: error.message }
     : data
@@ -31,6 +45,13 @@ export async function executeSearchTasks(
   const wsId = getWorkspaceContextWorkspaceId(ctx);
   const title = String(args.query ?? '').trim();
   if (!title) return { error: 'Provide a task title to search for.' };
+  const scope = await loadTaskReadScope({
+    sbAdmin: ctx.supabase,
+    userId: ctx.userId,
+    wsId,
+  });
+  if (scope.mode === 'boards' && scope.boardIds.length === 0)
+    return { error: 'No shared task boards in the current workspace.' };
   const page = Math.max(1, Number(args.page) || 1);
   const limit = Math.min(50, Math.max(1, Number(args.limit) || 20));
   const query = title.replace(/[\\%_]/g, '\\$&');
@@ -58,6 +79,10 @@ export async function executeSearchTasks(
     .order('created_at', { ascending: false })
     .order('id', { ascending: true })
     .range((page - 1) * limit, page * limit - 1);
+  if (scope.mode === 'boards')
+    builder = builder
+      .in('direct_board.id', scope.boardIds)
+      .in('task_lists.workspace_boards.id', scope.boardIds);
   if (args.includeCompleted !== true)
     builder = builder
       .eq('completed', false)

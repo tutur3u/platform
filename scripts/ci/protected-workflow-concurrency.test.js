@@ -30,9 +30,11 @@ const serialized = [
   'release-please-auto-merge.yaml',
   'release-please-transient-retry.yaml',
   'release-please.yaml',
+  'release-realtime-package.yaml',
   'release-sdk-dev.yaml',
   'release-sdk-package.yaml',
   'release-supabase-package.yaml',
+  'release-cloudflare-package.yaml',
   'release-types-package.yaml',
   'release-typescript-config-package.yaml',
   'release-ui-package.yaml',
@@ -74,10 +76,6 @@ const serialized = [
 // the production-only deploy job holds the serialized lock.
 const prExceptions = {
   'desktop-beta.yaml': 'Production publication shares the workflow lock',
-  'calendar-cloudflare.yaml':
-    'Staging publication consumes the durable attempt ledger',
-  'mail-cloudflare.yaml':
-    'Staging publication consumes the durable attempt ledger',
   'playground-runtime-acceptance.yaml':
     'Real sandbox must finish bounded cleanup',
   'docker-setup-check.yaml': 'Docker runtime is paused',
@@ -87,9 +85,16 @@ const prExceptions = {
 };
 const mainExceptions = {
   ...prExceptions,
+  'supabase-staging.yaml':
+    'Protected main migrations serialize exact-SHA marker evidence',
   'release-sdk-dev.yaml':
     'Dev publication retains its serial npm dist-tag lock',
-  'biome-check.yaml':
+  // PR revisions supersede; main never cancels an active staging upload.
+  'calendar-cloudflare.yaml':
+    'Staging publication consumes the durable attempt ledger',
+  'mail-cloudflare.yaml':
+    'Staging publication consumes the durable attempt ledger',
+  'oxc-check.yaml':
     'Job-level validation and separate repository mutation locks',
   'tanstack-route-manifest.yaml': 'TanStack runtime is paused',
   'codeql.yml':
@@ -144,10 +149,23 @@ function context(
 }
 function expression(source, github) {
   return vm.runInNewContext(
-    source,
+    // GitHub's `labels.*.name` object filter is not JavaScript.
+    source.replaceAll('labels.*.name', 'labelNames'),
     {
-      github,
+      github: {
+        ...github,
+        event: {
+          ...github.event,
+          pull_request: {
+            ...github.event?.pull_request,
+            labelNames: (github.event?.pull_request?.labels ?? []).map(
+              (label) => label.name
+            ),
+          },
+        },
+      },
       inputs: {},
+      contains: (items, item) => items.includes(item),
       startsWith: (value, prefix) => value.startsWith(prefix),
       format: (template, ...values) =>
         template.replace(/\{([0-9]+)\}/g, (_, index) => values[index]),
@@ -214,6 +232,22 @@ for (const [file, workflow] of Object.entries(workflows)) {
   for (const event of ['pull_request', 'pull_request_target']) {
     if (!Object.hasOwn(events(workflow), event)) continue;
     test(`${file}: ${event} revisions supersede or have an explicit exception`, () => {
+      if (file === 'oxc-check.yaml') {
+        // Oxc keeps mutation locks outside any parent group, so each
+        // validation job supersedes its own PR revisions.
+        for (const id of [
+          'check-ci',
+          'duplicate-validation',
+          'format',
+          'lint',
+        ]) {
+          assertPrSupersedes(
+            { ...workflow, concurrency: workflow.jobs[id].concurrency },
+            event
+          );
+        }
+        return;
+      }
       if (prExceptions[file]) {
         assert.ok(prExceptions[file]);
         if (!file.startsWith('docker-') && file !== 'rust-backend.yml') {
@@ -290,12 +324,10 @@ test('regression controls reject missing, non-cancelling, SHA-specific and cross
     { ...workflow.concurrency, 'cancel-in-progress': false },
     {
       ...workflow.concurrency,
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
       group: '${{ github.workflow }}-${{ github.sha }}',
     },
     {
       ...workflow.concurrency,
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
       group: '${{ github.workflow }}-${{ github.ref }}',
     },
     { ...workflow.concurrency, queue: 'max' },
@@ -411,7 +443,7 @@ for (const [file, workflow] of Object.entries(workflows)) {
     });
   }
 }
-test('main validation inventory requires isolated qualification, including Biome jobs', () => {
+test('main validation inventory requires isolated qualification, including Oxc jobs', () => {
   for (const [file, workflow] of Object.entries(workflows)) {
     if (mainExceptions[file] || file.startsWith('vercel-preview-')) continue;
     if (!Object.hasOwn(events(workflow), 'push')) continue;
@@ -465,8 +497,8 @@ function assertMutationLocks(workflow) {
     assertQualification(job.concurrency, workflow.name);
   }
 }
-test('Biome repository writes are outside every cancelling parent and validation group', () => {
-  const workflow = workflows['biome-check.yaml'];
+test('Oxc repository writes are outside every cancelling parent and validation group', () => {
+  const workflow = workflows['oxc-check.yaml'];
   assertMutationLocks(workflow);
   assert.throws(() =>
     assertMutationLocks({
@@ -586,4 +618,32 @@ test('Cloudflare app PR validation never shares the production deploy lock', () 
       render(workflow.concurrency.group, production)
     );
   }
+});
+
+test('Calendar and Mail PR revisions supersede while main staging uploads never cancel', () => {
+  for (const file of ['calendar-cloudflare.yaml', 'mail-cloudflare.yaml']) {
+    const c = workflows[file].concurrency;
+    assert.notEqual(c.queue, 'max', file);
+    const pr = context('refs/pull/7/merge', 'a', 1, 'pull_request', 7);
+    assert.equal(render(c['cancel-in-progress'], pr), true, file);
+    for (const [ref, event] of [
+      ['refs/heads/main', 'push'],
+      ['refs/heads/main', 'workflow_dispatch'],
+      ['refs/heads/production', 'push'],
+    ]) {
+      const run = context(ref, 'b', 2, event);
+      assert.equal(render(c['cancel-in-progress'], run), false, file);
+      assert.notEqual(render(c.group, run), render(c.group, pr), file);
+    }
+    // The upload itself keeps its own serialized, non-cancelling lock.
+    const publish = workflows['wave1-native-publish.yaml'].concurrency;
+    assert.equal(publish['cancel-in-progress'], false);
+    assert.equal(publish.queue, 'max');
+  }
+});
+
+test('PR path filters never apply to CodeQL main baselines', () => {
+  const push = events(workflows['codeql.yml']).push;
+  assert.deepEqual(push, { branches: ['main'] });
+  assert.ok(events(workflows['codeql.yml']).pull_request['paths-ignore']);
 });

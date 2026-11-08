@@ -78,12 +78,16 @@ class _TaskDatePickerSheet extends StatelessWidget {
     required this.initialDate,
     required this.firstDate,
     required this.lastDate,
+    this.currentDate,
   });
 
   final String title;
   final DateTime initialDate;
   final DateTime firstDate;
   final DateTime lastDate;
+
+  /// The day marked as today; the device's today when null.
+  final DateTime? currentDate;
 
   @override
   Widget build(BuildContext context) {
@@ -118,6 +122,7 @@ class _TaskDatePickerSheet extends StatelessWidget {
               initialDate: initialDate,
               firstDate: firstDate,
               lastDate: lastDate,
+              currentDate: currentDate,
               onDateChanged: (date) => Navigator.of(context).pop(date),
             ),
           ],

@@ -159,6 +159,7 @@ class _HistoryTabState extends State<HistoryTab> {
                 );
               },
               child: AppPageScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 controller: _scrollController,
                 slivers: [
                   SliverToBoxAdapter(
@@ -218,7 +219,7 @@ class _HistoryTabState extends State<HistoryTab> {
                           top: AppSpacing.xxl,
                           bottom: AppSpacing.lg,
                         ),
-                        child: Center(child: NovaLoadingIndicator()),
+                        child: AppLoadingIndicator.page(),
                       ),
                     )
                   else ...[
@@ -288,7 +289,7 @@ class _HistoryTabState extends State<HistoryTab> {
                       const SliverToBoxAdapter(
                         child: Padding(
                           padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Center(child: NovaLoadingIndicator()),
+                          child: AppLoadingIndicator(),
                         ),
                       ),
                     if (state.historyHasMore && !state.isHistoryLoadingMore)

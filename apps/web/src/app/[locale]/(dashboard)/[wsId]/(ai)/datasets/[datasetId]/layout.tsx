@@ -1,9 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type React from 'react';
 import { Navigation, type NavLink } from '@/components/navigation';
+import { requireDatasetAccess } from '@/lib/datasets/page-access';
 
 interface LayoutProps {
   params: Promise<{
@@ -22,15 +21,7 @@ export default async function DatasetDetailsLayout({
   const { wsId, datasetId } = await params;
   const t = await getTranslations();
 
-  const supabase = await createClient();
-
-  const { data: dataset } = await supabase
-    .from('workspace_datasets')
-    .select('*')
-    .eq('id', datasetId)
-    .maybeSingle();
-
-  if (!dataset) notFound();
+  await requireDatasetAccess(wsId, datasetId);
 
   const navLinks: NavLink[] = [
     {

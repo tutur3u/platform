@@ -403,7 +403,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                           if (!nestedContext.mounted) {
                             return;
                           }
-                          await shad.closeOverlay<void>(nestedContext);
+                          await Navigator.maybePop(nestedContext);
                           if (!mounted || !hostContext.mounted) {
                             return;
                           }

@@ -14,6 +14,7 @@ import {
 import { readLiveRequestBody } from '@tuturuuu/meet-core/features/live-assistant/request-body';
 import { signLiveSession } from '@tuturuuu/meet-core/features/live-assistant/token';
 import { liveWorkspaceCatalog } from '@tuturuuu/meet-core/features/live-assistant/workspace-tools';
+import { isMeetAiAvailableForWorkspace } from '@tuturuuu/meet-core/features/meeting-ai/server/workspace-gate';
 import { getScenarioPrompt } from '@tuturuuu/meet-core/parley/repository';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { z } from 'zod';
@@ -46,6 +47,9 @@ export async function POST(
       MEET_LIVE: DurableObjectNamespace;
       MEET_REALTIME_TOKEN_SECRET: string;
       GOOGLE_GENERATIVE_AI_API_KEY?: string;
+      MEET_AI_ENABLED_WORKSPACE_IDS?: string;
+      MEET_AI_DISABLED?: string;
+      MEET_AI_DISABLED_WORKSPACE_IDS?: string;
     };
     if (
       !env.MEET_LIVE ||
@@ -53,6 +57,13 @@ export async function POST(
     )
       throw new MeetCallAccessError(503, 'Live assistant is unavailable');
     const command = input.data;
+    // Live is transcription. Start and resume are default deny for workspaces
+    // outside the pilot allowlist; stop stays open so a session can always end.
+    if (
+      command.action !== 'stop' &&
+      !isMeetAiAvailableForWorkspace(access.meeting.ws_id, env)
+    )
+      throw new MeetCallAccessError(403, 'Meet AI is temporarily unavailable');
     const sharedContext =
       command.action === 'stop'
         ? undefined
@@ -108,6 +119,12 @@ export async function POST(
         409,
         'Refresh Meet before starting a room assistant'
       );
+    // Personal "Talk to Mira" stays on the actor's personal credits; only the
+    // room assistant (meeting transcription/notes) bills the meeting workspace.
+    const billingWorkspaceId =
+      command.mode === 'personal'
+        ? await personalWorkspace(access.user.id)
+        : access.meeting.ws_id;
     const claims: LiveSessionClaims = {
       audioPolicy: command.audioPolicy,
       audience: 'meet-live',
@@ -115,7 +132,7 @@ export async function POST(
       sessionId: crypto.randomUUID(),
       meetingId,
       ownerId: access.user.id,
-      billingWorkspaceId: await personalWorkspace(access.user.id),
+      billingWorkspaceId,
       mode: command.mode,
       expiresAt: Date.now() + 120000,
     };

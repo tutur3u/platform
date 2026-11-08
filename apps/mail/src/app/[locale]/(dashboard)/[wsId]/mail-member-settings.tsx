@@ -7,6 +7,12 @@ import {
   upsertMailMailboxMember,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -56,54 +62,65 @@ export function MailMemberSettings({
   });
   const options = ['viewer', 'sender', 'admin'] as const;
   return (
-    <section className="space-y-4">
+    <section className="space-y-8">
       {canManage ? (
-        <form
-          className="space-y-3 rounded-lg border p-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            save.mutate({ email: email.trim(), role });
-          }}
-        >
-          <Label htmlFor="member-email">{t('group_member_email')}</Label>
-          <Input
-            id="member-email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <Select
-            value={role}
-            onValueChange={(next) => setRole(next as MailMailboxRole)}
+        <SettingsSection>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              save.mutate({ email: email.trim(), role });
+            }}
           >
-            <SelectTrigger aria-label={t('group_member_role')}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((item) => (
-                <SelectItem value={item} key={item}>
-                  {t(`group_role_${item}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button type="submit" disabled={save.isPending || !email.trim()}>
-            {t('group_add_member')}
-          </Button>
-        </form>
+            <SettingItemTab
+              title={
+                <Label htmlFor="member-email">{t('group_member_email')}</Label>
+              }
+              controlWidth="xl"
+            >
+              <Input
+                id="member-email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </SettingItemTab>
+            <SettingItemTab title={t('group_member_role')} controlWidth="xl">
+              <Select
+                value={role}
+                onValueChange={(next) => setRole(next as MailMailboxRole)}
+              >
+                <SelectTrigger aria-label={t('group_member_role')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {options.map((item) => (
+                    <SelectItem value={item} key={item}>
+                      {t(`group_role_${item}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SettingItemTab>
+            <SettingsSectionFooter>
+              <Button type="submit" disabled={save.isPending || !email.trim()}>
+                {t('group_add_member')}
+              </Button>
+            </SettingsSectionFooter>
+          </form>
+        </SettingsSection>
       ) : null}
-      <div className="divide-y overflow-hidden rounded-lg border">
+      <SettingsSection>
         {members.map((member) => (
-          <div
-            className="flex flex-wrap items-center gap-3 p-4"
+          <SettingsSectionBlock
+            className="flex flex-wrap items-center gap-3 py-3"
             key={member.userId}
           >
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium text-sm">
                 {member.fullName || member.email}
               </p>
-              <p className="truncate text-muted-foreground text-xs">
+              <p className="truncate text-muted-foreground text-sm">
                 {member.email}
               </p>
             </div>
@@ -141,7 +158,7 @@ export function MailMemberSettings({
                   {t('group_remove_member')}
                 </Button>
                 {removing === member.userId ? (
-                  <div className="flex w-full items-center gap-2 rounded-lg border p-3">
+                  <div className="flex w-full flex-wrap items-center gap-2">
                     <p className="flex-1 text-sm">
                       {t('group_remove_confirm')}
                     </p>
@@ -163,9 +180,9 @@ export function MailMemberSettings({
                 {t(`group_role_${member.role}`)}
               </span>
             )}
-          </div>
+          </SettingsSectionBlock>
         ))}
-      </div>
+      </SettingsSection>
     </section>
   );
 }

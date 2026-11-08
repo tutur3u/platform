@@ -17,6 +17,12 @@ export async function GET(request: Request, { params }: Params) {
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
+  if (
+    !permissions.containsPermission('view_user_groups_posts') &&
+    !permissions.containsPermission('approve_posts')
+  ) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  }
 
   try {
     const query = parseWorkspacePostsSearchParams(
@@ -29,7 +35,15 @@ export async function GET(request: Request, { params }: Params) {
 
     return NextResponse.json({
       count: postsData.count,
-      data: postsData.data,
+      data: permissions.containsPermission('view_users_private_info')
+        ? postsData.data
+        : postsData.data.map((post) => ({
+            ...post,
+            email: null,
+            recipient: null,
+            user_phone: null,
+            queue_last_error: null,
+          })),
       summary: postsStatus,
     } satisfies {
       count: number;

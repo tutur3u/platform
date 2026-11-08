@@ -27,6 +27,15 @@ const operationId = '10000000-0000-4000-8000-000000000003';
 const user = {
   id: target,
   email,
+  identities: [
+    {
+      id: 'fixture-identity',
+      identity_id: 'fixture-identity',
+      user_id: target,
+      provider: 'email',
+      identity_data: {},
+    },
+  ],
   email_confirmed_at: '2026-01-01T00:00:00Z',
   banned_until: '2126-01-01T00:00:00Z',
   app_metadata: { employee_onboarding: true },

@@ -9,6 +9,8 @@ import 'package:intl/number_symbols.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
+    show AppSheetHandle;
 import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
@@ -648,139 +650,118 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
         }
         _closeSheet(result is bool ? result : null);
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.background,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.mutedForeground.withValues(
-                      alpha: 0.4,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const AppSheetHandle(),
+            const shad.Gap(18),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.financeTransactionDetails,
+                    style: theme.typography.h4.copyWith(
+                      fontWeight: FontWeight.w900,
                     ),
-                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ),
-              const shad.Gap(18),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                shad.GhostButton(
+                  onPressed: isSyntheticTransfer ? null : _showEditDialog,
+                  child: const Icon(Icons.edit_outlined, size: 18),
+                ),
+              ],
+            ),
+            const shad.Gap(16),
+            _TransactionSummaryCard(
+              transaction: _transaction,
+              workspaceCurrency: widget.workspaceCurrency ?? 'USD',
+              exchangeRates: widget.exchangeRates ?? const [],
+              showAmounts: showAmounts,
+            ),
+            const shad.Gap(14),
+            _DetailSectionCard(
+              title: l10n.financeQuickActions,
+              child: Column(
                 children: [
-                  Expanded(
-                    child: Text(
-                      l10n.financeTransactionDetails,
-                      style: theme.typography.h4.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
+                  _QuickActionTile(
+                    icon: _transaction.isTransfer
+                        ? Icons.swap_horiz_rounded
+                        : Icons.account_balance_wallet_outlined,
+                    label: _transaction.isTransfer
+                        ? l10n.financeWallets
+                        : l10n.financeWallet,
+                    value: _transaction.isTransfer
+                        ? _transferRouteLabel(_transaction)
+                        : (_transaction.walletName ?? '-'),
+                    onTap: _isQuickSaving || isSyntheticTransfer
+                        ? null
+                        : _showWalletQuickAction,
                   ),
-                  shad.GhostButton(
-                    onPressed: isSyntheticTransfer ? null : _showEditDialog,
-                    child: const Icon(Icons.edit_outlined, size: 18),
+                  if (!_transaction.isTransfer) ...[
+                    const shad.Gap(10),
+                    _QuickActionTile(
+                      icon: categoryIcon,
+                      label: l10n.financeCategory,
+                      value: _transaction.categoryName ?? '-',
+                      onTap: _isQuickSaving || isSyntheticTransfer
+                          ? null
+                          : _showCategoryQuickAction,
+                    ),
+                  ],
+                  const shad.Gap(10),
+                  _QuickActionTile(
+                    icon: Icons.sell_outlined,
+                    label: l10n.financeTags,
+                    value: tagText,
+                    onTap: _isQuickSaving || isSyntheticTransfer
+                        ? null
+                        : _showTagQuickAction,
+                  ),
+                  const shad.Gap(10),
+                  _QuickActionTile(
+                    icon: Icons.schedule_rounded,
+                    label: l10n.financeTakenAt,
+                    value: dateText,
+                    onTap: _isQuickSaving || isSyntheticTransfer
+                        ? null
+                        : _showTakenAtQuickAction,
+                  ),
+                  const shad.Gap(10),
+                  _QuickActionToggleTile(
+                    icon: Icons.insights_outlined,
+                    label: l10n.financeReportOptIn,
+                    value: _transaction.reportOptIn == true,
+                    enabled: !_isQuickSaving && !isSyntheticTransfer,
+                    activeLabel: l10n.financeReportOptIn,
+                    inactiveLabel: l10n.financeExcludedFromReports,
+                    onChanged: _toggleReportOptIn,
                   ),
                 ],
               ),
-              const shad.Gap(16),
-              _TransactionSummaryCard(
-                transaction: _transaction,
-                workspaceCurrency: widget.workspaceCurrency ?? 'USD',
-                exchangeRates: widget.exchangeRates ?? const [],
-                showAmounts: showAmounts,
-              ),
+            ),
+            if (privacyChips.isNotEmpty) ...[
               const shad.Gap(14),
               _DetailSectionCard(
-                title: l10n.financeQuickActions,
-                child: Column(
-                  children: [
-                    _QuickActionTile(
-                      icon: _transaction.isTransfer
-                          ? Icons.swap_horiz_rounded
-                          : Icons.account_balance_wallet_outlined,
-                      label: _transaction.isTransfer
-                          ? l10n.financeWallets
-                          : l10n.financeWallet,
-                      value: _transaction.isTransfer
-                          ? _transferRouteLabel(_transaction)
-                          : (_transaction.walletName ?? '-'),
-                      onTap: _isQuickSaving || isSyntheticTransfer
-                          ? null
-                          : _showWalletQuickAction,
-                    ),
-                    if (!_transaction.isTransfer) ...[
-                      const shad.Gap(10),
-                      _QuickActionTile(
-                        icon: categoryIcon,
-                        label: l10n.financeCategory,
-                        value: _transaction.categoryName ?? '-',
-                        onTap: _isQuickSaving || isSyntheticTransfer
-                            ? null
-                            : _showCategoryQuickAction,
-                      ),
-                    ],
-                    const shad.Gap(10),
-                    _QuickActionTile(
-                      icon: Icons.sell_outlined,
-                      label: l10n.financeTags,
-                      value: tagText,
-                      onTap: _isQuickSaving || isSyntheticTransfer
-                          ? null
-                          : _showTagQuickAction,
-                    ),
-                    const shad.Gap(10),
-                    _QuickActionTile(
-                      icon: Icons.schedule_rounded,
-                      label: l10n.financeTakenAt,
-                      value: dateText,
-                      onTap: _isQuickSaving || isSyntheticTransfer
-                          ? null
-                          : _showTakenAtQuickAction,
-                    ),
-                    const shad.Gap(10),
-                    _QuickActionToggleTile(
-                      icon: Icons.insights_outlined,
-                      label: l10n.financeReportOptIn,
-                      value: _transaction.reportOptIn == true,
-                      enabled: !_isQuickSaving && !isSyntheticTransfer,
-                      activeLabel: l10n.financeReportOptIn,
-                      inactiveLabel: l10n.financeExcludedFromReports,
-                      onChanged: _toggleReportOptIn,
-                    ),
-                  ],
-                ),
-              ),
-              if (privacyChips.isNotEmpty) ...[
-                const shad.Gap(14),
-                _DetailSectionCard(
-                  title: l10n.settingsTitle,
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: privacyChips,
-                  ),
-                ),
-              ],
-              const shad.Gap(18),
-              shad.DestructiveButton(
-                onPressed: _showDeleteConfirmation,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.delete_outline, size: 16),
-                    const shad.Gap(8),
-                    Text(l10n.financeDeleteTransaction),
-                  ],
-                ),
+                title: l10n.settingsTitle,
+                child: Wrap(spacing: 8, runSpacing: 8, children: privacyChips),
               ),
             ],
-          ),
+            const shad.Gap(18),
+            shad.DestructiveButton(
+              onPressed: _showDeleteConfirmation,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.delete_outline, size: 16),
+                  const shad.Gap(8),
+                  Text(l10n.financeDeleteTransaction),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

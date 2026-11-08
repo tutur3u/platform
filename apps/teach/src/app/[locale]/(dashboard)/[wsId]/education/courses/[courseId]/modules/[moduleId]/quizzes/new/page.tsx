@@ -14,7 +14,10 @@ interface Props {
 
 export default async function NewQuizPage({ params }: Props) {
   const { wsId: routeWsId, courseId, moduleId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(
+    routeWsId,
+    'update_user_groups'
+  );
   const t = await getTranslations();
 
   return (

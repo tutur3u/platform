@@ -16,6 +16,10 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { DocumentPresence } from './document-presence';
 import { DocumentStatus } from './document-status';
+
+/** Exported so the layout contract can be asserted; jsdom computes no layout. */
+export const DOCUMENT_SURFACE_CLASS_NAME =
+  'rounded-none! border-0! px-6 pb-12 outline-none sm:px-8';
 export function DocumentPanel({
   meetingId,
   accountId,
@@ -116,7 +120,10 @@ export function DocumentEditor({
       <div className="min-h-0 flex-1 overflow-auto">
         {provider ? (
           <RichTextEditor
-            className="rounded-none! border-0!"
+            // The surface itself is the panel: no inner frame, padding instead of
+            // a border, and no focus ring (the caret and toolbar show focus).
+            className={DOCUMENT_SURFACE_CLASS_NAME}
+            fillHeight
             content={null}
             toolbarLeadingContent={
               <div className="flex items-center gap-2">
@@ -143,7 +150,9 @@ export function DocumentEditor({
             writePlaceholder={t('placeholder')}
           />
         ) : (
-          <p className="text-muted-foreground text-sm">{t('connecting')}</p>
+          <p className="px-6 py-4 text-muted-foreground text-sm">
+            {t('connecting')}
+          </p>
         )}
       </div>
     </section>

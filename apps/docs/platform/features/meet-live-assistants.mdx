@@ -2,6 +2,8 @@
 title: Meet Live assistants
 updated: '2026-09-23'
 description: Operate personal and room-wide Mira voice sessions with private context, explicit approvals, and metered usage.
+updatedAt: "2026-10-10"
+audience: users
 ---
 
 Meet Live uses `gemini-3.1-flash-live-preview` through a Durable Object in the
@@ -108,7 +110,11 @@ the service cannot be reconstructed after an outage.
 ## Usage and costs
 
 Live reservations and settlement use the platform's existing AI credit ledger
-and charge the initiating user's personal workspace. Usage is accumulated from
+as follows. The room assistant (meeting transcription and notes) charges the
+meeting workspace (`workspace_meetings.ws_id`), and the initiating user remains
+attributed for per-user limits. A personal assistant session ("Talk to Mira",
+voice or text) charges the participant's own personal workspace. A selected tool
+workspace does not change billing. Usage is accumulated from
 provider events by modality. Reservations use nine-minute holds and renew after eight minutes or before exhaustion; failed
 settlements remain durable and retry after the session ends. Final provider usage
 is collected during shutdown. Interrupted turns without a final usage receipt

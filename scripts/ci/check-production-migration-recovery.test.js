@@ -262,7 +262,7 @@ test('workflow keeps default-off manual opt-in and full normal marker/staging/ap
   assert.match(yaml, /DEPLOYMENT_MARKER_HAS_SUCCESS.*!= "true"/);
   assert.match(
     yaml,
-    /d\.sha === target && d\.ref === target &&[\s\S]*p\.sha === target/
+    /d\.sha === source && d\.ref === source &&[\s\S]*p\.sha === source/
   );
   assert.match(
     yaml,
@@ -317,7 +317,9 @@ test('actual project guard rejects a mismatched recovery secret without revealin
       },
     });
   }
-  const expected = 'a'.repeat(20),
+  // The step also fails closed unless the project is the public production
+  // ref, so the matching binding uses that ref.
+  const expected = 'nzamlzqfdwaaxdefwraj',
     actual = 'b'.repeat(20);
   const wrong = run('true', expected, actual);
   assert.equal(wrong.status, 1);
@@ -325,4 +327,7 @@ test('actual project guard rejects a mismatched recovery secret without revealin
   assert.equal(run('true', expected, expected).status, 0);
   assert.equal(run('true', '', expected).status, 1);
   assert.equal(run('false', '', expected).status, 0);
+  const otherProject = run('false', '', actual);
+  assert.equal(otherProject.status, 1);
+  assert.ok(!`${otherProject.stdout}${otherProject.stderr}`.includes(actual));
 });

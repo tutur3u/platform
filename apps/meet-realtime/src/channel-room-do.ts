@@ -6,6 +6,7 @@ import {
   channelTicketSchema,
   channelClientFrameSchema as frame,
 } from '../../../packages/realtime/src/channels/schema';
+import { serviceRequestHeaders } from '../../../packages/realtime/src/core/service-request';
 import {
   signRealtimePayload,
   verifyRealtimePayload,
@@ -436,30 +437,34 @@ export class ChannelRoomDurableObject implements DurableObject {
         )
       )
         throw new Error('Invalid checkpoint endpoint');
+      // Workers send no User-Agent; the platform API proxy rejects anonymous
+      // API requests without one, so the service identity must be explicit.
       const response = await fetch(
         new URL('/api/v1/realtime/documents/checkpoint', base),
         {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+          headers: serviceRequestHeaders(token),
           body: JSON.stringify({ state: Array.from(update), hash }),
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal.timeout(15000),
           redirect: 'manual',
         }
       );
       await response.arrayBuffer();
       if (response.status === 409) failure = 'conflict';
-      if (!response.ok) throw new Error('Document checkpoint failed');
+      if (!response.ok)
+        throw new Error(`Document checkpoint failed (${response.status})`);
       metadata.savedHash = hash;
       metadata.checkpointStatus = 'saved';
       metadata.checkpointFailures = 0;
       delete metadata.checkpointRetry;
-    } catch {
+    } catch (error) {
       metadata.checkpointFailures = (metadata.checkpointFailures ?? 0) + 1;
       metadata.checkpointStatus = failure;
-      console.warn('Meeting document checkpoint deferred');
+      console.warn('Meeting document checkpoint deferred', {
+        status: failure,
+        failures: metadata.checkpointFailures,
+        reason: error instanceof Error ? error.message : 'unknown',
+      });
     }
     this.broadcast({
       type: 'broadcast',

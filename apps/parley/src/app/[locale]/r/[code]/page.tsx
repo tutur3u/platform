@@ -26,7 +26,9 @@ export default async function Session(props: {
   if (!scenario) notFound();
   const t = await getTranslations('parley');
   const notes = access.isHost
-    ? await (await parleyDatabase())
+    ? await (
+        await parleyDatabase()
+      )
         .schema('private')
         .from('parley_observations')
         .select('id, kind, content, created_at')

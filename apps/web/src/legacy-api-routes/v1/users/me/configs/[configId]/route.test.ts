@@ -1,3 +1,23 @@
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ({
+    auth: {
+      admin: {
+        getUserById: async () => ({
+          data: {
+            user: {
+              id: 'user-1',
+              email: 'member@tuturuuu.com',
+              email_confirmed_at: '2026-01-01',
+              identities: [{ provider: 'email', identity_data: {} }],
+            },
+          },
+          error: null,
+        }),
+      },
+    },
+  }),
+}));
+
 import { SHOW_VERSION_BADGE_CONFIG_ID } from '@tuturuuu/internal-api/users';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,9 +33,8 @@ describe('user config route payload protection', () => {
   });
 
   it('returns 413 before schema validation for oversized bodies', async () => {
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/configs/[configId]/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/configs/[configId]/route');
     const response = await (route.PUT as any)(
       new NextRequest('http://localhost/api/v1/users/me/configs/test', {
         method: 'PUT',
@@ -39,9 +58,8 @@ describe('user config route payload protection', () => {
   });
 
   it('keeps returning 400 for schema violations within the byte limit', async () => {
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/configs/[configId]/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/configs/[configId]/route');
     const response = await (route.PUT as any)(
       new NextRequest('http://localhost/api/v1/users/me/configs/test', {
         method: 'PUT',
@@ -64,9 +82,8 @@ describe('user config route payload protection', () => {
   });
 
   it('deletes the current user config when the value is null', async () => {
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/configs/[configId]/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/configs/[configId]/route');
     const query = {
       delete: vi.fn(() => query),
       eq: vi.fn(() => query),
@@ -96,9 +113,8 @@ describe('user config route payload protection', () => {
   });
 
   it('hides the version badge config from non-exact Tuturuuu users', async () => {
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/configs/[configId]/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/configs/[configId]/route');
     const query = {
       eq: vi.fn(() => query),
       maybeSingle: vi.fn(async () => ({
@@ -119,15 +135,14 @@ describe('user config route payload protection', () => {
       { configId: SHOW_VERSION_BADGE_CONFIG_ID }
     );
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ value: null });
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
     expect(from).not.toHaveBeenCalled();
   });
 
   it('returns the version badge config for exact Tuturuuu users', async () => {
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/configs/[configId]/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/configs/[configId]/route');
     const query = {
       eq: vi.fn(() => query),
       maybeSingle: vi.fn(async () => ({
@@ -156,9 +171,8 @@ describe('user config route payload protection', () => {
   });
 
   it('rejects version badge opt-in writes from xwf subdomain users', async () => {
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/configs/[configId]/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/configs/[configId]/route');
     const from = vi.fn();
     const response = await (route.PUT as any)(
       new NextRequest(
@@ -186,9 +200,8 @@ describe('user config route payload protection', () => {
   });
 
   it('allows non-exact users to clear the version badge config', async () => {
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/configs/[configId]/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/configs/[configId]/route');
     const query = {
       delete: vi.fn(() => query),
       eq: vi.fn(() => query),
@@ -221,9 +234,8 @@ describe('user config route payload protection', () => {
   });
 
   it('allows exact Tuturuuu users to enable the version badge config', async () => {
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/configs/[configId]/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/configs/[configId]/route');
     const upsert = vi.fn(async () => ({ error: null }));
     const from = vi.fn(() => ({ upsert }));
     const response = await (route.PUT as any)(

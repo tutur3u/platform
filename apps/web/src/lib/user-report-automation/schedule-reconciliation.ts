@@ -6,6 +6,10 @@ import {
   type ReportCadence,
   reportLocalTimeToUtc,
 } from '@tuturuuu/users-core/lib/reports/periods';
+import {
+  hasWebCronBudget,
+  WEB_CRON_BATCH_LIMIT,
+} from '@/lib/cron/web-cron-budget';
 
 type AdminClient = Awaited<ReturnType<typeof createAdminClient<Database>>>;
 
@@ -41,7 +45,12 @@ export async function reconcilePeriodicReportSchedules(
     .select('*');
   if (schedulesResult.error) throw schedulesResult.error;
   const schedules = (schedulesResult.data ?? []) as ReportSchedule[];
-  const dueSchedules = schedules.filter((schedule) => isDue(schedule, now));
+  if (hasWebCronBudget() && schedules.length > 1000)
+    throw new Error('Cloudflare report schedule catalog budget exceeded');
+  const allDueSchedules = schedules.filter((schedule) => isDue(schedule, now));
+  const dueSchedules = hasWebCronBudget()
+    ? allDueSchedules.slice(0, WEB_CRON_BATCH_LIMIT)
+    : allDueSchedules;
   let createdRuns = 0;
 
   for (const schedule of dueSchedules) {
@@ -68,6 +77,8 @@ export async function reconcilePeriodicReportSchedules(
       : (groupsResult.data ?? [])
           .map((group) => group.id)
           .filter((groupId) => !overriddenGroupIds.has(groupId));
+    if (hasWebCronBudget() && groupIds.length > 1000)
+      throw new Error('Cloudflare report group budget exceeded');
     const period = getCalendarReportPeriod({
       cadence: schedule.cadence,
       completed: schedule.generation_mode === 'ai',

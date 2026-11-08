@@ -206,6 +206,9 @@ const mocks = vi.hoisted(() => {
         return inventoryCatalogRpc(args);
       }
 
+      if (fnName === 'edit_inventory_priced_product')
+        return Promise.resolve({ data: { updated: 1 }, error: null });
+
       throw new Error(`Unexpected private RPC: ${fnName}`);
     }),
   };
@@ -292,6 +295,27 @@ vi.mock('next/headers', () => ({
   headers: vi.fn(() => Promise.resolve(new Headers())),
 }));
 
+function productInventoryPatchRequest() {
+  return new NextRequest(
+    'http://localhost/api/v1/workspaces/ws-1/products/product-1/inventory',
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        inventory: [
+          {
+            warehouse_id: '11111111-1111-4111-8111-111111111111',
+            unit_id: '22222222-2222-4222-8222-222222222222',
+            amount: 5,
+            min_amount: 1,
+            price: 10,
+          },
+        ],
+      }),
+    }
+  );
+}
+
 describe('product routes', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -361,9 +385,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/[productId]/route');
     const response = await GET(
       new NextRequest(
         `http://localhost/api/v1/workspaces/ws-1/products/${productId}`
@@ -393,9 +416,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/route');
     const response = await POST(
       new NextRequest('http://localhost/api/v1/workspaces/ws-1/products', {
         method: 'POST',
@@ -426,9 +448,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/route');
     const response = await POST(
       new NextRequest('http://localhost/api/v1/workspaces/personal/products', {
         method: 'POST',
@@ -473,9 +494,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route');
     const response = await POST(
       new NextRequest(
         'http://localhost/api/v1/workspaces/ws-1/products/product-1/inventory',
@@ -507,7 +527,7 @@ describe('product routes', () => {
     expect(mocks.inventoryInsert).toHaveBeenCalled();
   });
 
-  it('updates product inventory through the admin client for protected tables', async () => {
+  it('updates product inventory through the private atomic RPC', async () => {
     mocks.productMaybeSingle.mockResolvedValue({
       data: { id: 'product-1' },
       error: null,
@@ -534,38 +554,21 @@ describe('product routes', () => {
       eq: firstUpdateEq,
     });
 
-    const { PATCH } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
-    );
-    const response = await PATCH(
-      new NextRequest(
-        'http://localhost/api/v1/workspaces/ws-1/products/product-1/inventory',
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            inventory: [
-              {
-                warehouse_id: '11111111-1111-4111-8111-111111111111',
-                unit_id: '22222222-2222-4222-8222-222222222222',
-                amount: 5,
-                min_amount: 1,
-                price: 10,
-              },
-            ],
-          }),
-        }
-      ),
-      {
-        params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
-      }
-    );
+    const { PATCH } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route');
+    const response = await PATCH(productInventoryPatchRequest(), {
+      params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
+    });
 
     expect(response.status).toBe(200);
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
-    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('inventory_products');
+    expect(mocks.privateSupabase.rpc).toHaveBeenCalledWith(
+      'edit_inventory_priced_product',
+      expect.objectContaining({
+        p_product_id: 'product-1',
+        p_ws_id: 'normalized-ws',
+      })
+    );
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalledWith(
       'inventory_products'
     );
@@ -577,9 +580,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/count/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/count/route');
     const response = await GET(
       new NextRequest('http://localhost/api/v1/workspaces/ws-1/products/count'),
       {
@@ -612,9 +614,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/[productId]/route');
     const response = await GET(
       new NextRequest(
         `http://localhost/api/v1/workspaces/ws-1/products/${productId}`
@@ -641,9 +642,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/route');
     const response = await POST(
       new NextRequest('http://localhost/api/v1/workspaces/ws-1/products', {
         method: 'POST',
@@ -672,9 +672,8 @@ describe('product routes', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route');
     const response = await POST(
       new NextRequest(
         'http://localhost/api/v1/workspaces/ws-1/products/product-1/inventory',
@@ -734,37 +733,20 @@ describe('product routes', () => {
       eq: firstUpdateEq,
     });
 
-    const { PATCH } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
-    );
-    const response = await PATCH(
-      new NextRequest(
-        'http://localhost/api/v1/workspaces/ws-1/products/product-1/inventory',
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            inventory: [
-              {
-                warehouse_id: '11111111-1111-4111-8111-111111111111',
-                unit_id: '22222222-2222-4222-8222-222222222222',
-                amount: 5,
-                min_amount: 1,
-                price: 10,
-              },
-            ],
-          }),
-        }
-      ),
-      {
-        params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
-      }
-    );
+    const { PATCH } =
+      await import('@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route');
+    const response = await PATCH(productInventoryPatchRequest(), {
+      params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
+    });
 
     expect(response.status).toBe(200);
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
-    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('inventory_products');
+    expect(mocks.privateSupabase.rpc).toHaveBeenCalledWith(
+      'edit_inventory_priced_product',
+      expect.objectContaining({
+        p_product_id: 'product-1',
+        p_ws_id: 'normalized-ws',
+      })
+    );
   });
 });

@@ -5,13 +5,19 @@ import {
   createDynamicAdminClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Tables } from '@tuturuuu/types';
+import { isWorkspaceTemplateBackgroundPath } from '@tuturuuu/utils/template-background-path';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
+import {
+  type WorkspaceId,
+  workspaceIdSchema,
+} from '@tuturuuu/utils/workspace-id';
 import type { NextRequest } from 'next/server';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getBackgroundTemplate } from './template-query';
 
 interface Params {
   params: Promise<{
@@ -60,9 +66,11 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
-    let normalizedWsId: string;
+    let normalizedWsId: WorkspaceId;
     try {
-      normalizedWsId = await normalizeWorkspaceId(rawWsId, supabase);
+      normalizedWsId = workspaceIdSchema.parse(
+        await normalizeWorkspaceId(rawWsId, supabase)
+      );
     } catch {
       return NextResponse.json(
         { error: 'Invalid workspace ID' },
@@ -96,12 +104,8 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const sbAdmin = await createAdminClient();
 
-    const { data: template, error: templateError } = await sbAdmin
-      .from('board_templates')
-      .select('background_path,created_by,visibility')
-      .eq('id', templateId)
-      .eq('ws_id', normalizedWsId)
-      .maybeSingle();
+    const { data: template, error: templateError } =
+      await getBackgroundTemplate(sbAdmin, normalizedWsId, templateId);
 
     if (templateError) {
       console.error('Failed to fetch template background path:', templateError);
@@ -118,7 +122,12 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
-    if (!template.background_path) {
+    if (
+      !isWorkspaceTemplateBackgroundPath(
+        template.background_path,
+        normalizedWsId
+      )
+    ) {
       return NextResponse.json({ signedUrl: null });
     }
 

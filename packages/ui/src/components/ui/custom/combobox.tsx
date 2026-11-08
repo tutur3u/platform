@@ -73,6 +73,10 @@ interface ComboboxProps {
   label?: React.ReactNode;
   /** Accessible label for compact/icon-first triggers */
   ariaLabel?: string;
+  /** Marks the trigger invalid for assistive technology */
+  ariaInvalid?: boolean;
+  /** Id of the element describing the trigger (e.g. its error message) */
+  ariaDescribedBy?: string;
   /** Whether to render the selected option icon inside the trigger button */
   showSelectedIcon?: boolean;
   /** Icon rendered in the trigger instead of the selected option icon */
@@ -136,6 +140,8 @@ export function Combobox({
   creatingText,
   label,
   ariaLabel,
+  ariaInvalid,
+  ariaDescribedBy,
   showSelectedIcon = true,
   triggerIcon,
   showChevron = true,
@@ -441,6 +447,8 @@ export function Combobox({
       variant="outline"
       role="combobox"
       aria-label={ariaLabel}
+      aria-invalid={ariaInvalid || undefined}
+      aria-describedby={ariaDescribedBy}
       aria-expanded={open}
       className={cn(
         'min-w-0 overflow-hidden',

@@ -14,7 +14,7 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
       isSaving: _saving,
       onPrimaryPressed: _saving || _refreshing ? null : _save,
       child: _loading
-          ? const Center(child: NovaLoadingIndicator())
+          ? const AppLoadingIndicator.page()
           : ListView(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
               physics: const BouncingScrollPhysics(),

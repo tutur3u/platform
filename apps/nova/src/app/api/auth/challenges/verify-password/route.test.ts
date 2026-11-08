@@ -57,7 +57,6 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
             data: mocks.challenge,
             error: mocks.challenge ? null : { message: 'missing' },
           }),
-          // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
           then: (resolve: (value: unknown) => unknown) => {
             mocks.updates.push({ filters, payload });
             return Promise.resolve({ error: null }).then(resolve);
@@ -144,6 +143,7 @@ describe('Nova challenge password verification', () => {
       scope: 'nova-challenge',
       target: `${CHALLENGE_ID}:user-1`,
       userId: 'user-1',
+      ip: 'unknown',
     });
   });
 

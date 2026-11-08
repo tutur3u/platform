@@ -51,6 +51,7 @@ const payrollRow = {
   completed_sessions: 3,
   teacher_name: 'Binh',
   total_minutes: 135,
+  total_cong: 3,
 } as TutoringPayrollExportRow;
 
 describe('tutoring export mappers', () => {
@@ -73,6 +74,7 @@ describe('tutoring export mappers', () => {
       CompletedSessions: 3,
       Teacher: 'Binh',
       TotalMinutes: 135,
+      TotalCong: 3,
     });
   });
 });

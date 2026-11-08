@@ -1,5 +1,5 @@
 import { canAccessFinanceTransactionStoragePath } from '@tuturuuu/finance-core/storage-access';
-import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import { isExcludedDrivePath } from '@tuturuuu/storage-core/drive-path-policy';
 import {
   deleteWorkspaceStorageObjectByPath,
   WorkspaceStorageError,
@@ -7,6 +7,10 @@ import {
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  type StorageAccessAuditScope,
+  withStorageAccessAudit,
+} from '@/lib/storage/storage-access-audit';
 import {
   FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
   logWorkspaceStorageRouteError,
@@ -17,7 +21,13 @@ const deleteObjectSchema = z.object({
   path: z.string().min(1),
 });
 
-export async function DELETE(
+export const DELETE = withStorageAccessAudit(
+  { action: 'delete', route: '/api/v1/workspaces/[wsId]/storage/object' },
+  deleteWorkspaceStorageObject
+);
+
+async function deleteWorkspaceStorageObject(
+  audit: StorageAccessAuditScope,
   request: Request,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
@@ -29,6 +39,7 @@ export async function DELETE(
     return auth.response;
   }
   const { normalizedWsId, permissions, supabase, userId } = auth.context;
+  audit.set({ actorId: userId, wsId: normalizedWsId });
 
   let body: unknown;
   try {
@@ -62,7 +73,8 @@ export async function DELETE(
     );
   }
 
-  if (isReservedMobileDeploymentDrivePath(normalizedWsId, sanitizedPath)) {
+  audit.set({ path: sanitizedPath });
+  if (isExcludedDrivePath(normalizedWsId, sanitizedPath)) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 

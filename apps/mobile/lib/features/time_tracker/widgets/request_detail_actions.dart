@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, OutlinedButton, TextField;
 import 'package:mobile/core/input/platform_text_context_menu.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -171,9 +171,21 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
 
   Future<void> _handleApprove() async {
     final toastContext = Navigator.of(context, rootNavigator: true).context;
-    final dismissOverlay = context.isCompact
-        ? () => shad.closeOverlay<void>(context)
-        : () => Navigator.maybePop(context);
+    // Capture the sheet that owns these actions before awaiting. Closing it
+    // through its scope is a no-op when another route (such as the Edit
+    // sheet) now sits above it or it is already leaving, so a late approval
+    // never pops someone else's route or draft.
+    final modal = AppModalScope.maybeOf(context);
+    final route = ModalRoute.of(context);
+    Future<void> dismissOverlay() async {
+      if (modal != null) {
+        await modal.close();
+        return;
+      }
+      if (route != null && route.isCurrent && route.isActive && mounted) {
+        Navigator.of(context).pop();
+      }
+    }
 
     setState(() => _isProcessing = true);
 
@@ -232,7 +244,8 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
     final rootNav = Navigator.of(context, rootNavigator: true);
 
     unawaited(
-      shad.showDialog<void>(
+      showAppDialog<void>(
+        useRootNavigator: true,
         context: context,
         builder: (dialogCtx) => _ReasonDialogContent(
           title: title,
@@ -351,8 +364,8 @@ class _ReasonDialogContentState extends State<_ReasonDialogContent> {
         ? l10n.timerSubmitInfo
         : widget.title;
 
-    return shad.AlertDialog(
-      title: Text(widget.title),
+    return AppDialog(
+      title: widget.title,
       content: shad.TextField(
         selectionControls: platformTextSelectionControls(),
         contextMenuBuilder: platformTextContextMenuBuilder(),

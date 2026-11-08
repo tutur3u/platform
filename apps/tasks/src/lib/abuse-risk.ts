@@ -1,7 +1,7 @@
 import {
   isTurnstileError,
   verifyTurnstileToken,
-} from '@tuturuuu/turnstile/server';
+} from '@tuturuuu/cloudflare/turnstile/server';
 import {
   type AbuseRiskDecision,
   type AbuseSignalType,
@@ -20,8 +20,10 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import type { RateLimitConfig } from './rate-limit';
 
-export interface WebAbuseDecisionInput
-  extends Omit<ResolveAbuseRiskDecisionInput, 'headers'> {
+export interface WebAbuseDecisionInput extends Omit<
+  ResolveAbuseRiskDecisionInput,
+  'headers'
+> {
   request: NextRequest;
 }
 

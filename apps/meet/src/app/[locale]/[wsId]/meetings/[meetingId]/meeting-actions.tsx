@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Mic, Share2, Square } from '@tuturuuu/icons';
 import {
   getWorkspaceMeetingRecordings,
+  InternalApiError,
   toggleWorkspaceMeetingRecording,
 } from '@tuturuuu/internal-api';
 import type { RecordingStatus } from '@tuturuuu/types';
@@ -19,6 +20,7 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { AudioRecorder } from './audio-recorder';
 
@@ -32,10 +34,12 @@ interface RecordingSession {
   status: RecordingStatus;
   created_at: string;
   updated_at: string;
+  can_manage: boolean;
 }
 
 export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
   const queryClient = useQueryClient();
+  const t = useTranslations('meet.recording_permissions');
   const [startRecordingDialogOpen, setStartRecordingDialogOpen] =
     useState(false);
   const [stopRecordingDialogOpen, setStopRecordingDialogOpen] = useState(false);
@@ -75,6 +79,7 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
           status: 'recording',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          can_manage: true,
         });
         toast.success('Recording session started');
       } else {
@@ -83,14 +88,18 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
       }
     } catch (error) {
       console.error('Error starting recording:', error);
-      toast.error('Failed to start recording. Please try again.');
+      toast.error(
+        error instanceof InternalApiError && error.status === 403
+          ? t('denied')
+          : 'Failed to start recording. Please try again.'
+      );
     } finally {
       setIsStartingSession(false);
     }
   };
 
   const handleStopSession = async () => {
-    if (!activeSession) return;
+    if (!activeSession?.can_manage) return;
 
     setIsStoppingSession(true);
     try {
@@ -103,7 +112,11 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
       });
     } catch (error) {
       console.error('Error stopping recording:', error);
-      toast.error('Failed to stop recording');
+      toast.error(
+        error instanceof InternalApiError && error.status === 403
+          ? t('denied')
+          : 'Failed to stop recording'
+      );
     } finally {
       setIsStoppingSession(false);
     }
@@ -140,7 +153,7 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
             <Mic className="h-5 w-5" />
             {isStartingSession ? 'Starting...' : 'Start Recording'}
           </Button>
-        ) : (
+        ) : activeSession?.can_manage ? (
           <Button
             variant="destructive"
             size="lg"
@@ -151,7 +164,7 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
             <Square className="h-4 w-4" />
             {isStoppingSession ? 'Ending...' : 'End Recording'}
           </Button>
-        )}
+        ) : null}
 
         <Button variant="outline" size="lg" onClick={handleShareMeeting}>
           <Share2 className="mr-2 h-5 w-5" />
@@ -160,12 +173,14 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
       </div>
 
       {/* Audio Recorder */}
-      <AudioRecorder
-        wsId={wsId}
-        meetingId={meetingId}
-        sessionId={activeSession?.id || ''}
-        isRecording={isRecording}
-      />
+      {activeSession?.can_manage && (
+        <AudioRecorder
+          wsId={wsId}
+          meetingId={meetingId}
+          sessionId={activeSession?.id || ''}
+          isRecording={isRecording}
+        />
+      )}
 
       {/* Share Meeting Dialog */}
       <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>

@@ -2,6 +2,8 @@ import { getEffectiveAvailableSeats } from '@tuturuuu/payment-core/seat-limits';
 import { MAX_COLOR_LENGTH, MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { canAssignInvitationRoles } from '@/lib/workspace-creator-grant-permissions';
+import { getPendingWorkspaceInvitationRoleIds } from '@/lib/workspace-invitations/get-pending-role-ids';
 import type {
   EnhancedWorkspaceMember,
   WorkspaceMemberRole,
@@ -54,6 +56,7 @@ type SetInvitationRolesRpcClient = {
   rpc: (
     functionName: 'set_workspace_invitation_roles',
     args: {
+      p_actor_id: string;
       p_email: string;
       p_role_ids: string[];
       p_user_id: null;
@@ -129,9 +132,12 @@ export async function attachExternalProjectInvitationRoles({
 
 async function validateInvitationRoles({
   access,
+  pendingEmail,
   roleIds,
 }: {
   access: ExternalProjectTeamAccess;
+  /** Set when editing a pending invitation whose current roles may stay. */
+  pendingEmail?: string;
   roleIds: string[];
 }) {
   const uniqueRoleIds = [...new Set(roleIds)];
@@ -169,6 +175,32 @@ async function validateInvitationRoles({
       response: NextResponse.json(
         { message: 'One or more selected access levels are not available.' },
         { status: 400 }
+      ),
+    };
+  }
+
+  const canAssignRoles = await canAssignInvitationRoles(access.admin, {
+    loadAssignedRoleIds: pendingEmail
+      ? () =>
+          getPendingWorkspaceInvitationRoleIds({
+            admin: access.admin,
+            email: pendingEmail,
+            workspaceId: access.normalizedWorkspaceId,
+          })
+      : undefined,
+    roleIds: uniqueRoleIds,
+    userId: access.user.id,
+    wsId: access.normalizedWorkspaceId,
+  });
+  if (!canAssignRoles) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        {
+          message:
+            'Only the workspace creator can assign an access level that manages billing.',
+        },
+        { status: 403 }
       ),
     };
   }
@@ -296,13 +328,14 @@ export async function updateExternalProjectTeamInvitationRoles({
     );
   }
 
+  const email = validation.data.email.trim().toLowerCase();
   const roleValidation = await validateInvitationRoles({
     access,
+    pendingEmail: email,
     roleIds: validation.data.roleIds,
   });
   if (!roleValidation.ok) return roleValidation.response;
 
-  const email = validation.data.email.trim().toLowerCase();
   const invite = await access.admin
     .from('workspace_email_invites')
     .select('email')
@@ -327,6 +360,7 @@ export async function updateExternalProjectTeamInvitationRoles({
     'private'
   ) as unknown as SetInvitationRolesRpcClient;
   const result = await privateDb.rpc('set_workspace_invitation_roles', {
+    p_actor_id: access.user.id,
     p_email: email,
     p_role_ids: roleValidation.roleIds,
     p_user_id: null,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
@@ -28,225 +29,83 @@ class AssistantLiveInfoSheetBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-
-    return SafeArea(
-      top: false,
-      child: Material(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 8, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return AppSheetScaffold(
+      icon: _headerIcon(liveUiState.kind),
+      title: l10n.assistantLiveTitle,
+      actions: [
+        if (onPrimaryAction case final onPrimaryAction?)
+          AppButton.primary(
+            onPressed: () async => await onPrimaryAction(),
+            child: Text(l10n.assistantLiveConnect),
+          )
+        else
+          AppButton.secondary(
+            onPressed: onClose,
+            child: Text(l10n.assistantLiveInfoDismiss),
+          ),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: AssistantStatusBadge(
+              label: liveUiState.statusLabel(l10n),
+              color: _toneColor(theme, liveUiState.tone),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            liveUiState.detailLabel(l10n, liveState),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: AppLayout.sectionGap),
+          AppGroupedSection(
+            caption: l10n.assistantLiveInfoAccessHeading,
+            dividerInset: AppLayout.rowHorizontalPadding,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _LiveInfoHeaderIcon(kind: liveUiState.kind),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.assistantLiveTitle,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        AssistantStatusBadge(
-                          label: liveUiState.statusLabel(l10n),
-                          color: _toneColor(theme, liveUiState.tone),
-                        ),
-                      ],
-                    ),
+              AppGroupedRow(
+                title: Text(
+                  l10n.assistantLiveWorkspaceTierLabel(
+                    normalizeWorkspaceTier(liveUiState.workspaceTier),
                   ),
-                  AppIconButton(
-                    tooltip: MaterialLocalizations.of(
-                      context,
-                    ).closeButtonTooltip,
-                    onPressed: onClose,
-                    icon: const Icon(LucideIcons.x),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: theme.colorScheme.outlineVariant.withValues(
-                      alpha: 0.55,
-                    ),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Text(
-                    liveUiState.detailLabel(l10n, liveState),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      height: 1.45,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                l10n.assistantLiveInfoAccessHeading,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.2,
-                ),
-              ),
-              const SizedBox(height: 10),
-              _InfoTile(
-                label: l10n.assistantLiveWorkspaceTierLabel(
-                  normalizeWorkspaceTier(liveUiState.workspaceTier),
                 ),
                 trailing: WorkspaceTierBadge(tier: liveUiState.workspaceTier),
               ),
-              const SizedBox(height: 8),
-              _InfoTile(
-                label: l10n.assistantSourceLabel,
-                trailing: Text(
+              AppGroupedRow(
+                title: Text(l10n.assistantSourceLabel),
+                subtitle: Text(
                   liveUiState.creditSource == AssistantCreditSource.personal
                       ? l10n.assistantSourcePersonal
                       : l10n.assistantSourceWorkspace,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
                 ),
               ),
-              const SizedBox(height: 8),
-              _InfoTile(
-                label: l10n.assistantModelLabel,
-                trailing: Text(
-                  assistantLiveModelLabel,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+              AppGroupedRow(
+                title: Text(l10n.assistantModelLabel),
+                subtitle: const Text(assistantLiveModelLabel),
               ),
-              AssistantLiveStartupDiagnostics(
-                timings: liveState.startupTimings,
-              ),
-              if (onPrimaryAction != null) ...[
-                const SizedBox(height: 20),
-                AppButton.primary(
-                  onPressed: () async => await onPrimaryAction?.call(),
-                  child: Text(l10n.assistantLiveConnect),
-                ),
-              ],
-              if (onPrimaryAction == null) ...[
-                const SizedBox(height: 22),
-                AppButton.secondary(
-                  onPressed: onClose,
-                  child: Text(l10n.assistantLiveInfoDismiss),
-                ),
-              ],
             ],
           ),
-        ),
+          AssistantLiveStartupDiagnostics(timings: liveState.startupTimings),
+        ],
       ),
     );
   }
 }
 
-class _LiveInfoHeaderIcon extends StatelessWidget {
-  const _LiveInfoHeaderIcon({required this.kind});
-
-  final AssistantLiveUiKind kind;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final icon = switch (kind) {
-      AssistantLiveUiKind.unavailable => LucideIcons.micOff,
-      AssistantLiveUiKind.permissionDenied => LucideIcons.mic,
-      AssistantLiveUiKind.error => LucideIcons.circleAlert,
-      AssistantLiveUiKind.available => LucideIcons.mic,
-      AssistantLiveUiKind.preparing ||
-      AssistantLiveUiKind.connecting ||
-      AssistantLiveUiKind.reconnecting => LucideIcons.ellipsis,
-      AssistantLiveUiKind.live => LucideIcons.audioLines,
-    };
-    final color = switch (kind) {
-      AssistantLiveUiKind.error => theme.colorScheme.error,
-      AssistantLiveUiKind.live => theme.colorScheme.primary,
-      _ => theme.colorScheme.onSurfaceVariant,
-    };
-
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Icon(icon, color: color, size: 26),
-    );
-  }
-}
-
-class _InfoTile extends StatelessWidget {
-  const _InfoTile({required this.label, required this.trailing});
-
-  final String label;
-  final Widget trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(
-          alpha: 0.42,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final text = Text(
-              label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            );
-            if (constraints.maxWidth < 340 ||
-                MediaQuery.textScalerOf(context).scale(14) > 20) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [text, const SizedBox(height: 8), trailing],
-              );
-            }
-            return Row(
-              children: [
-                Expanded(child: text),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: DefaultTextStyle.merge(
-                    textAlign: TextAlign.end,
-                    child: trailing,
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
+IconData _headerIcon(AssistantLiveUiKind kind) => switch (kind) {
+  AssistantLiveUiKind.unavailable => LucideIcons.micOff,
+  AssistantLiveUiKind.permissionDenied => LucideIcons.mic,
+  AssistantLiveUiKind.error => LucideIcons.circleAlert,
+  AssistantLiveUiKind.available => LucideIcons.mic,
+  AssistantLiveUiKind.preparing ||
+  AssistantLiveUiKind.connecting ||
+  AssistantLiveUiKind.reconnecting => LucideIcons.ellipsis,
+  AssistantLiveUiKind.live => LucideIcons.audioLines,
+};
 
 Color _toneColor(ThemeData theme, AssistantLiveUiTone tone) {
   return switch (tone) {

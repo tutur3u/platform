@@ -1,5 +1,16 @@
 part of 'settings_compact_navigation_test.dart';
 
+/// The workspace picker sheet's body scroll view.
+Finder _workspacePickerScroll() => find
+    .descendant(
+      of: find.descendant(
+        of: find.byType(AppSheetScaffold),
+        matching: find.byType(CustomScrollView),
+      ),
+      matching: find.byType(Scrollable),
+    )
+    .first;
+
 void registerHiddenRecoveryChecks() {
   const guest = Workspace(id: 'guest-hidden', name: 'Guest project');
   const team = Workspace(id: 'team-visible', name: 'Team');
@@ -60,10 +71,7 @@ void registerHiddenRecoveryChecks() {
       await tester.scrollUntilVisible(
         find.byTooltip('Restore: Guest project'),
         120,
-        scrollable: find.descendant(
-          of: find.byKey(const ValueKey('workspace-picker-scroll')),
-          matching: find.byType(Scrollable),
-        ),
+        scrollable: _workspacePickerScroll(),
       );
       await _settle(tester);
       expect(find.byTooltip('Restore: Guest project'), findsOneWidget);
@@ -74,15 +82,20 @@ void registerHiddenRecoveryChecks() {
           hidden: any(named: 'hidden'),
         ),
       );
-      await tester.tap(find.byIcon(Icons.search_rounded).last);
-      await _settle(tester);
+      // Without the shell chrome registry the sheet shows its inline field,
+      // which scrolls with the body when large text leaves little room.
+      await tester.scrollUntilVisible(
+        find.byType(EditableText),
+        -120,
+        scrollable: _workspacePickerScroll(),
+      );
       await tester.enterText(find.byType(EditableText), 'Guest');
       await _settle(tester);
       expect(find.text('Team'), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.binding.handlePopRoute();
       await _settle(tester);
-      expect(find.byType(Dialog), findsNothing);
+      expect(find.byType(AppSheetScaffold), findsNothing);
       expect(h.router.state.matchedLocation, Routes.settings);
       verifyNever(
         () => h.workspaces.setWorkspaceHidden(
@@ -95,10 +108,7 @@ void registerHiddenRecoveryChecks() {
       await tester.scrollUntilVisible(
         find.byTooltip('Restore: Guest project'),
         120,
-        scrollable: find.descendant(
-          of: find.byKey(const ValueKey('workspace-picker-scroll')),
-          matching: find.byType(Scrollable),
-        ),
+        scrollable: _workspacePickerScroll(),
       );
       await _settle(tester);
       await _capture(tester, 'hidden-ready-${sample.$1.split(' ').first}');

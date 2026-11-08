@@ -323,17 +323,30 @@ function pausedExport(file, job, step, group) {
   return entry;
 }
 
-function savePolicy(step) {
+// SOURCE APPROVE 5817616989 reviewed these exact main-schedule input writers.
+// They still pass the same ref/event guard checks; this is not an exemption.
+const scheduledGitleaksWriters = new Set([
+  'security-checks.yaml:secrets: Save verified Gitleaks archive',
+  'security-checks.yaml:secrets: Save verified Gitleaks image binary',
+  'security-scan.yaml:secrets-diff: Save verified Gitleaks archive',
+  'security-scan.yaml:secrets-diff: Save verified Gitleaks image binary',
+]);
+
+function savePolicy(step, label) {
   const mobileDependencies = /gradle|CocoaPods/i.test(
     `${step.with?.key} ${step.with?.path}`
   );
   return {
     refs: ['refs/heads/main'],
-    events: mobileDependencies ? ['push'] : ['push', 'workflow_dispatch'],
+    events: mobileDependencies
+      ? ['push']
+      : scheduledGitleaksWriters.has(label)
+        ? ['push', 'workflow_dispatch', 'schedule']
+        : ['push', 'workflow_dispatch'],
   };
 }
 
-function assertTrustedSave(step, label, policy = savePolicy(step)) {
+function assertTrustedSave(step, label, policy = savePolicy(step, label)) {
   assert.ok(
     step.if,
     `${label}: heavyweight cache writer needs a trusted-ref/event guard`
@@ -366,7 +379,7 @@ function assertTrustedSave(step, label, policy = savePolicy(step)) {
       'schedule',
     ]) {
       for (const actor of ['contributor', 'dependabot[bot]']) {
-        for (const value of ['true', 'false', '']) {
+        for (const value of ['true', 'false', '', 'release', 'image']) {
           // Treat output-based save flags as attacker-controlled: they cannot replace the trust guard.
           const outputs = new Proxy(
             {},
@@ -409,7 +422,47 @@ function assertTrustedSave(step, label, policy = savePolicy(step)) {
   );
 }
 
-function assertWriterPolicy(step, label, policy = savePolicy(step)) {
+test('cache trust guard covers supplier enums and rejects a source-only save condition', () => {
+  for (const source of ['release', 'image']) {
+    const selected = `steps.installer.outputs.source == '${source}'`;
+    assert.doesNotThrow(() =>
+      assertTrustedSave(
+        {
+          if: `github.ref == 'refs/heads/main' && github.event_name == 'push' && ${selected}`,
+        },
+        `trusted ${source}`
+      )
+    );
+    assert.throws(
+      () => assertTrustedSave({ if: selected }, `untrusted ${source}`),
+      /cache save admitted/u
+    );
+  }
+});
+
+test('schedule producers are exact reviewed labels and still reject untrusted refs', () => {
+  const mainSchedule =
+    "github.ref == 'refs/heads/main' && github.event_name == 'schedule' && steps.installer.outputs.source == 'release'";
+  for (const label of scheduledGitleaksWriters) {
+    assert.doesNotThrow(() => assertTrustedSave({ if: mainSchedule }, label));
+    assert.throws(
+      () =>
+        assertTrustedSave(
+          {
+            if: "github.event_name == 'schedule' && steps.installer.outputs.source == 'release'",
+          },
+          label
+        ),
+      /cache save admitted/u
+    );
+    assert.throws(
+      () => assertTrustedSave({ if: mainSchedule }, `${label} unreviewed`),
+      /cache save admitted/u
+    );
+  }
+});
+
+function assertWriterPolicy(step, label, policy = savePolicy(step, label)) {
   if (
     /^actions\/cache(?:\/save)?@/.test(step.uses || '') ||
     ghaExports(step).length
@@ -433,6 +486,7 @@ test('every workflow/composite cache writer is trusted or has an exact documente
   let writers = 0;
   const seenExemptions = new Set();
   const seenPausedExports = new Set();
+  const seenScheduledWriters = new Set();
   for (const [file, document] of Object.entries({ ...workflows, ...actions })) {
     const groups = document.runs ? { composite: document.runs } : document.jobs;
     for (const [job, group] of Object.entries(groups)) {
@@ -463,15 +517,18 @@ test('every workflow/composite cache writer is trusted or has an exact documente
           seenExemptions.add(exemption);
           continue;
         }
-        const policy = savePolicy(step);
-        assertWriterPolicy(
-          step,
-          `${file}:${job}: ${step.name || step.uses}`,
-          policy
-        );
+        const label = `${file}:${job}: ${step.name || step.uses}`;
+        if (scheduledGitleaksWriters.has(label))
+          seenScheduledWriters.add(label);
+        assertWriterPolicy(step, label, savePolicy(step, label));
       }
     }
   }
+  assert.deepEqual(
+    [...seenScheduledWriters].sort(),
+    [...scheduledGitleaksWriters].sort(),
+    'remove stale reviewed schedule writer classifications'
+  );
   assert.equal(
     seenPausedExports.size,
     pausedExports.length,
@@ -492,7 +549,7 @@ test('Gradle restores never register setup-java post-job saves', () => {
   let restores = 0;
   for (const [file, document] of Object.entries({ ...workflows, ...actions })) {
     const groups = document.runs
-      ? [document.runs.steps]
+      ? [document.runs.steps ?? []]
       : Object.values(document.jobs).map((job) => job.steps || []);
     for (const steps of groups) {
       for (const step of steps) {

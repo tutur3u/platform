@@ -78,45 +78,154 @@ export const TopicAnnouncementAttachmentDraftSchema = z.object({
   storageProvider: z.enum(TOPIC_ANNOUNCEMENT_ATTACHMENT_STORAGE_PROVIDERS),
 });
 
+const TIME_SCHEMA = z
+  .string()
+  .trim()
+  .regex(/^\d{1,2}:\d{2}(?::\d{2})?$/u)
+  .nullable()
+  .optional();
+
+/** Optional text that keeps `undefined` (field omitted) apart from `null`. */
+function optionalNullableText(max: number) {
+  return z
+    .string()
+    .trim()
+    .max(max)
+    .nullable()
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value || null));
+}
+
+export const TOPIC_ANNOUNCEMENT_COURSE_BOOK_MAX_LENGTH = 200;
+export const TOPIC_ANNOUNCEMENT_VIDEO_URL_MAX_LENGTH = 2000;
+export const TOPIC_ANNOUNCEMENT_VIDEO_URL_PATTERN = /^https:\/\/\S+$/u;
+
+const VIDEO_URL_SCHEMA = optionalNullableText(
+  TOPIC_ANNOUNCEMENT_VIDEO_URL_MAX_LENGTH
+).refine(
+  (value) => !value || TOPIC_ANNOUNCEMENT_VIDEO_URL_PATTERN.test(value),
+  'Video link must be an https:// URL without spaces'
+);
+
+const TOPIC_ANNOUNCEMENT_ATTACHMENT_DRAFTS_SCHEMA = z
+  .array(TopicAnnouncementAttachmentDraftSchema)
+  .max(TOPIC_ANNOUNCEMENT_MAX_ATTACHMENTS);
+
+/**
+ * Shared field shape with no defaults so the update schema can tell an
+ * omitted field from an explicit value (zod 4 applies defaults and transforms
+ * inside `.partial()`).
+ */
+const topicAnnouncementFieldShape = {
+  attachmentDrafts: TOPIC_ANNOUNCEMENT_ATTACHMENT_DRAFTS_SCHEMA,
+  body: z.string().trim().max(20_000),
+  classLabel: optionalNullableText(500),
+  contactIds: z.array(z.string().uuid()).min(1).max(50),
+  courseBook: optionalNullableText(TOPIC_ANNOUNCEMENT_COURSE_BOOK_MAX_LENGTH),
+  dayLabel: optionalNullableText(500),
+  endTime: TIME_SCHEMA,
+  groupId: z.string().uuid().nullable().optional(),
+  place: optionalNullableText(500),
+  room: optionalNullableText(500),
+  sessionDate: z.string().date().nullable().optional(),
+  sourceType: z.string().trim().min(1).max(80),
+  startTime: TIME_SCHEMA,
+  status: TopicAnnouncementWritableStatusSchema.optional(),
+  teacherWorkspaceUserId: z.string().uuid().nullable().optional(),
+  title: z.string().trim().min(1).max(300),
+  topic: z.string().trim().max(20_000),
+  videoUrl: VIDEO_URL_SCHEMA,
+};
+
+function attachmentTotalWithinLimit(
+  attachmentDrafts: { sizeBytes: number }[] | undefined
+) {
+  return (
+    (attachmentDrafts ?? []).reduce(
+      (total, attachment) => total + attachment.sizeBytes,
+      0
+    ) <= TOPIC_ANNOUNCEMENT_MAX_ATTACHMENT_BYTES
+  );
+}
+
+const ATTACHMENT_TOTAL_ISSUE = {
+  message: 'Attachments cannot exceed 10 MB total',
+  path: ['attachmentDrafts'],
+};
+
+/**
+ * A topic may be blank only while the announcement stays a draft (the
+ * database enforces the same rule with topic_announcements_topic_ready_check).
+ */
+/**
+ * Topic value to store: trimmed text, or NULL when blank. A topic-less draft
+ * is always NULL (never ''), so it is easy to find and the non-blank rule
+ * cannot trip on it later.
+ */
+export function normalizeTopicAnnouncementTopic(topic: string): string | null;
+export function normalizeTopicAnnouncementTopic(
+  topic: string | undefined
+): string | null | undefined;
+export function normalizeTopicAnnouncementTopic(topic: string | undefined) {
+  if (topic === undefined) return undefined;
+  return topic.trim() || null;
+}
+
+export function isTopicAnnouncementTopicReady({
+  status,
+  topic,
+}: {
+  status?: string | null;
+  topic?: string | null;
+}) {
+  return status === 'draft' || Boolean(topic?.trim());
+}
+
+const TOPIC_REQUIRED_ISSUE = {
+  message: 'Topic is required unless the announcement is saved as a draft',
+  path: ['topic'],
+};
+
 export const TopicAnnouncementPayloadSchema = z
   .object({
-    attachmentDrafts: z
-      .array(TopicAnnouncementAttachmentDraftSchema)
-      .max(TOPIC_ANNOUNCEMENT_MAX_ATTACHMENTS)
-      .default([]),
-    body: z.string().trim().max(20_000).default(''),
-    classLabel: OPTIONAL_TEXT_SCHEMA,
-    contactIds: z.array(z.string().uuid()).min(1).max(50),
-    dayLabel: OPTIONAL_TEXT_SCHEMA,
-    endTime: z
-      .string()
-      .trim()
-      .regex(/^\d{1,2}:\d{2}(?::\d{2})?$/u)
-      .nullable()
-      .optional(),
-    groupId: z.string().uuid().nullable().optional(),
-    place: OPTIONAL_TEXT_SCHEMA,
-    room: OPTIONAL_TEXT_SCHEMA,
-    sessionDate: z.string().date().nullable().optional(),
-    sourceType: z.string().trim().min(1).max(80).default('manual'),
-    startTime: z
-      .string()
-      .trim()
-      .regex(/^\d{1,2}:\d{2}(?::\d{2})?$/u)
-      .nullable()
-      .optional(),
-    status: TopicAnnouncementWritableStatusSchema.optional(),
-    title: z.string().trim().min(1).max(300),
-    topic: z.string().trim().min(1).max(20_000),
+    ...topicAnnouncementFieldShape,
+    attachmentDrafts: TOPIC_ANNOUNCEMENT_ATTACHMENT_DRAFTS_SCHEMA.default([]),
+    body: topicAnnouncementFieldShape.body.default(''),
+    sourceType: topicAnnouncementFieldShape.sourceType.default('manual'),
+    topic: topicAnnouncementFieldShape.topic.default(''),
   })
   .refine(
+    (payload) => attachmentTotalWithinLimit(payload.attachmentDrafts),
+    ATTACHMENT_TOTAL_ISSUE
+  )
+  .refine(
     (payload) =>
-      payload.attachmentDrafts.reduce(
-        (total, attachment) => total + attachment.sizeBytes,
-        0
-      ) <= TOPIC_ANNOUNCEMENT_MAX_ATTACHMENT_BYTES,
-    {
-      message: 'Attachments cannot exceed 10 MB total',
-      path: ['attachmentDrafts'],
-    }
+      isTopicAnnouncementTopicReady({
+        status: payload.status ?? 'draft',
+        topic: payload.topic,
+      }),
+    TOPIC_REQUIRED_ISSUE
   );
+
+/** PATCH body: every field optional, omitted fields stay `undefined`. */
+export const TopicAnnouncementUpdateSchema = z
+  .object(topicAnnouncementFieldShape)
+  .partial()
+  .refine(
+    (payload) => attachmentTotalWithinLimit(payload.attachmentDrafts),
+    ATTACHMENT_TOTAL_ISSUE
+  )
+  .refine(
+    (payload) =>
+      payload.status === undefined ||
+      payload.topic === undefined ||
+      isTopicAnnouncementTopicReady(payload),
+    TOPIC_REQUIRED_ISSUE
+  );
+
+export type TopicAnnouncementPayload = z.infer<
+  typeof TopicAnnouncementPayloadSchema
+>;
+export type TopicAnnouncementUpdatePayload = z.infer<
+  typeof TopicAnnouncementUpdateSchema
+>;

@@ -1,5 +1,8 @@
 # TanStack/Rust Migration Plan
 
+> Retained inactive reference: Docker setup and Rust are paused. Use
+> `apps/docs/build/devops/active-runtime.mdx` for current operations.
+
 The full migration plan now lives in the discoverable docs app:
 
 - `apps/docs/platform/architecture/tanstack-rust-migration-plan.mdx`

@@ -40,9 +40,8 @@ describe('resolveWorkspaceRouteAccess', () => {
   });
 
   it('threads the validated app-session principal into workspace access', async () => {
-    const { resolveWorkspaceRouteAccess } = await import(
-      '@/lib/workspace-route-access'
-    );
+    const { resolveWorkspaceRouteAccess } =
+      await import('@/lib/workspace-route-access');
     const request = new Request('http://localhost/api/workspaces/team');
 
     const result = await resolveWorkspaceRouteAccess(request, 'team', [
@@ -63,9 +62,8 @@ describe('resolveWorkspaceRouteAccess', () => {
       response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
     };
     mocks.resolveSessionAuthContext.mockResolvedValue(failure);
-    const { resolveWorkspaceRouteAccess } = await import(
-      '@/lib/workspace-route-access'
-    );
+    const { resolveWorkspaceRouteAccess } =
+      await import('@/lib/workspace-route-access');
 
     const result = await resolveWorkspaceRouteAccess(
       new Request('http://localhost/api/workspaces/team'),
@@ -78,9 +76,8 @@ describe('resolveWorkspaceRouteAccess', () => {
 
   it('denies callers without workspace access', async () => {
     mocks.getPermissions.mockResolvedValue(null);
-    const { resolveWorkspaceRouteAccess } = await import(
-      '@/lib/workspace-route-access'
-    );
+    const { resolveWorkspaceRouteAccess } =
+      await import('@/lib/workspace-route-access');
 
     const result = await resolveWorkspaceRouteAccess(
       new Request('http://localhost/api/workspaces/team'),
@@ -96,9 +93,8 @@ describe('resolveWorkspaceRouteAccess', () => {
   });
 
   it('allows any matching required permission and denies when none match', async () => {
-    const { resolveWorkspaceRouteAccess } = await import(
-      '@/lib/workspace-route-access'
-    );
+    const { resolveWorkspaceRouteAccess } =
+      await import('@/lib/workspace-route-access');
     const request = new Request('http://localhost/api/workspaces/team');
 
     const allowed = await resolveWorkspaceRouteAccess(request, 'team', [

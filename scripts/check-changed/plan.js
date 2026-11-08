@@ -3,13 +3,19 @@
 
 const path = require('node:path');
 const { reverseDependents, assertSafePaths } = require('./workspaces.js');
+const { AUTH_GUARDS } = require('../auth-guards.js');
 const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
 
-const BIOME_VERSION = '2.5.13';
+const OXC_VERSION = '0.74.0';
 // Keep in sync with .github/workflows/branch-name-check.yaml (tested).
 const BRANCH_NAME_PATTERN =
   /^(feature|feat|fix|bugfix|hotfix|release|chore|docs|style|refactor|perf|dependabot|claude)\/.+|^release-please--branches--.+|^imgbot$/;
-const BIOME_FILE = /\.(?:[cm]?[jt]sx?|jsonc?|css|graphql|gql)$/;
+const OXC_FILE = /\.(?:[cm]?[jt]sx?|jsonc?|css|graphql|gql|mdx?|ya?ml|html)$/;
+const OXC_IGNORED_FORMATS = new Set(
+  require('../../.oxfmtrc.json')
+    .ignorePatterns.filter((pattern) => /^\*\*\/\*\.[a-z]+$/.test(pattern))
+    .map((pattern) => pattern.slice(5))
+);
 const SCRIPT_FILE = /\.(?:[cm]?js|ts)$/;
 const TS_SOURCE = /\.(?:[cm]?tsx?|d\.ts)$/;
 const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
@@ -29,11 +35,20 @@ const WORKFLOW_POLICY_TESTS = [
   'scripts/ci/bun-workflow-pins.test.js',
   'scripts/ci/check-workflow-config.test.js',
 ];
-const AUTH_GUARDS = [
-  ['internal-app-auth', 'scripts/check-internal-app-auth.js'],
-  ['satellite-cookie-auth', 'scripts/check-satellite-cookie-auth.js'],
-  ['server-console', 'scripts/check-server-console.js'],
+// The production migration gate pins the exact Git blobs of these producer
+// files. Changing one without extending its allowlist silently rejects the
+// next staging marker, so any change runs the contract tests.
+const STAGING_CONTRACT_TESTS = [
+  'scripts/ci/staging-contract-allowlist.test.js',
+  'scripts/ci/production-migration-target.test.js',
+  'scripts/ci/staging-descendant-marker.test.js',
 ];
+const PINNED_CONTRACT_FILES = new Set([
+  '.github/workflows/supabase-production.yaml',
+  '.github/workflows/supabase-staging.yaml',
+  'scripts/ci/fixtures/supabase-staging-legacy.yaml',
+  'scripts/ci/record-deployment-marker.ts',
+]);
 
 function isPausedPath(file) {
   const match = /^apps\/([^/]+)\//.exec(file);
@@ -76,6 +91,7 @@ function nodeScriptTests(files, exists) {
   const selected = new Set();
   for (const file of files) {
     if (NODE_TEST_FILE.test(file)) {
+      if (/-built-worker\.test\.mjs$/.test(file)) continue;
       if (exists(file)) selected.add(file);
       continue;
     }
@@ -90,20 +106,79 @@ function nodeScriptTests(files, exists) {
   return [...selected].sort();
 }
 
-function isNodeTest(file, context) {
+function runtimeImports(source, filename) {
+  const { parse } = require('@babel/parser');
+  const ast = parse(source, {
+    sourceType: 'unambiguous',
+    sourceFilename: filename,
+    plugins: ['typescript', 'jsx'],
+    createImportExpressions: true,
+    allowReturnOutsideFunction: true,
+  });
+  const imports = new Set();
+  function visit(node) {
+    if (!node || typeof node !== 'object') return;
+    let specifier;
+    if (
+      node.type === 'ImportDeclaration' &&
+      node.importKind !== 'type' &&
+      (node.specifiers.length === 0 ||
+        node.specifiers.some((entry) => entry.importKind !== 'type'))
+    ) {
+      specifier = node.source;
+    } else if (
+      (node.type === 'ExportNamedDeclaration' ||
+        node.type === 'ExportAllDeclaration') &&
+      node.exportKind !== 'type'
+    ) {
+      specifier = node.source;
+    } else if (node.type === 'ImportExpression') {
+      specifier = node.source;
+    } else if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'Identifier' &&
+      node.callee.name === 'require'
+    ) {
+      specifier = node.arguments[0];
+    } else if (
+      node.type === 'TSImportEqualsDeclaration' &&
+      node.importKind !== 'type' &&
+      node.moduleReference.type === 'TSExternalModuleReference'
+    ) {
+      specifier = node.moduleReference.expression;
+    }
+    if (specifier?.type === 'StringLiteral') imports.add(specifier.value);
+    for (const child of Object.values(node)) {
+      if (Array.isArray(child)) child.forEach(visit);
+      else if (child?.type) visit(child);
+    }
+  }
+  visit(ast);
+  return imports;
+}
+
+/**
+ * Which runner owns a test file: 'playwright', 'vitest', 'node' (node --test) or 'bun'
+ * (`bun test`, for Worker/Durable Object suites that CI runs with Bun and that
+ * Node cannot load because of extensionless workspace imports).
+ */
+function testRunnerOf(file, context) {
+  if (/-built-worker\.test\.mjs$/.test(file)) return 'ci';
   const workspace = workspaceOf(file);
-  if (!workspace) return NODE_TEST_FILE.test(file);
+  if (!workspace) return NODE_TEST_FILE.test(file) ? 'node' : 'vitest';
   const script = context.workspaces?.find(
     (entry) => entry.workspace === workspace
   )?.testScript;
   const source = context.readSource?.(file) ?? '';
-  const imports = (module) =>
-    new RegExp(
-      `(?:from\\s*|require\\s*\\(\\s*|import\\s*\\(\\s*)['"]${module}['"]`
-    ).test(source);
-  if (imports('vitest')) return false;
-  if (imports('node:test')) return true;
-  return /\bnode\s+--test(?:\s|$)/.test(script ?? '');
+  const imports = runtimeImports(source, file);
+  if (imports.has('@playwright/test')) return 'playwright';
+  if (imports.has('vitest')) return 'vitest';
+  if (imports.has('bun:test')) return 'bun';
+  if (imports.has('node:test')) return 'node';
+  return /\bnode\s+--test(?:\s|$)/.test(script ?? '') ? 'node' : 'vitest';
+}
+function isNodeTest(file, context) {
+  return testRunnerOf(file, context) === 'node';
 }
 
 /**
@@ -122,7 +197,7 @@ function planChecks(changes, context) {
   const steps = [];
   const skipped = [];
   const sharedConfig = all.filter((file) =>
-    /^(?:tsconfig\.json|biome\.jsonc?|turbo\.json|package\.json|bun\.lock|bunfig\.toml|\.npmrc|vitest\.config\.ts|\.oxlintrc\.json|\.oxfmtrc\.json)$|^packages\/typescript-config\/.*\.json$/.test(
+    /^(?:tsconfig\.json|oxfmtrc\.json|turbo\.json|package\.json|bun\.lock|bunfig\.toml|\.npmrc|vitest\.config\.ts|\.oxlintrc\.json|\.oxfmtrc\.json)$|^packages\/typescript-config\/.*\.json$/.test(
       file
     )
   );
@@ -169,27 +244,52 @@ function planChecks(changes, context) {
     );
   }
 
-  const biomeFiles = present.filter(
-    (file) => BIOME_FILE.test(file) && !file.startsWith(MOBILE_PREFIX)
+  if (any(/^packages\/(internal-api|sdk|utils|types)\//)) {
+    steps.push(
+      nodeStep('sdk-portable', 'SDK portable source approval (no emit)', [
+        'packages/sdk/scripts/portable-build.cjs',
+        '--check',
+      ])
+    );
+  }
+
+  const formatFiles = present.filter(
+    (file) =>
+      OXC_FILE.test(file) &&
+      !OXC_IGNORED_FORMATS.has(path.posix.extname(file).slice(1)) &&
+      !file.startsWith(MOBILE_PREFIX) &&
+      !file.split('/').some((segment) => OXC_EXCLUDED.has(segment)) &&
+      !/routeTree\.gen\.ts$|\.bridge\.gen\.ts$/.test(file) &&
+      !/^(?:\.agents\/skills\/|apps\/api\/generated\/|apps\/docs\/reference\/repository\/)/.test(
+        file
+      ) &&
+      file !== 'packages/sdk/src/operational-search/python-adapter-code.ts'
   );
-  if (biomeFiles.length) {
+  if (
+    !formatFiles.length &&
+    present.some(
+      (file) =>
+        OXC_FILE.test(file) &&
+        OXC_IGNORED_FORMATS.has(path.posix.extname(file).slice(1))
+    )
+  ) {
+    skipped.push(['oxfmt', 'changed formats are ignored by .oxfmtrc.json']);
+  }
+  if (formatFiles.length) {
     steps.push({
-      id: 'biome',
-      label: `biome check (${biomeFiles.length} files)`,
-      command: context.biomeBinary ?? 'npx',
+      id: 'oxfmt',
+      label: `oxfmt check (${formatFiles.length} files)`,
+      command: context.oxfmtBinary ?? 'npx',
       args: [
-        ...(context.biomeBinary
-          ? []
-          : ['--yes', `@biomejs/biome@${BIOME_VERSION}`]),
-        'check',
-        '--error-on-warnings',
-        '--no-errors-on-unmatched',
-        '--files-ignore-unknown=true',
-        ...biomeFiles,
+        ...(context.oxfmtBinary ? [] : ['--yes', `oxfmt@${OXC_VERSION}`]),
+        '--check',
+        '--threads',
+        '2',
+        ...formatFiles,
       ],
-      fixHint: `npx @biomejs/biome@${BIOME_VERSION} check --write <files>`,
+      fixHint: 'bun oxfmt --write <files>',
     });
-    const oxcFiles = biomeFiles.filter(
+    const oxcFiles = formatFiles.filter(
       (file) =>
         /\.[cm]?[jt]sx?$/.test(file) &&
         !file.split('/').some((segment) => OXC_EXCLUDED.has(segment))
@@ -198,18 +298,31 @@ function planChecks(changes, context) {
       steps.push(
         nodeStep(
           'oxlint',
-          `oxlint (${oxcFiles.length} files, advisory)`,
+          `oxlint (${oxcFiles.length} files)`,
           ['scripts/oxc.js', 'lint', ...oxcFiles],
-          { advisory: true }
+          {}
         )
       );
     }
   }
 
   if (any(/^(apps|packages)\/[^/]+\/.*\.[cm]?[jt]sx?$/)) {
-    for (const [id, script] of AUTH_GUARDS) {
-      steps.push(nodeStep(id, id, [script]));
+    for (const { name, script } of AUTH_GUARDS) {
+      steps.push(nodeStep(name, name, [script]));
     }
+  }
+  if (
+    any(
+      /^packages\/[^/]+\/package\.json$|^\.github\/workflows\/release-.+-package\.ya?ml$|^scripts\/ci\/package-release-(dependency-guard|readiness)\.js$/
+    )
+  ) {
+    steps.push(
+      nodeStep(
+        'package-release-dependencies',
+        'published package dependencies',
+        ['scripts/ci/package-release-dependency-guard.js']
+      )
+    );
   }
   if (any(/^apps\/[^/]+\/messages\/.*\.json$/)) {
     steps.push(
@@ -269,9 +382,20 @@ function planChecks(changes, context) {
   for (const file of present) {
     if (!workspaceOf(file) || file.startsWith(MOBILE_PREFIX)) continue;
     for (const related of siblingTests(file, exists)) {
-      relatedTests.set(related, isNodeTest(related, context));
+      relatedTests.set(related, testRunnerOf(related, context));
     }
   }
+  if ([...relatedTests.values()].includes('playwright')) {
+    skipped.push([
+      'playwright',
+      'browser specs require separate E2E runtime verification',
+    ]);
+  }
+  if (present.some((file) => /-built-worker\.test\.mjs$/.test(file)))
+    skipped.push([
+      'emitted-worker-tests',
+      'owning exact-commit CI build and emitted Worker acceptance required',
+    ]);
   const scriptTests = nodeScriptTests(
     all.filter((file) => !isPausedPath(file)),
     exists
@@ -279,8 +403,13 @@ function planChecks(changes, context) {
   const nodeTests = [
     ...new Set([
       ...scriptTests,
-      ...[...relatedTests].filter(([, node]) => node).map(([file]) => file),
+      ...[...relatedTests]
+        .filter(([, runner]) => runner === 'node')
+        .map(([file]) => file),
       ...(workflowTouched ? WORKFLOW_POLICY_TESTS : []),
+      ...(all.some((file) => PINNED_CONTRACT_FILES.has(file))
+        ? STAGING_CONTRACT_TESTS
+        : []),
     ]),
   ].filter(exists);
   if (nodeTests.length) {
@@ -344,10 +473,28 @@ function planChecks(changes, context) {
   }
 
   for (const [workspace, files] of byWorkspace) {
-    if (!context.hasVitest(workspace)) continue;
-    const tests = [
+    const related = [
       ...new Set(files.flatMap((file) => siblingTests(file, exists))),
-    ].filter((file) => !relatedTests.get(file));
+    ];
+    const bunTests = related.filter((file) => relatedTests.get(file) === 'bun');
+    if (bunTests.length) {
+      // `bun test` from the repository root would run the root `test` script.
+      steps.push({
+        id: `bun-test:${workspace}`,
+        label: `bun test ${workspace} (${bunTests.length} related files)`,
+        command: 'bun',
+        args: [
+          'test',
+          ...bunTests.map((file) => path.posix.relative(workspace, file)),
+        ],
+        cwd: workspace,
+        heavy: true,
+      });
+    }
+    if (!context.hasVitest(workspace)) continue;
+    const tests = related.filter(
+      (file) => (relatedTests.get(file) ?? 'vitest') === 'vitest'
+    );
     if (!tests.length) continue;
     steps.push({
       id: `vitest:${workspace}`,
@@ -391,12 +538,19 @@ function planChecks(changes, context) {
   if (!present.some((file) => SCRIPT_FILE.test(file) || TS_SOURCE.test(file))) {
     skipped.push(['vitest/type-check', 'no TypeScript or JavaScript changes']);
   }
+  steps.push(
+    nodeStep('staging-hosts', 'Staging cookie-domain isolation', [
+      'scripts/check-staging-hosts.js',
+    ])
+  );
   return { steps, skipped };
 }
 
 module.exports = {
-  BIOME_VERSION,
+  OXC_VERSION,
   BRANCH_NAME_PATTERN,
+  PINNED_CONTRACT_FILES,
+  STAGING_CONTRACT_TESTS,
   WORKFLOW_POLICY_TESTS,
   isBranchNameValid,
   isPausedPath,

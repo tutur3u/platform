@@ -1,11 +1,11 @@
 import {
+  isTurnstileError,
+  resolveTurnstileToken,
+} from '@tuturuuu/cloudflare/turnstile/server';
+import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import {
-  isTurnstileError,
-  resolveTurnstileToken,
-} from '@tuturuuu/turnstile/server';
 import {
   checkPasswordLoginLimit,
   classifyPotentialSpamUserAgent,
@@ -22,6 +22,10 @@ import {
 } from '@tuturuuu/utils/constants';
 import { validateEmail } from '@tuturuuu/utils/email/server';
 import { z } from 'zod';
+import {
+  isBrowserRequest,
+  refuseMobileSessionForBrowser,
+} from '@/lib/auth/browser-request';
 import { shouldBypassSupabaseAuthCaptchaForDev } from '@/lib/auth/local-e2e';
 import { OTP_SPAM_BLOCK_ERROR } from '@/lib/auth/otp';
 import { prepareNormalAuthRecoveryOverrideUse } from '@/lib/auth/recovery';
@@ -133,6 +137,10 @@ export async function passwordLogin(
   input: z.infer<typeof PasswordLoginRequestSchema>,
   context: PasswordLoginContext
 ): Promise<PasswordLoginFailureResult | PasswordLoginSuccessResult> {
+  if (input.client === 'mobile' && isBrowserRequest(context.headers)) {
+    return refuseMobileSessionForBrowser(context.endpoint);
+  }
+
   const suspiciousAgentCheck = await rejectSuspiciousUserAgent(context);
   if (suspiciousAgentCheck.failure) {
     return suspiciousAgentCheck.failure;

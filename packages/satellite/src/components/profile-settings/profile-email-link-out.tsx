@@ -42,7 +42,7 @@ export function ProfileEmailLinkOut({
           </a>
         </Button>
       </div>
-      <p className="text-muted-foreground text-xs">
+      <p className="text-muted-foreground text-sm">
         {t('email_managed_centrally')}
       </p>
     </div>

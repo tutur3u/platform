@@ -32,7 +32,6 @@ export function ComparisonTable({
   return (
     <section
       className={`max-h-[72vh] overflow-auto overscroll-contain rounded-2xl border border-foreground/10 bg-background/20 ${comparisonFocus}`}
-      // biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must scroll the comparison region.
       tabIndex={0}
       aria-label={copy.title}
     >

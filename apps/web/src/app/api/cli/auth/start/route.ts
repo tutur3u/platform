@@ -2,6 +2,10 @@ import { generateAssuredCrossAppToken } from '@tuturuuu/auth/cross-app/server';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import {
+  CLI_LOGIN_PAGE_SECURITY_HEADERS,
+  CLI_LOGIN_START_PATH,
+} from '@/lib/auth/cli-login-page-headers';
 
 function isLoopbackCallback(value: string) {
   try {
@@ -138,9 +142,20 @@ function escapeHtml(value: string) {
     .replace(/'/gu, '&#39;');
 }
 
-function acceptsJson(request: NextRequest) {
-  return request.headers.get('accept')?.includes('application/json') ?? false;
+// Only a top-level browser navigation may receive the CLI token. Same-origin
+// script cannot fake Fetch Metadata, so fetch and iframe loads are refused.
+// Requests without Fetch Metadata are refused too: the CLI only ever opens
+// this URL in a browser, and every current browser sends it.
+function isTopLevelNavigation(request: NextRequest) {
+  return (
+    request.headers.get('sec-fetch-mode') === 'navigate' &&
+    request.headers.get('sec-fetch-dest') === 'document'
+  );
 }
+
+const COPY_PAGE_SECURITY_HEADERS = Object.fromEntries(
+  CLI_LOGIN_PAGE_SECURITY_HEADERS.map(({ key, value }) => [key, value])
+);
 
 function renderCopyTokenPage(token: string, email: string | null) {
   const safeToken = escapeHtml(token);
@@ -219,6 +234,7 @@ function renderCopyTokenPage(token: string, email: string | null) {
 </html>`,
     {
       headers: {
+        ...COPY_PAGE_SECURITY_HEADERS,
         'Cache-Control': 'no-store',
         'Content-Type': 'text/html; charset=utf-8',
       },
@@ -227,9 +243,26 @@ function renderCopyTokenPage(token: string, email: string | null) {
 }
 
 export async function GET(request: NextRequest) {
+  // next.config.ts header rules match the raw pathname, but production Next
+  // also serves this handler for percent-encoded spellings (e.g. /%73tart),
+  // which would arrive without the sandbox CSP. Serve only the canonical path.
+  if (new URL(request.url).pathname !== CLI_LOGIN_START_PATH) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   const state = request.nextUrl.searchParams.get('state')?.trim();
   if (!state) {
     return NextResponse.json({ error: 'Missing state' }, { status: 400 });
+  }
+
+  if (!isTopLevelNavigation(request)) {
+    return NextResponse.json(
+      {
+        code: 'CLI_LOGIN_NAVIGATION_REQUIRED',
+        error: 'Open this link directly in a current browser',
+      },
+      { headers: { 'Cache-Control': 'no-store' }, status: 403 }
+    );
   }
 
   const supabase = await createClient();
@@ -237,6 +270,15 @@ export async function GET(request: NextRequest) {
 
   if (authError || !user) {
     return redirectToLogin(request);
+  }
+
+  const copyMode = request.nextUrl.searchParams.get('mode') === 'copy';
+  const redirectUri = request.nextUrl.searchParams.get('redirect_uri');
+  if (!copyMode && (!redirectUri || !isLoopbackCallback(redirectUri))) {
+    return NextResponse.json(
+      { error: 'Invalid CLI callback URL' },
+      { status: 400 }
+    );
   }
 
   const token = await generateAssuredCrossAppToken(
@@ -255,27 +297,8 @@ export async function GET(request: NextRequest) {
 
   const email = user.email ?? null;
 
-  if (request.nextUrl.searchParams.get('mode') === 'copy') {
-    if (acceptsJson(request)) {
-      return NextResponse.json(
-        { email, token },
-        {
-          headers: {
-            'Cache-Control': 'no-store',
-          },
-        }
-      );
-    }
-
+  if (copyMode || !redirectUri) {
     return renderCopyTokenPage(token, email);
-  }
-
-  const redirectUri = request.nextUrl.searchParams.get('redirect_uri');
-  if (!redirectUri || !isLoopbackCallback(redirectUri)) {
-    return NextResponse.json(
-      { error: 'Invalid CLI callback URL' },
-      { status: 400 }
-    );
   }
 
   const callbackUrl = new URL(redirectUri);

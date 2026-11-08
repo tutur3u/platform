@@ -1,0 +1,31 @@
+---
+title: "Deployment configuration"
+description: "Where Tuturuuu configuration lives, and the rules for handling it safely."
+updatedAt: '2026-10-31'
+audience: developers
+---
+
+Tuturuuu separates code from configuration. Code and the names of
+configuration values are public in this repository; values are not.
+
+## Rules
+
+- Hosted deployment credentials live in environment-scoped GitHub Actions
+  secrets.
+- Runtime and build-time configuration for hosted apps lives in the hosting
+  provider's project environment, not in workflow-wide variables.
+- Local development reads `apps/web/.env.local` (copy the checked-in example and
+  fill in your own values).
+- Never commit tokens, keys, passwords or rendered environment dumps, and do not
+  edit checked-in compose files to inject per-environment secrets.
+- Rotate a credential independently of unrelated ones, and revoke it when its
+  purpose ends.
+- Each app's documentation lists the configuration names it reads and whether
+  each is required, optional or server-only.
+
+## Self-hosting and local development
+
+See [Without Docker](/build/development-tools/without-docker) and
+[Local Supabase development](/build/development-tools/local-supabase-development)
+for running the maintained apps on your own machine, and the
+[DevOps overview](/build/devops/overview) for the delivery surfaces.

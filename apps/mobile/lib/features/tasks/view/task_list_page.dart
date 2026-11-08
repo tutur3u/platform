@@ -23,7 +23,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-Future<void> _reload(BuildContext context) async {
+Future<void> _reload(BuildContext context, {bool retainError = false}) async {
   final ws = context.read<WorkspaceCubit>().state.currentWorkspace;
   if (ws == null) return;
 
@@ -31,6 +31,7 @@ Future<void> _reload(BuildContext context) async {
     wsId: ws.id,
     isPersonal: ws.personal,
     forceRefresh: true,
+    retainError: retainError,
     userId: context.read<AuthCubit>().state.user?.id,
   );
 }
@@ -378,17 +379,20 @@ class _TaskListViewState extends State<_TaskListView> {
             if (state.status == TaskListStatus.loading &&
                 state.totalActiveTasks == 0 &&
                 state.completedTasks.isEmpty) {
-              return const Center(child: NovaLoadingIndicator());
+              return const AppLoadingIndicator.page();
             }
 
             if (state.status == TaskListStatus.error &&
                 state.totalActiveTasks == 0 &&
                 state.completedTasks.isEmpty) {
-              return _ErrorView(error: state.error);
+              return NovaRefreshIndicator.state(
+                onRefresh: () => _reload(context, retainError: true),
+                child: _ErrorView(error: state.error),
+              );
             }
 
             return NovaRefreshIndicator(
-              onRefresh: () => _reload(context),
+              onRefresh: () => _reload(context, retainError: true),
               child: AppPageListView(
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -480,7 +484,7 @@ class _TaskListViewState extends State<_TaskListView> {
                       state.isLoadingMoreCompleted)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: NovaLoadingIndicator()),
+                      child: AppLoadingIndicator(),
                     ),
                 ],
               ),

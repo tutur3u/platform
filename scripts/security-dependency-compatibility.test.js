@@ -98,56 +98,60 @@ test('security dependency overrides retain consumer behavior', async () => {
   console.log('PASS Google Storage gaxios UUID 11 consumer generation');
 });
 
-test('patched gRPC retains Photon consumer loopback behavior', {
-  skip: photon
-    ? false
-    : 'Photon iMessage chain is not installed on this platform',
-}, async () => {
-  const grpc = photon('@grpc/grpc-js');
-  const serialize = (x) => Buffer.from(JSON.stringify(x));
-  const deserialize = (x) => JSON.parse(x.toString());
-  const service = {
-    echo: {
-      path: '/security.Compatibility/Echo',
-      requestStream: false,
-      responseStream: false,
-      requestSerialize: serialize,
-      requestDeserialize: deserialize,
-      responseSerialize: serialize,
-      responseDeserialize: deserialize,
-    },
-  };
-  const server = new grpc.Server();
-  server.addService(service, {
-    echo: (call, cb) => cb(null, { value: call.request.value }),
-  });
-  const port = await new Promise((res, rej) =>
-    server.bindAsync(
-      '127.0.0.1:0',
-      grpc.ServerCredentials.createInsecure(),
-      (err, port) => (err ? rej(err) : res(port))
-    )
-  );
-  const Client = grpc.makeGenericClientConstructor(service, 'Compatibility');
-  const client = new Client(
-    `127.0.0.1:${port}`,
-    grpc.credentials.createInsecure()
-  );
-  try {
-    const result = await new Promise((res, rej) =>
-      client.echo(
-        { value: 'roundtrip' },
-        { deadline: new Date(Date.now() + 5000) },
-        (err, result) => (err ? rej(err) : res(result))
+test(
+  'patched gRPC retains Photon consumer loopback behavior',
+  {
+    skip: photon
+      ? false
+      : 'Photon iMessage chain is not installed on this platform',
+  },
+  async () => {
+    const grpc = photon('@grpc/grpc-js');
+    const serialize = (x) => Buffer.from(JSON.stringify(x));
+    const deserialize = (x) => JSON.parse(x.toString());
+    const service = {
+      echo: {
+        path: '/security.Compatibility/Echo',
+        requestStream: false,
+        responseStream: false,
+        requestSerialize: serialize,
+        requestDeserialize: deserialize,
+        responseSerialize: serialize,
+        responseDeserialize: deserialize,
+      },
+    };
+    const server = new grpc.Server();
+    server.addService(service, {
+      echo: (call, cb) => cb(null, { value: call.request.value }),
+    });
+    const port = await new Promise((res, rej) =>
+      server.bindAsync(
+        '127.0.0.1:0',
+        grpc.ServerCredentials.createInsecure(),
+        (err, port) => (err ? rej(err) : res(port))
       )
     );
-    assert.deepEqual(result, { value: 'roundtrip' });
-  } finally {
-    client.close();
-    server.forceShutdown();
+    const Client = grpc.makeGenericClientConstructor(service, 'Compatibility');
+    const client = new Client(
+      `127.0.0.1:${port}`,
+      grpc.credentials.createInsecure()
+    );
+    try {
+      const result = await new Promise((res, rej) =>
+        client.echo(
+          { value: 'roundtrip' },
+          { deadline: new Date(Date.now() + 5000) },
+          (err, result) => (err ? rej(err) : res(result))
+        )
+      );
+      assert.deepEqual(result, { value: 'roundtrip' });
+    } finally {
+      client.close();
+      server.forceShutdown();
+    }
+    console.log('PASS Photon ancestry gRPC loopback unary roundtrip');
   }
-  console.log('PASS Photon ancestry gRPC loopback unary roundtrip');
-});
+);
 
 // Void's Drizzle Kit pulls the deprecated @esbuild-kit loader, which pins
 // esbuild ~0.18 (GHSA-67mh-4wv8-2f99). The override must keep its transform API.

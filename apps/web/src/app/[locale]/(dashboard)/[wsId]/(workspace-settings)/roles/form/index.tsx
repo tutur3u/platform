@@ -23,6 +23,7 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isExplicitGrantPermission } from '@tuturuuu/utils/explicit-grant-permissions';
 import { cn } from '@tuturuuu/utils/format';
 import {
   type PermissionCatalog,
@@ -32,6 +33,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { rolePermissionPayload } from './permission-payload';
 import RoleFormDisplaySection from './role-display';
 import RoleFormMembersSection from './role-members';
 import RoleFormPermissionsSection from './role-permissions';
@@ -53,9 +55,11 @@ const FormSchema = z.object({
       },
     }).reduce(
       (acc, group) => {
-        group.permissions.forEach((permission) => {
-          acc[permission.id] = z.boolean();
-        });
+        group.permissions
+          .filter((permission) => !isExplicitGrantPermission(permission.id))
+          .forEach((permission) => {
+            acc[permission.id] = z.boolean();
+          });
         return acc;
       },
       {} as Record<PermissionId, z.ZodBoolean>
@@ -140,12 +144,14 @@ export function RoleForm({
         : data?.name || '',
       permissions: rootGroups.reduce(
         (acc, group) => {
-          group.permissions.forEach((permission) => {
-            acc[permission.id] =
-              data?.permissions.some(
-                (p) => p.id === permission.id && p.enabled
-              ) || false;
-          });
+          group.permissions
+            .filter((permission) => !isExplicitGrantPermission(permission.id))
+            .forEach((permission) => {
+              acc[permission.id] =
+                data?.permissions.some(
+                  (p) => p.id === permission.id && p.enabled
+                ) || false;
+            });
           return acc;
         },
         {} as Record<PermissionId, boolean>
@@ -161,12 +167,7 @@ export function RoleForm({
     mutationFn: async (formData: FormType) => {
       const payload = {
         ...formData,
-        permissions: Object.entries(formData.permissions).map(
-          ([id, enabled]) => ({
-            id: id as PermissionId,
-            enabled,
-          })
-        ),
+        permissions: rolePermissionPayload(formData.permissions),
       };
 
       if (forceDefault) {

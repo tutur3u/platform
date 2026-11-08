@@ -39,7 +39,9 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const authorization = await authorizeInfrastructureAdminRequest();
+  const authorization = await authorizeInfrastructureAdminRequest(
+    'manage_workspace_roles'
+  );
   if (!authorization.ok) return authorization.response;
   const supabase = authorization.sbAdmin;
   const { entryId } = await params;
@@ -95,7 +97,9 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const authorization = await authorizeInfrastructureAdminRequest();
+  const authorization = await authorizeInfrastructureAdminRequest(
+    'manage_workspace_roles'
+  );
   if (!authorization.ok) return authorization.response;
   const supabase = authorization.sbAdmin;
   const { entryId } = await params;

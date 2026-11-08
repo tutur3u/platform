@@ -79,6 +79,11 @@ describe('executeCreateQrCode', () => {
     expect(result.storagePath).toEqual(
       expect.stringContaining('ws-1/drive/mira/qr/')
     );
+    // Stored tool output never carries a bearer URL beyond the 7-day cap.
+    expect(createSignedUrl).toHaveBeenCalledWith(
+      expect.stringContaining('ws-1/drive/mira/qr/'),
+      604_800
+    );
     expect(result.fileName).toBe('Team-QR.png');
     expect(result.foregroundColor).toBe('#112233'.toUpperCase());
 

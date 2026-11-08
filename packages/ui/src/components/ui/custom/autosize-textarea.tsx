@@ -18,7 +18,6 @@ export const useAutosizeTextArea = ({
   minHeight = 0,
 }: UseAutosizeTextAreaProps) => {
   const [init, setInit] = React.useState(true);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: triggerAutoSize is needed to trigger the effect
   React.useEffect(() => {
     // We need to reset the height momentarily to get the correct scrollHeight for the textarea
     const offsetBorder = 2;

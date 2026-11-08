@@ -109,6 +109,12 @@ export interface RichTextEditorProps {
    * toolbar mid-click.
    */
   revealToolbarOnFocus?: boolean;
+  /**
+   * Stretch the editable surface to the host's full height so a click anywhere
+   * below the last line still places the caret. The host must give the editor a
+   * bounded, scrollable box; the toolbar keeps its natural height.
+   */
+  fillHeight?: boolean;
   /** Translations for mention chip dialogs */
   mentionTranslations?: {
     delete_task?: string;
@@ -162,6 +168,7 @@ export function RichTextEditor({
   allowCollaboration = false,
   allowEmbeds = true,
   revealToolbarOnFocus = false,
+  fillHeight = false,
   mentionTranslations,
   renderTaskMention,
   toolbarLeadingContent,
@@ -616,7 +623,11 @@ export function RichTextEditor({
 
   return (
     <div
-      className="group relative h-full"
+      className={
+        fillHeight
+          ? 'group relative flex min-h-full flex-col'
+          : 'group relative h-full'
+      }
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
           hasFocusWithinRef.current = false;
@@ -673,7 +684,14 @@ export function RichTextEditor({
       )}
       {/* Temporarily hide drag handle to resolve 'removeChild' error until finding a more robust solution
       !readOnly && <EditorDragHandle editor={editor} /> */}
-      <EditorContent editor={editor} />
+      <EditorContent
+        editor={editor}
+        className={
+          fillHeight
+            ? 'flex min-h-0 flex-1 flex-col [&>.ProseMirror]:flex-1'
+            : undefined
+        }
+      />
     </div>
   );
 }

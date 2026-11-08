@@ -1,5 +1,8 @@
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import type { WorkspaceId } from '@tuturuuu/utils/workspace-id';
 import { connection, NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { getBackgroundTemplate } from './template-query';
 
 vi.mock('next/server', async (importOriginal) => ({
   ...(await importOriginal<typeof import('next/server')>()),
@@ -70,11 +73,11 @@ function datastore() {
   };
 }
 
-async function request(method: 'GET' | 'HEAD' = 'GET') {
+async function request(method: 'GET' | 'HEAD' = 'GET', wsId = WORKSPACE) {
   const route = await import('./route');
   return route[method](
     new NextRequest('http://localhost/background-url', { method }),
-    { params: Promise.resolve({ templateId: TEMPLATE, wsId: WORKSPACE }) }
+    { params: Promise.resolve({ templateId: TEMPLATE, wsId }) }
   );
 }
 
@@ -117,6 +120,84 @@ describe('first-class template background policy and HEAD', () => {
   it('denies a private noncreator even when no background exists', async () => {
     fixture = { ...fixture, background_path: null, visibility: 'private' };
     expect((await request()).status).toBe(404);
+    noStorage();
+  });
+
+  it('requires a parsed workspace ID in the downstream query', () => {
+    expectTypeOf(getBackgroundTemplate)
+      .parameter(1)
+      .toEqualTypeOf<WorkspaceId>();
+    expectTypeOf<string>().not.toExtend<
+      Parameters<typeof getBackgroundTemplate>[1]
+    >();
+  });
+
+  it.each(['GET', 'HEAD'] as const)(
+    '%s preserves the invalid-workspace response before membership and storage',
+    async (method) => {
+      mocks.normalize.mockResolvedValue('not-a-uuid');
+      const response = await request(method, 'not-a-uuid');
+      expect(response.status).toBe(400);
+      if (method === 'GET') {
+        await expect(response.json()).resolves.toEqual({
+          error: 'Invalid workspace ID',
+        });
+      } else {
+        expect(await response.text()).toBe('');
+      }
+      expect(mocks.membership).not.toHaveBeenCalled();
+      expect(mocks.admin).not.toHaveBeenCalled();
+      noStorage();
+    }
+  );
+
+  it('preserves the normalization failure response', async () => {
+    mocks.normalize.mockRejectedValue(
+      new Error('synthetic resolution failure')
+    );
+    const response = await request();
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Invalid workspace ID',
+    });
+    expect(mocks.membership).not.toHaveBeenCalled();
+    noStorage();
+  });
+
+  it.each([
+    ['personal', WORKSPACE],
+    ['PERSONAL', WORKSPACE],
+    ['internal', ROOT_WORKSPACE_ID],
+    [ROOT_WORKSPACE_ID, ROOT_WORKSPACE_ID],
+    ['existing-handle', WORKSPACE],
+  ])('uses the normalized ID for %s', async (rawWsId, normalizedWsId) => {
+    mocks.normalize.mockResolvedValue(normalizedWsId);
+    const backgroundPath = `${normalizedWsId}/template-backgrounds/synthetic.png`;
+    fixture = {
+      ...fixture,
+      background_path: backgroundPath,
+      ws_id: normalizedWsId,
+    };
+    const response = await request('GET', rawWsId);
+    expect(response.status).toBe(200);
+    expect(mocks.normalize).toHaveBeenCalledWith(rawWsId, {
+      fixture: 'session',
+    });
+    expect(mocks.membership).toHaveBeenCalledWith({
+      wsId: normalizedWsId,
+      userId: MEMBER,
+      supabase: { fixture: 'session' },
+    });
+    expect(mocks.sign).toHaveBeenCalledWith(backgroundPath, 3600);
+  });
+
+  it('keeps cross-workspace template reads nondisclosing', async () => {
+    fixture = { ...fixture, ws_id: '22222222-2222-4222-8222-222222222222' };
+    const response = await request();
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Template not found or access denied',
+    });
     noStorage();
   });
 

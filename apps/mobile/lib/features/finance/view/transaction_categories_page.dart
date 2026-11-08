@@ -290,7 +290,7 @@ class _TransactionCategoriesViewState
     bool showAmounts,
   ) {
     if (_categoriesLoading) {
-      return const AppPageBody(child: Center(child: NovaLoadingIndicator()));
+      return const AppPageBody(child: AppLoadingIndicator.page());
     }
     if (_categoriesError != null) {
       return ListView(
@@ -364,7 +364,7 @@ class _TransactionCategoriesViewState
     bool showAmounts,
   ) {
     if (_tagsLoading) {
-      return const AppPageBody(child: Center(child: NovaLoadingIndicator()));
+      return const AppPageBody(child: AppLoadingIndicator.page());
     }
     if (_tagsError != null) {
       return ListView(

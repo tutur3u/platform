@@ -48,8 +48,23 @@ function parseConfig(text) {
   const rules = [];
   for (const block of text.split(/^\[\[rules\]\]\s*$/mu).slice(1)) {
     const id = /^id\s*=\s*"([^"]+)"/mu.exec(block)?.[1];
-    const regex = /^regex\s*=\s*'''(.+?)'''/mu.exec(block)?.[1];
-    if (id && regex) rules.push({ id, regex: new RegExp(regex, 'u') });
+    const rawRegex = /^regex\s*=\s*'''(.+?)'''/mu.exec(block)?.[1];
+    if (id && rawRegex) {
+      let regex = rawRegex;
+      let flags = 'u';
+      if (regex.startsWith('(?i)')) {
+        regex = regex.slice(4);
+        flags += 'i';
+      }
+      rules.push({ id, regex: new RegExp(regex, flags) });
+    }
+  }
+  if (rules.length === 0 && /useDefault\s*=\s*true/mu.test(text)) {
+    rules.push({
+      id: 'discord-client-id',
+      regex:
+        /[\w.-]{0,50}?(?:discord)(?:[ \t\w.-]{0,20})[\s'"]{0,3}(?:=|>|:{1,3}=|\|\||:|=>|\?=|,)[`'"\s=]{0,5}([0-9]{18})(?:[`'"\s;]|\\[nr]|$)/iu,
+    });
   }
   const allow = [...text.matchAll(/'''(.+?)'''/gu)]
     .filter((match) =>

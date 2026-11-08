@@ -63,6 +63,24 @@ Simulator builds skip Crashlytics symbol upload; signed device and release build
 retain it. The simulator can launch without a local web API, but signing in and
 testing authenticated screens requires the API at `API_BASE_URL`.
 
+## Native unit tests
+
+Run both native suites (iOS `RunnerTests` and Android JVM unit tests) from a
+clean checkout with:
+
+```sh
+scripts/mobile-native-tests.sh        # or: ios | android
+```
+
+The script uses the `development` flavor: it copies the tracked
+`ios/Runner/GoogleService-Info-development.plist` to the ignored
+`ios/Runner/GoogleService-Info.plist` (never copy a production plist), generates
+`ios/Flutter/Generated.xcconfig` for `lib/main_development.dart`, runs
+`xcodebuild test -scheme development -only-testing:RunnerTests` on an available
+iPhone simulator (override with `IOS_SIMULATOR_ID`), then runs
+`./gradlew :app:testDevelopmentDebugUnitTest -x :app:compileFlutterBuildDevelopmentDebug`.
+`pod install` may churn `Podfile.lock` and `project.pbxproj`; do not commit that.
+
 ---
 
 ## Running Tests 🧪

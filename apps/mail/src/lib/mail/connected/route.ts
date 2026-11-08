@@ -46,14 +46,16 @@ export async function connectedMailRoute(
         z.object({ provider: z.enum(['google', 'microsoft']) })
       );
       if (!body.ok) return body.response;
-      return await startOAuth(ctx, body.data.provider);
+      return await startOAuth(ctx, body.data.provider, request);
     }
     const accountId = z.uuid().safeParse(segments[0]);
     if (!accountId.success)
       return NextResponse.json({ error: 'Invalid account' }, { status: 400 });
     const account = await getAccount(ctx, accountId.data);
     if (segments.length === 1 && request.method === 'DELETE') {
-      const { error } = await (await table('mail_connected_accounts'))
+      const { error } = await (
+        await table('mail_connected_accounts')
+      )
         .delete()
         .eq('id', account.id)
         .eq('user_id', ctx.user.id)

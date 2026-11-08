@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, Mail, Route, Tag, Users } from '@tuturuuu/icons';
+import { Bot, Inbox, Mail, Route, Tag, Users } from '@tuturuuu/icons';
 import {
   getMailCatchAllConfiguration,
   getMailMailboxSettings,
@@ -12,10 +12,14 @@ import {
   updateMailMailboxSettings,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
-import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -35,7 +39,9 @@ import { MailGroupSettings } from './mail-group-settings';
 import { MailLabelSettings } from './mail-label-settings';
 import { MailMemberSettings } from './mail-member-settings';
 import { MailReadingSettings } from './mail-reading-settings';
+import { MailSettingsShell } from './mail-settings-shell';
 import { MailSignaturePreview } from './mail-signature-preview';
+import { MailSourceSettings } from './mail-source';
 
 export function MailSettingsDialog({
   mailbox,
@@ -150,23 +156,29 @@ export function MailSettingsDialog({
   const settings = settingsQuery.data?.settings;
   const settingsDirty = Boolean(
     settings &&
-      (senderName !== settings.senderName ||
-        signatureText !== (settings.signatureText ?? '') ||
-        signatureHtml !== (settings.signatureHtml ?? '') ||
-        outboundProvider !== (settings.outboundProviderOverride ?? 'default') ||
-        aiInstructions !== settings.aiInstructions ||
-        autoDraftEnabled !== settings.autoDraftEnabled)
+    (senderName !== settings.senderName ||
+      signatureText !== (settings.signatureText ?? '') ||
+      signatureHtml !== (settings.signatureHtml ?? '') ||
+      outboundProvider !== (settings.outboundProviderOverride ?? 'default') ||
+      aiInstructions !== settings.aiInstructions ||
+      autoDraftEnabled !== settings.autoDraftEnabled)
   );
   const catchAllDirty = Boolean(
     catchAllQuery.data &&
-      (targetMailboxId !== catchAllQuery.data.targetMailboxId ||
-        catchAllEnabled !== catchAllQuery.data.enabled ||
-        catchAllAutoDraft !== catchAllQuery.data.autoDraftEnabled)
+    (targetMailboxId !== catchAllQuery.data.targetMailboxId ||
+      catchAllEnabled !== catchAllQuery.data.enabled ||
+      catchAllAutoDraft !== catchAllQuery.data.autoDraftEnabled)
   );
   const navItems = useMemo(
     () => [
       {
         items: [
+          {
+            description: t('source_description'),
+            icon: Inbox,
+            label: t('source'),
+            name: 'source',
+          },
           {
             description: t('reading_settings_description'),
             icon: Mail,
@@ -218,19 +230,20 @@ export function MailSettingsDialog({
         ? membersQuery
         : settingsQuery;
   const settingsUnavailable =
+    tab !== 'source' &&
     tab !== 'reading' &&
     tab !== 'labels' &&
     (activeQuery.isLoading || activeQuery.isError);
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <SettingsDialogShell
+      <MailSettingsShell
         activeTab={tab}
         keyboardNavigation
         navItems={navItems}
         onActiveTabChange={setTab}
       >
-        <div className="mx-auto w-full max-w-2xl space-y-6 p-4 md:p-8">
+        <div className="space-y-8">
           {settingsUnavailable ? (
             <MailContentState
               kind={activeQuery.isError ? 'error' : 'loading'}
@@ -241,15 +254,17 @@ export function MailSettingsDialog({
               }
             />
           ) : null}
-          <div hidden={settingsUnavailable} className="space-y-6">
+          <div hidden={settingsUnavailable} className="space-y-8">
+            {tab === 'source' ? <MailSourceSettings /> : null}
             {tab === 'reading' ? <MailReadingSettings /> : null}
             {tab === 'identity' ? (
-              <>
-                <SettingField
+              <SettingsSection>
+                <SettingItemTab
                   description={
                     usesManagedIdentity ? t('sender_name_managed') : undefined
                   }
-                  label={t('sender_name')}
+                  title={t('sender_name')}
+                  controlWidth="xl"
                 >
                   <Input
                     aria-label={t('sender_name')}
@@ -258,10 +273,11 @@ export function MailSettingsDialog({
                     readOnly={usesManagedIdentity}
                     value={senderName}
                   />
-                </SettingField>
-                <SettingField
+                </SettingItemTab>
+                <SettingItemTab
+                  layout="stacked"
                   description={t('signature_description')}
-                  label={t('signature')}
+                  title={t('signature')}
                 >
                   <Tabs defaultValue="plain">
                     <TabsList className="grid w-full grid-cols-3">
@@ -306,8 +322,11 @@ export function MailSettingsDialog({
                       />
                     </TabsContent>
                   </Tabs>
-                </SettingField>
-                <SettingField label={t('outbound_provider')}>
+                </SettingItemTab>
+                <SettingItemTab
+                  title={t('outbound_provider')}
+                  controlWidth="md"
+                >
                   <Select
                     onValueChange={setOutboundProvider}
                     value={outboundProvider}
@@ -323,16 +342,16 @@ export function MailSettingsDialog({
                       <SelectItem value="ses">AWS SES</SelectItem>
                     </SelectContent>
                   </Select>
-                </SettingField>
-                <div className="flex justify-end">
+                </SettingItemTab>
+                <SettingsSectionFooter>
                   <Button
                     disabled={saveSettings.isPending || !settingsDirty}
                     onClick={() => saveSettings.mutate()}
                   >
                     {t('save')}
                   </Button>
-                </div>
-              </>
+                </SettingsSectionFooter>
+              </SettingsSection>
             ) : null}
             {tab === 'automation' ? (
               <>
@@ -344,31 +363,35 @@ export function MailSettingsDialog({
                     workspaceId={workspaceId}
                   />
                 )}
-                <SettingField label={t('ai_instructions')}>
-                  <Textarea
-                    className="min-h-44"
-                    aria-label={t('ai_instructions')}
-                    onChange={(event) => setAiInstructions(event.target.value)}
-                    value={aiInstructions}
+                <SettingsSection>
+                  <SettingItemTab layout="stacked" title={t('ai_instructions')}>
+                    <Textarea
+                      className="min-h-44"
+                      aria-label={t('ai_instructions')}
+                      onChange={(event) =>
+                        setAiInstructions(event.target.value)
+                      }
+                      value={aiInstructions}
+                    />
+                  </SettingItemTab>
+                  <ToggleRow
+                    checked={autoDraftEnabled}
+                    description={t('auto_draft_description')}
+                    label={t('automatic_drafts')}
+                    onCheckedChange={setAutoDraftEnabled}
                   />
-                </SettingField>
-                <ToggleRow
-                  checked={autoDraftEnabled}
-                  description={t('auto_draft_description')}
-                  label={t('automatic_drafts')}
-                  onCheckedChange={setAutoDraftEnabled}
-                />
-                <p className="text-muted-foreground text-xs">
-                  {t('drafts_never_send')}
-                </p>
-                <div className="flex justify-end">
-                  <Button
-                    disabled={saveSettings.isPending || !settingsDirty}
-                    onClick={() => saveSettings.mutate()}
-                  >
-                    {t('save')}
-                  </Button>
-                </div>
+                  <SettingsSectionMessage className="py-3">
+                    {t('drafts_never_send')}
+                  </SettingsSectionMessage>
+                  <SettingsSectionFooter>
+                    <Button
+                      disabled={saveSettings.isPending || !settingsDirty}
+                      onClick={() => saveSettings.mutate()}
+                    >
+                      {t('save')}
+                    </Button>
+                  </SettingsSectionFooter>
+                </SettingsSection>
               </>
             ) : null}
             {tab === 'labels' && mailbox ? (
@@ -398,8 +421,8 @@ export function MailSettingsDialog({
               />
             ) : null}
             {tab === 'delivery' && operator ? (
-              <>
-                <SettingField label={t('managed_domain')}>
+              <SettingsSection>
+                <SettingItemTab title={t('managed_domain')} controlWidth="md">
                   <Select
                     onValueChange={setDomainId}
                     value={domainId ?? undefined}
@@ -415,8 +438,11 @@ export function MailSettingsDialog({
                       ))}
                     </SelectContent>
                   </Select>
-                </SettingField>
-                <SettingField label={t('catch_all_mailbox')}>
+                </SettingItemTab>
+                <SettingItemTab
+                  title={t('catch_all_mailbox')}
+                  controlWidth="md"
+                >
                   <Select
                     onValueChange={setTargetMailboxId}
                     value={targetMailboxId ?? undefined}
@@ -434,7 +460,7 @@ export function MailSettingsDialog({
                       )}
                     </SelectContent>
                   </Select>
-                </SettingField>
+                </SettingItemTab>
                 <ToggleRow
                   checked={catchAllEnabled}
                   description={t('catch_all_description')}
@@ -451,7 +477,7 @@ export function MailSettingsDialog({
                   label={t('catch_all_auto_drafts')}
                   onCheckedChange={setCatchAllAutoDraft}
                 />
-                <div className="flex justify-end">
+                <SettingsSectionFooter>
                   <Button
                     disabled={
                       saveCatchAll.isPending ||
@@ -462,33 +488,13 @@ export function MailSettingsDialog({
                   >
                     {t('save')}
                   </Button>
-                </div>
-              </>
+                </SettingsSectionFooter>
+              </SettingsSection>
             ) : null}
           </div>
         </div>
-      </SettingsDialogShell>
+      </MailSettingsShell>
     </Dialog>
-  );
-}
-
-function SettingField({
-  children,
-  description,
-  label,
-}: {
-  children: React.ReactNode;
-  description?: string;
-  label: string;
-}) {
-  return (
-    <div className="grid gap-2">
-      <Label>{label}</Label>
-      {children}
-      {description ? (
-        <p className="text-muted-foreground text-xs leading-5">{description}</p>
-      ) : null}
-    </div>
   );
 }
 
@@ -506,17 +512,13 @@ function ToggleRow({
   onCheckedChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="flex items-start gap-4 rounded-2xl border border-dynamic p-4">
-      <div className="min-w-0 flex-1">
-        <div className="font-medium text-sm">{label}</div>
-        <p className="mt-1 text-muted-foreground text-sm">{description}</p>
-      </div>
+    <SettingItemTab title={label} description={description}>
       <Switch
         aria-label={label}
         checked={checked}
         disabled={disabled}
         onCheckedChange={onCheckedChange}
       />
-    </div>
+    </SettingItemTab>
   );
 }

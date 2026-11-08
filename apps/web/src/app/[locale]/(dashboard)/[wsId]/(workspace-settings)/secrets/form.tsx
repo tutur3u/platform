@@ -16,6 +16,7 @@ import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import * as z from 'zod';
@@ -36,6 +37,7 @@ interface Props {
   secretScope?: 'all' | 'rate-limits' | 'non-rate-limits';
   initialValues?: Partial<z.infer<typeof FormSchema>>;
   nameLocked?: boolean;
+  submitClassName?: string;
   onSubmitSecret?: (data: z.infer<typeof FormSchema>) => Promise<void> | void;
 
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
@@ -56,6 +58,7 @@ export default function SecretForm({
   secretScope = 'all',
   initialValues,
   nameLocked = false,
+  submitClassName,
   onSubmitSecret,
   onFinish,
 }: Props) {
@@ -134,7 +137,7 @@ export default function SecretForm({
           : `/api/workspaces/${wsId}/secrets`,
         {
           method: payload.id ? 'PUT' : 'POST',
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ name: payload.name, value: payload.value }),
         }
       );
 
@@ -308,7 +311,11 @@ export default function SecretForm({
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={disabled}>
+        <Button
+          type="submit"
+          className={cn('w-full', submitClassName)}
+          disabled={disabled}
+        >
           {data?.id ? t('common.edit') : t('common.create')}
         </Button>
       </form>

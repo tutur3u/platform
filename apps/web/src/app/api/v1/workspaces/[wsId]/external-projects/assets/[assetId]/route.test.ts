@@ -84,9 +84,8 @@ describe('external project asset route', () => {
   it('preserves public sources and returns 404 for invalid legacy private sources', async () => {
     vi.stubEnv('SECURITY_EGRESS_ENFORCEMENT_ENABLED', 'true');
     vi.stubEnv('SUPABASE_SERVER_URL', 'https://storage.example.test');
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
     for (const [source, status] of [
       [
         'https://storage.example.test/storage/v1/object/public/avatars/a.png',
@@ -154,9 +153,8 @@ describe('external project asset route', () => {
       })),
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -223,9 +221,8 @@ describe('external project asset route', () => {
       })),
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -286,9 +283,8 @@ describe('external project asset route', () => {
       })),
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -364,9 +360,8 @@ describe('external project asset route', () => {
       })),
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -439,9 +434,8 @@ describe('external project asset route', () => {
       })),
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -469,9 +463,8 @@ describe('external project asset route', () => {
       },
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -521,9 +514,8 @@ describe('external project asset route', () => {
       },
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await GET(
       new Request(
@@ -542,9 +534,54 @@ describe('external project asset route', () => {
     expect(mocks.createWorkspaceStorageSignedReadUrl).not.toHaveBeenCalled();
   });
 
+  it.each(['entry_id', 'block_id'])(
+    'SR-250 rejects a foreign %s before updating',
+    async (field) => {
+      const eq = vi.fn();
+      const query = {
+        select: vi.fn(),
+        eq,
+        maybeSingle: async () => ({ data: null, error: null }),
+      };
+      query.select.mockReturnValue(query);
+      eq.mockReturnValue(query);
+      mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
+        ok: true,
+        normalizedWorkspaceId: 'ws-1',
+        user: { id: 'user-1' },
+        admin: { from: () => query },
+      });
+      mocks.updateWorkspaceExternalProjectAsset.mockResolvedValue({
+        id: 'asset-1',
+      });
+      const { PATCH } = await import('./route');
+      const response = await PATCH(
+        new Request('http://localhost/api/asset', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            [field]: '11111111-1111-4111-8111-111111111111',
+          }),
+        }),
+        { params: Promise.resolve({ wsId: 'ws-1', assetId: 'asset-1' }) }
+      );
+      expect(response.status).toBe(404);
+      expect(eq).toHaveBeenCalledWith('ws_id', 'ws-1');
+      expect(mocks.updateWorkspaceExternalProjectAsset).not.toHaveBeenCalled();
+    }
+  );
+
   it('passes the authorized workspace to asset updates', async () => {
+    const eq = vi.fn();
+    const query = {
+      select: vi.fn(),
+      eq,
+      maybeSingle: async () => ({ data: { id: 'entry' }, error: null }),
+    };
+    query.select.mockReturnValue(query);
+    eq.mockReturnValue(query);
+    const admin = { from: () => query };
     mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
-      admin: {},
+      admin,
       normalizedWorkspaceId: 'ws-1',
       ok: true,
       user: {
@@ -555,9 +592,8 @@ describe('external project asset route', () => {
       id: 'asset-1',
     });
 
-    const { PATCH } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { PATCH } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await PATCH(
       new Request(
@@ -565,6 +601,7 @@ describe('external project asset route', () => {
         {
           body: JSON.stringify({
             alt_text: 'Updated alt text',
+            entry_id: '11111111-1111-4111-8111-111111111111',
           }),
           method: 'PATCH',
         }
@@ -585,8 +622,9 @@ describe('external project asset route', () => {
         alt_text: 'Updated alt text',
         workspaceId: 'ws-1',
       }),
-      {}
+      admin
     );
+    expect(eq).toHaveBeenCalledWith('ws_id', 'ws-1');
   });
 
   it('rejects asset updates that point outside external project storage', async () => {
@@ -599,9 +637,8 @@ describe('external project asset route', () => {
       },
     });
 
-    const { PATCH } = await import(
-      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
-    );
+    const { PATCH } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
 
     const response = await PATCH(
       new Request(

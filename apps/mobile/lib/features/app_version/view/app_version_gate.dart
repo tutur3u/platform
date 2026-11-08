@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide FilledButton, Scaffold, TextButton;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/app_version/cubit/app_version_state.dart';
 import 'package:mobile/features/desktop_update/desktop_update_gate.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AppVersionGate extends StatefulWidget {
@@ -114,9 +114,7 @@ class _InitialVersionCheckScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const shad.Scaffold(
-      child: Center(child: NovaLoadingIndicator(size: 20)),
-    );
+    return const shad.Scaffold(child: AppLoadingIndicator.page());
   }
 }
 

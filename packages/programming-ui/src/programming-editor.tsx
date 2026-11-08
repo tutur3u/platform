@@ -31,6 +31,7 @@ export function ProgrammingEditor({
   value,
   onChange,
   readOnly,
+  dark = false,
   presence,
   onCursor,
   onSelection,
@@ -40,6 +41,7 @@ export function ProgrammingEditor({
   value: string;
   onChange: (value: string) => void;
   readOnly: boolean;
+  dark?: boolean;
   presence: CollaborationPresence[];
   onCursor: (line: number, column: number) => void;
   onSelection: (
@@ -122,14 +124,16 @@ export function ProgrammingEditor({
       value={value}
       onChange={(next) => onChange(next ?? '')}
       onMount={onMount}
+      theme={dark ? 'vs-dark' : 'light'}
       options={{
         readOnly,
         automaticLayout: true,
         minimap: { enabled: false },
         fontSize: 13,
         fontFamily: 'ui-monospace, monospace',
+        lineNumbersMinChars: 3,
         scrollBeyondLastLine: false,
-        padding: { top: 12 },
+        padding: { top: 12, bottom: 12 },
         wordWrap: 'on',
       }}
     />

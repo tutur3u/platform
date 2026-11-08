@@ -18,7 +18,7 @@ function context(existing = [], overrides = {}) {
   const files = new Set(existing);
   return {
     base: 'abc123',
-    biomeBinary: '/repo/node_modules/.bin/biome',
+    oxfmtBinary: '/repo/node_modules/.bin/oxfmt',
     branch: 'chore/gate',
     exists: (file) => files.has(file),
     hasVitest: (workspace) => workspace !== 'apps/no-vitest',
@@ -26,7 +26,8 @@ function context(existing = [], overrides = {}) {
   };
 }
 
-const ids = (plan) => plan.steps.map((step) => step.id);
+const ids = (plan) =>
+  plan.steps.map((step) => step.id).filter((id) => id !== 'staging-hosts');
 const changed = (...files) => files.map((file) => ({ status: 'M', file }));
 
 test('branch-name pattern mirrors the branch-name-check workflow', () => {
@@ -67,7 +68,7 @@ test('detached HEAD skips branch validation', () => {
   assert.deepEqual(plan.skipped[0], ['branch-name', 'detached HEAD']);
 });
 
-test('TypeScript changes map to biome, oxlint, guards, vitest and type-check', () => {
+test('TypeScript changes map to oxc, oxlint, guards, vitest and type-check', () => {
   const plan = planChecks(
     changed('packages/utils/src/date.ts', 'apps/web/src/app/page.tsx'),
     context(['packages/utils/src/date.test.ts'])
@@ -77,34 +78,83 @@ test('TypeScript changes map to biome, oxlint, guards, vitest and type-check', (
     'source-size',
     'docs-inventory',
     'app-seo',
-    'biome',
+    'sdk-portable',
+    'oxfmt',
     'oxlint',
+    'server-console',
     'internal-app-auth',
     'satellite-cookie-auth',
-    'server-console',
+    'browser-session-surface',
     'vitest:packages/utils',
     'type-check:apps/web',
     'type-check:packages/utils',
   ]);
-  const biome = plan.steps.find((step) => step.id === 'biome');
-  assert.equal(biome.command, '/repo/node_modules/.bin/biome');
-  assert.ok(biome.args.includes('--error-on-warnings'));
+  const oxc = plan.steps.find((step) => step.id === 'oxfmt');
+  assert.equal(oxc.command, '/repo/node_modules/.bin/oxfmt');
+  assert.ok(oxc.args.includes('--check'));
   const oxlint = plan.steps.find((step) => step.id === 'oxlint');
-  assert.equal(oxlint.advisory, true);
+  assert.equal(Boolean(oxlint.advisory), false);
   const vitest = plan.steps.find((step) => step.id === 'vitest:packages/utils');
   assert.equal(vitest.cwd, 'packages/utils');
   assert.deepEqual(vitest.args.slice(-1), ['src/date.test.ts']);
   assert.equal(vitest.heavy, true);
 });
 
-test('falls back to pinned npx Biome when the local version differs', () => {
+test('bun:test suites run with bun test from their workspace, never Vitest or node --test', () => {
+  const source = {
+    'apps/meet-realtime/src/channel-room-do.test.ts':
+      "import { test } from 'bun:test';\nimport assert from 'node:assert/strict';",
+    'apps/meet-realtime/src/worker.test.ts':
+      "import { test } from 'node:test';",
+    'apps/meet-realtime/src/token.test.ts': "import { it } from 'vitest';",
+  };
+  const plan = planChecks(
+    changed(
+      'apps/meet-realtime/src/channel-room-do.ts',
+      'apps/meet-realtime/src/worker.ts',
+      'apps/meet-realtime/src/token.ts'
+    ),
+    context(Object.keys(source), {
+      readSource: (file) => source[file] ?? '',
+      workspaces: [{ workspace: 'apps/meet-realtime', testScript: '' }],
+    })
+  );
+  const bun = plan.steps.find(
+    (step) => step.id === 'bun-test:apps/meet-realtime'
+  );
+  assert.equal(bun.command, 'bun');
+  assert.equal(bun.cwd, 'apps/meet-realtime');
+  assert.deepEqual(bun.args, ['test', 'src/channel-room-do.test.ts']);
+  assert.equal(bun.heavy, true);
+  const node = plan.steps.find((step) => step.id === 'script-tests');
+  assert.deepEqual(
+    node.args.filter((arg) => arg.endsWith('.test.ts')),
+    ['apps/meet-realtime/src/worker.test.ts']
+  );
+  const vitest = plan.steps.find(
+    (step) => step.id === 'vitest:apps/meet-realtime'
+  );
+  assert.deepEqual(vitest.args.slice(-1), ['src/token.test.ts']);
+  // A workspace without a Vitest config still runs its Bun suites.
+  const bare = planChecks(
+    changed('apps/no-vitest/src/room.ts'),
+    context(['apps/no-vitest/src/room.test.ts'], {
+      readSource: () => "import { test } from 'bun:test';",
+      workspaces: [{ workspace: 'apps/no-vitest', testScript: '' }],
+    })
+  );
+  assert.ok(ids(bare).includes('bun-test:apps/no-vitest'));
+  assert.equal(ids(bare).includes('vitest:apps/no-vitest'), false);
+});
+
+test('falls back to pinned npx Oxc when the local version differs', () => {
   const plan = planChecks(
     changed('scripts/x.js'),
-    context([], { biomeBinary: null })
+    context([], { oxfmtBinary: null })
   );
-  const biome = plan.steps.find((step) => step.id === 'biome');
-  assert.equal(biome.command, 'npx');
-  assert.deepEqual(biome.args.slice(0, 2), ['--yes', '@biomejs/biome@2.5.13']);
+  const oxc = plan.steps.find((step) => step.id === 'oxfmt');
+  assert.equal(oxc.command, 'npx');
+  assert.deepEqual(oxc.args.slice(0, 2), ['--yes', 'oxfmt@0.74.0']);
 });
 
 test('deleted and paused-runtime files never reach file-level tools', () => {
@@ -115,7 +165,7 @@ test('deleted and paused-runtime files never reach file-level tools', () => {
     ],
     context()
   );
-  assert.equal(ids(plan).includes('biome'), false);
+  assert.equal(ids(plan).includes('oxfmt'), false);
   assert.equal(ids(plan).includes('type-check:apps/tanstack-web'), false);
   // A deletion can still break importers in its workspace.
   assert.ok(ids(plan).includes('type-check:packages/ui'));
@@ -138,7 +188,7 @@ test('mobile changes run gen-l10n first, dart format and flutter analyze', () =>
   );
   assert.deepEqual(mobile[1].args.slice(-1), ['lib/features/a.dart']);
   assert.deepEqual(mobile[2].args, ['analyze', 'lib', 'test']);
-  assert.equal(ids(plan).includes('biome'), false);
+  assert.equal(ids(plan).includes('oxfmt'), false);
   assert.ok(ids(plan).includes('mobile-api-mappings'));
   assert.ok(ids(plan).includes('mobile-shadcn-ratchet'));
 });
@@ -195,6 +245,43 @@ test('workflow edits run workflow policy tests with changed script tests', () =>
     'scripts/ci/bun-workflow-pins.test.js',
     'scripts/ci/check-workflow-config.test.js',
   ]);
+  const formatter = plan.steps.find((entry) => entry.id === 'oxfmt');
+  assert.ok(formatter.args.includes('scripts/oxc.js'));
+  assert.ok(!formatter.args.includes('.github/workflows/type-check.yaml'));
+});
+
+test('ignored formats do not claim formatter execution or omit workflow guards', () => {
+  const files = [
+    '.github/workflows/type-check.yaml',
+    '.github/actions/example/action.yml',
+    'README.md',
+    'docs/example.mdx',
+    'example.html',
+  ];
+  const config = JSON.parse(
+    fs.readFileSync(path.join(ROOT, '.oxfmtrc.json'), 'utf8')
+  );
+  for (const file of files) {
+    assert.ok(config.ignorePatterns.includes(`**/*${path.extname(file)}`));
+  }
+  const policyTests = [
+    'scripts/ci/protected-workflow-concurrency.test.js',
+    'scripts/ci/bun-workflow-pins.test.js',
+    'scripts/ci/check-workflow-config.test.js',
+  ];
+  const plan = planChecks(changed(...files), context(policyTests));
+  assert.equal(ids(plan).includes('oxfmt'), false);
+  assert.ok(
+    plan.skipped.some(
+      ([id, reason]) => id === 'oxfmt' && reason.includes('.oxfmtrc.json')
+    )
+  );
+  const tests = plan.steps.find((entry) => entry.id === 'script-tests');
+  for (const file of policyTests) assert.ok(tests.args.includes(file));
+  assert.ok(
+    ids(plan).includes('staging-hosts') ||
+      plan.steps.some((step) => step.id === 'staging-hosts')
+  );
 });
 
 test('siblingTests finds colocated and __tests__ files', () => {
@@ -267,8 +354,6 @@ test('REV-6467-2: shared changes type-check transitive reverse dependents', () =
 test('REV-6467-2: root/shared configuration explicitly requires CI coverage', () => {
   for (const file of [
     'tsconfig.json',
-    'biome.json',
-    'biome.jsonc',
     'turbo.json',
     'package.json',
     'bun.lock',
@@ -302,5 +387,22 @@ test('REV-6467-6: Git app dash route directories remain valid tool arguments', (
   const file = 'apps/git/src/app/[locale]/-/[wsId]/page.tsx';
   const plan = planChecks(changed(file), context([file]));
   assert.ok(plan.steps.some((step) => step.id === 'type-check:apps/git'));
-  assert.ok(plan.steps.find((step) => step.id === 'biome').args.includes(file));
+  assert.ok(plan.steps.find((step) => step.id === 'oxfmt').args.includes(file));
+});
+
+test('staging host isolation always runs', () => {
+  const plan = planChecks(changed('README.md'), context());
+  assert.deepEqual(
+    plan.steps.find((step) => step.id === 'staging-hosts').args,
+    ['scripts/check-staging-hosts.js']
+  );
+});
+
+test('emitted Worker acceptance remains with its owning build', () => {
+  const plan = planChecks(
+    changed('apps/apps/cloudflare/native-built-worker.test.mjs'),
+    context()
+  );
+  assert.ok(plan.skipped.some(([id]) => id === 'emitted-worker-tests'));
+  assert.ok(!plan.steps.find((step) => step.id === 'script-tests'));
 });

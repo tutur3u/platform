@@ -114,7 +114,6 @@
     "@tuturuuu/hooks": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
-    "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@types/debug": "^4.1.13",
@@ -157,6 +156,7 @@
     "react-resizable-panels": "^4.14.8",
     "react-syntax-highlighter": "^16.1.2",
     "recharts": "3.10.1",
+    "server-only": "^0.0.1",
     "slot-text": "^0.3.4",
     "sonner": "^2.0.8",
     "streamdown": "^2.7.1",
@@ -387,6 +387,10 @@
     "./custom/version-badge": {
       "types": "./src/components/ui/custom/version-badge.tsx",
       "import": "./src/components/ui/custom/version-badge.tsx"
+    },
+    "./custom/settings-section": {
+      "types": "./src/components/ui/custom/settings-section.tsx",
+      "import": "./src/components/ui/custom/settings-section.tsx"
     },
     "./custom/settings/*": "./src/components/ui/custom/settings/*.tsx",
     "./custom/missed-entry/*": "./src/components/ui/custom/missed-entry/*.tsx",

@@ -145,6 +145,7 @@ export async function getWorkspaceMembers({
             'user_id, workspace_roles!inner(id, name, ws_id, workspace_role_permissions(permission, enabled))'
           )
           .eq('workspace_roles.ws_id', wsId)
+          .eq('workspace_roles.workspace_role_permissions.ws_id', wsId)
           .in('user_id', userIdBatch);
 
       if (roleMembershipsError) throw roleMembershipsError;

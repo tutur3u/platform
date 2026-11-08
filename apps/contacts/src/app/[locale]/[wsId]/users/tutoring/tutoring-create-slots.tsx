@@ -5,13 +5,14 @@ import { Button } from '@tuturuuu/ui/button';
 import type { ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { formatSessionTimeRange } from './tutoring-filters';
 import { TutoringTeacherPicker } from './tutoring-teacher-picker';
 import {
   DURATION_PRESETS,
-  nextWeeklySlot,
+  nextWeeklySlots,
   type TutoringFormValues,
 } from './tutoring-types';
 
@@ -21,6 +22,8 @@ type SessionSlot = TutoringFormValues['sessionSlots'][number];
 
 function SlotRow({
   conflicting,
+  content,
+  helpId,
   index,
   onChange,
   onRemove,
@@ -31,6 +34,10 @@ function SlotRow({
   wsId,
 }: {
   conflicting: boolean;
+  /** Set when this session has its own content field. */
+  content?: string;
+  /** The element describing how this session's content is used. */
+  helpId?: string;
   index: number;
   onChange: (next: Partial<SessionSlot>) => void;
   onRemove: () => void;
@@ -145,12 +152,29 @@ function SlotRow({
           />
         </div>
       </div>
+
+      {content !== undefined ? (
+        <div className="mt-3 space-y-1">
+          <Label className="text-xs" htmlFor={`slotContent-${index}`}>
+            {t('content_for_session', { index: index + 1 })}
+          </Label>
+          <Textarea
+            aria-describedby={helpId}
+            id={`slotContent-${index}`}
+            onChange={(event) => onChange({ content: event.target.value })}
+            placeholder={t('content_placeholder')}
+            rows={3}
+            value={content}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
 
 export function TutoringCreateSlots({
   conflictingIndexes,
+  contentHelp,
   form,
   onChange,
   singleTeacherId,
@@ -158,6 +182,8 @@ export function TutoringCreateSlots({
   wsId,
 }: {
   conflictingIndexes: Set<number>;
+  /** How session content is used; shown beside the per-session fields. */
+  contentHelp?: string;
   form: TutoringFormValues;
   onChange: (next: TutoringFormValues) => void;
   singleTeacherId?: string;
@@ -166,6 +192,11 @@ export function TutoringCreateSlots({
 }) {
   const t = useTranslations('ws-tutoring');
   const atLimit = form.sessionSlots.length >= MAX_SLOTS;
+  const weeklySlots = nextWeeklySlots(form.sessionSlots, singleTeacherId ?? '');
+  const canRepeat =
+    weeklySlots.length > 0 &&
+    form.sessionSlots.length + weeklySlots.length <= MAX_SLOTS;
+  const multiple = form.sessionSlots.length > 1;
 
   const updateSlot = (index: number, next: Partial<SessionSlot>) =>
     onChange({
@@ -189,11 +220,12 @@ export function TutoringCreateSlots({
         </Label>
         <div className="flex items-center gap-2">
           <Button
-            disabled={atLimit}
+            disabled={!canRepeat}
             onClick={() =>
-              appendSlot(
-                nextWeeklySlot(form.sessionSlots, singleTeacherId ?? '')
-              )
+              onChange({
+                ...form,
+                sessionSlots: [...form.sessionSlots, ...weeklySlots],
+              })
             }
             size="sm"
             type="button"
@@ -222,10 +254,18 @@ export function TutoringCreateSlots({
         </div>
       </div>
 
+      {contentHelp && multiple ? (
+        <p className="text-muted-foreground text-xs" id="slot-content-help">
+          {contentHelp}
+        </p>
+      ) : null}
+
       <div className="max-h-[45vh] space-y-2 overflow-y-auto pr-1">
         {form.sessionSlots.map((slot, index) => (
           <SlotRow
             conflicting={conflictingIndexes.has(index)}
+            content={multiple ? (slot.content ?? form.content) : undefined}
+            helpId={contentHelp ? 'slot-content-help' : undefined}
             index={index}
             key={`session-slot-${index + 1}`}
             onChange={(next) => updateSlot(index, next)}

@@ -60,6 +60,7 @@ function buildSequentialSessionSlots({
       sessionDate: addDaysToDateString(sessionDate, dayOffset),
       startTime: formatMinutesAsTime(totalStartMinutes),
       teacherUserId: teacherUserId ?? null,
+      content: undefined,
     };
   });
 }
@@ -85,6 +86,39 @@ export function buildTutoringSessionSlots(
     startTime: payload.startTime,
     teacherUserId: payload.teacherUserId ?? null,
   });
+}
+
+/**
+ * One row per slot. A slot's own `content` wins, including an explicit empty
+ * string (a blank make-up session keeps following the class notes); a slot
+ * without one takes the payload `content`.
+ */
+export function buildTutoringSessionRows({
+  actorId,
+  payload,
+  slots,
+  wsId,
+}: {
+  actorId: string;
+  payload: TutoringSessionCreatePayload;
+  slots: NonNullable<ReturnType<typeof buildTutoringSessionSlots>>;
+  wsId: string;
+}) {
+  return slots.map((slot) => ({
+    ws_id: wsId,
+    group_id: payload.groupId,
+    student_user_id: payload.studentUserId,
+    teacher_user_id: slot.teacherUserId ?? payload.teacherUserId ?? null,
+    session_date: slot.sessionDate,
+    start_time: slot.startTime,
+    duration_minutes: slot.durationMinutes,
+    reason_type: payload.reasonType,
+    reason_detail: payload.reasonDetail,
+    content: slot.content ?? payload.content,
+    attendance_status: payload.attendanceStatus,
+    source_feedback_id: payload.sourceFeedbackId ?? null,
+    created_by: actorId,
+  }));
 }
 
 export async function validateTutoringSessionScope({
@@ -280,7 +314,7 @@ export async function listPotentialSchedulingConflicts({
       ? tutoringSessionsClient
           .from('workspace_tutoring_sessions')
           .select(
-            'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
+            'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
           )
           .eq('ws_id', normalizedWsId)
           .in('session_date', sessionDates)
@@ -290,7 +324,7 @@ export async function listPotentialSchedulingConflicts({
   const studentQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .select(
-      'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
+      'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
     )
     .eq('ws_id', normalizedWsId)
     .in('session_date', sessionDates)

@@ -21,7 +21,7 @@ class _TaskBoardKanbanView extends StatelessWidget {
     required this.onLoadMore,
     required this.onRetryLoad,
     required this.onTaskTap,
-    required this.onTaskMove,
+    required this.onTaskMenu,
     required this.isBulkSelectMode,
     required this.selectedTaskIds,
     required this.onToggleTaskSelection,
@@ -53,7 +53,7 @@ class _TaskBoardKanbanView extends StatelessWidget {
   final Future<void> Function(String listId, int pageSizeHint) onLoadMore;
   final Future<void> Function(String listId, int pageSizeHint) onRetryLoad;
   final Future<void> Function(TaskBoardTask task) onTaskTap;
-  final Future<void> Function(TaskBoardTask task) onTaskMove;
+  final Future<void> Function(TaskBoardTask task) onTaskMenu;
   final bool isBulkSelectMode;
   final Set<String> selectedTaskIds;
   final void Function(TaskBoardTask task) onToggleTaskSelection;
@@ -249,7 +249,7 @@ class _TaskBoardKanbanView extends StatelessWidget {
           ? () => unawaited(onRetryLoad(list.id, pageSizeHint))
           : () => unawaited(onLoadMore(list.id, pageSizeHint)),
       onTaskTap: (task) => unawaited(onTaskTap(task)),
-      onTaskMove: (task) => unawaited(onTaskMove(task)),
+      onTaskMenu: (task) => unawaited(onTaskMenu(task)),
       isBulkSelectMode: isBulkSelectMode,
       selectedTaskIds: selectedTaskIds,
       onToggleTaskSelection: onToggleTaskSelection,

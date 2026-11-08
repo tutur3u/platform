@@ -57,6 +57,8 @@ const mocks = vi.hoisted(() => {
   };
 
   return {
+    createAdminClient: vi.fn(),
+    getUserById: vi.fn(),
     getPermissions,
     platformRoleMaybeSingle,
     serverLogger,
@@ -65,6 +67,10 @@ const mocks = vi.hoisted(() => {
     withSessionAuth,
   };
 });
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: mocks.createAdminClient,
+}));
 
 vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
   const actual =
@@ -97,9 +103,8 @@ function permissionsResult(wsId: string, permissions: string[]) {
 }
 
 async function callRoute(wsId = 'ws-1') {
-  const { GET } = await import(
-    '@/app/api/v1/workspaces/[wsId]/settings/permissions/route'
-  );
+  const { GET } =
+    await import('@/app/api/v1/workspaces/[wsId]/settings/permissions/route');
 
   return GET(
     new NextRequest(
@@ -115,9 +120,8 @@ async function callCheckRoute(
   permission = 'manage_workspace_settings',
   wsId = 'ws-1'
 ) {
-  const { GET } = await import(
-    '@/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/check/route'
-  );
+  const { GET } =
+    await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/check/route');
 
   return GET(
     new NextRequest(
@@ -130,9 +134,8 @@ async function callCheckRoute(
 }
 
 async function callMemberSettingsRoute(wsId = 'ws-1') {
-  const { GET } = await import(
-    '@/legacy-api-routes/v1/workspaces/[wsId]/settings/members/route'
-  );
+  const { GET } =
+    await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/members/route');
 
   return GET(
     new NextRequest(
@@ -148,6 +151,20 @@ describe('workspace settings permissions route', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mocks.createAdminClient.mockResolvedValue({
+      auth: { admin: { getUserById: mocks.getUserById } },
+    });
+    mocks.getUserById.mockResolvedValue({
+      data: {
+        user: {
+          id: 'user-1',
+          email: 'agent@tuturuuu.com',
+          email_confirmed_at: '2026-01-01',
+          identities: [{ provider: 'email', identity_data: {} }],
+        },
+      },
+      error: null,
+    });
 
     mocks.verifySecret.mockResolvedValue(false);
     mocks.verifyHasSecrets.mockResolvedValue(false);
@@ -163,6 +180,31 @@ describe('workspace settings permissions route', () => {
         )
       )
     );
+  });
+
+  it('preserves member permissions without staff grants when admin construction fails', async () => {
+    const error = new Error('Admin client unavailable');
+    mocks.createAdminClient.mockRejectedValueOnce(error);
+    mocks.getPermissions.mockResolvedValue(
+      permissionsResult(ROOT_WORKSPACE_ID, ['manage_workspace_settings'])
+    );
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const response = await callRoute(ROOT_WORKSPACE_ID);
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toMatchObject({
+        manage_workspace_settings: true,
+        is_tuturuuu_member: false,
+        can_access_inquiries: false,
+      });
+      expect(log).toHaveBeenCalledWith(
+        'Failed to resolve staff status for workspace permissions',
+        error
+      );
+      expect(mocks.getUserById).not.toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it('rejects users without workspace access before checking secrets or root settings', async () => {

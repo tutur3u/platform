@@ -3,6 +3,7 @@ import { handleControlRequest } from './control';
 import {
   CRON_JOBS,
   CRON_TRIGGERS,
+  DATABASE_MAINTENANCE_RPCS,
   leaseMs,
   parseEnabledJobs,
   scheduleSlot,
@@ -81,7 +82,11 @@ it('catalog ids are unique and every cadence has a trigger', () => {
   expect(new Set(ids).size).toBe(ids.length);
   for (const job of CRON_JOBS) {
     expect(CRON_TRIGGERS).toContain(job.cron);
-    expect(job.path).toMatch(/^\/api\/cron\/[a-z0-9/-]+$/);
+    const maintenanceRpc = job.workerProcessor
+      ? DATABASE_MAINTENANCE_RPCS[job.workerProcessor]
+      : undefined;
+    if (maintenanceRpc) expect(job.path).toBe(`/rest/v1/rpc/${maintenanceRpc}`);
+    else expect(job.path).toMatch(/^\/api\/cron\/[a-z0-9/-]+$/);
     expect(leaseMs(job)).toBeGreaterThan(job.timeoutMs);
   }
 });

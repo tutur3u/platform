@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 
@@ -45,15 +44,13 @@ class SettingsDockSearch extends StatelessWidget {
           ? () async => _close()
           : null,
       actions: [
-        ShellActionSpec(
+        ShellActionSpec.search(
           id: '$location/search',
-          icon: active ? AppIcons.close : AppIcons.search,
+          active: active,
+          hasQuery: controller.text.isNotEmpty,
+          callbackToken: controller.text,
           tooltip: hint,
-          inDock: true,
-          keepVisibleWithKeyboard: active,
-          highlighted: active || controller.text.isNotEmpty,
-          callbackToken: (active, controller.text),
-          searchController: active ? controller : null,
+          controller: controller,
           searchHint: hint,
           onSearchChanged: onChanged,
           onCloseSearch: _close,

@@ -63,7 +63,7 @@ export function MailContentState({
       : kind === 'search'
         ? t('no_search_results_description')
         : kind === 'reader'
-          ? t('select_message_description')
+          ? null
           : kind === 'no_mailbox'
             ? t('no_mailbox_description')
             : t('empty_folder_description');
@@ -79,9 +79,11 @@ export function MailContentState({
         <h2 className="text-balance font-medium text-sm tracking-tight">
           {title}
         </h2>
-        <p className="mt-2 text-pretty text-muted-foreground text-sm leading-6">
-          {description}
-        </p>
+        {description ? (
+          <p className="mt-2 text-pretty text-muted-foreground text-sm leading-6">
+            {description}
+          </p>
+        ) : null}
         {onAction ? (
           <Button
             className="mt-5"

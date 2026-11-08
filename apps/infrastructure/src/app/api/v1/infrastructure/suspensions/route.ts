@@ -1,3 +1,4 @@
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { suspendUser } from '@tuturuuu/utils/abuse-protection/user-suspension';
 import {
@@ -9,7 +10,11 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 
 export const GET = withSessionAuth(
-  async (_req, { user, supabase }) => {
+  async (req) => {
+    const actor = await resolveSatelliteRequestActor(req, 'infra');
+    if (!actor)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { user, admin: supabase } = actor;
     const { data: hasPermission } = await supabase.rpc(
       'has_workspace_permission',
       {
@@ -40,7 +45,10 @@ export const GET = withSessionAuth(
 
     return NextResponse.json(data);
   },
-  { cache: { maxAge: 10, swr: 10 } }
+  {
+    cache: { maxAge: 10, swr: 10 },
+    allowAppSessionAuth: { targetApp: 'infra' },
+  }
 );
 
 const SuspendSchema = z.object({
@@ -50,7 +58,11 @@ const SuspendSchema = z.object({
 });
 
 export const POST = withSessionAuth(
-  async (req, { user, supabase }) => {
+  async (req) => {
+    const actor = await resolveSatelliteRequestActor(req, 'infra');
+    if (!actor)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { user, admin: supabase } = actor;
     const { data: hasPermission } = await supabase.rpc(
       'has_workspace_permission',
       {
@@ -97,5 +109,8 @@ export const POST = withSessionAuth(
     }
   },
   // Admin suspension action — strict limit
-  { rateLimit: { windowMs: 60000, maxRequests: 10 } }
+  {
+    rateLimit: { windowMs: 60000, maxRequests: 10 },
+    allowAppSessionAuth: { targetApp: 'infra' },
+  }
 );

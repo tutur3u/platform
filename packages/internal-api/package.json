@@ -10,7 +10,10 @@
   "main": "./dist/index.js",
   "sideEffects": false,
   "types": "./dist/index.d.ts",
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -108,6 +111,11 @@
       "import": "./dist/programming.js",
       "require": "./dist/programming.js"
     },
+    "./tulearn": {
+      "types": "./dist/tulearn.d.ts",
+      "import": "./dist/tulearn.js",
+      "require": "./dist/tulearn.js"
+    },
     "./external-project-team": {
       "types": "./dist/external-project-team.d.ts",
       "import": "./dist/external-project-team.js",
@@ -132,6 +140,11 @@
       "types": "./dist/finance-exchange-rates.d.ts",
       "import": "./dist/finance-exchange-rates.js",
       "require": "./dist/finance-exchange-rates.js"
+    },
+    "./finance-fee-lock-contracts": {
+      "types": "./dist/finance-fee-lock-contracts.d.ts",
+      "import": "./dist/finance-fee-lock-contracts.js",
+      "require": "./dist/finance-fee-lock-contracts.js"
     },
     "./finance-subscription-analytics": {
       "types": "./dist/finance-subscription-analytics.d.ts",
@@ -283,6 +296,11 @@
       "import": "./dist/task-history.js",
       "require": "./dist/task-history.js"
     },
+    "./task-sprints": {
+      "types": "./dist/task-sprints.d.ts",
+      "import": "./dist/task-sprints.js",
+      "require": "./dist/task-sprints.js"
+    },
     "./tutoring": {
       "types": "./dist/tutoring.d.ts",
       "import": "./dist/tutoring.js",
@@ -302,6 +320,11 @@
       "types": "./dist/tutoring-queue-rules.d.ts",
       "import": "./dist/tutoring-queue-rules.js",
       "require": "./dist/tutoring-queue-rules.js"
+    },
+    "./task-cycles": {
+      "types": "./dist/task-cycles.d.ts",
+      "import": "./dist/task-cycles.js",
+      "require": "./dist/task-cycles.js"
     },
     "./task-templates": {
       "types": "./dist/task-templates.d.ts",
@@ -352,6 +375,11 @@
       "types": "./dist/users-feedbacks.d.ts",
       "import": "./dist/users-feedbacks.js",
       "require": "./dist/users-feedbacks.js"
+    },
+    "./topic-announcements": {
+      "types": "./dist/topic-announcements.d.ts",
+      "import": "./dist/topic-announcements.js",
+      "require": "./dist/topic-announcements.js"
     },
     "./workspace-configs": {
       "types": "./dist/workspace-configs.d.ts",

@@ -64,6 +64,19 @@ describe('getPublicClientMessages', () => {
     expect(ui).not.toHaveProperty('onboarding');
   });
 
+  it('ships the Meet Together client namespaces on marketing pages', () => {
+    for (const messages of [en, vi]) {
+      const marketing = getClientMessages(messages, [
+        ...ROOT_CLIENT_MESSAGE_NAMESPACES,
+        ...MARKETING_CLIENT_MESSAGE_NAMESPACES,
+      ]);
+      expect(marketing['meet-together']).toEqual(messages['meet-together']);
+      expect(marketing['meet-together-plan-details']).toEqual(
+        messages['meet-together-plan-details']
+      );
+    }
+  });
+
   it('deep-picks only requested shell keys', () => {
     const messages = {
       common: { about: 'About', hidden: 'Do not serialize' },

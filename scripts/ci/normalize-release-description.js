@@ -39,6 +39,21 @@ async function normalizeReleasePullRequest(
   return { changed: true, number: pull.number };
 }
 
+/** Play summaries stop at a complete priority bullet; other store history is unchanged. */
+function normalizeMobileStoreDescription(content) {
+  const bullets = normalizeMobileReleaseNotes(content).split('\n');
+  const selected = [];
+  let characters = 0;
+  for (const bullet of bullets) {
+    const nextLength = Array.from(bullet).length + (selected.length ? 1 : 0);
+    if (characters + nextLength > 500) break;
+    selected.push(bullet);
+    characters += nextLength;
+  }
+  // An oversized first bullet yields no text, so the existing nonempty guard fails.
+  return selected.join('\n');
+}
+
 async function main() {
   const token = resolveToken();
   const repository = process.env.GITHUB_REPOSITORY;
@@ -51,7 +66,9 @@ async function main() {
 module.exports = { normalizeReleaseDescription, normalizeReleasePullRequest };
 if (require.main === module && process.argv[2] === '--mobile') {
   const fs = require('node:fs');
-  process.stdout.write(normalizeMobileReleaseNotes(fs.readFileSync(0, 'utf8')));
+  process.stdout.write(
+    normalizeMobileStoreDescription(fs.readFileSync(0, 'utf8'))
+  );
 } else if (require.main === module) {
   main().catch((error) => {
     console.error(error.message);

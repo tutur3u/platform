@@ -26,13 +26,11 @@ extension _MailShellActions on _MailWorkspaceState {
             callbackToken: (_mailboxId, _mutating),
             onPressed: _compose,
           ),
-        ShellActionSpec(
+        ShellActionSpec.search(
           id: 'mail-search',
-          icon: Icons.search,
+          active: _searchVisible,
           tooltip: l10n.mailSearch,
-          highlighted: _searchVisible,
-          callbackToken: _searchVisible,
-          searchController: _searchVisible ? _search : null,
+          controller: _search,
           searchHint: l10n.mailSearch,
           onSearchChanged: (_) {
             _searchDebounce?.cancel();

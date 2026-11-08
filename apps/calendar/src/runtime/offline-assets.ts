@@ -1,3 +1,4 @@
+import { createBasePath } from '@tuturuuu/start-bridge/base-path';
 export const OFFLINE_WORKER_URL = '/serwist/sw.js';
 export const OFFLINE_SCOPE = '/';
 export const offlinePrecache = [
@@ -9,8 +10,24 @@ export const offlinePrecache = [
   '/android-chrome-512x512.png',
   '/apple-touch-icon.png',
 ];
-export function isNativeStaticAsset(request: Request, origin: string) {
+export function calendarOfflineContract(basePath = '') {
+  const base = createBasePath({ app: 'calendar', basePath });
+  return {
+    workerUrl: base.withBase(OFFLINE_WORKER_URL),
+    scope: base.isRoot ? OFFLINE_SCOPE : `${base.basePath}/`,
+    precache: offlinePrecache.map((path) => base.withBase(path)),
+    fallback: base.withBase('/offline.html'),
+  };
+}
+export function isNativeStaticAsset(
+  request: Request,
+  origin: string,
+  basePath = ''
+) {
   const url = new URL(request.url);
+  const pathname = createBasePath({ app: 'calendar', basePath }).strip(
+    url.pathname
+  );
   return (
     request.method === 'GET' &&
     url.origin === origin &&
@@ -19,7 +36,7 @@ export function isNativeStaticAsset(request: Request, origin: string) {
       request.destination
     ) &&
     /^\/assets\/[^?]+-[A-Za-z0-9_-]{8,}\.(?:js|css|woff2?|png|jpe?g|svg|webp)$/u.test(
-      url.pathname
+      pathname ?? ''
     )
   );
 }

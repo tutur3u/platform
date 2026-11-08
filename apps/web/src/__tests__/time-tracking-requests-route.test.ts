@@ -74,9 +74,8 @@ describe('time tracking requests route', () => {
   });
 
   it('rejects malformed requestId filters before Supabase UUID comparisons', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/requests/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/requests/route');
 
     const response = await GET(
       new NextRequest(

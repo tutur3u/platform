@@ -26,7 +26,29 @@ concurrency:
   cancel-in-progress: false
   queue: max
 jobs:
+  preflight:
+    if: inputs.profile == 'staging' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Refuse missing fences or unprotected staging environments
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WAVE1_STAGING_PUBLISH_ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}
+          WAVE1_STAGING_PUBLICATION_ADMISSION: ${{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}
+          APP: ${{ inputs.app }}
+        run: node scripts/ci/wave1-staging-preflight.mjs native "$APP"
   publish:
+    needs: preflight
     if: inputs.profile == 'staging' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -71,6 +93,11 @@ jobs:
           CLOUDFLARE_STAGING_API_TOKEN: ${{ secrets.CLOUDFLARE_STAGING_API_TOKEN }}
           CLOUDFLARE_STAGING_ACCOUNT_ID: ${{ vars.CLOUDFLARE_STAGING_ACCOUNT_ID }}
           WAVE1_CONTROL_READ_TOKEN: ${{ secrets.WAVE1_CONTROL_READ_TOKEN }}
+          STAGING_TUTUR3U_ZONE_ID: ${{ vars.STAGING_TUTUR3U_ZONE_ID }}
+          STAGING_ACCESS_APP_IDS: ${{ vars.STAGING_ACCESS_APP_IDS }}
+          STAGING_ACCESS_STAFF_GROUP_ID: ${{ vars.STAGING_ACCESS_STAFF_GROUP_ID }}
+          STAGING_ACCESS_STAFF_EMAIL_LIST_ID: ${{ vars.STAGING_ACCESS_STAFF_EMAIL_LIST_ID }}
+          STAGING_ACCESS_HEALTH_TOKEN_IDS: ${{ vars.STAGING_ACCESS_HEALTH_TOKEN_IDS }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
         run: node scripts/ci/wave1-native-publish.mjs publish "$APP" "$PROFILE" "$SOURCE_SHA"

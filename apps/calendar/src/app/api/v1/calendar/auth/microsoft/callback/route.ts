@@ -18,6 +18,7 @@ import {
   checkCalendarOAuthRuntime,
 } from '@/lib/calendar/calendar-oauth-runtime';
 import { verifyCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
+import { reactivateCalendarAuthToken } from '@/lib/calendar/calendar-token-reconnect';
 import {
   getMicrosoftOAuthConfig,
   isMicrosoftConfigComplete,
@@ -218,17 +219,16 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     if (existingToken) {
       calendarOAuthDebug('🔍 [DEBUG] Updating existing Microsoft token...');
-      const { error: updateError } = await supabase
-        .from('calendar_auth_tokens')
-        .update({
+      const { error: updateError } = await reactivateCalendarAuthToken(
+        supabase,
+        existingToken.id,
+        {
           access_token: tokenResponse.accessToken,
           refresh_token: refreshToken,
           expires_at: expiresAt,
           account_name: accountName,
-          is_active: true,
-          created_at: new Date().toISOString(),
-        })
-        .eq('id', existingToken.id);
+        }
+      );
 
       if (updateError) {
         calendarOAuthError('❌ [DEBUG] Error updating token:', updateError);

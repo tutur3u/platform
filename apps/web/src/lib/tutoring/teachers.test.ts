@@ -1,6 +1,11 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { describe, expect, it, vi } from 'vitest';
-import { listWorkspaceTeacherIds, workspaceTeachersQuery } from './teachers';
+import {
+  classifyWorkspaceTeacher,
+  listWorkspaceTeacherIds,
+  listWorkspaceTutorIds,
+  workspaceTeachersQuery,
+} from './teachers';
 
 function fixture(data: { id: string }[] = [], error: unknown = null) {
   const query = {
@@ -30,6 +35,60 @@ describe('workspace tutoring teacher eligibility', () => {
       ['memberships.group.ws_id', 'center'],
     ]);
     expect(query.eq).not.toHaveBeenCalledWith('group_id', expect.anything());
+    // Each membership carries its group so roles can be classified.
+    expect(query.select.mock.calls[0]?.[0]).toContain(',group_id)');
+  });
+  it.each([
+    ['tutor only', ['tutor-group'], { isTutor: true, isClassTeacher: false }],
+    ['class only', ['class-group'], { isTutor: false, isClassTeacher: true }],
+    [
+      'both',
+      ['class-group', 'tutor-group'],
+      { isTutor: true, isClassTeacher: true },
+    ],
+  ])('classifies %s teachers', (_name, groups, expected) => {
+    expect(
+      classifyWorkspaceTeacher(
+        groups.map((group_id) => ({ group_id })),
+        ['tutor-group']
+      )
+    ).toEqual(expected);
+  });
+  it('treats every teacher as a class teacher when no tutor group is set', () => {
+    expect(classifyWorkspaceTeacher([{ group_id: 'class-group' }], [])).toEqual(
+      { isTutor: false, isClassTeacher: true }
+    );
+  });
+  it('finds tutors only through TEACHER membership of the tutor groups in this center', async () => {
+    const query = {
+      select: vi.fn(() => query),
+      eq: vi.fn(() => query),
+      in: vi.fn(async () => ({
+        data: [{ user_id: 'a' }, { user_id: 'a' }, { user_id: 'b' }],
+        error: null,
+      })),
+    };
+    const sbAdmin = {
+      from: vi.fn(() => query),
+    } as unknown as TypedSupabaseClient;
+    const result = await listWorkspaceTutorIds({
+      normalizedWsId: 'center',
+      sbAdmin,
+      tutorGroupIds: ['tutor-group'],
+    });
+    expect(query.eq.mock.calls).toEqual([
+      ['role', 'TEACHER'],
+      ['group.ws_id', 'center'],
+    ]);
+    expect(query.in).toHaveBeenCalledWith('group_id', ['tutor-group']);
+    expect(result.tutorIds).toEqual(['a', 'b']);
+    const none = await listWorkspaceTutorIds({
+      normalizedWsId: 'center',
+      sbAdmin,
+      tutorGroupIds: [],
+    });
+    expect(none.tutorIds).toEqual([]);
+    expect(sbAdmin.from).toHaveBeenCalledTimes(1);
   });
   it('validates requested teachers across groups without returning other people', async () => {
     const { client, query } = fixture([{ id: 'eligible' }]);

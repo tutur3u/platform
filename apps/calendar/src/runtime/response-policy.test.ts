@@ -60,7 +60,10 @@ describe('canonical Calendar response policy at the native boundary', () => {
         'x-owner': 'web',
       },
     });
-    expect(await applyCalendarResponsePolicy(request(path), owner)).toBe(owner);
+    const response = await applyCalendarResponsePolicy(request(path), owner);
+    expect(await response.text()).toBe('embed');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.get('x-frame-options')).toBeNull();
     expect(owner.headers.has('x-frame-options')).toBe(false);
     expect(owner.headers.get('content-security-policy')).toBe(
       'frame-ancestors https://owner.test'
@@ -80,4 +83,39 @@ describe('canonical Calendar response policy at the native boundary', () => {
       ).headers.get('x-frame-options')
     ).toBe('DENY');
   });
+});
+
+describe('Calendar static offline document policy', () => {
+  it('allows the sealed same-origin script while denying other sources and frames', async () => {
+    const response = await applyCalendarResponsePolicy(
+      request('/offline.html'),
+      new Response('<script src="/offline.js" defer></script>', {
+        headers: { 'Content-Type': 'text/html' },
+      }),
+      'request-nonce'
+    );
+    const csp = response.headers.get('Content-Security-Policy');
+    expect(csp).toContain("default-src 'none'");
+    expect(csp).toContain("script-src 'self'");
+    expect(csp).toContain("style-src 'self'");
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(csp).not.toContain('nonce-');
+    expect(csp).not.toContain('strict-dynamic');
+    expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+  });
+
+  it.each(['/personal', '/offline.html/private', '/offline-extra.html'])(
+    'keeps the nonce policy on %s',
+    async (path) => {
+      const response = await applyCalendarResponsePolicy(
+        request(path),
+        new Response('private', { headers: { 'Content-Type': 'text/html' } }),
+        'request-nonce'
+      );
+      expect(response.headers.get('Content-Security-Policy')).toContain(
+        "script-src 'nonce-request-nonce' 'strict-dynamic'"
+      );
+    }
+  );
 });

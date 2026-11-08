@@ -28,7 +28,7 @@ Generated source-alias tsconfig, Vite cache, JSON evidence and synthetic PNGs st
 ignored in this directory. No private screenshot is included. The source-export
 mapper reads each workspace package manifest and uses actual TypeScript source
 instead of stale compiled declarations; it does not create fake declaration stubs.
-Biome and focused no-emit TypeScript failures make the runners fail. Geometry owns
+Oxc and focused no-emit TypeScript failures make the runners fail. Geometry owns
 the type check; the second runner avoids repeating it for unchanged product source.
 Use `run-geometry.mjs` or `run-ui.mjs` directly to isolate a failure.
 

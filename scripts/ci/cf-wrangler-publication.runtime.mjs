@@ -16,11 +16,9 @@ import { parseJsonc, readBuildOutputConfig } from './cf-worker-parity.mjs';
 import { prepareWranglerPublication } from './cf-wrangler-publication.mjs';
 
 const root = resolve(
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: direct post-build gate, outside cached Turbo tasks.
   process.env.CF_PUBLICATION_TEST_ROOT ??
     join(dirname(fileURLToPath(import.meta.url)), '../..')
 );
-// biome-ignore lint/suspicious/noUndeclaredEnvVars: direct post-build gate, outside cached Turbo tasks.
 const app = process.env.CF_PUBLICATION_TEST_APP;
 assert.ok(
   ['coordination', 'devbox-control'].includes(app),

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  store: new Map<string, number>(),
   challengeAndVerify: vi.fn(),
   checkMFAVerifyLimit: vi.fn(),
   clearMFAVerifyFailures: vi.fn(),
@@ -18,6 +19,25 @@ vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: mocks.createClient,
+  createAdminClient: async () => ({
+    rpc: async () => ({ data: [], error: null }),
+    from: () => ({ insert: async () => ({ error: null }) }),
+  }),
+}));
+
+vi.mock('../../../../../../../packages/utils/src/upstash-rest', () => ({
+  hasUpstashRestEnv: () => true,
+  getUpstashRestRedisClient: async () => ({
+    get: async (key: string) => mocks.store.get(key) ?? null,
+    incr: async (key: string) => {
+      const count = (mocks.store.get(key) ?? 0) + 1;
+      mocks.store.set(key, count);
+      return count;
+    },
+    expire: async () => 1,
+    ttl: async () => 300,
+    del: async (key: string) => Number(mocks.store.delete(key)),
+  }),
 }));
 
 vi.mock('@tuturuuu/utils/abuse-protection', () => ({
@@ -72,6 +92,7 @@ const routes = [
 describe.each(routes)('MFA $name per-account limit', ({ call, authCall }) => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.store.clear();
     mocks.checkMFAVerifyLimit.mockResolvedValue({ allowed: true });
     mocks.reserveMFAVerifySubjectAttempt.mockResolvedValue({ allowed: true });
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
@@ -123,5 +144,47 @@ describe.each(routes)('MFA $name per-account limit', ({ call, authCall }) => {
 
     expect(response.status).toBe(200);
     expect(mocks.clearMFAVerifySubjectFailures).toHaveBeenCalledWith(subject);
+  });
+
+  it('waits for the failure counter and returns a fixed message', async () => {
+    let finishWrite: () => void = () => {};
+    mocks.recordMFAVerifyFailure.mockReturnValue(
+      new Promise<void>((resolve) => {
+        finishWrite = resolve;
+      })
+    );
+    authCall().mockResolvedValue({
+      data: null,
+      error: { message: 'upstream detail' },
+    });
+    let finished = false;
+    const pending = call().then((response) => {
+      finished = true;
+      return response;
+    });
+    await vi.waitFor(() =>
+      expect(mocks.recordMFAVerifyFailure).toHaveBeenCalled()
+    );
+    expect(finished).toBe(false);
+    finishWrite();
+    const response = await pending;
+    expect(await response.json()).toEqual({ error: 'Verification failed' });
+  });
+
+  it('blocks subsequent attempts after the failure limit', async () => {
+    const real = await vi.importActual<
+      typeof import('@tuturuuu/utils/abuse-protection')
+    >('@tuturuuu/utils/abuse-protection');
+    mocks.checkMFAVerifyLimit.mockImplementation(real.checkMFAVerifyLimit);
+    mocks.recordMFAVerifyFailure.mockImplementation(
+      real.recordMFAVerifyFailure
+    );
+    authCall().mockResolvedValue({ data: null, error: { message: 'invalid' } });
+    for (let i = 0; i < real.ABUSE_THRESHOLDS.MFA_VERIFY_FAILED_MAX; i++)
+      expect((await call()).status).toBe(400);
+    expect((await call()).status).toBe(429);
+    expect(authCall()).toHaveBeenCalledTimes(
+      real.ABUSE_THRESHOLDS.MFA_VERIFY_FAILED_MAX
+    );
   });
 });

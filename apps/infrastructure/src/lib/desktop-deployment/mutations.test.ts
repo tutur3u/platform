@@ -64,7 +64,6 @@ function fixture(platform: 'windows' | 'macos' = 'windows') {
       select: () => chain,
       eq: () => chain,
       maybeSingle: () => Promise.resolve({ data: result, error: null }),
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are deliberately awaitable.
       then: (resolve: (value: unknown) => unknown) =>
         Promise.resolve({ data: result, error: null }).then(resolve),
     };

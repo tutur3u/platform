@@ -3,8 +3,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
-import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -152,17 +156,13 @@ export default function DefaultCurrencySettings({ workspaceId }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="font-medium text-lg">{t('default_currency_title')}</h3>
-        <p className="text-muted-foreground text-sm">
-          {t('default_currency_description')}
-        </p>
-      </div>
-
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="grid gap-2">
-          <Label>{t('default_currency_label')}</Label>
+    <SettingsSection>
+      <form onSubmit={onSubmit}>
+        <SettingItemTab
+          title={t('default_currency_label')}
+          description={t('default_currency_description')}
+          controlWidth="lg"
+        >
           <Select
             onValueChange={(val) =>
               setSelectedCurrency(val as SupportedCurrency)
@@ -180,15 +180,17 @@ export default function DefaultCurrencySettings({ workspaceId }: Props) {
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </SettingItemTab>
 
-        <Button
-          type="submit"
-          disabled={isLoadingConfig || updateMutation.isPending || !isDirty}
-        >
-          {updateMutation.isPending ? t('saving') : t('save')}
-        </Button>
+        <SettingsSectionFooter>
+          <Button
+            type="submit"
+            disabled={isLoadingConfig || updateMutation.isPending || !isDirty}
+          >
+            {updateMutation.isPending ? t('saving') : t('save')}
+          </Button>
+        </SettingsSectionFooter>
       </form>
-    </div>
+    </SettingsSection>
   );
 }

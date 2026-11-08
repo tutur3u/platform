@@ -2,7 +2,6 @@
   "name": "tutur3u",
   "devDependencies": {
     "@babel/parser": "7.29.9",
-    "@biomejs/biome": "^2.5.13",
     "@lingual/i18n-check": "0.9.5",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.6.5",
@@ -97,9 +96,9 @@
     "mobile:firebase:configure": "node scripts/mobile-firebase-config.js",
     "build:android": "bun mobile:firebase:configure --environment production --platform android && node scripts/mobile-build-android.js",
     "build:android:dev": "bun mobile:firebase:configure --environment development --platform android && cd apps/mobile && flutter build aab --dart-define-from-file=.env --flavor development --target lib/main_development.dart",
-    "build:ios": "bun mobile:firebase:configure --environment production --platform ios && flutter config --no-enable-swift-package-manager && cd apps/mobile && flutter build ipa --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
+    "build:ios": "node scripts/mobile-validate-dart-defines.js apps/mobile/.env.production && bun mobile:firebase:configure --environment production --platform ios && flutter config --no-enable-swift-package-manager && cd apps/mobile && flutter build ipa --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
     "build:ios:ipa": "bun build:ios",
-    "build:ios:unsigned": "bun mobile:firebase:configure --environment production --platform ios && flutter config --no-enable-swift-package-manager && cd apps/mobile && flutter build ios --release --no-codesign --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
+    "build:ios:unsigned": "node scripts/mobile-validate-dart-defines.js apps/mobile/.env.production && bun mobile:firebase:configure --environment production --platform ios && flutter config --no-enable-swift-package-manager && cd apps/mobile && flutter build ios --release --no-codesign --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
     "build:ios:dev": "bun mobile:firebase:configure --environment development --platform ios && flutter config --no-enable-swift-package-manager && cd apps/mobile && flutter build ios --dart-define-from-file=.env --flavor development --target lib/main_development.dart",
     "build:web": "bun turbo:local run build -F @tuturuuu/web",
     "build:web:docker": "node scripts/paused-runtimes.js docker",
@@ -263,13 +262,13 @@
     "migration:tanstack:gates": "node scripts/paused-runtimes.js migration",
     "migration:tanstack:progress": "node scripts/paused-runtimes.js migration",
     "migration:tanstack:readme": "node scripts/paused-runtimes.js migration",
-    "format": "biome format",
-    "format:fix": "biome format --write",
-    "ff": "biome format --write && biome lint --write && biome check --write",
-    "lint": "biome lint",
-    "lint:fix": "biome lint --write",
-    "format-and-lint": "biome check",
-    "format-and-lint:fix": "biome check --write",
+    "format": "oxfmt --check .",
+    "format:fix": "oxfmt --write .",
+    "ff": "oxlint --fix . && oxfmt --write .",
+    "lint": "oxlint --deny-warnings --threads 2 .",
+    "lint:fix": "oxlint --fix .",
+    "format-and-lint": "oxfmt --check . && oxlint --deny-warnings --threads 2 .",
+    "format-and-lint:fix": "oxlint --fix . && oxfmt --write .",
     "i18n:add": "node scripts/i18n-add-key.js",
     "i18n:setup-check": "node scripts/check-next-intl-setup.js",
     "i18n:check": "node scripts/run-i18n-check.js -l apps/web/messages apps/apps/messages apps/calendar/messages apps/chat/messages apps/cms/messages apps/drive/messages apps/finance/messages apps/inventory/messages apps/storefront/messages apps/mail/messages apps/nova/messages apps/rewise/messages apps/shortener/messages apps/tasks/messages apps/meet/messages apps/track/messages apps/learn/messages apps/teach/messages apps/hive/messages apps/mind/messages apps/tools/messages -s en -f i18next -o missingKeys invalidKeys -i landing.pricing.plans.enterprise.period",
@@ -328,7 +327,10 @@
     "supabase",
     "unrs-resolver"
   ],
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "optionalDependencies": {
     "@typescript/typescript-aix-ppc64": "7.0.2",
     "@typescript/typescript-darwin-arm64": "7.0.2",
@@ -354,6 +356,7 @@
   "patchedDependencies": {
     "@opennextjs/cloudflare@1.20.6": "patches/@opennextjs%2Fcloudflare@1.20.6.patch",
     "@opennextjs/cloudflare@https://registry.npmjs.org/@opennextjs/cloudflare/-/cloudflare-1.20.6.tgz": "patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch",
-    "@supabase/auth-js@2.117.1": "patches/@supabase%2Fauth-js@2.117.1.patch"
+    "@supabase/auth-js@2.117.1": "patches/@supabase%2Fauth-js@2.117.1.patch",
+    "@cloudflare/config@0.27.0": "patches/@cloudflare%2Fconfig@0.27.0.patch"
   }
 }

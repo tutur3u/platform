@@ -43,6 +43,7 @@ import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { RequireAttentionHelp } from '../tutoring/tutoring-content-hint';
 
 interface UserFeedbackPanelUser {
   id: string;
@@ -393,9 +394,9 @@ export function UserFeedbackPanel({
                   <div className="font-medium text-sm">
                     {tFeedback('requires_attention')}
                   </div>
-                  <div className="text-muted-foreground text-xs">
-                    {tFeedback('requires_attention_description')}
-                  </div>
+                  <RequireAttentionHelp
+                    tutoring={createValues.require_attention}
+                  />
                 </div>
                 <Switch
                   checked={createValues.require_attention}
@@ -501,9 +502,9 @@ export function UserFeedbackPanel({
                             <div className="font-medium text-sm">
                               {tFeedback('requires_attention')}
                             </div>
-                            <div className="text-muted-foreground text-xs">
-                              {tFeedback('requires_attention_description')}
-                            </div>
+                            <RequireAttentionHelp
+                              tutoring={updateValues.require_attention}
+                            />
                           </div>
                           <Switch
                             checked={updateValues.require_attention}

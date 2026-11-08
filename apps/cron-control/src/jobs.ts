@@ -1,3 +1,5 @@
+import { isWebJob } from './web-gate';
+
 // Scheduled jobs owned by Cron Control. Every job is disabled until its id is
 // listed in CRON_CONTROL_ENABLED_JOBS; see the Cron Control runbook for the
 // per-job cutover sequence away from the legacy Vercel/pg_cron owner.
@@ -15,6 +17,22 @@ export type ProcessorTarget =
 // must be removed before this job is enabled, and failures are not retried.
 export type OverlapClass = 'claim-fenced' | 'handover' | 'idempotent';
 
+export type WorkerProcessorId =
+  | 'checkout-expiry'
+  | 'cron-history-retention'
+  | 'meet-transcript-retention'
+  | 'storage-access-audit-retention';
+
+// Native database maintenance: the Worker calls this private RPC with the
+// service key; there is no legacy HTTP owner to opt in or fall back to.
+export const DATABASE_MAINTENANCE_RPCS: Partial<
+  Record<WorkerProcessorId, string>
+> = {
+  'cron-history-retention': 'prune_cron_history',
+  'meet-transcript-retention': 'purge_meet_transcripts_batch',
+  'storage-access-audit-retention': 'prune_storage_access_events',
+};
+
 export interface CronJob {
   cron: string;
   id: string;
@@ -23,16 +41,16 @@ export interface CronJob {
   path: string;
   target: ProcessorTarget;
   timeoutMs: number;
-  // Job ids listed in CRON_CONTROL_WORKER_PROCESSORS run this Worker port
-  // instead of calling the legacy processor route.
-  workerProcessor?: 'checkout-expiry';
+  // Legacy ports require CRON_CONTROL_WORKER_PROCESSORS selection. Native
+  // maintenance always uses its Worker processor once the job is enabled.
+  workerProcessor?: WorkerProcessorId;
 }
 
 export const IMMEDIATE_NOTIFICATIONS_CRON = '*/5 * * * *';
 export const MAX_CONCURRENT_DISPATCHES = 4;
 export const MAX_CONSECUTIVE_FAILURES = 5;
 const DEFAULT_TIMEOUT_MS = 120_000;
-// Processors declaring maxDuration = 300 get the full window plus margin.
+// Long-running processors get a five-minute window plus completion margin.
 const LONG_TIMEOUT_MS = 310_000;
 
 function job(
@@ -61,6 +79,32 @@ function job(
 
 // Cadences preserve the live legacy owner, not the stale source catalogs.
 export const CRON_JOBS: readonly CronJob[] = Object.freeze([
+  job(
+    'database-cron-history-retention',
+    '*/10 * * * *',
+    'web',
+    '/rest/v1/rpc/prune_cron_history',
+    'idempotent',
+    { workerProcessor: 'cron-history-retention', timeoutMs: 30_000 }
+  ),
+  job(
+    'database-storage-access-audit-retention',
+    '*/10 * * * *',
+    'web',
+    '/rest/v1/rpc/prune_storage_access_events',
+    'idempotent',
+    { workerProcessor: 'storage-access-audit-retention', timeoutMs: 30_000 }
+  ),
+  // Daily, sharing the media cleanup trigger. The database fence keeps it a
+  // no-op (or a count-only dry run) until deletion is separately approved.
+  job(
+    'meet-transcript-retention',
+    '17 3 * * *',
+    'web',
+    '/rest/v1/rpc/purge_meet_transcripts_batch',
+    'idempotent',
+    { workerProcessor: 'meet-transcript-retention', timeoutMs: 150_000 }
+  ),
   job(
     'tasks-cleanup-media',
     '17 3 * * *',
@@ -104,7 +148,8 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '*/15 * * * *',
     'web',
     '/api/cron/process-notification-batches',
-    'claim-fenced'
+    'claim-fenced',
+    { timeoutMs: LONG_TIMEOUT_MS }
   ),
   job(
     'web-report-automation',
@@ -133,7 +178,8 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '*/30 * * * *',
     'web',
     '/api/cron/process-post-email-queue',
-    'claim-fenced'
+    'claim-fenced',
+    { timeoutMs: LONG_TIMEOUT_MS }
   ),
   job(
     'inventory-checkout-expiry',
@@ -189,7 +235,7 @@ export const TARGET_SECRET_VARS = {
 } as const satisfies Record<ProcessorTarget, string>;
 
 export function maxAttempts(cronJob: CronJob) {
-  return cronJob.overlap === 'handover' ? 1 : 2;
+  return isWebJob(cronJob.id) || cronJob.overlap === 'handover' ? 1 : 2;
 }
 
 // Long enough for every attempt and backoff; an expired lease lets a later

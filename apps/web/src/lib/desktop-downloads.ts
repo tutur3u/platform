@@ -20,7 +20,8 @@ export type DesktopRelease = {
   downloads: DesktopDownload[];
 };
 
-const tagPattern = /^desktop-v\d+\.\d+\.\d+-\d+$/;
+// Legacy betas appended the CI run ID; current tags are desktop-v<version>.
+const tagPattern = /^desktop-v\d+\.\d+\.\d+(?:-\d+)?$/;
 const object = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)

@@ -17,6 +17,8 @@ import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
 import 'package:mobile/features/mail/view/mail_settings_chrome.dart';
 import 'package:mobile/features/mail/view/mail_settings_controls.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
+import 'package:mobile/features/settings/view/settings_row_layout.dart';
+import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 part 'mail_settings_page_data.dart';
@@ -368,185 +370,22 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                             padding: const EdgeInsets.only(
                               bottom: AppSpacing.md,
                             ),
-                            child: Text(l10n.mailSettingsReadOnly),
+                            child: AppAlert(
+                              leading: const Icon(LucideIcons.cloudOff),
+                              content: Text(l10n.mailSettingsReadOnly),
+                            ),
                           ),
                         if (_failed)
-                          AppButton.outline(
-                            onPressed: _load,
-                            child: Text(l10n.commonRetry),
-                          ),
-                        AppToggleRow(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppSpacing.md,
-                          ),
-                          title: Text(l10n.mailLoadImages),
-                          subtitle: Text(l10n.mailLoadImagesDescription),
-                          value: MailImagePreference.instance.value,
-                          onChanged: (enabled) => unawaited(
-                            MailImagePreference.instance.select(
-                              enabled: enabled,
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.md,
+                            ),
+                            child: AppButton.outline(
+                              onPressed: _load,
+                              child: Text(l10n.commonRetry),
                             ),
                           ),
-                        ),
-                        MailSettingsSelect(
-                          title: l10n.mailDefaultAction,
-                          value:
-                              MailPrimaryActionPreference.instance.value.name,
-                          choices: {
-                            for (final option in MailPrimaryAction.values)
-                              option.name: option.label(context),
-                          },
-                          onChanged: (name) => unawaited(
-                            MailPrimaryActionPreference.instance.select(
-                              MailPrimaryAction.values.byName(name),
-                            ),
-                          ),
-                        ),
-                        if (widget.swipePreferences != null)
-                          AppListTile(
-                            leading: const Icon(Icons.swipe_outlined),
-                            title: Text(l10n.mailSwipeActions),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => showMailSwipeSettings(
-                              context,
-                              widget.swipePreferences!,
-                            ),
-                          ),
-                        if (_canEdit || widget.readOnlySnapshot) ...[
-                          MailSettingsPendingStatus(
-                            workspaceId: widget.workspaceId,
-                            mailboxId: widget.mailboxId,
-                          ),
-                          AppTextField(
-                            controller: _sender,
-                            enabled: _canChangeSettings,
-                            maxLength: 160,
-                            label: l10n.mailSenderName,
-                            placeholder: l10n.mailSenderNamePlaceholder,
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
-                          AppTextField(
-                            controller: _signature,
-                            enabled: _canChangeSettings,
-                            minLines: 3,
-                            maxLines: 8,
-                            label: l10n.mailSignature,
-                            placeholder: l10n.mailSignaturePlaceholder,
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
-                          AppTextField(
-                            controller: _instructions,
-                            enabled: _canChangeSettings,
-                            minLines: 3,
-                            maxLines: 8,
-                            label: l10n.mailAiInstructions,
-                            placeholder: l10n.mailDraftInstructionsPlaceholder,
-                          ),
-                          AppToggleRow(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.md,
-                            ),
-                            title: Text(l10n.mailAutoDraft),
-                            value: _autoDraft,
-                            onChanged: _canChangeSettings
-                                ? (v) => setState(() => _autoDraft = v)
-                                : null,
-                          ),
-                          MailSettingsSelect(
-                            title: l10n.mailDeliveryProvider,
-                            value: _provider ?? 'default',
-                            choices: {
-                              'default': l10n.mailDomainDefault,
-                              'cloudflare': 'Cloudflare',
-                              'ses': 'Amazon SES',
-                            },
-                            onChanged: _canChangeSettings
-                                ? (value) => setState(
-                                    () => _provider = value == 'default'
-                                        ? null
-                                        : value,
-                                  )
-                                : null,
-                          ),
-                          if (_group == null) ...[
-                            AppToggleRow(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.md,
-                              ),
-                              title: Text(l10n.mailSmartLabels),
-                              value: _smartLabels,
-                              onChanged: _canChangeSettings
-                                  ? (v) => setState(() => _smartLabels = v)
-                                  : null,
-                            ),
-                            MailSettingsSelect(
-                              title: l10n.mailForwarding,
-                              value: _forwarding,
-                              choices: {
-                                'off': l10n.mailForwardingOff,
-                                'catch_all': l10n.mailCatchAll,
-                                'mailbox': l10n.mailMailbox,
-                              },
-                              onChanged: _canChangeSettings
-                                  ? (value) =>
-                                        setState(() => _forwarding = value)
-                                  : null,
-                            ),
-                            if (_forwarding == 'mailbox')
-                              AppTextField(
-                                controller: _forwardTo,
-                                enabled: _canChangeSettings,
-                                keyboardType: TextInputType.emailAddress,
-                                label: l10n.mailForwardTo,
-                                placeholder: l10n.mailForwardToPlaceholder,
-                              ),
-                          ],
-                          if (_group != null) ...[
-                            for (final field in {
-                              'posting': l10n.mailGroupPosting,
-                              'attachments': l10n.mailGroupAttachments,
-                              'sendAs': l10n.mailGroupSendAs,
-                            }.entries)
-                              MailSettingsSelect(
-                                title: field.value,
-                                value: _group![field.key] as String,
-                                choices: {
-                                  if (field.key != 'sendAs')
-                                    'anyone': l10n.mailAnyone,
-                                  if (field.key != 'sendAs')
-                                    'organization': l10n.mailOrganization,
-                                  'members': l10n.mailMembers,
-                                  'managers': l10n.mailManagers,
-                                },
-                                onChanged: _canChangeSettings
-                                    ? (value) => setState(
-                                        () => _group![field.key] = value,
-                                      )
-                                    : null,
-                              ),
-                          ],
-                          if (_canEdit) const AppDivider(),
-                          if (_canEdit)
-                            for (final section in {
-                              'labels': l10n.mailLabels,
-                              'folders': l10n.mailFolders,
-                              'members': l10n.mailMembers,
-                            }.entries)
-                              AppListTile(
-                                title: Text(section.value),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () => Navigator.of(context).push<void>(
-                                  MaterialPageRoute(
-                                    builder: (_) => MailOrganizationPage(
-                                      repository: widget.repository,
-                                      workspaceId: widget.workspaceId,
-                                      mailboxId: widget.mailboxId,
-                                      kind: section.key,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                        ],
+                        ..._formSections(context),
                       ],
                     ),
                   ),
@@ -554,5 +393,200 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
         ),
       ),
     );
+  }
+
+  List<Widget> _formSections(BuildContext context) {
+    final l10n = context.l10n;
+    final editable = _canChangeSettings;
+    final showServer = _canEdit || widget.readOnlySnapshot;
+    List<AppSelectOption<String>> options(Map<String, String> choices) => [
+      for (final entry in choices.entries)
+        AppSelectOption(value: entry.key, label: entry.value),
+    ];
+    Widget section(String title, List<Widget> rows) => Padding(
+      padding: const EdgeInsets.only(bottom: SettingsRowLayout.groupGap),
+      child: SettingsCompactSection(title: title, children: rows),
+    );
+    return [
+      section(l10n.mailSettingsReadingGroup, [
+        SettingsSwitchRow(
+          icon: LucideIcons.image,
+          title: l10n.mailLoadImages,
+          subtitle: l10n.mailLoadImagesDescription,
+          value: MailImagePreference.instance.value,
+          onChanged: (enabled) =>
+              unawaited(MailImagePreference.instance.select(enabled: enabled)),
+        ),
+        SettingsChoiceRow<String>(
+          icon: LucideIcons.mousePointerClick,
+          title: l10n.mailDefaultAction,
+          value: MailPrimaryActionPreference.instance.value.name,
+          options: options({
+            for (final option in MailPrimaryAction.values)
+              option.name: option.label(context),
+          }),
+          onChanged: (name) => unawaited(
+            MailPrimaryActionPreference.instance.select(
+              MailPrimaryAction.values.byName(name),
+            ),
+          ),
+        ),
+        if (widget.swipePreferences != null)
+          SettingsTile(
+            grouped: true,
+            icon: LucideIcons.pointer,
+            title: l10n.mailSwipeActions,
+            onTap: () =>
+                showMailSwipeSettings(context, widget.swipePreferences!),
+          ),
+      ]),
+      if (showServer) ...[
+        MailSettingsPendingStatus(
+          workspaceId: widget.workspaceId,
+          mailboxId: widget.mailboxId,
+        ),
+        section(l10n.mailSettingsComposeGroup, [
+          SettingsFieldRow(
+            child: AppTextField(
+              controller: _sender,
+              enabled: editable,
+              maxLength: 160,
+              label: l10n.mailSenderName,
+              placeholder: l10n.mailSenderNamePlaceholder,
+              helperText: l10n.mailSenderNameHelper,
+              textCapitalization: TextCapitalization.words,
+            ),
+          ),
+          SettingsFieldRow(
+            child: AppTextField(
+              controller: _signature,
+              enabled: editable,
+              minLines: 3,
+              maxLines: 8,
+              label: l10n.mailSignature,
+              placeholder: l10n.mailSignaturePlaceholder,
+              helperText: l10n.mailSignatureHelper,
+            ),
+          ),
+        ]),
+        section(l10n.mailSettingsAiGroup, [
+          SettingsSwitchRow(
+            icon: LucideIcons.sparkles,
+            title: l10n.mailAutoDraft,
+            subtitle: l10n.mailAutoDraftDescription,
+            value: _autoDraft,
+            onChanged: editable ? (v) => setState(() => _autoDraft = v) : null,
+          ),
+          SettingsFieldRow(
+            child: AppTextField(
+              key: const ValueKey('mail-settings-instructions'),
+              controller: _instructions,
+              enabled: editable,
+              minLines: 3,
+              maxLines: 8,
+              label: l10n.mailDraftInstructions,
+              placeholder: l10n.mailDraftInstructionsPlaceholder,
+              helperText: l10n.mailDraftInstructionsHelper,
+            ),
+          ),
+        ]),
+        section(l10n.mailSettingsDeliveryGroup, [
+          SettingsChoiceRow<String>(
+            icon: LucideIcons.send,
+            title: l10n.mailDeliveryProvider,
+            value: _provider ?? 'default',
+            options: options({
+              'default': l10n.mailDomainDefault,
+              'cloudflare': 'Cloudflare',
+              'ses': 'Amazon SES',
+            }),
+            onChanged: editable
+                ? (value) => setState(
+                    () => _provider = value == 'default' ? null : value,
+                  )
+                : null,
+          ),
+          if (_group == null) ...[
+            SettingsSwitchRow(
+              icon: LucideIcons.tags,
+              title: l10n.mailSmartLabels,
+              value: _smartLabels,
+              onChanged: editable
+                  ? (v) => setState(() => _smartLabels = v)
+                  : null,
+            ),
+            SettingsChoiceRow<String>(
+              icon: LucideIcons.forward,
+              title: l10n.mailForwarding,
+              value: _forwarding,
+              options: options({
+                'off': l10n.mailForwardingOff,
+                'catch_all': l10n.mailCatchAll,
+                'mailbox': l10n.mailMailbox,
+              }),
+              onChanged: editable
+                  ? (value) => setState(() => _forwarding = value)
+                  : null,
+            ),
+            if (_forwarding == 'mailbox')
+              SettingsFieldRow(
+                child: AppTextField(
+                  controller: _forwardTo,
+                  enabled: editable,
+                  keyboardType: TextInputType.emailAddress,
+                  label: l10n.mailForwardTo,
+                  placeholder: l10n.mailForwardToPlaceholder,
+                ),
+              ),
+          ],
+        ]),
+        if (_group != null)
+          section(l10n.mailSettingsGroupPermissions, [
+            for (final field in {
+              'posting': (l10n.mailGroupPosting, LucideIcons.messageSquare),
+              'attachments': (l10n.mailGroupAttachments, LucideIcons.paperclip),
+              'sendAs': (l10n.mailGroupSendAs, LucideIcons.userPen),
+            }.entries)
+              SettingsChoiceRow<String>(
+                icon: field.value.$2,
+                title: field.value.$1,
+                value: _group![field.key] as String,
+                options: options({
+                  if (field.key != 'sendAs') 'anyone': l10n.mailAnyone,
+                  if (field.key != 'sendAs')
+                    'organization': l10n.mailOrganization,
+                  'members': l10n.mailMembers,
+                  'managers': l10n.mailManagers,
+                }),
+                onChanged: editable
+                    ? (value) => setState(() => _group![field.key] = value)
+                    : null,
+              ),
+          ]),
+        if (_canEdit)
+          section(l10n.mailSettingsOrganizeGroup, [
+            for (final section in {
+              'labels': (l10n.mailLabels, LucideIcons.tag),
+              'folders': (l10n.mailFolders, LucideIcons.folder),
+              'members': (l10n.mailMembers, LucideIcons.users),
+            }.entries)
+              SettingsTile(
+                grouped: true,
+                icon: section.value.$2,
+                title: section.value.$1,
+                onTap: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => MailOrganizationPage(
+                      repository: widget.repository,
+                      workspaceId: widget.workspaceId,
+                      mailboxId: widget.mailboxId,
+                      kind: section.key,
+                    ),
+                  ),
+                ),
+              ),
+          ]),
+      ],
+    ];
   }
 }

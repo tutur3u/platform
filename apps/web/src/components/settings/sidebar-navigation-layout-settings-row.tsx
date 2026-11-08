@@ -36,7 +36,7 @@ function IconButton({
           type="button"
           variant="ghost"
           size="icon"
-          className="h-7 w-7"
+          className="h-7 w-7 text-muted-foreground"
           disabled={disabled}
           onClick={onClick}
         >
@@ -109,9 +109,9 @@ export function SortableNavigationItem({
         transition,
       }}
       className={cn(
-        'flex min-h-9 items-center gap-1 rounded-md border border-border/70 bg-background/70 px-1.5 py-1',
-        isDragging && 'opacity-60 shadow-sm',
-        hidden && 'border-dashed opacity-70'
+        'flex min-h-10 items-center gap-1 py-1',
+        isDragging && 'relative z-10 bg-card opacity-60 shadow-sm',
+        hidden && 'text-muted-foreground'
       )}
     >
       <button

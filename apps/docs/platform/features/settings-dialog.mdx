@@ -2,6 +2,7 @@
 updatedAt: "2026-10-23"
 title: 'Settings dialog'
 description: 'Shared account tabs, settings deep links, URL state and history behavior across apps/web and satellites.'
+audience: users
 ---
 
 Every app opens account and app settings in one fullscreen settings dialog. Its
@@ -155,3 +156,117 @@ instead of hand-writing query strings.
   app-specific dialog includes the shared account tabs.
 - `apps/web/src/__tests__/proxy.test.ts`: settings params survive the root
   redirect.
+
+
+## Workspace operation permissions
+
+The Web settings API requires `manage_workspace_settings` for writes and accepts
+only editable configuration fields. Workspace members may still read operational
+settings needed by time tracking. A referral promotion selected from Web or
+Inventory must belong to the normalized workspace before settings or user links
+change.
+
+E2EE key initialization requires `manage_e2ee`, matching the other key management
+operations. Status reads remain available to workspace members.
+
+Per-user referral discounts require `update_users` or an invoice permission
+(`view_invoices`, `create_invoices`, `update_invoices`). Per-user group membership
+reads require `view_user_groups` or those invoice permissions, preserving invoice
+forms and previews. API-key callers retain their existing key-scoped admission.
+External-project asset edits validate referenced entries and blocks in the
+asset's workspace before updating.
+
+Global crawler data requires root-workspace `ai_lab`. Legacy memory backfills
+require root `manage_workspace_roles` and preserve each user's memory-service
+consent settings. Root time-tracking exports require
+`manage_time_tracking_requests`; exchange-rate cron requests always require
+service or cron authentication, including development.
+
+These rules cover the active Web and Inventory handlers. Regression tests live
+beside the settings, encryption, referral, asset, crawler, backfill, export and
+exchange-rate handlers, and in Users Core's referral-discount route tests.
+
+## Layout and contrast
+
+Scope: every settings dialog built on `SatelliteSettingsDialogShell`, plus the Nova dialog. Applies to light and dark themes on web and satellite apps. Mobile Flutter settings follow [mobile settings shell](/platform/features/mobile-settings-shell) instead.
+
+Settings pages are a single centered column of grouped cards, so a person can scan labels down the left edge and controls down the right.
+
+| Building block | Use |
+| --- | --- |
+| `SettingsSection` from `@tuturuuu/ui/custom/settings-section` | One card of related settings, with an optional title, description and heading action. It is the only section heading style, and it never outranks the page title. |
+| `SettingItemTab` from `@tuturuuu/ui/custom/settings-item-tab` | One setting. Inside a section it is a divided row. Alone it draws its own card. |
+| `layout="inline"` | Label on the left, compact control on the right, for switches, selects, buttons and short values. Stacks automatically when the row is narrower than 512px. This is the default. |
+| `layout="stacked"` | Control spans the row, for tile pickers, textareas, tables and lists. |
+| `controlWidth` | Width of the control in a wide inline row, such as `xl` for a text field. The scale lives in `settings-item-tab.tsx`, so every app emits it. |
+| `SettingsSectionFooter` | A card's trailing actions, such as its save button. |
+| `SettingsSectionMessage` | Empty, loading and error states inside a card, with an optional retry action. |
+| `SettingsSectionBlock` | Free-form content that lines up with the rows around it. |
+
+Rules:
+
+- The shell renders the page title and description, so a panel does not repeat them.
+- Panel roots use `space-y-8`. Cards and hairlines replace `Separator`, and cards are never nested.
+- Row titles use `text-sm font-medium`, and descriptions use `text-sm text-muted-foreground`.
+- Color carries state only: destructive for danger, `dynamic-green` for success, `dynamic-yellow` or `dynamic-red` for warnings and errors.
+- Danger actions sit in a final section as a plain row with a destructive button.
+
+`.settings-surface` in `packages/ui/src/globals.css` scopes the contrast tokens to the dialog. Dark mode's global `--border`, `--input`, `--muted` and `--accent` share one value, which hides form controls against a panel, so settings overrides them locally and leaves the rest of the product untouched. Disabled inputs and select triggers stay readable because a disabled value, such as a user ID, is often what someone came to read or copy.
+
+The sidebar shows group labels as plain text while the expand-all preference keeps groups open, because a chevron there would promise a toggle that does nothing. Turning the preference off restores collapsible groups. A group label that only repeats its single item is hidden.
+
+Regression coverage: `packages/ui/src/components/ui/custom/__tests__/settings-dialog-shell.test.tsx` and `packages/ui/src/components/ui/custom/__tests__/settings-section.test.tsx`.
+
+
+## Accessible field rows
+
+The section, row, footer, message, and scoped contrast patterns are designed by
+Khôi (@VoMinhKhoii), introduced in
+[settings sections and contrast tokens](https://github.com/tutur3u/platform/pull/7790).
+Reuse those exports from `@tuturuuu/ui`; application panels do not need copies.
+
+`SettingsField` from `@tuturuuu/ui/custom/settings-field` composes a single
+labelled control with `SettingItemTab`. It supplies the control ID, help-text
+association, invalid state, and error association. Spread the supplied props on
+the actual focusable control. Use this render function from a client form component.
+Set an explicit layout so the caller does not
+depend on the row's default.
+
+```tsx
+import { SettingsField } from '@tuturuuu/ui/custom/settings-field';
+import { Input } from '@tuturuuu/ui/input';
+
+<SettingsField
+  label="Display name"
+  description="Visible to your workspace"
+  layout="inline"
+  controlWidth="xl"
+  validation={{ kind: 'invalid', message: 'Enter a display name' }}
+>
+  {(controlProps) => <Input {...controlProps} name="displayName" />}
+</SettingsField>
+```
+
+Use translated labels and messages in application callers. Validation is one
+union: either `{ kind: 'valid' }` or `{ kind: 'invalid', message }`. The invalid
+variant renders an alert and associates it with the control. The component does
+not submit, validate, disable, or change a value. The caller owns those actions
+and its explicit UI state machine. A disabled control remains disabled when the
+caller passes that attribute.
+
+This component fits a native input, textarea, or a control whose focusable trigger
+accepts `id`, `aria-describedby`, and `aria-invalid`. It does not label a whole
+multi-control group. Use a fieldset and legend for that case. For React Hook Form,
+keep `FormField`, `FormLabel`, `FormControl`, and `FormMessage` from
+`@tuturuuu/ui/form`; do not wrap them in a second label/error system.
+
+`SettingsField` inherits spacing, typography, responsive control widths, and
+contrast from the shared row and enclosing `.settings-surface`. It introduces no
+new color tokens. Keep the surface on the enclosing shell. Use `SettingsSection`
+for related fields and `SettingsSectionFooter` for their existing save action.
+
+Behavior regression coverage lives in
+`packages/ui/src/components/ui/custom/__tests__/settings-field.test.tsx`: accessible
+names, combined help and error descriptions, validation recovery without losing
+the draft, unique generated IDs, and disabled control preservation. These tests
+do not establish browser contrast or screenshot acceptance.

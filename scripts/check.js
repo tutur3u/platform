@@ -20,6 +20,7 @@ const fs = require('node:fs');
 const { writeExclusiveFileSync } = require('./safe-fs');
 const os = require('node:os');
 const path = require('node:path');
+const { authGuardChecks } = require('./auth-guards.js');
 const { sourceSizeCheck } = require('./check-source-size.js');
 const {
   assertCheckCliAllowed,
@@ -40,7 +41,7 @@ const failFastRequiredChecks = new Set(['tests', 'type-check']);
 // fast, independent quality gates (formatting/lint) are never silently skipped
 // just because tests or type-check are red (e.g. an unrelated pre-existing
 // failure). Prevents format/lint regressions from slipping past `bun validate`.
-const alwaysRunAfterFailFast = new Set(['biome']);
+const alwaysRunAfterFailFast = new Set(['oxc']);
 const DISCORD_PYTHON_PATH_PREFIX = 'apps/discord/';
 const DISCORD_PYTHON_WORKFLOW_PATH = '.github/workflows/discord-python-ci.yml';
 const PLATFORM_RELEASE_VERSION_PATHS = new Set([
@@ -68,7 +69,7 @@ function getLastNumberMatch(output, regex) {
   return lastMatch ? Number.parseInt(lastMatch[1], 10) : 0;
 }
 
-function parseBiomeIssueStats(output) {
+function parseOxcIssueStats(output) {
   const clean = stripAnsi(output);
   const filesChecked = getLastNumberMatch(
     clean,
@@ -92,18 +93,18 @@ function parseBiomeIssueStats(output) {
   };
 }
 
-function formatBiomeIssueStats(stats) {
+function formatOxcIssueStats(stats) {
   return `${stats.errors} error(s), ${stats.warnings} warning(s), ${stats.infos} info(s)`;
 }
 
-function validateBiomeOutput(output) {
-  const stats = parseBiomeIssueStats(output);
+function validateOxcOutput(output) {
+  const stats = parseOxcIssueStats(output);
 
   if (stats.totalIssues === 0) {
     return null;
   }
 
-  return `Found ${stats.totalIssues} Biome issue(s): ${formatBiomeIssueStats(stats)}`;
+  return `Found ${stats.totalIssues} Oxc issue(s): ${formatOxcIssueStats(stats)}`;
 }
 
 /**
@@ -260,37 +261,20 @@ const checks = [
     },
   },
   {
-    name: 'biome',
+    name: 'oxc',
     command: 'bun',
-    args: ['biome', 'check', '--error-on-warnings'],
+    args: ['format-and-lint'],
     parseOutput: (stdout) => {
-      const stats = parseBiomeIssueStats(stdout);
+      const stats = parseOxcIssueStats(stdout);
       return stats.filesChecked > 0
         ? `${stats.filesChecked} files checked`
         : 'Passed';
     },
-    validateOutput: validateBiomeOutput,
+    validateOutput: validateOxcOutput,
   },
   sourceSizeCheck,
   publicSeoCheck,
-  {
-    name: 'server-console',
-    command: 'node',
-    args: ['scripts/check-server-console.js'],
-    parseOutput: () => 'Server logs use native console methods',
-  },
-  {
-    name: 'internal-app-auth',
-    command: 'node',
-    args: ['scripts/check-internal-app-auth.js'],
-    parseOutput: () => 'Registered app auth surfaces use app sessions',
-  },
-  {
-    name: 'satellite-cookie-auth',
-    command: 'node',
-    args: ['scripts/check-satellite-cookie-auth.js'],
-    parseOutput: () => 'Satellites authorize with app-session-aware clients',
-  },
+  ...authGuardChecks,
   {
     name: 'offline-worker-wiring',
     command: 'node',
@@ -302,6 +286,12 @@ const checks = [
     command: 'node',
     args: ['scripts/check-multi-account-vault-owner.js'],
     parseOutput: () => 'Only apps/web carries the multi-account vault',
+  },
+  {
+    name: 'package-release-dependencies',
+    command: 'node',
+    args: ['scripts/ci/package-release-dependency-guard.js'],
+    parseOutput: () => 'Published packages only depend on released packages',
   },
   {
     name: 'legacy-api-route-wrappers',
@@ -1367,7 +1357,7 @@ module.exports = {
   isTrustedCheckQueuePid,
   listTrackedCheckProcesses,
   main,
-  parseBiomeIssueStats,
+  parseOxcIssueStats,
   releaseCheckQueueLock,
   runCheck,
   signalProcess,

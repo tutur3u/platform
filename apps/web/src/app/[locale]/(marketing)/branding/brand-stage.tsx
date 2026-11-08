@@ -77,7 +77,6 @@ export function HeroBrandStage({
                 repeat: Number.POSITIVE_INFINITY,
               }}
             >
-              {/* biome-ignore lint/performance/noImgElement: local branding SVG stays native to keep this dev route off next/image. */}
               <img
                 alt=""
                 className="h-full w-full object-contain drop-shadow-[0_24px_36px_rgba(0,0,0,0.18)]"
@@ -241,7 +240,6 @@ export function KineticAssetStrip({
             className="flex h-16 w-52 shrink-0 items-center gap-3 rounded-xl border border-foreground/[0.07] bg-foreground/[0.015] px-5"
             key={`${asset.key}-${index}`}
           >
-            {/* biome-ignore lint/performance/noImgElement: local branding SVGs stay native to keep this dev route off next/image. */}
             <img
               alt=""
               className="h-8 w-8 object-contain"

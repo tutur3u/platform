@@ -1,7 +1,45 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+
+const settingsUpdateSchema = z
+  .object({
+    break_duration_minutes: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullable()
+      .optional(),
+    break_enabled: z.boolean().nullable().optional(),
+    break_interval_minutes: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullable()
+      .optional(),
+    guest_user_checkup_threshold: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullable()
+      .optional(),
+    missed_entry_date_threshold: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullable()
+      .optional(),
+    referral_count_cap: z.number().int().nonnegative().optional(),
+    referral_increment_percent: z.number().nonnegative().optional(),
+    referral_promotion_id: z.uuid().nullable().optional(),
+    referral_reward_type: z.enum(['REFERRER', 'RECEIVER', 'BOTH']).optional(),
+  })
+  .strict();
 
 export const GET = withSessionAuth<{ wsId: string }>(
   async (_request, { user, supabase }, { wsId }) => {
@@ -75,8 +113,6 @@ export const GET = withSessionAuth<{ wsId: string }>(
 export const POST = withSessionAuth<{ wsId: string }>(
   async (request, { user, supabase }, { wsId }) => {
     try {
-      const sbAdmin = await createAdminClient();
-
       // Verify workspace access
       const memberCheck = await verifyWorkspaceMembershipType({
         wsId,
@@ -98,14 +134,43 @@ export const POST = withSessionAuth<{ wsId: string }>(
         );
       }
 
-      const body = await request.json();
+      const permissions = await getPermissions({ user, wsId });
+      if (!permissions?.containsPermission('manage_workspace_settings'))
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      const parsed = settingsUpdateSchema.safeParse(await request.json());
+      if (!parsed.success)
+        return NextResponse.json(
+          { error: 'Invalid settings' },
+          { status: 400 }
+        );
+      const body = parsed.data;
+      const sbAdmin = await createAdminClient();
+      if (body.referral_promotion_id) {
+        const { data: promotion, error: promotionError } = await sbAdmin
+          .schema('private')
+          .from('workspace_promotions')
+          .select('id')
+          .eq('ws_id', permissions.wsId)
+          .eq('id', body.referral_promotion_id)
+          .maybeSingle();
+        if (promotionError)
+          return NextResponse.json(
+            { error: 'Failed to verify promotion' },
+            { status: 500 }
+          );
+        if (!promotion)
+          return NextResponse.json(
+            { error: 'Promotion not found' },
+            { status: 404 }
+          );
+      }
 
       // Update workspace settings
       const { data: settings, error } = await sbAdmin
         .from('workspace_settings')
         .upsert({
           ...body,
-          ws_id: wsId,
+          ws_id: permissions.wsId,
         })
         .select()
         .single();

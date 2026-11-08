@@ -43,7 +43,6 @@ describe('topic read ownership preserves the mutation fallback', () => {
     ['GET', path],
     ['HEAD', path],
     ['POST', `${path}/preview`],
-    ['POST', `${path}/announcements/id/send`],
   ])(
     '%s %s remains local or uses its original fallback',
     async (method, pathname) => {
@@ -59,6 +58,33 @@ describe('topic read ownership preserves the mutation fallback', () => {
       expect(mocks.guard).toHaveBeenCalledOnce();
     }
   );
+  it.each([
+    ['GET', '/schedule?month=2026-10'],
+    ['PUT', '/schedule'],
+    ['POST', '/schedule/clone'],
+    ['GET', '/contacts'],
+    ['POST', '/contacts'],
+    ['GET', '/templates'],
+    ['POST', '/notify-teachers'],
+    ['POST', '/announcements/id/send'],
+    ['PATCH', '/contacts/id'],
+    ['DELETE', '/templates/id'],
+  ])('forwards %s %s after session and API guards', async (method, suffix) => {
+    const request = new NextRequest(
+      `https://contacts.example.test${path}${suffix}`,
+      { method }
+    );
+    const result = await proxy(request);
+    const target = new URL(result.headers.get('x-middleware-rewrite')!);
+    expect(target.pathname + target.search).toBe(path + suffix);
+    expect(target.hostname).not.toBe('contacts.example.test');
+    expect(mocks.refresh).toHaveBeenCalledWith(request, {
+      sessionMode: 'supabase-first',
+      targetApp: 'contacts',
+    });
+    expect(mocks.guard).toHaveBeenCalledOnce();
+    expect(mocks.propagate).toHaveBeenCalledWith(expect.anything(), result);
+  });
   it('forwards collection POST without dropping its query or refreshed cookies', async () => {
     const result = await proxy(
       new NextRequest(`https://contacts.example.test${path}?source=synthetic`, {

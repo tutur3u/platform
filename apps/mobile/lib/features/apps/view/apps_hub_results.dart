@@ -9,6 +9,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
+import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -40,5 +41,6 @@ Object appsHubAvailability(BuildContext context) => (
   context.read<InventoryAccessCubit?>()?.state,
   context.read<EducationAccessCubit?>()?.state,
   context.read<HabitsAccessCubit?>()?.state,
+  context.read<MastermindAccessCubit?>()?.state,
   Localizations.localeOf(context),
 );

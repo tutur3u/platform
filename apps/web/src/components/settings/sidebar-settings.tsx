@@ -2,10 +2,12 @@
 
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
-import { Separator } from '@tuturuuu/ui/separator';
 import { useSidebar } from '@/context/sidebar-context';
 import NavigationSettings from './navigation-settings';
-import { SidebarNavigationLayoutSettings } from './sidebar-navigation-layout-settings';
+import {
+  SidebarNavigationLayoutSettings,
+  SidebarRecentNavigationSetting,
+} from './sidebar-navigation-layout-settings';
 
 interface NavigationSidebarSettingsProps {
   wsId?: string;
@@ -18,14 +20,10 @@ export default function NavigationSidebarSettings({
 }: NavigationSidebarSettingsProps) {
   return (
     <div className="space-y-8">
-      {user && (
-        <>
-          <NavigationSettings wsId={wsId} user={user} />
-          <Separator />
-        </>
-      )}
-      <SharedSidebarSettings useSidebar={useSidebar} />
-      <Separator />
+      {user && <NavigationSettings wsId={wsId} user={user} />}
+      <SharedSidebarSettings useSidebar={useSidebar}>
+        <SidebarRecentNavigationSetting />
+      </SharedSidebarSettings>
       <SidebarNavigationLayoutSettings wsId={wsId} />
     </div>
   );

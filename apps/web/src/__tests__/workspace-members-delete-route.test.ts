@@ -253,13 +253,12 @@ describe('workspace members delete route', () => {
   });
 
   it('revokes the Polar seat using the Polar customer id during member removal', async () => {
-    const { DELETE } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/members/route'
-    );
+    const { DELETE } =
+      await import('@/legacy-api-routes/workspaces/[wsId]/members/route');
 
     const response = await DELETE(
       new NextRequest(
-        `http://localhost/api/workspaces/${ROOT_WORKSPACE_ID}/members?id=user-1`,
+        `http://localhost/api/workspaces/${ROOT_WORKSPACE_ID}/members?id=00000000-0000-4000-8000-000000000001`,
         {
           method: 'DELETE',
         }
@@ -283,7 +282,7 @@ describe('workspace members delete route', () => {
       mocks.sessionSupabase
     );
     expect(mocks.getExternalCustomer).toHaveBeenCalledWith({
-      externalId: 'user-1',
+      externalId: '00000000-0000-4000-8000-000000000001',
     });
     expect(mocks.revokeSeat).toHaveBeenCalledWith({
       seatId: 'seat-1',

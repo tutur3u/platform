@@ -40,6 +40,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { getMountedAppVerifyTokenMatch } from '@tuturuuu/utils/internal-app-mounts';
 import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import { requiresAccountMfa } from '@tuturuuu/utils/required-mfa-browser';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -57,6 +58,7 @@ import * as z from 'zod';
 import { DEV_MODE } from '@/constants/common';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
+import { getCrossAppPkceParams } from '@/lib/auth/cross-app-pkce';
 import {
   isManagedTuturuuuHostname,
   isRootTuturuuuHostname,
@@ -94,41 +96,36 @@ const VERIFY_TOKEN_FALLBACK_PATH = '/onboarding';
 const VERIFY_TOKEN_ROUTE_SEGMENT = 'verify-token';
 
 const Turnstile = lazy(async () => {
-  const { Turnstile: TurnstileComponent } = await import(
-    '@marsidev/react-turnstile'
-  );
+  const { Turnstile: TurnstileComponent } =
+    await import('@marsidev/react-turnstile');
 
   return { default: TurnstileComponent };
 });
 
 const InternalAppAccountConfirmation = lazy(async () => {
-  const { InternalAppAccountConfirmation: Confirmation } = await import(
-    './internal-app-account-confirmation'
-  );
+  const { InternalAppAccountConfirmation: Confirmation } =
+    await import('./internal-app-account-confirmation');
 
   return { default: Confirmation };
 });
 
 const InputOTP = lazy(async () => {
-  const { InputOTP: InputOTPComponent } = await import(
-    '@tuturuuu/ui/input-otp'
-  );
+  const { InputOTP: InputOTPComponent } =
+    await import('@tuturuuu/ui/input-otp');
 
   return { default: InputOTPComponent };
 });
 
 const InputOTPGroup = lazy(async () => {
-  const { InputOTPGroup: InputOTPGroupComponent } = await import(
-    '@tuturuuu/ui/input-otp'
-  );
+  const { InputOTPGroup: InputOTPGroupComponent } =
+    await import('@tuturuuu/ui/input-otp');
 
   return { default: InputOTPGroupComponent };
 });
 
 const InputOTPSlot = lazy(async () => {
-  const { InputOTPSlot: InputOTPSlotComponent } = await import(
-    '@tuturuuu/ui/input-otp'
-  );
+  const { InputOTPSlot: InputOTPSlotComponent } =
+    await import('@tuturuuu/ui/input-otp');
 
   return { default: InputOTPSlotComponent };
 });
@@ -235,19 +232,12 @@ function getStaticReturnApp(
   returnUrl: string | null | undefined,
   localReturnPath: string | null
 ) {
-  if (!returnUrl) {
-    return null;
-  }
+  if (!returnUrl) return null;
+  if (localReturnPath) return 'web';
 
-  if (localReturnPath) {
-    return 'web';
-  }
-
-  const appDomain = getAppDomainByUrl(returnUrl);
-
-  if (appDomain?.kind === 'internal') {
-    return appDomain.name;
-  }
+  const appDomain =
+    getMountedAppVerifyTokenMatch(returnUrl) ?? getAppDomainByUrl(returnUrl);
+  if (appDomain?.kind === 'internal') return appDomain.name;
 
   return normalizeManagedTuturuuuReturnUrl(returnUrl)
     ? MANAGED_TUTURUUU_RETURN_APP
@@ -285,8 +275,8 @@ function requiresAccountConfirmationForReturnApp(
 ) {
   return Boolean(
     returnApp &&
-      !['platform', 'web', MANAGED_TUTURUUU_RETURN_APP].includes(returnApp) &&
-      !isRegisteredInternalAppReturn
+    !['platform', 'web', MANAGED_TUTURUUU_RETURN_APP].includes(returnApp) &&
+    !isRegisteredInternalAppReturn
   );
 }
 
@@ -870,6 +860,7 @@ export default function LoginForm({
       }
 
       const crossAppReturn = await createCrossAppReturnUrlWithInternalApi({
+        ...getCrossAppPkceParams(searchParams),
         returnUrl,
       });
 
@@ -885,13 +876,8 @@ export default function LoginForm({
         nextUrl.searchParams.set('multiAccount', 'true');
       }
 
-      if (nextUrl.origin !== window.location.origin) {
-        window.location.assign(nextUrl.toString());
-      } else {
-        router.push(nextUrl.toString());
-        router.refresh();
-      }
-
+      // Another app serves its verifier, even on this origin (an apex mount).
+      window.location.assign(nextUrl.toString());
       return;
     }
 
@@ -1407,7 +1393,6 @@ export default function LoginForm({
       >
         {t('login.continue_with_google')}
       </SocialLoginButton>
-
       <SocialLoginButton
         disabled={loading}
         onClick={() => void handleOAuthLogin('azure')}
@@ -1415,9 +1400,11 @@ export default function LoginForm({
           <SocialImageLogo src="/media/logos/microsoft.svg" alt="Microsoft" />
         }
       >
-        {t('login.continue_with_microsoft')}
+        {t('login.staff_microsoft')}
       </SocialLoginButton>
-
+      <p className="text-muted-foreground text-sm">
+        {t('login.microsoft_email_recovery')}
+      </p>
       <SocialLoginButton
         disabled={loading}
         onClick={() => void handleOAuthLogin('apple')}
@@ -1425,7 +1412,6 @@ export default function LoginForm({
       >
         {t('login.continue_with_apple')}
       </SocialLoginButton>
-
       <SocialLoginButton
         disabled={loading}
         onClick={() => void handleOAuthLogin('github')}
@@ -1435,7 +1421,6 @@ export default function LoginForm({
       </SocialLoginButton>
     </div>
   );
-
   const renderRateLimitedSocialAuthSuggestion = (email: string) => (
     <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/20 p-4">
       <p className="text-muted-foreground text-sm leading-relaxed">
@@ -1538,12 +1523,10 @@ export default function LoginForm({
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
     const diagnosticCode = searchParams.get('diagnosticCode');
-
     if (!error && !errorDescription && !diagnosticCode) {
       oauthErrorToastKeyRef.current = null;
       return;
     }
-
     const toastKey = `${error ?? ''}:${errorDescription ?? ''}:${diagnosticCode ?? ''}`;
     if (oauthErrorToastKeyRef.current === toastKey) {
       return;
@@ -1556,9 +1539,11 @@ export default function LoginForm({
     toast.error(t('login.failed'), {
       description: formatDiagnosticDescription(
         errorDescription ||
-          (error === 'auth_failed'
-            ? t('login.oauth_callback_failed')
-            : t('login.social_sign_in_failed')),
+          (error === 'azure_tenant_restricted'
+            ? t('login.microsoft_tenant_restricted')
+            : error === 'auth_failed'
+              ? t('login.oauth_callback_failed')
+              : t('login.social_sign_in_failed')),
         diagnosticCode
       ),
     });

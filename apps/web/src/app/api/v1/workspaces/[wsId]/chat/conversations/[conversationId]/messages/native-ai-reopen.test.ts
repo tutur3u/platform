@@ -31,7 +31,7 @@ const aiBodySchema = z.object({
   persistenceRequestId: z.string(),
   messages: z.array(
     z.object({
-      role: z.enum(['assistant', 'user', 'system']),
+      role: z.enum(['assistant', 'user']),
       parts: z.array(
         z.object({ type: z.string(), text: z.string().optional() })
       ),
@@ -42,9 +42,8 @@ const aiBodySchema = z.object({
 beforeEach(resetMessageRouteMocks);
 
 it('keeps USER content authoritative when metadata claims a reply preview', async () => {
-  const { toAiChatUiMessages, toNativeAiUiMessages } = await import(
-    './ai-message-shared'
-  );
+  const { toAiChatUiMessages, toNativeAiUiMessages } =
+    await import('./ai-message-shared');
   const message = {
     ...userMessage,
     kind: 'user' as const,

@@ -1,8 +1,8 @@
-import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { connection, NextResponse } from 'next/server';
 import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
+import { seedExchangeRates } from '@/lib/finance/seed-exchange-rates';
 
 function reply(data: unknown, options: { status?: number } = {}) {
   return NextResponse.json(data, {
@@ -28,9 +28,15 @@ export const GET = withSessionAuth(
         return reply({ error: 'Failed to fetch rates' }, { status: 500 });
       }
 
-      // If no rates exist yet, trigger the cron endpoint to seed initial data
+      // Seed initial data when no rates exist yet.
       if (!latestDate) {
-        await triggerInitialFetch();
+        const seedResult = await seedExchangeRates();
+        if (!seedResult.ok) {
+          console.error('Failed to seed exchange rates', {
+            status: seedResult.status,
+          });
+          return reply({ error: 'Failed to fetch rates' }, { status: 502 });
+        }
 
         // Re-query after seeding
         const { data: seededDate, error: seededDateError } = await supabase
@@ -89,24 +95,3 @@ export const GET = withSessionAuth(
 );
 
 export const HEAD = createLegacyHeadHandler(GET);
-
-async function triggerInitialFetch() {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    getLocalInternalAppUrl('platform', 'http://localhost:7803');
-  const serviceKey = process.env.SUPABASE_SECRET_KEY;
-
-  if (!serviceKey) return;
-
-  try {
-    await fetch(`${baseUrl}/api/cron/finance/exchange-rates`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${serviceKey}`,
-      },
-    });
-  } catch {
-    // Seeding failed silently — rates will be populated on next cron run
-  }
-}
