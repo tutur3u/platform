@@ -9,14 +9,18 @@ import {
 } from '@/lib/external-projects/access';
 import {
   EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL,
-  EXTERNAL_PROJECT_PUBLIC_CACHE_CONTROL,
   externalProjectAssetCacheTag,
   workspaceExternalProjectCacheTag,
 } from '@/lib/external-projects/cache';
 import {
+  CMS_DELIVERY_CACHE_CONTROL,
+  CMS_DELIVERY_CDN_CACHE_CONTROL,
+} from '@/lib/external-projects/delivery-cache';
+import {
   ifNoneMatchMatches,
   MAX_VERCEL_CACHE_TAGS,
 } from '@/lib/external-projects/http-cache';
+import { attachPublishedPageVersions } from '@/lib/external-projects/published-delivery';
 import { buildWorkspaceExternalProjectDeliveryPayload } from '@/lib/external-projects/store';
 
 const privateHeaders = {
@@ -34,7 +38,7 @@ export async function GET(
   try {
     if (preview) {
       const access = await requireWorkspaceExternalProjectAccess({
-        mode: 'publish',
+        mode: 'edit',
         request,
         wsId,
       });
@@ -69,11 +73,11 @@ export async function GET(
     if (!binding.enabled || !binding.canonical_project) {
       return NextResponse.json(
         { error: 'External project delivery unavailable for this workspace' },
-        { headers: privateHeaders, status: 404 }
+        { headers: privateHeaders, status: 409 }
       );
     }
 
-    const payload = await buildWorkspaceExternalProjectDeliveryPayload(
+    const legacyPayload = await buildWorkspaceExternalProjectDeliveryPayload(
       {
         binding,
         includeDrafts: false,
@@ -81,6 +85,8 @@ export async function GET(
       },
       admin
     );
+
+    const payload = await attachPublishedPageVersions(legacyPayload, admin);
 
     const etag = `W/"${payload.revision}"`;
     const assetCacheTags = payload.collections.flatMap((collection) =>
@@ -93,9 +99,9 @@ export async function GET(
       ...[...new Set(assetCacheTags)].slice(0, MAX_VERCEL_CACHE_TAGS - 1),
     ];
     const publicHeaders = {
-      'Cache-Control': EXTERNAL_PROJECT_PUBLIC_CACHE_CONTROL,
+      'Cache-Control': CMS_DELIVERY_CACHE_CONTROL,
       ETag: etag,
-      'Vercel-CDN-Cache-Control': 'max-age=86400, stale-while-revalidate=43200',
+      'Vercel-CDN-Cache-Control': CMS_DELIVERY_CDN_CACHE_CONTROL,
       'Vercel-Cache-Tag': cacheTags.join(','),
     };
 
