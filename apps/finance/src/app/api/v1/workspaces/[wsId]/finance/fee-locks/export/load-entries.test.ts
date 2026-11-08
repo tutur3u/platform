@@ -114,16 +114,12 @@ describe('loadFeeLockExportEntries', () => {
   });
 
   it('pages past max_rows and refuses more than 2000 rows', async () => {
-    let page = 0;
     const db = fakeSupabase({
       fee_locks: {
-        get data() {
-          page += 1;
-          return Array.from({ length: page < 3 ? 1000 : 1 }, (_, i) => ({
-            id: `${page}-${i}`,
-            status: 'locked',
-          }));
-        },
+        data: Array.from({ length: 2001 }, (_, i) => ({
+          id: `lock-${i}`,
+          status: 'locked',
+        })),
       },
     });
     const { response } = await load(db);
