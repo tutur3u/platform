@@ -61,6 +61,11 @@ interface AvatarEditorProps {
   title: string;
 }
 
+type AvatarMutation =
+  | { kind: 'idle' }
+  | { kind: 'saving' }
+  | { kind: 'removing' };
+
 async function compressAvatarFile(blob: Blob): Promise<File> {
   const compressed = await compressAvatar(blob);
   return new File([compressed], 'avatar.jpg', { type: 'image/jpeg' });
@@ -139,13 +144,18 @@ export function AvatarEditor({
   title,
 }: AvatarEditorProps) {
   const fileInputId = useId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
-  const [cropOpen, setCropOpen] = useState(false);
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [cropSelection, setCropSelection] = useState<{
+    file: File;
+    imageUrl: string;
+  } | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [removing, setRemoving] = useState(false);
+  const [mutation, setMutation] = useState<AvatarMutation>({ kind: 'idle' });
+  const saving = mutation.kind === 'saving';
+  const removing = mutation.kind === 'removing';
+  const busy = mutation.kind !== 'idle';
+  const selectedImageUrl = cropSelection?.imageUrl ?? null;
   const [committedSrc, setCommittedSrc] = useState<string | null>(src);
   const [previewSrc, setPreviewSrc] = useState<string | null>(src);
   const blobUrlRef = useRef<string | null>(null);
@@ -182,9 +192,7 @@ export function AvatarEditor({
       URL.revokeObjectURL(selectedImageUrlRef.current);
       selectedImageUrlRef.current = null;
     }
-    setSelectedImageUrl(null);
-    setSelectedFile(null);
-    setCropOpen(false);
+    setCropSelection(null);
   }, []);
 
   const restoreCommittedPreview = useCallback(() => {
@@ -202,9 +210,7 @@ export function AvatarEditor({
     clearCropSelection();
     const imageUrl = URL.createObjectURL(file);
     selectedImageUrlRef.current = imageUrl;
-    setSelectedImageUrl(imageUrl);
-    setSelectedFile(file);
-    setCropOpen(true);
+    setCropSelection({ file, imageUrl });
   };
 
   const handleCropComplete = async (croppedImage: Blob) => {
@@ -223,13 +229,13 @@ export function AvatarEditor({
   };
 
   const saveAvatar = async () => {
-    if (!pendingFile || saving) return;
+    if (!pendingFile || busy) return;
     if (pendingFile.size > maxFileSize) {
       toast.error(labels.fileTooLarge);
       return;
     }
 
-    setSaving(true);
+    setMutation({ kind: 'saving' });
     try {
       const nextSrc = await onSave(pendingFile);
       clearPendingPreview();
@@ -241,12 +247,12 @@ export function AvatarEditor({
       setPreviewSrc(committedSrc);
       clearPendingPreview();
     } finally {
-      setSaving(false);
+      setMutation({ kind: 'idle' });
     }
   };
 
   const removeAvatar = async () => {
-    if (removing) return;
+    if (busy) return;
 
     if (pendingFile) {
       restoreCommittedPreview();
@@ -257,7 +263,7 @@ export function AvatarEditor({
 
     const previousSrc = committedSrc;
     setPreviewSrc(null);
-    setRemoving(true);
+    setMutation({ kind: 'removing' });
     try {
       await onRemove();
       setCommittedSrc(null);
@@ -265,7 +271,7 @@ export function AvatarEditor({
       console.error('Error removing avatar:', error);
       setPreviewSrc(previousSrc);
     } finally {
-      setRemoving(false);
+      setMutation({ kind: 'idle' });
     }
   };
 
@@ -280,10 +286,10 @@ export function AvatarEditor({
 
   return (
     <>
-      {selectedImageUrl
+      {cropSelection
         ? renderCropper({
-            file: selectedFile ?? new File([], 'avatar'),
-            imageUrl: selectedImageUrl,
+            file: cropSelection.file,
+            imageUrl: cropSelection.imageUrl,
             onCancel: clearCropSelection,
             onCropComplete: (croppedImage) => {
               void handleCropComplete(croppedImage);
@@ -293,15 +299,15 @@ export function AvatarEditor({
                 clearCropSelection();
                 return;
               }
-              setCropOpen(isOpen);
             },
-            open: cropOpen,
+            open: true,
           })
         : null}
       {allowEdit ? (
         <Dialog
           open={open}
           onOpenChange={(isOpen) => {
+            if (busy && !isOpen) return;
             if (!isOpen) restoreCommittedPreview();
             setOpen(isOpen);
           }}
@@ -327,7 +333,7 @@ export function AvatarEditor({
               </button>
             </DialogTrigger>
           </div>
-          <DialogContent>
+          <DialogContent showCloseButton={!busy}>
             <DialogHeader>
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>{description}</DialogDescription>
@@ -339,17 +345,23 @@ export function AvatarEditor({
             </div>
             <DialogFooter className="flex-wrap max-sm:gap-2">
               <div>
-                <Label
-                  htmlFor={fileInputId}
-                  className="inline-block cursor-pointer rounded-md border p-3 px-4 text-center max-sm:w-full"
-                >
+                <Label htmlFor={fileInputId} className="sr-only">
                   {previewSrc ? labels.replace : labels.upload}
                 </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {previewSrc ? labels.replace : labels.upload}
+                </Button>
                 <input
+                  ref={fileInputRef}
                   id={fileInputId}
                   type="file"
                   accept="image/png,image/jpeg,image/jpg,image/webp"
-                  disabled={saving}
+                  disabled={busy}
                   onChange={(event) => {
                     const file = event.target.files?.[0];
                     if (file) handleFileSelect(file);
@@ -365,7 +377,7 @@ export function AvatarEditor({
                   onClick={() => {
                     void removeAvatar();
                   }}
-                  disabled={removing}
+                  disabled={busy}
                 >
                   {removing ? (
                     <Loader2 className="h-5 w-5 animate-spin" />

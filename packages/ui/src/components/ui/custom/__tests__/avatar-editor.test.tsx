@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AvatarEditor, type AvatarEditorCropRequest } from '../avatar-editor';
 
@@ -157,5 +163,35 @@ describe('AvatarEditor', () => {
     expect(
       await screen.findByRole('button', { name: 'Save avatar' })
     ).toBeEnabled();
+  });
+
+  it('keeps file selection keyboard reachable and prevents removal during save', async () => {
+    const save = Promise.withResolvers<string | null>();
+    const onSave = vi.fn(() => save.promise);
+    const { onRemove } = renderEditor({ onSave });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit avatar' }));
+    const newAvatar = screen.getByRole('button', { name: 'New avatar' });
+    newAvatar.focus();
+    expect(newAvatar).toHaveFocus();
+    fireEvent.change(screen.getByLabelText('New avatar'), {
+      target: {
+        files: [new File(['image'], 'photo.png', { type: 'image/png' })],
+      },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { hidden: true, name: 'Apply crop' })
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Save avatar' })).toBeEnabled()
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Save avatar' }));
+    expect(onSave).toHaveBeenCalledOnce();
+    expect(newAvatar).toBeDisabled();
+    const remove = screen.getByRole('button', { name: 'Remove avatar' });
+    expect(remove).toBeDisabled();
+    fireEvent.click(remove);
+    expect(onRemove).not.toHaveBeenCalled();
+    await act(async () => save.resolve('https://cdn.example/saved.jpg'));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
