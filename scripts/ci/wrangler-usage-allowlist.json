@@ -203,6 +203,16 @@
       },
       "digest": "3aa9f9648e96a936f50ed5e36a0a9daa53e3dcbb8489b00eb549840c7737c782"
     },
+    ".github/workflows/storefront-cloudflare.yaml": {
+      "lines": 5,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7643",
+        "reason": "REV-7643: cutover artifact writes the emitted wrangler.json for an operator. No wrangler command is added. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "cb3f9de3f9f565368ee118a6600074ef472469d84e9b363fdfb666c21ad78051"
+    },
     ".github/workflows/wave1-native-app.yaml": {
       "lines": 4,
       "uses": 4,
