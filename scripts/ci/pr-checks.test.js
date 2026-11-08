@@ -284,7 +284,8 @@ test('the consolidated branch check executes the existing policy with branch nam
   }
 });
 
-test('Security Checks bytes match the reviewed definer-guard workflow', () => {
+test('Security Checks bytes match the reviewed workflow', () => {
+  // Includes the authenticated supplier accepted at 5e4bfbc4 / SOURCE 5817616989.
   const { createHash } = require('node:crypto');
   const { readFileSync } = require('node:fs');
   const bytes = readFileSync(
@@ -292,7 +293,7 @@ test('Security Checks bytes match the reviewed definer-guard workflow', () => {
   );
   assert.equal(
     createHash('sha256').update(bytes).digest('hex'),
-    '21c63351f01ffe048250ff7fdda1391ea9d00e09af1f638599f9e77d8690f43d'
+    '5b1b04ec29499a4225e90b1736b3fb6abdf1158ce403421f5c3640885f1944fc'
   );
 });
 
