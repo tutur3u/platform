@@ -4,8 +4,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import { updateWorkspaceConfig } from '@tuturuuu/internal-api/workspace-configs';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
@@ -48,44 +52,37 @@ export function TimeTrackerGeneralSettings({ wsId }: { wsId: string }) {
   const savedValue = configValue?.trim().toLowerCase() === 'true';
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="font-medium text-lg">{t('general')}</h3>
-        <p className="text-muted-foreground text-sm">
-          {t('general_description')}
-        </p>
-      </div>
+    <div className="space-y-8">
+      <SettingsSection>
+        <SettingItemTab
+          title={t('allow_future_sessions')}
+          description={t('allow_future_sessions_description')}
+        >
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : (
+            <Switch
+              checked={allowFutureSessions}
+              onCheckedChange={setAllowFutureSessions}
+            />
+          )}
+        </SettingItemTab>
 
-      <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
-        <div className="space-y-0.5">
-          <p className="font-medium">{t('allow_future_sessions')}</p>
-          <p className="text-muted-foreground text-sm">
-            {t('allow_future_sessions_description')}
-          </p>
-        </div>
-        {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-        ) : (
-          <Switch
-            checked={allowFutureSessions}
-            onCheckedChange={setAllowFutureSessions}
-          />
-        )}
-      </div>
+        <SettingsSectionFooter>
+          <Button
+            disabled={
+              isLoading ||
+              updateMutation.isPending ||
+              allowFutureSessions === savedValue
+            }
+            onClick={() => updateMutation.mutate()}
+            type="button"
+          >
+            {updateMutation.isPending ? t('saving') : t('save')}
+          </Button>
+        </SettingsSectionFooter>
+      </SettingsSection>
 
-      <Button
-        disabled={
-          isLoading ||
-          updateMutation.isPending ||
-          allowFutureSessions === savedValue
-        }
-        onClick={() => updateMutation.mutate()}
-        type="button"
-      >
-        {updateMutation.isPending ? t('saving') : t('save')}
-      </Button>
-
-      <Separator />
       <HeatmapDisplaySettings />
     </div>
   );

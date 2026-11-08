@@ -5,6 +5,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWorkspaceTimeThreshold } from '@tuturuuu/hooks';
 import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Form,
   FormControl,
@@ -183,32 +188,30 @@ export function TimeTrackerRequestsSettings({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="font-medium text-lg">{t('title')}</h3>
-        <p className="text-muted-foreground text-sm">{t('description')}</p>
-      </div>
-
+    <SettingsSection title={t('title')} description={t('description')}>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)}>
           <FormField
             control={form.control}
             name="noApprovalNeeded"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    {t('noApprovalNeeded')}
-                  </FormLabel>
-                  <FormDescription>{t('noApprovalHint')}</FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    disabled={!canManageWorkspaceSettings || isThresholdLoading}
-                  />
-                </FormControl>
+              <FormItem className="gap-0">
+                <SettingItemTab
+                  title={<FormLabel>{t('noApprovalNeeded')}</FormLabel>}
+                  description={
+                    <FormDescription>{t('noApprovalHint')}</FormDescription>
+                  }
+                >
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={
+                        !canManageWorkspaceSettings || isThresholdLoading
+                      }
+                    />
+                  </FormControl>
+                </SettingItemTab>
               </FormItem>
             )}
           />
@@ -218,27 +221,30 @@ export function TimeTrackerRequestsSettings({
               control={form.control}
               name="threshold"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">{t('label')}</FormLabel>
-                    <FormDescription>{t('help')}</FormDescription>
-                  </div>
-                  <FormControl>
-                    <div className="flex items-center gap-2">
-                      {isThresholdLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                      ) : (
-                        <Input
-                          type="number"
-                          min={0}
-                          {...field}
-                          disabled={!canManageWorkspaceSettings}
-                          className="w-24"
-                        />
-                      )}
+                <FormItem className="gap-0">
+                  <SettingItemTab
+                    title={<FormLabel>{t('label')}</FormLabel>}
+                    description={<FormDescription>{t('help')}</FormDescription>}
+                  >
+                    <div className="space-y-2">
+                      <FormControl>
+                        <div className="flex items-center gap-2">
+                          {isThresholdLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          ) : (
+                            <Input
+                              type="number"
+                              min={0}
+                              {...field}
+                              disabled={!canManageWorkspaceSettings}
+                              className="w-24"
+                            />
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
                     </div>
-                  </FormControl>
-                  <FormMessage />
+                  </SettingItemTab>
                 </FormItem>
               )}
             />
@@ -248,40 +254,47 @@ export function TimeTrackerRequestsSettings({
             control={form.control}
             name="statusChangeGracePeriodMinutes"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    {t('statusChangeGracePeriodLabel')}
-                  </FormLabel>
-                  <FormDescription>
-                    {t('statusChangeGracePeriodHelp')}
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <div className="flex items-center gap-2">
-                    {isGracePeriodLoading || isThresholdLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    ) : (
-                      <Input
-                        type="number"
-                        min={0}
-                        {...field}
-                        disabled={!canManageWorkspaceSettings}
-                        className="w-24"
-                      />
-                    )}
+              <FormItem className="gap-0">
+                <SettingItemTab
+                  title={
+                    <FormLabel>{t('statusChangeGracePeriodLabel')}</FormLabel>
+                  }
+                  description={
+                    <FormDescription>
+                      {t('statusChangeGracePeriodHelp')}
+                    </FormDescription>
+                  }
+                >
+                  <div className="space-y-2">
+                    <FormControl>
+                      <div className="flex items-center gap-2">
+                        {isGracePeriodLoading || isThresholdLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Input
+                            type="number"
+                            min={0}
+                            {...field}
+                            disabled={!canManageWorkspaceSettings}
+                            className="w-24"
+                          />
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
                   </div>
-                </FormControl>
-                <FormMessage />
+                </SettingItemTab>
               </FormItem>
             )}
           />
 
-          <Button type="submit" disabled={isSubmitDisabled}>
-            {updateThresholdMutation.isPending ? t('saving') : t('save')}
-          </Button>
+          <SettingsSectionFooter>
+            <Button type="submit" disabled={isSubmitDisabled}>
+              {updateThresholdMutation.isPending ? t('saving') : t('save')}
+            </Button>
+          </SettingsSectionFooter>
         </form>
       </Form>
-    </div>
+    </SettingsSection>
   );
 }
