@@ -9,7 +9,7 @@ SET LOCAL statement_timeout = '60s';
 -- complaint is also recorded in private.email_bounce_complaints by address hash
 -- (the platform's 16-character sha256 form). Policy notice ledger rows sent
 -- with the same SES message id become 'bounced' or 'complained'.
--- Rollback: apps/database/rollbacks/20261104183000_ses_delivery_notifications.rollback.sql
+-- Rollback: apps/database/rollbacks/20261109004500_ses_delivery_notifications.rollback.sql
 
 create table if not exists private.ses_notification_receipts (
     sns_message_id text primary key

@@ -10,7 +10,7 @@ import { PGlite } from '@electric-sql/pglite';
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 const LEDGER = '20261104180000_policy_notice_send_ledger';
-const MIGRATION = '20261104183000_ses_delivery_notifications';
+const MIGRATION = '20261109004500_ses_delivery_notifications';
 const TOPIC = 'arn:aws:sns:ap-southeast-1:123456789012:ses-events';
 const ACTOR = '00000000-0000-4000-8000-0000000000aa';
 const RUN = '00000000-0000-4000-8000-0000000000bb';
