@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   escapeFeeLockLikeText,
+  FEE_LOCK_EMPTY_CODE,
   FEE_LOCK_MAX_MONEY,
   type FeeLockLineInput,
+  feeLockBatchItemResultSchema,
   feeLockBatchLockRequestSchema,
   feeLockSaveDraftRequestSchema,
+  feeLockSnapshotSchema,
   isFeeLockMoneyInRange,
   toFeeLockIlikePattern,
 } from './finance-fee-lock-contracts';
@@ -128,5 +131,106 @@ describe('fee-lock search escaping', () => {
     expect(toFeeLockIlikePattern('  An_%  ')).toBe('%An\\_\\%%');
     expect(toFeeLockIlikePattern('   ')).toBeNull();
     expect(toFeeLockIlikePattern(undefined)).toBeNull();
+  });
+});
+
+describe('fee-lock snapshot', () => {
+  it('pins schema version 1 and rejects a mid-month period', () => {
+    const snapshot = {
+      schema_version: 1,
+      fee_lock_id: id(9),
+      ws_id: id(8),
+      student_id: id(1),
+      student_name: 'Học viên mẫu',
+      period_month: '2026-12-01',
+      currency: 'VND',
+      revision: 1,
+      total_amount: 1_200_000,
+      note: null,
+      locked_by: null,
+      locked_at: '2026-11-25T03:00:00.000Z',
+      lines: [],
+    };
+    expect(feeLockSnapshotSchema.safeParse(snapshot).success).toBe(true);
+    expect(
+      feeLockSnapshotSchema.safeParse({
+        ...snapshot,
+        period_month: '2026-12-15',
+      }).success
+    ).toBe(false);
+    expect(
+      feeLockSnapshotSchema.safeParse({ ...snapshot, schema_version: 2 })
+        .success
+    ).toBe(false);
+  });
+
+  it('bounds strings, line count, amounts, timestamps and months like the inputs', () => {
+    const line = {
+      kind: 'tuition',
+      group_id: id(2),
+      group_name: 'Lớp A',
+      label: 'Lớp A',
+      unit_label: 'buổi',
+      product_id: null,
+      unit_price: 150_000,
+      quantity: 8,
+      adjustment_amount: 0,
+      reason: null,
+      line_amount: 1_200_000,
+      sort_order: 0,
+    };
+    const base = {
+      schema_version: 1,
+      fee_lock_id: id(9),
+      ws_id: id(8),
+      student_id: id(1),
+      student_name: 'Học viên mẫu',
+      period_month: '2026-12-01',
+      currency: 'VND',
+      revision: 1,
+      total_amount: 1_200_000,
+      note: null,
+      locked_by: null,
+      locked_at: '2026-11-25T10:00:00+07:00',
+      lines: [line],
+    };
+    const ok = (patch: object, linePatch: object = {}) =>
+      feeLockSnapshotSchema.safeParse({
+        ...base,
+        lines: [{ ...line, ...linePatch }],
+        ...patch,
+      }).success;
+    expect(ok({})).toBe(true);
+    expect(ok({ student_name: 'x'.repeat(201) })).toBe(false);
+    expect(ok({ note: 'x'.repeat(2001) })).toBe(false);
+    expect(ok({ period_month: '2026-13-01' })).toBe(false);
+    expect(ok({ locked_at: 'yesterday' })).toBe(false);
+    expect(ok({ total_amount: FEE_LOCK_MAX_MONEY + 1 })).toBe(false);
+    expect(ok({ lines: Array.from({ length: 51 }, () => line) })).toBe(false);
+    expect(ok({}, { label: 'x'.repeat(201) })).toBe(false);
+    expect(ok({}, { reason: 'x'.repeat(501) })).toBe(false);
+    expect(ok({}, { quantity: 0 })).toBe(false);
+    expect(ok({}, { line_amount: -1 })).toBe(false);
+    expect(ok({}, { adjustment_amount: -FEE_LOCK_MAX_MONEY - 1 })).toBe(false);
+    expect(ok({}, { sort_order: 0 })).toBe(true);
+    expect(ok({}, { sort_order: 32_767 })).toBe(true);
+    expect(ok({}, { sort_order: 32_768 })).toBe(false);
+    expect(ok({}, { sort_order: -1 })).toBe(false);
+  });
+});
+
+describe('fee-lock batch item results', () => {
+  it('reports an empty draft as invalid with its code, never as a conflict', () => {
+    const parse = (r: object) =>
+      feeLockBatchItemResultSchema.safeParse({ id: id(301), ...r }).success;
+    expect(parse({ result: 'invalid', code: FEE_LOCK_EMPTY_CODE })).toBe(true);
+    expect(parse({ result: 'ok', version: 3, revision: 1 })).toBe(true);
+    expect(parse({ result: 'conflict', current_version: 4 })).toBe(true);
+    expect(parse({ result: 'not_found' })).toBe(true);
+    expect(parse({ result: 'invalid' })).toBe(false);
+    expect(parse({ result: 'invalid', code: 'boom' })).toBe(false);
+    expect(parse({ result: 'conflict', code: FEE_LOCK_EMPTY_CODE })).toBe(
+      false
+    );
   });
 });
