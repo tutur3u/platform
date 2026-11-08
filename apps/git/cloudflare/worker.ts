@@ -30,7 +30,12 @@ interface WorkerContext {
 
 type ApiEntry = typeof import('../src/start-bridge/api-entry');
 
-const seoPolicy = {"origin":"https://git.tuturuuu.com","localePrefix":"never","publicPaths":["tutur3u/platform"],"publicPatterns":["","[^/]+/[^/]+(?:/.*)?"]};
+const seoPolicy = {
+  origin: 'https://git.tuturuuu.com',
+  localePrefix: 'never',
+  publicPaths: ['tutur3u/platform'],
+  publicPatterns: ['', '[^/]+/[^/]+(?:/.*)?'],
+};
 
 const mounts = {
   app: 'git',
@@ -40,36 +45,43 @@ const mounts = {
   ...appConfig.mounts,
 };
 
-const handler = () => (
-  import.meta.viteRsc.loadModule('rsc', 'bridge-api') as Promise<ApiEntry>
-).then(({ endpoints }) =>
-  createBridgeHandler<GitEnvironment, WorkerContext>({
-    mounts,
-    csp: appConfig.csp,
-    apiOrigin: appConfig.apiOrigin,
-    framablePaths: appConfig.framablePaths,
-    start: createBridgeStartHandler(),
-    serverFnBase: '/_serverFn',
-    proxy,
-    matches: createProxyMatcher(proxyConfig.matcher, defaultProxyMatches),
-    endpoints,
-    centralFirst,
-    functionBase: '/_serverFn',
-    functionProxy: createFunctionProxy({ targetApp: 'git' }),
-    publicAssets,
-    assets: (env) => env.ASSETS,
-    centralApiOrigin: (env) =>
-      env.INTERNAL_WEB_API_ORIGIN ?? 'https://tuturuuu.com',
-  })
-);
+const handler = () =>
+  (
+    import.meta.viteRsc.loadModule('rsc', 'bridge-api') as Promise<ApiEntry>
+  ).then(({ endpoints }) =>
+    createBridgeHandler<GitEnvironment, WorkerContext>({
+      mounts,
+      csp: appConfig.csp,
+      apiOrigin: appConfig.apiOrigin,
+      framablePaths: appConfig.framablePaths,
+      start: createBridgeStartHandler(),
+      serverFnBase: '/_serverFn',
+      proxy,
+      matches: createProxyMatcher(proxyConfig.matcher, defaultProxyMatches),
+      endpoints,
+      centralFirst,
+      functionBase: '/_serverFn',
+      functionProxy: createFunctionProxy({ targetApp: 'git' }),
+      publicAssets,
+      assets: (env) => env.ASSETS,
+      centralApiOrigin: (env) =>
+        env.INTERNAL_WEB_API_ORIGIN ?? 'https://tuturuuu.com',
+    })
+  );
 
 export default {
   async fetch(request: Request, env: GitEnvironment, ctx: WorkerContext) {
     let response: Response;
     try {
-      if (process.env.NODE_ENV !== 'production') throw new Error('Production runtime required');
-      const required = ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
-        'SUPABASE_SECRET_KEY', 'TUTURUUU_APP_COORDINATION_SECRET', 'ENCRYPTION_MASTER_KEY'] as const;
+      if (process.env.NODE_ENV !== 'production')
+        throw new Error('Production runtime required');
+      const required = [
+        'NEXT_PUBLIC_SUPABASE_URL',
+        'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+        'SUPABASE_SECRET_KEY',
+        'TUTURUUU_APP_COORDINATION_SECRET',
+        'ENCRYPTION_MASTER_KEY',
+      ] as const;
       if (!env.ASSETS || required.some((name) => !env[name]?.trim())) {
         throw new Error('Missing required Worker bindings');
       }

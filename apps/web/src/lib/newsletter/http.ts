@@ -1,9 +1,6 @@
 import { connection, NextResponse } from 'next/server';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
-import {
-  NewsletterGateError,
-  type NewsletterGateCode,
-} from './domain';
+import { NewsletterGateError, type NewsletterGateCode } from './domain';
 
 const STATUS: Record<NewsletterGateCode, number> = {
   flag_disabled: 403,
@@ -56,7 +53,9 @@ export function newsletterErrorResponse(error: unknown) {
 
 export async function readJson(
   request: Request
-): Promise<{ ok: true; value: unknown } | { ok: false; response: NextResponse }> {
+): Promise<
+  { ok: true; value: unknown } | { ok: false; response: NextResponse }
+> {
   try {
     return { ok: true, value: await request.json() };
   } catch {

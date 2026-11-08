@@ -15,14 +15,34 @@ const bridge = startBridgePreset({
   appRoot: import.meta.url,
   app: 'rewise',
   rsc: true,
-  serverOnlySpecifiers: ['@tuturuuu/satellite/auth', '@tuturuuu/utils/api-proxy-guard', '@tuturuuu/supabase/next/server'],
+  serverOnlySpecifiers: [
+    '@tuturuuu/satellite/auth',
+    '@tuturuuu/utils/api-proxy-guard',
+    '@tuturuuu/supabase/next/server',
+  ],
 });
 
 export default defineConfig(({ command }) => ({
   base: bridge.base,
-  define: { ...bridge.define, ...(command === 'build' ? { 'process.env.NODE_ENV': JSON.stringify('production') } : {}) },
+  define: {
+    ...bridge.define,
+    ...(command === 'build'
+      ? { 'process.env.NODE_ENV': JSON.stringify('production') }
+      : {}),
+  },
   plugins: [
-    startBridgeRscPlugin({ rscEntries: { 'bridge-api': new URL('./src/start-bridge/api-entry.ts', import.meta.url), 'bridge-pages': new URL('./src/start-bridge/page-modules.bridge.gen.ts', import.meta.url) } }),
+    startBridgeRscPlugin({
+      rscEntries: {
+        'bridge-api': new URL(
+          './src/start-bridge/api-entry.ts',
+          import.meta.url
+        ),
+        'bridge-pages': new URL(
+          './src/start-bridge/page-modules.bridge.gen.ts',
+          import.meta.url
+        ),
+      },
+    }),
     // SSR bundles CommonJS too (postcss via sanitize-html requires 'path'):
     // the same Node built-in conversion the rsc environment always gets.
     startBridgeNodeBuiltinsPlugin(),

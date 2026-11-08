@@ -391,8 +391,7 @@ test('the #6990 discord-client-id fingerprint is suppressed while new findings f
   const head = commit(
     repo,
     {
-      'apps/web/src/new-leak.ts':
-        `const discordUserId = "${['987654321', '098765432'].join('')}";\n`,
+      'apps/web/src/new-leak.ts': `const discordUserId = "${['987654321', '098765432'].join('')}";\n`,
     },
     'add new discord finding elsewhere'
   );

@@ -1604,7 +1604,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/mastermind/access/route.ts",
-    "sourceSha256": "04adeff576f1bbe74151c57f196fc89a321f2288a470560b00732cfeaea68b28",
+    "sourceSha256": "8466f5c251e89d1e19afc2030b872c4268c3106f294f5a370ef199394e645a9b",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

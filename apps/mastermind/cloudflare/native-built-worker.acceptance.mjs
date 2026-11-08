@@ -123,7 +123,8 @@ test(
         },
       },
     };
-    const worker = await require('wrangler').unstable_startWorker(workerOptions);
+    const worker =
+      await require('wrangler').unstable_startWorker(workerOptions);
     t.after(() => worker.dispose());
     await worker.ready;
     const {
@@ -198,9 +199,8 @@ test(
     const readsBeforeRevocation = permissionReads;
     rootAccess = false;
     assert.equal(
-      (
-        await worker.fetch('https://mastermind.tuturuuu.com/en', { headers })
-      ).status,
+      (await worker.fetch('https://mastermind.tuturuuu.com/en', { headers }))
+        .status,
       403
     );
     assert.equal(permissionReads, readsBeforeRevocation + 1);

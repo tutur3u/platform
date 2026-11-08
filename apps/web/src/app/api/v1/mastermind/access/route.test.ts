@@ -101,5 +101,4 @@ describe('GET /api/v1/mastermind/access', () => {
       wsId: ROOT_WORKSPACE_ID,
     });
   });
-
 });
