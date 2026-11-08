@@ -134,6 +134,11 @@ for (const [file, jobId] of workflows) {
       assert.ok(steps.indexOf(save) > steps.indexOf(install));
     }
     assert.equal(install.id, 'gitleaks');
+    assert.deepEqual(install.env, { GH_TOKEN: expression('github.token') });
+    assert.deepEqual(workflow.permissions, { contents: 'read' });
+    if (job.permissions)
+      assert.deepEqual(job.permissions, { contents: 'read' });
+    assert.doesNotMatch(install.run, /curl |secrets\.|auth login/);
     assert.equal(
       install.if,
       undefined,
@@ -191,11 +196,11 @@ for (const [file, jobId] of workflows) {
 
   const scenarios = [
     { name: 'release-hit', archive: 'valid', source: 'release' },
-    { name: 'release-miss', source: 'release', curl: true },
+    { name: 'release-miss', source: 'release', download: true },
     { name: 'corrupt-release-hit', archive: 'corrupt', fail: true },
     {
       name: 'corrupt-release-download',
-      curl: true,
+      download: true,
       corruptRelease: true,
       fail: true,
     },
@@ -203,15 +208,15 @@ for (const [file, jobId] of workflows) {
     { name: 'corrupt-image-hit', image: 'corrupt', fail: true },
     {
       name: 'release-outage-image-fallback',
-      curl: true,
-      curlFail: true,
+      download: true,
+      downloadFail: true,
       docker: true,
       source: 'image',
     },
     {
       name: 'both-sources-fail',
-      curl: true,
-      curlFail: true,
+      download: true,
+      downloadFail: true,
       docker: true,
       dockerFail: 'pull',
       fail: true,
@@ -219,16 +224,16 @@ for (const [file, jobId] of workflows) {
     },
     {
       name: 'image-pull-timeout',
-      curl: true,
-      curlFail: true,
+      download: true,
+      downloadFail: true,
       timeout: true,
       fail: true,
       exit: 124,
     },
     {
       name: 'image-create-fails',
-      curl: true,
-      curlFail: true,
+      download: true,
+      downloadFail: true,
       docker: true,
       dockerFail: 'create',
       fail: true,
@@ -236,8 +241,8 @@ for (const [file, jobId] of workflows) {
     },
     {
       name: 'image-copy-fails',
-      curl: true,
-      curlFail: true,
+      download: true,
+      downloadFail: true,
       docker: true,
       dockerFail: 'cp',
       fail: true,
@@ -246,16 +251,16 @@ for (const [file, jobId] of workflows) {
     },
     {
       name: 'corrupt-image-download',
-      curl: true,
-      curlFail: true,
+      download: true,
+      downloadFail: true,
       docker: true,
       corruptImage: true,
       fail: true,
     },
     {
       name: 'wrong-image-version',
-      curl: true,
-      curlFail: true,
+      download: true,
+      downloadFail: true,
       docker: true,
       wrongVersion: 'image',
       fail: true,
@@ -263,7 +268,7 @@ for (const [file, jobId] of workflows) {
     },
     {
       name: 'wrong-release-version',
-      curl: true,
+      download: true,
       wrongVersion: 'release',
       fail: true,
       versionRan: true,
@@ -278,7 +283,7 @@ for (const [file, jobId] of workflows) {
       const releaseDir = path.join(box, 'release');
       for (const dir of [temp, bin, releaseDir]) fs.mkdirSync(dir);
       function binary(label) {
-        return `#!/bin/sh\n# ${label}\n[ "$1" = version ] || exit 98\necho version >> "$VERSION_LOG"\necho ${scenario.wrongVersion === label ? '8.30.0' : '8.30.1'}\n`;
+        return `#!/bin/sh\n# ${label}\n[ "$1" = version ] || exit 98\n[ -z "\${GH_TOKEN:-}" ] && [ -z "\${GITHUB_TOKEN:-}" ] || exit 85\necho version >> "$VERSION_LOG"\necho ${scenario.wrongVersion === label ? '8.30.0' : '8.30.1'}\n`;
       }
       executable(path.join(releaseDir, 'gitleaks'), binary('release'));
       const imageFixture = path.join(box, 'image-fixture');
@@ -299,36 +304,41 @@ for (const [file, jobId] of workflows) {
           );
         }
       }
-      const curlLog = path.join(box, 'curl-args');
+      const releaseLog = path.join(box, 'release-args');
       const dockerLog = path.join(box, 'docker-args');
       const versionLog = path.join(box, 'version-log');
       const output = path.join(box, 'output');
       executable(
-        path.join(bin, 'curl'),
+        path.join(bin, 'gh'),
         `#!/bin/sh
-printf '%s\\n' "$@" > "$CURL_LOG"
+[ "$GH_TOKEN" = fixture-auth ] || exit 88
+printf '%s\\n' "$@" >> "$RELEASE_LOG"
+echo attempt >> "$RELEASE_ATTEMPTS"
 while [ "$#" -gt 0 ]; do
   if [ "$1" = --output ]; then shift; target="$1"; fi
   shift
 done
-if [ "$CURL_FAIL" = true ]; then printf partial > "$target"; touch "$CURL_FAILURE"; exit 22; fi
+if [ "$RELEASE_FAIL" = true ]; then printf partial > "$target"; touch "$RELEASE_FAILURE"; exit 22; fi
 if [ "$CORRUPT_RELEASE" = true ]; then printf corrupt > "$target"; else cp "$FIXTURE" "$target"; fi
 `
       );
       executable(
         path.join(bin, 'timeout'),
         `#!/bin/sh
-[ "$1" = 180 ] || exit 96
-[ -f "$CURL_FAILURE" ] || exit 95
-shift
-if [ "$PULL_TIMEOUT" = true ]; then exit 124; fi
-exec "$@"
+case "$1" in
+  120) [ "$2" = gh ] || exit 96; shift; exec "$@" ;;
+  180) [ -f "$RELEASE_FAILURE" ] || exit 95; shift
+       if [ "$PULL_TIMEOUT" = true ]; then exit 124; fi
+       exec "$@" ;;
+  *) exit 87 ;;
+esac
 `
       );
       executable(
         path.join(bin, 'docker'),
         `#!/bin/sh
-[ -f "$CURL_FAILURE" ] || exit 94
+[ -f "$RELEASE_FAILURE" ] || exit 94
+[ -z "\${GH_TOKEN:-}" ] && [ -z "\${GITHUB_TOKEN:-}" ] || exit 86
 printf '%s\\n' "$*" >> "$DOCKER_LOG"
 case "$1" in
   pull) [ "$*" = "pull --platform linux/amd64 $EXPECTED_IMAGE" ] || exit 93
@@ -344,6 +354,10 @@ case "$1" in
 esac
 `
       );
+      executable(
+        path.join(bin, 'sleep'),
+        '#!/bin/sh\nprintf "%s\\n" "$1" >> "$SLEEP_LOG"\n'
+      );
       shaAdapter(bin);
       const result = spawnSync('bash', ['-c', install.run], {
         encoding: 'utf8',
@@ -351,17 +365,21 @@ esac
           ...process.env,
           PATH: `${bin}${path.delimiter}${process.env.PATH}`,
           RUNNER_TEMP: temp,
+          GH_TOKEN: 'fixture-auth',
+          GITHUB_TOKEN: 'fixture-parent',
+          RELEASE_ATTEMPTS: path.join(box, 'release-attempts'),
+          SLEEP_LOG: path.join(box, 'sleep-log'),
           GITHUB_OUTPUT: output,
           GITLEAKS_VERSION: pins.GITLEAKS_VERSION,
           GITLEAKS_SHA256: sha(fixture),
           GITLEAKS_IMAGE_DIGEST: pins.GITLEAKS_IMAGE_DIGEST,
           GITLEAKS_IMAGE_BINARY_SHA256: sha(imageFixture),
           EXPECTED_IMAGE: `ghcr.io/gitleaks/gitleaks@sha256:${imageDigest}`,
-          CURL_LOG: curlLog,
+          RELEASE_LOG: releaseLog,
           DOCKER_LOG: dockerLog,
           VERSION_LOG: versionLog,
-          CURL_FAILURE: path.join(box, 'curl-failed'),
-          CURL_FAIL: String(Boolean(scenario.curlFail)),
+          RELEASE_FAILURE: path.join(box, 'release-failed'),
+          RELEASE_FAIL: String(Boolean(scenario.downloadFail)),
           CORRUPT_RELEASE: String(Boolean(scenario.corruptRelease)),
           CORRUPT_IMAGE: String(Boolean(scenario.corruptImage)),
           PULL_TIMEOUT: String(Boolean(scenario.timeout)),
@@ -377,7 +395,7 @@ esac
         result.stdout + result.stderr
       );
       if (scenario.exit) assert.equal(result.status, scenario.exit);
-      assert.equal(fs.existsSync(curlLog), Boolean(scenario.curl));
+      assert.equal(fs.existsSync(releaseLog), Boolean(scenario.download));
       assert.equal(fs.existsSync(dockerLog), Boolean(scenario.docker));
       assert.equal(
         fs.existsSync(versionLog),
@@ -400,7 +418,7 @@ esac
           'failed supplier cannot publish verified source'
         );
       }
-      if (scenario.curlFail)
+      if (scenario.downloadFail)
         assert.equal(
           fs.existsSync(archive),
           false,
@@ -413,20 +431,28 @@ esac
         );
       if (scenario.name.startsWith('corrupt'))
         assert.match(result.stdout + result.stderr, /FAILED|checksum/);
-      if (scenario.curl) {
-        const args = fs.readFileSync(curlLog, 'utf8').trim().split('\n');
+      if (scenario.download) {
+        const args = fs.readFileSync(releaseLog, 'utf8').trim().split('\n');
+        assert.deepEqual(args.slice(0, 3), ['release', 'download', 'v8.30.1']);
+        assert.equal(args[args.indexOf('--repo') + 1], 'gitleaks/gitleaks');
         assert.equal(
-          args[args.indexOf('--retry') + 1],
-          file === 'security-checks.yaml' ? '3' : '2'
+          args[args.indexOf('--pattern') + 1],
+          'gitleaks_8.30.1_linux_x64.tar.gz'
         );
-        assert.ok(args.includes('--fail'));
-        assert.ok(
-          args.includes(
-            'https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz'
-          )
+        assert.equal(args.includes('fixture-auth'), false);
+        const attempts = fs
+          .readFileSync(path.join(box, 'release-attempts'), 'utf8')
+          .trim()
+          .split('\n').length;
+        assert.equal(
+          attempts,
+          scenario.downloadFail ? (file === 'security-checks.yaml' ? 4 : 3) : 1
         );
-        if (file === 'security-scan.yaml')
-          assert.equal(args[args.indexOf('--max-time') + 1], '120');
+        if (scenario.downloadFail)
+          assert.equal(
+            fs.readFileSync(path.join(box, 'sleep-log'), 'utf8'),
+            file === 'security-checks.yaml' ? '1\n2\n4\n' : '1\n2\n'
+          );
       }
     });
   }
