@@ -68,7 +68,9 @@ test(
       createHmac('sha256', secret).update(content).digest('base64url');
     const plain = (value) => ({ type: 'plain_text', value });
     const require = createRequire(join(app, 'package.json'));
-    const worker = await require('wrangler').unstable_startWorker({
+    let rootAccess = true;
+    let permissionReads = 0;
+    const workerOptions = {
       config: join(scratch, relative(app, configPath)),
       envFiles: [envFile],
       sendMetrics: false,
@@ -109,12 +111,42 @@ test(
               headers: { 'Content-Type': 'application/json' },
             });
           }
+          if (request.url === 'https://tuturuuu.com/api/v1/mastermind/access') {
+            permissionReads++;
+            assert.equal(
+              request.headers.get('Authorization'),
+              `Bearer ${session}`
+            );
+            return Response.json({ enabled: rootAccess });
+          }
           throw new Error('Application data reads forbidden');
         },
       },
-    });
+    };
+    const worker = await require('wrangler').unstable_startWorker(workerOptions);
     t.after(() => worker.dispose());
     await worker.ready;
+    const {
+      TUTURUUU_APP_COORDINATION_SECRET: _secret,
+      ...missingSecretBindings
+    } = workerOptions.bindings;
+    const misconfigured = await require('wrangler').unstable_startWorker({
+      ...workerOptions,
+      bindings: missingSecretBindings,
+    });
+    t.after(() => misconfigured.dispose());
+    await misconfigured.ready;
+    const unavailable = await misconfigured.fetch(
+      'https://mastermind.tuturuuu.com/'
+    );
+    assert.equal(unavailable.status, 503);
+    assert.equal(await unavailable.text(), 'Service unavailable');
+    const anonymousRoot = await worker.fetch(
+      'https://mastermind.tuturuuu.com/',
+      { redirect: 'manual' }
+    );
+    assert.equal(anonymousRoot.status, 303);
+    assert.equal(anonymousRoot.headers.get('Location'), '/login');
     const headers = {
       'Cf-Access-Jwt-Assertion': access,
       Authorization: `Bearer ${session}`,
@@ -163,5 +195,14 @@ test(
       assert.ok(html.includes(email));
       assert.ok(html.includes(locale === 'en' ? 'Coming soon' : 'Sắp ra mắt'));
     }
+    const readsBeforeRevocation = permissionReads;
+    rootAccess = false;
+    assert.equal(
+      (
+        await worker.fetch('https://mastermind.tuturuuu.com/en', { headers })
+      ).status,
+      403
+    );
+    assert.equal(permissionReads, readsBeforeRevocation + 1);
   }
 );
