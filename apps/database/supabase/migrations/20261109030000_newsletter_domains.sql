@@ -221,7 +221,7 @@ begin
     or p_subdomain <> pg_catalog.lower(p_subdomain)
     or pg_catalog.length(p_subdomain) < 1
     or pg_catalog.length(p_subdomain) > 253
-    or pg_catalog.position('*' in p_subdomain) > 0
+    or pg_catalog.strpos(p_subdomain, '*') > 0
     or p_subdomain ~ '[^a-z0-9.-]'
     or p_subdomain ~ '^[0-9]+([.][0-9]+){3}$'
     or p_subdomain = 'localhost'
@@ -263,7 +263,7 @@ begin
   end if;
   if pg_catalog.jsonb_array_length(p_dns) < 1
     or pg_catalog.jsonb_array_length(p_dns) > 12
-    or pg_catalog.position(p_token_hash in p_dns::text) > 0
+    or pg_catalog.strpos(p_dns::text, p_token_hash) > 0
   then
     raise exception 'newsletter_dns' using errcode = '22023';
   end if;
@@ -591,8 +591,8 @@ begin
     or p_actor_email is null
     or pg_catalog.lower(pg_catalog.btrim(p_recipient))
       is distinct from pg_catalog.lower(pg_catalog.btrim(p_actor_email))
-    or pg_catalog.position(',' in p_recipient) > 0
-    or pg_catalog.position(';' in p_recipient) > 0
+    or pg_catalog.strpos(p_recipient, ',') > 0
+    or pg_catalog.strpos(p_recipient, ';') > 0
     or p_recipient ~ '[[:cntrl:]]'
     or p_actor_email ~ '[[:cntrl:]]'
   then
