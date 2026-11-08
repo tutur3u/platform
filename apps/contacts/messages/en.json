@@ -3792,6 +3792,7 @@
     "total": "Total",
     "total_reports": "Total reports",
     "unapproved": "Unapproved",
+    "undated_sent_notice": "{count, plural, one {# sent report has no recorded send date and appears} other {# sent reports have no recorded send date and appear}} only in All months.",
     "undeliverable": "Undeliverable",
     "unknown_group": "Unknown group",
     "unknown_member": "Unknown member",

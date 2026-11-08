@@ -3792,6 +3792,7 @@
     "total": "Tổng",
     "total_reports": "Tổng báo cáo",
     "unapproved": "Chưa phê duyệt",
+    "undated_sent_notice": "{count} báo cáo đã gửi không có ngày gửi được ghi nhận, chỉ hiển thị trong Tất cả các tháng.",
     "undeliverable": "Không thể gửi",
     "unknown_group": "Nhóm không xác định",
     "unknown_member": "Thành viên không xác định",

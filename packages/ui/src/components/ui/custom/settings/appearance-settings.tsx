@@ -1,6 +1,7 @@
 'use client';
 
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import {
@@ -10,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -43,79 +43,81 @@ export function AppearanceSettings({
 
   return (
     <div className="space-y-8">
-      <SettingItemTab
-        title={t('common.theme')}
-        description="Select your preferred theme for the application."
-      >
-        <RadioGroup
-          defaultValue={theme}
-          onValueChange={setTheme}
-          className="grid grid-cols-3 gap-4"
+      <SettingsSection>
+        <SettingItemTab
+          layout="stacked"
+          title={t('common.theme')}
+          description="Select your preferred theme for the application."
         >
-          <div>
-            <RadioGroupItem value="light" id="light" className="peer sr-only" />
-            <Label
-              htmlFor="light"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-            >
-              <div className="mb-3 h-20 w-full rounded-md bg-[#ecedef] shadow-sm" />
-              {t('common.light')}
-            </Label>
-          </div>
-          <div>
-            <RadioGroupItem value="dark" id="dark" className="peer sr-only" />
-            <Label
-              htmlFor="dark"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-            >
-              <div className="mb-3 h-20 w-full rounded-md bg-slate-950 shadow-sm" />
-              {t('common.dark')}
-            </Label>
-          </div>
-          <div>
-            <RadioGroupItem
-              value="system"
-              id="system"
-              className="peer sr-only"
-            />
-            <Label
-              htmlFor="system"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-            >
-              <div className="mb-3 h-20 w-full rounded-md bg-linear-to-r from-[#ecedef] to-slate-950 shadow-sm" />
-              {t('common.system')}
-            </Label>
-          </div>
-        </RadioGroup>
-      </SettingItemTab>
+          <RadioGroup
+            defaultValue={theme}
+            onValueChange={setTheme}
+            className="grid grid-cols-3 gap-3"
+          >
+            <div>
+              <RadioGroupItem
+                value="light"
+                id="light"
+                className="peer sr-only"
+              />
+              <Label
+                htmlFor="light"
+                className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-2 font-normal hover:bg-accent hover:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-data-[state=checked]:border-foreground peer-data-[state=checked]:ring-1 peer-data-[state=checked]:ring-foreground"
+              >
+                <div className="h-14 w-full rounded-md border bg-[#ecedef] shadow-sm" />
+                {t('common.light')}
+              </Label>
+            </div>
+            <div>
+              <RadioGroupItem value="dark" id="dark" className="peer sr-only" />
+              <Label
+                htmlFor="dark"
+                className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-2 font-normal hover:bg-accent hover:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-data-[state=checked]:border-foreground peer-data-[state=checked]:ring-1 peer-data-[state=checked]:ring-foreground"
+              >
+                <div className="h-14 w-full rounded-md border bg-slate-950 shadow-sm" />
+                {t('common.dark')}
+              </Label>
+            </div>
+            <div>
+              <RadioGroupItem
+                value="system"
+                id="system"
+                className="peer sr-only"
+              />
+              <Label
+                htmlFor="system"
+                className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-2 font-normal hover:bg-accent hover:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-data-[state=checked]:border-foreground peer-data-[state=checked]:ring-1 peer-data-[state=checked]:ring-foreground"
+              >
+                <div className="h-14 w-full rounded-md border bg-linear-to-r from-[#ecedef] to-slate-950 shadow-sm" />
+                {t('common.system')}
+              </Label>
+            </div>
+          </RadioGroup>
+        </SettingItemTab>
 
-      <Separator />
-
-      <SettingItemTab
-        title={t('common.language')}
-        description={t('settings-account.language-description')}
-      >
-        <Select
-          defaultValue={locale}
-          onValueChange={handleLocaleChange}
-          disabled={isPending}
+        <SettingItemTab
+          title={t('common.language')}
+          description={t('settings-account.language-description')}
         >
-          <SelectTrigger className="w-50">
-            <SelectValue placeholder={t('common.select-language')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="en">English</SelectItem>
-            <SelectItem value="vi">Tieng Viet</SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingItemTab>
+          <Select
+            defaultValue={locale}
+            onValueChange={handleLocaleChange}
+            disabled={isPending}
+          >
+            <SelectTrigger className="w-50">
+              <SelectValue placeholder={t('common.select-language')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="vi">Tieng Viet</SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingItemTab>
 
-      {canManageVersionBadge ? (
-        <>
-          <Separator />
+        {canManageVersionBadge ? (
           <VersionBadgeSetting canManage={canManageVersionBadge} />
-        </>
-      ) : null}
+        ) : null}
+      </SettingsSection>
     </div>
   );
 }
