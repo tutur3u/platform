@@ -51,17 +51,17 @@ import {
   updateSaleCartQuantity,
 } from './sale-create-items';
 import {
-  SaleProductPicker,
-  type SaleProductSort,
-  sortSaleStockOptions,
-} from './sale-product-picker';
-import { useSeasonSalePrices } from './season-sale-prices';
-import {
   browserSalePeriodStorage,
   rememberSalePeriod,
   resolveSalePeriod,
   type SalePeriodSelection,
 } from './sale-period-selection';
+import {
+  SaleProductPicker,
+  type SaleProductSort,
+  sortSaleStockOptions,
+} from './sale-product-picker';
+import { useSeasonSalePrices } from './season-sale-prices';
 import { useHybridSearchResults } from './use-hybrid-search-results';
 
 const SALE_TABS = ['items', 'checkout'] as const;
@@ -264,14 +264,13 @@ export function SaleCreateDialog({
     (sum, line) => sum + line.price * line.quantity,
     0
   );
-  const canSubmit = Boolean(
+  const canSubmit =
     lines.length > 0 &&
-    content.trim() &&
-    walletId &&
-    categoryId &&
+    content.trim() !== '' &&
+    walletId !== '' &&
+    categoryId !== '' &&
     periodId !== 'choose' &&
-    seasonPricing.cartIsCurrent(lines)
-  );
+    seasonPricing.cartIsCurrent(lines);
   const tabIndex = SALE_TABS.indexOf(tab as (typeof SALE_TABS)[number]);
   const canGoNext = lines.length > 0;
 

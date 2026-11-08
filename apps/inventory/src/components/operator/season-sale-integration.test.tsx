@@ -183,10 +183,9 @@ describe('mounted season sales integrations', () => {
     review();
     await waitFor(() => expect(api.sale).toHaveBeenCalledTimes(1));
     await waitFor(() =>
-      expect(screen.getByRole('tab', { name: /Items/ })).toHaveAttribute(
-        'data-state',
-        'active'
-      )
+      expect(
+        screen.getByRole('tab', { name: /Items/ }).getAttribute('data-state')
+      ).toBe('active')
     );
     await add('Beta');
     review();
