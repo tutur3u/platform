@@ -140,6 +140,7 @@ bun run test -- src/lib/external-projects/email-policy.test.ts \
 - Keep CMS as a pure satellite frontend. Do not move API ownership into `apps/cms`.
 - Continue adding or extending client helpers in `packages/internal-api` for CMS-facing API calls.
 - Keep preview sourced from the existing delivery route instead of introducing a second preview payload contract.
+- Entry preview is read-only. `POST .../entries/{entryId}/publish` with `eventKind: "preview"` returns the entry as stored. It does not change the entry status, record a publish event or invalidate the delivery cache, and it returns `404` for an entry outside the workspace. Only `publish` and `unpublish` write. Regression: the colocated `publish/route.test.ts`.
 - Backend/database naming remains `external-project*`; the product surface is what changed.
 - Protect CMS-owned product copy with the CMS copy hygiene test, and add
   explicit admin/developer-detail exceptions only when a staff workflow truly
