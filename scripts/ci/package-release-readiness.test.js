@@ -482,6 +482,125 @@ test('dependent workflow dispatch targets direct unpublished dependents only', a
   );
 });
 
+test('dependent fanout continues past a deliberately disabled workflow', async () => {
+  const rootDir = createFixtureRoot();
+  for (const [name, packageName] of [
+    ['sdk', 'tuturuuu'],
+    ['ui', '@tuturuuu/ui'],
+  ]) {
+    writeJson(path.join(rootDir, `packages/${name}/package.json`), {
+      name: packageName,
+      version: '5.0.0',
+      dependencies: { '@tuturuuu/internal-api': 'workspace:*' },
+    });
+    writeWorkflow(rootDir, `release-${name}-package.yaml`, `packages/${name}`);
+  }
+  const attempts = [];
+  const dispatched = await dispatchDependentWorkflows({
+    packageDir: 'packages/internal-api',
+    repoRoot: rootDir,
+    versionExists: createVersionExists(
+      new Set(['@tuturuuu/internal-api@2.0.0'])
+    ),
+    logger: silentLogger,
+    dispatchWorkflow: async ({ workflowName, skipDisabled }) => {
+      assert.equal(skipDisabled, true);
+      attempts.push(workflowName);
+      return {
+        state: workflowName.includes('sdk') ? 'disabled' : 'dispatched',
+      };
+    },
+  });
+  assert.deepEqual(attempts, [
+    'release-sdk-package.yaml',
+    'release-ui-package.yaml',
+  ]);
+  assert.deepEqual(
+    dispatched.map((entry) => entry.packageName),
+    ['@tuturuuu/ui']
+  );
+});
+
+test('optional dependent dispatch skips disabled workflows before any POST', async () => {
+  for (const state of ['disabled_manually']) {
+    const methods = [];
+    const result = await dispatchRelatedWorkflow({
+      env: {
+        GH_TOKEN: 'fixture-token',
+        GITHUB_REPOSITORY: 'tutur3u/platform',
+        GITHUB_REF_NAME: 'production',
+      },
+      skipDisabled: true,
+      workflowName: 'release-sdk-package.yaml',
+      logger: silentLogger,
+      fetchImpl: async (url, options) => {
+        methods.push(options.method);
+        assert.ok(url.endsWith('/release-sdk-package.yaml'));
+        return { ok: true, json: async () => ({ state }) };
+      },
+    });
+    assert.deepEqual(result, { ref: 'production', state: 'disabled' });
+    assert.deepEqual(methods, ['GET']);
+  }
+});
+
+test('optional dependent dispatch fails closed for unreadable workflow state', async () => {
+  for (const response of [
+    { ok: false, status: 403, statusText: 'Forbidden' },
+    { ok: true, json: async () => ({ state: 'disabled_inactivity' }) },
+    { ok: true, json: async () => ({ state: 'unknown' }) },
+  ]) {
+    const methods = [];
+    await assert.rejects(
+      dispatchRelatedWorkflow({
+        env: {
+          GH_TOKEN: 'fixture-token',
+          GITHUB_REPOSITORY: 'tutur3u/platform',
+          GITHUB_REF_NAME: 'production',
+        },
+        skipDisabled: true,
+        workflowName: 'release-ui-package.yaml',
+        logger: silentLogger,
+        fetchImpl: async (_url, options) => {
+          methods.push(options.method);
+          return response;
+        },
+      }),
+      /workflow state/
+    );
+    assert.deepEqual(methods, ['GET']);
+  }
+});
+
+test('optional dependent dispatch preserves failures after active preflight', async () => {
+  const methods = [];
+  await assert.rejects(
+    dispatchRelatedWorkflow({
+      env: {
+        GH_TOKEN: 'fixture-token',
+        GITHUB_REPOSITORY: 'tutur3u/platform',
+        GITHUB_REF_NAME: 'production',
+      },
+      skipDisabled: true,
+      workflowName: 'release-ui-package.yaml',
+      logger: silentLogger,
+      fetchImpl: async (_url, options) => {
+        methods.push(options.method);
+        return options.method === 'GET'
+          ? { ok: true, json: async () => ({ state: 'active' }) }
+          : {
+              ok: false,
+              status: 500,
+              statusText: 'Server Error',
+              text: async () => '',
+            };
+      },
+    }),
+    /500 Server Error/
+  );
+  assert.deepEqual(methods, ['GET', 'POST']);
+});
+
 test('platform changed package gate reports ready when changed versions are visible', async () => {
   const rootDir = createFixtureRoot();
 

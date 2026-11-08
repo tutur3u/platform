@@ -385,6 +385,7 @@ async function dispatchRelatedWorkflow({
   env = process.env,
   fetchImpl = globalThis.fetch,
   logger = console,
+  skipDisabled = false,
   workflowName,
 }) {
   const url = buildWorkflowDispatchUrl({ env, workflowName });
@@ -397,16 +398,38 @@ async function dispatchRelatedWorkflow({
     );
   }
 
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'User-Agent': 'tuturuuu-package-release-readiness',
+  };
+
+  if (skipDisabled) {
+    const workflow = await fetchImpl(url.slice(0, -'/dispatches'.length), {
+      headers,
+      method: 'GET',
+    });
+    if (!workflow.ok) {
+      throw new Error(
+        `Unable to inspect ${workflowName} workflow state: ${workflow.status} ${workflow.statusText}.`
+      );
+    }
+    const { state } = await workflow.json();
+    if (state === 'disabled_manually') {
+      logger.log(`Skipping disabled dependent workflow ${workflowName}.`);
+      return { ref, state: 'disabled' };
+    }
+    if (state !== 'active') {
+      throw new Error(`Unable to confirm ${workflowName} workflow state.`);
+    }
+  }
+
   const response = await fetchImpl(url, {
     body: JSON.stringify({
       ref,
     }),
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      'User-Agent': 'tuturuuu-package-release-readiness',
-    },
+    headers,
     method: 'POST',
   });
 
@@ -671,12 +694,13 @@ async function dispatchDependentWorkflows({
   }
 
   for (const dependent of dependents) {
-    await dispatchWorkflow({
+    const result = await dispatchWorkflow({
       env,
       logger,
+      skipDisabled: true,
       workflowName: dependent.workflowName,
     });
-    dispatched.push(dependent);
+    if (result?.state !== 'disabled') dispatched.push(dependent);
   }
 
   return dispatched;
