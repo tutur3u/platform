@@ -1,4 +1,4 @@
--- Fee lock functions (20261104130100): baseline maths, server totals, the
+-- Fee lock functions (20261109050100): baseline maths, server totals, the
 -- reason rule, version conflicts, cross-workspace rejection, lock/reopen
 -- revisions, grants, workspace-owned catalogue units and warehouses, the money
 -- limit (22003) and 200-character snapshot names. Synthetic fixtures; December 2026.
