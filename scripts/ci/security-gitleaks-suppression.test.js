@@ -268,8 +268,16 @@ regex = '''(?i)[\\w.-]{0,50}?(?:discord)(?:[ \\t\\w.-]{0,20})[\\s'"]{0,3}(?:=|>|
 
 test('the #6990 discord-client-id fingerprint is suppressed while new findings fail', (t) => {
   const repoRoot = path.resolve(__dirname, '../..');
-  const ignoreFile = path.join(repoRoot, '.gitleaksignore');
-  const ignoreContent = fs.readFileSync(ignoreFile, 'utf8');
+  const ignoreContent = execFileSync('git', ['show', 'HEAD:.gitleaksignore'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  const ignoreDirectory = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'gitleaks-discord-ignore-')
+  );
+  t.after(() => fs.rmSync(ignoreDirectory, { force: true, recursive: true }));
+  const ignoreFile = path.join(ignoreDirectory, 'trusted-ignore');
+  fs.writeFileSync(ignoreFile, ignoreContent);
   assert.ok(
     ignoreContent
       .split('\n')
