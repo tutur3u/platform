@@ -1,8 +1,8 @@
 -- Manual rollback only: removes CMS page versions and the entry pointer added
--- by 20261104140000_external_project_page_versions.sql. This deletes every
+-- by 20261109010100_external_project_page_versions.sql. This deletes every
 -- saved page version (publish events stay); export the table first if any
 -- must be kept, and deploy app code without the page-version routes first.
--- Then roll back 20261104135900.
+-- Then roll back 20261109010000.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '60s';
