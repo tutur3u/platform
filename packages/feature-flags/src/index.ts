@@ -39,3 +39,13 @@ export function evaluateFlags<Key extends string>(
     ])
   ) as Record<Key, boolean>;
 }
+
+export const cookieConsentBanner = {
+  key: 'cookie_consent_banner',
+  description:
+    'Client-side privacy preferences; remove after production verification.',
+  owner: 'pax',
+  class: 'ui',
+  default: false,
+  removeBy: '2026-12-08',
+} satisfies FlagDefinition<'cookie_consent_banner'>;
