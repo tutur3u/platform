@@ -6,9 +6,8 @@ vi.mock('@tuturuuu/finance-core/fee-lock/access', () => ({
   isFeeLockEnabled: mocks.enabled,
 }));
 
-const { insertFeeLockLink, resolveFeeLockRef } = await import(
-  './fee-lock-link'
-);
+const { discardNewSubscriptionInvoice, insertFeeLockLink, resolveFeeLockRef } =
+  await import('./fee-lock-link');
 
 const WS = '00000000-0000-4000-8000-0000000fe010';
 const LOCK = '00000000-0000-4000-8000-0000000fe301';
@@ -188,5 +187,63 @@ describe('insertFeeLockLink', () => {
     const db = fakeSupabase();
     expect((await insert(db, 1e15))?.status).toBe(400);
     expect(db.client.from).not.toHaveBeenCalled();
+  });
+});
+
+describe('discardNewSubscriptionInvoice', () => {
+  const started = new Date('2026-12-01T03:00:00Z');
+
+  it('discards a linked invoice through the one-transaction RPC with the request start', async () => {
+    const db = fakeSupabase(
+      {},
+      { fee_lock_discard_new_invoice: { data: true } }
+    );
+    await discardNewSubscriptionInvoice(client(db), {
+      wsId: WS,
+      invoiceId: INVOICE,
+      actorId: 'actor-1',
+      requestStartedAt: started,
+      linked: true,
+    });
+    expect(db.rpcCalls).toEqual([
+      {
+        fn: 'fee_lock_discard_new_invoice',
+        args: {
+          p_ws_id: WS,
+          p_invoice_id: INVOICE,
+          p_actor_id: 'actor-1',
+          p_request_started_at: '2026-12-01T02:58:00.000Z',
+          p_reason: 'Subscription invoice creation failed',
+        },
+      },
+    ]);
+    expect(db.client.from).not.toHaveBeenCalled();
+  });
+
+  it('keeps the original child-first cleanup for an unlinked invoice and does nothing without one', async () => {
+    const db = fakeSupabase();
+    await discardNewSubscriptionInvoice(client(db), {
+      wsId: WS,
+      invoiceId: null,
+      actorId: 'a',
+      requestStartedAt: started,
+      linked: true,
+    });
+    expect(db.rpcCalls).toHaveLength(0);
+    await discardNewSubscriptionInvoice(client(db), {
+      wsId: WS,
+      invoiceId: INVOICE,
+      actorId: 'a',
+      requestStartedAt: started,
+      linked: false,
+    });
+    expect(
+      db.calls.filter((c) => c.method === 'delete').map((c) => c.table)
+    ).toEqual([
+      'finance_invoice_promotions',
+      'finance_invoice_products',
+      'finance_invoice_user_groups',
+      'finance_invoices',
+    ]);
   });
 });
