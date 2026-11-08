@@ -85,7 +85,7 @@ describe('feature flags page access', () => {
       (link) =>
         link?.title === 'infrastructure-navigation.groups.delivery.title'
     );
-    expect(delivery?.children?.map((link) => link.href)).toContain(
+    expect(delivery?.children?.map((link) => link?.href)).toContain(
       '/root/feature-flags'
     );
   });

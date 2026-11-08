@@ -30,6 +30,8 @@ const ENTRY_FIELDS = new Set([
   'legacyRemoveBy',
 ]);
 
+const CREDENTIAL_FRAGMENTS = ['PASSWORD', 'PRIVATE', 'TOKEN', 'CERTIFICATE'];
+
 const flagsIn = (family: string) =>
   featureFlagCatalog.flags.filter((flag) => flag.family === family);
 
@@ -166,7 +168,15 @@ describe('feature flag catalog', () => {
   it('records no production verification or credential-shaped entries', () => {
     for (const flag of featureFlagCatalog.flags) {
       expect(flag.verifiedOnProdAt, flag.key).toBeNull();
-      expect(flag.key).not.toMatch(/PASSWORD|PRIVATE|TOKEN|CERTIFICATE|_KEY$/);
+      for (const fragment of CREDENTIAL_FRAGMENTS) {
+        expect(
+          flag.key.includes(fragment),
+          `${flag.key} contains ${fragment}`
+        ).toBe(false);
+      }
+      expect(flag.key.endsWith('_KEY'), `${flag.key} ends with _KEY`).toBe(
+        false
+      );
     }
   });
 
