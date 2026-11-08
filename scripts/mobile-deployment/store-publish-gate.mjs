@@ -49,9 +49,7 @@ export function readZipText(buffer, filename) {
     const compressedSize = zip.readUInt32LE(offset + 18);
     const nameLength = zip.readUInt16LE(offset + 26);
     const extraLength = zip.readUInt16LE(offset + 28);
-    const name = zip
-      .subarray(offset + 30, offset + 30 + nameLength)
-      .toString();
+    const name = zip.subarray(offset + 30, offset + 30 + nameLength).toString();
     const dataStart = offset + 30 + nameLength + extraLength;
     const data = zip.subarray(dataStart, dataStart + compressedSize);
     if (name === filename || name.endsWith(`/${filename}`)) {
@@ -76,8 +74,7 @@ export function treeAt(sha, git = execFileSync) {
 
 function uploaded(jobs) {
   return (jobs ?? []).some(
-    (job) =>
-      UPLOAD_JOB_NAMES.includes(job.name) && job.conclusion === 'success'
+    (job) => UPLOAD_JOB_NAMES.includes(job.name) && job.conclusion === 'success'
   );
 }
 
@@ -85,10 +82,7 @@ export async function loadRecordedTree({ repo, token, readTree, request }) {
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(repo)) {
     throw new Error('repository is malformed');
   }
-  const listed = await request(
-    workflowRunsPath.replace('REPO', repo),
-    token
-  );
+  const listed = await request(workflowRunsPath.replace('REPO', repo), token);
   const runs = listed.workflow_runs ?? [];
   for (const run of runs) {
     const artifacts = await request(
@@ -162,7 +156,8 @@ async function main() {
     force: process.env.FORCE_STORE_PUBLISH === 'true',
   });
   const body = gateOutput({ publish: decision.publish, tree: currentTree });
-  if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, body);
+  if (process.env.GITHUB_OUTPUT)
+    appendFileSync(process.env.GITHUB_OUTPUT, body);
   console.log(
     `mobile store publish: ${decision.publish ? 'upload' : 'skip'} (${decision.reason})`
   );

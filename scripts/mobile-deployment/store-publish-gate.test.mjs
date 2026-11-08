@@ -92,7 +92,10 @@ test('the uploaded artifact and its zip entry carry the tree hash', () => {
     readZipText(storedZip(UPLOADED_TREE_FILE, text, 8), UPLOADED_TREE_FILE),
     text
   );
-  assert.equal(gateOutput({ publish: false, tree: same }), `publish=false\ntree=${same}\n`);
+  assert.equal(
+    gateOutput({ publish: false, tree: same }),
+    `publish=false\ntree=${same}\n`
+  );
 });
 
 test('the last uploaded artifact wins over an older successful job', async () => {
@@ -101,7 +104,13 @@ test('the last uploaded artifact wins over an older successful job', async () =>
     requests.push(path);
     if (path.endsWith('/runs?per_page=30')) {
       return {
-        workflow_runs: [{ id: 9, head_sha: '1'.repeat(40), created_at: '2026-11-09T00:00:00Z' }],
+        workflow_runs: [
+          {
+            id: 9,
+            head_sha: '1'.repeat(40),
+            created_at: '2026-11-09T00:00:00Z',
+          },
+        ],
       };
     }
     if (path.endsWith('/artifacts?per_page=100')) {
@@ -109,7 +118,8 @@ test('the last uploaded artifact wins over an older successful job', async () =>
         artifacts: [{ id: 4, name: UPLOADED_TREE_ARTIFACT, expired: false }],
       };
     }
-    if (path.endsWith('/zip')) return storedZip(UPLOADED_TREE_FILE, `tree ${same}\n`);
+    if (path.endsWith('/zip'))
+      return storedZip(UPLOADED_TREE_FILE, `tree ${same}\n`);
     throw new Error(path);
   };
   const recorded = await loadRecordedTree({
@@ -119,7 +129,10 @@ test('the last uploaded artifact wins over an older successful job', async () =>
     request,
   });
   assert.equal(recorded, same);
-  assert.equal(requests.some((path) => path.endsWith('/jobs?per_page=100')), false);
+  assert.equal(
+    requests.some((path) => path.endsWith('/jobs?per_page=100')),
+    false
+  );
 });
 
 test('without an artifact, the last successful upload tree is the baseline', async () => {
@@ -134,7 +147,9 @@ test('without an artifact, the last successful upload tree is the baseline', asy
     }
     if (path.endsWith('/artifacts?per_page=100')) return { artifacts: [] };
     if (path.endsWith('/runs/2/jobs?per_page=100')) {
-      return { jobs: [{ name: 'Upload iOS to TestFlight', conclusion: 'failure' }] };
+      return {
+        jobs: [{ name: 'Upload iOS to TestFlight', conclusion: 'failure' }],
+      };
     }
     if (path.endsWith('/runs/1/jobs?per_page=100')) {
       return {
