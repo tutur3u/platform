@@ -183,6 +183,16 @@
       },
       "digest": "2392f6d063d1996a39fb80caa64386e54f450ead750e9b353484a6eab3cc92c7"
     },
+    ".github/workflows/mastermind-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7608",
+        "reason": "REV-7608: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "ecd7cdb3ecc244b40fc2d16e412b82af9287148a79307beba4a0758f3e070257"
+    },
     ".github/workflows/meet-cloudflare.yaml": {
       "lines": 30,
       "uses": 34,
@@ -806,12 +816,12 @@
     "apps/mastermind/cloudflare/native-built-worker.acceptance.mjs": {
       "gap": "void-emitted-runtime",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7301",
-        "reason": "ADMITTED GAP: require(wrangler).unstable_startWorker runs the exact sealed Void-emitted config with bundle/processEntrypoint disabled, disposable bindings, outbound JWKS interception and provider auth denied. The cf/Vite harness requires native cf Build Output and lacks this Void-config fixture contract. No build or publication is admitted."
+        "decision": "https://github.com/tutur3u/platform/pull/7675",
+        "reason": "REV-7675: a second local unstable_startWorker refuses startup when the coordination secret binding is absent. Remote is disabled and provider auth is denied. The void-emitted runtime gap and its removal condition remain."
       },
-      "lines": 1,
-      "uses": 1,
-      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+      "lines": 2,
+      "uses": 2,
+      "digest": "0237422907598ee7a39a10dc713e863717d472bb08d390ffd18cd4500dc1ba87"
     },
     "apps/mastermind/package.json": {
       "gap": "void-emitted-runtime",

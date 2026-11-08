@@ -8,6 +8,23 @@ audience: users
 Mastermind is an internal fleet overview. The mobile section reads one sanitized snapshot from the Mastermind hub Worker. This page records the
 product rules of the shell entry, the Home tab and the Inbox; later tabs extend it.
 
+## Native Worker live admission
+
+The native Mastermind Worker also reads `GET /api/v1/mastermind/access` on every
+request that passes its Access JWT, app session, and owner allowlist checks.
+It forwards only the verified Mastermind app-session bearer token to the fixed
+web endpoint, with caching disabled, redirects refused and a five-second timeout.
+The endpoint accepts the `mastermind` audience with `internal-app:session` scope
+and resolves the principal's root-workspace permissions afresh. Existing mobile
+session access and the rollout rule below remain unchanged.
+
+Revoking the active root permission denies the next Worker request without
+changing its environment or waiting for its owner data memo to expire. An API
+error, timeout, non-200 status or invalid response also denies access. The
+endpoint must be deployed before adopting the Worker follow-up; an older endpoint
+without the app-session opt-in denies the Worker. Regression coverage lives in
+`apps/mastermind/src/native/auth.test.ts` and the emitted-Worker runtime smoke.
+
 ## Offline preparation
 
 The default-off `offline_read_mastermind` flag registers the existing signed

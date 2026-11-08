@@ -1,6 +1,7 @@
 import { verifyAppSessionRequestWithToken } from '@tuturuuu/auth/app-session-core';
 import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { hasLiveRootAccess } from './permission';
 
 export interface MastermindEnvironment {
   ASSETS?: AssetsBinding;
@@ -11,6 +12,22 @@ export interface MastermindEnvironment {
   TUTURUUU_APP_COORDINATION_SECRET?: string;
   OPS_HUB?: { fetch(request: Request): Promise<Response> };
 }
+export function assertMastermindEnvironment(env: MastermindEnvironment): void {
+  if (process.env.NODE_ENV !== 'production') {
+    throw new Error('Mastermind requires production mode');
+  }
+  const required = [
+    env.CF_ACCESS_TEAM_DOMAIN,
+    env.CF_ACCESS_AUD,
+    env.MASTERMIND_OWNER_EMAIL,
+    env.OWNER_IDS,
+    env.TUTURUUU_APP_COORDINATION_SECRET,
+  ];
+  if (required.some((value) => !value?.trim())) {
+    throw new Error('Required Mastermind environment is missing');
+  }
+}
+
 // Keep jose's cache and cooldown alive across requests within this isolate.
 const accessKeySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 function accessKeys(issuer: URL) {
@@ -105,13 +122,12 @@ export async function authenticate(
       return null;
     const owner = getSatelliteAppSessionUser('mastermind', request, env, now);
     if (!owner || owner.email !== payload.email) return null;
-    // Transitional owner-only mode until live manage_mastermind checks land.
-    // Re-read on EVERY request, before any memo, API call or render.
     const allowed = (env.OWNER_IDS ?? '')
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean);
-    return allowed.includes(owner.id) ? owner : null;
+    if (!allowed.includes(owner.id)) return null;
+    return (await hasLiveRootAccess(owner)) ? owner : null;
   } catch {
     return null;
   }
