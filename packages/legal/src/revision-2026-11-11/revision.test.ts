@@ -49,7 +49,7 @@ function allParts() {
 describe('2026-11-11 revision source', () => {
   it('is extracted from the frozen FINAL', () => {
     expect(FINAL_SOURCE_SHA256).toBe(
-      '1234b293dfb5b83c4cc94ff6716a3a10df6bcd284263e394241ef38e8838a8f6'
+      'a42bc6135831e94eaf0e872f3bced491143c666024dcea03b0e9f07921da7006'
     );
     expect(REVISION_DATE).toBe('2026-11-11');
   });
