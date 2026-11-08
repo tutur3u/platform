@@ -23,7 +23,8 @@ insert into public.workspaces (id, name, personal, creator_id) values
   (pg_temp.doc(10), 'WDH A', false, pg_temp.doc(1)),
   (pg_temp.doc(11), 'WDH B', false, pg_temp.doc(1));
 insert into public.workspace_members (ws_id, user_id, type)
-values (pg_temp.doc(10), pg_temp.doc(1), 'MEMBER');
+values (pg_temp.doc(10), pg_temp.doc(1), 'MEMBER')
+on conflict (ws_id, user_id) do nothing;
 
 select is(
   (select confdeltype::text from pg_constraint
