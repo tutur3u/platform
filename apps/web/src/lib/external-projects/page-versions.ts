@@ -5,7 +5,7 @@ import type {
 import type { Database } from '@tuturuuu/types';
 import { z } from 'zod';
 
-// Until typegen runs on a database with 20261104140000 applied, these are the
+// Until typegen runs on a database with 20261109010100 applied, these are the
 // page-version table and publish RPC from that migration.
 export type PageVersionRow = {
   created_at: string;
