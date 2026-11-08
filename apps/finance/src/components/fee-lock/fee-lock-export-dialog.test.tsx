@@ -24,6 +24,7 @@ const labels = {
   export_title: 'Xuất bảng chốt học phí',
   export_locked_only: 'Chỉ học phí đã chốt',
   export_all: 'Gồm cả bản nháp',
+  export_include_notice: 'Kèm nội dung thông báo',
   export_too_many: (count: number) => `too_many:${count}`,
   export_done: (count: number) => `done:${count}`,
   export_failed: 'failed',
@@ -67,16 +68,17 @@ describe('FeeLockExportDialog', () => {
     open();
     submit();
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('done:3'));
-    expect(mocks.export).toHaveBeenCalledWith(WS, { month: '2026-12', groupId: GROUP, status: 'locked' });
+    expect(mocks.export).toHaveBeenCalledWith(WS, { month: '2026-12', groupId: GROUP, status: 'locked', include_notice: false });
     expect(URL.createObjectURL).toHaveBeenCalledWith(blob);
     const link = click.mock.contexts[0] as HTMLAnchorElement;
     expect(link.download).toBe('chot-hoc-phi-2026-12-00000000.xlsx');
 
     open();
     fireEvent.click(screen.getByRole('radio', { name: 'Gồm cả bản nháp' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Kèm nội dung thông báo' }));
     submit();
     await waitFor(() => expect(mocks.export).toHaveBeenCalledTimes(2));
-    expect(mocks.export).toHaveBeenLastCalledWith(WS, { month: '2026-12', groupId: GROUP, status: 'all' });
+    expect(mocks.export).toHaveBeenLastCalledWith(WS, { month: '2026-12', groupId: GROUP, status: 'all', include_notice: true });
   });
 
   it('shows the too-many message and a failure without saving anything', async () => {

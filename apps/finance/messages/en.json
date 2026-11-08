@@ -11979,6 +11979,7 @@
     "export_all": "Include drafts",
     "export_done": "Export ready ({count} rows)",
     "export_failed": "Export failed. Please try again.",
+    "export_include_notice": "Include notice text",
     "export_locked_only": "Locked fees only",
     "export_title": "Export fee lock",
     "export_too_many": "Too many rows ({count}). Filter by class first.",

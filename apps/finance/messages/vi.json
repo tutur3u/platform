@@ -11979,6 +11979,7 @@
     "export_all": "Gồm cả bản nháp",
     "export_done": "Đã xuất ({count} dòng)",
     "export_failed": "Xuất thất bại. Vui lòng thử lại.",
+    "export_include_notice": "Kèm nội dung thông báo",
     "export_locked_only": "Chỉ học phí đã chốt",
     "export_title": "Xuất bảng chốt học phí",
     "export_too_many": "Quá nhiều dòng ({count}). Hãy lọc theo lớp trước.",

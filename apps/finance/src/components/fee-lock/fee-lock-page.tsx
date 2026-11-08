@@ -169,6 +169,7 @@ export function FeeLockPage({
               export_too_many: (count) => t('export_too_many', { count }),
               export_done: (count) => t('export_done', { count }),
               export_failed: t('export_failed'),
+              export_include_notice: t('export_include_notice'),
               cancel: common('cancel'),
             }}
           />

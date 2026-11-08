@@ -94,7 +94,7 @@ export async function loadFeeLockExportEntries(
   const locks = await readPages((from, to) => {
     const query = sbAdmin
       .from('fee_locks')
-      .select('id, student_id, status, revision, total_amount')
+      .select('id, student_id, status, revision, currency, total_amount')
       .eq('ws_id', wsId)
       .eq('period_month', periodMonth);
     return (status === 'locked' ? query.eq('status', 'locked') : query)
@@ -172,7 +172,7 @@ export async function loadFeeLockExportEntries(
         sbAdmin
           .from('fee_lock_lines')
           .select(
-            'id, fee_lock_id, kind, group_name_snapshot, label, unit_label, unit_price, quantity, adjustment_amount, reason, line_amount, sort_order'
+            'id, fee_lock_id, kind, group_id, group_name_snapshot, label, unit_label, unit_price, quantity, adjustment_amount, reason, line_amount, sort_order'
           )
           .eq('ws_id', wsId)
           .in('fee_lock_id', ids)
@@ -203,6 +203,7 @@ export async function loadFeeLockExportEntries(
         revision: null,
         student_name: names.get(lock.student_id) ?? '',
         period_month: periodMonth,
+        currency: lock.currency,
         total_amount: lock.total_amount,
         lines: lines.rows
           .filter((line) => line.fee_lock_id === lock.id)
