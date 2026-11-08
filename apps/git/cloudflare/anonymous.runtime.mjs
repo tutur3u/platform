@@ -58,7 +58,7 @@ test('anonymous root and closed public ingress on the emitted Worker', { timeout
     assert.ok([301, 302, 303, 307, 308].includes(response.status));
     const target = new URL(response.location, `https://${canonical}`);
     assert.equal(target.host, canonical);
-    assert.equal(target.pathname, '/login');
+    assert.equal(target.pathname, '/tutur3u/platform');
   } else {
     assert.equal(response.status, 200);
   }
