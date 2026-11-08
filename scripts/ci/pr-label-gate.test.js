@@ -66,7 +66,8 @@ const PROTECTED_TRIGGERS = {
   'mobile-build-linux.yaml': '7469a02578f1c4c3',
   'mobile-build-macos.yaml': 'cca5083fd78920dc',
   'mobile-build-windows.yaml': 'ff0b86edd5297973',
-  'mobile.yaml': '2bd82a7675ba9ab3',
+  // Add only the checksum-pinned native input action to push/PR paths.
+  'mobile.yaml': 'ed6d793aecbe7293',
   'nova-cloudflare.yaml': 'a2d9cd99b1329afe',
   'ops-hub-cloudflare.yaml': '0a3cc2c97958f5cd',
   'parley-cloudflare.yaml': 'f1777123fb48e37c',
