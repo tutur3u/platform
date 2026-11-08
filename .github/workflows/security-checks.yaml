@@ -68,11 +68,17 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # PR checkout is the tested merge ref. Its first parent is the
-          # trusted main snapshot, including records merged after PR creation.
-          # Keep HEAD_SHA pinned to the PR head for new-record attestations.
+          # Checkout is the PR head, so the synthetic merge commit (GITHUB_SHA)
+          # is often absent and rev-parse exits 128 before the guard runs.
+          # Use that merge commit's first parent when it is present. Otherwise
+          # keep the event base SHA, which is already the trusted main snapshot.
+          # HEAD_SHA stays the PR head for new-record attestations.
           if [ "$EVENT_NAME" = pull_request ]; then
-            BASE_SHA="$(git rev-parse --verify "$GITHUB_SHA^1")"
+            if merge_parent=$(git rev-parse --verify "${GITHUB_SHA}^1" 2>/dev/null); then
+              BASE_SHA="$merge_parent"
+            else
+              echo "::warning::Merge commit ${GITHUB_SHA} is not in this checkout. Using the pull request base ${BASE_SHA}."
+            fi
           fi
           dir="$RUNNER_TEMP/definer-guard"
           mkdir -p "$dir"
