@@ -24,7 +24,7 @@ const require = createRequire(join(app, 'package.json'));
 const WORKER = "tuturuuu-marketing-vite-staging";
 const PUBLIC_FILES = ["android-chrome-192x192.png", "android-chrome-512x512.png", "apple-touch-icon.png", "favicon-16x16.png", "favicon-32x32.png", "favicon.ico", "logo.svg", "media/branding/brand-mark-dark.svg", "media/branding/brand-mark-light.svg", "media/logos/og-image.jpg", "media/logos/transparent.png"];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
-const EXPECTED = {"/":404,"/legal/dpa":200,"/about":200,"/pricing":200,"/blog":200,"/solutions/education":200,"/products":200,"/products/tasks":200,"/privacy":200,"/security":200,"/security/bug-bounty":200,"/security/policy":200,"/terms":200};
+const EXPECTED = {"/":404,"/legal/dpa":200,"/about":200,"/pricing":200,"/careers":200,"/blog":200,"/solutions/education":200,"/products":200,"/products/tasks":200,"/privacy":200,"/security":200,"/security/bug-bounty":200,"/security/policy":200,"/terms":200};
 // Response-policy probes (start-bridge.routes.json `runtimeProbes`).
 const POLICY_PROBES = [{"kind":"page","path":"/legal/dpa"},{"kind":"api","skip":"marketing owns no API routes; /api/* is served by the web app"},{"kind":"notFound","path":"/__native-smoke-missing__"}];
 // The Worker's mounts: the generated defaults plus the app-owned
