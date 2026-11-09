@@ -8,6 +8,7 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { createResponsePolicyRedisFixture } from './response-policy-redis-fixture.mjs';
 import { REQUIRED_RUNTIME_NAMES } from './runtime-environment.ts';
 
 const app = fileURLToPath(new URL('../', import.meta.url));
@@ -40,175 +41,192 @@ function assertHeaders(response, { asset = false, publicPage = false } = {}) {
   }
 }
 
-test(
-  'emitted inventory response policy and root host fences',
-  {
-    timeout: 120000,
-  },
-  async (t) => {
-    assert.equal(
-      process.env.CI,
-      'true',
-      'Requires the exact emitted native build'
-    );
-    assert.match(process.env.CI_SOURCE_SHA ?? '', /^[a-f0-9]{40}$/);
-    const { configPath } = readNativeRuntimeConfig(app);
-    const scratch = await mkdtemp(join(tmpdir(), 'inventory-response-policy-'));
-    t.after(() => rm(scratch, { recursive: true, force: true }));
-    await cp(join(app, 'dist'), join(scratch, 'dist'), {
-      recursive: true,
-      verbatimSymlinks: true,
-    });
-    const envFile = join(scratch, 'synthetic.env');
-    await writeFile(envFile, '', { flag: 'wx', mode: 0o600 });
-    const registry = join(scratch, 'registry');
-    await mkdir(registry);
-    const egress = [];
-    const sdk = require('wrangler');
-    const worker = await sdk.unstable_startWorker({
-      config: join(scratch, relative(app, configPath)),
-      envFiles: [envFile],
-      sendMetrics: false,
-      bindings: {
-        ...Object.fromEntries(
-          [...REQUIRED_RUNTIME_NAMES, 'SEPAY_WEBHOOK_API_KEY'].map((name) => [
-            name,
-            { type: 'secret_text', value: randomBytes(32).toString('hex') },
-          ])
-        ),
-        NEXT_PUBLIC_SUPABASE_URL: {
-          type: 'plain_text',
-          value: 'https://fixture.supabase.invalid',
-        },
-        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: {
-          type: 'plain_text',
-          value: 'sb_publishable_fixture',
-        },
-        UPSTASH_REDIS_REST_URL: {
-          type: 'plain_text',
-          value: 'https://redis.invalid',
-        },
-        INTERNAL_WEB_API_ORIGIN: {
-          type: 'plain_text',
-          value: 'https://central.invalid',
-        },
-      },
-      build: { bundle: false, processEntrypoint: false },
-      dev: {
-        remote: false,
-        watch: false,
-        persist: false,
-        inspector: false,
-        liveReload: false,
-        generateTypes: false,
-        enableContainers: false,
-        registry,
-        server: { hostname: '127.0.0.1', port: 0 },
-        inferOriginFromRoutes: false,
-        routeRequestsByRoutes: false,
-        auth: () => {
-          throw new Error('Provider auth forbidden');
-        },
-        outboundService(request) {
-          assert.ok(egress.length < 16, 'Egress operation budget');
-          egress.push(new URL(request.url).origin);
-          return new Response('Fixture egress denied', { status: 599 });
-        },
-      },
-    });
-    t.after(() => worker.dispose());
-    await worker.ready;
-    const origin = await worker.url;
-    const get = (host, path, method = 'GET') =>
-      new Promise((resolve, reject) => {
-        const request = httpRequest(
-          {
-            hostname: origin.hostname,
-            port: origin.port,
-            path,
-            method,
-            headers: { host },
-          },
-          (response) => {
-            const bytes = [];
-            response.on('data', (part) => bytes.push(part));
-            response.on('error', reject);
-            response.on('end', () =>
-              resolve({
-                status: response.statusCode,
-                headers: response.headers,
-                body: Buffer.concat(bytes),
-              })
-            );
-          }
-        );
-        request.on('error', reject);
-        request.setTimeout(15000, () =>
-          request.destroy(new Error('Runtime response deadline'))
-        );
-        request.end();
-      });
-    const assetNames = await readdir(join(app, 'dist/client/assets'), {
-      recursive: true,
-    });
-    const firstScript = assetNames.sort().find((name) => name.endsWith('.js'));
-    assert.ok(firstScript, 'Compiled browser asset required');
-    const scriptPath = `/assets/${firstScript.split('\\').join('/')}`;
-    for (const host of hosts) {
-      await t.test(
-        `${host} headers cover pages, APIs and method-limited assets`,
-        async () => {
-          const root = await get(host, '/');
-          assert.equal(root.status, 307);
-          assertHeaders(root, { publicPage: false });
-          const info = await get(host, '/api/build-info');
-          assert.equal(info.status, 200);
-          assertHeaders(info);
-          assert.equal(
-            JSON.parse(info.body).commitHash,
-            process.env.CI_SOURCE_SHA
-          );
-          const head = await get(host, '/api/build-info', 'HEAD');
-          assert.equal(head.status, 200);
-          assert.equal(head.body.length, 0);
-          assertHeaders(head);
-          const privatePage = await get(host, '/personal/catalog');
-          assert.equal(privatePage.status, 307);
-          assertHeaders(privatePage);
-          for (const method of ['GET', 'HEAD']) {
-            const asset = await get(host, scriptPath, method);
-            assert.equal(asset.status, 200);
-            assertHeaders(asset, { asset: true });
-            assert.notEqual(
-              asset.headers['cache-control'],
-              'private, no-store'
-            );
-            const robots = await get(host, '/robots.txt', method);
-            assert.equal(robots.status, 200);
-            assertHeaders(robots, { asset: true });
-          }
-          const mutation = await get(host, scriptPath, 'POST');
-          assert.ok(
-            mutation.status < 500,
-            `Asset-path mutation: ${mutation.status}`
-          );
-          assertHeaders(mutation);
-        }
+for (const unavailable of [false, true]) {
+  test(
+    unavailable
+      ? 'emitted inventory retains response policy when the abuse-controls store fails'
+      : 'emitted inventory response policy and root host fences',
+    {
+      timeout: 120000,
+    },
+    async (t) => {
+      assert.equal(
+        process.env.CI,
+        'true',
+        'Requires the exact emitted native build'
       );
+      assert.match(process.env.CI_SOURCE_SHA ?? '', /^[a-f0-9]{40}$/);
+      const { configPath } = readNativeRuntimeConfig(app);
+      const scratch = await mkdtemp(
+        join(tmpdir(), 'inventory-response-policy-')
+      );
+      t.after(() => rm(scratch, { recursive: true, force: true }));
+      await cp(join(app, 'dist'), join(scratch, 'dist'), {
+        recursive: true,
+        verbatimSymlinks: true,
+      });
+      const envFile = join(scratch, 'synthetic.env');
+      await writeFile(envFile, '', { flag: 'wx', mode: 0o600 });
+      const registry = join(scratch, 'registry');
+      await mkdir(registry);
+      const redis = createResponsePolicyRedisFixture({ unavailable });
+      const sdk = require('wrangler');
+      const worker = await sdk.unstable_startWorker({
+        config: join(scratch, relative(app, configPath)),
+        envFiles: [envFile],
+        sendMetrics: false,
+        bindings: {
+          ...Object.fromEntries(
+            [...REQUIRED_RUNTIME_NAMES, 'SEPAY_WEBHOOK_API_KEY'].map((name) => [
+              name,
+              { type: 'secret_text', value: randomBytes(32).toString('hex') },
+            ])
+          ),
+          NEXT_PUBLIC_SUPABASE_URL: {
+            type: 'plain_text',
+            value: 'https://fixture.supabase.invalid',
+          },
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: {
+            type: 'plain_text',
+            value: 'sb_publishable_fixture',
+          },
+          UPSTASH_REDIS_REST_URL: {
+            type: 'plain_text',
+            value: 'https://redis.invalid',
+          },
+          INTERNAL_WEB_API_ORIGIN: {
+            type: 'plain_text',
+            value: 'https://central.invalid',
+          },
+        },
+        build: { bundle: false, processEntrypoint: false },
+        dev: {
+          remote: false,
+          watch: false,
+          persist: false,
+          inspector: false,
+          liveReload: false,
+          generateTypes: false,
+          enableContainers: false,
+          registry,
+          server: { hostname: '127.0.0.1', port: 0 },
+          inferOriginFromRoutes: false,
+          routeRequestsByRoutes: false,
+          auth: () => {
+            throw new Error('Provider auth forbidden');
+          },
+          outboundService: redis.outbound,
+        },
+      });
+      t.after(async () => {
+        await worker.dispose();
+        console.info(
+          'Local Redis fixture audit:',
+          JSON.stringify(redis.assertRequests())
+        );
+      });
+      await worker.ready;
+      const origin = await worker.url;
+      const get = (host, path, method = 'GET') =>
+        new Promise((resolve, reject) => {
+          const request = httpRequest(
+            {
+              hostname: origin.hostname,
+              port: origin.port,
+              path,
+              method,
+              headers: { host },
+            },
+            (response) => {
+              const bytes = [];
+              response.on('data', (part) => bytes.push(part));
+              response.on('error', reject);
+              response.on('end', () =>
+                resolve({
+                  status: response.statusCode,
+                  headers: response.headers,
+                  body: Buffer.concat(bytes),
+                })
+              );
+            }
+          );
+          request.on('error', reject);
+          request.setTimeout(15000, () =>
+            request.destroy(new Error('Runtime response deadline'))
+          );
+          request.end();
+        });
+      if (unavailable) {
+        // Store failures retain the guard's enabled defaults; an anonymous
+        // request without an IP/session has no per-identity limiter to apply.
+        const info = await get(hosts[0], '/api/build-info');
+        assert.equal(info.status, 200);
+        assertHeaders(info);
+        assert.equal(
+          JSON.parse(info.body).commitHash,
+          process.env.CI_SOURCE_SHA
+        );
+        return;
+      }
+      const assetNames = await readdir(join(app, 'dist/client/assets'), {
+        recursive: true,
+      });
+      const firstScript = assetNames
+        .sort()
+        .find((name) => name.endsWith('.js'));
+      assert.ok(firstScript, 'Compiled browser asset required');
+      const scriptPath = `/assets/${firstScript.split('\\').join('/')}`;
+      for (const host of hosts) {
+        await t.test(
+          `${host} headers cover pages, APIs and method-limited assets`,
+          async () => {
+            const root = await get(host, '/');
+            assert.equal(root.status, 307);
+            assertHeaders(root, { publicPage: false });
+            const info = await get(host, '/api/build-info');
+            assert.equal(info.status, 200);
+            assertHeaders(info);
+            assert.equal(
+              JSON.parse(info.body).commitHash,
+              process.env.CI_SOURCE_SHA
+            );
+            const head = await get(host, '/api/build-info', 'HEAD');
+            assert.equal(head.status, 200);
+            assert.equal(head.body.length, 0);
+            assertHeaders(head);
+            const privatePage = await get(host, '/personal/catalog');
+            assert.equal(privatePage.status, 307);
+            assertHeaders(privatePage);
+            for (const method of ['GET', 'HEAD']) {
+              const asset = await get(host, scriptPath, method);
+              assert.equal(asset.status, 200);
+              assertHeaders(asset, { asset: true });
+              assert.notEqual(
+                asset.headers['cache-control'],
+                'private, no-store'
+              );
+              const robots = await get(host, '/robots.txt', method);
+              assert.equal(robots.status, 200);
+              assertHeaders(robots, { asset: true });
+            }
+            const mutation = await get(host, scriptPath, 'POST');
+            assert.ok(
+              mutation.status < 500,
+              `Asset-path mutation: ${mutation.status}`
+            );
+            assertHeaders(mutation);
+          }
+        );
+      }
+      for (const host of [
+        'tuturuuu.com',
+        'inventory.tuturuuu.com.attacker.invalid',
+        'unknown.invalid',
+      ]) {
+        const rejected = await get(host, '/inventory');
+        assert.equal(rejected.status, 404);
+        assertHeaders(rejected);
+      }
     }
-    for (const host of [
-      'tuturuuu.com',
-      'inventory.tuturuuu.com.attacker.invalid',
-      'unknown.invalid',
-    ]) {
-      const rejected = await get(host, '/inventory');
-      assert.equal(rejected.status, 404);
-      assertHeaders(rejected);
-    }
-    assert.deepEqual(
-      egress,
-      [],
-      'Header/host acceptance must perform no outbound requests'
-    );
-  }
-);
+  );
+}
