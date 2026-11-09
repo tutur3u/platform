@@ -185,6 +185,14 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/habits/[[...slug]]/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/habits/[[...slug]]/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/tasks/[[...slug]]/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/tasks/[[...slug]]/page'),
     layouts: [
