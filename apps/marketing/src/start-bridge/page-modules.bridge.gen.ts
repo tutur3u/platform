@@ -23,6 +23,15 @@ export const pageModules = {
       () => import('../app/[locale]/(marketing)/acceptable-use/layout'),
     ],
   },
+  'src/app/[locale]/(marketing)/blog/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/blog/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/blog/layout'),
+    ],
+  },
   'src/app/[locale]/(marketing)/community-guidelines/page.tsx': {
     page: () => import('../app/[locale]/(marketing)/community-guidelines/page'),
     layouts: [
