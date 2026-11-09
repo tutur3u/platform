@@ -345,7 +345,7 @@ test('live permission revocation denies the next request with unchanged env and 
     expect.objectContaining({
       headers: { Authorization: expect.stringContaining('Bearer ttr_app_') },
       cache: 'no-store',
-      redirect: 'error',
+      redirect: 'manual',
       signal: expect.any(AbortSignal),
     })
   );

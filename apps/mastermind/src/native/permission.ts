@@ -9,12 +9,12 @@ export async function hasLiveRootAccess(owner: Owner): Promise<boolean> {
       'https://tuturuuu.com/api/v1/mastermind/access',
       {
         headers: { Authorization: `Bearer ${owner.token}` },
-        redirect: 'error',
+        redirect: 'manual',
         cache: 'no-store',
         signal: AbortSignal.timeout(5_000),
       }
     );
-    if (response.status !== 200) return false;
+    if (response.type === 'opaqueredirect' || !response.ok) return false;
     const result = accessResponse.safeParse(await response.json());
     return result.success && result.data.enabled;
   } catch {
