@@ -311,7 +311,7 @@ export function SelfPreviewPip({
           data-testid="self-preview-card"
           data-corner={prefs.corner}
           data-size={prefs.size}
-          data-dragging={drag ? 'true' : undefined}
+          data-dragging={drag?.moved ? 'true' : undefined}
           className={cn(
             'group/pip pointer-events-auto absolute top-0 left-0 isolate [container-type:size] touch-none select-none overflow-hidden rounded-2xl bg-background shadow-xl ring-1 ring-border outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             drag

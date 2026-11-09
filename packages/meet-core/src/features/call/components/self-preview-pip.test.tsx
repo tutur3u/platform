@@ -168,3 +168,18 @@ it('does not move the card until a touch drag passes the 10px slop', () => {
   fireEvent.pointerMove(card, { ...touch, clientX: 215, clientY: 200 });
   expect(card.getAttribute('data-dragging')).toBe('true');
 });
+
+it('treats a 6px touch jitter as a tap and a 6px mouse move as a drag', () => {
+  renderPip(new MemoryStorage());
+  const card = screen.getByTestId('self-preview-card');
+  const touch = { pointerId: 3, pointerType: 'touch', button: 0 };
+  fireEvent.pointerDown(card, { ...touch, clientX: 300, clientY: 300 });
+  fireEvent.pointerMove(card, { ...touch, clientX: 306, clientY: 300 });
+  expect(card.getAttribute('data-dragging')).toBeNull();
+  fireEvent.pointerUp(card, touch);
+  const mouse = { pointerId: 4, pointerType: 'mouse', button: 0 };
+  fireEvent.pointerDown(card, { ...mouse, clientX: 300, clientY: 300 });
+  fireEvent.pointerMove(card, { ...mouse, clientX: 306, clientY: 300 });
+  expect(card.getAttribute('data-dragging')).toBe('true');
+  fireEvent.pointerUp(card, mouse);
+});
