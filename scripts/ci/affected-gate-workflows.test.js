@@ -12,6 +12,97 @@ const gated = Object.entries(workflows).filter(([, workflow]) =>
 );
 const needsOf = (job) => [job.needs ?? []].flat();
 
+const scopedCallers = {
+  'git-cloudflare.yaml': { app: 'git', jobs: ['build'] },
+  'external-cloudflare.yaml': { app: 'external', jobs: ['build'] },
+  'roadmap-cloudflare.yaml': { app: 'roadmap', jobs: ['build'] },
+  'rewise-cloudflare.yaml': { app: 'rewise', jobs: ['cutover-artifact'] },
+  'meet-cloudflare.yaml': {
+    app: 'meet',
+    jobs: ['validate', 'restored-artifact'],
+  },
+  'web-start-candidate.yaml': { app: 'web', jobs: ['candidate'] },
+  'contacts-start-candidate.yaml': { app: 'contacts', jobs: ['candidate'] },
+};
+
+const admittedPrContext = (run) => ({
+  github: {
+    event_name: 'pull_request',
+    ref: 'refs/pull/1/merge',
+    repository: 'tutur3u/platform',
+    event: {
+      pull_request: {
+        draft: false,
+        labels: [{ name: 'ready-for-ci' }],
+        head: { repo: { full_name: 'tutur3u/platform' } },
+      },
+    },
+  },
+  needs: {
+    'affected-gate': { result: 'success', outputs: { run } },
+    'check-ci': {
+      result: 'success',
+      outputs: { should_run: 'true', run_checks: 'true' },
+    },
+    'production-policy': { result: 'skipped', outputs: { allowed: 'false' } },
+    validate: { result: 'success' },
+  },
+});
+
+for (const [file, { app, jobs }] of Object.entries(scopedCallers)) {
+  test(`${file}: app qualification skips unrelated changes and runs affected changes`, async () => {
+    const { decide } = await import('./affected-gate.mjs');
+    const workflow = workflows[file];
+    const qualify = (apps) =>
+      String(
+        decide({
+          eventName: 'pull_request',
+          apps: app,
+          result: { mode: 'affected', apps, reason: 'test dependency closure' },
+        }).run
+      );
+    for (const id of jobs) {
+      const condition = workflow.jobs[id].if;
+      assert.equal(
+        evaluateExpression(
+          condition,
+          admittedPrContext(qualify(['apps/docs']))
+        ),
+        false,
+        `${id}: unrelated changes must skip`
+      );
+      const context = admittedPrContext(qualify([`apps/${app}`]));
+      assert.equal(
+        evaluateExpression(condition, context),
+        true,
+        `${id}: affected app must run`
+      );
+      context.github.event.pull_request.labels = [];
+      assert.equal(
+        evaluateExpression(condition, context),
+        false,
+        `${id}: readiness remains required`
+      );
+    }
+    assert.equal(workflow.jobs['affected-gate']?.steps[1].with.app, app);
+  });
+}
+
+test('manual and production-only jobs retain their event and ref boundaries', () => {
+  const dispatch = admittedPrContext('true');
+  dispatch.github.event_name = 'workflow_dispatch';
+  const rewise = workflows['rewise-cloudflare.yaml'].jobs.native.if;
+  assert.equal(evaluateExpression(rewise, dispatch), true);
+  assert.equal(evaluateExpression(rewise, admittedPrContext('true')), false);
+
+  const production = admittedPrContext('true');
+  production.github.event_name = 'push';
+  production.github.ref = 'refs/heads/production';
+  const meet = workflows['meet-cloudflare.yaml'].jobs['production-policy'].if;
+  assert.equal(evaluateExpression(meet, production), true);
+  assert.equal(evaluateExpression(meet, admittedPrContext('true')), false);
+});
+
 test('affected-gate is wired into per-app workflows', () => {
   assert.ok(gated.length > 0, 'expected affected-gate workflows');
 });
@@ -85,7 +176,7 @@ for (const [file, workflow] of gated) {
     );
   });
 
-  test(`${file}: jobs reading the gate depend on it and never use status functions`, () => {
+  test(`${file}: jobs consume the gate with preserved status guards`, () => {
     let consumers = 0;
     for (const [id, job] of Object.entries(workflow.jobs)) {
       if (id === 'affected-gate') continue;
@@ -103,7 +194,16 @@ for (const [file, workflow] of gated) {
       consumers += 1;
       assert.ok(needsOf(job).includes('affected-gate'), `${id}: needs`);
       assert.match(condition, /needs\.affected-gate\.outputs\.run == 'true'/u);
-      assert.doesNotMatch(condition, /\b(always|failure|cancelled)\(\)/u, id);
+      const retainedCancellation =
+        file === 'meet-cloudflare.yaml' && id === 'validate';
+      if (retainedCancellation) assert.match(condition, /!cancelled\(\)/u);
+      assert.doesNotMatch(
+        retainedCancellation
+          ? condition.replace('!cancelled()', 'true')
+          : condition,
+        /\b(always|failure|cancelled)\(\)/u,
+        id
+      );
     }
     assert.ok(consumers > 0, 'a gate with no consumer is dead weight');
   });
