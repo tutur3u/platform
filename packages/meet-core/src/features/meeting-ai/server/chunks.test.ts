@@ -121,6 +121,42 @@ describe('Meet chunk idempotency', () => {
     expect(JSON.stringify(output)).not.toContain('ERASED');
     expect(mocks.generate).not.toHaveBeenCalled();
   });
+  it('projects an erased duplicate completed during the reservation race', async () => {
+    const duplicate = {
+      id,
+      status: 'completed',
+      attempts: 1,
+      transcript: 'ERASED fallback',
+      usage: { erased: true, privateName: 'ERASED name' },
+    };
+    const from = vi
+      .fn()
+      .mockReturnValueOnce(
+        query({
+          data: { id, created_at: new Date().toISOString() },
+          error: null,
+        })
+      )
+      .mockReturnValueOnce(query({ data: null, error: null }))
+      .mockReturnValueOnce(query({ data: duplicate, error: null }));
+    const rpc = vi.fn().mockResolvedValue({ data: null, error: null });
+    mocks.access.mockResolvedValue({
+      db: { from, rpc },
+      meetingId: id,
+      wsId: id,
+      user: { id },
+    });
+    const output = await transcribeMeetChunk(request(), params);
+    expect(rpc).toHaveBeenCalledOnce();
+    expect(output).toMatchObject({
+      transcript: '',
+      erased: true,
+      speaker: null,
+    });
+    expect(JSON.stringify(output)).not.toContain('ERASED');
+    expect(output).not.toHaveProperty('usage');
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
   it('retries transcript persistence without repeating a paid Gemini call', async () => {
     const saved = { id, status: 'completed', transcript: 'Saved after retry' };
     const speaker = { accountId: id, displayName: 'Alice', kind: 'microphone' };

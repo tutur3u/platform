@@ -32,7 +32,7 @@ export function MeetingTranscript({ chunks }: { chunks: MeetAiChunk[] }) {
                 },
               ];
         return segments
-          .filter((segment) => !('erased' in segment))
+          .filter((segment) => 'startSeconds' in segment)
           .sort((a, b) => a.startSeconds - b.startSeconds)
           .map((segment, index) => (
             <p key={`${chunk.id}:${index}`} className="text-sm">

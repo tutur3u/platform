@@ -139,7 +139,7 @@ export async function transcribeMeetChunk(
             90_000));
     if (exhausted)
       throw new MeetAiError(409, 'Transcription retries exhausted');
-    return duplicate.data;
+    return project(duplicate.data);
   }
   try {
     const current = await db
