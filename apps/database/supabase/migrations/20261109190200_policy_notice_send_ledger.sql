@@ -13,7 +13,7 @@ SET LOCAL statement_timeout = '60s';
 -- its last ledger activity, manually (not scheduled):
 --   select private.policy_notice_purge('policy-change-2026-11-11');
 -- The function refuses before the 90 days have passed.
--- Rollback: apps/database/rollbacks/20261104180000_policy_notice_send_ledger.rollback.sql
+-- Rollback: apps/database/rollbacks/20261109190200_policy_notice_send_ledger.rollback.sql
 
 create table if not exists private.policy_notice_runs (
     id uuid primary key default gen_random_uuid(),

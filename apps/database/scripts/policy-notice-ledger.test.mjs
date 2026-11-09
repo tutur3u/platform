@@ -9,7 +9,7 @@ import { PGlite } from '@electric-sql/pglite';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
-const MIGRATION = '20261104180000_policy_notice_send_ledger';
+const MIGRATION = '20261109190200_policy_notice_send_ledger';
 const NOTICE = 'policy-change-2026-11-11';
 const V1 = 'v3-aaaaaaaaaaaa';
 const V2 = 'v3-bbbbbbbbbbbb';

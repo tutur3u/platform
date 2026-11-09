@@ -1,5 +1,5 @@
 -- Manual rollback only: drops the policy notice send ledger and its functions
--- created by 20261104180000_policy_notice_send_ledger.sql. Deploy app code
+-- created by 20261109190200_policy_notice_send_ledger.sql. Deploy app code
 -- without the policy notice route first. Static SQL: no DO block, no EXECUTE.
 -- Refuses while any run or delivery row exists, because the ledger is the only
 -- record of who received the notice and the guard against a second send.
