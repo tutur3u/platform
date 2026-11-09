@@ -187,7 +187,7 @@ jobs:
 
   cutover-build:
     needs: affected-gate
-    if: ${{ needs.affected-gate.outputs.run == 'true' && (github.event_name == 'workflow_dispatch') }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.event_name == 'workflow_dispatch')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -220,7 +220,11 @@ jobs:
           test -n "$NEXT_PUBLIC_SUPABASE_URL"
           test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
       - name: Build app suppliers
-        run: bun turbo:local run build --filter='@tuturuuu/nova^...' --concurrency=2
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter='@tuturuuu/nova^...' --concurrency=2
+          token: ''
+          team: ''
       - name: Stamp exact build identity
         env:
           PLATFORM_BUILD_COMMIT_HASH: ${{ github.sha }}
@@ -228,8 +232,11 @@ jobs:
           PLATFORM_BUILD_ENVIRONMENT: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build native Cloudflare app
-        working-directory: apps/nova
-        run: bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/nova && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Exercise anonymous root and host isolation in workerd
         working-directory: apps/nova
         env:
@@ -242,6 +249,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
+          retention-days: 7
           name: nova-emitted-config-${{ github.sha }}
           path: ${{ runner.temp }}/nova-emitted-config.json
           if-no-files-found: error

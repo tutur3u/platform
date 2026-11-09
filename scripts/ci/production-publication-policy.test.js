@@ -37,6 +37,21 @@ const heldPolicy = Object.fromEntries(
 );
 const heldReason = /held for wave-\d cutover/;
 
+const hasPublicationCommand = (publicationStepCommand) =>
+  /vercel (?:pull|build|deploy)|wrangler (?:deploy|secret)/.test(
+    publicationStepCommand
+  );
+
+function publicationWrites(jobs) {
+  return Object.entries(jobs).filter(([, value]) =>
+    value.steps?.some(
+      (step) =>
+        hasPublicationCommand(step.run ?? step.with?.command ?? '') &&
+        !/--dry-run/.test(step.run ?? step.with?.command ?? '')
+    )
+  );
+}
+
 function fixture(t, policy) {
   const root = mkdtempSync(join(tmpdir(), 'publication-policy-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
@@ -341,14 +356,7 @@ for (const { workflow, job } of publishers) {
       jobs[job].if,
       "github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'"
     );
-    const writes = Object.entries(jobs).filter(([, value]) =>
-      value.steps?.some(
-        (step) =>
-          /vercel (?:pull|build|deploy)|wrangler (?:deploy|secret)/.test(
-            step.run ?? step.with?.command ?? ''
-          ) && !/--dry-run/.test(step.run ?? step.with?.command ?? '')
-      )
-    );
+    const writes = publicationWrites(jobs);
     assert.deepEqual(
       writes.map(([name]) => name),
       [job]

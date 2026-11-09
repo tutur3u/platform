@@ -227,8 +227,11 @@ jobs:
           PLATFORM_BUILD_ENVIRONMENT: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build the production Start Worker and assets
-        working-directory: apps/rewise
-        run: bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/rewise && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Seal and pack Worker, assets and emitted Wrangler config
         run: |
           python3 scripts/ci/rewise-native-artifact.py config apps/rewise
