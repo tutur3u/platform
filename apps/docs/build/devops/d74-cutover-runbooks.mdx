@@ -184,6 +184,27 @@ Cutovers run in this order: lowest risk first. Marketing page groups flip throug
 | Vercel rollback pin | capture before the flip |
 | Packet | `chat-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs chat https://chat.tuturuuu.com` |
+## 14. infrastructure
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-infrastructure` |
+| Hosts | infrastructure.tuturuuu.com |
+| Artifact | infrastructure-cloudflare.yaml (`infrastructure-cutover-<sha>`) |
+| Vercel rollback pin | capture before the flip |
+| Packet | `infrastructure-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs infrastructure https://infrastructure.tuturuuu.com` |
+
+## 15. mind
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-mind` |
+| Hosts | mind.tuturuuu.com |
+| Artifact | mind-cloudflare.yaml (`mind-cutover-<sha>`) |
+| Vercel rollback pin | capture before the flip |
+| Packet | `mind-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs mind https://mind.tuturuuu.com` |
 
 ## Not cut over tonight
 
@@ -204,3 +225,4 @@ Cutovers run in this order: lowest risk first. Marketing page groups flip throug
 | Vercel rollback pin | none found; confirm where hive.tuturuuu.com is served |
 | Smoke | `node scripts/cutover-smoke.mjs hive https://hive.tuturuuu.com` |
 - infrastructure, mind, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
+- learn, chat, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
