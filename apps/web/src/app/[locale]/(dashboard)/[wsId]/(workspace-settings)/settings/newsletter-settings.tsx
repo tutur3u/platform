@@ -11,8 +11,11 @@ export default async function NewsletterSettings({ wsId }: { wsId: string }) {
           claim
             ? {
                 approval: claim.approval,
+                dkimVerified: claim.dkimVerified,
                 dnsRecords: claim.dnsRecords,
+                mailFromVerified: claim.mailFromVerified,
                 subdomain: claim.subdomain,
+                txtVerified: claim.txtVerified,
               }
             : null
         }
