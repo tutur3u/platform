@@ -243,13 +243,14 @@ export function createHandler(deps: HandlerDeps) {
     request: Request,
     origin: URL,
     key: string,
-    options: { respectOriginCacheControl: boolean }
+    options: { respectOriginCacheControl: boolean },
+    publicHost: string | undefined
   ) {
     try {
       const response = withPublicLink(
         await fetch(originRequest(request, origin), NO_FOLLOW),
         origin,
-        env.PUBLIC_HOST
+        publicHost
       );
       if (!isStorable(response, options).store) {
         await response.body?.cancel();
@@ -304,7 +305,13 @@ export function createHandler(deps: HandlerDeps) {
         return servedFromCache(cached, 'HIT', storedAt, nowMs, head, isPage);
       }
       if (state === 'stale') {
-        const revalidate = refresh(new Request(request), origin, key, options);
+        const revalidate = refresh(
+          new Request(request),
+          origin,
+          key,
+          options,
+          env.PUBLIC_HOST
+        );
         if (ctx) ctx.waitUntil(revalidate);
         else await revalidate;
         return servedFromCache(cached, 'STALE', storedAt, nowMs, head, isPage);
