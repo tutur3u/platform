@@ -16,6 +16,11 @@
       "owner": "cf/Void Wrangler-exit lane; release orchestrator owns rehearsal acceptance and the separate publisher promotion.",
       "removal": "Remove only in a separately reviewed cf publisher change carrying the disposable migration and data-survival rehearsal receipt."
     },
+    "meet-ai-containment-config": {
+      "reason": "SR-919 containment validates checked-in Meet legacy and native configuration names, including legacy tool config filenames; its regression fixtures exercise the same read-only scanner without executing the CLI.",
+      "owner": "Meet containment maintainers; the security desk reviews #7518.",
+      "removal": "Remove legacy filename references and these entries when every checked-in Meet config migrates to native config and containment coverage proves the old config files no longer exist."
+    },
     "opennext-adapter": {
       "reason": "Parley and Lettin publish through @opennextjs/cloudflare, which reads wrangler.jsonc and invokes Wrangler; cf has no OpenNext adapter.",
       "owner": "Parley/Lettin TanStack Start on Void migration lane (orchestrator assigns)",
@@ -1059,20 +1064,20 @@
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7785",
-        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
+        "decision": "https://github.com/tutur3u/platform/pull/7518",
+        "reason": "FIX-7518-R2: SR-919 containment pins change existing config bytes; the new containment scanner and its negative fixtures only read legacy config names and never invoke the CLI."
       },
-      "digest": "d77319a27c20140e51c2df07807641f514c65ec1170aa64c7e426cf714e65c00"
+      "digest": "5572cead38ccdb2efa8af481532c1e568cf6f704d3ef5c46ebd22c2216a2511d"
     },
     "apps/meet-realtime/wrangler.staging.jsonc": {
       "lines": 2,
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7785",
-        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
+        "decision": "https://github.com/tutur3u/platform/pull/7518",
+        "reason": "FIX-7518-R2: SR-919 containment pins change existing config bytes; the new containment scanner and its negative fixtures only read legacy config names and never invoke the CLI."
       },
-      "digest": "36c1e9c53da6060b9c88a11c630d46be9790a8c1d61d55c9e4d4c074bf6ebfb7"
+      "digest": "45c171b76efaba3b69a14183e4efcb91f144937aaea28eff3d4ff67313af7649"
     },
     "apps/meet/.gitignore": {
       "lines": 1,
@@ -1109,10 +1114,10 @@
       "uses": 2,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7785",
-        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
+        "decision": "https://github.com/tutur3u/platform/pull/7518",
+        "reason": "FIX-7518-R2: SR-919 containment pins change existing config bytes; the new containment scanner and its negative fixtures only read legacy config names and never invoke the CLI."
       },
-      "digest": "e053a5366eb6908d11db6e014eddfa7afb456c4aaccd8d5f6d76fe925dfc06dc"
+      "digest": "0756e4a805c31b15ad4dbb8ebc87496421dd6ffd11ece399927d41baed002d9b"
     },
     "apps/nova/.gitignore": {
       "lines": 1,
@@ -1717,6 +1722,26 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "066ababd236575df1327eb049f12227da1d7478509a73c8820972f51fb70e61d"
+    },
+    "scripts/check-meet-ai-containment.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "meet-ai-containment-config",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7518",
+        "reason": "FIX-7518-R2: SR-919 containment pins change existing config bytes; the new containment scanner and its negative fixtures only read legacy config names and never invoke the CLI."
+      },
+      "digest": "c532356b6a91237b6711ff03ae45d6c8f6ee32b79f32396d092b56befe531301"
+    },
+    "scripts/check-meet-ai-containment.test.js": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "meet-ai-containment-config",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7518",
+        "reason": "FIX-7518-R2: SR-919 containment pins change existing config bytes; the new containment scanner and its negative fixtures only read legacy config names and never invoke the CLI."
+      },
+      "digest": "93a071f804c706cf938f0df035c8badc904a12a5eeccfdb47b5957b6facd41d1"
     },
     "scripts/check-staging-hosts.test.js": {
       "lines": 3,

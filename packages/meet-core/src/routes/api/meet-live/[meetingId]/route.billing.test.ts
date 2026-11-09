@@ -33,7 +33,10 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
           user: { id: mocks.actor.id },
           isHost: mocks.actor.isHost,
           displayName: 'Host',
-          meeting: { ws_id: 'meeting-ws', name: 'Meeting' },
+          meeting: {
+            ws_id: '00000000-0000-4000-8000-0000000000f1',
+            name: 'Meeting',
+          },
         })
       );
     } catch (error) {
@@ -75,6 +78,7 @@ const bind = (allowlist?: string) =>
       },
       MEET_REALTIME_TOKEN_SECRET: 'secret',
       GOOGLE_GENERATIVE_AI_API_KEY: 'key',
+      MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
       MEET_AI_ENABLED_WORKSPACE_IDS: allowlist,
     },
   });
@@ -84,7 +88,7 @@ describe('meet-live meeting workspace billing', () => {
     vi.resetAllMocks();
     mocks.fetch.mockImplementation(async () => Response.json({ ok: true }));
     mocks.callRoom.mockResolvedValue({});
-    bind('meeting-ws');
+    bind('00000000-0000-4000-8000-0000000000f1');
   });
 
   it.each(['host', 'member', 'guest'])(
@@ -105,7 +109,9 @@ describe('meet-live meeting workspace billing', () => {
       expect(initialize).toBeDefined();
       const body = JSON.parse(initialize?.[1].body);
       expect(body.claims.billingWorkspaceId).toBe('personal-ws');
-      expect(body.claims.billingWorkspaceId).not.toBe('meeting-ws');
+      expect(body.claims.billingWorkspaceId).not.toBe(
+        '00000000-0000-4000-8000-0000000000f1'
+      );
       expect(body.claims.ownerId).toBe(actor);
       expect(body.workspace.id).toBe(sessionId);
     }
@@ -126,7 +132,7 @@ describe('meet-live meeting workspace billing', () => {
     );
     expect(initialize).toBeDefined();
     expect(JSON.parse(initialize?.[1].body).claims.billingWorkspaceId).toBe(
-      'meeting-ws'
+      '00000000-0000-4000-8000-0000000000f1'
     );
   });
 });

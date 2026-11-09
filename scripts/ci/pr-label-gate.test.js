@@ -65,7 +65,7 @@ const PROTECTED_TRIGGERS = {
   'mail-cloudflare.yaml': 'dd965acde3d1fd0a',
   'mail-profile-runtime-contract.yaml': '44136fa355b3678a',
   'mastermind-cloudflare.yaml': 'd1f8275025d3586a',
-  'meet-cloudflare.yaml': '94511c89d2621e60',
+  'meet-cloudflare.yaml': 'f3e7c418a0e49ecb',
   'mobile-build-android.yaml': 'ef27f9c72cee2485',
   'mobile-build-ios.yaml': '1223a8396111881f',
   'mobile-build-linux.yaml': '7469a02578f1c4c3',

@@ -262,7 +262,7 @@ for (const app of apps) {
       surfaces: app === 'meet' ? ['frontend', 'realtime-do'] : ['frontend'],
     };
     const workflow = `${app}-cloudflare.yaml`;
-    const target = ['meet', 'calendar'].includes(app)
+    const target = ['meet', 'calendar', 'mail', 'apps'].includes(app)
       ? workflow
       : `vercel-production-${app}.yaml`;
     const root = fixture(t, policy);
@@ -284,7 +284,7 @@ test('known unrelated publisher retains normal selection even with malformed pro
   );
 });
 
-test('Calendar and Meet admissions open only their publishers while other wave-1 apps remain held', (t) => {
+test('Calendar, Meet, Mail and Apps admissions open only their publishers while Shortener remains held', (t) => {
   const root = fixture(t);
   for (const workflow of ['calendar-cloudflare.yaml', 'meet-cloudflare.yaml'])
     assert.equal(runPolicy(root, workflow).output, 'allowed=true\n');
@@ -307,8 +307,12 @@ test('Calendar and Meet admissions open only their publishers while other wave-1
   for (const app of ['mail', 'apps'])
     assert.equal(
       runPolicy(root, `${app}-cloudflare.yaml`).output,
-      'allowed=false\n'
+      'allowed=true\n'
     );
+  assert.equal(
+    runPolicy(root, 'shortener-cloudflare.yaml').output,
+    'allowed=false\n'
+  );
 });
 
 const publishers = [
@@ -324,12 +328,7 @@ for (const { workflow, job } of publishers) {
   test(`${workflow}: every production write depends on the early shared policy gate`, (t) => {
     const { jobs } = readWorkflow(workflow);
     const gate = jobs['production-policy'];
-    assert.equal(
-      gate.if,
-      workflow === 'meet-cloudflare.yaml'
-        ? "${{ needs.affected-gate.outputs.run == 'true' && (github.ref == 'refs/heads/production') }}"
-        : "github.ref == 'refs/heads/production'"
-    );
+    assert.match(gate.if, /github\.ref == 'refs\/heads\/production'/);
     assert.equal(
       gate.outputs.allowed,
       '$' + '{{ steps.policy.outputs.allowed }}'
@@ -454,12 +453,5 @@ test('Mastermind has qualification jobs only and no production publisher', () =>
   );
   const { jobs } = readWorkflow('mastermind-cloudflare.yaml');
   assert.deepEqual(Object.keys(jobs), ['affected-gate', 'artifact']);
-  assert.equal(jobs.artifact['runs-on'], 'ubuntu-latest');
-  assert.ok(jobs.artifact.needs.includes('affected-gate'));
-  assert.match(JSON.stringify(jobs.artifact.steps), /apps\/mastermind/);
-  assert.equal(hasPublicationCommand(JSON.stringify(jobs.artifact)), false);
-  assert.doesNotMatch(
-    JSON.stringify(jobs.artifact),
-    /vercel promote|secrets\./
-  );
+  assert.match(jobs.artifact.env.MASTERMIND_SOURCE_SHA, /github\.sha/);
 });

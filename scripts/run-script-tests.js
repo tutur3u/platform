@@ -13,6 +13,7 @@ const DEFAULT_SUPPLEMENTAL_PATHS = [
   'apps/database/scripts/declarative-schema-readiness.test.js',
   'apps/database/scripts/delete-storage-buckets.test.js',
   'apps/database/scripts/new-migration.test.js',
+  'apps/database/scripts/policy-notice-ledger.test.mjs',
   'apps/database/scripts/rls-perf-initplan-migration.test.js',
   'apps/database/scripts/seed-sql.test.js',
   'apps/database/scripts/storage-bucket-inserts.test.js',

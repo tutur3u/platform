@@ -1,0 +1,82 @@
+---
+title: "External on Start + Void"
+description: "Native External Worker, the cutover artifact, and the cutover and Vercel rollback packet."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+External (`apps/external`) runs on TanStack Start, Vite+ and Void behind
+[`@tuturuuu/start-bridge`](/build/devops/start-bridge). The Next.js build
+(`build`) and the Vercel project stay in place until the cutover has been
+stable, so the canonical host keeps a one-step route back.
+
+## Worker
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-external` (`void.config.ts`) |
+| Flags | `workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=1` |
+| Routes | none; the hostname is attached at cutover by the release operator |
+| Canonical host | `external.tuturuuu.com`; any other host answers `404` |
+
+The Worker answers with the bridge error response unless it runs in production
+mode, has the `ASSETS` binding, and all four of `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` and
+`TUTURUUU_APP_COORDINATION_SECRET` are present (names only recorded here).
+`/api/storage/*` is closed to anonymous ingress and answers `403`. Other `/api/*`
+paths forward to `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`).
+
+## Build and artifact
+
+`external-cloudflare.yaml` builds the Worker, checks bridge routes and native
+types, records the emitted configuration receipt, runs
+`node --test cloudflare/anonymous.runtime.mjs` against the emitted Worker, and
+uploads `external-cutover-<source SHA>` containing `external-worker.tgz`, the
+receipt and `SOURCE_SHA` (7 days). It never deploys. Do not run
+`build:cloudflare` on a shared development machine.
+
+## Cutover packet
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-external` |
+| Route | `external.tuturuuu.com/*`, operator-attached |
+| Static assets binding | `ASSETS` (`dist/client`, `run_worker_first`) |
+| Build command | `bun run --cwd apps/external build:cloudflare` with `NEXT_PUBLIC_APP_URL=https://external.tuturuuu.com`, `NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com` |
+| Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
+| Prior Vercel deployment | record the immutable deployment ID and URL of the `external` Vercel project before the switch |
+| Data | no database writes and no migrations |
+
+### Switch
+
+1. Record the source SHA, artifact name and Vercel deployment ID.
+2. Extract `dist`, provision the four secrets on `tuturuuu-external`, deploy,
+   and run the smoke below against the Worker's own address.
+3. Attach `external.tuturuuu.com` (a proxied route in front of the still-valid
+   Vercel origin where possible).
+
+### Smoke
+
+```bash
+# Entry route is anonymous 200
+curl -s -o /dev/null -w '%{http_code}\n' https://external.tuturuuu.com/
+# Build identity matches the accepted SHA
+curl -s https://external.tuturuuu.com/api/build-info
+# Closed storage ingress
+curl -s -o /dev/null -w '%{http_code}\n' https://external.tuturuuu.com/api/storage/probe
+# Foreign host is refused
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: unknown.invalid' https://external.tuturuuu.com/
+```
+
+Expected: `200`, the accepted commit, `403`, `404`. The app has no login page of its
+own; sign-in belongs to the central app.
+
+### Rollback
+
+- **Triggers:** 5xx above 1% for 5 minutes, any cross-host response, or an
+  anonymous storage request that is not refused.
+- **Action:** remove the Worker route (or repoint the mapping) so the host
+  resolves to the recorded Vercel deployment. Never rebuild on the rollback path.
+- **Data:** a route rollback changes no stored project data.
+- **Stability:** keep the Vercel project and domain for 14 consecutive stable
+  days before decommissioning, which is a separate approval.
