@@ -65,7 +65,7 @@ export async function exchangeToken(
   const response = await fetch(config.token, {
     method: 'POST',
     cache: 'no-store',
-    redirect: 'error',
+    redirect: 'manual',
     signal: AbortSignal.timeout(20000),
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -74,7 +74,7 @@ export async function exchangeToken(
       ...values,
     }),
   });
-  if (!response.ok)
+  if (response.type === 'opaqueredirect' || !response.ok)
     throw new ConnectedMailError(409, 'Reconnect this mail account');
   const token = await response.json();
   const refreshToken = token.refresh_token || previousRefresh;

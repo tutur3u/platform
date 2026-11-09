@@ -363,3 +363,39 @@ it('does not adopt a token rejected by the provider during forced refresh', asyn
   });
   expect(account).toEqual(original);
 });
+
+it.each([301, 302, 307, 308])(
+  'denies token exchange redirect %s before parsing credentials',
+  async (status) => {
+    const response = new Response(null, {
+      status,
+      headers: { Location: 'https://other.invalid/' },
+    });
+    const json = vi.spyOn(response, 'json');
+    const fetch = vi.fn().mockResolvedValue(response);
+    vi.stubGlobal('fetch', fetch);
+    await expect(
+      exchangeToken('google', {
+        grant_type: 'authorization_code',
+        code: 'synthetic',
+      })
+    ).rejects.toMatchObject({ status: 409 });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' });
+    expect(json).not.toHaveBeenCalled();
+  }
+);
+it('denies an opaque token response before parsing credentials', async () => {
+  const response = Response.json({
+    access_token: 'synthetic',
+    refresh_token: 'synthetic',
+    expires_in: 3600,
+  });
+  Object.defineProperty(response, 'type', { value: 'opaqueredirect' });
+  const json = vi.spyOn(response, 'json');
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+  await expect(exchangeToken('google', {})).rejects.toMatchObject({
+    status: 409,
+  });
+  expect(json).not.toHaveBeenCalled();
+});
