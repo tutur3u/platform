@@ -1,0 +1,91 @@
+---
+title: "Rewise on Start + Void"
+description: "Native Rewise Worker profiles, the sealed cutover artifact, and the cutover and Vercel rollback packet."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Rewise (`apps/rewise`) runs on TanStack Start, Vite+ and Void behind
+[`@tuturuuu/start-bridge`](/build/devops/start-bridge). The Next.js build
+(`build`) and the Vercel project stay in place until the cutover has been
+stable, so the canonical host keeps a one-step route back.
+
+## Worker profiles
+
+| Profile | Selected by | Worker | `TUTURUUU_NOINDEX` |
+| --- | --- | --- | --- |
+| Staging (default) | no profile variable | `tuturuuu-rewise-vite-staging` | `1` |
+| Production | `VITE_REWISE_NATIVE_PROFILE=production` | `tuturuuu-rewise` | `0` |
+
+Neither profile declares routes; `workers_dev` and `preview_urls` are off. The
+only canonical host is `rewise.tuturuuu.com` (the retired `rewise.me` and
+`rewise.school` origins are rejected). Any other host answers `404`.
+
+A Worker missing any required secret, or without `ABUSE_GUARD_BACKEND=upstash`,
+refuses to serve (`cloudflare/required-secrets.ts`) instead of running on a
+fallback. Names only are recorded here.
+
+| Route | Behavior |
+| --- | --- |
+| `/` | Redirects to `/login` |
+| `/login` | Redirects to `https://tuturuuu.com/login` (central sign-in) |
+| `/api/build-info` | Local build identity |
+
+## Build and artifact
+
+`rewise-cloudflare.yaml` has a `cutover-artifact` job that builds with
+`VITE_REWISE_NATIVE_PROFILE=production`, seals the Worker, assets and emitted
+Wrangler config with `scripts/ci/rewise-native-artifact.py`, records the
+emitted configuration receipt, runs
+`node --test cloudflare/anonymous-smoke.runtime.mjs` against the sealed output in
+workerd with synthetic secrets only, and uploads
+`rewise-cutover-production-<source SHA>`. It never deploys. Do not run
+`build:cloudflare` on a shared development machine.
+
+## Cutover packet
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-rewise` |
+| Route | `rewise.tuturuuu.com/*`, operator-attached |
+| Static assets binding | `ASSETS` (`dist/client`, `run_worker_first`) |
+| Build command | `VITE_REWISE_NATIVE_PROFILE=production bun run --cwd apps/rewise build:cloudflare` |
+| Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
+| Vars | `ABUSE_GUARD_BACKEND=upstash`, `NEXT_PUBLIC_APP_URL=https://rewise.tuturuuu.com`, `NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com` |
+| Optional AI keys | the provider keys listed in `env.example`, as secrets on the Worker |
+| Prior Vercel deployment | record the immutable deployment ID and URL of the `rewise` Vercel project before the switch |
+| Data | no database writes and no migrations; reuse the existing Upstash database, provision nothing new |
+
+### Switch
+
+1. Record the source SHA, artifact name and Vercel deployment ID.
+2. Provision the secrets and vars on `tuturuuu-rewise`, deploy the sealed
+   output, and run the smoke below against the Worker's own address.
+3. Attach `rewise.tuturuuu.com` (a proxied route in front of the still-valid
+   Vercel origin where possible).
+
+### Smoke
+
+```bash
+# Entry route redirects to /login; no 5xx
+curl -sI https://rewise.tuturuuu.com/ | head -5
+# Login redirects to the central sign-in page
+curl -sI https://rewise.tuturuuu.com/login | head -5
+# Build identity matches the accepted SHA
+curl -s https://rewise.tuturuuu.com/api/build-info
+# Foreign host is refused
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: tuturuuu.com' https://rewise.tuturuuu.com/
+```
+
+Expected: a redirect to `/login`, a redirect to `https://tuturuuu.com/login`,
+the accepted commit, and `404`.
+
+### Rollback
+
+- **Triggers:** 5xx above 1% for 5 minutes, a sign-in loop, a chat or AI route
+  failing for authenticated users, or any cross-host response.
+- **Action:** remove the Worker route (or repoint the mapping) so the host
+  resolves to the recorded Vercel deployment. Never rebuild on the rollback path.
+- **Data:** a route rollback changes no conversation data.
+- **Stability:** keep the Vercel project and domain for 14 consecutive stable
+  days before decommissioning, which is a separate approval.
