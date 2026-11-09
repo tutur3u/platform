@@ -1,5 +1,5 @@
 'use client';
-import { Expand, Shrink, Video, VideoOff } from '@tuturuuu/icons';
+import { EyeOff, Expand, PictureInPicture2, Shrink } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
@@ -89,10 +89,24 @@ export function SelfPreviewPip({
   const overlayRef = useRef<HTMLDivElement>(null);
   const probeRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const pillRef = useRef<HTMLButtonElement>(null);
+  const focusAfterToggle = useRef(false);
+  const [announcement, setAnnouncement] = useState('');
 
   useEffect(() => {
     writePipPrefs(resolvedStorage, prefs);
   }, [prefs, resolvedStorage]);
+
+  useEffect(() => {
+    if (!focusAfterToggle.current) return;
+    focusAfterToggle.current = false;
+    (prefs.hidden ? pillRef.current : cardRef.current)?.focus();
+  }, [prefs.hidden]);
+
+  const toggleHidden = (hidden: boolean) => {
+    focusAfterToggle.current = true;
+    update({ hidden });
+  };
 
   useIsomorphicLayoutEffect(() => {
     const overlay = overlayRef.current;
@@ -220,6 +234,11 @@ export function SelfPreviewPip({
     if (corner !== prefs.corner) {
       event.preventDefault();
       update({ corner });
+      setAnnouncement(
+        t('self_preview_moved', {
+          corner: t(`self_preview_corner_${corner.replace('-', '_')}`),
+        })
+      );
     }
   };
 
@@ -248,10 +267,14 @@ export function SelfPreviewPip({
           paddingLeft: 'env(safe-area-inset-left, 0px)',
         }}
       />
+      <output className="sr-only" aria-live="polite">
+        {announcement}
+      </output>
       {prefs.hidden ? (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
+              ref={pillRef}
               type="button"
               variant="secondary"
               size="icon"
@@ -264,9 +287,9 @@ export function SelfPreviewPip({
                   : 'rounded-r-none rounded-l-xl'
               )}
               style={pillStyle}
-              onClick={() => update({ hidden: false })}
+              onClick={() => toggleHidden(false)}
             >
-              <VideoOff className="size-4" />
+              <PictureInPicture2 className="size-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side={pillSide === 'left' ? 'right' : 'left'}>
@@ -309,7 +332,7 @@ export function SelfPreviewPip({
                   type="button"
                   size="icon"
                   variant="ghost"
-                  className="size-7"
+                  className="size-7 [@media(pointer:coarse)]:size-10"
                   aria-label={t('self_preview_resize', {
                     size: t(`self_preview_size_${nextSize(prefs.size)}`),
                   })}
@@ -335,12 +358,12 @@ export function SelfPreviewPip({
                   type="button"
                   size="icon"
                   variant="ghost"
-                  className="size-7"
+                  className="size-7 [@media(pointer:coarse)]:size-10"
                   aria-label={t('self_preview_hide')}
                   data-testid="self-preview-hide"
-                  onClick={() => update({ hidden: true })}
+                  onClick={() => toggleHidden(true)}
                 >
-                  <Video className="size-3.5" />
+                  <EyeOff className="size-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('self_preview_hide')}</TooltipContent>

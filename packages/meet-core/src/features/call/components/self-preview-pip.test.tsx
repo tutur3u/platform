@@ -92,3 +92,23 @@ it('restores saved preferences and survives unavailable storage', () => {
     screen.getByTestId('self-preview-card').getAttribute('data-corner')
   ).toBe('bottom-right');
 });
+
+it('moves focus to the restore pill after hiding and back to the card after restoring', () => {
+  renderPip(new MemoryStorage());
+  fireEvent.click(screen.getByTestId('self-preview-hide'));
+  expect(document.activeElement).toBe(
+    screen.getByTestId('self-preview-restore')
+  );
+  fireEvent.click(screen.getByTestId('self-preview-restore'));
+  expect(document.activeElement).toBe(screen.getByTestId('self-preview-card'));
+});
+
+it('announces corner moves politely', () => {
+  renderPip(new MemoryStorage());
+  fireEvent.keyDown(screen.getByTestId('self-preview-card'), {
+    key: 'ArrowLeft',
+  });
+  expect(screen.getByRole('status').textContent).toBe(
+    'Camera preview moved to bottom left'
+  );
+});

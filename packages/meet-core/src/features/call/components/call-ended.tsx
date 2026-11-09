@@ -98,7 +98,7 @@ export function CallEnded({
     backLink(true)
   );
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center bg-background px-5 py-10">
+    <main className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-10">
       <div
         className={cn(
           'w-full space-y-8',

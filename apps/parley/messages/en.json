@@ -4369,13 +4369,18 @@
       "waiting_room": "Waiting to join ({count})",
       "you": "You",
       "your_name": "Your name",
-      "self_preview_show": "Show your camera",
-      "self_preview_hide": "Hide your camera",
+      "self_preview_show": "Show self view",
+      "self_preview_hide": "Hide self view",
       "self_preview_role": "Floating camera preview",
       "self_preview_resize": "Resize to {size}",
       "self_preview_size_s": "small",
       "self_preview_size_m": "medium",
-      "self_preview_size_l": "large"
+      "self_preview_size_l": "large",
+      "self_preview_moved": "Camera preview moved to {corner}",
+      "self_preview_corner_top_left": "top left",
+      "self_preview_corner_top_right": "top right",
+      "self_preview_corner_bottom_left": "bottom left",
+      "self_preview_corner_bottom_right": "bottom right"
     },
     "collaboration": {
       "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",

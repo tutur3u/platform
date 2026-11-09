@@ -38,7 +38,12 @@ export function NotesSharingControl({
     >
       <div className="space-y-1">
         <Label htmlFor="share-ended-notes">{t('share_ended_notes')}</Label>
-        <p className="max-w-sm text-muted-foreground text-xs">
+        <p
+          className={cn(
+            'max-w-sm text-muted-foreground',
+            variant === 'row' ? 'text-sm' : 'text-xs'
+          )}
+        >
           {t('share_ended_notes_hint')}
         </p>
       </div>

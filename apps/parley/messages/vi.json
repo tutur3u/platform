@@ -4369,13 +4369,18 @@
       "waiting_room": "Đang chờ vào ({count})",
       "you": "Bạn",
       "your_name": "Tên của bạn",
-      "self_preview_show": "Hiện camera của bạn",
-      "self_preview_hide": "Ẩn camera của bạn",
+      "self_preview_show": "Hiện khung xem trước của bạn",
+      "self_preview_hide": "Ẩn khung xem trước của bạn",
       "self_preview_role": "Khung xem trước camera nổi",
       "self_preview_resize": "Đổi sang cỡ {size}",
       "self_preview_size_s": "nhỏ",
       "self_preview_size_m": "vừa",
-      "self_preview_size_l": "lớn"
+      "self_preview_size_l": "lớn",
+      "self_preview_moved": "Khung camera đã chuyển sang {corner}",
+      "self_preview_corner_top_left": "góc trên bên trái",
+      "self_preview_corner_top_right": "góc trên bên phải",
+      "self_preview_corner_bottom_left": "góc dưới bên trái",
+      "self_preview_corner_bottom_right": "góc dưới bên phải"
     },
     "collaboration": {
       "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",
