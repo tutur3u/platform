@@ -10,7 +10,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/(landing)/layout'),
     ],
   },
@@ -19,7 +18,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/about/layout'),
     ],
   },
@@ -28,7 +26,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/acceptable-use/layout'),
     ],
   },
@@ -37,7 +34,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/blog/layout'),
     ],
   },
@@ -46,7 +42,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/branding/layout'),
     ],
   },
@@ -55,7 +50,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/careers/layout'),
     ],
   },
@@ -64,7 +58,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/community-guidelines/layout'),
     ],
   },
@@ -73,7 +66,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/contact/layout'),
     ],
   },
@@ -82,7 +74,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/contributors/layout'),
     ],
   },
@@ -91,7 +82,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/legal/changes/layout'),
     ],
   },
@@ -100,7 +90,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/legal/changes/layout'),
     ],
   },
@@ -109,7 +98,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/legal/dpa/layout'),
     ],
   },
@@ -118,7 +106,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/legal/sla/layout'),
     ],
   },
@@ -127,7 +114,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/legal/subprocessors/layout'),
     ],
   },
@@ -136,7 +122,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/partners/layout'),
     ],
   },
@@ -145,7 +130,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
     ],
   },
   'src/app/[locale]/(marketing)/privacy/page.tsx': {
@@ -153,7 +137,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/privacy/layout'),
     ],
   },
@@ -162,7 +145,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/ai/layout'),
     ],
@@ -172,7 +154,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/calendar/layout'),
     ],
@@ -182,7 +163,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/chat/layout'),
     ],
@@ -192,7 +172,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/crm/layout'),
     ],
@@ -202,7 +181,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/documents/layout'),
     ],
@@ -212,7 +190,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/drive/layout'),
     ],
@@ -222,7 +199,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/finance/layout'),
     ],
@@ -232,7 +208,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/forms/layout'),
     ],
@@ -242,7 +217,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/hive/layout'),
     ],
@@ -252,7 +226,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/inventory/layout'),
     ],
@@ -262,7 +235,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/lms/layout'),
     ],
@@ -272,7 +244,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/mail/layout'),
     ],
@@ -282,7 +253,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/meet-together/layout'),
     ],
@@ -292,7 +262,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
     ],
   },
@@ -301,7 +270,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/qr/layout'),
     ],
@@ -311,7 +279,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/storefront/layout'),
     ],
@@ -321,7 +288,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/tasks/layout'),
     ],
@@ -331,7 +297,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/track/layout'),
     ],
@@ -341,7 +306,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/products/layout'),
       () => import('../app/[locale]/(marketing)/products/workflows/layout'),
     ],
@@ -351,7 +315,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/security/layout'),
       () => import('../app/[locale]/(marketing)/security/bug-bounty/layout'),
     ],
@@ -361,7 +324,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/security/layout'),
     ],
   },
@@ -370,7 +332,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/security/layout'),
     ],
   },
@@ -379,7 +340,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/solutions/construction/layout'),
     ],
   },
@@ -388,7 +348,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/solutions/education/layout'),
     ],
   },
@@ -397,7 +356,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/solutions/healthcare/layout'),
     ],
   },
@@ -406,7 +364,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/solutions/hospitality/layout'),
     ],
   },
@@ -415,7 +372,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/solutions/manufacturing/layout'),
     ],
   },
@@ -424,7 +380,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/solutions/pharmacies/layout'),
     ],
   },
@@ -433,7 +388,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/solutions/realestate/layout'),
     ],
   },
@@ -442,7 +396,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/solutions/restaurants/layout'),
     ],
   },
@@ -451,7 +404,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/solutions/retail/layout'),
     ],
   },
@@ -460,7 +412,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/terms/layout'),
     ],
   },
@@ -469,7 +420,6 @@ export const pageModules = {
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(marketing)/layout'),
-      () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/women-in-tech/layout'),
     ],
   },
