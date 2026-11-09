@@ -243,6 +243,17 @@
       },
       "digest": "1beb88e2772be3324b55b9f33dcfe4b0c818fa7898de666878c61b1d0080214f"
     },
+    ".github/workflows/rewise-cloudflare.yaml": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7899",
+        "reason": "Three data-only mentions: two build/seal labels and WRANGLER_SEND_METRICS=false. The workflow builds and seals the exact source with public inputs, never invokes the CLI and has no provider deployment step or provider credential. Void profiles keep workers_dev and preview_urls false, no routes, ASSETS as the only resource binding, and TUTURUUU_NOINDEX as the sole non-secret var; the artifact validator rejects other bindings and settings. This admits these mentions only; publication and runtime acceptance remain separately gated."
+      },
+      "digest": "3ec6b8fe2cf9ec9fa028460545a704efe37c68c6f8baec416d205c41a1d67ae6",
+      "kind": "workflow"
+    },
     ".github/workflows/roadmap-cloudflare.yaml": {
       "lines": 1,
       "uses": 1,
@@ -1292,6 +1303,50 @@
         "reason": "Playground follows the Wave 1 Start + Void template (codemod): Void rebuilds on deploy, so the exact Void-emitted Worker is qualified with the pinned Wrangler adapter (generated .void-wrangler.jsonc ignored, built-Worker harness, dependency pin). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/rewise/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7899",
+        "reason": "The .void-wrangler.jsonc line ignores a local Void-emitted scratch configuration. It executes nothing, loads no environment or credential and creates no route or binding. Keep this ignore while Void emits the legacy-named scratch file; remove it only with the producer so generated configuration is not accidentally staged."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8",
+      "kind": "source"
+    },
+    "apps/rewise/cloudflare/anonymous-smoke.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7899",
+        "reason": "The pinned SDK starts a disposable local workerd from the sealed Void-emitted config, with bundling and entrypoint processing disabled. Config assertions require routes=[], workers_dev=false and preview_urls=false; injected values are synthetic fixture bindings. Empty explicit envFiles, isolated registry, remote=false, persist=false, denied provider auth, intercepted outbound requests, disabled metrics, 120-second tests and disposal prevent provider publication, credential-backed ingress or external egress. Retain until the cf/Void runner accepts the same sealed artifact with equivalent isolation and negative controls."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29",
+      "kind": "source"
+    },
+    "apps/rewise/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7899",
+        "reason": "The SDK runs a disposable copy of the CI-sealed staging artifact with an empty explicit env file and an isolated registry. The fixture disables bundling, entrypoint processing, remote access, persistence and metrics; provider auth throws and all outbound requests are intercepted and denied. It checks the staging Worker identity and settings against the app config, with synthetic bindings, a 120-second timeout and disposal. This admits the local SDK import only, not the held redirect expectation, a runtime pass or publication. Remove when the cf/Void runner preserves the same sealed-artifact and isolation contract."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20",
+      "kind": "source"
+    },
+    "apps/rewise/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7899",
+        "reason": "The exact devDependency pin supplies SDK 4.151.2 for the two isolated sealed-Void runtime fixtures. The admission does not add a CLI command, lifecycle script, remote provider action, binding, route or secret. Existing deployment authority is unchanged. Remove the dependency when an equivalent cf/Void sealed-artifact runner replaces these SDK callers; dependency changes require fresh byte-bound admission."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b",
+      "kind": "manifest"
     },
     "apps/roadmap/.gitignore": {
       "lines": 1,
