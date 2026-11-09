@@ -32,6 +32,15 @@ export const pageModules = {
       () => import('../app/[locale]/(marketing)/blog/layout'),
     ],
   },
+  'src/app/[locale]/(marketing)/branding/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/branding/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/branding/layout'),
+    ],
+  },
   'src/app/[locale]/(marketing)/careers/page.tsx': {
     page: () => import('../app/[locale]/(marketing)/careers/page'),
     layouts: [

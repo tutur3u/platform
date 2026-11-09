@@ -527,6 +527,177 @@
     "weighted_score": "Trọng số",
     "worst_performing": "Hiệu năng tệ nhất"
   },
+  "branding": {
+    "assetActions": {
+      "copiedPath": "Đã sao chép đường dẫn tài nguyên",
+      "copyPath": "Sao chép đường dẫn tài nguyên",
+      "downloadSvg": "SVG",
+      "pathCopied": "Đã sao chép {path}"
+    },
+    "assets": {
+      "brandMarkDark": {
+        "alt": "Wordmark Tuturuuu dùng trên nền tối",
+        "name": "Dùng trên nền tối"
+      },
+      "brandMarkLight": {
+        "alt": "Wordmark Tuturuuu dùng trên nền sáng",
+        "name": "Dùng trên nền sáng"
+      },
+      "description": "Dùng các tệp SVG gốc trong thư viện nhận diện công khai cho báo chí, sản phẩm, đối tác và nội dung biên tập.",
+      "eyebrow": "Thư viện tài nguyên",
+      "gaming": {
+        "alt": "Biểu tượng Tuturuuu Gaming",
+        "name": "Gaming"
+      },
+      "mira": {
+        "alt": "Biểu tượng Mira AI",
+        "name": "Mira"
+      },
+      "nova": {
+        "alt": "Biểu tượng Nova",
+        "name": "Nova"
+      },
+      "rewise": {
+        "alt": "Biểu tượng Rewise",
+        "name": "Rewise"
+      },
+      "title": "Logo chính và biểu tượng sản phẩm",
+      "tudo": {
+        "alt": "Biểu tượng Tudo",
+        "name": "Tudo"
+      },
+      "tuturuuu": {
+        "alt": "Biểu tượng Tuturuuu",
+        "name": "Tuturuuu"
+      }
+    },
+    "colorCopied": "Đã sao chép mã màu {color}",
+    "colors": {
+      "description": "Bảng màu phản ánh giá trị cốt lõi và đảm bảo sự hài hòa thị giác trên mọi nền tảng.",
+      "eyebrow": "Hệ màu",
+      "primary": {
+        "energy": {
+          "description": "Năng động và nhiệt huyết trong mọi thử thách",
+          "title": "Năng Lượng"
+        },
+        "growth": {
+          "description": "Tăng trưởng bền vững và cải tiến không ngừng",
+          "title": "Phát Triển"
+        },
+        "impact": {
+          "description": "Tạo ra giá trị thiết thực cho cuộc sống",
+          "title": "Tác Động"
+        },
+        "innovation": {
+          "description": "Phá vỡ giới hạn với công nghệ tiên phong",
+          "title": "Đổi Mới"
+        }
+      },
+      "primaryTitle": "Màu Sắc Chính",
+      "system": {
+        "backgroundDark": "Nền Tối",
+        "backgroundLight": "Nền Sáng",
+        "surfaceDark": "Bề Mặt Tối",
+        "surfaceLight": "Bề Mặt Sáng"
+      },
+      "systemTitle": "Màu Sắc Hệ Thống",
+      "title": "Bảng Màu Thương Hiệu"
+    },
+    "cta": {
+      "description": "Với nhu cầu báo chí, đối tác hoặc đồng tiếp thị, hãy liên hệ để nhận hướng dẫn sử dụng đã được duyệt và bộ tài nguyên mở rộng.",
+      "primaryAction": "Yêu cầu tài nguyên",
+      "secondaryAction": "Tìm hiểu câu chuyện",
+      "title": "Cần media kit đã duyệt?"
+    },
+    "guidelines": {
+      "color": {
+        "rule1": "Dùng màu chính cho yếu tố quan trọng",
+        "rule2": "Đảm bảo độ tương phản phù hợp",
+        "rule3": "Tuân thủ tiêu chuẩn khả năng tiếp cận",
+        "rule4": "Sử dụng màu hệ thống đúng mục đích",
+        "title": "Nguyên Tắc Màu Sắc"
+      },
+      "description": "Tuân thủ các nguyên tắc này để duy trì tính nhất quán của thương hiệu.",
+      "eyebrow": "Quy chuẩn sử dụng",
+      "logo": {
+        "rule1": "Giữ khoảng cách an toàn xung quanh logo",
+        "rule2": "Không thay đổi màu sắc logo",
+        "rule3": "Chọn phiên bản logo phù hợp với nền",
+        "rule4": "Tuân thủ kích thước tối thiểu",
+        "title": "Nguyên Tắc Logo"
+      },
+      "title": "Nguyên Tắc Sử Dụng",
+      "typography": {
+        "rule1": "Duy trì hệ thống phân cấp rõ ràng",
+        "rule2": "Chọn độ đậm phông chữ hợp lý",
+        "rule3": "Đảm bảo dễ đọc ở mọi kích cỡ",
+        "rule4": "Tuân thủ nguyên tắc khoảng cách",
+        "title": "Nguyên Tắc Chữ"
+      }
+    },
+    "hero": {
+      "badge": "Nhận Diện Thương Hiệu",
+      "description": "Nguồn tham chiếu thực tế cho logo Tuturuuu, biểu tượng sản phẩm, bảng màu, chữ và quy chuẩn dùng trên các điểm chạm công khai.",
+      "primaryAction": "Xem tài nguyên",
+      "secondaryAction": "Yêu cầu media kit",
+      "title": "Tuturuuu",
+      "titleAccent": "Branding"
+    },
+    "logos": {
+      "mira": {
+        "description": "Logo AI thể hiện trí tuệ, tin cậy và sự đột phá của nền tảng."
+      },
+      "tuturuuu": {
+        "description": "Logo chính thể hiện sự đổi mới, đáng tin cậy và xuất sắc của chúng tôi."
+      }
+    },
+    "plate": {
+      "clearSpaceLabel": "Khoảng trống",
+      "clearSpaceValue": "1x biểu tượng",
+      "formatLabel": "Định dạng",
+      "minWidthLabel": "Chiều rộng tối thiểu"
+    },
+    "preview": {
+      "dark": "Nền tối",
+      "description": "Bản xem trước toàn màn hình cho {name} trên các chế độ nền khả dụng.",
+      "fullscreen": "Xem toàn màn hình",
+      "light": "Nền sáng",
+      "monoDark": "Đơn sắc tối",
+      "monoLight": "Đơn sắc sáng",
+      "title": "preview"
+    },
+    "summary": {
+      "assets": {
+        "description": "Wordmark và biểu tượng sản phẩm có sẵn dưới dạng SVG dùng được trong sản xuất.",
+        "eyebrow": "01",
+        "title": "Tài nguyên chuẩn"
+      },
+      "colors": {
+        "description": "Bảng màu cân bằng xanh dương, xanh lá, cam và đỏ để dễ nhận biết mà không gây nhiễu thị giác.",
+        "eyebrow": "02",
+        "title": "Bảng màu rõ ràng"
+      },
+      "rules": {
+        "description": "Ghi chú sử dụng giúp đối tác, biên tập viên và đội sản phẩm giữ thương hiệu nhất quán.",
+        "eyebrow": "03",
+        "title": "Hướng dẫn thực tế"
+      }
+    },
+    "typography": {
+      "description": "Bộ phông chữ được chọn lọc đảm bảo độ rõ nét và dễ đọc, đồng thời thể hiện nhất quán bản sắc thương hiệu.",
+      "eyebrow": "Hệ chữ",
+      "inter": {
+        "usage": "Phông chữ chính cho giao diện, tiêu đề và nội dung"
+      },
+      "notoSans": {
+        "usage": "Hỗ trợ đa ngôn ngữ và bộ ký tự đặc biệt"
+      },
+      "sampleLatin": "Build calm, capable software for ambitious teams.",
+      "sampleVietnamese": "Xây dựng phần mềm rõ ràng cho đội ngũ tham vọng.",
+      "title": "Hệ Thống Chữ",
+      "weightsLabel": "độ đậm"
+    }
+  },
   "breaks": {
     "break_after": "Nghỉ ngơi sau {name}",
     "break_duration": "Thời gian nghỉ",
