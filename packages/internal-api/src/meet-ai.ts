@@ -31,17 +31,25 @@ export type MeetAiChunk = {
   duration_seconds: number;
   status: string;
   transcript: string | null;
-  speaker?: {
-    accountId: string;
-    displayName: string;
-    kind: 'microphone' | 'shared_audio';
-  } | null;
-  segments?: Array<{
-    speaker: NonNullable<MeetAiChunk['speaker']> | null;
-    kind: 'microphone' | 'shared_audio';
-    startSeconds: number;
-    transcript: string;
-  }>;
+  erased?: boolean;
+  speaker?:
+    | {
+        accountId: string;
+        displayName?: string;
+        label?: string;
+        kind: 'microphone' | 'shared_audio';
+      }
+    | { selector: string; kind: 'microphone' | 'shared_audio'; label?: string }
+    | null;
+  segments?: Array<
+    | { erased: true }
+    | {
+        speaker: NonNullable<MeetAiChunk['speaker']> | null;
+        kind: 'microphone' | 'shared_audio';
+        startSeconds: number;
+        transcript: string;
+      }
+  >;
   cost_usd: number | null;
 };
 export type MeetAiSession = {

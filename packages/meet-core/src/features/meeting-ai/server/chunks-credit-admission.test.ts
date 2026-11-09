@@ -141,7 +141,12 @@ it('retries a transient credit check and transcribes with that admission', async
     usage: { available: true },
     costUsd: 0.0001,
   });
-  expect(await transcribeMeetChunk(request(), params)).toEqual(saved);
+  expect(await transcribeMeetChunk(request(), params)).toEqual({
+    ...saved,
+    erased: false,
+    segments: [],
+    speaker: null,
+  });
   expect(mocks.check).toHaveBeenCalledTimes(2);
   expect(rpc).toHaveBeenCalledTimes(1);
   expect(mocks.generate).toHaveBeenCalledWith(
