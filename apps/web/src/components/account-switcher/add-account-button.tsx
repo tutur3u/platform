@@ -1,7 +1,9 @@
 'use client';
 
+import { describeWebAccountSaveError } from '@tuturuuu/internal-api/auth';
 import { Plus } from '@tuturuuu/icons/lucide-static';
 import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
@@ -15,12 +17,15 @@ export function AddAccountButton() {
   const handleAddAccount = async () => {
     setIsLoading(true);
     try {
-      await prepareAddAccountAndNavigate({
+      const result = await prepareAddAccountAndNavigate({
         saveCurrentAccount: addAccount,
       });
-    } catch (_error) {
-      // prepareAddAccountAndNavigate handles navigation even on error,
-      // but reset loading state in case navigation was prevented
+
+      if (result.errorCode === 'account_limit') {
+        toast.error(describeWebAccountSaveError(result, t));
+        setIsLoading(false);
+      }
+    } catch {
       setIsLoading(false);
     }
   };

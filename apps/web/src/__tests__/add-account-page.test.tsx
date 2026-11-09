@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Suspense } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import AddAccountPage, {
@@ -134,5 +134,33 @@ describe('AddAccountPage', () => {
     });
     expect(screen.getByText('Session not found')).toBeDefined();
     expect(mockLocationAssign).not.toHaveBeenCalled();
+  });
+
+  it('shows the 10-account limit and retries the save', async () => {
+    mockAddAccount
+      .mockResolvedValueOnce({
+        error: 'account_limit',
+        errorCode: 'account_limit',
+        success: false,
+      })
+      .mockResolvedValueOnce({
+        redirectTo: '/en/personal/tasks',
+        success: true,
+      });
+
+    await renderAddAccountPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('account_switcher.account_limit')).toBeDefined();
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'account_switcher.retry' })
+    );
+
+    await waitFor(() => {
+      expect(mockLocationAssign).toHaveBeenCalledWith('/en/personal/tasks');
+    });
+    expect(mockAddAccount).toHaveBeenCalledTimes(2);
   });
 });

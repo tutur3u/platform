@@ -40,11 +40,15 @@ export async function POST(request: NextRequest) {
 
     const result = await saveCurrentWebAccount(request, parsed.data);
     if (!result.success) {
+      if (result.errorCode === 'account_limit') {
+        return accountCorsJson(request, result, { status: 409 });
+      }
+
       const diagnosticCode = createAuthDiagnosticCode('account_save');
       logAuthDiagnostic({
         authMethod: 'multi-account',
         code: diagnosticCode,
-        error: result.error,
+        error: result.errorCode ?? result.error,
         level: 'warn',
         message: 'Failed to save current multi-account vault entry',
         request,
@@ -83,7 +87,11 @@ export async function POST(request: NextRequest) {
 
     return accountCorsJson(
       request,
-      { diagnosticCode, error: 'Failed to save current account' },
+      {
+        diagnosticCode,
+        error: 'Could not save this account. Retry.',
+        errorCode: 'save_failed',
+      },
       { status: 500 }
     );
   }
