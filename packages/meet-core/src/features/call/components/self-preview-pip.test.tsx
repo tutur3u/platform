@@ -128,3 +128,43 @@ it('keeps the card controls visible for coarse pointers and on hover or focus', 
   expect(controls?.className).toContain('group-hover/pip:opacity-100');
   expect(controls?.className).toContain('group-focus-within/pip:opacity-100');
 });
+
+it('presses the hide control instead of dragging on a 6px touch jitter', () => {
+  renderPip(new MemoryStorage());
+  const card = screen.getByTestId('self-preview-card');
+  const hide = screen.getByTestId('self-preview-hide');
+  fireEvent.pointerDown(hide, {
+    pointerId: 1,
+    pointerType: 'touch',
+    button: 0,
+    clientX: 100,
+    clientY: 100,
+  });
+  fireEvent.pointerMove(hide, {
+    pointerId: 1,
+    pointerType: 'touch',
+    clientX: 106,
+    clientY: 100,
+  });
+  expect(card.getAttribute('data-dragging')).toBeNull();
+  fireEvent.pointerUp(hide, { pointerId: 1, pointerType: 'touch' });
+  fireEvent.click(hide);
+  expect(screen.queryByTestId('self-preview-card')).toBeNull();
+  expect(screen.getByTestId('self-preview-restore')).toBeTruthy();
+});
+
+it('does not move the card until a touch drag passes the 10px slop', () => {
+  const storage = new MemoryStorage();
+  renderPip(storage);
+  const card = screen.getByTestId('self-preview-card');
+  const touch = { pointerId: 2, pointerType: 'touch', button: 0 };
+  fireEvent.pointerDown(card, { ...touch, clientX: 200, clientY: 200 });
+  fireEvent.pointerMove(card, { ...touch, clientX: 206, clientY: 200 });
+  const before = card.style.transform;
+  fireEvent.pointerUp(card, touch);
+  expect(card.getAttribute('data-corner')).toBe('bottom-right');
+  expect(card.style.transform).toBe(before);
+  fireEvent.pointerDown(card, { ...touch, clientX: 200, clientY: 200 });
+  fireEvent.pointerMove(card, { ...touch, clientX: 215, clientY: 200 });
+  expect(card.getAttribute('data-dragging')).toBe('true');
+});

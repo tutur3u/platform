@@ -13,6 +13,7 @@ import {
   projectedPosition,
   readPipPrefs,
   writePipPrefs,
+  dragSlop,
 } from './pip-layout';
 
 const insets = { top: 12, right: 12, bottom: 12, left: 12 };
@@ -178,5 +179,13 @@ describe('preferences', () => {
     expect(readPipPrefs(undefined)).toEqual(DEFAULT_PIP_PREFS);
     store.set(PIP_STORAGE_KEY, '{not json');
     expect(readPipPrefs(storage)).toEqual(DEFAULT_PIP_PREFS);
+  });
+});
+
+describe('dragSlop', () => {
+  it('tolerates more jitter for touch and pen than for a mouse', () => {
+    expect(dragSlop('mouse')).toBe(3);
+    expect(dragSlop('touch')).toBe(10);
+    expect(dragSlop('pen')).toBe(10);
   });
 });

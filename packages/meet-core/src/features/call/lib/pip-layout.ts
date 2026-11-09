@@ -189,5 +189,12 @@ export function pinchSize(size: PipSize, scale: number): PipSize {
   return size;
 }
 
+/** Travel before a press becomes a drag: coarse pointers jitter more than a mouse. */
+export const PIP_DRAG_SLOP = { mouse: 3, coarse: 10 } as const;
+
+export function dragSlop(pointerType: string): number {
+  return pointerType === 'mouse' ? PIP_DRAG_SLOP.mouse : PIP_DRAG_SLOP.coarse;
+}
+
 export const distance = (a: Point, b: Point) =>
   Math.hypot(a.x - b.x, a.y - b.y);

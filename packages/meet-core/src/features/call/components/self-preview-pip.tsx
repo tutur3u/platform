@@ -19,6 +19,7 @@ import {
   clampPosition,
   cornerPosition,
   distance,
+  dragSlop,
   type Insets,
   moveCorner,
   nearestCorner,
@@ -188,6 +189,9 @@ export function SelfPreviewPip({
     if (!drag || drag.pointerId !== event.pointerId) return;
     if (active && active.pointers.size > 1) return;
     const point = { x: event.clientX, y: event.clientY };
+    const moved =
+      drag.moved || distance(point, drag.origin) > dragSlop(event.pointerType);
+    if (!moved) return;
     const elapsed = Math.max(1, event.timeStamp - drag.last.at);
     const next = clampPosition(
       {
@@ -201,7 +205,7 @@ export function SelfPreviewPip({
     setDrag({
       ...drag,
       position: next,
-      moved: drag.moved || distance(point, drag.origin) > 3,
+      moved,
       velocity: {
         x: (point.x - drag.last.point.x) / elapsed,
         y: (point.y - drag.last.point.y) / elapsed,
