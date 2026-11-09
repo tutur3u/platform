@@ -16,6 +16,7 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { assertServerArtifact } from './server-artifact-scan.mjs';
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
@@ -112,11 +113,7 @@ test('the emitted config exposes no default Cloudflare hostname', () => {
 });
 
 test('the emitted server has NODE_ENV inlined', async () => {
-  const files = await readdir(join(app, 'dist/server'), { recursive: true });
-  for (const file of files.filter((name) => name.endsWith('.mjs'))) {
-    const source = await readFile(join(app, 'dist/server', file), 'utf8');
-    assert.doesNotMatch(source, /process\.env\.NODE_ENV/u, file);
-  }
+  await assertServerArtifact(join(app, 'dist/server'));
 });
 
 test('signed-out requests answer as production does', {
