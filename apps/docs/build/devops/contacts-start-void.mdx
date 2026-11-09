@@ -1,0 +1,45 @@
+---
+title: "Contacts cutover state"
+description: "What exists for Contacts on Start + Void, what does not, and the Vercel rollback that stays in force."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Contacts (`apps/contacts`) hosts tutoring workspaces that a customer uses daily.
+Vercel remains its production runtime. This page records the state so that nobody
+mistakes the candidate for a cutover-ready app.
+
+## State
+
+| Item | State |
+| --- | --- |
+| Native source | None for customer pages. `cloudflare/` holds the default-off [staging candidate](/build/devops/contacts-start-candidate): a fail-closed Worker whose only native route is the inert `/__contacts1` probe. Every page, route handler and asset is forwarded to a Next staging origin |
+| Conversion | The [codemod](/build/devops/start-bridge-codemod) reports 40 of 40 pages on the generic adapter. It conflicts with the candidate's hand-written `vite.config.mts` and `cloudflare/worker.ts` (`--adopt` replaces them), so conversion is a separate change that retires the candidate and its CI |
+| Production | Vercel, no Worker, no route, no DNS change. Last verified deployment source: `e970` (8 Nov), READY, anonymous homepage and login `200`. Customer record behavior is not verified |
+| Reports | `/users/reports` stays on the Next build and must keep working through any future cutover |
+
+## Cutover packet (not ready)
+
+Do not attach a route for Contacts from the candidate. The candidate Worker answers
+`503` unless `CONTACTS_START_CANDIDATE=staging` on the exact staging origin, and
+forwards to Next, so it would add a hop in front of Vercel with no cost saving.
+A real cutover needs the native conversion, the sealed artifact, signed-in staging
+acceptance of tutoring, feedback, billing and `/users/reports`, and a production
+profile (Worker name, host, bindings and secret names, as in
+[Finance](/build/devops/finance-start-void)).
+
+## Rollback
+
+Nothing has been switched, so the production rollback is unchanged: the immutable
+Vercel deployment already serving `contacts` stays in place. Any future cutover
+captures the current Vercel deployment id, source SHA and DNS record before the
+flip and rolls back by removing only the Contacts Worker route.
+
+## Smoke (current Vercel production)
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://contacts.tuturuuu.com/        # 200
+curl -s -o /dev/null -w '%{http_code}\n' https://contacts.tuturuuu.com/login   # 200
+```
+
+Signed-in checks of `/users/reports` use a disposable workspace, never customer data.
