@@ -20,10 +20,27 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
   route-free Worker (`workers_dev: false`, `routes: []`). Binding the canonical host is a
   separate provider step, so uploading never moves traffic.
 - Production publication is gated by `productionPublicationPolicy` in `tuturuuu.ci.ts`
-  and the `wave1-native-production.yaml` dispatch, which currently lists `calendar` only.
-  Admitting `mail` or `apps` needs the same reviewed cutover PR plus the workflow option and
-  its protected environment.
-- Rollback: Vercel can no longer redeploy `calendar` or `mail` from `main`. Their build
+  and the `wave1-native-production.yaml` dispatch, which lists `calendar`, `mail` and
+  `apps`. All three are admitted. Each run uses the protected GitHub environment
+  `wave1-<app>-production` (`publish` only succeeds when `PUBLICATION_ENVIRONMENT` equals that
+  exact name) and must be dispatched from the `production` ref.
+- Environments the release owner creates (restrict each to the `production` branch and add a
+  required reviewer): `wave1-calendar-production`,
+  `wave1-mail-production`, `wave1-apps-production`. Each holds the same four secrets,
+  by name: `PRODUCTION_SUPABASE_URL`, `PRODUCTION_SUPABASE_PUBLISHABLE_KEY` (public build
+  inputs), `WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN` (read-only topology, used by the
+  preflight and verify steps) and `WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN` (upload only, used
+  by the upload step). The per-app Worker secrets listed below are set on the Worker, not
+  in GitHub.
+- Legacy `vercel-production-mail.yaml` and `vercel-production-apps.yaml` are disabled in
+  `tuturuuu.ci.ts`, like Calendar and Meet: Vercel can no longer build either app.
+- Tasks and Track are not wave-1 profile apps. Their `mail-calendar-tasks-builds.yaml`
+  (`tasks-cutover-artifact`) and `track-cloudflare.yaml` (`track-cutover-artifact`) jobs
+  already rewrite the emitted config to the production Worker names `tuturuuu-tasks` and
+  `tuturuuu-track` (route-free, `workers_dev` and `preview_urls` off) and upload the
+  artifact for an operator `wrangler deploy`. They need no environment and have no
+  production publisher job.
+- Rollback: Vercel can no longer redeploy `calendar`, `mail` or `apps` from `main`. Their build
   command now emits a native Worker and Vercel fails with `NEXT_OUTPUT_DIR_MISSING`, so the
   rollback target is the retained READY deployment below, restored by moving the alias.
   Never delete these deployments until a full release cycle has run on the Worker.
@@ -56,33 +73,33 @@ unauthenticated workspace route. Meet and Roadmap use their own workflows and ar
 
 | Field | Value |
 | --- | --- |
-| Worker | `tuturuuu-calendar` (staging `tuturuuu-calendar-wave1-staging` on `calendar.tutur3u.com`) |
+| Worker | `tuturuuu-calendar` |
 | Canonical host | `calendar.tuturuuu.com` |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`, `CRON_SECRET`; optional `TUTURUUU_APP_COORDINATION_SECRET` |
 | Bindings | `ASSETS` only; no database, KV, R2 or queue |
-| Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=calendar` from `production` |
+| Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=calendar` from `production` (environment `wave1-calendar-production`) |
 | Vercel rollback | `dpl_EDfFFKFtpxeJ29UUmxZc1VNqLsX2` (`calendar-2zv7iqdve-tuturuuu.vercel.app`, READY, aliased to `calendar.tuturuuu.com`) |
 
 ## Mail
 
 | Field | Value |
 | --- | --- |
-| Worker | `tuturuuu-mail` (staging `tuturuuu-mail-wave1-staging`) |
+| Worker | `tuturuuu-mail` |
 | Canonical host | `mail.tuturuuu.com` |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`, `MAIL_CONNECTED_ACCOUNTS_KEY`, `MAIL_R2_ACCOUNT_ID`, `MAIL_R2_ACCESS_KEY_ID`, `MAIL_R2_SECRET_ACCESS_KEY`, `MAIL_CLOUDFLARE_ACCOUNT_ID`, `MAIL_CLOUDFLARE_API_TOKEN`, `MAIL_CLOUDFLARE_INGEST_SECRET` |
 | Resources | Existing R2 bucket `tuturuuu-mail` (retained); the email-routing Worker (`wrangler.email-routing.jsonc`) is a separate deployment and is not touched by this cutover |
-| Publication | Held in `tuturuuu.ci.ts`; needs the cutover PR, the workflow option and a protected environment |
+| Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=mail` from `production` (environment `wave1-mail-production`) |
 | Vercel rollback | `dpl_G7VbMYiwb9BhAm9i2FK8N3Udw3s3` (`mail-4qk3m6sdv-tuturuuu.vercel.app`, READY, aliased to `mail.tuturuuu.com`) |
 
 ## Apps
 
 | Field | Value |
 | --- | --- |
-| Worker | `tuturuuu-apps` (staging `tuturuuu-apps-wave1-staging`) |
+| Worker | `tuturuuu-apps` |
 | Canonical host | `apps.tuturuuu.com`; the production profile sets `APPS_CANONICAL_HOST_ENABLED=1`, without which the Worker answers 503 on that host |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
 | Vars | `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com`; `/api/*` proxies to Web |
-| Publication | Held in `tuturuuu.ci.ts` |
+| Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=apps` from `production` (environment `wave1-apps-production`) |
 | Vercel rollback | `dpl_7jwSj1yvqqtjxagQqsVr8kZ97ByS` (`apps-mlvxr7mpd-tuturuuu.vercel.app`, READY, aliased to `apps.tuturuuu.com`) |
 
 ## Meet
