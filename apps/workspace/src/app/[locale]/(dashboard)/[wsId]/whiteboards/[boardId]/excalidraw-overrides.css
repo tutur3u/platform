@@ -1,0 +1,4 @@
+.excalidraw .sidebar-trigger,
+.excalidraw .UserList {
+  display: none;
+}

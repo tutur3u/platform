@@ -54,6 +54,8 @@ export const pages = [
   { pattern: "/[wsId]/queues", file: "src/app/[locale]/(dashboard)/[wsId]/queues/(default)/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/readings", file: "src/app/[locale]/(dashboard)/[wsId]/readings/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/tasks/[[...slug]]", file: "src/app/[locale]/(dashboard)/[wsId]/tasks/[[...slug]]/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/whiteboards/[boardId]", file: "src/app/[locale]/(dashboard)/[wsId]/whiteboards/[boardId]/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/whiteboards", file: "src/app/[locale]/(dashboard)/[wsId]/whiteboards/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/", file: "src/app/[locale]/page.tsx", defaults: { "locale": "en" } },
 ] as const satisfies readonly BridgePage[];
 
