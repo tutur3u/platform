@@ -131,4 +131,6 @@ Membership filtering is covered by `board-filter-state.test.ts` and
 The task-board member endpoint returns public profile names and avatars with
 `email: null`. Board visibility does not grant access to private member email
 addresses. The assignee picker and mention suggestions use the task home
-workspace; task cards and history retain authorized task identities.
+workspace; task cards and history retain authorized task identities. History actor names
+come from public profiles; private email fallbacks from history storage are
+not returned.
