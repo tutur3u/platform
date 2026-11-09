@@ -48,6 +48,66 @@ export const pageModules = {
       () => import('../app/[locale]/(auth)/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/(ai)/datasets/(default)/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/(default)/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/api-references/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/api-references/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/explore/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/explore/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/settings/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/settings/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(ai)/models/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(ai)/models/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(ai)/pipelines/(default)/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(ai)/pipelines/(default)/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/(dashboard)/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/(dashboard)/page'),
     layouts: [
@@ -160,8 +220,113 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/ai-chat/[chatId]/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/ai-chat/[chatId]/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/ai-chat/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/ai-chat/chatbots/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/ai-chat/chatbots/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/ai-chat/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/new/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/new/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/ai-chat/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/new/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/ai-chat/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/ai-chat/new/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/ai-chat/new/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/ai-chat/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/ai-chat/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/ai-chat/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/ai-chat/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/ai/executions/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/ai/executions/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/ai/spark/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/ai/spark/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/calendar/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/calendar/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/changelog/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/changelog/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/crawlers/(default)/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/crawlers/(default)/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/uncrawled/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/crawlers/(default)/uncrawled/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/crawlers/(default)/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/crawlers/[crawlerId]/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/crawlers/[crawlerId]/page'),
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(dashboard)/layout'),
@@ -193,6 +358,22 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/integrations/discord/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/integrations/discord/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/integrations/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/integrations/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/memories/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/memories/page'),
     layouts: [
@@ -212,6 +393,22 @@ export const pageModules = {
   },
   'src/app/[locale]/(dashboard)/[wsId]/notes/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/notes/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/polls/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/polls/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/queues/(default)/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/queues/(default)/page'),
     layouts: [
       () => import('../app/[locale]/layout'),
       () => import('../app/[locale]/(dashboard)/layout'),
