@@ -67,6 +67,31 @@ jobs:
             echo "✅ Branch name follows convention: $BRANCH_NAME"
           fi
 
+  commit-trailers:
+    name: Check commit trailers
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ready-for-ci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Read the trailer check
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/ci/commit-trailer-check.js
+      - name: Reject Co-authored-by trailers
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR}/commits" --jq '.[] | .commit.message + "\u0000"' | node scripts/ci/commit-trailer-check.js
+
   staging-hosts:
     name: Staging cookie-domain isolation
     if: github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ready-for-ci'
@@ -173,6 +198,7 @@ jobs:
       [
         scope,
         branch-name,
+        commit-trailers,
         staging-hosts,
         feature-flag-lifecycle,
         admitted,
@@ -202,6 +228,7 @@ jobs:
           const selected = {
             scope: full,
             'branch-name': full,
+            'commit-trailers': full,
             'staging-hosts': full,
             // Warning-only: a skip never blocks; a checker crash still fails.
             'feature-flag-lifecycle': false,
