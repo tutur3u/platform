@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { randomBytes } from 'node:crypto';
 import { cp, mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { request as httpRequest } from 'node:http';
 import { createRequire } from 'node:module';
@@ -7,6 +8,7 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { REQUIRED_RUNTIME_NAMES } from './runtime-environment.ts';
 
 const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
@@ -68,6 +70,24 @@ test(
       envFiles: [envFile],
       sendMetrics: false,
       bindings: {
+        ...Object.fromEntries(
+          REQUIRED_RUNTIME_NAMES.map((name) => [
+            name,
+            { type: 'secret_text', value: randomBytes(32).toString('hex') },
+          ])
+        ),
+        NEXT_PUBLIC_SUPABASE_URL: {
+          type: 'plain_text',
+          value: 'https://fixture.supabase.invalid',
+        },
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: {
+          type: 'plain_text',
+          value: 'sb_publishable_fixture',
+        },
+        UPSTASH_REDIS_REST_URL: {
+          type: 'plain_text',
+          value: 'https://redis.invalid',
+        },
         INTERNAL_WEB_API_ORIGIN: {
           type: 'plain_text',
           value: 'https://central.invalid',
