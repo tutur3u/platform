@@ -12,6 +12,7 @@ export const pages = [
   { pattern: "/legal/dpa", file: "src/app/[locale]/(marketing)/legal/dpa/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/legal/sla", file: "src/app/[locale]/(marketing)/legal/sla/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/legal/subprocessors", file: "src/app/[locale]/(marketing)/legal/subprocessors/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/partners", file: "src/app/[locale]/(marketing)/partners/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/pricing", file: "src/app/[locale]/(marketing)/pricing/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/privacy", file: "src/app/[locale]/(marketing)/privacy/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/products/ai", file: "src/app/[locale]/(marketing)/products/ai/page.tsx", defaults: { "locale": "en" } },
