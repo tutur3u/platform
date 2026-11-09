@@ -93,7 +93,7 @@ export function createPlayIntegrityVerifier(config: {
         },
         body: JSON.stringify({ integrityToken: input.token }),
         cache: 'no-store',
-        redirect: 'error',
+        redirect: 'manual',
         signal,
       }
     );
