@@ -20,18 +20,21 @@ def load():
     spec = importlib.util.spec_from_file_location("pay_native_artifact_base", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    profile = json.loads(PROFILE.read_text())
-    if profile.get("POLAR_SANDBOX") != "true":
+    production = os.environ.get("VITE_PAY_NATIVE_PROFILE") == "production"
+    worker = "tuturuuu-pay" if production else WORKER
+    profile_path = PROFILE.with_name("production-profile.json") if production else PROFILE
+    profile = json.loads(profile_path.read_text())
+    if not production and profile.get("POLAR_SANDBOX") != "true":
         raise RuntimeError("Pay staging qualification requires Polar sandbox")
     module.IDENTITY = {
         **module.IDENTITY,
-        "name": WORKER,
+        "name": worker,
         "workers_dev": False,
         "vars": profile,
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
     }
-    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
+    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": worker}
     module.RECEIPT = "pay-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
     return module
