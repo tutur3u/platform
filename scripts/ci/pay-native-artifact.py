@@ -53,7 +53,12 @@ def reject_staging_production(directory, output):
     staging_url = staging.get("NEXT_PUBLIC_SUPABASE_URL", "")
     if ".supabase.co" in staging_url:
         markers.add(staging_url.removeprefix("https://").removesuffix(".supabase.co"))
-    if "sandbox" in str(config.get("vars", {}).get("POLAR_SERVER", "")).lower():
+    # The Polar environment is chosen at runtime from these vars. Bundles carry
+    # the SDK's sandbox server table, the checkout embed origins and setup copy,
+    # so the bundle text is not evidence of the selected server.
+    if str(vars_.get("POLAR_SANDBOX", "")).lower() != "false":
+        raise ValueError("production POLAR_SANDBOX must be false")
+    if "sandbox" in str(vars_.get("POLAR_SERVER", "")).lower():
         raise ValueError("production Polar server must not use sandbox")
     for path in (output["assets"], output["main"]):
         files = [path] if path.is_file() else sorted(p for p in path.rglob("*") if p.is_file())
@@ -65,8 +70,6 @@ def reject_staging_production(directory, output):
             leaks = staging_host_leaks(content)
             if leaks:
                 raise ValueError("staging marker in production output: " + ", ".join(leaks))
-            if b"sandbox" in content and (b"polar" in content or b"server" in content):
-                raise ValueError("production Polar server must not use sandbox")
 
 
 def load():

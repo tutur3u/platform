@@ -79,7 +79,7 @@ class PayArtifactTest(unittest.TestCase):
     def production_output(self, *, web="https://tuturuuu.com", vars_extra=None, client="client", server="server"):
         wrapper.PRODUCTION = True
         app, config = self.fixture()
-        config["vars"] = {"NEXT_PUBLIC_WEB_APP_URL": web, **(vars_extra or {})}
+        config["vars"] = {"NEXT_PUBLIC_WEB_APP_URL": web, "POLAR_SANDBOX": "false", **(vars_extra or {})}
         config_path = app / "dist/native/wrangler.json"
         config_path.write_text(json.dumps(config))
         client_path = app / "dist/client/assets/entry.js"
@@ -132,6 +132,21 @@ class PayArtifactTest(unittest.TestCase):
         app, output = self.production_output(vars_extra={"POLAR_SERVER": "https://sandbox-api.polar.sh"})
         with self.assertRaisesRegex(ValueError, "Polar server"):
             wrapper.reject_staging_production(app, output)
+
+    def test_production_profile_rejects_polar_sandbox_flag(self):
+        for flag in ("true", "", "1"):
+            app, output = self.production_output(vars_extra={"POLAR_SANDBOX": flag})
+            with self.assertRaisesRegex(ValueError, "POLAR_SANDBOX"):
+                wrapper.reject_staging_production(app, output)
+
+    def test_production_profile_accepts_polar_sandbox_text_in_bundles(self):
+        sdk = (
+            'let l=`https://polar.sh,https://sandbox.polar.sh`.split(`,`);'
+            'const s={production:"https://api.polar.sh",sandbox:"https://sandbox-api.polar.sh"};'
+            '"Set POLAR_SANDBOX=true in your .env"'
+        )
+        app, output = self.production_output(client=sdk, server=sdk)
+        wrapper.reject_staging_production(app, output)
 
     def test_seal_pack_restore_round_trip(self):
         app, _ = self.fixture()
