@@ -192,6 +192,7 @@ jobs:
       contents: read
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VITE_PAY_NATIVE_PROFILE: production
       TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://pay-ci.supabase.invalid' }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_pay_ci_placeholder' }}
@@ -241,7 +242,8 @@ jobs:
           c.name = 'tuturuuu-pay';
           c.workers_dev = false;
           c.preview_urls = false;
-          c.upload_source_maps = false;
+          c.upload_source_maps = true;
+          c.topLevelName = 'tuturuuu-pay';
           c.vars = {
             TUTURUUU_NOINDEX: '0',
             NODE_ENV: 'production',
