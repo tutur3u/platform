@@ -9,10 +9,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@tuturuuu/internal-api": ["../../packages/internal-api/src/index.ts"],
-      "@tuturuuu/internal-api/*": ["../../packages/internal-api/src/*"],
-      "@tuturuuu/types/*": ["../../packages/types/src/*"]
+      "@/*": ["./src/*"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true
