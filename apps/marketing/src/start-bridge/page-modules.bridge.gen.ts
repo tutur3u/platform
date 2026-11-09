@@ -311,6 +311,87 @@ export const pageModules = {
       () => import('../app/[locale]/(marketing)/security/layout'),
     ],
   },
+  'src/app/[locale]/(marketing)/solutions/construction/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/solutions/construction/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/solutions/construction/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/solutions/education/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/solutions/education/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/solutions/education/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/solutions/healthcare/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/solutions/healthcare/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/solutions/healthcare/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/solutions/hospitality/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/solutions/hospitality/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/solutions/hospitality/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/solutions/manufacturing/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/solutions/manufacturing/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/solutions/manufacturing/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/solutions/pharmacies/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/solutions/pharmacies/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/solutions/pharmacies/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/solutions/realestate/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/solutions/realestate/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/solutions/realestate/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/solutions/restaurants/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/solutions/restaurants/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/solutions/restaurants/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/solutions/retail/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/solutions/retail/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/solutions/retail/layout'),
+    ],
+  },
   'src/app/[locale]/(marketing)/terms/page.tsx': {
     page: () => import('../app/[locale]/(marketing)/terms/page'),
     layouts: [
