@@ -315,6 +315,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Vercel rollback pin | dpl_5GdmHYYQ1AfLeZcZ1pZ79zKDokGQ |
 | Packet | `nova-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs nova https://nova.tuturuuu.com` |
+| Abuse guard | Service binding `ABUSE_GUARD` (`tuturuuu-abuse-guard`), secret `ABUSE_GUARD_KEY_PEPPER`, `ABUSE_GUARD_FAMILIES=proxy`, optional `ABUSE_GUARD_TIMEOUT_MS`. Upstash credentials are not required. |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
 
 ## pay
