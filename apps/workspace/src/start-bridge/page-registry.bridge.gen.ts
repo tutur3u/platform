@@ -42,6 +42,7 @@ export const pages = [
   { pattern: "/[wsId]/crawlers", file: "src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/crawlers/uncrawled", file: "src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/uncrawled/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/crawlers/[crawlerId]", file: "src/app/[locale]/(dashboard)/[wsId]/crawlers/[crawlerId]/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/diet", file: "src/app/[locale]/(dashboard)/[wsId]/diet/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/documents/[documentId]", file: "src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/documents", file: "src/app/[locale]/(dashboard)/[wsId]/documents/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/habits/[[...slug]]", file: "src/app/[locale]/(dashboard)/[wsId]/habits/[[...slug]]/page.tsx", defaults: { "locale": "en" } },
