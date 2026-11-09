@@ -147,6 +147,7 @@ export const ci = {
   'chat-cloudflare.yaml': true,
   'learn-cloudflare.yaml': true,
   'infrastructure-cloudflare.yaml': true,
+  'mind-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
