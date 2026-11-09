@@ -1,13 +1,32 @@
 export type RoadmapBasepath = '/' | '/roadmap';
 export const mountHeader = 'x-roadmap-router-base';
+export const ROADMAP_SATELLITE_HOST = 'roadmap.tuturuuu.com';
+export const ROADMAP_CANONICAL_ORIGIN = 'https://tuturuuu.com';
 
-export function selectedBasepath(request: Request): RoadmapBasepath {
+export function isRoadmapSatelliteHost(request: Request): boolean {
   const url = new URL(request.url);
   const host = request.headers.get('host');
-  return url.host === 'roadmap.tuturuuu.com' &&
-    (host === null || host === 'roadmap.tuturuuu.com')
-    ? '/'
-    : '/roadmap';
+  return (
+    url.protocol === 'https:' &&
+    url.host === ROADMAP_SATELLITE_HOST &&
+    (host === null || host === ROADMAP_SATELLITE_HOST)
+  );
+}
+
+/** Map a satellite URL onto the canonical public path, keeping the query. */
+export function canonicalRoadmapLocation(url: URL): string {
+  const path = url.pathname;
+  const mounted =
+    path === '/roadmap' || path.startsWith('/roadmap/')
+      ? path
+      : path === '/'
+        ? '/roadmap/'
+        : `/roadmap${path}`;
+  return `${ROADMAP_CANONICAL_ORIGIN}${mounted}${url.search}`;
+}
+
+export function selectedBasepath(request: Request): RoadmapBasepath {
+  return isRoadmapSatelliteHost(request) ? '/' : '/roadmap';
 }
 
 export function parseBasepath(value: unknown): RoadmapBasepath {
@@ -28,6 +47,14 @@ export function roadmapBoundary(
   const url = new URL(request.url);
   if (/[%\\]/.test(url.pathname) || url.pathname.includes('//')) {
     return new Response('Bad Request', { status: 400 });
+  }
+  // The public satellite host only redirects. The web proxy fetches workers.dev,
+  // whose host is not roadmap.tuturuuu.com, so this redirect cannot loop.
+  if (isRoadmapSatelliteHost(request)) {
+    return new Response(null, {
+      status: 301,
+      headers: { Location: canonicalRoadmapLocation(url) },
+    });
   }
   if (basepath === '/') {
     if (
