@@ -213,5 +213,47 @@ describe('gateway handler', () => {
       const off = await t.call('/privacy', undefined, ENV);
       expect(await off.text()).toBe('web-origin.vercel.app');
     });
+
+    it('keeps signed-in and Next-specific requests on the web origin', async () => {
+      const t = setup((r) => new Response(hostOf(r)));
+      const cookie = await t.call(
+        '/',
+        { headers: { cookie: 'sb-abc-auth-token=1' } },
+        {
+          ...FLAGGED,
+          GATEWAY_MARKETING_GROUPS: 'home',
+        }
+      );
+      expect(await cookie.text()).toBe('web-origin.vercel.app');
+      const auth = await t.call(
+        '/privacy',
+        { headers: { authorization: 'Bearer x' } },
+        FLAGGED
+      );
+      expect(await auth.text()).toBe('web-origin.vercel.app');
+      const rsc = await t.call(
+        '/about',
+        { headers: { rsc: '1' } },
+        FLAGGED
+      );
+      expect(await rsc.text()).toBe('web-origin.vercel.app');
+      const anon = await t.call('/about', undefined, FLAGGED);
+      expect(await anon.text()).toBe('marketing-origin.example');
+    });
+
+    it('rewrites origin hosts in Link headers to the public host', async () => {
+      const t = setup(
+        () =>
+          new Response('page', {
+            headers: {
+              link: '<https://marketing-origin.example/about>; rel="alternate"; hreflang="en"',
+            },
+          })
+      );
+      const response = await t.call('/about', undefined, FLAGGED);
+      expect(response.headers.get('link')).toBe(
+        '<https://tuturuuu.com/about>; rel="alternate"; hreflang="en"'
+      );
+    });
   });
 });

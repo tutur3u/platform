@@ -1,5 +1,6 @@
 import {
   bypassReason,
+  hasAuthCookie,
   cacheKey,
   FRESH_SECONDS,
   freshness,
@@ -68,6 +69,25 @@ function resolveOrigin(env: Env, manifest: Manifest, originName: string) {
   }
 }
 
+/**
+ * Requests that depend on a signed-in session or on the Next app (RSC and
+ * server actions) always go to the web origin, even for a flagged group, so a
+ * signed-in visitor keeps today's behavior (for example `/` redirects them to
+ * their workspace).
+ */
+function needsWebOrigin(request: Request) {
+  const headers = request.headers;
+  return (
+    headers.has('authorization') ||
+    headers.has('rsc') ||
+    headers.has('next-router-prefetch') ||
+    headers.has('next-router-state-tree') ||
+    headers.has('next-action') ||
+    new URL(request.url).searchParams.has('_rsc') ||
+    hasAuthCookie(headers.get('cookie'))
+  );
+}
+
 function flaggedGroups(env: Env) {
   return new Set(
     (env.GATEWAY_MARKETING_GROUPS ?? '')
@@ -78,9 +98,15 @@ function flaggedGroups(env: Env) {
 }
 
 /** The origin a matched route uses: its flagged origin when the group flag is on and that origin is configured, otherwise its default. */
-function chooseOrigin(env: Env, manifest: Manifest, match: RouteMatch) {
+function chooseOrigin(
+  env: Env,
+  manifest: Manifest,
+  match: RouteMatch,
+  request: Request
+) {
   if (
     match.group &&
+    !needsWebOrigin(request) &&
     match.flagOrigin &&
     flaggedGroups(env).has(match.group)
   ) {
@@ -99,6 +125,33 @@ function originRequest(request: Request, origin: URL) {
 }
 
 const NO_FOLLOW = { redirect: 'manual' } as const;
+
+/** Maps origin-host URLs in a Link header (hreflang alternates) to the public host. */
+/** A copy of the response whose Link header names the public host. */
+function withPublicLink(
+  response: Response,
+  origin: URL,
+  publicHost: string | undefined
+) {
+  const copy = new Response(response.body, response);
+  rewriteLinkHeader(copy, origin, publicHost);
+  return copy;
+}
+
+export function rewriteLinkHeader(
+  response: Response,
+  origin: URL,
+  publicHost: string | undefined
+) {
+  const link = response.headers.get('link');
+  if (!link || !publicHost) return;
+  const escaped = origin.host.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rewritten = link.replace(
+    new RegExp(`https?://${escaped}`, 'gi'),
+    `https://${publicHost}`
+  );
+  if (rewritten !== link) response.headers.set('link', rewritten);
+}
 
 /** Maps an origin-host Location back to the public host; nothing else moves. */
 export function rewriteLocation(
@@ -154,6 +207,7 @@ async function proxy(
   }
   const next = withGatewayHeader(response, state, extra);
   rewriteLocation(next, origin, env.PUBLIC_HOST);
+  rewriteLinkHeader(next, origin, env.PUBLIC_HOST);
   return next;
 }
 
@@ -189,10 +243,15 @@ export function createHandler(deps: HandlerDeps) {
     request: Request,
     origin: URL,
     key: string,
-    options: { respectOriginCacheControl: boolean }
+    options: { respectOriginCacheControl: boolean },
+    publicHost: string | undefined
   ) {
     try {
-      const response = await fetch(originRequest(request, origin), NO_FOLLOW);
+      const response = withPublicLink(
+        await fetch(originRequest(request, origin), NO_FOLLOW),
+        origin,
+        publicHost
+      );
       if (!isStorable(response, options).store) {
         await response.body?.cancel();
         return;
@@ -210,7 +269,7 @@ export function createHandler(deps: HandlerDeps) {
       return plain(508, 'gateway loop detected');
     }
     const match = matchRoute(new URL(request.url).pathname, deps.manifest);
-    const chosen = chooseOrigin(env, deps.manifest, match);
+    const chosen = chooseOrigin(env, deps.manifest, match, request);
     const origin = chosen.url;
     if (!origin) return plain(500, 'gateway origin not configured');
 
@@ -246,7 +305,13 @@ export function createHandler(deps: HandlerDeps) {
         return servedFromCache(cached, 'HIT', storedAt, nowMs, head, isPage);
       }
       if (state === 'stale') {
-        const revalidate = refresh(new Request(request), origin, key, options);
+        const revalidate = refresh(
+          new Request(request),
+          origin,
+          key,
+          options,
+          env.PUBLIC_HOST
+        );
         if (ctx) ctx.waitUntil(revalidate);
         else await revalidate;
         return servedFromCache(cached, 'STALE', storedAt, nowMs, head, isPage);
@@ -257,7 +322,11 @@ export function createHandler(deps: HandlerDeps) {
 
     let response: Response;
     try {
-      response = await fetch(originRequest(request, origin), NO_FOLLOW);
+      response = withPublicLink(
+        await fetch(originRequest(request, origin), NO_FOLLOW),
+        origin,
+        env.PUBLIC_HOST
+      );
     } catch {
       return plain(502, 'gateway origin unreachable');
     }
@@ -267,6 +336,7 @@ export function createHandler(deps: HandlerDeps) {
         'x-gateway-bypass': decision.reason ?? 'not-storable',
       });
       rewriteLocation(next, origin, env.PUBLIC_HOST);
+      rewriteLinkHeader(next, origin, env.PUBLIC_HOST);
       return next;
     }
     const put = cache.put(
