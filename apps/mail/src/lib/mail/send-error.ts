@@ -1,8 +1,5 @@
 export class MailSendError extends Error {
-  constructor(
-    message: string,
-    options?: { cause?: unknown }
-  ) {
+  constructor(message: string, options?: { cause?: unknown }) {
     super(message, options);
     this.name = 'MailSendError';
   }
