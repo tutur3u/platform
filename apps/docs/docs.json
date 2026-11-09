@@ -219,6 +219,8 @@
                   "build/devops/git-start-void",
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",
+                  "build/devops/nova-start-void",
+                  "build/devops/lettin-start-void",
                   "build/devops/tasks-start-void",
                   "build/devops/track-start-void",
                   "build/devops/finance-start-void",
