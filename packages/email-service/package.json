@@ -11,7 +11,10 @@
     "./types": "./src/types.ts",
     "./constants": "./src/constants.ts",
     "./providers/ses": "./src/providers/ses.ts",
-    "./validation": "./src/validation.ts"
+    "./validation": "./src/validation.ts",
+    "./appeal-transport": "./src/appeal-transport.ts",
+    "./appeal-ses": "./src/appeal-ses.ts",
+    "./appeal-report": "./src/appeal-report.ts"
   },
   "scripts": {
     "type-check": "tsc --project tsconfig.typecheck.json",
@@ -20,6 +23,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.1154.0",
+    "@aws-sdk/client-sesv2": "^3.1154.0",
+    "@aws-sdk/client-sts": "^3.1154.0",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",

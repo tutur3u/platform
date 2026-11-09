@@ -31,6 +31,7 @@ import {
   isSameOriginMutation,
   readAppealJson,
   requireAppealAdmin,
+  requireAppealRecipient,
 } from './http';
 
 const wsId = '11111111-1111-4111-8111-111111111111';
@@ -59,6 +60,34 @@ describe('appeal HTTP boundaries', () => {
       ok: true,
       wsId,
       actorId: user.id,
+    });
+  });
+  it('allows a freshly verified external recipient session without granting admin access', async () => {
+    state.getUser.mockResolvedValue({
+      data: { user: { ...user, email: 'recipient@example.com' } },
+      error: null,
+    });
+    expect(await requireAppealRecipient(request())).toEqual({
+      actorId: user.id,
+      email: 'recipient@example.com',
+    });
+    expect((await requireAppealAdmin(request(), wsId)).ok).toBe(false);
+    expect(state.maybeSingle).not.toHaveBeenCalled();
+  });
+  it('refuses an unconfirmed recipient session without bootstrapping ordinary mail', async () => {
+    state.getUser.mockResolvedValue({
+      data: {
+        user: {
+          ...user,
+          email: 'recipient@example.com',
+          email_confirmed_at: null,
+        },
+      },
+      error: null,
+    });
+    await expect(requireAppealRecipient(request())).rejects.toMatchObject({
+      code: 'forbidden',
+      message: 'forbidden',
     });
   });
   it.each([

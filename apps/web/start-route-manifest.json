@@ -43,18 +43,18 @@
     }
   ],
   "summary": {
-    "total": 852,
+    "total": 856,
     "categories": {
-      "api": 657,
+      "api": 660,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 164,
+      "page": 165,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 840 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 844 }
   },
   "routes": [
     {
@@ -1349,6 +1349,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/[locale]/email-appeals/request",
+      "source": "apps/web/src/app/[locale]/email-appeals/request/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/[locale]/games/farm",
       "source": "apps/web/src/app/[locale]/games/farm/page.tsx",
       "category": "page",
@@ -2469,6 +2477,22 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/email-appeals/preview",
+      "source": "apps/web/src/app/api/v1/email-appeals/preview/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/email-appeals/recipient",
+      "source": "apps/web/src/app/api/v1/email-appeals/recipient/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/exchange-rates",
       "source": "apps/web/src/app/api/v1/exchange-rates/route.ts",
       "category": "api",
@@ -3503,6 +3527,14 @@
     {
       "pattern": "/api/v1/webhooks/ai-agents/[adapter]/[channelId]",
       "source": "apps/web/src/app/api/v1/webhooks/ai-agents/[adapter]/[channelId]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/webhooks/email/appeals",
+      "source": "apps/web/src/app/api/v1/webhooks/email/appeals/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

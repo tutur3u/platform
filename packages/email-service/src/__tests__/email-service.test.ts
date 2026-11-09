@@ -143,6 +143,7 @@ describe('EmailService', () => {
     const negative = {
       email: 'synthetic@example.com',
       is_blocked: false,
+      has_workspace_grant: false,
       reason: null,
     };
     const unavailableCases = [
@@ -224,6 +225,46 @@ describe('EmailService', () => {
         p_ws_id: 'ws-1',
         p_emails: ['synthetic@example.com'],
       });
+    });
+
+    it('keeps consented recipients blocked without a report router', async () => {
+      service.setSupabaseClient({
+        rpc: vi.fn().mockResolvedValue({
+          data: [{ ...negative, has_workspace_grant: true }],
+          error: null,
+        }),
+      } as never);
+      Reflect.set(service, 'blacklistChecker', new BlacklistChecker());
+      const result = await service.send({
+        recipients: { to: [recipient] },
+        content: { subject: 'Report', html: '<p>Report</p>' },
+        metadata: defaultMetadata,
+      });
+      expect(result.success).toBe(false);
+      expect(providerSend).not.toHaveBeenCalled();
+    });
+
+    it('sends a consented recipient only through the injected report route', async () => {
+      service.setSupabaseClient({
+        rpc: vi.fn().mockResolvedValue({
+          data: [{ ...negative, has_workspace_grant: true }],
+          error: null,
+        }),
+      } as never);
+      Reflect.set(service, 'blacklistChecker', new BlacklistChecker());
+      const route = vi.fn(async () => ({
+        success: false,
+        deliveryOutcome: 'unknown' as const,
+      }));
+      service.setAppealReportRouter(route);
+      const result = await service.send({
+        recipients: { to: [recipient] },
+        content: { subject: 'Report', html: '<p>Report</p>' },
+        metadata: defaultMetadata,
+      });
+      expect(result.deliveryOutcome).toBe('unknown');
+      expect(route).toHaveBeenCalledTimes(1);
+      expect(providerSend).not.toHaveBeenCalled();
     });
 
     it('preserves suppression lookup before the appeal migration is deployed', async () => {

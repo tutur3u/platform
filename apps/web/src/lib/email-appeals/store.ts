@@ -11,6 +11,15 @@ type AppealRpcSchema = {
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;
     Functions: {
+      email_appeal_record_provider_status: {
+        Args: {
+          p_ws_id: string;
+          p_actor_id: string;
+          p_email: string;
+          p_status_json: Json;
+        };
+        Returns: Json;
+      };
       email_appeal_list: {
         Args: {
           p_ws_id: string;
@@ -31,12 +40,35 @@ type AppealRpcSchema = {
         };
         Returns: Json;
       };
-      email_appeal_claim_delivery: { Args: { p_id: string }; Returns: Json };
-      email_appeal_mark_delivery: {
-        Args: { p_id: string; p_outcome: string };
+      email_appeal_recipient_view: {
+        Args: { p_appeal_id: string; p_actor_id: string };
         Returns: Json;
       };
-      email_appeal_confirm: { Args: { p_token_hash: string }; Returns: Json };
+      email_appeal_claim_bootstrap: {
+        Args: {
+          p_id: string;
+          p_actor_id: string;
+          p_token_hash: string;
+          p_claims: Json;
+        };
+        Returns: Json;
+      };
+      email_appeal_claim_delivery: {
+        Args: { p_id: string; p_binding: Json; p_provider_generation: string };
+        Returns: Json;
+      };
+      email_appeal_mark_delivery: {
+        Args: { p_id: string; p_outcome: string; p_message_id: string | null };
+        Returns: Json;
+      };
+      email_appeal_preview: {
+        Args: { p_token_hash: string; p_claims: Json };
+        Returns: Json;
+      };
+      email_appeal_confirm: {
+        Args: { p_token_hash: string; p_claims: Json };
+        Returns: Json;
+      };
     };
   };
 };
@@ -71,23 +103,73 @@ export async function createAppealStore(
       if (error) throw storeError(error);
       return data;
     },
-    async claimDelivery(id) {
-      const { data, error } = await admin.rpc('email_appeal_claim_delivery', {
-        p_id: id,
+    async recipientView(appealId, actorId) {
+      const { data, error } = await admin.rpc('email_appeal_recipient_view', {
+        p_appeal_id: appealId,
+        p_actor_id: actorId,
       });
       if (error) throw storeError(error);
       return data;
     },
-    async markDelivery(id, outcome) {
-      const { error } = await admin.rpc('email_appeal_mark_delivery', {
-        p_id: id,
-        p_outcome: outcome,
+    async claimBootstrap(input) {
+      const { data, error } = await admin.rpc('email_appeal_claim_bootstrap', {
+        p_id: input.id,
+        p_actor_id: input.actorId,
+        p_token_hash: input.tokenHash,
+        p_claims: input.claims,
+      });
+      if (error) throw storeError(error);
+      return data;
+    },
+    async recordProviderStatus(wsId, actorId, email, status) {
+      const { error } = await admin.rpc('email_appeal_record_provider_status', {
+        p_ws_id: wsId,
+        p_actor_id: actorId,
+        p_email: email,
+        p_status_json: status,
       });
       if (error) throw storeError(error);
     },
-    async confirm(tokenHash) {
+    async claimDelivery(id, binding, providerGeneration) {
+      const { data, error } = await admin.rpc('email_appeal_claim_delivery', {
+        p_id: id,
+        p_provider_generation: providerGeneration,
+        p_binding: {
+          grant_id: binding.grantId,
+          source_account_id: binding.sourceAccountId,
+          source_region: binding.sourceRegion,
+          account_id: binding.accountId,
+          region: binding.region,
+          identity: binding.identity,
+          configuration_set: binding.configurationSet,
+          ip_pool: binding.ipPool,
+          purpose: binding.purpose,
+          confirmation_origin: binding.confirmationOrigin,
+        },
+      });
+      if (error) throw storeError(error);
+      return data;
+    },
+    async markDelivery(id, outcome, messageId) {
+      const { error } = await admin.rpc('email_appeal_mark_delivery', {
+        p_id: id,
+        p_outcome: outcome,
+        p_message_id: messageId ?? null,
+      });
+      if (error) throw storeError(error);
+    },
+    async preview(tokenHash, claims) {
+      const { data, error } = await admin.rpc('email_appeal_preview', {
+        p_token_hash: tokenHash,
+        p_claims: claims,
+      });
+      if (error) throw storeError(error);
+      return data;
+    },
+    async confirm(tokenHash, claims) {
       const { data, error } = await admin.rpc('email_appeal_confirm', {
         p_token_hash: tokenHash,
+        p_claims: claims,
       });
       if (error) throw storeError(error);
       return data;

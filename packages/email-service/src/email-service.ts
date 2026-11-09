@@ -1,16 +1,6 @@
-/**
- * Email Service
- *
- * Main entry point for centralized email sending with rate limiting,
- * blacklist checking, and comprehensive audit logging.
- *
- * In DEV_MODE (when NODE_ENV === 'development'):
- * - Emails are NOT actually sent to recipients
- * - All emails are logged to the audit table with status 'sent' and messageId 'dev-mode-skip'
- * - Rate limiting and blacklist checks still apply
- * - This allows testing the full email flow without sending real emails
- */
+/** Sends email with recipient protection, rate limits, and audit records. */
 
+import type { AppealReportRouter } from './appeal-report';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database } from '@tuturuuu/types';
 import { blockIP, isIPBlocked } from '@tuturuuu/utils/abuse-protection';
@@ -59,6 +49,12 @@ export class EmailService {
   private supabase: SupabaseClient<Database> | null = null;
   private bypassRateLimits: boolean = false;
 
+  private appealReportRouter?: AppealReportRouter;
+
+  setAppealReportRouter(router: AppealReportRouter) {
+    this.appealReportRouter = router;
+  }
+
   private static isDevModeActive(devMode?: boolean): boolean {
     const devModeEnabled = DEV_MODE || Boolean(devMode);
     const forceProductionEmail = process.env.SEND_PRODUCTION_EMAIL === 'true';
@@ -89,9 +85,6 @@ export class EmailService {
         }
         this.provider = new CloudflareEmailProvider(config.credentials);
         break;
-      // Future providers can be added here
-      // case 'sendgrid':
-      // case 'postmark':
       default:
         throw new Error(`Unknown email provider: ${config.provider}`);
     }
@@ -139,7 +132,6 @@ export class EmailService {
 
     const source = params.source || this.config.defaultSource;
 
-    // Create audit record immediately (even if we early-return due to protections)
     const auditId = await createAuditRecord(this.supabase, {
       wsId: params.metadata.wsId,
       userId: params.metadata.userId,
@@ -161,7 +153,6 @@ export class EmailService {
         : undefined,
     });
 
-    // 0. Enforce IP blocks (shared across the platform)
     if (params.metadata.ipAddress && params.metadata.ipAddress !== 'unknown') {
       const blockInfo = await isIPBlocked(params.metadata.ipAddress);
 
@@ -227,7 +218,6 @@ export class EmailService {
       }
     }
 
-    // 1. Check sender rate limits (skip if bypassRateLimits is set)
     if (this.bypassRateLimits) {
       // Skip rate limiting for admin/system operations
     } else {
@@ -287,7 +277,6 @@ export class EmailService {
       }
     }
 
-    // 2. Check recipient rate limits (skip if bypassRateLimits is set)
     const recipientLimits = this.bypassRateLimits
       ? new Map()
       : await this.rateLimiter.checkRecipientLimits(allRecipients);
@@ -295,7 +284,8 @@ export class EmailService {
     const blacklistResult = await this.blacklistChecker.checkEmails(
       allRecipients,
       this.supabase,
-      params.metadata.wsId
+      params.metadata.wsId,
+      Boolean(this.appealReportRouter)
     );
 
     const blockedRecipients: BlockedRecipient[] = [];
@@ -330,7 +320,6 @@ export class EmailService {
       );
     }
 
-    // Filter to allowed recipients only
     const blockedSet = new Set(
       blockedRecipients.map((b: BlockedRecipient) => b.email)
     );
@@ -409,8 +398,11 @@ export class EmailService {
     // Format source for provider
     const formattedSource = `"${source.name}" <${source.email}>`;
 
-    const providerResult = await this.provider.send({
+    const providerResult = await (
+      this.appealReportRouter ?? ((input) => this.provider.send(input))
+    )({
       source: formattedSource,
+      metadata: params.metadata,
       recipients: {
         to: allowedTo,
         cc: allowedCc,
@@ -419,7 +411,6 @@ export class EmailService {
       content: params.content,
     });
 
-    // 7. Update audit record and counters
     if (providerResult.success) {
       if (auditId) {
         await updateAuditRecord(
@@ -491,7 +482,8 @@ export class EmailService {
       : await this.blacklistChecker.checkEmails(
           allRecipients,
           this.supabase,
-          params.metadata.wsId
+          params.metadata.wsId,
+          Boolean(this.appealReportRouter)
         );
 
     const blockedRecipients: BlockedRecipient[] = blacklistResult.blocked.map(
@@ -550,7 +542,6 @@ export class EmailService {
         : undefined,
     });
 
-    // Check dev mode - skip actual sending but log as sent
     const shouldSkipSending = this.shouldSkipSendingInDevMode();
 
     if (shouldSkipSending) {
@@ -585,8 +576,11 @@ export class EmailService {
 
     const formattedSource = `"${source.name}" <${source.email}>`;
 
-    const providerResult = await this.provider.send({
+    const providerResult = await (
+      this.appealReportRouter ?? ((input) => this.provider.send(input))
+    )({
       source: formattedSource,
+      metadata: params.metadata,
       recipients: { to: allowedTo, cc: allowedCc, bcc: allowedBcc },
       content: params.content,
     });
@@ -690,8 +684,6 @@ export class EmailService {
       wsId
     );
 
-    // DEV_MODE is handled globally via the imported constant
-    // No need to set devMode in config - it's checked in send() and sendInternal()
     const service = new EmailService({
       provider: 'ses',
       credentials: {

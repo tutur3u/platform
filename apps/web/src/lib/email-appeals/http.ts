@@ -113,3 +113,16 @@ export async function requireAppealAdmin(request: Request, wsId: string) {
   }
   return { ok: true as const, wsId: normalizedWsId, actorId: user.id };
 }
+
+export async function requireAppealRecipient(request: Request) {
+  await connection();
+  const supabase = await createClient(request);
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (error || !user?.email_confirmed_at || !user.email) {
+    throw new AppealError('forbidden');
+  }
+  return { actorId: user.id, email: user.email.trim().toLowerCase() };
+}

@@ -7,6 +7,7 @@ import {
   sendReportEmail,
 } from '@tuturuuu/users-core/reports/email-reply-identity';
 import type { ReportEmailReplyRpc } from '@tuturuuu/users-core/reports/email-reply-types';
+import { createAppealReportRouter } from '@/lib/email-appeals/report-router';
 import { isEmailBlacklisted } from '@/lib/email-blacklist';
 import { createEmailUnsubscribeUrl } from '@/lib/email-unsubscribe';
 import { resolvePeriodicReportEmailAccess } from './access';
@@ -220,7 +221,13 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       return;
     }
     attemptedRecipient = recipient;
-    if (await isEmailBlacklisted(sbAdmin, recipient)) {
+    const appealRouter = await createAppealReportRouter({
+      wsId: row.ws_id,
+      recipient,
+      reportId: row.report_id,
+      queueId: row.id,
+    });
+    if (!appealRouter && (await isEmailBlacklisted(sbAdmin, recipient))) {
       await fail('blocked', 'Recipient is unsubscribed or blocked.', true);
       return;
     }
@@ -236,6 +243,7 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
     }
     const unsubscribeUrl = createEmailUnsubscribeUrl(recipient);
     const service = await EmailService.fromWorkspace(row.ws_id);
+    if (appealRouter) service.setAppealReportRouter(appealRouter);
     if (!(await hasEmailLease(privateDb, row))) return;
     const subject =
       row.delivery_kind === 'test'

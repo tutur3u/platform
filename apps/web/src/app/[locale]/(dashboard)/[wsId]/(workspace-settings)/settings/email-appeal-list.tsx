@@ -48,6 +48,11 @@ export default function EmailAppealList({ wsId }: { wsId: string }) {
         const { entries, total, pageSize } = query.data;
         return (
           <>
+            {query.data.providerInventory !== 'checked' ? (
+              <SettingsSectionMessage>
+                {t('provider_unavailable')}
+              </SettingsSectionMessage>
+            ) : null}
             {query.isFetching ? (
               <SettingsSectionMessage>{t('refreshing')}</SettingsSectionMessage>
             ) : null}

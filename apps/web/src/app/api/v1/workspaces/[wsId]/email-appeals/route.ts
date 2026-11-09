@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { hasDeliverableMx } from '@/lib/email-appeals/deliverability';
 import { AppealError, appealRequestSchema } from '@/lib/email-appeals/domain';
 import {
   appealErrorResponse,
@@ -7,7 +6,7 @@ import {
   readAppealJson,
   requireAppealAdmin,
 } from '@/lib/email-appeals/http';
-import { getAppealMailer } from '@/lib/email-appeals/mailer';
+import { refreshAppealInventory } from '@/lib/email-appeals/inventory';
 import { requestAppeal } from '@/lib/email-appeals/service';
 import { createAppealStore, listAppeals } from '@/lib/email-appeals/store';
 
@@ -30,7 +29,14 @@ export async function GET(
       page: url.searchParams.get('page') ?? 1,
     });
     if (!query.success) throw new AppealError('invalid_request');
-    return appealJson(await listAppeals({ ...access, ...query.data }));
+    const providerInventory = await refreshAppealInventory({
+      ...access,
+      ...query.data,
+    });
+    return appealJson({
+      ...(await listAppeals({ ...access, ...query.data })),
+      providerInventory,
+    });
   } catch (error) {
     return appealErrorResponse(error);
   }
@@ -46,15 +52,16 @@ export async function POST(
     if (!body.success) throw new AppealError('invalid_request');
     const access = await requireAppealAdmin(request, wsId);
     if (!access.ok) return access.response;
+    await refreshAppealInventory({
+      ...access,
+      search: body.data.email,
+      page: 1,
+    });
     return appealJson(
       await requestAppeal(
         { ...access, ...body.data },
         {
           store: await createAppealStore(access.actorId),
-          key: process.env.EMAIL_APPEAL_TOKEN_SECRET ?? '',
-          origin: new URL(request.url).origin,
-          mailer: getAppealMailer(),
-          checkMx: hasDeliverableMx,
         }
       )
     );

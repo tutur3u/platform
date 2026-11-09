@@ -15,6 +15,7 @@ import type { BlacklistCheckResult, BlacklistedEmail } from '../types';
 const suppressionStatusSchema = z.object({
   email: z.string(),
   is_blocked: z.boolean(),
+  has_workspace_grant: z.boolean().optional(),
   reason: z.string().nullish(),
 });
 
@@ -50,6 +51,17 @@ async function workspaceBlockStatuses(
   if (result.error?.code === 'PGRST202' || result.error?.code === '42883') {
     return supabase.rpc('get_email_block_statuses', { p_emails: emails });
   }
+  if (
+    !result.error &&
+    !z
+      .array(
+        suppressionStatusSchema.extend({
+          has_workspace_grant: z.boolean(),
+        })
+      )
+      .safeParse(result.data).success
+  )
+    throw suppressionUnavailable();
   return result;
 }
 
@@ -69,7 +81,8 @@ export class BlacklistChecker {
   async checkEmails(
     emails: string[],
     supabase: SupabaseClient<Database>,
-    wsId?: string
+    wsId?: string,
+    allowWorkspaceGrants = false
   ): Promise<BlacklistCheckResult> {
     if (emails.length === 0) {
       return { allowed: [], blocked: [] };
@@ -114,7 +127,10 @@ export class BlacklistChecker {
         const normalized = email.toLowerCase();
         const status = statuses.get(normalized);
         if (!status) throw suppressionUnavailable();
-        if (status.is_blocked) {
+        if (
+          status.is_blocked ||
+          (status.has_workspace_grant && !allowWorkspaceGrants)
+        ) {
           result.blocked.push({
             email,
             reason: status.reason || 'Blacklisted',

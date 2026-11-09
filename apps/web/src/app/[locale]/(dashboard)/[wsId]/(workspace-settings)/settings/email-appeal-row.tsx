@@ -8,14 +8,23 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';
+import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 
 function statusKey(status: string) {
   switch (status) {
+    case 'waiting_recipient':
+    case 'verifying':
+    case 'dispatching':
+    case 'sent':
+    case 'unavailable':
     case 'pending':
     case 'confirmed':
+    case 'transport_pending':
+    case 'qualified':
     case 'failed':
     case 'expired':
     case 'reblocked':
@@ -67,9 +76,25 @@ export default function EmailAppealRow({
         );
       case 'success':
         return (
-          <p role="status" className="text-sm">
-            {t(`outcome.${mutation.data.status}`)}
-          </p>
+          <div className="space-y-2">
+            <p role="status" className="text-sm">
+              {t('admin_waiting_recipient')}
+            </p>
+            <Label htmlFor={`${reasonId}-recipient`}>
+              {t('recipient_link')}
+            </Label>
+            <Input
+              id={`${reasonId}-recipient`}
+              readOnly
+              value={mutation.data.recipientRequestPath}
+              onFocus={(event) => event.target.select()}
+            />
+            <Button asChild variant="outline">
+              <Link href={mutation.data.recipientRequestPath}>
+                {t('open_recipient_page')}
+              </Link>
+            </Button>
+          </div>
         );
       default: {
         const exhaustive: never = mutation;
@@ -108,6 +133,19 @@ export default function EmailAppealRow({
           <Button
             type="button"
             variant="outline"
+            disabled={
+              !entry.appealable ||
+              [
+                'waiting_recipient',
+                'verifying',
+                'dispatching',
+                'sent',
+                'confirmed',
+                'unknown',
+              ].includes(entry.status ?? '') ||
+              (entry.cooldownUntil !== null &&
+                Date.parse(entry.cooldownUntil) > Date.now())
+            }
             aria-expanded={expanded}
             onClick={() => setExpanded(!expanded)}
           >

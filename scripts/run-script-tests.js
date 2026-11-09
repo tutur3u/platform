@@ -11,6 +11,7 @@ const DEFAULT_SUPPLEMENTAL_PATHS = [
   '.github/actions/run-with-turbo-remote-cache/action.test.js',
   'apps/database/scripts/atomic-file.test.mjs',
   'apps/database/scripts/email-blacklist-appeals.test.mjs',
+  'apps/database/scripts/email-blacklist-appeals-guards.test.mjs',
   'apps/database/scripts/declarative-schema-readiness.test.js',
   'apps/database/scripts/delete-storage-buckets.test.js',
   'apps/database/scripts/new-migration.test.js',

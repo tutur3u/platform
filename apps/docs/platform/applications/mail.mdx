@@ -1193,44 +1193,88 @@ Root-mode Mail keeps its existing satellite session behavior. The required
 profile and remains separate from browser build-time configuration. See
 `proxy-auth.test.ts` for the no-session-cookie-write regression.
 
-## Workspace suppression appeals (proposal)
+## Workspace suppression appeals (internal candidate)
 
-Workspace administrators can request recipient verification for exact addresses
-blocked by bounce or complaint events. The experimental feature starts disabled
-and is restricted to verified `@tuturuuu.com` administrators when enabled.
-Manual bans, domain blocks, and unsubscribe choices remain protected.
+The `email_blacklist_appeals` flag defaults off. During internal rollout, only
+freshly verified `@tuturuuu.com` workspace administrators can list and initiate
+appeals. The settings section has an Experimental badge. Manual bans, domain
+blocks, and unsubscribe choices remain protected across every path.
 
-The appeal records the administrator, required reason, request time and outcome.
-A signed, single-use confirmation expires after 24 hours; only its hash is stored.
-A recipient must explicitly confirm before a workspace-scoped allow record exists.
-New suppression events invalidate that record and increase the appeal cooldown.
+An administrator supplies a reason. The recipient opens the resulting shareable
+request page and signs in through an already confirmed identity matching the
+stored address. Signing in must not trigger an ordinary suppressed SES message.
+The recipient explicitly requests one confirmation, then reviews the trusted
+workspace and report-email purpose and explicitly confirms. Neither GET requests
+nor link scanners consume consent. Tokens are signed, hash-only at rest, bound to
+the appeal/workspace/recipient/purpose/generation, and expire at the original
+24-hour deadline. `EMAIL_APPEAL_TOKEN_SECRET` is server-only and at least 32 bytes;
+rotation invalidates outstanding links.
 
-Global blacklist rows and SES account suppression remain intact. A configuration
-set can override SES account suppression settings; a configuration set alone does
-not isolate sender reputation. Confirmation transport must be separately reviewed
-before activation, particularly for complaints. No automatic complaint confirmation
-is sent through the ordinary report sender. Hard bounces require a fresh MX check;
-SMTP mailbox probing is excluded because it can create abuse and cannot prove
-mailbox ownership.
+Admin initiation, recipient bootstrap, and ambiguous sends share the original
+operation. Limits are 10 appeals per workspace per day, three per address per
+week, and a 48-hour cooldown. Re-bounce or complaint invalidates challenges and
+consent across workspaces and escalates the cooldown to a maximum of 64 days.
+UNKNOWN remains terminal: there is no automatic resend, provider fallback, or new
+operation key. Provider acceptance, delivery, and recipient consent are distinct.
 
-Source locations: `public.email_blacklist`,
-`private.email_bounce_complaints`, and the blacklist checker in
-`packages/email-service/src/protection/blacklist-checker.ts`. Signed SES ingestion
-is delivered separately by the notification webhook. The feature's migration uses
-a draft timestamp; the merge owner assigns its final version above the newest
-applied migration immediately before integration.
+### Transport and suppression boundaries
 
-The current implementation records `waiting_recipient` for complaints and
-`unavailable` when no reviewed confirmation transport exists. These outcomes do
-not send mail or enable an address. Recipient-initiated complaint recovery and a
-provisioned transport are activation prerequisites. `EMAIL_APPEAL_TOKEN_SECRET`
-is a server-only signing key of at least 32 bytes; rotation invalidates outstanding
-links. The link carries its token in a fragment, removed on explicit confirmation;
-GET requests never consume consent. SMTP probing is not performed.
+Recovery uses a separately controlled SES account, distinct from the ordinary
+sender account. Its exact account/region, verified identity, configuration set,
+dedicated IP pool, fixed HTTPS confirmation origin, purpose, policy approval and
+operational grant are pinned in private transport controls. Confirmation and
+workspace reports use separate reviewed identities/configuration sets. A dedicated
+identity or configuration set alone does not provide account reputation isolation.
+[SES configuration sets](https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_GetConfigurationSet.html)
+provide the configuration and pool mapping; [account health](https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_GetAccount.html)
+remains a separate gate.
 
-Regression coverage: `apps/database/scripts/email-blacklist-appeals.test.mjs`
-executes the migration's token, quota, permission and re-block lifecycle.
-`apps/web/src/lib/email-appeals/*.test.ts` covers signing, safe dispatch and request
-boundaries. Sender tests preserve suppression during migration rollout. Studio
-validation is required before release; these checks do not establish provider
-readiness or live delivery.
+Sending is unavailable unless the durable control is enabled, the operational
+`EMAIL_APPEAL_PROVIDER_GRANT_ID` matches it, and `EMAIL_APPEAL_TRANSPORT_STOP=0`.
+The stop fence defaults closed. Source publication and a review do not enable the
+control or supply credentials. Provider mutation, credentials and real sends
+require a separate operational grant. Least-privilege credentials need no
+suppression-deletion permission. No account-level suppression is removed.
+
+The adapter checks actual STS account identities, account health, sender/DKIM,
+configuration/pool mapping, and exact account suppression in both regions/accounts.
+An unknown/read error denies sending. A suppression in the recovery account stays
+blocked. Historical ordinary-account bounce/complaint suppression can only reach
+the recipient-initiated verification path. Hard bounces require bounded fresh DNS
+MX lookup; missing/Null MX fails. SMTP RCPT probing is excluded because it creates
+unsolicited traffic and cannot prove ownership. Local and provider generations,
+flags, controls and dispatch claims are rechecked after slow lookups and before
+effect. All SDK operations have one attempt and a three-second deadline.
+
+Inventory pages scan at most 25 known workspace recipients; unavailable SES reads
+are displayed separately from local blocks. Durable inventory admission caps the
+platform at 100 recipient checks per hour. Verification claims and confirmation/
+report dispatch have platform-wide 20-per-hour budgets. Each suppression lookup
+uses at most eight read operations; confirmation performs two lookups and report
+routing performs two. Therefore dispatch uses at most 16 reads and one send, with
+no retry loop. The same durable attempt remains spent after process failure.
+
+Authenticated RSA-SHA256 SNS feedback is accepted only from pinned account,
+region, topic, identity and configuration mappings. Stored actual message,
+recipient, workspace and appeal identities must match; duplicate events are
+no-ops. The bounded historical binding allowlist remains available after sending
+is stopped, allowing late complaints to revoke consent. Subscription confirmation
+is an operator provisioning step; the webhook never auto-fetches subscription URLs.
+
+### Workspace report delivery
+
+A database consent record does not make ordinary SES deliver to an account-
+suppressed address. Periodic report recovery selects a reviewed per-message route
+only for the same workspace and exact active grant, approved report and current
+queue lease. Queue ID and content digest claim one dispatch; changing recipients,
+workspaces, report approval, provider generation or transport controls denies it.
+The provider generation recorded at consent must still match; a changed generation revokes the grant. Report budget is reserved before provider reads. The confirmation transport cannot send campaigns. Missing report qualification is
+shown as transport pending; consent is never labelled restored delivery.
+
+Sources include `public.email_blacklist`, `private.email_bounce_complaints`, the
+private appeal/provider-status ledgers and the shared email-service checker.
+Regression evidence lives in `apps/database/scripts/email-blacklist-appeals*.mjs`,
+`apps/web/src/lib/email-appeals/*.test.ts`, and the email-service appeal tests.
+Production provider acceptance, full database catalog/type generation and visual
+browser evidence remain separate release gates. The migration version is a draft
+placeholder; the merge owner assigns a final version above fresh applied history.

@@ -3,6 +3,7 @@ import {
   APPEAL_LIFETIME_MS,
   appealRequestSchema,
   hashAppealToken,
+  hashAppealRecipient,
   issueAppealToken,
   verifyAppealToken,
 } from './domain';
@@ -10,21 +11,36 @@ import {
 const wsId = '11111111-1111-4111-8111-111111111111';
 const key = 'isolated-test-signing-key-32-bytes-minimum';
 const now = 1_800_000_000_000;
+const binding = {
+  appealId: '33333333-3333-4333-8333-333333333333',
+  wsId,
+  recipientHash: hashAppealRecipient('member@example.com'),
+  purpose: 'workspace_report_reenable' as const,
+  generation: 'synthetic-generation',
+  expiresAt: now + APPEAL_LIFETIME_MS,
+};
 
 describe('appeal challenge', () => {
+  it('binds the appeal, recipient, workspace, purpose and event generation', () => {
+    const token = issueAppealToken(binding, key, now);
+    expect(verifyAppealToken(token, key, now)).toMatchObject(binding);
+    expect(hashAppealRecipient(' Member@Example.com ')).toBe(
+      binding.recipientHash
+    );
+  });
   it('binds a random signed challenge to one workspace for 24 hours', () => {
-    const first = issueAppealToken(wsId, key, now);
-    const second = issueAppealToken(wsId, key, now);
+    const first = issueAppealToken(binding, key, now);
+    const second = issueAppealToken(binding, key, now);
     expect(first).not.toBe(second);
     expect(verifyAppealToken(first, key, now)).toMatchObject({
-      wsId,
+      ...binding,
       expiresAt: now + APPEAL_LIFETIME_MS,
     });
     expect(hashAppealToken(first)).toMatch(/^[0-9a-f]{64}$/);
     expect(hashAppealToken(first)).not.toContain(first);
   });
   it('expires at the exclusive expiry boundary', () => {
-    const token = issueAppealToken(wsId, key, now);
+    const token = issueAppealToken(binding, key, now);
     expect(() =>
       verifyAppealToken(token, key, now + APPEAL_LIFETIME_MS - 1)
     ).not.toThrow();
@@ -33,7 +49,7 @@ describe('appeal challenge', () => {
     ).toThrow('expired_token');
   });
   it('refuses payload or signature tampering and another signing key', () => {
-    const token = issueAppealToken(wsId, key, now);
+    const token = issueAppealToken(binding, key, now);
     const [body, signature] = token.split('.');
     expect(() => verifyAppealToken(`A${body}.${signature}`, key, now)).toThrow(
       'invalid_token'
@@ -53,7 +69,7 @@ describe('appeal challenge', () => {
     }
   );
   it('refuses weak signing keys', () => {
-    expect(() => issueAppealToken(wsId, 'weak', now)).toThrow(
+    expect(() => issueAppealToken(binding, 'weak', now)).toThrow(
       'transport_unavailable'
     );
   });

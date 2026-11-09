@@ -41,13 +41,20 @@ export class AppealError extends Error {
   }
 }
 
-const claimsSchema = z
+export const appealTokenBindingSchema = z
   .object({
+    appealId: z.uuid(),
     wsId: z.uuid(),
+    recipientHash: z.string().regex(/^[a-f0-9]{64}$/),
+    purpose: z.literal('workspace_report_reenable'),
+    generation: z.string().min(1).max(128),
     expiresAt: z.number().int().positive(),
-    nonce: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
   })
   .strict();
+export type AppealTokenBinding = z.infer<typeof appealTokenBindingSchema>;
+const claimsSchema = appealTokenBindingSchema.extend({
+  nonce: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+});
 
 function signingKey(key: string): string {
   if (Buffer.byteLength(key) < 32)
@@ -55,12 +62,18 @@ function signingKey(key: string): string {
   return key;
 }
 
-export function issueAppealToken(wsId: string, key: string, now = Date.now()) {
+export function issueAppealToken(
+  binding: AppealTokenBinding,
+  key: string,
+  now = Date.now()
+) {
   const claims = claimsSchema.parse({
-    wsId,
-    expiresAt: now + APPEAL_LIFETIME_MS,
+    ...binding,
     nonce: randomBytes(32).toString('base64url'),
   });
+  if (claims.expiresAt <= now || claims.expiresAt > now + APPEAL_LIFETIME_MS) {
+    throw new AppealError('expired_token');
+  }
   const body = Buffer.from(JSON.stringify(claims)).toString('base64url');
   const signature = createHmac('sha256', signingKey(key))
     .update(body)
@@ -102,6 +115,10 @@ export function verifyAppealToken(
 
 export function hashAppealToken(token: string) {
   return createHash('sha256').update(token).digest('hex');
+}
+
+export function hashAppealRecipient(email: string) {
+  return createHash('sha256').update(email.trim().toLowerCase()).digest('hex');
 }
 
 export const appealRequestSchema = z
