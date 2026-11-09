@@ -16,10 +16,12 @@ deployment ID before any cutover.
 - Production Worker: `tuturuuu-nova` (`VITE_NOVA_NATIVE_PROFILE=production`).
 - Hosts: `nova.tuturuuu.com`, `nova.ai.vn`, and `nova.tutur3u.com`.
 - The Worker config declares the `ASSETS` static asset binding. Runtime
-  environment names are `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`,
-  `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`,
-  `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
-  Configure credentials as secrets where appropriate; this packet records names only.
+  Runtime names include `TUTURUUU_APP_COORDINATION_SECRET`,
+  `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, and
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Abuse guard uses service binding
+  `ABUSE_GUARD` (`tuturuuu-abuse-guard`), secret `ABUSE_GUARD_KEY_PEPPER`,
+  `ABUSE_GUARD_FAMILIES=proxy`, and optional `ABUSE_GUARD_TIMEOUT_MS`.
+  Upstash credentials are no longer required. This packet records names only.
 - `TUTURUUU_NOINDEX` is `1` in staging and `0` in production.
 - Build from the app directory with `bun run build:cloudflare`. If workspace
   outputs are missing, run `bun turbo:local run build --filter='@tuturuuu/nova^...' --concurrency=2` first.
