@@ -1421,9 +1421,14 @@ describe('web proxy api handling', () => {
     vi.unstubAllGlobals();
   });
 
-  it('redirects a bare roadmap path to the mounted slash path', async () => {
+  it('serves the bare roadmap path from the worker root without redirecting', async () => {
     vi.useRealTimers();
-    const fetchMock = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response('<html>roadmap</html>', {
+        headers: { 'content-type': 'text/html' },
+        status: 200,
+      })
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     const { proxy } = await import('../proxy');
@@ -1431,11 +1436,15 @@ describe('web proxy api handling', () => {
       new NextRequest('http://localhost/roadmap?view=now')
     );
 
-    expect(response.status).toBe(308);
-    expect(response.headers.get('location')).toBe(
-      'http://localhost/roadmap/?view=now'
+    // Next strips the trailing slash before the proxy runs and the worker
+    // redirects the bare form, so a redirect here would loop: the root is
+    // requested from the worker directly.
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/?view=now'
     );
-    expect(fetchMock).not.toHaveBeenCalled();
     expect(mocks.authProxy).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
