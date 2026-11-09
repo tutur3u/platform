@@ -1,0 +1,543 @@
+'use client';
+
+import { AudioLines, Sparkles, UserIcon } from '@tuturuuu/icons';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { cn } from '@tuturuuu/utils/format';
+import {
+  buildMermaidAutoRepairPrompt,
+  extractMermaidBlocks,
+  isAutoMermaidRepairPrompt,
+  simpleStableHash,
+} from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mermaid-auto-repair';
+import { getToolChainOutcome } from './chat-message-list/tool-components/tool-chain-outcome';
+import 'katex/dist/katex.min.css';
+import mermaidParser from 'mermaid';
+import { useTranslations } from 'next-intl';
+import {
+  type MutableRefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import {
+  getDisplayText,
+  getErrorMessage,
+  getMessageText,
+  hasTextContent,
+  hasToolParts,
+} from './chat-message-list/helpers';
+import {
+  AssistantMarkdown,
+  ReasoningPart,
+} from './chat-message-list/markdown-components';
+import { resolveMessageRenderGroups } from './chat-message-list/resolve-message-render-groups';
+import {
+  CollapsibleToolSection,
+  CopyButton,
+  GroupedToolCallParts,
+  isVisualToolDescriptor,
+  SourcesPart,
+  ToolCallPart,
+} from './chat-message-list/tool-components';
+import type { ChatMessageListProps } from './chat-message-list/types';
+import { UserMessageContent } from './chat-message-list/user-message-components';
+import { useChatScrollFollow } from './use-chat-scroll-follow';
+
+const MAX_AUTO_MERMAID_REPAIR_ATTEMPTS = 2;
+const RESPONSE_STATUS_INTERVAL_MS = 1800;
+const RESPONSE_DRAFTING_STATUS_KEYS = [
+  'response_status_starting',
+  'response_status_drafting',
+  'response_status_streaming',
+] as const;
+const RESPONSE_TOOL_STATUS_KEYS = [
+  'response_status_checking',
+  'response_status_using_tools',
+  'response_status_wrapping_up',
+] as const;
+let mermaidParserInitialized = false;
+
+function ensureMermaidParserInitialized(): void {
+  if (mermaidParserInitialized) return;
+  mermaidParser.initialize({
+    startOnLoad: false,
+    securityLevel: 'strict',
+    theme: 'default',
+  });
+  mermaidParserInitialized = true;
+}
+
+type AssistantActivityStatus = 'drafting' | 'tools' | null;
+
+export function getAssistantActivityStatus({
+  isStreaming,
+  lastMessage,
+}: {
+  isStreaming: boolean;
+  lastMessage?: ChatMessageListProps['messages'][number];
+}): AssistantActivityStatus {
+  if (!isStreaming || !lastMessage) return null;
+
+  if (lastMessage.role === 'user') return 'drafting';
+  if (lastMessage.role !== 'assistant') return null;
+  if (hasTextContent(lastMessage)) return null;
+
+  return hasToolParts(lastMessage) ? 'tools' : 'drafting';
+}
+
+function AssistantActivityBubble({
+  assistantName,
+  status,
+}: {
+  assistantName?: string;
+  status: Exclude<AssistantActivityStatus, null>;
+}) {
+  const t = useTranslations('dashboard.mira_chat');
+  const [statusIndex, setStatusIndex] = useState(0);
+  const keys =
+    status === 'tools'
+      ? RESPONSE_TOOL_STATUS_KEYS
+      : RESPONSE_DRAFTING_STATUS_KEYS;
+  const currentKey = keys[statusIndex % keys.length]!;
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setStatusIndex((value) => value + 1);
+    }, RESPONSE_STATUS_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="mt-3 flex gap-2.5">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dynamic-purple/15 text-dynamic-purple">
+        <Sparkles className="h-3.5 w-3.5" />
+      </div>
+      <div className="flex min-w-0 flex-col items-start">
+        <span className="mb-1 px-1 font-medium text-[11px] text-muted-foreground">
+          {assistantName ?? 'Mira'}
+        </span>
+        <div
+          className="flex max-w-full items-center gap-2 rounded-2xl border border-border/50 bg-muted/45 px-3.5 py-2.5 text-muted-foreground text-sm shadow-sm"
+          aria-live="polite"
+        >
+          <span className="relative flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+            <span className="absolute h-2.5 w-2.5 animate-ping rounded-full bg-dynamic-purple/35" />
+            <span className="h-1.5 w-1.5 rounded-full bg-dynamic-purple" />
+          </span>
+          <span className="truncate">{t(currentKey)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function ChatMessageList({
+  footer,
+  messages,
+  isStreaming,
+  assistantName,
+  userName,
+  userAvatarUrl,
+  onAutoSubmitMermaidFix,
+  reserveComposerSpace = true,
+  scrollContainerRef,
+  toolbarVisibilityAnchorRef,
+  messageAttachments,
+}: ChatMessageListProps) {
+  const t = useTranslations('dashboard.mira_chat');
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const setScrollContainerRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      (containerRef as MutableRefObject<HTMLDivElement | null>).current = el;
+      if (scrollContainerRef) {
+        (
+          scrollContainerRef as MutableRefObject<HTMLDivElement | null>
+        ).current = el;
+      }
+    },
+    [scrollContainerRef]
+  );
+
+  useChatScrollFollow(containerRef, messages);
+
+  const attemptedMermaidRepairsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!onAutoSubmitMermaidFix) return;
+    if (isStreaming) return;
+
+    const lastAssistantWithMermaid = [...messages]
+      .reverse()
+      .find(
+        (msg) =>
+          msg.role === 'assistant' && getMessageText(msg).includes('```mermaid')
+      );
+    if (!lastAssistantWithMermaid) return;
+
+    const fullText = getMessageText(lastAssistantWithMermaid);
+    const mermaidBlocks = extractMermaidBlocks(fullText);
+    if (mermaidBlocks.length === 0) return;
+
+    let cancelled = false;
+
+    const run = async () => {
+      ensureMermaidParserInitialized();
+      for (let i = 0; i < mermaidBlocks.length; i++) {
+        const block = mermaidBlocks[i]!;
+        const repairKey = `${lastAssistantWithMermaid.id}:${i}:${simpleStableHash(block)}`;
+        if (attemptedMermaidRepairsRef.current.has(repairKey)) continue;
+        if (
+          attemptedMermaidRepairsRef.current.size >=
+          MAX_AUTO_MERMAID_REPAIR_ATTEMPTS
+        ) {
+          break;
+        }
+
+        try {
+          await mermaidParser.parse(block);
+        } catch (error) {
+          if (cancelled) return;
+          attemptedMermaidRepairsRef.current.add(repairKey);
+          onAutoSubmitMermaidFix(
+            buildMermaidAutoRepairPrompt({
+              parseError: getErrorMessage(error),
+              originalDiagram: block,
+            })
+          );
+          break;
+        }
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [messages, isStreaming, onAutoSubmitMermaidFix]);
+
+  if (messages.length === 0) return null;
+
+  const lastAssistantIndex = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i]?.role === 'assistant') return i;
+    }
+    return -1;
+  })();
+
+  return (
+    <div
+      ref={setScrollContainerRef}
+      className={cn(
+        'scrollbar-none flex min-w-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-1 py-3',
+        scrollContainerRef && reserveComposerSpace && 'pb-28 sm:pb-32'
+      )}
+    >
+      {messages.map((message, index) => {
+        const notice = message.parts.find(
+          (part) => part.type === 'data-live-session'
+        );
+        if (
+          notice &&
+          'data' in notice &&
+          notice.data &&
+          typeof notice.data === 'object' &&
+          'text' in notice.data &&
+          typeof notice.data.text === 'string'
+        )
+          return (
+            <div
+              key={message.id}
+              role="status"
+              className="my-3 flex min-w-0 items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-muted-foreground text-xs"
+            >
+              <AudioLines className="size-3.5 shrink-0" />
+              <span className="min-w-0 [overflow-wrap:anywhere]">
+                {notice.data.text}
+              </span>
+            </div>
+          );
+        const isUser = message.role === 'user';
+        const hasText = hasTextContent(message);
+        const displayText = isUser
+          ? getDisplayText(message, isAutoMermaidRepairPrompt)
+          : '';
+        const hasDisplayText = isUser ? displayText.trim().length > 0 : hasText;
+        const hasTools = !isUser && hasToolParts(message);
+        const hasAttachments =
+          isUser && (messageAttachments?.get(message.id)?.length ?? 0) > 0;
+
+        // Skip messages with no renderable content
+        const hasSources =
+          !isUser &&
+          message.parts.some(
+            (part) =>
+              part.type === 'source-url' &&
+              typeof part.url === 'string' &&
+              typeof part.sourceId === 'string' &&
+              part.url.trim().length > 0 &&
+              part.sourceId.trim().length > 0
+          );
+        if (!hasDisplayText && !hasTools && !hasAttachments && !hasSources)
+          return null;
+
+        const isLastAssistant = index === lastAssistantIndex;
+
+        // Check if previous visible message has the same role (for grouping)
+        const prevMessage = messages[index - 1];
+        const isContinuation =
+          prevMessage?.role === message.role &&
+          !prevMessage.parts.some((part) => part.type === 'data-live-session');
+
+        const messageText = isUser ? displayText : getMessageText(message);
+
+        return (
+          <div
+            key={message.id}
+            className={cn(
+              'group flex min-w-0 max-w-full gap-2',
+              isUser ? 'flex-row-reverse' : '',
+              isContinuation ? 'mt-0.5' : 'mt-3 first:mt-0'
+            )}
+          >
+            {/* Avatar — show for first message in a group, invisible spacer for continuations */}
+            <div className="flex w-7 shrink-0 flex-col items-center">
+              {!isContinuation ? (
+                isUser && userAvatarUrl ? (
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={userAvatarUrl} alt={t('you')} />
+                    <AvatarFallback className="bg-foreground/10 text-xs">
+                      <UserIcon className="h-3.5 w-3.5" />
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <div
+                    className={cn(
+                      'flex h-7 w-7 items-center justify-center rounded-full',
+                      isUser
+                        ? 'bg-foreground/10'
+                        : 'bg-dynamic-purple/15 text-dynamic-purple'
+                    )}
+                  >
+                    {isUser ? (
+                      <UserIcon className="h-3.5 w-3.5" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </div>
+                )
+              ) : (
+                <div className="h-0 w-7" />
+              )}
+            </div>
+
+            {/* Message content — min-w-0 so bubble can shrink and wrap inside chat area */}
+            <div
+              className={cn(
+                'flex min-w-0 max-w-[calc(100%-2.25rem)] flex-1 flex-col',
+                isUser ? 'items-end' : 'items-start'
+              )}
+            >
+              {/* Name label — show for first message in a group */}
+              {!isContinuation && (
+                <span
+                  className={cn(
+                    'mb-1 px-1 font-medium text-[11px] text-muted-foreground',
+                    isUser && 'text-right'
+                  )}
+                >
+                  {isUser ? userName || t('you') : (assistantName ?? 'Mira')}
+                </span>
+              )}
+
+              {/* Bubble + actions row */}
+              <div
+                className={cn(
+                  'flex w-full min-w-0 max-w-full flex-wrap items-end gap-1',
+                  isUser ? 'flex-row-reverse' : ''
+                )}
+              >
+                <div
+                  className={cn(
+                    'min-w-0 max-w-full overflow-hidden rounded-2xl px-3.5 py-2.5 text-sm [overflow-wrap:anywhere]',
+                    isUser
+                      ? 'bg-foreground text-background'
+                      : 'bg-muted/50 text-foreground'
+                  )}
+                >
+                  {isUser ? (
+                    <UserMessageContent
+                      displayText={displayText}
+                      attachments={messageAttachments?.get(message.id)}
+                    />
+                  ) : (
+                    <div className="flex min-w-0 max-w-full flex-col gap-2 overflow-hidden *:min-w-0 *:max-w-full">
+                      {(() => {
+                        const descriptors = resolveMessageRenderGroups({
+                          message,
+                          isStreaming,
+                          isLastAssistant,
+                        });
+                        const historyParts = descriptors.flatMap((d) =>
+                          d.kind === 'tool'
+                            ? [d.part]
+                            : d.kind === 'tool-group'
+                              ? d.parts
+                              : []
+                        );
+                        const { recovered } = getToolChainOutcome(historyParts);
+                        const elements: React.ReactNode[] = [];
+                        let genericToolBatch: Extract<
+                          (typeof descriptors)[number],
+                          { kind: 'tool' | 'tool-group' }
+                        >[] = [];
+
+                        const flushBatch = () => {
+                          if (genericToolBatch.length === 0) return;
+                          if (
+                            genericToolBatch.length === 1 &&
+                            !(
+                              genericToolBatch[0]?.kind === 'tool-group' &&
+                              genericToolBatch[0].parts.some((part) =>
+                                recovered.has(part)
+                              )
+                            )
+                          ) {
+                            const d = genericToolBatch[0]!;
+                            elements.push(
+                              d.kind === 'tool' ? (
+                                <ToolCallPart
+                                  key={d.key}
+                                  part={d.part}
+                                  recovered={recovered.has(d.part)}
+                                  renderUiFailure={d.renderUiFailure}
+                                />
+                              ) : (
+                                <GroupedToolCallParts
+                                  key={d.key}
+                                  parts={d.parts}
+                                  toolName={d.toolName}
+                                />
+                              )
+                            );
+                          } else {
+                            elements.push(
+                              <CollapsibleToolSection
+                                key={`collapsible-${genericToolBatch[0]!.key}`}
+                                descriptors={genericToolBatch}
+                                historyParts={historyParts}
+                              />
+                            );
+                          }
+                          genericToolBatch = [];
+                        };
+
+                        for (const descriptor of descriptors) {
+                          if (descriptor.kind === 'reasoning') {
+                            flushBatch();
+                            elements.push(
+                              <ReasoningPart
+                                key={descriptor.key}
+                                text={descriptor.text}
+                                isAnimating={descriptor.isAnimating}
+                              />
+                            );
+                          } else if (descriptor.kind === 'text') {
+                            flushBatch();
+                            elements.push(
+                              <AssistantMarkdown
+                                key={descriptor.key}
+                                text={descriptor.text}
+                                isAnimating={descriptor.isAnimating}
+                              />
+                            );
+                          } else if (
+                            descriptor.kind === 'tool' ||
+                            descriptor.kind === 'tool-group'
+                          ) {
+                            if (isVisualToolDescriptor(descriptor)) {
+                              flushBatch();
+                              elements.push(
+                                descriptor.kind === 'tool' ? (
+                                  <ToolCallPart
+                                    key={descriptor.key}
+                                    part={descriptor.part}
+                                    recovered={recovered.has(descriptor.part)}
+                                    renderUiFailure={descriptor.renderUiFailure}
+                                  />
+                                ) : (
+                                  <div
+                                    key={descriptor.key}
+                                    className="flex flex-col gap-2"
+                                  >
+                                    {descriptor.parts.map((part) => (
+                                      <ToolCallPart
+                                        key={part.toolCallId}
+                                        part={part}
+                                        recovered={recovered.has(part)}
+                                      />
+                                    ))}
+                                  </div>
+                                )
+                              );
+                            } else {
+                              genericToolBatch.push(descriptor);
+                            }
+                          } else if (descriptor.kind === 'sources') {
+                            flushBatch();
+                            elements.push(
+                              <SourcesPart
+                                key={descriptor.key}
+                                parts={descriptor.parts}
+                              />
+                            );
+                          }
+                        }
+                        flushBatch();
+                        return elements;
+                      })()}
+                    </div>
+                  )}
+                </div>
+
+                {/* Copy button — appears on hover (hide for file-only messages) */}
+                {hasDisplayText && messageText.trim() && (
+                  <CopyButton text={messageText} />
+                )}
+                {/* Copy raw JSON — appears on hover, for non-user messages only */}
+                {!isUser && (
+                  <CopyButton
+                    text={JSON.stringify(message, null, 2)}
+                    icon="json"
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      {footer}
+      {(() => {
+        const status = getAssistantActivityStatus({
+          isStreaming,
+          lastMessage: messages[messages.length - 1],
+        });
+        return status ? (
+          <AssistantActivityBubble
+            key={status}
+            assistantName={assistantName}
+            status={status}
+          />
+        ) : null;
+      })()}
+      <div
+        ref={toolbarVisibilityAnchorRef}
+        aria-hidden="true"
+        className="h-px w-full shrink-0"
+      />
+    </div>
+  );
+}

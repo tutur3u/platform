@@ -1,0 +1,438 @@
+'use client';
+
+import {
+  MessageSquareText,
+  Mic,
+  MicOff,
+  MonitorUp,
+  MonitorX,
+  PhoneOff,
+  Play,
+  Video,
+  VideoOff,
+} from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
+import {
+  memo,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { useLiveAPIContext } from '@/hooks/use-live-api';
+import type { UseMediaStreamResult } from '@/hooks/use-media-stream-mux';
+import { useScreenCapture } from '@/hooks/use-screen-capture';
+import { useWebcam } from '@/hooks/use-webcam';
+import { AudioRecorder } from '../../audio/audio-recorder';
+
+export type ControlTrayProps = {
+  compact?: boolean;
+  leading?: ReactNode;
+  videoRef: RefObject<HTMLVideoElement | null>;
+  children?: ReactNode;
+  supportsVideo: boolean;
+  onRestartSession?: () => Promise<void>;
+  onVideoStreamChange?: (
+    stream: MediaStream | null,
+    type: 'webcam' | 'screen' | null
+  ) => void;
+  onInputVolumeChange?: (volume: number) => void;
+  onError?: (error: Error) => void;
+  videoStopRequest?: number;
+  textChatOpen?: boolean;
+  onToggleChat?: () => void;
+  onReturnToChat?: () => void;
+};
+
+export async function runLiveSessionAction({
+  connected,
+  disconnect,
+  onRestartSession,
+  onReturnToChat,
+}: {
+  connected: boolean;
+  disconnect: () => Promise<void>;
+  onRestartSession: () => Promise<void>;
+  onReturnToChat?: () => void;
+}) {
+  if (connected) {
+    await disconnect();
+    onReturnToChat?.();
+  } else await onRestartSession();
+}
+
+function MediaStreamButton({
+  compact,
+  active,
+  activeIcon,
+  activeLabel,
+  disabled,
+  inactiveIcon,
+  inactiveLabel,
+  onError,
+  start,
+  stop,
+}: {
+  compact?: boolean;
+  active: boolean;
+  activeIcon: ReactNode;
+  activeLabel: string;
+  disabled?: boolean;
+  inactiveIcon: ReactNode;
+  inactiveLabel: string;
+  onError: (error: Error) => void;
+  start: () => Promise<unknown>;
+  stop: () => void;
+}) {
+  return (
+    <Button
+      aria-label={active ? activeLabel : inactiveLabel}
+      aria-pressed={active}
+      title={active ? activeLabel : inactiveLabel}
+      variant="ghost"
+      size="icon"
+      className={cn(
+        'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
+        compact && 'size-9 rounded-xl',
+        active && 'bg-primary/10 text-primary'
+      )}
+      disabled={disabled}
+      onClick={() => {
+        if (active) stop();
+        else {
+          void start().catch((error) => {
+            onError(error instanceof Error ? error : new Error(String(error)));
+          });
+        }
+      }}
+    >
+      {active ? activeIcon : inactiveIcon}
+    </Button>
+  );
+}
+
+function ControlTray({
+  compact = false,
+  leading,
+  videoRef,
+  children,
+  onInputVolumeChange = () => {},
+  onError = () => {},
+  onRestartSession,
+  onVideoStreamChange = () => {},
+  supportsVideo,
+  textChatOpen,
+  onToggleChat,
+  onReturnToChat,
+  videoStopRequest = 0,
+}: ControlTrayProps) {
+  const t = useTranslations('dashboard.voice_assistant');
+  const videoStreams = [useWebcam(), useScreenCapture()];
+  const [webcam, screenCapture] = videoStreams;
+  const [activeVideoStream, setActiveVideoStream] =
+    useState<MediaStream | null>(null);
+  const [audioRecorder] = useState(() => new AudioRecorder());
+  const [muted, setMuted] = useState(false);
+  const [sessionActionPending, setSessionActionPending] = useState(false);
+  const [mediaError, setMediaError] = useState(false);
+  const captureGeneration = useRef(0);
+  const connectedRef = useRef(false);
+  const renderCanvasRef = useRef<HTMLCanvasElement>(null);
+  const sessionButtonRef = useRef<HTMLButtonElement>(null);
+  const lastVideoStopRequestRef = useRef(videoStopRequest);
+  const videoStreamsRef = useRef(videoStreams);
+  const onVideoStreamChangeRef = useRef(onVideoStreamChange);
+  videoStreamsRef.current = videoStreams;
+  onVideoStreamChangeRef.current = onVideoStreamChange;
+
+  const { client, connected, connectionStatus, disconnect } =
+    useLiveAPIContext();
+  connectedRef.current = connected;
+  const canRestart = typeof onRestartSession === 'function';
+  useEffect(
+    () => () => {
+      captureGeneration.current++;
+      connectedRef.current = false;
+      videoStreamsRef.current.forEach((item) => {
+        item.stop();
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!connected) sessionButtonRef.current?.focus();
+  }, [connected]);
+
+  useEffect(() => {
+    const onData = (base64: string) => {
+      if (!client.ws) return;
+      client.sendRealtimeInput([
+        { data: base64, mimeType: 'audio/pcm;rate=16000' },
+      ]);
+    };
+
+    if (connected && !muted) {
+      audioRecorder.on('data', onData).on('volume', onInputVolumeChange);
+      void audioRecorder.start().catch(() => {
+        setMuted(true);
+        setMediaError(true);
+      });
+    } else {
+      audioRecorder.stop();
+      if (connected && muted) client.sendAudioStreamEnd();
+    }
+
+    return () => {
+      audioRecorder.off('data', onData).off('volume', onInputVolumeChange);
+      audioRecorder.stop();
+      onInputVolumeChange(0);
+    };
+  }, [audioRecorder, client, connected, muted, onInputVolumeChange]);
+
+  useEffect(() => {
+    if (connected) return;
+    captureGeneration.current++;
+    videoStreamsRef.current.forEach((stream) => {
+      stream?.stop();
+    });
+    setActiveVideoStream(null);
+    onVideoStreamChangeRef.current(null, null);
+  }, [connected]);
+
+  useEffect(() => {
+    if (lastVideoStopRequestRef.current === videoStopRequest) return;
+    lastVideoStopRequestRef.current = videoStopRequest;
+    videoStreamsRef.current.forEach((stream) => {
+      stream?.stop();
+    });
+    setActiveVideoStream(null);
+    onVideoStreamChangeRef.current(null, null);
+  }, [videoStopRequest]);
+
+  useEffect(() => {
+    if (!videoRef.current || !activeVideoStream) return;
+    const video = videoRef.current;
+    video.srcObject = activeVideoStream;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let isCapturing = false;
+
+    const captureFrame = () => {
+      const canvas = renderCanvasRef.current;
+      if (!canvas || !connected || !client.ws || !isCapturing) return;
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        timeoutId = setTimeout(captureFrame, 500);
+        return;
+      }
+
+      const context = canvas.getContext('2d');
+      if (!context) return;
+      const scale = Math.min(
+        1,
+        1024 / Math.max(video.videoWidth, video.videoHeight)
+      );
+      canvas.width = Math.floor(video.videoWidth * scale);
+      canvas.height = Math.floor(video.videoHeight * scale);
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const encoded = canvas.toDataURL('image/jpeg', 0.8);
+      client.sendRealtimeInput([
+        {
+          data: encoded.slice(encoded.indexOf(',') + 1),
+          mimeType: 'image/jpeg',
+        },
+      ]);
+      timeoutId = setTimeout(captureFrame, 1000);
+    };
+
+    const startCapture = () => {
+      if (isCapturing) return;
+      isCapturing = true;
+      captureFrame();
+    };
+
+    if (video.readyState >= 2) startCapture();
+    else video.addEventListener('loadeddata', startCapture, { once: true });
+    void video.play().catch(() => undefined);
+
+    return () => {
+      isCapturing = false;
+      if (timeoutId) clearTimeout(timeoutId);
+      video.removeEventListener('loadeddata', startCapture);
+    };
+  }, [activeVideoStream, client, connected, videoRef]);
+
+  const changeStreams = (next?: UseMediaStreamResult) => async () => {
+    const generation = ++captureGeneration.current;
+    setMediaError(false);
+    const stream = next ? await next.start() : null;
+    if (generation !== captureGeneration.current || !connectedRef.current) {
+      stream?.getTracks().forEach((track) => {
+        track.stop();
+      });
+      next?.stop();
+      return;
+    }
+    setActiveVideoStream(stream);
+    onVideoStreamChange(stream, next?.type ?? null);
+    videoStreams
+      .filter((item) => item !== next)
+      .forEach((item) => {
+        item.stop();
+      });
+  };
+
+  return (
+    <div className="flex w-full min-w-0 max-w-full flex-col items-stretch justify-center gap-2">
+      {mediaError && (
+        <p role="alert" className="text-center text-dynamic-red text-xs">
+          {t('studio.media_error')}
+        </p>
+      )}
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+        {leading}
+        <div
+          className={cn(
+            'motion-safe:[&>button]:fade-in motion-safe:[&>button]:slide-in-from-bottom-1 ml-auto flex max-w-full flex-wrap items-center justify-end gap-1 motion-safe:[&>button:nth-child(2)]:[animation-delay:30ms] motion-safe:[&>button:nth-child(3)]:[animation-delay:60ms] motion-safe:[&>button:nth-child(5)]:[animation-delay:90ms] motion-safe:[&>button]:animate-in motion-safe:[&>button]:duration-200',
+            !compact &&
+              'rounded-2xl border bg-background/70 p-1.5 shadow-lg backdrop-blur-xl'
+          )}
+        >
+          {connected && (
+            <>
+              <Button
+                aria-label={
+                  muted ? t('unmute_microphone') : t('mute_microphone')
+                }
+                title={muted ? t('unmute_microphone') : t('mute_microphone')}
+                aria-pressed={muted}
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
+                  compact && 'size-9 rounded-xl',
+                  muted && 'bg-destructive/10 text-dynamic-red'
+                )}
+                onClick={() => {
+                  setMediaError(false);
+                  setMuted((value) => !value);
+                }}
+              >
+                {muted ? (
+                  <MicOff className="size-4" />
+                ) : (
+                  <Mic className="size-4" />
+                )}
+              </Button>
+
+              {supportsVideo && (
+                <>
+                  <MediaStreamButton
+                    compact={compact}
+                    active={Boolean(screenCapture?.isStreaming)}
+                    activeIcon={<MonitorX className="size-4" />}
+                    activeLabel={t('stop_sharing')}
+                    inactiveIcon={<MonitorUp className="size-4" />}
+                    inactiveLabel={t('share_screen')}
+                    onError={() => setMediaError(true)}
+                    start={changeStreams(screenCapture)}
+                    stop={changeStreams()}
+                  />
+                  <MediaStreamButton
+                    compact={compact}
+                    active={Boolean(webcam?.isStreaming)}
+                    activeIcon={<VideoOff className="size-4" />}
+                    activeLabel={t('disable_camera')}
+                    inactiveIcon={<Video className="size-4" />}
+                    inactiveLabel={t('enable_camera')}
+                    onError={() => setMediaError(true)}
+                    start={changeStreams(webcam)}
+                    stop={changeStreams()}
+                  />
+                </>
+              )}
+
+              <span aria-hidden className="mx-0.5 h-5 w-px bg-border/60" />
+            </>
+          )}
+
+          {!connected && onReturnToChat ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-10 gap-2 rounded-full px-3"
+              onClick={onReturnToChat}
+            >
+              <MessageSquareText className="size-4" />
+              {t('return_to_chat')}
+            </Button>
+          ) : typeof onToggleChat === 'function' ? (
+            <Button
+              aria-label={textChatOpen ? t('close_chat') : t('open_chat')}
+              title={textChatOpen ? t('close_chat') : t('open_chat')}
+              aria-pressed={Boolean(textChatOpen)}
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
+                compact && 'size-9 rounded-xl',
+                textChatOpen && 'bg-primary/10 text-primary'
+              )}
+              onClick={onToggleChat}
+            >
+              <MessageSquareText className="size-4" />
+            </Button>
+          ) : null}
+
+          <Button
+            ref={sessionButtonRef}
+            aria-label={connected ? t('end_session') : t('new_session')}
+            title={connected ? t('end_session') : t('new_session')}
+            disabled={
+              sessionActionPending ||
+              (!connected &&
+                (!canRestart ||
+                  connectionStatus === 'connecting' ||
+                  connectionStatus === 'reconnecting'))
+            }
+            variant={connected ? 'destructive' : 'default'}
+            size="icon"
+            className={cn('size-11 rounded-xl shadow-sm', compact && 'size-9')}
+            aria-busy={sessionActionPending}
+            onClick={async () => {
+              setSessionActionPending(true);
+              try {
+                await runLiveSessionAction({
+                  connected,
+                  disconnect,
+                  onRestartSession:
+                    onRestartSession ?? (() => Promise.resolve()),
+                  onReturnToChat,
+                });
+              } catch (error) {
+                onError(
+                  error instanceof Error ? error : new Error(String(error))
+                );
+              } finally {
+                setSessionActionPending(false);
+              }
+            }}
+          >
+            {connected ? (
+              <PhoneOff className="size-4" />
+            ) : (
+              <Play className="size-4" />
+            )}
+          </Button>
+
+          {children}
+        </div>
+      </div>
+      <canvas className="hidden" ref={renderCanvasRef} />
+    </div>
+  );
+}
+
+export default memo(ControlTray);

@@ -48,4 +48,12 @@ export const pageModules = {
       () => import('../app/[locale]/(auth)/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/(dashboard)/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(dashboard)/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
 } satisfies Record<PageFile, BridgePageModules>;
