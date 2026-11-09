@@ -34,6 +34,15 @@ export const pages = [
   { pattern: "/security/bug-bounty", file: "src/app/[locale]/(marketing)/security/bug-bounty/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/security", file: "src/app/[locale]/(marketing)/security/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/security/policy", file: "src/app/[locale]/(marketing)/security/policy/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/solutions/construction", file: "src/app/[locale]/(marketing)/solutions/construction/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/solutions/education", file: "src/app/[locale]/(marketing)/solutions/education/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/solutions/healthcare", file: "src/app/[locale]/(marketing)/solutions/healthcare/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/solutions/hospitality", file: "src/app/[locale]/(marketing)/solutions/hospitality/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/solutions/manufacturing", file: "src/app/[locale]/(marketing)/solutions/manufacturing/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/solutions/pharmacies", file: "src/app/[locale]/(marketing)/solutions/pharmacies/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/solutions/realestate", file: "src/app/[locale]/(marketing)/solutions/realestate/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/solutions/restaurants", file: "src/app/[locale]/(marketing)/solutions/restaurants/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/solutions/retail", file: "src/app/[locale]/(marketing)/solutions/retail/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/terms", file: "src/app/[locale]/(marketing)/terms/page.tsx", defaults: { "locale": "en" } },
 ] as const satisfies readonly BridgePage[];
 
