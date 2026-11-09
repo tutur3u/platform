@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Loader2 } from '@tuturuuu/icons';
+import { ArrowLeft, Loader2, Video } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -9,8 +9,9 @@ import { useWaitDeadline } from '../hooks/use-wait-deadline';
 
 /**
  * One stable, full-height shell for server loading, device checks and
- * recovery. While loading it shows only the meeting name, one status line, a
- * spinner and a way back; `description` and `children` are for recovery.
+ * recovery. While loading it shows the meeting name, the call mark with a
+ * spinner, one title, one short status line and a way back. `description`
+ * and `children` carry recovery copy and actions for settled outcomes.
  */
 export function CallPreparation({
   title,
@@ -33,6 +34,9 @@ export function CallPreparation({
   const status = slow
     ? t('join_loading_slow_title')
     : (title ?? t('preparing_call'));
+  const line = slow
+    ? undefined
+    : (description ?? (spinning ? t('connecting') : undefined));
   return (
     <main className="flex min-h-dvh w-full items-center justify-center bg-background px-5 py-10 sm:px-8">
       <section
@@ -40,35 +44,32 @@ export function CallPreparation({
         aria-busy={spinning}
       >
         {meetingName && (
-          <p className="mb-2 max-w-full truncate font-medium text-base">
+          <p className="mb-6 max-w-full truncate text-muted-foreground text-sm">
             {meetingName}
           </p>
         )}
-        <output aria-live="polite" className="block space-y-2">
-          <h1
-            className={`text-balance ${
-              busy
-                ? 'text-muted-foreground text-sm'
-                : 'font-medium text-base text-foreground'
-            }`}
-          >
+        <div className="relative mb-6 grid size-16 place-items-center rounded-2xl bg-muted">
+          <Video className="size-7 text-muted-foreground" aria-hidden="true" />
+          {spinning && (
+            <span className="absolute -right-1.5 -bottom-1.5 grid size-7 place-items-center rounded-full border bg-background shadow-sm">
+              <Loader2
+                className="size-4 text-muted-foreground motion-safe:animate-spin"
+                aria-hidden="true"
+              />
+            </span>
+          )}
+        </div>
+        <output aria-live="polite" className="block space-y-1.5">
+          <h1 className="text-balance font-semibold text-xl tracking-tight">
             {status}
           </h1>
-          {description && !slow && (
-            <p className="text-pretty text-muted-foreground text-sm leading-relaxed">
-              {description}
-            </p>
+          {line && (
+            <p className="text-pretty text-muted-foreground text-sm">{line}</p>
           )}
         </output>
-        {spinning && (
-          <Loader2
-            className="mt-6 size-5 text-muted-foreground motion-safe:animate-spin"
-            aria-hidden="true"
-          />
-        )}
         {children && <div className="mt-6 w-full space-y-4">{children}</div>}
         {(leaveHref || slow) && (
-          <Button variant="ghost" size="sm" className="mt-6" asChild>
+          <Button variant="ghost" size="sm" className="mt-8" asChild>
             <Link href={leaveHref ?? '/'}>
               <ArrowLeft className="size-4" aria-hidden="true" />
               {t('back_to_meet')}

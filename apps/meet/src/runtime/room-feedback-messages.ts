@@ -4,6 +4,7 @@ export const roomFeedbackMessages = {
     meet: {
       call: {
         back_to_meet: 'Back to Meet',
+        connecting: 'Connecting…',
         connection_refresh: 'Refresh',
         join_error_hint:
           'We could not confirm your connection. Automatic reconnection attempts are limited. Check your network, then retry or leave.',
@@ -20,6 +21,7 @@ export const roomFeedbackMessages = {
     meet: {
       call: {
         back_to_meet: 'Quay lại Meet',
+        connecting: 'Đang kết nối…',
         connection_refresh: 'Làm mới',
         join_error_hint:
           'Chưa thể xác nhận kết nối của bạn. Số lần tự động kết nối lại có giới hạn. Kiểm tra mạng, rồi thử lại hoặc rời đi.',
