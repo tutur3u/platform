@@ -473,6 +473,14 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/notifications/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/notifications/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/polls/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/polls/page'),
     layouts: [
