@@ -68,8 +68,10 @@ interface UpdateWithRelations {
   attachments?: Attachment[];
 }
 
-interface MappedUpdate
-  extends Omit<UpdateWithRelations, 'reactions' | 'comments'> {
+interface MappedUpdate extends Omit<
+  UpdateWithRelations,
+  'reactions' | 'comments'
+> {
   reactionGroups: ReactionGroup[];
   commentsCount: number;
   attachmentsCount: number;

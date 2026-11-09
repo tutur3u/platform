@@ -2,15 +2,21 @@
 // often missed before pushing. Pure functions only; the runner executes steps.
 
 const path = require('node:path');
+const { selectLocalChecks } = require('../ci/check-map.js');
 const { reverseDependents, assertSafePaths } = require('./workspaces.js');
 const { AUTH_GUARDS } = require('../auth-guards.js');
 const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
 
-const BIOME_VERSION = '2.5.13';
+const OXC_VERSION = '0.74.0';
 // Keep in sync with .github/workflows/branch-name-check.yaml (tested).
 const BRANCH_NAME_PATTERN =
   /^(feature|feat|fix|bugfix|hotfix|release|chore|docs|style|refactor|perf|dependabot|claude)\/.+|^release-please--branches--.+|^imgbot$/;
-const BIOME_FILE = /\.(?:[cm]?[jt]sx?|jsonc?|css|graphql|gql)$/;
+const OXC_FILE = /\.(?:[cm]?[jt]sx?|jsonc?|css|graphql|gql|mdx?|ya?ml|html)$/;
+const OXC_IGNORED_FORMATS = new Set(
+  require('../../.oxfmtrc.json')
+    .ignorePatterns.filter((pattern) => /^\*\*\/\*\.[a-z]+$/.test(pattern))
+    .map((pattern) => pattern.slice(5))
+);
 const SCRIPT_FILE = /\.(?:[cm]?js|ts)$/;
 const TS_SOURCE = /\.(?:[cm]?tsx?|d\.ts)$/;
 const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
@@ -86,6 +92,7 @@ function nodeScriptTests(files, exists) {
   const selected = new Set();
   for (const file of files) {
     if (NODE_TEST_FILE.test(file)) {
+      if (/-built-worker\.test\.mjs$/.test(file)) continue;
       if (exists(file)) selected.add(file);
       continue;
     }
@@ -157,6 +164,7 @@ function runtimeImports(source, filename) {
  * Node cannot load because of extensionless workspace imports).
  */
 function testRunnerOf(file, context) {
+  if (/-built-worker\.test\.mjs$/.test(file)) return 'ci';
   const workspace = workspaceOf(file);
   if (!workspace) return NODE_TEST_FILE.test(file) ? 'node' : 'vitest';
   const script = context.workspaces?.find(
@@ -187,10 +195,11 @@ function planChecks(changes, context) {
     .map((change) => change.file)
     .filter((file) => !isPausedPath(file));
   const any = (pattern) => all.some((file) => pattern.test(file));
+  const selected = selectLocalChecks(all);
   const steps = [];
   const skipped = [];
   const sharedConfig = all.filter((file) =>
-    /^(?:tsconfig\.json|biome\.jsonc?|turbo\.json|package\.json|bun\.lock|bunfig\.toml|\.npmrc|vitest\.config\.ts|\.oxlintrc\.json|\.oxfmtrc\.json)$|^packages\/typescript-config\/.*\.json$/.test(
+    /^(?:tsconfig\.json|oxfmtrc\.json|turbo\.json|package\.json|bun\.lock|bunfig\.toml|\.npmrc|vitest\.config\.ts|\.oxlintrc\.json|\.oxfmtrc\.json)$|^packages\/typescript-config\/.*\.json$/.test(
       file
     )
   );
@@ -231,13 +240,13 @@ function planChecks(changes, context) {
       '--check',
     ])
   );
-  if (any(/^apps\/docs\//)) {
+  if (selected.has('docs-audit')) {
     steps.push(
       nodeStep('docs-audit', 'docs navigation audit', ['scripts/docs-audit.js'])
     );
   }
 
-  if (any(/^packages\/(internal-api|sdk|utils|types)\//)) {
+  if (selected.has('sdk-portable')) {
     steps.push(
       nodeStep('sdk-portable', 'SDK portable source approval (no emit)', [
         'packages/sdk/scripts/portable-build.cjs',
@@ -246,27 +255,43 @@ function planChecks(changes, context) {
     );
   }
 
-  const biomeFiles = present.filter(
-    (file) => BIOME_FILE.test(file) && !file.startsWith(MOBILE_PREFIX)
+  const formatFiles = present.filter(
+    (file) =>
+      OXC_FILE.test(file) &&
+      !OXC_IGNORED_FORMATS.has(path.posix.extname(file).slice(1)) &&
+      !file.startsWith(MOBILE_PREFIX) &&
+      !file.split('/').some((segment) => OXC_EXCLUDED.has(segment)) &&
+      !/routeTree\.gen\.ts$|\.bridge\.gen\.ts$/.test(file) &&
+      !/^(?:\.agents\/skills\/|apps\/api\/generated\/|apps\/docs\/reference\/repository\/)/.test(
+        file
+      ) &&
+      file !== 'packages/sdk/src/operational-search/python-adapter-code.ts'
   );
-  if (biomeFiles.length) {
+  if (
+    !formatFiles.length &&
+    present.some(
+      (file) =>
+        OXC_FILE.test(file) &&
+        OXC_IGNORED_FORMATS.has(path.posix.extname(file).slice(1))
+    )
+  ) {
+    skipped.push(['oxfmt', 'changed formats are ignored by .oxfmtrc.json']);
+  }
+  if (formatFiles.length) {
     steps.push({
-      id: 'biome',
-      label: `biome check (${biomeFiles.length} files)`,
-      command: context.biomeBinary ?? 'npx',
+      id: 'oxfmt',
+      label: `oxfmt check (${formatFiles.length} files)`,
+      command: context.oxfmtBinary ?? 'npx',
       args: [
-        ...(context.biomeBinary
-          ? []
-          : ['--yes', `@biomejs/biome@${BIOME_VERSION}`]),
-        'check',
-        '--error-on-warnings',
-        '--no-errors-on-unmatched',
-        '--files-ignore-unknown=true',
-        ...biomeFiles,
+        ...(context.oxfmtBinary ? [] : ['--yes', `oxfmt@${OXC_VERSION}`]),
+        '--check',
+        '--threads',
+        '2',
+        ...formatFiles,
       ],
-      fixHint: `npx @biomejs/biome@${BIOME_VERSION} check --write <files>`,
+      fixHint: 'bun oxfmt --write <files>',
     });
-    const oxcFiles = biomeFiles.filter(
+    const oxcFiles = formatFiles.filter(
       (file) =>
         /\.[cm]?[jt]sx?$/.test(file) &&
         !file.split('/').some((segment) => OXC_EXCLUDED.has(segment))
@@ -275,9 +300,9 @@ function planChecks(changes, context) {
       steps.push(
         nodeStep(
           'oxlint',
-          `oxlint (${oxcFiles.length} files, advisory)`,
+          `oxlint (${oxcFiles.length} files)`,
           ['scripts/oxc.js', 'lint', ...oxcFiles],
-          { advisory: true }
+          {}
         )
       );
     }
@@ -288,11 +313,7 @@ function planChecks(changes, context) {
       steps.push(nodeStep(name, name, [script]));
     }
   }
-  if (
-    any(
-      /^packages\/[^/]+\/package\.json$|^\.github\/workflows\/release-.+-package\.ya?ml$|^scripts\/ci\/package-release-(dependency-guard|readiness)\.js$/
-    )
-  ) {
+  if (selected.has('package-release-dependencies')) {
     steps.push(
       nodeStep(
         'package-release-dependencies',
@@ -301,7 +322,7 @@ function planChecks(changes, context) {
       )
     );
   }
-  if (any(/^apps\/[^/]+\/messages\/.*\.json$/)) {
+  if (selected.has('i18n')) {
     steps.push(
       nodeStep('i18n-sort', 'i18n sort', ['scripts/i18n-sort.js', '--check']),
       nodeStep('i18n-key-parity', 'i18n en/vi parity', [
@@ -309,14 +330,14 @@ function planChecks(changes, context) {
       ])
     );
   }
-  if (any(/^apps\/database\/supabase\/migrations\//)) {
+  if (selected.has('migration-timestamps')) {
     steps.push(
       nodeStep('migration-timestamps', 'migration timestamps', [
         'scripts/check-migration-timestamps.js',
       ])
     );
   }
-  if (any(/^apps\/web\/src\/(app\/api|legacy-api-routes)\//)) {
+  if (selected.has('api-route-wrappers')) {
     steps.push(
       nodeStep('api-route-wrappers', 'legacy API route wrappers', [
         'scripts/generate-web-api-route-wrappers.js',
@@ -324,29 +345,21 @@ function planChecks(changes, context) {
       ])
     );
   }
-  if (
-    any(
-      /^(bun\.lock$|apps\/mobile\/(lib\/core\/ui\/icons\/generated|assets\/fonts\/lucide|test\/fixtures\/lucide)\/|scripts\/(mobile-lucide\/|check-mobile-lucide-sync\.js$))/
-    )
-  ) {
+  if (selected.has('mobile-lucide-sync')) {
     steps.push(
       nodeStep('mobile-lucide-sync', 'mobile Lucide icons match web', [
         'scripts/check-mobile-lucide-sync.js',
       ])
     );
   }
-  if (
-    any(
-      /^(apps\/mobile\/(lib|test)\/|apps\/mobile\/tool\/shadcn_import_allowlist\.txt$|scripts\/(check-mobile-shadcn-imports|dart-directive-uris)\.js$)/
-    )
-  ) {
+  if (selected.has('mobile-shadcn-ratchet')) {
     steps.push(
       nodeStep('mobile-shadcn-ratchet', 'mobile shadcn import ratchet', [
         'scripts/check-mobile-shadcn-imports.js',
       ])
     );
   }
-  if (any(/^(apps\/mobile\/lib|apps\/web\/src\/app\/api)\//)) {
+  if (selected.has('mobile-api-mappings')) {
     steps.push(
       nodeStep('mobile-api-mappings', 'mobile API mappings', [
         'scripts/check-mobile-api-mappings.js',
@@ -368,6 +381,11 @@ function planChecks(changes, context) {
       'browser specs require separate E2E runtime verification',
     ]);
   }
+  if (present.some((file) => /-built-worker\.test\.mjs$/.test(file)))
+    skipped.push([
+      'emitted-worker-tests',
+      'owning exact-commit CI build and emitted Worker acceptance required',
+    ]);
   const scriptTests = nodeScriptTests(
     all.filter((file) => !isPausedPath(file)),
     exists
@@ -519,7 +537,7 @@ function planChecks(changes, context) {
 }
 
 module.exports = {
-  BIOME_VERSION,
+  OXC_VERSION,
   BRANCH_NAME_PATTERN,
   PINNED_CONTRACT_FILES,
   STAGING_CONTRACT_TESTS,

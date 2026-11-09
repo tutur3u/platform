@@ -23077,6 +23077,130 @@ export type Database = {
         Args: { p_actor_user_id: string; p_template: Json; p_ws_id: string };
         Returns: Json;
       };
+      fee_lock_baseline: {
+        Args: {
+          p_currency?: string;
+          p_month: string;
+          p_student_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          baseline_amount: number;
+          group_id: string;
+          group_name: string;
+          product_id: string;
+          session_count: number;
+          student_id: string;
+          student_name: string;
+          unit_id: string;
+          unit_price: number;
+          warehouse_id: string;
+        }[];
+      };
+      fee_lock_claim: {
+        Args: {
+          p_expected_version: number;
+          p_lock_id: string;
+          p_status: string;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['fee_locks']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'fee_locks';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      fee_lock_discard_new_invoice: {
+        Args: {
+          p_actor_id: string;
+          p_invoice_id: string;
+          p_reason: string;
+          p_request_started_at: string;
+          p_ws_id: string;
+        };
+        Returns: boolean;
+      };
+      fee_lock_lock: {
+        Args: {
+          p_actor_id: string;
+          p_expected_version: number;
+          p_lock_id: string;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['fee_locks']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'fee_locks';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      fee_lock_merge_students: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: number;
+      };
+      fee_lock_reopen: {
+        Args: {
+          p_actor_id: string;
+          p_expected_version: number;
+          p_lock_id: string;
+          p_reason: string;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['fee_locks']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'fee_locks';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      fee_lock_round: {
+        Args: { p_amount: number; p_currency: string };
+        Returns: number;
+      };
+      fee_lock_save_draft: {
+        Args: {
+          p_actor_id: string;
+          p_currency?: string;
+          p_expected_version: number;
+          p_lines: Json;
+          p_month: string;
+          p_note?: string;
+          p_student_id: string;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['fee_locks']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'fee_locks';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      fee_notice_template_save: {
+        Args: {
+          p_actor_id: string;
+          p_body: string;
+          p_expected_version?: number;
+          p_item_format: string;
+          p_item_separator: string;
+          p_locale: string;
+          p_notice_grouping: string;
+          p_payment_line: string;
+          p_restored_from?: number;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['fee_notice_templates']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'fee_notice_templates';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       finalize_employee_creation: {
         Args: {
           p_actor_id: string;
@@ -28904,6 +29028,612 @@ export type Database = {
             columns: ['added_by_user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      fee_lock_events: {
+        Row: {
+          actor_id: string | null;
+          after_total: number | null;
+          before_total: number | null;
+          created_at: string;
+          event_type: string;
+          fee_lock_id: string | null;
+          id: number;
+          metadata: Json;
+          reason: string | null;
+          revision: number | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id?: string | null;
+          after_total?: number | null;
+          before_total?: number | null;
+          created_at?: string;
+          event_type: string;
+          fee_lock_id?: string | null;
+          id?: never;
+          metadata?: Json;
+          reason?: string | null;
+          revision?: number | null;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          after_total?: number | null;
+          before_total?: number | null;
+          created_at?: string;
+          event_type?: string;
+          fee_lock_id?: string | null;
+          id?: never;
+          metadata?: Json;
+          reason?: string | null;
+          revision?: number | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fee_lock_events_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_events_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_events_fee_lock_fkey';
+            columns: ['fee_lock_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'fee_locks';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      fee_lock_invoice_links: {
+        Row: {
+          charged_total: number;
+          created_at: string;
+          created_by: string | null;
+          fee_lock_id: string;
+          fee_lock_revision: number;
+          id: string;
+          invoice_id: string;
+          suggested_total: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          charged_total: number;
+          created_at?: string;
+          created_by?: string | null;
+          fee_lock_id: string;
+          fee_lock_revision: number;
+          id?: string;
+          invoice_id: string;
+          suggested_total: number;
+          ws_id: string;
+        };
+        Update: {
+          charged_total?: number;
+          created_at?: string;
+          created_by?: string | null;
+          fee_lock_id?: string;
+          fee_lock_revision?: number;
+          id?: string;
+          invoice_id?: string;
+          suggested_total?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fee_lock_invoice_links_fee_lock_fkey';
+            columns: ['fee_lock_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'fee_locks';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_invoice_links_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'finance_invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_invoice_links_revision_fkey';
+            columns: ['fee_lock_id', 'fee_lock_revision'];
+            isOneToOne: true;
+            referencedRelation: 'fee_lock_revisions';
+            referencedColumns: ['fee_lock_id', 'revision'];
+          },
+          {
+            foreignKeyName: 'fee_lock_invoice_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_invoice_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_invoice_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      fee_lock_lines: {
+        Row: {
+          adjustment_amount: number;
+          baseline_amount: number | null;
+          baseline_quantity: number | null;
+          fee_lock_id: string;
+          group_id: string | null;
+          group_name_snapshot: string | null;
+          id: string;
+          kind: string;
+          label: string;
+          line_amount: number;
+          product_id: string | null;
+          quantity: number;
+          reason: string | null;
+          sort_order: number;
+          unit_id: string | null;
+          unit_label: string | null;
+          unit_price: number;
+          warehouse_id: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          adjustment_amount?: number;
+          baseline_amount?: number | null;
+          baseline_quantity?: number | null;
+          fee_lock_id: string;
+          group_id?: string | null;
+          group_name_snapshot?: string | null;
+          id?: string;
+          kind: string;
+          label: string;
+          line_amount: number;
+          product_id?: string | null;
+          quantity: number;
+          reason?: string | null;
+          sort_order?: number;
+          unit_id?: string | null;
+          unit_label?: string | null;
+          unit_price: number;
+          warehouse_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          adjustment_amount?: number;
+          baseline_amount?: number | null;
+          baseline_quantity?: number | null;
+          fee_lock_id?: string;
+          group_id?: string | null;
+          group_name_snapshot?: string | null;
+          id?: string;
+          kind?: string;
+          label?: string;
+          line_amount?: number;
+          product_id?: string | null;
+          quantity?: number;
+          reason?: string | null;
+          sort_order?: number;
+          unit_id?: string | null;
+          unit_label?: string | null;
+          unit_price?: number;
+          warehouse_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fee_lock_lines_fee_lock_fkey';
+            columns: ['fee_lock_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'fee_locks';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_lines_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_lines_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_lines_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_lines_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_lines_product_id_fkey';
+            columns: ['product_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_products';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_lines_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_lines_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_lines_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      fee_lock_revisions: {
+        Row: {
+          fee_lock_id: string;
+          id: string;
+          locked_at: string;
+          locked_by: string | null;
+          revision: number;
+          snapshot: Json;
+          total_amount: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          fee_lock_id: string;
+          id?: string;
+          locked_at?: string;
+          locked_by?: string | null;
+          revision: number;
+          snapshot: Json;
+          total_amount: number;
+          ws_id: string;
+        };
+        Update: {
+          fee_lock_id?: string;
+          id?: string;
+          locked_at?: string;
+          locked_by?: string | null;
+          revision?: number;
+          snapshot?: Json;
+          total_amount?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fee_lock_revisions_fee_lock_fkey';
+            columns: ['fee_lock_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'fee_locks';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_revisions_locked_by_fkey';
+            columns: ['locked_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_revisions_locked_by_fkey';
+            columns: ['locked_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_revisions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_revisions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_revisions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      fee_locks: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          id: string;
+          locked_at: string | null;
+          locked_by: string | null;
+          note: string | null;
+          period_month: string;
+          revision: number;
+          status: string;
+          student_id: string;
+          total_amount: number;
+          updated_at: string;
+          updated_by: string | null;
+          version: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          id?: string;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          note?: string | null;
+          period_month: string;
+          revision?: number;
+          status?: string;
+          student_id: string;
+          total_amount?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          version?: number;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          id?: string;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          note?: string | null;
+          period_month?: string;
+          revision?: number;
+          status?: string;
+          student_id?: string;
+          total_amount?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          version?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fee_locks_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_locked_by_fkey';
+            columns: ['locked_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_locked_by_fkey';
+            columns: ['locked_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_student_id_fkey';
+            columns: ['student_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_student_id_fkey';
+            columns: ['student_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_student_id_fkey';
+            columns: ['student_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_student_id_fkey';
+            columns: ['student_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      fee_notice_templates: {
+        Row: {
+          body: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          is_active: boolean;
+          item_format: string;
+          item_separator: string;
+          locale: string;
+          notice_grouping: string;
+          payment_line: string;
+          version: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          is_active?: boolean;
+          item_format: string;
+          item_separator: string;
+          locale?: string;
+          notice_grouping?: string;
+          payment_line?: string;
+          version: number;
+          ws_id: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          is_active?: boolean;
+          item_format?: string;
+          item_separator?: string;
+          locale?: string;
+          notice_grouping?: string;
+          payment_line?: string;
+          version?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fee_notice_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_notice_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_notice_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_notice_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_notice_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -36342,17 +37072,20 @@ export type Database = {
           created_at: string | null;
           project_id: string;
           task_id: string;
+          ticket_number: number | null;
         };
         ComputedFields: never;
         Insert: {
           created_at?: string | null;
           project_id: string;
           task_id: string;
+          ticket_number?: number | null;
         };
         Update: {
           created_at?: string | null;
           project_id?: string;
           task_id?: string;
+          ticket_number?: number | null;
         };
         Relationships: [
           {
@@ -36613,9 +37346,11 @@ export type Database = {
           id: string;
           lead_id: string | null;
           name: string;
+          next_ticket_number: number;
           priority: Database['public']['Enums']['task_priority'] | null;
           start_date: string | null;
           status: string | null;
+          ticket_key: string | null;
           updated_at: string | null;
           ws_id: string;
         };
@@ -36632,9 +37367,11 @@ export type Database = {
           id?: string;
           lead_id?: string | null;
           name: string;
+          next_ticket_number?: number;
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           status?: string | null;
+          ticket_key?: string | null;
           updated_at?: string | null;
           ws_id: string;
         };
@@ -36650,9 +37387,11 @@ export type Database = {
           id?: string;
           lead_id?: string | null;
           name?: string;
+          next_ticket_number?: number;
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           status?: string | null;
+          ticket_key?: string | null;
           updated_at?: string | null;
           ws_id?: string;
         };
@@ -42029,6 +42768,8 @@ export type Database = {
           is_public: boolean | null;
           legacy_content: string | null;
           name: string | null;
+          parent_id: string | null;
+          position: number | null;
           ws_id: string | null;
         };
         ComputedFields: never;
@@ -42039,6 +42780,8 @@ export type Database = {
           is_public?: boolean | null;
           legacy_content?: string | null;
           name?: string | null;
+          parent_id?: string | null;
+          position?: number | null;
           ws_id?: string | null;
         };
         Update: {
@@ -42048,9 +42791,18 @@ export type Database = {
           is_public?: boolean | null;
           legacy_content?: string | null;
           name?: string | null;
+          parent_id?: string | null;
+          position?: number | null;
           ws_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_documents_parent_id_fkey';
+            columns: ['parent_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_documents';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'workspace_documents_ws_id_fkey';
             columns: ['ws_id'];
@@ -49050,6 +49802,16 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      add_board_sprint: {
+        Args: { p_actor_id?: string; p_board_id: string; p_ws_id: string };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       add_platform_entity_creation_limit_table: {
         Args: {
           p_notes?: string;
@@ -49294,6 +50056,10 @@ export type Database = {
       archive_old_notifications: {
         Args: { p_days_threshold?: number };
         Returns: number;
+      };
+      assign_task_cycle: {
+        Args: { p_cycle_id: string; p_task_id: string };
+        Returns: undefined;
       };
       atomic_sync_token_operation: {
         Args: {
@@ -52355,6 +53121,10 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      list_board_unplanned_task_ids: {
+        Args: { p_board_id: string; p_ws_id: string };
+        Returns: string[];
+      };
       list_deferred_calendar_google_imports: {
         Args: {
           p_auth_token_id?: string;
@@ -52809,6 +53579,21 @@ export type Database = {
           remaining_credits: number;
           success: boolean;
         }[];
+      };
+      remove_board_sprint: {
+        Args: {
+          p_actor_id?: string;
+          p_board_id: string;
+          p_cycle_id: string;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       remove_task_label_with_actor: {
         Args: {
@@ -56527,12 +57312,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -56556,11 +57341,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -56581,11 +57366,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -56606,11 +57391,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema['Enums']
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -56623,11 +57408,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema['CompositeTypes']
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }

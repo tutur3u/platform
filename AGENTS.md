@@ -5,6 +5,8 @@
 This file contains cross-cutting repository constraints. Task-specific procedures
 live in `plugins/tuturuuu/skills/*/references/` and `apps/docs`.
 
+Cloudflare migration API and runtime references: [docs/agents/cloudflare](docs/agents/cloudflare/README.md).
+
 Read the root and nearest applicable `AGENTS.md`. Load a focused skill only when
 its capability helps the current task; read linked references by topic rather than
 loading a stack of checklists before every edit. Repository rules supplement the
@@ -47,13 +49,21 @@ for roles, independent review, publication, receipts and retirement.
   skips or fails, stop and report the blocker rather than pushing manually.
 - Do not commit secrets, API keys, tokens, credentials, or raw sensitive values.
   Reference environment variables by name only.
+- Keep conversation history out of maintainer-facing text. Code comments, docs,
+  commit messages and PR titles and descriptions describe the code as it is and
+  why. Never record the conversation, prompt, review rounds or iteration history
+  in them: no "as requested", "per the user", "as discussed", "in the previous
+  iteration", "by this lane", or agent names with times. Comments and docs also
+  avoid "previously", "changed from", "now uses" and "used to be"; state the
+  current behavior and its reason. A PR or commit body may describe the diff;
+  the discussion that led to it stays in the PR thread. Agent sessions run a
+  PreToolUse check that refuses such edits: rephrase, never work around it.
 - Do not manually edit `package.json` to add or update dependencies. Use the
   package manager command for the owning workspace.
-- Gradually adopt Oxlint/Oxfmt through explicit owned-file paths with
-  `bun oxc:lint`, `bun oxc:format`, and `bun oxc:write`. Retain Biome gates until
-  each scope records rule/formatting parity and migrates CI, editors and generators
-  together. Do not run global formatters or Vite+ monorepo migrators for scoped
-  work. See [adoption guidance](apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx).
+- Use Oxfmt for formatting and Oxlint for JavaScript/TypeScript linting. Run
+  `bun format`, `bun lint`, or `bun ff` to apply safe fixes and formatting.
+  Scoped edits use `bun oxc:lint`, `bun oxc:format`, and `bun oxc:write` with
+  explicit paths. See [tooling guidance](apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx).
 - Plan cf CLI adoption over Wrangler per verified operation. Preserve existing
   commands/configuration until authentication, target identity, bindings/migrations,
   emitted artifacts and rollback parity are established; retain Wrangler for gaps.
@@ -105,6 +115,8 @@ for roles, independent review, publication, receipts and retirement.
   post-merge worktree and local task-branch cleanup mandated below.
 
 ## 3. Mandatory Actions
+
+- Before writing web UI source, read the [UI design skill](plugins/tuturuuu/skills/tuturuuu-ui-design/SKILL.md) and follow its linked component map and review checklist.
 
 - Run `git status --short` before editing. If dirty or untracked paths exist,
   treat them as user-owned or other-agent-owned until proven otherwise.

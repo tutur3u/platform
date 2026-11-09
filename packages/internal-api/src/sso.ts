@@ -13,8 +13,10 @@ export interface SsoClientInput {
   nameIdFormat: typeof SSO_NAME_ID_FORMAT;
   requestSigning: SsoRequestSigning;
 }
-export interface SsoManagedClient
-  extends Omit<SsoClientInput, 'requestSigning'> {
+export interface SsoManagedClient extends Omit<
+  SsoClientInput,
+  'requestSigning'
+> {
   id: string;
   enabled: boolean;
   revision: number;

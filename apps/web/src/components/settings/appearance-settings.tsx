@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { persistLocalePreference } from '@tuturuuu/ui/custom/locale-preference';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { VersionBadgeSetting } from '@tuturuuu/ui/custom/version-badge';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
@@ -13,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   detectLocaleTimeFormat,
@@ -111,166 +111,164 @@ export default function AppearanceSettings({
 
   return (
     <div className="space-y-8">
-      <SettingItemTab
-        title={t('common.theme')}
-        description="Select your preferred theme for the application."
-      >
-        <RadioGroup
-          defaultValue={theme}
-          onValueChange={setTheme}
-          className="grid grid-cols-3 gap-4"
+      <SettingsSection>
+        <SettingItemTab
+          layout="stacked"
+          title={t('common.theme')}
+          description="Select your preferred theme for the application."
         >
-          <div>
-            <RadioGroupItem value="light" id="light" className="peer sr-only" />
-            <Label
-              htmlFor="light"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-            >
-              <div className="mb-3 h-20 w-full rounded-md bg-[#ecedef] shadow-sm" />
-              {t('common.light')}
-            </Label>
-          </div>
-          <div>
-            <RadioGroupItem value="dark" id="dark" className="peer sr-only" />
-            <Label
-              htmlFor="dark"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-            >
-              <div className="mb-3 h-20 w-full rounded-md bg-slate-950 shadow-sm" />
-              {t('common.dark')}
-            </Label>
-          </div>
-          <div>
-            <RadioGroupItem
-              value="system"
-              id="system"
-              className="peer sr-only"
-            />
-            <Label
-              htmlFor="system"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-            >
-              <div className="mb-3 h-20 w-full rounded-md bg-linear-to-r from-[#ecedef] to-slate-950 shadow-sm" />
-              {t('common.system')}
-            </Label>
-          </div>
-        </RadioGroup>
-      </SettingItemTab>
+          <RadioGroup
+            defaultValue={theme}
+            onValueChange={setTheme}
+            className="grid grid-cols-3 gap-3"
+          >
+            <div>
+              <RadioGroupItem
+                value="light"
+                id="light"
+                className="peer sr-only"
+              />
+              <Label
+                htmlFor="light"
+                className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-2 font-normal hover:bg-accent hover:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-data-[state=checked]:border-foreground peer-data-[state=checked]:ring-1 peer-data-[state=checked]:ring-foreground"
+              >
+                <div className="h-14 w-full rounded-md border bg-[#ecedef] shadow-sm" />
+                {t('common.light')}
+              </Label>
+            </div>
+            <div>
+              <RadioGroupItem value="dark" id="dark" className="peer sr-only" />
+              <Label
+                htmlFor="dark"
+                className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-2 font-normal hover:bg-accent hover:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-data-[state=checked]:border-foreground peer-data-[state=checked]:ring-1 peer-data-[state=checked]:ring-foreground"
+              >
+                <div className="h-14 w-full rounded-md border bg-slate-950 shadow-sm" />
+                {t('common.dark')}
+              </Label>
+            </div>
+            <div>
+              <RadioGroupItem
+                value="system"
+                id="system"
+                className="peer sr-only"
+              />
+              <Label
+                htmlFor="system"
+                className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-2 font-normal hover:bg-accent hover:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-data-[state=checked]:border-foreground peer-data-[state=checked]:ring-1 peer-data-[state=checked]:ring-foreground"
+              >
+                <div className="h-14 w-full rounded-md border bg-linear-to-r from-[#ecedef] to-slate-950 shadow-sm" />
+                {t('common.system')}
+              </Label>
+            </div>
+          </RadioGroup>
+        </SettingItemTab>
 
-      {canManageVersionBadge ? (
-        <>
-          <Separator />
+        {canManageVersionBadge ? (
           <VersionBadgeSetting canManage={canManageVersionBadge} />
-        </>
-      ) : null}
+        ) : null}
+      </SettingsSection>
 
-      <Separator />
-
-      <SettingItemTab
-        title={t('common.language')}
-        description={t('settings-account.language-description')}
-      >
-        <Select
-          defaultValue={locale}
-          onValueChange={handleLocaleChange}
-          disabled={isPending}
+      <SettingsSection>
+        <SettingItemTab
+          title={t('common.language')}
+          description={t('settings-account.language-description')}
         >
-          <SelectTrigger className="w-50">
-            <SelectValue placeholder={t('common.select-language')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="en">English</SelectItem>
-            <SelectItem value="vi">Tiếng Việt</SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingItemTab>
+          <Select
+            defaultValue={locale}
+            onValueChange={handleLocaleChange}
+            disabled={isPending}
+          >
+            <SelectTrigger className="w-50">
+              <SelectValue placeholder={t('common.select-language')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="vi">Tiếng Việt</SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingItemTab>
 
-      <Separator />
-
-      <SettingItemTab
-        title={t('settings-account.timezone')}
-        description={t('settings-account.timezone-description')}
-      >
-        <Select
-          value={calendarSettings?.timezone || 'auto'}
-          onValueChange={handleTimezoneChange}
-          disabled={isLoadingSettings || updateCalendarSettings.isPending}
+        <SettingItemTab
+          title={t('settings-account.timezone')}
+          description={t('settings-account.timezone-description')}
         >
-          <SelectTrigger className="w-75">
-            <SelectValue placeholder={t('settings-appearance.auto-detect')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="auto">
-              {t('settings-appearance.auto-detect')} ({systemTimezone})
-            </SelectItem>
-            {timezones.map((tz) => (
-              <SelectItem key={tz} value={tz}>
-                {tz}
+          <Select
+            value={calendarSettings?.timezone || 'auto'}
+            onValueChange={handleTimezoneChange}
+            disabled={isLoadingSettings || updateCalendarSettings.isPending}
+          >
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder={t('settings-appearance.auto-detect')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">
+                {t('settings-appearance.auto-detect')} ({systemTimezone})
               </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </SettingItemTab>
+              {timezones.map((tz) => (
+                <SelectItem key={tz} value={tz}>
+                  {tz}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingItemTab>
 
-      <Separator />
-
-      <SettingItemTab
-        title={t('settings-account.first-day-of-week')}
-        description={t('settings-account.first-day-of-week-description')}
-      >
-        <Select
-          value={calendarSettings?.first_day_of_week || 'auto'}
-          onValueChange={handleFirstDayChange}
-          disabled={isLoadingSettings || updateCalendarSettings.isPending}
+        <SettingItemTab
+          title={t('settings-account.first-day-of-week')}
+          description={t('settings-account.first-day-of-week-description')}
         >
-          <SelectTrigger className="w-50">
-            <SelectValue placeholder={t('settings-appearance.auto')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="auto">
-              {t('settings-appearance.auto')}
-            </SelectItem>
-            <SelectItem value="sunday">
-              {t('settings-appearance.sunday')}
-            </SelectItem>
-            <SelectItem value="monday">
-              {t('settings-appearance.monday')}
-            </SelectItem>
-            <SelectItem value="saturday">
-              {t('settings-appearance.saturday')}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingItemTab>
+          <Select
+            value={calendarSettings?.first_day_of_week || 'auto'}
+            onValueChange={handleFirstDayChange}
+            disabled={isLoadingSettings || updateCalendarSettings.isPending}
+          >
+            <SelectTrigger className="w-50">
+              <SelectValue placeholder={t('settings-appearance.auto')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">
+                {t('settings-appearance.auto')}
+              </SelectItem>
+              <SelectItem value="sunday">
+                {t('settings-appearance.sunday')}
+              </SelectItem>
+              <SelectItem value="monday">
+                {t('settings-appearance.monday')}
+              </SelectItem>
+              <SelectItem value="saturday">
+                {t('settings-appearance.saturday')}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingItemTab>
 
-      <Separator />
-
-      <SettingItemTab
-        title={t('settings-account.time-format')}
-        description={t('settings-account.time-format-description')}
-      >
-        <Select
-          value={calendarSettings?.time_format || 'auto'}
-          onValueChange={handleTimeFormatChange}
-          disabled={isLoadingSettings || updateCalendarSettings.isPending}
+        <SettingItemTab
+          title={t('settings-account.time-format')}
+          description={t('settings-account.time-format-description')}
         >
-          <SelectTrigger className="w-50">
-            <SelectValue placeholder={t('settings-appearance.auto')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="auto">
-              {t('settings-appearance.auto')} (
-              {detectedTimeFormat === '12h' ? '1:30 PM' : '13:30'})
-            </SelectItem>
-            <SelectItem value="12h">
-              {t('settings-appearance.12-hour')} (1:30 PM)
-            </SelectItem>
-            <SelectItem value="24h">
-              {t('settings-appearance.24-hour')} (13:30)
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingItemTab>
+          <Select
+            value={calendarSettings?.time_format || 'auto'}
+            onValueChange={handleTimeFormatChange}
+            disabled={isLoadingSettings || updateCalendarSettings.isPending}
+          >
+            <SelectTrigger className="w-50">
+              <SelectValue placeholder={t('settings-appearance.auto')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">
+                {t('settings-appearance.auto')} (
+                {detectedTimeFormat === '12h' ? '1:30 PM' : '13:30'})
+              </SelectItem>
+              <SelectItem value="12h">
+                {t('settings-appearance.12-hour')} (1:30 PM)
+              </SelectItem>
+              <SelectItem value="24h">
+                {t('settings-appearance.24-hour')} (13:30)
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingItemTab>
+      </SettingsSection>
     </div>
   );
 }

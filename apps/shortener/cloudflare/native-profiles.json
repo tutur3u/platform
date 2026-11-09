@@ -1,0 +1,17 @@
+{
+  "staging": {
+    "workerName": "tuturuuu-shortener-vite-staging",
+    "workersDev": true,
+    "vars": { "TUTURUUU_NOINDEX": "1" }
+  },
+  "production": {
+    "workerName": "tuturuuu-shortener",
+    "workersDev": false,
+    "vars": {
+      "SHORTENER_CANONICAL_HOST_ENABLED": "1",
+      "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
+      "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+      "NEXT_PUBLIC_APP_URL": "https://ttr.gg"
+    }
+  }
+}

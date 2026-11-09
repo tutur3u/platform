@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.38.0](https://github.com/tutur3u/platform/compare/types-v0.37.0...types-v0.38.0) (2026-11-08)
+
+
+### Features
+
+* **auth:** bind cross-app login handoffs with PKCE and report session assurance ([#7394](https://github.com/tutur3u/platform/issues/7394)) ([1202eb8](https://github.com/tutur3u/platform/commit/1202eb86e09b46a8c7313d6c81c24365eef92a50))
+* **database:** tutoring automation foundation ([#7254](https://github.com/tutur3u/platform/issues/7254)) ([dcc7d73](https://github.com/tutur3u/platform/commit/dcc7d73e488cabedda8874803201ce5c69e57b7f))
+* **mastermind:** add the Inbox ask card and accept the new hub fields ([#7395](https://github.com/tutur3u/platform/issues/7395)) ([fe316e8](https://github.com/tutur3u/platform/commit/fe316e8f95f3e569e26be81faac9fef56c8f8a1f))
+* **mastermind:** add the Inbox ask-v2 contract and shared fixture ([#7390](https://github.com/tutur3u/platform/issues/7390)) ([3371d16](https://github.com/tutur3u/platform/commit/3371d16e41c65551939195fb8e2cdcdfb71ccdcf))
+* **tasks:** add per-board sprint data model ([0f20cc9](https://github.com/tutur3u/platform/commit/0f20cc99d46ffa3ae385cdab020f06bcf466f325)) ([#7043](https://github.com/tutur3u/platform/issues/7043)) ([9b08aef](https://github.com/tutur3u/platform/commit/9b08aef8da70cb686870790925d68368afef4f07))
+* **tasks:** number tasks per project with editable keys ([39e5342](https://github.com/tutur3u/platform/commit/39e534251f9d4b643463043c6af4e77b480bb8bf))
+* **tasks:** plan up to five sprints ahead and park tasks outside sprints ([#7224](https://github.com/tutur3u/platform/issues/7224)) ([d114c02](https://github.com/tutur3u/platform/commit/d114c02b0f4ea11bb41ea68c057d9d50bf1abf1e))
+
+
+### Bug Fixes
+
+* **db:** consolidate has_workspace_permission and add manage_mastermind ([#7302](https://github.com/tutur3u/platform/issues/7302)) ([29ef37b](https://github.com/tutur3u/platform/commit/29ef37bf1f47571ade70b0ab3ba879554fa5aa79))
+* **db:** leave one workspace's projects unkeyed and run ticket key migrations in a transaction ([485915b](https://github.com/tutur3u/platform/commit/485915bc4a5b7f7a54b12ff816d548ea890ec2a2))
+* **db:** rename the assign_task_cycle rollback to the re-timed migration ([e495e55](https://github.com/tutur3u/platform/commit/e495e550df36907b7ce9863b37383d7214e3344f))
+* **devbox:** share identity grant predicate before ownership fence ([#7142](https://github.com/tutur3u/platform/issues/7142)) ([9a8529f](https://github.com/tutur3u/platform/commit/9a8529f935d407d4b4425513a616f8608ae09145))
+* **permissions:** keep role workspace ownership consistent ([#7206](https://github.com/tutur3u/platform/issues/7206)) ([bcd7671](https://github.com/tutur3u/platform/commit/bcd76715785fb17e703e934c3e2b36e672222647))
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+* **tasks:** enforce one cycle per task in the assign path, not a unique index ([016b0db](https://github.com/tutur3u/platform/commit/016b0dbb4e32975be640c1c63936a6b9583ee76b))
+
 ## [0.37.0](https://github.com/tutur3u/platform/compare/types-v0.36.0...types-v0.37.0) (2026-10-24)
 
 

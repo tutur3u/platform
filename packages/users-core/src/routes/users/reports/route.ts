@@ -6,6 +6,10 @@ import {
   MAX_MONTHLY_REPORT_TEXT_LENGTH,
   MAX_MONTHLY_REPORT_TITLE_LENGTH,
 } from '../../../features/reports/report-limits';
+import {
+  isReportMonth,
+  resolveReportMonth,
+} from '../../../features/reports/report-month';
 import { getUserGroupMembershipsForActor } from '../../../lib/user-groups/groups-utils';
 import { getUserGroupRoutePermissions } from '../../../lib/user-groups/route-auth';
 import {
@@ -25,6 +29,7 @@ import {
 } from './report-list-query';
 import {
   buildReportPeriodFilter,
+  buildReportStageMonthFilter,
   resolveReportPeriodTimezone,
 } from './report-period-filter';
 import {
@@ -66,6 +71,9 @@ const ListReportsSchema = z.object({
     .optional(),
   periodStart: z.iso.date().optional(),
   periodEnd: z.iso.date().optional(),
+  // Sent reports: the month they were sent. Other stages: the month they
+  // cover (saved period, else estimated from created_at).
+  month: z.string().refine(isReportMonth).optional(),
   cadence: z
     .enum(['all', 'weekly', 'monthly', 'quarterly', 'yearly'])
     .default('monthly'),
@@ -107,7 +115,9 @@ export async function GET(request: Request, { params }: Params) {
       !parsed.success ||
       (parsed.data.periodStart &&
         parsed.data.periodEnd &&
-        parsed.data.periodStart > parsed.data.periodEnd)
+        parsed.data.periodStart > parsed.data.periodEnd) ||
+      // A month and a custom range are alternatives, never combined.
+      (parsed.data.month && (parsed.data.periodStart || parsed.data.periodEnd))
     ) {
       return NextResponse.json(
         {
@@ -154,6 +164,7 @@ export async function GET(request: Request, { params }: Params) {
         pageSize: parsed.data.pageSize,
         summaryPartial: false,
         total: 0,
+        undatedSentCount: null,
         workspace: { id: wsId, timezone: null },
       });
     }
@@ -168,18 +179,25 @@ export async function GET(request: Request, { params }: Params) {
       .eq('id', wsId)
       .single()
       .then((result) => result);
-    const periodFilter =
-      parsed.data.periodStart || parsed.data.periodEnd
-        ? await workspacePromise.then((result) => {
-            if (result.error) throw result.error;
-            return buildReportPeriodFilter({
-              periodStart: parsed.data.periodStart,
-              periodEnd: parsed.data.periodEnd,
-              timezone: resolveReportPeriodTimezone(
-                result.data?.timezone,
-                parsed.data.timezone
-              ),
-            });
+    const timezonePromise = Promise.resolve(workspacePromise).then((result) => {
+      if (result.error) throw result.error;
+      return resolveReportPeriodTimezone(
+        result.data?.timezone,
+        parsed.data.timezone
+      );
+    });
+    // Awaited below; never an unhandled rejection if the list fails first.
+    timezonePromise.catch(() => {});
+    const periodFilter = parsed.data.month
+      ? buildReportStageMonthFilter({
+          month: parsed.data.month,
+          timezone: await timezonePromise,
+        })
+      : parsed.data.periodStart || parsed.data.periodEnd
+        ? buildReportPeriodFilter({
+            periodStart: parsed.data.periodStart,
+            periodEnd: parsed.data.periodEnd,
+            timezone: await timezonePromise,
           })
         : null;
 
@@ -377,17 +395,23 @@ export async function GET(request: Request, { params }: Params) {
     const testsByReport = new Map(
       (testDeliveries.data ?? []).map((row) => [row.report_id, row])
     );
-    const data = (listResult.data ?? []).map((row) => ({
-      ...row,
-      test_delivery: row.id ? (testsByReport.get(row.id) ?? null) : null,
-      creator_name:
-        row.creator_display_name ??
-        row.creator_full_name ??
-        row.creator_email ??
-        null,
-      user_name:
-        row.user_display_name ?? row.user_full_name ?? row.user_email ?? null,
-    }));
+    const timezone = await timezonePromise;
+    const data = (listResult.data ?? []).map((row) => {
+      const reportMonth = resolveReportMonth(row, timezone);
+      return {
+        ...row,
+        report_month: reportMonth?.month ?? null,
+        report_month_estimated: reportMonth?.estimated ?? false,
+        test_delivery: row.id ? (testsByReport.get(row.id) ?? null) : null,
+        creator_name:
+          row.creator_display_name ??
+          row.creator_full_name ??
+          row.creator_email ??
+          null,
+        user_name:
+          row.user_display_name ?? row.user_full_name ?? row.user_email ?? null,
+      };
+    });
 
     return NextResponse.json({
       counts,
@@ -397,6 +421,9 @@ export async function GET(request: Request, { params }: Params) {
       pageSize: parsed.data.pageSize,
       summaryPartial,
       total: listResult.count,
+      // Sent reports without a send date match no month, so a month read
+      // never sees them and their number is unknown: always null, never 0.
+      undatedSentCount: null,
       workspace: workspaceResult.data,
     });
   } catch (error) {
@@ -501,6 +528,12 @@ export async function POST(request: Request, { params }: Params) {
       })
       .select('id')
       .single();
+    // A concurrent create or a title already used for this student and class.
+    if (result.error?.code === '23505')
+      return NextResponse.json(
+        { message: 'Duplicate report exists' },
+        { status: 409 }
+      );
     if (result.error) throw result.error;
     return NextResponse.json(result.data);
   } catch (error) {

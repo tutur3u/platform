@@ -50,9 +50,8 @@ describe('managed asset import job route', () => {
   });
 
   it('creates a job at the protected-report-safe limit', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/route');
     const response = await POST(createRequest(75), {
       params: Promise.resolve({ wsId: 'personal' }),
     });
@@ -65,9 +64,8 @@ describe('managed asset import job route', () => {
   });
 
   it('rejects oversized jobs before writing an invalid report', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/route');
     const response = await POST(createRequest(76), {
       params: Promise.resolve({ wsId: 'personal' }),
     });

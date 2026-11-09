@@ -89,12 +89,10 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
           wsId={workspace.id}
           workspace={workspace}
           defaultCollapsed={defaultCollapsed}
-          links={
-            await getNavigationLinks({
-              permissions: permissions ?? undefined,
-              personalOrWsId: workspaceSlug,
-            })
-          }
+          links={await getNavigationLinks({
+            permissions: permissions ?? undefined,
+            personalOrWsId: workspaceSlug,
+          })}
           actions={
             <Suspense
               key={user.id}

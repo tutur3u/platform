@@ -156,7 +156,6 @@ function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
   const { orientation } = useCarousel();
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: role="group" with aria-roledescription="slide" is intentional WAI-ARIA carousel pattern
     <div
       role="group"
       aria-roledescription="slide"

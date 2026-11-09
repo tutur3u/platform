@@ -252,6 +252,23 @@ describe('auth callback route', () => {
     );
   });
 
+  it.each([
+    'https://rewise.me/workspace/personal',
+    'https://www.rewise.me',
+    'https://rewise.school/workspace/personal',
+    'https://app.rewise.school',
+  ])('rejects released Rewise domain returnUrl %s', async (returnUrl) => {
+    const response = await GET(
+      new NextRequest(
+        `https://tuturuuu.com/api/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`
+      )
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/personal'
+    );
+  });
+
   it('rejects managed wildcard hostname lookalike returnUrl values', async () => {
     const managedLookalikeReturnUrl = encodeURIComponent(
       'https://vc.tuturuuu.com.evil.test/workspace/personal/plans'

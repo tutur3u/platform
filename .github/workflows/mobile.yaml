@@ -19,6 +19,7 @@ on:
       - "scripts/check-mobile-shadcn-imports.js"
       - "scripts/dart-directive-uris.js"
       - ".github/actions/setup-flutter-with-cache/**"
+      - ".github/actions/cache-litertlm-native/**"
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
@@ -32,6 +33,7 @@ on:
       - "scripts/check-mobile-shadcn-imports.js"
       - "scripts/dart-directive-uris.js"
       - ".github/actions/setup-flutter-with-cache/**"
+      - ".github/actions/cache-litertlm-native/**"
 
 permissions:
   contents: read
@@ -385,7 +387,7 @@ jobs:
   tests:
     name: Mobile Tests (${{ matrix.shard }})
     needs: [check-ci]
-    if: (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: (needs.check-ci.outputs.should_run == 'true' && (github.run_attempt > 1 || toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').tests) != 'false') && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -403,6 +405,9 @@ jobs:
           channel: stable
       - name: Install dependencies
         run: flutter pub get
+      - name: Prepare verified LiteRT-LM native input
+        uses: ./.github/actions/cache-litertlm-native
+
       - name: Run test shard
         run: flutter test --concurrency=2 --total-shards=4 --shard-index=${{ matrix.shard }} -r expanded
 
@@ -465,6 +470,9 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: flutter pub get
         working-directory: apps/mobile
+      - name: Prepare verified LiteRT-LM native input
+        uses: ./.github/actions/cache-litertlm-native
+
       - name: Verify native/web room protocol against local Cloudflare
         run: bun apps/meet-realtime/tests/mobile-local-check.ts
 
@@ -479,4 +487,13 @@ jobs:
           QUALITY_RESULT: ${{ needs.quality.result }}
           TEST_RESULT: ${{ needs.tests.result }}
           REALTIME_RESULT: ${{ needs.realtime-parity.result }}
-        run: test "$QUALITY_RESULT" = success && test "$TEST_RESULT" = success && test "$REALTIME_RESULT" = success
+          TEST_REQUIRED: ${{ github.run_attempt > 1 || toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').tests) != 'false' }}
+        run: |
+          test "$QUALITY_RESULT" = success
+          test "$REALTIME_RESULT" = success
+          if [ "$TEST_RESULT" = success ]; then
+            exit 0
+          fi
+          test "$TEST_REQUIRED" = false
+          test "$TEST_RESULT" = skipped
+          echo 'Flutter unit shards omitted for unrelated Node/Bun inputs; no Flutter test execution is claimed. Mobile analysis and realtime parity passed.' >> "$GITHUB_STEP_SUMMARY"

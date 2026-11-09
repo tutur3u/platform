@@ -27,6 +27,7 @@ describe('atomic invoice mutations', () => {
     const builder = {
       select: () => builder,
       eq: () => builder,
+      limit: () => builder,
       maybeSingle: mocks.maybeSingle,
     };
     mocks.access.mockResolvedValue({

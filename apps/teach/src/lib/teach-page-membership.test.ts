@@ -13,9 +13,7 @@ const boundaries = [
   {
     name: 'education/attempts/[attemptId]/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/attempts/[attemptId]/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/attempts/[attemptId]/page'),
     permission: 'view_user_groups_reports',
     readsData: true,
   },
@@ -29,99 +27,77 @@ const boundaries = [
   {
     name: 'education/courses/[courseId]/builder/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/builder/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/builder/page'),
     permission: 'update_user_groups',
     readsData: true,
   },
   {
     name: 'education/courses/[courseId]/layout.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/layout'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/layout'),
     permission: 'view_user_groups',
     readsData: true,
   },
   {
     name: 'education/courses/[courseId]/modules/[moduleId]/content/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/content/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/content/page'),
     permission: 'update_user_groups',
     readsData: true,
   },
   {
     name: 'education/courses/[courseId]/modules/[moduleId]/flashcards/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/flashcards/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/flashcards/page'),
     permission: 'update_user_groups',
     readsData: true,
   },
   {
     name: 'education/courses/[courseId]/modules/[moduleId]/layout.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/layout'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/layout'),
     permission: 'update_user_groups',
     readsData: true,
   },
   {
     name: 'education/courses/[courseId]/modules/[moduleId]/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/page'),
     permission: 'update_user_groups',
     readsData: true,
   },
   {
     name: 'education/courses/[courseId]/modules/[moduleId]/quiz-sets/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quiz-sets/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quiz-sets/page'),
     permission: 'update_user_groups',
     readsData: true,
   },
   {
     name: 'education/courses/[courseId]/modules/[moduleId]/quizzes/new/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quizzes/new/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quizzes/new/page'),
     permission: 'update_user_groups',
     readsData: false,
   },
   {
     name: 'education/courses/[courseId]/modules/[moduleId]/quizzes/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quizzes/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quizzes/page'),
     permission: 'update_user_groups',
     readsData: true,
   },
   {
     name: 'education/courses/[courseId]/modules/[moduleId]/resources/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/resources/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/resources/page'),
     permission: 'update_user_groups',
     readsData: true,
   },
   {
     name: 'education/courses/[courseId]/modules/[moduleId]/youtube-links/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/youtube-links/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/youtube-links/page'),
     permission: 'update_user_groups',
     readsData: true,
   },
@@ -135,54 +111,42 @@ const boundaries = [
   {
     name: 'education/library/flashcards/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/library/flashcards/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/library/flashcards/page'),
     permission: 'ai_lab',
     readsData: true,
   },
   {
     name: 'education/library/quiz-sets/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/library/quiz-sets/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/library/quiz-sets/page'),
     permission: 'ai_lab',
     readsData: true,
   },
   {
     name: 'education/library/quizzes/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/library/quizzes/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/library/quizzes/page'),
     permission: 'update_user_groups',
     readsData: true,
   },
   {
     name: 'education/quiz-sets/[setId]/layout.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/layout'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/layout'),
     permission: 'ai_lab',
     readsData: true,
   },
   {
     name: 'education/quiz-sets/[setId]/linked-modules/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/linked-modules/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/linked-modules/page'),
     permission: 'ai_lab',
     readsData: true,
   },
   {
     name: 'education/quiz-sets/[setId]/page.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/page'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/page'),
     permission: 'ai_lab',
     readsData: true,
   },
@@ -195,27 +159,21 @@ const boundaries = [
   {
     name: '(dashboard)/statistics/courses.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/statistics/courses'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/(dashboard)/statistics/courses'),
     permission: 'view_user_groups',
     readsData: true,
   },
   {
     name: '(dashboard)/statistics/flashcards.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/statistics/flashcards'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/(dashboard)/statistics/flashcards'),
     permission: 'ai_lab',
     readsData: true,
   },
   {
     name: '(dashboard)/statistics/quizzes.tsx',
     load: () =>
-      import(
-        '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/statistics/quizzes'
-      ),
+      import('@/app/[locale]/(dashboard)/[wsId]/(dashboard)/statistics/quizzes'),
     permission: 'update_user_groups',
     readsData: true,
   },

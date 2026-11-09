@@ -138,9 +138,8 @@ describe('workspace settings route CMS config access', () => {
   });
 
   it('reads ENABLE_CMS_GAMES through external project access', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route');
 
     const response = await GET(
       new Request(
@@ -176,9 +175,8 @@ describe('workspace settings route CMS config access', () => {
       ok: true,
     });
 
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route');
 
     const response = await PUT(
       new Request(
@@ -228,9 +226,8 @@ describe('workspace settings route default wallet access', () => {
     });
     mockFinanceAccess(admin.admin);
 
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route');
 
     const response = await PUT(
       new Request(
@@ -267,9 +264,8 @@ describe('workspace settings route default wallet access', () => {
     const admin = createSettingsAdmin();
     mockFinanceAccess(admin.admin);
 
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route');
 
     const response = await PUT(
       new Request(
@@ -312,9 +308,8 @@ describe('workspace settings route guest self-join access', () => {
   });
 
   it('reads guest self-join with the current satellite workspace session', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route');
 
     const request = new Request(
       `http://localhost/api/v1/workspaces/ws-1/settings/${ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID}`
@@ -342,9 +337,8 @@ describe('workspace settings route guest self-join access', () => {
   it('requires member management permission before updating guest self-join', async () => {
     const admin = createAdmin();
     mocks.createAdminClient.mockResolvedValue(admin.admin);
-    const { PUT } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
-    );
+    const { PUT } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route');
 
     const request = new Request(
       `http://localhost/api/v1/workspaces/ws-1/settings/${ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID}`,

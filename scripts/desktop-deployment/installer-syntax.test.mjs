@@ -20,82 +20,104 @@ async function helper(name, variable) {
   return script;
 }
 
-test('macOS updater helper parses without executing installation', {
-  skip: process.platform === 'win32',
-}, async () => {
-  const input = await helper('desktop_macos_installer', '_macosScript');
-  const result = spawnSync('/bin/sh', ['-n'], { input, encoding: 'utf8' });
-  assert.equal(result.status, 0, result.stderr);
-});
+test(
+  'macOS updater helper parses without executing installation',
+  {
+    skip: process.platform === 'win32',
+  },
+  async () => {
+    const input = await helper('desktop_macos_installer', '_macosScript');
+    const result = spawnSync('/bin/sh', ['-n'], { input, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+  }
+);
 
-test('Windows updater helper parses without executing installation', {
-  skip: process.platform !== 'win32',
-}, async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'tuturuuu-updater-syntax-'));
-  try {
-    const file = join(directory, 'installer.ps1');
-    await writeFile(file, await helper('desktop_installer', '_windowsScript'));
+test(
+  'Windows updater helper parses without executing installation',
+  {
+    skip: process.platform !== 'win32',
+  },
+  async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'tuturuuu-updater-syntax-'));
+    try {
+      const file = join(directory, 'installer.ps1');
+      await writeFile(
+        file,
+        await helper('desktop_installer', '_windowsScript')
+      );
+      const result = spawnSync(
+        'pwsh',
+        [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          '$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile($env:TUTURUUU_UPDATER_SCRIPT,[ref]$tokens,[ref]$errors) > $null; if ($errors.Count -gt 0) { $errors | ForEach-Object { $_.Message }; exit 1 }',
+        ],
+        {
+          encoding: 'utf8',
+          env: { ...process.env, TUTURUUU_UPDATER_SCRIPT: file },
+        }
+      );
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }
+);
+
+test(
+  'Linux restart waits for the previous process to exit',
+  {
+    skip: process.platform === 'win32',
+  },
+  async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'tuturuuu-restart-test-'));
+    const parent = spawn('/bin/sleep', ['30']);
+    const done = once(parent, 'exit');
+    let restart;
+    try {
+      const script = join(directory, 'relaunch.sh');
+      const executable = join(directory, 'app.sh');
+      await writeFile(
+        script,
+        await helper('desktop_installer', '_linuxScript')
+      );
+      await writeFile(executable, '#!/bin/sh\ntouch "$0.done"\n', {
+        mode: 0o700,
+      });
+      restart = spawn('/bin/sh', [script, String(parent.pid), executable]);
+      const restarted = once(restart, 'exit');
+      await setTimeout(100);
+      await assert.rejects(access(`${executable}.done`));
+      parent.kill('SIGTERM');
+      await done;
+      const [code] = await restarted;
+      assert.equal(code, 0);
+      await access(`${executable}.done`);
+    } finally {
+      parent.kill();
+      restart?.kill();
+      await rm(directory, { recursive: true, force: true });
+    }
+  }
+);
+
+test(
+  'Windows installer smoke script parses before native execution',
+  {
+    skip: process.platform !== 'win32',
+  },
+  () => {
     const result = spawnSync(
       'pwsh',
       [
         '-NoProfile',
         '-NonInteractive',
         '-Command',
-        '$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile($env:TUTURUUU_UPDATER_SCRIPT,[ref]$tokens,[ref]$errors) > $null; if ($errors.Count -gt 0) { $errors | ForEach-Object { $_.Message }; exit 1 }',
+        '$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path scripts/desktop-deployment/smoke-windows.ps1),[ref]$tokens,[ref]$errors) > $null; if ($errors.Count -gt 0) { $errors | ForEach-Object { $_.Message }; exit 1 }',
       ],
-      {
-        encoding: 'utf8',
-        env: { ...process.env, TUTURUUU_UPDATER_SCRIPT: file },
-      }
+      { encoding: 'utf8' }
     );
     assert.equal(result.status, 0, result.stderr || result.stdout);
-  } finally {
-    await rm(directory, { recursive: true, force: true });
   }
-});
-
-test('Linux restart waits for the previous process to exit', {
-  skip: process.platform === 'win32',
-}, async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'tuturuuu-restart-test-'));
-  const parent = spawn('/bin/sleep', ['30']);
-  const done = once(parent, 'exit');
-  let restart;
-  try {
-    const script = join(directory, 'relaunch.sh');
-    const executable = join(directory, 'app.sh');
-    await writeFile(script, await helper('desktop_installer', '_linuxScript'));
-    await writeFile(executable, '#!/bin/sh\ntouch "$0.done"\n', {
-      mode: 0o700,
-    });
-    restart = spawn('/bin/sh', [script, String(parent.pid), executable]);
-    const restarted = once(restart, 'exit');
-    await setTimeout(100);
-    await assert.rejects(access(`${executable}.done`));
-    parent.kill('SIGTERM');
-    await done;
-    const [code] = await restarted;
-    assert.equal(code, 0);
-    await access(`${executable}.done`);
-  } finally {
-    parent.kill();
-    restart?.kill();
-    await rm(directory, { recursive: true, force: true });
-  }
-});
-
-test('Windows installer smoke script parses before native execution', {
-  skip: process.platform !== 'win32',
-}, () => {
-  const result = spawnSync(
-    'pwsh',
-    [
-      '-NoProfile',
-      '-NonInteractive',
-      '-Command',
-      '$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path scripts/desktop-deployment/smoke-windows.ps1),[ref]$tokens,[ref]$errors) > $null; if ($errors.Count -gt 0) { $errors | ForEach-Object { $_.Message }; exit 1 }',
-    ],
-    { encoding: 'utf8' }
-  );
-  assert.equal(result.status, 0, result.stderr || result.stdout);
-});
+);

@@ -160,9 +160,8 @@ describe('API-key storage reserved mobile deployment paths', () => {
     });
 
     // The returned key reads back with the same transport key, not %25-encoded.
-    const { GET } = await import(
-      '@/app/api/v1/storage/download/[...path]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/storage/download/[...path]/route');
     const read = await GET(
       new Request(
         'http://localhost/api/v1/storage/download/file'
@@ -262,9 +261,8 @@ describe('API-key storage reserved mobile deployment paths', () => {
       data: { path: `${ROOT_WORKSPACE_ID}/docs/literal%41/image.png` },
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/storage/download/[...path]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/storage/download/[...path]/route');
     const read = await GET(
       new Request(
         'http://localhost/api/v1/storage/download/file'
@@ -305,9 +303,8 @@ describe('API-key storage reserved mobile deployment paths', () => {
   });
 
   it('rejects downloads from the mobile deployment vault prefix', async () => {
-    const { GET } = await import(
-      '@/app/api/v1/storage/download/[...path]/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/storage/download/[...path]/route');
 
     const response = await GET(
       new Request(
@@ -419,9 +416,8 @@ describe('API-key Drive cannot expose private chat objects', () => {
     'rejects list, download, share, batch signing and delete for %s',
     async (path) => {
       const list = await import('@/app/api/v1/storage/list/route');
-      const download = await import(
-        '@/app/api/v1/storage/download/[...path]/route'
-      );
+      const download =
+        await import('@/app/api/v1/storage/download/[...path]/route');
       const share = await import('@/app/api/v1/storage/share/route');
       const batch = await import('@/app/api/v1/storage/share-batch/route');
       const del = await import('./delete/route');

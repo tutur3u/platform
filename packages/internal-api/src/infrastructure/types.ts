@@ -399,8 +399,7 @@ export interface ListAiGatewayModelsParams {
   type?: 'all' | 'embedding' | 'image' | 'language';
 }
 
-export interface ListAiGatewayModelsPageParams
-  extends ListAiGatewayModelsParams {
+export interface ListAiGatewayModelsPageParams extends ListAiGatewayModelsParams {
   limit?: number | string;
   page?: number | string;
 }
@@ -1409,8 +1408,7 @@ export interface BlueGreenMonitoringPaginatedResult<T> {
   window: BlueGreenMonitoringArchiveWindow;
 }
 
-export interface BlueGreenMonitoringRequestArchive
-  extends BlueGreenMonitoringPaginatedResult<BlueGreenMonitoringRequestLog> {
+export interface BlueGreenMonitoringRequestArchive extends BlueGreenMonitoringPaginatedResult<BlueGreenMonitoringRequestLog> {
   analytics: {
     averageLatencyMs: number | null;
     distinctRoutes: number;
@@ -1877,8 +1875,7 @@ export interface ObservabilityLogGroup {
   userId: string | null;
 }
 
-export interface ObservabilityLogsResult
-  extends ObservabilityPaginatedResult<ObservabilityLogGroup> {
+export interface ObservabilityLogsResult extends ObservabilityPaginatedResult<ObservabilityLogGroup> {
   facets: ObservabilityLogFacets;
 }
 
@@ -2041,8 +2038,7 @@ export interface GetObservabilityParams {
   user?: string;
 }
 
-export interface GetBlueGreenMonitoringRequestArchiveParams
-  extends GetBlueGreenMonitoringArchiveParams {
+export interface GetBlueGreenMonitoringRequestArchiveParams extends GetBlueGreenMonitoringArchiveParams {
   q?: string;
   render?: 'all' | 'document' | 'rsc';
   route?: string;

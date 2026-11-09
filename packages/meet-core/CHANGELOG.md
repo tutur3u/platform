@@ -1,5 +1,57 @@
 # Changelog
 
+## [1.5.0](https://github.com/tutur3u/platform/compare/meet-core-v1.4.2...meet-core-v1.5.0) (2026-11-08)
+
+
+### Features
+
+* **meet:** add transcription state and consent protocol ([#7266](https://github.com/tutur3u/platform/issues/7266)) ([2d601a1](https://github.com/tutur3u/platform/commit/2d601a1620cc8d39d425abb0617774c6eb2184bf))
+* **meet:** default-allow Meet AI with a kill switch ([#7410](https://github.com/tutur3u/platform/issues/7410)) ([a96f160](https://github.com/tutur3u/platform/commit/a96f1609656bed08678af0dd1fb828711af4278a))
+* **meet:** fail-closed per-user Meet AI limiter ([#7417](https://github.com/tutur3u/platform/issues/7417)) ([fca5cb0](https://github.com/tutur3u/platform/commit/fca5cb0b31a5966bab2d8fe16b9d0c8f2f7986fe))
+* **meet:** gate Meet AI behind a default-deny workspace allowlist ([#7354](https://github.com/tutur3u/platform/issues/7354)) ([c1ec761](https://github.com/tutur3u/platform/commit/c1ec761dedcdd01041e4b6b82f53aa62f001655f))
+* **meet:** improve transcription quality and support solo meetings ([#7267](https://github.com/tutur3u/platform/issues/7267)) ([ecc5e53](https://github.com/tutur3u/platform/commit/ecc5e53bfa6423ddbd9aaf789e6779c551064eab))
+* **meet:** limit transcript and notes reads to participants and admins ([#7293](https://github.com/tutur3u/platform/issues/7293)) ([ab3216d](https://github.com/tutur3u/platform/commit/ab3216dceaaed5483fa0debd90f091cb9473d06f))
+* **meet:** lobby camera and mic preview ([#7419](https://github.com/tutur3u/platform/issues/7419)) ([4c24127](https://github.com/tutur3u/platform/commit/4c24127c2021af53948b53ccd73109937cbe15b4))
+* **meet:** lobby device controls ([#7418](https://github.com/tutur3u/platform/issues/7418)) ([9ecc80f](https://github.com/tutur3u/platform/commit/9ecc80fe6caadd2667213f02679ed77396bbed76))
+* **meet:** lobby device store and media meter ([27193dc](https://github.com/tutur3u/platform/commit/27193dc5770335c2f44f4b10e982638930bb809a))
+* **meet:** lobby media capture and device list ([#7416](https://github.com/tutur3u/platform/issues/7416)) ([2a87e7e](https://github.com/tutur3u/platform/commit/2a87e7ee514a931566e3221e6a867f1fb6a92213))
+* **meet:** lobby presence and guest display names ([#7415](https://github.com/tutur3u/platform/issues/7415)) ([54661e1](https://github.com/tutur3u/platform/commit/54661e18400be851b3c4d30dbcf0db3e90721d34))
+* **meet:** make the preparing-call screen minimal ([#7449](https://github.com/tutur3u/platform/issues/7449)) ([b003573](https://github.com/tutur3u/platform/commit/b003573eff405c5b3b1e03015e107621785d15c2))
+* **meet:** notes and transcript tabs on the meeting page ([#7283](https://github.com/tutur3u/platform/issues/7283)) ([2f8c357](https://github.com/tutur3u/platform/commit/2f8c3579d6cb727c3cfd2b84c6f3d7645ba987db))
+* **meet:** pre-join waiting room UI call integration ([cd8f37d](https://github.com/tutur3u/platform/commit/cd8f37d99f7d39914876603b6f573d80495426d9)) ([#7421](https://github.com/tutur3u/platform/issues/7421)) ([c84f02c](https://github.com/tutur3u/platform/commit/c84f02c8cbfb15bdd5149bb1f5466ada57b5416c))
+* **meet:** pre-join waiting room UI controls ([e21631d](https://github.com/tutur3u/platform/commit/e21631d74a706f4cfbe8c5900dd577864f2aefc1))
+* **meet:** pre-join waiting room UI preview ([4629230](https://github.com/tutur3u/platform/commit/462923074c1822ba0badf774b9e90fd495f2786e))
+* **realtime:** let lobby guests set their display name ([5e64a58](https://github.com/tutur3u/platform/commit/5e64a58284c6f8ace6b03f11377af45391b4b4bd))
+* **tasks:** add per-board sprint data model ([#7043](https://github.com/tutur3u/platform/issues/7043)) ([9b08aef](https://github.com/tutur3u/platform/commit/9b08aef8da70cb686870790925d68368afef4f07))
+
+
+### Bug Fixes
+
+* **ai:** require workspace access for meeting transcription ([#7357](https://github.com/tutur3u/platform/issues/7357)) ([c2763ae](https://github.com/tutur3u/platform/commit/c2763aeb66c094982c3bf8fa83d5b2da6d5cc3a5))
+* **meet:** announce a blocked lobby microphone with the camera on ([f5213f7](https://github.com/tutur3u/platform/commit/f5213f7dfac697ef2f8cb71adf8c570c1d8c0202))
+* **meet:** apply only the newest lobby device enumeration ([20de6bc](https://github.com/tutur3u/platform/commit/20de6bc0ea4ebd030d7209ce6778225ab7f4272f))
+* **meet:** bill Meet AI to the meeting workspace's AI credits ([#7408](https://github.com/tutur3u/platform/issues/7408)) ([0f8b6dc](https://github.com/tutur3u/platform/commit/0f8b6dcac84f7b29d4c6a15e574330d7b3ad4349))
+* **meet:** derive lobby picker ids from useId ([ea012b8](https://github.com/tutur3u/platform/commit/ea012b8097f445a9a9f4b50036cfcddad2de97cc))
+* **meet:** disable the speaker picker when no outputs are listed ([8766a58](https://github.com/tutur3u/platform/commit/8766a58c67e24ade939d86c09ec98f52b4bbc585))
+* **meet:** drop Chrome's communications pseudo-device from lobby pickers ([a407d7a](https://github.com/tutur3u/platform/commit/a407d7aaee88adaa2147e88767d0c8473ae92a24))
+* **meet:** fall back to the default device when a lobby id is stale ([bb1328d](https://github.com/tutur3u/platform/commit/bb1328d3187bc85599344ca3ecbff47024984f09))
+* **meet:** format the lobby roster overflow as one ICU message ([39f3079](https://github.com/tutur3u/platform/commit/39f3079213692171d356479c41660295e8758a20))
+* **meet:** keep spaces and IME text while guests type their name ([768919d](https://github.com/tutur3u/platform/commit/768919d4e6ce9d5726816e944411deb24eaaa151))
+* **meet:** let System default recover an unlisted lobby device ([b7fde79](https://github.com/tutur3u/platform/commit/b7fde79ba9faabcb7b2160b961a81c56d5007502))
+* **meet:** lock lobby media only after Join, not while waiting or connecting ([ab34a6b](https://github.com/tutur3u/platform/commit/ab34a6bc5d781874c964cc900e62fc6938c059c7))
+* **meet:** lock lobby media toggles while the join request is in flight ([9249fdd](https://github.com/tutur3u/platform/commit/9249fdddafd49dc9da44aa0591fa916f253a62f5))
+* **meet:** lock lobby media while a join request waits for the host ([5ad25a2](https://github.com/tutur3u/platform/commit/5ad25a294bc2aa82e0c2ea33ab6249dc813b52db))
+* **meet:** render Mira avatar without the image optimizer ([#7448](https://github.com/tutur3u/platform/issues/7448)) ([ab99463](https://github.com/tutur3u/platform/commit/ab9946399d322e65a71b18a524f241f585256d59))
+* **meet:** send the lobby guest name to presence only when it changed ([2a21aac](https://github.com/tutur3u/platform/commit/2a21aacd214ea6d3d10092c072be3e661eee0e84))
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+* **types:** avoid deep rpc instantiation in client bindings ([8e6c343](https://github.com/tutur3u/platform/commit/8e6c34352a609ad8774502af1c716fe1c6348e39))
+
+
+### Performance Improvements
+
+* **meet:** cut sequential round trips in room and workspace loaders ([#7445](https://github.com/tutur3u/platform/issues/7445)) ([da9c301](https://github.com/tutur3u/platform/commit/da9c30151fb840c5ae2d758929c81972b46355e4))
+* **meet:** keep the lobby mic meter level inside the meter ([946d031](https://github.com/tutur3u/platform/commit/946d031b80632eab0e404d5b66588552bea72de6))
+
 ## [1.4.2](https://github.com/tutur3u/platform/compare/meet-core-v1.4.1...meet-core-v1.4.2) (2026-10-24)
 
 

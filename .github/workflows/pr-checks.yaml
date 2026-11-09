@@ -21,89 +21,29 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      biome: ${{ steps.paths.outputs.biome }}
+      oxc: ${{ steps.paths.outputs.oxc }}
       i18n: ${{ steps.paths.outputs.i18n }}
       docs: ${{ steps.paths.outputs.docs }}
       migrations: ${{ steps.paths.outputs.migrations }}
       mobile: ${{ steps.paths.outputs.mobile }}
       plugin: ${{ steps.paths.outputs.plugin }}
     steps:
+      - name: Read the shared check map
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/ci/check-map.js
+            /scripts/ci/check-map.json
+      - name: Project the shared map for CI
+        id: map
+        run: node scripts/ci/check-map.js --ci-filters
       - name: Select affected checks
         id: paths
-        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
-          filters: |
-            biome:
-              - &control '.github/**'
-              - &manifest 'package.json'
-              - &lock 'bun.lock'
-              - '**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx,json,jsonc,css,graphql,gql}'
-              - '.editorconfig'
-              - '.gitignore'
-            i18n:
-              - *control
-              - *manifest
-              - *lock
-              - 'apps/*/messages/**'
-              - 'packages/*/messages/**'
-              - 'apps/*/src/**'
-              - 'packages/*/src/**'
-              - 'apps/*/package.json'
-              - 'packages/*/package.json'
-              - 'scripts/i18n-*'
-              - 'scripts/run-i18n-check.js'
-              - 'i18n-*.json'
-            docs:
-              - *control
-              - *manifest
-              - *lock
-              - 'apps/docs/**'
-              - 'apps/*/src/app/**'
-              - 'apps/*/public/**'
-              - 'apps/*/package.json'
-              - 'packages/*/package.json'
-              - 'apps/*/next.config.*'
-              - 'packages/utils/**'
-              - 'scripts/docs-*'
-              - 'scripts/generate-*'
-              - 'scripts/local-docs*'
-              - 'scripts/paused-*'
-              - 'scripts/ci/paused-*'
-              - 'scripts/ci/release-docs-*'
-              - 'scripts/ci/cf-adoption-*'
-              - 'apps/mobile/pubspec.*'
-              - 'apps/discord/pyproject.toml'
-              - 'apps/discord/uv.lock'
-              - 'scripts/safe-fs.js'
-            migrations:
-              - *control
-              - 'apps/database/supabase/migrations/**.sql'
-              - 'scripts/check-migration-timestamps*'
-              - 'tuturuuu*.ts'
-            mobile:
-              - *control
-              - *manifest
-              - 'apps/mobile/lib/core/config/api_config.dart'
-              - 'apps/*/src/app/api/**'
-              - 'apps/web/src/legacy-api-routes/**'
-              - 'apps/tanstack-web/migration/route-manifest.json'
-              - 'packages/sdk/src/**'
-              - 'scripts/check-mobile-api-mappings.*'
-              - 'tuturuuu*.ts'
-            plugin:
-              - *control
-              - 'plugins/**'
-              - '.agents/**'
-              - '.claude/**'
-              - '.claude-plugin/**'
-              - '.codex/**'
-              - 'skills.sh.json'
-              - 'apps/docs/build/skills/**'
-              - 'apps/docs/build/development-tools/codex-plugin.mdx'
-              - 'apps/docs/build/development-tools/git-conventions.mdx'
-              - 'AGENTS.md'
-              - 'apps/docs/docs.json'
-              - 'tuturuuu*.ts'
+          filters: ${{ steps.map.outputs.filters }}
 
   branch-name:
     name: Check branch name
@@ -127,6 +67,31 @@ jobs:
             echo "✅ Branch name follows convention: $BRANCH_NAME"
           fi
 
+  commit-trailers:
+    name: Check commit trailers
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ready-for-ci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Read the trailer check
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/ci/commit-trailer-check.js
+      - name: Reject Co-authored-by trailers
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR}/commits" --jq '.[] | .commit.message + "\u0000"' | node scripts/ci/commit-trailer-check.js
+
   staging-hosts:
     name: Staging cookie-domain isolation
     if: github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ready-for-ci'
@@ -143,6 +108,23 @@ jobs:
       - name: Keep staging hosts outside the production cookie zone
         run: node scripts/check-staging-hosts.js
 
+  feature-flag-lifecycle:
+    name: Feature flag lifecycle
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ready-for-ci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Warning-only: overdue or malformed entries annotate the run without failing it.
+      - name: Report overdue feature flags
+        run: node packages/feature-flags/scripts/check-lifecycle.mjs
+
   admitted:
     uses: ./.github/workflows/ci-admitted.yaml
     permissions:
@@ -150,10 +132,10 @@ jobs:
       issues: read
       pull-requests: read
 
-  biome:
+  oxc:
     needs: scope
-    if: needs.scope.outputs.biome == 'true' && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
-    uses: ./.github/workflows/biome-check.yaml
+    if: needs.scope.outputs.oxc == 'true' && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    uses: ./.github/workflows/oxc-check.yaml
     permissions:
       actions: read
       contents: write
@@ -211,8 +193,23 @@ jobs:
 
   gate:
     name: ${{ (github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'ready-for-ci') && 'Cheap PR Checks (label event)' || 'Cheap PR Checks' }}
-    if: '!cancelled()'
-    needs: [scope, branch-name, staging-hosts, admitted, biome, i18n, docs, migration-timestamps, migrations, mobile, plugin]
+    if: "!cancelled()"
+    needs:
+      [
+        scope,
+        branch-name,
+        commit-trailers,
+        staging-hosts,
+        feature-flag-lifecycle,
+        admitted,
+        oxc,
+        i18n,
+        docs,
+        migration-timestamps,
+        migrations,
+        mobile,
+        plugin,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions: {}
@@ -231,9 +228,12 @@ jobs:
           const selected = {
             scope: full,
             'branch-name': full,
+            'commit-trailers': full,
             'staging-hosts': full,
+            // Warning-only: a skip never blocks; a checker crash still fails.
+            'feature-flag-lifecycle': false,
             admitted: true,
-            biome: full && scope.biome === 'true' && process.env.READY === 'true',
+            oxc: full && scope.oxc === 'true' && process.env.READY === 'true',
             i18n: full && scope.i18n === 'true' && process.env.READY === 'true',
             docs: full && scope.docs === 'true' && process.env.READY === 'true',
             'migration-timestamps': full && scope.migrations === 'true',

@@ -68,7 +68,6 @@ beforeEach(() => {
       or: vi.fn(),
       in: vi.fn(),
       maybeSingle: run,
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
       then: (
         resolve: (value: unknown) => unknown,
         reject: (error: unknown) => unknown

@@ -142,16 +142,14 @@ export async function listMessages(
       ).toString('base64url')
     : null;
   return {
-    messages: (page.value ?? []).map(
-      (row: any): ConnectedMessage => ({
-        id: row.id,
-        subject: row.subject ?? '',
-        from: row.from?.emailAddress?.address ?? '',
-        date: row.receivedDateTime,
-        unread: !row.isRead,
-        starred: row.flag?.flagStatus === 'flagged',
-      })
-    ),
+    messages: (page.value ?? []).map((row: any): ConnectedMessage => ({
+      id: row.id,
+      subject: row.subject ?? '',
+      from: row.from?.emailAddress?.address ?? '',
+      date: row.receivedDateTime,
+      unread: !row.isRead,
+      starred: row.flag?.flagStatus === 'flagged',
+    })),
     nextCursor,
   };
 }

@@ -11,6 +11,11 @@ function fixture(t) {
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   return root;
 }
+function publishPid(file, pid) {
+  const staging = `${file}.tmp`;
+  require('node:fs').writeFileSync(staging, String(pid));
+  require('node:fs').renameSync(staging, file);
+}
 async function until(check) {
   const deadline = Date.now() + 5000;
   while (!check()) {
@@ -45,7 +50,7 @@ test('SIGKILL leader cannot release a live detached builder; takeover succeeds o
     marker = path.join(root, 'builder');
   const lockHelper = require.resolve('./sdk-dev-pack-lock');
   const processHelper = require.resolve('./sdk-package-process');
-  const builder = `require('node:fs').writeFileSync(${JSON.stringify(marker)}, String(process.pid));setInterval(()=>{},1000);`;
+  const builder = `(${publishPid.toString()})(${JSON.stringify(marker)}, process.pid);setInterval(()=>{},1000);`;
   const code = `const release = require(${JSON.stringify(lockHelper)}).acquirePackLock(${JSON.stringify(file)});
     require(${JSON.stringify(processHelper)}).runProcess(process.execPath, ['-e', ${JSON.stringify(builder)}],
       {onSpawn: pid => release.track(pid), timeoutMs: 10000}).then(()=>release());`;
@@ -119,8 +124,9 @@ test('leader death before ownership publication closes gate without launching wo
     marker = path.join(root, 'unsafe');
   const helper = require.resolve('./sdk-package-process');
   const builder = `require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'unsafe');`;
-  const code = `require(${JSON.stringify(helper)}).runProcess(process.execPath, ['-e', ${JSON.stringify(builder)}],
-    {onSpawn: async pid => { require('node:fs').writeFileSync(${JSON.stringify(ready)}, String(pid)); await new Promise(()=>{}); }, timeoutMs: 10000});`;
+  const code = `const publishPid = ${publishPid.toString()};
+    require(${JSON.stringify(helper)}).runProcess(process.execPath, ['-e', ${JSON.stringify(builder)}],
+    {onSpawn: async pid => { publishPid(${JSON.stringify(ready)}, pid); await new Promise(()=>{}); }, timeoutMs: 10000});`;
   const leader = cp.spawn(process.execPath, ['-e', code], {
     stdio: ['ignore', 'ignore', 'ignore'],
   });

@@ -21,7 +21,6 @@ import { requestLocale, setPageParams } from './page-params';
 // App components declare their own props (`{ params: Promise<{ id }> }`), so
 // the module type accepts any props; the adapter calls them with Next's.
 // Redirect-only pages (`redirect()` in the body) return void, as in Next.
-// biome-ignore lint/suspicious/noConfusingVoidType: `Promise<void>` page returns must type-check; `undefined` rejects them.
 type Component = (props: never) => ReactNode | void | Promise<ReactNode | void>;
 type Renderable = (
   props: Record<string, unknown>

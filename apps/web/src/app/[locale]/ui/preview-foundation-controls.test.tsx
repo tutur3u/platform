@@ -1,15 +1,16 @@
+// @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { FormPreview } from './preview-foundation-controls';
 
 const sample = (key: string) =>
   (
-    ({
+    {
       formDescription: 'Shown with React Hook Form context.',
       validated: 'Validated',
       workspaceName: 'Workspace name',
       workspacePlaceholder: 'Tuturuuu',
-    }) satisfies Record<string, string>
+    } satisfies Record<string, string>
   )[key] ?? key;
 
 describe('FormPreview', () => {

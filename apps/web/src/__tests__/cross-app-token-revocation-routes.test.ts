@@ -114,9 +114,8 @@ describe('cross-app token revocation', () => {
   describe('POST /api/v1/users/me/password', () => {
     it('revokes cross-app tokens for the session user after a successful change', async () => {
       mocks.updateUser.mockResolvedValue({ error: null });
-      const route = await import(
-        '@/legacy-api-routes/v1/users/me/password/route'
-      );
+      const route =
+        await import('@/legacy-api-routes/v1/users/me/password/route');
 
       const response = await (route.POST as any)(passwordRequest(), {
         supabase: mocks.supabase,
@@ -132,9 +131,8 @@ describe('cross-app token revocation', () => {
     it('reports success when the password changed but revocation failed', async () => {
       mocks.updateUser.mockResolvedValue({ error: null });
       mocks.rpc.mockResolvedValueOnce({ error: { message: 'unavailable' } });
-      const route = await import(
-        '@/legacy-api-routes/v1/users/me/password/route'
-      );
+      const route =
+        await import('@/legacy-api-routes/v1/users/me/password/route');
 
       const response = await (route.POST as any)(passwordRequest(), {
         supabase: mocks.supabase,
@@ -151,9 +149,8 @@ describe('cross-app token revocation', () => {
           message: 'reauthentication_needed',
         },
       });
-      const route = await import(
-        '@/legacy-api-routes/v1/users/me/password/route'
-      );
+      const route =
+        await import('@/legacy-api-routes/v1/users/me/password/route');
 
       const response = await (route.POST as any)(passwordRequest(), {
         supabase: mocks.supabase,

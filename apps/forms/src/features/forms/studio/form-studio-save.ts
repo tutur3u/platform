@@ -182,7 +182,6 @@ export function useFormStudioSave({
     }
   }, 2000);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: state setters are passed in as stable props of the studio state hook
   useEffect(() => {
     if (!autosaveEnabled) {
       setAutosaveScheduledAt(null);
@@ -209,7 +208,6 @@ export function useFormStudioSave({
     };
   }, [autosaveEnabled, form, performAutosave, saveMutation.isPending]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: state setters are passed in as stable props of the studio state hook
   useEffect(() => {
     if (!autosaveEnabled || !form.formState.isDirty) {
       setAutosaveScheduledAt(null);
@@ -217,7 +215,6 @@ export function useFormStudioSave({
     }
   }, [autosaveEnabled, form.formState.isDirty, performAutosave]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: state setters are passed in as stable props of the studio state hook
   useEffect(() => {
     if (!autosaveScheduledAt) {
       setSecondsUntilAutosave(0);
@@ -265,7 +262,6 @@ export function useFormStudioSave({
     sectionsArray.move(oldIndex, newIndex);
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the ref and state setter are passed in as stable props of the studio state hook
   useEffect(() => {
     const saveButton = primarySaveButtonRef.current;
     if (!saveButton) {

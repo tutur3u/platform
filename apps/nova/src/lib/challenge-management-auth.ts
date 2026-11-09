@@ -8,16 +8,16 @@ type NovaChallengeAccessUser = Pick<SupabaseUser, 'email' | 'id'>;
 export function canManageNovaChallenges(role?: NovaPlatformRole | null) {
   return Boolean(
     role?.enabled &&
-      (role.allow_challenge_management ||
-        role.allow_manage_all_challenges ||
-        role.allow_role_management)
+    (role.allow_challenge_management ||
+      role.allow_manage_all_challenges ||
+      role.allow_role_management)
   );
 }
 
 export function canManageAllNovaChallenges(role?: NovaPlatformRole | null) {
   return Boolean(
     role?.enabled &&
-      (role.allow_manage_all_challenges || role.allow_role_management)
+    (role.allow_manage_all_challenges || role.allow_role_management)
   );
 }
 

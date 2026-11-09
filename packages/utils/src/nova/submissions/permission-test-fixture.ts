@@ -65,7 +65,6 @@ export function permissionFixture() {
           return builder;
         },
         single: async () => result(),
-        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
         then: (resolve: (value: unknown) => unknown) =>
           Promise.resolve(result()).then(resolve),
       };

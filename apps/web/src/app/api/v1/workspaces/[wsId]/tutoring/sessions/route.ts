@@ -19,6 +19,7 @@ import {
   TutoringSessionListQuerySchema,
   type TutoringSessionSlotInput,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
+import { denyExcludedTutoringGroup } from '@/lib/tutoring/group-exclusion';
 import {
   isLinkedContentSession,
   loadLinkedLessonContent,
@@ -302,6 +303,16 @@ export async function POST(request: Request, { params }: Params) {
   if (scopeValidationResponse) {
     return scopeValidationResponse;
   }
+
+  // Classes the workspace excludes from tutoring take no new sessions; the
+  // sessions already booked in them stay listed and editable.
+  const excludedGroupResponse = await denyExcludedTutoringGroup({
+    groupId: payload.groupId,
+    reasonType: payload.reasonType,
+    sbAdmin: sbAdmin as TypedSupabaseClient,
+    wsId: normalizedWsId,
+  });
+  if (excludedGroupResponse) return excludedGroupResponse;
 
   const sessionSlots = buildTutoringSessionSlots(payload);
 

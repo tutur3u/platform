@@ -79,6 +79,7 @@ export function ProfileFieldForm({
         disabled={!isDirty || !value.trim() || mutation.isPending}
         size="icon"
         type="submit"
+        variant="outline"
       >
         {mutation.isPending ? (
           <Loader2 className="size-4 animate-spin" />

@@ -3,8 +3,6 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   AlertTriangle,
-  Coins,
-  CreditCard,
   ExternalLink,
   Loader2,
   RefreshCw,
@@ -17,13 +15,15 @@ import {
 } from '@tuturuuu/internal-api';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
 import { HiddenWorkspacesSettings } from '@tuturuuu/ui/custom/workspace-select';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
-import type { ComponentType, ReactNode } from 'react';
 import { GuestSelfJoinSetting } from './guest-self-join-setting';
 import { InviteLinksSection } from './invite-links-section';
 import { WorkspaceAvatarEditor } from './workspace-avatar-editor';
@@ -68,9 +68,9 @@ export function SatelliteWorkspaceSettingsPanel({
   const memberSettingsQuery = useQuery({
     enabled: Boolean(
       workspace?.id &&
-        activeTab === 'workspace_members' &&
-        (permissionsQuery.data?.manage_workspace_members ||
-          permissionsQuery.data?.manage_workspace_roles)
+      activeTab === 'workspace_members' &&
+      (permissionsQuery.data?.manage_workspace_members ||
+        permissionsQuery.data?.manage_workspace_roles)
     ),
     queryFn: () => getWorkspaceMemberSettings(workspace?.id ?? ''),
     queryKey: ['workspace-member-settings', workspace?.id],
@@ -86,7 +86,7 @@ export function SatelliteWorkspaceSettingsPanel({
   if (!activeTab.startsWith('workspace_')) return null;
   if ((!workspace && workspaceQuery.isPending) || permissionsQuery.isPending) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-8">
         {activeTab === 'workspace_general' && <HiddenWorkspacesSettings />}
         <PanelLoading label={t('loading')} />
       </div>
@@ -94,7 +94,7 @@ export function SatelliteWorkspaceSettingsPanel({
   }
   if (!workspace || workspaceQuery.isError || permissionsQuery.isError) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-8">
         {activeTab === 'workspace_general' && <HiddenWorkspacesSettings />}
         <PanelError
           description={t('load_error_description')}
@@ -109,17 +109,19 @@ export function SatelliteWorkspaceSettingsPanel({
 
   if (activeTab === 'workspace_general') {
     return (
-      <div className="space-y-4">
+      <div className="space-y-8">
         <HiddenWorkspacesSettings />
         {!permissions?.manage_workspace_settings && <RestrictedNotice />}
-        <WorkspaceAvatarEditor
-          canEdit={permissions?.manage_workspace_settings ?? false}
-          workspace={workspace}
-        />
-        <WorkspaceIdentityForm
-          canEdit={permissions?.manage_workspace_settings ?? false}
-          workspace={workspace}
-        />
+        <SettingsSection>
+          <WorkspaceAvatarEditor
+            canEdit={permissions?.manage_workspace_settings ?? false}
+            workspace={workspace}
+          />
+          <WorkspaceIdentityForm
+            canEdit={permissions?.manage_workspace_settings ?? false}
+            workspace={workspace}
+          />
+        </SettingsSection>
       </div>
     );
   }
@@ -129,14 +131,16 @@ export function SatelliteWorkspaceSettingsPanel({
       workspace.personal || (memberSettingsQuery.data?.disableInvite ?? false);
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-8">
         {!canManageMembers && !permissions?.manage_workspace_roles && (
           <RestrictedNotice />
         )}
-        <GuestSelfJoinSetting
-          disabled={workspace.personal || !canManageMembers}
-          wsId={workspace.id}
-        />
+        <SettingsSection>
+          <GuestSelfJoinSetting
+            disabled={workspace.personal || !canManageMembers}
+            wsId={workspace.id}
+          />
+        </SettingsSection>
         {!workspace.personal ? (
           <InviteLinksSection
             disabled={!canManageMembers || invitationsDisabled}
@@ -161,48 +165,43 @@ export function SatelliteWorkspaceSettingsPanel({
   const billingUrl = `https://pay.tuturuuu.com/${workspace.id}/billing`;
   const creditStatus = aiCreditsQuery.data;
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-2">
-        <BillingMetricCard
+    <div className="space-y-8">
+      <SettingsSection>
+        <SettingItemTab
           description={t('billing_plan_description')}
-          icon={CreditCard}
-          label={t('billing_current_plan')}
-          tone="purple"
+          title={t('billing_current_plan')}
         >
           {aiCreditsQuery.isPending ? (
-            <Skeleton className="h-8 w-28" />
+            <Skeleton className="h-6 w-28" />
           ) : creditStatus ? (
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-2xl">
+              <span className="font-medium text-sm">
                 {t(getPlanTranslationKey(creditStatus.tier))}
               </span>
-              <span className="rounded-full border bg-muted/60 px-2 py-0.5 font-medium text-muted-foreground text-xs">
-                {creditStatus.tier}
-              </span>
+              <Badge variant="secondary">{creditStatus.tier}</Badge>
             </div>
           ) : (
             <BillingMetricError onRetry={() => aiCreditsQuery.refetch()} />
           )}
-        </BillingMetricCard>
+        </SettingItemTab>
 
-        <BillingMetricCard
+        <SettingItemTab
+          layout="stacked"
           description={t('billing_ai_credits_description')}
-          icon={Coins}
-          label={t('billing_ai_credits')}
-          tone="blue"
+          title={t('billing_ai_credits')}
         >
           {aiCreditsQuery.isPending ? (
             <div className="space-y-3">
-              <Skeleton className="h-8 w-36" />
+              <Skeleton className="h-6 w-36" />
               <Skeleton className="h-2 w-full" />
             </div>
           ) : creditStatus ? (
             <div className="space-y-3">
               <div className="flex items-end justify-between gap-3">
-                <p className="font-semibold text-2xl tabular-nums">
+                <p className="font-semibold text-base tabular-nums">
                   {formatCredits(creditStatus.remaining)}
                 </p>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-muted-foreground text-sm">
                   {t('billing_credits_used', {
                     used: formatCredits(creditStatus.totalUsed),
                   })}
@@ -213,28 +212,21 @@ export function SatelliteWorkspaceSettingsPanel({
                 className="h-2"
                 value={Math.min(100, Math.max(0, creditStatus.percentUsed))}
               />
-              <p className="text-muted-foreground text-xs">
+              <p className="text-muted-foreground text-sm">
                 {t('billing_credits_remaining')}
               </p>
             </div>
           ) : (
             <BillingMetricError onRetry={() => aiCreditsQuery.refetch()} />
           )}
-        </BillingMetricCard>
-      </div>
+        </SettingItemTab>
+      </SettingsSection>
 
-      <div className="relative overflow-hidden rounded-2xl border bg-card/40 p-5">
-        <div className="absolute inset-y-0 right-0 w-1/3 bg-linear-to-l from-dynamic-purple/10 to-transparent" />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
-          <div className="rounded-2xl border border-dynamic-purple/20 bg-dynamic-purple/10 p-3 text-dynamic-purple">
-            <CreditCard className="size-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-semibold">{t('billing_manage')}</h3>
-            <p className="mt-1 text-muted-foreground text-sm">
-              {t('billing_manage_description')}
-            </p>
-          </div>
+      <SettingsSection>
+        <SettingItemTab
+          description={t('billing_manage_description')}
+          title={t('billing_manage')}
+        >
           {permissions?.can_access_billing ? (
             <Button asChild>
               <a href={billingUrl} rel="noopener noreferrer" target="_blank">
@@ -248,42 +240,8 @@ export function SatelliteWorkspaceSettingsPanel({
               <ExternalLink className="ml-2 size-4" />
             </Button>
           )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function BillingMetricCard({
-  children,
-  description,
-  icon: Icon,
-  label,
-  tone,
-}: {
-  children: ReactNode;
-  description: string;
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  tone: 'blue' | 'purple';
-}) {
-  const toneClass =
-    tone === 'blue'
-      ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue'
-      : 'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple';
-
-  return (
-    <div className="rounded-2xl border bg-card/40 p-5">
-      <div className="mb-4 flex items-start gap-3">
-        <div className={`rounded-xl border p-2.5 ${toneClass}`}>
-          <Icon className="size-4" />
-        </div>
-        <div className="min-w-0">
-          <p className="font-medium">{label}</p>
-          <p className="text-muted-foreground text-xs">{description}</p>
-        </div>
-      </div>
-      {children}
+        </SettingItemTab>
+      </SettingsSection>
     </div>
   );
 }
@@ -291,7 +249,7 @@ function BillingMetricCard({
 function BillingMetricError({ onRetry }: { onRetry: () => void }) {
   const t = useTranslations('satellite-workspace-settings');
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed p-3">
+    <div className="flex items-center justify-between gap-3">
       <p className="text-muted-foreground text-sm">
         {t('billing_overview_unavailable')}
       </p>
@@ -324,13 +282,12 @@ function getPlanTranslationKey(tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE') {
 function RestrictedNotice() {
   const t = useTranslations('satellite-workspace-settings');
   return (
-    <div className="flex gap-3 rounded-xl border border-dynamic-orange/20 bg-dynamic-orange/10 p-4 text-sm">
-      <AlertTriangle className="shrink-0 text-dynamic-orange" />
-      <div>
-        <p className="font-medium">{t('read_only')}</p>
-        <p className="text-muted-foreground">{t('read_only_description')}</p>
-      </div>
-    </div>
+    <SettingItemTab
+      layout="stacked"
+      description={t('read_only_description')}
+      icon={<AlertTriangle className="size-4 text-dynamic-yellow" />}
+      title={t('read_only')}
+    />
   );
 }
 
@@ -351,14 +308,11 @@ function PanelError({
   title: string;
 }) {
   return (
-    <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5">
-      <div className="flex gap-3">
-        <AlertTriangle className="text-destructive" />
-        <div>
-          <p className="font-semibold">{title}</p>
-          <p className="text-muted-foreground text-sm">{description}</p>
-        </div>
-      </div>
-    </div>
+    <SettingItemTab
+      layout="stacked"
+      description={description}
+      icon={<AlertTriangle className="size-4 text-destructive" />}
+      title={title}
+    />
   );
 }

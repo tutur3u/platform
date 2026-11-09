@@ -64,9 +64,8 @@ describe('external project entry batch route', () => {
         status: 403,
       }),
     });
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/batch/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/batch/route');
 
     const response = await POST(createRequest({ operations: [] }), {
       params: Promise.resolve({
@@ -94,9 +93,8 @@ describe('external project entry batch route', () => {
     mocks.deleteWorkspaceExternalProjectEntry.mockResolvedValue({
       id: deletedEntryId,
     });
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/batch/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/batch/route');
 
     const response = await POST(
       createRequest({
@@ -194,9 +192,8 @@ describe('external project entry batch route', () => {
     mocks.deleteWorkspaceExternalProjectEntry.mockResolvedValueOnce({
       id: deletedEntryId,
     });
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/batch/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/batch/route');
 
     const response = await POST(
       createRequest({
@@ -243,9 +240,8 @@ describe('external project entry batch route', () => {
   });
 
   it('rejects invalid payloads', async () => {
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/batch/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/batch/route');
 
     const response = await POST(
       createRequest({

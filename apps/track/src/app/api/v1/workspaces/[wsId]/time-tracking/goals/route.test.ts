@@ -168,9 +168,8 @@ describe('time tracking goals route cross-user authorization', () => {
   it.each(['track', 'calendar'])(
     'accepts the %s app-session audience for time-tracking routes',
     async (targetApp) => {
-      const { getDefaultAppSessionVerificationOptions } = await import(
-        '@/lib/api-auth'
-      );
+      const { getDefaultAppSessionVerificationOptions } =
+        await import('@/lib/api-auth');
       const options = getDefaultAppSessionVerificationOptions(
         'http://localhost/api/v1/workspaces/ws-1/time-tracking/goals'
       );
@@ -184,9 +183,8 @@ describe('time tracking goals route cross-user authorization', () => {
   );
 
   it('denies an unrelated app-session audience for time-tracking routes', async () => {
-    const { getDefaultAppSessionVerificationOptions } = await import(
-      '@/lib/api-auth'
-    );
+    const { getDefaultAppSessionVerificationOptions } =
+      await import('@/lib/api-auth');
     const options = getDefaultAppSessionVerificationOptions(
       'http://localhost/api/v1/workspaces/ws-1/time-tracking/goals'
     );

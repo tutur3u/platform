@@ -1,4 +1,4 @@
-import { FileCheck2, History, Plus } from '@tuturuuu/icons';
+import { FileCheck2, History, Lock, Plus } from '@tuturuuu/icons';
 import {
   createAdminClient,
   createClient,
@@ -171,6 +171,9 @@ interface Props {
   canDeleteInvoices?: boolean;
   deleteInvoiceAction?: DeleteInvoiceAction;
   currency?: string;
+  /** Fee-lock entry on the pending tab; the host app gates it and owns the copy. */
+  feeLockHref?: string;
+  feeLockLabel?: string;
   financePrefix?: string;
   permissions?: PermissionsResult;
   userId?: string;
@@ -186,6 +189,8 @@ export default async function InvoicesPage({
   canDeleteInvoices = false,
   deleteInvoiceAction,
   currency = 'USD',
+  feeLockHref,
+  feeLockLabel,
   financePrefix = '/finance',
   permissions,
   userId,
@@ -276,6 +281,16 @@ export default async function InvoicesPage({
           </Suspense>
         </TabsContent>
         <TabsContent value="pending">
+          {feeLockHref && feeLockLabel && (
+            <div className="mb-4 flex justify-end">
+              <Link href={feeLockHref}>
+                <Button variant="outline">
+                  <Lock className="h-4 w-4" />
+                  {feeLockLabel}
+                </Button>
+              </Link>
+            </div>
+          )}
           <Suspense fallback={<Skeleton className="h-125 w-full" />}>
             <PendingInvoicesTable
               wsId={wsId}

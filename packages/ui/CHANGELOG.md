@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.41.0](https://github.com/tutur3u/platform/compare/ui-v0.40.0...ui-v0.41.0) (2026-11-08)
+
+
+### Features
+
+* **roadmap:** add the public Cloudflare migration roadmap ([#7786](https://github.com/tutur3u/platform/issues/7786)) ([73ee6e7](https://github.com/tutur3u/platform/commit/73ee6e773b5076e8851cc60ef0ddcb76ef92a915))
+* **satellites:** regroup domain settings panels ([#7794](https://github.com/tutur3u/platform/issues/7794)) ([e970ea0](https://github.com/tutur3u/platform/commit/e970ea0f5821f909f4fde955b89e8520ff493151))
+* **tasks:** open board tasks in a right side panel ([d97923d](https://github.com/tutur3u/platform/commit/d97923da6a62bfc12e79e249c9874007d6df34e7)) ([#7045](https://github.com/tutur3u/platform/issues/7045)) ([33aa40d](https://github.com/tutur3u/platform/commit/33aa40daa9715c8c4277fb63d747cc6f6d30e038))
+* **ui:** add accessible settings field composition ([8b0b3d3](https://github.com/tutur3u/platform/commit/8b0b3d36aa3b9ca5e698cd12c17a39e29c7eb7b9))
+* **web:** regroup workspace and developer settings into sections ([2ded799](https://github.com/tutur3u/platform/commit/2ded7991fd1371afd4fd9473bfeb82008e9b846b)) ([#7792](https://github.com/tutur3u/platform/issues/7792)) ([79c37ae](https://github.com/tutur3u/platform/commit/79c37ae0308458165f662db9c9cda4a6e6fe1480))
+
+
+### Bug Fixes
+
+* **packages:** make the published [@tuturuuu](https://github.com/tuturuuu) chain installable and guard it ([#7389](https://github.com/tutur3u/platform/issues/7389)) ([b1378ab](https://github.com/tutur3u/platform/commit/b1378abcaa31c02b5861cc16e6aa6bb2f8789c3c))
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+* **ui:** increase light muted foreground contrast ([#7219](https://github.com/tutur3u/platform/issues/7219)) ([e1870dd](https://github.com/tutur3u/platform/commit/e1870dd454293ab614dc636d6ecaba00e84c10dc))
+* **utils:** resolve ambiguous DST wall times deterministically ([#7397](https://github.com/tutur3u/platform/issues/7397)) ([523a09b](https://github.com/tutur3u/platform/commit/523a09b40567e89769fc6ab139c860ec7817e5cd))
+
 ## [0.40.0](https://github.com/tutur3u/platform/compare/ui-v0.39.2...ui-v0.40.0) (2026-10-24)
 
 

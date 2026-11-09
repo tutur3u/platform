@@ -1,7 +1,4 @@
-export {
-  createOfflineRoute,
-  createSerwistRoute,
-} from './create-offline-route';
+export { createOfflineRoute, createSerwistRoute } from './create-offline-route';
 export type {
   OfflineRouteConfig,
   OfflineRouteResult,

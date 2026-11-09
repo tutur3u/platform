@@ -234,7 +234,6 @@ describe('Meet chunk idempotency', () => {
       return f.cleanup;
     });
     Object.assign(f.cleanup, {
-      // biome-ignore lint/suspicious/noThenProperty: Model the awaited Supabase cleanup query and its CAS predicate.
       then: (resolve: (value: unknown) => void) => {
         if (predicates.status === status) status = 'failed';
         resolve({ data: null, error: null });

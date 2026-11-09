@@ -93,9 +93,8 @@ describe('batched notification persistence', () => {
 });
 
 it('Cloudflare selects at most 25 pending batches and refuses a 21st notification page', async () => {
-  const { fetchPendingBatchedNotificationBatches } = await import(
-    './batched-helpers'
-  );
+  const { fetchPendingBatchedNotificationBatches } =
+    await import('./batched-helpers');
   const { fetchAllPaginatedRows } = await import('./cron-helpers');
   const { withWebCronBudget } = await import('../cron/web-cron-budget');
   const range = vi.fn(async (_from: number, to: number) => ({

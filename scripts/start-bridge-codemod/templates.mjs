@@ -69,7 +69,7 @@ ${options.map((option) => `  ${option},`).join('\n')}
 
 export default defineConfig(({ command }) => ({
   base: bridge.base,
-  define: bridge.define,
+  define: { ...bridge.define, 'process.env.NODE_ENV': JSON.stringify('production') },
   plugins: [
     startBridgeRscPlugin({ ${pluginOptions.join(', ')} }),
     // SSR bundles CommonJS too (postcss via sanitize-html requires 'path'):

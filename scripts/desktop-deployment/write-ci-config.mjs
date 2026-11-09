@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: standalone CI-only scripts never run in Turbo or cache signing inputs */
 import { appendFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { validatePublicConfig } from './public-config.mjs';

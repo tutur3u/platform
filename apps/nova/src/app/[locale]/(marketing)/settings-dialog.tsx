@@ -1,7 +1,7 @@
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/dialog';
-import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 import UserAvatar from './settings-avatar';
@@ -16,11 +16,11 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
   const t = useTranslations();
 
   return (
-    <DialogContent>
+    <DialogContent className="settings-surface">
       <DialogHeader>
         <DialogTitle>{t('settings-account.account')}</DialogTitle>
       </DialogHeader>
-      <div className="grid gap-1 md:min-w-max md:max-w-lg">
+      <SettingsSection className="md:max-w-lg">
         <SettingItemTab
           title={t('settings-account.avatar')}
           description={t('settings-account.avatar-description')}
@@ -28,11 +28,10 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
           <UserAvatar user={user} />
         </SettingItemTab>
 
-        <Separator className="my-4" />
-
         <Suspense
           fallback={
             <SettingItemTab
+              layout="stacked"
               title={t('settings-account.display-name')}
               description={t('settings-account.display-name-description')}
             >
@@ -41,6 +40,7 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
           }
         >
           <SettingItemTab
+            layout="stacked"
             title={t('settings-account.display-name')}
             description={t('settings-account.display-name-description')}
           >
@@ -48,11 +48,10 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
           </SettingItemTab>
         </Suspense>
 
-        <Separator className="my-4" />
-
         <Suspense
           fallback={
             <SettingItemTab
+              layout="stacked"
               title="Email"
               description={t('settings-account.email-description')}
             >
@@ -61,6 +60,7 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
           }
         >
           <SettingItemTab
+            layout="stacked"
             title="Email"
             description={t('settings-account.email-description')}
           >
@@ -83,7 +83,7 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
             </Button>
           </SettingItemTab>
           */}
-      </div>
+      </SettingsSection>
     </DialogContent>
   );
 }

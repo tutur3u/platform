@@ -69,6 +69,11 @@ export function ProjectListItem({
                   className="inline-flex max-w-full items-center gap-2 font-semibold text-lg hover:text-dynamic-blue"
                   onClick={(event) => event.stopPropagation()}
                 >
+                  {project.ticket_key ? (
+                    <span className="shrink-0 font-mono font-normal text-muted-foreground text-sm">
+                      {project.ticket_key}
+                    </span>
+                  ) : null}
                   <span className="truncate">{project.name}</span>
                   <ExternalLink className="h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
                 </NextLink>
@@ -81,6 +86,11 @@ export function ProjectListItem({
                     onNavigate(project.id);
                   }}
                 >
+                  {project.ticket_key ? (
+                    <span className="shrink-0 font-mono font-normal text-muted-foreground text-sm">
+                      {project.ticket_key}
+                    </span>
+                  ) : null}
                   <span className="truncate">{project.name}</span>
                   <ExternalLink className="h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
                 </button>

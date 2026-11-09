@@ -103,14 +103,13 @@ export function coversModel(window: UsageWindow, model?: string): boolean {
       window.scope.modelPrefixes?.some((prefix) =>
         normalizedModel.startsWith(normalizeModelId(prefix))
       ) ||
-        window.scope.modelFamilies?.some(
-          (family) =>
-            MODEL_FAMILIES.includes(family) &&
-            new RegExp(
-              `(?:^|[-_/])${escapeRegExp(family)}(?:$|[-_/])`,
-              'i'
-            ).test(normalizedModel)
-        )
+      window.scope.modelFamilies?.some(
+        (family) =>
+          MODEL_FAMILIES.includes(family) &&
+          new RegExp(`(?:^|[-_/])${escapeRegExp(family)}(?:$|[-_/])`, 'i').test(
+            normalizedModel
+          )
+      )
     )
   );
 }

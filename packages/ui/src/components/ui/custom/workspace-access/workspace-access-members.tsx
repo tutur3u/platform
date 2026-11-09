@@ -1,9 +1,12 @@
 'use client';
 
-import { UsersRound } from '@tuturuuu/icons';
 import type { InternalApiEnhancedWorkspaceMember } from '@tuturuuu/types';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
+import {
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '../settings-section';
 import type { WorkspaceAccessLabels, WorkspaceAccessRole } from './types';
 import { WorkspaceAccessMemberRow } from './workspace-access-member-row';
 
@@ -56,54 +59,42 @@ export function WorkspaceAccessMembers({
   const t = useTranslations() as (key: string) => string;
 
   if (isLoading) {
-    return (
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Skeleton className="h-48 rounded-xl" />
-        <Skeleton className="h-48 rounded-xl" />
-        <Skeleton className="h-48 rounded-xl" />
-        <Skeleton className="h-48 rounded-xl" />
-      </div>
-    );
+    return ['first', 'second', 'third', 'fourth'].map((row) => (
+      <SettingsSectionBlock className="py-3" key={row}>
+        <Skeleton className="h-14 rounded-lg" />
+      </SettingsSectionBlock>
+    ));
   }
 
   if (members.length === 0) {
     return (
-      <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-xl border border-border border-dashed p-8 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-foreground/5 text-muted-foreground">
-          <UsersRound className="h-6 w-6" />
-        </div>
-        <p className="text-muted-foreground text-sm">
-          {searchTerm.trim()
-            ? t('ws-members.no_members_match')
-            : status === 'invited'
-              ? t('ws-members.no_invited_members_found')
-              : t('ws-members.no_members_found')}
-        </p>
-      </div>
+      <SettingsSectionMessage>
+        {searchTerm.trim()
+          ? t('ws-members.no_members_match')
+          : status === 'invited'
+            ? t('ws-members.no_invited_members_found')
+            : t('ws-members.no_members_found')}
+      </SettingsSectionMessage>
     );
   }
 
-  return (
-    <div className="grid gap-3 lg:grid-cols-2">
-      {members.map((member) => (
-        <WorkspaceAccessMemberRow
-          key={`${member.id ?? member.email ?? member.handle}`}
-          canEditProfiles={canEditProfiles}
-          canManageMembers={canManageMembers}
-          canManageRoles={canManageRoles}
-          canUpdateInvitationRoles={canUpdateInvitationRoles}
-          defaultAdminEnabled={defaultAdminEnabled}
-          isMutating={isMutating}
-          labels={labels}
-          member={member}
-          onAssignRole={onAssignRole}
-          onEditMemberProfile={onEditMemberProfile}
-          onRemoveMember={onRemoveMember}
-          onRemoveRole={onRemoveRole}
-          onUpdateInvitationRole={onUpdateInvitationRole}
-          roles={roles}
-        />
-      ))}
-    </div>
-  );
+  return members.map((member) => (
+    <WorkspaceAccessMemberRow
+      key={`${member.id ?? member.email ?? member.handle}`}
+      canEditProfiles={canEditProfiles}
+      canManageMembers={canManageMembers}
+      canManageRoles={canManageRoles}
+      canUpdateInvitationRoles={canUpdateInvitationRoles}
+      defaultAdminEnabled={defaultAdminEnabled}
+      isMutating={isMutating}
+      labels={labels}
+      member={member}
+      onAssignRole={onAssignRole}
+      onEditMemberProfile={onEditMemberProfile}
+      onRemoveMember={onRemoveMember}
+      onRemoveRole={onRemoveRole}
+      onUpdateInvitationRole={onUpdateInvitationRole}
+      roles={roles}
+    />
+  ));
 }

@@ -43,7 +43,7 @@ jobs:
     if: (always() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       PROFILE_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}

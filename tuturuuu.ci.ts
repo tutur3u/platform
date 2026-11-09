@@ -1,12 +1,13 @@
 import type { ProductionPublicationPolicy } from './scripts/ci/production-publication-policy.ts';
 
 export const ci = {
+  'roadmap-cloudflare.yaml': true,
   'mastermind-cloudflare.yaml': true,
   'contacts-start-candidate.yaml': true,
   'sso-persistence-contract.yaml': true,
   'employee-schema-contract.yaml': true,
   'actions-storage-report.yaml': true,
-  'biome-check.yaml': true,
+  'oxc-check.yaml': true,
   'branch-name-check.yaml': true,
   'calendar-generation-contract.yaml': true,
   'periodic-report-delivery-contract.yaml': true,
@@ -29,6 +30,7 @@ export const ci = {
   'report-review-receipts-contract.yaml': true,
   'workspace-permission-scope-contract.yaml': true,
   'programming-app-builds.yaml': true,
+  'app-builds-affected.yaml': true,
   'mail-calendar-tasks-builds.yaml': true,
   'playground-runtime-acceptance.yaml': true,
   'codecov.yaml': true,
@@ -137,22 +139,38 @@ export const ci = {
   'tools-cloudflare.yaml': true,
   'pay-cloudflare.yaml': true,
   'playground-cloudflare.yaml': true,
+  'git-cloudflare.yaml': true,
+  'external-cloudflare.yaml': true,
+  'rewise-cloudflare.yaml': true,
   'learn-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
 // Admit each app only in an explicitly reviewed wave cutover PR.
 export const productionPublicationPolicy = {
+  forms: {
+    state: 'admitted',
+    reason:
+      'Forms native Start route-free upload with smoke and pinned rollback',
+    surfaces: ['frontend'],
+  },
+  inventory: {
+    state: 'admitted',
+    reason:
+      'Inventory native Start route-free upload with smoke and pinned rollback',
+    surfaces: ['frontend'],
+  },
+  nova: {
+    state: 'admitted',
+    reason:
+      'Nova native Start route-free upload with smoke and pinned rollback',
+    surfaces: ['frontend'],
+  },
   mastermind: {
     state: 'held',
     reason: 'held for wave-2 cutover: Mastermind security review required',
   },
-  meet: {
-    state: 'admitted',
-    reason:
-      'Meet native Start + Void cutover on the tuturuuu-meet Worker with private version smoke and one-step version rollback',
-    surfaces: ['frontend', 'realtime-do'],
-  },
+  meet: { state: 'held', reason: 'held for wave-1 cutover' },
   calendar: {
     state: 'admitted',
     reason:

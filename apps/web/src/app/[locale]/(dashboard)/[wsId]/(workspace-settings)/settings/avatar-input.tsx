@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { AlertTriangle, Loader2, UserIcon } from '@tuturuuu/icons';
+import { Loader2, UserIcon } from '@tuturuuu/icons';
 import {
   createWorkspaceAvatarUploadTarget,
   updateWorkspaceAvatar,
@@ -246,54 +246,45 @@ export default function AvatarInput({ workspace, disabled }: Props) {
       )}
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-          <div className="flex flex-col items-center gap-4">
-            <Avatar
-              className={cn(
-                'h-32 w-32 overflow-hidden rounded-md font-semibold text-3xl'
-              )}
-            >
-              <AvatarImage
-                src={previewSrc || undefined}
-                alt="Avatar"
-                className={cn('rounded-md object-cover')}
-              />
-              <AvatarFallback className={cn('rounded-md font-semibold')}>
-                {getInitials(workspace?.name) || (
-                  <UserIcon className="h-12 w-12" />
-                )}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-
-          {disabled && (
-            <div className="flex items-center gap-2 rounded-lg border border-dynamic-amber/30 bg-dynamic-amber/10 p-3">
-              <AlertTriangle className="h-5 w-5 text-dynamic-amber" />
-              <p className="text-dynamic-amber text-sm">
-                {t('settings-account.insufficient_permissions_avatar')}
-              </p>
-            </div>
-          )}
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-wrap items-center @lg:justify-end gap-2"
+        >
+          <Avatar
+            className={cn(
+              'size-12 shrink-0 overflow-hidden rounded-md font-semibold text-base'
+            )}
+          >
+            <AvatarImage
+              src={previewSrc || undefined}
+              alt="Avatar"
+              className={cn('rounded-md object-cover')}
+            />
+            <AvatarFallback className={cn('rounded-md font-semibold')}>
+              {getInitials(workspace?.name) || <UserIcon className="size-5" />}
+            </AvatarFallback>
+          </Avatar>
 
           {/* Upload controls - only show if user has permission */}
           {!isUploadDisabled && (
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <>
               <div>
-                <Label
-                  htmlFor="file-upload"
-                  className={cn(
-                    'inline-block rounded-md border p-3 px-4 text-center max-sm:w-full',
-                    isConverting
-                      ? 'cursor-not-allowed opacity-50'
-                      : 'cursor-pointer'
-                  )}
-                >
-                  {isConverting
-                    ? 'Converting...'
-                    : previewSrc
-                      ? t('settings-account.new_avatar')
-                      : t('settings-account.upload_avatar')}
-                </Label>
+                <Button asChild size="sm" variant="outline">
+                  <Label
+                    htmlFor="file-upload"
+                    className={cn(
+                      isConverting
+                        ? 'cursor-not-allowed text-muted-foreground'
+                        : 'cursor-pointer'
+                    )}
+                  >
+                    {isConverting
+                      ? 'Converting...'
+                      : previewSrc
+                        ? t('settings-account.new_avatar')
+                        : t('settings-account.upload_avatar')}
+                  </Label>
+                </Button>
                 <input
                   id="file-upload"
                   type="file"
@@ -309,12 +300,14 @@ export default function AvatarInput({ workspace, disabled }: Props) {
               </div>
               {previewSrc && (
                 <Button
-                  variant="destructive"
+                  className="text-dynamic-red hover:text-dynamic-red"
                   onClick={removeAvatar}
+                  size="sm"
                   type="button"
+                  variant="outline"
                 >
                   {saving ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     t('settings-account.remove_avatar')
                   )}
@@ -322,15 +315,16 @@ export default function AvatarInput({ workspace, disabled }: Props) {
               )}
               <Button
                 type="submit"
+                size="sm"
                 disabled={saving || !form.getValues('file')}
               >
                 {saving ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   t('settings-account.save_avatar')
                 )}
               </Button>
-            </div>
+            </>
           )}
         </form>
       </Form>

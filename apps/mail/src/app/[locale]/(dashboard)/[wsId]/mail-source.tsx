@@ -1,5 +1,6 @@
 'use client';
 
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import { useTranslations } from 'next-intl';
@@ -53,31 +54,33 @@ export function MailSourceSettings() {
   ] as const;
 
   return (
-    <RadioGroup
-      aria-label={t('source')}
-      className="grid gap-3"
-      onValueChange={(value) => void setSource(value as typeof source)}
-      value={source}
-    >
-      {options.map((option) => (
-        <Label
-          className="flex cursor-pointer items-start gap-3 rounded-2xl border border-dynamic p-4 has-[[data-state=checked]]:border-foreground/40 has-[[data-state=checked]]:bg-muted/40"
-          htmlFor={`mail-source-${option.value}`}
-          key={option.value}
-        >
-          <RadioGroupItem
-            className="mt-0.5"
-            id={`mail-source-${option.value}`}
-            value={option.value}
-          />
-          <span className="grid gap-1">
-            <span className="font-medium text-sm">{option.label}</span>
-            <span className="font-normal text-muted-foreground text-sm">
-              {option.description}
+    <SettingsSection>
+      <RadioGroup
+        aria-label={t('source')}
+        className="grid gap-0 divide-y"
+        onValueChange={(value) => void setSource(value as typeof source)}
+        value={source}
+      >
+        {options.map((option) => (
+          <Label
+            className="flex cursor-pointer items-start gap-3 px-4 py-4 md:px-5"
+            htmlFor={`mail-source-${option.value}`}
+            key={option.value}
+          >
+            <RadioGroupItem
+              className="mt-0.5"
+              id={`mail-source-${option.value}`}
+              value={option.value}
+            />
+            <span className="grid gap-1">
+              <span className="font-medium text-sm">{option.label}</span>
+              <span className="font-normal text-muted-foreground text-sm">
+                {option.description}
+              </span>
             </span>
-          </span>
-        </Label>
-      ))}
-    </RadioGroup>
+          </Label>
+        ))}
+      </RadioGroup>
+    </SettingsSection>
   );
 }

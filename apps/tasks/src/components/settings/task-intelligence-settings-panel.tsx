@@ -8,6 +8,10 @@ import {
 } from '@tuturuuu/tasks-api/progress/preferences';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
+  SettingsSection,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
+import {
   useUpdateUserWorkspaceConfig,
   useUserWorkspaceConfig,
 } from '@tuturuuu/ui/hooks/use-user-workspace-config';
@@ -18,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 
@@ -50,14 +53,11 @@ export function TaskIntelligenceSettingsPanel({ wsId }: { wsId: string }) {
   const disabled = updateConfig.isPending;
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl border bg-dynamic-cyan/5 p-4">
-        <h3 className="font-semibold">{t('autopilot_title')}</h3>
-        <p className="mt-1 text-muted-foreground text-sm">
-          {t('autopilot_description')}
-        </p>
-      </div>
-      <div className="grid gap-5">
+    <div className="space-y-8">
+      <SettingsSection
+        description={t('autopilot_description')}
+        title={t('autopilot_title')}
+      >
         <SettingItemTab
           description={t('show_decisions_description')}
           title={t('show_decisions')}
@@ -71,7 +71,6 @@ export function TaskIntelligenceSettingsPanel({ wsId }: { wsId: string }) {
             }
           />
         </SettingItemTab>
-        <Separator />
         <SettingItemTab
           description={t('goal_style_description')}
           title={t('goal_style')}
@@ -95,7 +94,8 @@ export function TaskIntelligenceSettingsPanel({ wsId }: { wsId: string }) {
             </SelectContent>
           </Select>
         </SettingItemTab>
-        <Separator />
+      </SettingsSection>
+      <SettingsSection>
         <SettingItemTab
           description={t('ai_catchups_description')}
           title={t('ai_catchups')}
@@ -109,7 +109,6 @@ export function TaskIntelligenceSettingsPanel({ wsId }: { wsId: string }) {
             }
           />
         </SettingItemTab>
-        <Separator />
         <SettingItemTab
           description={t('catchup_cadence_description')}
           title={t('catchup_cadence')}
@@ -133,8 +132,10 @@ export function TaskIntelligenceSettingsPanel({ wsId }: { wsId: string }) {
             </SelectContent>
           </Select>
         </SettingItemTab>
-      </div>
-      <p className="text-muted-foreground text-xs">{t('privacy_note')}</p>
+        <SettingsSectionMessage className="py-4">
+          {t('privacy_note')}
+        </SettingsSectionMessage>
+      </SettingsSection>
     </div>
   );
 }

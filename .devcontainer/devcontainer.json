@@ -16,7 +16,7 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "biomejs.biome",
+        "oxc.oxc-vscode",
         "vitest.explorer",
         "bradlc.vscode-tailwindcss",
         "pflannery.vscode-versionlens",
@@ -29,10 +29,10 @@
       ],
       "settings": {
         "editor.codeActionsOnSave": {
-          "source.organizeImports.biome": "explicit",
+          "source.organizeImports.oxc": "explicit",
           "source.organizeImports": "explicit",
           "source.sortMembers": "explicit",
-          "source.fixAll.biome": "explicit",
+          "source.fixAll.oxc": "explicit",
           "source.fixAll": "explicit"
         },
         "files.eol": "\n",
@@ -84,30 +84,30 @@
         "editor.formatOnPaste": false,
         "editor.formatOnSave": true,
         "editor.formatOnSaveMode": "file",
-        "editor.defaultFormatter": "biomejs.biome",
+        "editor.defaultFormatter": "oxc.oxc-vscode",
         "[xml]": {
-          "editor.defaultFormatter": "biomejs.biome"
+          "editor.defaultFormatter": "oxc.oxc-vscode"
         },
         "[css]": {
-          "editor.defaultFormatter": "biomejs.biome"
+          "editor.defaultFormatter": "oxc.oxc-vscode"
         },
         "[json]": {
-          "editor.defaultFormatter": "biomejs.biome"
+          "editor.defaultFormatter": "oxc.oxc-vscode"
         },
         "[jsonc]": {
-          "editor.defaultFormatter": "biomejs.biome"
+          "editor.defaultFormatter": "oxc.oxc-vscode"
         },
         "[javascript]": {
-          "editor.defaultFormatter": "biomejs.biome"
+          "editor.defaultFormatter": "oxc.oxc-vscode"
         },
         "[typescript]": {
-          "editor.defaultFormatter": "biomejs.biome"
+          "editor.defaultFormatter": "oxc.oxc-vscode"
         },
         "[javascriptreact]": {
-          "editor.defaultFormatter": "biomejs.biome"
+          "editor.defaultFormatter": "oxc.oxc-vscode"
         },
         "[typescriptreact]": {
-          "editor.defaultFormatter": "biomejs.biome"
+          "editor.defaultFormatter": "oxc.oxc-vscode"
         },
         "typescript.tsdk": "node_modules/typescript/lib",
         "workbench.editor.customLabels.patterns": {

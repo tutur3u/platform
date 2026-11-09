@@ -1,0 +1,50 @@
+name: Cache Finance native inputs
+description: Restore exact-lock Bun downloads and Playwright browsers without sharing profile artifacts.
+inputs:
+  save:
+    description: Allow a trusted main caller to seed missing caches; other profile jobs restore only.
+    required: false
+    default: "false"
+  bun-version:
+    description: Bun version used by the calling job.
+    required: true
+  node-version:
+    description: Node version used by the calling job.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Select isolated input cache directories
+      shell: bash
+      env:
+        LOCK_HASH: ${{ hashFiles('bun.lock') }}
+      run: |
+        set -euo pipefail
+        test -f bun.lock
+        test -n "$LOCK_HASH"
+        echo "BUN_INSTALL_CACHE_DIR=$RUNNER_TEMP/finance-native-bun" >> "$GITHUB_ENV"
+        echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/finance-native-playwright" >> "$GITHUB_ENV"
+    - name: Restore and save trusted Finance Bun inputs
+      if: ${{ inputs.save == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]' }}
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/finance-native-bun
+        key: finance-bun-v1-${{ runner.os }}-${{ runner.arch }}-bun${{ inputs.bun-version }}-node${{ inputs.node-version }}-${{ hashFiles('bun.lock') }}
+    - name: Restore Finance Bun inputs without saving
+      if: ${{ inputs.save != 'true' || github.ref != 'refs/heads/main' || (github.event_name != 'push' && github.event_name != 'workflow_dispatch') || github.actor == 'dependabot[bot]' }}
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/finance-native-bun
+        key: finance-bun-v1-${{ runner.os }}-${{ runner.arch }}-bun${{ inputs.bun-version }}-node${{ inputs.node-version }}-${{ hashFiles('bun.lock') }}
+    - name: Restore and save trusted Finance browser inputs
+      if: ${{ inputs.save == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.actor != 'dependabot[bot]' }}
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/finance-native-playwright
+        key: finance-browser-v1-${{ runner.os }}-${{ runner.arch }}-bun${{ inputs.bun-version }}-node${{ inputs.node-version }}-${{ hashFiles('bun.lock') }}
+    - name: Restore Finance browser inputs without saving
+      if: ${{ inputs.save != 'true' || github.ref != 'refs/heads/main' || (github.event_name != 'push' && github.event_name != 'workflow_dispatch') || github.actor == 'dependabot[bot]' }}
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/finance-native-playwright
+        key: finance-browser-v1-${{ runner.os }}-${{ runner.arch }}-bun${{ inputs.bun-version }}-node${{ inputs.node-version }}-${{ hashFiles('bun.lock') }}

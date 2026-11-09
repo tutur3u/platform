@@ -72,7 +72,6 @@ function database(approvalEnabled = false, existing = true) {
       };
     builder.maybeSingle = async () => result();
     builder.single = async () => result();
-    // biome-ignore lint/suspicious/noThenProperty: faithfully emulate the awaited PostgREST builder.
     builder.then = (resolve: (value: unknown) => unknown) => {
       const response = result();
       if (table === 'external_user_monthly_reports' && writes)
@@ -142,8 +141,6 @@ describe('Report create/edit requires an explicit approval action', () => {
     { scores: [2, 4] },
     { scores: null },
     { cadence: 'weekly' },
-    { period_start: '2026-07-01' },
-    { period_end: '2026-07-31' },
     { generation_mode: 'ai' },
     { generation_status: 'generating' },
     { generation_status: 'failed' },
@@ -154,6 +151,46 @@ describe('Report create/edit requires an explicit approval action', () => {
       report_approval_status: 'PENDING',
       approved_by: null,
       approved_at: null,
+    });
+  });
+  it.each([
+    { period_start: '2026-10-01', period_end: '2026-10-31' },
+    { period_start: null, period_end: null },
+  ])(
+    'keeps the review decision when only the report month changes %j',
+    async (body) => {
+      const calls = database(true);
+      expect((await PUT(request(body), context)).status).toBe(200);
+      const update = written(calls, 'update');
+      expect(update).toMatchObject(body);
+      for (const field of [
+        'report_approval_status',
+        'approved_by',
+        'approved_at',
+        'rejected_by',
+        'rejected_at',
+        'rejection_reason',
+      ])
+        expect(update).not.toHaveProperty(field);
+    }
+  );
+  it('still invalidates approval when the month changes with the content', async () => {
+    const calls = database(true);
+    expect(
+      (
+        await PUT(
+          request({
+            period_start: '2026-10-01',
+            period_end: '2026-10-31',
+            content: 'Rewritten observation',
+          }),
+          context
+        )
+      ).status
+    ).toBe(200);
+    expect(written(calls, 'update')).toMatchObject({
+      report_approval_status: 'PENDING',
+      approved_by: null,
     });
   });
   it('owns approval timestamps and attribution even when the caller supplies spoofed values', async () => {

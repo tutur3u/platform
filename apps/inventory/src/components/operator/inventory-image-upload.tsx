@@ -94,7 +94,6 @@ export function InventoryImageUploadField({
           )}
         >
           {value ? (
-            // biome-ignore lint/performance/noImgElement: previews use arbitrary signed workspace media URLs.
             <img
               alt={label}
               className="h-full w-full object-cover"

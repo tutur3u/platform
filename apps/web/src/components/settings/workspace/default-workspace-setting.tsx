@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Crown, Loader2 } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
@@ -155,7 +154,7 @@ export default function DefaultWorkspaceSetting({
         onValueChange={handleSelectedWorkspaceChange}
         disabled={isUpdating}
       >
-        <SelectTrigger className={isUpdating ? 'opacity-50' : ''}>
+        <SelectTrigger>
           <SelectValue placeholder="Select a default workspace" />
         </SelectTrigger>
         <SelectContent>
@@ -195,34 +194,34 @@ export default function DefaultWorkspaceSetting({
       </Select>
 
       {selectedIsPersonal && (
-        <Alert className="mt-2">
-          <Crown className="h-4 w-4" />
-          <AlertDescription>
-            <span className="font-medium">{t('personal_account')}</span>
-            <span className="ml-2 text-muted-foreground">/personal</span>
-          </AlertDescription>
-        </Alert>
+        <p className="flex items-center gap-2 text-sm">
+          <Crown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="font-medium">{t('personal_account')}</span>
+          <span className="text-muted-foreground">/personal</span>
+        </p>
       )}
 
       {hasChanged && (
-        <Button
-          onClick={handleUpdate}
-          disabled={isUpdating}
-          size="sm"
-          className="w-full"
-        >
-          {isUpdating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Updating...
-            </>
-          ) : (
-            <>
-              <Check className="mr-2 h-4 w-4" />
-              Save Changes
-            </>
-          )}
-        </Button>
+        <div className="flex justify-end">
+          <Button
+            onClick={handleUpdate}
+            disabled={isUpdating}
+            size="sm"
+            variant="outline"
+          >
+            {isUpdating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Save Changes
+              </>
+            )}
+          </Button>
+        </div>
       )}
     </div>
   );
