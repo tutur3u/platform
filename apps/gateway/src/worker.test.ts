@@ -71,6 +71,7 @@ describe('gateway handler', () => {
     const first = await t.call('/about');
     expect(first.headers.get('x-gateway-cache')).toBe('BYPASS');
     expect(first.headers.get('set-cookie')).toBe('a=1; Path=/');
+    expect(first.headers.get('x-gateway-bypass')).toBe('set-cookie');
     expect(t.cache.entries.size).toBe(0);
   });
 
