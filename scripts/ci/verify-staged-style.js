@@ -136,6 +136,16 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
   let sequence = 0;
   let browser;
   let stage = 'identity';
+  // A step killed by its timeout never reaches the catch block, so the last
+  // reached stage is kept on disk next to the rest of the proof.
+  const markStage = async (next) => {
+    stage = next;
+    await writeFile(
+      resolve(evidence, 'stage.json'),
+      `${JSON.stringify({ stage, at: new Date().toISOString() })}\n`
+    ).catch(() => {});
+  };
+  await markStage('identity');
   const failures = [];
   const css = new Map();
   const cssSources = new Map();
@@ -193,7 +203,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       browserType ||
       createRequire(resolve(root, 'apps/web/package.json'))('playwright')
         .chromium;
-    stage = 'browser';
+    await markStage('browser');
     browser = await chromium.launch({
       headless: true,
       env: safeEnvironment(env),
@@ -232,7 +242,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
     });
     const viewports = [];
     for (const width of [390, 1440]) {
-      stage = `viewport-${width}`;
+      await markStage(`viewport-${width}`);
       const page = await context.newPage();
       await page.setViewportSize({ width, height: 900 });
       const response = await page.goto(`${origin}/en`, {
@@ -331,7 +341,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       });
       await page.close();
     }
-    stage = 'receipt';
+    await markStage('receipt');
     const receipt = {
       source: sha,
       deployment: url,
