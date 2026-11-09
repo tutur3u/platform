@@ -102,6 +102,27 @@ class PayArtifactTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "staging marker"):
             wrapper.reject_staging_production(app, output)
 
+    def test_production_profile_accepts_compiled_staging_allowlists(self):
+        server = (
+            "R=[`.staging.tutur3u.com`];if(r&&e!==`.staging.tutur3u.com`)throw Error(`x`);"
+            "new Set(`web.ai.pay`.split(`.`).map(e=>`${e}.tutur3u.com`))"
+        )
+        app, output = self.production_output(client=server, server=server)
+        wrapper.reject_staging_production(app, output)
+
+    def test_production_profile_rejects_staging_host_beside_an_allowlist(self):
+        for host in ("https://pay.tutur3u.com", "https://web.tutur3u.com/api", "tutur3u.com", ".other.tutur3u.com"):
+            app, output = self.production_output(server="[`.staging.tutur3u.com`]" + host)
+            with self.assertRaisesRegex(ValueError, "staging marker"):
+                wrapper.reject_staging_production(app, output)
+
+    def test_production_profile_rejects_staging_cookie_domain_in_config(self):
+        app, output = self.production_output(
+            vars_extra={"NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".staging.tutur3u.com"}
+        )
+        with self.assertRaisesRegex(ValueError, "staging marker in production config"):
+            wrapper.reject_staging_production(app, output)
+
     def test_production_profile_rejects_staging_supabase_project_ref(self):
         app, output = self.production_output(server="https://fxefojytwimjiqxseqag.supabase.co")
         with self.assertRaisesRegex(ValueError, "staging marker"):
