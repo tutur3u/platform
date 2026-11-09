@@ -52,7 +52,7 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - uses: ./.github/actions/cache-supabase-images
       - name: Apply complete schema, run strict fee lock pgTAP, generate actual types
         run: node apps/database/scripts/verify-fee-lock-database-contract.mjs
