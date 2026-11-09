@@ -229,6 +229,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Smoke | `node scripts/cutover-smoke.mjs mind https://mind.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
 | Abuse guard | Service binding `ABUSE_GUARD` → `tuturuuu-abuse-guard`, secret `ABUSE_GUARD_KEY_PEPPER`, and text variable `ABUSE_GUARD_FAMILIES=proxy`; `ABUSE_GUARD_TIMEOUT_MS` is optional. Upstash is not required. |
+| Abuse guard | Service binding `ABUSE_GUARD` to `tuturuuu-abuse-guard`, secret `ABUSE_GUARD_KEY_PEPPER`, text variable `ABUSE_GUARD_FAMILIES=proxy`, and optional `ABUSE_GUARD_TIMEOUT_MS`. Upstash credentials are not required. |
 
 ## Not cut over tonight
 
