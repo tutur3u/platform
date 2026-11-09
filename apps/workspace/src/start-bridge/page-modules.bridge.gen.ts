@@ -201,6 +201,15 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/mira/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/mira/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/mira/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/notes/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/notes/page'),
     layouts: [

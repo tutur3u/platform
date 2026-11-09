@@ -27,6 +27,7 @@ export const pages = [
   { pattern: "/[wsId]/documents", file: "src/app/[locale]/(dashboard)/[wsId]/documents/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/habits/[[...slug]]", file: "src/app/[locale]/(dashboard)/[wsId]/habits/[[...slug]]/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/memories", file: "src/app/[locale]/(dashboard)/[wsId]/memories/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/mira", file: "src/app/[locale]/(dashboard)/[wsId]/mira/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/notes", file: "src/app/[locale]/(dashboard)/[wsId]/notes/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/tasks/[[...slug]]", file: "src/app/[locale]/(dashboard)/[wsId]/tasks/[[...slug]]/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/", file: "src/app/[locale]/page.tsx", defaults: { "locale": "en" } },
