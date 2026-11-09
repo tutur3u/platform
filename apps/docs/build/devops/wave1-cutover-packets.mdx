@@ -37,6 +37,21 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
 
   A passing smoke shows `server: cloudflare` and no `x-vercel-id` header.
 
+## Verified at `506c1ea9`
+
+The full production-profile sequence (build, seal, original-bytes workerd acceptance,
+upload-limit dry-run, final seal) passes on an isolated checkout for these apps:
+
+| App | Script bytes | Gzip bytes | Modules |
+| --- | --- | --- | --- |
+| Calendar | 23181018 | 3315032 | 221 |
+| Mail | 6123439 | 1958325 | 103 |
+| Apps | 2355083 | 567748 | 25 |
+
+Every size is inside the recorded paid-plan limits (64 MiB script). Mail and Apps runtime
+acceptance returns `200` for `GET`/`HEAD /api/build-info`, `405` for `POST`, and `307` for the
+unauthenticated workspace route. Meet and Roadmap use their own workflows and are covered above.
+
 ## Calendar
 
 | Field | Value |
@@ -79,7 +94,9 @@ anonymous `/` answers 307 to the Web login). Source carries the custom-domain ro
 `IMAGES`, and the `MEET_LIVE` Durable Object (migration tag `meet-live-v1`). Required secret
 names: `MEET_REALTIME_TOKEN_SECRET`, `NEXT_PUBLIC_SUPABASE_URL`,
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`.
-Meet AI stays contained (`MEET_AI_DISABLED=true`). Migration changes follow the Meet
+Meet is not part of the wave-1 profile set: `meet-cloudflare.yaml` validates it on every
+change (native build, emitted-config receipt, restored-artifact acceptance) and its `deploy`
+job publishes from the `production` ref with a deployment marker. Meet AI stays contained (`MEET_AI_DISABLED=true`). Migration changes follow the Meet
 migration serialization and are not part of this packet. Vercel holds no READY production
 deployment for Meet (all recent ones are canceled), so rollback for a Meet regression is the
 previous Worker version, not Vercel.
