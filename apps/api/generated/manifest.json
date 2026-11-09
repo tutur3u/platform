@@ -52,5 +52,573 @@
     "body": "none",
     "status": 200,
     "runtime": "worker"
+  },
+  {
+    "operationId": "getWorkspaceRoleOptions",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/roles/options",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_workspace_roles"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "listWorkspaceRoles",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/roles",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_workspace_roles"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "createWorkspaceRole",
+    "method": "POST",
+    "path": "/api/v1/workspaces/{wsId}/roles",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_workspace_roles"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 1048576,
+      "deadlineMs": 10000,
+      "ratePolicy": "workspace-write"
+    },
+    "body": "json",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getWorkspaceDefaultRole",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/roles/default",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_workspace_roles"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getWorkspaceRole",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/roles/{roleId}",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_workspace_roles",
+      "object": {
+        "param": "roleId",
+        "resource": "workspace_roles"
+      }
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "listWorkspaceRoleMembers",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/roles/{roleId}/members",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_workspace_roles",
+      "object": {
+        "param": "roleId",
+        "resource": "workspace_roles"
+      }
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getWorkspaceRoleMember",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/roles/{roleId}/members/{userId}",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_workspace_roles",
+      "object": {
+        "param": "roleId",
+        "resource": "workspace_roles"
+      }
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "listWorkspaceRoleWallets",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/roles/{roleId}/wallets",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_workspace_roles",
+      "object": {
+        "param": "roleId",
+        "resource": "workspace_roles"
+      }
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getWorkspaceRoleWallet",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/roles/{roleId}/wallets/{walletId}",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_workspace_roles",
+      "object": {
+        "param": "roleId",
+        "resource": "workspace_roles"
+      }
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "listWorkspaceApiKeys",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/api-keys",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_api_keys"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "createWorkspaceApiKey",
+    "method": "POST",
+    "path": "/api/v1/workspaces/{wsId}/api-keys",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_api_keys"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 1048576,
+      "deadlineMs": 10000,
+      "ratePolicy": "workspace-write"
+    },
+    "body": "json",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getWorkspaceApiKeyRoles",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/api-keys/roles",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_api_keys"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getWorkspaceApiKey",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/api-keys/{keyId}",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_api_keys",
+      "object": {
+        "param": "keyId",
+        "resource": "workspace_api_keys"
+      }
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "rotateWorkspaceApiKey",
+    "method": "POST",
+    "path": "/api/v1/workspaces/{wsId}/api-keys/{keyId}/rotate",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_api_keys",
+      "object": {
+        "param": "keyId",
+        "resource": "workspace_api_keys"
+      }
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 1048576,
+      "deadlineMs": 10000,
+      "ratePolicy": "workspace-write"
+    },
+    "body": "json",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "listWorkspaceApiKeyUsageLogs",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/api-keys/{keyId}/usage-logs",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_api_keys",
+      "object": {
+        "param": "keyId",
+        "resource": "workspace_api_keys"
+      }
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "createWorkspaceWhiteboard",
+    "method": "POST",
+    "path": "/api/v1/workspaces/{wsId}/whiteboards",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_whiteboards"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 1048576,
+      "deadlineMs": 10000,
+      "ratePolicy": "workspace-write"
+    },
+    "body": "json",
+    "status": 201,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getWorkspaceWhiteboard",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/whiteboards/{boardId}",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_whiteboards",
+      "object": {
+        "param": "boardId",
+        "resource": "workspace_whiteboards"
+      }
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getWorkspaceWhiteboardImageUrl",
+    "method": "POST",
+    "path": "/api/v1/workspaces/{wsId}/whiteboards/{boardId}/image-url",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_whiteboards",
+      "object": {
+        "param": "boardId",
+        "resource": "workspace_whiteboards"
+      }
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 1048576,
+      "deadlineMs": 10000,
+      "ratePolicy": "workspace-write"
+    },
+    "body": "json",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "listWorkspaceWorkforceUsers",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/workforce/users",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_workforce"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getWorkspaceWorkforceUser",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/workforce/users/{userId}",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_workforce"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "listWorkspaceUserProfileLinks",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/user-profile-links",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_user_profile_links"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "listWorkspaceUserProfileLinkUsers",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/user-profile-links/users",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_user_profile_links"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getWorkspaceUserProfileLink",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/user-profile-links/{linkId}",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_user_profile_links",
+      "object": {
+        "param": "linkId",
+        "resource": "workspace_user_profile_links"
+      }
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "listWorkspaceProgrammingProblems",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/programming/problems",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_programming_problems"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getWorkspaceProgrammingProblem",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/programming/problems/{problemId}",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "manage_programming_problems",
+      "object": {
+        "param": "problemId",
+        "resource": "workspace_programming_problems"
+      }
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
+  },
+  {
+    "operationId": "getWorkspaceDeletedStatus",
+    "method": "GET",
+    "path": "/api/v1/workspaces/{wsId}/deleted",
+    "aliases": [],
+    "policy": {
+      "kind": "workspace",
+      "workspaceParam": "wsId",
+      "permission": "view_workspace"
+    },
+    "guard": "web-api",
+    "limits": {
+      "bodyBytes": 0,
+      "deadlineMs": 5000,
+      "ratePolicy": "workspace-read"
+    },
+    "body": "none",
+    "status": 200,
+    "runtime": "worker"
   }
 ]
