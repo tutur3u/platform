@@ -89,7 +89,7 @@ export const ci = {
   // affected-path gating. Only the automatic platform preview belongs here.
   'vercel-preview-platform.yaml': true,
   'vercel-production-ai.yaml': true,
-  'vercel-production-apps.yaml': true,
+  'vercel-production-apps.yaml': false,
   'vercel-production-calendar.yaml': false,
   'vercel-production-chat.yaml': true,
   'vercel-production-cms.yaml': true,
@@ -108,7 +108,7 @@ export const ci = {
   'vercel-production-tasks.yaml': true,
   'vercel-production-meet.yaml': false,
   'vercel-production-learn.yaml': true,
-  'vercel-production-mail.yaml': true,
+  'vercel-production-mail.yaml': false,
   // Avoid automatic TanStack production builds while the migration is paused.
   'vercel-production-tanstack-web.yaml': false,
   'vercel-production-teach.yaml': true,
@@ -154,7 +154,17 @@ export const productionPublicationPolicy = {
       'Calendar native root cutover with private smoke and rehearsed route rollback',
     surfaces: ['frontend'],
   },
-  mail: { state: 'held', reason: 'held for wave-1 cutover' },
-  apps: { state: 'held', reason: 'held for wave-1 cutover' },
+  mail: {
+    state: 'admitted',
+    reason:
+      'Mail native cutover with route-free upload, private smoke and Vercel alias rollback',
+    surfaces: ['frontend'],
+  },
+  apps: {
+    state: 'admitted',
+    reason:
+      'Apps native cutover with route-free upload, private smoke and Vercel alias rollback',
+    surfaces: ['frontend'],
+  },
   shortener: { state: 'held', reason: 'held for wave-2 cutover' },
 } satisfies ProductionPublicationPolicy;

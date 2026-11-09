@@ -259,7 +259,7 @@ test('known unrelated publisher retains normal selection even with malformed pro
   );
 });
 
-test('Calendar admission opens only its publisher while Meet and other wave-1 apps remain held', (t) => {
+test('Calendar, Mail and Apps admission opens only their publishers while Meet and Shortener remain held', (t) => {
   const root = fixture(t);
   assert.equal(
     runPolicy(root, 'calendar-cloudflare.yaml').output,
@@ -293,8 +293,12 @@ test('Calendar admission opens only its publisher while Meet and other wave-1 ap
   for (const app of ['mail', 'apps'])
     assert.equal(
       runPolicy(root, `${app}-cloudflare.yaml`).output,
-      'allowed=false\n'
+      'allowed=true\n'
     );
+  assert.equal(
+    runPolicy(root, 'shortener-cloudflare.yaml').output,
+    'allowed=false\n'
+  );
 });
 
 const publishers = [

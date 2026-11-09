@@ -213,9 +213,13 @@ test('only the production environment upload step receives the named deploy toke
   const workflow = readWorkflow('wave1-native-production.yaml');
   assert.deepEqual(workflow.on.workflow_dispatch.inputs.app.options, [
     'calendar',
+    'mail',
+    'apps',
   ]);
-  assert.equal(workflow.jobs.publish.environment, 'wave1-calendar-production');
-  assert.equal(workflow.jobs.qualify.environment, 'wave1-calendar-production');
+  const environment = 'wave1-${{ inputs.app }}-production';
+  assert.equal(workflow.jobs.publish.environment, environment);
+  assert.equal(workflow.jobs.qualify.environment, environment);
+  assert.equal(workflow.jobs.publish.env.PUBLICATION_ENVIRONMENT, environment);
   assert.ok(
     workflow.jobs.publish.steps.some((step) =>
       step.run?.includes('bun install --frozen-lockfile --ignore-scripts')
