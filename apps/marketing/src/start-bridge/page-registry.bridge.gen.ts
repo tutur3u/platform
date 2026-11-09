@@ -5,6 +5,7 @@ export const pages = [
   { pattern: "/about", file: "src/app/[locale]/(marketing)/about/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/acceptable-use", file: "src/app/[locale]/(marketing)/acceptable-use/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/blog", file: "src/app/[locale]/(marketing)/blog/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/careers", file: "src/app/[locale]/(marketing)/careers/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/community-guidelines", file: "src/app/[locale]/(marketing)/community-guidelines/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/legal/changes/full", file: "src/app/[locale]/(marketing)/legal/changes/full/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/legal/changes", file: "src/app/[locale]/(marketing)/legal/changes/page.tsx", defaults: { "locale": "en" } },
