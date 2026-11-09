@@ -38,9 +38,10 @@ path until an explicit cutover PR admits the app.
 | AI chat | `(dashboard)/[wsId]/ai-chat`, `[chatId]`, `chatbots`, `my-chatbots`, `new` | Carved. |
 | Changelog | `(dashboard)/[wsId]/changelog` | Carved. |
 | Crawlers | `(dashboard)/[wsId]/crawlers` | Carved. |
+| Polls | `(dashboard)/[wsId]/polls` | Carved. |
 | Locale root | `[locale]/page.tsx` (Workspace-owned) | Answers `404`. The locale-only path would otherwise match `/[wsId]` as a workspace named after the locale. Signed-in users never reach it because the proxy redirects them to their workspace. |
 | Redirected by the proxy | `workforce`, plus `finance`, `drive`, `mail`, `chat`, `time-tracker`, `meet`, `users`, `posts` and `forms` (satellite redirects in `src/proxy.ts`) | Nothing to carve. The proxy answers with a redirect to the owning app before any page renders. |
-| Not carved | `cron`, `diet`, `epm`, `external-projects`, `feedback`, `hive`, `inventory`, `link-shortener`, `metrics`, `mind`, `notifications`, `polls`, `progress`, `qr-generator`, `queues`, `readings`, `whiteboards`, `workouts`, `workspace-setup`, `(dashboard)/personal-journal` | Workspace answers `404` for them, so a router in front of it must send only the carved patterns here. |
+| Not carved | `cron`, `diet`, `epm`, `external-projects`, `feedback`, `hive`, `inventory`, `link-shortener`, `metrics`, `mind`, `notifications`, `progress`, `qr-generator`, `queues`, `readings`, `whiteboards`, `workouts`, `workspace-setup`, `(dashboard)/personal-journal` | Workspace answers `404` for them, so a router in front of it must send only the carved patterns here. |
 
 Run `bun run routes:check` after every carve. If it reports stale registries, run
 `bun ../../packages/start-bridge/src/codegen/cli.ts generate .`. The page module
