@@ -172,7 +172,7 @@ describe('board header filter state', () => {
     ).toEqual({ ...DEFAULT_BOARD_FILTERS, hideEmptyTaskLists: true });
   });
 
-  it('lists people you first, then by task count', () => {
+  it('lists only workspace members, you first, then by task count', () => {
     const tasks = [
       { assignees: [minh] },
       { assignees: [minh, me] },
@@ -180,12 +180,16 @@ describe('board header filter state', () => {
       { assignees: [{ id: 'an', display_name: 'An' }] },
       { assignees: [minh] },
     ];
-    expect(collectBoardPeople(tasks, 'me').map((p) => p.id)).toEqual([
+    expect(collectBoardPeople(tasks, 'me', people).map((p) => p.id)).toEqual([
       'me',
       'minh',
-      'an',
     ]);
-    expect(collectBoardPeople(tasks, 'me')[1]?.taskCount).toBe(3);
+    expect(collectBoardPeople(tasks, 'me', people)[1]?.taskCount).toBe(3);
     expect(countUnassignedTasks(tasks)).toBe(1);
+    expect(collectBoardPeople(tasks, 'me', [me])).toEqual([
+      { ...me, taskCount: 1 },
+    ]);
+    expect(collectBoardPeople(tasks, 'me', [])).toEqual([]);
+    expect(tasks[3]?.assignees[0]?.id).toBe('an');
   });
 });

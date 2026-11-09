@@ -59,7 +59,10 @@ type TaskHistoryRpcEntry = {
   user_avatar_url: string | null;
 };
 
-export function formatTaskHistoryEntry(entry: TaskHistoryRpcEntry) {
+export function formatTaskHistoryEntry(
+  entry: TaskHistoryRpcEntry,
+  publicProfile?: { display_name: string | null }
+) {
   return {
     id: entry.id,
     task_id: entry.task_id,
@@ -73,7 +76,7 @@ export function formatTaskHistoryEntry(entry: TaskHistoryRpcEntry) {
     user: entry.user_id
       ? {
           id: entry.user_id,
-          name: entry.user_display_name || 'Unknown',
+          name: publicProfile?.display_name || 'Unknown',
           avatar_url: entry.user_avatar_url,
         }
       : null,
@@ -169,9 +172,30 @@ export async function GET(
     const totalCount = history?.[0]?.total_count ?? 0;
     const taskName = history?.[0]?.task_name ?? 'Unknown Task';
 
-    // Format the response
+    const actorIds = [
+      ...new Set(
+        (history ?? []).flatMap((entry) =>
+          entry.user_id ? [entry.user_id] : []
+        )
+      ),
+    ];
+    const { data: profiles, error: profilesError } = actorIds.length
+      ? await supabase
+          .from('users')
+          .select('id, display_name')
+          .in('id', actorIds)
+      : { data: [], error: null };
+    if (profilesError) {
+      return NextResponse.json(
+        { error: 'Failed to fetch history profiles' },
+        { status: 500 }
+      );
+    }
+    const profilesById = new Map(
+      (profiles ?? []).map((profile) => [profile.id, profile])
+    );
     const formattedHistory = (history || []).map((entry: TaskHistoryRpcEntry) =>
-      formatTaskHistoryEntry(entry)
+      formatTaskHistoryEntry(entry, profilesById.get(entry.user_id ?? ''))
     );
 
     return NextResponse.json({
