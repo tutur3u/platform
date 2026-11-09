@@ -307,6 +307,32 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/crawlers/(default)/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/crawlers/(default)/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/uncrawled/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/crawlers/(default)/uncrawled/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/crawlers/(default)/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/crawlers/[crawlerId]/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/crawlers/[crawlerId]/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/documents/[documentId]/page'),
     layouts: [
