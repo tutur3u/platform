@@ -1,4 +1,878 @@
 {
+  "bug-bounty": {
+    "assessment": {
+      "accepted": {
+        "description": "Both public Hall of Fame entries are verified reports. Verification means Tuturuuu reproduced or validated the relevant behavior, then published the narrower confirmed scope.",
+        "title": "Verified finding"
+      },
+      "badge": "Verified scope",
+      "description": "We separate each researcher's claim from Tuturuuu's verified scope. That lets us credit reports without overstating direct infrastructure or product impact.",
+      "remediation": {
+        "description": "For direct Tuturuuu exposure, we fix the affected route or policy. For upstream platform behavior, we harden our integration and track provider-level mitigation separately.",
+        "title": "Remediation path"
+      },
+      "scope": {
+        "description": "A verified report can describe direct Tuturuuu product impact, workspace-level exposure, or upstream provider behavior. The public card names which category applies.",
+        "title": "Impact classification"
+      },
+      "title": "Verified report scope, without overclaiming",
+      "upstream": {
+        "description": "Hiep's finding is credited as verified, but the risky execution path is native to Supabase Storage file delivery and does not directly affect Tuturuuu infrastructure or products.",
+        "title": "Upstream storage scope"
+      }
+    },
+    "community": {
+      "description": "Every name here reflects careful private reporting and confirmed security value.",
+      "eyebrow": "Community",
+      "metrics": {
+        "channel": "Private reporting",
+        "credit": "Recognition",
+        "reports": "Verified reports"
+      },
+      "public_credit": "Public credit",
+      "title": "Security improves when researchers can work with us"
+    },
+    "hall": {
+      "badge": "Hall of Fame",
+      "description": "Verified research, public credit, and a short note on what each report helped improve.",
+      "title": "Researchers helping make Tuturuuu safer"
+    },
+    "hero": {
+      "badge": "Security Hall of Fame",
+      "description": "Meet the researchers who report issues responsibly and help keep Tuturuuu trustworthy for teams, schools, and communities.",
+      "policy_cta": "Read security policy",
+      "report_cta": "Report a vulnerability",
+      "title_highlight": "people who make Tuturuuu safer",
+      "title_prefix": "Thank you to the"
+    },
+    "labels": {
+      "cwe": "CWE",
+      "remediation": "Remediation",
+      "report_date": "Report date",
+      "report_summary": "Report summary",
+      "scope": "Scope",
+      "severity": "Severity",
+      "verified_impact": "Verified impact"
+    },
+    "ledger": {
+      "description": "Verification is public, but impact scope stays exact.",
+      "details": {
+        "direct_product_cases": "Rana's report involved Tuturuuu-managed workspace privacy scope.",
+        "upstream_platform_cases": "Hiep's report is a native Supabase Storage delivery behavior.",
+        "verified_reports": "Both listed reports have been validated and credited."
+      },
+      "eyebrow": "Disclosure ledger",
+      "metrics": {
+        "channel": "Reporting channel",
+        "direct_product_cases": "Direct product cases",
+        "upstream_platform_cases": "Upstream platform cases",
+        "verified_reports": "Verified reports"
+      },
+      "recognition": "Public credit",
+      "title": "Verified reports, precise scope"
+    },
+    "meta": {
+      "description": "Meet the researchers recognized in the Tuturuuu Security Hall of Fame.",
+      "title": "Security Hall of Fame"
+    },
+    "program": {
+      "badge": "Report",
+      "contact_cta": "Email security team",
+      "description": "If you find something, send it privately. We will validate it, fix what matters, and credit verified reports when researchers want to be listed.",
+      "security_cta": "Security page",
+      "steps": {
+        "credit": {
+          "description": "Verified researchers can be listed here with the name or handle they choose.",
+          "title": "Get credited"
+        },
+        "private": {
+          "description": "Email security@tuturuuu.com before sharing details publicly.",
+          "title": "Report privately"
+        },
+        "scope": {
+          "description": "Use the smallest proof needed and avoid destructive testing.",
+          "title": "Keep it safe"
+        },
+        "triage": {
+          "description": "We review the report, confirm impact, and prioritize the right fix.",
+          "title": "We validate"
+        }
+      },
+      "title": "Found something?"
+    },
+    "researchers": {
+      "rana": {
+        "cwe": "CWE-200 / CWE-284",
+        "date": "May 18, 2026",
+        "description": "Rana reported that authenticated Supabase REST access to user profile rows could enumerate records more broadly than intended.",
+        "impact": "Rana helped us tighten profile visibility around workspace boundaries.",
+        "name": "Rana Zeeshan (nova cyber force)",
+        "note": "Verified as a Tuturuuu-managed workspace privacy issue.",
+        "remediation": "Restrict profile reads to the signed-in user or users sharing a workspace, and keep private account details behind narrower access paths.",
+        "report": "Profile visibility scope",
+        "scope": "Direct Tuturuuu workspace privacy scope",
+        "severity": "Workspace privacy scope",
+        "status": "Verified"
+      },
+      "vapour": {
+        "cwe": "CWE-79 / CWE-434",
+        "date": "2025-03-30",
+        "description": "Nguyen Nghia Hiep reported a stored XSS behavior caused by SVG delivery through Supabase Storage public URLs.",
+        "impact": "Hiep helped surface unsafe SVG behavior in direct Supabase Storage file delivery.",
+        "name": "Nguyen Nghia Hiep (vapour)",
+        "note": "Verified and credited; this does not directly affect Tuturuuu products or infrastructure.",
+        "remediation": "Keep blocking or sanitizing risky SVG avatar uploads in Tuturuuu flows and track provider-level handling for Supabase Storage SVG delivery.",
+        "report": "SVG storage delivery behavior",
+        "scope": "Native Supabase Storage offering",
+        "severity": "Upstream storage behavior",
+        "status": "Verified"
+      }
+    }
+  },
+  "calendar": {
+    "4-days": "4 Days",
+    "account_disconnected": "Account disconnected successfully",
+    "add": "Add",
+    "add_account": "Add Account",
+    "add_google_account": "Add Google Account",
+    "add_microsoft_account": "Add Microsoft Account",
+    "add_more_calendars": "Add More Calendars",
+    "added_calendar": "Added {name}",
+    "agenda": "Agenda",
+    "agenda_all_day": "All day",
+    "agenda_empty_subtitle": "No events in the next {days} days. Enjoy the free time!",
+    "agenda_empty_title": "All clear",
+    "agenda_event_count": "{count, plural, one {# event} other {# events}}",
+    "all_calendars_connected": "All your Google Calendars are already connected.",
+    "auth_url_invalid": "Invalid authentication URL received",
+    "calendar_created": "Calendar created",
+    "calendar_creation_failed": "Failed to create calendar",
+    "calendar_data_reset": "Calendar data reset successfully",
+    "calendar_deleted": "Calendar deleted",
+    "calendar_deletion_failed": "Failed to delete calendar",
+    "calendar_disabled": "Calendar disabled",
+    "calendar_enabled": "Calendar enabled",
+    "calendar_reset_failed": "Failed to reset calendar data",
+    "calendar_sync_settings_unavailable": "Sync controls will be available after the latest calendar migration is applied.",
+    "calendar_sync_settings_updated": "Calendar sync settings updated",
+    "calendar_sync_started": "Calendar sync started",
+    "calendar_toggle_failed": "Failed to toggle calendar",
+    "calendars": "Calendars",
+    "calendars_selected": "selected",
+    "cancel": "Cancel",
+    "categories": {
+      "add": "Add",
+      "add_all_missing": "Add All Missing",
+      "browse_suggestions": "Browse suggestions",
+      "description": "Customize colors for different event categories",
+      "done": "Done",
+      "edit": "Edit",
+      "event_suffix": "Event",
+      "failed_to_load": "Failed to load categories",
+      "info_example": "For example, if you have a \"Work\" category with blue color, events with \"work\" or \"meeting\" in the title will be colored blue.",
+      "info_text": "Categories help organize your events by color. The AI will automatically assign colors to events based on their title and these categories.",
+      "new_category_placeholder": "New category name",
+      "no_categories": "No categories yet. Add one to get started.",
+      "select_color": "Select a color:",
+      "suggestions": "Suggestions",
+      "title": "Category Colors",
+      "try_refreshing": "Please try refreshing the page.",
+      "your_categories": "Your Categories"
+    },
+    "choose_calendars_to_show": "Choose which calendars to show in this workspace.",
+    "choose_default_calendar": "Choose default calendar",
+    "choose_outbound_calendar": "Choose outbound calendar",
+    "coming_soon": "Coming Soon",
+    "conflict_policy": "Conflict policy",
+    "connect": "Connect",
+    "connect_accounts": "Connect accounts",
+    "connect_calendar": "Connect Calendar",
+    "connect_calendar_accounts": "Connect calendar accounts",
+    "connect_calendar_accounts_desc": "Connect Google or Outlook to start two-way syncing availability, tasks, and routines.",
+    "connect_google_calendar": "Connect Google Calendar",
+    "connect_google_desc": "Connect your Google account",
+    "connect_microsoft_desc": "Connect your Microsoft account",
+    "connected_accounts": "Connected Accounts",
+    "connected_calendars": "Connected Calendars",
+    "create": "Create",
+    "create_calendar": "Create Calendar",
+    "create_description": "Choose what you'd like to create.",
+    "create_event_ai_desc": "Describe what you need and get smart time suggestions.",
+    "create_event_desc": "Fill in title, time, location, and details.",
+    "create_habit_desc": "Create a recurring habit to track on your calendar.",
+    "creation_recovery_notice": "The previous creation is unconfirmed. Retry the original request first; your edits will stay open to save after confirmation.",
+    "creation_recovery_retry": "Retry original creation",
+    "creation_recovery_unavailable": "Creation is unconfirmed and automatic recovery is unavailable for this source. Check the calendar before starting another creation; your edits are preserved.",
+    "current": "Current",
+    "custom_calendars": "Custom",
+    "danger_zone": "Danger Zone",
+    "day": "Day",
+    "default_calendar_source": "Default calendar source",
+    "default_calendar_source_desc": "New events use this calendar unless you choose another source.",
+    "default_calendar_updated": "Default calendar updated",
+    "degraded": "Degraded",
+    "deletes": "Deletes",
+    "disconnect": "Disconnect",
+    "e2ee": {
+      "already_enabled": "E2EE is enabled for this workspace",
+      "checking": "Checking E2EE...",
+      "enable": "Enable E2EE",
+      "enable_for_workspace": "Enable E2EE for this workspace",
+      "enable_tooltip": "Click to enable end-to-end encryption for your calendar events",
+      "enabled": "E2EE Enabled",
+      "enabling": "Enabling E2EE...",
+      "encrypt_events": "Encrypt {count} events",
+      "encrypting": "Encrypting...",
+      "encrypting_progress": "Encrypting {current}/{total} events...",
+      "fix_failed": "Failed to fix encryption issues",
+      "fix_success": "Successfully fixed {count} corrupt events",
+      "fixing": "Fixing...",
+      "fixing_integrity": "Fixing encryption integrity issues...",
+      "fixing_tooltip": "Re-encrypting events with integrity issues...",
+      "integrity_issue": "Some events marked as encrypted but contain plaintext",
+      "key_generated": "E2EE encryption key generated successfully",
+      "key_generation_failed": "Failed to generate E2EE encryption key",
+      "migration_failed": "Failed to encrypt some events",
+      "migration_success": "Successfully encrypted {count} events",
+      "setup_description": "Enable encryption to protect your calendar events. Once enabled, your event titles, descriptions, and locations will be encrypted before being stored.",
+      "setup_title": "End-to-End Encryption",
+      "tooltip": "Your calendar events are encrypted at rest using end-to-end encryption",
+      "unencrypted_warning": "{count} calendar events are not yet encrypted. Click to encrypt them now.",
+      "verification_failed": "Failed to verify encryption status",
+      "verified": "All events verified as properly encrypted",
+      "verify_tooltip": "Click to verify encryption - checks if events are truly encrypted in the database",
+      "verifying": "Verifying...",
+      "verifying_tooltip": "Checking encryption status of your events..."
+    },
+    "enter_calendar_name": "Enter calendar name:",
+    "errors": {
+      "forbidden": "Access forbidden",
+      "unauthorized": "Unauthorized access",
+      "unknown_error": "An unknown error occurred"
+    },
+    "failed_to_add": "Failed to add calendar",
+    "failed_to_disconnect": "Failed to disconnect account",
+    "failed_to_fetch_calendars": "Failed to fetch calendars",
+    "failed_to_fetch_google": "Failed to fetch from Google",
+    "failed_to_load_events": "Failed to load events",
+    "failed_to_remove": "Failed to remove calendar",
+    "failed_to_update": "Failed to update calendar",
+    "failed_to_update_visibility": "Failed to update calendar visibility",
+    "google": "Google",
+    "google_auth_failed": "Google authentication failed",
+    "google_calendar": "Google Calendar",
+    "google_event_color": "Google color {id}",
+    "healthy": "Healthy",
+    "import": "Import",
+    "import_external_changes": "Import external changes",
+    "import_external_changes_desc": "Bring Google and Outlook event changes into Tuturuuu.",
+    "inherit_calendar_color": "Use calendar color",
+    "last_synced_at": "Last synced {time}",
+    "latest_write_wins": "Latest write wins",
+    "latest_write_wins_desc": "When both sides changed, the most recently written event wins.",
+    "loading_calendars": "Loading calendars...",
+    "manage_calendar_accounts": "Manage Calendar Accounts",
+    "manage_calendar_accounts_desc": "Connect multiple Google and Microsoft accounts to sync calendars from all your accounts.",
+    "manage_calendars": "Manage Calendars",
+    "manage_google_calendars_desc": "Choose which Google Calendars to sync with your workspace",
+    "manage_google_calendars_title": "Manage Google Calendars",
+    "microsoft_auth_failed": "Microsoft authentication failed",
+    "microsoft_coming_soon": "Microsoft Outlook Coming Soon!",
+    "microsoft_coming_soon_desc": "We're working on Microsoft calendar integration. It will be available very soon!",
+    "microsoft_outlook": "Microsoft Outlook",
+    "month": "Month",
+    "new": "New",
+    "new-event": "New event",
+    "new-habit": "New Habit",
+    "new-task": "New Task",
+    "no_calendars_connected": "No calendars connected yet. Add calendars below to start syncing.",
+    "no_calendars_found": "No calendars found for this account.",
+    "no_calendars_synced": "No calendars synced yet.",
+    "no_google_accounts": "No Google accounts connected yet.",
+    "no_microsoft_accounts": "No Microsoft accounts connected yet.",
+    "no_outbound_calendar": "No outbound calendar",
+    "outlook": "Outlook",
+    "overridden_by_settings": "Overridden by your settings",
+    "personal_first_day_override_desc": "You have set your personal first day of week to <bold>{firstDay}</bold>, which overrides this workspace setting. Your effective first day is <bold>{effectiveFirstDay}</bold>. Change it in Appearance & Theme settings.",
+    "personal_timezone_override_desc": "You have set your personal timezone to <bold>{timezone}</bold>, which overrides this workspace setting. Your effective timezone is <bold>{effectiveTimezone}</bold>. Change it in Appearance & Theme settings.",
+    "please_reconnect": "Please reconnect your Google Calendar",
+    "primary": "Primary",
+    "provider_color_label": "Google event color",
+    "provider_reconnect_description": "The provider session expired. Stored calendars remain available; reconnect to refresh them.",
+    "reconnect": "Reconnect",
+    "reconnect_desc": "Your current connection needs additional permissions. Please disconnect and reconnect your Google Calendar.",
+    "reconnect_required": "Reconnect",
+    "recurrence": {
+      "advancedPattern": "This series uses an advanced pattern, which is preserved. Edit its event details here.",
+      "all": "Entire series",
+      "allDay": "All day",
+      "cancel": "Cancel",
+      "conflict": "This series changed elsewhere. Reload it before saving.",
+      "count": "Number of occurrences",
+      "create": "Recurring event",
+      "daily": "Daily",
+      "delete": "Delete selected scope",
+      "description": "Choose how this native Calendar event repeats.",
+      "edit": "Edit recurring event",
+      "end": "Ends (exclusive for all-day events)",
+      "ending": "Repeat until",
+      "failed": "Could not save this change. Your draft is retained; try again.",
+      "FR": "Fri",
+      "frequency": "Repeat",
+      "future": "This and following occurrences",
+      "futureExceptionsReset": "Edits and cancellations for this and following occurrences will be reset when you save.",
+      "interval": "Every",
+      "invalid": "Check the title, dates, time zone and recurrence settings.",
+      "loading": "Loading recurring event…",
+      "location": "Location",
+      "MO": "Mon",
+      "month": "Month (1–12)",
+      "monthDay": "Day of month",
+      "monthDayLast": "Use the last day",
+      "monthDayOverflow": "When the day is missing",
+      "monthDayPattern": "Day of month",
+      "monthDaySkip": "Skip that month",
+      "monthly": "Monthly",
+      "monthPattern": "Repeat by",
+      "monthWeekdayPattern": "Weekday in month",
+      "native_source": "Tuturuuu Calendar",
+      "nativeOnly": "Saved to Tuturuuu Calendar. Missing local times during daylight saving are skipped. Provider recurrence is managed separately.",
+      "never": "No end date",
+      "ordinal1": "First",
+      "ordinal2": "Second",
+      "ordinal3": "Third",
+      "ordinal4": "Fourth",
+      "ordinalLast": "Last",
+      "provider_disabled": "Editing recurring events is not available for this connected calendar yet. Existing events remain unchanged.",
+      "provider_pending": "Your change is being synchronized. This request is retained so retrying will not create another event.",
+      "provider_readonly": "Read-only recurring event",
+      "provider_readonly_description": "This provider recurrence rule cannot be safely edited here. Manage the series in its original calendar.",
+      "provider_retry": "Continue synchronization",
+      "provider_source": "Calendar",
+      "relativeWeekdayHelp": "With several weekdays selected, each month uses the earliest matching date in the selected week. The start date must match this pattern.",
+      "reload": "Reload series",
+      "SA": "Sat",
+      "save": "Save",
+      "saving": "Saving…",
+      "scope": "Apply changes to",
+      "start": "Starts",
+      "SU": "Sun",
+      "TH": "Thu",
+      "this": "Only this occurrence",
+      "timezone": "Time zone",
+      "title": "Title",
+      "TU": "Tue",
+      "unavailable": "This recurring event is unavailable.",
+      "until": "End date",
+      "WE": "Wed",
+      "weekdays": "Days of the week",
+      "weekIndex": "Which week",
+      "weekly": "Weekly",
+      "yearly": "Yearly"
+    },
+    "refresh_connection": "Your Google Calendar connection needs to be refreshed.",
+    "refresh_needed": "Refresh needed",
+    "removed_calendar": "Removed {name}",
+    "reset_all_data": "Reset All Data",
+    "reset_calendar_confirm_desc": "This will permanently delete all calendar events, disconnect all linked accounts (Google, Microsoft), and remove custom calendars. System calendars will be preserved but emptied. This action cannot be undone.",
+    "reset_calendar_confirm_title": "Reset all calendar data?",
+    "reset_calendar_data": "Reset Calendar Data",
+    "schedule": "Schedule",
+    "send": "Send",
+    "settings_tab_accounts": "Accounts",
+    "settings_tab_calendars": "Calendars",
+    "settings_tab_sync": "Sync",
+    "settings_updated_error": "Failed to update workspace calendar settings",
+    "settings_updated_success": "Workspace calendar settings updated successfully",
+    "sync_completed": "Sync completed",
+    "sync_from_google": "From Google",
+    "sync_in_progress": "Sync in progress",
+    "sync_now": "Sync now",
+    "sync_recovery": {
+      "attention": "Sync needs attention",
+      "calendar_failed": "Other calendars can keep syncing. You can pause this calendar while its connection is repaired.",
+      "calendar_paused": "Sync paused for this calendar. Saved events remain available.",
+      "calendar_unavailable": "This calendar is unavailable or access was removed. Restore access with your provider, or pause its sync.",
+      "check_again": "Check again",
+      "completed": "Calendars synced",
+      "configuration": "The calendar service could not complete the request. Retry once; if it still fails, contact support. Reconnecting may not resolve this service issue.",
+      "failed": "Calendar sync failed. Try syncing again. If it keeps failing, contact support.",
+      "not_synced": "Your account is connected, but no completed sync is recorded yet. Sync now to import events.",
+      "partial_failure": "Some calendars could not sync. Review the sync warning and try again.",
+      "pause_calendar": "Pause sync for this calendar",
+      "pause_failed": "Could not pause this calendar. Please try again.",
+      "paused": "No calendars selected for sync",
+      "provider_unavailable": "The calendar provider is temporarily unavailable. Try again shortly.",
+      "rate_limited": "The calendar provider is limiting requests. Wait a little before retrying.",
+      "reconnect_description": "Calendar access needs to be renewed. Reconnect the affected account to resume syncing.",
+      "reconnect_google": "Reconnect Google",
+      "reconnect_microsoft": "Reconnect Outlook",
+      "retry_after": "Try again in {seconds} seconds.",
+      "saved_events": "Previously synced events remain available.",
+      "stale": "Your calendars have not synced recently. Sync now to get the latest changes.",
+      "stalled": "The last sync did not finish. New changes may be missing. Sync again to recover.",
+      "status_failed": "We could not check your calendar connection. Check your connection and try again.",
+      "syncing_description": "Checking your calendars. You can keep using saved events while sync runs.",
+      "unavailable": "Sync status unavailable"
+    },
+    "sync_to_google": "To Google",
+    "sync_tuturuuu_events_outward": "Sync Tuturuuu events outward",
+    "sync_tuturuuu_events_outward_desc": "Mirror native Tuturuuu event creates and edits to a connected provider calendar.",
+    "synced": "Synced",
+    "syncing_calendars": "Syncing calendars...",
+    "syncing_to_google": "Syncing to Google...",
+    "this-month": "This month",
+    "this-week": "This Week",
+    "this-year": "This Year",
+    "timezone_required": {
+      "description": "To ensure calendar previews and Smart Schedule work correctly for everyone, please choose a fixed timezone and first day of week for this workspace.",
+      "first_day": {
+        "auto": "Auto",
+        "monday": "Monday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      },
+      "first_day_label": "First day of week",
+      "label": "Workspace timezone",
+      "recommended": "Recommended",
+      "save": "Save settings",
+      "save_failed": "Failed to save calendar settings",
+      "saved": "Calendar settings saved",
+      "saving": "Saving...",
+      "title": "Set workspace timezone"
+    },
+    "today": "Today",
+    "toggle_calendars_desc": "Toggle which calendars to show",
+    "toggle_failed": "Failed to toggle calendar visibility",
+    "tomorrow": "Tomorrow",
+    "tuturuuu_calendars": "Tuturuuu Calendars",
+    "two_way_sync": "Two-way sync",
+    "two_way_sync_desc": "Control how Tuturuuu imports provider changes and mirrors native events outward.",
+    "unknown_account": "Unknown account",
+    "unknown_error": "An unknown error occurred",
+    "view": "View",
+    "views": {
+      "busy_days": "{count, plural, one {# day with events} other {# days with events}}",
+      "clear_search": "Clear search",
+      "create_event": "Create event",
+      "create_on_date": "Create event on {date}",
+      "more_events": "+{count} more",
+      "no_events": "No events for this day",
+      "no_matches": "No matching events",
+      "open_day": "View events on {date}",
+      "open_day_short": "View day",
+      "search_events": "Search events",
+      "untitled_event": "Untitled event"
+    },
+    "visible_calendars": "Visible Calendars",
+    "visible_calendars_count": "{count} of {total} calendar{s} visible",
+    "week": "Week",
+    "workspace_first_day": "Workspace First Day of Week",
+    "workspace_first_day_desc": "Set the first day of the week for calendar display in this workspace. Members can override this in their personal settings.",
+    "workspace_timezone": "Workspace Timezone",
+    "workspace_timezone_desc": "Set the default timezone for this workspace. Members can override this in their personal settings.",
+    "year": "Year",
+    "yesterday": "Yesterday"
+  },
+  "chat": {
+    "accept_friend": "Accept",
+    "add_friend_by_email": "Add friend by email",
+    "add_reaction": "React with {reaction}",
+    "agent_adapter": "Adapter",
+    "agent_admin_required": "You need root AI-agent admin permission to manage this channel.",
+    "agent_auto_respond": "Auto respond",
+    "agent_channel": "Agent channel",
+    "agent_channel_enabled": "Channel enabled",
+    "agent_channel_id": "Channel ID",
+    "agent_channel_setup": "Channel setup",
+    "agent_clear_secret_on_save": "Clear this secret on save",
+    "agent_copied_webhook": "Webhook copied",
+    "agent_copy_webhook": "Copy webhook",
+    "agent_deploy": "Deploy",
+    "agent_deploy_failed": "Could not deploy agent channel",
+    "agent_deploy_success": "Agent channel deployed",
+    "agent_details": "Agent details",
+    "agent_diagnostic_adapter_account": "External account mapping",
+    "agent_diagnostic_agent_enabled": "Agent enabled",
+    "agent_diagnostic_channel_deployed": "Channel deployed",
+    "agent_diagnostic_channel_enabled": "Channel enabled",
+    "agent_diagnostic_last_error": "Recent error",
+    "agent_diagnostic_last_event": "Last external event",
+    "agent_diagnostic_listener_lifecycle": "Listener lifecycle",
+    "agent_diagnostic_required_secrets": "Required secrets",
+    "agent_diagnostic_webhook_url": "Webhook URL",
+    "agent_diagnostic_workspace_mapping": "Workspace mapping",
+    "agent_diagnostic_zalo_personal_feature_flag": "Personal Zalo feature flag",
+    "agent_diagnostics": "Diagnostics",
+    "agent_disabled": "Disabled",
+    "agent_discord_guild_id": "Discord guild ID",
+    "agent_discord_live_test_hint": "Readiness only. For full Discord validation, set the Interactions Endpoint URL, install the app, then mention the bot in the mapped channel.",
+    "agent_discord_mentions": "Mention role IDs",
+    "agent_display_name": "Display name",
+    "agent_enabled": "Enabled",
+    "agent_external_channel_id": "External channel ID",
+    "agent_external_draft": "Draft",
+    "agent_external_draft_failed": "Could not draft response",
+    "agent_external_draft_placeholder": "Draft response",
+    "agent_external_draft_success": "Draft ready",
+    "agent_external_last_sync": "Last sync",
+    "agent_external_message_count": "Messages",
+    "agent_external_no_threads": "No mirrored external threads yet",
+    "agent_external_prompt_placeholder": "Optional prompt for the draft",
+    "agent_external_recent_threads": "Recent external threads",
+    "agent_external_refresh_after_action": "Refreshing mirrored thread data after the action finishes.",
+    "agent_external_response": "Manual response",
+    "agent_external_send": "Send",
+    "agent_external_send_failed": "Could not send response",
+    "agent_external_send_success": "Response sent",
+    "agent_external_sync": "Sync external thread",
+    "agent_external_sync_failed": "Could not sync external thread",
+    "agent_external_sync_no_new": "No new messages",
+    "agent_external_sync_success": "Synced {count} messages",
+    "agent_external_thread": "External thread",
+    "agent_external_thread_id": "External thread ID",
+    "agent_external_thread_missing": "External thread ID is missing.",
+    "agent_history_sync": "History sync",
+    "agent_instructions": "Instructions",
+    "agent_last_event": "Last event",
+    "agent_live_test_hint": "Readiness only. Send a live message from the external platform for an end-to-end test.",
+    "agent_metadata_missing": "Agent setup metadata is hidden for this account.",
+    "agent_model": "Model",
+    "agent_name": "Agent name",
+    "agent_name_placeholder": "AI name",
+    "agent_not_found": "Agent setup was not found.",
+    "agent_operations": "Operations",
+    "agent_pause": "Pause",
+    "agent_pause_failed": "Could not pause agent channel",
+    "agent_pause_success": "Agent channel paused",
+    "agent_rotate_failed": "Could not rotate agent secret",
+    "agent_rotate_secret": "Rotate secret",
+    "agent_save": "Save setup",
+    "agent_save_failed": "Could not save agent setup",
+    "agent_save_success": "Agent setup saved",
+    "agent_secret_configured": "configured ending {suffix}",
+    "agent_secret_missing": "Missing",
+    "agent_secret_placeholder": "Leave blank to keep current value",
+    "agent_secret_rotated": "Secret rotated",
+    "agent_secret_value": "Secret value",
+    "agent_secrets": "Secrets",
+    "agent_setup": "Setup",
+    "agent_status_deployed": "Deployed",
+    "agent_status_draft": "Draft",
+    "agent_status_error": "Error",
+    "agent_status_paused": "Paused",
+    "agent_tab_operations": "Operations",
+    "agent_tab_setup": "Setup",
+    "agent_tab_thread": "Thread",
+    "agent_test": "Test",
+    "agent_test_failed": "Agent test failed",
+    "agent_test_prompt": "Optional test prompt",
+    "agent_test_success": "Agent test sent",
+    "agent_typing": "AI agent is typing",
+    "agent_workspace_id": "Workspace ID",
+    "agent_zalo_oa_id": "Zalo official account ID",
+    "agent_zalo_personal_action_failed": "Personal Zalo action failed",
+    "agent_zalo_personal_channel_required": "Personal Zalo channel is required",
+    "agent_zalo_personal_cookie_json_invalid": "Personal Zalo cookie JSON is invalid",
+    "agent_zalo_personal_credentials_missing": "Personal Zalo credentials are missing",
+    "agent_zalo_personal_disabled": "Disabled",
+    "agent_zalo_personal_enabled": "Enabled",
+    "agent_zalo_personal_feature": "Feature flag",
+    "agent_zalo_personal_feature_disabled": "Personal Zalo feature flag is disabled",
+    "agent_zalo_personal_listener_title": "Personal Zalo listener",
+    "agent_zalo_personal_live_test_hint": "After readiness passes, send a live Zalo message from another account to test mirroring and response.",
+    "agent_zalo_personal_not_available": "Not available",
+    "agent_zalo_personal_own_id": "Personal Zalo account ID",
+    "agent_zalo_personal_qr_abort": "Abort",
+    "agent_zalo_personal_qr_abort_failed": "Could not abort QR pairing",
+    "agent_zalo_personal_qr_abort_success": "QR pairing aborted",
+    "agent_zalo_personal_qr_aborted": "Aborted",
+    "agent_zalo_personal_qr_alt": "Personal Zalo pairing QR code",
+    "agent_zalo_personal_qr_authenticated": "Authenticated",
+    "agent_zalo_personal_qr_credentials_missing": "QR credentials were not returned. Try pairing again.",
+    "agent_zalo_personal_qr_credentials_ready": "Credentials ready",
+    "agent_zalo_personal_qr_declined": "Declined",
+    "agent_zalo_personal_qr_expired": "Expired",
+    "agent_zalo_personal_qr_failed": "Failed",
+    "agent_zalo_personal_qr_generated": "Ready to scan",
+    "agent_zalo_personal_qr_not_started": "Not started",
+    "agent_zalo_personal_qr_pending": "Starting",
+    "agent_zalo_personal_qr_persisted": "Saved",
+    "agent_zalo_personal_qr_persisted_success": "Personal Zalo credentials saved",
+    "agent_zalo_personal_qr_retry": "Retry QR",
+    "agent_zalo_personal_qr_scanned": "Scanned",
+    "agent_zalo_personal_qr_start": "Pair QR",
+    "agent_zalo_personal_qr_start_failed": "Could not start QR pairing",
+    "agent_zalo_personal_qr_title": "QR pairing",
+    "agent_zalo_personal_running": "Listener",
+    "agent_zalo_personal_running_value": "Running",
+    "agent_zalo_personal_start": "Start",
+    "agent_zalo_personal_start_success": "Personal Zalo listener started",
+    "agent_zalo_personal_stop": "Stop",
+    "agent_zalo_personal_stop_success": "Personal Zalo listener stopped",
+    "agent_zalo_personal_stopped": "Stopped",
+    "agent_zalo_personal_sync_history": "Sync history",
+    "agent_zalo_personal_sync_history_success": "Synced {count} historical messages across {threads} threads",
+    "agent_zalo_personal_sync_history_timed_out": "History sync timed out before Zalo returned every page. Run it again to continue.",
+    "agent_zalo_personal_sync_phone": "Sync phone",
+    "agent_zalo_personal_sync_phone_failed": "Phone transfer sync failed",
+    "agent_zalo_personal_sync_phone_no_approval": "The phone sync request was sent, but no approval payload was received before polling ended. Keep Zalo open on your phone before starting another phone sync.",
+    "agent_zalo_personal_sync_phone_no_approval_http_unavailable": "The phone sync request was sent over the live Zalo connection, but the legacy HTTP approval endpoint is unavailable and no approval payload was received before polling ended.",
+    "agent_zalo_personal_sync_phone_no_payload": "Phone transfer was approved, but Zalo did not return any transferable message payload to this PC session.",
+    "agent_zalo_personal_sync_phone_no_payload_http_unavailable": "Phone transfer was approved over the live Zalo connection, but the legacy HTTP transfer endpoint is unavailable and Zalo did not return any transferable message payload to this PC session.",
+    "agent_zalo_personal_sync_phone_partial": "Phone transfer sync stopped early. Run it again to continue importing remaining messages.",
+    "agent_zalo_personal_sync_phone_success": "Synced {count} phone messages across {threads} threads",
+    "agent_zalo_personal_sync_phone_waiting": "Approve the transfer sync request on your phone. This screen will keep checking the current sync job.",
+    "agent_zalo_personal_sync_web_browser_unavailable": "Zalo Web sync needs a Playwright browser runtime on this server.",
+    "agent_zalo_personal_sync_web_failed": "Zalo Web phone sync failed.",
+    "agent_zalo_personal_sync_web_login_required": "Zalo Web needs a fresh QR login before phone sync can import messages.",
+    "agent_zalo_personal_sync_web_timed_out": "Zalo Web phone sync timed out before messages finished importing.",
+    "agent_zalo_personal_validate": "Validate",
+    "agent_zalo_personal_validate_success": "Personal Zalo login validated",
+    "ai_agents": "AI agents",
+    "ai_badge": "AI",
+    "ai_cached_tokens": "Cached tokens",
+    "ai_chars_short": "chars",
+    "ai_context_breakdown": "Context breakdown",
+    "ai_context_empty": "No context captured yet",
+    "ai_credit_payg": "PAYG",
+    "ai_credit_personal": "Personal",
+    "ai_credit_plan": "Plan",
+    "ai_credit_scope_user": "User balance",
+    "ai_credit_scope_workspace": "Workspace balance",
+    "ai_credit_source": "Credit source",
+    "ai_credit_used_balance": "used",
+    "ai_credit_workspace": "Workspace",
+    "ai_credits_loading": "Loading credits",
+    "ai_credits_remaining": "credits remaining",
+    "ai_credits_unknown": "Credits unavailable",
+    "ai_details": "AI details",
+    "ai_estimated": "Estimated",
+    "ai_exact": "Exact",
+    "ai_fast_mode": "Fast",
+    "ai_input_tokens": "Input",
+    "ai_message_usage": "Message usage",
+    "ai_messages": "Messages",
+    "ai_model": "Model",
+    "ai_model_placeholder": "Select model",
+    "ai_no_usage": "No usage data yet",
+    "ai_output_tokens": "Output",
+    "ai_reasoning_tokens": "Reasoning",
+    "ai_response_mode": "Response mode",
+    "ai_settings": "Settings",
+    "ai_settings_failed": "Could not save AI settings",
+    "ai_settings_saved": "AI settings saved",
+    "ai_thinking_mode": "Thinking",
+    "ai_thought": "Thought",
+    "ai_tool_completed": "completed",
+    "ai_tool_failed": "failed",
+    "ai_tool_input": "Input",
+    "ai_tool_output": "Output",
+    "ai_tool_running": "running",
+    "ai_total_cost": "Total cost",
+    "ai_total_tokens": "Total tokens",
+    "ai_usage": "Usage",
+    "archive": "Archive",
+    "archive_agent": "Archive AI conversation",
+    "archive_channel": "Archive channel",
+    "archive_chat": "Archive chat",
+    "archive_chat_warning": "This will remove the chat from your active list. You can restore it from archived conversations.",
+    "archive_confirm": "Archive",
+    "archive_filter_active": "Active",
+    "archive_filter_all": "All",
+    "archive_filter_archived": "Archived",
+    "archive_group": "Archive group",
+    "archive_group_owner_warning": "Archiving this group will make you leave the group and lose access to all messages. Other members can keep viewing messages unless they are removed from the group.",
+    "archive_group_warning": "This will make you leave the group and lose access to all messages.",
+    "archive_workspace_conversation_warning": "Archiving this workspace conversation will remove it from the active list for everyone.",
+    "assistant_name": "Mira",
+    "assistant_response_failed": "Mira could not respond, but your message was saved.",
+    "attach_files": "Attach files",
+    "attachment": "Attachment",
+    "attachment_limit_reached": "You can attach up to {count} files per message.",
+    "attachment_open_failed": "Could not open attachment",
+    "attachment_too_large": "Attachments must be {size} or smaller.",
+    "back": "Back",
+    "cancel": "Cancel",
+    "channel_badge": "Channel",
+    "channel_name_placeholder": "Channel name",
+    "channels": "Channels",
+    "conversation_actions": "Conversation actions",
+    "conversation_archive_failed": "Could not archive conversation",
+    "conversation_archived": "Conversation archived",
+    "conversation_create_direct_requires_one_target": "Choose exactly one person for a DM.",
+    "conversation_create_failed": "Could not create conversation",
+    "conversation_create_group_requires_members": "Choose at least one person for the group.",
+    "conversation_create_permission_required": "You do not have permission to create that conversation here.",
+    "conversation_create_target_not_invitable": "You can only message people who share a workspace with you or have accepted your friend request.",
+    "conversation_delete_failed": "Could not delete conversation",
+    "conversation_deleted": "Conversation deleted",
+    "conversation_description_placeholder": "Description",
+    "conversation_name_placeholder": "Conversation name",
+    "conversation_pinned": "Conversation pinned",
+    "conversation_title_generate_failed": "Could not generate a conversation title",
+    "conversation_types": "Conversation types",
+    "conversation_unpinned": "Conversation unpinned",
+    "conversation_update_failed": "Could not update conversation",
+    "conversation_updated": "Conversation updated",
+    "copy_as_json": "Copy as JSON",
+    "copy_as_markdown": "Copy as Markdown",
+    "copy_as_text": "Copy as text",
+    "create": "Create",
+    "decline_friend": "Decline",
+    "delete_agent": "Delete AI conversation",
+    "delete_channel": "Delete channel",
+    "delete_chat": "Delete chat",
+    "delete_chat_warning": "This will remove the chat from your list. You will lose access to its messages.",
+    "delete_confirm": "Delete",
+    "delete_group": "Delete group",
+    "delete_group_owner_warning": "Deleting this group will make you leave the group and lose access to all messages. Other members can keep viewing messages unless they are removed from the group.",
+    "delete_group_warning": "This will make you leave the group and lose access to all messages.",
+    "delete_message": "Delete message",
+    "delete_workspace_conversation_warning": "Deleting this workspace conversation will remove access for everyone. Messages and attachments in this channel or AI conversation will no longer be available.",
+    "direct_message": "Direct message",
+    "direct_messages": "Direct messages",
+    "directory_search_placeholder": "Search people",
+    "download_qr_code": "Download QR code",
+    "drop_files_here": "Drop files to attach",
+    "edited": "edited",
+    "empty_conversations_description": "Start a direct message, group chat, channel, or AI conversation.",
+    "empty_conversations_title": "No conversations yet",
+    "empty_directory": "No people found",
+    "empty_messages_description": "Messages and attachments will appear here.",
+    "empty_messages_title": "No messages yet",
+    "external_sender": "Website visitor",
+    "external_visitor_typing": "Website visitor is typing",
+    "files": "Files",
+    "filter_conversations": "Filter conversations",
+    "first_activity": "First activity",
+    "friend_email_placeholder": "friend@example.com",
+    "friend_request_failed": "Could not send friend request",
+    "friend_request_sent": "Friend request sent",
+    "friend_requests": "Friend requests",
+    "friend_requests_description": "Review people who can message you directly.",
+    "friends": "Friends",
+    "generate_conversation_title": "Generate title",
+    "generated_qr_code": "Generated QR code",
+    "generating_conversation_title": "Generating...",
+    "group_chat": "Group chat",
+    "group_name_placeholder": "Group name",
+    "groups": "Groups",
+    "hide": "Hide",
+    "incoming_friend_requests": "Incoming",
+    "integration_create_failed": "Could not create integration",
+    "integration_create_success": "Integration ready",
+    "integration_discord": "Discord",
+    "integration_discord_description": "Connect a Discord bot channel to mirror messages and run the AI agent.",
+    "integration_setup": "Set up",
+    "integration_zalo_official": "Zalo Official",
+    "integration_zalo_official_description": "Connect a Zalo Official Account channel for customer conversations.",
+    "integration_zalo_personal": "Zalo Personal",
+    "integration_zalo_personal_description": "Pair a personal Zalo account by QR code and sync conversations.",
+    "last_activity": "Last activity",
+    "links": "Links",
+    "load_older_messages": "Load older messages",
+    "loading_ai_settings": "Loading AI settings",
+    "loading_ai_usage": "Loading AI usage",
+    "loading_conversations": "Loading conversations",
+    "loading_directory": "Loading people",
+    "loading_messages": "Loading messages",
+    "loading_older_messages": "Loading older messages",
+    "loading_shared_content": "Loading shared content",
+    "loading_visitor_context": "Loading visitor context...",
+    "loading_workspaces": "Loading workspaces",
+    "member_count": "{count, plural, one {# member} other {# members}}",
+    "members": "Members",
+    "members_description": "People who can view and interact with this conversation.",
+    "message": "Message",
+    "message_copied": "Message copied",
+    "message_copy_failed": "Could not copy message",
+    "message_delete_failed": "Could not delete message",
+    "message_deleted": "Message deleted",
+    "message_deleted_success": "Message deleted",
+    "message_placeholder": "Write a message...",
+    "message_send_failed": "Could not send message",
+    "more": "More",
+    "network_hint": "Network",
+    "never": "Never",
+    "new_conversation": "New conversation",
+    "new_conversation_description": "Create a secure workspace conversation.",
+    "next": "Next",
+    "no_files_shared": "No files shared yet",
+    "no_friends_yet": "No friends yet",
+    "no_incoming_friend_requests": "No incoming requests",
+    "no_links_shared": "No links shared yet",
+    "no_messages_yet": "No messages yet",
+    "no_photos_shared": "No photos shared yet",
+    "no_search_results": "No messages found",
+    "no_sent_friend_requests": "No sent requests",
+    "no_visited_routes": "No route history",
+    "online": "Online",
+    "photos": "Photos",
+    "pin_conversation": "Pin conversation",
+    "private_by_default": "Private schema by default",
+    "private_schema_status": "Private chat",
+    "react_to_message": "React to message",
+    "read_only_badge": "Read-only",
+    "read_only_conversation": "External AI-agent messages are mirrored here in read-only mode. Draft and send manual responses from Infrastructure > AI Agents.",
+    "remove_attachment": "Remove attachment",
+    "rename_conversation": "Rename conversation",
+    "rename_conversation_description": "Update the name shown for everyone with access to this conversation.",
+    "revoke_friend_request": "Revoke request",
+    "role_admin": "Admin",
+    "role_assistant": "Assistant",
+    "role_member": "Member",
+    "role_owner": "Owner",
+    "save": "Save",
+    "scope_personal": "Personal",
+    "scope_personal_subtitle": "DMs and Groups",
+    "scope_personal_unavailable": "Personal unavailable",
+    "scope_workspaces": "Workspaces",
+    "scope_workspaces_subtitle": "Channels and AIs",
+    "search": "Search",
+    "search_placeholder": "Search messages",
+    "send_friend_request": "Send request",
+    "send_message": "Send message",
+    "sent_friend_requests": "Sent",
+    "shared": "Shared",
+    "show": "Show",
+    "showing_all_chats": "Showing active and archived conversations",
+    "showing_archived_chats": "Showing archived conversations",
+    "source_external": "External source",
+    "source_zalo_personal": "Zalo Personal",
+    "step_details": "Details",
+    "step_details_description": "Add the name and optional context people will see.",
+    "step_members": "People",
+    "step_members_direct_description": "Choose one person you can message.",
+    "step_members_group_description": "Choose the people who should be in this group.",
+    "step_type": "Type",
+    "step_type_description": "Choose the kind of conversation to create.",
+    "system_event": "Conversation updated",
+    "system_event_conversation_renamed": "{actorName} renamed this conversation to {title}",
+    "system_event_conversation_updated": "{actorName} updated this conversation",
+    "system_event_generic": "Conversation updated",
+    "tab_conversations": "Conversations",
+    "tab_integrations": "Integrations",
+    "title": "Chat",
+    "toggle_shared_content": "Toggle shared content",
+    "type_ai": "AI",
+    "type_channel": "Channel",
+    "type_direct": "DM",
+    "type_group": "Group",
+    "unknown": "Unknown",
+    "unknown_sender": "Unknown sender",
+    "unpin_conversation": "Unpin conversation",
+    "unread_messages_count": "{count, plural, one {# unread message} other {# unread messages}}",
+    "untitled_channel": "Untitled channel",
+    "untitled_chat": "Untitled chat",
+    "upload_failed": "Could not upload file",
+    "visited_routes": "Visited routes",
+    "visitor_context": "Visitor context",
+    "visitor_context_unavailable": "Visitor context is unavailable.",
+    "visitor_email": "Email",
+    "visitor_name": "Name",
+    "visitor_phone": "Phone"
+  },
   "common": {
     "0_usd_per_month": "$0/month",
     "404-msg": "The page you are looking for does not exist.",
@@ -945,6 +1819,151 @@
       "requirements": "Windows 10 or later · Intel / AMD 64-bit"
     }
   },
+  "documents": {
+    "back-to-documents": "Back to documents",
+    "cancel": "Cancel",
+    "create": "Create",
+    "create-document-error": "An error occurred while creating the document.",
+    "create-new-document": "Create new document",
+    "creating": "Creating document",
+    "delete": "Delete",
+    "delete-document": "Delete document",
+    "delete-document-confirmation": "Are you sure you want to delete this document?",
+    "document-name": "Document name",
+    "document-name-placeholder": "Enter document name",
+    "documents": "Documents",
+    "edit": "Edit",
+    "empty-preview": "No content yet",
+    "new-document": "New document",
+    "no-documents": "No documents in this workspace",
+    "preview": "Preview",
+    "save": "Save",
+    "start_writing": "Start writing your document...",
+    "untitled-document": "Untitled document"
+  },
+  "finance": {
+    "expense": "Expense",
+    "failed_to_load_categories": "Failed to load categories",
+    "failed_to_load_tags": "Failed to load tags",
+    "failed_to_load_users": "Failed to load users",
+    "failed_to_load_wallets": "Failed to load wallets",
+    "filter_by_categories": "Filter by categories",
+    "filter_by_creator": "Filter by creator",
+    "filter_by_tags": "Filter by tags",
+    "filter_by_users": "Filter by users",
+    "filter_by_wallets": "Filter by wallets",
+    "income": "Income",
+    "loading_categories": "Loading categories...",
+    "loading_creators": "Loading creators...",
+    "loading_tags": "Loading tags...",
+    "loading_users": "Loading users...",
+    "loading_wallets": "Loading wallets...",
+    "manage_categories": "Manage categories",
+    "new_budget": "New budget",
+    "new_credit_card": "New credit card",
+    "new_debt": "New debt",
+    "new_invoice": "New invoice",
+    "new_loan": "New loan",
+    "new_recurring_transaction": "New recurring transaction",
+    "new_transaction": "New transaction",
+    "new_transfer": "New transfer",
+    "new_wallet": "New wallet",
+    "no_categories_found": "No categories found.",
+    "no_creators_found": "No creators found.",
+    "no_tags_found": "No tags found.",
+    "no_users_found": "No users found.",
+    "no_wallets_found": "No wallets found.",
+    "quick_actions": "Quick actions",
+    "search_categories": "Search categories...",
+    "search_creators": "Search creators...",
+    "search_tags": "Search tags...",
+    "search_users": "Search users...",
+    "search_wallets": "Search wallets...",
+    "unknown_user": "Unknown user"
+  },
+  "inventory": {
+    "default_referral_promotion": "Default referral promotion",
+    "referral_count_cap": "Referral discount cap",
+    "referral_increment_percent": "Referral increment percent",
+    "referral_reward_type": "Referral Reward Type",
+    "reward_both": "Both Referrer and Receiver",
+    "reward_receiver_only": "Receiver Only",
+    "reward_referrer_only": "Referrer Only",
+    "select_reward_type": "Select who receives the reward"
+  },
+  "mail": {
+    "ai_draft": "AI Email Draft",
+    "ai_draft_title": "AI Email Assistant",
+    "ai_error": "Failed to generate email draft. Please try again.",
+    "apply_draft": "Apply Draft",
+    "archive": "Archive",
+    "choose_email_message": "Choose an email from the list to view its content here.",
+    "compose": "Compose",
+    "compose_email": "Compose Email",
+    "confidential_content": "Content Hidden",
+    "confidential_content_desc": "Email content is hidden in confidential mode",
+    "confidential_email": "[CONFIDENTIAL]",
+    "confidential_mode": "Confidential",
+    "confidential_recipients": "[CONFIDENTIAL]",
+    "confidential_sender": "[CONFIDENTIAL]",
+    "confidential_subject": "[CONFIDENTIAL]",
+    "context": "Context",
+    "context_placeholder": "Describe what you want to communicate...",
+    "display_name_required": "Display name is required.",
+    "display_name_required_message": "You must set a display name before sending mail.",
+    "drafts": "Drafts",
+    "edit": "Edit",
+    "forward": "Forward",
+    "from_label": "From:",
+    "generate_draft": "Generate Draft",
+    "generated_content": "Generated Content",
+    "generated_subject": "Generated Subject",
+    "generating": "Generating...",
+    "inbox": "Inbox",
+    "loading_email_content": "Loading email content...",
+    "loading_more_emails": "Loading more emails...",
+    "mark_as_unread": "Mark as unread",
+    "message": "Message",
+    "message_placeholder": "Write your message here...",
+    "more": "More",
+    "move_to_trash": "Move to trash",
+    "no_email_selected": "No email selected",
+    "no_emails_found": "No emails found",
+    "no_more_emails": "No more emails to load",
+    "none": "None",
+    "original_content_included": "Original message will be included when sent",
+    "original_message": "Original Message",
+    "preview": "Preview",
+    "purpose": "Purpose",
+    "purpose_placeholder": "What is the purpose of this email?",
+    "quoted_content_included": "Quoted content will be included when sent",
+    "quoted_message": "Quoted Message",
+    "recipient_placeholder": "recipient@example.com",
+    "recipients": "Recipients",
+    "recipients_placeholder": "Who are you writing to?",
+    "reply": "Reply",
+    "reply_all": "Reply all",
+    "revise": "Revise",
+    "revise_email": "Revise Email",
+    "revising": "Revising...",
+    "revision_placeholder": "Describe how you want to revise the email...",
+    "send_as": "Send as",
+    "send_email": "Send Email",
+    "sent": "Sent",
+    "spam": "Spam",
+    "starred": "Starred",
+    "subject": "Subject",
+    "subject_placeholder": "Enter email subject",
+    "suggestions": "Suggestions",
+    "to": "To",
+    "to_label": "To:",
+    "tone": "Tone",
+    "tone_casual": "Casual",
+    "tone_formal": "Formal",
+    "tone_friendly": "Friendly",
+    "tone_professional": "Professional",
+    "trash": "Trash"
+  },
   "marketing-nav": {
     "all_apps": "Explore every Tuturuuu app",
     "groups": {
@@ -1038,6 +2057,169 @@
       }
     }
   },
+  "marketingSeo": {
+    "about": {
+      "description": "Learn why we are building Tuturuuu: an open-source workspace that connects team collaboration, everyday operations, and AI assistance.",
+      "title": "About Tuturuuu and Our Connected Workspace"
+    },
+    "acceptable_use": {
+      "description": "Read the rules for using Tuturuuu responsibly, including prohibited activities and how acceptable use is enforced.",
+      "title": "Acceptable Use Policy"
+    },
+    "blog": {
+      "description": "Explore what is coming to the Tuturuuu blog, and find published product updates, open-source development, and ways to connect with the team.",
+      "title": "Workspace Guides and Product Stories"
+    },
+    "branding": {
+      "description": "Find Tuturuuu logos, visual assets, and brand guidelines for consistent, accurate use in your projects and communications.",
+      "title": "Tuturuuu Brand Assets and Guidelines"
+    },
+    "careers": {
+      "description": "Explore opportunities to help build Tuturuuu, an open-source workspace for teams, and learn about our approach to work and collaboration.",
+      "title": "Careers at Tuturuuu"
+    },
+    "changelog": {
+      "description": "See what changed in Tuturuuu. Read product updates and explore platform release notes by app, version, features, and fixes.",
+      "title": "Product Updates and Release Notes"
+    },
+    "community_guidelines": {
+      "description": "Understand the expectations for respectful participation, collaboration, and contributions in the Tuturuuu community.",
+      "title": "Community Guidelines"
+    },
+    "contact": {
+      "description": "Talk to the Tuturuuu team about your workspace, product questions, partnerships, or feedback. Find the right channel to get started.",
+      "title": "Contact Tuturuuu"
+    },
+    "contributors": {
+      "description": "Meet the people helping build Tuturuuu and explore contributions to our open-source workspace.",
+      "title": "Tuturuuu Open-Source Contributors"
+    },
+    "home": {
+      "description": "Bring team tasks, calendars, documents, and business tools together in one open-source workspace. Plan and collaborate with AI assistance from Mira.",
+      "title": "All-in-One Workspace for Teams"
+    },
+    "legal_changes": {
+      "description": "Proposed — not yet in effect",
+      "title": "Upcoming changes"
+    },
+    "legal_dpa": {
+      "description": "Read the Tuturuuu data processing addendum and the responsibilities that apply when processing personal data.",
+      "title": "Data Processing Addendum"
+    },
+    "legal_sla": {
+      "description": "Review the Tuturuuu service level agreement for service availability, support, and applicable commitments.",
+      "title": "Service Level Agreement"
+    },
+    "legal_subprocessors": {
+      "description": "Review the subprocessors and service providers involved in delivering Tuturuuu and processing data.",
+      "title": "Subprocessors and Service Providers"
+    },
+    "meet": {
+      "description": "Explore Tuturuuu Meet to coordinate availability and plan team meetings within your connected workspace.",
+      "title": "Team Meetings and Availability Planning"
+    },
+    "partners": {
+      "description": "Explore ways to work with Tuturuuu on integrations, product development, and bringing a connected workspace to more teams.",
+      "title": "Partner with Tuturuuu"
+    },
+    "privacy": {
+      "description": "Read how Tuturuuu collects, uses, and protects personal information, and learn about your privacy choices and rights.",
+      "title": "Privacy Policy"
+    },
+    "security": {
+      "description": "Learn how Tuturuuu approaches workspace security, data protection, responsible disclosure, and transparency in our open-source platform.",
+      "title": "Workspace Security and Privacy"
+    },
+    "security_bug_bounty": {
+      "description": "Find the scope, reporting process, and guidelines for responsibly disclosing a security vulnerability to Tuturuuu.",
+      "title": "Report a Security Vulnerability"
+    },
+    "solutions_construction": {
+      "description": "Coordinate construction projects, team tasks, schedules, documents, and operational records in a connected Tuturuuu workspace.",
+      "title": "Construction Project Workspace"
+    },
+    "solutions_education": {
+      "description": "Organize education team tasks, schedules, documents, and learning operations in one connected workspace with Tuturuuu.",
+      "title": "Workspace for Education Teams"
+    },
+    "solutions_healthcare": {
+      "description": "Explore Tuturuuu for coordinating healthcare team tasks, schedules, inventory, and everyday operations.",
+      "title": "Workspace for Healthcare Operations"
+    },
+    "solutions_hospitality": {
+      "description": "Connect hospitality team tasks, schedules, stock, and operational records in a shared Tuturuuu workspace.",
+      "title": "Workspace for Hospitality Teams"
+    },
+    "solutions_manufacturing": {
+      "description": "Coordinate manufacturing team tasks, inventory, schedules, and documents with connected Tuturuuu business tools.",
+      "title": "Workspace for Manufacturing Operations"
+    },
+    "solutions_pharmacies": {
+      "description": "Explore a connected workspace for pharmacy team coordination, inventory, schedules, and business operations with Tuturuuu.",
+      "title": "Workspace for Pharmacy Operations"
+    },
+    "solutions_realestate": {
+      "description": "Keep real estate contacts, team tasks, schedules, and documents together in a connected Tuturuuu workspace.",
+      "title": "Workspace for Real Estate Teams"
+    },
+    "solutions_restaurants": {
+      "description": "Organize restaurant team tasks, inventory, schedules, and financial records in a connected Tuturuuu workspace.",
+      "title": "Workspace for Restaurant Operations"
+    },
+    "solutions_retail": {
+      "description": "Connect retail inventory, customer records, team tasks, and finances with Tuturuuu business management tools.",
+      "title": "Workspace for Retail Teams"
+    },
+    "terms": {
+      "description": "Review the terms that govern your use of Tuturuuu, including accounts, responsibilities, and service conditions.",
+      "title": "Terms of Service"
+    },
+    "visualizations_horse_racing": {
+      "bodyDescription": "This interactive visualization demonstrates how to rank N horses when we can only race M horses at a time. The algorithm efficiently determines the complete ranking with the minimum number of races.",
+      "description": "Explore an interactive horse racing visualization and compare the algorithms behind the simulation.",
+      "title": "Horse Racing Algorithm Visualization"
+    },
+    "women_in_tech": {
+      "description": "Celebrate the women who helped build Tuturuuu. Explore stories of engineers, leaders, and partners shaping technology in Vietnam and beyond.",
+      "title": "Vietnamese Women’s Day 2025: Women in Tech"
+    }
+  },
+  "meet": {
+    "call": {
+      "private_tools": {
+        "calendar": "Calendar",
+        "close": "Close my day",
+        "empty_calendar": "Your next seven days are clear.",
+        "empty_tasks": "No active tasks. Enjoy the space.",
+        "event": "Untitled event",
+        "loading": "Loading your day…",
+        "open_calendar": "Open Calendar",
+        "open_tasks": "Open Tasks",
+        "private": "Only visible to you",
+        "protected_event": "Encrypted event",
+        "stale_calendar": "Showing your last loaded calendar. Refresh is currently unavailable.",
+        "stale_tasks": "Showing your last loaded tasks. Refresh is currently unavailable.",
+        "tasks": "Tasks",
+        "title": "My day",
+        "unavailable": "Your personal tools are unavailable right now."
+      },
+      "restore_call": "Restore meeting",
+      "restore_failed": "Could not restore this meeting. Its state may have changed or its original call allowance may have expired.",
+      "restoring_call": "Restoring meeting…"
+    },
+    "collaboration": {
+      "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",
+      "checkpoint_deferred": "Workspace backup is delayed. Live edits remain in this room while saving is retried.",
+      "connecting": "Connecting to the shared document…",
+      "document": "Shared document",
+      "document_presence": "{count, plural, one {# person in this document} other {# people in this document}}",
+      "live": "Live · automatic sync",
+      "placeholder": "Write together…",
+      "reconnecting": "Reconnecting…",
+      "tools": "Tools",
+      "unavailable": "The shared document is unavailable."
+    }
+  },
   "privacy-consent": {
     "accept_optional": "Accept optional",
     "analytics": "Analytics and performance",
@@ -1058,5 +2240,1772 @@
     "settings_description": "Choose optional uses of browser storage. You can return here at any time to change or withdraw your choice.",
     "storage_unavailable": "Browser storage is unavailable. Optional collection stays off. Enable browser storage if you want your choice to be remembered.",
     "title": "Your privacy choices"
+  },
+  "products": {
+    "ai": {
+      "closing": {
+        "description": "Start with the assistant, and the rest of the core is already behind her.",
+        "title": "Meet Mira"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Start with Mira",
+        "secondary": "Talk to us"
+      },
+      "description": "Tuturuuu's AI is not a chat box bolted onto the side. Mira plans and acts; Aurora, Rewise, Nova and Crystal are what make her useful.",
+      "eyebrow": "AI",
+      "features": {
+        "aurora": {
+          "description": "The contextual engine that links related emails, tasks, files and events, so Mira answers with your work in view instead of a blank slate.",
+          "title": "Aurora, the nervous system"
+        },
+        "crystal": {
+          "description": "The multi-modal interface for voice, video and screen sharing, for the moments when typing is the slow way to explain.",
+          "title": "Crystal, the bridge to humanity"
+        },
+        "everywhere": {
+          "description": "The same core sits behind your tasks, calendar, mail and documents, so you do not have to visit a separate AI tab to get help.",
+          "title": "In the surfaces you already use"
+        },
+        "eyebrow": "The AI core",
+        "mira": {
+          "description": "The assistant you talk to. Ask, and she plans, schedules, drafts and logs across your tasks, calendar, mail and finances.",
+          "title": "Mira, your AI partner"
+        },
+        "nova": {
+          "description": "The prompt-engineering platform that shapes how Mira reasons, so her behaviour is something you can inspect and change.",
+          "title": "Nova, the conscience and forge"
+        },
+        "rewise": {
+          "description": "An aggregator of leading AI models from OpenAI, Gemini and Anthropic, routing each request to the one that handles it best.",
+          "title": "Rewise, the collective mind"
+        },
+        "subtitle": "Each part does one job, and you only ever address one of them.",
+        "title": "What is actually running"
+      },
+      "seo": {
+        "description": "Plan work, ask questions, and get help from Mira inside your connected Tuturuuu workspace, with actions guided by your permissions.",
+        "title": "AI Assistant for Team Workspaces"
+      },
+      "title": "Five systems, one assistant you talk to",
+      "useCases": {
+        "eyebrow": "Where it fits",
+        "inbox": {
+          "items": [
+            "Long threads reduced to what was decided",
+            "Replies drafted in your own context",
+            "Commitments in a thread turned into tasks",
+            "Meetings proposed at times you can make"
+          ],
+          "title": "Getting through the inbox"
+        },
+        "knowledge": {
+          "items": [
+            "Summaries of documents you have not read yet",
+            "Key details pulled out of a long file",
+            "Answers grounded in your workspace, with the source",
+            "Notes turned into an outline you can edit"
+          ],
+          "title": "Working with your own material"
+        },
+        "planning": {
+          "items": [
+            "Focus blocks scheduled around the meetings you cannot move",
+            "A plan that shifts when the day does",
+            "Priorities read from your actual tasks",
+            "A realistic answer to what fits before Friday"
+          ],
+          "title": "Planning the day"
+        },
+        "subtitle": "Ordinary work, handled with the context your workspace already holds.",
+        "title": "What people ask it to do"
+      }
+    },
+    "calendar": {
+      "closing": {
+        "description": "Open Calendar and see meetings, deadlines and focus time in one place before you agree to anything else.",
+        "title": "Look at the week you actually have"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Calendar",
+        "secondary": "Talk to us"
+      },
+      "description": "Meetings, deadlines and focus blocks in one view, with scheduling that accounts for time zones and the work you already committed to.",
+      "eyebrow": "Calendar",
+      "features": {
+        "anywhere": {
+          "description": "Your schedule reads well on a phone between meetings, not only on the laptop you left at your desk.",
+          "title": "The same day on any device"
+        },
+        "booking": {
+          "description": "Share a booking link with the hours you are willing to give away, and the event appears on both calendars.",
+          "title": "A link instead of an email thread"
+        },
+        "coordination": {
+          "description": "Team calendars overlap in a single view, so the meeting lands where it fits everyone rather than where it fits the organiser.",
+          "title": "One shared availability"
+        },
+        "eyebrow": "What you get",
+        "reminders": {
+          "description": "Notifications and email updates go out ahead of the event and when details change, so nobody prepares for the wrong thing.",
+          "title": "Reminders that arrive in time"
+        },
+        "scheduling": {
+          "description": "Slots are proposed from real availability and your stated preferences, so you pick rather than hunt.",
+          "title": "Suggested times, not empty grids"
+        },
+        "subtitle": "The calendar knows what you owe and when you are free, so booking a time stops being a negotiation.",
+        "timezones": {
+          "description": "Everyone sees the event in their own local time, and the conversion happens before anyone joins an hour early.",
+          "title": "Time zones handled quietly"
+        },
+        "title": "Scheduling without the back and forth"
+      },
+      "seo": {
+        "description": "Plan meetings, deadlines, and focus time with a shared team calendar. Keep schedules connected to your tasks in Tuturuuu.",
+        "title": "Shared Calendar and Team Scheduling"
+      },
+      "title": "A calendar that defends your day",
+      "useCases": {
+        "clients": {
+          "items": [
+            "Bookable slots you control",
+            "Consultations confirmed without an exchange of emails",
+            "Follow-ups scheduled before the call ends",
+            "Reminders sent so fewer meetings are missed"
+          ],
+          "title": "Working with clients"
+        },
+        "events": {
+          "items": [
+            "Sessions and speakers on one schedule",
+            "Venue and equipment booked against the same dates",
+            "Attendee lists attached to the event",
+            "A calendar you can share read-only"
+          ],
+          "title": "Running an event"
+        },
+        "eyebrow": "In practice",
+        "subtitle": "Internal coordination, client bookings and events all run on the same calendar.",
+        "team": {
+          "items": [
+            "Meetings placed where the team is actually free",
+            "Shared availability without a spreadsheet",
+            "Project milestones on the same timeline",
+            "Rooms and shared resources booked once"
+          ],
+          "title": "Working with a team"
+        },
+        "title": "Whoever you are scheduling with"
+      }
+    },
+    "chat": {
+      "closing": {
+        "description": "Move the conversation next to the tasks and the calendar it keeps referring to.",
+        "title": "Open the workspace channel"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Chat",
+        "secondary": "Talk to us"
+      },
+      "description": "Channels and direct messages inside the same workspace as your tasks, calendar and documents, so context does not live in a separate app.",
+      "eyebrow": "Chat",
+      "features": {
+        "agents": {
+          "description": "Connect an AI agent to a channel, including bridged Discord and Zalo threads, and let it answer or draft where the conversation already is.",
+          "title": "Agents in the channel"
+        },
+        "channels": {
+          "description": "A channel for a project, a team or a decision, so a thread has a home instead of drifting through a group chat.",
+          "title": "A channel per topic"
+        },
+        "direct": {
+          "description": "One-to-one conversations sit beside the shared ones, so a quick question does not mean switching apps.",
+          "title": "Direct messages"
+        },
+        "eyebrow": "What you get",
+        "files": {
+          "description": "Shared files remain in the conversation that produced them, and are listed per conversation when you need them again.",
+          "title": "Files stay with the thread"
+        },
+        "search": {
+          "description": "Search across conversations, so last month's decision is retrievable without scrolling for it.",
+          "title": "Findable afterwards"
+        },
+        "subtitle": "Workspace channels, private messages, and everything findable afterwards.",
+        "title": "Messaging that stays in context",
+        "workspace": {
+          "description": "Move between your own conversations and each workspace's from the same rail, without signing out of anything.",
+          "title": "Personal and workspace side by side"
+        }
+      },
+      "seo": {
+        "description": "Channels, direct messages and files in the same workspace as your work.",
+        "title": "Team Chat and Channels"
+      },
+      "title": "The conversation next to the work",
+      "useCases": {
+        "eyebrow": "In practice",
+        "personal": {
+          "items": [
+            "Notes to yourself in the same app",
+            "Direct messages without a separate tool",
+            "Personal and work conversations kept apart",
+            "Search that covers both"
+          ],
+          "title": "Your own thread"
+        },
+        "projects": {
+          "items": [
+            "A channel per project, closed when it ships",
+            "Decisions written where the work lives",
+            "Files kept with the discussion",
+            "Context available to whoever picks it up next"
+          ],
+          "title": "Project threads"
+        },
+        "subtitle": "Everyday team talk, project threads, and the notes you send yourself.",
+        "team": {
+          "items": [
+            "One place instead of three group chats",
+            "A reaction instead of another reply",
+            "Pinned conversations for the ones that matter",
+            "New joiners can read what happened"
+          ],
+          "title": "Everyday team talk"
+        },
+        "title": "Three conversations worth keeping"
+      }
+    },
+    "crm": {
+      "closing": {
+        "description": "Contacts is part of your Tuturuuu workspace. Sign in and bring your customer list with you.",
+        "title": "Stop rebuilding context before every call"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Contacts",
+        "secondary": "Talk to us"
+      },
+      "description": "Contacts, deals and conversation history in one record that the rest of your workspace can see. The follow-up you meant to send becomes a task with a date instead of a note to yourself.",
+      "eyebrow": "Contacts",
+      "features": {
+        "analytics": {
+          "description": "Conversion by stage, cycle length and where deals stall, so you fix the step that is actually costing you.",
+          "title": "Numbers behind the feeling"
+        },
+        "automation": {
+          "description": "Stage changes create the follow-up tasks and reminders, so process does not depend on discipline.",
+          "title": "The routine parts, taken over"
+        },
+        "contacts": {
+          "description": "Details, roles and history in a single record, so anyone picking up the account knows what was already said.",
+          "title": "One profile per person"
+        },
+        "deals": {
+          "description": "Every opportunity has a stage, a value and a person responsible. Handovers stop losing details.",
+          "title": "Deals with owners and dates"
+        },
+        "eyebrow": "What it does",
+        "history": {
+          "description": "Calls, emails and meeting notes attach to the contact, so nothing important lives only in someone's inbox.",
+          "title": "Conversations that stay findable"
+        },
+        "pipeline": {
+          "description": "See every open opportunity by stage, and which ones have gone quiet longer than they should have.",
+          "title": "A pipeline you can read at a glance"
+        },
+        "subtitle": "Not another database to maintain. The customer record sits beside your tasks, calendar and invoices, so context arrives with the name.",
+        "title": "The relationship, written down"
+      },
+      "seo": {
+        "description": "Keep customer contacts and relationship records organized in Tuturuuu. Connect your team’s follow-up work with tasks and workspace tools.",
+        "title": "CRM and Contact Management for Teams"
+      },
+      "title": "Every customer, and everything you promised them",
+      "useCases": {
+        "eyebrow": "Who it is for",
+        "growth": {
+          "items": [
+            "See which customers actually drive revenue",
+            "Spot the segments worth more of your time",
+            "Track revenue per account over time",
+            "Plan capacity against real demand"
+          ],
+          "title": "Growth and planning"
+        },
+        "sales": {
+          "items": [
+            "Track leads from first contact to signed",
+            "See the whole pipeline without asking for an update",
+            "Get reminded before a deal goes cold",
+            "Forecast from stages rather than optimism"
+          ],
+          "title": "Sales"
+        },
+        "service": {
+          "items": [
+            "Open a case against the full customer history",
+            "Track what was promised and by when",
+            "Keep feedback where the next conversation will find it",
+            "See which accounts need attention this week"
+          ],
+          "title": "Customer service"
+        },
+        "subtitle": "Selling, supporting and planning all draw on the same customer history.",
+        "title": "One record, several jobs"
+      }
+    },
+    "documents": {
+      "closing": {
+        "description": "Bring your writing into the same workspace as the rest of the work, and stop hunting for the version everyone agreed on.",
+        "title": "Start your next document here"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Start writing",
+        "secondary": "Talk to us"
+      },
+      "description": "Docs sit next to the tasks, calendar and files they belong to, so a spec stops being a link somebody has to go find.",
+      "eyebrow": "Documents",
+      "features": {
+        "assistant": {
+          "description": "Ask for a summary, an outline or a rewrite, and start from something on the page instead of a blank one.",
+          "title": "A draft to argue with"
+        },
+        "collaboration": {
+          "description": "Comments, suggestions and live editing mean the review happens on the page instead of scattered across three threads.",
+          "title": "Draft together"
+        },
+        "editor": {
+          "description": "A clean editor with the structure you expect: headings, lists, tables, code. The page gets out of the way of the thinking.",
+          "title": "Write without ceremony"
+        },
+        "eyebrow": "What you get",
+        "permissions": {
+          "description": "Per-document and per-folder access, including people outside the workspace, revocable at any time.",
+          "title": "Share exactly this much"
+        },
+        "search": {
+          "description": "Full-text search across every document in the workspace, so you stop reconstructing a decision from memory.",
+          "title": "Find the one you mean"
+        },
+        "subtitle": "Editing, search, history and permissions, without another tab to keep open.",
+        "title": "A document that keeps its context",
+        "versions": {
+          "description": "Every change is kept, so you can see who altered what and restore an earlier version without asking anyone.",
+          "title": "Nothing is lost by editing"
+        }
+      },
+      "seo": {
+        "description": "Write and organize team documents in Tuturuuu. Keep project context, tasks, and shared files close to the work they support.",
+        "title": "Collaborative Documents for Teams"
+      },
+      "title": "Write it down where the work already lives",
+      "useCases": {
+        "business": {
+          "items": [
+            "Contracts and their revision history",
+            "Proposals drafted from a previous one",
+            "Policies with controlled access",
+            "Reports written next to the numbers"
+          ],
+          "title": "Business paperwork"
+        },
+        "eyebrow": "Where it fits",
+        "knowledge": {
+          "items": [
+            "Onboarding guides new hires read on day one",
+            "Process documentation kept in one place",
+            "Internal FAQs instead of answering it again",
+            "Research notes with their sources attached"
+          ],
+          "title": "Team knowledge"
+        },
+        "specs": {
+          "items": [
+            "Specs that link to the tasks they created",
+            "Meeting notes with decisions and owners",
+            "Runbooks the on-call person can follow",
+            "Retrospectives that stay findable"
+          ],
+          "title": "Project and product docs"
+        },
+        "subtitle": "Three shapes of writing that stop drifting once they live in the workspace.",
+        "title": "The documents a team actually keeps"
+      }
+    },
+    "drive": {
+      "closing": {
+        "description": "Put storage next to the tasks, mail and documents that reference it, and stop paying for a drive that knows nothing about your work.",
+        "title": "Move your files in"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Drive",
+        "secondary": "Talk to us"
+      },
+      "description": "Storage that sits inside the workspace, so a file, the task it belongs to and the person who needs it are never three products apart.",
+      "eyebrow": "Drive",
+      "features": {
+        "devices": {
+          "description": "Web and mobile, so the file you need on the way to a meeting is not sitting on a laptop at home.",
+          "title": "The same drive on every device"
+        },
+        "eyebrow": "What you get",
+        "organization": {
+          "description": "Nest folders the way your team works and tag files so the same document can belong to more than one place.",
+          "title": "Folders, plus the labels you think in"
+        },
+        "search": {
+          "description": "Filter by name, type, owner and date, so a file from three months ago takes one search instead of ten clicks.",
+          "title": "Find it without opening folders"
+        },
+        "sharing": {
+          "description": "Share a file or a folder with chosen people or a link, and take the access back whenever you want.",
+          "title": "Send a link, not an attachment"
+        },
+        "storage": {
+          "description": "Everything is encrypted at rest and reachable only by the people you have given access to.",
+          "title": "Files kept private by default"
+        },
+        "subtitle": "Upload, find, share and roll back, without a folder archaeology expedition.",
+        "title": "Storage that behaves",
+        "versions": {
+          "description": "Replacing a file does not erase it. Earlier versions stay available, so an overwrite is not a lost afternoon.",
+          "title": "Every upload keeps the last one"
+        }
+      },
+      "seo": {
+        "description": "Store, organize, and securely share files with Tuturuuu Drive.",
+        "title": "Secure Cloud Drive"
+      },
+      "title": "Your files, where the rest of the work is",
+      "useCases": {
+        "delivery": {
+          "items": [
+            "A link instead of an attachment that bounces",
+            "Access you can revoke after the handover",
+            "Large files without the compression ritual",
+            "A clear record of what was sent and when"
+          ],
+          "title": "Sending work to clients"
+        },
+        "eyebrow": "Where it fits",
+        "records": {
+          "items": [
+            "Version history for anything that gets revised",
+            "Originals preserved alongside the current file",
+            "Restore a file someone replaced by mistake",
+            "A tidy archive instead of a folder on one desktop"
+          ],
+          "title": "Records you have to keep"
+        },
+        "subtitle": "Three jobs storage has to do before anyone trusts it.",
+        "team": {
+          "items": [
+            "One place for the assets everyone reuses",
+            "Folders scoped to a project or a client",
+            "Access that follows the workspace, not one person's inbox",
+            "New members see the history, not an empty folder"
+          ],
+          "title": "Shared team files"
+        },
+        "title": "What teams keep in Drive"
+      }
+    },
+    "finance": {
+      "closing": {
+        "description": "Finance is part of your Tuturuuu workspace. Sign in and start with this month.",
+        "title": "Open the books without dreading it"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Finance",
+        "secondary": "Talk to us"
+      },
+      "description": "Expenses, budgets, invoices and cash flow in the same workspace as the rest of your work. Receipts get read and categorised for you, so the month closes without a weekend of data entry.",
+      "eyebrow": "Finance",
+      "features": {
+        "budgets": {
+          "description": "Set a limit per category and see where you stand as you spend, not after the statement lands.",
+          "title": "Budgets you actually notice"
+        },
+        "cashflow": {
+          "description": "Money in against money out over time, so a thin month shows up while you can still do something about it.",
+          "title": "Cash flow you can see coming"
+        },
+        "expenses": {
+          "description": "Photograph a receipt and it arrives as a categorised transaction. The shoebox of paper stops being a problem you deal with in April.",
+          "title": "Expenses that file themselves"
+        },
+        "eyebrow": "What it does",
+        "payments": {
+          "description": "Record what you billed and what cleared in the same place, so chasing an unpaid invoice starts from a fact rather than a memory.",
+          "title": "Payments and invoices in one ledger"
+        },
+        "planning": {
+          "description": "Model a hire, a price change or a savings goal against your actual history instead of a guess.",
+          "title": "Plans that use your real numbers"
+        },
+        "reports": {
+          "description": "Income, spend and category breakdowns are already built. Pull the number your accountant asked for in a minute, not an evening.",
+          "title": "Reports without the export"
+        },
+        "subtitle": "Every number lives next to the work that produced it, so you are not reconciling two versions of the truth.",
+        "title": "The bookkeeping, mostly handled"
+      },
+      "seo": {
+        "description": "Track transactions, manage wallets, and organize budgets in Tuturuuu. Give your team a clearer view of income, expenses, and financial records.",
+        "title": "Team Finance, Budgets and Expense Tracking"
+      },
+      "title": "Know where the money went, without the spreadsheet",
+      "useCases": {
+        "business": {
+          "items": [
+            "Keep team spend in categories you chose, not the bank's",
+            "Invoice, track and follow up without a second tool",
+            "Close the month from records that were already tidy",
+            "See margin per project rather than per bank account"
+          ],
+          "title": "Running a business"
+        },
+        "eyebrow": "Who it is for",
+        "personal": {
+          "items": [
+            "See where the month actually went, by category",
+            "Give every savings goal a number and a date",
+            "Track accounts and investments in one balance",
+            "Set a budget you will still be following in March"
+          ],
+          "title": "Personal money"
+        },
+        "planning": {
+          "items": [
+            "Project the next few months from real history",
+            "Test a decision before it becomes an expense",
+            "Spot the months where cash gets tight early",
+            "Compare a plan against what actually happened"
+          ],
+          "title": "Planning ahead"
+        },
+        "subtitle": "A freelancer, a small team and a household all want to know the same thing: what is left, and what is coming.",
+        "title": "Same ledger, different questions"
+      }
+    },
+    "forms": {
+      "closing": {
+        "description": "Open Forms, build the form you keep asking for by email, and share the link.",
+        "title": "Write the first question"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Forms",
+        "secondary": "Talk to us"
+      },
+      "description": "Build a form, send a link, and watch the responses arrive where you can read, filter and chart them without exporting anything.",
+      "eyebrow": "Forms",
+      "features": {
+        "analytics": {
+          "description": "Per-question charts, activity over time and drop-off points are there as soon as the answers are.",
+          "title": "Summaries you did not build"
+        },
+        "builder": {
+          "description": "Add questions and group them into sections, then move blocks until the form reads the way you would ask in person.",
+          "title": "Questions, sections, order"
+        },
+        "eyebrow": "What you get",
+        "logic": {
+          "description": "Rules skip a question or jump to a section based on an earlier answer, so nobody reads what does not apply to them.",
+          "title": "Shows only what applies"
+        },
+        "responses": {
+          "description": "Answers land in the form itself, grouped by responder, so reading them is not a spreadsheet exercise.",
+          "title": "Responses in place"
+        },
+        "share": {
+          "description": "Publish and get a share link that opens for anyone you send it to, on a phone as easily as a laptop.",
+          "title": "One link to share"
+        },
+        "subtitle": "A builder, a link to share, and a response view that already knows how to summarise itself.",
+        "theme": {
+          "description": "Colors, fonts and images are set on the form itself, so a public link does not look borrowed.",
+          "title": "Looks like you sent it"
+        },
+        "title": "From question to answer without a detour"
+      },
+      "seo": {
+        "description": "Build a form, share a link, and read every response where it lands.",
+        "title": "Online Forms and Surveys"
+      },
+      "title": "Ask once, read the answers in one place",
+      "useCases": {
+        "eyebrow": "In practice",
+        "feedback": {
+          "items": [
+            "Surveys after a purchase or an event",
+            "Ratings you can read as a chart",
+            "Open answers kept next to the numbers",
+            "Drop-off shown at the question people stopped on"
+          ],
+          "title": "Asking customers"
+        },
+        "intake": {
+          "items": [
+            "Registration for an event or a class",
+            "Client intake before the first call",
+            "Applications collected in one queue",
+            "A public link that needs no account to answer"
+          ],
+          "title": "Requests and sign-ups"
+        },
+        "internal": {
+          "items": [
+            "Requests routed with conditional questions",
+            "Checklists filled the same way every time",
+            "Answers reviewed without a shared inbox",
+            "Results summarised for the next meeting"
+          ],
+          "title": "Running the team"
+        },
+        "subtitle": "Collecting requests, asking customers, and running something internal.",
+        "title": "The forms most teams need first"
+      }
+    },
+    "hive": {
+      "closing": {
+        "description": "Build the world, configure the agents, and run the first tick.",
+        "title": "Open the lab"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Hive",
+        "secondary": "Talk to us"
+      },
+      "description": "Build a world, place agents in it, give them prompts and memory, then run the simulation and read what they actually did.",
+      "eyebrow": "Hive",
+      "features": {
+        "agents": {
+          "description": "Each agent carries a role, a backstory, a model and a prompt, and can be selected in the world to see exactly how it is configured.",
+          "title": "Agents you place and inspect"
+        },
+        "eyebrow": "What you get",
+        "observe": {
+          "description": "Run logs, conversation turns, event counts and world state are kept per session, so a result can be checked rather than remembered.",
+          "title": "What happened, recorded"
+        },
+        "prompts": {
+          "description": "Switch between default, enhanced and custom prompts, turn memory and backstory on or off, and change the model without leaving the run.",
+          "title": "Prompt, memory, model"
+        },
+        "runs": {
+          "description": "Step a single simulation tick by hand, or let autonomous ticks pair agents round-robin, all-to-all, or against a chosen target.",
+          "title": "Runs you trigger or schedule"
+        },
+        "subtitle": "A world you can edit, agents you can configure, and runs you can watch and compare.",
+        "title": "Everything an experiment needs to be repeatable",
+        "workflows": {
+          "description": "The same run reads three ways: the world as it stands, the sequence of events, and the graph of how the agents' work connected.",
+          "title": "World, timeline, workflow graph"
+        },
+        "world": {
+          "description": "Place blocks and objects on a voxel grid, with camera presets, time of day, season and weather as variables you control.",
+          "title": "A world you build by hand"
+        }
+      },
+      "seo": {
+        "description": "Keep what your team knows searchable instead of scattered.",
+        "title": "Team Knowledge Hive"
+      },
+      "title": "A lab for swarm agents",
+      "useCases": {
+        "design": {
+          "items": [
+            "A multi-agent setup tried before it is built",
+            "Pairing strategies compared on the same world",
+            "Prompt changes seen in behavior, not in theory",
+            "Failure modes found in simulation"
+          ],
+          "title": "Designing a system"
+        },
+        "eyebrow": "In practice",
+        "research": {
+          "items": [
+            "One variable changed between two runs",
+            "Memory and backstory isolated as conditions",
+            "Conversation turns kept for review",
+            "Named sessions, so results stay attributable"
+          ],
+          "title": "Agent research"
+        },
+        "subtitle": "Agent research, designing a multi-agent system, and showing others how one behaves.",
+        "teaching": {
+          "items": [
+            "A shared world several people can watch",
+            "Live state as the tick runs",
+            "A scenario replayed for a discussion",
+            "Agent decisions traceable to their prompt"
+          ],
+          "title": "Showing how it behaves"
+        },
+        "title": "What people run in it"
+      }
+    },
+    "inventory": {
+      "closing": {
+        "description": "Inventory is part of your Tuturuuu workspace. Sign in and load your first items.",
+        "title": "Count once, trust it afterwards"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Inventory",
+        "secondary": "Talk to us"
+      },
+      "description": "Track what you hold, across every location, with scanning, reorder points and a full movement history. The stockout you would have found out about from a customer shows up as an alert instead.",
+      "eyebrow": "Inventory",
+      "features": {
+        "eyebrow": "What it does",
+        "orders": {
+          "description": "Raise an order, track what is inbound and see which supplier delivers late, all against the same item record.",
+          "title": "Purchase orders and suppliers"
+        },
+        "reordering": {
+          "description": "Set a minimum per item and get told to reorder before you run out, not after.",
+          "title": "Reorder points that trigger themselves"
+        },
+        "reports": {
+          "description": "See what moves, what sits, and what is quietly tying up your cash.",
+          "title": "Turnover you can act on"
+        },
+        "scanning": {
+          "description": "Receive, move and count items with a phone camera, so a stock take stops meaning a clipboard.",
+          "title": "Barcode and QR scanning"
+        },
+        "stock": {
+          "description": "What you have, where it is, updated as it moves. The count you quote a customer is the count on the shelf.",
+          "title": "Live stock levels"
+        },
+        "subtitle": "Levels, movements and suppliers in one system, connected to the finance and customer records you already keep.",
+        "title": "Fewer surprises in the stockroom",
+        "warehouses": {
+          "description": "Track stock per site and every transfer between them, without a spreadsheet per warehouse.",
+          "title": "Multiple locations, one picture"
+        }
+      },
+      "seo": {
+        "description": "Monitor stock levels and fulfillment workflows with Tuturuuu Inventory.",
+        "title": "Inventory Management"
+      },
+      "title": "Stock counts that match the shelf",
+      "useCases": {
+        "distribution": {
+          "items": [
+            "Organise stock by location and bin",
+            "Pick and fulfil against live availability",
+            "Follow transfers between sites",
+            "See what is inbound and when it lands"
+          ],
+          "title": "Distribution"
+        },
+        "eyebrow": "Who it is for",
+        "manufacturing": {
+          "items": [
+            "Track raw materials against planned runs",
+            "Plan production around what you actually hold",
+            "Keep a movement record for quality checks",
+            "Watch unit cost as input prices change"
+          ],
+          "title": "Production"
+        },
+        "retail": {
+          "items": [
+            "Keep shelf and system counts in agreement",
+            "Reorder before a best seller runs out",
+            "Track supplier prices and lead times",
+            "Tie stock movements back to sales"
+          ],
+          "title": "Retail"
+        },
+        "subtitle": "Retail, distribution and production ask the same question in different words: do we have enough, and where is it?",
+        "title": "Wherever the stock sits"
+      }
+    },
+    "lms": {
+      "closing": {
+        "description": "Learn is part of your Tuturuuu workspace. Sign in and set up your first course.",
+        "title": "Start teaching, not configuring"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Learn",
+        "secondary": "Talk to us"
+      },
+      "description": "Build a course, set the work, and see progress as it happens. Learners get one place for what is due; you get an honest picture of who is falling behind while there is still time to help.",
+      "eyebrow": "Learn",
+      "features": {
+        "assignments": {
+          "description": "Set work, collect submissions and grade in one place, with scoring handled automatically where it can be.",
+          "title": "Assignments and grading"
+        },
+        "courses": {
+          "description": "Organise lessons, readings and video into modules, and reuse the structure the next time you run it.",
+          "title": "Courses you can build in an afternoon"
+        },
+        "discussion": {
+          "description": "Discussion attached to the lesson, so the answer helps everyone who reaches that point later.",
+          "title": "Questions asked once"
+        },
+        "eyebrow": "What it does",
+        "live": {
+          "description": "Run classes and one-to-ones next to the material they cover, with the recording where the lesson is.",
+          "title": "Live sessions in context"
+        },
+        "practice": {
+          "description": "Check understanding as you go with quizzes and exercises, rather than finding out at the exam.",
+          "title": "Quizzes and practice"
+        },
+        "progress": {
+          "description": "Completion and performance per learner, so the person who stopped three weeks ago is visible now.",
+          "title": "Progress you can see, not guess"
+        },
+        "subtitle": "Course material, submissions and progress in one system, on the same calendar as everything else your learners are juggling.",
+        "title": "Teaching, with less admin around it"
+      },
+      "seo": {
+        "description": "Deliver training and measure learning impact with Tuturuuu LMS.",
+        "title": "Learning Management System"
+      },
+      "title": "Courses, assignments and where each learner stands",
+      "useCases": {
+        "centers": {
+          "items": [
+            "Manage a catalogue of courses and cohorts",
+            "Run certification programmes end to end",
+            "Monitor progress across every active group",
+            "See which courses actually finish well"
+          ],
+          "title": "Training providers"
+        },
+        "corporate": {
+          "items": [
+            "Onboard new hires with a path they can follow",
+            "Run professional development without a scheduler",
+            "Track compliance training to completion",
+            "Assess skills before and after the programme"
+          ],
+          "title": "Teams and training"
+        },
+        "eyebrow": "Who it is for",
+        "institutions": {
+          "items": [
+            "Deliver a course online with the material in order",
+            "See performance per student, not just per class",
+            "Run virtual classrooms alongside the coursework",
+            "Keep readings and resources in one library"
+          ],
+          "title": "Schools and universities"
+        },
+        "subtitle": "A classroom, an onboarding programme and a certification course run on the same three things: material, work, and progress.",
+        "title": "Anywhere people are learning something"
+      }
+    },
+    "mail": {
+      "closing": {
+        "description": "Connect your inbox and let the messages that create work create it directly, instead of on a sticky note.",
+        "title": "Move your mail in"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Mail",
+        "secondary": "Talk to us"
+      },
+      "description": "Mail that knows about your tasks and your calendar, so the promise made in a thread becomes something with an owner and a date.",
+      "eyebrow": "Mail",
+      "features": {
+        "assistant": {
+          "description": "Mira drafts a response in your context and summarises a long thread, so you are editing instead of writing from nothing.",
+          "title": "A reply already started"
+        },
+        "calendar": {
+          "description": "Times you can actually make are proposed from your calendar, and the event is created without leaving the message.",
+          "title": "Book the meeting from the thread"
+        },
+        "eyebrow": "What you get",
+        "inbox": {
+          "description": "Priority sorting and automatic grouping put the messages that need you at the top and the rest out of the way.",
+          "title": "The important mail first"
+        },
+        "schedule": {
+          "description": "Write now, deliver later, and set a follow-up so a silent thread comes back to you instead of disappearing.",
+          "title": "Send it when it lands better"
+        },
+        "search": {
+          "description": "Find a message by what you remember about it, the person, the month, the attachment, not the exact subject line.",
+          "title": "Ask for it in plain words"
+        },
+        "shared": {
+          "description": "Shared addresses with delegated access, so support or billing mail is not stuck behind one person's login.",
+          "title": "Inboxes a team can run"
+        },
+        "subtitle": "Triage, drafting, scheduling and shared inboxes in one place.",
+        "title": "Less inbox, more done"
+      },
+      "seo": {
+        "description": "Organize email alongside your team’s tasks, calendar, and workspace tools with Tuturuuu Mail.",
+        "title": "Email Management in Your Team Workspace"
+      },
+      "title": "An inbox that hands work to the rest of your day",
+      "useCases": {
+        "clients": {
+          "items": [
+            "Threads that carry the project's context",
+            "Scheduling without the four-message dance",
+            "Follow-ups that fire without you remembering",
+            "Attachments that land in Drive, not a downloads folder"
+          ],
+          "title": "Client correspondence"
+        },
+        "eyebrow": "Where it fits",
+        "followups": {
+          "items": [
+            "Reply drafts waiting for your edit",
+            "Scheduled sending across time zones",
+            "Reminders when nobody answered",
+            "Mail turned into a task with a due date"
+          ],
+          "title": "Keeping your day intact"
+        },
+        "subtitle": "Three kinds of correspondence that stop leaking once mail sits in the workspace.",
+        "team": {
+          "items": [
+            "One address several people can answer",
+            "Handover without a chain of forwards",
+            "Internal updates that become tasks",
+            "A record new teammates can read back"
+          ],
+          "title": "Team and shared inboxes"
+        },
+        "title": "The mail that actually costs you time"
+      }
+    },
+    "meet": {
+      "closing": {
+        "description": "Choose the dates, share the link, and let the group answer in their own time.",
+        "title": "Set up a plan in a minute"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Create a plan",
+        "secondary": "Talk to us"
+      },
+      "description": "Pick some candidate dates, share one link, and watch a group's availability collect itself. No account needed to take part.",
+      "eyebrow": "Tuturuuu Meet",
+      "features": {
+        "agenda": {
+          "description": "Discussion points and objectives sit alongside the time slot, so the meeting has a purpose written down before it starts.",
+          "title": "The agenda lives with the plan"
+        },
+        "availability": {
+          "description": "Set the candidate dates and the range of hours worth considering, so people only answer the question that matters.",
+          "title": "Dates and hours you choose"
+        },
+        "eyebrow": "What you get",
+        "guests": {
+          "description": "Anyone with the link can add their availability by name, so external people are not a reason to fall back to email.",
+          "title": "Guests without an account"
+        },
+        "overlap": {
+          "description": "Group availability builds up as a grid, and the soonest and best slots surface without anyone counting rows.",
+          "title": "The overlap, drawn for you"
+        },
+        "sharing": {
+          "description": "Sign in and your plans are saved, so a recurring group does not start from a blank page every time.",
+          "title": "Plans you can come back to"
+        },
+        "subtitle": "A plan takes a minute to set up and replaces the thread where six people list the hours they cannot make.",
+        "timezones": {
+          "description": "Each participant marks availability in their own time zone, and the plan reconciles them into one honest picture.",
+          "title": "Everyone answers in local time"
+        },
+        "title": "One link, everyone's availability"
+      },
+      "title": "Find the time before you send the invite",
+      "useCases": {
+        "clients": {
+          "items": [
+            "Candidate times offered in one message",
+            "No access to your internal calendar required",
+            "Several attendees reconciled at once",
+            "A record of what was agreed and why"
+          ],
+          "title": "Clients and externals"
+        },
+        "eyebrow": "In practice",
+        "groups": {
+          "items": [
+            "Study sessions arranged around classes",
+            "Volunteer shifts matched to who is free",
+            "Recurring plans reused week to week",
+            "Anyone can respond without signing up"
+          ],
+          "title": "Groups and communities"
+        },
+        "subtitle": "The more calendars in play, the more the thread costs. This replaces it.",
+        "teams": {
+          "items": [
+            "A workable hour found without a chain of replies",
+            "Local time shown to every participant",
+            "Contractors and partners included by link",
+            "The agenda ready before the slot is booked"
+          ],
+          "title": "Teams across time zones"
+        },
+        "title": "Whenever more than three people are involved"
+      }
+    },
+    "meet-together": {
+      "seo": {
+        "description": "Compare availability and settle on a meeting time without the back and forth.",
+        "title": "Find a Time Everyone Can Meet"
+      }
+    },
+    "qr": {
+      "closing": {
+        "description": "Paste the link, set the colors, and download a file you can print.",
+        "title": "Make the code"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open QR generator",
+        "secondary": "Talk to us"
+      },
+      "description": "Turn a link, a message or a payment detail into a QR code, style it so it looks like yours, and download it ready to print.",
+      "eyebrow": "QR",
+      "features": {
+        "anyValue": {
+          "description": "Paste a URL, a message, or payment details, and the code updates as you type.",
+          "title": "Any link or text"
+        },
+        "colors": {
+          "description": "Set the code and background colors so it sits inside your material instead of on a white square.",
+          "title": "Your colors"
+        },
+        "export": {
+          "description": "Download as PNG, JPG or WebP at four times the on-screen size, so it holds up on a menu or a banner.",
+          "title": "A file that prints"
+        },
+        "eyebrow": "What you get",
+        "logo": {
+          "description": "Drop an image into the center, with its size, opacity and rounding under your control, and the code stays scannable.",
+          "title": "A logo in the middle"
+        },
+        "open": {
+          "description": "The generator is part of the Tuturuuu tools app and opens straight to the form.",
+          "title": "Nothing to sign up for"
+        },
+        "styles": {
+          "description": "A plain code, a branded card with your own title, or a scan-me version for a poster where people need the instruction.",
+          "title": "Three layouts"
+        },
+        "subtitle": "Any value, three layouts, your colors, your logo, and a file large enough for print.",
+        "title": "Enough control to print it once"
+      },
+      "seo": {
+        "description": "Create custom QR codes with colors, logos, and export options using Tuturuuu Tools. Explore QR codes for links, events, and business materials.",
+        "title": "Custom QR Code Generator"
+      },
+      "title": "A code for the thing you keep repeating",
+      "useCases": {
+        "business": {
+          "items": [
+            "A menu opened without an app",
+            "Payment details on a card by the till",
+            "An ordering or review link at the table",
+            "A link printed on a receipt or a bag"
+          ],
+          "title": "On the counter"
+        },
+        "events": {
+          "items": [
+            "A registration link on a poster",
+            "Directions to the room or the venue",
+            "Slides and materials after a talk",
+            "A contact card people can scan"
+          ],
+          "title": "At an event"
+        },
+        "everyday": {
+          "items": [
+            "A long link passed to a phone without typing",
+            "A form link people can scan and fill in",
+            "A profile or portfolio on a business card",
+            "A code sized for a sticker or a badge"
+          ],
+          "title": "Everyday handoffs"
+        },
+        "eyebrow": "In practice",
+        "subtitle": "On counters, at events, and in everyday handoffs.",
+        "title": "Where these codes end up"
+      }
+    },
+    "storefront": {
+      "closing": {
+        "description": "Publish the products you already track and give buyers a link that stays current.",
+        "title": "Open the shop"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Storefront",
+        "secondary": "Talk to us"
+      },
+      "description": "A public shop that reads the products and stock you already keep in Inventory, so the catalog customers see is the one you maintain.",
+      "eyebrow": "Storefront",
+      "features": {
+        "cart": {
+          "description": "Buyers add across categories and come back to the cart, on a phone as easily as a laptop.",
+          "title": "A cart that survives browsing"
+        },
+        "catalog": {
+          "description": "Products, prices and descriptions come from Inventory, so publishing is a visibility decision rather than a second data entry.",
+          "title": "The catalog is your inventory"
+        },
+        "checkout": {
+          "description": "Payment is handed to Polar at checkout, so card details never sit with the shop.",
+          "title": "Checkout handled by Polar"
+        },
+        "eyebrow": "What you get",
+        "orders": {
+          "description": "A buyer can look their order up, and the workspace sees the same record without asking for a screenshot.",
+          "title": "Orders both sides can see"
+        },
+        "stock": {
+          "description": "Availability follows the counts your team maintains, so the shop does not sell what the shelf no longer has.",
+          "title": "Stock buyers can trust"
+        },
+        "subtitle": "One catalog, one stock count, and a checkout your buyers can finish.",
+        "title": "A shop on top of the stock you already track",
+        "visibility": {
+          "description": "A store can be open to anyone with the link or kept to invited buyers, decided per store.",
+          "title": "Public or private"
+        }
+      },
+      "seo": {
+        "description": "Sell online with a storefront connected to your inventory and finance.",
+        "title": "Online Storefront"
+      },
+      "title": "Your inventory, open to buyers",
+      "useCases": {
+        "buyers": {
+          "items": [
+            "Browsing by category on a phone",
+            "A cart that remembers what was added",
+            "A checkout that ends at a real payment page",
+            "An order they can look up later"
+          ],
+          "title": "The people buying"
+        },
+        "eyebrow": "In practice",
+        "operators": {
+          "items": [
+            "Stock counted once, shown everywhere",
+            "Product visibility set per store",
+            "Orders in the same workspace as inventory",
+            "Catalog and payment settings kept in Inventory"
+          ],
+          "title": "Behind the counter"
+        },
+        "shops": {
+          "items": [
+            "A shop without rebuilding the catalog",
+            "Prices maintained in one place",
+            "A link you can put on a receipt or a poster",
+            "No second system to reconcile"
+          ],
+          "title": "Small shops"
+        },
+        "subtitle": "Small shops, the team behind the counter, and the people buying.",
+        "title": "Who the shop is for"
+      }
+    },
+    "tasks": {
+      "closing": {
+        "description": "Open Tasks, write down what is on your mind, and let the workspace keep track of the rest.",
+        "title": "Start with today's list"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Tasks",
+        "secondary": "Talk to us"
+      },
+      "description": "Lists, boards and timelines over the same set of tasks, with owners, dates and priorities that hold up when the week gets busy.",
+      "eyebrow": "Tasks",
+      "features": {
+        "assistant": {
+          "description": "Suggested priorities and time estimates arrive before you open the board, so triage is a review rather than a decision from scratch.",
+          "title": "An assistant that sorts first"
+        },
+        "collaborate": {
+          "description": "Every task carries an owner and a state, so nobody has to ask in chat who picked it up.",
+          "title": "Assigned, not implied"
+        },
+        "deadlines": {
+          "description": "Due dates and reminders land on the same calendar as your meetings, so deadlines compete for real time.",
+          "title": "Dates that reach your calendar"
+        },
+        "eyebrow": "What you get",
+        "insights": {
+          "description": "Completion and time spent are recorded as you go, so a retrospective starts from data instead of memory.",
+          "title": "What actually got done"
+        },
+        "organize": {
+          "description": "Group work the way you think about it, so the next thing to do is visible without reading the whole list.",
+          "title": "Lists, labels and priorities"
+        },
+        "subtitle": "The parts that keep a list honest: an owner, a date, a priority, and a view that matches how you actually work.",
+        "title": "Enough structure to stop re-deciding",
+        "views": {
+          "description": "Switch the view without moving the work. The same tasks, arranged for planning, standups or delivery.",
+          "title": "List, board or timeline"
+        }
+      },
+      "seo": {
+        "description": "Organize projects with shared task boards, assignees, priorities, and due dates. Keep your team’s next steps clear with Tuturuuu Tasks.",
+        "title": "Project and Task Management for Teams"
+      },
+      "title": "Work that stays where you left it",
+      "useCases": {
+        "eyebrow": "In practice",
+        "operations": {
+          "items": [
+            "Repeatable checklists for routine work",
+            "Deadlines tracked across several projects",
+            "Workload visible before you commit to more",
+            "Status reports assembled from real activity"
+          ],
+          "title": "Recurring operations"
+        },
+        "personal": {
+          "items": [
+            "A daily list you can finish, not an inbox",
+            "Goals broken down into tasks with dates",
+            "Habits and routines that repeat on schedule",
+            "Priorities set once, in the morning"
+          ],
+          "title": "Your own week"
+        },
+        "subtitle": "Personal lists, team delivery and recurring operations all sit in one workspace.",
+        "team": {
+          "items": [
+            "Project work split into owned tasks",
+            "Handoffs with a state everyone can see",
+            "Progress readable without a status meeting",
+            "Comments and context on the task itself"
+          ],
+          "title": "Team delivery"
+        },
+        "title": "The same board, three ways to use it"
+      }
+    },
+    "track": {
+      "closing": {
+        "description": "Open Track, pick the task you are on, and let the week record itself.",
+        "title": "Start the timer"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Track",
+        "secondary": "Talk to us"
+      },
+      "description": "Start a timer against a real task, stop it when you move on, and end the week knowing where the hours went instead of guessing.",
+      "eyebrow": "Track",
+      "features": {
+        "breaks": {
+          "description": "Coffee, lunch and walks are logged as their own break types, so tracked time stays honest.",
+          "title": "Breaks counted apart"
+        },
+        "export": {
+          "description": "Export the sessions you filtered for, so invoicing and payroll start from the same rows you just read.",
+          "title": "Numbers that leave the app"
+        },
+        "eyebrow": "What you get",
+        "history": {
+          "description": "Past sessions stay editable, and an entry someone forgot can be requested and approved instead of quietly lost.",
+          "title": "A record you can correct"
+        },
+        "subtitle": "Sessions attached to tasks, breaks counted separately, and a history you can still correct.",
+        "tasks": {
+          "description": "Pick a task from your boards and the session attaches to it, so hours land on the work rather than a free-text label.",
+          "title": "Time against real tasks"
+        },
+        "team": {
+          "description": "Managers see sessions across the workspace, filtered by person and period, without collecting screenshots.",
+          "title": "Hours per person"
+        },
+        "timer": {
+          "description": "A running timer sits at the top of the screen, so starting is faster than deciding to skip it.",
+          "title": "Start and stop in one click"
+        },
+        "title": "A timer that stays close to the work"
+      },
+      "seo": {
+        "description": "Track time against real tasks and review where your team’s hours go. Keep time entries connected to projects in Tuturuuu.",
+        "title": "Team Time Tracking and Task Timers"
+      },
+      "title": "Hours you can account for",
+      "useCases": {
+        "eyebrow": "In practice",
+        "freelance": {
+          "items": [
+            "Hours per client, ready to invoice",
+            "Sessions tied to the task you delivered",
+            "Estimates checked against what it took",
+            "An export your invoice can cite"
+          ],
+          "title": "Billing clients"
+        },
+        "review": {
+          "items": [
+            "A week reviewed in one screen",
+            "Time by task, project and person",
+            "Gaps found while you can still fix them",
+            "A record for the next planning round"
+          ],
+          "title": "Closing the week"
+        },
+        "subtitle": "Billing a client, running a team, or closing out a week.",
+        "team": {
+          "items": [
+            "Who is working on what, right now",
+            "Workload visible before you assign more",
+            "Break time separated from focused time",
+            "Approvals for entries someone forgot"
+          ],
+          "title": "Running a team"
+        },
+        "title": "Three reasons people keep it running"
+      }
+    },
+    "workflows": {
+      "closing": {
+        "description": "Set up your workspace, map the process once, and stop doing it by hand next month.",
+        "title": "Automate the part you keep repeating"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Set up your workspace",
+        "secondary": "Talk to us"
+      },
+      "description": "Build the process once with triggers and conditions, and the approvals, handoffs and updates run whether or not anyone remembers to chase them.",
+      "eyebrow": "Workflows",
+      "features": {
+        "assistant": {
+          "description": "The assistant reads how a workflow actually runs and points at the steps that queue up or get skipped.",
+          "title": "Suggestions where it stalls"
+        },
+        "builder": {
+          "description": "Lay out steps visually and the shape of the process stays obvious to anyone who opens it later.",
+          "title": "Built by arranging, not coding"
+        },
+        "eyebrow": "What you get",
+        "integrations": {
+          "description": "APIs and custom triggers let a workflow reach the tools your team has not replaced, instead of forcing a migration.",
+          "title": "Connected to what you already run"
+        },
+        "subtitle": "A workflow is meant to be understood by the people it affects, not just by whoever built it.",
+        "templates": {
+          "description": "Templates cover the common cases, so onboarding or approvals are adjusted rather than designed from nothing.",
+          "title": "Start from a known process"
+        },
+        "title": "Automation you can read",
+        "triggers": {
+          "description": "Work starts on an event, a schedule or a rule you set, so the process moves without someone noticing it should.",
+          "title": "Conditions and triggers"
+        },
+        "versions": {
+          "description": "Versions are kept as the process evolves, so you can see what changed and go back if the new one is worse.",
+          "title": "Changes you can trace"
+        }
+      },
+      "seo": {
+        "description": "Automate cross-team processes with Tuturuuu Workflows.",
+        "title": "Workflow Automation"
+      },
+      "title": "The routine parts, handled without you",
+      "useCases": {
+        "approvals": {
+          "items": [
+            "Approvals routed to whoever should decide",
+            "Documents moved through review in order",
+            "New hires set up from the same checklist",
+            "Purchase requests tracked to a decision"
+          ],
+          "title": "Business processes"
+        },
+        "eyebrow": "In practice",
+        "subtitle": "Approvals, handoffs and system chores are the parts that quietly cost a week each month.",
+        "systems": {
+          "items": [
+            "Data kept in step between tools",
+            "Scheduled jobs run on time",
+            "Custom triggers for your own events",
+            "Runs logged so failures are findable"
+          ],
+          "title": "System chores"
+        },
+        "team": {
+          "items": [
+            "Tasks assigned as work reaches a stage",
+            "Handoffs that carry their context along",
+            "Status updates posted without a reminder",
+            "Notifications only for people who need them"
+          ],
+          "title": "Team automation"
+        },
+        "title": "Where the manual work usually hides"
+      }
+    }
+  },
+  "qr": {
+    "image_upload": {
+      "browse": "browse files",
+      "dimensions": "Dimensions",
+      "dimensions_too_large": "Image dimensions are too large. Maximum size is 512x512px.",
+      "dimensions_too_small": "Image dimensions are too small. Minimum size is 32x32px.",
+      "drop_files": "Drop files here",
+      "file_too_large": "File is too large. Maximum size is {size}.",
+      "image_uploaded": "Image uploaded",
+      "invalid_image": "Invalid image file.",
+      "invalid_type": "Invalid file type. Please upload JPG, PNG, WebP, or SVG files.",
+      "max_size": "Max size",
+      "processing": "Processing",
+      "recommended": "Recommended",
+      "rounded_logo": "Rounded logo",
+      "signed_url_failed": "Failed to generate signed URL.",
+      "supported_formats": "Supported formats",
+      "title": "Logo/Image Upload",
+      "upload_failed": "Upload failed. Please try again."
+    }
+  },
+  "security-policy": {
+    "cta": {
+      "description": "Send the report privately first. We will acknowledge it, validate impact, coordinate a fix, and discuss public credit when the issue is resolved.",
+      "hall_cta": "View Hall of Fame",
+      "report_cta": "Email security team",
+      "title": "Ready to report?"
+    },
+    "hero": {
+      "badge": "Security policy",
+      "description": "How to report vulnerabilities safely, what is in scope, and how we coordinate fixes and public credit.",
+      "hall_cta": "View Hall of Fame",
+      "report_cta": "Report privately",
+      "title_highlight": "responsible disclosure",
+      "title_prefix": "Tuturuuu security policy for"
+    },
+    "meta": {
+      "description": "Read the Tuturuuu security policy for responsible disclosure, scope, safe testing rules, and response expectations.",
+      "title": "Security Policy"
+    },
+    "reporting": {
+      "ack_label": "Initial response",
+      "ack_value": "Within 24 hours",
+      "credit_label": "Recognition",
+      "credit_value": "Optional public credit",
+      "description": "Use one private channel for initial reports so we can triage quickly and protect users while the issue is unresolved.",
+      "email_label": "Private inbox",
+      "eyebrow": "Report channel",
+      "title": "Send vulnerability reports privately"
+    },
+    "response": {
+      "badge": "Response",
+      "description": "We prioritize confirmed impact, communicate next steps, and keep public credit aligned with the verified scope.",
+      "items": {
+        "ack": {
+          "description": "We acknowledge new reports within 24 hours when enough contact information is provided.",
+          "title": "Acknowledge"
+        },
+        "credit": {
+          "description": "Verified researchers can be listed on the Hall of Fame with the name or handle they choose.",
+          "title": "Credit"
+        },
+        "triage": {
+          "description": "We reproduce or validate the behavior, classify impact, and coordinate remediation.",
+          "title": "Triage"
+        }
+      },
+      "title": "What happens after you report"
+    },
+    "rules": {
+      "badge": "Safe testing",
+      "description": "Please use the smallest proof needed to show impact and avoid actions that could harm customers, workspaces, data, or service availability.",
+      "include": {
+        "items": {
+          "contact": "Your preferred contact method and public credit name, if you want recognition.",
+          "impact": "The practical security impact and affected users, workspaces, or assets.",
+          "steps": "Clear reproduction steps, screenshots, request logs, or a minimal proof of concept.",
+          "summary": "A short summary of the vulnerability and the affected Tuturuuu surface."
+        },
+        "title": "What to include"
+      },
+      "items": {
+        "minimum": "Use minimal, non-destructive testing and stop once impact is demonstrated.",
+        "no_data_access": "Do not access, modify, delete, or exfiltrate data that is not yours.",
+        "no_persistence": "Do not establish persistence, backdoors, malware, or ongoing access.",
+        "no_service_disruption": "Do not run denial-of-service, spam, resource exhaustion, or availability-impacting tests.",
+        "private": "Report privately to security@tuturuuu.com before public disclosure."
+      },
+      "title": "Rules of engagement"
+    },
+    "scope": {
+      "badge": "Scope",
+      "description": "Focus on vulnerabilities that affect Tuturuuu-managed products, user data, authentication, authorization, or production service integrity.",
+      "in_scope": {
+        "items": {
+          "auth": "Authentication, authorization, session handling, and cross-workspace access controls.",
+          "core": "Tuturuuu web products, public app routes, APIs, and workspace features.",
+          "data": "Issues that expose, modify, or destroy user, workspace, billing, or private content.",
+          "public_apps": "Public Tuturuuu-controlled domains and integrations where user impact can be shown safely."
+        },
+        "title": "In scope"
+      },
+      "out_of_scope": {
+        "items": {
+          "dos": "Denial-of-service, load testing, spam, automated scanning at scale, or resource exhaustion.",
+          "physical": "Physical attacks, employee device compromise, or issues requiring stolen credentials.",
+          "social": "Social engineering, phishing, harassment, or attempts to target Tuturuuu staff or users.",
+          "upstream": "Provider-native behavior without a demonstrated Tuturuuu product impact."
+        },
+        "title": "Out of scope"
+      },
+      "title": "Scope and boundaries"
+    },
+    "workflow": {
+      "badge": "Process",
+      "description": "Responsible disclosure works best when reports stay private, reproduction is safe, and verified scope is written precisely.",
+      "steps": {
+        "credit": {
+          "description": "When the issue is resolved and the researcher wants recognition, we can publish verified credit in the Hall of Fame.",
+          "title": "Credit verified work"
+        },
+        "private": {
+          "description": "Email security@tuturuuu.com with enough detail to reproduce the issue without publishing it first.",
+          "title": "Report privately"
+        },
+        "safe": {
+          "description": "Keep testing narrow, avoid customer data, and stop when you have a clear proof of impact.",
+          "title": "Test safely"
+        }
+      },
+      "title": "Responsible disclosure flow"
+    }
+  },
+  "tasks": {
+    "board": "Board",
+    "could_not_find_lists": "Could not find necessary lists",
+    "date_next_week": "Next Week",
+    "date_this_week": "This Week",
+    "date_today": "Today",
+    "date_tomorrow": "Tomorrow",
+    "date_yesterday": "Yesterday",
+    "failed_to_update_task": "Failed to update task",
+    "goals": {
+      "categoryGoalLabel": "{category} Goal",
+      "create_error": "Failed to create goal",
+      "create_success": "Goal created successfully",
+      "dailyProgress": "Daily Progress",
+      "defaultCategory": "General",
+      "delete_error": "Failed to delete goal",
+      "delete_success": "Goal deleted successfully",
+      "emptyState": {
+        "subtitle": "Set goals in Time Tracker settings.",
+        "title": "No active goals."
+      },
+      "update_error": "Failed to update goal",
+      "update_success": "Goal updated successfully",
+      "weeklyProgress": "Weekly Progress"
+    },
+    "history": {
+      "activity": "History",
+      "assignee_added": "Assigned user",
+      "assignee_removed": "Removed assignee",
+      "before_clear_version": "Before clear",
+      "changed": "Changed",
+      "changed_fields": "Changed fields",
+      "close_preview": "Close preview",
+      "compare_version": "Compare",
+      "completed": "Completed",
+      "condense": "Condense",
+      "content_changed": "Content changed",
+      "core_fields": "Core Fields",
+      "current": "Current:",
+      "dates": "Dates",
+      "description_change_title": "Description change",
+      "description_changes": "Description Changes",
+      "description_restore_banner_description": "Current content differs from the latest tracked version. Restore it or compare all tracked versions.",
+      "description_restore_banner_title": "A tracked description version is available",
+      "description_restore_failed": "Failed to restore description",
+      "description_restore_success": "Description restored",
+      "description_version_no_preview": "No text preview",
+      "description_versions_description": "Compare tracked description versions and restore the one that should be current.",
+      "description_versions_title": "Description versions",
+      "deselect_all": "Deselect all",
+      "empty": "No history available for this task",
+      "empty_description_value": "Empty or not restorable",
+      "error": "Failed to load task history",
+      "error_loading": "Failed to load snapshot",
+      "field": {
+        "assignees": "Assignees",
+        "completed": "Completed",
+        "description": "Description",
+        "end_date": "Due Date",
+        "estimation": "Estimation",
+        "labels": "Labels",
+        "list": "List",
+        "name": "Name",
+        "priority": "Priority",
+        "projects": "Projects",
+        "start_date": "Start Date"
+      },
+      "field_updated": {
+        "completed": "Changed status",
+        "description": "Updated description",
+        "end_date": "Updated due date",
+        "estimation_points": "Updated estimation",
+        "list_id": "Moved task",
+        "name": "Updated name",
+        "priority": "Changed priority",
+        "start_date": "Set start date",
+        "unknown": "Updated a field"
+      },
+      "fields_changed": "{count} fields different",
+      "had_content": "Had content",
+      "image_added": "Image added",
+      "image_removed": "Image removed",
+      "incomplete": "Incomplete",
+      "label_added": "Added label",
+      "label_removed": "Removed label",
+      "latest_version": "Latest",
+      "line_diff": "Line",
+      "line_hidden": "1 unchanged line hidden",
+      "lines_added": "added",
+      "lines_hidden": "{count} unchanged lines hidden",
+      "lines_removed": "removed",
+      "media_added": "Added",
+      "media_changes": "Media Changes",
+      "media_modified": "Modified",
+      "media_preview": "Media Preview",
+      "media_removed": "Removed",
+      "new_version": "Current",
+      "no_change": "No change",
+      "no_changes": "No changes from current",
+      "no_recoverable_description_versions": "No restorable description versions were found in history.",
+      "no_snapshot": "No snapshot data",
+      "no_visible_changes": "No visible text changes",
+      "no_visible_changes_description": "The description was modified, but the visible text appears unchanged. Formatting or media may have changed.",
+      "old_version": "Previous",
+      "points": "points",
+      "previous_description_value": "Previous",
+      "priority": {
+        "critical": "Critical",
+        "high": "High",
+        "low": "Low",
+        "medium": "Medium",
+        "none": "None",
+        "urgent": "Urgent"
+      },
+      "project_linked": "Linked project",
+      "project_unlinked": "Unlinked project",
+      "relationships": "Relationships",
+      "restore_from_change": "Restore from this change",
+      "restore_latest_tracked": "Restore latest tracked",
+      "restore_previous_description": "Restore previous",
+      "restore_resulting_description": "Restore resulting",
+      "restore_version": "Restore",
+      "resulting_description_value": "Resulting",
+      "revert_disabled_warning": "Reverting snapshots is currently disabled.",
+      "revert_error_description": "Please try again",
+      "revert_error_title": "Revert failed",
+      "revert_selected": "Revert {count} fields",
+      "revert_success_description": "Successfully reverted selected fields",
+      "revert_success_title": "Changes reverted",
+      "revert_warning": "This action will create a new history entry recording the revert.",
+      "reverting": "Reverting...",
+      "select_all": "Select all",
+      "snapshot": "Snapshot:",
+      "snapshot_title": "Task Snapshot",
+      "split_view": "Split",
+      "task_created": "Created task",
+      "text_changes": "Text Changes",
+      "tracked_by_user": "Tracked by",
+      "unchanged_fields": "Unchanged fields",
+      "unified_view": "Unified",
+      "unknown_change": "Made a change",
+      "unknown_list": "Unknown list",
+      "unknown_user": "Unknown user",
+      "value": {
+        "empty": "Empty"
+      },
+      "video_added": "Video added",
+      "video_removed": "Video removed",
+      "view_changes": "View changes",
+      "view_description_diff": "View diff",
+      "view_description_versions": "View versions",
+      "view_snapshot": "View snapshot & revert",
+      "was_empty": "Empty",
+      "word_diff": "Word",
+      "youtube_added": "YouTube added",
+      "youtube_removed": "YouTube removed"
+    },
+    "overdue": "Overdue",
+    "personal": "Personal",
+    "priority_critical": "Critical",
+    "priority_high": "High",
+    "priority_low": "Low",
+    "priority_medium": "Medium",
+    "priority_none": "None",
+    "priority_normal": "Normal",
+    "show_less": "Show less",
+    "show_more_tasks": "Show {count} more tasks",
+    "starts": "Starts",
+    "task_completed": "Task completed",
+    "task_marked_incomplete": "Task marked as incomplete",
+    "task_not_associated": "Task is not associated with a board"
+  },
+  "workflow": {
+    "afternoons": "Afternoons",
+    "ai_analysis": "AI Analysis",
+    "ai_analyzes_optimizes": "AI Analyzes & Optimizes",
+    "ai_analyzes_optimizes_description": "Our AI analyzes your tasks, priorities, deadlines, and team availability to create the optimal schedule.",
+    "all_available": "All Available",
+    "calendar": "Calendar",
+    "chat": "Chat",
+    "continuous_improvement": "Continuous Improvement",
+    "continuous_improvement_description": "Tuturuuu learns from your habits and preferences to get better over time, making you more productive every day.",
+    "create_tasks_naturally": "Create Tasks Naturally",
+    "create_tasks_naturally_description": "Type or speak in natural language to create tasks. Tuturuuu's AI understands context, deadlines, and priorities.",
+    "email": "Email",
+    "everything_in_one_place": "Everything in One Place",
+    "everything_in_one_place_description": "Calendar events, tasks, meetings, chat, and email all work together in a unified workspace.",
+    "high_priority": "High priority",
+    "how_tuturuuu_works": "How Tuturuuu Works",
+    "learning_adaptation": "Learning & Adaptation",
+    "meeting_preference": "Meeting Preference",
+    "meetings": "Meetings",
+    "morning_focus": "Morning Focus",
+    "natural_language_input": "Natural Language Input",
+    "next_step": "Next step",
+    "optimal_time_slot": "Optimal Time Slot",
+    "our_intelligent_workflow_makes_productivity_effortless": "Our intelligent workflow makes productivity effortless",
+    "priority_analysis": "Priority analysis",
+    "productivity_pattern": "Productivity Pattern",
+    "schedule_a_meeting_with_the_marketing_team_next_tuesday_at_10am_high_priority": "\"Schedule a meeting with the marketing team next Tuesday at 10am, high priority\"",
+    "start_over": "Start over",
+    "task_completion_rate": "Task Completion Rate",
+    "task_created_and_scheduled": "Task created and scheduled",
+    "tasks": "Tasks",
+    "team_availability": "Team Availability",
+    "tuesday_10_00_am": "Tuesday, 10:00 AM",
+    "unified_workspace": "Unified Workspace"
   }
 }

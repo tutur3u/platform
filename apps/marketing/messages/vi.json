@@ -1,4 +1,878 @@
 {
+  "bug-bounty": {
+    "assessment": {
+      "accepted": {
+        "description": "Cả hai mục công khai trong Bảng vinh danh đều là báo cáo đã được xác minh. Xác minh nghĩa là Tuturuuu đã tái hiện hoặc kiểm chứng hành vi liên quan, rồi công bố phạm vi đã xác nhận ở mức chính xác hơn.",
+        "title": "Phát hiện đã xác minh"
+      },
+      "badge": "Phạm vi đã xác minh",
+      "description": "Chúng tôi tách tuyên bố của nhà nghiên cứu khỏi phạm vi Tuturuuu đã xác minh. Nhờ vậy, báo cáo vẫn được ghi nhận mà không phóng đại tác động trực tiếp tới hạ tầng hoặc sản phẩm.",
+      "remediation": {
+        "description": "Với tác động trực tiếp tới Tuturuuu, chúng tôi sửa route hoặc chính sách liên quan. Với hành vi thuộc nền tảng bên thứ ba, chúng tôi gia cố tích hợp của mình và theo dõi hướng xử lý ở cấp nhà cung cấp riêng.",
+        "title": "Lộ trình khắc phục"
+      },
+      "scope": {
+        "description": "Một báo cáo đã xác minh có thể mô tả tác động trực tiếp tới sản phẩm Tuturuuu, lộ dữ liệu theo phạm vi workspace hoặc hành vi của nhà cung cấp bên thứ ba. Thẻ công khai sẽ nêu rõ nhóm áp dụng.",
+        "title": "Phân loại tác động"
+      },
+      "title": "Phạm vi báo cáo đã xác minh, không phóng đại",
+      "upstream": {
+        "description": "Phát hiện của Hiệp được ghi nhận là đã xác minh, nhưng đường khai thác rủi ro là hành vi gốc trong cách Supabase Storage phân phối tệp và không ảnh hưởng trực tiếp tới hạ tầng hoặc sản phẩm của Tuturuuu.",
+        "title": "Phạm vi storage bên thứ ba"
+      }
+    },
+    "community": {
+      "description": "Mỗi cái tên ở đây đại diện cho cách báo cáo riêng tư cẩn trọng và giá trị bảo mật đã được xác nhận.",
+      "eyebrow": "Cộng đồng",
+      "metrics": {
+        "channel": "Báo cáo riêng tư",
+        "credit": "Ghi nhận",
+        "reports": "Báo cáo đã xác minh"
+      },
+      "public_credit": "Ghi nhận công khai",
+      "title": "Bảo mật tốt hơn khi nhà nghiên cứu có thể làm việc cùng chúng tôi"
+    },
+    "hall": {
+      "badge": "Bảng vinh danh",
+      "description": "Nghiên cứu đã xác minh, ghi nhận công khai và ghi chú ngắn về điều mỗi báo cáo giúp cải thiện.",
+      "title": "Những nhà nghiên cứu giúp Tuturuuu an toàn hơn"
+    },
+    "hero": {
+      "badge": "Bảng vinh danh bảo mật",
+      "description": "Gặp những nhà nghiên cứu báo cáo có trách nhiệm và giúp Tuturuuu đáng tin cậy hơn cho đội nhóm, trường học và cộng đồng.",
+      "policy_cta": "Đọc chính sách bảo mật",
+      "report_cta": "Báo cáo lỗ hổng",
+      "title_highlight": "những người giúp Tuturuuu an toàn hơn",
+      "title_prefix": "Cảm ơn"
+    },
+    "labels": {
+      "cwe": "CWE",
+      "remediation": "Khắc phục",
+      "report_date": "Ngày báo cáo",
+      "report_summary": "Tóm tắt báo cáo",
+      "scope": "Phạm vi",
+      "severity": "Mức độ",
+      "verified_impact": "Tác động đã xác minh"
+    },
+    "ledger": {
+      "description": "Trạng thái xác minh được công khai, nhưng phạm vi tác động vẫn phải chính xác.",
+      "details": {
+        "direct_product_cases": "Báo cáo của Rana liên quan đến phạm vi riêng tư workspace do Tuturuuu quản lý.",
+        "upstream_platform_cases": "Báo cáo của Hiệp là hành vi phân phối tệp gốc của Supabase Storage.",
+        "verified_reports": "Cả hai báo cáo được liệt kê đều đã được xác thực và ghi nhận."
+      },
+      "eyebrow": "Sổ ghi nhận công bố",
+      "metrics": {
+        "channel": "Kênh báo cáo",
+        "direct_product_cases": "Ca tác động trực tiếp",
+        "upstream_platform_cases": "Ca nền tảng bên thứ ba",
+        "verified_reports": "Báo cáo đã xác minh"
+      },
+      "recognition": "Ghi nhận công khai",
+      "title": "Báo cáo đã xác minh, phạm vi chính xác"
+    },
+    "meta": {
+      "description": "Gặp những nhà nghiên cứu được ghi nhận trong Bảng vinh danh bảo mật của Tuturuuu.",
+      "title": "Bảng vinh danh bảo mật"
+    },
+    "program": {
+      "badge": "Báo cáo",
+      "contact_cta": "Email đội bảo mật",
+      "description": "Nếu bạn phát hiện vấn đề, hãy gửi riêng tư. Chúng tôi sẽ xác minh, sửa điều quan trọng và ghi nhận báo cáo đã xác minh khi nhà nghiên cứu muốn được nêu tên.",
+      "security_cta": "Trang bảo mật",
+      "steps": {
+        "credit": {
+          "description": "Nhà nghiên cứu đã xác minh có thể được ghi tên ở đây bằng tên hoặc handle họ chọn.",
+          "title": "Được ghi nhận"
+        },
+        "private": {
+          "description": "Email security@tuturuuu.com trước khi chia sẻ chi tiết công khai.",
+          "title": "Báo cáo riêng tư"
+        },
+        "scope": {
+          "description": "Dùng bằng chứng nhỏ nhất cần thiết và tránh kiểm thử phá hoại.",
+          "title": "Giữ an toàn"
+        },
+        "triage": {
+          "description": "Chúng tôi xem xét báo cáo, xác nhận tác động và ưu tiên bản sửa phù hợp.",
+          "title": "Chúng tôi xác minh"
+        }
+      },
+      "title": "Bạn phát hiện vấn đề?"
+    },
+    "researchers": {
+      "rana": {
+        "cwe": "CWE-200 / CWE-284",
+        "date": "Ngày 18 tháng 5 năm 2026",
+        "description": "Rana báo cáo rằng quyền truy cập Supabase REST đã đăng nhập vào các hàng hồ sơ người dùng có thể liệt kê bản ghi rộng hơn phạm vi dự định.",
+        "impact": "Rana giúp chúng tôi siết chặt phạm vi hiển thị hồ sơ quanh ranh giới workspace.",
+        "name": "Rana Zeeshan (nova cyber force)",
+        "note": "Đã xác minh là vấn đề riêng tư workspace do Tuturuuu quản lý.",
+        "remediation": "Giới hạn quyền đọc hồ sơ cho người dùng đang đăng nhập hoặc người dùng có chung không gian làm việc, đồng thời giữ chi tiết tài khoản riêng tư sau các đường truy cập chặt chẽ hơn.",
+        "report": "Phạm vi hiển thị hồ sơ",
+        "scope": "Phạm vi riêng tư workspace trực tiếp của Tuturuuu",
+        "severity": "Phạm vi riêng tư theo workspace",
+        "status": "Đã xác minh"
+      },
+      "vapour": {
+        "cwe": "CWE-79 / CWE-434",
+        "date": "2025-03-30",
+        "description": "Nguyễn Nghĩa Hiệp báo cáo hành vi stored XSS phát sinh từ việc Supabase Storage phân phối SVG qua URL công khai.",
+        "impact": "Hiệp giúp phát hiện hành vi SVG không an toàn trong luồng phân phối tệp trực tiếp của Supabase Storage.",
+        "name": "Nguyễn Nghĩa Hiệp (vapour)",
+        "note": "Đã xác minh và ghi nhận; vấn đề này không ảnh hưởng trực tiếp tới sản phẩm hoặc hạ tầng của Tuturuuu.",
+        "remediation": "Tiếp tục chặn hoặc làm sạch các lượt tải lên SVG rủi ro trong luồng Tuturuuu và theo dõi cách xử lý ở cấp nhà cung cấp cho việc Supabase Storage phân phối SVG.",
+        "report": "Hành vi phân phối SVG trong storage",
+        "scope": "Tính năng gốc của Supabase Storage",
+        "severity": "Hành vi storage bên thứ ba",
+        "status": "Đã xác minh"
+      }
+    }
+  },
+  "calendar": {
+    "4-days": "4 ngày",
+    "account_disconnected": "Đã ngắt kết nối tài khoản thành công",
+    "add": "Thêm",
+    "add_account": "Thêm tài khoản",
+    "add_google_account": "Thêm tài khoản Google",
+    "add_microsoft_account": "Thêm tài khoản Microsoft",
+    "add_more_calendars": "Thêm lịch khác",
+    "added_calendar": "Đã thêm {name}",
+    "agenda": "Lịch trình",
+    "agenda_all_day": "Cả ngày",
+    "agenda_empty_subtitle": "Không có sự kiện nào trong {days} ngày tới. Tận hưởng thời gian rảnh!",
+    "agenda_empty_title": "Lịch trống",
+    "agenda_event_count": "{count, plural, one {# sự kiện} other {# sự kiện}}",
+    "all_calendars_connected": "Tất cả lịch Google của bạn đã được kết nối.",
+    "auth_url_invalid": "URL xác thực không hợp lệ",
+    "calendar_created": "Đã tạo lịch",
+    "calendar_creation_failed": "Không thể tạo lịch",
+    "calendar_data_reset": "Đã đặt lại dữ liệu lịch thành công",
+    "calendar_deleted": "Đã xóa lịch",
+    "calendar_deletion_failed": "Không thể xóa lịch",
+    "calendar_disabled": "Lịch đã bị tắt",
+    "calendar_enabled": "Lịch đã được bật",
+    "calendar_reset_failed": "Không thể đặt lại dữ liệu lịch",
+    "calendar_sync_settings_unavailable": "Điều khiển đồng bộ sẽ khả dụng sau khi áp dụng migration lịch mới nhất.",
+    "calendar_sync_settings_updated": "Đã cập nhật cài đặt đồng bộ lịch",
+    "calendar_sync_started": "Đã bắt đầu đồng bộ lịch",
+    "calendar_toggle_failed": "Không thể bật/tắt lịch",
+    "calendars": "Lịch",
+    "calendars_selected": "đã chọn",
+    "cancel": "Hủy",
+    "categories": {
+      "add": "Thêm",
+      "add_all_missing": "Thêm tất cả còn thiếu",
+      "browse_suggestions": "Xem gợi ý",
+      "description": "Tùy chỉnh màu sắc cho các danh mục sự kiện khác nhau",
+      "done": "Xong",
+      "edit": "Sửa",
+      "event_suffix": "Sự kiện",
+      "failed_to_load": "Không thể tải danh mục",
+      "info_example": "Ví dụ, nếu bạn có danh mục \"Công việc\" với màu xanh, các sự kiện có \"công việc\" hoặc \"cuộc họp\" trong tiêu đề sẽ được tô màu xanh.",
+      "info_text": "Danh mục giúp tổ chức các sự kiện của bạn theo màu sắc. AI sẽ tự động gán màu cho các sự kiện dựa trên tiêu đề và các danh mục này.",
+      "new_category_placeholder": "Tên danh mục mới",
+      "no_categories": "Chưa có danh mục nào. Thêm một danh mục để bắt đầu.",
+      "select_color": "Chọn màu:",
+      "suggestions": "Gợi ý",
+      "title": "Màu sắc danh mục",
+      "try_refreshing": "Vui lòng thử làm mới trang.",
+      "your_categories": "Danh mục của bạn"
+    },
+    "choose_calendars_to_show": "Chọn những lịch sẽ hiển thị trong không gian làm việc này.",
+    "choose_default_calendar": "Chọn lịch mặc định",
+    "choose_outbound_calendar": "Chọn lịch đồng bộ ra ngoài",
+    "coming_soon": "Sắp ra mắt",
+    "conflict_policy": "Chính sách xung đột",
+    "connect": "Kết nối",
+    "connect_accounts": "Kết nối tài khoản",
+    "connect_calendar": "Kết nối Lịch",
+    "connect_calendar_accounts": "Kết nối tài khoản lịch",
+    "connect_calendar_accounts_desc": "Kết nối Google hoặc Outlook để bắt đầu đồng bộ hai chiều thời gian rảnh, công việc và thói quen.",
+    "connect_google_calendar": "Kết nối Google Calendar",
+    "connect_google_desc": "Kết nối tài khoản Google của bạn",
+    "connect_microsoft_desc": "Kết nối tài khoản Microsoft của bạn",
+    "connected_accounts": "Tài khoản đã kết nối",
+    "connected_calendars": "Lịch đã kết nối",
+    "create": "Tạo",
+    "create_calendar": "Tạo lịch mới",
+    "create_description": "Chọn loại bạn muốn tạo.",
+    "create_event_ai_desc": "Mô tả nhu cầu và nhận gợi ý thời gian thông minh.",
+    "create_event_desc": "Nhập tiêu đề, thời gian, địa điểm và chi tiết.",
+    "create_habit_desc": "Tạo thói quen lặp lại để theo dõi trên lịch.",
+    "creation_recovery_notice": "Lần tạo trước chưa được xác nhận. Hãy thử lại yêu cầu ban đầu; các chỉnh sửa vẫn được giữ để lưu sau khi xác nhận.",
+    "creation_recovery_retry": "Thử lại lần tạo ban đầu",
+    "creation_recovery_unavailable": "Lần tạo chưa được xác nhận và nguồn này không hỗ trợ tự động khôi phục. Hãy kiểm tra lịch trước khi tạo lại; các chỉnh sửa vẫn được giữ.",
+    "current": "Hiện tại",
+    "custom_calendars": "Tùy chỉnh",
+    "danger_zone": "Vùng nguy hiểm",
+    "day": "Ngày",
+    "default_calendar_source": "Nguồn lịch mặc định",
+    "default_calendar_source_desc": "Sự kiện mới sẽ dùng lịch này trừ khi bạn chọn nguồn khác.",
+    "default_calendar_updated": "Đã cập nhật lịch mặc định",
+    "degraded": "Suy giảm",
+    "deletes": "Xóa",
+    "disconnect": "Ngắt kết nối",
+    "e2ee": {
+      "already_enabled": "E2EE đã được bật cho không gian làm việc này",
+      "checking": "Đang kiểm tra E2EE...",
+      "enable": "Bật E2EE",
+      "enable_for_workspace": "Bật E2EE cho không gian làm việc này",
+      "enable_tooltip": "Nhấn để bật mã hóa đầu cuối cho các sự kiện lịch của bạn",
+      "enabled": "E2EE Đã bật",
+      "enabling": "Đang bật E2EE...",
+      "encrypt_events": "Mã hóa {count} sự kiện",
+      "encrypting": "Đang mã hóa...",
+      "encrypting_progress": "Đang mã hóa {current}/{total} sự kiện...",
+      "fix_failed": "Không thể sửa lỗi mã hóa",
+      "fix_success": "Đã sửa thành công {count} sự kiện lỗi",
+      "fixing": "Đang sửa...",
+      "fixing_integrity": "Đang sửa lỗi toàn vẹn mã hóa...",
+      "fixing_tooltip": "Đang mã hóa lại các sự kiện bị lỗi...",
+      "integrity_issue": "Một số sự kiện được đánh dấu là đã mã hóa nhưng chứa văn bản thường",
+      "key_generated": "Đã tạo khóa mã hóa E2EE thành công",
+      "key_generation_failed": "Không thể tạo khóa mã hóa E2EE",
+      "migration_failed": "Không thể mã hóa một số sự kiện",
+      "migration_success": "Đã mã hóa thành công {count} sự kiện",
+      "setup_description": "Bật mã hóa để bảo vệ các sự kiện lịch của bạn. Khi được bật, tiêu đề, mô tả và địa điểm sự kiện sẽ được mã hóa trước khi lưu trữ.",
+      "setup_title": "Mã hóa Đầu-Cuối",
+      "tooltip": "Các sự kiện lịch của bạn được mã hóa đầu cuối khi lưu trữ",
+      "unencrypted_warning": "{count} sự kiện lịch chưa được mã hóa. Nhấn để mã hóa ngay.",
+      "verification_failed": "Không thể xác minh trạng thái mã hóa",
+      "verified": "Tất cả sự kiện đã được xác minh mã hóa đúng cách",
+      "verify_tooltip": "Nhấn để xác minh mã hóa - kiểm tra xem các sự kiện có thực sự được mã hóa trong cơ sở dữ liệu",
+      "verifying": "Đang xác minh...",
+      "verifying_tooltip": "Đang kiểm tra trạng thái mã hóa của các sự kiện..."
+    },
+    "enter_calendar_name": "Nhập tên lịch:",
+    "errors": {
+      "forbidden": "Truy cập bị cấm",
+      "unauthorized": "Truy cập trái phép",
+      "unknown_error": "Đã xảy ra lỗi không xác định"
+    },
+    "failed_to_add": "Không thể thêm lịch",
+    "failed_to_disconnect": "Không thể ngắt kết nối tài khoản",
+    "failed_to_fetch_calendars": "Không thể lấy danh sách lịch",
+    "failed_to_fetch_google": "Không thể lấy dữ liệu từ Google",
+    "failed_to_load_events": "Không thể tải sự kiện",
+    "failed_to_remove": "Không thể gỡ lịch",
+    "failed_to_update": "Không thể cập nhật lịch",
+    "failed_to_update_visibility": "Không thể cập nhật trạng thái hiển thị lịch",
+    "google": "Google",
+    "google_auth_failed": "Xác thực Google thất bại",
+    "google_calendar": "Lịch Google",
+    "google_event_color": "Màu Google {id}",
+    "healthy": "Ổn định",
+    "import": "Nhập",
+    "import_external_changes": "Nhập thay đổi bên ngoài",
+    "import_external_changes_desc": "Đưa thay đổi sự kiện từ Google và Outlook vào Tuturuuu.",
+    "inherit_calendar_color": "Dùng màu lịch",
+    "last_synced_at": "Đồng bộ lần cuối {time}",
+    "latest_write_wins": "Bản ghi mới nhất thắng",
+    "latest_write_wins_desc": "Khi cả hai bên cùng thay đổi, sự kiện được ghi gần đây nhất sẽ được giữ.",
+    "loading_calendars": "Đang tải danh sách lịch...",
+    "manage_calendar_accounts": "Quản lý tài khoản lịch",
+    "manage_calendar_accounts_desc": "Kết nối nhiều tài khoản Google và Microsoft để đồng bộ lịch từ tất cả các tài khoản của bạn.",
+    "manage_calendars": "Quản lý lịch",
+    "manage_google_calendars_desc": "Chọn lịch Google để đồng bộ với không gian làm việc của bạn",
+    "manage_google_calendars_title": "Quản lý lịch Google",
+    "microsoft_auth_failed": "Xác thực Microsoft thất bại",
+    "microsoft_coming_soon": "Microsoft Outlook sắp ra mắt!",
+    "microsoft_coming_soon_desc": "Chúng tôi đang hoàn thiện tích hợp lịch Microsoft. Tính năng này sẽ có sớm thôi!",
+    "microsoft_outlook": "Microsoft Outlook",
+    "month": "Tháng",
+    "new": "Tạo mới",
+    "new-event": "Sự kiện mới",
+    "new-habit": "Thói quen mới",
+    "new-task": "Công việc mới",
+    "no_calendars_connected": "Chưa có lịch nào được kết nối. Thêm lịch bên dưới để bắt đầu đồng bộ.",
+    "no_calendars_found": "Không tìm thấy lịch cho tài khoản này.",
+    "no_calendars_synced": "Chưa có lịch nào được đồng bộ.",
+    "no_google_accounts": "Chưa có tài khoản Google nào được kết nối.",
+    "no_microsoft_accounts": "Chưa có tài khoản Microsoft nào được kết nối.",
+    "no_outbound_calendar": "Không có lịch đồng bộ ra ngoài",
+    "outlook": "Outlook",
+    "overridden_by_settings": "Bị ghi đè bởi cài đặt của bạn",
+    "personal_first_day_override_desc": "Bạn đã đặt ngày bắt đầu tuần cá nhân là <bold>{firstDay}</bold>, việc này ghi đè cài đặt không gian làm việc. Ngày bắt đầu của bạn là <bold>{effectiveFirstDay}</bold>. Thay đổi trong cài đặt Giao diện & Chủ đề.",
+    "personal_timezone_override_desc": "Bạn đã đặt múi giờ cá nhân là <bold>{timezone}</bold>, việc này ghi đè cài đặt không gian làm việc. Múi giờ hiện tại của bạn là <bold>{effectiveTimezone}</bold>. Thay đổi trong cài đặt Giao diện & Chủ đề.",
+    "please_reconnect": "Vui lòng kết nối lại Google Calendar",
+    "primary": "Chính",
+    "provider_color_label": "Màu sự kiện Google",
+    "provider_reconnect_description": "Phiên kết nối nhà cung cấp đã hết hạn. Các lịch đã lưu vẫn khả dụng; hãy kết nối lại để làm mới.",
+    "reconnect": "Kết nối lại",
+    "reconnect_desc": "Kết nối hiện tại của bạn cần thêm quyền. Vui lòng ngắt kết nối và kết nối lại Google Calendar.",
+    "reconnect_required": "Cần kết nối lại",
+    "recurrence": {
+      "advancedPattern": "Chuỗi này sử dụng mẫu nâng cao và sẽ được giữ nguyên. Sửa thông tin sự kiện tại đây.",
+      "all": "Toàn bộ chuỗi",
+      "allDay": "Cả ngày",
+      "cancel": "Hủy",
+      "conflict": "Chuỗi đã được thay đổi ở nơi khác. Tải lại trước khi lưu.",
+      "count": "Số lần lặp",
+      "create": "Sự kiện lặp lại",
+      "daily": "Hàng ngày",
+      "delete": "Xóa phạm vi đã chọn",
+      "description": "Chọn cách lặp lại sự kiện Lịch gốc này.",
+      "edit": "Sửa sự kiện lặp lại",
+      "end": "Kết thúc (không bao gồm ngày cuối cho sự kiện cả ngày)",
+      "ending": "Lặp lại đến",
+      "failed": "Không thể lưu thay đổi. Bản nháp được giữ lại; hãy thử lại.",
+      "FR": "T6",
+      "frequency": "Lặp lại",
+      "future": "Lần này và các lần sau",
+      "futureExceptionsReset": "Các chỉnh sửa và lần hủy cho lần này và các lần tiếp theo sẽ được đặt lại khi bạn lưu.",
+      "interval": "Mỗi",
+      "invalid": "Kiểm tra tiêu đề, ngày, múi giờ và cài đặt lặp lại.",
+      "loading": "Đang tải sự kiện lặp lại…",
+      "location": "Địa điểm",
+      "MO": "T2",
+      "month": "Tháng (1–12)",
+      "monthDay": "Ngày trong tháng",
+      "monthDayLast": "Dùng ngày cuối tháng",
+      "monthDayOverflow": "Khi tháng không có ngày này",
+      "monthDayPattern": "Ngày trong tháng",
+      "monthDaySkip": "Bỏ qua tháng đó",
+      "monthly": "Hàng tháng",
+      "monthPattern": "Lặp theo",
+      "monthWeekdayPattern": "Thứ trong tháng",
+      "native_source": "Lịch Tuturuuu",
+      "nativeOnly": "Lưu vào Lịch Tuturuuu. Giờ địa phương không tồn tại khi đổi giờ mùa hè sẽ được bỏ qua. Lịch lặp của nhà cung cấp được quản lý riêng.",
+      "never": "Không có ngày kết thúc",
+      "ordinal1": "Đầu tiên",
+      "ordinal2": "Thứ hai",
+      "ordinal3": "Thứ ba",
+      "ordinal4": "Thứ tư",
+      "ordinalLast": "Cuối cùng",
+      "provider_disabled": "Chưa thể chỉnh sửa sự kiện lặp lại của lịch được kết nối này. Các sự kiện hiện có vẫn được giữ nguyên.",
+      "provider_pending": "Thay đổi của bạn đang được đồng bộ. Yêu cầu này được lưu lại để việc thử lại không tạo thêm sự kiện.",
+      "provider_readonly": "Sự kiện lặp lại chỉ đọc",
+      "provider_readonly_description": "Không thể chỉnh sửa an toàn quy tắc lặp lại này tại đây. Hãy quản lý chuỗi sự kiện trong lịch gốc.",
+      "provider_retry": "Tiếp tục đồng bộ",
+      "provider_source": "Lịch",
+      "relativeWeekdayHelp": "Khi chọn nhiều thứ, mỗi tháng dùng ngày khớp sớm nhất trong tuần đã chọn. Ngày bắt đầu phải khớp quy tắc này.",
+      "reload": "Tải lại chuỗi",
+      "SA": "T7",
+      "save": "Lưu",
+      "saving": "Đang lưu…",
+      "scope": "Áp dụng thay đổi cho",
+      "start": "Bắt đầu",
+      "SU": "CN",
+      "TH": "T5",
+      "this": "Chỉ lần này",
+      "timezone": "Múi giờ",
+      "title": "Tiêu đề",
+      "TU": "T3",
+      "unavailable": "Sự kiện lặp lại này không khả dụng.",
+      "until": "Ngày kết thúc",
+      "WE": "T4",
+      "weekdays": "Ngày trong tuần",
+      "weekIndex": "Tuần nào",
+      "weekly": "Hàng tuần",
+      "yearly": "Hàng năm"
+    },
+    "refresh_connection": "Kết nối Google Calendar của bạn cần được làm mới.",
+    "refresh_needed": "Cần làm mới",
+    "removed_calendar": "Đã gỡ {name}",
+    "reset_all_data": "Đặt lại tất cả",
+    "reset_calendar_confirm_desc": "Thao tác này sẽ xóa vĩnh viễn tất cả sự kiện lịch, ngắt kết nối tất cả tài khoản đã liên kết (Google, Microsoft), và xóa lịch tùy chỉnh. Lịch hệ thống sẽ được giữ lại nhưng dữ liệu sẽ bị xóa. Hành động này không thể hoàn tác.",
+    "reset_calendar_confirm_title": "Đặt lại toàn bộ dữ liệu lịch?",
+    "reset_calendar_data": "Đặt lại dữ liệu lịch",
+    "schedule": "Lên lịch",
+    "send": "Gửi",
+    "settings_tab_accounts": "Tài khoản",
+    "settings_tab_calendars": "Lịch",
+    "settings_tab_sync": "Đồng bộ",
+    "settings_updated_error": "Không thể cập nhật cài đặt lịch không gian làm việc",
+    "settings_updated_success": "Cập nhật cài đặt lịch không gian làm việc thành công",
+    "sync_completed": "Đồng bộ hoàn tất",
+    "sync_from_google": "Từ Google",
+    "sync_in_progress": "Đang đồng bộ",
+    "sync_now": "Đồng bộ ngay",
+    "sync_recovery": {
+      "attention": "Đồng bộ cần chú ý",
+      "calendar_failed": "Các lịch khác vẫn có thể đồng bộ. Bạn có thể tạm dừng lịch này trong khi khắc phục kết nối.",
+      "calendar_paused": "Đã tạm dừng đồng bộ lịch này. Các sự kiện đã lưu vẫn hiển thị.",
+      "calendar_unavailable": "Lịch này không còn khả dụng hoặc quyền truy cập đã bị thu hồi. Khôi phục quyền truy cập tại nhà cung cấp hoặc tạm dừng đồng bộ.",
+      "check_again": "Kiểm tra lại",
+      "completed": "Đã đồng bộ lịch",
+      "configuration": "Dịch vụ lịch không thể hoàn tất yêu cầu. Hãy thử lại một lần; nếu vẫn thất bại, hãy liên hệ hỗ trợ. Kết nối lại có thể không giải quyết được lỗi dịch vụ này.",
+      "failed": "Đồng bộ lịch thất bại. Hãy thử đồng bộ lại. Nếu vẫn thất bại, hãy liên hệ hỗ trợ.",
+      "not_synced": "Tài khoản đã kết nối nhưng chưa ghi nhận lần đồng bộ hoàn tất. Đồng bộ ngay để nhập sự kiện.",
+      "partial_failure": "Một số lịch chưa đồng bộ được. Xem cảnh báo đồng bộ và thử lại.",
+      "pause_calendar": "Tạm dừng đồng bộ lịch này",
+      "pause_failed": "Không thể tạm dừng lịch này. Vui lòng thử lại.",
+      "paused": "Chưa chọn lịch để đồng bộ",
+      "provider_unavailable": "Nhà cung cấp lịch tạm thời không khả dụng. Hãy thử lại sau ít phút.",
+      "rate_limited": "Nhà cung cấp lịch đang giới hạn yêu cầu. Hãy đợi một lúc trước khi thử lại.",
+      "reconnect_description": "Cần cấp lại quyền truy cập lịch. Kết nối lại tài khoản bị ảnh hưởng để tiếp tục đồng bộ.",
+      "reconnect_google": "Kết nối lại Google",
+      "reconnect_microsoft": "Kết nối lại Outlook",
+      "retry_after": "Thử lại sau {seconds} giây.",
+      "saved_events": "Các sự kiện đã đồng bộ trước đó vẫn được giữ lại.",
+      "stale": "Lịch chưa được đồng bộ gần đây. Đồng bộ ngay để nhận các thay đổi mới nhất.",
+      "stalled": "Lần đồng bộ trước chưa hoàn tất. Có thể thiếu các thay đổi mới. Đồng bộ lại để khôi phục.",
+      "status_failed": "Không thể kiểm tra kết nối lịch. Hãy kiểm tra kết nối mạng và thử lại.",
+      "syncing_description": "Đang kiểm tra các lịch. Bạn vẫn có thể sử dụng các sự kiện đã lưu trong khi đồng bộ.",
+      "unavailable": "Không xem được trạng thái đồng bộ"
+    },
+    "sync_to_google": "Đến Google",
+    "sync_tuturuuu_events_outward": "Đồng bộ sự kiện Tuturuuu ra ngoài",
+    "sync_tuturuuu_events_outward_desc": "Phản chiếu các sự kiện Tuturuuu được tạo và chỉnh sửa sang lịch nhà cung cấp đã kết nối.",
+    "synced": "Đã đồng bộ",
+    "syncing_calendars": "Đang đồng bộ lịch...",
+    "syncing_to_google": "Đang đồng bộ lên Google...",
+    "this-month": "Tháng này",
+    "this-week": "Tuần này",
+    "this-year": "Năm nay",
+    "timezone_required": {
+      "description": "Để bản xem trước lịch và Lịch thông minh hoạt động chính xác cho mọi người, vui lòng chọn múi giờ cố định và ngày bắt đầu tuần cho không gian làm việc này.",
+      "first_day": {
+        "auto": "Tự động",
+        "monday": "Thứ hai",
+        "saturday": "Thứ bảy",
+        "sunday": "Chủ nhật"
+      },
+      "first_day_label": "Ngày bắt đầu tuần",
+      "label": "Múi giờ không gian làm việc",
+      "recommended": "Đề xuất",
+      "save": "Lưu thiết lập",
+      "save_failed": "Không thể lưu thiết lập lịch",
+      "saved": "Đã lưu thiết lập lịch",
+      "saving": "Đang lưu...",
+      "title": "Thiết lập múi giờ không gian làm việc"
+    },
+    "today": "Hôm nay",
+    "toggle_calendars_desc": "Bật/tắt lịch hiển thị",
+    "toggle_failed": "Không thể cập nhật trạng thái hiển thị lịch.",
+    "tomorrow": "Ngày mai",
+    "tuturuuu_calendars": "Lịch Tuturuuu",
+    "two_way_sync": "Đồng bộ hai chiều",
+    "two_way_sync_desc": "Kiểm soát cách Tuturuuu nhập thay đổi từ nhà cung cấp và phản chiếu sự kiện gốc ra ngoài.",
+    "unknown_account": "Tài khoản không xác định",
+    "unknown_error": "Đã xảy ra lỗi không xác định",
+    "view": "Chế độ hiển thị",
+    "views": {
+      "busy_days": "{count} ngày có sự kiện",
+      "clear_search": "Xóa tìm kiếm",
+      "create_event": "Tạo sự kiện",
+      "create_on_date": "Tạo sự kiện vào {date}",
+      "more_events": "+{count} sự kiện khác",
+      "no_events": "Không có sự kiện trong ngày này",
+      "no_matches": "Không tìm thấy sự kiện phù hợp",
+      "open_day": "Xem sự kiện vào {date}",
+      "open_day_short": "Xem ngày",
+      "search_events": "Tìm sự kiện",
+      "untitled_event": "Sự kiện chưa có tiêu đề"
+    },
+    "visible_calendars": "Lịch đang hiển thị",
+    "visible_calendars_count": "Đang hiển thị {count} trên {total} lịch",
+    "week": "Tuần",
+    "workspace_first_day": "Ngày bắt đầu tuần",
+    "workspace_first_day_desc": "Đặt ngày bắt đầu tuần cho việc hiển thị lịch trong không gian làm việc. Thành viên có thể ghi đè cài đặt này trong cài đặt cá nhân.",
+    "workspace_timezone": "Múi giờ làm việc",
+    "workspace_timezone_desc": "Đặt múi giờ mặc định cho không gian làm việc này. Thành viên có thể ghi đè cài đặt này trong cài đặt cá nhân.",
+    "year": "Năm",
+    "yesterday": "Hôm qua"
+  },
+  "chat": {
+    "accept_friend": "Chấp nhận",
+    "add_friend_by_email": "Thêm bạn bằng email",
+    "add_reaction": "Thả {reaction}",
+    "agent_adapter": "Bộ chuyển tiếp",
+    "agent_admin_required": "Bạn cần quyền quản trị AI-agent ở workspace gốc để quản lý kênh này.",
+    "agent_auto_respond": "Tự động phản hồi",
+    "agent_channel": "Kênh agent",
+    "agent_channel_enabled": "Bật kênh",
+    "agent_channel_id": "ID kênh",
+    "agent_channel_setup": "Thiết lập kênh",
+    "agent_clear_secret_on_save": "Xóa secret này khi lưu",
+    "agent_copied_webhook": "Đã sao chép webhook",
+    "agent_copy_webhook": "Sao chép webhook",
+    "agent_deploy": "Deploy",
+    "agent_deploy_failed": "Không thể deploy kênh agent",
+    "agent_deploy_success": "Đã deploy kênh agent",
+    "agent_details": "Chi tiết agent",
+    "agent_diagnostic_adapter_account": "Ánh xạ tài khoản bên ngoài",
+    "agent_diagnostic_agent_enabled": "Agent đã bật",
+    "agent_diagnostic_channel_deployed": "Kênh đã deploy",
+    "agent_diagnostic_channel_enabled": "Kênh đã bật",
+    "agent_diagnostic_last_error": "Lỗi gần đây",
+    "agent_diagnostic_last_event": "Sự kiện bên ngoài gần nhất",
+    "agent_diagnostic_listener_lifecycle": "Vòng đời listener",
+    "agent_diagnostic_required_secrets": "Secret bắt buộc",
+    "agent_diagnostic_webhook_url": "URL webhook",
+    "agent_diagnostic_workspace_mapping": "Ánh xạ workspace",
+    "agent_diagnostic_zalo_personal_feature_flag": "Cờ tính năng Zalo cá nhân",
+    "agent_diagnostics": "Chẩn đoán",
+    "agent_disabled": "Đã tắt",
+    "agent_discord_guild_id": "ID guild Discord",
+    "agent_discord_live_test_hint": "Chỉ kiểm tra độ sẵn sàng. Để kiểm thử Discord đầy đủ, hãy đặt Interactions Endpoint URL, cài ứng dụng, rồi mention bot trong kênh đã ánh xạ.",
+    "agent_discord_mentions": "ID role được mention",
+    "agent_display_name": "Tên hiển thị",
+    "agent_enabled": "Đã bật",
+    "agent_external_channel_id": "ID kênh bên ngoài",
+    "agent_external_draft": "Soạn nháp",
+    "agent_external_draft_failed": "Không thể soạn phản hồi",
+    "agent_external_draft_placeholder": "Phản hồi nháp",
+    "agent_external_draft_success": "Đã tạo bản nháp",
+    "agent_external_last_sync": "Đồng bộ cuối",
+    "agent_external_message_count": "Tin nhắn",
+    "agent_external_no_threads": "Chưa có luồng bên ngoài được mirror",
+    "agent_external_prompt_placeholder": "Prompt tùy chọn cho bản nháp",
+    "agent_external_recent_threads": "Luồng bên ngoài gần đây",
+    "agent_external_refresh_after_action": "Đang làm mới dữ liệu luồng đã mirror sau khi thao tác hoàn tất.",
+    "agent_external_response": "Phản hồi thủ công",
+    "agent_external_send": "Gửi",
+    "agent_external_send_failed": "Không thể gửi phản hồi",
+    "agent_external_send_success": "Đã gửi phản hồi",
+    "agent_external_sync": "Đồng bộ luồng ngoài",
+    "agent_external_sync_failed": "Không thể đồng bộ luồng ngoài",
+    "agent_external_sync_no_new": "Không có tin nhắn mới",
+    "agent_external_sync_success": "Đã đồng bộ {count} tin nhắn",
+    "agent_external_thread": "Luồng bên ngoài",
+    "agent_external_thread_id": "ID luồng bên ngoài",
+    "agent_external_thread_missing": "Thiếu ID luồng bên ngoài.",
+    "agent_history_sync": "Đồng bộ lịch sử",
+    "agent_instructions": "Chỉ dẫn",
+    "agent_last_event": "Sự kiện cuối",
+    "agent_live_test_hint": "Chỉ kiểm tra độ sẵn sàng. Hãy gửi tin nhắn thật từ nền tảng bên ngoài để kiểm thử end-to-end.",
+    "agent_metadata_missing": "Metadata thiết lập agent đang bị ẩn với tài khoản này.",
+    "agent_model": "Model",
+    "agent_name": "Tên agent",
+    "agent_name_placeholder": "Tên AI",
+    "agent_not_found": "Không tìm thấy thiết lập agent.",
+    "agent_operations": "Vận hành",
+    "agent_pause": "Tạm dừng",
+    "agent_pause_failed": "Không thể tạm dừng kênh agent",
+    "agent_pause_success": "Đã tạm dừng kênh agent",
+    "agent_rotate_failed": "Không thể xoay vòng secret agent",
+    "agent_rotate_secret": "Xoay vòng secret",
+    "agent_save": "Lưu thiết lập",
+    "agent_save_failed": "Không thể lưu thiết lập agent",
+    "agent_save_success": "Đã lưu thiết lập agent",
+    "agent_secret_configured": "đã cấu hình, cuối {suffix}",
+    "agent_secret_missing": "Thiếu",
+    "agent_secret_placeholder": "Để trống để giữ giá trị hiện tại",
+    "agent_secret_rotated": "Đã xoay vòng secret",
+    "agent_secret_value": "Giá trị secret",
+    "agent_secrets": "Secret",
+    "agent_setup": "Thiết lập",
+    "agent_status_deployed": "Đã deploy",
+    "agent_status_draft": "Bản nháp",
+    "agent_status_error": "Lỗi",
+    "agent_status_paused": "Tạm dừng",
+    "agent_tab_operations": "Vận hành",
+    "agent_tab_setup": "Thiết lập",
+    "agent_tab_thread": "Luồng",
+    "agent_test": "Kiểm thử",
+    "agent_test_failed": "Kiểm thử agent thất bại",
+    "agent_test_prompt": "Prompt kiểm thử tùy chọn",
+    "agent_test_success": "Đã gửi kiểm thử agent",
+    "agent_typing": "AI agent đang nhập",
+    "agent_workspace_id": "ID workspace",
+    "agent_zalo_oa_id": "ID Zalo official account",
+    "agent_zalo_personal_action_failed": "Thao tác Zalo cá nhân thất bại",
+    "agent_zalo_personal_channel_required": "Kênh Zalo cá nhân là bắt buộc",
+    "agent_zalo_personal_cookie_json_invalid": "Cookie JSON Zalo cá nhân không hợp lệ",
+    "agent_zalo_personal_credentials_missing": "Thiếu credential Zalo cá nhân",
+    "agent_zalo_personal_disabled": "Đã tắt",
+    "agent_zalo_personal_enabled": "Đã bật",
+    "agent_zalo_personal_feature": "Cờ tính năng",
+    "agent_zalo_personal_feature_disabled": "Cờ tính năng Zalo cá nhân đang tắt",
+    "agent_zalo_personal_listener_title": "Listener Zalo cá nhân",
+    "agent_zalo_personal_live_test_hint": "Sau khi sẵn sàng, gửi tin nhắn Zalo thật từ tài khoản khác để kiểm tra mirror và phản hồi.",
+    "agent_zalo_personal_not_available": "Không có",
+    "agent_zalo_personal_own_id": "ID tài khoản Zalo cá nhân",
+    "agent_zalo_personal_qr_abort": "Hủy",
+    "agent_zalo_personal_qr_abort_failed": "Không thể hủy ghép QR",
+    "agent_zalo_personal_qr_abort_success": "Đã hủy ghép QR",
+    "agent_zalo_personal_qr_aborted": "Đã hủy",
+    "agent_zalo_personal_qr_alt": "Mã QR ghép Zalo cá nhân",
+    "agent_zalo_personal_qr_authenticated": "Đã xác thực",
+    "agent_zalo_personal_qr_credentials_missing": "QR không trả về credential. Hãy thử ghép lại.",
+    "agent_zalo_personal_qr_credentials_ready": "Credential đã sẵn sàng",
+    "agent_zalo_personal_qr_declined": "Bị từ chối",
+    "agent_zalo_personal_qr_expired": "Đã hết hạn",
+    "agent_zalo_personal_qr_failed": "Thất bại",
+    "agent_zalo_personal_qr_generated": "Sẵn sàng quét",
+    "agent_zalo_personal_qr_not_started": "Chưa bắt đầu",
+    "agent_zalo_personal_qr_pending": "Đang bắt đầu",
+    "agent_zalo_personal_qr_persisted": "Đã lưu",
+    "agent_zalo_personal_qr_persisted_success": "Đã lưu credential Zalo cá nhân",
+    "agent_zalo_personal_qr_retry": "Thử lại QR",
+    "agent_zalo_personal_qr_scanned": "Đã quét",
+    "agent_zalo_personal_qr_start": "Ghép QR",
+    "agent_zalo_personal_qr_start_failed": "Không thể bắt đầu ghép QR",
+    "agent_zalo_personal_qr_title": "Ghép QR",
+    "agent_zalo_personal_running": "Listener",
+    "agent_zalo_personal_running_value": "Đang chạy",
+    "agent_zalo_personal_start": "Bắt đầu",
+    "agent_zalo_personal_start_success": "Đã bắt đầu listener Zalo cá nhân",
+    "agent_zalo_personal_stop": "Dừng",
+    "agent_zalo_personal_stop_success": "Đã dừng listener Zalo cá nhân",
+    "agent_zalo_personal_stopped": "Đã dừng",
+    "agent_zalo_personal_sync_history": "Đồng bộ lịch sử",
+    "agent_zalo_personal_sync_history_success": "Đã đồng bộ {count} tin nhắn lịch sử trong {threads} luồng",
+    "agent_zalo_personal_sync_history_timed_out": "Đồng bộ lịch sử hết thời gian chờ trước khi Zalo trả về toàn bộ trang. Hãy chạy lại để tiếp tục.",
+    "agent_zalo_personal_sync_phone": "Đồng bộ từ điện thoại",
+    "agent_zalo_personal_sync_phone_failed": "Đồng bộ chuyển từ điện thoại thất bại",
+    "agent_zalo_personal_sync_phone_no_approval": "Yêu cầu đồng bộ từ điện thoại đã được gửi nhưng chưa nhận được dữ liệu phê duyệt trước khi hết lượt kiểm tra. Hãy mở Zalo trên điện thoại trước khi bắt đầu một lần đồng bộ mới.",
+    "agent_zalo_personal_sync_phone_no_approval_http_unavailable": "Yêu cầu đồng bộ từ điện thoại đã được gửi qua kết nối Zalo trực tiếp, nhưng endpoint phê duyệt HTTP cũ không khả dụng và chưa nhận được dữ liệu phê duyệt trước khi hết lượt kiểm tra.",
+    "agent_zalo_personal_sync_phone_no_payload": "Quá trình chuyển từ điện thoại đã được phê duyệt, nhưng Zalo không trả về dữ liệu tin nhắn có thể nhập vào phiên PC này.",
+    "agent_zalo_personal_sync_phone_no_payload_http_unavailable": "Quá trình chuyển từ điện thoại đã được phê duyệt qua kết nối Zalo trực tiếp, nhưng endpoint chuyển HTTP cũ không khả dụng và Zalo không trả về dữ liệu tin nhắn có thể nhập vào phiên PC này.",
+    "agent_zalo_personal_sync_phone_partial": "Đồng bộ chuyển từ điện thoại dừng sớm. Hãy chạy lại để tiếp tục nhập tin nhắn còn lại.",
+    "agent_zalo_personal_sync_phone_success": "Đã đồng bộ {count} tin nhắn từ điện thoại trong {threads} luồng",
+    "agent_zalo_personal_sync_phone_waiting": "Hãy phê duyệt yêu cầu đồng bộ chuyển trên điện thoại. Màn hình này sẽ tiếp tục kiểm tra tác vụ đồng bộ hiện tại.",
+    "agent_zalo_personal_sync_web_browser_unavailable": "Đồng bộ Zalo Web cần runtime trình duyệt Playwright trên máy chủ này.",
+    "agent_zalo_personal_sync_web_failed": "Đồng bộ từ điện thoại qua Zalo Web thất bại.",
+    "agent_zalo_personal_sync_web_login_required": "Zalo Web cần đăng nhập QR mới trước khi có thể nhập tin nhắn từ điện thoại.",
+    "agent_zalo_personal_sync_web_timed_out": "Đồng bộ từ điện thoại qua Zalo Web hết thời gian chờ trước khi nhập xong tin nhắn.",
+    "agent_zalo_personal_validate": "Kiểm tra",
+    "agent_zalo_personal_validate_success": "Đã kiểm tra đăng nhập Zalo cá nhân",
+    "ai_agents": "AI agent",
+    "ai_badge": "AI",
+    "ai_cached_tokens": "Token đã lưu cache",
+    "ai_chars_short": "ký tự",
+    "ai_context_breakdown": "Phân tích ngữ cảnh",
+    "ai_context_empty": "Chưa có ngữ cảnh được ghi nhận",
+    "ai_credit_payg": "Trả thêm",
+    "ai_credit_personal": "Cá nhân",
+    "ai_credit_plan": "Gói",
+    "ai_credit_scope_user": "Số dư người dùng",
+    "ai_credit_scope_workspace": "Số dư workspace",
+    "ai_credit_source": "Nguồn credit",
+    "ai_credit_used_balance": "đã dùng",
+    "ai_credit_workspace": "Workspace",
+    "ai_credits_loading": "Đang tải credit",
+    "ai_credits_remaining": "credit còn lại",
+    "ai_credits_unknown": "Không có dữ liệu credit",
+    "ai_details": "Chi tiết AI",
+    "ai_estimated": "Ước tính",
+    "ai_exact": "Chính xác",
+    "ai_fast_mode": "Nhanh",
+    "ai_input_tokens": "Đầu vào",
+    "ai_message_usage": "Mức dùng từng tin nhắn",
+    "ai_messages": "Tin nhắn",
+    "ai_model": "Model",
+    "ai_model_placeholder": "Chọn model",
+    "ai_no_usage": "Chưa có dữ liệu sử dụng",
+    "ai_output_tokens": "Đầu ra",
+    "ai_reasoning_tokens": "Suy luận",
+    "ai_response_mode": "Chế độ trả lời",
+    "ai_settings": "Cài đặt",
+    "ai_settings_failed": "Không thể lưu cài đặt AI",
+    "ai_settings_saved": "Đã lưu cài đặt AI",
+    "ai_thinking_mode": "Suy nghĩ",
+    "ai_thought": "Suy nghĩ",
+    "ai_tool_completed": "đã hoàn tất",
+    "ai_tool_failed": "thất bại",
+    "ai_tool_input": "Đầu vào",
+    "ai_tool_output": "Đầu ra",
+    "ai_tool_running": "đang chạy",
+    "ai_total_cost": "Tổng chi phí",
+    "ai_total_tokens": "Tổng token",
+    "ai_usage": "Sử dụng",
+    "archive": "Lưu trữ",
+    "archive_agent": "Lưu trữ cuộc trò chuyện AI",
+    "archive_channel": "Lưu trữ kênh",
+    "archive_chat": "Lưu trữ chat",
+    "archive_chat_warning": "Thao tác này sẽ gỡ chat khỏi danh sách đang hoạt động. Bạn có thể khôi phục từ các cuộc trò chuyện đã lưu trữ.",
+    "archive_confirm": "Lưu trữ",
+    "archive_filter_active": "Đang hoạt động",
+    "archive_filter_all": "Tất cả",
+    "archive_filter_archived": "Đã lưu trữ",
+    "archive_group": "Lưu trữ nhóm",
+    "archive_group_owner_warning": "Lưu trữ nhóm này sẽ khiến bạn rời nhóm và mất quyền truy cập vào toàn bộ tin nhắn. Các thành viên khác vẫn có thể xem tin nhắn trừ khi họ bị xóa khỏi nhóm.",
+    "archive_group_warning": "Thao tác này sẽ khiến bạn rời nhóm và mất quyền truy cập vào toàn bộ tin nhắn.",
+    "archive_workspace_conversation_warning": "Lưu trữ cuộc trò chuyện workspace này sẽ gỡ nó khỏi danh sách đang hoạt động của mọi người.",
+    "assistant_name": "Mira",
+    "assistant_response_failed": "Mira không thể phản hồi, nhưng tin nhắn của bạn đã được lưu.",
+    "attach_files": "Đính kèm tệp",
+    "attachment": "Tệp đính kèm",
+    "attachment_limit_reached": "Bạn có thể đính kèm tối đa {count} tệp mỗi tin nhắn.",
+    "attachment_open_failed": "Không thể mở tệp đính kèm",
+    "attachment_too_large": "Tệp đính kèm phải nhỏ hơn hoặc bằng {size}.",
+    "back": "Quay lại",
+    "cancel": "Hủy",
+    "channel_badge": "Kênh",
+    "channel_name_placeholder": "Tên kênh",
+    "channels": "Kênh",
+    "conversation_actions": "Thao tác cuộc trò chuyện",
+    "conversation_archive_failed": "Không thể lưu trữ cuộc trò chuyện",
+    "conversation_archived": "Đã lưu trữ cuộc trò chuyện",
+    "conversation_create_direct_requires_one_target": "Chọn đúng một người cho DM.",
+    "conversation_create_failed": "Không thể tạo cuộc trò chuyện",
+    "conversation_create_group_requires_members": "Chọn ít nhất một người cho nhóm.",
+    "conversation_create_permission_required": "Bạn không có quyền tạo cuộc trò chuyện đó tại đây.",
+    "conversation_create_target_not_invitable": "Bạn chỉ có thể nhắn tin cho người dùng chung workspace với bạn hoặc đã chấp nhận lời mời kết bạn của bạn.",
+    "conversation_delete_failed": "Không thể xóa cuộc trò chuyện",
+    "conversation_deleted": "Đã xóa cuộc trò chuyện",
+    "conversation_description_placeholder": "Mô tả",
+    "conversation_name_placeholder": "Tên cuộc trò chuyện",
+    "conversation_pinned": "Đã ghim cuộc trò chuyện",
+    "conversation_title_generate_failed": "Không thể tạo tên cuộc trò chuyện",
+    "conversation_types": "Loại cuộc trò chuyện",
+    "conversation_unpinned": "Đã bỏ ghim cuộc trò chuyện",
+    "conversation_update_failed": "Không thể cập nhật cuộc trò chuyện",
+    "conversation_updated": "Đã cập nhật cuộc trò chuyện",
+    "copy_as_json": "Sao chép dạng JSON",
+    "copy_as_markdown": "Sao chép dạng Markdown",
+    "copy_as_text": "Sao chép dạng văn bản",
+    "create": "Tạo",
+    "decline_friend": "Từ chối",
+    "delete_agent": "Xóa cuộc trò chuyện AI",
+    "delete_channel": "Xóa kênh",
+    "delete_chat": "Xóa chat",
+    "delete_chat_warning": "Thao tác này sẽ xóa chat khỏi danh sách của bạn. Bạn sẽ mất quyền truy cập vào các tin nhắn.",
+    "delete_confirm": "Xóa",
+    "delete_group": "Xóa nhóm",
+    "delete_group_owner_warning": "Xóa nhóm này sẽ khiến bạn rời nhóm và mất quyền truy cập vào toàn bộ tin nhắn. Các thành viên khác vẫn có thể xem tin nhắn như bình thường trừ khi họ bị xóa khỏi nhóm.",
+    "delete_group_warning": "Thao tác này sẽ khiến bạn rời nhóm và mất quyền truy cập vào toàn bộ tin nhắn.",
+    "delete_message": "Xóa tin nhắn",
+    "delete_workspace_conversation_warning": "Xóa cuộc trò chuyện workspace này sẽ làm tất cả mọi người mất quyền truy cập. Tin nhắn và tệp đính kèm trong kênh hoặc cuộc trò chuyện AI này sẽ không còn khả dụng.",
+    "direct_message": "Tin nhắn trực tiếp",
+    "direct_messages": "Tin nhắn trực tiếp",
+    "directory_search_placeholder": "Tìm người",
+    "download_qr_code": "Tải mã QR",
+    "drop_files_here": "Thả tệp để đính kèm",
+    "edited": "đã sửa",
+    "empty_conversations_description": "Bắt đầu tin nhắn trực tiếp, nhóm trò chuyện, kênh hoặc cuộc trò chuyện AI.",
+    "empty_conversations_title": "Chưa có cuộc trò chuyện",
+    "empty_directory": "Không tìm thấy người dùng",
+    "empty_messages_description": "Tin nhắn và tệp đính kèm sẽ xuất hiện tại đây.",
+    "empty_messages_title": "Chưa có tin nhắn",
+    "external_sender": "Khách truy cập website",
+    "external_visitor_typing": "Khách truy cập website đang nhập",
+    "files": "Tệp",
+    "filter_conversations": "Lọc cuộc trò chuyện",
+    "first_activity": "Hoạt động đầu tiên",
+    "friend_email_placeholder": "ban@example.com",
+    "friend_request_failed": "Không thể gửi lời mời kết bạn",
+    "friend_request_sent": "Đã gửi lời mời kết bạn",
+    "friend_requests": "Lời mời kết bạn",
+    "friend_requests_description": "Xem những người có thể nhắn tin trực tiếp với bạn.",
+    "friends": "Bạn bè",
+    "generate_conversation_title": "Tạo tên",
+    "generated_qr_code": "Mã QR được tạo",
+    "generating_conversation_title": "Đang tạo...",
+    "group_chat": "Nhóm trò chuyện",
+    "group_name_placeholder": "Tên nhóm",
+    "groups": "Nhóm",
+    "hide": "Ẩn",
+    "incoming_friend_requests": "Đến",
+    "integration_create_failed": "Không thể tạo tích hợp",
+    "integration_create_success": "Tích hợp đã sẵn sàng",
+    "integration_discord": "Discord",
+    "integration_discord_description": "Kết nối kênh bot Discord để đồng bộ tin nhắn và chạy AI agent.",
+    "integration_setup": "Thiết lập",
+    "integration_zalo_official": "Zalo Official",
+    "integration_zalo_official_description": "Kết nối kênh Zalo Official Account cho hội thoại khách hàng.",
+    "integration_zalo_personal": "Zalo cá nhân",
+    "integration_zalo_personal_description": "Ghép nối tài khoản Zalo cá nhân bằng mã QR và đồng bộ hội thoại.",
+    "last_activity": "Hoạt động gần nhất",
+    "links": "Liên kết",
+    "load_older_messages": "Tải tin nhắn cũ",
+    "loading_ai_settings": "Đang tải cài đặt AI",
+    "loading_ai_usage": "Đang tải mức dùng AI",
+    "loading_conversations": "Đang tải cuộc trò chuyện",
+    "loading_directory": "Đang tải người dùng",
+    "loading_messages": "Đang tải tin nhắn",
+    "loading_older_messages": "Đang tải tin nhắn cũ",
+    "loading_shared_content": "Đang tải nội dung đã chia sẻ",
+    "loading_visitor_context": "Đang tải thông tin khách truy cập...",
+    "loading_workspaces": "Đang tải không gian làm việc",
+    "member_count": "{count, plural, one {# thành viên} other {# thành viên}}",
+    "members": "Thành viên",
+    "members_description": "Những người có thể xem và tương tác với cuộc trò chuyện này.",
+    "message": "Tin nhắn",
+    "message_copied": "Đã sao chép tin nhắn",
+    "message_copy_failed": "Không thể sao chép tin nhắn",
+    "message_delete_failed": "Không thể xóa tin nhắn",
+    "message_deleted": "Tin nhắn đã bị xóa",
+    "message_deleted_success": "Đã xóa tin nhắn",
+    "message_placeholder": "Nhập tin nhắn...",
+    "message_send_failed": "Không thể gửi tin nhắn",
+    "more": "Thêm",
+    "network_hint": "Mạng",
+    "never": "Chưa bao giờ",
+    "new_conversation": "Cuộc trò chuyện mới",
+    "new_conversation_description": "Tạo cuộc trò chuyện bảo mật trong workspace.",
+    "next": "Tiếp theo",
+    "no_files_shared": "Chưa có tệp nào được chia sẻ",
+    "no_friends_yet": "Chưa có bạn bè",
+    "no_incoming_friend_requests": "Không có lời mời đến",
+    "no_links_shared": "Chưa có liên kết nào được chia sẻ",
+    "no_messages_yet": "Chưa có tin nhắn",
+    "no_photos_shared": "Chưa có ảnh nào được chia sẻ",
+    "no_search_results": "Không tìm thấy tin nhắn",
+    "no_sent_friend_requests": "Không có lời mời đã gửi",
+    "no_visited_routes": "Chưa có lịch sử truy cập",
+    "online": "Trực tuyến",
+    "photos": "Ảnh",
+    "pin_conversation": "Ghim cuộc trò chuyện",
+    "private_by_default": "Mặc định dùng schema riêng tư",
+    "private_schema_status": "Chat riêng tư",
+    "react_to_message": "Thả phản ứng",
+    "read_only_badge": "Chỉ đọc",
+    "read_only_conversation": "Tin nhắn AI-agent bên ngoài được đồng bộ ở chế độ chỉ đọc. Soạn nháp và gửi phản hồi thủ công trong Hạ tầng > AI Agents.",
+    "remove_attachment": "Gỡ tệp đính kèm",
+    "rename_conversation": "Đổi tên cuộc trò chuyện",
+    "rename_conversation_description": "Cập nhật tên hiển thị cho mọi người có quyền truy cập cuộc trò chuyện này.",
+    "revoke_friend_request": "Thu hồi lời mời",
+    "role_admin": "Quản trị",
+    "role_assistant": "Trợ lý",
+    "role_member": "Thành viên",
+    "role_owner": "Chủ sở hữu",
+    "save": "Lưu",
+    "scope_personal": "Cá nhân",
+    "scope_personal_subtitle": "DM và nhóm",
+    "scope_personal_unavailable": "Không có Cá nhân",
+    "scope_workspaces": "Không gian",
+    "scope_workspaces_subtitle": "Kênh và AI",
+    "search": "Tìm kiếm",
+    "search_placeholder": "Tìm tin nhắn",
+    "send_friend_request": "Gửi lời mời",
+    "send_message": "Gửi tin nhắn",
+    "sent_friend_requests": "Đã gửi",
+    "shared": "Đã chia sẻ",
+    "show": "Hiển thị",
+    "showing_all_chats": "Đang hiển thị cuộc trò chuyện hoạt động và đã lưu trữ",
+    "showing_archived_chats": "Đang hiển thị cuộc trò chuyện đã lưu trữ",
+    "source_external": "Nguồn bên ngoài",
+    "source_zalo_personal": "Zalo cá nhân",
+    "step_details": "Chi tiết",
+    "step_details_description": "Thêm tên và ngữ cảnh tùy chọn mà mọi người sẽ thấy.",
+    "step_members": "Người tham gia",
+    "step_members_direct_description": "Chọn một người bạn có thể nhắn tin.",
+    "step_members_group_description": "Chọn những người nên có trong nhóm này.",
+    "step_type": "Loại",
+    "step_type_description": "Chọn loại cuộc trò chuyện cần tạo.",
+    "system_event": "Cuộc trò chuyện đã được cập nhật",
+    "system_event_conversation_renamed": "{actorName} đã đổi tên cuộc trò chuyện thành {title}",
+    "system_event_conversation_updated": "{actorName} đã cập nhật cuộc trò chuyện này",
+    "system_event_generic": "Cuộc trò chuyện đã được cập nhật",
+    "tab_conversations": "Hội thoại",
+    "tab_integrations": "Tích hợp",
+    "title": "Trò chuyện",
+    "toggle_shared_content": "Bật/tắt nội dung đã chia sẻ",
+    "type_ai": "AI",
+    "type_channel": "Kênh",
+    "type_direct": "DM",
+    "type_group": "Nhóm",
+    "unknown": "Không rõ",
+    "unknown_sender": "Người gửi không xác định",
+    "unpin_conversation": "Bỏ ghim cuộc trò chuyện",
+    "unread_messages_count": "{count} tin nhắn chưa đọc",
+    "untitled_channel": "Kênh chưa đặt tên",
+    "untitled_chat": "Cuộc trò chuyện chưa đặt tên",
+    "upload_failed": "Không thể tải tệp lên",
+    "visited_routes": "Trang đã truy cập",
+    "visitor_context": "Thông tin khách truy cập",
+    "visitor_context_unavailable": "Không thể tải thông tin khách truy cập.",
+    "visitor_email": "Email",
+    "visitor_name": "Tên",
+    "visitor_phone": "Số điện thoại"
+  },
   "common": {
     "0_usd_per_month": "không có phí hàng tháng",
     "404-msg": "Trang bạn đang tìm kiếm không tồn tại.",
@@ -945,6 +1819,151 @@
       "requirements": "Windows 10 trở lên · Intel / AMD 64-bit"
     }
   },
+  "documents": {
+    "back-to-documents": "Quay lại tài liệu",
+    "cancel": "Hủy",
+    "create": "Tạo",
+    "create-document-error": "Đã xảy ra lỗi khi tạo tài liệu.",
+    "create-new-document": "Tạo tài liệu mới",
+    "creating": "Đang tạo",
+    "delete": "Xóa",
+    "delete-document": "Xóa tài liệu",
+    "delete-document-confirmation": "Bạn có chắc chắn muốn xóa tài liệu này?",
+    "document-name": "Tên tài liệu",
+    "document-name-placeholder": "Nhập tên tài liệu",
+    "documents": "Tài liệu",
+    "edit": "Chỉnh sửa",
+    "empty-preview": "Chưa có nội dung",
+    "new-document": "Tài liệu mới",
+    "no-documents": "Không có tài liệu nào trong không gian làm việc này",
+    "preview": "Xem trước",
+    "save": "Lưu",
+    "start_writing": "Bắt đầu viết tài liệu...",
+    "untitled-document": "Tài liệu chưa có tiêu đề"
+  },
+  "finance": {
+    "expense": "Chi tiêu",
+    "failed_to_load_categories": "Không thể tải danh sách danh mục",
+    "failed_to_load_tags": "Không thể tải danh sách thẻ",
+    "failed_to_load_users": "Không thể tải danh sách người dùng",
+    "failed_to_load_wallets": "Không thể tải danh sách ví",
+    "filter_by_categories": "Lọc theo danh mục",
+    "filter_by_creator": "Lọc theo người tạo",
+    "filter_by_tags": "Lọc theo thẻ",
+    "filter_by_users": "Lọc theo người dùng",
+    "filter_by_wallets": "Lọc theo ví",
+    "income": "Thu nhập",
+    "loading_categories": "Đang tải danh sách danh mục...",
+    "loading_creators": "Đang tải danh sách người tạo...",
+    "loading_tags": "Đang tải danh sách thẻ...",
+    "loading_users": "Đang tải danh sách người dùng...",
+    "loading_wallets": "Đang tải danh sách ví...",
+    "manage_categories": "Quản lý danh mục",
+    "new_budget": "Ngân sách mới",
+    "new_credit_card": "Thẻ tín dụng mới",
+    "new_debt": "Khoản nợ mới",
+    "new_invoice": "Hóa đơn mới",
+    "new_loan": "Khoản cho vay mới",
+    "new_recurring_transaction": "Giao dịch định kỳ mới",
+    "new_transaction": "Giao dịch mới",
+    "new_transfer": "Chuyển khoản mới",
+    "new_wallet": "Ví mới",
+    "no_categories_found": "Không tìm thấy danh mục nào.",
+    "no_creators_found": "Không tìm thấy người tạo nào.",
+    "no_tags_found": "Không tìm thấy thẻ nào.",
+    "no_users_found": "Không tìm thấy người dùng nào.",
+    "no_wallets_found": "Không tìm thấy ví nào.",
+    "quick_actions": "Thao tác nhanh",
+    "search_categories": "Tìm kiếm danh mục...",
+    "search_creators": "Tìm kiếm người tạo...",
+    "search_tags": "Tìm kiếm thẻ...",
+    "search_users": "Tìm kiếm người dùng...",
+    "search_wallets": "Tìm kiếm ví...",
+    "unknown_user": "Người dùng không xác định"
+  },
+  "inventory": {
+    "default_referral_promotion": "Khuyến mãi được cấp mặc định",
+    "referral_count_cap": "Giới hạn giảm giá giới thiệu",
+    "referral_increment_percent": "Phần trăm tăng theo lượt giới thiệu",
+    "referral_reward_type": "Loại phần thưởng giới thiệu",
+    "reward_both": "Cả hai",
+    "reward_receiver_only": "Chỉ người được giới thiệu",
+    "reward_referrer_only": "Chỉ người giới thiệu",
+    "select_reward_type": "Chọn người nhận thưởng"
+  },
+  "mail": {
+    "ai_draft": "Soạn thảo Email AI",
+    "ai_draft_title": "Trợ lý Email AI",
+    "ai_error": "Không thể tạo bản nháp email. Vui lòng thử lại.",
+    "apply_draft": "Áp dụng bản nháp",
+    "archive": "Lưu trữ",
+    "choose_email_message": "Chọn một email từ danh sách để xem nội dung tại đây.",
+    "compose": "Soạn thảo",
+    "compose_email": "Soạn thảo Email",
+    "confidential_content": "Nội dung bị ẩn",
+    "confidential_content_desc": "Nội dung email bị ẩn trong chế độ bảo mật",
+    "confidential_email": "[BẢO MẬT]",
+    "confidential_mode": "Bảo mật",
+    "confidential_recipients": "[BẢO MẬT]",
+    "confidential_sender": "[BẢO MẬT]",
+    "confidential_subject": "[BẢO MẬT]",
+    "context": "Ngữ cảnh",
+    "context_placeholder": "Mô tả những gì bạn muốn truyền đạt...",
+    "display_name_required": "Tên hiển thị được yêu cầu.",
+    "display_name_required_message": "Bạn phải đặt tên hiển thị trước khi gửi thư.",
+    "drafts": "Bản nháp",
+    "edit": "Biên tập",
+    "forward": "Chuyển tiếp",
+    "from_label": "Từ:",
+    "generate_draft": "Tạo bản nháp",
+    "generated_content": "Nội dung đã tạo",
+    "generated_subject": "Chủ đề đã tạo",
+    "generating": "Đang tạo...",
+    "inbox": "Hộp thư đến",
+    "loading_email_content": "Đang tải nội dung email...",
+    "loading_more_emails": "Đang tải thêm email...",
+    "mark_as_unread": "Đánh dấu chưa đọc",
+    "message": "Tin nhắn",
+    "message_placeholder": "Viết tin nhắn của bạn tại đây...",
+    "more": "Thêm",
+    "move_to_trash": "Chuyển vào thùng rác",
+    "no_email_selected": "Chưa chọn email nào",
+    "no_emails_found": "Không tìm thấy email nào",
+    "no_more_emails": "Không có email nào để tải thêm",
+    "none": "Không có",
+    "original_content_included": "Nội dung gốc sẽ được bao gồm khi gửi",
+    "original_message": "Thư gốc",
+    "preview": "Xem trước",
+    "purpose": "Mục đích",
+    "purpose_placeholder": "Mục đích của email này là gì?",
+    "quoted_content_included": "Nội dung trích dẫn sẽ được bao gồm khi gửi",
+    "quoted_message": "Thư trích dẫn",
+    "recipient_placeholder": "nguoinhan@example.com",
+    "recipients": "Người nhận",
+    "recipients_placeholder": "Bạn đang viết cho ai?",
+    "reply": "Trả lời",
+    "reply_all": "Trả lời tất cả",
+    "revise": "Chỉnh sửa",
+    "revise_email": "Chỉnh sửa Email",
+    "revising": "Đang chỉnh sửa...",
+    "revision_placeholder": "Mô tả cách bạn muốn chỉnh sửa email...",
+    "send_as": "Gửi như",
+    "send_email": "Gửi Email",
+    "sent": "Đã gửi",
+    "spam": "Thư rác",
+    "starred": "Đã gắn sao",
+    "subject": "Chủ đề",
+    "subject_placeholder": "Nhập chủ đề email",
+    "suggestions": "Gợi ý",
+    "to": "Đến",
+    "to_label": "Đến:",
+    "tone": "Giọng điệu",
+    "tone_casual": "Thân mật",
+    "tone_formal": "Trang trọng",
+    "tone_friendly": "Thân thiện",
+    "tone_professional": "Chuyên nghiệp",
+    "trash": "Rác"
+  },
   "marketing-nav": {
     "all_apps": "Khám phá mọi ứng dụng Tuturuuu",
     "groups": {
@@ -1038,6 +2057,169 @@
       }
     }
   },
+  "marketingSeo": {
+    "about": {
+      "description": "Tìm hiểu lý do chúng tôi xây dựng Tuturuuu: không gian làm việc mã nguồn mở kết nối cộng tác nhóm, vận hành hằng ngày và trợ lý AI.",
+      "title": "Về Tuturuuu và không gian làm việc kết nối"
+    },
+    "acceptable_use": {
+      "description": "Đọc các quy định sử dụng Tuturuuu có trách nhiệm, những hoạt động bị cấm và cách thực thi chính sách sử dụng.",
+      "title": "Chính sách sử dụng chấp nhận được"
+    },
+    "blog": {
+      "description": "Khám phá định hướng blog Tuturuuu, đọc cập nhật sản phẩm đã phát hành, theo dõi phát triển mã nguồn mở và kết nối với đội ngũ.",
+      "title": "Hướng dẫn làm việc và câu chuyện sản phẩm"
+    },
+    "branding": {
+      "description": "Tìm logo, tài nguyên hình ảnh và hướng dẫn thương hiệu Tuturuuu để sử dụng nhất quán, chính xác trong dự án và truyền thông.",
+      "title": "Tài nguyên và hướng dẫn thương hiệu Tuturuuu"
+    },
+    "careers": {
+      "description": "Khám phá cơ hội xây dựng Tuturuuu, không gian làm việc mã nguồn mở cho đội nhóm, và tìm hiểu cách chúng tôi làm việc và cộng tác.",
+      "title": "Cơ hội nghề nghiệp tại Tuturuuu"
+    },
+    "changelog": {
+      "description": "Xem những thay đổi trong Tuturuuu. Đọc cập nhật sản phẩm và tra cứu ghi chú phát hành theo ứng dụng, phiên bản, tính năng và bản sửa lỗi.",
+      "title": "Cập nhật sản phẩm và ghi chú phát hành"
+    },
+    "community_guidelines": {
+      "description": "Tìm hiểu các nguyên tắc tham gia, cộng tác và đóng góp trên tinh thần tôn trọng trong cộng đồng Tuturuuu.",
+      "title": "Nguyên tắc cộng đồng"
+    },
+    "contact": {
+      "description": "Trao đổi với đội ngũ Tuturuuu về không gian làm việc, sản phẩm, hợp tác hoặc góp ý. Tìm kênh liên hệ phù hợp để bắt đầu.",
+      "title": "Liên hệ Tuturuuu"
+    },
+    "contributors": {
+      "description": "Tìm hiểu những người cùng xây dựng Tuturuuu và khám phá các đóng góp cho không gian làm việc mã nguồn mở.",
+      "title": "Cộng tác viên mã nguồn mở Tuturuuu"
+    },
+    "home": {
+      "description": "Kết nối công việc, lịch, tài liệu và công cụ kinh doanh trong một không gian làm việc mã nguồn mở. Lập kế hoạch và cộng tác với trợ lý AI Mira.",
+      "title": "Không gian làm việc tất cả trong một cho đội nhóm"
+    },
+    "legal_changes": {
+      "description": "Dự kiến — chưa có hiệu lực",
+      "title": "Thay đổi sắp tới"
+    },
+    "legal_dpa": {
+      "description": "Đọc phụ lục xử lý dữ liệu Tuturuuu và các trách nhiệm áp dụng khi xử lý dữ liệu cá nhân.",
+      "title": "Phụ lục xử lý dữ liệu"
+    },
+    "legal_sla": {
+      "description": "Xem thỏa thuận mức độ dịch vụ Tuturuuu về tính sẵn sàng, hỗ trợ và các cam kết áp dụng.",
+      "title": "Thỏa thuận mức độ dịch vụ"
+    },
+    "legal_subprocessors": {
+      "description": "Xem các bên xử lý phụ và nhà cung cấp tham gia cung cấp Tuturuuu và xử lý dữ liệu.",
+      "title": "Bên xử lý phụ và nhà cung cấp dịch vụ"
+    },
+    "meet": {
+      "description": "Khám phá Tuturuuu Meet để phối hợp thời gian rảnh và lên lịch họp nhóm trong không gian làm việc kết nối.",
+      "title": "Họp nhóm và lên kế hoạch thời gian"
+    },
+    "partners": {
+      "description": "Khám phá cơ hội hợp tác cùng Tuturuuu về tích hợp, phát triển sản phẩm và đưa không gian làm việc kết nối đến nhiều đội nhóm hơn.",
+      "title": "Hợp tác với Tuturuuu"
+    },
+    "privacy": {
+      "description": "Đọc cách Tuturuuu thu thập, sử dụng và bảo vệ thông tin cá nhân, cùng các lựa chọn và quyền riêng tư của bạn.",
+      "title": "Chính sách quyền riêng tư"
+    },
+    "security": {
+      "description": "Tìm hiểu cách Tuturuuu bảo vệ không gian làm việc và dữ liệu, tiếp nhận báo cáo lỗ hổng có trách nhiệm và duy trì sự minh bạch của nền tảng mã nguồn mở.",
+      "title": "Bảo mật và quyền riêng tư của không gian làm việc"
+    },
+    "security_bug_bounty": {
+      "description": "Tìm hiểu phạm vi, quy trình báo cáo và hướng dẫn công bố có trách nhiệm các lỗ hổng bảo mật cho Tuturuuu.",
+      "title": "Báo cáo lỗ hổng bảo mật"
+    },
+    "solutions_construction": {
+      "description": "Phối hợp dự án xây dựng, công việc nhóm, lịch trình, tài liệu và hồ sơ vận hành trong không gian làm việc Tuturuuu kết nối.",
+      "title": "Không gian làm việc cho dự án xây dựng"
+    },
+    "solutions_education": {
+      "description": "Quản lý công việc, lịch trình, tài liệu và hoạt động đào tạo của đội ngũ giáo dục trong một không gian làm việc Tuturuuu kết nối.",
+      "title": "Không gian làm việc cho đội ngũ giáo dục"
+    },
+    "solutions_healthcare": {
+      "description": "Khám phá Tuturuuu để phối hợp công việc, lịch trình, tồn kho và hoạt động vận hành hằng ngày của đội ngũ y tế.",
+      "title": "Không gian làm việc cho vận hành y tế"
+    },
+    "solutions_hospitality": {
+      "description": "Kết nối công việc, lịch trình, tồn kho và hồ sơ vận hành của đội ngũ dịch vụ lưu trú trong không gian làm việc Tuturuuu dùng chung.",
+      "title": "Không gian làm việc cho đội ngũ dịch vụ lưu trú"
+    },
+    "solutions_manufacturing": {
+      "description": "Phối hợp công việc, tồn kho, lịch trình và tài liệu của đội ngũ sản xuất với các công cụ kinh doanh Tuturuuu kết nối.",
+      "title": "Không gian làm việc cho vận hành sản xuất"
+    },
+    "solutions_pharmacies": {
+      "description": "Khám phá không gian làm việc kết nối để phối hợp đội ngũ, quản lý tồn kho, lịch trình và hoạt động kinh doanh nhà thuốc với Tuturuuu.",
+      "title": "Không gian làm việc cho vận hành nhà thuốc"
+    },
+    "solutions_realestate": {
+      "description": "Kết nối danh bạ, công việc nhóm, lịch trình và tài liệu bất động sản trong một không gian làm việc Tuturuuu.",
+      "title": "Không gian làm việc cho đội ngũ bất động sản"
+    },
+    "solutions_restaurants": {
+      "description": "Quản lý công việc nhóm, tồn kho, lịch trình và hồ sơ tài chính của nhà hàng trong không gian làm việc Tuturuuu kết nối.",
+      "title": "Không gian làm việc cho vận hành nhà hàng"
+    },
+    "solutions_retail": {
+      "description": "Kết nối tồn kho, hồ sơ khách hàng, công việc nhóm và tài chính bán lẻ với các công cụ quản lý kinh doanh Tuturuuu.",
+      "title": "Không gian làm việc cho đội ngũ bán lẻ"
+    },
+    "terms": {
+      "description": "Xem các điều khoản áp dụng khi sử dụng Tuturuuu, bao gồm tài khoản, trách nhiệm và điều kiện cung cấp dịch vụ.",
+      "title": "Điều khoản dịch vụ"
+    },
+    "visualizations_horse_racing": {
+      "bodyDescription": "Mô phỏng tương tác này minh họa cách xếp hạng N con ngựa khi mỗi lần chỉ có thể cho M con đua. Thuật toán xác định toàn bộ thứ hạng một cách hiệu quả với số cuộc đua ít nhất.",
+      "description": "Khám phá mô phỏng đua ngựa tương tác và so sánh các thuật toán được sử dụng trong mô phỏng.",
+      "title": "Trực quan hóa thuật toán đua ngựa"
+    },
+    "women_in_tech": {
+      "description": "Tôn vinh những người phụ nữ góp phần xây dựng Tuturuuu. Khám phá câu chuyện của kỹ sư, lãnh đạo và đối tác định hình công nghệ tại Việt Nam và thế giới.",
+      "title": "Ngày Phụ nữ Việt Nam 2025: Phụ nữ trong công nghệ"
+    }
+  },
+  "meet": {
+    "call": {
+      "private_tools": {
+        "calendar": "Lịch",
+        "close": "Đóng ngày của tôi",
+        "empty_calendar": "Bảy ngày tới của bạn chưa có sự kiện.",
+        "empty_tasks": "Không có công việc đang hoạt động.",
+        "event": "Sự kiện chưa có tên",
+        "loading": "Đang tải ngày của bạn…",
+        "open_calendar": "Mở Lịch",
+        "open_tasks": "Mở Công việc",
+        "private": "Chỉ bạn nhìn thấy",
+        "protected_event": "Sự kiện được mã hóa",
+        "stale_calendar": "Đang hiển thị lịch đã tải gần nhất. Hiện chưa thể làm mới.",
+        "stale_tasks": "Đang hiển thị công việc đã tải gần nhất. Hiện chưa thể làm mới.",
+        "tasks": "Công việc",
+        "title": "Ngày của tôi",
+        "unavailable": "Các công cụ cá nhân hiện chưa khả dụng."
+      },
+      "restore_call": "Khôi phục cuộc họp",
+      "restore_failed": "Không thể khôi phục cuộc họp. Trạng thái có thể đã thay đổi hoặc thời lượng cuộc gọi ban đầu đã hết.",
+      "restoring_call": "Đang khôi phục cuộc họp…"
+    },
+    "collaboration": {
+      "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",
+      "checkpoint_deferred": "Bản lưu tại không gian làm việc đang bị chậm. Nội dung cộng tác vẫn được giữ trong phòng trong khi hệ thống thử lưu lại.",
+      "connecting": "Đang kết nối tài liệu chung…",
+      "document": "Tài liệu chung",
+      "document_presence": "{count} người trong tài liệu này",
+      "live": "Trực tiếp · đồng bộ tự động",
+      "placeholder": "Cùng nhau viết…",
+      "reconnecting": "Đang kết nối lại…",
+      "tools": "Công cụ",
+      "unavailable": "Tài liệu chung hiện không khả dụng."
+    }
+  },
   "privacy-consent": {
     "accept_optional": "Chấp nhận mục tùy chọn",
     "analytics": "Phân tích và hiệu suất",
@@ -1058,5 +2240,1772 @@
     "settings_description": "Chọn các mục đích sử dụng bộ nhớ trình duyệt tùy chọn. Bạn có thể quay lại đây bất cứ lúc nào để thay đổi hoặc rút lại lựa chọn.",
     "storage_unavailable": "Bộ nhớ trình duyệt không khả dụng. Việc thu thập tùy chọn vẫn tắt. Hãy bật bộ nhớ trình duyệt nếu bạn muốn lưu lựa chọn.",
     "title": "Lựa chọn quyền riêng tư"
+  },
+  "products": {
+    "ai": {
+      "closing": {
+        "description": "Bắt đầu từ trợ lý, phần lõi còn lại đã sẵn sàng phía sau cô ấy.",
+        "title": "Gặp Mira"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Bắt đầu với Mira",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "AI của Tuturuuu không phải một ô chat gắn thêm bên cạnh. Mira lên kế hoạch và hành động; Aurora, Rewise, Nova và Crystal là thứ khiến cô ấy hữu ích.",
+      "eyebrow": "AI",
+      "features": {
+        "aurora": {
+          "description": "Hệ thống ngữ cảnh liên kết email, công việc, tệp và sự kiện liên quan, để Mira trả lời khi đã nhìn thấy công việc của bạn.",
+          "title": "Aurora, hệ thần kinh"
+        },
+        "crystal": {
+          "description": "Giao diện đa phương thức cho giọng nói, video và chia sẻ màn hình, dành cho những lúc gõ phím là cách giải thích chậm nhất.",
+          "title": "Crystal, cầu nối con người"
+        },
+        "everywhere": {
+          "description": "Cùng một lõi nằm sau công việc, lịch, thư và tài liệu của bạn, nên bạn không phải mở một tab AI riêng để được giúp.",
+          "title": "Ngay trong những nơi bạn đã dùng"
+        },
+        "eyebrow": "Lõi AI",
+        "mira": {
+          "description": "Trợ lý bạn trò chuyện cùng. Bạn nhờ, Mira lên kế hoạch, xếp lịch, soạn thư và ghi chép trên task, lịch, email và tài chính của bạn.",
+          "title": "Mira, người bạn đồng hành AI"
+        },
+        "nova": {
+          "description": "Nền tảng prompt engineering định hình cách Mira suy luận, để hành vi của cô ấy là thứ bạn xem được và đổi được.",
+          "title": "Nova, lương tâm và lò rèn"
+        },
+        "rewise": {
+          "description": "Nơi tổng hợp các model AI hàng đầu từ OpenAI, Gemini và Anthropic, chuyển mỗi yêu cầu tới model xử lý nó tốt nhất.",
+          "title": "Rewise, trí tuệ tập thể"
+        },
+        "subtitle": "Mỗi phần làm một việc, còn bạn chỉ cần nói chuyện với một trong số đó.",
+        "title": "Thứ đang thật sự chạy bên dưới"
+      },
+      "seo": {
+        "description": "Lập kế hoạch, đặt câu hỏi và nhận hỗ trợ từ Mira trong không gian làm việc Tuturuuu kết nối, với các thao tác theo quyền của bạn.",
+        "title": "Trợ lý AI cho không gian làm việc nhóm"
+      },
+      "title": "Năm hệ thống, một trợ lý để bạn trò chuyện",
+      "useCases": {
+        "eyebrow": "Dùng vào việc gì",
+        "inbox": {
+          "items": [
+            "Chuỗi thư dài rút lại còn điều đã quyết",
+            "Thư trả lời soạn theo ngữ cảnh của bạn",
+            "Cam kết trong thư chuyển thành công việc",
+            "Cuộc họp đề xuất vào giờ bạn có thể dự"
+          ],
+          "title": "Đi hết hộp thư"
+        },
+        "knowledge": {
+          "items": [
+            "Tóm tắt những tài liệu bạn chưa kịp đọc",
+            "Rút ra chi tiết quan trọng từ một tệp dài",
+            "Câu trả lời dựa trên dữ liệu trong không gian làm việc, kèm nguồn",
+            "Ghi chú biến thành dàn ý bạn có thể sửa"
+          ],
+          "title": "Làm việc với tài liệu của chính bạn"
+        },
+        "planning": {
+          "items": [
+            "Khoảng tập trung xếp quanh những cuộc họp không thể dời",
+            "Kế hoạch tự dịch chuyển khi ngày thay đổi",
+            "Ưu tiên đọc từ danh sách công việc thật của bạn",
+            "Câu trả lời thực tế cho việc gì kịp trước thứ Sáu"
+          ],
+          "title": "Lên kế hoạch cho ngày"
+        },
+        "subtitle": "Công việc thường ngày, xử lý bằng ngữ cảnh mà không gian làm việc của bạn đã có.",
+        "title": "Những việc người ta nhờ nó làm"
+      }
+    },
+    "calendar": {
+      "closing": {
+        "description": "Mở Calendar và xem họp, hạn công việc và thời gian tập trung cùng một chỗ trước khi nhận thêm bất cứ điều gì.",
+        "title": "Nhìn đúng tuần bạn đang có"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Calendar",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Cuộc họp, hạn công việc và khoảng thời gian tập trung trong cùng một khung nhìn, với cách xếp lịch có tính đến múi giờ và những gì bạn đã nhận.",
+      "eyebrow": "Lịch",
+      "features": {
+        "anywhere": {
+          "description": "Lịch của bạn dễ đọc trên điện thoại giữa hai cuộc họp, không chỉ trên chiếc laptop đang để ở bàn.",
+          "title": "Cùng một ngày trên mọi thiết bị"
+        },
+        "booking": {
+          "description": "Chia sẻ liên kết đặt lịch với đúng khung giờ bạn sẵn sàng cho đi, và sự kiện xuất hiện trên lịch của cả hai bên.",
+          "title": "Một đường liên kết thay cho chuỗi email"
+        },
+        "coordination": {
+          "description": "Lịch của cả nhóm chồng lên nhau trong một khung nhìn, nên buổi họp rơi vào chỗ hợp với mọi người chứ không chỉ hợp với người tổ chức.",
+          "title": "Một bức tranh thời gian rảnh chung"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "reminders": {
+          "description": "Thông báo và email được gửi trước sự kiện và khi chi tiết thay đổi, nên không ai chuẩn bị nhầm việc.",
+          "title": "Nhắc đúng lúc còn kịp"
+        },
+        "scheduling": {
+          "description": "Các khung giờ được đề xuất từ thời gian rảnh thật và thói quen bạn đã đặt, nên bạn chỉ việc chọn thay vì đi dò.",
+          "title": "Gợi ý giờ, không phải ô trống"
+        },
+        "subtitle": "Lịch biết bạn đang nợ việc gì và rảnh lúc nào, nên đặt một buổi hẹn không còn là cuộc thương lượng.",
+        "timezones": {
+          "description": "Mỗi người thấy sự kiện theo giờ địa phương của mình, và việc quy đổi xảy ra trước khi có ai vào sớm một tiếng.",
+          "title": "Múi giờ được xử lý lặng lẽ"
+        },
+        "title": "Xếp lịch mà không phải hỏi tới hỏi lui"
+      },
+      "seo": {
+        "description": "Lên kế hoạch họp, thời hạn và thời gian tập trung với lịch nhóm dùng chung. Kết nối lịch trình với công việc trong Tuturuuu.",
+        "title": "Lịch dùng chung và lên lịch cho đội nhóm"
+      },
+      "title": "Cuốn lịch biết giữ ngày của bạn",
+      "useCases": {
+        "clients": {
+          "items": [
+            "Khung giờ đặt hẹn do bạn kiểm soát",
+            "Buổi tư vấn chốt được mà không cần trao đổi email",
+            "Buổi kế tiếp đặt xong trước khi cuộc gọi kết thúc",
+            "Lời nhắc gửi đi để bớt buổi hẹn bị quên"
+          ],
+          "title": "Làm việc với khách hàng"
+        },
+        "events": {
+          "items": [
+            "Các phiên và diễn giả trên một lịch trình",
+            "Địa điểm và thiết bị đặt theo đúng ngày",
+            "Danh sách người tham dự gắn với sự kiện",
+            "Một cuốn lịch có thể chia sẻ ở chế độ chỉ xem"
+          ],
+          "title": "Tổ chức sự kiện"
+        },
+        "eyebrow": "Trong thực tế",
+        "subtitle": "Phối hợp nội bộ, đặt hẹn với khách và tổ chức sự kiện đều chạy trên cùng một cuốn lịch.",
+        "team": {
+          "items": [
+            "Họp đặt vào lúc cả nhóm thật sự rảnh",
+            "Thời gian rảnh chung mà không cần bảng tính",
+            "Các mốc dự án nằm trên cùng dòng thời gian",
+            "Phòng họp và thiết bị dùng chung đặt một lần"
+          ],
+          "title": "Làm việc với nhóm"
+        },
+        "title": "Dù bạn đang xếp lịch với ai"
+      }
+    },
+    "chat": {
+      "closing": {
+        "description": "Đưa cuộc trò chuyện về cạnh những công việc và lịch mà nó vẫn nhắc tới.",
+        "title": "Mở kênh của không gian làm việc"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Chat",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Kênh chung và tin nhắn riêng nằm trong cùng không gian làm việc với công việc, lịch và tài liệu của bạn, nên bối cảnh không trôi sang một ứng dụng khác.",
+      "eyebrow": "Chat",
+      "features": {
+        "agents": {
+          "description": "Kết nối một tác nhân AI vào kênh, kể cả luồng Discord hay Zalo được bắc cầu về, để nó trả lời hoặc soạn nháp ngay nơi cuộc trò chuyện đang diễn ra.",
+          "title": "Tác nhân AI ngay trong kênh"
+        },
+        "channels": {
+          "description": "Một kênh cho dự án, cho nhóm hay cho một quyết định, để mạch trao đổi có chỗ ở thay vì trôi trong một nhóm chat chung.",
+          "title": "Mỗi chủ đề một kênh"
+        },
+        "direct": {
+          "description": "Trò chuyện một–một nằm ngay cạnh các kênh chung, nên hỏi nhanh một câu không cần đổi ứng dụng.",
+          "title": "Tin nhắn riêng"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "files": {
+          "description": "Tệp đã chia sẻ nằm lại trong cuộc trò chuyện sinh ra chúng, và được liệt kê theo từng cuộc trò chuyện khi bạn cần lại.",
+          "title": "Tệp ở lại với mạch trao đổi"
+        },
+        "search": {
+          "description": "Tìm kiếm xuyên các cuộc trò chuyện, nên quyết định của tháng trước lấy lại được mà không phải cuộn tay.",
+          "title": "Tìm lại được về sau"
+        },
+        "subtitle": "Kênh của không gian làm việc, tin nhắn riêng, và mọi thứ đều tìm lại được về sau.",
+        "title": "Nhắn tin không rời khỏi bối cảnh",
+        "workspace": {
+          "description": "Chuyển giữa hội thoại cá nhân và hội thoại của từng không gian làm việc trên cùng một thanh, không phải đăng xuất khỏi đâu cả.",
+          "title": "Cá nhân và không gian làm việc cạnh nhau"
+        }
+      },
+      "seo": {
+        "description": "Kênh, tin nhắn riêng và tệp nằm chung không gian với công việc của bạn.",
+        "title": "Trò chuyện và kênh nhóm"
+      },
+      "title": "Cuộc trò chuyện nằm cạnh công việc",
+      "useCases": {
+        "eyebrow": "Trong thực tế",
+        "personal": {
+          "items": [
+            "Ghi chú cho chính mình trong cùng ứng dụng",
+            "Nhắn tin riêng mà không cần công cụ khác",
+            "Việc riêng và việc chung tách bạch",
+            "Tìm kiếm bao trùm cả hai"
+          ],
+          "title": "Mạch riêng của bạn"
+        },
+        "projects": {
+          "items": [
+            "Mỗi dự án một kênh, đóng lại khi bàn giao xong",
+            "Quyết định được viết ngay nơi công việc diễn ra",
+            "Tệp giữ cùng phần thảo luận",
+            "Người tiếp nhận sau vẫn có đủ bối cảnh"
+          ],
+          "title": "Mạch thảo luận theo dự án"
+        },
+        "subtitle": "Trao đổi hằng ngày, mạch thảo luận theo dự án, và những ghi chú bạn gửi cho chính mình.",
+        "team": {
+          "items": [
+            "Một chỗ thay vì ba nhóm chat",
+            "Một biểu tượng cảm xúc thay cho một câu trả lời nữa",
+            "Ghim lại những cuộc trò chuyện quan trọng",
+            "Người mới vào đọc lại được chuyện đã xảy ra"
+          ],
+          "title": "Trao đổi hằng ngày"
+        },
+        "title": "Ba cuộc trò chuyện đáng giữ lại"
+      }
+    },
+    "crm": {
+      "closing": {
+        "description": "Khách hàng là một phần trong không gian làm việc Tuturuuu của bạn. Đăng nhập và mang danh sách khách hàng theo cùng.",
+        "title": "Thôi dựng lại ngữ cảnh trước mỗi cuộc gọi"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Khách hàng",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Liên hệ, cơ hội bán hàng và lịch sử trao đổi trong một hồ sơ mà cả không gian làm việc đều thấy được. Việc theo sát bạn định làm trở thành một công việc có hạn chót, thay vì một ghi chú cho chính mình.",
+      "eyebrow": "Khách hàng",
+      "features": {
+        "analytics": {
+          "description": "Tỉ lệ chuyển đổi theo giai đoạn, độ dài chu kỳ và chỗ cơ hội hay tắc, để bạn sửa đúng bước đang gây tốn kém.",
+          "title": "Con số phía sau cảm giác"
+        },
+        "automation": {
+          "description": "Chuyển giai đoạn sẽ tự tạo việc theo sát và lời nhắc, nên quy trình không còn phụ thuộc vào tính kỷ luật.",
+          "title": "Phần lặp đi lặp lại, để hệ thống lo"
+        },
+        "contacts": {
+          "description": "Thông tin, vai trò và lịch sử trong một hồ sơ duy nhất, để ai tiếp quản cũng biết trước đó đã trao đổi những gì.",
+          "title": "Mỗi người một hồ sơ"
+        },
+        "deals": {
+          "description": "Mỗi cơ hội có giai đoạn, giá trị và người chịu trách nhiệm. Bàn giao thôi làm rơi chi tiết.",
+          "title": "Cơ hội có người phụ trách và hạn chót"
+        },
+        "eyebrow": "Nó làm gì",
+        "history": {
+          "description": "Cuộc gọi, email và ghi chú họp gắn vào hồ sơ, để không điều gì quan trọng chỉ nằm trong hộp thư của một người.",
+          "title": "Trao đổi luôn tìm lại được"
+        },
+        "pipeline": {
+          "description": "Thấy mọi cơ hội đang mở theo từng giai đoạn, và cơ hội nào đã im lặng lâu hơn mức nên có.",
+          "title": "Nhìn toàn bộ tiến trình bán hàng trong một lần"
+        },
+        "subtitle": "Không phải thêm một cơ sở dữ liệu để chăm. Hồ sơ khách hàng nằm cạnh công việc, lịch và hoá đơn, nên ngữ cảnh đến cùng với cái tên.",
+        "title": "Mối quan hệ, được ghi lại"
+      },
+      "seo": {
+        "description": "Quản lý liên hệ và hồ sơ quan hệ khách hàng trong Tuturuuu. Kết nối công việc chăm sóc khách hàng với nhiệm vụ và công cụ làm việc nhóm.",
+        "title": "CRM và quản lý liên hệ cho đội nhóm"
+      },
+      "title": "Mọi khách hàng, và mọi điều bạn đã hứa với họ",
+      "useCases": {
+        "eyebrow": "Dành cho ai",
+        "growth": {
+          "items": [
+            "Biết khách hàng nào thật sự tạo ra doanh thu",
+            "Nhận ra nhóm khách đáng dành thêm thời gian",
+            "Theo dõi doanh thu theo từng khách qua thời gian",
+            "Bố trí nguồn lực theo nhu cầu thật"
+          ],
+          "title": "Tăng trưởng và kế hoạch"
+        },
+        "sales": {
+          "items": [
+            "Theo dõi khách tiềm năng từ lần chạm đầu đến khi chốt",
+            "Nhìn toàn bộ tiến trình mà không phải đi hỏi cập nhật",
+            "Được nhắc trước khi một cơ hội nguội đi",
+            "Dự báo dựa trên giai đoạn thay vì sự lạc quan"
+          ],
+          "title": "Đội bán hàng"
+        },
+        "service": {
+          "items": [
+            "Mở một yêu cầu ngay trên lịch sử đầy đủ của khách",
+            "Ghi rõ đã hứa điều gì và đến khi nào",
+            "Giữ phản hồi ở nơi cuộc trò chuyện kế tiếp sẽ thấy",
+            "Biết tài khoản nào cần được để mắt trong tuần này"
+          ],
+          "title": "Chăm sóc khách hàng"
+        },
+        "subtitle": "Bán hàng, chăm sóc và lập kế hoạch đều dựa trên cùng một lịch sử khách hàng.",
+        "title": "Một hồ sơ, nhiều công việc"
+      }
+    },
+    "documents": {
+      "closing": {
+        "description": "Đưa việc viết vào cùng không gian với phần còn lại của công việc, và thôi đi tìm bản mà mọi người đã thống nhất.",
+        "title": "Bắt đầu tài liệu tiếp theo ở đây"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Bắt đầu viết",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Tài liệu nằm cạnh công việc, lịch và tệp mà nó thuộc về, để một bản mô tả không còn là đường link ai đó phải đi tìm.",
+      "eyebrow": "Tài liệu",
+      "features": {
+        "assistant": {
+          "description": "Yêu cầu một bản tóm tắt, một dàn ý hay một lần viết lại, và bắt đầu từ thứ đã có trên trang thay vì trang trắng.",
+          "title": "Một bản nháp để bắt đầu"
+        },
+        "collaboration": {
+          "description": "Bình luận, đề xuất và chỉnh sửa trực tiếp giúp việc góp ý diễn ra ngay trên trang, thay vì rải rác trong ba cuộc trao đổi.",
+          "title": "Cùng nhau chỉnh sửa"
+        },
+        "editor": {
+          "description": "Trình soạn thảo gọn gàng với đủ cấu trúc bạn cần: tiêu đề, danh sách, bảng, mã nguồn. Trang giấy không cản đường suy nghĩ.",
+          "title": "Viết mà không rườm rà"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "permissions": {
+          "description": "Phân quyền theo từng tài liệu và từng thư mục, kể cả với người ngoài không gian làm việc, và thu hồi bất cứ lúc nào.",
+          "title": "Chia sẻ vừa đủ"
+        },
+        "search": {
+          "description": "Tìm kiếm toàn văn trên mọi tài liệu trong không gian làm việc, để bạn thôi phải dựng lại một quyết định bằng trí nhớ.",
+          "title": "Tìm đúng tài liệu bạn cần"
+        },
+        "subtitle": "Soạn thảo, tìm kiếm, lịch sử và phân quyền, mà không cần mở thêm một tab nào.",
+        "title": "Tài liệu giữ được ngữ cảnh của nó",
+        "versions": {
+          "description": "Mọi thay đổi đều được giữ lại, nên bạn thấy được ai sửa gì và khôi phục phiên bản cũ mà không cần hỏi ai.",
+          "title": "Sửa mà không mất gì"
+        }
+      },
+      "seo": {
+        "description": "Soạn thảo và tổ chức tài liệu nhóm trong Tuturuuu. Kết nối bối cảnh dự án, công việc và tệp dùng chung với hoạt động liên quan.",
+        "title": "Tài liệu cộng tác cho đội nhóm"
+      },
+      "title": "Viết ngay tại nơi công việc đang diễn ra",
+      "useCases": {
+        "business": {
+          "items": [
+            "Hợp đồng cùng lịch sử chỉnh sửa",
+            "Đề xuất soạn lại từ một bản trước",
+            "Chính sách với quyền truy cập được kiểm soát",
+            "Báo cáo viết ngay cạnh số liệu"
+          ],
+          "title": "Giấy tờ kinh doanh"
+        },
+        "eyebrow": "Dùng vào việc gì",
+        "knowledge": {
+          "items": [
+            "Hướng dẫn nhập môn người mới đọc ngay ngày đầu",
+            "Tài liệu quy trình gom về một chỗ",
+            "Câu hỏi thường gặp nội bộ thay cho việc trả lời lại",
+            "Ghi chú nghiên cứu kèm nguồn"
+          ],
+          "title": "Kiến thức của đội"
+        },
+        "specs": {
+          "items": [
+            "Bản mô tả liên kết tới công việc mà nó sinh ra",
+            "Biên bản họp kèm quyết định và người phụ trách",
+            "Quy trình xử lý sự cố để người trực làm theo",
+            "Tổng kết dự án vẫn tìm lại được"
+          ],
+          "title": "Tài liệu dự án và sản phẩm"
+        },
+        "subtitle": "Ba dạng tài liệu thôi trôi dạt khi chúng nằm trong không gian làm việc.",
+        "title": "Những tài liệu một đội thật sự giữ lại"
+      }
+    },
+    "drive": {
+      "closing": {
+        "description": "Đặt kho lưu trữ cạnh công việc, thư và tài liệu tham chiếu tới nó, và thôi trả tiền cho một ổ đĩa chẳng biết gì về công việc của bạn.",
+        "title": "Chuyển tệp của bạn vào đây"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Drive",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Kho lưu trữ nằm trong không gian làm việc, để một tệp, công việc liên quan và người cần nó không còn cách nhau ba phần mềm.",
+      "eyebrow": "Drive",
+      "features": {
+        "devices": {
+          "description": "Có mặt trên web và di động, để tệp bạn cần trên đường đi họp không nằm lại trên chiếc máy ở nhà.",
+          "title": "Cùng một Drive trên mọi thiết bị"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "organization": {
+          "description": "Sắp xếp thư mục theo cách đội bạn làm việc và gắn nhãn để cùng một tài liệu có thể thuộc về nhiều nơi.",
+          "title": "Thư mục, cộng thêm nhãn bạn quen dùng"
+        },
+        "search": {
+          "description": "Lọc theo tên, định dạng, người sở hữu và ngày, để một tệp từ ba tháng trước chỉ tốn một lần tìm thay vì mười lần bấm.",
+          "title": "Tìm mà không phải mở từng thư mục"
+        },
+        "sharing": {
+          "description": "Chia sẻ một tệp hay một thư mục cho người bạn chọn hoặc qua đường link, và thu hồi quyền bất cứ lúc nào.",
+          "title": "Gửi một đường link, không phải tệp đính kèm"
+        },
+        "storage": {
+          "description": "Mọi thứ được mã hoá khi lưu và chỉ những người bạn cấp quyền mới mở được.",
+          "title": "Tệp mặc định là riêng tư"
+        },
+        "subtitle": "Tải lên, tìm, chia sẻ và quay lui, mà không cần khai quật thư mục.",
+        "title": "Kho lưu trữ biết điều",
+        "versions": {
+          "description": "Thay thế một tệp không xoá mất bản trước. Các phiên bản cũ vẫn còn, nên ghi đè không còn là một buổi chiều mất trắng.",
+          "title": "Mỗi lần tải lên đều giữ bản cũ"
+        }
+      },
+      "seo": {
+        "description": "Lưu trữ, sắp xếp và chia sẻ tệp an toàn với Tuturuuu Drive.",
+        "title": "Lưu trữ đám mây an toàn"
+      },
+      "title": "Tệp của bạn, ở nơi công việc đang diễn ra",
+      "useCases": {
+        "delivery": {
+          "items": [
+            "Một đường link thay cho tệp đính kèm bị chặn",
+            "Quyền truy cập có thể thu hồi sau khi bàn giao",
+            "Tệp lớn mà không cần nghi thức nén",
+            "Ghi nhận rõ ràng đã gửi gì và gửi khi nào"
+          ],
+          "title": "Gửi kết quả cho khách hàng"
+        },
+        "eyebrow": "Dùng vào việc gì",
+        "records": {
+          "items": [
+            "Lịch sử phiên bản cho mọi thứ được sửa nhiều lần",
+            "Bản gốc nằm cạnh bản hiện tại",
+            "Khôi phục tệp bị ai đó thay nhầm",
+            "Một kho lưu trữ gọn gàng thay cho thư mục trên màn hình một người"
+          ],
+          "title": "Hồ sơ phải giữ lại"
+        },
+        "subtitle": "Ba việc kho lưu trữ phải làm được trước khi ai đó tin tưởng nó.",
+        "team": {
+          "items": [
+            "Một nơi cho những tài nguyên ai cũng dùng lại",
+            "Thư mục gói gọn theo dự án hoặc khách hàng",
+            "Quyền truy cập gắn với không gian làm việc, không gắn với hộp thư một người",
+            "Người mới thấy được cả lịch sử, không phải thư mục trống"
+          ],
+          "title": "Tệp dùng chung của đội"
+        },
+        "title": "Các đội giữ gì trong Drive"
+      }
+    },
+    "finance": {
+      "closing": {
+        "description": "Tài chính là một phần trong không gian làm việc Tuturuuu của bạn. Đăng nhập và bắt đầu với tháng này.",
+        "title": "Mở sổ mà không thấy ngại"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Tài chính",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Chi tiêu, ngân sách, hoá đơn và dòng tiền nằm chung không gian với phần việc còn lại. Hoá đơn được đọc và phân loại giúp bạn, để cuối tháng khép lại mà không mất trọn một cuối tuần nhập liệu.",
+      "eyebrow": "Tài chính",
+      "features": {
+        "budgets": {
+          "description": "Đặt hạn mức cho từng nhóm và thấy mình đang ở đâu ngay khi chi, chứ không phải khi sao kê về.",
+          "title": "Ngân sách bạn thật sự để ý"
+        },
+        "cashflow": {
+          "description": "Tiền vào so với tiền ra theo thời gian, để một tháng eo hẹp lộ ra khi bạn vẫn còn kịp xoay xở.",
+          "title": "Dòng tiền nhìn thấy trước"
+        },
+        "expenses": {
+          "description": "Chụp một hoá đơn và nó trở thành giao dịch đã phân loại. Chồng giấy trong ngăn kéo thôi là việc bạn phải giải quyết vào cuối năm.",
+          "title": "Chi tiêu tự vào sổ"
+        },
+        "eyebrow": "Nó làm gì",
+        "payments": {
+          "description": "Ghi lại đã xuất hoá đơn gì và đã nhận về gì ở cùng một nơi, để việc nhắc nợ bắt đầu từ dữ liệu chứ không từ trí nhớ.",
+          "title": "Thanh toán và hoá đơn chung một sổ"
+        },
+        "planning": {
+          "description": "Thử một lần tuyển người, một lần đổi giá hay một mục tiêu tiết kiệm trên lịch sử thật, thay vì phỏng đoán.",
+          "title": "Kế hoạch dựa trên số thật"
+        },
+        "reports": {
+          "description": "Thu, chi và cơ cấu theo nhóm đã dựng sẵn. Lấy con số kế toán hỏi trong một phút, thay vì cả buổi tối.",
+          "title": "Báo cáo không cần xuất file"
+        },
+        "subtitle": "Mỗi con số nằm cạnh công việc đã tạo ra nó, nên bạn không phải đối chiếu hai phiên bản sự thật.",
+        "title": "Phần sổ sách, gần như đã có người lo"
+      },
+      "seo": {
+        "description": "Theo dõi giao dịch, quản lý ví và tổ chức ngân sách trong Tuturuuu. Giúp đội nhóm nắm rõ thu nhập, chi phí và hồ sơ tài chính.",
+        "title": "Tài chính nhóm, ngân sách và theo dõi chi phí"
+      },
+      "title": "Biết tiền đã đi đâu, không cần bảng tính",
+      "useCases": {
+        "business": {
+          "items": [
+            "Phân loại chi tiêu của nhóm theo cách bạn chọn, không theo ngân hàng",
+            "Xuất hoá đơn, theo dõi và nhắc nợ mà không cần công cụ thứ hai",
+            "Khép sổ cuối tháng từ dữ liệu vốn đã gọn gàng",
+            "Xem biên lợi nhuận theo dự án, không theo tài khoản ngân hàng"
+          ],
+          "title": "Điều hành doanh nghiệp"
+        },
+        "eyebrow": "Dành cho ai",
+        "personal": {
+          "items": [
+            "Thấy rõ tháng vừa rồi tiền đi đâu, theo từng nhóm",
+            "Gắn cho mỗi mục tiêu tiết kiệm một con số và một mốc thời gian",
+            "Theo dõi tài khoản và khoản đầu tư trong một số dư chung",
+            "Đặt một ngân sách mà tháng Ba bạn vẫn còn theo được"
+          ],
+          "title": "Tài chính cá nhân"
+        },
+        "planning": {
+          "items": [
+            "Dự phóng vài tháng tới từ lịch sử thật",
+            "Thử một quyết định trước khi nó thành khoản chi",
+            "Phát hiện sớm những tháng dòng tiền căng",
+            "So kế hoạch với những gì đã thật sự diễn ra"
+          ],
+          "title": "Nhìn về phía trước"
+        },
+        "subtitle": "Người làm tự do, một nhóm nhỏ hay một gia đình đều muốn biết cùng một điều: còn lại bao nhiêu, và sắp tới là gì.",
+        "title": "Cùng một cuốn sổ, những câu hỏi khác nhau"
+      }
+    },
+    "forms": {
+      "closing": {
+        "description": "Mở Forms, dựng đúng biểu mẫu bạn vẫn phải hỏi qua email, rồi chia sẻ đường liên kết.",
+        "title": "Viết câu hỏi đầu tiên"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Forms",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Tạo biểu mẫu, gửi một đường liên kết, và xem phản hồi đổ về đúng nơi bạn có thể đọc, lọc và dựng biểu đồ mà không phải xuất đi đâu cả.",
+      "eyebrow": "Forms",
+      "features": {
+        "analytics": {
+          "description": "Biểu đồ theo từng câu hỏi, hoạt động theo thời gian và điểm bỏ dở có sẵn ngay khi có câu trả lời.",
+          "title": "Bản tóm tắt bạn không phải dựng"
+        },
+        "builder": {
+          "description": "Thêm câu hỏi rồi gom vào từng phần, sắp xếp lại tới khi biểu mẫu đọc lên giống cách bạn hỏi trực tiếp.",
+          "title": "Câu hỏi, phần, thứ tự"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "logic": {
+          "description": "Quy tắc có thể bỏ qua một câu hỏi hoặc nhảy tới một phần dựa trên câu trả lời trước, nên không ai phải đọc thứ không liên quan tới mình.",
+          "title": "Chỉ hiện phần liên quan"
+        },
+        "responses": {
+          "description": "Câu trả lời về thẳng biểu mẫu, nhóm theo người trả lời, nên việc đọc chúng không còn là chuyện của bảng tính.",
+          "title": "Phản hồi nằm ngay tại chỗ"
+        },
+        "share": {
+          "description": "Xuất bản và nhận một đường liên kết mở được cho bất kỳ ai bạn gửi, trên điện thoại cũng dễ như trên máy tính.",
+          "title": "Một đường liên kết để chia sẻ"
+        },
+        "subtitle": "Một trình soạn, một đường liên kết để chia sẻ, và trang phản hồi tự biết cách tóm tắt.",
+        "theme": {
+          "description": "Màu, phông chữ và hình ảnh được đặt ngay trên biểu mẫu, nên đường liên kết công khai không trông như đi mượn.",
+          "title": "Nhìn ra là của bạn"
+        },
+        "title": "Từ câu hỏi tới câu trả lời, không vòng vèo"
+      },
+      "seo": {
+        "description": "Tạo biểu mẫu, chia sẻ liên kết và đọc mọi phản hồi ngay tại nơi chúng đến.",
+        "title": "Biểu mẫu và khảo sát trực tuyến"
+      },
+      "title": "Hỏi một lần, đọc câu trả lời ở một chỗ",
+      "useCases": {
+        "eyebrow": "Trong thực tế",
+        "feedback": {
+          "items": [
+            "Khảo sát sau khi mua hoặc sau một sự kiện",
+            "Điểm đánh giá đọc được ngay dưới dạng biểu đồ",
+            "Câu trả lời mở nằm cạnh các con số",
+            "Thấy rõ người ta dừng lại ở câu hỏi nào"
+          ],
+          "title": "Hỏi khách hàng"
+        },
+        "intake": {
+          "items": [
+            "Đăng ký cho một sự kiện hoặc một lớp học",
+            "Thu thập thông tin khách trước buổi trao đổi đầu tiên",
+            "Hồ sơ ứng tuyển gom về một hàng đợi",
+            "Đường liên kết công khai, người trả lời không cần tài khoản"
+          ],
+          "title": "Yêu cầu và đăng ký"
+        },
+        "internal": {
+          "items": [
+            "Yêu cầu được phân luồng bằng câu hỏi điều kiện",
+            "Danh sách kiểm tra điền theo cùng một cách mỗi lần",
+            "Xem xét câu trả lời mà không cần hộp thư chung",
+            "Kết quả tóm tắt sẵn cho buổi họp kế tiếp"
+          ],
+          "title": "Vận hành đội nhóm"
+        },
+        "subtitle": "Thu thập yêu cầu, hỏi khách hàng, và phục vụ việc nội bộ.",
+        "title": "Những biểu mẫu đội nhóm cần trước tiên"
+      }
+    },
+    "hive": {
+      "closing": {
+        "description": "Dựng thế giới, cấu hình các tác nhân, và chạy nhịp đầu tiên.",
+        "title": "Mở phòng thí nghiệm"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Hive",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Dựng một thế giới, đặt các tác nhân vào đó, cho chúng chỉ dẫn và trí nhớ, rồi chạy mô phỏng và đọc lại xem chúng thực sự đã làm gì.",
+      "eyebrow": "Hive",
+      "features": {
+        "agents": {
+          "description": "Mỗi tác nhân mang một vai trò, một tiểu sử, một mô hình và một chỉ dẫn, chọn ngay trong thế giới là thấy nó đang được cấu hình thế nào.",
+          "title": "Tác nhân đặt vào và soi được"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "observe": {
+          "description": "Nhật ký chạy, lượt hội thoại, số sự kiện và trạng thái thế giới được giữ theo từng phiên, nên một kết quả có thể kiểm chứng thay vì phải nhớ.",
+          "title": "Chuyện đã xảy ra, có ghi lại"
+        },
+        "prompts": {
+          "description": "Đổi giữa chỉ dẫn mặc định, mở rộng và tự viết, bật tắt trí nhớ và tiểu sử, đổi mô hình mà không phải rời lượt chạy.",
+          "title": "Chỉ dẫn, trí nhớ, mô hình"
+        },
+        "runs": {
+          "description": "Chạy tay từng nhịp mô phỏng, hoặc để các nhịp tự động ghép cặp tác nhân theo vòng tròn, tất cả với tất cả, hoặc với một đối tượng bạn chọn.",
+          "title": "Lượt chạy do bạn bấm hoặc hẹn lịch"
+        },
+        "subtitle": "Một thế giới sửa được, các tác nhân cấu hình được, và những lượt chạy xem và so sánh được.",
+        "title": "Đủ thứ để một thí nghiệm lặp lại được",
+        "workflows": {
+          "description": "Cùng một lượt chạy đọc được theo ba cách: thế giới ở hiện trạng, chuỗi sự kiện, và đồ thị cho thấy công việc của các tác nhân nối vào nhau ra sao.",
+          "title": "Thế giới, dòng thời gian, đồ thị luồng"
+        },
+        "world": {
+          "description": "Đặt khối và vật thể trên lưới voxel, với góc máy, thời điểm trong ngày, mùa và thời tiết là những biến bạn kiểm soát.",
+          "title": "Thế giới bạn tự dựng"
+        }
+      },
+      "seo": {
+        "description": "Giữ những gì đội ngũ bạn biết ở nơi tìm được, thay vì rải rác khắp nơi.",
+        "title": "Kho tri thức đội ngũ"
+      },
+      "title": "Phòng thí nghiệm cho bầy tác nhân",
+      "useCases": {
+        "design": {
+          "items": [
+            "Thử một thiết lập nhiều tác nhân trước khi dựng thật",
+            "So sánh các cách ghép cặp trên cùng một thế giới",
+            "Thấy thay đổi chỉ dẫn qua hành vi, không phải qua lý thuyết",
+            "Phát hiện kiểu hỏng ngay trong mô phỏng"
+          ],
+          "title": "Thiết kế một hệ thống"
+        },
+        "eyebrow": "Trong thực tế",
+        "research": {
+          "items": [
+            "Chỉ đổi một biến giữa hai lượt chạy",
+            "Tách riêng trí nhớ và tiểu sử thành điều kiện thí nghiệm",
+            "Giữ lại các lượt hội thoại để xem lại",
+            "Phiên có tên, nên kết quả còn quy được về nguồn"
+          ],
+          "title": "Nghiên cứu tác nhân"
+        },
+        "subtitle": "Nghiên cứu tác nhân, thiết kế một hệ nhiều tác nhân, và cho người khác thấy nó hành xử ra sao.",
+        "teaching": {
+          "items": [
+            "Một thế giới chung nhiều người cùng xem",
+            "Trạng thái cập nhật ngay khi nhịp đang chạy",
+            "Dựng lại một kịch bản để cùng thảo luận",
+            "Truy được quyết định của tác nhân về đúng chỉ dẫn của nó"
+          ],
+          "title": "Cho thấy nó hành xử ra sao"
+        },
+        "title": "Người ta chạy gì trong đó"
+      }
+    },
+    "inventory": {
+      "closing": {
+        "description": "Kho hàng là một phần trong không gian làm việc Tuturuuu của bạn. Đăng nhập và nhập những mã hàng đầu tiên.",
+        "title": "Kiểm một lần, rồi tin vào con số đó"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Kho hàng",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Theo dõi hàng bạn đang giữ ở mọi kho, với quét mã, ngưỡng đặt lại và toàn bộ lịch sử xuất nhập. Việc hết hàng mà lẽ ra khách phải báo cho bạn nay hiện ra dưới dạng một cảnh báo.",
+      "eyebrow": "Kho hàng",
+      "features": {
+        "eyebrow": "Nó làm gì",
+        "orders": {
+          "description": "Tạo đơn, theo dõi hàng đang về và biết nhà cung cấp nào hay giao trễ, tất cả trên cùng một mã hàng.",
+          "title": "Đơn mua và nhà cung cấp"
+        },
+        "reordering": {
+          "description": "Đặt mức tối thiểu cho từng mã và được nhắc đặt hàng trước khi hết, chứ không phải sau.",
+          "title": "Ngưỡng đặt lại tự kích hoạt"
+        },
+        "reports": {
+          "description": "Thấy hàng nào chạy, hàng nào nằm im, và hàng nào đang âm thầm giữ vốn của bạn.",
+          "title": "Vòng quay hàng để ra quyết định"
+        },
+        "scanning": {
+          "description": "Nhận, chuyển và kiểm hàng bằng camera điện thoại, để kiểm kê thôi đồng nghĩa với cầm bảng kê giấy.",
+          "title": "Quét mã vạch và mã QR"
+        },
+        "stock": {
+          "description": "Bạn có gì, ở đâu, cập nhật ngay khi hàng dịch chuyển. Con số bạn báo cho khách đúng bằng con số trên kệ.",
+          "title": "Tồn kho theo thời gian thực"
+        },
+        "subtitle": "Tồn kho, luân chuyển và nhà cung cấp trong một hệ thống, nối với dữ liệu tài chính và khách hàng bạn vẫn đang giữ.",
+        "title": "Bớt bất ngờ trong kho",
+        "warehouses": {
+          "description": "Theo dõi tồn kho từng địa điểm và mọi lần điều chuyển, không cần mỗi kho một bảng tính.",
+          "title": "Nhiều kho, một bức tranh"
+        }
+      },
+      "seo": {
+        "description": "Theo dõi tồn kho và quy trình giao hàng với Tuturuuu Inventory.",
+        "title": "Quản lý kho hàng"
+      },
+      "title": "Số liệu tồn kho khớp với hàng trên kệ",
+      "useCases": {
+        "distribution": {
+          "items": [
+            "Sắp xếp hàng theo kho và theo vị trí",
+            "Soạn và giao hàng dựa trên tồn kho thực tế",
+            "Theo dõi các lần điều chuyển giữa các kho",
+            "Biết hàng nào đang về và về lúc nào"
+          ],
+          "title": "Phân phối"
+        },
+        "eyebrow": "Dành cho ai",
+        "manufacturing": {
+          "items": [
+            "Theo dõi nguyên vật liệu theo kế hoạch sản xuất",
+            "Lên kế hoạch dựa trên lượng hàng đang thật sự có",
+            "Giữ lịch sử luân chuyển phục vụ kiểm tra chất lượng",
+            "Theo dõi giá thành khi giá đầu vào thay đổi"
+          ],
+          "title": "Sản xuất"
+        },
+        "retail": {
+          "items": [
+            "Giữ số trên hệ thống khớp với hàng trên kệ",
+            "Đặt lại hàng trước khi mã bán chạy hết",
+            "Theo dõi giá và thời gian giao của nhà cung cấp",
+            "Nối luân chuyển hàng với doanh số"
+          ],
+          "title": "Bán lẻ"
+        },
+        "subtitle": "Bán lẻ, phân phối và sản xuất hỏi cùng một câu bằng những cách khác nhau: còn đủ không, và đang nằm ở đâu?",
+        "title": "Ở bất cứ nơi nào có hàng"
+      }
+    },
+    "lms": {
+      "closing": {
+        "description": "Học tập là một phần trong không gian làm việc Tuturuuu của bạn. Đăng nhập và dựng khoá học đầu tiên.",
+        "title": "Bắt đầu dạy, thay vì đi cấu hình"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Học tập",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Dựng một khoá học, giao bài, và thấy tiến độ ngay khi nó diễn ra. Người học có một nơi duy nhất để biết cần nộp gì; bạn có bức tranh trung thực về ai đang tụt lại, khi vẫn còn kịp giúp.",
+      "eyebrow": "Học tập",
+      "features": {
+        "assignments": {
+          "description": "Giao bài, thu bài và chấm ở cùng một nơi, phần nào chấm tự động được thì hệ thống lo.",
+          "title": "Bài tập và chấm điểm"
+        },
+        "courses": {
+          "description": "Sắp xếp bài giảng, tài liệu đọc và video thành từng phần, rồi dùng lại cấu trúc đó cho lần mở khoá sau.",
+          "title": "Khoá học dựng xong trong một buổi chiều"
+        },
+        "discussion": {
+          "description": "Thảo luận gắn với bài học, nên câu trả lời giúp được mọi người học đến đó về sau.",
+          "title": "Câu hỏi chỉ phải trả lời một lần"
+        },
+        "eyebrow": "Nó làm gì",
+        "live": {
+          "description": "Dạy lớp và kèm riêng ngay cạnh phần nội dung liên quan, bản ghi nằm đúng chỗ bài học.",
+          "title": "Buổi học trực tuyến đúng ngữ cảnh"
+        },
+        "practice": {
+          "description": "Kiểm tra mức hiểu bài dọc đường bằng câu hỏi và bài luyện, thay vì đợi đến kỳ thi mới biết.",
+          "title": "Câu hỏi và luyện tập"
+        },
+        "progress": {
+          "description": "Mức hoàn thành và kết quả của từng người học, để người đã dừng lại ba tuần trước hiện ra ngay bây giờ.",
+          "title": "Tiến độ nhìn thấy được, không phải đoán"
+        },
+        "subtitle": "Tài liệu, bài nộp và tiến độ trong một hệ thống, trên cùng cuốn lịch với mọi thứ khác người học đang xoay xở.",
+        "title": "Dạy học, với ít việc hành chính xung quanh hơn"
+      },
+      "seo": {
+        "description": "Tổ chức đào tạo và đo lường hiệu quả học tập với Tuturuuu LMS.",
+        "title": "Hệ thống quản lý học tập"
+      },
+      "title": "Khoá học, bài tập và vị trí của từng người học",
+      "useCases": {
+        "centers": {
+          "items": [
+            "Quản lý danh mục khoá học và các lớp đang mở",
+            "Vận hành chương trình cấp chứng chỉ từ đầu đến cuối",
+            "Theo dõi tiến độ của mọi lớp đang chạy",
+            "Biết khoá học nào thật sự kết thúc tốt"
+          ],
+          "title": "Trung tâm đào tạo"
+        },
+        "corporate": {
+          "items": [
+            "Đón người mới bằng một lộ trình họ tự theo được",
+            "Chạy chương trình phát triển chuyên môn mà không cần người điều phối",
+            "Theo dõi đào tạo tuân thủ đến khi hoàn thành",
+            "Đánh giá năng lực trước và sau chương trình"
+          ],
+          "title": "Đội nhóm và đào tạo nội bộ"
+        },
+        "eyebrow": "Dành cho ai",
+        "institutions": {
+          "items": [
+            "Đưa khoá học lên trực tuyến với nội dung đúng thứ tự",
+            "Xem kết quả theo từng sinh viên, không chỉ theo lớp",
+            "Tổ chức lớp học trực tuyến song song với bài vở",
+            "Gom tài liệu và học liệu vào một thư viện"
+          ],
+          "title": "Trường học và đại học"
+        },
+        "subtitle": "Một lớp học, một chương trình hội nhập hay một khoá cấp chứng chỉ đều chạy trên ba thứ: nội dung, bài làm và tiến độ.",
+        "title": "Ở bất cứ đâu có người đang học"
+      }
+    },
+    "mail": {
+      "closing": {
+        "description": "Kết nối hộp thư và để những lá thư sinh ra công việc tạo ra công việc thật, thay vì một mẩu giấy nhớ.",
+        "title": "Chuyển thư của bạn vào đây"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Mail",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Thư biết về công việc và lịch của bạn, để lời hứa trong một cuộc trao đổi trở thành việc có người phụ trách và có hạn chót.",
+      "eyebrow": "Mail",
+      "features": {
+        "assistant": {
+          "description": "Mira soạn bản trả lời theo ngữ cảnh của bạn và tóm tắt một chuỗi thư dài, để bạn chỉnh sửa thay vì viết từ đầu.",
+          "title": "Thư trả lời đã bắt đầu sẵn"
+        },
+        "calendar": {
+          "description": "Các khung giờ bạn thật sự trống được đề xuất từ lịch của bạn, và sự kiện được tạo mà không cần rời khỏi lá thư.",
+          "title": "Đặt lịch họp ngay trong thư"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "inbox": {
+          "description": "Sắp xếp theo mức ưu tiên và tự động gom nhóm đưa những thư cần bạn lên đầu, phần còn lại lùi ra sau.",
+          "title": "Thư quan trọng lên trước"
+        },
+        "schedule": {
+          "description": "Viết bây giờ, gửi sau, và đặt nhắc theo dõi để một chuỗi thư im lặng quay lại với bạn thay vì biến mất.",
+          "title": "Gửi vào lúc dễ được đọc hơn"
+        },
+        "search": {
+          "description": "Tìm một lá thư bằng những gì bạn còn nhớ, người gửi, tháng nào, tệp đính kèm, chứ không cần đúng dòng tiêu đề.",
+          "title": "Hỏi bằng lời thường ngày"
+        },
+        "shared": {
+          "description": "Địa chỉ dùng chung với quyền được uỷ nhiệm, để thư hỗ trợ hay thanh toán không kẹt sau tài khoản của một người.",
+          "title": "Hộp thư cả đội cùng vận hành"
+        },
+        "subtitle": "Phân loại, soạn thư, hẹn giờ và hộp thư dùng chung ở cùng một nơi.",
+        "title": "Ít hộp thư hơn, xong việc nhiều hơn"
+      },
+      "seo": {
+        "description": "Tổ chức email cùng công việc, lịch và công cụ làm việc nhóm với Tuturuuu Mail.",
+        "title": "Quản lý email trong không gian làm việc nhóm"
+      },
+      "title": "Hộp thư biết chuyển việc sang phần còn lại của ngày",
+      "useCases": {
+        "clients": {
+          "items": [
+            "Chuỗi thư mang theo ngữ cảnh của dự án",
+            "Hẹn lịch mà không cần bốn lượt qua lại",
+            "Nhắc theo dõi tự chạy mà bạn không phải nhớ",
+            "Tệp đính kèm nằm trong Drive, không nằm trong thư mục tải về"
+          ],
+          "title": "Trao đổi với khách hàng"
+        },
+        "eyebrow": "Dùng vào việc gì",
+        "followups": {
+          "items": [
+            "Bản nháp trả lời chờ bạn chỉnh",
+            "Hẹn giờ gửi qua các múi giờ",
+            "Nhắc lại khi chưa ai trả lời",
+            "Thư được chuyển thành công việc có hạn chót"
+          ],
+          "title": "Giữ nguyên vẹn một ngày của bạn"
+        },
+        "subtitle": "Ba dạng trao đổi thôi rò rỉ khi thư nằm trong không gian làm việc.",
+        "team": {
+          "items": [
+            "Một địa chỉ nhiều người cùng trả lời",
+            "Bàn giao mà không cần chuyển tiếp lòng vòng",
+            "Cập nhật nội bộ trở thành công việc",
+            "Một bản ghi người mới có thể đọc lại"
+          ],
+          "title": "Đội nhóm và hộp thư dùng chung"
+        },
+        "title": "Những loại thư thật sự tốn thời gian của bạn"
+      }
+    },
+    "meet": {
+      "closing": {
+        "description": "Chọn ngày, chia sẻ liên kết, và để cả nhóm trả lời theo thời gian của họ.",
+        "title": "Tạo một kế hoạch trong một phút"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Tạo kế hoạch",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Chọn vài ngày khả dĩ, chia sẻ một đường liên kết, và thời gian rảnh của cả nhóm tự gom lại. Người tham gia không cần tài khoản.",
+      "eyebrow": "Tuturuuu Meet",
+      "features": {
+        "agenda": {
+          "description": "Các điểm thảo luận và mục tiêu nằm ngay cạnh khung giờ, nên buổi họp có mục đích được viết ra trước khi bắt đầu.",
+          "title": "Nội dung họp nằm cùng kế hoạch"
+        },
+        "availability": {
+          "description": "Đặt sẵn những ngày khả dĩ và khoảng giờ đáng cân nhắc, để mọi người chỉ trả lời đúng câu hỏi cần trả lời.",
+          "title": "Ngày và khung giờ do bạn chọn"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "guests": {
+          "description": "Bất kỳ ai có liên kết đều có thể điền thời gian rảnh kèm tên, nên người ngoài công ty không còn là lý do phải quay lại dùng email.",
+          "title": "Khách không cần tài khoản"
+        },
+        "overlap": {
+          "description": "Thời gian rảnh của nhóm hiện dần thành một lưới, và khung giờ sớm nhất cũng như hợp nhất tự nổi lên mà không ai phải đếm.",
+          "title": "Phần trùng nhau được vẽ sẵn"
+        },
+        "sharing": {
+          "description": "Đăng nhập thì kế hoạch được lưu, nên một nhóm họp định kỳ không phải bắt đầu từ trang trắng mỗi lần.",
+          "title": "Kế hoạch có thể quay lại dùng"
+        },
+        "subtitle": "Một kế hoạch mất chừng một phút để tạo và thay cho cả đoạn hội thoại nơi sáu người lần lượt kể ra những giờ họ bận.",
+        "timezones": {
+          "description": "Mỗi người đánh dấu thời gian rảnh theo múi giờ của họ, và kế hoạch quy về một bức tranh chung trung thực.",
+          "title": "Ai cũng trả lời theo giờ của mình"
+        },
+        "title": "Một liên kết, thời gian rảnh của tất cả"
+      },
+      "title": "Tìm ra giờ họp trước khi gửi lời mời",
+      "useCases": {
+        "clients": {
+          "items": [
+            "Đưa ra nhiều giờ khả dĩ trong một tin nhắn",
+            "Không cần mở lịch nội bộ cho người ngoài",
+            "Nhiều người tham dự được gom về một lần",
+            "Còn lại bản ghi về điều đã thống nhất"
+          ],
+          "title": "Khách hàng và đối tác ngoài"
+        },
+        "eyebrow": "Trong thực tế",
+        "groups": {
+          "items": [
+            "Buổi học chung xếp quanh lịch lên lớp",
+            "Ca tình nguyện khớp với người đang rảnh",
+            "Kế hoạch định kỳ dùng lại từ tuần này sang tuần khác",
+            "Ai cũng trả lời được mà không phải đăng ký"
+          ],
+          "title": "Nhóm và cộng đồng"
+        },
+        "subtitle": "Càng nhiều cuốn lịch tham gia, chuỗi tin nhắn càng tốn kém. Đây là thứ thay thế nó.",
+        "teams": {
+          "items": [
+            "Tìm được giờ khả thi mà không cần chuỗi trả lời",
+            "Giờ địa phương hiển thị cho từng người",
+            "Cộng tác viên và đối tác tham gia bằng liên kết",
+            "Nội dung họp sẵn sàng trước khi chốt giờ"
+          ],
+          "title": "Nhóm ở nhiều múi giờ"
+        },
+        "title": "Bất cứ khi nào có hơn ba người"
+      }
+    },
+    "meet-together": {
+      "seo": {
+        "description": "So lịch rảnh và chốt giờ họp mà không cần hỏi qua hỏi lại.",
+        "title": "Tìm giờ họp hợp cho tất cả"
+      }
+    },
+    "qr": {
+      "closing": {
+        "description": "Dán đường liên kết, chọn màu, và tải về tệp bạn có thể đem in.",
+        "title": "Tạo mã"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở trình tạo mã QR",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Biến một đường liên kết, một đoạn chữ hay thông tin thanh toán thành mã QR, chỉnh cho ra dáng của bạn, rồi tải về sẵn sàng đem in.",
+      "eyebrow": "QR",
+      "features": {
+        "anyValue": {
+          "description": "Dán một địa chỉ web, một đoạn tin nhắn hay thông tin thanh toán, mã cập nhật ngay khi bạn gõ.",
+          "title": "Mọi đường liên kết hoặc đoạn chữ"
+        },
+        "colors": {
+          "description": "Đặt màu mã và màu nền để nó nằm gọn trong ấn phẩm thay vì trên một ô trắng.",
+          "title": "Màu của bạn"
+        },
+        "export": {
+          "description": "Tải về dạng PNG, JPG hoặc WebP ở kích thước gấp bốn lần bản hiển thị, đủ nét cho thực đơn hay băng rôn.",
+          "title": "Tệp in được"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "logo": {
+          "description": "Thả một hình vào chính giữa, tự chỉnh kích thước, độ mờ và bo góc, mà mã vẫn quét được.",
+          "title": "Logo ở giữa"
+        },
+        "open": {
+          "description": "Trình tạo mã nằm trong bộ công cụ Tuturuuu và mở thẳng vào biểu mẫu.",
+          "title": "Không phải đăng ký gì"
+        },
+        "styles": {
+          "description": "Mã trơn, thẻ có thương hiệu kèm tiêu đề của bạn, hoặc bản có dòng nhắc quét dành cho áp phích, nơi người ta cần một lời hướng dẫn.",
+          "title": "Ba kiểu bố cục"
+        },
+        "subtitle": "Mọi nội dung, ba kiểu bố cục, màu của bạn, logo của bạn, và tệp đủ lớn để in.",
+        "title": "Đủ tùy chỉnh để in một lần là xong"
+      },
+      "seo": {
+        "description": "Tạo mã QR tùy chỉnh với màu sắc, logo và tùy chọn xuất bằng Tuturuuu Tools. Khám phá mã QR cho liên kết, sự kiện và tài liệu kinh doanh.",
+        "title": "Trình tạo mã QR tùy chỉnh"
+      },
+      "title": "Một mã cho thứ bạn phải lặp đi lặp lại",
+      "useCases": {
+        "business": {
+          "items": [
+            "Thực đơn mở ra mà không cần ứng dụng",
+            "Thông tin thanh toán trên tấm thẻ cạnh quầy thu ngân",
+            "Đường liên kết đặt món hoặc đánh giá ngay tại bàn",
+            "Một đường liên kết in trên hóa đơn hoặc túi đựng"
+          ],
+          "title": "Trên quầy"
+        },
+        "events": {
+          "items": [
+            "Đường liên kết đăng ký in trên áp phích",
+            "Chỉ đường tới phòng hoặc địa điểm",
+            "Slide và tài liệu sau buổi nói chuyện",
+            "Một danh thiếp người khác quét được"
+          ],
+          "title": "Tại sự kiện"
+        },
+        "everyday": {
+          "items": [
+            "Đưa một đường liên kết dài sang điện thoại mà không phải gõ",
+            "Đường liên kết biểu mẫu để người khác quét và điền",
+            "Trang cá nhân hoặc hồ sơ năng lực trên danh thiếp",
+            "Mã in vừa một miếng dán hoặc một thẻ đeo"
+          ],
+          "title": "Trao đổi hằng ngày"
+        },
+        "eyebrow": "Trong thực tế",
+        "subtitle": "Trên quầy, tại sự kiện, và trong những lần trao đổi hằng ngày.",
+        "title": "Những mã này rồi đi về đâu"
+      }
+    },
+    "storefront": {
+      "closing": {
+        "description": "Đăng bán những sản phẩm bạn đã theo dõi và đưa cho người mua một đường liên kết luôn đúng.",
+        "title": "Mở cửa hàng"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Storefront",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Một cửa hàng công khai đọc thẳng sản phẩm và tồn kho bạn đang quản lý trong Inventory, nên danh mục khách nhìn thấy chính là danh mục bạn duy trì.",
+      "eyebrow": "Storefront",
+      "features": {
+        "cart": {
+          "description": "Người mua thêm hàng qua nhiều nhóm sản phẩm rồi quay lại giỏ, trên điện thoại cũng dễ như trên máy tính.",
+          "title": "Giỏ hàng không mất khi xem tiếp"
+        },
+        "catalog": {
+          "description": "Sản phẩm, giá và mô tả lấy từ Inventory, nên đăng bán là một quyết định hiển thị chứ không phải nhập liệu lần hai.",
+          "title": "Danh mục chính là kho của bạn"
+        },
+        "checkout": {
+          "description": "Bước thanh toán được chuyển sang Polar, nên thông tin thẻ không nằm lại ở cửa hàng.",
+          "title": "Thanh toán do Polar đảm nhiệm"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "orders": {
+          "description": "Người mua tra lại được đơn của mình, còn không gian làm việc thấy đúng bản ghi đó mà không phải xin ảnh chụp màn hình.",
+          "title": "Đơn hàng hai bên cùng thấy"
+        },
+        "stock": {
+          "description": "Tình trạng còn hàng bám theo con số đội bạn duy trì, nên cửa hàng không bán thứ đã hết trên kệ.",
+          "title": "Tồn kho người mua tin được"
+        },
+        "subtitle": "Một danh mục, một con số tồn kho, và một luồng thanh toán người mua hoàn tất được.",
+        "title": "Một cửa hàng đặt trên chính kho bạn đang theo dõi",
+        "visibility": {
+          "description": "Mỗi cửa hàng tự chọn: mở cho bất kỳ ai có đường liên kết, hoặc chỉ dành cho người mua được mời.",
+          "title": "Công khai hoặc riêng tư"
+        }
+      },
+      "seo": {
+        "description": "Bán hàng trực tuyến với gian hàng nối liền kho hàng và tài chính của bạn.",
+        "title": "Gian hàng trực tuyến"
+      },
+      "title": "Kho hàng của bạn, mở ra cho người mua",
+      "useCases": {
+        "buyers": {
+          "items": [
+            "Xem theo nhóm sản phẩm trên điện thoại",
+            "Giỏ hàng nhớ những gì đã thêm",
+            "Thanh toán kết thúc ở một trang thanh toán thật",
+            "Đơn hàng tra lại được sau này"
+          ],
+          "title": "Người đi mua"
+        },
+        "eyebrow": "Trong thực tế",
+        "operators": {
+          "items": [
+            "Tồn kho đếm một lần, hiển thị ở mọi nơi",
+            "Bật tắt hiển thị sản phẩm theo từng cửa hàng",
+            "Đơn hàng nằm cùng không gian làm việc với kho",
+            "Danh mục và thiết lập thanh toán giữ trong Inventory"
+          ],
+          "title": "Phía sau quầy"
+        },
+        "shops": {
+          "items": [
+            "Có cửa hàng mà không phải dựng lại danh mục",
+            "Giá duy trì ở một nơi duy nhất",
+            "Đường liên kết in được lên hóa đơn hay áp phích",
+            "Không thêm hệ thống thứ hai phải đối soát"
+          ],
+          "title": "Cửa hàng nhỏ"
+        },
+        "subtitle": "Cửa hàng nhỏ, đội đứng sau quầy, và người đi mua.",
+        "title": "Cửa hàng này dành cho ai"
+      }
+    },
+    "tasks": {
+      "closing": {
+        "description": "Mở Tasks, ghi ra những gì đang trong đầu, phần còn lại để không gian làm việc theo dõi.",
+        "title": "Bắt đầu từ danh sách hôm nay"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Tasks",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Danh sách, bảng và dòng thời gian trên cùng một tập công việc, với người phụ trách, hạn hoàn thành và mức ưu tiên vẫn đứng vững khi tuần bận rộn.",
+      "eyebrow": "Công việc",
+      "features": {
+        "assistant": {
+          "description": "Gợi ý về mức ưu tiên và thời gian ước tính có sẵn trước khi bạn mở bảng, nên việc phân loại chỉ còn là xem lại thay vì quyết định từ đầu.",
+          "title": "Trợ lý sắp xếp trước"
+        },
+        "collaborate": {
+          "description": "Mỗi việc đều gắn một người và một trạng thái, nên không ai phải hỏi trong nhóm chat xem ai đang làm.",
+          "title": "Có người phụ trách rõ ràng"
+        },
+        "deadlines": {
+          "description": "Hạn và nhắc nhở xuất hiện trên cùng cuốn lịch với các cuộc họp, nên deadline phải cạnh tranh bằng thời gian thật.",
+          "title": "Hạn hoàn thành nằm trên lịch"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "insights": {
+          "description": "Mức hoàn thành và thời gian bỏ ra được ghi lại khi bạn làm, nên buổi nhìn lại bắt đầu từ số liệu chứ không từ trí nhớ.",
+          "title": "Thực sự đã xong những gì"
+        },
+        "organize": {
+          "description": "Nhóm công việc theo đúng cách bạn nghĩ về nó, để việc cần làm tiếp theo hiện ra mà không phải đọc hết danh sách.",
+          "title": "Danh sách, nhãn và ưu tiên"
+        },
+        "subtitle": "Những thứ giữ cho một danh sách trung thực: người phụ trách, hạn hoàn thành, mức ưu tiên và một chế độ xem đúng với cách bạn làm việc.",
+        "title": "Đủ cấu trúc để không phải quyết định lại",
+        "views": {
+          "description": "Đổi cách xem mà không phải dời công việc. Vẫn là những việc đó, sắp xếp cho lập kế hoạch, họp nhanh hoặc bàn giao.",
+          "title": "Danh sách, bảng hoặc dòng thời gian"
+        }
+      },
+      "seo": {
+        "description": "Tổ chức dự án với bảng công việc dùng chung, người phụ trách, mức ưu tiên và thời hạn. Giúp đội nhóm nắm rõ bước tiếp theo với Tuturuuu Tasks.",
+        "title": "Quản lý dự án và công việc cho đội nhóm"
+      },
+      "title": "Công việc nằm đúng chỗ bạn để lại",
+      "useCases": {
+        "eyebrow": "Trong thực tế",
+        "operations": {
+          "items": [
+            "Danh sách kiểm tra dùng lại cho việc thường kỳ",
+            "Theo dõi hạn trên nhiều dự án cùng lúc",
+            "Nhìn thấy khối lượng việc trước khi nhận thêm",
+            "Báo cáo trạng thái dựng từ hoạt động thật"
+          ],
+          "title": "Vận hành lặp lại"
+        },
+        "personal": {
+          "items": [
+            "Một danh sách trong ngày có thể làm hết, không phải hộp thư",
+            "Mục tiêu chia nhỏ thành việc có hạn cụ thể",
+            "Thói quen và việc định kỳ tự lặp lại",
+            "Ưu tiên đặt một lần vào buổi sáng"
+          ],
+          "title": "Tuần của riêng bạn"
+        },
+        "subtitle": "Việc cá nhân, việc của nhóm và việc lặp lại hằng tháng đều nằm trong một không gian làm việc.",
+        "team": {
+          "items": [
+            "Dự án chia thành các việc có người phụ trách",
+            "Bàn giao kèm trạng thái ai cũng nhìn thấy",
+            "Tiến độ đọc được mà không cần họp báo cáo",
+            "Bình luận và bối cảnh nằm ngay trong công việc"
+          ],
+          "title": "Nhóm bàn giao công việc"
+        },
+        "title": "Cùng một bảng, ba cách dùng"
+      }
+    },
+    "track": {
+      "closing": {
+        "description": "Mở Track, chọn công việc bạn đang làm, và để cả tuần tự được ghi lại.",
+        "title": "Bắt đầu bấm giờ"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Track",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Bấm giờ theo đúng công việc đang làm, dừng khi chuyển việc, và kết thúc tuần với con số cụ thể thay vì phỏng đoán.",
+      "eyebrow": "Track",
+      "features": {
+        "breaks": {
+          "description": "Cà phê, ăn trưa hay đi dạo được ghi theo từng loại nghỉ riêng, nên thời gian làm việc vẫn trung thực.",
+          "title": "Thời gian nghỉ tính riêng"
+        },
+        "export": {
+          "description": "Xuất đúng những phiên bạn vừa lọc, để việc lập hóa đơn và tính lương bắt đầu từ chính các dòng bạn vừa đọc.",
+          "title": "Số liệu mang ra ngoài được"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "history": {
+          "description": "Các phiên cũ vẫn sửa được, và một lần quên bấm giờ có thể được yêu cầu bổ sung rồi duyệt, thay vì mất luôn.",
+          "title": "Bản ghi có thể sửa"
+        },
+        "subtitle": "Phiên làm việc gắn với công việc cụ thể, thời gian nghỉ tính riêng, và lịch sử vẫn sửa lại được.",
+        "tasks": {
+          "description": "Chọn một công việc từ bảng của bạn và phiên làm việc gắn vào đó, nên số giờ thuộc về công việc chứ không phải một dòng chữ tự do.",
+          "title": "Đếm giờ theo công việc thật"
+        },
+        "team": {
+          "description": "Quản lý xem các phiên trong cả không gian làm việc, lọc theo người và theo kỳ, không cần đi thu ảnh chụp màn hình.",
+          "title": "Số giờ theo từng người"
+        },
+        "timer": {
+          "description": "Bộ đếm giờ luôn hiện ở đầu màn hình, nên bấm bắt đầu còn nhanh hơn là quyết định bỏ qua.",
+          "title": "Bắt đầu và dừng bằng một cú nhấp"
+        },
+        "title": "Bộ đếm giờ nằm ngay cạnh công việc"
+      },
+      "seo": {
+        "description": "Ghi nhận thời gian theo công việc thực tế và xem đội nhóm phân bổ thời gian ra sao. Kết nối bản ghi thời gian với dự án trong Tuturuuu.",
+        "title": "Theo dõi thời gian nhóm và bộ đếm công việc"
+      },
+      "title": "Số giờ bạn có thể giải trình",
+      "useCases": {
+        "eyebrow": "Trong thực tế",
+        "freelance": {
+          "items": [
+            "Số giờ theo từng khách, sẵn sàng lập hóa đơn",
+            "Phiên làm việc gắn với công việc đã bàn giao",
+            "Ước lượng được đối chiếu với thời gian thực tế",
+            "Bản xuất dữ liệu để hóa đơn dẫn chiếu"
+          ],
+          "title": "Lập hóa đơn cho khách"
+        },
+        "review": {
+          "items": [
+            "Xem lại cả tuần trong một màn hình",
+            "Thời gian theo công việc, dự án và người",
+            "Phát hiện chỗ thiếu khi vẫn còn sửa được",
+            "Một bản ghi cho lần lập kế hoạch tiếp theo"
+          ],
+          "title": "Chốt lại một tuần"
+        },
+        "subtitle": "Lập hóa đơn cho khách, điều phối một nhóm, hoặc chốt lại một tuần.",
+        "team": {
+          "items": [
+            "Ai đang làm gì, ngay lúc này",
+            "Thấy rõ khối lượng công việc trước khi giao thêm",
+            "Thời gian nghỉ tách khỏi thời gian tập trung",
+            "Duyệt những mục ai đó quên ghi"
+          ],
+          "title": "Điều phối một nhóm"
+        },
+        "title": "Ba lý do người dùng để bộ đếm chạy"
+      }
+    },
+    "workflows": {
+      "closing": {
+        "description": "Thiết lập không gian làm việc, vẽ quy trình một lần, và tháng sau không phải làm tay nữa.",
+        "title": "Tự động hóa phần bạn cứ làm đi làm lại"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Thiết lập không gian làm việc",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Dựng quy trình một lần với điều kiện và tác nhân kích hoạt, rồi các bước phê duyệt, bàn giao và cập nhật tự chạy dù có ai nhớ nhắc hay không.",
+      "eyebrow": "Quy trình",
+      "features": {
+        "assistant": {
+          "description": "Trợ lý đọc cách một quy trình thật sự chạy và chỉ ra những bước thường dồn ứ hoặc bị bỏ qua.",
+          "title": "Gợi ý ở chỗ hay tắc"
+        },
+        "builder": {
+          "description": "Bố trí các bước một cách trực quan để hình dạng quy trình vẫn rõ ràng với người mở nó ra sau này.",
+          "title": "Dựng bằng cách sắp xếp, không phải viết mã"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "integrations": {
+          "description": "API và tác nhân kích hoạt tùy chỉnh giúp quy trình chạm tới các công cụ nhóm bạn chưa thay, thay vì bắt phải chuyển đổi toàn bộ.",
+          "title": "Nối với những gì bạn đang dùng"
+        },
+        "subtitle": "Một quy trình phải dễ hiểu với những người chịu ảnh hưởng bởi nó, chứ không chỉ với người đã dựng ra nó.",
+        "templates": {
+          "description": "Mẫu có sẵn cho các trường hợp phổ biến, nên việc nhận nhân sự mới hay phê duyệt chỉ cần chỉnh lại thay vì dựng từ đầu.",
+          "title": "Bắt đầu từ quy trình đã biết"
+        },
+        "title": "Tự động hóa mà vẫn đọc được",
+        "triggers": {
+          "description": "Công việc bắt đầu từ một sự kiện, một lịch chạy hoặc một quy tắc bạn đặt, nên quy trình tự chạy mà không chờ ai để ý.",
+          "title": "Điều kiện và tác nhân kích hoạt"
+        },
+        "versions": {
+          "description": "Các phiên bản được giữ lại khi quy trình thay đổi, nên bạn thấy được cái gì đã đổi và quay về nếu bản mới tệ hơn.",
+          "title": "Thay đổi có thể truy lại"
+        }
+      },
+      "seo": {
+        "description": "Tự động hoá quy trình liên phòng ban với Tuturuuu Workflows.",
+        "title": "Tự động hoá quy trình"
+      },
+      "title": "Phần lặp đi lặp lại, chạy mà không cần bạn",
+      "useCases": {
+        "approvals": {
+          "items": [
+            "Phê duyệt tự đi đến đúng người có quyền quyết",
+            "Tài liệu đi qua các vòng xem xét theo thứ tự",
+            "Nhân sự mới được thiết lập theo cùng một danh sách",
+            "Đề nghị mua sắm theo dõi được đến khi có quyết định"
+          ],
+          "title": "Quy trình nghiệp vụ"
+        },
+        "eyebrow": "Trong thực tế",
+        "subtitle": "Phê duyệt, bàn giao và các việc vặt giữa hệ thống là phần âm thầm ngốn cả tuần mỗi tháng.",
+        "systems": {
+          "items": [
+            "Dữ liệu giữ đồng bộ giữa các công cụ",
+            "Tác vụ theo lịch chạy đúng giờ",
+            "Tác nhân kích hoạt riêng cho sự kiện của bạn",
+            "Mỗi lần chạy đều có nhật ký để tìm ra lỗi"
+          ],
+          "title": "Việc vặt giữa các hệ thống"
+        },
+        "team": {
+          "items": [
+            "Việc được giao khi công việc tới một giai đoạn",
+            "Bàn giao mang theo bối cảnh của chính nó",
+            "Cập nhật trạng thái đăng đi mà không cần nhắc",
+            "Thông báo chỉ gửi cho người thật sự cần"
+          ],
+          "title": "Tự động hóa cho nhóm"
+        },
+        "title": "Nơi việc thủ công thường trốn"
+      }
+    }
+  },
+  "qr": {
+    "image_upload": {
+      "browse": "duyệt tệp",
+      "dimensions": "Kích thước",
+      "dimensions_too_large": "Kích thước hình ảnh quá lớn. Kích thước tối đa là 512x512px.",
+      "dimensions_too_small": "Kích thước hình ảnh quá nhỏ. Kích thước tối thiểu là 32x32px.",
+      "drop_files": "Thả tệp vào đây",
+      "file_too_large": "Tệp quá lớn. Kích thước tối đa là {size}.",
+      "image_uploaded": "Hình ảnh đã tải lên",
+      "invalid_image": "Tệp hình ảnh không hợp lệ.",
+      "invalid_type": "Loại tệp không hợp lệ. Vui lòng tải lên tệp JPG, PNG, WebP hoặc SVG.",
+      "max_size": "Kích thước tối đa",
+      "processing": "Đang xử lý",
+      "recommended": "Khuyên dùng",
+      "rounded_logo": "Logo tròn",
+      "signed_url_failed": "Không thể tạo URL đã ký.",
+      "supported_formats": "Định dạng được hỗ trợ",
+      "title": "Tải lên Logo/Hình ảnh",
+      "upload_failed": "Tải lên thất bại. Vui lòng thử lại."
+    }
+  },
+  "security-policy": {
+    "cta": {
+      "description": "Hãy gửi báo cáo riêng tư trước. Chúng tôi sẽ xác nhận, kiểm chứng tác động, phối hợp sửa lỗi và trao đổi về ghi nhận công khai khi vấn đề đã được xử lý.",
+      "hall_cta": "Xem Bảng vinh danh",
+      "report_cta": "Email đội bảo mật",
+      "title": "Sẵn sàng báo cáo?"
+    },
+    "hero": {
+      "badge": "Chính sách bảo mật",
+      "description": "Cách báo cáo lỗ hổng an toàn, phạm vi áp dụng và cách chúng tôi phối hợp sửa lỗi cũng như ghi nhận công khai.",
+      "hall_cta": "Xem Bảng vinh danh",
+      "report_cta": "Báo cáo riêng tư",
+      "title_highlight": "công bố có trách nhiệm",
+      "title_prefix": "Chính sách bảo mật Tuturuuu cho"
+    },
+    "meta": {
+      "description": "Đọc chính sách bảo mật của Tuturuuu về công bố có trách nhiệm, phạm vi, quy tắc kiểm thử an toàn và kỳ vọng phản hồi.",
+      "title": "Chính sách bảo mật"
+    },
+    "reporting": {
+      "ack_label": "Phản hồi ban đầu",
+      "ack_value": "Trong vòng 24 giờ",
+      "credit_label": "Ghi nhận",
+      "credit_value": "Ghi nhận công khai tùy chọn",
+      "description": "Hãy dùng một kênh riêng tư cho báo cáo ban đầu để chúng tôi có thể phân loại nhanh và bảo vệ người dùng khi vấn đề chưa được xử lý.",
+      "email_label": "Hộp thư riêng tư",
+      "eyebrow": "Kênh báo cáo",
+      "title": "Gửi báo cáo lỗ hổng riêng tư"
+    },
+    "response": {
+      "badge": "Phản hồi",
+      "description": "Chúng tôi ưu tiên tác động đã xác nhận, trao đổi bước tiếp theo và giữ ghi nhận công khai khớp với phạm vi đã xác minh.",
+      "items": {
+        "ack": {
+          "description": "Chúng tôi xác nhận báo cáo mới trong vòng 24 giờ khi có đủ thông tin liên hệ.",
+          "title": "Xác nhận"
+        },
+        "credit": {
+          "description": "Nhà nghiên cứu đã xác minh có thể được nêu trên Bảng vinh danh bằng tên hoặc handle họ chọn.",
+          "title": "Ghi nhận"
+        },
+        "triage": {
+          "description": "Chúng tôi tái hiện hoặc kiểm chứng hành vi, phân loại tác động và phối hợp khắc phục.",
+          "title": "Phân loại"
+        }
+      },
+      "title": "Điều xảy ra sau khi bạn báo cáo"
+    },
+    "rules": {
+      "badge": "Kiểm thử an toàn",
+      "description": "Vui lòng dùng bằng chứng nhỏ nhất cần thiết để thể hiện tác động và tránh hành động có thể gây hại cho khách hàng, workspace, dữ liệu hoặc độ sẵn sàng của dịch vụ.",
+      "include": {
+        "items": {
+          "contact": "Cách liên hệ ưu tiên và tên ghi nhận công khai, nếu bạn muốn được ghi nhận.",
+          "impact": "Tác động bảo mật thực tế và người dùng, workspace hoặc tài sản bị ảnh hưởng.",
+          "steps": "Các bước tái hiện rõ ràng, ảnh chụp màn hình, nhật ký request hoặc proof of concept tối thiểu.",
+          "summary": "Tóm tắt ngắn về lỗ hổng và bề mặt Tuturuuu bị ảnh hưởng."
+        },
+        "title": "Nên gửi kèm"
+      },
+      "items": {
+        "minimum": "Dùng kiểm thử tối thiểu, không phá hoại và dừng lại khi tác động đã được chứng minh.",
+        "no_data_access": "Không truy cập, chỉnh sửa, xoá hoặc trích xuất dữ liệu không thuộc về bạn.",
+        "no_persistence": "Không thiết lập quyền truy cập lâu dài, backdoor, mã độc hoặc cơ chế duy trì truy cập.",
+        "no_service_disruption": "Không chạy kiểm thử DoS, spam, làm cạn tài nguyên hoặc ảnh hưởng đến độ sẵn sàng.",
+        "private": "Báo cáo riêng tư tới security@tuturuuu.com trước khi công bố công khai."
+      },
+      "title": "Quy tắc phối hợp"
+    },
+    "scope": {
+      "badge": "Phạm vi",
+      "description": "Tập trung vào lỗ hổng ảnh hưởng đến sản phẩm do Tuturuuu quản lý, dữ liệu người dùng, xác thực, phân quyền hoặc tính toàn vẹn của dịch vụ production.",
+      "in_scope": {
+        "items": {
+          "auth": "Xác thực, phân quyền, quản lý phiên và kiểm soát truy cập giữa các workspace.",
+          "core": "Sản phẩm web, route ứng dụng công khai, API và tính năng workspace của Tuturuuu.",
+          "data": "Vấn đề làm lộ, chỉnh sửa hoặc phá huỷ dữ liệu người dùng, workspace, thanh toán hoặc nội dung riêng tư.",
+          "public_apps": "Tên miền và tích hợp công khai do Tuturuuu kiểm soát khi có thể chứng minh tác động người dùng một cách an toàn."
+        },
+        "title": "Trong phạm vi"
+      },
+      "out_of_scope": {
+        "items": {
+          "dos": "DoS, kiểm thử tải, spam, quét tự động quy mô lớn hoặc làm cạn tài nguyên.",
+          "physical": "Tấn công vật lý, chiếm thiết bị nhân viên hoặc vấn đề cần thông tin đăng nhập bị đánh cắp.",
+          "social": "Kỹ thuật xã hội, phishing, quấy rối hoặc cố gắng nhắm vào nhân viên hay người dùng Tuturuuu.",
+          "upstream": "Hành vi gốc của nhà cung cấp bên thứ ba khi chưa chứng minh được tác động tới sản phẩm Tuturuuu."
+        },
+        "title": "Ngoài phạm vi"
+      },
+      "title": "Phạm vi và ranh giới"
+    },
+    "workflow": {
+      "badge": "Quy trình",
+      "description": "Công bố có trách nhiệm hiệu quả nhất khi báo cáo được giữ riêng tư, quá trình tái hiện an toàn và phạm vi đã xác minh được viết chính xác.",
+      "steps": {
+        "credit": {
+          "description": "Khi vấn đề đã được xử lý và nhà nghiên cứu muốn được ghi nhận, chúng tôi có thể công bố ghi nhận đã xác minh trong Bảng vinh danh.",
+          "title": "Ghi nhận công việc đã xác minh"
+        },
+        "private": {
+          "description": "Email security@tuturuuu.com với đủ chi tiết để tái hiện vấn đề mà không công bố trước.",
+          "title": "Báo cáo riêng tư"
+        },
+        "safe": {
+          "description": "Giữ phạm vi kiểm thử hẹp, tránh dữ liệu khách hàng và dừng lại khi có bằng chứng tác động rõ ràng.",
+          "title": "Kiểm thử an toàn"
+        }
+      },
+      "title": "Luồng công bố có trách nhiệm"
+    }
+  },
+  "tasks": {
+    "board": "Bảng",
+    "could_not_find_lists": "Không tìm thấy danh sách phù hợp để hoàn thành nhiệm vụ",
+    "date_next_week": "Tuần Tới",
+    "date_this_week": "Tuần Này",
+    "date_today": "Hôm Nay",
+    "date_tomorrow": "Ngày Mai",
+    "date_yesterday": "Hôm Qua",
+    "failed_to_update_task": "Cập nhật nhiệm vụ thất bại",
+    "goals": {
+      "categoryGoalLabel": "Mục tiêu {category}",
+      "create_error": "Không thể tạo mục tiêu",
+      "create_success": "Đã tạo mục tiêu thành công",
+      "dailyProgress": "Tiến độ hằng ngày",
+      "defaultCategory": "Chung",
+      "delete_error": "Không thể xóa mục tiêu",
+      "delete_success": "Đã xóa mục tiêu thành công",
+      "emptyState": {
+        "subtitle": "Hãy đặt mục tiêu trong cài đặt Theo dõi thời gian.",
+        "title": "Chưa có mục tiêu nào đang hoạt động."
+      },
+      "update_error": "Không thể cập nhật mục tiêu",
+      "update_success": "Đã cập nhật mục tiêu thành công",
+      "weeklyProgress": "Tiến độ hằng tuần"
+    },
+    "history": {
+      "activity": "Lịch sử",
+      "assignee_added": "Đã giao cho người dùng",
+      "assignee_removed": "Đã xóa người được giao",
+      "before_clear_version": "Trước khi xóa",
+      "changed": "Đã thay đổi",
+      "changed_fields": "Trường đã thay đổi",
+      "close_preview": "Đóng xem trước",
+      "compare_version": "So sánh",
+      "completed": "Hoàn thành",
+      "condense": "Thu gọn",
+      "content_changed": "Nội dung đã thay đổi",
+      "core_fields": "Trường Cơ Bản",
+      "current": "Hiện tại:",
+      "dates": "Ngày Tháng",
+      "description_change_title": "Thay đổi mô tả",
+      "description_changes": "Thay đổi mô tả",
+      "description_restore_banner_description": "Nội dung hiện tại khác với phiên bản đã theo dõi mới nhất. Khôi phục hoặc so sánh tất cả phiên bản đã theo dõi.",
+      "description_restore_banner_title": "Có phiên bản mô tả đã theo dõi",
+      "description_restore_failed": "Không thể khôi phục mô tả",
+      "description_restore_success": "Đã khôi phục mô tả",
+      "description_version_no_preview": "Không có xem trước văn bản",
+      "description_versions_description": "So sánh các phiên bản mô tả đã theo dõi và khôi phục phiên bản nên là hiện tại.",
+      "description_versions_title": "Phiên bản mô tả",
+      "deselect_all": "Bỏ chọn tất cả",
+      "empty": "Chưa có lịch sử cho công việc này",
+      "empty_description_value": "Trống hoặc không thể khôi phục",
+      "error": "Không thể tải lịch sử công việc",
+      "error_loading": "Không thể tải ảnh chụp",
+      "field": {
+        "assignees": "Người được giao",
+        "completed": "Hoàn thành",
+        "description": "Mô tả",
+        "end_date": "Ngày đến hạn",
+        "estimation": "Ước tính",
+        "labels": "Nhãn",
+        "list": "Danh sách",
+        "name": "Tên",
+        "priority": "Mức độ ưu tiên",
+        "projects": "Dự án",
+        "start_date": "Ngày bắt đầu"
+      },
+      "field_updated": {
+        "completed": "Đã thay đổi trạng thái",
+        "description": "Đã cập nhật mô tả",
+        "end_date": "Đã thay đổi ngày đến hạn",
+        "estimation_points": "Đã cập nhật ước tính",
+        "list_id": "Đã chuyển đến danh sách",
+        "name": "Đã cập nhật tên",
+        "priority": "Đã thay đổi mức độ ưu tiên",
+        "start_date": "Đã thay đổi ngày bắt đầu",
+        "unknown": "Đã cập nhật trường"
+      },
+      "fields_changed": "{count} trường khác biệt",
+      "had_content": "Có nội dung",
+      "image_added": "Đã thêm hình ảnh",
+      "image_removed": "Đã xóa hình ảnh",
+      "incomplete": "Chưa hoàn thành",
+      "label_added": "Đã thêm nhãn",
+      "label_removed": "Đã xóa nhãn",
+      "latest_version": "Mới nhất",
+      "line_diff": "Dòng",
+      "line_hidden": "1 dòng không thay đổi bị ẩn",
+      "lines_added": "đã thêm",
+      "lines_hidden": "{count} dòng không thay đổi bị ẩn",
+      "lines_removed": "đã xóa",
+      "media_added": "Đã thêm",
+      "media_changes": "Thay đổi media",
+      "media_modified": "Đã chỉnh sửa",
+      "media_preview": "Xem trước media",
+      "media_removed": "Đã xóa",
+      "new_version": "Hiện tại",
+      "no_change": "Không thay đổi",
+      "no_changes": "Không có thay đổi so với hiện tại",
+      "no_recoverable_description_versions": "Không tìm thấy phiên bản mô tả có thể khôi phục trong lịch sử.",
+      "no_snapshot": "Không có dữ liệu ảnh chụp",
+      "no_visible_changes": "Không có thay đổi văn bản hiển thị",
+      "no_visible_changes_description": "Mô tả đã được chỉnh sửa, nhưng phần chữ hiển thị có vẻ không đổi. Định dạng hoặc media có thể đã thay đổi.",
+      "old_version": "Trước đó",
+      "points": "điểm",
+      "previous_description_value": "Trước",
+      "priority": {
+        "critical": "Cực kỳ khẩn cấp",
+        "high": "Cao",
+        "low": "Thấp",
+        "medium": "Trung bình",
+        "none": "Không có",
+        "urgent": "Khẩn cấp"
+      },
+      "project_linked": "Đã liên kết dự án",
+      "project_unlinked": "Đã hủy liên kết dự án",
+      "relationships": "Mối Quan Hệ",
+      "restore_from_change": "Khôi phục từ thay đổi này",
+      "restore_latest_tracked": "Khôi phục bản mới nhất",
+      "restore_previous_description": "Khôi phục bản trước",
+      "restore_resulting_description": "Khôi phục bản sau",
+      "restore_version": "Khôi phục",
+      "resulting_description_value": "Sau",
+      "revert_disabled_warning": "Tính năng khôi phục ảnh chụp hiện đang bị tắt.",
+      "revert_error_description": "Vui lòng thử lại",
+      "revert_error_title": "Khôi phục thất bại",
+      "revert_selected": "Khôi phục {count} trường",
+      "revert_success_description": "Đã khôi phục thành công các trường đã chọn",
+      "revert_success_title": "Đã khôi phục thay đổi",
+      "revert_warning": "Thao tác này sẽ tạo mục lịch sử mới ghi nhận việc khôi phục.",
+      "reverting": "Đang khôi phục...",
+      "select_all": "Chọn tất cả",
+      "snapshot": "Ảnh chụp:",
+      "snapshot_title": "Ảnh Chụp Công Việc",
+      "split_view": "Chia đôi",
+      "task_created": "Đã tạo công việc",
+      "text_changes": "Thay đổi văn bản",
+      "tracked_by_user": "Được theo dõi bởi",
+      "unchanged_fields": "Trường không thay đổi",
+      "unified_view": "Gộp",
+      "unknown_change": "Đã thực hiện thay đổi",
+      "unknown_list": "Danh sách không xác định",
+      "unknown_user": "Người dùng không xác định",
+      "value": {
+        "empty": "Trống"
+      },
+      "video_added": "Đã thêm video",
+      "video_removed": "Đã xóa video",
+      "view_changes": "Xem thay đổi",
+      "view_description_diff": "Xem so sánh",
+      "view_description_versions": "Xem phiên bản",
+      "view_snapshot": "Xem ảnh chụp & khôi phục",
+      "was_empty": "Trống",
+      "word_diff": "Từ",
+      "youtube_added": "Đã thêm YouTube",
+      "youtube_removed": "Đã xóa YouTube"
+    },
+    "overdue": "QUÁ HẠN",
+    "personal": "Cá Nhân",
+    "priority_critical": "Khẩn Cấp",
+    "priority_high": "Cao",
+    "priority_low": "Thấp",
+    "priority_medium": "Trung Bình",
+    "priority_none": "Không có ưu tiên",
+    "priority_normal": "Bình Thường",
+    "show_less": "Thu Gọn",
+    "show_more_tasks": "Hiển thị thêm {count}",
+    "starts": "Bắt đầu",
+    "task_completed": "Nhiệm vụ hoàn thành!",
+    "task_marked_incomplete": "Nhiệm vụ đánh dấu chưa hoàn thành",
+    "task_not_associated": "Nhiệm vụ không liên kết với bảng nào"
+  },
+  "workflow": {
+    "afternoons": "Buổi chiều",
+    "ai_analysis": "Phân tích AI",
+    "ai_analyzes_optimizes": "Phân tích AI",
+    "ai_analyzes_optimizes_description": "AI của chúng tôi phân tích các nhiệm vụ, ưu tiên, thời hạn và tính khả dụng của nhóm để tạo ra lịch trình tối ưu.",
+    "all_available": "Tất cả có sẵn",
+    "calendar": "Lịch",
+    "chat": "Trò chuyện",
+    "continuous_improvement": "Cải tiến liên tục",
+    "continuous_improvement_description": "Tuturuuu học hỏi từ thói quen và sở thích của bạn để trở nên tốt hơn theo thời gian, giúp bạn làm việc hiệu quả hơn mỗi ngày.",
+    "create_tasks_naturally": "Tạo nhiệm vụ một cách tự nhiên",
+    "create_tasks_naturally_description": "Gõ hoặc nói bằng ngôn ngữ tự nhiên để tạo ra các nhiệm vụ. \nAI của Tuturuuu hiểu bối cảnh, thời hạn và ưu tiên.",
+    "email": "E-mail",
+    "everything_in_one_place": "Mọi thứ ở một nơi",
+    "everything_in_one_place_description": "Các sự kiện lịch, nhiệm vụ, cuộc họp, trò chuyện và email đều hoạt động cùng nhau trong một không gian làm việc thống nhất.",
+    "high_priority": "Ưu tiên cao",
+    "how_tuturuuu_works": "Cách thức hoạt động của Tuturuuu",
+    "learning_adaptation": "Học hỏi",
+    "meeting_preference": "Đáp ứng sở thích",
+    "meetings": "Các cuộc họp",
+    "morning_focus": "Tập trung buổi sáng",
+    "natural_language_input": "Đầu vào ngôn ngữ tự nhiên",
+    "next_step": "Bước tiếp theo",
+    "optimal_time_slot": "Khe thời gian tối ưu",
+    "our_intelligent_workflow_makes_productivity_effortless": "Quy trình công việc thông minh của chúng tôi làm cho năng suất dễ dàng",
+    "priority_analysis": "Phân tích ưu tiên",
+    "productivity_pattern": "Mô hình năng suất",
+    "schedule_a_meeting_with_the_marketing_team_next_tuesday_at_10am_high_priority": "\"Lên lịch một cuộc họp với nhóm tiếp thị vào thứ ba tới lúc 10 giờ sáng, ưu tiên cao\"",
+    "start_over": "Bắt đầu lại",
+    "task_completion_rate": "Tỷ lệ hoàn thành nhiệm vụ",
+    "task_created_and_scheduled": "Nhiệm vụ được tạo và lên lịch",
+    "tasks": "Nhiệm vụ",
+    "team_availability": "Đội ngũ sẵn có",
+    "tuesday_10_00_am": "Thứ ba, 10:00 sáng",
+    "unified_workspace": "Không gian làm việc thống nhất"
   }
 }
