@@ -44,7 +44,7 @@ function report(change: Partial<PeriodicReport> = {}): PeriodicReport {
     created_at: ago(900),
     delivery_status: 'draft',
     delivery_requested_at: null,
-    feedback: '',
+    feedback: 'Teacher comment',
     generation_mode: 'manual',
     generation_status: 'ready',
     group_id: 'class-a',
@@ -383,4 +383,10 @@ describe('resend messages', () => {
     expect(keys(vi_ as typeof en)).toEqual(keys(en));
     expect(keys(en).length).toBeGreaterThan(10);
   });
+});
+
+it('does not offer resend for empty feedback even when a delivery failed', () => {
+  expect(
+    periodicResendReason(report({ ...failed, feedback: '  ' }), NOW)
+  ).toBeNull();
 });

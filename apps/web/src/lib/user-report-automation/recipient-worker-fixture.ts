@@ -26,7 +26,7 @@ export function recipientWorkerFixture(
     user_id: options.subjectId ?? 'subject-a',
     title: 'Synthetic monthly report',
     content: 'Synthetic progress',
-    feedback: '',
+    feedback: 'Teacher comment',
     report_approval_status: 'APPROVED',
     delivery_status: 'queued',
   };

@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 // Synthetic workspaces, classes and reports only. The database functions
 // (request_held_periodic_report_delivery, request_periodic_report_delivery and
 // skip_held_periodic_reports) are in-memory fakes: nothing here can reach a
@@ -73,6 +72,7 @@ function report(id: string, change: Row = {}): Row {
     delivered_at: null,
     generation_status: 'ready',
     last_delivery_error: null,
+    feedback: 'Teacher comment',
     report_approval_status: 'APPROVED',
     report_stage: 'approved',
     user_email: `learner-${id.slice(-2)}@example.com`,

@@ -1,4 +1,5 @@
-'use client';
+import { hasReportFeedback } from '@tuturuuu/users-core/features/reports/report-feedback';
+('use client');
 
 import {
   CalendarDays,
@@ -84,6 +85,7 @@ export function PeriodicReportRow({
 }) {
   const t = useTranslations('reports-hub');
   const category = periodicDeliveryCategory(report);
+  const emptyFeedback = !hasReportFeedback(report.feedback);
   const resendReason = onResend
     ? periodicResendReason(report, Date.now())
     : null;
@@ -218,16 +220,19 @@ export function PeriodicReportRow({
           {permissions.canApproveReports &&
           (report.report_approval_status === 'PENDING' ||
             report.report_approval_status === null) ? (
-            <Button
-              size="icon"
-              className="size-8"
-              variant="outline"
-              disabled={approvalPending}
-              onClick={onApprove}
-              aria-label={t('approve')}
-            >
-              <Check className="h-4 w-4" />
-            </Button>
+            <span title={emptyFeedback ? t('feedback_required') : undefined}>
+              <Button
+                size="icon"
+                className="size-8"
+                variant="outline"
+                disabled={approvalPending || emptyFeedback}
+                title={emptyFeedback ? t('feedback_required') : undefined}
+                onClick={onApprove}
+                aria-label={t('approve')}
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+            </span>
           ) : null}
           <Button
             size="icon"
@@ -253,14 +258,18 @@ export function PeriodicReportRow({
             report.delivery_status
           ) &&
           !isBlockingDeliveryCategory(category) ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onDeliveryIntent('send')}
-            >
-              <Send className="size-3.5" />
-              {t('send')}
-            </Button>
+            <span title={emptyFeedback ? t('feedback_required') : undefined}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={emptyFeedback}
+                title={emptyFeedback ? t('feedback_required') : undefined}
+                onClick={() => onDeliveryIntent('send')}
+              >
+                <Send className="size-3.5" />
+                {t('send')}
+              </Button>
+            </span>
           ) : null}
           {onResend &&
           (resendReason === 'failed' || resendReason === 'stuck') ? (
@@ -328,12 +337,28 @@ function DeliveryMenu({
         ) &&
         !isBlockingDeliveryCategory(periodicDeliveryCategory(report)) ? (
           <>
-            <DropdownMenuItem onSelect={() => onDeliveryIntent('test')}>
+            <DropdownMenuItem
+              disabled={!hasReportFeedback(report.feedback)}
+              title={
+                !hasReportFeedback(report.feedback)
+                  ? t('feedback_required')
+                  : undefined
+              }
+              onSelect={() => onDeliveryIntent('test')}
+            >
               <Send className="mr-2 h-4 w-4" />
               {t('test_send')}
             </DropdownMenuItem>
             {report.delivery_status !== 'sent' ? (
-              <DropdownMenuItem onSelect={() => onDeliveryIntent('send')}>
+              <DropdownMenuItem
+                disabled={!hasReportFeedback(report.feedback)}
+                title={
+                  !hasReportFeedback(report.feedback)
+                    ? t('feedback_required')
+                    : undefined
+                }
+                onSelect={() => onDeliveryIntent('send')}
+              >
                 <Mail className="mr-2 h-4 w-4" />
                 {t('send')}
               </DropdownMenuItem>

@@ -1,3 +1,7 @@
+import {
+  hasReportFeedback,
+  REPORT_FEEDBACK_REQUIRED,
+} from '../../../../features/reports/report-feedback';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
 import { getWorkspaceUserLinkForUser } from '@tuturuuu/utils/workspace-user-link';
@@ -107,13 +111,13 @@ export async function PUT(request: Request, context: Params) {
       periodChanged
         ? reportView
             .select(
-              'id, user_id, group_id, generation_mode, delivery_status, delivered_at'
+              'id, user_id, group_id, generation_mode, feedback, delivery_status, delivered_at'
             )
             .eq('id', reportId)
             .eq('user_ws_id', wsId)
             .maybeSingle()
         : reportView
-            .select('id, user_id, group_id, generation_mode')
+            .select('id, user_id, group_id, generation_mode, feedback')
             .eq('id', reportId)
             .eq('user_ws_id', wsId)
             .maybeSingle(),
@@ -136,6 +140,14 @@ export async function PUT(request: Request, context: Params) {
         { status: 500 }
       );
     }
+    const nextFeedback = parsed.data.feedback ?? existing.data.feedback;
+    if (
+      parsed.data.report_approval_status === 'APPROVED' &&
+      !hasReportFeedback(nextFeedback)
+    ) {
+      return NextResponse.json(REPORT_FEEDBACK_REQUIRED, { status: 422 });
+    }
+
     // Both reads share one shape: the delivery fields are only present when
     // the month changed (ordinary draft saves never select them).
     const existingReport: {
@@ -252,10 +264,16 @@ export async function PUT(request: Request, context: Params) {
       }
     }
 
-    const mutation = privateDb
+    let mutation = privateDb
       .from('external_user_monthly_reports')
       .update(updatePayload)
       .eq('id', reportId);
+    if (parsed.data.report_approval_status === 'APPROVED') {
+      mutation =
+        existing.data.feedback === null
+          ? mutation.is('feedback', null)
+          : mutation.eq('feedback', existing.data.feedback);
+    }
     if (!approvalTouched) {
       const { user_id: userId, group_id: groupId } = existing.data;
       if (
@@ -291,8 +309,13 @@ export async function PUT(request: Request, context: Params) {
         );
       }
     } else {
-      const result = await mutation;
+      const result = await mutation.select('id');
       if (result.error) throw result.error;
+      if (!result.data?.length)
+        return NextResponse.json(
+          { message: 'Report changed. Refresh before approving.' },
+          { status: 409 }
+        );
     }
     return NextResponse.json({ success: true });
   } catch (error) {

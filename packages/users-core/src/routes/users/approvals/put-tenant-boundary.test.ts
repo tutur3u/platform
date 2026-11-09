@@ -35,6 +35,7 @@ function database() {
     { id: 'foreign-both', user_ws_id: 'foreign', group_ws_id: 'foreign' },
   ].map((row) => ({
     ...row,
+    feedback: 'Teacher comment',
     report_approval_status: 'PENDING',
     delivery_status: 'draft',
   }));
@@ -42,7 +43,10 @@ function database() {
     const filters = new Map<string, unknown>();
     const builder: Record<string, unknown> = {};
     const selected = () =>
-      table === 'external_user_monthly_reports_workspace_view'
+      [
+        'external_user_monthly_reports_workspace_view',
+        'external_user_monthly_reports',
+      ].includes(table)
         ? rows.filter((row) =>
             [...filters].every(
               ([key, value]) => row[key as keyof typeof row] === value
@@ -147,10 +151,16 @@ describe('periodic approval initial subject and group tenancy', () => {
       actor
     );
     expect(response.status).toBe(200);
-    expect(calls.find((call) => call.method === 'in')?.args).toEqual([
-      'id',
-      ['own'],
-    ]);
+    expect(
+      calls
+        .filter(
+          (call) =>
+            call.table === 'external_user_monthly_reports' &&
+            call.method === 'eq' &&
+            call.args[0] === 'id'
+        )
+        .map((call) => call.args)
+    ).toEqual([['id', 'own']]);
   });
   it('preserves permission denial before privileged queries and updates', async () => {
     mocks.permissions.mockResolvedValue({
