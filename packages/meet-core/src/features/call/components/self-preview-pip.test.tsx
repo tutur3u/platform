@@ -119,28 +119,12 @@ it('announces corner moves politely', () => {
   );
 });
 
-it('shows the controls briefly on mount and again on a touch tap', () => {
-  vi.useFakeTimers();
-  try {
-    renderPip(new MemoryStorage());
-    const card = screen.getByTestId('self-preview-card');
-    expect(card.getAttribute('data-revealed')).toBe('true');
-    act(() => {
-      vi.advanceTimersByTime(3100);
-    });
-    expect(card.getAttribute('data-revealed')).toBeNull();
-    fireEvent.pointerDown(card, {
-      pointerId: 1,
-      pointerType: 'touch',
-      button: 0,
-    });
-    fireEvent.pointerUp(card, {
-      pointerId: 1,
-      pointerType: 'touch',
-      button: 0,
-    });
-    expect(card.getAttribute('data-revealed')).toBe('true');
-  } finally {
-    vi.useRealTimers();
-  }
+it('keeps the card controls visible for coarse pointers and on hover or focus', () => {
+  renderPip(new MemoryStorage());
+  const controls = screen
+    .getByTestId('self-preview-resize')
+    .closest('div[class*="opacity-0"]');
+  expect(controls?.className).toContain('[@media(pointer:coarse)]:opacity-100');
+  expect(controls?.className).toContain('group-hover/pip:opacity-100');
+  expect(controls?.className).toContain('group-focus-within/pip:opacity-100');
 });
