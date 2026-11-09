@@ -71,11 +71,18 @@ for (const path of PUBLIC_PATHS) {
     fail(`${path} cached status ${second.status}`);
   } else pass(`${path} 200 ${states}`);
   for (const response of [first, second]) {
+    const state = cacheHeader(response) ?? '';
+    const cookies = response.headers.getSetCookie?.() ?? [];
+    // A stored copy never carries a cookie. The MISS that filled the cache may
+    // keep the locale cookie the origin sets on every anonymous page.
+    const onlyLocale =
+      cookies.length > 0 &&
+      cookies.every((cookie) => /^\s*NEXT_LOCALE=/i.test(cookie));
     if (
-      ['HIT', 'MISS', 'STALE'].includes(cacheHeader(response) ?? '') &&
-      response.headers.has('set-cookie')
+      (['HIT', 'STALE'].includes(state) && cookies.length > 0) ||
+      (state === 'MISS' && cookies.length > 0 && !onlyLocale)
     ) {
-      fail(`${path} cacheable response carries Set-Cookie`);
+      fail(`${path} cacheable response carries Set-Cookie (${state})`);
     }
   }
 }
@@ -133,6 +140,11 @@ if (origin) {
         .join(',');
     const viaGateway = await get(path);
     const direct = await fetch(`${origin}${path}`, { redirect: 'manual' });
+    if (direct.status === 403) {
+      // The origin's bot protection blocks non-Cloudflare addresses.
+      console.log(`skip ${path} Set-Cookie comparison (origin answered 403)`);
+      continue;
+    }
     if (names(viaGateway) !== names(direct)) {
       fail(
         `${path} Set-Cookie names differ (gateway "${names(viaGateway)}", origin "${names(direct)}")`
