@@ -5,6 +5,10 @@ description: "Order, commands, rollback pins and smoke for each app cutover to a
 
 Cutovers run in this order: lowest risk first. Marketing page groups flip through the gateway instead (see the gateway Worker page). Each section is the whole runbook for one app; the linked packet has the full binding, secret and variable names.
 
+## Web apex pin
+
+Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web): `dpl_FZuaw8J2RRS3ust79agjwyKo2AAf` (source d209d72b). The current production deployment is `dpl_9NxJS4nsCaYZwEjSWe2bJwj2Hjdk` (prebuilt from a7826c1f). Pins read 9 Nov 23:40.
+
 ## Common steps
 
 1. Record the source SHA, the sealed artifact (CI run id) and the Vercel rollback pin below.
@@ -35,7 +39,7 @@ Cutovers run in this order: lowest risk first. Marketing page groups flip throug
 | Worker | `tuturuuu-tools` |
 | Hosts | tools.tuturuuu.com, tools.tutur3u.com, tuturuuu.com/tools |
 | Artifact | tools-cloudflare.yaml, job cutover-artifact |
-| Vercel rollback pin | dpl_LUqZb9KjEXhA16gM7qpGRYNfs2ja |
+| Vercel rollback pin | dpl_2EBL3XVwhpRw94GJ9tL2zc4Xr9UQ |
 | Packet | `tools-cutover-packet` |
 | Smoke | `node scripts/cutover-smoke.mjs tools https://tools.tuturuuu.com` |
 
@@ -171,7 +175,7 @@ Cutovers run in this order: lowest risk first. Marketing page groups flip throug
 | Worker | `tuturuuu-learn` |
 | Hosts | learn.tuturuuu.com |
 | Artifact | learn-cloudflare.yaml, job learn-cutover-artifact |
-| Vercel rollback pin | capture before the flip |
+| Vercel rollback pin | dpl_2Q4f1WgzDA2RMPowNNvsgqSwST2C |
 | Packet | `learn-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs learn https://learn.tuturuuu.com` |
 
@@ -182,7 +186,7 @@ Cutovers run in this order: lowest risk first. Marketing page groups flip throug
 | Worker | `tuturuuu-chat` |
 | Hosts | chat.tuturuuu.com |
 | Artifact | chat-cloudflare.yaml, job chat-cutover-artifact |
-| Vercel rollback pin | capture before the flip |
+| Vercel rollback pin | dpl_AufjhfQ3Kq74ibco2BTyAtwhH5YT |
 | Packet | `chat-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs chat https://chat.tuturuuu.com` |
 ## 14. infrastructure
@@ -192,7 +196,7 @@ Cutovers run in this order: lowest risk first. Marketing page groups flip throug
 | Worker | `tuturuuu-infrastructure` |
 | Hosts | infrastructure.tuturuuu.com |
 | Artifact | infrastructure-cloudflare.yaml (`infrastructure-cutover-<sha>`) |
-| Vercel rollback pin | capture before the flip |
+| Vercel rollback pin | dpl_AZghhKoj3zwcE6ZfotQJmdo7Lang (the one before the 23:37 prebuilt promotion dpl_GjkU1QKSV7woJRssbm8bmZK1WfNB) |
 | Packet | `infrastructure-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs infrastructure https://infrastructure.tuturuuu.com` |
 
@@ -203,7 +207,7 @@ Cutovers run in this order: lowest risk first. Marketing page groups flip throug
 | Worker | `tuturuuu-mind` |
 | Hosts | mind.tuturuuu.com |
 | Artifact | mind-cloudflare.yaml (`mind-cutover-<sha>`) |
-| Vercel rollback pin | capture before the flip |
+| Vercel rollback pin | dpl_9H1vKG4Pkup7TeBhY5umdpvg7pqn |
 | Packet | `mind-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs mind https://mind.tuturuuu.com` |
 
@@ -223,7 +227,7 @@ Cutovers run in this order: lowest risk first. Marketing page groups flip throug
 | Worker | `tuturuuu-hive` |
 | Hosts | hive.tuturuuu.com |
 | Artifact | hive-cloudflare.yaml, job hive-cutover-artifact |
-| Vercel rollback pin | none found; confirm where hive.tuturuuu.com is served |
+| Vercel rollback pin | none: no Vercel project, Cloudflare only |
 | Smoke | `node scripts/cutover-smoke.mjs hive https://hive.tuturuuu.com` |
 - infrastructure, mind, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
 - learn, chat, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.

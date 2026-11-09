@@ -1,0 +1,87 @@
+---
+title: "Drive on Start + Void"
+description: "Native Drive Worker profiles, the sealed Cloudflare artifact, and the cutover and Vercel rollback packet."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Drive (`apps/drive`) runs on TanStack Start, Vite+ and Void behind
+[`@tuturuuu/start-bridge`](/build/devops/start-bridge). The Next.js build
+(`build:legacy`) and the Vercel project stay in place until the cutover has been
+stable, so the canonical host keeps a one-step route back.
+
+## Worker profiles
+
+| Profile | Selected by | Worker | Vars |
+| --- | --- | --- | --- |
+| Staging (default) | no profile variable | `tuturuuu-drive-vite-staging` | `src/start-candidate/staging-policy.ts`; the build refuses a non-staging value |
+| Production | `VITE_DRIVE_NATIVE_PROFILE=production` | `tuturuuu-drive` | `cloudflare/production-profile.json` |
+
+Neither profile declares routes, custom domains, `workers_dev` or
+`preview_urls`. The hostname is attached at cutover by the release operator.
+
+The production Worker answers every request with a refusal until
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+`SUPABASE_SECRET_KEY` and `TUTURUUU_APP_COORDINATION_SECRET` are present
+(`cloudflare/required-bindings.ts`). Names only are recorded here; values stay in
+the secret store. Hosts other than the canonical Drive host answer `404`.
+
+## Build and artifact
+
+`drive-cloudflare-artifact.yaml` runs on `ready-for-ci` pull requests and by
+manual dispatch. It builds with `bun run --cwd apps/drive build:cloudflare`,
+records the emitted configuration receipt, and runs
+`node --test apps/drive/cloudflare/cutover.runtime.mjs` against the emitted
+Worker in workerd. On manual dispatch it seals the output with
+`scripts/ci/drive-native-artifact.py` and uploads `drive-native-<source SHA>`
+(7 days). The workflow never deploys.
+
+Do not run `build:cloudflare` on a shared development machine; use the workflow.
+
+## Cutover packet
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-drive` |
+| Route | `drive.tuturuuu.com/*` attached by the operator; no other host |
+| Static assets binding | `ASSETS` (`dist/client`, `run_worker_first`) |
+| Build command | `VITE_DRIVE_NATIVE_PROFILE=production bun run --cwd apps/drive build:cloudflare` |
+| Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
+| Central API origin | `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com` |
+| Prior Vercel deployment | record the immutable deployment ID and URL of the `drive` Vercel project before the switch |
+| Data | no database writes and no migrations |
+
+### Switch
+
+1. Record the source SHA, the sealed artifact name and the Vercel deployment ID.
+2. Provision the four secrets on `tuturuuu-drive`, then deploy the sealed output.
+3. Verify on the Worker before attaching the route: smoke below with the
+   Worker's own address.
+4. Attach `drive.tuturuuu.com` to the Worker (a proxied route in front of the
+   still-valid Vercel origin where possible).
+
+### Smoke
+
+```bash
+# Anonymous protected route redirects to /login; no 5xx
+curl -sI https://drive.tuturuuu.com/00000000-0000-4000-8000-000000000001 | head -5
+# Login page renders
+curl -s -o /dev/null -w '%{http_code}\n' https://drive.tuturuuu.com/login
+# Build identity matches the accepted SHA
+curl -s https://drive.tuturuuu.com/api/build-info
+# Foreign host is refused
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: untrusted.invalid' https://drive.tuturuuu.com/login
+```
+
+Expected: a `30x` to `/login`, `200`, the accepted commit, and `404`.
+
+### Rollback
+
+- **Triggers:** a 5xx rate above 1% or an authentication failure loop for 5
+  minutes, any cross-host response, or any storage permission regression.
+- **Action:** remove the Worker route (or repoint the mapping) so
+  `drive.tuturuuu.com` resolves to the recorded Vercel deployment again. Never
+  rebuild on the rollback path.
+- **Data:** a route rollback changes no stored files or metadata.
+- **Stability:** keep the Vercel project and domain for 14 consecutive stable
+  days before decommissioning, which is a separate approval.
