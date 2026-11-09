@@ -10,8 +10,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: cms-renderer-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   artifact:
     if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
@@ -25,22 +25,34 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
       # Lockfile-only resolution records the new workspace without installing on M4.
       - run: bun install --frozen-lockfile --ignore-scripts
       - name: Build delivery test dependencies
-        run: bun run --filter @tuturuuu/types build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun run --filter @tuturuuu/types build
+          token: ''
+          team: ''
       - name: Shared render and delivery checks
-        shell: bash
-        run: |
-          # bunfig.toml preloads a redirect that turns in-repo `bun test` into the full turbo suite.
-          cd "$RUNNER_TEMP"
-          bun test \
-            "$GITHUB_WORKSPACE/packages/cms-blocks/src/render" \
-            "$GITHUB_WORKSPACE/packages/sdk/src/cms-site.test.ts" \
-            "$GITHUB_WORKSPACE/apps/cms-renderer/src"
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          token: ''
+          team: ''
+          command: |
+            # bunfig.toml preloads a redirect that turns in-repo `bun test` into the full turbo suite.
+            cd "$RUNNER_TEMP"
+            bun test \
+              "$GITHUB_WORKSPACE/packages/cms-blocks/src/render" \
+              "$GITHUB_WORKSPACE/packages/sdk/src/cms-site.test.ts" \
+              "$GITHUB_WORKSPACE/apps/cms-renderer/src"
       - name: Build Worker and generated routes
-        working-directory: apps/cms-renderer
-        run: bun run build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/cms-renderer && bun run build
+          token: ''
+          team: ''
       - name: Record bounded emitted config receipt
         if: always()
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/cms-renderer "$SOURCE_SHA" "$RUNNER_TEMP/cms-renderer-emitted-config.json"
@@ -50,6 +62,7 @@ jobs:
         with:
           name: cms-renderer-config-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/cms-renderer-emitted-config.json
+          if-no-files-found: error
           retention-days: 7
       - name: Enforce private Worker endpoints
         run: |
@@ -61,8 +74,11 @@ jobs:
           assert.equal(config.preview_urls, false);
           JS
       - name: Check generated app types
-        working-directory: apps/cms-renderer
-        run: bun run type-check
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/cms-renderer && bun run type-check
+          token: ''
+          team: ''
       - name: Validate emitted deployable Worker without publishing
         run: bun x --no-install wrangler deploy --dry-run --config apps/cms-renderer/dist/server/wrangler.json --outdir /tmp/cms-renderer-dry-run
       - name: Seal exact source and package output
