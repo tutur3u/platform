@@ -20,7 +20,7 @@ export function JoinOutcome({
   const t = useTranslations('meet.call');
   return (
     <CallPreparation
-      busy={false}
+      lifecycle="error"
       meetingName={meetingName}
       leaveHref={leaveHref}
       title={t(`join_${reason}_title`)}

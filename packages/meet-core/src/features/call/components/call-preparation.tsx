@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useWaitDeadline } from '../hooks/use-wait-deadline';
+import { type CallLifecycle, isCallLifecycleBusy } from '../lib/call-state';
 
 /**
  * One stable, full-height shell for server loading, device checks and
@@ -18,13 +19,16 @@ export function CallPreparation({
   description,
   meetingName,
   leaveHref,
-  busy = true,
+  lifecycle = 'preparing',
+  busy = isCallLifecycleBusy(lifecycle),
   children,
 }: {
   title?: string;
   description?: string;
   meetingName?: string;
   leaveHref?: string;
+  /** Drives the spinner; `busy` overrides it for non-call loading states. */
+  lifecycle?: CallLifecycle;
   busy?: boolean;
   children?: ReactNode;
 }) {
