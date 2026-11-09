@@ -33,7 +33,11 @@ jobs:
           node-version: 24.22.0
       - run: bun install --frozen-lockfile --ignore-scripts
       - name: Build app dependencies
-        run: bun turbo:local run build --filter='@tuturuuu/drive^...' --concurrency=2
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter='@tuturuuu/drive^...' --concurrency=2
+          token: ''
+          team: ''
       - name: Build Drive Start Worker and assets
         run: bun run --cwd apps/drive build:cloudflare
       - name: Record emitted configuration receipt
@@ -46,6 +50,7 @@ jobs:
           name: drive-config-receipt-${{ env.DRIVE_SOURCE_SHA }}-${{ github.run_id }}
           path: ${{ runner.temp }}/drive-emitted-config.json
           if-no-files-found: error
+          retention-days: 7
       - name: Anonymous authentication and host-isolation smoke
         run: node --test apps/drive/cloudflare/cutover.runtime.mjs
       - name: Seal deployable output
