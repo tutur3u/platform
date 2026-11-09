@@ -192,7 +192,7 @@ test('hold and enable flag reject production, PRs, branch dispatch and unprovisi
     true
   );
 });
-test('production policy CLI reports hold without loading artifact or provider credentials', () => {
+test('production policy CLI reports admission without loading artifact or provider credentials', () => {
   const result = execFileSync(
     'node',
     [
@@ -213,7 +213,7 @@ test('production policy CLI reports hold without loading artifact or provider cr
       },
     }
   );
-  assert.match(result, /held for wave-1 cutover/);
+  assert.match(result, /Explicit source cutover admission required/);
 });
 for (const phase of ['stopped', 'verify', 'write', 'accept', 'success']) {
   test(`one-shot publication bounds writes and preserves ${phase} outcome`, async () => {
