@@ -105,3 +105,27 @@ cd apps/gateway
 vp test
 vp lint --config .oxlintrc.json src --deny-warnings
 ```
+
+## Marketing page groups
+
+The gateway can serve a page group from the `apps/marketing` Worker instead of the Vercel web origin. Each group is one flag.
+
+| Group | Paths |
+| --- | --- |
+| `legal` | `/privacy`, `/terms`, `/acceptable-use`, `/community-guidelines`, `/security`, `/legal/*`, `/security/*` |
+| `company` | `/about`, `/branding`, `/careers`, `/contact`, `/contributors`, `/partners`, `/women-in-tech` |
+| `products` | `/products`, `/products/*` |
+| `solutions` | `/solutions/*` |
+| `blog` | `/blog`, `/blog/*` |
+| `home` | `/`, `/pricing` |
+
+`/changelog`, `/download`, `/models`, `/meet`, `/meet-together`, `/portfolio`, `/qr-generator` and `/visualizations/*` always stay on the web origin.
+
+Two Worker variables control the flip:
+
+- `MARKETING_ORIGIN`: the `https://` origin of the marketing Worker. Without it, every group stays on web.
+- `GATEWAY_MARKETING_GROUPS`: comma-separated group names served by the marketing origin, for example `legal,company`.
+
+Flip a group by adding its name and redeploying the gateway variables. Roll it back by removing the name, or by clearing `GATEWAY_MARKETING_GROUPS`. Cached pages from the other origin are keyed separately and expire within the cache window, so a rollback is complete within one stale period.
+
+Smoke for each group before the next one: anonymous 200 on two paths of the group, `x-gateway-cache` present, and `x-tuturuuu-runtime: native` on a cache MISS from the marketing origin.
