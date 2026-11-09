@@ -35,6 +35,7 @@ type TransportSchema = {
       email_appeal_authorize_dispatch: {
         Args: {
           p_id: string;
+          p_dispatch_id: string;
           p_ws_id: string;
           p_email: string;
           p_generation: string;
@@ -113,6 +114,7 @@ async function authorizeDispatch(
     const admin = await createAdminClient<TransportSchema>({ noCookie: true });
     const { data, error } = await admin.rpc('email_appeal_authorize_dispatch', {
       p_id: input.appealId,
+      p_dispatch_id: input.dispatchId,
       p_ws_id: input.wsId,
       p_email: input.email,
       p_generation: input.generation,

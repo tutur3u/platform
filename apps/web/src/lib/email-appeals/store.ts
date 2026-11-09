@@ -151,12 +151,13 @@ export async function createAppealStore(
       return data;
     },
     async markDelivery(id, outcome, messageId) {
-      const { error } = await admin.rpc('email_appeal_mark_delivery', {
+      const { data, error } = await admin.rpc('email_appeal_mark_delivery', {
         p_id: id,
         p_outcome: outcome,
         p_message_id: messageId ?? null,
       });
       if (error) throw storeError(error);
+      return data;
     },
     async preview(tokenHash, claims) {
       const { data, error } = await admin.rpc('email_appeal_preview', {

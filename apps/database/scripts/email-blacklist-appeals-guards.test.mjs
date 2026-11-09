@@ -394,12 +394,28 @@ test('report feedback binds actual report dispatch and provider generation chang
       [dispatch.id]
     );
     assert.equal(
-      (await feedback(db, appeal.id, { messageId: 'report-message' })).status,
+      (
+        await feedback(db, appeal.id, {
+          messageId: 'report-message',
+          dispatchId: dispatch.id,
+          dispatchKind: 'report',
+          identity: reportBinding.identity,
+          configurationSet: reportBinding.configuration_set,
+        })
+      ).status,
       'recorded'
     );
     assert.equal(await blocked(db), true);
     assert.equal(
-      (await feedback(db, appeal.id, { messageId: 'report-message' })).status,
+      (
+        await feedback(db, appeal.id, {
+          messageId: 'report-message',
+          dispatchId: dispatch.id,
+          dispatchKind: 'report',
+          identity: reportBinding.identity,
+          configurationSet: reportBinding.configuration_set,
+        })
+      ).status,
       'duplicate'
     );
     await db.exec(

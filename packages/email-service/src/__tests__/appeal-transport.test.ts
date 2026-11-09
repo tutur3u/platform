@@ -81,6 +81,15 @@ describe('grant-bound report routing', () => {
       FromEmailAddress: 'reports@recovery.example.com',
       ConfigurationSetName: 'workspace-reports',
       Destination: { ToAddresses: [input.email] },
+      EmailTags: [
+        { Name: 'appeal_id', Value: input.appealId },
+        { Name: 'workspace_id', Value: input.wsId },
+        {
+          Name: 'appeal_dispatch_id',
+          Value: '00000000-0000-4000-8000-000000000004',
+        },
+        { Name: 'appeal_dispatch_kind', Value: 'report' },
+      ],
     });
     expect(f.record).toHaveBeenCalledWith(
       '00000000-0000-4000-8000-000000000004',
@@ -173,6 +182,7 @@ describe('grant-bound report routing', () => {
 });
 const input: ConfirmationInput = {
   appealId: '00000000-0000-4000-8000-000000000002',
+  dispatchId: '00000000-0000-4000-8000-000000000099',
   wsId: '00000000-0000-4000-8000-000000000003',
   email: 'recipient@example.com',
   workspaceName: 'Example workspace',
@@ -266,6 +276,8 @@ describe('pinned confirmation transport', () => {
       EmailTags: [
         { Name: 'appeal_id', Value: input.appealId },
         { Name: 'workspace_id', Value: input.wsId },
+        { Name: 'appeal_dispatch_id', Value: input.dispatchId },
+        { Name: 'appeal_dispatch_kind', Value: 'confirmation' },
       ],
     });
     expect(command?.input.Content?.Simple?.Subject?.Data).toBe(

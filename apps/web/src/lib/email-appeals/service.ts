@@ -48,7 +48,7 @@ export type AppealStore = {
     id: string,
     outcome: 'sent' | 'failed' | 'unknown' | 'unavailable',
     messageId?: string
-  ): Promise<void>;
+  ): Promise<unknown>;
   preview(tokenHash: string, claims: AppealTokenBinding): Promise<unknown>;
   confirm(tokenHash: string, claims: AppealTokenBinding): Promise<unknown>;
 };
@@ -68,6 +68,10 @@ const recipientSchema = z.object({
   status: z.string(),
 });
 const stateSchema = z.object({ status: z.string() });
+const dispatchSchema = z.object({
+  status: z.literal('dispatching'),
+  dispatch_id: z.uuid(),
+});
 const previewSchema = z.object({
   status: z.literal('ready'),
   workspace_name: z.string(),
@@ -223,15 +227,16 @@ export async function bootstrapRecipientAppeal(
     await dependencies.store.markDelivery(row.id, 'failed');
     throw new AppealError('deliverability_failed');
   }
-  const claim = stateSchema.safeParse(
-    await dependencies.store.claimDelivery(
-      row.id,
-      transport.binding,
-      suppression.generation
-    )
+  const claimed = await dependencies.store.claimDelivery(
+    row.id,
+    transport.binding,
+    suppression.generation
   );
+  const claim = stateSchema.safeParse(claimed);
   if (!claim.success) throw new AppealError('store_unavailable');
   if (claim.data.status !== 'dispatching') return { status: 'unavailable' };
+  const dispatch = dispatchSchema.safeParse(claimed);
+  if (!dispatch.success) throw new AppealError('store_unavailable');
   const url = new URL(
     '/en/email-appeals',
     transport.binding.confirmationOrigin
@@ -241,6 +246,7 @@ export async function bootstrapRecipientAppeal(
   try {
     result = await transport.sendConfirmation({
       appealId: row.id,
+      dispatchId: dispatch.data.dispatch_id,
       wsId: row.ws_id,
       email: row.email,
       workspaceName: row.workspace_name,
@@ -260,7 +266,11 @@ export async function bootstrapRecipientAppeal(
     await dependencies.store.markDelivery(row.id, 'failed');
     return { status: 'unavailable' };
   }
-  await dependencies.store.markDelivery(row.id, 'sent', result.messageId);
+  const marked = stateSchema.safeParse(
+    await dependencies.store.markDelivery(row.id, 'sent', result.messageId)
+  );
+  if (!marked.success) throw new AppealError('store_unavailable');
+  if (marked.data.status !== 'sent') return { status: 'unavailable' };
   return { status: 'sent' };
 }
 

@@ -202,6 +202,7 @@ export function createSesAppealTransport(
         const content = confirmationContent(binding, input);
         const suppression = await lookupSuppression(input.email);
         if (
+          !z.uuid().safeParse(input.dispatchId).success ||
           suppression.status !== 'eligible' ||
           suppression.generation !== input.providerGeneration ||
           !(await dependencies.authorizeDispatch(input)) ||
@@ -216,6 +217,8 @@ export function createSesAppealTransport(
           EmailTags: [
             { Name: 'appeal_id', Value: input.appealId },
             { Name: 'workspace_id', Value: input.wsId },
+            { Name: 'appeal_dispatch_id', Value: input.dispatchId },
+            { Name: 'appeal_dispatch_kind', Value: 'confirmation' },
           ],
         });
         const response = await dependencies.recovery.send(command);

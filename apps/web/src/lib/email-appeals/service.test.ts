@@ -71,10 +71,14 @@ function fixture(reason = 'ses_hard_bounce') {
       )
         return { status: 'reblocked' };
       state.status = 'dispatching';
-      return { status: 'dispatching' };
+      return {
+        status: 'dispatching',
+        dispatch_id: '00000000-0000-4000-8000-000000000099',
+      };
     }),
     markDelivery: vi.fn(async (_id, outcome) => {
       state.status = outcome;
+      return { status: outcome };
     }),
     preview: vi.fn(async (hash) =>
       hash === state.hash && state.status === 'sent'
@@ -220,6 +224,7 @@ describe('recipient-initiated appeal orchestration', () => {
         workspaceName: 'Trusted Workspace',
         generation: tokenBinding.generation,
         providerGeneration: 'provider-generation',
+        dispatchId: '00000000-0000-4000-8000-000000000099',
       })
     );
     expect(await previewAppeal(token, f.dependencies)).toEqual({
@@ -236,6 +241,19 @@ describe('recipient-initiated appeal orchestration', () => {
       code: 'invalid_token',
       message: 'invalid_token',
     });
+  });
+
+  it('does not report a sent challenge when early feedback reblocks the dispatch', async () => {
+    const f = fixture();
+    vi.mocked(f.store.markDelivery).mockImplementation(async () => {
+      f.state.status = 'reblocked';
+      return { status: 'reblocked' };
+    });
+    expect(await bootstrapRecipientAppeal(recipient, f.dependencies)).toEqual({
+      status: 'unavailable',
+    });
+    expect(f.send).toHaveBeenCalledTimes(1);
+    expect(f.state.status).toBe('reblocked');
   });
   it('permits a complainant confirmation only after that exact recipient initiates it', async () => {
     const f = fixture('ses_complaint');

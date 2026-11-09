@@ -21,6 +21,10 @@ type FeedbackSchema = {
           p_event_id: string;
           p_message_id: string;
           p_appeal_id: string;
+          p_dispatch_id: string;
+          p_dispatch_kind: string;
+          p_identity: string;
+          p_configuration_set: string;
           p_account_id: string;
           p_region: string;
           p_email: string;
@@ -82,6 +86,10 @@ export async function POST(request: Request) {
         p_event_id: input.eventId,
         p_message_id: input.messageId,
         p_appeal_id: input.appealId,
+        p_dispatch_id: input.dispatchId,
+        p_dispatch_kind: input.dispatchKind,
+        p_identity: input.identity,
+        p_configuration_set: input.configurationSet,
         p_account_id: input.accountId,
         p_region: input.region,
         p_email: input.email,

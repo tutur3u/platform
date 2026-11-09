@@ -1255,9 +1255,14 @@ routing performs two. Therefore dispatch uses at most 16 reads and one send, wit
 no retry loop. The same durable attempt remains spent after process failure.
 
 Authenticated RSA-SHA256 SNS feedback is accepted only from pinned account,
-region, topic, identity and configuration mappings. Stored actual message,
-recipient, workspace and appeal identities must match; duplicate events are
-no-ops. The bounded historical binding allowlist remains available after sending
+region, topic, identity and configuration mappings. A random dispatch ID is stored
+before the send and carried in signed SES event tags, along with the dispatch kind,
+workspace and appeal. Feedback must match the exact stored dispatch, sender,
+configuration and recipient. It atomically records the provider message ID and
+negative event even before the send response is saved or after an UNKNOWN response.
+Once known, the provider message ID must match; feedback never changes an UNKNOWN
+operation into a sent operation or permits a resend. Duplicate events are no-ops.
+The bounded historical binding allowlist remains available after sending
 is stopped, allowing late complaints to revoke consent. Subscription confirmation
 is an operator provisioning step; the webhook never auto-fetches subscription URLs.
 

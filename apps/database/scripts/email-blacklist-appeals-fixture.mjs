@@ -220,6 +220,10 @@ async function blocked(db, workspace = ws) {
 async function feedback(db, id, overrides = {}) {
   const p = {
     eventId: 'event-one',
+    dispatchId: (await row(db, id)).dispatch_id,
+    dispatchKind: 'confirmation',
+    identity: binding.identity,
+    configurationSet: binding.configuration_set,
     messageId: `message-${id}`,
     accountId: binding.account_id,
     region: binding.region,
@@ -231,7 +235,7 @@ async function feedback(db, id, overrides = {}) {
   };
   return result(
     db,
-    'SELECT public.email_appeal_feedback($1,$2,$3,$4,$5,$6,$7,$8,$9) result',
+    'SELECT public.email_appeal_feedback($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) result',
     [
       p.eventId,
       p.messageId,
@@ -242,6 +246,10 @@ async function feedback(db, id, overrides = {}) {
       p.type,
       p.bounceType,
       id,
+      p.dispatchId,
+      p.dispatchKind,
+      p.identity,
+      p.configurationSet,
     ]
   );
 }

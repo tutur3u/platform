@@ -149,6 +149,8 @@ export async function sendGrantedReport(
         EmailTags: [
           { Name: 'appeal_id', Value: context.appealId },
           { Name: 'workspace_id', Value: input.metadata.wsId },
+          { Name: 'appeal_dispatch_id', Value: id },
+          { Name: 'appeal_dispatch_kind', Value: 'report' },
         ],
         Content: {
           Simple: {

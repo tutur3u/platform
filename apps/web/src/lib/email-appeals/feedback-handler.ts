@@ -12,6 +12,10 @@ export type FeedbackRecord = {
   eventId: string;
   messageId: string;
   appealId: string;
+  dispatchId: string;
+  dispatchKind: 'confirmation' | 'report';
+  identity: string;
+  configurationSet: string;
   accountId: string;
   region: string;
   email: string;
@@ -40,6 +44,8 @@ const mailSchema = z.object({
   tags: z.object({
     appeal_id: z.tuple([z.uuid()]),
     workspace_id: z.tuple([z.uuid()]),
+    appeal_dispatch_id: z.tuple([z.uuid()]),
+    appeal_dispatch_kind: z.tuple([z.enum(['confirmation', 'report'])]),
     'ses:configuration-set': z.tuple([z.string().min(1).max(64)]),
   }),
 });
@@ -194,6 +200,10 @@ export async function handleAppealFeedback(
       eventId: envelope.MessageId,
       messageId: mail.messageId,
       appealId: mail.tags.appeal_id[0],
+      dispatchId: mail.tags.appeal_dispatch_id[0],
+      dispatchKind: mail.tags.appeal_dispatch_kind[0],
+      identity: binding.identity,
+      configurationSet: binding.configurationSet,
       accountId: binding.accountId,
       region: binding.region,
       email: target.emailAddress.toLowerCase(),

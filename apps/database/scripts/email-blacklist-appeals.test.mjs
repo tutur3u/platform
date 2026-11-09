@@ -225,11 +225,12 @@ test('dispatch is bounded, bound to provider generation and killed by fresh even
       (await claims(db, appeal.id)).generation,
       providerGeneration,
       binding,
+      (await row(db, appeal.id)).dispatch_id,
     ];
     assert.equal(
       await result(
         db,
-        'SELECT public.email_appeal_authorize_dispatch($1,$2,$3,$4,$5,$6) result',
+        'SELECT public.email_appeal_authorize_dispatch($1,$2,$3,$4,$5,$6,$7) result',
         args
       ),
       true
@@ -237,8 +238,8 @@ test('dispatch is bounded, bound to provider generation and killed by fresh even
     assert.equal(
       await result(
         db,
-        'SELECT public.email_appeal_authorize_dispatch($1,$2,$3,$4,$5,$6) result',
-        [...args.slice(0, 4), hash('new-provider-state'), binding]
+        'SELECT public.email_appeal_authorize_dispatch($1,$2,$3,$4,$5,$6,$7) result',
+        [...args.slice(0, 4), hash('new-provider-state'), ...args.slice(5)]
       ),
       false
     );
@@ -248,7 +249,7 @@ test('dispatch is bounded, bound to provider generation and killed by fresh even
     assert.equal(
       await result(
         db,
-        'SELECT public.email_appeal_authorize_dispatch($1,$2,$3,$4,$5,$6) result',
+        'SELECT public.email_appeal_authorize_dispatch($1,$2,$3,$4,$5,$6,$7) result',
         args
       ),
       false
@@ -263,12 +264,12 @@ test('dispatch is bounded, bound to provider generation and killed by fresh even
     assert.equal(
       await result(
         db,
-        'SELECT public.email_appeal_authorize_dispatch($1,$2,$3,$4,$5,$6) result',
+        'SELECT public.email_appeal_authorize_dispatch($1,$2,$3,$4,$5,$6,$7) result',
         args
       ),
       false
     );
-    await assert.rejects(mark(db, appeal.id), /email_appeal_delivery_state/);
+    assert.equal((await mark(db, appeal.id)).status, 'reblocked');
   } finally {
     await db.close();
   }

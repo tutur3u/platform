@@ -18,6 +18,7 @@ const region = 'ap-southeast-1';
 const topic = `arn:aws:sns:${region}:${accountId}:appeal-feedback`;
 const wsId = '11111111-1111-4111-8111-111111111111';
 const appealId = '22222222-2222-4222-8222-222222222222';
+const dispatchId = '44444444-4444-4444-8444-444444444444';
 const email = 'recipient@example.com';
 const { privateKey, publicKey } = generateKeyPairSync('rsa', {
   modulusLength: 2048,
@@ -47,6 +48,8 @@ function bounceEvent() {
       tags: {
         appeal_id: [appealId],
         workspace_id: [wsId],
+        appeal_dispatch_id: [dispatchId],
+        appeal_dispatch_kind: ['confirmation'],
         'ses:configuration-set': [binding.configurationSet],
       },
     },
@@ -124,6 +127,10 @@ describe('appeal signed feedback boundary', () => {
       eventId: 'sns-delivery-event',
       messageId: 'ses-actual-message',
       appealId,
+      dispatchId,
+      dispatchKind: 'confirmation',
+      identity: binding.identity,
+      configurationSet: binding.configurationSet,
       accountId,
       region,
       email,
@@ -274,6 +281,7 @@ describe('appeal signed feedback boundary', () => {
     const approved = { ...deps, bindings: [binding, reportBinding] };
     const event = bounceEvent();
     event.mail.source = reportBinding.identity;
+    event.mail.tags.appeal_dispatch_kind = ['report'];
     event.mail.tags['ses:configuration-set'] = [reportBinding.configurationSet];
     const response = await handleAppealFeedback(
       request(envelope(event)),
@@ -334,6 +342,19 @@ describe('appeal signed feedback boundary', () => {
     ]);
     expect(deps.record).toHaveBeenCalledTimes(2);
   });
+
+  it.each(['appeal_dispatch_id', 'appeal_dispatch_kind'] as const)(
+    'rejects a signed event without its durable %s tag',
+    async (field) => {
+      const event = bounceEvent();
+      event.mail.tags[field] = [];
+      const deps = dependencies();
+      expect(
+        (await handleAppealFeedback(request(envelope(event)), deps)).status
+      ).toBe(400);
+      expect(deps.record).not.toHaveBeenCalled();
+    }
+  );
 
   it('keeps store uncertainty unavailable and stored-claim mismatch invalid', async () => {
     const deps = dependencies();

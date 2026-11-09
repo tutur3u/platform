@@ -43,6 +43,7 @@ export type SuppressionLookup =
 
 export type ConfirmationInput = {
   appealId: string;
+  dispatchId: string;
   wsId: string;
   email: string;
   workspaceName: string;

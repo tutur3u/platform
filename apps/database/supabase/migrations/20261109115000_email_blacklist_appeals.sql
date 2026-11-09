@@ -21,6 +21,7 @@ CREATE TABLE private.email_blacklist_appeals (
   verification_started_at timestamptz,
   provider_generation text,
   transport_binding jsonb,
+  dispatch_id uuid UNIQUE,
   provider_message_id text,
   cooldown_until timestamptz NOT NULL DEFAULT clock_timestamp() + interval '48 hours'
 );
@@ -60,6 +61,10 @@ CREATE TABLE private.email_appeal_feedback (
   region text NOT NULL,
   event_id text NOT NULL,
   appeal_id uuid NOT NULL REFERENCES private.email_blacklist_appeals(id) ON DELETE CASCADE,
+  dispatch_id uuid NOT NULL,
+  dispatch_kind text NOT NULL CHECK (dispatch_kind IN ('confirmation','report')),
+  message_id text NOT NULL,
+  event_type text NOT NULL CHECK (event_type IN ('bounce','complaint')),
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   PRIMARY KEY (account_id,region,event_id)
 );
@@ -296,12 +301,13 @@ BEGIN
     ELSE 'dispatching' END;
   UPDATE private.email_blacklist_appeals SET status = v_status,
     dispatched_at = CASE WHEN v_status = 'dispatching' THEN clock_timestamp() END,
+    dispatch_id = CASE WHEN v_status = 'dispatching' THEN gen_random_uuid() END,
     transport_binding = CASE WHEN v_status = 'dispatching' THEN p_binding END,
     provider_generation = CASE WHEN v_status = 'dispatching' THEN p_provider_generation END,
     cooldown_until = CASE WHEN v_status = 'dispatching' THEN cooldown_until ELSE clock_timestamp() + interval '48 hours' END
   WHERE id = v_row.id;
   INSERT INTO private.email_blacklist_appeal_events(appeal_id,outcome) VALUES(v_row.id,v_status);
-  RETURN jsonb_build_object('status',CASE WHEN v_status = 'failed' THEN 'invalid' ELSE v_status END);
+  RETURN (SELECT jsonb_build_object('status',CASE WHEN v_status = 'failed' THEN 'invalid' ELSE v_status END,'dispatch_id',dispatch_id) FROM private.email_blacklist_appeals WHERE id = v_row.id);
 END;
 $$;
 
@@ -312,11 +318,12 @@ DECLARE v_status text;
 BEGIN
   IF p_outcome IS NULL OR p_outcome NOT IN ('sent','failed','unknown','unavailable')
     OR (p_outcome = 'sent' AND (p_message_id IS NULL OR length(btrim(p_message_id)) NOT BETWEEN 1 AND 200)) THEN RAISE EXCEPTION 'email_appeal_invalid_request'; END IF;
-  UPDATE private.email_blacklist_appeals SET status = p_outcome,
-    provider_message_id = p_message_id,
-    cooldown_until = CASE WHEN p_outcome = 'sent' THEN cooldown_until ELSE clock_timestamp() + interval '48 hours' END
-  WHERE id = p_id AND (
+  UPDATE private.email_blacklist_appeals SET status = CASE WHEN status = 'reblocked' AND p_outcome <> 'unknown' THEN status ELSE p_outcome END,
+    provider_message_id = coalesce(provider_message_id,p_message_id),
+    cooldown_until = CASE WHEN p_outcome = 'sent' THEN cooldown_until ELSE greatest(cooldown_until,clock_timestamp() + interval '48 hours') END
+  WHERE id = p_id AND (provider_message_id IS NULL OR p_message_id IS NULL OR provider_message_id = p_message_id) AND (
     (status = 'dispatching' AND p_outcome IN ('sent','failed','unknown'))
+    OR (status = 'reblocked' AND dispatched_at IS NOT NULL AND p_outcome IN ('sent','failed','unknown'))
     OR (status = 'verifying' AND p_outcome IN ('failed','unavailable'))
   ) RETURNING status INTO v_status;
   IF v_status IS NULL THEN RAISE EXCEPTION 'email_appeal_delivery_state'; END IF;
@@ -454,11 +461,11 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION public.email_appeal_authorize_dispatch(p_id uuid,p_ws_id uuid,p_email text,p_generation text,p_provider_generation text,p_binding jsonb) RETURNS boolean
+CREATE FUNCTION public.email_appeal_authorize_dispatch(p_id uuid,p_ws_id uuid,p_email text,p_generation text,p_provider_generation text,p_binding jsonb,p_dispatch_id uuid) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, pg_temp
 AS $$ SELECT EXISTS (SELECT 1 FROM private.email_blacklist_appeals a
   JOIN private.email_appeal_transport_control c ON c.enabled AND c.provider_policy_approved AND c.binding = a.transport_binding
-  WHERE a.id = p_id AND a.ws_id = p_ws_id AND a.email = lower(btrim(p_email)) AND a.status = 'dispatching'
+  WHERE a.id = p_id AND a.dispatch_id = p_dispatch_id AND a.ws_id = p_ws_id AND a.email = lower(btrim(p_email)) AND a.status = 'dispatching'
     AND a.expires_at > clock_timestamp() AND a.transport_binding = p_binding AND a.provider_generation = p_provider_generation
     AND private.email_appeal_verified_recipient(a.recipient_id,a.email)
     AND EXISTS (SELECT 1 FROM public.workspace_secrets f WHERE f.ws_id = p_ws_id AND f.name = 'email_blacklist_appeals' AND f.value = 'true')
@@ -518,8 +525,8 @@ AS $$
 DECLARE v_status text; v_appeal_id uuid; v_email text; v_count integer;
 BEGIN
   IF p_outcome IS NULL OR p_outcome NOT IN ('sent','failed','unknown','reblocked') OR (p_outcome = 'sent' AND (p_message_id IS NULL OR length(btrim(p_message_id)) NOT BETWEEN 1 AND 200)) THEN RAISE EXCEPTION 'email_appeal_invalid_request'; END IF;
-  UPDATE private.email_appeal_report_dispatches SET status = p_outcome,provider_message_id = p_message_id
-    WHERE id = p_dispatch_id AND status = 'dispatching' RETURNING status,appeal_id,email INTO v_status,v_appeal_id,v_email;
+  UPDATE private.email_appeal_report_dispatches SET status = p_outcome,provider_message_id = coalesce(provider_message_id,p_message_id)
+    WHERE id = p_dispatch_id AND status = 'dispatching' AND (provider_message_id IS NULL OR p_message_id IS NULL OR provider_message_id = p_message_id) RETURNING status,appeal_id,email INTO v_status,v_appeal_id,v_email;
   IF v_status IS NULL THEN RAISE EXCEPTION 'email_appeal_delivery_state'; END IF;
   IF p_outcome = 'reblocked' THEN
     SELECT count(*) INTO v_count FROM private.email_blacklist_appeals WHERE email = v_email AND status = 'reblocked';
@@ -544,22 +551,40 @@ AS $$ SELECT EXISTS (SELECT 1 FROM private.email_appeal_report_dispatches d
     AND public.email_appeal_report_grant(p_ws_id,p_email)->>'generation' = p_generation
     AND public.email_appeal_report_grant(p_ws_id,p_email)->'report_binding' = p_binding) $$;
 
-CREATE FUNCTION public.email_appeal_feedback(p_event_id text,p_message_id text,p_account_id text,p_region text,p_email text,p_ws_id uuid,p_event_type text,p_bounce_type text DEFAULT NULL,p_appeal_id uuid DEFAULT NULL) RETURNS jsonb
+CREATE FUNCTION public.email_appeal_feedback(p_event_id text,p_message_id text,p_account_id text,p_region text,p_email text,p_ws_id uuid,p_event_type text,p_bounce_type text,p_appeal_id uuid,p_dispatch_id uuid,p_dispatch_kind text,p_identity text,p_configuration_set text) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE v_id uuid; v_inserted uuid;
 BEGIN
   IF p_event_id IS NULL OR length(p_event_id) NOT BETWEEN 1 AND 200 OR p_event_type IS NULL
+    OR p_message_id IS NULL OR length(btrim(p_message_id)) NOT BETWEEN 1 AND 200
+    OR p_dispatch_kind IS NULL OR p_dispatch_kind NOT IN ('confirmation','report')
     OR p_event_type NOT IN ('bounce','complaint') OR (p_event_type = 'bounce' AND coalesce(p_bounce_type,'') NOT IN ('hard','soft','transient')) THEN RETURN jsonb_build_object('status','invalid'); END IF;
-  SELECT id INTO v_id FROM private.email_blacklist_appeals WHERE id = p_appeal_id AND provider_message_id = p_message_id
-    AND transport_binding->>'account_id' = p_account_id AND transport_binding->>'region' = p_region
-    AND email = lower(btrim(p_email)) AND ws_id = p_ws_id;
-  IF v_id IS NULL THEN SELECT appeal_id INTO v_id FROM private.email_appeal_report_dispatches WHERE appeal_id = p_appeal_id AND provider_message_id = p_message_id
-    AND binding->>'account_id' = p_account_id AND binding->>'region' = p_region AND email = lower(btrim(p_email)) AND ws_id = p_ws_id; END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('email-appeal-address:' || lower(btrim(p_email)),0));
+  -- A random durable dispatch tag binds feedback even when the send response is lost.
+  IF p_dispatch_kind = 'confirmation' THEN
+    SELECT id INTO v_id FROM private.email_blacklist_appeals WHERE id = p_appeal_id AND dispatch_id = p_dispatch_id AND dispatched_at IS NOT NULL
+      AND (provider_message_id IS NULL OR provider_message_id = p_message_id)
+      AND transport_binding->>'account_id' = p_account_id AND transport_binding->>'region' = p_region
+      AND transport_binding->>'identity' = p_identity AND transport_binding->>'configuration_set' = p_configuration_set
+      AND email = lower(btrim(p_email)) AND ws_id = p_ws_id FOR UPDATE;
+  ELSE
+    SELECT appeal_id INTO v_id FROM private.email_appeal_report_dispatches WHERE appeal_id = p_appeal_id AND id = p_dispatch_id
+      AND (provider_message_id IS NULL OR provider_message_id = p_message_id)
+      AND binding->>'account_id' = p_account_id AND binding->>'region' = p_region
+      AND binding->>'identity' = p_identity AND binding->>'configuration_set' = p_configuration_set
+      AND email = lower(btrim(p_email)) AND ws_id = p_ws_id FOR UPDATE;
+  END IF;
   IF v_id IS NULL THEN RETURN jsonb_build_object('status','invalid'); END IF;
-  INSERT INTO private.email_appeal_feedback(account_id,region,event_id,appeal_id) VALUES(p_account_id,p_region,p_event_id,v_id)
+  INSERT INTO private.email_appeal_feedback(account_id,region,event_id,appeal_id,dispatch_id,dispatch_kind,message_id,event_type)
+    VALUES(p_account_id,p_region,p_event_id,v_id,p_dispatch_id,p_dispatch_kind,p_message_id,p_event_type)
     ON CONFLICT DO NOTHING RETURNING appeal_id INTO v_inserted;
   IF v_inserted IS NULL THEN RETURN jsonb_build_object('status','duplicate'); END IF;
+  IF p_dispatch_kind = 'confirmation' THEN
+    UPDATE private.email_blacklist_appeals SET provider_message_id = coalesce(provider_message_id,p_message_id) WHERE id = v_id;
+  ELSE
+    UPDATE private.email_appeal_report_dispatches SET provider_message_id = coalesce(provider_message_id,p_message_id) WHERE id = p_dispatch_id;
+  END IF;
   INSERT INTO private.email_bounce_complaints(email_hash,event_type,bounce_type)
     VALUES(private.email_appeal_hash(p_email),p_event_type,p_bounce_type);
   RETURN jsonb_build_object('status','recorded');
@@ -593,6 +618,6 @@ CREATE TRIGGER email_appeal_bounce_reblock AFTER INSERT ON private.email_bounce_
 CREATE TRIGGER email_appeal_blacklist_reblock AFTER INSERT OR UPDATE ON public.email_blacklist FOR EACH ROW EXECUTE FUNCTION private.email_appeal_reblock();
 
 REVOKE ALL ON FUNCTION private.email_appeal_hash(text), private.email_appeal_admin(uuid,uuid), private.email_appeal_recipient(uuid,text), private.email_appeal_suppression(text,uuid), private.email_appeal_reblock(), private.email_appeal_verified_recipient(uuid,text), private.email_appeal_claims_match(private.email_blacklist_appeals,jsonb) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.email_appeal_list(uuid,uuid,text,integer,integer), public.email_appeal_request(uuid,uuid,text,text,text), public.email_appeal_claim_delivery(uuid,jsonb,text), public.email_appeal_mark_delivery(uuid,text,text), public.email_appeal_confirm(text,jsonb), public.email_appeal_preview(text,jsonb), public.email_appeal_block_statuses(uuid,text[]), public.email_appeal_recipient_view(uuid,uuid), public.email_appeal_claim_bootstrap(uuid,uuid,text,jsonb), public.email_appeal_transport_binding(), public.email_appeal_feedback_bindings(), public.email_appeal_recipient_candidates(uuid,uuid,text,integer,integer), public.email_appeal_record_provider_status(uuid,uuid,text,jsonb), public.email_appeal_report_grant(uuid,text), public.email_appeal_authorize_dispatch(uuid,uuid,text,text,text,jsonb), public.email_appeal_claim_report(uuid,uuid,text,uuid,text,jsonb,text,text), public.email_appeal_mark_report(uuid,text,text), public.email_appeal_authorize_report_dispatch(uuid,uuid,text,text,text,jsonb), public.email_appeal_feedback(text,text,text,text,text,uuid,text,text,uuid) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.email_appeal_list(uuid,uuid,text,integer,integer), public.email_appeal_request(uuid,uuid,text,text,text), public.email_appeal_claim_delivery(uuid,jsonb,text), public.email_appeal_mark_delivery(uuid,text,text), public.email_appeal_confirm(text,jsonb), public.email_appeal_preview(text,jsonb), public.email_appeal_block_statuses(uuid,text[]), public.email_appeal_recipient_view(uuid,uuid), public.email_appeal_claim_bootstrap(uuid,uuid,text,jsonb), public.email_appeal_transport_binding(), public.email_appeal_feedback_bindings(), public.email_appeal_recipient_candidates(uuid,uuid,text,integer,integer), public.email_appeal_record_provider_status(uuid,uuid,text,jsonb), public.email_appeal_report_grant(uuid,text), public.email_appeal_authorize_dispatch(uuid,uuid,text,text,text,jsonb), public.email_appeal_claim_report(uuid,uuid,text,uuid,text,jsonb,text,text), public.email_appeal_mark_report(uuid,text,text), public.email_appeal_authorize_report_dispatch(uuid,uuid,text,text,text,jsonb), public.email_appeal_feedback(text,text,text,text,text,uuid,text,text,uuid) TO service_role;
+REVOKE ALL ON FUNCTION public.email_appeal_list(uuid,uuid,text,integer,integer), public.email_appeal_request(uuid,uuid,text,text,text), public.email_appeal_claim_delivery(uuid,jsonb,text), public.email_appeal_mark_delivery(uuid,text,text), public.email_appeal_confirm(text,jsonb), public.email_appeal_preview(text,jsonb), public.email_appeal_block_statuses(uuid,text[]), public.email_appeal_recipient_view(uuid,uuid), public.email_appeal_claim_bootstrap(uuid,uuid,text,jsonb), public.email_appeal_transport_binding(), public.email_appeal_feedback_bindings(), public.email_appeal_recipient_candidates(uuid,uuid,text,integer,integer), public.email_appeal_record_provider_status(uuid,uuid,text,jsonb), public.email_appeal_report_grant(uuid,text), public.email_appeal_authorize_dispatch(uuid,uuid,text,text,text,jsonb,uuid), public.email_appeal_claim_report(uuid,uuid,text,uuid,text,jsonb,text,text), public.email_appeal_mark_report(uuid,text,text), public.email_appeal_authorize_report_dispatch(uuid,uuid,text,text,text,jsonb), public.email_appeal_feedback(text,text,text,text,text,uuid,text,text,uuid,uuid,text,text,text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.email_appeal_list(uuid,uuid,text,integer,integer), public.email_appeal_request(uuid,uuid,text,text,text), public.email_appeal_claim_delivery(uuid,jsonb,text), public.email_appeal_mark_delivery(uuid,text,text), public.email_appeal_confirm(text,jsonb), public.email_appeal_preview(text,jsonb), public.email_appeal_block_statuses(uuid,text[]), public.email_appeal_recipient_view(uuid,uuid), public.email_appeal_claim_bootstrap(uuid,uuid,text,jsonb), public.email_appeal_transport_binding(), public.email_appeal_feedback_bindings(), public.email_appeal_recipient_candidates(uuid,uuid,text,integer,integer), public.email_appeal_record_provider_status(uuid,uuid,text,jsonb), public.email_appeal_report_grant(uuid,text), public.email_appeal_authorize_dispatch(uuid,uuid,text,text,text,jsonb,uuid), public.email_appeal_claim_report(uuid,uuid,text,uuid,text,jsonb,text,text), public.email_appeal_mark_report(uuid,text,text), public.email_appeal_authorize_report_dispatch(uuid,uuid,text,text,text,jsonb), public.email_appeal_feedback(text,text,text,text,text,uuid,text,text,uuid,uuid,text,text,text) TO service_role;
 COMMIT;
