@@ -25,5 +25,19 @@
     "global.d.ts",
     "messages"
   ],
-  "exclude": ["node_modules", "dist", ".turbo", "public/sw.js"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".turbo",
+    "public/sw.js",
+    "cloudflare",
+    "src/routeTree.gen.ts",
+    "src/router.tsx",
+    "src/routes",
+    "src/start-bridge",
+    "src/start.ts",
+    "start-bridge.config.ts",
+    "vite.config.mts",
+    "void.config.ts"
+  ]
 }
