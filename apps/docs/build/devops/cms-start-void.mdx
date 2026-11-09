@@ -1,0 +1,57 @@
+---
+title: "CMS Start cutover packet"
+description: "Source and operator checklist for a future CMS Worker cutover."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+CMS has a TanStack Start/Void candidate. Production publication and routing are
+held; this packet records the source target and checks required before Rex
+authorizes a cutover. It does not authorize deployment, provider changes or data
+writes.
+
+## Worker and configuration
+
+- Worker: `tuturuuu-cms` for production; `tuturuuu-cms-vite-staging` for
+  staging.
+- Hosts: `cms.tuturuuu.com` and the `/cms` mount on `tuturuuu.com`. The
+  configuration rejects unknown hosts and disables Workers.dev and preview
+  URLs.
+- Build: `cd apps/cms && bun run build:cloudflare`.
+- Static asset binding: `ASSETS`. Optional internal API origin variable:
+  `INTERNAL_WEB_API_ORIGIN`. The build profile sets `TUTURUUU_NOINDEX`.
+- Runtime secret names required by CMS: `TUTURUUU_APP_COORDINATION_SECRET`,
+  `SUPABASE_SECRET_KEY`, and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+  `NEXT_PUBLIC_SUPABASE_URL` is a non-secret environment binding. Set secret
+  values only in the protected runtime secret store; this page records names
+  only.
+
+## Smoke checks
+
+After an authorized cutover, probe public deployment identity at both mounts and
+verify the native runtime header and expected source SHA:
+
+```sh
+curl -fsS -D - https://cms.tuturuuu.com/api/build-info
+curl -fsSI https://tuturuuu.com/cms/api/build-info
+```
+
+Run the existing isolated emitted-worker and cutover smoke checks before
+publication:
+
+```sh
+(cd apps/cms && CI=true CI_SOURCE_SHA="$(git rev-parse HEAD)" bun run test:runtime)
+node scripts/ci/cms-cutover-smoke.mjs
+```
+
+Confirm anonymous `/` redirects to `/login`, unknown hosts are rejected, and
+the root and mounted build-info requests return the deployed identity.
+
+## Rollback
+
+Before routing changes, Rex records the immutable Vercel deployment ID and the
+exact routes, custom domains and DNS records being replaced, plus the one-step
+restore command and rollback owner. No deployment ID is recorded in this
+repository, so Rex must capture it. Restore that routing to the prior deployment
+immediately if smoke or the post-cutover watch regresses. Keep the deployment
+available for the full release cycle.
