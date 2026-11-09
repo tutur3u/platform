@@ -1,0 +1,90 @@
+{
+  "kind": "Document hierarchy browser fixture captures",
+  "boundary": "Actual shared UI components with synthetic documents and API responses; framework navigation adapter. No deployed authentication, database, or production acceptance.",
+  "before": "Flat-flow fixture using DocumentCard visual JSX unchanged from the API parent. These are not historical production screenshots.",
+  "after": "DocumentHierarchy with actual CreateChild and DocumentCard children.",
+  "captureLimitation": "Native preview captures 1430 raster pixels for a verified 1440 CSS-pixel viewport and document width. No resizing, padding, or image edits. Mobile captures are 390 raster pixels.",
+  "sourceFocusSHA256": "45616da1cbeded52d5166ed4eb77e95d7df685ee73340cbb7c8adb4b93282933",
+  "captures": [
+    {
+      "file": "before-390-light.png",
+      "view": "before",
+      "cssViewport": [390, 900],
+      "pngDimensions": [390, 900],
+      "theme": "light",
+      "locale": "vi",
+      "sourceRevision": "432064be127031e4b9af10e179c5fcfee0afdb9c",
+      "sha256": "b21088044ee18c2cc8c9bf02a3abf12a1a340b9ea89e03994bb101312cd6818b"
+    },
+    {
+      "file": "before-390-dark.png",
+      "view": "before",
+      "cssViewport": [390, 900],
+      "pngDimensions": [390, 900],
+      "theme": "dark",
+      "locale": "vi",
+      "sourceRevision": "432064be127031e4b9af10e179c5fcfee0afdb9c",
+      "sha256": "bfa1b826228ab58aca1fbb2558356800ac5a3b8ebfba77cc8f2126987c882bfb"
+    },
+    {
+      "file": "before-1440-light.png",
+      "view": "before",
+      "cssViewport": [1440, 900],
+      "pngDimensions": [1430, 900],
+      "theme": "light",
+      "locale": "vi",
+      "sourceRevision": "432064be127031e4b9af10e179c5fcfee0afdb9c",
+      "sha256": "17ad1d2dcd4d67468180dd4d184de8daca30ded313d0820e6db24ef0ff0f4f98"
+    },
+    {
+      "file": "before-1440-dark.png",
+      "view": "before",
+      "cssViewport": [1440, 900],
+      "pngDimensions": [1430, 900],
+      "theme": "dark",
+      "locale": "vi",
+      "sourceRevision": "432064be127031e4b9af10e179c5fcfee0afdb9c",
+      "sha256": "334be5c1891eedcdbd794a90d40682c695f340125ada57d346e9470fdf588308"
+    },
+    {
+      "file": "after-390-light.png",
+      "view": "after",
+      "cssViewport": [390, 900],
+      "pngDimensions": [390, 900],
+      "theme": "light",
+      "locale": "en",
+      "sourceRevision": "9f6716e9c13bad69086fb9d9a18df712d3a98a51",
+      "sha256": "5c417141052546548ac446548d4a7956718a6e7cc4b0fe2416b81ebef530829e"
+    },
+    {
+      "file": "after-390-dark.png",
+      "view": "after",
+      "cssViewport": [390, 900],
+      "pngDimensions": [390, 900],
+      "theme": "dark",
+      "locale": "vi",
+      "sourceRevision": "9f6716e9c13bad69086fb9d9a18df712d3a98a51",
+      "sha256": "e42028db43f364b4c2262835bcaeed773a03e45c74c9c82b645023f58f333828"
+    },
+    {
+      "file": "after-1440-light.png",
+      "view": "after",
+      "cssViewport": [1440, 900],
+      "pngDimensions": [1430, 900],
+      "theme": "light",
+      "locale": "en",
+      "sourceRevision": "9f6716e9c13bad69086fb9d9a18df712d3a98a51",
+      "sha256": "90f8630159aa1d1dbbf12f6ee19f64a560e51ff583f056c4fb8bdc4b7a2c1f67"
+    },
+    {
+      "file": "after-1440-dark.png",
+      "view": "after",
+      "cssViewport": [1440, 900],
+      "pngDimensions": [1430, 900],
+      "theme": "dark",
+      "locale": "vi",
+      "sourceRevision": "9f6716e9c13bad69086fb9d9a18df712d3a98a51",
+      "sha256": "3ed850f223cd05492d2b21694f5a6e1ad4ccbf339e831041b6025d9b420a03cd"
+    }
+  ]
+}
