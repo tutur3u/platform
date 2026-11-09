@@ -9,6 +9,7 @@ export const pages = [
   { pattern: "/sso/consent", file: "src/app/[locale]/(auth)/sso/consent/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/verify-token", file: "src/app/[locale]/(auth)/verify-token/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]", file: "src/app/[locale]/(dashboard)/[wsId]/(dashboard)/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/calendar", file: "src/app/[locale]/(dashboard)/[wsId]/calendar/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/tasks/[[...slug]]", file: "src/app/[locale]/(dashboard)/[wsId]/tasks/[[...slug]]/page.tsx", defaults: { "locale": "en" } },
 ] as const satisfies readonly BridgePage[];
 
