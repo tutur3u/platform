@@ -148,6 +148,7 @@ export const ci = {
   'learn-cloudflare.yaml': true,
   'infrastructure-cloudflare.yaml': true,
   'mind-cloudflare.yaml': true,
+  'teach-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
