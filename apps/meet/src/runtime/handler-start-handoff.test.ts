@@ -292,3 +292,26 @@ it('R21 late asynchronous navigation keeps inherited ALS wiring after terminal r
     'one'
   );
 });
+
+describe('legacy web Meet AI defense in depth behind proxy()', () => {
+  it.each([
+    '/api/ai/meetings/transcription',
+    '/api/ai/meetings/summary',
+    '/api/ai//meetings/summary',
+  ])(
+    'never forwards %s to apps/web even if proxy() passes it through',
+    async (path) => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const response = await handleMeetRequest(
+        new Request(`https://meet.invalid${path}`, { method: 'POST' }),
+        {},
+        ctx
+      );
+      expect(response.status).toBe(403);
+      expect((await response.json()).code).toBe(
+        'MEET_AI_WORKSPACE_NOT_ENABLED'
+      );
+      expect(ports.start).not.toHaveBeenCalled();
+    }
+  );
+});
