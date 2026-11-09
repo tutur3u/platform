@@ -8,12 +8,13 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import { useEndedRoom } from '../hooks/use-ended-room';
+import type { CallLifecycle } from '../lib/call-state';
 import { EndedMeetingSettings } from './ended-meeting-settings';
 import { RestoreRoomButton } from './restore-room-button';
 
 export function CallEnded({
   accountId,
-  ended = true,
+  lifecycle = 'ended',
   initialShowNotes = false,
   canManage,
   canReadNotes,
@@ -26,7 +27,8 @@ export function CallEnded({
   notes,
 }: {
   accountId: string;
-  ended?: boolean;
+  /** `ended` when the room closed; any other value means this device left. */
+  lifecycle?: CallLifecycle;
   initialShowNotes?: boolean;
   canManage: boolean;
   canReadNotes: boolean;
@@ -39,6 +41,7 @@ export function CallEnded({
   /** Replaces the default notes overview, e.g. with the meeting page reader. */
   notes?: ReactNode;
 }) {
+  const ended = lifecycle === 'ended';
   useEndedRoom(accountId, meetingId, ended);
   const queryClient = useQueryClient();
   const t = useTranslations('meet.call');

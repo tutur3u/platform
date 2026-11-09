@@ -33,6 +33,7 @@ import { useSharedRoomAudio } from '../hooks/use-shared-room-audio';
 import {
   countUnreadChatMessages,
   isHandRaised,
+  selectCallLifecycle,
   selectOthers,
   selectSelf,
 } from '../lib/call-state';
@@ -281,7 +282,8 @@ function CallShellContent({
     if (state.ended || state.admission === 'denied') leaveNow();
   }, [state.ended, state.admission, leaveNow]);
 
-  if (state.admission === 'denied' && !state.ended)
+  const lifecycle = selectCallLifecycle(state, joined);
+  if (lifecycle === 'error')
     return (
       <JoinOutcome
         reason={state.admissionReason ?? 'denied'}
@@ -289,11 +291,11 @@ function CallShellContent({
         leaveHref={backHref}
       />
     );
-  if (left || state.ended)
+  if (left || lifecycle === 'ended')
     return (
       <CallEnded
         accountId={accountId}
-        ended={state.ended}
+        lifecycle={lifecycle}
         canManage={canManage}
         canReadNotes={
           state.ended ? !!state.settings.shareNotesAfterMeeting : canReadNotes
@@ -306,7 +308,7 @@ function CallShellContent({
         saving={saving}
       />
     );
-  if (!joined || state.admission === 'waiting')
+  if (lifecycle === 'preparing' || lifecycle === 'joining')
     return (
       <ConnectedLobby
         canReadWorkspace={canReadWorkspace}
