@@ -16,6 +16,7 @@ const DEFAULT_SUPPLEMENTAL_PATHS = [
   'apps/database/scripts/policy-notice-ledger.test.mjs',
   'apps/database/scripts/rls-perf-initplan-migration.test.js',
   'apps/database/scripts/seed-sql.test.js',
+  'apps/database/scripts/ses-delivery-notifications.test.mjs',
   'apps/database/scripts/storage-bucket-inserts.test.js',
   'apps/database/scripts/verify-declarative-parity-psql.test.mjs',
   'apps/database/scripts/verify-declarative-parity.test.mjs',
