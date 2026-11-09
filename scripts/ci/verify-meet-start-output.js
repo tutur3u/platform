@@ -19,6 +19,7 @@ const {
 
 const secretNames = [
   'GOOGLE_GENERATIVE_AI_API_KEY',
+  'MEET_AI_DISABLED_WORKSPACE_IDS',
   'MEET_REALTIME_TOKEN_SECRET',
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
   'NEXT_PUBLIC_SUPABASE_URL',
@@ -43,7 +44,8 @@ const identity = {
   ],
   images: { binding: 'IMAGES' },
   observability: { enabled: true, head_sampling_rate: 0.05 },
-  workers_dev: true,
+  workers_dev: false,
+  preview_urls: false,
   routes: [{ pattern: 'meet.tuturuuu.com', custom_domain: true }],
   durable_objects: {
     bindings: [{ name: 'MEET_LIVE', class_name: 'MeetLiveDurableObject' }],
@@ -52,6 +54,7 @@ const identity = {
     { tag: 'meet-live-v1', new_sqlite_classes: ['MeetLiveDurableObject'] },
   ],
   vars: {
+    NODE_ENV: 'production',
     NEXT_PUBLIC_APP_URL: 'https://meet.tuturuuu.com',
     NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
     MEET_REALTIME_URL: 'wss://meet-realtime.tuturuuu.com/realtime',

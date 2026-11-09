@@ -31,7 +31,11 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.{ts,tsx}', 'cloudflare/worker-entrypoint.test.ts'],
+    include: [
+      'src/**/*.test.{ts,tsx}',
+      'cloudflare/worker-admission.test.ts',
+      'cloudflare/worker-entrypoint.test.ts',
+    ],
     exclude: [...configDefaults.exclude, 'src/proxy.public-callback.test.ts'],
   },
 });
