@@ -208,3 +208,22 @@ for (const [file, workflow] of gated) {
     assert.ok(consumers > 0, 'a gate with no consumer is dead weight');
   });
 }
+
+for (const [file, workflow] of gated) {
+  const checkCi = workflow.jobs['check-ci'];
+  if (!checkCi) continue;
+  test(`${file}: the configuration check waits for the gate and skips unaffected pull requests`, () => {
+    assert.deepEqual(needsOf(checkCi), ['affected-gate']);
+    const skipped = admittedPrContext('false');
+    const affected = admittedPrContext('true');
+    assert.equal(evaluateExpression(checkCi.if, skipped), false);
+    assert.equal(evaluateExpression(checkCi.if, affected), true);
+    const push = admittedPrContext('true');
+    push.github.event_name = 'push';
+    push.github.ref = 'refs/heads/main';
+    assert.equal(evaluateExpression(checkCi.if, push), true);
+    const unlabeled = admittedPrContext('true');
+    unlabeled.github.event.pull_request.labels = [];
+    assert.equal(evaluateExpression(checkCi.if, unlabeled), false);
+  });
+}

@@ -1,0 +1,60 @@
+---
+title: "Parley and docs hosting routes"
+description: "Where Parley and the documentation site run today, how Parley is rolled back, and why neither needs a Vercel exit."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Parley and the documentation site are the two Wave 2 apps with no Vercel
+deployment to exit. This page records their current hosting route so the
+Cloudflare migration inventory is complete.
+
+## Parley
+
+Parley (`apps/parley`) already runs on Cloudflare Workers as a Next.js app
+through OpenNext. It has no `vercel.json` and no Vercel workflow.
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-parley` (`apps/parley/wrangler.jsonc`) |
+| Route | `parley.tuturuuu.com` as a Workers custom domain |
+| Build | `bun run --cwd apps/parley build:cloudflare` (`opennextjs-cloudflare build`) |
+| Publisher | `parley-cloudflare.yaml`, deploy job on the `production` branch only |
+| Bindings | `ASSETS`, `WORKER_SELF_REFERENCE`, `MEETING_AI_PROVIDER` (service `tuturuuu-meet`), `NEXT_INC_CACHE_R2_BUCKET`, `IMAGES`, Durable Object `MEET_LIVE` (script `tuturuuu-meet`) |
+| Secrets (names) | `MEET_REALTIME_TOKEN_SECRET`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` |
+
+The deploy job verifies the secret names, deploys the CI-built Worker and then
+requires `https://parley.tuturuuu.com/access-denied` to answer `200`.
+
+### Smoke
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://parley.tuturuuu.com/access-denied
+curl -sI https://parley.tuturuuu.com/ | head -5
+curl -s https://parley.tuturuuu.com/api/build-info
+```
+
+Expected: `200`, a redirect to the central sign-in for an anonymous visitor, and the
+deployed commit.
+
+### Rollback
+
+Redeploy the previous `parley-worker-<SHA>` artifact with the same deploy job, or
+roll the Worker back to its prior Cloudflare version. There is no Vercel route
+to return to. Parley's rooms depend on the `tuturuuu-meet` Worker and its
+`MeetLiveDurableObject`; never roll the two back independently of a changed
+binding contract.
+
+### Native Start port
+
+A port to Start + Void is not required to remove Vercel cost and is not
+scheduled. It is a separate change that must preserve `/live-connect` (the
+authenticated WebSocket upgrade to `MEET_LIVE`), the service and Durable Object
+bindings above, and the room routes.
+
+## Documentation site
+
+`apps/docs` stays on Mintlify (hosted, or `bun dev:docs` locally with the pinned
+CLI in `mintlify-version.json`). It has no Next.js, Vercel or Worker build, so
+there is nothing to port. Its hostname mapping is provider-side and unchanged by
+the Start migration; do not add a Worker route for it.

@@ -5,7 +5,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET } from './route';
 
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), membership: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  auth: vi.fn(),
+  load: vi.fn(),
+  membership: vi.fn(),
+}));
+vi.mock('./runtime-store', () => ({ loadMobileRuntimeFlags: mocks.load }));
 vi.mock('@tuturuuu/feature-flags', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('@tuturuuu/feature-flags')>();
@@ -39,6 +44,7 @@ describe('GET mobile feature flags', () => {
       supabase: {},
     });
     mocks.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
+    mocks.load.mockResolvedValue({ status: 'unreachable' });
   });
 
   it('rejects unauthenticated requests before evaluating validators', async () => {
@@ -206,5 +212,64 @@ describe('GET mobile feature flags', () => {
 
   it('returns 200 for a stale validator', async () => {
     expect((await GET(request('', '"old"'))).status).toBe(200);
+  });
+
+  it('does not read storage before authentication or membership succeeds', async () => {
+    mocks.auth.mockResolvedValue({
+      ok: false,
+      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    });
+    await GET(request());
+    mocks.auth.mockResolvedValue({
+      ok: true,
+      user: { id: 'user-1' },
+      supabase: {},
+    });
+    mocks.membership.mockResolvedValue({
+      ok: false,
+      error: 'membership_missing',
+    });
+    await GET(request(`?wsId=${wsId}`));
+    await GET(request('?wsId=not-a-uuid'));
+    expect(mocks.load).not.toHaveBeenCalled();
+  });
+
+  it('returns an error instead of defaults when storage denies the read', async () => {
+    mocks.load.mockResolvedValue({ status: 'denied' });
+    const response = await GET(request());
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: 'Could not evaluate flags',
+    });
+    expect(response.headers.get('cache-control')).toBe('private, no-cache');
+    expect(evaluateFlags).not.toHaveBeenCalled();
+  });
+
+  it('uses server environment overrides and keeps the master gate', async () => {
+    const previous = process.env.VERCEL_ENV;
+    process.env.VERCEL_ENV = 'production';
+    try {
+      mocks.load.mockResolvedValue({
+        status: 'ready',
+        overrides: [
+          { flagKey: 'mobile_offline', overrideEnabled: false, revision: 2 },
+          { flagKey: 'offline_read_notes', overrideEnabled: true, revision: 3 },
+        ],
+      });
+      const response = await GET(request('?environment=development'));
+      expect(mocks.load).toHaveBeenCalledWith('production');
+      const body = await response.json();
+      expect(body.flags.mobile_offline).toBe(false);
+      expect(body.flags.offline_read_notes).toBe(false);
+      expect(body.ttlSeconds).toBe(30);
+      expect(evaluateFlags).toHaveBeenLastCalledWith(
+        registry,
+        { userId: 'user-1' },
+        { mobile_offline: false, offline_read_notes: true }
+      );
+    } finally {
+      if (previous === undefined) delete process.env.VERCEL_ENV;
+      else process.env.VERCEL_ENV = previous;
+    }
   });
 });

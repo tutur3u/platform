@@ -6,16 +6,16 @@ const { readWorkflow } = require('./workflow-yaml-test-helper');
 // Vite is a declared root dependency and owns this locked matcher.
 const picomatch = createRequire(require.resolve('vite'))('picomatch');
 const workflow = readWorkflow('pr-checks.yaml', { raw: true });
+const mapStep = workflow.jobs.scope.steps.find((step) => step.id === 'map');
+const pathsStep = workflow.jobs.scope.steps.find((step) => step.id === 'paths');
+assert.equal(mapStep.run, 'node scripts/ci/check-map.js --ci-filters');
+assert.equal(pathsStep.with.filters, '${{ steps.map.outputs.filters }}');
 const filters = JSON.parse(
-  execFileSync(
-    'bun',
-    [
-      '-e',
-      'console.log(JSON.stringify(Bun.YAML.parse(process.argv[1])))',
-      workflow.jobs.scope.steps[0].with.filters,
-    ],
-    { encoding: 'utf8' }
-  )
+  execFileSync(process.execPath, ['scripts/ci/check-map.js', '--ci-filters'], {
+    cwd: require('node:path').resolve(__dirname, '../..'),
+    encoding: 'utf8',
+    env: { ...process.env, GITHUB_OUTPUT: '' },
+  })
 );
 const matches = (patterns, file) => picomatch(patterns, { dot: true })(file);
 const common = {

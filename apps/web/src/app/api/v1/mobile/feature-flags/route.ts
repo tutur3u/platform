@@ -1,9 +1,15 @@
 import { createHash } from 'node:crypto';
-import { evaluateFlags, registry } from '@tuturuuu/feature-flags';
+import {
+  evaluateFlags,
+  registry,
+  resolveRuntimeFlagEnvironment,
+  selectRuntimeOverrides,
+} from '@tuturuuu/feature-flags';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { loadMobileRuntimeFlags } from './runtime-store';
 
 const workspaceIdSchema = z.string().uuid();
 const cacheHeaders = {
@@ -53,13 +59,35 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const payload = {
-    ttlSeconds: 30,
-    flags: evaluateFlags(registry, {
-      userId: auth.user.id,
-      ...(wsId === null ? {} : { wsId }),
-    }),
+  const environment = resolveRuntimeFlagEnvironment({
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+  });
+  let store: Awaited<ReturnType<typeof loadMobileRuntimeFlags>>;
+  try {
+    store = await loadMobileRuntimeFlags(environment);
+  } catch {
+    store = { status: 'unreachable' };
+  }
+  const selected = selectRuntimeOverrides({
+    keys: registry.map((flag) => flag.key),
+    store,
+  });
+  if (selected.kind === 'denied' || selected.kind === 'invalid') {
+    return NextResponse.json(
+      { error: 'Could not evaluate flags' },
+      { status: 500, headers: cacheHeaders }
+    );
+  }
+  const context = {
+    userId: auth.user.id,
+    ...(wsId === null ? {} : { wsId }),
   };
+  const flags =
+    selected.kind === 'overrides' && Object.keys(selected.overrides).length > 0
+      ? evaluateFlags(registry, context, selected.overrides)
+      : evaluateFlags(registry, context);
+  const payload = { ttlSeconds: 30, flags };
   const version = createHash('sha256')
     .update(JSON.stringify(payload))
     .digest('hex');

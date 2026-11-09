@@ -176,7 +176,7 @@ describe('verifySnsEnvelope', () => {
 
     await expect(verifySnsEnvelope(envelope)).resolves.toBe(true);
     expect(fetchMock).toHaveBeenCalledWith(new URL(TEST_SIGNING_CERT_URL), {
-      redirect: 'error',
+      redirect: 'manual',
     });
   });
 
@@ -187,5 +187,37 @@ describe('verifySnsEnvelope', () => {
       envelope,
       notification,
     });
+  });
+  it.each([301, 302, 307, 308])(
+    'denies certificate redirect %s without reading it',
+    async (status) => {
+      configureExpectedTopicArn();
+      const response = new Response(null, {
+        status,
+        headers: { Location: 'https://other.invalid/' },
+      });
+      const text = vi.spyOn(response, 'text');
+      const fetch = vi.fn().mockResolvedValue(response);
+      vi.stubGlobal('fetch', fetch);
+      await expect(
+        verifySnsEnvelope(createSignedEnvelope(TEST_SIGNING_CERT_URL))
+      ).resolves.toBe(false);
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(fetch).toHaveBeenCalledWith(new URL(TEST_SIGNING_CERT_URL), {
+        redirect: 'manual',
+      });
+      expect(text).not.toHaveBeenCalled();
+    }
+  );
+  it('denies an opaque signing certificate before reading it', async () => {
+    configureExpectedTopicArn();
+    const response = new Response(publicKeyPem);
+    Object.defineProperty(response, 'type', { value: 'opaqueredirect' });
+    const text = vi.spyOn(response, 'text');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+    await expect(
+      verifySnsEnvelope(createSignedEnvelope(TEST_SIGNING_CERT_URL))
+    ).resolves.toBe(false);
+    expect(text).not.toHaveBeenCalled();
   });
 });
