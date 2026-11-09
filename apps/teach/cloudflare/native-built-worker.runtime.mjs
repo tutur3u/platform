@@ -37,7 +37,7 @@ const EXPECTED = { '/': 200 };
 const POLICY_PROBES = [
   { kind: 'page', path: '/' },
   { kind: 'api', path: '/api/build-info' },
-  { kind: 'notFound', path: '/__native-smoke-missing__' },
+  { kind: 'notFound', path: '/login/__native-smoke-missing__' },
 ];
 // The Worker's mounts: the generated defaults plus the app-owned
 // start-bridge.config.ts overrides, exactly as cloudflare/worker.ts spreads

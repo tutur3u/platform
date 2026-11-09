@@ -17,5 +17,8 @@
   "ignored": {},
   "runtime": {
     "/": 200
+  },
+  "runtimeProbes": {
+    "notFound": "/login/__native-smoke-missing__"
   }
 }
