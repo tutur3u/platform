@@ -194,7 +194,7 @@ jobs:
         apps/workspace/src/start-bridge apps/workspace/src/routes apps/workspace/src/router.tsx apps/workspace/src/start.ts apps/workspace/cloudflare apps/workspace/vite.config.mts apps/workspace/void.config.ts apps/workspace/tsconfig.json apps/workspace/package.json apps/workspace/start-bridge.routes.json apps/workspace/cloudflare/deployment-profile.mjs apps/workspace/cloudflare/deployment-profile.test.mjs
   # Dispatch-only production seal. It does not deploy, attach a route, or publish.
   workspace-cutover-artifact:
-    if: github.event_name == 'workflow_dispatch'
+    if: ${{ (github.event_name == 'workflow_dispatch') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
