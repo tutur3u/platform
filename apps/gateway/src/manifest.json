@@ -155,6 +155,16 @@
       ]
     },
     {
+      "id": "marketing-assets",
+      "origin": "marketing",
+      "cache": "static",
+      "localized": false,
+      "exact": [],
+      "prefix": [
+        "/assets/"
+      ]
+    },
+    {
       "id": "static-assets",
       "origin": "web",
       "cache": "static",

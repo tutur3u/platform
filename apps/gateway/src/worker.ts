@@ -113,7 +113,12 @@ function chooseOrigin(
     const flagged = resolveOrigin(env, manifest, match.flagOrigin);
     if (flagged) return { url: flagged, flagged: true };
   }
-  return { url: resolveOrigin(env, manifest, match.origin), flagged: false };
+  const own = resolveOrigin(env, manifest, match.origin);
+  // A route that names an optional origin (for example the marketing assets)
+  // falls back to the default origin while that origin is not configured.
+  const url =
+    own ?? resolveOrigin(env, manifest, manifest.default.origin);
+  return { url, flagged: false };
 }
 
 function originRequest(request: Request, origin: URL) {
