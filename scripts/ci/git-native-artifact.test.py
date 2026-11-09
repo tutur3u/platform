@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 import unittest
 
 HERE = Path(__file__).parent
@@ -72,22 +73,24 @@ class GitArtifactTest(unittest.TestCase):
         env.pop("APPS_SOURCE_SHA", None)
         env.pop("GIT_SOURCE_SHA", None)
         env["VITE_GIT_NATIVE_PROFILE"] = "production"
-        missing = subprocess.run(
-            [sys.executable, str(HERE / "git-native-artifact.py"), "seal", "apps/git", "--receipt", "/tmp/git-artifact-missing.json"],
-            env=env,
-            capture_output=True,
-            text=True,
-        )
-        self.assertNotEqual(missing.returncode, 0)
-        self.assertIn("exact source SHA required", missing.stderr)
-        env["GIT_SOURCE_SHA"] = SHA
-        present = subprocess.run(
-            [sys.executable, str(HERE / "git-native-artifact.py"), "seal", "apps/git", "--receipt", "/tmp/git-artifact-present.json"],
-            env=env,
-            capture_output=True,
-            text=True,
-        )
-        self.assertNotIn("exact source SHA required", present.stderr)
+        with tempfile.TemporaryDirectory(prefix="git-artifact-") as temporary:
+            receipt = str(Path(temporary) / "receipt.json")
+            missing = subprocess.run(
+                [sys.executable, str(HERE / "git-native-artifact.py"), "seal", "apps/git", "--receipt", receipt],
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(missing.returncode, 0)
+            self.assertIn("exact source SHA required", missing.stderr)
+            env["GIT_SOURCE_SHA"] = SHA
+            present = subprocess.run(
+                [sys.executable, str(HERE / "git-native-artifact.py"), "seal", "apps/git", "--receipt", receipt],
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotIn("exact source SHA required", present.stderr)
 
 
 if __name__ == "__main__":
