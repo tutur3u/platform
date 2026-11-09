@@ -26,6 +26,7 @@ path until an explicit cutover PR admits the app.
 | Dashboard home | `(dashboard)/[wsId]/(dashboard)/page.tsx` and its Mira, assistant, user-group and generative-UI closure | Carved. `/[wsId]` renders the Mira dashboard. |
 | Tasks | `(dashboard)/[wsId]/tasks/[[...slug]]` | Carved. Redirects to the Tasks app origin with the path and query preserved. |
 | Calendar | `(dashboard)/[wsId]/calendar` | Carved. Redirects to the Calendar app origin. |
+| Workspace settings | `(dashboard)/[wsId]/(workspace-settings)`: `settings` (+ `notifications`, `reports`), `members`, `roles` (redirects to `members?tab=roles`), `api-keys` (+ usage logs), `secrets`, `usage`, `sso`, `inquiries`, `billing` (+ `success`, which redirects to the Pay app) | Carved. `lib/datasets/page-access.ts` redirects a `401` to `/login` because the bridge has no `unauthorized()` boundary. |
 | Locale root | `[locale]/page.tsx` (Workspace-owned) | Answers `404`. The locale-only path would otherwise match `/[wsId]` as a workspace named after the locale. Signed-in users never reach it because the proxy redirects them to their workspace. |
 | Every other `[wsId]/*` group | `ai`, `documents`, `habits`, `inventory`, `notes`, `polls`, `workforce`, and the rest | Not carved. Workspace answers `404` for them, so a router in front of it must send only the carved patterns here. |
 

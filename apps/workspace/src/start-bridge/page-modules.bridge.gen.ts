@@ -56,6 +56,110 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/api-keys/[keyId]/usage-logs/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/api-keys/[keyId]/usage-logs/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/api-keys/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/api-keys/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/success/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/success/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/inquiries/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/inquiries/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/roles/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/roles/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/notifications/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/notifications/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/reports/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/reports/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/sso/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/sso/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/usage/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/usage/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/calendar/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/calendar/page'),
     layouts: [
