@@ -184,11 +184,18 @@ function ParticipantTileImpl({
         )}
       />
       {!showVideo && (
-        <div className="absolute inset-0 grid size-full place-items-center bg-muted/40">
+        <div
+          className={cn(
+            'absolute inset-0 grid size-full place-items-center bg-muted/40',
+            floating && 'pb-7'
+          )}
+        >
           {MEETING_APP === 'parley' && participant.assistantAudio ? (
-            <LiveAvatar size={120} />
+            <LiveAvatar size={floating ? 40 : 120} />
           ) : (
-            <Avatar className="size-20 text-xl">
+            <Avatar
+              className={floating ? 'size-10 text-sm' : 'size-20 text-xl'}
+            >
               <AvatarImage src={participant.avatarUrl} alt="" />
               <AvatarFallback>
                 {participant.displayName

@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
@@ -111,4 +117,30 @@ it('announces corner moves politely', () => {
   expect(screen.getByRole('status').textContent).toBe(
     'Camera preview moved to bottom left'
   );
+});
+
+it('shows the controls briefly on mount and again on a touch tap', () => {
+  vi.useFakeTimers();
+  try {
+    renderPip(new MemoryStorage());
+    const card = screen.getByTestId('self-preview-card');
+    expect(card.getAttribute('data-revealed')).toBe('true');
+    act(() => {
+      vi.advanceTimersByTime(3100);
+    });
+    expect(card.getAttribute('data-revealed')).toBeNull();
+    fireEvent.pointerDown(card, {
+      pointerId: 1,
+      pointerType: 'touch',
+      button: 0,
+    });
+    fireEvent.pointerUp(card, {
+      pointerId: 1,
+      pointerType: 'touch',
+      button: 0,
+    });
+    expect(card.getAttribute('data-revealed')).toBe('true');
+  } finally {
+    vi.useRealTimers();
+  }
 });

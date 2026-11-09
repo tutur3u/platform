@@ -34,6 +34,7 @@ import {
   writePipPrefs,
 } from '../lib/pip-layout';
 
+const REVEAL_MS = 3000;
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 const useIsomorphicLayoutEffect =
   typeof window === 'undefined' ? useEffect : useLayoutEffect;
@@ -92,6 +93,8 @@ export function SelfPreviewPip({
   const pillRef = useRef<HTMLButtonElement>(null);
   const focusAfterToggle = useRef(false);
   const [announcement, setAnnouncement] = useState('');
+  const [revealed, setRevealed] = useState(true);
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     writePipPrefs(resolvedStorage, prefs);
@@ -102,6 +105,21 @@ export function SelfPreviewPip({
     focusAfterToggle.current = false;
     (prefs.hidden ? pillRef.current : cardRef.current)?.focus();
   }, [prefs.hidden]);
+
+  const reveal = useCallback((show: boolean) => {
+    if (revealTimer.current) clearTimeout(revealTimer.current);
+    setRevealed(show);
+    if (show)
+      revealTimer.current = setTimeout(() => setRevealed(false), REVEAL_MS);
+  }, []);
+
+  // Surface the controls briefly whenever the card appears so they can be found.
+  useEffect(() => {
+    if (!prefs.hidden) reveal(true);
+    return () => {
+      if (revealTimer.current) clearTimeout(revealTimer.current);
+    };
+  }, [prefs.hidden, reveal]);
 
   const toggleHidden = (hidden: boolean) => {
     focusAfterToggle.current = true;
@@ -224,6 +242,8 @@ export function SelfPreviewPip({
     if (drag.moved) {
       const landing = projectedPosition(drag.position, drag.velocity);
       update({ corner: nearestCorner(landing, card, container) });
+    } else if (event.pointerType !== 'mouse') {
+      reveal(!revealed);
     }
     setDrag(null);
   };
@@ -308,6 +328,7 @@ export function SelfPreviewPip({
           data-corner={prefs.corner}
           data-size={prefs.size}
           data-dragging={drag ? 'true' : undefined}
+          data-revealed={revealed ? 'true' : undefined}
           className={cn(
             'group/pip pointer-events-auto absolute top-0 left-0 isolate touch-none select-none overflow-hidden rounded-2xl bg-background shadow-xl ring-1 ring-border outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             drag
@@ -325,7 +346,7 @@ export function SelfPreviewPip({
           <div className="absolute inset-0 [&>*]:h-full [&>*]:w-full">
             {children}
           </div>
-          <div className="absolute top-2 right-2 z-10 flex gap-1 rounded-lg bg-background/80 p-1 opacity-100 backdrop-blur transition-opacity sm:opacity-0 sm:group-focus-within/pip:opacity-100 sm:group-hover/pip:opacity-100 [@media(hover:none)]:opacity-100">
+          <div className="pointer-events-none absolute right-1.5 bottom-1.5 z-10 flex gap-0.5 rounded-lg bg-background/80 p-0.5 opacity-0 backdrop-blur group-focus-within/pip:pointer-events-auto group-focus-within/pip:opacity-100 group-hover/pip:pointer-events-auto group-hover/pip:opacity-100 group-data-[revealed=true]/pip:pointer-events-auto group-data-[revealed=true]/pip:opacity-100 motion-safe:transition-opacity">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
