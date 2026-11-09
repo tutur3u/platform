@@ -1,0 +1,248 @@
+---
+title: "Worker services configuration reconciliation"
+description: "Reconciled inventory of the 13 Worker services: Cloudflare Worker configs, routes, bindings, DO/queue/cron, build commands, deploy workflows, and owner verification."
+updatedAt: '2026-11-09'
+audience: developers
+---
+
+## Scope and purpose
+
+This reconciliation audits the 13 services categorized under Worker services
+during the D74 Cloudflare migration program:
+
+1. `abuse-guard`
+2. `api`
+3. `coordination`
+4. `cron-control`
+5. `devbox-control`
+6. `meet-realtime`
+7. `ops-hub`
+8. `turbo-cache`
+9. `discord`
+10. `chat-realtime`
+11. `hive-realtime`
+12. `supermemory`
+13. `storage-unzip-proxy`
+
+For each service, the repository configuration (`wrangler.jsonc`, `wrangler.publish.jsonc`,
+or `cloudflare.config.ts`), package build scripts, GitHub Actions deploy workflows,
+and code ownership rules in `.github/CODEOWNERS` are reconciled below.
+
+Per D74 security and operational policies:
+- **No secret values** are documented or logged—only binding names.
+- Any binding or service lacking an explicit owner in `.github/CODEOWNERS` is flagged.
+- Non-Cloudflare Worker services (container sidecars or third-party serverless) are explicitly distinguished from Cloudflare-native Workers.
+
+---
+
+## Reconciled inventory matrix
+
+| Service (App) | Worker Name | Routes / Domains | Binding NAMES | DO / Queue / Cron | Build Command | Deploy Workflow | Ownership & Flags |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `abuse-guard` | `tuturuuu-abuse-guard` | None (`workersDev: false`, `previewUrls: false`; custom domain attached at staging publication) | `ABUSE_GUARD_DAILY_OP_BUDGET`, `ABUSE_GUARD_FAMILY_BUDGETS`, `ABUSE_GUARD_LOCATION_HINT`, `ABUSE_GUARD_SECRETS`, `ABUSE_GUARD_OPERATOR_TOKEN`, `GUARD_SUBJECT`, `GUARD_CONTROL` | **DO:** `GuardSubject`, `GuardControl` (SQLite)<br/>**Queue:** None<br/>**Cron:** None | `vp build` | None (tested via `meet-cloudflare.yaml` stub; not yet published) | **Owned:** `@vhpx` covers `/apps/abuse-guard/`. |
+| `api` | `tuturuuu-api` | None (`workers_dev: false`, `preview_urls: false`; routed via gateway / reverse proxy) | None in `wrangler.jsonc` (stateless API proxy / handler) | **DO:** None<br/>**Queue:** None<br/>**Cron:** None | `vp build --configLoader runner` | `.github/workflows/api-worker.yaml` (CI verification) | **Owned:** `@vhpx` covers auth routes, API proxy guards, and middleware. |
+| `coordination` | `tuturuuu-coordination` | `workers_dev: true` (`tuturuuu-coordination.<account>.workers.dev`), `preview_urls: true` | `COORDINATION` (DO), `COORDINATION_TOKEN` (secret) | **DO:** `CoordinationObject` (SQLite, migration `v1`)<br/>**Queue:** None<br/>**Cron:** None | `vp build` | `.github/workflows/coordination-cloudflare.yaml` | **Owned:** `@vhpx` covers `/apps/coordination/src/worker.ts` & coordination token. |
+| `cron-control` | `tuturuuu-cron-control` | `workersDev: true`, `previewUrls: true` | `WEB_ORIGIN`, `INFRASTRUCTURE_ORIGIN`, `INVENTORY_ORIGIN`, `PAY_ORIGIN`, `TASKS_ORIGIN`, `CRON_CONTROL_ENABLED_JOBS`, `CRON_CONTROL_WORKER_PROCESSORS`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `CRON_CONTROL_DELIVERY_TOKEN`, `CRON_CONTROL_OPERATOR_TOKEN`, `CRON_LEDGER` (DO) | **DO:** `CronLedger` (SQLite)<br/>**Queue:** None<br/>**Cron:** 9 schedules (`* * * * *`, `0 */12 * * *`, `0 */6 * * *`, `0 6 * * *`, `*/10 * * * *`, `*/15 * * * *`, `17 3 * * *`, `*/30 * * * *`, `*/5 * * * *`) | `vp build` | `.github/workflows/cron-control-cloudflare.yaml` | **Owned:** `@vhpx` covers `/apps/cron-control/`. |
+| `devbox-control` | `tuturuuu-devbox-control` | `workers_dev: true`, `preview_urls: true` | `RUNNER_WAKE` (DO), `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `DEVBOX_CONTROL_INTERNAL_TOKEN` | **DO:** `RunnerWake` (SQLite, migration `v1`)<br/>**Queue:** None<br/>**Cron:** None | `vp build` | `.github/workflows/devbox-control-cloudflare.yaml` | **Owned:** `@vhpx` covers `/apps/devbox-control/`. |
+| `meet-realtime` | `tuturuuu-meet-realtime` | Custom domain `meet-realtime.tuturuuu.com`, `workers_dev: true` (staging: `staging-meet-realtime.tuturuuu.com`) | `MEET_AI_DISABLED`, `MEET_AI_ENABLED_WORKSPACE_IDS`, `CHANNEL_ROOM` (DO), `COLLABORATION_ROOM` (DO), `MEET_ROOM` (DO), `MEET_REALTIME_TOKEN_SECRET`, `CLOUDFLARE_REALTIME_APP_ID`, `CLOUDFLARE_REALTIME_APP_SECRET`, `CLOUDFLARE_TURN_KEY_ID`, `CLOUDFLARE_TURN_API_TOKEN` | **DO:** `MeetRoomDurableObject` (v1), `CollaborationRoomDurableObject` (v2), `ChannelRoomDurableObject` (v3) (SQLite)<br/>**Queue:** None<br/>**Cron:** None | `vp build` | `.github/workflows/meet-cloudflare.yaml` | ⚠️ **FLAG: NO CODE OWNER.** `apps/meet-realtime/` lacks an entry in `.github/CODEOWNERS`. TURN and realtime secrets need explicit owner assignment. |
+| `ops-hub` | `tuturuuu-ops-hub` | `workersDev: true`, `previewUrls: false` | `OPS_HUB_GATEWAY_SECRET`, `OPS_HUB_PUBLISHER_PUBLIC_KEY`, `OPS_HUB_ALLOWED_USER_IDS`, `HUB` (DO) | **DO:** `OpsHub` (SQLite)<br/>**Queue:** None<br/>**Cron:** None | `vp build` | `.github/workflows/ops-hub-cloudflare.yaml` | **Owned:** `@vhpx` covers `/apps/ops-hub/`. |
+| `turbo-cache` | `tuturuuu-turbo-cache` | Custom domain `turbo-cache.tuturuuu.com`, `workersDev: false` | `ARTIFACTS` (R2), `BUDGET` (DO), `REQUEST_LIMITER` (RateLimiter: 600 req/10s), `TURBO_CACHE_MODE`, `TURBO_CACHE_REQUIRE_SIGNATURE`, `TURBO_CACHE_TTL_DAYS`, `TURBO_CACHE_MAX_ARTIFACT_BYTES`, `TURBO_CACHE_DAILY_CLASS_A`, `TURBO_CACHE_DAILY_CLASS_B`, `TURBO_CACHE_DAILY_WRITE_BYTES`, `TURBO_CACHE_MONTHLY_CLASS_A_FENCE`, `TURBO_CACHE_TOKENS`, `TURBO_CACHE_ADMIN_TOKEN_SHA256` | **DO:** `TurboCacheBudget` (SQLite)<br/>**Queue:** None<br/>**Cron:** None<br/>**R2:** `tuturuuu-turbo-cache`<br/>**RateLimit:** `REQUEST_LIMITER` (namespace 4207) | `vp build` | `.github/workflows/turbo-cache-cloudflare.yaml` | ⚠️ **FLAG: NO CODE OWNER.** `apps/turbo-cache/` lacks an entry in `.github/CODEOWNERS`. R2 bucket and token bindings require explicit ownership. |
+| `discord` | *N/A (Modal)* | Modal webhook endpoints (`app.modal.run`) | *N/A (Modal env / secrets: `DISCORD_TOKEN`, `DISCORD_PUBLIC_KEY`, `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET`)* | **DO:** None<br/>**Queue:** None<br/>**Cron:** Modal Cron (`@app.function(schedule=modal.Cron(...))`) | Python uv / `Dockerfile.markitdown` | `.github/workflows/discord-modal-deploy.yml` | ⚠️ **FLAG: NOT A WORKER.** Hosted on Modal. Partial code ownership (`/apps/discord/auth.py` by `@vhpx`). |
+| `chat-realtime` | *N/A (Docker)* | Internal sidecar: `http://chat-realtime:7817` | *N/A (Docker container env: `PORT=7817`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CHAT_REALTIME_TOKEN_SECRET`)* | **DO:** None<br/>**Queue:** None<br/>**Cron:** None | `docker build` (`Dockerfile`) | Docker Compose (`docker-compose.web.prod.yml`, `.github/workflows/e2e-tests.yaml`) | ⚠️ **FLAG: NOT A WORKER.** Bun SSE Docker container. Partial code ownership (`/apps/chat-realtime/src/token.ts` by `@vhpx`). |
+| `hive-realtime` | *N/A (Docker)* | Reverse proxy: `hive.tuturuuu.com/realtime` -> port 7815 | *N/A (Docker / Bun process env: `PORT=7815`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `HIVE_REALTIME_TOKEN_SECRET`)* | **DO:** None<br/>**Queue:** None<br/>**Cron:** None | `bun src/index.ts` / `docker build` (`Dockerfile`) | Docker Compose (`.github/workflows/e2e-tests.yaml`) | ⚠️ **FLAG: NOT A WORKER.** Bun WebSocket Docker service. Partial code ownership (`/apps/hive-realtime/src/token.ts` by `@vhpx`). |
+| `supermemory` | *N/A (Docker)* | Internal service: `http://supermemory:8787` | *N/A (Docker container env: `DATABASE_URL`, `SUPERMEMORY_API_KEY`)* | **DO:** None<br/>**Queue:** None<br/>**Cron:** None | `docker build` (`Dockerfile`) | Docker Compose (`.github/workflows/docker-setup-check.yaml`) | ⚠️ **FLAG: NOT A WORKER & NO CODE OWNER.** PostgreSQL pgvector memory support service in Docker. |
+| `storage-unzip-proxy` | *N/A (Docker)* | Internal service: `http://storage-unzip-proxy:8788/extract` | *N/A (Docker container env: `PORT=8788`, `DRIVE_UNZIP_PROXY_SHARED_TOKEN`, limits)* | **DO:** None<br/>**Queue:** None<br/>**Cron:** None | `docker build` (`Dockerfile`) | Docker Compose (`.github/workflows/docker-setup-check.yaml`) | ⚠️ **FLAG: NOT A WORKER & NO CODE OWNER.** Self-hosted ZIP extraction support service in Docker. |
+
+---
+
+## Detailed service profiles
+
+### 1. `abuse-guard`
+- **Architecture**: Authenticated RPC service over SQLite-backed Durable Objects. Not yet publicly routed.
+- **Config file**: `apps/abuse-guard/cloudflare.config.ts` (`cf/config` `defineConfig`).
+- **Worker Name**: `tuturuuu-abuse-guard` (Account `e8912e2867beecc673d171907bf09649`).
+- **Routes**: `workersDev: false`, `previewUrls: false`. Custom domain attached during admitted staging publication.
+- **Bindings**:
+  - `ABUSE_GUARD_DAILY_OP_BUDGET`: Text (`1000000`).
+  - `ABUSE_GUARD_FAMILY_BUDGETS`: Text (default empty).
+  - `ABUSE_GUARD_LOCATION_HINT`: Text (`apac`).
+  - `ABUSE_GUARD_SECRETS`: Secret.
+  - `ABUSE_GUARD_OPERATOR_TOKEN`: Secret.
+  - `GUARD_SUBJECT`: Durable Object (`GuardSubject`).
+  - `GUARD_CONTROL`: Durable Object (`GuardControl`).
+- **Durable Objects**: `GuardSubject` (SQLite storage), `GuardControl` (SQLite storage).
+- **Build & Test**: `vp build`, `vp test`, `cf workers types && tsc`.
+- **Workflow**: No dedicated publication workflow; stub verification tested in `meet-cloudflare.yaml`.
+- **Owner**: `@vhpx` (`.github/CODEOWNERS`).
+
+### 2. `api`
+- **Architecture**: Standalone HTTP API Worker created to absorb API route handlers from `apps/web`.
+- **Config file**: `apps/api/wrangler.jsonc` (invoked via `@cloudflare/vite-plugin` in `vite.config.ts`).
+- **Worker Name**: `tuturuuu-api`.
+- **Routes**: `workers_dev: false`, `preview_urls: false`. Traffic routed via apex gateway Worker.
+- **Bindings**: None in `wrangler.jsonc`. CPU limit configured to `50ms`.
+- **Build & Test**: `vp build --configLoader runner`, `bun test src`, `test:runtime`.
+- **Workflow**: `.github/workflows/api-worker.yaml` (CI verification).
+- **Owner**: `@vhpx` covers sensitive API sub-paths and proxy guards.
+
+### 3. `coordination`
+- **Architecture**: Distributed coordination and synchronization Worker backed by a SQLite Durable Object.
+- **Config file**: `apps/coordination/wrangler.publish.jsonc` and `apps/coordination/cloudflare.config.ts`.
+- **Worker Name**: `tuturuuu-coordination` (Account `e8912e2867beecc673d171907bf09649`).
+- **Routes**: `workers_dev: true`, `preview_urls: true`.
+- **Bindings**:
+  - `COORDINATION_TOKEN`: Secret (required bearer token, minimum 32 chars).
+  - `COORDINATION`: Durable Object (`CoordinationObject`).
+- **Durable Objects**: `CoordinationObject` (SQLite storage, tag `v1`).
+- **Build & Test**: `vp build`, `node --test src/worker.test.mjs`.
+- **Workflow**: `.github/workflows/coordination-cloudflare.yaml` (includes dry-run checks and Turbo remote cache).
+- **Owner**: `@vhpx` (`/apps/coordination/src/worker.ts`).
+
+### 4. `cron-control`
+- **Architecture**: Centralized scheduler controller dispatching authenticated cron executions to downstream app origins.
+- **Config file**: `apps/cron-control/cloudflare.config.ts`.
+- **Worker Name**: `tuturuuu-cron-control` (Account `e8912e2867beecc673d171907bf09649`).
+- **Routes**: `workersDev: true`, `previewUrls: true`.
+- **Bindings**:
+  - Origins: `WEB_ORIGIN`, `INFRASTRUCTURE_ORIGIN`, `INVENTORY_ORIGIN`, `PAY_ORIGIN`, `TASKS_ORIGIN`.
+  - Feature Flags / Selectors: `CRON_CONTROL_ENABLED_JOBS`, `CRON_CONTROL_WORKER_PROCESSORS`.
+  - Secrets: `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `CRON_CONTROL_DELIVERY_TOKEN`, `CRON_CONTROL_OPERATOR_TOKEN`.
+  - Durable Object: `CRON_LEDGER` (`CronLedger`).
+- **Triggers (Cron)**: 9 schedules:
+  - `* * * * *` (every minute)
+  - `0 */12 * * *` (every 12 hours)
+  - `0 */6 * * *` (every 6 hours)
+  - `0 6 * * *` (daily at 06:00)
+  - `*/10 * * * *` (every 10 minutes)
+  - `*/15 * * * *` (every 15 minutes)
+  - `17 3 * * *` (daily at 03:17)
+  - `*/30 * * * *` (every 30 minutes)
+  - `*/5 * * * *` (every 5 minutes)
+- **Durable Objects**: `CronLedger` (SQLite storage).
+- **Build & Test**: `vp build`, `vp test`, runtime boundary verification.
+- **Workflow**: `.github/workflows/cron-control-cloudflare.yaml`.
+- **Owner**: `@vhpx` (`/apps/cron-control/`).
+
+### 5. `devbox-control`
+- **Architecture**: Leases, lifecycle state, and runner authentication controller for remote devbox code execution.
+- **Config file**: `apps/devbox-control/wrangler.publish.jsonc` and `apps/devbox-control/cloudflare.config.ts`.
+- **Worker Name**: `tuturuuu-devbox-control` (Account `e8912e2867beecc673d171907bf09649`).
+- **Routes**: `workers_dev: true`, `preview_urls: true`.
+- **Bindings**:
+  - `RUNNER_WAKE`: Durable Object (`RunnerWake`).
+  - `SUPABASE_URL`: Secret.
+  - `SUPABASE_SECRET_KEY`: Secret.
+  - `DEVBOX_CONTROL_INTERNAL_TOKEN`: Secret.
+- **Durable Objects**: `RunnerWake` (SQLite storage, tag `v1`).
+- **Build & Test**: `vp build`, `vp test`.
+- **Workflow**: `.github/workflows/devbox-control-cloudflare.yaml`.
+- **Owner**: `@vhpx` (`/apps/devbox-control/`).
+
+### 6. `meet-realtime`
+- **Architecture**: Real-time signaling, room coordination, and TURN credential issuer for Tuturuuu Meet.
+- **Config file**: `apps/meet-realtime/wrangler.jsonc` (production) and `wrangler.staging.jsonc` (staging).
+- **Worker Name**: `tuturuuu-meet-realtime` (Account `e8912e2867beecc673d171907bf09649`).
+- **Routes**: Custom domain `meet-realtime.tuturuuu.com`, `workers_dev: true` (staging: `staging-meet-realtime.tuturuuu.com`).
+- **Bindings**:
+  - Vars: `MEET_AI_DISABLED` (`true`), `MEET_AI_ENABLED_WORKSPACE_IDS` (`""`).
+  - Secrets: `MEET_REALTIME_TOKEN_SECRET`, `CLOUDFLARE_REALTIME_APP_ID`, `CLOUDFLARE_REALTIME_APP_SECRET`, `CLOUDFLARE_TURN_KEY_ID`, `CLOUDFLARE_TURN_API_TOKEN`.
+  - Durable Objects: `CHANNEL_ROOM`, `COLLABORATION_ROOM`, `MEET_ROOM`.
+- **Durable Objects**:
+  - `MeetRoomDurableObject` (tag `v1`, SQLite)
+  - `CollaborationRoomDurableObject` (tag `v2-collaboration`, SQLite)
+  - `ChannelRoomDurableObject` (tag `v3-channels`, SQLite)
+- **Build & Test**: `vp build`, `test:protocol`, `test:runtime`.
+- **Workflow**: `.github/workflows/meet-cloudflare.yaml`.
+- **Owner**: ⚠️ **Unowned in `.github/CODEOWNERS`**. Requires adding `/apps/meet-realtime/` under `@vhpx` or assigned security reviewer.
+
+### 7. `ops-hub`
+- **Architecture**: Ingestion and event distribution hub for internal operations and canary telemetry.
+- **Config file**: `apps/ops-hub/cloudflare.config.ts`.
+- **Worker Name**: `tuturuuu-ops-hub`.
+- **Routes**: `workersDev: true`, `previewUrls: false`.
+- **Bindings**:
+  - `OPS_HUB_GATEWAY_SECRET`: Secret.
+  - `OPS_HUB_PUBLISHER_PUBLIC_KEY`: Secret.
+  - `OPS_HUB_ALLOWED_USER_IDS`: Secret.
+  - `HUB`: Durable Object (`OpsHub`).
+- **Durable Objects**: `OpsHub` (SQLite storage).
+- **Build & Test**: `vp build`, `vitest run`, `test:runtime`.
+- **Workflow**: `.github/workflows/ops-hub-cloudflare.yaml`.
+- **Owner**: `@vhpx` (`/apps/ops-hub/`).
+
+### 8. `turbo-cache`
+- **Architecture**: Self-hosted Turborepo remote cache running on Cloudflare Workers, R2 object storage, and Durable Objects.
+- **Config file**: `apps/turbo-cache/cloudflare.config.ts`.
+- **Worker Name**: `tuturuuu-turbo-cache` (Account `e8912e2867beecc673d171907bf09649`).
+- **Routes**: Custom domain `turbo-cache.tuturuuu.com`, `workersDev: false`.
+- **Bindings**:
+  - `ARTIFACTS`: R2 bucket `tuturuuu-turbo-cache`.
+  - `BUDGET`: Durable Object (`TurboCacheBudget`).
+  - `REQUEST_LIMITER`: RateLimiter (namespace `4207`, 600 req per 10 s).
+  - Vars: `TURBO_CACHE_MODE` (`off`), `TURBO_CACHE_REQUIRE_SIGNATURE` (`true`), `TURBO_CACHE_TTL_DAYS` (`7`), `TURBO_CACHE_MAX_ARTIFACT_BYTES` (`104857600`), `TURBO_CACHE_DAILY_CLASS_A` (`100000`), `TURBO_CACHE_DAILY_CLASS_B` (`1000000`), `TURBO_CACHE_DAILY_WRITE_BYTES` (`21474836480`), `TURBO_CACHE_MONTHLY_CLASS_A_FENCE` (`2000000`).
+  - Secrets: `TURBO_CACHE_TOKENS`, `TURBO_CACHE_ADMIN_TOKEN_SHA256`.
+- **Durable Objects**: `TurboCacheBudget` (SQLite storage).
+- **Build & Test**: `vp build`, `vp test`.
+- **Workflow**: `.github/workflows/turbo-cache-cloudflare.yaml`.
+- **Owner**: ⚠️ **Unowned in `.github/CODEOWNERS`**. Requires adding `/apps/turbo-cache/` to ensure changes to remote cache security policies and R2 bucket bindings require code-owner approval.
+
+### 9. `discord`
+- **Architecture**: Python-based Discord bot and automation service running on Modal serverless infrastructure.
+- **Config file**: None (Python application with `pyproject.toml`, `requirements.txt`, `app.py`).
+- **Worker Name**: Not a Cloudflare Worker. Deployed to Modal.
+- **Routes**: Modal serverless endpoints and webhook handlers.
+- **Bindings**: Not applicable (uses Modal environment variables and secrets).
+- **Build & Test**: `ruff`, `mypy`, `pytest`, Modal container build.
+- **Workflow**: `.github/workflows/discord-modal-deploy.yml`.
+- **Owner**: Partial code ownership (`/apps/discord/auth.py` by `@vhpx`).
+
+### 10. `chat-realtime`
+- **Architecture**: Server-Sent Events (SSE) realtime service for Tuturuuu Chat running in Bun.
+- **Config file**: None (Dockerized Bun service; `Dockerfile`, `src/server.ts`).
+- **Worker Name**: Not a Cloudflare Worker. Deployed as a Docker Compose sidecar on port 7817 (`http://chat-realtime:7817`).
+- **Routes**: Internal service sidecar within Docker network.
+- **Bindings**: Not applicable (uses container environment variables: Supabase keys and `CHAT_REALTIME_TOKEN_SECRET`).
+- **Build & Test**: `docker build`.
+- **Workflow**: `docker-compose.web.prod.yml`, `.github/workflows/e2e-tests.yaml`.
+- **Owner**: Partial code ownership (`/apps/chat-realtime/src/token.ts` by `@vhpx`).
+
+### 11. `hive-realtime`
+- **Architecture**: WebSocket realtime server for Tuturuuu Hive running in Bun.
+- **Config file**: None (Dockerized Bun service; `Dockerfile`, `package.json`, `src/server.ts`).
+- **Worker Name**: Not a Cloudflare Worker. Deployed as a Docker container on port 7815.
+- **Routes**: Reverse-proxied from `hive.tuturuuu.com/realtime` to port 7815.
+- **Bindings**: Not applicable (uses container environment variables: Supabase keys and `HIVE_REALTIME_TOKEN_SECRET`).
+- **Build & Test**: `bun src/index.ts` / `docker build`.
+- **Workflow**: Docker Compose, `.github/workflows/e2e-tests.yaml`.
+- **Owner**: Partial code ownership (`/apps/hive-realtime/src/token.ts` by `@vhpx`).
+
+### 12. `supermemory`
+- **Architecture**: Vector memory and context support service utilizing PostgreSQL (`pgvector`) in Bun.
+- **Config file**: None (Dockerized Bun service; `Dockerfile`, `package.json`, `src/server.js`).
+- **Worker Name**: Not a Cloudflare Worker. Deployed as an internal Docker support service on port 8787 (`http://supermemory:8787`).
+- **Routes**: Internal support container.
+- **Bindings**: Not applicable (uses `DATABASE_URL` and `SUPERMEMORY_API_KEY`).
+- **Build & Test**: `docker build`.
+- **Workflow**: `docker-compose.web.prod.yml`, `.github/workflows/docker-setup-check.yaml`.
+- **Owner**: ⚠️ **Unowned in `.github/CODEOWNERS`**.
+
+### 13. `storage-unzip-proxy`
+- **Architecture**: Background ZIP extraction proxy that downloads archives from signed URLs and posts extracted files to storage backends.
+- **Config file**: None (Dockerized Node/Bun service; `Dockerfile`, `package.json`, `src/server.js`).
+- **Worker Name**: Not a Cloudflare Worker. Deployed as an internal Docker support service on port 8788 (`http://storage-unzip-proxy:8788/extract`).
+- **Routes**: Internal support container.
+- **Bindings**: Not applicable (uses `DRIVE_UNZIP_PROXY_SHARED_TOKEN` and extraction bounds).
+- **Build & Test**: `docker build`, `vitest run`.
+- **Workflow**: `docker-compose.web.prod.yml`, `.github/workflows/docker-setup-check.yaml`.
+- **Owner**: ⚠️ **Unowned in `.github/CODEOWNERS`**.
+
+---
+
+## Action items and missing owner flags
+
+1. **Add `apps/meet-realtime/` to `.github/CODEOWNERS`**:
+   The service manages sensitive WebRTC TURN API tokens (`CLOUDFLARE_TURN_API_TOKEN`) and realtime secrets.
+2. **Add `apps/turbo-cache/` to `.github/CODEOWNERS`**:
+   The service controls R2 artifact storage access, cache tokens (`TURBO_CACHE_TOKENS`), and admin token hashes.
+3. **Clarify Non-Worker Status**:
+   `discord`, `chat-realtime`, `hive-realtime`, `supermemory`, and `storage-unzip-proxy` are currently container/Modal services, not Cloudflare Workers. Any future migration of these services to Cloudflare Workers would require full architectural conversion to Worker runtimes (e.g., WebSocket Hibernation API for realtime services).
