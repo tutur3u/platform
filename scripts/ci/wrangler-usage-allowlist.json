@@ -108,6 +108,16 @@
       },
       "digest": "12cbcfd4c7e76ca6c4a7bce663b2c928b2b6c5556c161ab628f06cea548fad6c"
     },
+    ".github/workflows/cms-renderer.yaml": {
+      "lines": 2,
+      "uses": 3,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8015",
+        "reason": "PR #8015 qualifies the Void-emitted cms-renderer Worker with one wrangler deploy --dry-run and names dist/server/wrangler.json. The dry-run does not publish. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "0abc80abd5963eafd4914e4eb577f158336db64546aefe044a865413a27f8c68"
+    },
     ".github/workflows/colab-cloudflare.yaml": {
       "lines": 2,
       "uses": 2,
@@ -648,6 +658,16 @@
         "reason": "Start + Void candidate (#7962) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/cms-renderer/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8015",
+        "reason": "PR #8015 pins wrangler 4.151.2 so the cms-renderer workflow can dry-run the Void-emitted Worker. No publish script is added. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "29d04740be01b9da26b9b94252086da7b11bee329e5116f1a5aa59df47b1035e"
     },
     "apps/cms/.gitignore": {
       "lines": 1,
