@@ -22,6 +22,7 @@
   "runtimeProbes": {
     "api": {
       "skip": "the app owns a single auth-recovery confirmation route; every other /api request is forwarded to the central Web API"
-    }
+    },
+    "notFound": "/login/__native-smoke-missing__"
   }
 }

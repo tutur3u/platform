@@ -50,7 +50,7 @@ const POLICY_PROBES = [
     kind: 'api',
     skip: 'the app owns a single auth-recovery confirmation route; every other /api request is forwarded to the central Web API',
   },
-  { kind: 'notFound', path: '/__native-smoke-missing__' },
+  { kind: 'notFound', path: '/login/__native-smoke-missing__' },
 ];
 // The Worker's mounts: the generated defaults plus the app-owned
 // start-bridge.config.ts overrides, exactly as cloudflare/worker.ts spreads
