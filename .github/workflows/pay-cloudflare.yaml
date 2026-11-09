@@ -192,6 +192,7 @@ jobs:
       contents: read
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VITE_PAY_NATIVE_PROFILE: production
       TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://pay-ci.supabase.invalid' }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_pay_ci_placeholder' }}
@@ -229,8 +230,6 @@ jobs:
           command: cd apps/pay && bun run build:cloudflare
           token: ''
           team: ''
-      - name: Qualify the emitted output before rewriting
-        run: python3 scripts/ci/pay-native-artifact.py config apps/pay
       - name: Write the production wrangler config
         run: |
           node --input-type=module <<'JS'
@@ -241,11 +240,14 @@ jobs:
           c.name = 'tuturuuu-pay';
           c.workers_dev = false;
           c.preview_urls = false;
-          c.upload_source_maps = false;
+          c.upload_source_maps = true;
+          c.topLevelName = 'tuturuuu-pay';
           c.vars = {
             TUTURUUU_NOINDEX: '0',
             NODE_ENV: 'production',
             TUTURUUU_REQUIRE_SECRETS: '1',
+            NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN: '.tuturuuu.com',
+            INTERNAL_WEB_API_ORIGIN: 'https://tuturuuu.com',
             NEXT_PUBLIC_APP_URL: 'https://pay.tuturuuu.com',
             NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
             NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,

@@ -62,6 +62,8 @@ def load():
         module.IDENTITY["vars"] = {
             "TUTURUUU_NOINDEX": "0", "NODE_ENV": "production",
             "TUTURUUU_REQUIRE_SECRETS": "1",
+            "NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".tuturuuu.com",
+            "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
             "NEXT_PUBLIC_APP_URL": "https://pay.tuturuuu.com",
             "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
             "NEXT_PUBLIC_SUPABASE_URL": os.environ.get("NEXT_PUBLIC_SUPABASE_URL", "https://production-placeholder.supabase.co"),
