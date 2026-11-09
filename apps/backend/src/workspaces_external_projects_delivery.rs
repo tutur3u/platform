@@ -13,6 +13,8 @@
 //! membership/permission check here — delivery is public for enabled
 //! workspaces.
 
+use std::fmt::Write;
+
 use serde_json::{Map, Value, json};
 use sha2::Digest;
 
@@ -309,7 +311,12 @@ async fn build_delivery_payload(
         .unwrap_or_else(|| "empty".to_owned());
 
     let pointers: Vec<_> = entries.iter().map(|e| &e["published_page_version_id"]).collect();
-    let revision = format!("{revision}-{:x}", sha2::Sha256::digest(serde_json::to_vec(&pointers).map_err(|_| ())?));
+    let digest = sha2::Sha256::digest(serde_json::to_vec(&pointers).map_err(|_| ())?);
+    let mut pointer_hash = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        write!(&mut pointer_hash, "{byte:02x}").map_err(|_| ())?;
+    }
+    let revision = format!("{revision}-{pointer_hash}");
 
     Ok(json!({
         "adapter": adapter,
