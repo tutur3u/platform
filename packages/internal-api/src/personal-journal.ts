@@ -233,13 +233,15 @@ export function journalMoodSeries(
   });
 }
 
+export const JOURNAL_EXPORT_LIMIT = 10_000;
+
 export const journalExportSchema = z
   .object({
     kind: z.literal('tuturuuu.personal-journal'),
     version: z.literal(1),
     complete: z.boolean(),
     exportedAt: z.iso.datetime({ precision: 3 }),
-    entries: z.array(journalEntrySchema).max(10_000),
+    entries: z.array(journalEntrySchema).max(JOURNAL_EXPORT_LIMIT),
   })
   .strict();
 export type JournalExport = z.infer<typeof journalExportSchema>;
@@ -251,9 +253,11 @@ export function journalExportPayload(
   return journalExportSchema.parse({
     kind: 'tuturuuu.personal-journal',
     version: 1,
-    complete: options.complete,
+    complete: options.complete && entries.length <= JOURNAL_EXPORT_LIMIT,
     exportedAt: options.exportedAt,
-    entries: entries.map((entry) => journalEntrySchema.parse(entry)),
+    entries: entries
+      .slice(0, JOURNAL_EXPORT_LIMIT)
+      .map((entry) => journalEntrySchema.parse(entry)),
   });
 }
 

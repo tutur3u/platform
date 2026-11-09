@@ -1,6 +1,7 @@
 'use client';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  JOURNAL_EXPORT_LIMIT,
   type JournalEntry,
   type JournalExport,
   type JournalPeriod,
@@ -10,11 +11,11 @@ import {
   journalTimezoneSchema,
   listPersonalJournal,
 } from '@tuturuuu/internal-api/personal-journal';
-import { Badge } from '@tuturuuu/ui/badge';
+import { FeatureStatusBadge } from '@tuturuuu/ui/custom/feature-status-badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import JournalEditor from './editor';
 import JournalMoodChart from './mood-chart';
@@ -42,6 +43,7 @@ export default function JournalClient({
   wsId: string;
 }) {
   const t = useTranslations('personal_journal');
+  const locale = useLocale() === 'vi' ? 'vi' : 'en';
   const queryClient = useQueryClient();
   const [timezone, setTimezone] = useState(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -82,7 +84,12 @@ export default function JournalClient({
       let page = query.data;
       let hasMore = Boolean(query.hasNextPage);
       let steps = 0;
-      while (hasMore && steps < 100) {
+      while (
+        hasMore &&
+        steps < 100 &&
+        (page?.pages.reduce((count, item) => count + item.items.length, 0) ??
+          0) < JOURNAL_EXPORT_LIMIT
+      ) {
         const next = await query.fetchNextPage();
         if (next.isError || !next.data) {
           setExportState('failed');
@@ -105,7 +112,7 @@ export default function JournalClient({
         exportedAt: new Date().toISOString(),
       });
       saveJournalExport(payload);
-      setExportState(hasMore ? 'partial' : 'idle');
+      setExportState(payload.complete ? 'idle' : 'partial');
     } catch {
       setExportState('failed');
     }
@@ -169,7 +176,7 @@ export default function JournalClient({
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <h2 className="font-semibold text-xl">{t('mood_chart')}</h2>
-              <Badge variant="outline">{t('experimental')}</Badge>
+              <FeatureStatusBadge locale={locale} variant="experimental" />
             </div>
             <Button
               className="w-full sm:w-auto"

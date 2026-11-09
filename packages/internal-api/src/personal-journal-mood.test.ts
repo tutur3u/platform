@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  JOURNAL_EXPORT_LIMIT,
   JOURNAL_MOOD_SCORES,
   type JournalEntry,
   journalExportFilename,
@@ -65,6 +66,26 @@ describe('journal export', () => {
       'personal-journal-2026-11-09.json'
     );
   });
+
+  it.each([
+    JOURNAL_EXPORT_LIMIT - 1,
+    JOURNAL_EXPORT_LIMIT,
+    JOURNAL_EXPORT_LIMIT + 1,
+  ])(
+    'exports %i cached entries within the limit and reports omissions',
+    (count) => {
+      const entries = Array.from({ length: count }, () => entry);
+      const payload = journalExportPayload(entries, {
+        complete: true,
+        exportedAt: '2026-11-09T05:20:00.000Z',
+      });
+      expect(payload.entries).toHaveLength(
+        Math.min(count, JOURNAL_EXPORT_LIMIT)
+      );
+      expect(payload.complete).toBe(count <= JOURNAL_EXPORT_LIMIT);
+      expect(entries).toHaveLength(count);
+    }
+  );
 
   it('refuses an extra field on an entry', () => {
     expect(() =>
