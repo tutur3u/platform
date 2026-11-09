@@ -203,10 +203,10 @@
       "uses": 6,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7976",
-        "reason": "REV-7976: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/pull/8013",
+        "reason": "Build-time infrastructure profiles seal and pack the unchanged emitted config. The workflow only reads Wrangler metadata; the retained publication gap and removal condition remain."
       },
-      "digest": "efa9031808f00ca86fbcab9b90fd79bb1fa61fed456a8f144f50ebedae8968a6"
+      "digest": "ae47128e0308bcb43adea9962e240e29514a07d748e79cd8ab022f30ece3593f"
     },
     ".github/workflows/inventory-cloudflare.yaml": {
       "lines": 2,
@@ -2572,6 +2572,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "7bb4ae9947213258a577a33c2de7a5886266c02267f7edd54e82515d876dcdce"
+    },
+    "scripts/ci/infrastructure-native-artifact.test.py": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8013",
+        "reason": "Source-only artifact regression reads the emitted Wrangler config to verify unchanged bytes across profile seal/pack and reject the opposite Worker identity. No Wrangler command or publication is added."
+      },
+      "digest": "cd9a8e3324e2de6a50341fa00ef95c4fa5ea133df1635cbc5fc7c587f85c8e1a"
     },
     "scripts/ci/meet-build-metadata.test.js": {
       "lines": 14,

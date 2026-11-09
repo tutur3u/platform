@@ -38,6 +38,7 @@ on:
         'packages/utils/**',
         'packages/vercel/**',
         'scripts/ci/infrastructure-native-artifact.py',
+        'scripts/ci/infrastructure-native-artifact.test.py',
         '.github/workflows/infrastructure-cloudflare.yaml',
         'scripts/ci/apps-native-artifact.py',
         'scripts/ci/apps-native-runtime-pointer.mjs',
@@ -98,6 +99,7 @@ on:
         'packages/utils/**',
         'packages/vercel/**',
         'scripts/ci/infrastructure-native-artifact.py',
+        'scripts/ci/infrastructure-native-artifact.test.py',
         '.github/workflows/infrastructure-cloudflare.yaml',
         'scripts/ci/apps-native-artifact.py',
         'scripts/ci/apps-native-runtime-pointer.mjs',
@@ -205,6 +207,8 @@ jobs:
       contents: read
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      INFRASTRUCTURE_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VITE_INFRASTRUCTURE_NATIVE_PROFILE: production
       TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://infrastructure-ci.supabase.invalid' }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_infrastructure_ci_placeholder' }}
@@ -242,41 +246,19 @@ jobs:
           command: cd apps/infrastructure && bun run build:cloudflare
           token: ''
           team: ''
-      - name: Qualify the staging output before rewriting
-        run: python3 scripts/ci/infrastructure-native-artifact.py config apps/infrastructure
-      - name: Write the production wrangler config
+      - name: Package Worker, assets and emitted Wrangler config
         run: |
-          node --input-type=module <<'JS'
-          import { readFileSync, writeFileSync } from 'node:fs';
-          const path = 'apps/infrastructure/dist/server/wrangler.json';
-          const c = JSON.parse(readFileSync(path, 'utf8'));
-          for (const k of ['configPath', 'userConfigPath', 'topLevelName', 'definedEnvironments']) delete c[k];
-          c.name = 'tuturuuu-infrastructure';
-          c.workers_dev = false;
-          c.preview_urls = false;
-          c.upload_source_maps = false;
-          c.vars = {
-            TUTURUUU_NOINDEX: '0',
-            NODE_ENV: 'production',
-            TUTURUUU_REQUIRE_SECRETS: '1',
-            NEXT_PUBLIC_APP_URL: 'https://infrastructure.tuturuuu.com',
-            NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
-          };
-          writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);
-          JS
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          python3 scripts/ci/infrastructure-native-artifact.py config apps/infrastructure
+          python3 scripts/ci/infrastructure-native-artifact.py seal apps/infrastructure --receipt "$RUNNER_TEMP/infrastructure-native-artifact.json"
+          python3 scripts/ci/infrastructure-native-artifact.py pack apps/infrastructure --receipt "$RUNNER_TEMP/infrastructure-native-artifact.json" --archive "$RUNNER_TEMP/infrastructure-production-artifact.tar.gz"
           test "$(node -p "require('./apps/infrastructure/dist/server/wrangler.json').name")" = tuturuuu-infrastructure
           test "$(node -p "require('./apps/infrastructure/dist/server/wrangler.json').workers_dev")" = false
           test "$(node -p "require('./apps/infrastructure/dist/server/wrangler.json').preview_urls")" = false
+          test "$(node -p "String(require('./apps/infrastructure/dist/server/wrangler.json').routes)")" = undefined
           test -f apps/infrastructure/dist/server/index.mjs
           test -d apps/infrastructure/dist/client
-      - name: Validate, seal and pack the final production output
-        env:
-          INFRASTRUCTURE_SOURCE_SHA: ${{ env.SOURCE_SHA }}
-        run: |
-          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          python3 scripts/ci/infrastructure-native-artifact.py --profile production config apps/infrastructure
-          python3 scripts/ci/infrastructure-native-artifact.py --profile production seal apps/infrastructure --receipt "$RUNNER_TEMP/infrastructure-production-artifact.json"
-          python3 scripts/ci/infrastructure-native-artifact.py --profile production pack apps/infrastructure --receipt "$RUNNER_TEMP/infrastructure-production-artifact.json" --archive "$RUNNER_TEMP/infrastructure-production-artifact.tar.gz"
+          test -f "$RUNNER_TEMP/infrastructure-production-artifact.tar.gz"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: infrastructure-cutover-${{ env.TRUSTED == 'true' && 'production' || 'fixture' }}-${{ env.SOURCE_SHA }}

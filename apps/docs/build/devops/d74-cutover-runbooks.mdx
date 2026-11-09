@@ -243,7 +243,7 @@ Run it through `wave1-native-production.yaml` (input `app`, from the `production
 | --- | --- |
 | Worker | `tuturuuu-infrastructure` |
 | Hosts | infrastructure.tuturuuu.com |
-| Artifact | infrastructure-cloudflare.yaml (`infrastructure-cutover-<sha>`) |
+| Artifact | infrastructure-cloudflare.yaml, job infrastructure-cutover-artifact (`VITE_INFRASTRUCTURE_NATIVE_PROFILE=production`, sealed by `scripts/ci/infrastructure-native-artifact.py`; no routes) |
 | Vercel rollback pin | dpl_AZghhKoj3zwcE6ZfotQJmdo7Lang (the one before the 23:37 prebuilt promotion dpl_GjkU1QKSV7woJRssbm8bmZK1WfNB) |
 | Packet | `infrastructure-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs infrastructure https://infrastructure.tuturuuu.com` |
