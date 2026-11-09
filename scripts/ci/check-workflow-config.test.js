@@ -180,6 +180,14 @@ test('app-only changes run only that app', () => {
       rootDir,
       workflowName: 'vercel-production-mail.yaml',
     },
+    false
+  );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/mail/src/app/page.tsx'],
+      rootDir,
+      workflowName: 'mail-cloudflare.yaml',
+    },
     true
   );
   assertWorkflowDecision(
@@ -287,7 +295,7 @@ test('bun.lock-only changes run enabled Vercel app deploys', () => {
         rootDir,
         workflowName,
       },
-      !/-production-(tanstack-web|meet|calendar)\.yaml$/.test(workflowName)
+      !/-production-(tanstack-web|meet|calendar|mail|apps)\.yaml$/.test(workflowName)
     );
   }
 });
