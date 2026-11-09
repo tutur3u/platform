@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   getPermissions: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   privateFrom: vi.fn(),
+  bulkValue: null as string | null,
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -72,6 +73,7 @@ function reportRow(
 describe('Contacts approvals GET handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.bulkValue = null;
     mocks.normalizeWorkspaceId.mockResolvedValue('workspace-1');
     mocks.getPermissions.mockResolvedValue({
       containsPermission: (permission: string) =>
@@ -91,6 +93,17 @@ describe('Contacts approvals GET handler', () => {
     mocks.privateFrom.mockReturnValue({ select });
     mocks.createAdminClient.mockResolvedValue({
       schema: vi.fn().mockReturnValue({ from: mocks.privateFrom }),
+      from: vi.fn(() => {
+        const query = {
+          select: () => query,
+          eq: () => query,
+          maybeSingle: async () => ({
+            data: mocks.bulkValue === null ? null : { value: mocks.bulkValue },
+            error: null,
+          }),
+        };
+        return query;
+      }),
     });
     return { select };
   }
@@ -103,6 +116,15 @@ describe('Contacts approvals GET handler', () => {
     expect(response.status).toBe(200);
     return response.json();
   }
+
+  it.each([null, 'false', 'true'])(
+    'returns exact saved bulk approval policy %j',
+    async (value) => {
+      mocks.bulkValue = value;
+      mockReportRows([]);
+      expect((await getReports()).bulkApprovalEnabled).toBe(value === 'true');
+    }
+  );
 
   it('prefers full names for report recipients and creators', async () => {
     mockReportRows([

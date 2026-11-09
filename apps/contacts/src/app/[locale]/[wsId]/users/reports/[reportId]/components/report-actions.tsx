@@ -125,6 +125,11 @@ export function ReportActions({
               size="sm"
               variant="outline"
               className="gap-1 border-dynamic-green/30 text-dynamic-green hover:bg-dynamic-green/10"
+              title={
+                approvalBlockedReason
+                  ? t(`ws-reports.${approvalBlockedReason}`)
+                  : undefined
+              }
               onClick={onApprove}
               disabled={
                 isApproving || isRejecting || Boolean(approvalBlockedReason)

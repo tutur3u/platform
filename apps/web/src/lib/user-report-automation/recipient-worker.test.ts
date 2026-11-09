@@ -112,3 +112,17 @@ describe('actual monthly delivery worker recipient boundaries', () => {
     expect(f.report.delivery_status).toBe('sent');
   });
 });
+
+it('does not send an older queued report without feedback', async () => {
+  vi.clearAllMocks();
+  const f = recipientWorkerFixture();
+  f.report.feedback = ' \n\t';
+  await run(f);
+  expect(mocks.send).not.toHaveBeenCalled();
+  expect(mocks.preview).not.toHaveBeenCalled();
+  expect(f.queue.status).toBe('blocked');
+  expect(f.completions[0]).toMatchObject({
+    p_status: 'blocked',
+    p_error: 'Report has no feedback. Báo cáo chưa có nhận xét.',
+  });
+});

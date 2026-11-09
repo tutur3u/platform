@@ -1,3 +1,4 @@
+import { hasReportFeedback } from '@tuturuuu/users-core/features/reports/report-feedback';
 import {
   PERIODIC_RESEND_STUCK_AFTER_MINUTES,
   type PeriodicReport,
@@ -15,6 +16,7 @@ export function periodicResendReason(
   report: PeriodicReport,
   now: number
 ): ResendRowReason | null {
+  if (!hasReportFeedback(report.feedback)) return null;
   if (report.report_approval_status !== 'APPROVED') return null;
   if (!report.user_email?.trim()) return null;
   // A test delivery is never resent as a real send.

@@ -1,3 +1,5 @@
+import { REPORT_FEEDBACK_REQUIRED } from '../../../../features/reports/report-feedback';
+import { countReportsWithoutFeedback } from '../feedback-readiness';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { verifySecret } from '@tuturuuu/utils/workspace-helper';
@@ -247,6 +249,16 @@ export async function POST(request: Request, { params }: Params) {
       );
     if (body.action === 'send' && heldIds.length > HELD_SEND_LIMIT)
       return scopeTooLarge(HELD_SEND_LIMIT);
+
+    if (body.action === 'send') {
+      const emptyCount = await countReportsWithoutFeedback(
+        sbAdmin,
+        wsId,
+        heldIds
+      );
+      if (emptyCount)
+        return json({ ...REPORT_FEEDBACK_REQUIRED, emptyCount }, 422);
+    }
 
     // No action without an audit row: who, when, workspace, scope, action, count.
     const audit = await heldAuditTable(sbAdmin)
