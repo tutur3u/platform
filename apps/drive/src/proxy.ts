@@ -45,6 +45,18 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
+    // Release identity is public (the native Worker serves it before any
+    // session work): no refresh, and no ambient identity reaches the handler.
+    const isBuildInfoRead =
+      req.nextUrl.pathname === '/api/build-info' &&
+      (req.method === 'GET' || req.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of req.cookies.getAll())
+        req.cookies.delete(cookie.name);
+      req.headers.delete('cookie');
+      req.headers.delete('authorization');
+      return NextResponse.next({ request: { headers: req.headers } });
+    }
     const appSessionRefresh = isLocalAuthApi
       ? null
       : await refreshAppSessionForRequest(req, {
