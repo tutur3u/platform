@@ -2,6 +2,7 @@
 import type { BridgePage } from '@tuturuuu/start-bridge/pages';
 
 export const pages = [
+  { pattern: "/about", file: "src/app/[locale]/(marketing)/about/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/acceptable-use", file: "src/app/[locale]/(marketing)/acceptable-use/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/community-guidelines", file: "src/app/[locale]/(marketing)/community-guidelines/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/legal/changes/full", file: "src/app/[locale]/(marketing)/legal/changes/full/page.tsx", defaults: { "locale": "en" } },
@@ -9,6 +10,7 @@ export const pages = [
   { pattern: "/legal/dpa", file: "src/app/[locale]/(marketing)/legal/dpa/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/legal/sla", file: "src/app/[locale]/(marketing)/legal/sla/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/legal/subprocessors", file: "src/app/[locale]/(marketing)/legal/subprocessors/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/pricing", file: "src/app/[locale]/(marketing)/pricing/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/privacy", file: "src/app/[locale]/(marketing)/privacy/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/security/bug-bounty", file: "src/app/[locale]/(marketing)/security/bug-bounty/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/security", file: "src/app/[locale]/(marketing)/security/page.tsx", defaults: { "locale": "en" } },

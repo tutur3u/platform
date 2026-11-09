@@ -1,4 +1,409 @@
 {
+  "about": {
+    "community": {
+      "contributions": {
+        "description": "Git commits từ hơn 30 người đóng góp kể từ 2022",
+        "title": "Đóng Góp Code",
+        "value": "10,000+"
+      },
+      "culture": {
+        "builders": {
+          "description": "Mỗi thành viên hành động như người sáng lập trong lĩnh vực của mình",
+          "title": "Người Xây Dựng, Không Phải Nhân Viên"
+        },
+        "innovation": {
+          "description": "Công nghệ có thể bắt nguồn từ bất kỳ đâu",
+          "title": "Đổi Mới Là Ưu Tiên"
+        },
+        "optimism": {
+          "description": "Tham vọng táo bạo kết hợp với thực thi nghiêm ngặt",
+          "title": "Lạc Quan Thực Dụng"
+        },
+        "ownership": {
+          "description": "Quyết định đi kèm trách nhiệm với kết quả",
+          "title": "Tinh Thần Sở Hữu Không Ngừng"
+        },
+        "subtitle": "Giá trị định nghĩa cách chúng tôi làm việc và đổi mới cùng nhau",
+        "title": "Văn Hóa Của Chúng Tôi",
+        "transparency": {
+          "description": "Hoạt động nội bộ phản ánh triết lý mã nguồn mở của chúng tôi",
+          "title": "Minh Bạch Theo Mặc Định"
+        },
+        "vietnam": {
+          "description": "Tham vọng toàn cầu, sự xuất sắc Đông Nam Á",
+          "title": "Gốc Rễ Việt Nam"
+        }
+      },
+      "milestones": {
+        "description": "Tính năng và tích hợp đã ra mắt",
+        "title": "Cột Mốc Đổi Mới",
+        "value": "50+"
+      },
+      "openSource": {
+        "description": "Người đóng góp và người dùng cùng xây dựng trên GitHub",
+        "title": "Cộng Đồng Mã Nguồn Mở",
+        "value": "10K+"
+      },
+      "subtitle": "Tham gia cùng hàng nghìn nhà xây dựng, người mơ mộng và nhà đổi mới định hình tương lai",
+      "title": {
+        "highlight": "Toàn Cầu",
+        "part1": "Xây Dựng Cộng Đồng"
+      }
+    },
+    "companyInfo": {
+      "details": {
+        "ceo": "Người Sáng Lập & CEO",
+        "ceoValue": "Võ Hoàng Phúc",
+        "founded": "Thành Lập",
+        "foundedValue": "2 tháng 4, 2025",
+        "taxCode": "Mã Số Thuế",
+        "taxCodeValue": "0318898402",
+        "title": "Thông Tin Công Ty"
+      },
+      "links": {
+        "contact": "Liên Hệ",
+        "github": "GitHub",
+        "website": "Website"
+      },
+      "location": {
+        "address1": "Tầng 14, Tòa Nhà HM Town",
+        "address2": "412 Nguyễn Thị Minh Khai",
+        "address3": "Phường 05, Quận 3",
+        "address4": "Thành phố Hồ Chí Minh, Việt Nam",
+        "title": "Địa Chỉ"
+      },
+      "subtitle": "Xây dựng hệ điều hành thông minh cho công việc hiện đại",
+      "title": "CÔNG TY CỔ PHẦN TUTURUUU"
+    },
+    "coreBeliefs": {
+      "focus": {
+        "description": "Trong một thế giới được thiết kế để gây xao nhãng, khả năng duy trì công việc chuyên sâu chính là lợi thế cạnh tranh quyết định.",
+        "title": "Tập Trung Là Siêu Năng Lực Mới"
+      },
+      "impact": {
+        "description": "Năng suất không phải là làm nhiều hơn; đó là tạo ra nhiều giá trị hơn. Chúng tôi mang đến không gian tinh thần cho những đột phá.",
+        "title": "Tác Động Hơn Hoạt Động"
+      },
+      "potential": {
+        "description": "Ý tưởng xuất sắc có thể xuất hiện từ bất kỳ con phố, ngôi làng hay lớp học nào. Việc tiếp cận các công cụ đẳng cấp thế giới phải là phổ quát.",
+        "title": "Tiềm Năng Không Có Mã Bưu Chính"
+      },
+      "subtitle": "Những nguyên tắc cơ bản định hướng mọi thứ chúng tôi xây dựng",
+      "technology": {
+        "description": "Công nghệ phải là sự mở rộng của ý chí con người, không phải lồng nhốt sự chú ý. Chúng tôi xây dựng phần mềm để đảo ngược xu hướng này.",
+        "title": "Công Nghệ Là Ý Chí Con Người"
+      },
+      "thirdEra": {
+        "description": "Chúng ta đang bước vào Kỷ Nguyên Đối Tác, nơi AI hoạt động như một đối tác thông minh để khuếch đại tiềm năng con người.",
+        "title": "Kỷ Nguyên Thứ Ba"
+      },
+      "title": {
+        "highlight": "Cốt Lõi",
+        "part1": "Giá Trị"
+      },
+      "transparency": {
+        "description": "Công nghệ nền tảng không bao giờ nên là hộp đen. Triết lý mã nguồn mở tạo ra lòng tin và thúc đẩy đổi mới.",
+        "title": "Minh Bạch Triệt Để"
+      }
+    },
+    "cta": {
+      "contribute": "Đóng Góp Trên GitHub",
+      "description": "Chúng tôi đang tập hợp một đội ngũ những người xây dựng tin rằng công nghệ nên giải phóng tiềm năng con người. Nếu bạn chia sẻ tầm nhìn của chúng tôi, hãy cùng tạo ra điều phi thường.",
+      "getInTouch": "Liên Hệ",
+      "title": "Tham Gia Xây Dựng Tương Lai"
+    },
+    "ecosystem": {
+      "aiCore": {
+        "aurora": {
+          "name": "Aurora",
+          "role": "Hệ Thần Kinh"
+        },
+        "crystal": {
+          "name": "Crystal",
+          "role": "Cầu Nối Với Con Người"
+        },
+        "mira": {
+          "name": "Mira",
+          "role": "Linh Hồn & Giọng Nói"
+        },
+        "nova": {
+          "name": "Nova",
+          "role": "Lương Tâm & Xưởng Rèn"
+        },
+        "rewise": {
+          "name": "Rewise",
+          "role": "Tâm Trí Tập Thể"
+        },
+        "subtitle": "Kiến Trúc Của Trí Tuệ",
+        "title": "Lõi AI"
+      },
+      "subtitle": "Một bộ ứng dụng gắn kết hoạt động như một sinh vật duy nhất",
+      "title": {
+        "highlight": "Tuturuuu",
+        "part1": "Hệ Sinh Thái"
+      },
+      "tuchat": {
+        "description": "Giao tiếp thống nhất",
+        "name": "Tuturuuu Chat"
+      },
+      "tudo": {
+        "description": "Quản lý công việc thông minh",
+        "name": "Tuturuuu Tasks"
+      },
+      "tumeet": {
+        "description": "Cuộc họp thông minh",
+        "name": "Tuturuuu Meet"
+      },
+      "tuplan": {
+        "description": "Tự động lập lịch bằng AI",
+        "name": "Tuturuuu Calendar"
+      }
+    },
+    "features": {
+      "analytics": {
+        "description": "Trực quan hóa mô hình năng suất, theo dõi mục tiêu và đưa ra quyết định dựa trên dữ liệu.",
+        "feature1": "Số liệu thời gian thực",
+        "feature2": "Báo cáo tùy chỉnh",
+        "feature3": "Thông tin chi tiết",
+        "title": "Bảng Điều Khiển Phân Tích"
+      },
+      "finance": {
+        "description": "Theo dõi chi tiêu, quản lý ngân sách và có được cái nhìn sâu sắc về tình hình tài chính với phân tích AI.",
+        "feature1": "Theo dõi chi tiêu",
+        "feature2": "Lập kế hoạch ngân sách",
+        "feature3": "Phân tích tài chính",
+        "title": "Quản Lý Tài Chính"
+      },
+      "inventory": {
+        "description": "Quản lý sản phẩm, theo dõi mức tồn kho và tối ưu hóa chuỗi cung ứng với tự động hóa thông minh.",
+        "feature1": "Quản lý kho",
+        "feature2": "Tự động đặt hàng",
+        "feature3": "Phân tích",
+        "title": "Hệ Thống Kho Hàng"
+      },
+      "learning": {
+        "description": "Truy cập nội dung giáo dục, thực hành với thử thách AI và nâng cao kỹ năng qua Nova.",
+        "feature1": "Thử thách AI",
+        "feature2": "Theo dõi kỹ năng",
+        "feature3": "Bảng xếp hạng",
+        "title": "Nền Tảng Học Tập"
+      },
+      "openSource": {
+        "description": "Minh bạch hoàn toàn với mã nguồn công khai, đóng góp cộng đồng và tùy chọn tự triển khai.",
+        "feature1": "GitHub công khai",
+        "feature2": "Cộng đồng phát triển",
+        "feature3": "Tự triển khai được",
+        "title": "Mã Nguồn Mở"
+      },
+      "security": {
+        "description": "Mã hóa cấp ngân hàng, phân quyền chi tiết và nhật ký kiểm toán toàn diện bảo vệ dữ liệu của bạn.",
+        "feature1": "Bảo mật cấp hàng",
+        "feature2": "RBAC",
+        "feature3": "Nhật ký kiểm toán",
+        "title": "Bảo Mật Doanh Nghiệp"
+      },
+      "subtitle": "Một bộ công cụ toàn diện để quản lý mọi khía cạnh công việc và cuộc sống của bạn",
+      "title": {
+        "highlight": "Năng Suất",
+        "part1": "Không Chỉ Là"
+      }
+    },
+    "hero": {
+      "badge": "Kỷ Nguyên Đối Tác",
+      "cta": {
+        "openSource": "Mã Nguồn Mở",
+        "vision": "Khám Phá Tầm Nhìn"
+      },
+      "description": "Chúng tôi đang xây dựng hệ điều hành mã nguồn mở thông minh đầu tiên trên thế giới cho công việc và cuộc sống hiện đại. Sứ mệnh của chúng tôi là chiến đấu chống lại tiếng ồn công nghệ bằng cách tạo ra một nền tảng thống nhất tự động hóa công việc hành chính và loại bỏ ma sát chuyển đổi ngữ cảnh.",
+      "title": {
+        "highlight": "Tiềm Năng Con Người",
+        "part1": "Giải Phóng",
+        "part2": "Thông Qua Công Nghệ Thông Minh"
+      }
+    },
+    "problem": {
+      "badge": "Sự Phản Bội Lớn Của Công Việc Hiện Đại",
+      "cognitive": {
+        "description": "Chuyển đổi ngữ cảnh làm giảm năng suất và gây kiệt sức",
+        "stat": "Giảm 40%",
+        "title": "Chi Phí Nhận Thức"
+      },
+      "financial": {
+        "description": "Lãng phí vào \"công việc quản lý công việc\"—gánh nặng hàng nghìn tỷ đô la cho năng suất toàn cầu",
+        "stat": "21 giờ/tuần",
+        "title": "Chi Phí Tài Chính"
+      },
+      "innovation": {
+        "description": "Những đột phá tiếp theo bị ngộp thở bởi hộp thư, cuộc họp và bảng tính",
+        "stat": "Không Thể Đo Lường",
+        "title": "Chi Phí Đổi Mới"
+      },
+      "title": {
+        "highlight": "Ma Sát Kỹ Thuật Số",
+        "part1": "Cái Giá Của"
+      }
+    },
+    "sections": {
+      "beliefs": {
+        "eyebrow": "Niềm tin"
+      },
+      "capabilities": {
+        "eyebrow": "Năng lực"
+      },
+      "closing": {
+        "eyebrow": "Tham gia cùng chúng tôi"
+      },
+      "community": {
+        "eyebrow": "Cộng đồng"
+      },
+      "company": {
+        "eyebrow": "Doanh nghiệp"
+      },
+      "ecosystem": {
+        "eyebrow": "Hệ sinh thái"
+      },
+      "journey": {
+        "eyebrow": "Hành trình"
+      },
+      "purpose": {
+        "eyebrow": "Mục đích"
+      },
+      "stack": {
+        "eyebrow": "Công nghệ"
+      }
+    },
+    "techStack": {
+      "ai": {
+        "category": "AI & Phân Tích",
+        "tech1": "OpenAI",
+        "tech2": "Anthropic",
+        "tech3": "Gemini",
+        "tech4": "Vertex AI"
+      },
+      "backend": {
+        "category": "Backend",
+        "tech1": "Supabase",
+        "tech2": "PostgreSQL",
+        "tech3": "tRPC",
+        "tech4": "Vercel AI SDK"
+      },
+      "frontend": {
+        "category": "Frontend",
+        "tech1": "Next.js 15",
+        "tech2": "React",
+        "tech3": "TypeScript",
+        "tech4": "Tailwind CSS"
+      },
+      "infrastructure": {
+        "category": "Hạ Tầng",
+        "tech1": "Turborepo",
+        "tech2": "Bun",
+        "tech3": "Docker",
+        "tech4": "Vercel"
+      },
+      "subtitle": "Chúng tôi tận dụng các công nghệ mới nhất để xây dựng nền tảng nhanh, đáng tin cậy và có khả năng mở rộng",
+      "title": {
+        "highlight": "Công Nghệ Tiên Tiến",
+        "part1": "Được Xây Dựng Với"
+      }
+    },
+    "timeline": {
+      "building": {
+        "achievement1": "Quản lý công việc Tuturuuu Tasks",
+        "achievement2": "Đồng bộ lịch",
+        "achievement3": "Theo dõi tài chính",
+        "achievement4": "Nền tảng Nova",
+        "description": "Xây dựng nền tảng với hơn 377 migration cơ sở dữ liệu, xác thực toàn diện và tích hợp AI.",
+        "period": "2024 - Hiện Tại",
+        "phase": "Xây Dựng",
+        "title": "Phát Triển Nhanh"
+      },
+      "evolution": {
+        "achievement1": "Trí tuệ đa tác nhân",
+        "achievement2": "Khả năng tiếp cận toàn cầu",
+        "achievement3": "Học tập liên tục",
+        "description": "Mở rộng khả năng của Mira, xây dựng biểu đồ ngữ cảnh của Aurora và biến điều không thể thành có thể cho mọi người.",
+        "period": "2025 - Tương Lai",
+        "phase": "Tiến Hóa",
+        "title": "Kỷ Nguyên Đối Tác"
+      },
+      "foundation": {
+        "achievement1": "Kiến trúc nền tảng",
+        "achievement2": "Đội ngũ cốt lõi tập hợp",
+        "description": "Nhận ra Sự Phản Bội Lớn Của Công Việc Hiện Đại và hình dung một tương lai tốt đẹp hơn nơi AI phục vụ nhân loại.",
+        "period": "2024 - Những Ngày Đầu",
+        "phase": "Nền Tảng",
+        "title": "Tia Lửa"
+      },
+      "launch": {
+        "achievement1": "Thực thể pháp lý được thành lập",
+        "achievement2": "Phát hành mã nguồn mở",
+        "description": "TUTURUUU JSC chính thức được thành lập, đánh dấu cam kết xây dựng hệ điều hành thông minh cho công việc hiện đại.",
+        "period": "2 tháng 4, 2025",
+        "phase": "Ra Mắt",
+        "title": "Thành Lập Chính Thức"
+      },
+      "subtitle": "Từ tầm nhìn đầy tham vọng đến hiện thực chuyển đổi",
+      "title": {
+        "highlight": "Đổi Mới",
+        "part1": "Hành Trình"
+      }
+    },
+    "vision": {
+      "mission": {
+        "description": "Chiến đấu chống lại tiếng ồn công nghệ bằng cách xây dựng một nền tảng thông minh, thống nhất và mở, tự động hóa công việc hành chính và loại bỏ ma sát chuyển đổi ngữ cảnh.",
+        "title": "Sứ Mệnh"
+      },
+      "subtitle": "Điều thúc đẩy chúng tôi mỗi ngày để vượt qua ranh giới và đổi mới",
+      "title": {
+        "highlight": "Phương Bắc",
+        "part1": "Ngôi Sao"
+      },
+      "vision": {
+        "description": "Tạo ra tương lai nơi công nghệ giải phóng tiềm năng nhân loại—giải phóng sự tập trung tập thể để giải quyết những thách thức quan trọng nhất của thế giới, đồng thời làm cho sự đổi mới đẳng cấp thế giới trở nên dễ tiếp cận với mọi người, mọi nơi.",
+        "title": "Tầm Nhìn"
+      }
+    }
+  },
+  "aurora": {
+    "90_confidence_high": "Tự tin 90% (cao)",
+    "90_confidence_lo": "Tự tin 90% (thấp)",
+    "accuracy": "Độ chính xác",
+    "average": "Trung bình",
+    "average_performance": "Hiệu năng trung bình",
+    "best_performing": "Hiệu năng tốt nhất",
+    "consistency": "Tính nhất quán",
+    "current_price": "Giá hiện tại",
+    "declining": "Suy giảm",
+    "directional_accuracy": "Độ chính xác định hướng",
+    "forecast_range": "Phạm vi dự báo",
+    "high": "Cao",
+    "improving": "Cải thiện",
+    "last_updated": "Cập nhật lần cuối",
+    "low": "Thấp",
+    "ml_models": "Mô hình học máy",
+    "ml_price_prediction": "Dự đoán giá mô hình học máy",
+    "model_comparison": "So sánh mô hình",
+    "model_correlation": "Tương quan mô hình",
+    "model_performance": "Hiệu suất mô hình",
+    "moderate": "Vừa phải",
+    "no_data": "Không có dữ liệu.",
+    "overall": "Tổng thể",
+    "prediction_insights": "Những insights từ dự đoán",
+    "relative": "liên quan",
+    "scaled_model": "(Scaled)",
+    "select_date": "Chọn ngày",
+    "slope": "độ dốc",
+    "stable": "Ổn định",
+    "statistical_models": "Mô hình thống kê",
+    "strong": "Mạnh",
+    "trend": "Xu hướng",
+    "turning_point_accuracy": "Độ chính xác điểm",
+    "volatility": "Biến động giá",
+    "weak": "Yếu đuối",
+    "weighted_score": "Trọng số",
+    "worst_performing": "Hiệu năng tệ nhất"
+  },
   "bug-bounty": {
     "assessment": {
       "accepted": {
@@ -1759,6 +2164,136 @@
     "yellow": "Vàng",
     "yesterday": "Hôm qua"
   },
+  "contact": {
+    "banner": {
+      "description": "Đội ngũ của chúng tôi cam kết cung cấp hỗ trợ xuất sắc và giúp bạn tận dụng tối đa Tuturuuu.",
+      "eyebrow": "Hỗ trợ",
+      "features": {
+        "dedicated": "Đội Ngũ Tận Tâm",
+        "expert": "Hỗ Trợ Chuyên Nghiệp",
+        "response": "Phản Hồi Trong 24h"
+      },
+      "title": "Chúng Tôi Luôn Sẵn Sàng Hỗ Trợ"
+    },
+    "form": {
+      "authRequired": {
+        "description": "Để đảm bảo hệ thống được bảo vệ và danh tính của bạn được xác minh, bạn cần đăng nhập để gửi yêu cầu. Điều này giúp chúng tôi duy trì một kênh giao tiếp an toàn và đáng tin cậy.",
+        "loginButton": "Đăng Nhập để Tiếp Tục",
+        "title": "Yêu Cầu Xác Thực"
+      },
+      "button": {
+        "send": "Gửi Tin Nhắn",
+        "sending": "Đang gửi..."
+      },
+      "description": "Chia sẻ ý tưởng, câu hỏi của bạn, hoặc yêu cầu truy cập beta các tính năng thử nghiệm. Chúng tôi sẽ phản hồi sớm nhất có thể.",
+      "eyebrow": "Gửi tin nhắn",
+      "fields": {
+        "email": {
+          "label": "Email",
+          "placeholder": "you@example.com"
+        },
+        "message": {
+          "label": "Tin nhắn",
+          "placeholder": "Cho chúng tôi biết về câu hỏi, ý tưởng, hoặc yêu cầu truy cập beta của bạn..."
+        },
+        "name": {
+          "label": "Tên",
+          "placeholder": "Tên của bạn"
+        },
+        "product": {
+          "label": "Sản Phẩm",
+          "options": {
+            "calendar": "Lịch",
+            "finance": "Tài Chính",
+            "nova": "Nova (Học Tập)",
+            "other": "Khác",
+            "rewise": "Rewise (AI Chat)",
+            "tudo": "Tuturuuu Tasks",
+            "tumeet": "Tuturuuu Meet",
+            "web": "Nền Tảng Web"
+          },
+          "placeholder": "Chọn sản phẩm"
+        },
+        "subject": {
+          "label": "Tiêu đề",
+          "placeholder": "Bạn muốn nói về điều gì?"
+        },
+        "type": {
+          "label": "Loại Yêu Cầu",
+          "options": {
+            "bug": "Báo Lỗi",
+            "featureRequest": "Yêu Cầu Tính Năng",
+            "jobApplication": "Ứng Tuyển",
+            "support": "Hỗ Trợ Chung"
+          },
+          "placeholder": "Chọn loại"
+        }
+      },
+      "title": "Gửi Tin Nhắn"
+    },
+    "founder": {
+      "contact": {
+        "email": "Email",
+        "github": "GitHub"
+      },
+      "description": "Thúc đẩy đổi mới và xuất sắc trong công nghệ. Đừng ngần ngại liên hệ trực tiếp để hợp tác, đối tác, hoặc yêu cầu truy cập beta.",
+      "name": "Võ Hoàng Phúc",
+      "role": "Người Sáng Lập & CEO",
+      "title": "Kết Nối Với Người Sáng Lập"
+    },
+    "hero": {
+      "badge": "Kết Nối Cùng Chúng Tôi",
+      "description": "Dù bạn muốn đổi mới, hợp tác, yêu cầu truy cập beta các tính năng thử nghiệm, hay đơn giản là tìm hiểu thêm về nền tảng của chúng tôi, chúng tôi luôn sẵn sàng hỗ trợ.",
+      "title": {
+        "highlight": "Tương Lai",
+        "part1": "Cùng Xây Dựng"
+      }
+    },
+    "highlights": {
+      "beta": {
+        "description": "Yêu cầu truy cập sớm các tính năng thử nghiệm",
+        "title": "Truy Cập Beta"
+      },
+      "premium": {
+        "description": "Quan tâm tận tình đến nhu cầu của bạn",
+        "title": "Dịch Vụ Cao Cấp"
+      },
+      "technical": {
+        "description": "Hỗ trợ chuyên nghiệp từ đội ngũ kỹ sư",
+        "title": "Chuyên Môn Kỹ Thuật"
+      },
+      "title": "Tại Sao Chọn Chúng Tôi"
+    },
+    "methods": {
+      "email": {
+        "description": "Cho các câu hỏi chung và hỗ trợ",
+        "title": "Email"
+      },
+      "eyebrow": "Kênh liên hệ",
+      "github": {
+        "description": "Khám phá các dự án mã nguồn mở",
+        "title": "GitHub"
+      },
+      "response": {
+        "description": "Phản hồi nhanh và hữu ích",
+        "title": "Thời Gian Phản Hồi",
+        "value": "Trong Vòng 24 Giờ"
+      },
+      "subtitle": "Chọn cách thức liên hệ bạn ưa thích",
+      "support": {
+        "description": "Luôn sẵn sàng hỗ trợ bạn",
+        "title": "Hỗ Trợ Toàn Cầu",
+        "value": "Có Mặt 24/7"
+      },
+      "title": "Liên Hệ"
+    },
+    "quickLinks": {
+      "about": "Về Chúng Tôi",
+      "github": "GitHub Repository",
+      "pricing": "Bảng Giá",
+      "title": "Liên Kết Nhanh"
+    }
+  },
   "desktop_download": {
     "android": {
       "beta_action": "Tham gia trên Google Play",
@@ -2218,6 +2753,157 @@
       "reconnecting": "Đang kết nối lại…",
       "tools": "Công cụ",
       "unavailable": "Tài liệu chung hiện không khả dụng."
+    }
+  },
+  "mira": {
+    "achievements": {
+      "complete": "hoàn thành",
+      "locked": "Đã khóa",
+      "milestones": "Cột mốc",
+      "productivity": "Năng suất",
+      "progress": "Tiến độ thành tựu",
+      "social": "Xã hội",
+      "special": "Đặc biệt",
+      "title": "Thành tựu",
+      "unlocked": "Đã mở khóa",
+      "xp_earned": "XP đã kiếm"
+    },
+    "error": "Không thể tải Mira. Vui lòng làm mới.",
+    "focus": {
+      "almost_there": "Sắp xong rồi! Bạn đang làm rất tốt!",
+      "deep_work": "Làm việc sâu",
+      "duration": "Thời lượng",
+      "elapsed": "Đã trôi qua",
+      "end_session": "Kết thúc phiên",
+      "extended": "Kéo dài",
+      "goal": "Bạn muốn hoàn thành gì?",
+      "goal_placeholder": "ví dụ: Hoàn thành báo cáo, Xem lại code, Học chương 5...",
+      "halfway": "Đã xong một nửa. Tiếp tục phát huy!",
+      "no_active_session": "Không có phiên đang hoạt động",
+      "no_session_description": "Bắt đầu một phiên tập trung để theo dõi thời gian làm việc sâu và nhận XP cùng Mira!",
+      "overtime": "Quá giờ",
+      "overtime_message": "Tập trung tuyệt vời! Nghỉ ngơi khi bạn sẵn sàng nhé.",
+      "pomodoro": "Pomodoro",
+      "recent_sessions": "Phiên gần đây",
+      "remaining": "Còn lại",
+      "start": "Bắt đầu tập trung",
+      "start_session": "Bắt đầu phiên tập trung",
+      "stay_focused": "Hãy tập trung. Mira tin vào bạn!"
+    },
+    "focus_complete": {
+      "achievements_unlocked": "Thành tựu đã mở khóa!",
+      "amazing_work": "Làm tốt lắm!",
+      "completed_message": "Bạn đã làm được! Mira rất tự hào về bạn.",
+      "focus_time": "Thời gian tập trung",
+      "goal_was": "Mục tiêu của bạn là:",
+      "partial_message": "Cố gắng tốt! Mỗi phút tập trung đều có giá trị.",
+      "reflection": "Bạn cảm thấy thế nào?",
+      "reflection_placeholder": "Bạn đã hoàn thành gì? Có suy nghĩ gì muốn ghi lại?",
+      "session_ended": "Phiên đã kết thúc",
+      "xp_earned": "XP kiếm được"
+    },
+    "history": {
+      "all_time": "tất cả thời gian",
+      "daily_avg": "Trung bình ngày",
+      "delete_button": "Xóa",
+      "delete_cancel": "Hủy",
+      "delete_confirm_description": "Điều này sẽ xóa vĩnh viễn phiên tập trung này khỏi lịch sử của bạn. Hành động này không thể hoàn tác.",
+      "delete_confirm_title": "Xóa phiên tập trung?",
+      "delete_pending": "Đang xóa...",
+      "delete_session": "Xóa phiên",
+      "delete_success": "Đã xóa phiên tập trung",
+      "no_sessions": "Chưa có phiên tập trung nào.",
+      "no_sessions_hint": "Bắt đầu phiên đầu tiên của bạn!",
+      "recent_sessions": "Phiên gần đây",
+      "this_month": "Tháng này",
+      "this_week": "Tuần này",
+      "title": "Lịch sử tập trung",
+      "total_sessions": "Tổng số phiên"
+    },
+    "loading": "Đang tải Mira...",
+    "messages": {
+      "achievement_unlocked": "Đã mở khóa thành tựu!",
+      "fed_success": "Đã cho Mira ăn! +{xp} XP",
+      "focus_start": "Cùng tập trung nào! Bạn làm được mà!",
+      "focus_started": "Đã bắt đầu phiên tập trung!",
+      "great_work": "Làm tốt lắm! Bạn đã làm được!",
+      "happy_wiggle": "*tiếng cá vui vẻ*",
+      "hello": "Chào bạn! Hôm nay của bạn thế nào?",
+      "here_for_you": "Tôi ở đây nếu bạn cần nói chuyện!",
+      "lets_go": "Cùng hoàn thành một số mục tiêu nào!",
+      "nice_pet": "*lắc lư vui vẻ* Thích lắm!",
+      "ready": "Sẵn sàng làm việc hiệu quả hôm nay chứ?",
+      "yum": "Ngon quá! Mira thích món này!"
+    },
+    "mood": {
+      "excited": "Phấn khích",
+      "focused": "Tập trung",
+      "happy": "Vui vẻ",
+      "neutral": "Bình thường",
+      "sad": "Buồn",
+      "tired": "Mệt mỏi"
+    },
+    "personal_only": "Mira chỉ khả dụng trong không gian làm việc cá nhân của bạn",
+    "personal_only_description": "Chuyển sang không gian làm việc cá nhân của bạn để gặp Mira!",
+    "pet": {
+      "chat": "Trò chuyện với Mira",
+      "feed": "Cho Mira ăn",
+      "full": "Mira đã no rồi!",
+      "level": "Cấp độ {level}",
+      "not_hungry": "Mira chưa đói! Chờ thêm {minutes} phút nữa.",
+      "pet": "Vuốt ve Mira",
+      "streak": "Chuỗi {days} ngày",
+      "xp": "{xp} / {xpToNext} XP"
+    },
+    "stats": {
+      "conversations": "Cuộc trò chuyện",
+      "focus_time": "Thời gian tập trung",
+      "health": "Sức khỏe",
+      "hunger": "Độ đói",
+      "hungry_warning": "Mira đang đói! Hãy cho Mira ăn nhé.",
+      "progress": "Tiến độ"
+    },
+    "subtitle": "Người bạn AI cá nhân của bạn",
+    "tabs": {
+      "achievements": "Thành tựu",
+      "focus": "Tập trung",
+      "history": "Lịch sử",
+      "home": "Trang chủ",
+      "tasks": "Công việc"
+    },
+    "tasks": {
+      "all_caught_up": "Đã xong hết!",
+      "done_today": "Xong hôm nay",
+      "no_tasks_description": "Bạn không có công việc nào đến hạn sớm. Tuyệt vời!",
+      "overdue": "Quá hạn",
+      "overview": "Tổng quan công việc",
+      "task_completed": "Hoàn thành công việc!",
+      "title": "Công việc của tôi",
+      "today": "Hôm nay",
+      "upcoming": "Sắp tới",
+      "xp_earned": "+{amount} XP"
+    },
+    "title": "Mira",
+    "voice": {
+      "close": "Đóng",
+      "connect_to_chat": "Kết nối để trò chuyện...",
+      "end_call": "Kết thúc cuộc gọi",
+      "preparing": "Đang chuẩn bị trò chuyện bằng giọng nói...",
+      "retry": "Thử lại",
+      "send_message": "Gửi tin nhắn",
+      "status": {
+        "connecting": "Đang kết nối...",
+        "listening": "Đang lắng nghe...",
+        "mira_speaking": "Mira đang nói...",
+        "ready": "Sẵn sàng",
+        "reconnecting": "Đang kết nối lại...",
+        "tap_to_talk": "Nhấn để nói chuyện"
+      },
+      "talk_to_mira": "Trò chuyện với Mira",
+      "talking_to_mira": "Đang trò chuyện với Mira",
+      "toggle_text_chat": "Bật/tắt trò chuyện văn bản",
+      "type_message": "Nhập tin nhắn...",
+      "unavailable": "Trò chuyện bằng giọng nói không khả dụng"
     }
   },
   "privacy-consent": {

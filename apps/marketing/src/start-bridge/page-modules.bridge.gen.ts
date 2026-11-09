@@ -5,6 +5,15 @@ import type { pages } from './page-registry.bridge.gen';
 type PageFile = (typeof pages)[number]['file'];
 
 export const pageModules = {
+  'src/app/[locale]/(marketing)/about/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/about/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/about/layout'),
+    ],
+  },
   'src/app/[locale]/(marketing)/acceptable-use/page.tsx': {
     page: () => import('../app/[locale]/(marketing)/acceptable-use/page'),
     layouts: [
@@ -66,6 +75,14 @@ export const pageModules = {
       () => import('../app/[locale]/(marketing)/layout'),
       () => import('../app/[locale]/(marketing)/template'),
       () => import('../app/[locale]/(marketing)/legal/subprocessors/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/pricing/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/pricing/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
     ],
   },
   'src/app/[locale]/(marketing)/privacy/page.tsx': {
