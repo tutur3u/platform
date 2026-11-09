@@ -106,6 +106,24 @@ ports rather than create alternate identity or navigation implementations.
 forwarding, rejected identities, profile fallback and interleaved requests;
 `auth.test.ts` covers the Next adapter.
 
+### Provider requests that forbid redirects
+
+Workers supports `redirect: 'manual'` and `redirect: 'follow'`. The Fetch-standard
+`redirect: 'error'` mode throws before dispatch on Workers. For credential-bearing
+provider requests that must not follow redirects, use `manual` and reject
+`opaqueredirect` and every 3xx before reading a response body or refreshing
+credentials. Do not forward `Location` or retry a redirected mutation.
+
+Calendar's Graph sync transport retains its single-attempt cancellation budget.
+Mail's provider transport permits only its existing GET-on-401 credential refresh;
+its OAuth token/profile and SNS certificate readers require a direct successful
+response. Focused tests cover direct success, redirect and opaque-response denial,
+and the existing retry limits. Verify the transport in local workerd with synthetic
+identity boundaries and an outbound interceptor; record every attempted host and
+require that a redirect never reaches its destination. Provider and production
+acceptance remain separate from this local check. See the
+[Workers Request reference](https://developers.cloudflare.com/workers/runtime-apis/request/).
+
 ## basePath readiness
 
 Each app must serve both its subdomain and `tuturuuu.com/<app>` from the same
