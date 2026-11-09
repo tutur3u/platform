@@ -40,6 +40,7 @@ const PROTECTED_TRIGGERS = {
   'calendar-cloudflare.yaml': 'e3e096233a6e8a60',
   'calendar-generation-contract.yaml': '0a3cc2c97958f5cd',
   'cms-cloudflare.yaml': 'c43009624296a37c',
+  'cms-renderer.yaml': '94c592fa21fb7888',
   'codeql.yml': '4a4a1b519370f1bc',
   'colab-cloudflare.yaml': 'dce28d216351f5af',
   'connected-mail-accounts-contract.yaml': '36344b32dd7e88da',
