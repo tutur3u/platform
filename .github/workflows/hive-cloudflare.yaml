@@ -183,3 +183,91 @@ jobs:
         TUTURUUU_NOINDEX=1
       format-paths: >-
         apps/hive/src/start-bridge apps/hive/src/routes apps/hive/src/router.tsx apps/hive/src/start.ts apps/hive/cloudflare apps/hive/vite.config.mts apps/hive/void.config.ts apps/hive/tsconfig.json apps/hive/package.json apps/hive/start-bridge.routes.json
+  hive-cutover-artifact:
+    needs: [check-ci, affected-gate]
+    if: ${{ needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://hive-ci.supabase.invalid' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_hive_ci_placeholder' }}
+      NEXT_PUBLIC_APP_URL: https://hive.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      WRANGLER_SEND_METRICS: 'false'
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - name: Generate build metadata
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build shared dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="@tuturuuu/hive^..." --concurrency=2
+          token: ''
+          team: ''
+      - name: Build the Start Worker
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/hive && bun run build:cloudflare
+          token: ''
+          team: ''
+      - name: Qualify the staging output before rewriting
+        run: python3 scripts/ci/hive-native-artifact.py config apps/hive
+      - name: Write the production wrangler config
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const path = 'apps/hive/dist/server/wrangler.json';
+          const c = JSON.parse(readFileSync(path, 'utf8'));
+          for (const k of ['configPath', 'userConfigPath', 'topLevelName', 'definedEnvironments']) delete c[k];
+          c.name = 'tuturuuu-hive';
+          c.workers_dev = false;
+          c.preview_urls = false;
+          c.upload_source_maps = false;
+          c.vars = {
+            TUTURUUU_NOINDEX: '0',
+            NODE_ENV: 'production',
+            TUTURUUU_REQUIRE_SECRETS: '1',
+            NEXT_PUBLIC_APP_URL: 'https://hive.tuturuuu.com',
+            NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
+          };
+          writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);
+          JS
+          test "$(node -p "require('./apps/hive/dist/server/wrangler.json').name")" = tuturuuu-hive
+          test "$(node -p "require('./apps/hive/dist/server/wrangler.json').workers_dev")" = false
+          test "$(node -p "require('./apps/hive/dist/server/wrangler.json').preview_urls")" = false
+          test -f apps/hive/dist/server/index.mjs
+          test -d apps/hive/dist/client
+      - name: Validate, seal and pack the final production output
+        env:
+          HIVE_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          python3 scripts/ci/hive-native-artifact.py --profile production config apps/hive
+          python3 scripts/ci/hive-native-artifact.py --profile production seal apps/hive --receipt "$RUNNER_TEMP/hive-production-artifact.json"
+          python3 scripts/ci/hive-native-artifact.py --profile production pack apps/hive --receipt "$RUNNER_TEMP/hive-production-artifact.json" --archive "$RUNNER_TEMP/hive-production-artifact.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: hive-cutover-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/hive-production-artifact.tar.gz
+          retention-days: 14
+          if-no-files-found: error
+
