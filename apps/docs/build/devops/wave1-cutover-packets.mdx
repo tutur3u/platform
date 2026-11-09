@@ -73,7 +73,7 @@ unauthenticated workspace route. Meet and Roadmap use their own workflows and ar
 
 | Field | Value |
 | --- | --- |
-| Worker | `tuturuuu-calendar` (staging `tuturuuu-calendar-wave1-staging` on `calendar.tutur3u.com`) |
+| Worker | `tuturuuu-calendar` |
 | Canonical host | `calendar.tuturuuu.com` |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`, `CRON_SECRET`; optional `TUTURUUU_APP_COORDINATION_SECRET` |
 | Bindings | `ASSETS` only; no database, KV, R2 or queue |
@@ -84,7 +84,7 @@ unauthenticated workspace route. Meet and Roadmap use their own workflows and ar
 
 | Field | Value |
 | --- | --- |
-| Worker | `tuturuuu-mail` (staging `tuturuuu-mail-wave1-staging`) |
+| Worker | `tuturuuu-mail` |
 | Canonical host | `mail.tuturuuu.com` |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`, `MAIL_CONNECTED_ACCOUNTS_KEY`, `MAIL_R2_ACCOUNT_ID`, `MAIL_R2_ACCESS_KEY_ID`, `MAIL_R2_SECRET_ACCESS_KEY`, `MAIL_CLOUDFLARE_ACCOUNT_ID`, `MAIL_CLOUDFLARE_API_TOKEN`, `MAIL_CLOUDFLARE_INGEST_SECRET` |
 | Resources | Existing R2 bucket `tuturuuu-mail` (retained); the email-routing Worker (`wrangler.email-routing.jsonc`) is a separate deployment and is not touched by this cutover |
@@ -95,7 +95,7 @@ unauthenticated workspace route. Meet and Roadmap use their own workflows and ar
 
 | Field | Value |
 | --- | --- |
-| Worker | `tuturuuu-apps` (staging `tuturuuu-apps-wave1-staging`) |
+| Worker | `tuturuuu-apps` |
 | Canonical host | `apps.tuturuuu.com`; the production profile sets `APPS_CANONICAL_HOST_ENABLED=1`, without which the Worker answers 503 on that host |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
 | Vars | `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com`; `/api/*` proxies to Web |
