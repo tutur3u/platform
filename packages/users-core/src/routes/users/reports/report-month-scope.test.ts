@@ -263,6 +263,44 @@ it('selects October by saved period and by estimated month, on the list and the 
   ]);
 });
 
+it.each(['pending', 'approved', 'sent', 'blocked'] as const)(
+  'keeps October reports written or sent 1–8 November in %s, excluding September reports from 1–8 October',
+  async (stage) => {
+    for (let day = 1; day <= 8; day++) {
+      const date = String(day).padStart(2, '0');
+      const november = `2026-11-${date}T03:00:00Z`;
+      const october = `2026-10-${date}T03:00:00Z`;
+      state.rows = [
+        row('october-saved', stage, november, {
+          period: '2026-10',
+          deliveredAt: november,
+        }),
+        row('october-estimated', stage, november, { deliveredAt: november }),
+        row('september-saved', stage, october, {
+          period: '2026-09',
+          deliveredAt: october,
+        }),
+        row('september-estimated', stage, october, { deliveredAt: october }),
+      ];
+      const response = await get(
+        `stage=${stage}&cadence=monthly&month=2026-10`
+      );
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(ids(body)).toEqual(['october-saved', 'october-estimated']);
+      expect(body.total).toBe(2);
+      expect(body.counts.total).toBe(2);
+      expect(body.counts.stages[stage]).toBe(2);
+      expect(
+        body.data.every(
+          (report: { report_month: string }) =>
+            report.report_month === '2026-10'
+        )
+      ).toBe(true);
+    }
+  }
+);
+
 it('summary counts follow the selected month', async () => {
   const octoberBody = await (await get('stage=pending&month=2026-10')).json();
   const novemberBody = await (await get('stage=pending&month=2026-11')).json();
