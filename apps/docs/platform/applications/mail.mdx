@@ -1219,3 +1219,18 @@ Source locations: `public.email_blacklist`,
 is delivered separately by the notification webhook. The feature's migration uses
 a draft timestamp; the merge owner assigns its final version above the newest
 applied migration immediately before integration.
+
+The current implementation records `waiting_recipient` for complaints and
+`unavailable` when no reviewed confirmation transport exists. These outcomes do
+not send mail or enable an address. Recipient-initiated complaint recovery and a
+provisioned transport are activation prerequisites. `EMAIL_APPEAL_TOKEN_SECRET`
+is a server-only signing key of at least 32 bytes; rotation invalidates outstanding
+links. The link carries its token in a fragment, removed on explicit confirmation;
+GET requests never consume consent. SMTP probing is not performed.
+
+Regression coverage: `apps/database/scripts/email-blacklist-appeals.test.mjs`
+executes the migration's token, quota, permission and re-block lifecycle.
+`apps/web/src/lib/email-appeals/*.test.ts` covers signing, safe dispatch and request
+boundaries. Sender tests preserve suppression during migration rollout. Studio
+validation is required before release; these checks do not establish provider
+readiness or live delivery.

@@ -1,0 +1,22 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+LOCK TABLE private.email_blacklist_appeals IN ACCESS EXCLUSIVE MODE;
+-- Retain consent/audit evidence until an operator has archived it.
+SELECT CASE WHEN count(*) > 0 THEN 'email_appeal_archive_required' ELSE '0' END::integer FROM private.email_blacklist_appeals;
+DROP TRIGGER email_appeal_bounce_reblock ON private.email_bounce_complaints;
+DROP TRIGGER email_appeal_blacklist_reblock ON public.email_blacklist;
+DROP FUNCTION public.email_appeal_list(uuid,uuid,text,integer,integer);
+DROP FUNCTION public.email_appeal_request(uuid,uuid,text,text,text);
+DROP FUNCTION public.email_appeal_claim_delivery(uuid);
+DROP FUNCTION public.email_appeal_mark_delivery(uuid,text);
+DROP FUNCTION public.email_appeal_confirm(text);
+DROP FUNCTION public.email_appeal_block_statuses(uuid,text[]);
+DROP FUNCTION private.email_appeal_reblock();
+DROP FUNCTION private.email_appeal_suppression(text);
+DROP FUNCTION private.email_appeal_recipient(uuid,text);
+DROP FUNCTION private.email_appeal_admin(uuid,uuid);
+DROP FUNCTION private.email_appeal_hash(text);
+DROP TABLE private.email_blacklist_appeal_events;
+DROP TABLE private.email_blacklist_appeals;
+COMMIT;

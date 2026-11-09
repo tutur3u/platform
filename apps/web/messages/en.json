@@ -6997,6 +6997,54 @@
     "send_failed": "Failed to send email.",
     "unexpected_error": "An unexpected error occurred"
   },
+  "email-appeals": {
+    "blocked_at": "Blocked on {date}",
+    "confirm_button": "I agree to receive workspace emails",
+    "confirm_description": "Confirm that you want to receive emails from the workspace that requested this appeal. This does not subscribe you to other workspaces or remove provider-wide restrictions.",
+    "confirm_title": "Confirm email delivery",
+    "confirm_unavailable": "Confirmation is temporarily unavailable. Email delivery remains blocked.",
+    "confirmed": "Your consent was recorded. Provider restrictions may still prevent delivery.",
+    "confirming": "Confirming your choice…",
+    "consent_required": "The recipient must explicitly confirm before this workspace can send again. An appeal does not remove global or provider suppression.",
+    "empty": "No blocked report recipients match this search.",
+    "experimental": "Experimental",
+    "invalid_token": "This confirmation link is invalid, expired or already used. Ask the workspace administrator for a new appeal.",
+    "load_error": "Blocked addresses could not be loaded. Your access may have changed.",
+    "loading": "Loading blocked addresses…",
+    "next": "Next",
+    "outcome": {
+      "sent": "A confirmation was sent. Sending remains blocked until the recipient confirms.",
+      "unavailable": "The verification delivery service is unavailable. No confirmation email was sent; this address remains blocked.",
+      "unknown": "Confirmation delivery could not be confirmed. The email may have been sent. This request remains in its cooldown period and will not be retried automatically.",
+      "waiting_recipient": "Recipient opt-in is required. No confirmation email was sent to this complaint-suppressed address."
+    },
+    "page": "Page {page} · {total} addresses",
+    "previous": "Previous",
+    "reason": "Reason for appeal",
+    "reasons": {
+      "hard_bounce": "Hard bounce",
+      "manual": "Manual block",
+      "soft_bounce_threshold": "Repeated soft bounces",
+      "spam_complaint": "Spam complaint"
+    },
+    "refreshing": "Refreshing addresses…",
+    "request": "Request re-enable",
+    "request_error": "The appeal could not be created. Check your permissions, the address cooldown and deliverability before trying again.",
+    "requesting": "Requesting…",
+    "retry": "Retry",
+    "search": "Search addresses",
+    "source": "Source: {source}",
+    "statuses": {
+      "confirmed": "Recipient confirmed",
+      "expired": "Appeal expired",
+      "failed": "Verification failed",
+      "pending": "Awaiting confirmation",
+      "reblocked": "Blocked again",
+      "unknown": "Blocked"
+    },
+    "submit": "Submit appeal",
+    "title": "Blocked email appeals"
+  },
   "email-audit": {
     "description": "View and monitor all outgoing email communications from your workspace.",
     "failed_emails": "Failed Emails",

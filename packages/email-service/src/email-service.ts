@@ -137,7 +137,6 @@ export class EmailService {
       };
     }
 
-    // Determine source early for auditing
     const source = params.source || this.config.defaultSource;
 
     // Create audit record immediately (even if we early-return due to protections)
@@ -293,13 +292,12 @@ export class EmailService {
       ? new Map()
       : await this.rateLimiter.checkRecipientLimits(allRecipients);
 
-    // 3. Check blacklist
     const blacklistResult = await this.blacklistChecker.checkEmails(
       allRecipients,
-      this.supabase
+      this.supabase,
+      params.metadata.wsId
     );
 
-    // Combine blocked recipients
     const blockedRecipients: BlockedRecipient[] = [];
 
     for (const blocked of blacklistResult.blocked as BlacklistedEmail[]) {
@@ -318,7 +316,6 @@ export class EmailService {
       });
     }
 
-    // Log blacklist blocks
     if (blacklistResult.blocked.length > 0) {
       await logEmailAbuseEvent(
         this.supabase,
@@ -489,11 +486,13 @@ export class EmailService {
       };
     }
 
-    // Check blacklist only (skip rate limiting), unless an audited internal
-    // recovery flow explicitly opts out for a manually approved recipient.
     const blacklistResult = options.skipRecipientBlacklist
       ? { blocked: [] }
-      : await this.blacklistChecker.checkEmails(allRecipients, this.supabase);
+      : await this.blacklistChecker.checkEmails(
+          allRecipients,
+          this.supabase,
+          params.metadata.wsId
+        );
 
     const blockedRecipients: BlockedRecipient[] = blacklistResult.blocked.map(
       (b: BlacklistedEmail) => ({

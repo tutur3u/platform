@@ -20,6 +20,7 @@ import { readExternalProjectEmailPolicy } from '@/lib/external-projects/email-po
 import AdminTaskEmbeddings from './admin-task-embeddings';
 import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';
+import EmailAppealSettings from './email-appeal-settings';
 import ExternalEmailPolicy from './external-email-policy';
 import NewsletterSettings from './newsletter-settings';
 import WorkspaceLogoSettings from './logo';
@@ -145,6 +146,12 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
         {canManageWorkspace && (
           <div className="lg:col-span-2">
             <NewsletterSettings wsId={wsId} />
+          </div>
+        )}
+
+        {canManageWorkspace && (
+          <div className="lg:col-span-2">
+            <EmailAppealSettings wsId={wsId} />
           </div>
         )}
 

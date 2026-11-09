@@ -6997,6 +6997,54 @@
     "send_failed": "Gửi email thất bại.",
     "unexpected_error": "Đã xảy ra lỗi không mong muốn"
   },
+  "email-appeals": {
+    "blocked_at": "Bị chặn ngày {date}",
+    "confirm_button": "Tôi đồng ý nhận email từ không gian làm việc",
+    "confirm_description": "Xác nhận rằng bạn muốn nhận email từ không gian làm việc đã tạo yêu cầu này. Việc này không đăng ký nhận email từ không gian làm việc khác hoặc xóa hạn chế của nhà cung cấp.",
+    "confirm_title": "Xác nhận nhận email",
+    "confirm_unavailable": "Tạm thời không thể xác nhận. Việc gửi email vẫn bị chặn.",
+    "confirmed": "Đã ghi nhận sự đồng ý của bạn. Hạn chế của nhà cung cấp vẫn có thể ngăn việc gửi email.",
+    "confirming": "Đang xác nhận lựa chọn của bạn…",
+    "consent_required": "Người nhận phải xác nhận rõ ràng trước khi không gian làm việc có thể gửi lại. Yêu cầu không xóa lệnh chặn toàn hệ thống hoặc của nhà cung cấp.",
+    "empty": "Không có người nhận báo cáo bị chặn phù hợp với tìm kiếm này.",
+    "experimental": "Thử nghiệm",
+    "invalid_token": "Liên kết xác nhận không hợp lệ, đã hết hạn hoặc đã được sử dụng. Hãy yêu cầu quản trị viên tạo yêu cầu mới.",
+    "load_error": "Không thể tải địa chỉ bị chặn. Quyền truy cập của bạn có thể đã thay đổi.",
+    "loading": "Đang tải địa chỉ bị chặn…",
+    "next": "Tiếp",
+    "outcome": {
+      "sent": "Đã gửi email xác nhận. Email vẫn bị chặn cho đến khi người nhận xác nhận.",
+      "unavailable": "Dịch vụ gửi xác minh không khả dụng. Không gửi email xác nhận; địa chỉ này vẫn bị chặn.",
+      "unknown": "Không thể xác nhận kết quả gửi email xác minh. Email có thể đã được gửi. Yêu cầu này vẫn trong thời gian chờ và sẽ không được tự động gửi lại.",
+      "waiting_recipient": "Cần sự đồng ý của người nhận. Không gửi email xác nhận đến địa chỉ đã báo cáo thư rác này."
+    },
+    "page": "Trang {page} · {total} địa chỉ",
+    "previous": "Trước",
+    "reason": "Lý do yêu cầu",
+    "reasons": {
+      "hard_bounce": "Lỗi trả lại vĩnh viễn",
+      "manual": "Chặn thủ công",
+      "soft_bounce_threshold": "Lỗi trả lại tạm thời nhiều lần",
+      "spam_complaint": "Báo cáo thư rác"
+    },
+    "refreshing": "Đang cập nhật địa chỉ…",
+    "request": "Yêu cầu mở chặn",
+    "request_error": "Không thể tạo yêu cầu. Hãy kiểm tra quyền truy cập, thời gian chờ của địa chỉ và khả năng nhận email trước khi thử lại.",
+    "requesting": "Đang gửi yêu cầu…",
+    "retry": "Thử lại",
+    "search": "Tìm địa chỉ email",
+    "source": "Nguồn: {source}",
+    "statuses": {
+      "confirmed": "Người nhận đã xác nhận",
+      "expired": "Yêu cầu đã hết hạn",
+      "failed": "Xác minh thất bại",
+      "pending": "Chờ xác nhận",
+      "reblocked": "Bị chặn lại",
+      "unknown": "Bị chặn"
+    },
+    "submit": "Gửi yêu cầu",
+    "title": "Yêu cầu mở chặn email"
+  },
   "email-audit": {
     "description": "Xem và theo dõi tất cả email gửi đi từ không gian làm việc của bạn.",
     "failed_emails": "Email thất bại",
