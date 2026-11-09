@@ -3,6 +3,30 @@ name: Web E2E report-only
 on:
   push:
     branches: [main]
+    paths:
+      # Include unknown inputs; omit only known non-runtime changes.
+      - "**"
+      - "!*.md"
+      - "!**/AGENTS.md"
+      - "!apps/docs/**"
+      - "!apps/mobile/**"
+      - "!apps/backend/**"
+      - "!apps/tanstack-web/**"
+      - "!docs/**"
+      - "!plans/**"
+      - "!plugins/**"
+      - "!skills/**"
+      - "!conductor/**"
+      - "!.agents/**"
+      - "!.agent/**"
+      - "!.claude/**"
+      - "!.codex/**"
+      - "!.cursor/**"
+      - "!.gemini/**"
+      - "!.opencode/**"
+      - "!.vscode/**"
+      - "!.windsurf/**"
+      - "!.zed/**"
   schedule:
     - cron: '17 19 * * *'
   workflow_dispatch:

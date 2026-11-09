@@ -8,7 +8,10 @@ import importlib.util
 import os
 from pathlib import Path
 
-WORKER = "tuturuuu-ai-vite-staging"
+PROFILE = os.environ.get("VITE_AI_NATIVE_PROFILE") or "staging"
+if PROFILE not in ("staging", "production"):
+    raise ValueError("unknown VITE_AI_NATIVE_PROFILE: " + PROFILE)
+WORKER = "tuturuuu-ai" if PROFILE == "production" else "tuturuuu-ai-vite-staging"
 PUBLIC_FILES = (
     "robots.txt",
 )
@@ -24,7 +27,7 @@ def load():
         "name": WORKER,
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public","enable_request_signal"],
-        "workers_dev": False,
+        "workers_dev": False, "preview_urls": False,
     }
     module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
     module.RECEIPT = "ai-native-artifact.json"

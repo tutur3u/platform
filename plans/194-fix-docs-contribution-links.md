@@ -102,7 +102,7 @@ not push or open a PR.
 Completed in the clean isolated worktree
 `.worktrees/docs-fix-contribution-links`. The focused test recorded the required
 red phase on exactly three stale targets, then passed 2/2 after the docs edits.
-Plan 004 discovery listed the new test among 98 files; docs JSON, scoped Biome,
+Plan 004 discovery listed the new test among 98 files; docs JSON, scoped Oxc,
 `bun check`, and whitespace gates passed. Commit
 `e539356d3910152193b87ea2b762ac32258af03a` changes exactly the two docs files
 and `scripts/docs-contribution-links.test.js`; no push or PR was created.

@@ -130,9 +130,8 @@ describe('inventory suppliers API route', () => {
       },
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/suppliers/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/suppliers/route');
     const response = await GET(
       new Request(
         'https://app.example.com/api?response=paginated&pageSize=100'
@@ -170,9 +169,8 @@ describe('inventory suppliers API route', () => {
       },
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/suppliers/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/suppliers/route');
     const response = await POST(
       new Request('https://app.example.com/api', {
         body: JSON.stringify({ name: 'Acme' }),
@@ -197,9 +195,8 @@ describe('inventory suppliers API route', () => {
       },
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/suppliers/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/suppliers/route');
     const response = await POST(
       new Request('https://app.example.com/api', {
         body: JSON.stringify({ name: 'Acme' }),
@@ -221,9 +218,8 @@ describe('inventory suppliers API route', () => {
       },
     });
 
-    const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/suppliers/[supplierId]/route'
-    );
+    const { PUT } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/suppliers/[supplierId]/route');
     const response = await PUT(
       new Request('https://app.example.com/api', {
         body: JSON.stringify({ name: 'Vendor' }),
@@ -257,9 +253,8 @@ describe('inventory suppliers API route', () => {
       },
     });
 
-    const { DELETE } = await import(
-      '@/app/api/v1/workspaces/[wsId]/inventory/suppliers/[supplierId]/route'
-    );
+    const { DELETE } =
+      await import('@/app/api/v1/workspaces/[wsId]/inventory/suppliers/[supplierId]/route');
     const response = await DELETE(new Request('https://app.example.com/api'), {
       params: Promise.resolve({
         supplierId: 'supplier-1',

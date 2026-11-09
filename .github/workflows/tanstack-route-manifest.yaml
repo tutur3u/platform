@@ -60,7 +60,7 @@ jobs:
       #
       # Compares parsed JSON rather than bytes, and writes the fresh copy to a
       # temp path rather than over the committed one. `bun migration:tanstack:
-      # manifest` pipes through `bunx biome format`, and this job installs no
+      # manifest` pipes through `bunx oxfmt --check`, and this job installs no
       # dependencies — running the script here fails on `bunx: command not
       # found`, and a byte comparison would flag formatting rather than drift.
       - name: Regenerate and require no semantic diff

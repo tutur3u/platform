@@ -1,0 +1,33 @@
+name: Affected app gate
+description: >-
+  Decide whether an app's heavy pull request jobs should run. Always run=true
+  for any event other than pull_request, for any app the affected-apps
+  calculation lists (or when it selects all apps), and on any error.
+inputs:
+  app:
+    description: >-
+      App directory name under apps/. A comma-separated list gates a workflow
+      covering several apps: it runs when any of them is affected.
+    required: true
+outputs:
+  run:
+    description: Whether heavy jobs should run ("true" or "false")
+    value: ${{ steps.gate.outputs.run || 'true' }}
+  reason:
+    description: Gate decision reason
+    value: ${{ steps.gate.outputs.reason }}
+runs:
+  using: composite
+  steps:
+    - id: gate
+      shell: bash
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        BASE_REF: ${{ github.base_ref }}
+        APP: ${{ inputs.app }}
+      run: |
+        # Fail open: if the script cannot even start, run everything.
+        if ! node "${GITHUB_WORKSPACE}/scripts/ci/affected-gate.mjs"; then
+          echo 'run=true' >> "$GITHUB_OUTPUT"
+          echo 'reason=gate script failed' >> "$GITHUB_OUTPUT"
+        fi

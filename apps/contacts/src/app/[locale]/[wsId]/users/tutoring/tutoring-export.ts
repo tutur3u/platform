@@ -13,6 +13,27 @@ export type TutoringExportFormat =
   | 'payroll-csv'
   | 'payroll-xlsx';
 
+/** Red Student font. Excel stores the color as alpha plus RGB. */
+const STUDENT_ATTENTION_ARGB = 'FFFF0000';
+
+const CLOCK_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/;
+
+const DETAILED_HEADERS = [
+  'AttendanceStatus',
+  'Content',
+  'Date',
+  'DurationMinutes',
+  'Group',
+  'ReasonType',
+  'Student',
+  'Teacher',
+  'Time',
+] as const;
+
+type DetailedHeader = (typeof DETAILED_HEADERS)[number];
+
+type DetailedDisplayRow = Record<DetailedHeader, string | number>;
+
 function downloadBlob(blob: Blob, filename: string) {
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
@@ -24,8 +45,10 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-export function toDetailedExportRows(rows: TutoringDetailedExportRow[]) {
-  return rows.map((row) => ({
+function detailedDisplayRow(
+  row: TutoringDetailedExportRow
+): DetailedDisplayRow {
+  return {
     AttendanceStatus: row.attendance_status,
     Content: row.content,
     Date: row.date,
@@ -35,7 +58,16 @@ export function toDetailedExportRows(rows: TutoringDetailedExportRow[]) {
     Student: row.student_name,
     Teacher: row.teacher_name,
     Time: row.time,
-  }));
+  };
+}
+
+export function toDetailedExportRows(rows: TutoringDetailedExportRow[]) {
+  return rows.map(detailedDisplayRow);
+}
+
+export function detailedStudentNeedsAttention(row: TutoringDetailedExportRow) {
+  const hasScheduledTime = CLOCK_TIME.test(row.time.trim());
+  return row.teacher_user_id === null || !hasScheduledTime;
 }
 
 function writeCsv(rows: object[], filename: string) {
@@ -65,6 +97,53 @@ function writeXlsx(rows: object[], sheetName: string, filename: string) {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
   XLSX.writeFile(workbook, filename);
+}
+
+function workbookBytes(written: ArrayBuffer | ArrayBufferView) {
+  if (written instanceof ArrayBuffer) return new Uint8Array(written);
+  return new Uint8Array(
+    written.buffer,
+    written.byteOffset,
+    written.byteLength
+  ).slice();
+}
+
+// SheetJS community cannot write font colors; load the styled writer on export.
+export async function buildDetailedTutoringXlsx(
+  rows: TutoringDetailedExportRow[]
+) {
+  const { Workbook } = await import('exceljs');
+  const workbook = new Workbook();
+  const sheet = workbook.addWorksheet('Detailed');
+  sheet.addRow([...DETAILED_HEADERS]);
+  const studentColumn = DETAILED_HEADERS.indexOf('Student') + 1;
+
+  for (const source of rows) {
+    const display = detailedDisplayRow(source);
+    const excelRow = sheet.addRow(
+      DETAILED_HEADERS.map((header) => display[header])
+    );
+    if (detailedStudentNeedsAttention(source)) {
+      excelRow.getCell(studentColumn).font = {
+        color: { argb: STUDENT_ATTENTION_ARGB },
+      };
+    }
+  }
+
+  return workbookBytes(await workbook.xlsx.writeBuffer());
+}
+
+async function writeDetailedXlsx(
+  rows: TutoringDetailedExportRow[],
+  filename: string
+) {
+  const bytes = await buildDetailedTutoringXlsx(rows);
+  downloadBlob(
+    new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    }),
+    filename
+  );
 }
 
 export async function runTutoringExport({
@@ -105,6 +184,6 @@ export async function runTutoringExport({
     return rows.length;
   }
 
-  writeXlsx(rows, 'Detailed', 'tutoring-detailed.xlsx');
+  await writeDetailedXlsx(response.data, 'tutoring-detailed.xlsx');
   return rows.length;
 }

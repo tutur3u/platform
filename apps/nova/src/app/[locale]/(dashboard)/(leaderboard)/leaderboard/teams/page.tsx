@@ -104,8 +104,7 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
   // Fetch team members for avatar display and member details
   const { data: teamMembersData, error: teamMembersError } = await sbAdmin
     .schema('private')
-    .from('nova_team_members')
-    .select(`
+    .from('nova_team_members').select(`
       team_id,
       user_id
     `);

@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/calendar-v0.36.0...calendar-v0.37.0) (2026-11-08)
+
+
+### Features
+
+* **calendar:** split staging and production hosts and verify Access on staging ([#7318](https://github.com/tutur3u/platform/issues/7318)) ([e1f9a4c](https://github.com/tutur3u/platform/commit/e1f9a4c69f948c9a458b4adc15f01d6e82807ea4))
+* **satellites:** regroup domain settings panels ([#7794](https://github.com/tutur3u/platform/issues/7794)) ([e970ea0](https://github.com/tutur3u/platform/commit/e970ea0f5821f909f4fde955b89e8520ff493151))
+* **tasks:** add cycle and backlog planning view ([dcc9882](https://github.com/tutur3u/platform/commit/dcc9882690857f6dc97a25d58edb64f0b3615af9))
+* **tasks:** add per-board sprint data model ([#7043](https://github.com/tutur3u/platform/issues/7043)) ([9b08aef](https://github.com/tutur3u/platform/commit/9b08aef8da70cb686870790925d68368afef4f07))
+* **tasks:** apply the preview review round to the header, panel, Details and cards ([#7193](https://github.com/tutur3u/platform/issues/7193)) ([7f7b479](https://github.com/tutur3u/platform/commit/7f7b4793458788e632a3c7967b596baf92c517b5))
+* **tasks:** end sprints from a summary with carry or backlog decisions ([cafc56c](https://github.com/tutur3u/platform/commit/cafc56c3a7590bb000ffd7625022f97a5fee1a59)) ([#7089](https://github.com/tutur3u/platform/issues/7089)) ([6596ff5](https://github.com/tutur3u/platform/commit/6596ff54da29eaebd5c13338223330b30479de2b))
+* **tasks:** number tasks per project with editable keys ([39e5342](https://github.com/tutur3u/platform/commit/39e534251f9d4b643463043c6af4e77b480bb8bf))
+* **tasks:** plan the next sprint from a Plan tab ([457c109](https://github.com/tutur3u/platform/commit/457c10949a77eb7d0494a4d0fad728249d45a9e2)) ([#7088](https://github.com/tutur3u/platform/issues/7088)) ([02844d7](https://github.com/tutur3u/platform/commit/02844d7084d83571607a67c8790cc6b75dacb619))
+* **tasks:** plan up to five sprints ahead and park tasks outside sprints ([#7224](https://github.com/tutur3u/platform/issues/7224)) ([d114c02](https://github.com/tutur3u/platform/commit/d114c02b0f4ea11bb41ea68c057d9d50bf1abf1e))
+* **tasks:** show the board's sprint in the header and Board view ([9d91b1a](https://github.com/tutur3u/platform/commit/9d91b1aae612b205f723542b02d7e43a51a0862e)) ([#7046](https://github.com/tutur3u/platform/issues/7046)) ([f3f31bd](https://github.com/tutur3u/platform/commit/f3f31bde4003f4db9b70f154619eb665a2df5597))
+* **tasks:** show the task's sprint in the task panel ([#7108](https://github.com/tutur3u/platform/issues/7108)) ([978e783](https://github.com/tutur3u/platform/commit/978e7839909bfee471a304e942705f733f215421))
+* **tasks:** simplify sprint planning, summary and board filtering ([#7396](https://github.com/tutur3u/platform/issues/7396)) ([9d45884](https://github.com/tutur3u/platform/commit/9d458840f0064f6c37e43da5d4fca3bccd4fa88c))
+* **tasks:** two-row board header with people, project and focus filters ([8d53440](https://github.com/tutur3u/platform/commit/8d53440a1a2f08b1f1632558bb8e480e5d2bac32)) ([#7042](https://github.com/tutur3u/platform/issues/7042)) ([b48007d](https://github.com/tutur3u/platform/commit/b48007d34f18a714a2d6379273850d813c959998))
+* **web:** harden the staging issuer Worker and its protected Next fallback ([#7319](https://github.com/tutur3u/platform/issues/7319)) ([cb5292d](https://github.com/tutur3u/platform/commit/cb5292dc5fc90c10b2af9e9a241905c3c6f5de99))
+
+
+### Bug Fixes
+
+* **calendar:** fail closed when the staging Tasks URL is unset ([#7345](https://github.com/tutur3u/platform/issues/7345)) ([2f9de15](https://github.com/tutur3u/platform/commit/2f9de15500e89f8228fb9f64cd982d0572b89bbc))
+* **calendar:** normalise the Tasks origin host before the production check ([#7384](https://github.com/tutur3u/platform/issues/7384)) ([7dc2796](https://github.com/tutur3u/platform/commit/7dc2796c0598a376acae7498f3e4cc3f2b6da047))
+* **calendar:** retire the temporary cutover smoke host and record staging G3 blockers ([#7312](https://github.com/tutur3u/platform/issues/7312)) ([e4a2dc5](https://github.com/tutur3u/platform/commit/e4a2dc53118e2f3a0397fc15665b144d568e7687))
+* **calendar:** scope connection PATCH and DELETE to the caller workspace ([#7073](https://github.com/tutur3u/platform/issues/7073)) ([78fc480](https://github.com/tutur3u/platform/commit/78fc480694d6ad14d3706f23d7a8dc93fa1e4641))
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+* **tasks:** pluralize the per-person task totals in the sprint summary ([5ad85ec](https://github.com/tutur3u/platform/commit/5ad85ec2eded60fa0016bae84eaf034d243a874d))
+* **tasks:** trash a new backlog task that cannot leave the running sprint ([d2aa74c](https://github.com/tutur3u/platform/commit/d2aa74c748b56969024ab49d990bd856d95687e4))
+* **tasks:** wait for the sprint's tasks before allowing End ([5b61c32](https://github.com/tutur3u/platform/commit/5b61c329e87a8bfa46f58678d005f9485693e35a))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/calendar-v0.35.0...calendar-v0.36.0) (2026-10-24)
 
 

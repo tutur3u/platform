@@ -15,16 +15,6 @@ const {
 } = require('./workflow-config-test-helpers.js');
 
 const PACKAGE_PROVENANCE_REPOSITORY_URL = 'https://github.com/tutur3u/platform';
-const rootPackageJson = JSON.parse(
-  fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')
-);
-const expectedBiomeCliVersion = rootPackageJson.devDependencies[
-  '@biomejs/biome'
-].replace(/^[^\d]*/u, '');
-const expectedBiomeCliVersionPattern = expectedBiomeCliVersion.replaceAll(
-  '.',
-  '\\.'
-);
 const tanstackWebVercelWorkflows = new Set([
   'vercel-preview-tanstack-web.yaml',
   'vercel-production-tanstack-web.yaml',
@@ -583,7 +573,7 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   assert.match(supabaseStagingWorkflow, /\n {4}branches:\n {6}- main\n/);
   assert.match(
     supabaseProductionWorkflow,
-    /deployments\?environment=\$\{environment\}&sha=\$\{target\}/
+    /deployments\?environment=\$\{environment\}&sha=\$\{source\}/
   );
   assert.match(
     supabaseProductionWorkflow,
@@ -620,53 +610,6 @@ test('Codecov workflow runs workspace package tests with coverage', () => {
   );
   assert.doesNotMatch(testJob, /^\s+run:.*turbo:local run test/mu);
   assert.doesNotMatch(workflow, /run: bun vitest run --coverage/u);
-});
-
-test('Biome workflow runs pinned npm Biome CLI and prints captured output when checks fail', () => {
-  const workflow = fs.readFileSync(
-    path.join(repoRoot, '.github', 'workflows', 'biome-check.yaml'),
-    'utf8'
-  );
-  const formatJob = readWorkflowJobBlock('biome-check.yaml', 'format');
-  const lintJob = readWorkflowJobBlock('biome-check.yaml', 'lint');
-  const applyFormatJob = readWorkflowJobBlock(
-    'biome-check.yaml',
-    'apply-format'
-  );
-
-  for (const job of [formatJob, lintJob]) {
-    assert.match(job, /uses: actions\/setup-node@[0-9a-f]{40} # v7\b/u);
-    assert.match(job, /node-version: 24/u);
-    assert.match(job, /printf '%s\\n' "\$biome_output"/u);
-    assert.match(job, /Biome exit code \$biome_exit_code/u);
-    assert.match(
-      job,
-      /\[ "\$total_issues" -gt 0 \] \|\| \[ "\$biome_exit_code" -ne 0 \]/u
-    );
-  }
-
-  assert.doesNotMatch(workflow, /biomejs\/setup-biome@v2/u);
-  assert.match(
-    formatJob,
-    new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} format \\. 2>&1`,
-      'u'
-    )
-  );
-  assert.match(
-    lintJob,
-    new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} lint \\. 2>&1`,
-      'u'
-    )
-  );
-  assert.match(
-    applyFormatJob,
-    new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} format --write \\.`,
-      'u'
-    )
-  );
 });
 
 test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', () => {
@@ -899,7 +842,7 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
   );
   assert.match(
     cleanupStep,
-    /git push origin --delete "\$\{RELEASE_NOTES_BRANCH\}"/
+    /bash scripts\/ci\/github-token-push\.sh --delete "\$\{RELEASE_NOTES_BRANCH\}"/
   );
   assert.match(
     cleanupStep,
@@ -1093,10 +1036,10 @@ test('Supabase production migration requires production platform deploy and succ
   assert.match(evaluateJob, /does not have a current success status/);
   assert.match(
     evaluateJob,
-    /deployments\?environment=\$\{environment\}&sha=\$\{target\}/
+    /deployments\?environment=\$\{environment\}&sha=\$\{source\}/
   );
-  assert.match(evaluateJob, /d\.sha === target && d\.ref === target/);
-  assert.match(evaluateJob, /p\.sha === target && p\.markerKind/);
+  assert.match(evaluateJob, /d\.sha === source && d\.ref === source/);
+  assert.match(evaluateJob, /p\.sha === source && p\.markerKind/);
   assert.match(evaluateJob, /run\.status === 'completed'/);
   assert.match(evaluateJob, /run\.conclusion === 'success'/);
   assert.match(evaluateJob, /run\.run_attempt === Number\(p\.runAttempt\)/);
@@ -1105,7 +1048,11 @@ test('Supabase production migration requires production platform deploy and succ
   assert.doesNotMatch(evaluateJob, /run\.conclusion === 'skipped'/);
   assert.match(
     evaluateJob,
-    /Production platform deployment marker and staging migration are bound to \$TARGET_SHA/
+    /Production platform deployment marker and staging migration are bound to \$\{target\}/
+  );
+  assert.match(
+    evaluateJob,
+    /staging migration is bound to its tree-equal parent \$\{source\}/
   );
 
   assert.match(evaluateJob, /ref: \$\{\{ github\.sha \}\}/);
@@ -1246,7 +1193,7 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
     const header = workflow.slice(0, workflow.indexOf('\njobs:'));
     const deployJob = readWorkflowJobBlock(workflowName, jobName);
     const installIndex = workflow.indexOf(
-      'run: bash scripts/ci/run-with-backoff.sh bun install\n'
+      'run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile\n'
     );
     const firstSecretInterpolationIndex = workflow.search(
       SECRET_INTERPOLATION_PATTERN

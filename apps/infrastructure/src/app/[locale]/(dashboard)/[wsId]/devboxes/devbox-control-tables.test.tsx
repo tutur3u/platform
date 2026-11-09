@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { DevboxAdminRunner } from '@/lib/devboxes/admin-store';

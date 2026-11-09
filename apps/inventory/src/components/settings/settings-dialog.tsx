@@ -27,6 +27,7 @@ import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calend
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
@@ -180,26 +181,25 @@ export function SettingsDialog({
       )}
 
       {activeTab === 'inventory_general' && workspace && (
-        <div className="h-full">
-          <div className="grid gap-6">
+        <SettingsSection>
+          <SettingItemTab
+            title={t('settings.inventory.workspace_name')}
+            description={t('settings.inventory.workspace_name_description')}
+          >
+            <span className="text-muted-foreground text-sm">
+              {workspace.name || t('common.unnamed')}
+            </span>
+          </SettingItemTab>
+          {wsId && (
             <SettingItemTab
-              title={t('settings.inventory.workspace_name')}
-              description={t('settings.inventory.workspace_name_description')}
+              title={t('settings.inventory.currency_title')}
+              description={t('settings.inventory.currency_description')}
+              controlWidth="xl"
             >
-              <span className="text-muted-foreground text-sm">
-                {workspace.name || t('common.unnamed')}
-              </span>
+              <InventoryCurrencySettings wsId={wsId} />
             </SettingItemTab>
-            {wsId && (
-              <SettingItemTab
-                title={t('settings.inventory.currency_title')}
-                description={t('settings.inventory.currency_description')}
-              >
-                <InventoryCurrencySettings wsId={wsId} />
-              </SettingItemTab>
-            )}
-          </div>
-        </div>
+          )}
+        </SettingsSection>
       )}
 
       {activeTab === 'inventory_payments' && wsId && (

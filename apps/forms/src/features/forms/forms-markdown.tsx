@@ -105,7 +105,7 @@ export function FormsMarkdown({
       {hasRichTextHtml ? (
         <div
           className={getMarkdownClassName(variant, className)}
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: content is already sanitized
+          // eslint-disable-next-line react/no-danger -- sanitizeFormsRichTextHtml sanitizes rich-text input before this sink.
           dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
         />
       ) : (

@@ -18,7 +18,7 @@ export default defineConfig({
       '**/e2e-wave1-staging/**',
       '**/node_modules/**',
     ],
-    environment: 'jsdom',
+    environment: 'node',
     setupFiles: ['./vitest.setup.ts'],
     testTimeout: 30_000,
     env: {

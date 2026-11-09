@@ -6248,5 +6248,13 @@
     "sourceDigest": "5cdcd585c8ea834f1e922a95f8aaf4799e58302e5a11f78eb32324c36dacd089",
     "reason": "CREATE OR REPLACE retains existing private service-only invitation ACLs: 20260813182000_multi_role_workspace_invitations.sql:296-301,381-386,421-426 and 20260813024230_finalize_workspace_invitation_membership.sql:71-83 revoke PUBLIC/anon/authenticated and grant service_role. Replacements narrow writes and do not grant execution.",
     "rules": ["public-execute"]
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261109180000_guard_legacy_cross_app_token_uuid.sql",
+    "signature": "public.validate_cross_app_token(text,text)",
+    "digest": "f5f83fec3e4ce28c039594050fd8d6e60cb1c1d7d1a5922ce49dafaafb4aabd4",
+    "sourceDigest": "519ceb35caf61da65898895fb208cbf1e3b115a3d91263fdd9d671a331fbbc31",
+    "reason": "Reviewed O5 legacy UUID validator fix (#7857): CREATE OR REPLACE preserves the existing exact-signature ACL and introduces no GRANT. Original production apply d0a54339c2824164a713a7f399406163 retained OID 18352, owner, signature and ACL; effective EXECUTE is denied to anon and allowed to authenticated/service_role. The replacement atomically consumes only unbound, unused, unrevoked, unexpired tokens. This exception covers only the per-file public-execute diagnostic for this exact source; it grants no execution privilege and does not waive search_path or SQL grant-contract diagnostics.",
+    "rules": ["public-execute"]
   }
 ]

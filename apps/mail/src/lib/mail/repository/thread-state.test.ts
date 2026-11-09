@@ -62,7 +62,6 @@ beforeEach(() => {
         cursor = value;
         return messageQuery;
       },
-      // biome-ignore lint/suspicious/noThenProperty: emulate Supabase pagination.
       then: (resolve: (value: unknown) => unknown) =>
         Promise.resolve({
           data:

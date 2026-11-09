@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { AIModelUI } from '@tuturuuu/types';
 import { Command, CommandList } from '@tuturuuu/ui/command';

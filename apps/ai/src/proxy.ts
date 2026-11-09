@@ -171,8 +171,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const appSession = appSessionRefresh.ok ? appSessionRefresh.claims : null;
   const hasSatelliteSession = Boolean(
     appSession &&
-      (hasWebAppSessionTokenFromRequest(requestWithRefresh) ||
-        hasSupportedSupabaseAuthCookie(requestWithRefresh))
+    (hasWebAppSessionTokenFromRequest(requestWithRefresh) ||
+      hasSupportedSupabaseAuthCookie(requestWithRefresh))
   );
 
   if (!hasSatelliteSession) {

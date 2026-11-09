@@ -5,6 +5,7 @@ import {
   createAdminClient,
   createAnonClient,
   createClient,
+  createDetachedClient,
   createDynamicAdminClient,
   createDynamicClient,
 } from '../server';
@@ -734,6 +735,88 @@ describe('Supabase Server Client', () => {
         { name: 'test', value: 'test', options: {} },
       ]);
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe('session user-agent metadata', () => {
+    const browserUserAgent =
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+    it('forwards only the cookie-auth request user-agent', async () => {
+      (headers as any).mockReturnValue(
+        new Headers({ 'user-agent': 'ambient-node' })
+      );
+
+      await createClient({
+        headers: new Headers({
+          cookie: 'sb-test=secret',
+          'user-agent': browserUserAgent,
+          'x-forwarded-for': '203.0.113.5',
+        }),
+        url: 'https://tuturuuu.com/api/auth',
+      });
+
+      const options = (createServerClient as any).mock.calls[0][2];
+      expect(options.global).toEqual({
+        headers: { 'User-Agent': browserUserAgent },
+      });
+      expect(JSON.stringify(options.global.headers)).not.toContain(
+        '203.0.113.5'
+      );
+      expect(JSON.stringify(options.global.headers)).not.toContain('ambient');
+    });
+
+    it('does not attach a user-agent to the admin client', async () => {
+      (headers as any).mockReturnValue(
+        new Headers({
+          cookie: 'sb-test=secret',
+          'user-agent': browserUserAgent,
+          'x-forwarded-for': '203.0.113.5',
+        })
+      );
+
+      await createAdminClient();
+
+      const options = (createServerClient as any).mock.calls[0][2];
+      expect(options.global).toBeUndefined();
+    });
+
+    it('does not copy the user-agent onto a bearer data client', async () => {
+      await createClient({
+        headers: new Headers({
+          authorization: 'Bearer stolen-user-jwt',
+          cookie: 'sb-test=secret',
+          'user-agent': browserUserAgent,
+          'x-forwarded-for': '203.0.113.5',
+        }),
+      });
+
+      expect(createServerClient).not.toHaveBeenCalled();
+      const options = (createBrowserClient as any).mock.calls[0][2];
+      expect(options.global.headers).toEqual({
+        Authorization: 'Bearer stolen-user-jwt',
+      });
+      expect(options.global.headers['User-Agent']).toBeUndefined();
+      expect(JSON.stringify(options.global.headers)).not.toContain(
+        '203.0.113.5'
+      );
+    });
+
+    it('forwards a detached session user-agent and omits it when absent', () => {
+      createDetachedClient({ userAgent: browserUserAgent });
+      expect((createServerClient as any).mock.calls[0][2].global).toEqual({
+        headers: { 'User-Agent': browserUserAgent },
+      });
+
+      createDetachedClient();
+      expect(
+        (createServerClient as any).mock.calls[1][2].global
+      ).toBeUndefined();
+
+      createDetachedClient({ userAgent: '   \n  ' });
+      expect(
+        (createServerClient as any).mock.calls[2][2].global
+      ).toBeUndefined();
     });
   });
 });

@@ -257,9 +257,8 @@ test('attempt and title association never borrows a transport or success marker'
 
 test('helper-emitted synthetic record crosses reporter and terminal shape for both lifecycle cases', async () => {
   const { EventEmitter } = await import('node:events');
-  const { observeProfileNavigation } = await import(
-    '../../apps/web/e2e/helpers/lettin-profile-navigation-diagnostics.ts'
-  );
+  const { observeProfileNavigation } =
+    await import('../../apps/web/e2e/helpers/lettin-profile-navigation-diagnostics.ts');
   for (const dcl of [false, true]) {
     const page = new EventEmitter();
     const base = 'http:' + '//127.0.0.1:3000';

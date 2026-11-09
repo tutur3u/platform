@@ -64,7 +64,6 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.equal(preflight.outputs.has_ci_token, undefined);
   assert.equal(
     preflight.outputs.build_name,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
     '${{ steps.version_name.outputs.build_name }}'
   );
   assert.equal(preflight.defaults.run['working-directory'], 'apps/mobile');
@@ -102,10 +101,14 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     ['ios', 'publish-ios-testflight'],
   ]) {
     const job = parsed.jobs[jobId];
-    assert.deepEqual(job.needs, ['check-ci', 'mobile-credentials-preflight']);
+    assert.deepEqual(job.needs, [
+      'check-ci',
+      'mobile-store-publish-gate',
+      'mobile-credentials-preflight',
+    ]);
     assert.equal(
       job.if,
-      "github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'"
+      "github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-store-publish-gate.outputs.publish == 'true' && needs.mobile-credentials-preflight.result == 'success'"
     );
     assert.equal(job.environment, 'mobile-store-beta');
     assert.equal(job.defaults.run['working-directory'], 'apps/mobile');
@@ -166,30 +169,22 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   const betaStep = step(ios, 'Verify TestFlight and distribute to beta groups');
   assert.equal(
     betaStep.env.MOBILE_BUILD_NAME,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
     '${{ needs.mobile-credentials-preflight.outputs.build_name }}'
   );
   assert.equal(
     step(preflight, 'Bundle mobile beta release history').env
       .MOBILE_BUILD_NUMBER,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
     '${{ steps.credentials.outputs.build_number }}'
   );
   assert.equal(
     betaStep.env.TESTFLIGHT_BETA_ENABLED,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
     "${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}"
   );
   assert.equal(
     betaStep.env.TESTFLIGHT_BETA_GROUPS,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
     "${{ vars.TESTFLIGHT_BETA_GROUPS || '' }}"
   );
-  assert.equal(
-    betaStep.env.GITHUB_TOKEN,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
-    '${{ github.token }}'
-  );
+  assert.equal(betaStep.env.GITHUB_TOKEN, '${{ github.token }}');
   assert.equal(betaStep.env.TESTFLIGHT_BETA_WHATS_NEW, undefined);
   const retry = parsed.jobs['retry-ios-testflight-review'];
   assert.equal(
@@ -212,7 +207,6 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.equal(step(retry, 'Cleanup iOS release files').if, 'always()');
   assert.equal(
     step(ios, 'Upload iOS IPA artifact').with.path,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
     '${{ steps.ios-ipa.outputs.path }}'
   );
 
@@ -381,9 +375,35 @@ test('mobile store event guards separate new releases from review retries', () =
   assert.equal(input.type, 'choice');
   assert.equal(input.required, true);
   assert.deepEqual(input.options, ['release', 'retry_ios_review']);
+  const force = parsed.true.workflow_dispatch.inputs.force;
+  assert.equal(force.required, false);
+  assert.equal(force.default, false);
+  assert.equal(force.type, 'boolean');
+  const gate = parsed.jobs['mobile-store-publish-gate'];
+  assert.equal(gate.environment, undefined);
+  assert.equal(gate.permissions['id-token'], undefined);
+  assert.doesNotMatch(
+    gate.steps.map((step) => step.run ?? '').join('\n'),
+    /build-name\.mjs|MOBILE_DEPLOYMENT_CI_TOKEN/
+  );
+  const record = parsed.jobs['record-mobile-store-tree'];
+  assert.match(record.if, /needs\.publish-ios-testflight\.result == 'success'/);
+  assert.match(
+    record.if,
+    /needs\.publish-android-internal\.result == 'success'/
+  );
+  assert.equal(
+    record.steps.find((step) => step.name === 'Upload the mobile tree hash')
+      .with.name,
+    'mobile-store-uploaded-tree'
+  );
   const evaluate = (job, context) => {
     const expression = parsed.jobs[job].if
       .replaceAll('needs.check-ci', "needs['check-ci']")
+      .replaceAll(
+        'needs.mobile-store-publish-gate',
+        "needs['mobile-store-publish-gate']"
+      )
       .replaceAll(
         'needs.mobile-credentials-preflight',
         "needs['mobile-credentials-preflight']"
@@ -408,6 +428,7 @@ test('mobile store event guards separate new releases from review retries', () =
     inputs: { mode: queuedMode },
     needs: {
       'check-ci': { outputs: { should_run: 'true' } },
+      'mobile-store-publish-gate': { outputs: { publish: 'false' } },
       'mobile-credentials-preflight': { result: 'success' },
     },
   };
@@ -447,6 +468,9 @@ test('mobile store event guards separate new releases from review retries', () =
               inputs: { mode },
               needs: {
                 'check-ci': { outputs: { should_run: enabled } },
+                'mobile-store-publish-gate': {
+                  outputs: { publish: 'true' },
+                },
                 'mobile-credentials-preflight': { result: preflight },
               },
             };
@@ -478,6 +502,35 @@ test('mobile store event guards separate new releases from review retries', () =
                 mode === 'retry_ios_review',
               label
             );
+            const unchanged = {
+              ...context,
+              needs: {
+                ...context.needs,
+                'mobile-store-publish-gate': {
+                  outputs: { publish: 'false' },
+                },
+              },
+            };
+            assert.equal(
+              evaluate('mobile-credentials-preflight', unchanged),
+              false,
+              `unchanged preflight: ${label}`
+            );
+            assert.equal(
+              evaluate('mobile-store-publish-gate', unchanged),
+              release,
+              `dry run: ${label}`
+            );
+            for (const job of [
+              'publish-android-internal',
+              'publish-ios-testflight',
+            ]) {
+              assert.equal(
+                evaluate(job, unchanged),
+                false,
+                `unchanged ${job}: ${label}`
+              );
+            }
           }
         }
       }

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/auth-v0.7.0...auth-v0.8.0) (2026-11-08)
+
+
+### Features
+
+* **auth:** guard staging cookie scope with explicit deploy environment ([#7315](https://github.com/tutur3u/platform/issues/7315)) ([25c85aa](https://github.com/tutur3u/platform/commit/25c85aa8b0e9b08a03aace0cab90aaa75ebd6bfd))
+* **rewise:** make rewise.tuturuuu.com the only canonical URL ([#7757](https://github.com/tutur3u/platform/issues/7757)) ([320ce8f](https://github.com/tutur3u/platform/commit/320ce8fda7a73b510332d630916bf90ef8398d8a))
+
+
+### Bug Fixes
+
+* **auth:** re-derive claim-email consumers from confirmed Auth (SR-926) ([#7759](https://github.com/tutur3u/platform/issues/7759)) ([5c0ed4b](https://github.com/tutur3u/platform/commit/5c0ed4bd3456f687e295513a43ab32c5c0eb1697))
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+* **security:** reject the released rewise.me and rewise.school domains ([#7756](https://github.com/tutur3u/platform/issues/7756)) ([4397841](https://github.com/tutur3u/platform/commit/43978414c1387d3c748688fd39b36b427fda37da))
+* **security:** stop trusting the expired rewise.me origin ([#7413](https://github.com/tutur3u/platform/issues/7413)) ([c8f3530](https://github.com/tutur3u/platform/commit/c8f3530fee7bdaa3a86fc23caaafa23112955ee0))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/auth-v0.6.0...auth-v0.7.0) (2026-10-17)
 
 

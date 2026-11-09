@@ -123,6 +123,8 @@ def validate_output(directory, source=None):
     config = read_json(config_path)
     require(isinstance(config, dict), "invalid config object")
     expected = {**IDENTITY, **NORMALIZED_DEFAULTS}
+    if "preview_urls" in config:
+        expected["preview_urls"] = False
     require(set(expected) | {"configPath", "userConfigPath", "main", "assets"} <= set(config), "missing normalized output field")
     require(not (set(config) - set(expected) - {"configPath", "userConfigPath", "main", "assets"}), "unreviewed emitted config field")
     for key, value in expected.items():

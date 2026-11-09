@@ -1,0 +1,194 @@
+---
+title: "Web design system"
+description: "Settings patterns, shared components, and review criteria for consistent web interfaces."
+---
+
+<Warning>
+This is a proposal extracted from Khôi's settings stack, PRs #7790–#7794.
+Verify the merged implementation before adopting the component contracts below.
+The screenshot matrix and visual regression coverage are pending. This page does
+not establish accessibility conformance or production acceptance.
+</Warning>
+
+## Design source
+
+The settings design is by **Khôi (Vo Minh Khoi, @VoMinhKhoii)**:
+[#7790](https://github.com/tutur3u/platform/pull/7790) introduces sections and scoped
+contrast, [#7791](https://github.com/tutur3u/platform/pull/7791) applies account and
+preference panels, [#7792](https://github.com/tutur3u/platform/pull/7792) covers
+workspace and developer panels, [#7793](https://github.com/tutur3u/platform/pull/7793)
+covers shared and Tasks settings, and
+[#7794](https://github.com/tutur3u/platform/pull/7794) covers domain panels.
+
+The design groups related decisions into cards in a centered column. Labels and
+controls align across rows. Hierarchy comes from headings, spacing, and hairlines.
+Color communicates state rather than decorating every setting.
+
+## Component map
+
+These contracts describe the proposed completed stack, including #7794's inline
+row default. They are not exports guaranteed by an earlier stack layer.
+
+| Need | Shared component or source | Composition rule |
+| --- | --- | --- |
+| Settings navigation and content frame | `SatelliteSettingsDialogShell`, `@tuturuuu/ui/custom/satellite-settings-dialog-shell` | Shell owns the page title, description, scrolling, and mobile navigation. Preserve search, keyboard navigation, and URL behavior. |
+| Related settings | `SettingsSection`, `@tuturuuu/ui/custom/settings-section` | One titled section with one divided card. Do not nest cards. |
+| Compact control or value | `SettingItemTab`, `@tuturuuu/ui/custom/settings-item-tab` | Inline by default in the completed stack. Narrow rows stack automatically. |
+| Table, tile picker, list, or textarea | `SettingItemTab layout="stacked"` | Give the content the row width. |
+| Free-form content | `SettingsSectionBlock`, same section module | Align custom content with row padding. |
+| Save actions | `SettingsSectionFooter`, same section module | Keep actions in the relevant card. Preserve existing save semantics. |
+| Empty, loading, or error message | `SettingsSectionMessage`, same section module | Include an actionable recovery when available. `tone="error"` supplies an alert role. |
+| Validated field | `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage` from `@tuturuuu/ui/form` | Keep the existing schema and field error association. A row title alone is not an input label. |
+| Basic controls | `@tuturuuu/ui/input`, `/select`, `/switch`, `/button` | Reuse focus, disabled, and error behavior. Do not restyle individual controls. |
+| Contrast | `.settings-surface` in `packages/ui/src/globals.css` | Apply at the settings shell. Do not copy its CSS values into apps. |
+
+`controlWidth` is a shared scale: `xs` = `w-48`, `sm` = `w-56`, `md` = `w-64`,
+`lg` = `w-72`, `xl` = `w-80`, and `2xl` = `w-96`, applied at the row's `@lg`
+container breakpoint. The classes belong in the shared component so every app
+emits them. Avoid app-local arbitrary widths for routine controls.
+
+## Layout, spacing, and typography
+
+The shell uses `max-w-3xl` with `space-y-8`. Mobile content has `px-4 py-6`;
+desktop content has `md:px-10 md:py-10`. The desktop sidebar is `w-64` and appears
+at `md`. Row padding is `px-4 py-4 md:px-5`. Section headers use `space-y-3` above
+the card. Footer padding is `px-4 py-3 md:px-5`, with wrapping actions and `gap-2`.
+Use the existing Tailwind spacing scale rather than pixel literals.
+
+The page title is `text-2xl font-semibold tracking-tight`. Section titles are
+`text-base font-semibold tracking-tight`. Row titles are `text-sm font-medium`;
+descriptions are `text-sm text-muted-foreground`. Preserve meaningful instructions,
+validation, and recovery text. Remove duplicate page titles and redundant slogans.
+
+Inline rows switch at `@lg` (512px of container width), independent of viewport
+width. At narrow widths, labels precede controls. Long values need wrapping or a
+bounded scroll region. Review translated labels, long identifiers, zoom, and the
+last reachable action rather than relying on a desktop screenshot alone.
+
+## Tokens and themes
+
+Use `bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground`,
+`border-border`, `border-input`, and `bg-accent` for their semantic roles. Use
+`destructive` for destructive actions and existing `dynamic-*` state colors only
+for meaningful status. Pair color with text or an icon and an accessible name.
+Avoid raw hex, RGB, HSL, OKLCH, arbitrary color utilities, and decorative hue classes
+in application components. Token definitions remain in the shared stylesheet.
+
+The proposed settings scope separates borders, inputs, cards, and accent surfaces
+in dark mode. It also keeps disabled input values readable at full opacity while
+disabled buttons remain visibly unavailable. Do not extend these overrides to the
+global product theme without a separate visual review. Disabled is not read-only:
+values that people must select or copy need an appropriate interaction model.
+
+Light and dark screenshots are separate acceptance cases. A semantic token name
+alone does not prove sufficient contrast, especially for focus indicators,
+disabled values, validation messages, and selected navigation.
+
+## Navigation, forms, and states
+
+With expand-all enabled or search active, sidebar groups are non-collapsible and
+redundant labels for single-item groups are hidden. Otherwise the group control
+collapses its children.
+Keep active state, keyboard access, focus restoration, and mobile back navigation.
+Do not add a chevron to a control that cannot collapse.
+
+Keep form submission boundaries, validation schemas, permission checks, dirty-state
+logic, confirmation dialogs, and pending-state disabling when composing rows.
+Connect each input to a visible label and its error. Keep failed values available
+for correction. Do not turn an explicit-save form into autosave during styling.
+Put destructive actions in a final section with a destructive button and preserve
+the existing confirmation behavior.
+
+| State | Visible behavior | Review evidence |
+| --- | --- | --- |
+| Loading | Skeleton follows the final section and row geometry; controls cannot submit stale values. | No jump to an unrelated layout; loading status is accessible. |
+| Empty | Explain what is absent inside the section; provide a useful next action when permitted. | Distinguish empty data from failed or unavailable data. |
+| Error | Section message with alert semantics and retry when safe. | Retry preserves inputs and uses the existing request path. |
+| Saving | Pending action and duplicate-submission prevention. | Success and failure feedback match the existing save model. |
+| Read-only or denied | Readable values and an understandable permission state. | No misleading editable control or inaccessible copy affordance. |
+
+## Explicit state machines
+
+Steve Ruiz's tldraw prompt, "find all of the implicit state machines in my app",
+is a useful review question. Model each UI surface's mutually exclusive states as
+one discriminated union. Do not scatter `isLoading`, `isEmpty`, `hasError`, and
+`isSuccess` booleans across a panel. Keep valid concurrent concerns in separate,
+named machines rather than forcing unrelated processes into one status.
+
+This illustrative type describes a settings editor. `Values` is the domain's
+validated form type, not an unvalidated network response:
+
+```ts
+type SettingsState<Values> =
+  | { kind: 'idle' }
+  | { kind: 'loading' }
+  | { kind: 'empty' }
+  | { kind: 'error'; message: string; draft: Values | null }
+  | { kind: 'success'; values: Values }
+  | { kind: 'saving'; values: Values }
+  | { kind: 'disabled'; values: Values; reason: string }
+  | { kind: 'stale'; values: Values; reason: string };
+```
+
+Loading cannot also be empty or successful. Disabled and stale states carry the
+values people need to read and an explanation. Saving keeps the submitted draft;
+a failed save transitions to error with that draft. Use a reducer or equivalent
+transition function to admit events only in valid states. Render with an exhaustive
+`switch (state.kind)` and a `never` check so adding a state requires a designed view.
+Do not claim this illustrative union enforces transitions by itself.
+
+Design every reachable state, including stale data during refresh, pending saves,
+permission changes, and recovery. If a state cannot occur for a surface, omit it
+and document why in its review evidence. Test actual events and recovery paths;
+a screenshot of a manually selected state does not prove that users can reach it.
+
+Khôi's section messages, form errors, pending buttons, and empty lists provide
+presentation references for these states. The captured settings diffs still contain
+query and mutation booleans. They do not establish that every panel already uses
+this discriminated-union architecture. Preserve their behavior during extraction;
+apply the explicit-state requirement to new and substantially edited UI logic.
+
+## UI review checklist
+
+- [ ] Use the component map; justify any new primitive against existing first-party callers.
+- [ ] Keep one page title and group related settings without nested cards.
+- [ ] Use semantic colors and the spacing scale; review any token exception explicitly.
+- [ ] Verify visible labels, errors, keyboard focus, search, and mobile navigation.
+- [ ] Are all states designed and reachable, and impossible combinations unrepresentable?
+- [ ] Use one discriminated state per mutually exclusive UI machine, with exhaustive rendering.
+- [ ] Exercise idle, loading, empty, error, success, disabled, stale, saving, and permission states as applicable.
+- [ ] Preserve schema, submission, permissions, URL state, and destructive confirmations.
+- [ ] Capture 390px and 1440px viewports in light and dark, with no horizontal overflow.
+- [ ] Check long translated content, copied values, focus contrast, and the final action.
+- [ ] Record exact source, route, theme, viewport, fixture state, and screenshot path.
+- [ ] Distinguish source checks, browser acceptance, CI, and production evidence.
+
+## Reference screenshots and acceptance
+
+Khôi's source screenshots are in
+[the settings redesign directory](https://github.com/tutur3u/platform/tree/main/.github/screenshots/settings-redesign)
+after #7790 lands. The PR contains appearance, security, profile, navigation,
+workspace, members, and personality examples. Filenames such as `security-mobile`
+do not establish an exact viewport or complete theme coverage.
+
+Fresh captures must use the merged stack and a deterministic, non-sensitive fixture.
+The required matrix is account/security, appearance/preferences, workspace/developer,
+Tasks, and one domain panel, each at **390 and 1440 pixels**, in **light and dark**.
+Capture default and representative loading, empty, and error states. Store the
+source SHA and capture metadata beside approved references. Until those captures
+are reviewed, this proposal has no complete screenshot acceptance receipt.
+
+## Enforcement proposal
+
+Start with advisory diagnostics for raw color and arbitrary spacing in changed UI
+source. Shared token definitions and genuine user-authored color data need distinct
+handling. Do not auto-rewrite data colors or CSS measurements into semantic tokens.
+Warnings need file, line, rule, and a suggested existing token or scale.
+
+Visual CI must use the shared dependency cache and affected-input selection.
+Include shared UI, tokens, tested surface source, fixture, configuration, lockfile,
+and browser version in the result identity. Cache browser binaries and dependencies;
+reuse a passing result only for identical inputs in the same trusted context.
+Never share privileged caches with untrusted pull requests or skip required security
+checks. Baseline changes require reviewed screenshots, not an automatic acceptance
+of every image difference. This proposal does not install lint or visual CI.

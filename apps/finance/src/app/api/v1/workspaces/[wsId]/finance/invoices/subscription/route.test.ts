@@ -11,6 +11,7 @@ const mocks = {
     schema: vi.fn(() => ({})),
   },
   isGroupBlockedForSubscriptionInvoices: vi.fn(),
+  isFeeLockEnabled: vi.fn(),
   sessionSupabase: {
     auth: {
       getUser: vi.fn(),
@@ -47,6 +48,11 @@ vi.mock('../route', () => ({
   validateInvoiceCustomer: (
     ...args: Parameters<typeof mocks.validateInvoiceCustomer>
   ) => mocks.validateInvoiceCustomer(...args),
+}));
+
+vi.mock('@tuturuuu/finance-core/fee-lock/access', () => ({
+  isFeeLockEnabled: (...args: Parameters<typeof mocks.isFeeLockEnabled>) =>
+    mocks.isFeeLockEnabled(...args),
 }));
 
 vi.mock('@/utils/workspace-config', () => ({
@@ -520,4 +526,143 @@ describe('subscription invoice create route', () => {
       expect(schemaClient.from).toHaveBeenCalledWith('inventory_units');
     }
   );
+
+  describe('fee_lock_ref', () => {
+    const LOCK = '00000000-0000-4000-8000-0000000fe301';
+    const WS = '00000000-0000-0000-0000-000000000000';
+    // One builder per table; every insert is recorded in `inserts`.
+    function sbAdminWith(tables: Record<string, unknown>) {
+      const inserts: Array<{ table: string; row: unknown }> = [];
+      const from = vi.fn((table: string) => {
+        const builder = createBuilder(
+          tables[table] ?? { data: null, error: null }
+        );
+        builder.insert.mockImplementation((row: unknown) => {
+          inserts.push({ table, row });
+          return builder;
+        });
+        return builder;
+      });
+      const rpc = vi.fn(async () => ({ data: true, error: null }));
+      const schema = vi.fn(() => ({ from, rpc }));
+      return { sbAdmin: { from, schema }, inserts, rpc };
+    }
+    const post = async (db: ReturnType<typeof sbAdminWith>) => {
+      mocks.getFinanceRouteContext.mockImplementation(async () => ({
+        context: {
+          normalizedWsId: WS,
+          permissions: withPermissions(['create_invoices']),
+          sbAdmin: db.sbAdmin,
+          supabase: {},
+          user: { id: 'user-1' },
+        },
+      }));
+      const { POST } = await import('./route');
+      const body = {
+        customer_id: 'customer-1',
+        group_ids: ['group-1'],
+        selected_month: '2026-12',
+        content: 'Học phí',
+        wallet_id: 'wallet-1',
+        category_id: 'category-1',
+        products: [
+          {
+            product_id: 'product-1',
+            unit_id: 'unit-1',
+            warehouse_id: 'warehouse-1',
+            quantity: 8,
+            price: 150000,
+            category_id: 'category-1',
+          },
+        ],
+        fee_lock_ref: { fee_lock_id: LOCK, revision: 2 },
+      };
+      return POST(
+        new Request('http://localhost/x', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+        { params: Promise.resolve({ wsId: WS }) }
+      );
+    };
+    const reads = {
+      workspace_wallets: { data: { id: 'wallet-1' }, error: null },
+      workspace_user_groups: { data: [{ id: 'group-1' }], error: null },
+      workspace_products: {
+        data: [
+          {
+            id: 'product-1',
+            name: 'Tuition',
+            finance_category_id: 'category-1',
+          },
+        ],
+        error: null,
+      },
+      transaction_categories: { data: { id: 'category-1' }, error: null },
+      fee_locks: {
+        data: {
+          id: LOCK,
+          student_id: 'customer-1',
+          period_month: '2026-12-01',
+          status: 'locked',
+          revision: 2,
+        },
+        error: null,
+      },
+      fee_lock_revisions: {
+        data: { revision: 2, total_amount: 100 },
+        error: null,
+      },
+      inventory_units: { data: [{ id: 'unit-1', name: 'buổi' }], error: null },
+    };
+
+    it('answers 400 before any invoice is created when ENABLE_FEE_LOCK is off', async () => {
+      mocks.isFeeLockEnabled.mockResolvedValue(false);
+      const db = sbAdminWith(reads);
+      const response = await post(db);
+      expect([response.status, (await response.json()).code]).toEqual([
+        400,
+        'FEE_LOCK_DISABLED',
+      ]);
+      expect(mocks.isFeeLockEnabled).toHaveBeenCalledWith(WS);
+      expect(db.inserts).toHaveLength(0);
+    });
+
+    it('links the invoice before stock changes and discards both in one RPC when stock fails', async () => {
+      mocks.isFeeLockEnabled.mockResolvedValue(true);
+      const db = sbAdminWith({
+        ...reads,
+        finance_invoices: { data: { id: 'invoice-1' }, error: null },
+        product_stock_changes: {
+          data: null,
+          error: { message: 'stock failed' },
+        },
+      });
+      const response = await post(db);
+      expect(response.status).toBe(500);
+      expect(db.inserts.map((insert) => insert.table)).toEqual([
+        'finance_invoices',
+        'finance_invoice_user_groups',
+        'finance_invoice_products',
+        'fee_lock_invoice_links',
+        'fee_lock_events',
+        'product_stock_changes',
+      ]);
+      expect(db.inserts[3]?.row).toMatchObject({
+        ws_id: WS,
+        invoice_id: 'invoice-1',
+        fee_lock_id: LOCK,
+        fee_lock_revision: 2,
+        charged_total: 100,
+      });
+      expect(db.rpc).toHaveBeenCalledWith(
+        'fee_lock_discard_new_invoice',
+        expect.objectContaining({
+          p_ws_id: WS,
+          p_invoice_id: 'invoice-1',
+          p_actor_id: 'user-1',
+        })
+      );
+    });
+  });
 });

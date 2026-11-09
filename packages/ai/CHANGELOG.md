@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/ai-v0.18.3...ai-v0.19.0) (2026-11-08)
+
+
+### Features
+
+* **ai:** add private Meet transcription evaluation harness ([#7269](https://github.com/tutur3u/platform/issues/7269)) ([28a5503](https://github.com/tutur3u/platform/commit/28a5503f53655583230e95046869485012a72575))
+* **meet:** default-allow Meet AI with a kill switch ([#7410](https://github.com/tutur3u/platform/issues/7410)) ([a96f160](https://github.com/tutur3u/platform/commit/a96f1609656bed08678af0dd1fb828711af4278a))
+* **meet:** fail-closed per-user Meet AI limiter ([#7417](https://github.com/tutur3u/platform/issues/7417)) ([fca5cb0](https://github.com/tutur3u/platform/commit/fca5cb0b31a5966bab2d8fe16b9d0c8f2f7986fe))
+* **meet:** improve transcription quality and support solo meetings ([#7267](https://github.com/tutur3u/platform/issues/7267)) ([ecc5e53](https://github.com/tutur3u/platform/commit/ecc5e53bfa6423ddbd9aaf789e6779c551064eab))
+
+
+### Bug Fixes
+
+* **ai:** gate meeting transcription on the Meet AI allowlist and fail closed on rate-limit outages ([#7380](https://github.com/tutur3u/platform/issues/7380)) ([f303930](https://github.com/tutur3u/platform/commit/f3039306dfa2459e7c60e6604d9043b1f8b258dc))
+* **ai:** read evaluation inputs through one file handle ([#7280](https://github.com/tutur3u/platform/issues/7280)) ([c77068a](https://github.com/tutur3u/platform/commit/c77068a7515a21adfbe1fa42a6586c7113228982))
+* **ai:** reject non-regular eval inputs before opening them ([#7296](https://github.com/tutur3u/platform/issues/7296)) ([08e4120](https://github.com/tutur3u/platform/commit/08e4120719220a661c55fd71edcfb76d7c9565ed))
+* **ai:** require workspace access for meeting transcription ([#7357](https://github.com/tutur3u/platform/issues/7357)) ([c2763ae](https://github.com/tutur3u/platform/commit/c2763aeb66c094982c3bf8fa83d5b2da6d5cc3a5))
+* **meet:** bill Meet AI to the meeting workspace's AI credits ([#7408](https://github.com/tutur3u/platform/issues/7408)) ([0f8b6dc](https://github.com/tutur3u/platform/commit/0f8b6dcac84f7b29d4c6a15e574330d7b3ad4349))
+* **packages:** make the published [@tuturuuu](https://github.com/tuturuuu) chain installable and guard it ([#7389](https://github.com/tutur3u/platform/issues/7389)) ([b1378ab](https://github.com/tutur3u/platform/commit/b1378abcaa31c02b5861cc16e6aa6bb2f8789c3c))
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+
 ## [0.18.3](https://github.com/tutur3u/platform/compare/ai-v0.18.2...ai-v0.18.3) (2026-10-24)
 
 

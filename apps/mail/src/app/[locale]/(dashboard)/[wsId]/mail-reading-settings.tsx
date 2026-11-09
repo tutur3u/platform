@@ -1,4 +1,6 @@
 'use client';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -17,13 +19,12 @@ export function MailReadingSettings() {
   const [behavior, setBehavior] = useMailArchiveBehavior();
   const [appearance, setAppearance] = useMailPreviewAppearance();
   return (
-    <div className="space-y-6">
-      <p className="text-muted-foreground text-sm">
-        {t('reading_settings_description')}
-      </p>
+    <SettingsSection>
       <MailKeyboardSetting />
-      <div className="space-y-2">
-        <Label htmlFor="mail-after-archive">{t('after_archive')}</Label>
+      <SettingItemTab
+        title={<Label htmlFor="mail-after-archive">{t('after_archive')}</Label>}
+        controlWidth="md"
+      >
         <Select
           value={behavior}
           onValueChange={(value) => {
@@ -38,11 +39,15 @@ export function MailReadingSettings() {
             <SelectItem value="list">{t('archive_list')}</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="mail-content-appearance">
-          {t('message_appearance')}
-        </Label>
+      </SettingItemTab>
+      <SettingItemTab
+        title={
+          <Label htmlFor="mail-content-appearance">
+            {t('message_appearance')}
+          </Label>
+        }
+        controlWidth="md"
+      >
         <Select
           value={appearance}
           onValueChange={(value) => {
@@ -59,7 +64,7 @@ export function MailReadingSettings() {
             <SelectItem value="original">{t('original_view')}</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-    </div>
+      </SettingItemTab>
+    </SettingsSection>
   );
 }

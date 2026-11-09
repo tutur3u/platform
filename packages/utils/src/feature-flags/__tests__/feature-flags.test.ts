@@ -73,9 +73,9 @@ describe('FEATURE_FLAGS', () => {
   });
 
   describe('flag count and structure', () => {
-    it('should have exactly 14 feature flags', () => {
+    it('should have exactly 15 feature flags', () => {
       const flags = Object.keys(FEATURE_FLAGS);
-      expect(flags).toHaveLength(14);
+      expect(flags).toHaveLength(15);
     });
 
     it('should have all unique values', () => {
@@ -202,6 +202,7 @@ describe('FeatureFlagMap type', () => {
       PREVENT_WORKSPACE_DELETION: true,
       ENABLE_AVATAR: true,
       ENABLE_LOGO: true,
+      newsletter_sending: false,
     };
 
     expect(flagMap.ENABLE_AI).toBe(true);
@@ -237,6 +238,7 @@ describe('Feature flag usage patterns', () => {
         PREVENT_WORKSPACE_DELETION: false,
         ENABLE_AVATAR: true,
         ENABLE_LOGO: true,
+        newsletter_sending: false,
       };
 
       const aiFeatures: FeatureFlag[] = [
@@ -264,6 +266,7 @@ describe('Feature flag usage patterns', () => {
         PREVENT_WORKSPACE_DELETION: false,
         ENABLE_AVATAR: false,
         ENABLE_LOGO: false,
+        newsletter_sending: false,
       };
 
       const educationFeatures: FeatureFlag[] = [

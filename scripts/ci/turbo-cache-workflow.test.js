@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noTemplateCurlyInString: GitHub expressions are literal workflow inputs.
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const path = require('node:path');
@@ -49,8 +48,9 @@ test('cache changes and runtime harness changes select automatic Worker qualific
 test('exact PR head is built without cache and accepted in workerd before artifact upload', () => {
   const workflow = readWorkflow(name);
   const job = workflow.jobs['build-acceptance'];
-  assert.equal(job.needs, 'check-ci');
-  assert.equal(job.if, "needs.check-ci.outputs.should_run == 'true'");
+  assert.deepEqual(job.needs, ['check-ci', 'affected-gate']);
+  assert.match(job.if, /needs\.affected-gate\.outputs\.run == 'true'/u);
+  assert.match(job.if, /needs\.check-ci\.outputs\.should_run == 'true'/u);
   const steps = job.steps;
   const checkout = steps.find((step) =>
     step.uses?.startsWith('actions/checkout@')
@@ -104,6 +104,7 @@ test('qualification has read-only credentials and no publication path', () => {
     contents: 'read',
   });
   assert.deepEqual(Object.keys(workflow.jobs).sort(), [
+    'affected-gate',
     'build-acceptance',
     'check-ci',
   ]);

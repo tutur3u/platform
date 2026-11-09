@@ -1,4 +1,1 @@
-export {
-  GET,
-  PATCH,
-} from '@tuturuuu/users-core/routes/notifications/route';
+export { GET, PATCH } from '@tuturuuu/users-core/routes/notifications/route';

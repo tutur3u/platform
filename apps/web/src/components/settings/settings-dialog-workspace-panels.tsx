@@ -4,6 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { getWorkspaceMemberSettings } from '@tuturuuu/internal-api';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import {
+  SettingsSection,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
 import { HiddenWorkspacesSettings } from '@tuturuuu/ui/custom/workspace-select';
 import { useTranslations } from 'next-intl';
@@ -40,24 +44,28 @@ function WorkspacePanelState({
 
   if (workspaceError) {
     return (
-      <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
-        <p className="font-medium text-destructive">
-          {t('settings.failed_to_load_workspace')}
-        </p>
-        <p className="mt-1 text-muted-foreground text-sm">
-          {workspaceError.message || t('settings.error_loading_workspace')}
-        </p>
-      </div>
+      <SettingsSection>
+        <SettingsSectionMessage tone="error">
+          <div className="space-y-1">
+            <p className="font-medium">
+              {t('settings.failed_to_load_workspace')}
+            </p>
+            <p className="text-muted-foreground">
+              {workspaceError.message || t('settings.error_loading_workspace')}
+            </p>
+          </div>
+        </SettingsSectionMessage>
+      </SettingsSection>
     );
   }
 
   if (!workspace) {
     return (
-      <div className="rounded-lg border p-4">
-        <p className="text-muted-foreground text-sm">
+      <SettingsSection>
+        <SettingsSectionMessage>
           {t('settings.workspace_not_found')}
-        </p>
-      </div>
+        </SettingsSectionMessage>
+      </SettingsSection>
     );
   }
 
@@ -87,25 +95,26 @@ export function WorkspaceGeneralSettingsPanel({
   if (isLoadingWorkspace || workspaceError || !workspace) {
     return (
       <div className="space-y-8">
-        <HiddenWorkspacesSettings />
         {state}
+        <HiddenWorkspacesSettings />
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
-      <HiddenWorkspacesSettings />
       <BasicInfo
         workspace={workspace}
         allowEdit={allowWorkspaceBasicsEdit}
         isPersonal={workspace.personal}
-      />
-      <WorkspaceAvatarSettings
-        user={user}
-        workspace={workspace}
-        allowEdit={allowWorkspaceBasicsEdit}
-      />
+      >
+        <WorkspaceAvatarSettings
+          user={user}
+          workspace={workspace}
+          allowEdit={allowWorkspaceBasicsEdit}
+        />
+      </BasicInfo>
+      <HiddenWorkspacesSettings />
     </div>
   );
 }
@@ -149,7 +158,7 @@ export function WorkspaceMembersSettingsPanel({
 
   return (
     <div className="h-full">
-      <div className="space-y-6">
+      <div className="space-y-8">
         <GuestSelfJoinSetting
           wsId={workspace.id}
           disabled={workspace.personal || !canManageWorkspaceMembers}
@@ -160,7 +169,6 @@ export function WorkspaceMembersSettingsPanel({
             wsId={workspace.id}
             canManageMembers
             disableInvite={invitationsDisabled}
-            embedded
           />
         ) : null}
         <StandardWorkspaceAccessPage

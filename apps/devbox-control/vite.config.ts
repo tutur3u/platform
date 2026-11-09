@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: local harness persistence override, never a build input.
 import { cloudflare } from '@cloudflare/vite-plugin';
 import { defineConfig } from 'vite-plus';
 

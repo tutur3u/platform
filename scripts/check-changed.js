@@ -26,7 +26,7 @@ const {
   assertSafePaths,
 } = require('./check-changed/workspaces.js');
 const {
-  BIOME_VERSION,
+  OXC_VERSION,
   isBranchNameValid,
   planChecks,
   workspaceOf,
@@ -255,16 +255,16 @@ function ttrPrefix(
   }
 }
 
-function localBiome(root = ROOT) {
+function localOxfmt(root = ROOT) {
   try {
     const manifest = JSON.parse(
       fs.readFileSync(
-        path.join(root, 'node_modules/@biomejs/biome/package.json'),
+        path.join(root, 'node_modules/oxfmt/package.json'),
         'utf8'
       )
     );
-    return manifest.version === BIOME_VERSION
-      ? path.join(root, 'node_modules/.bin/biome')
+    return manifest.version === OXC_VERSION
+      ? path.join(root, 'node_modules/.bin/oxfmt')
       : null;
   } catch {
     return null;
@@ -444,7 +444,7 @@ function main(argv = process.argv.slice(2), deps = {}) {
   const exists = (file) => fs.existsSync(path.join(root, file));
   const plan = planChecks(changes, {
     base,
-    biomeBinary: localBiome(root),
+    oxfmtBinary: localOxfmt(root),
     ...validationBranch(execFile, pushes),
     exists,
     readSource: (file) => fs.readFileSync(path.join(root, file), 'utf8'),

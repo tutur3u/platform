@@ -99,9 +99,8 @@ function mockAccessibleTask() {
 }
 
 async function callPatch(body: unknown) {
-  const { PATCH } = await import(
-    '@/app/api/v1/users/me/tasks/[taskId]/schedule/route'
-  );
+  const { PATCH } =
+    await import('@/app/api/v1/users/me/tasks/[taskId]/schedule/route');
 
   return (PATCH as unknown as ScheduleRouteHandler)(
     new Request(`http://localhost/api/v1/users/me/tasks/${TASK_ID}/schedule`, {

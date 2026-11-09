@@ -33,7 +33,6 @@ export function SaleProductImageDialog({
           className="group relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md border bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-12 sm:w-12"
           type="button"
         >
-          {/* biome-ignore lint/performance/noImgElement: workspace media can be a signed first-party URL. */}
           <img
             alt=""
             className="h-full w-full object-cover transition-transform group-hover:scale-105"
@@ -50,7 +49,6 @@ export function SaleProductImageDialog({
           <DialogDescription>{t('imagePreviewDescription')}</DialogDescription>
         </DialogHeader>
         <div className="grid max-h-[75vh] place-items-center bg-muted/30 p-4">
-          {/* biome-ignore lint/performance/noImgElement: workspace media can be a signed first-party URL. */}
           <img
             alt={name}
             className="max-h-[68vh] max-w-full rounded-lg object-contain"

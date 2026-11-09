@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { renderHook } from '@testing-library/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import {

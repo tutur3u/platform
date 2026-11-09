@@ -2,6 +2,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -90,32 +92,22 @@ export default function ExperimentalFinanceSettings({ workspaceId }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="font-semibold text-lg tracking-tight">
-          {t('experimental_title')}
-        </h3>
-        <p className="text-muted-foreground text-sm">
-          {t('experimental_description')}
-        </p>
-      </div>
-
-      <div className="flex items-center justify-between rounded-lg border p-4">
-        <div className="space-y-0.5">
-          <Label htmlFor="momo-zalopay-toggle" className="text-base">
+    <SettingsSection>
+      <SettingItemTab
+        title={
+          <Label htmlFor="momo-zalopay-toggle">
             {t('enable_momo_zalopay_label')}
           </Label>
-          <p className="text-muted-foreground text-sm">
-            {t('enable_momo_zalopay_description')}
-          </p>
-        </div>
+        }
+        description={t('enable_momo_zalopay_description')}
+      >
         <Switch
           id="momo-zalopay-toggle"
           checked={enabled}
           onCheckedChange={handleToggle}
           disabled={updateMutation.isPending}
         />
-      </div>
-    </div>
+      </SettingItemTab>
+    </SettingsSection>
   );
 }

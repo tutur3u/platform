@@ -227,7 +227,7 @@ node --check apps/database/scripts/run-supabase-isolated.js
 node --check apps/database/tests/programming-hosted-typegen-review/proposal.mjs
 node --check apps/database/tests/programming-hosted-typegen-review/process-group.mjs
 node --check apps/database/tests/programming-hosted-typegen-review/network-policy.mjs
-node node_modules/@biomejs/biome/bin/biome format apps/database/scripts/run-supabase-isolated.js apps/database/tests/programming-hosted-typegen-review/*.mjs
+node node_modules/oxfmt/bin/oxfmt --check apps/database/scripts/run-supabase-isolated.js apps/database/tests/programming-hosted-typegen-review/*.mjs
 git diff --check
 ```
 
@@ -254,7 +254,7 @@ Earlier reviewed backend: 048933b4f6d2b78d35d91b752184aaf3078ea605.
 Frozen programming SQL SHA256:
 2895cf4d9e5d6cae17690c31eb4eecae02800de21730b3bdf6b8a67fc306e96f.
 
-Biome job110301337967/run36839608030 reported two formatting errors in
+Oxc job110301337967/run36839608030 reported two formatting errors in
 programming-execution.test.ts and internal-api/programming.test.ts; f83 applies
 formatting only. Type Check job110300512359/run36839608180 reported TS6059 at
 programming-runner-contract.test.ts(6,35): SDK devbox-judge-sandbox.ts and its

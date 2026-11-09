@@ -49,9 +49,8 @@ async function createNavigationAdminClient(options?: { noCookie?: boolean }) {
 }
 
 async function loadWorkspaceNavigationHelpers() {
-  const workspaceHelperModule = await import(
-    '@tuturuuu/utils/workspace-helper'
-  );
+  const workspaceHelperModule =
+    await import('@tuturuuu/utils/workspace-helper');
   const { getPermissions, getSecret, getSecrets } = workspaceHelperModule;
   return {
     getPermissions,

@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.41.0](https://github.com/tutur3u/platform/compare/tasks-v0.40.0...tasks-v0.41.0) (2026-11-08)
+
+
+### Features
+
+* **db:** keep new project ticket keys off board prefixes ([b4e4fcd](https://github.com/tutur3u/platform/commit/b4e4fcdb965d2e656614ab8318f71ee019d30f1d))
+* **satellite:** regroup shared and tasks settings into sections ([#7793](https://github.com/tutur3u/platform/issues/7793)) ([ada23b2](https://github.com/tutur3u/platform/commit/ada23b29059530a6adb56a6107d9372dc92bc834))
+* **tasks:** add cycle and backlog planning view ([dcc9882](https://github.com/tutur3u/platform/commit/dcc9882690857f6dc97a25d58edb64f0b3615af9))
+* **tasks:** add per-board sprint data model ([0f20cc9](https://github.com/tutur3u/platform/commit/0f20cc99d46ffa3ae385cdab020f06bcf466f325)) ([#7043](https://github.com/tutur3u/platform/issues/7043)) ([9b08aef](https://github.com/tutur3u/platform/commit/9b08aef8da70cb686870790925d68368afef4f07))
+* **tasks:** apply the preview review round to the header, panel, Details and cards ([#7193](https://github.com/tutur3u/platform/issues/7193)) ([7f7b479](https://github.com/tutur3u/platform/commit/7f7b4793458788e632a3c7967b596baf92c517b5))
+* **tasks:** end sprints from a summary with carry or backlog decisions ([cafc56c](https://github.com/tutur3u/platform/commit/cafc56c3a7590bb000ffd7625022f97a5fee1a59)) ([#7089](https://github.com/tutur3u/platform/issues/7089)) ([6596ff5](https://github.com/tutur3u/platform/commit/6596ff54da29eaebd5c13338223330b30479de2b))
+* **tasks:** match the cycle planning API contract ([d18a025](https://github.com/tutur3u/platform/commit/d18a0250f2019bc282aac34ed642a5cfe100ee83))
+* **tasks:** number tasks per project with editable keys ([39e5342](https://github.com/tutur3u/platform/commit/39e534251f9d4b643463043c6af4e77b480bb8bf))
+* **tasks:** one cycle per task, backlog helpers and Cycles nav ([4bf9477](https://github.com/tutur3u/platform/commit/4bf9477cbfae8f7129b661d16b86bf5f34fceabb))
+* **tasks:** plan the next sprint from a Plan tab ([457c109](https://github.com/tutur3u/platform/commit/457c10949a77eb7d0494a4d0fad728249d45a9e2)) ([#7088](https://github.com/tutur3u/platform/issues/7088)) ([02844d7](https://github.com/tutur3u/platform/commit/02844d7084d83571607a67c8790cc6b75dacb619))
+* **tasks:** plan up to five sprints ahead and park tasks outside sprints ([#7224](https://github.com/tutur3u/platform/issues/7224)) ([d114c02](https://github.com/tutur3u/platform/commit/d114c02b0f4ea11bb41ea68c057d9d50bf1abf1e))
+* **tasks:** show the board's sprint in the header and Board view ([9d91b1a](https://github.com/tutur3u/platform/commit/9d91b1aae612b205f723542b02d7e43a51a0862e)) ([#7046](https://github.com/tutur3u/platform/issues/7046)) ([f3f31bd](https://github.com/tutur3u/platform/commit/f3f31bde4003f4db9b70f154619eb665a2df5597))
+* **tasks:** show the task's sprint in the task panel ([#7108](https://github.com/tutur3u/platform/issues/7108)) ([978e783](https://github.com/tutur3u/platform/commit/978e7839909bfee471a304e942705f733f215421))
+* **tasks:** simplify sprint planning, summary and board filtering ([#7396](https://github.com/tutur3u/platform/issues/7396)) ([9d45884](https://github.com/tutur3u/platform/commit/9d458840f0064f6c37e43da5d4fca3bccd4fa88c))
+* **tasks:** two-row board header with people, project and focus filters ([8d53440](https://github.com/tutur3u/platform/commit/8d53440a1a2f08b1f1632558bb8e480e5d2bac32)) ([#7042](https://github.com/tutur3u/platform/issues/7042)) ([b48007d](https://github.com/tutur3u/platform/commit/b48007d34f18a714a2d6379273850d813c959998))
+
+
+### Bug Fixes
+
+* **cloudflare:** harden native runtime and artifact qualification ([d2cd64a](https://github.com/tutur3u/platform/commit/d2cd64afe3758a7c3a1804e4f942f17579b27725))
+* **db:** rename the assign_task_cycle rollback to the re-timed migration ([e495e55](https://github.com/tutur3u/platform/commit/e495e550df36907b7ce9863b37383d7214e3344f))
+* **release:** forward-port retained cycle compatibility and publication holds ([#7805](https://github.com/tutur3u/platform/issues/7805)) ([ed3a1c8](https://github.com/tutur3u/platform/commit/ed3a1c8c5f66d35316f73c2be1c9ed1ed46d4d09))
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+* **release:** retain schema compatibility and publication holds ([1807f49](https://github.com/tutur3u/platform/commit/1807f498f10b00ce134fef786b0ed9368a6dbb0e))
+* **staging:** host-only __Host- cookies and Set-Cookie Domain backstops ([#7429](https://github.com/tutur3u/platform/issues/7429)) ([e058622](https://github.com/tutur3u/platform/commit/e058622ccafe40c0523ad68bdc2b594718bbd735))
+* **tasks:** address cycle planning review ([d44a3ac](https://github.com/tutur3u/platform/commit/d44a3acfc28b94b056fe5c1e7f04b912d8388e88))
+* **tasks:** enforce one cycle per task in the assign path, not a unique index ([016b0db](https://github.com/tutur3u/platform/commit/016b0dbb4e32975be640c1c63936a6b9583ee76b))
+* **tasks:** keep board cycles off until enabled ([#7553](https://github.com/tutur3u/platform/issues/7553)) ([b1fa689](https://github.com/tutur3u/platform/commit/b1fa689c1289261bc472c810ed733e8c66506566))
+* **tasks:** keep board sprints out of the legacy task-cycle edit routes ([a2f053c](https://github.com/tutur3u/platform/commit/a2f053c283d000a17a887a193000b8b2789b147d))
+* **tasks:** keep legacy cycle edits working before the sprint migration ([f22feeb](https://github.com/tutur3u/platform/commit/f22feeb36e26c39cbee37c79e8bc2f4fe4431cae))
+* **tasks:** label plan and summary tasks by project key, keep member project creation ([fbc8400](https://github.com/tutur3u/platform/commit/fbc84009caf57110f79ec008e54f0cd472d22538))
+* **tasks:** limit one-cycle-per-task to workspace cycles, keep board sprint history ([bbeddd9](https://github.com/tutur3u/platform/commit/bbeddd9958b9d3943f45e8e11253aa049127c598))
+* **tasks:** pluralize the per-person task totals in the sprint summary ([5ad85ec](https://github.com/tutur3u/platform/commit/5ad85ec2eded60fa0016bae84eaf034d243a874d))
+* **tasks:** regenerate bridge route registry for task-cycle routes ([4cbbdb6](https://github.com/tutur3u/platform/commit/4cbbdb637d667919ba906baf681c1ef3d88175d8))
+* **tasks:** satisfy changed-file gates for cycle planning ([204930c](https://github.com/tutur3u/platform/commit/204930ced56a62fcef7d9ad974bee5a11054c81d))
+* **tasks:** show new sprint tasks at once and count unloaded progress ([978cdfd](https://github.com/tutur3u/platform/commit/978cdfdb6d7332b18fa3e874d946276285cb521d))
+* **tasks:** spy on the Mira Tasks rpc call without the typed overloads ([d0a2246](https://github.com/tutur3u/platform/commit/d0a2246e377c055af8f2b06f97cee1fffd01364c))
+* **tasks:** trash a new backlog task that cannot leave the running sprint ([d2aa74c](https://github.com/tutur3u/platform/commit/d2aa74c748b56969024ab49d990bd856d95687e4))
+* **tasks:** type the move route's project rows and the dialog title task ([a97c50a](https://github.com/tutur3u/platform/commit/a97c50a6a27ec35fee4978036b8159c28f338981))
+* **tasks:** wait for the sprint's tasks before allowing End ([5b61c32](https://github.com/tutur3u/platform/commit/5b61c329e87a8bfa46f58678d005f9485693e35a))
+* **types:** avoid deep rpc instantiation in client bindings ([8e6c343](https://github.com/tutur3u/platform/commit/8e6c34352a609ad8774502af1c716fe1c6348e39))
+
 ## [0.40.0](https://github.com/tutur3u/platform/compare/tasks-v0.39.0...tasks-v0.40.0) (2026-10-24)
 
 

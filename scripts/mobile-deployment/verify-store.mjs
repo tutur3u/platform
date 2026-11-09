@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Standalone uncached release step; signing credentials never enter Turbo's cache.
 import { sign } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';

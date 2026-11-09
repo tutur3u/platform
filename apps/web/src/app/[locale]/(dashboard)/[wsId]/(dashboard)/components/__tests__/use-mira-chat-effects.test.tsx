@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { QueryClient } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import type { UIMessage } from '@tuturuuu/ai/types';

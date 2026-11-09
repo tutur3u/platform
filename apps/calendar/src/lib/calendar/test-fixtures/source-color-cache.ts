@@ -6,7 +6,6 @@ export function failingSourceColorCache(mode: CacheFailureMode): unknown {
   const query = {
     update: () => query,
     eq: () => query,
-    // biome-ignore lint/suspicious/noThenProperty: Model the awaited PostgREST query boundary.
     then: (
       resolve: (value: unknown) => unknown,
       reject: (error: unknown) => unknown

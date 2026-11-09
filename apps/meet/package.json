@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/meet",
-  "version": "0.35.0",
+  "version": "0.36.0",
   "private": true,
   "scripts": {
     "type-check": "node scripts/type-check.cjs && bun run type-check:config",
@@ -28,7 +28,7 @@
     "preview:cloudflare": "vp preview",
     "deploy:cloudflare": "wrangler deploy --config dist/ssr/wrangler.json",
     "cf:typecheck": "node scripts/type-check.cjs",
-    "cf:typegen": "wrangler types --config dist/ssr/wrangler.json --include-runtime=false --env-interface CloudflareEnv cloudflare-env.d.ts && biome format --write cloudflare-env.d.ts",
+    "cf:typegen": "wrangler types --config dist/ssr/wrangler.json --include-runtime=false --env-interface CloudflareEnv cloudflare-env.d.ts && oxfmt --write cloudflare-env.d.ts",
     "type-check:config": "tsc --noEmit --project tsconfig.config.json"
   },
   "dependencies": {
@@ -76,7 +76,6 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.13",
     "@cloudflare/workers-types": "5.20261022.1",
     "@opennextjs/cloudflare": "https://registry.npmjs.org/@opennextjs/cloudflare/-/cloudflare-1.20.6.tgz",
     "@tailwindcss/postcss": "^4.3.3",

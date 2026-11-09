@@ -81,103 +81,114 @@ async function expectExactAssets(origin) {
   }
 }
 
-test('emitted Tasks Worker serves the exact offline fallback URLs', {
-  timeout: 180000,
-}, async (t) => {
-  assert.equal(
-    process.env.CI,
-    'true',
-    'Run only after the native build, never as a source-only unit test'
-  );
-  const { configPath, config } = readNativeRuntimeConfig(app);
-  assert.equal(config.assets.html_handling, 'none');
-
-  // A disposable copy, so runtime state never touches the sealed output.
-  const scratch = await realpath(
-    await mkdtemp(join(tmpdir(), 'tasks-offline-'))
-  );
-  t.after(() => rm(scratch, { recursive: true, force: true }));
-  await cp(join(app, 'dist'), join(scratch, 'dist'), {
-    recursive: true,
-    verbatimSymlinks: true,
-  });
-  const envFile = join(scratch, 'synthetic.env');
-  await writeFile(envFile, '', { flag: 'wx', mode: 0o600 });
-  const scratchConfig = join(scratch, relative(app, configPath));
-  const egress = [];
-
-  async function start(config, name) {
-    const registry = join(scratch, `registry-${name}`);
-    await mkdir(registry, { mode: 0o700 });
-    const worker = await require('wrangler').unstable_startWorker({
-      config,
-      envFiles: [envFile],
-      sendMetrics: false,
-      build: { bundle: false, processEntrypoint: false },
-      dev: {
-        remote: false,
-        watch: false,
-        persist: false,
-        inspector: false,
-        liveReload: false,
-        generateTypes: false,
-        enableContainers: false,
-        registry,
-        server: { hostname: '127.0.0.1', port: 0 },
-        inferOriginFromRoutes: false,
-        routeRequestsByRoutes: false,
-        auth: () => {
-          throw new Error('Provider auth is forbidden in this runtime test');
-        },
-        outboundService: (request) => {
-          egress.push(new URL(request.url).origin);
-          return new Response('denied by the runtime test', { status: 599 });
-        },
-      },
-    });
-    t.after(() => worker.dispose());
-    await worker.ready;
-    return new URL((await worker.url).origin);
-  }
-
-  // The probe keeps the sealed config's exact assets block; only `main`
-  // changes, and the negative control also drops html_handling.
-  async function probeConfig(name, assets) {
-    const dir = join(scratchConfig, '..');
-    await writeFile(join(dir, `${name}.mjs`), ASSET_PROBE);
-    const probe = join(dir, `${name}.json`);
-    await writeFile(
-      probe,
-      JSON.stringify({ ...config, name, main: `${name}.mjs`, assets })
+test(
+  'emitted Tasks Worker serves the exact offline fallback URLs',
+  {
+    timeout: 180000,
+  },
+  async (t) => {
+    assert.equal(
+      process.env.CI,
+      'true',
+      'Run only after the native build, never as a source-only unit test'
     );
-    return probe;
-  }
+    const { configPath, config } = readNativeRuntimeConfig(app);
+    assert.equal(config.assets.html_handling, 'none');
 
-  await t.test('the Worker answers them with their exact bytes', async () => {
-    await expectExactAssets(await start(scratchConfig, 'app'));
-  });
+    // A disposable copy, so runtime state never touches the sealed output.
+    const scratch = await realpath(
+      await mkdtemp(join(tmpdir(), 'tasks-offline-'))
+    );
+    t.after(() => rm(scratch, { recursive: true, force: true }));
+    await cp(join(app, 'dist'), join(scratch, 'dist'), {
+      recursive: true,
+      verbatimSymlinks: true,
+    });
+    const envFile = join(scratch, 'synthetic.env');
+    await writeFile(envFile, '', { flag: 'wx', mode: 0o600 });
+    const scratchConfig = join(scratch, relative(app, configPath));
+    const egress = [];
 
-  await t.test(
-    'the sealed asset policy serves them without a redirect',
-    async () => {
-      const probe = await probeConfig('asset-probe', config.assets);
-      await expectExactAssets(await start(probe, 'probe'));
+    async function start(config, name) {
+      const registry = join(scratch, `registry-${name}`);
+      await mkdir(registry, { mode: 0o700 });
+      const worker = await require('wrangler').unstable_startWorker({
+        config,
+        envFiles: [envFile],
+        bindings: {
+          SUPABASE_SECRET_KEY: { type: 'plain_text', value: 'fixture' },
+          TUTURUUU_APP_COORDINATION_SECRET: {
+            type: 'plain_text',
+            value: 'fixture',
+          },
+        },
+        sendMetrics: false,
+        build: { bundle: false, processEntrypoint: false },
+        dev: {
+          remote: false,
+          watch: false,
+          persist: false,
+          inspector: false,
+          liveReload: false,
+          generateTypes: false,
+          enableContainers: false,
+          registry,
+          server: { hostname: '127.0.0.1', port: 0 },
+          inferOriginFromRoutes: false,
+          routeRequestsByRoutes: false,
+          auth: () => {
+            throw new Error('Provider auth is forbidden in this runtime test');
+          },
+          outboundService: (request) => {
+            egress.push(new URL(request.url).origin);
+            return new Response('denied by the runtime test', { status: 599 });
+          },
+        },
+      });
+      t.after(() => worker.dispose());
+      await worker.ready;
+      return new URL((await worker.url).origin);
     }
-  );
 
-  await t.test(
-    'negative control: the default html_handling redirects /offline.html',
-    async () => {
-      const { html_handling: _, ...assets } = config.assets;
-      const probe = await probeConfig('asset-probe-default', assets);
-      const response = await get(
-        await start(probe, 'default'),
-        '/offline.html'
+    // The probe keeps the sealed config's exact assets block; only `main`
+    // changes, and the negative control also drops html_handling.
+    async function probeConfig(name, assets) {
+      const dir = join(scratchConfig, '..');
+      await writeFile(join(dir, `${name}.mjs`), ASSET_PROBE);
+      const probe = join(dir, `${name}.json`);
+      await writeFile(
+        probe,
+        JSON.stringify({ ...config, name, main: `${name}.mjs`, assets })
       );
-      assert.equal(response.status, 307);
-      assert.match(response.headers.location ?? '', /\/offline$/u);
+      return probe;
     }
-  );
 
-  assert.deepEqual(egress, []);
-});
+    await t.test('the Worker answers them with their exact bytes', async () => {
+      await expectExactAssets(await start(scratchConfig, 'app'));
+    });
+
+    await t.test(
+      'the sealed asset policy serves them without a redirect',
+      async () => {
+        const probe = await probeConfig('asset-probe', config.assets);
+        await expectExactAssets(await start(probe, 'probe'));
+      }
+    );
+
+    await t.test(
+      'negative control: the default html_handling redirects /offline.html',
+      async () => {
+        const { html_handling: _, ...assets } = config.assets;
+        const probe = await probeConfig('asset-probe-default', assets);
+        const response = await get(
+          await start(probe, 'default'),
+          '/offline.html'
+        );
+        assert.equal(response.status, 307);
+        assert.match(response.headers.location ?? '', /\/offline$/u);
+      }
+    );
+
+    assert.deepEqual(egress, []);
+  }
+);

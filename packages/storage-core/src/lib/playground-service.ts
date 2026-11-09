@@ -377,9 +377,8 @@ export async function savePlaygroundRunnerFiles(
     p_runner_id: runnerId,
     p_run_id: runId,
   });
-  const { syncPlaygroundRunnerFiles } = await import(
-    './playground-runner-sync'
-  );
+  const { syncPlaygroundRunnerFiles } =
+    await import('./playground-runner-sync');
   return syncPlaygroundRunnerFiles({
     ...scope,
     runnerId,

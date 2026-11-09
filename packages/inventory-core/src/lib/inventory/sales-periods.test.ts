@@ -13,7 +13,6 @@ function chain(result: unknown) {
   for (const method of ['eq', 'in', 'order', 'select', 'limit']) {
     query[method] = vi.fn(() => query);
   }
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable and the test double mirrors that contract.
   query.then = (resolve: (value: unknown) => unknown) => resolve(result);
   return query;
 }

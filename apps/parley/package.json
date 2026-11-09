@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/parley",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
   "scripts": {
     "dev": "node ../../scripts/portless-safe-dev.js",
@@ -11,7 +11,7 @@
     "build:cloudflare": "opennextjs-cloudflare build",
     "deploy:cloudflare": "opennextjs-cloudflare deploy",
     "cf:typecheck": "tsc --noEmit -p tsconfig.cloudflare.json",
-    "cf:typegen": "wrangler types --include-runtime=false --env-interface CloudflareEnv cloudflare-env.d.ts && biome format --write cloudflare-env.d.ts"
+    "cf:typegen": "wrangler types --include-runtime=false --env-interface CloudflareEnv cloudflare-env.d.ts && oxfmt --write cloudflare-env.d.ts"
   },
   "portless": {
     "name": "parley.tuturuuu",
@@ -56,7 +56,6 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.13",
     "@cloudflare/workers-types": "^5.20261022.1",
     "@opennextjs/cloudflare": "https://registry.npmjs.org/@opennextjs/cloudflare/-/cloudflare-1.20.6.tgz",
     "@tailwindcss/postcss": "^4.3.3",

@@ -271,9 +271,8 @@ export function SaleProductPicker({
                   ) : null}
                   {showWarehouseOnMobile ? (
                     <>
-                      {option.warehouseName} <span aria-hidden="true">
-                        ·
-                      </span>{' '}
+                      {option.warehouseName}{' '}
+                      <span aria-hidden="true">·</span>{' '}
                     </>
                   ) : null}
                   {option.amount === null ? (

@@ -99,12 +99,15 @@
               "platform/personal-journal",
               "platform/features/assistant-live",
               "platform/features/mira-mail-tools",
+              "platform/features/email-domains-newsletter-design",
               "platform/features/assistant-reaction-retention",
               "platform/features/assistant-local-models",
               "platform/personal-proactive-execution",
               "platform/features/mobile-timer",
               "platform/features/mira-health-planning-tools",
               "platform/features/task-reminder-delivery",
+              "platform/domain-gating-design",
+              "platform/features/safe-workspace-invitations",
               "platform/features/tasks-board-header",
               "platform/features/tasks-board-cards",
               "platform/features/task-board-sprints",
@@ -176,6 +179,7 @@
             "pages": [
               "build/overview",
               "build/mail/report-email-replies",
+              "build/mail/newsletter-provider-feasibility",
               {
                 "group": "DevOps & Deployment",
                 "pages": [
@@ -208,6 +212,7 @@
                   "build/devops/adaptive-abuse-rate-limits",
                   "build/devops/storage-egress-protection",
                   "build/devops/meet-transcript-retention",
+                  "build/devops/status-api-revocation",
                   "build/devops/critical-app-rollout",
                   "build/devops/github-actions-runbook",
                   "build/devops/caching",
@@ -240,6 +245,7 @@
               "build/development-tools/stacked-pull-requests",
               "build/development-tools/local-supabase-development",
               "build/development-tools/local-e2e",
+              "build/development-tools/hosted-dev-supabase-preview",
               "build/development-tools/notification-email-freshness",
               "build/development-tools/ci-cd-pipelines",
               "build/development-tools/ci-cd-optimization",
@@ -247,6 +253,7 @@
               "build/development-tools/worktree-disk-usage",
               "build/development-tools/documenting",
               "build/development-tools/mobile-state-regressions",
+              "build/development-tools/web-design-system",
               "build/development-tools/mobile-design-system",
               "build/development-tools/mobile-design-language",
               "build/development-tools/mobile-native-pass-plan",
@@ -323,6 +330,7 @@
               {
                 "group": "Application integrations",
                 "pages": [
+                  "platform/applications/ec-reply-deliverability-design",
                   {
                     "group": "Square POS",
                     "pages": [
@@ -451,6 +459,7 @@
                 "group": "API Reference",
                 "pages": [
                   "reference/api-reference/introduction",
+                  "reference/api-reference/status",
                   "reference/api-reference/ai-studio",
                   "reference/api-reference/mastermind-push-events",
                   "reference/api-reference/endpoint/generate"
@@ -512,7 +521,9 @@
                   "reference/repository/routes/playground",
                   "reference/repository/routes/redis",
                   "reference/repository/routes/rewise",
+                  "reference/repository/routes/roadmap",
                   "reference/repository/routes/shortener",
+                  "reference/repository/routes/status-api",
                   "reference/repository/routes/storage-unzip-proxy",
                   "reference/repository/routes/storefront",
                   "reference/repository/routes/supermemory",

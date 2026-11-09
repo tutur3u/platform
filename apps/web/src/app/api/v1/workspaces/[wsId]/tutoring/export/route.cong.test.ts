@@ -25,7 +25,6 @@ function query(result: () => Result) {
     in: () => builder,
     order: () => builder,
     range: () => builder,
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
     then(
       resolve: (value: unknown) => unknown,
       reject: (error: unknown) => unknown
@@ -295,11 +294,13 @@ describe('tutoring export access and failures', () => {
         student_name: 'Learner One',
         teacher_name: 'Synthetic teacher',
         time: '17:15',
+        teacher_user_id: 'teacher-1',
       }),
       expect.objectContaining({
         group_name: 'N/A',
         student_name: 'N/A',
         teacher_name: 'N/A',
+        teacher_user_id: null,
       }),
     ]);
   });

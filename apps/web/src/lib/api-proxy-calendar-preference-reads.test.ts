@@ -71,9 +71,8 @@ async function request(
   useActor = true,
   method = 'GET'
 ) {
-  const { guardApiProxyRequest } = await import(
-    '@tuturuuu/utils/api-proxy-guard'
-  );
+  const { guardApiProxyRequest } =
+    await import('@tuturuuu/utils/api-proxy-guard');
   const req = new NextRequest(`https://tuturuuu.com${pathname}`, {
     method,
     headers: { authorization: `Bearer ${token}`, 'x-user-id': 'forged-actor' },

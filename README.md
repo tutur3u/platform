@@ -1,356 +1,173 @@
-# Tuturuuu Platform
+# Tuturuuu
+
+<p align="center">
+  <img src="apps/web/public/media/branding/tuturuuu.svg" alt="Tuturuuu" width="80" />
+</p>
 
 [![Vercel Platform Production Deployment](https://github.com/tutur3u/platform/actions/workflows/vercel-production-platform.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/vercel-production-platform.yaml)
 [![CodeQL](https://github.com/tutur3u/platform/actions/workflows/codeql.yml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/codeql.yml)
 [![Test](https://github.com/tutur3u/platform/actions/workflows/turbo-unit-tests.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/turbo-unit-tests.yaml)
 
-![Tuturuuu unified workspace marketing hero](/public/tuturuuu-marketing-hero.png)
+![Tuturuuu workspace](public/tuturuuu-marketing-hero.png)
 
-Tuturuuu is an open-source intelligent workspace platform for modern work and
-life. It brings tasks, calendars, meetings, documents, storage, finance,
-inventory, learning, automation, and AI-assisted workflows into one connected
-operating layer.
+## What is Tuturuuu
 
-The goal is to reduce digital friction: capture what matters, clarify the next
-action, keep teams in sync, and let software handle more of the coordination
-load. This monorepo contains the apps, shared packages, mobile client, SDK,
-CLI, documentation, local services, and deployment tooling behind that system.
+Tuturuuu is an open-source workspace for modern work and life. Tasks, calendar, meetings, mail, documents, files, finance, inventory, and learning live in one connected system, so people can capture what matters, see the next action, and keep a team in sync. The goal is to take the coordination load off the people doing the work.
 
-## Migration Progress
+This repository holds the apps, shared packages, mobile client, SDK, CLI, docs, and deployment tooling behind that system.
 
-<!-- tanstack-rust-migration-progress:start -->
-_Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with `bun migration:tanstack:readme` after route ownership changes._
+## Products
 
-![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=26.41%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=12.44%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=d29922&label=TanStack+Start&message=65.79%25+terminal&style=flat-square)
+Each product is its own app under `apps/`, on its own site. [apps.tuturuuu.com](https://apps.tuturuuu.com) is the launcher. The [product directory](https://docs.tuturuuu.com/platform/applications/overview) is the longer guide.
 
-| Track | Progress | Terminal | Migrated | Removed | Remaining |
-| --- | --- | ---: | ---: | ---: | ---: |
-| Overall | `[#####---------------]` 26.41% | 230 / 871 | 216 | 14 | 641 |
-| Rust backend | `[##------------------]` 12.44% | 80 / 643 | 68 | 12 | 563 |
-| TanStack Start | `[#############-------]` 65.79% | 150 / 228 | 148 | 2 | 78 |
-
-<details>
-<summary>Remaining work by route kind</summary>
-
-| Kind | Progress | Terminal | Remaining |
-| --- | --- | ---: | ---: |
-| api | `[##--------------]` 11.94% | 75 / 628 | 553 |
-| page | `[##########------]` 64.74% | 101 / 156 | 55 |
-| layout | `[###########-----]` 69.12% | 47 / 68 | 21 |
-| cron | `[###-------------]` 20% | 2 / 10 | 8 |
-| route-handler | `[############----]` 75% | 3 / 4 | 1 |
-| error | `[########--------]` 50% | 1 / 2 | 1 |
-| loading | `[----------------]` 0% | 0 / 1 | 1 |
-| trpc | `[----------------]` 0% | 0 / 1 | 1 |
-| not-found | `[################]` 100% | 1 / 1 | 0 |
-
-</details>
-
-<details>
-<summary>Next legacy artifacts in the manifest</summary>
-
-| Route | Owner | Methods | Source |
-| --- | --- | --- | --- |
-| `/api/ai/chat` | Rust backend | `POST` | `apps/web/src/legacy-api-routes/ai/chat/route.ts` |
-| `/api/ai/chat/delete-file` | Rust backend | `POST` | `apps/web/src/legacy-api-routes/ai/chat/delete-file/route.ts` |
-| `/api/ai/chat/file-urls` | Rust backend | `POST` | `apps/web/src/legacy-api-routes/ai/chat/file-urls/route.ts` |
-| `/api/ai/chat/google` | Rust backend | `POST` | `apps/web/src/legacy-api-routes/ai/chat/google/route.ts` |
-| `/api/ai/chat/google/new` | Rust backend | `POST` | `apps/web/src/legacy-api-routes/ai/chat/google/new/route.ts` |
-
-</details>
-<!-- tanstack-rust-migration-progress:end -->
-
-## What Tuturuuu Builds
-
-| Product layer | What it does | Where to start |
+| Product | What it is for | Open |
 | --- | --- | --- |
-| Command Center | Daily workspace view for tasks, appointments, reminders, quick capture, and GTD-style triage | [Command Center docs](https://docs.tuturuuu.com/platform/features/command-center-dashboard) |
-| Workspace apps | Tasks, Calendar, Meet, Finance, Inventory, CMS, Track, Shortener, Learn, Teach, Rewise, Nova, Hive, and more | [Platform overview](https://docs.tuturuuu.com/platform/overview) |
-| AI and automation | Mira, Nova, Rewise, model routing, structured data, workflow automation, and research surfaces like Hive | [AI docs](https://docs.tuturuuu.com/platform/ai/structured-data) |
-| Mobile | Flutter workspace tools for Drive, CRM, Education, QR login approval, MFA approval, and mobile-first modules | [Mobile workspace tools](https://docs.tuturuuu.com/platform/features/mobile-workspace-tools) |
-| SDK and CLI | TypeScript SDK plus the native `ttr` CLI for workspace, task, finance, storage, and automation workflows | [SDK reference](https://docs.tuturuuu.com/reference/packages/sdk) |
-| Docs and operations | Product docs, architecture notes, local development, Docker, CI, deployment, and runbooks | [Build docs](https://docs.tuturuuu.com/build/overview) |
+| Platform | Workspace home for the account and shared tools | [tuturuuu.com](https://tuturuuu.com) |
+| Apps | Launcher that sends you to each product | [apps.tuturuuu.com](https://apps.tuturuuu.com) |
+| Tasks | Boards, cycles, and task organization | [tasks.tuturuuu.com](https://tasks.tuturuuu.com) |
+| Calendar | Events and scheduling | [calendar.tuturuuu.com](https://calendar.tuturuuu.com) |
+| Track | Timers, session history, and time requests | [track.tuturuuu.com](https://track.tuturuuu.com) |
+| Meet | Plans, rooms, calls, and follow-ups | [meet.tuturuuu.com](https://meet.tuturuuu.com) |
+| Chat | Direct messages, groups, and channels | [chat.tuturuuu.com](https://chat.tuturuuu.com) |
+| Mail | Team mailboxes | [mail.tuturuuu.com](https://mail.tuturuuu.com) |
+| Drive | Workspace files and folders | [drive.tuturuuu.com](https://drive.tuturuuu.com) |
+| Mind | Mindboards and knowledge planning | [mind.tuturuuu.com](https://mind.tuturuuu.com) |
+| Contacts | Workspace CRM, groups, and attendance | [contacts.tuturuuu.com](https://contacts.tuturuuu.com) |
+| Finance | Wallets, transactions, invoices, and budgets | [finance.tuturuuu.com](https://finance.tuturuuu.com) |
+| Inventory | Stock, catalog, and checkout | [inventory.tuturuuu.com](https://inventory.tuturuuu.com) |
+| Storefront | Published shops and orders (`apps/storefront`) | [store.tuturuuu.com](https://store.tuturuuu.com) |
+| Pay | Workspace billing and subscriptions | [pay.tuturuuu.com](https://pay.tuturuuu.com) |
+| Forms | Form studio, share links, and responses | [forms.tuturuuu.com](https://forms.tuturuuu.com) |
+| CMS | Pages, media, and publishing | [cms.tuturuuu.com](https://cms.tuturuuu.com) |
+| Learn | Courses and practice for learners and parents | [learn.tuturuuu.com](https://learn.tuturuuu.com) |
+| Teach | Education tools for teachers | [teach.tuturuuu.com](https://teach.tuturuuu.com) |
+| Nova | Prompt-engineering lessons and challenges | [nova.tuturuuu.com](https://nova.tuturuuu.com) |
+| AI Studio | Model policy, prompts, and runs (`apps/ai`) | [ai.tuturuuu.com](https://ai.tuturuuu.com) |
+| Rewise | Private AI conversations | [rewise.tuturuuu.com](https://rewise.tuturuuu.com) |
+| Tulletin | Creative notebooks and published worlds (`apps/lettin`) | [lettin.tuturuuu.com](https://lettin.tuturuuu.com) |
+| Colab | Collaborative programming workshops | [colab.tuturuuu.com](https://colab.tuturuuu.com) |
+| Hive | Voxel research and simulation | [hive.tuturuuu.com](https://hive.tuturuuu.com) |
+| Parley | Scenario training sessions | [parley.tuturuuu.com](https://parley.tuturuuu.com) |
+| Tools | QR codes and small public utilities | [tools.tuturuuu.com](https://tools.tuturuuu.com) |
+| Git | Public repository browser | [git.tuturuuu.com](https://git.tuturuuu.com) |
+| Shortener | Short-link redirects, including [ttr.gg](https://ttr.gg) | [shortener.tuturuuu.com](https://shortener.tuturuuu.com) |
+| Docs | Product and engineering guides (`apps/docs`) | [docs.tuturuuu.com](https://docs.tuturuuu.com) |
+| Mobile | Native workspace client (`apps/mobile`) | [Download](https://tuturuuu.com/download) |
 
-## Start Here
+The QR generator is [tools.tuturuuu.com/qr](https://tools.tuturuuu.com/qr).
 
-| Need | Go to |
-| --- | --- |
-| Product vision and platform architecture | [docs.tuturuuu.com](https://docs.tuturuuu.com) |
-| Local development setup | [Development Guide](https://docs.tuturuuu.com/build/development-tools/development) |
-| Monorepo architecture | [Monorepo Architecture](https://docs.tuturuuu.com/build/development-tools/monorepo-architecture) |
-| Docker and blue/green deployment | [Web Docker Deployment](https://docs.tuturuuu.com/build/devops/web-docker-deployment) |
-| Autonomous agent guardrails | [AGENTS.md](./AGENTS.md) |
-| Contributor rules | [CONTRIBUTING.md](./CONTRIBUTING.md) |
-| Security policy | [SECURITY.md](./SECURITY.md) |
+## Roadmap
 
-## Repository Map
+The public roadmap is [tuturuuu.com/roadmap](https://tuturuuu.com/roadmap).
 
-```txt
-apps/
-  web/                  Main platform app, dashboard, and centralized APIs
-  mobile/               Flutter app for iOS and Android
-  docs/                 Mintlify documentation site
-  database/             Supabase migrations, seeds, tests, and typegen
-  calendar|cms|finance|inventory|meet|tasks|track|...  Satellite apps
-  hive|hive-realtime    Research world editor and realtime service
-  redis|discord|backend|storage-unzip-proxy|...         Supporting services
-packages/
-  ui|icons|hooks|utils|types|supabase|auth|internal-api  Shared product foundation
-  ai|trigger|workflows|sdk|payment|apis|...              AI, automation, SDK, and integrations
-scripts/
-  check, Docker, CI, local environment, release, and developer tooling
-```
+## Try it
 
-Tuturuuu uses a Turborepo monorepo so product changes can move atomically across
-apps, database schema, generated types, shared packages, tests, and docs.
-Internal packages use `workspace:*`; prefer shared packages before introducing
-app-local duplicates.
+Open [tuturuuu.com](https://tuturuuu.com). Download the apps for phone, tablet, and computer at [tuturuuu.com/download](https://tuturuuu.com/download).
 
-## Technology Foundation
+## Quick start
 
-| Layer | Choices |
-| --- | --- |
-| Runtime and package manager | Bun (`packageManager` pin), Node.js 26.12.1 (`.node-version`) |
-| Monorepo orchestration | Turborepo |
-| Web apps | Next.js 16 App Router, React 19, TypeScript |
-| Local app routing | Portless, stable `https://*.tuturuuu.localhost` origins |
-| UI | Tailwind CSS 4, Radix/Shadcn patterns, `@tuturuuu/ui`, `@tuturuuu/icons` |
-| Data | Supabase PostgreSQL with RLS and generated database types |
-| Client state | TanStack Query, Jotai, nuqs |
-| APIs | Next.js Route Handlers, tRPC, `@tuturuuu/internal-api` |
-| AI | Vercel AI SDK and provider-specific packages |
-| Mobile | Flutter, Dart, BLoC/Cubit |
-| Tests and checks | Vitest, Playwright, Biome, tsc, Flutter checks |
-| Deployment | Vercel, GitHub Actions, Docker blue/green workflow |
-
-## Quick Start
-
-Install the required tools:
-
-- [Bun](https://bun.sh/) 1.3.x
-- [Node.js](https://nodejs.org/) 26.12.1, pinned in `.node-version` (the
-  `engines` floor is 22.13; see
-  [Node.js runtime pin](apps/docs/build/development-tools/node-runtime.mdx))
-- [Docker](https://www.docker.com/) for Supabase, Redis, and Dockerized web
-  workflows
-- Flutter SDK for `apps/mobile`
-- Rust toolchain for `apps/backend`
-- Python and `uv` for `apps/discord`
-
-Clone and install:
+You need [Bun](https://bun.sh/) 1.4.4 (`packageManager` in the root `package.json`) and Node.js 26.12.1 (`.node-version`). The `engines` floor is Node.js `>=22.13.0`.
 
 ```bash
 git clone https://github.com/tutur3u/platform.git
 cd platform
-bun i
-```
-
-Create only the environment files needed for the apps you plan to run. Most web
-work starts with:
-
-```bash
+bun install
 cp apps/web/.env.example apps/web/.env.local
-```
-
-Then fill in Supabase, auth, AI, email, storage, and integration variables as
-needed. Keep secrets in local env files or deployment secret stores, never in
-git.
-
-## Local Development
-
-The default local experience uses Portless, so apps get stable HTTPS subdomains
-instead of relying on fallback ports:
-
-| App | Local URL |
-| --- | --- |
-| Platform | `https://tuturuuu.localhost` |
-| Calendar | `https://calendar.tuturuuu.localhost` |
-| CMS | `https://cms.tuturuuu.localhost` |
-| External | `https://external.tuturuuu.localhost` |
-| Finance | `https://finance.tuturuuu.localhost` |
-| Hive | `https://hive.tuturuuu.localhost` |
-| Inventory | `https://inventory.tuturuuu.localhost` |
-| Learn | `https://learn.tuturuuu.localhost` |
-| Meet | `https://meet.tuturuuu.localhost` |
-| Nova | `https://nova.tuturuuu.localhost` |
-| Rewise | `https://rewise.tuturuuu.localhost` |
-| Shortener | `https://shortener.tuturuuu.localhost` |
-| Tasks | `https://tasks.tuturuuu.localhost` |
-| Teach | `https://teach.tuturuuu.localhost` |
-| Track | `https://track.tuturuuu.localhost` |
-
-Run the main platform:
-
-```bash
 bun dev:web
 ```
 
-Start local Supabase first when you need a local database:
+`bun dev:web` runs `node scripts/dev-workspaces.js web` and serves the platform at [https://tuturuuu.localhost](https://tuturuuu.localhost). Fill in `apps/web/.env.local` before you expect signed-in flows to work. The [development guide](https://docs.tuturuuu.com/build/development-tools/development) covers the other local app URLs.
 
-```bash
-bun sb:start
-bun dev:web
+## For power users
+
+`apps/web` is the central platform. The other product apps are satellites: each one owns a slice of the product on its own host and shares the account session with the platform. Shared code lives in `packages/`. Turborepo runs the workspace tasks. Bun is the package manager.
+
+- [Platform overview](https://docs.tuturuuu.com/platform/overview)
+- [Satellite apps](https://docs.tuturuuu.com/platform/architecture/satellite-apps)
+- [Monorepo architecture](https://docs.tuturuuu.com/build/development-tools/monorepo-architecture)
+- [Repository catalog](https://docs.tuturuuu.com/reference/repository/catalog)
+
+```txt
+apps/web              Platform app
+apps/<product>        One directory per product in the table above
+apps/mobile           Flutter client
+apps/docs             Documentation site
+apps/database         Database migrations
+packages/             Shared libraries
+scripts/              Checks, local environment, and release tooling
 ```
 
-Use convenience scripts when you want the workflow to manage Supabase:
+Other directories under `apps/` are local services and workers. The catalog lists every one.
 
-```bash
-bun devx:web     # start Supabase, then run web
-bun devrs:web    # reset and seed Supabase, then run web
-```
+### Packages on npm
 
-Run a focused app from the root when a matching script exists:
+These names resolve on the public npm registry. The SDK package is `tuturuuu` (`packages/sdk`). It is the TypeScript SDK for the platform.
 
-```bash
-bun dev:calendar
-bun dev:cms
-bun dev:finance
-bun dev:inventory
-bun dev:meet
-bun dev:nova
-bun dev:rewise
-bun dev:shortener
-bun dev:tasks
-bun dev:track
-bun dev:learn
-bun dev:teach
-bun dev:hive
-bun dev:external
-```
-
-Use `bun dev:edu` when working on Learn and Teach together with the central web
-app for cross-app login. Run mobile and docs separately:
-
-```bash
-bun dev:mobile
-bun dev:docs
-```
-
-Do not run long-lived development servers or build commands in automation unless
-the task explicitly calls for them.
-
-## Data And Local Services
-
-Supabase lives in `apps/database` and is exposed through root scripts:
-
-| Command | Purpose |
+| Package | Directory |
 | --- | --- |
-| `bun sb:start` | Start local Supabase |
-| `bun sb:stop` | Stop local Supabase |
-| `bun sb:reset` | Reset local Supabase and regenerate types |
-| `bun sb:new` | Create a migration |
-| `bun sb:up` | Apply local migrations and regenerate types |
-| `bun sb:typegen` | Regenerate database types |
-| `bun redis:start` | Start local Redis and the Serverless Redis HTTP proxy |
-| `bun redis:stop` | Stop local Redis services |
+| `tuturuuu` | `packages/sdk` |
+| `@tuturuuu/ui` | `packages/ui` |
+| `@tuturuuu/icons` | `packages/icons` |
+| `@tuturuuu/hooks` | `packages/hooks` |
+| `@tuturuuu/utils` | `packages/utils` |
+| `@tuturuuu/types` | `packages/types` |
+| `@tuturuuu/supabase` | `packages/supabase` |
+| `@tuturuuu/ai` | `packages/ai` |
+| `@tuturuuu/apis` | `packages/apis` |
+| `@tuturuuu/internal-api` | `packages/internal-api` |
+| `@tuturuuu/typescript-config` | `packages/typescript-config` |
+| `@tuturuuu/editor` | `packages/editor` |
+| `@tuturuuu/google` | `packages/google` |
+| `@tuturuuu/cloudflare` | `packages/cloudflare` |
+| `@tuturuuu/devbox` | `packages/devbox` |
+| `@tuturuuu/realtime` | `packages/realtime` |
+| `@tuturuuu/vercel` | `packages/vercel` |
+| `@tuturuuu/games` | `packages/games` |
+| `@tuturuuu/masonry` | `packages/masonry` |
+| `@tuturuuu/offline` | `packages/offline` |
+| `@tuturuuu/workflows` | `packages/workflows` |
 
-Production Supabase pushes are not part of the normal contributor flow. Prepare
-migrations in the repo and let the release operator apply them.
+`@tuturuuu/supabase` is the Supabase client and SSR helpers. `@tuturuuu/editor` is the rich-text editor. `@tuturuuu/workflows` is the Workflows SDK. Other packages under `packages/` stay inside the workspace.
 
-## Docker And Deployment
+### API, SDK, and CLI
 
-The web app has Docker workflows for development, production-like local runs,
-and self-hosted blue/green deployment.
+```bash
+bun add tuturuuu
+```
 
-| Command | Purpose |
-| --- | --- |
-| `bun dev:web:docker` | Run the web development workflow inside Docker |
-| `bun devx:web:docker` | Start local Supabase, then run Docker web development |
-| `bun devrs:web:docker` | Reset local Supabase, then run Docker web development |
-| `bun dev:web:docker:down` | Stop the Docker development stack |
-| `bun serve:web:docker` | Run the production web image in place |
-| `bun serve:web:docker:bg` | Run blue/green production deployment |
-| `bun serve:web:docker:bg:watch` | Poll the tracked branch and deploy new fast-forwards |
-| `bun serve:web:docker:down` | Stop the production Docker stack |
-| `bun serve:web:docker:bg:down` | Stop blue/green runtime state |
+The client defaults to `https://tuturuuu.com/api/v1`. Reference: [SDK docs](https://docs.tuturuuu.com/reference/packages/sdk).
 
-Dockerized web commands read `apps/web/.env.local`. Redis is enabled by default
-inside the Docker web flow and can be disabled with `--without-redis` when
-testing Redis-unavailable behavior. In that mode, `apps/web` fails open for
-Redis-backed route rate limits and IP-block enforcement while preserving normal
-auth, authorization, payload-size, Turnstile, suspension, and validation checks.
-
-See the [Web Docker Deployment](https://docs.tuturuuu.com/build/devops/web-docker-deployment)
-runbook for flags, lock recovery, BuildKit throttling, blue/green cutover, and
-runtime file details.
-
-## SDK And CLI
-
-The `tuturuuu` package in `packages/sdk` ships the public TypeScript SDK and the
-native Bun-powered `ttr` CLI.
-
-Use the repo-local CLI during development:
+The same package ships the `ttr` CLI. `tuturuuu` and `tutur3u` are aliases of that binary. Inside this checkout, `bun ttr` runs `node scripts/trusted-ttr.js`:
 
 ```bash
 bun ttr --help
-bun ttr whoami --no-update-check
-bun ttr tasks --json --no-update-check
-```
-
-Use the globally installed `ttr` for normal user workflows, login, and upgrade
-management:
-
-```bash
 ttr login
 ttr workspaces
-ttr tasks --compact
-ttr finance wallets
 ```
 
-The SDK covers workspace storage, files, documents, EPM delivery and management,
-task workflows, finance workflows, and agent-friendly JSON output.
+### Self-hosting
 
-## Quality Gates
+Notes for running the web app with Docker are in the [Web Docker Deployment](https://docs.tuturuuu.com/build/devops/web-docker-deployment) guide.
 
-Use the narrowest focused check first, then the repo-level check when your
-change touches TypeScript, JavaScript, root scripts, or shared config.
+## Contributing
 
-| Command | Purpose |
-| --- | --- |
-| `bun format:fix <files>` | Format specific files with Biome |
-| `bun i18n:sort` | Sort message files after translation edits |
-| `bun test` | Run package test tasks through Turbo |
-| `bun test:scripts` | Run root script tests |
-| `bun type-check` | Run type-check tasks through Turbo |
-| `bun validate` | Run the repository validation suite |
-| `bun check:docker` | Validate Docker web configuration |
-| `bun check:mobile` | Run Flutter mobile validation |
-| `git diff --check` | Catch whitespace issues before commit |
+Issues labeled [`good first issue`](https://github.com/tutur3u/platform/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) are the place to start.
 
-For Markdown-only changes, keep the file manually formatted and run
-`git diff --check`. For product, API, schema, or shared package changes, follow
-the focused verification for that surface and the guardrails in `AGENTS.md`.
+1. Fork the repository and create a branch.
+2. Run `bun install`.
+3. Run `bun run build` to confirm the environment.
+4. Add tests and docs for the change.
+5. Run `bun format` and `bun lint`.
+6. Open a pull request that explains the change and names any related issue.
 
-## Contributor Expectations
+The full guide is [CONTRIBUTING.md](./CONTRIBUTING.md). Community standards are in [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md). Report security issues through [SECURITY.md](./SECURITY.md).
 
-Before making broad or automated changes, read [AGENTS.md](./AGENTS.md). It is
-the operating manual for this checkout and includes the full guardrail set.
+## For partners
 
-The short version:
+Tuturuuu is building an open-source workspace that keeps the products above in one system, so teams spend less time stitching tools together. Questions and partnerships go through the [contact page](https://tuturuuu.com/contact). That page includes [contact@tuturuuu.com](mailto:contact@tuturuuu.com).
 
-- Check `git status --short` before editing and avoid unrelated dirty files.
-- Use Conventional Commit style for authored commits.
-- Default to Server Components in Next.js; use client components only for
-  browser state, browser APIs, or interaction.
-- Use TanStack Query for client-side data fetching and mutations.
-- Put authenticated app API access behind `packages/internal-api/src/*`.
-- Import shared database row shapes from `@tuturuuu/types/db` where possible.
-- Update both English and Vietnamese message bundles for user-facing strings.
-- Add dashboard routes to the relevant `navigation.tsx` aliases, children,
-  icons, and permissions.
-- Keep durable workflow, deployment, architecture, debugging, and operations
-  knowledge in `apps/docs`.
+## Community and license
 
-## CI, Security, And License
+Talk with the community on [Discord](https://discord.gg/tuturuuu). Source and issues live at [github.com/tutur3u/platform](https://github.com/tutur3u/platform).
 
-GitHub Actions cover branch naming, Biome, type checks, tests, CodeQL, mobile
-builds, Supabase checks, Vercel preview and production deployments, package
-releases, Docker setup checks, and Discord Modal deployment.
-
-Production web deployments primarily target Vercel. The Docker workflow exists
-for local production simulation and self-hosted blue/green operation.
-
-Security issues should be reported through [SECURITY.md](./SECURITY.md).
-
-This project is licensed under the Apache License, Version 2.0. See
-[LICENSE](./LICENSE) for details.
+This repository is licensed under the Apache License, Version 2.0. Copyright 2025 Tuturuuu. See [LICENSE](./LICENSE).

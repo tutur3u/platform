@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/finance-core-v0.4.2...finance-core-v0.5.0) (2026-11-08)
+
+
+### Features
+
+* **fee-lock:** PR-01c ENABLE_FEE_LOCK flag and portable total calculator ([#7540](https://github.com/tutur3u/platform/issues/7540)) ([625bc78](https://github.com/tutur3u/platform/commit/625bc782fcb2eb9173948e8a004b564ae35e5872))
+
 ## [0.4.2](https://github.com/tutur3u/platform/compare/finance-core-v0.4.1...finance-core-v0.4.2) (2026-09-20)
 
 

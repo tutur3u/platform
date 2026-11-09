@@ -107,7 +107,6 @@ it('queues a reminder for a watched task in any workspace when push is the only 
     ]) {
       query[name] = vi.fn(() => query);
     }
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     query.then = (resolve: (value: unknown) => unknown) =>
       Promise.resolve({ data, error: null }).then(resolve);
     return query;
@@ -221,7 +220,6 @@ describe('equivalent deadline interval receipts', () => {
         'range',
       ])
         query[name] = vi.fn(() => query);
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
       query.then = (resolve: (value: unknown) => unknown) =>
         Promise.resolve({ data, error: null }).then(resolve);
       return query;

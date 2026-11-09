@@ -48,9 +48,8 @@ describe('whiteboard image route', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/[boardId]/image-url/route'
-    );
+    const { POST } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/[boardId]/image-url/route');
     if (!POST) {
       throw new Error('POST handler is not defined');
     }
@@ -96,9 +95,8 @@ describe('whiteboard image route', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/[boardId]/image-url/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/[boardId]/image-url/route');
     if (!GET) {
       throw new Error('GET handler is not defined');
     }

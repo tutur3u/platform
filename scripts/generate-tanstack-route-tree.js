@@ -22,20 +22,11 @@ const START_REGISTRATION_FOOTER = Object.freeze([
 ]);
 const START_REGISTRATION_FOOTER_BLOCK = START_REGISTRATION_FOOTER.join('\n');
 const ROUTE_TREE_FORMATTER_CONFIG = Object.freeze({
-  formatter: {
-    enabled: true,
-    indentStyle: 'space',
-    indentWidth: 2,
-    lineEnding: 'lf',
-    lineWidth: 80,
-  },
-  javascript: {
-    formatter: {
-      quoteStyle: 'single',
-      semicolons: 'always',
-      trailingCommas: 'all',
-    },
-  },
+  printWidth: 80,
+  tabWidth: 2,
+  singleQuote: true,
+  semi: true,
+  trailingComma: 'all',
 });
 
 function getStartRegistrationFooter() {
@@ -135,7 +126,7 @@ async function formatGeneratedRouteTree({
   const tempDir = await fsImpl.mkdtemp(
     path.join(configDir, 'tanstack-route-tree-format-')
   );
-  const configPath = path.join(tempDir, 'biome.json');
+  const configPath = path.join(tempDir, '.oxfmtrc.json');
 
   try {
     await fsImpl.writeFile(
@@ -144,14 +135,7 @@ async function formatGeneratedRouteTree({
     );
     await run(
       formatterCommand,
-      [
-        'biome',
-        'format',
-        '--write',
-        '--config-path',
-        configPath,
-        generatedRouteTree,
-      ],
+      ['oxfmt', '--write', '--config', configPath, generatedRouteTree],
       { cwd: rootDir }
     );
   } finally {

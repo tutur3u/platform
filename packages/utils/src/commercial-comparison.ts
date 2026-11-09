@@ -10,6 +10,14 @@ import { features2 } from './commercial-comparison-2';
 const gateOrder = ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'];
 const advanced: ComparisonFeature[] = [
   {
+    id: 'roadmap_0',
+    app: 'roadmap',
+    category: 'developer',
+    detail: 'publicRoadmap',
+    values: ['pending', 'pending', 'pending', 'pending'],
+    pending: true,
+  },
+  {
     id: 'cronControl',
     app: 'cron-control',
     category: 'internal',
@@ -26,6 +34,13 @@ const advanced: ComparisonFeature[] = [
   {
     id: 'mastermind',
     app: 'mastermind',
+    category: 'internal',
+    detail: 'standard',
+    values: ['internal', 'internal', 'internal', 'internal'],
+  },
+  {
+    id: 'statusApi',
+    app: 'status-api',
     category: 'internal',
     detail: 'standard',
     values: ['internal', 'internal', 'internal', 'internal'],

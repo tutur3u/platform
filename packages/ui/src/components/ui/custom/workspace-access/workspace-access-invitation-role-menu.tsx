@@ -54,7 +54,8 @@ export function WorkspaceAccessInvitationRoleMenu({
           {assignedRoles.map((role) => (
             <Badge
               key={role.id}
-              className="h-6 gap-1 border-dynamic-purple/35 bg-dynamic-purple/10 px-2 text-dynamic-purple text-xs"
+              variant="outline"
+              className="h-6 gap-1 px-2 text-xs"
             >
               <ShieldUser className="size-3" />
               {role.name}
@@ -67,7 +68,7 @@ export function WorkspaceAccessInvitationRoleMenu({
           <Button
             variant="outline"
             size="sm"
-            className={`h-7 max-w-full rounded-full px-2.5 text-xs active:scale-[0.98] ${assignedRoles.length > 0 ? 'border-dynamic-purple/40 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/15 hover:text-dynamic-purple' : 'border-dashed text-muted-foreground hover:text-foreground'}`}
+            className={`h-7 max-w-full rounded-full px-2.5 text-xs active:scale-[0.98] ${assignedRoles.length > 0 ? '' : 'border-dashed text-muted-foreground hover:text-foreground'}`}
             disabled={isMutating}
           >
             {assignedRoles.length > 0 ? (
@@ -117,7 +118,7 @@ export function WorkspaceAccessInvitationRoleMenu({
           ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
-      <p className="text-muted-foreground text-xs leading-4">
+      <p className="text-muted-foreground text-sm">
         {t('ws-members.invitation_role_helper')}
       </p>
     </div>

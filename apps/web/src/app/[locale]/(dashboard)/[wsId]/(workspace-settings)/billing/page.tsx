@@ -16,7 +16,7 @@ export default function BillingPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => (
         <div className="container mx-auto max-w-4xl px-4 py-8">
-          <WorkspaceBillingSummaryPanel wsId={wsId} />
+          <WorkspaceBillingSummaryPanel showTitle wsId={wsId} />
         </div>
       )}
     </WorkspaceWrapper>

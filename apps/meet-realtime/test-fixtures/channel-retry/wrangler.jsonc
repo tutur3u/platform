@@ -6,10 +6,10 @@
   "tsconfig": "tsconfig.json",
   "durable_objects": {
     "bindings": [
-      { "name": "CHANNEL_RETRY_FIXTURE", "class_name": "ChannelRetryFixture" }
-    ]
+      { "name": "CHANNEL_RETRY_FIXTURE", "class_name": "ChannelRetryFixture" },
+    ],
   },
   "migrations": [
-    { "tag": "fixture-v1", "new_sqlite_classes": ["ChannelRetryFixture"] }
-  ]
+    { "tag": "fixture-v1", "new_sqlite_classes": ["ChannelRetryFixture"] },
+  ],
 }

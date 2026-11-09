@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noTemplateCurlyInString: GitHub workflow expressions are literal inputs.
 // Native Workers on cf: build once, qualify the emitted Build Output, and let the
 // gated production job publish that exact artifact with retained Wrangler migrations.
 const assert = require('node:assert/strict');
