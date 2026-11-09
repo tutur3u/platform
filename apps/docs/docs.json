@@ -232,7 +232,8 @@
                   "build/devops/desktop-release-versioning",
                   "build/devops/sepay-testing-guide",
                   "build/devops/polar-storefront-integration",
-                  "build/devops/square-terminal-integration"
+                  "build/devops/square-terminal-integration",
+                  "build/devops/tools-cutover-packet"
                 ]
               },
               "build/development-tools/overview",
