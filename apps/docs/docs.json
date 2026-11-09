@@ -543,6 +543,7 @@
                   "reference/repository/routes/learn",
                   "reference/repository/routes/lettin",
                   "reference/repository/routes/mail",
+                  "reference/repository/routes/marketing",
                   "reference/repository/routes/mastermind",
                   "reference/repository/routes/meet",
                   "reference/repository/routes/meet-realtime",
@@ -570,7 +571,8 @@
                   "reference/repository/routes/web-2",
                   "reference/repository/routes/web-3",
                   "reference/repository/routes/web-4",
-                  "reference/repository/routes/web-5"
+                  "reference/repository/routes/web-5",
+                  "reference/repository/routes/workspace"
                 ],
                 "expanded": false
               }
