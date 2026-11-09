@@ -21,10 +21,19 @@ describe('desktop metadata reader', () => {
       request.mock.calls.every(
         ([url, options]) =>
           url.startsWith('https://api.github.com/repos/tutur3u/platform/') &&
-          options.redirect === 'error' &&
+          options.redirect === 'manual' &&
           options.cache === 'no-store'
       )
     ).toBe(true);
+  });
+  it('treats a redirect response as unavailable metadata', async () => {
+    const json = vi.fn();
+    const request = vi
+      .fn()
+      .mockResolvedValue({ ok: false, status: 301, type: 'basic', json });
+    vi.stubGlobal('fetch', request);
+    expect((await getDesktopDeploymentStatus()).releasesAvailable).toBe(false);
+    expect(json).not.toHaveBeenCalled();
   });
   it('rejects unrelated runs instead of following external URLs', async () => {
     const request = vi.fn().mockResolvedValue({
