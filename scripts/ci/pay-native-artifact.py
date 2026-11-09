@@ -13,6 +13,32 @@ PROFILE = Path(__file__).resolve().parents[2] / "apps/pay/cloudflare/staging-pro
 PUBLIC_FILES = (
     "robots.txt",
 )
+PRODUCTION = False
+
+
+def reject_staging_production(directory, output):
+    if not PRODUCTION:
+        return
+    config = json.loads(output["config"].read_text())
+    vars_ = config.get("vars", {})
+    if vars_.get("NEXT_PUBLIC_WEB_APP_URL") != "https://tuturuuu.com":
+        raise ValueError("production NEXT_PUBLIC_WEB_APP_URL must be https://tuturuuu.com")
+    staging = json.loads(PROFILE.read_text())
+    markers = {"tutur3u.com"}
+    staging_url = staging.get("NEXT_PUBLIC_SUPABASE_URL", "")
+    if ".supabase.co" in staging_url:
+        markers.add(staging_url.removeprefix("https://").removesuffix(".supabase.co"))
+    if "sandbox" in str(config.get("vars", {}).get("POLAR_SERVER", "")).lower():
+        raise ValueError("production Polar server must not use sandbox")
+    for path in (output["assets"], output["main"]):
+        files = [path] if path.is_file() else sorted(p for p in path.rglob("*") if p.is_file())
+        for file in files:
+            content = file.read_bytes().lower()
+            for marker in markers:
+                if marker.lower().encode() in content:
+                    raise ValueError("staging marker in production output: " + marker)
+            if b"sandbox" in content and (b"polar" in content or b"server" in content):
+                raise ValueError("production Polar server must not use sandbox")
 
 
 def load():
@@ -32,8 +58,26 @@ def load():
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
     }
     module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
+    if PRODUCTION:
+        module.IDENTITY["vars"] = {
+            "TUTURUUU_NOINDEX": "0", "NODE_ENV": "production",
+            "TUTURUUU_REQUIRE_SECRETS": "1",
+            "NEXT_PUBLIC_APP_URL": "https://pay.tuturuuu.com",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+            "NEXT_PUBLIC_SUPABASE_URL": os.environ.get("NEXT_PUBLIC_SUPABASE_URL", "https://production-placeholder.supabase.co"),
+            "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": os.environ.get("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_production_placeholder"),
+            "POLAR_SANDBOX": "false",
+        }
     module.RECEIPT = "pay-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
+    original_validate = module.validate_output
+
+    def validate_output(directory, source=None):
+        output = original_validate(directory, source)
+        reject_staging_production(directory, output)
+        return output
+
+    module.validate_output = validate_output
     return module
 
 
@@ -46,6 +90,8 @@ def main():
         if index >= len(sys.argv) or sys.argv.pop(index) != "production":
             raise SystemExit("only the production artifact profile is supported")
         production = True
+    global PRODUCTION
+    PRODUCTION = production
     global WORKER
     if production:
         WORKER = "tuturuuu-pay"

@@ -229,7 +229,7 @@ jobs:
           command: cd apps/pay && bun run build:cloudflare
           token: ''
           team: ''
-      - name: Qualify the staging output before rewriting
+      - name: Qualify the emitted output before rewriting
         run: python3 scripts/ci/pay-native-artifact.py config apps/pay
       - name: Write the production wrangler config
         run: |
@@ -237,7 +237,7 @@ jobs:
           import { readFileSync, writeFileSync } from 'node:fs';
           const path = 'apps/pay/dist/server/wrangler.json';
           const c = JSON.parse(readFileSync(path, 'utf8'));
-          for (const k of ['configPath', 'userConfigPath', 'topLevelName', 'definedEnvironments']) delete c[k];
+          
           c.name = 'tuturuuu-pay';
           c.workers_dev = false;
           c.preview_urls = false;
@@ -248,6 +248,9 @@ jobs:
             TUTURUUU_REQUIRE_SECRETS: '1',
             NEXT_PUBLIC_APP_URL: 'https://pay.tuturuuu.com',
             NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
+            NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+            POLAR_SANDBOX: 'false',
           };
           writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);
           JS
@@ -258,7 +261,7 @@ jobs:
           test -d apps/pay/dist/client
       - name: Validate, seal and pack the final production output
         env:
-          TEACH_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+          PAY_SOURCE_SHA: ${{ env.SOURCE_SHA }}
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           python3 scripts/ci/pay-native-artifact.py --profile production config apps/pay
