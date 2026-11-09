@@ -10,9 +10,14 @@ import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import appConfig from '../start-bridge.config';
+import { configureCmsAbuseGuard } from '../src/runtime/abuse-guard';
 
 export interface CmsEnvironment {
   ASSETS: AssetsBinding;
+  ABUSE_GUARD: import('@tuturuuu/utils/abuse-guard/client').AbuseGuardBinding;
+  ABUSE_GUARD_KEY_PEPPER?: string;
+  ABUSE_GUARD_FAMILIES?: string;
+  ABUSE_GUARD_TIMEOUT_MS?: string;
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;
 }
@@ -57,6 +62,7 @@ const handler = (
 
 export default {
   async fetch(request: Request, env: CmsEnvironment, ctx: WorkerContext) {
+    configureCmsAbuseGuard(env);
     const response = await (await handler)(request, env, ctx);
     return appConfig.wrapResponse
       ? appConfig.wrapResponse(response, { request, env })

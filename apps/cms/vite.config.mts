@@ -47,6 +47,13 @@ for (const name of ['TUTURUUU_APP_COORDINATION_SECRET', 'SUPABASE_SECRET_KEY']) 
     throw new Error('Missing or unsafe required secret: ' + name);
   }
 }
+const legacyUpstash = ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'].every(name => typeof nativeStartupEnv[name] === 'string' && nativeStartupEnv[name].trim());
+const bindingMode = nativeStartupEnv.ABUSE_GUARD && typeof nativeStartupEnv.ABUSE_GUARD === 'object';
+const missingGuardNames = [];
+if (!legacyUpstash && !bindingMode) missingGuardNames.push('ABUSE_GUARD');
+if (!legacyUpstash && (typeof nativeStartupEnv.ABUSE_GUARD_KEY_PEPPER !== 'string' || !nativeStartupEnv.ABUSE_GUARD_KEY_PEPPER.trim())) missingGuardNames.push('ABUSE_GUARD_KEY_PEPPER');
+if (!legacyUpstash && (typeof nativeStartupEnv.ABUSE_GUARD_FAMILIES !== 'string' || !nativeStartupEnv.ABUSE_GUARD_FAMILIES.trim())) missingGuardNames.push('ABUSE_GUARD_FAMILIES');
+if (!legacyUpstash && missingGuardNames.length) throw new Error('Missing required abuse guard names: ' + missingGuardNames.join(', '));
 for (const name of ['APP_COORDINATION_TOKEN_SECRET', 'SUPABASE_SERVICE_KEY', 'SUPABASE_SERVICE_ROLE_KEY']) {
   if (nativeStartupEnv[name]?.trim().startsWith('tuturuuu-local-development-')) throw new Error('Development signing secret forbidden: ' + name);
 }
