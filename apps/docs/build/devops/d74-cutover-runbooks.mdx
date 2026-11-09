@@ -249,6 +249,15 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Artifact | ai-cloudflare.yaml, job cutover-build (production profile; `ai-cutover-production-<sha>`) |
 | Vercel rollback pin | dpl_GuUpXDwZovfjHm9AvM3NSpjmYf1d |
 | Smoke | `node scripts/cutover-smoke.mjs ai https://ai.tuturuuu.com` |
+## Forms
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-forms` |
+| Hosts | forms.tuturuuu.com |
+| Artifact | forms-cloudflare.yaml, job cutover-build (`forms-cutover-<sha>`) |
+| Vercel rollback pin | dpl_HfGqF1JjoZev7CNQYFEqonFsB33h |
+| Smoke | `node scripts/cutover-smoke.mjs forms https://forms.tuturuuu.com` |
 - infrastructure, mind, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
 - learn, chat, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
 
@@ -262,3 +271,12 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Vercel rollback pin | dpl_6ReHrAjbW7ahNKyL1ssgDZEdGeq4 |
 | Packet | `git-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs git https://git.tuturuuu.com` |
+## Inventory
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-inventory` |
+| Hosts | inventory.tuturuuu.com |
+| Artifact | inventory-cloudflare.yaml, job cutover-build (`inventory-cutover-<sha>`) |
+| Vercel rollback pin | dpl_2qe5xFZEHUSNbbmm3sR6TgbHDG5h |
+| Smoke | `node scripts/cutover-smoke.mjs inventory https://inventory.tuturuuu.com` |
