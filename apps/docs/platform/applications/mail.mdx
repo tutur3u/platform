@@ -1192,3 +1192,30 @@ Root-mode Mail keeps its existing satellite session behavior. The required
 `NEXT_PUBLIC_SUPABASE_URL` Worker secret is declared in the native artifact
 profile and remains separate from browser build-time configuration. See
 `proxy-auth.test.ts` for the no-session-cookie-write regression.
+
+## Workspace suppression appeals (proposal)
+
+Workspace administrators can request recipient verification for exact addresses
+blocked by bounce or complaint events. The experimental feature starts disabled
+and is restricted to verified `@tuturuuu.com` administrators when enabled.
+Manual bans, domain blocks, and unsubscribe choices remain protected.
+
+The appeal records the administrator, required reason, request time and outcome.
+A signed, single-use confirmation expires after 24 hours; only its hash is stored.
+A recipient must explicitly confirm before a workspace-scoped allow record exists.
+New suppression events invalidate that record and increase the appeal cooldown.
+
+Global blacklist rows and SES account suppression remain intact. A configuration
+set can override SES account suppression settings; a configuration set alone does
+not isolate sender reputation. Confirmation transport must be separately reviewed
+before activation, particularly for complaints. No automatic complaint confirmation
+is sent through the ordinary report sender. Hard bounces require a fresh MX check;
+SMTP mailbox probing is excluded because it can create abuse and cannot prove
+mailbox ownership.
+
+Source locations: `public.email_blacklist`,
+`private.email_bounce_complaints`, and the blacklist checker in
+`packages/email-service/src/protection/blacklist-checker.ts`. Signed SES ingestion
+is delivered separately by the notification webhook. The feature's migration uses
+a draft timestamp; the merge owner assigns its final version above the newest
+applied migration immediately before integration.
