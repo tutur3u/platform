@@ -9532,6 +9532,7 @@
     "end_weak_support_done": "Đã cho học viên thoát kèm",
     "end_weak_support_failed": "Không thể thoát kèm. Hãy thử lại.",
     "end_weak_support_title": "Cho học viên thoát kèm yếu?",
+    "export_choose_range": "Chọn khoảng ngày",
     "export_detailed_csv": "CSV chi tiết",
     "export_detailed_xlsx": "XLSX chi tiết",
     "export_failed": "Xuất dữ liệu thất bại",
