@@ -10,6 +10,7 @@ export interface MastermindEnvironment {
   MASTERMIND_OWNER_EMAIL?: string;
   OWNER_IDS?: string;
   TUTURUUU_APP_COORDINATION_SECRET?: string;
+  OPS_HUB_MASTERMIND_SNAPSHOT_SECRET?: string;
   OPS_HUB?: { fetch(request: Request): Promise<Response> };
 }
 export function assertMastermindEnvironment(env: MastermindEnvironment): void {

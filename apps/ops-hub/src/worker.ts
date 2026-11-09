@@ -14,7 +14,20 @@ import {
 
 export { OpsHub } from './hub';
 
-async function handle(request: Request, env: Env) {
+type HubEnvironment = Partial<
+  Omit<
+    import('cf/config').InferEnv<
+      typeof import('../cloudflare.config').default.worker
+    >,
+    'HUB'
+  >
+> & {
+  HUB: {
+    getByName(name: string): { fetch(request: Request): Promise<Response> };
+  };
+};
+
+async function handle(request: Request, env: HubEnvironment) {
   const url = new URL(request.url);
   const target = url.pathname + url.search;
   const users = allowedUsers(env.OPS_HUB_ALLOWED_USER_IDS);
@@ -37,7 +50,7 @@ async function handle(request: Request, env: Env) {
     try {
       const publicKey = await crypto.subtle.importKey(
         'raw',
-        bytesFromBase64(env.OPS_HUB_PUBLISHER_PUBLIC_KEY),
+        bytesFromBase64(env.OPS_HUB_PUBLISHER_PUBLIC_KEY ?? ''),
         'Ed25519',
         false,
         ['verify']
@@ -55,14 +68,59 @@ async function handle(request: Request, env: Env) {
       return json({ error: 'Not found' }, 404);
     }
   } else {
-    if (!routeAllowed(request.method, target))
-      return json({ error: 'Not found' }, 404);
+    const assertion = request.headers.get(ASSERTION_HEADER) ?? '';
+    const keyId = assertion.split('.')[0];
+    const key =
+      keyId === 'mastermind'
+        ? {
+            current: env.OPS_HUB_MASTERMIND_SNAPSHOT_SECRET,
+            next: env.OPS_HUB_MASTERMIND_SNAPSHOT_SECRET_NEXT,
+            start: env.OPS_HUB_MASTERMIND_SNAPSHOT_NEXT_NOT_BEFORE,
+            end: env.OPS_HUB_MASTERMIND_SNAPSHOT_NEXT_EXPIRES_AT,
+            allowed:
+              request.method === 'GET' &&
+              ['/snapshot', '/status'].includes(target),
+          }
+        : keyId === 'gateway'
+          ? {
+              current: env.OPS_HUB_GATEWAY_SECRET,
+              next: env.OPS_HUB_GATEWAY_SECRET_NEXT,
+              start: env.OPS_HUB_GATEWAY_NEXT_NOT_BEFORE,
+              end: env.OPS_HUB_GATEWAY_NEXT_EXPIRES_AT,
+              allowed: routeAllowed(request.method, target),
+            }
+          : null;
+    if (!key?.allowed) return json({ error: 'Not found' }, 404);
     userId = await verifyAssertion(
-      env.OPS_HUB_GATEWAY_SECRET,
-      request.headers.get(ASSERTION_HEADER) ?? '',
+      key.current ?? '',
+      assertion,
       request.method,
-      target
+      target,
+      Date.now(),
+      keyId
     );
+    const seconds = Math.floor(Date.now() / 1000);
+    const start = Number(key.start);
+    const end = Number(key.end);
+    if (
+      !userId &&
+      key.next &&
+      /^\d{10}$/.test(key.start ?? '') &&
+      /^\d{10}$/.test(key.end ?? '') &&
+      end > start &&
+      end - start <= 3600 &&
+      seconds >= start &&
+      seconds < end
+    ) {
+      userId = await verifyAssertion(
+        key.next,
+        assertion,
+        request.method,
+        target,
+        Date.now(),
+        keyId
+      );
+    }
     if (!userId || !users.has(userId)) return json({ error: 'Not found' }, 404);
   }
   return env.HUB.getByName(`hub:${userId}`).fetch(
@@ -74,7 +132,7 @@ async function handle(request: Request, env: Env) {
   );
 }
 export default {
-  async fetch(request: Request, env: Env) {
+  async fetch(request: Request, env: HubEnvironment) {
     let response: Response;
     try {
       response = await handle(request, env);
@@ -99,4 +157,4 @@ export default {
     console.info(JSON.stringify({ status: response.status, route }));
     return response;
   },
-} satisfies ExportedHandler<Env>;
+};
