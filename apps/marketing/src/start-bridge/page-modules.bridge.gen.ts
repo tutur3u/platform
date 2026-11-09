@@ -94,6 +94,195 @@ export const pageModules = {
       () => import('../app/[locale]/(marketing)/privacy/layout'),
     ],
   },
+  'src/app/[locale]/(marketing)/products/ai/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/ai/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/ai/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/calendar/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/calendar/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/calendar/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/chat/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/chat/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/chat/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/crm/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/crm/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/crm/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/documents/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/documents/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/documents/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/drive/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/drive/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/drive/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/finance/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/finance/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/finance/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/forms/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/forms/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/forms/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/hive/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/hive/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/hive/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/inventory/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/inventory/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/inventory/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/lms/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/lms/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/lms/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/mail/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/mail/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/mail/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/meet-together/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/meet-together/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/meet-together/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/qr/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/qr/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/qr/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/storefront/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/storefront/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/storefront/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/tasks/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/tasks/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/tasks/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/track/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/track/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/track/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/products/workflows/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/products/workflows/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/products/layout'),
+      () => import('../app/[locale]/(marketing)/products/workflows/layout'),
+    ],
+  },
   'src/app/[locale]/(marketing)/security/bug-bounty/page.tsx': {
     page: () => import('../app/[locale]/(marketing)/security/bug-bounty/page'),
     layouts: [

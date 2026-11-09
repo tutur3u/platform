@@ -365,6 +365,129 @@
       }
     }
   },
+  "approvals": {
+    "actions": {
+      "allApproved": "Đã phê duyệt tất cả thành công.",
+      "approve": "Duyệt",
+      "approveAll": "Duyệt tất cả ({count})",
+      "approveAllProgress": "Đang duyệt {current}/{total}",
+      "approved": "Đã ghi nhận phê duyệt.",
+      "cancel": "Hủy",
+      "confirmReject": "Xác Nhận Từ Chối",
+      "openReport": "Mở báo cáo",
+      "reject": "Từ chối",
+      "rejected": "Đã ghi nhận từ chối.",
+      "sessionSummary": "Phiên này: {approved} đã duyệt, {rejected} đã từ chối",
+      "unapprove": "Gỡ phê duyệt",
+      "unapproved": "Đã gỡ phê duyệt.",
+      "viewDetails": "Xem Chi Tiết"
+    },
+    "common": {
+      "all_workspaces_hidden": "Tất cả không gian làm việc của bạn đã ẩn. Khôi phục một không gian để chọn.",
+      "current_workspace": "Không gian làm việc hiện tại",
+      "default_workspace": "Không gian làm việc mặc định",
+      "empty": "Trống",
+      "hidden_workspaces": "Không gian làm việc đã ẩn",
+      "hidden_workspaces_description": "Chỉ bạn thấy danh sách này. Khôi phục để hiện lại trong danh sách không gian làm việc của bạn. Quyền truy cập của bạn và các thành viên khác không thay đổi.",
+      "hidden_workspaces_empty": "Bạn không có không gian làm việc đã ẩn",
+      "hidden_workspaces_load_error": "Không thể tải danh sách đã ẩn. Thử lại khi có kết nối.",
+      "hidden_workspaces_update_error": "Không thể cập nhật danh sách đã ẩn. Lựa chọn trước đó đã được khôi phục.",
+      "hide_workspace": "Ẩn không gian làm việc",
+      "no_workspace_found": "Không tìm thấy không gian làm việc",
+      "restore_workspace": "Khôi phục không gian làm việc",
+      "search_workspace": "Tìm kiếm không gian làm việc"
+    },
+    "description": "Xem và phê duyệt báo cáo, bài đăng của người dùng.",
+    "detail": {
+      "actions": "Thao Tác",
+      "compareWithPrevious": "So Sánh Với Phiên Bản Trước",
+      "content": "Nội Dung",
+      "currentVersion": "Phiên Bản Hiện Tại",
+      "day": "N{day}",
+      "feedback": "Nhận Xét",
+      "loading": "Đang tải...",
+      "metadata": "Thông Tin",
+      "no_content": "Không có nội dung",
+      "noContent": "Không có nội dung",
+      "noData": "Không có dữ liệu",
+      "notes": "Ghi chú",
+      "pendingApproval": "Đang Chờ Phê Duyệt",
+      "pendingApprovalDescription": "Báo cáo này đang chờ phê duyệt. Vui lòng xem nội dung bên dưới.",
+      "postSubtitle": "Bài Đăng Nhóm",
+      "previousApprovedVersion": "Phiên Bản Đã Duyệt Trước Đó",
+      "rejectionReasonLabel": "Lý Do Từ Chối",
+      "rejectionReasonPlaceholder": "Nhập lý do từ chối mục này...",
+      "reportSubtitle": "Báo Cáo Tháng",
+      "score": "Điểm Tổng",
+      "scores": "Điểm Hàng Ngày",
+      "statusHistory": "Lịch Sử Trạng Thái",
+      "title": "Chi Tiết Phê Duyệt"
+    },
+    "empty": "Hiện chưa có mục cần phê duyệt.",
+    "filters": {
+      "allCreators": "Tất cả người tạo",
+      "allGroups": "Tất cả nhóm",
+      "allUsers": "Tất cả người dùng",
+      "clearFilters": "Xóa bộ lọc",
+      "creator": "Người tạo",
+      "description": "Lọc phê duyệt theo trạng thái và các tiêu chí khác.",
+      "group": "Nhóm",
+      "status": "Trạng thái",
+      "status_all": "Tất cả",
+      "status_approved": "Đã duyệt",
+      "status_pending": "Đang chờ",
+      "status_rejected": "Từ chối",
+      "status_skipped": "Đã bỏ qua",
+      "title": "Bộ lọc",
+      "user": "Người dùng"
+    },
+    "labels": {
+      "approved_at": "Duyệt lúc",
+      "created_at": "Tạo lúc",
+      "group": "Nhóm",
+      "last_modified_by": "Chỉnh sửa gần nhất bởi",
+      "rejected_at": "Từ chối lúc",
+      "rejection_reason": "Lý do",
+      "unknown_group": "Nhóm không xác định",
+      "unknown_user": "Người dùng không xác định",
+      "untitled": "Chưa đặt tiêu đề",
+      "user": "Người dùng"
+    },
+    "list": {
+      "allCaughtUpMessage": "Tất cả mục đang chờ đã được xử lý. Tốt lắm!",
+      "allCaughtUpTitle": "Đã xử lý hết!",
+      "error": "Không thể tải danh sách phê duyệt",
+      "itemsPerPage": "Số mục mỗi trang",
+      "loading": "Đang tải danh sách phê duyệt...",
+      "noItemsDefault": "Hiện chưa có mục nào cần phê duyệt.",
+      "noItemsMessage": "Hãy điều chỉnh bộ lọc để xem thêm kết quả.",
+      "noItemsTitle": "Không tìm thấy mục nào",
+      "showing": "Hiển thị {start}–{end} trong {total}",
+      "title": "Phê duyệt"
+    },
+    "personal": {
+      "description": "Chuyển sang workspace nhóm để duyệt báo cáo hoặc bài đăng.",
+      "title": "Không hỗ trợ phê duyệt cho workspace cá nhân."
+    },
+    "reject_dialog": {
+      "cancel": "Hủy",
+      "confirm": "Từ chối",
+      "description": "Vui lòng nêu lý do từ chối {title}.",
+      "reason": "Lý do từ chối",
+      "reason_placeholder": "Giải thích vì sao mục này bị từ chối.",
+      "title": "Từ chối mục"
+    },
+    "status": {
+      "approved": "Đã duyệt",
+      "pending": "Đang chờ",
+      "rejected": "Từ chối"
+    },
+    "tabs": {
+      "posts": "Bài đăng",
+      "reports": "Báo cáo"
+    },
+    "title": "Phê duyệt"
+  },
   "aurora": {
     "90_confidence_high": "Tự tin 90% (cao)",
     "90_confidence_lo": "Tự tin 90% (thấp)",
@@ -403,6 +526,24 @@
     "weak": "Yếu đuối",
     "weighted_score": "Trọng số",
     "worst_performing": "Hiệu năng tệ nhất"
+  },
+  "breaks": {
+    "break_after": "Nghỉ ngơi sau {name}",
+    "break_duration": "Thời gian nghỉ",
+    "break_interval_hint": "Thời gian nghỉ được tính theo bội số 15 phút",
+    "options": {
+      "15": "15 phút",
+      "30": "30 phút",
+      "45": "45 phút",
+      "60": "1 giờ",
+      "75": "1 giờ 15 phút",
+      "90": "1 giờ 30 phút",
+      "105": "1 giờ 45 phút",
+      "120": "2 giờ"
+    },
+    "schedule_break_description": "Lên lịch nghỉ ngơi sau khi hoàn thành",
+    "scheduled_break": "Giờ nghỉ đã lên lịch",
+    "take_a_break_after": "Nghỉ ngơi sau khi hoàn thành"
   },
   "bug-bounty": {
     "assessment": {
@@ -4373,6 +4514,10 @@
       "title": "Tải lên Logo/Hình ảnh",
       "upload_failed": "Tải lên thất bại. Vui lòng thử lại."
     }
+  },
+  "search": {
+    "search": "Tìm kiếm",
+    "search-placeholder": "Nhập từ khóa để tìm kiếm"
   },
   "security-policy": {
     "cta": {

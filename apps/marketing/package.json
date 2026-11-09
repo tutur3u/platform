@@ -11,6 +11,7 @@
     "start": "next start",
     "preview": "next build --turbopack && next start -p 7836 --turbopack",
     "messages:sync": "node scripts/sync-messages.mjs",
+    "public:sync": "node scripts/sync-public.mjs",
     "messages:check": "node scripts/sync-messages.mjs --check",
     "build:cloudflare": "vp build --configLoader runner",
     "dev:cloudflare": "vp dev --configLoader runner --host 127.0.0.1 --port ${PORT:-7836}",

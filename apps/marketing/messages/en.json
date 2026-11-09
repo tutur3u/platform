@@ -365,6 +365,129 @@
       }
     }
   },
+  "approvals": {
+    "actions": {
+      "allApproved": "All items approved successfully.",
+      "approve": "Approve",
+      "approveAll": "Approve All ({count})",
+      "approveAllProgress": "Approving {current}/{total}",
+      "approved": "Approval recorded.",
+      "cancel": "Cancel",
+      "confirmReject": "Confirm Rejection",
+      "openReport": "Open report",
+      "reject": "Reject",
+      "rejected": "Rejection recorded.",
+      "sessionSummary": "This session: {approved} approved, {rejected} rejected",
+      "unapprove": "Remove approval",
+      "unapproved": "Approval removed.",
+      "viewDetails": "View Details"
+    },
+    "common": {
+      "all_workspaces_hidden": "All your workspaces are Hidden. Restore one to choose a workspace.",
+      "current_workspace": "Current workspace",
+      "default_workspace": "Default workspace",
+      "empty": "Empty",
+      "hidden_workspaces": "Hidden workspaces",
+      "hidden_workspaces_description": "Only you can see this list. Restore a workspace to show it in your workspace lists. Your access and other members are unchanged.",
+      "hidden_workspaces_empty": "You have no Hidden workspaces",
+      "hidden_workspaces_load_error": "Unable to load Hidden workspaces. Retry when you are online.",
+      "hidden_workspaces_update_error": "Unable to update Hidden workspaces. Your previous choice was restored.",
+      "hide_workspace": "Hide workspace",
+      "no_workspace_found": "No workspaces found",
+      "restore_workspace": "Restore workspace",
+      "search_workspace": "Search workspaces"
+    },
+    "description": "Review and approve user reports and posts.",
+    "detail": {
+      "actions": "Actions",
+      "compareWithPrevious": "Compare with Previous",
+      "content": "Content",
+      "currentVersion": "Current Version",
+      "day": "D{day}",
+      "feedback": "Feedback",
+      "loading": "Loading...",
+      "metadata": "Metadata",
+      "no_content": "No content",
+      "noContent": "No content available",
+      "noData": "No data",
+      "notes": "Notes",
+      "pendingApproval": "Pending Approval",
+      "pendingApprovalDescription": "This report is pending approval. Please review the content below.",
+      "postSubtitle": "Group Post",
+      "previousApprovedVersion": "Previous Approved Version",
+      "rejectionReasonLabel": "Rejection Reason",
+      "rejectionReasonPlaceholder": "Enter the reason for rejecting this item...",
+      "reportSubtitle": "Monthly Report",
+      "score": "Overall Score",
+      "scores": "Daily Scores",
+      "statusHistory": "Status History",
+      "title": "Approval Details"
+    },
+    "empty": "No approvals to review right now.",
+    "filters": {
+      "allCreators": "All creators",
+      "allGroups": "All groups",
+      "allUsers": "All users",
+      "clearFilters": "Clear filters",
+      "creator": "Creator",
+      "description": "Filter approvals by status and other criteria.",
+      "group": "Group",
+      "status": "Status",
+      "status_all": "All",
+      "status_approved": "Approved",
+      "status_pending": "Pending",
+      "status_rejected": "Rejected",
+      "status_skipped": "Skipped",
+      "title": "Filters",
+      "user": "User"
+    },
+    "labels": {
+      "approved_at": "Approved",
+      "created_at": "Created",
+      "group": "Group",
+      "last_modified_by": "Last modified by",
+      "rejected_at": "Rejected",
+      "rejection_reason": "Reason",
+      "unknown_group": "Unknown group",
+      "unknown_user": "Unknown user",
+      "untitled": "Untitled",
+      "user": "User"
+    },
+    "list": {
+      "allCaughtUpMessage": "All pending items have been reviewed. Great job!",
+      "allCaughtUpTitle": "All caught up!",
+      "error": "Failed to load approvals",
+      "itemsPerPage": "Items per page",
+      "loading": "Loading approvals...",
+      "noItemsDefault": "No approvals to review at the moment.",
+      "noItemsMessage": "Try adjusting your filters to see more results.",
+      "noItemsTitle": "No approvals found",
+      "showing": "Showing {start}–{end} of {total}",
+      "title": "Approvals"
+    },
+    "personal": {
+      "description": "Switch to a team workspace to review and approve reports or posts.",
+      "title": "Approvals are not available for personal workspaces."
+    },
+    "reject_dialog": {
+      "cancel": "Cancel",
+      "confirm": "Reject",
+      "description": "Provide a reason for rejecting {title}.",
+      "reason": "Rejection reason",
+      "reason_placeholder": "Explain why this item is rejected.",
+      "title": "Reject item"
+    },
+    "status": {
+      "approved": "Approved",
+      "pending": "Pending",
+      "rejected": "Rejected"
+    },
+    "tabs": {
+      "posts": "Posts",
+      "reports": "Reports"
+    },
+    "title": "Approvals"
+  },
   "aurora": {
     "90_confidence_high": "90% Confidence (High)",
     "90_confidence_lo": "90% Confidence (Low)",
@@ -403,6 +526,24 @@
     "weak": "Weak",
     "weighted_score": "Weighted Score",
     "worst_performing": "Worst performing"
+  },
+  "breaks": {
+    "break_after": "Break after {name}",
+    "break_duration": "Break Duration",
+    "break_interval_hint": "Breaks are scheduled in 15-minute intervals",
+    "options": {
+      "15": "15 minutes",
+      "30": "30 minutes",
+      "45": "45 minutes",
+      "60": "1 hour",
+      "75": "1 hour 15 minutes",
+      "90": "1 hour 30 minutes",
+      "105": "1 hour 45 minutes",
+      "120": "2 hours"
+    },
+    "schedule_break_description": "Schedule a break after completing this",
+    "scheduled_break": "Scheduled break",
+    "take_a_break_after": "Take a break after"
   },
   "bug-bounty": {
     "assessment": {
@@ -4373,6 +4514,10 @@
       "title": "Logo/Image Upload",
       "upload_failed": "Upload failed. Please try again."
     }
+  },
+  "search": {
+    "search": "Search",
+    "search-placeholder": "Enter a keyword to search"
   },
   "security-policy": {
     "cta": {
