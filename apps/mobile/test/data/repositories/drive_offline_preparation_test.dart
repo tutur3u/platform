@@ -211,9 +211,8 @@ void main() {
     );
     when(() => workspace.stream).thenAnswer((_) => const Stream.empty());
     final auth = _Auth();
-    when(
-      () => auth.state,
-    ).thenReturn(AuthState.authenticated(supabase.auth.currentUser!));
+    when(() => auth.state)
+        .thenReturn(AuthState.authenticated(supabase.auth.currentUser!));
     when(() => auth.stream).thenAnswer((_) => const Stream.empty());
     final permissions = _Permissions();
     when(() => permissions.getPermissions(wsId: 'ws')).thenAnswer(
