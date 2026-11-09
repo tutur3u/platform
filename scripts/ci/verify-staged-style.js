@@ -16,6 +16,40 @@ const { promisify } = require('node:util');
 const { parseCurlOutput } = require('./verify-staged-critical-app');
 
 const run = promisify(execFile);
+// Every reason this script raises itself. Only these strings, never raw error
+// text from child processes or the browser, may appear in logs or evidence.
+const FAILURE_REASONS = [
+  'Missing staged response headers',
+  'Staged stylesheet has the wrong content type',
+  'Stylesheet is outside the built Next assets',
+  'Stylesheet escapes the built artifact',
+  'Staged CSS bytes differ from the built artifact',
+  'An exact staged platform deployment and source identity are required',
+  'Styled proof does not match the staged platform source',
+  'Staged stylesheet request failed',
+  'Staged public page failed or left the candidate',
+  'Unverified stylesheet',
+  'Candidate CSS did not verify against built bytes',
+  'Candidate styles or fonts are missing',
+  'Staged stylesheet rule inventory differs from built CSS',
+  'Candidate utility styles are missing',
+];
+
+function describeFailure(error) {
+  const message = String(error?.message ?? '');
+  const known = FAILURE_REASONS.find((reason) => message.includes(reason));
+  if (known) return known;
+  const name = /^[A-Za-z]{1,40}$/u.test(error?.name ?? '')
+    ? error.name
+    : 'Error';
+  const code =
+    typeof error?.code === 'string' && /^[A-Z_]{1,30}$/u.test(error.code)
+      ? `:${error.code}`
+      : Number.isInteger(error?.code)
+        ? `:exit-${error.code}`
+        : '';
+  return `Unclassified ${name}${code}`;
+}
 const safeEnvironment = (env) =>
   Object.fromEntries(
     [
@@ -101,6 +135,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
   const scratch = await mkdtemp(resolve(tmpdir(), 'staged-style-fetch-'));
   let sequence = 0;
   let browser;
+  let stage = 'identity';
   const failures = [];
   const css = new Map();
   const cssSources = new Map();
@@ -158,6 +193,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       browserType ||
       createRequire(resolve(root, 'apps/web/package.json'))('playwright')
         .chromium;
+    stage = 'browser';
     browser = await chromium.launch({
       headless: true,
       env: safeEnvironment(env),
@@ -189,13 +225,14 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
           cssSources.set(target.pathname, result.body.toString('utf8'));
         }
         await route.fulfill(result);
-      } catch {
-        failures.push('Staged resource or CSS verification failed');
+      } catch (error) {
+        failures.push(describeFailure(error));
         await route.abort('failed');
       }
     });
     const viewports = [];
     for (const width of [390, 1440]) {
+      stage = `viewport-${width}`;
       const page = await context.newPage();
       await page.setViewportSize({ width, height: 900 });
       const response = await page.goto(`${origin}/en`, {
@@ -294,6 +331,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       });
       await page.close();
     }
+    stage = 'receipt';
     const receipt = {
       source: sha,
       deployment: url,
@@ -312,15 +350,42 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       'Verified staged CSS bytes, utility rendering and 390/1440 screenshots.'
     );
     return receipt;
+  } catch (error) {
+    const reason = describeFailure(error);
+    await writeFile(
+      resolve(evidence, 'failure.json'),
+      `${JSON.stringify(
+        {
+          source: sha,
+          deployment: url,
+          stage,
+          reason,
+          resourceFailures: [...new Set(failures)].slice(0, 10),
+        },
+        null,
+        2
+      )}\n`
+    ).catch(() => {});
+    error.stagedReason = reason;
+    throw error;
   } finally {
     if (browser) await browser.close();
     await rm(scratch, { recursive: true, force: true });
   }
 }
 
-module.exports = { main, responseHeaders, safeEnvironment, verifyCss };
+module.exports = {
+  FAILURE_REASONS,
+  describeFailure,
+  main,
+  responseHeaders,
+  safeEnvironment,
+  verifyCss,
+};
 if (require.main === module)
-  main().catch(() => {
-    console.error('Staged style proof failed; promotion is blocked.');
+  main().catch((error) => {
+    console.error(
+      `Staged style proof failed: ${error?.stagedReason ?? describeFailure(error)}. Promotion is blocked.`
+    );
     process.exitCode = 1;
   });
