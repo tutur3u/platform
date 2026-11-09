@@ -1,0 +1,48 @@
+---
+title: "Colab deployment packet"
+description: "Colab's Worker, Durable Object identity, deploy path, rollback and smoke checks."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Colab (`apps/colab`) is already a Cloudflare Worker with a Vite single-page
+frontend. It has no Vercel deployment, so it does not take part in the
+Vercel-exit cutovers. Its Worker entry is `src/server/worker.ts`; the frontend is
+served from `dist` through the `ASSETS` binding.
+
+## Identity that must not change
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-colab` |
+| Domain | `colab.tuturuuu.com` (custom domain) |
+| Durable Object | binding `ROOMS`, class `ColabRoom`, SQLite migration tag `v1` |
+| Other bindings | `ASSETS`, `AI` |
+| Variables | `APP_ORIGIN`, `AUTH_ORIGIN`, `COLAB_REQUIRE_SPONSORSHIP`, `COLAB_AI_MODEL` |
+| Secret (name) | `COLAB_SESSION_SECRET` |
+| Worker-first paths | `/`, `/join`, `/host`, `/guide`, `/workshops`, `/api/*`, `/auth/*`, `/verify-token` |
+
+Renaming the class, changing the binding or rewriting the migration tag would
+detach existing room state. Any change to the entry bundle needs the room,
+WebSocket and expiry runtime checks in `apps/colab/scripts` to pass first.
+
+## Deploy
+
+`colab-cloudflare.yaml` validates on pull requests and `main`. Its `deploy` job
+runs only for the `production` branch in the `colab-production` environment: it
+runs `wrangler deploy` with the token secret `COLAB_CLOUDFLARE_API_TOKEN`, then
+`scripts/verify-deployment.mjs` compares the live entry shell, `/api/health` and
+every built asset hash against the local build.
+
+## Rollback
+
+Roll back to the previous Worker version in Cloudflare, or redeploy the previous
+production commit. Durable Object storage is not affected by a version rollback.
+
+## Smoke checks
+
+- `GET https://colab.tuturuuu.com/api/health` answers `200` with
+  `app: "colab"` and `status: "ok"`
+- `GET /` and `/guide` answer `200`
+- after a deploy, `node apps/colab/scripts/verify-deployment.mjs` from a built
+  checkout reports the asset hashes verified
