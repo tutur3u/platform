@@ -237,32 +237,7 @@ jobs:
           team: ''
       - name: Qualify the staging output before rewriting
         run: python3 scripts/ci/learn-native-artifact.py config apps/learn
-      - name: Write the production wrangler config
-        run: |
-          node --input-type=module <<'JS'
-          import { readFileSync, writeFileSync } from 'node:fs';
-          const path = 'apps/learn/dist/server/wrangler.json';
-          const c = JSON.parse(readFileSync(path, 'utf8'));
-          for (const k of ['configPath', 'userConfigPath', 'topLevelName', 'definedEnvironments']) delete c[k];
-          c.name = 'tuturuuu-learn';
-          c.workers_dev = false;
-          c.preview_urls = false;
-          c.upload_source_maps = false;
-          c.vars = {
-            TUTURUUU_NOINDEX: '0',
-            NODE_ENV: 'production',
-            TUTURUUU_REQUIRE_SECRETS: '1',
-            NEXT_PUBLIC_APP_URL: 'https://learn.tuturuuu.com',
-            NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
-          };
-          writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);
-          JS
-          test "$(node -p "require('./apps/learn/dist/server/wrangler.json').name")" = tuturuuu-learn
-          test "$(node -p "require('./apps/learn/dist/server/wrangler.json').workers_dev")" = false
-          test "$(node -p "require('./apps/learn/dist/server/wrangler.json').preview_urls")" = false
-          test -f apps/learn/dist/server/index.mjs
-          test -d apps/learn/dist/client
-      - name: Validate, seal and pack the final production output
+      - name: Validate, seal and pack the production output
         env:
           LEARN_SOURCE_SHA: ${{ env.SOURCE_SHA }}
         run: |
