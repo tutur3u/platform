@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.47.0](https://github.com/tutur3u/platform/compare/rewise-v0.46.0...rewise-v0.47.0) (2026-11-09)
+
+
+### Features
+
+* **rewise:** compose Cloudflare wiring onto main ([c7c7cd0](https://github.com/tutur3u/platform/commit/c7c7cd0ebd248c7ad49c14ec5f1d620a29cbb127))
+
+
+### Bug Fixes
+
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+
 ## [0.46.0](https://github.com/tutur3u/platform/compare/rewise-v0.45.0...rewise-v0.46.0) (2026-11-08)
 
 

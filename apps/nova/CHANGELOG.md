@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.44.0](https://github.com/tutur3u/platform/compare/nova-v0.43.0...nova-v0.44.0) (2026-11-09)
+
+
+### Features
+
+* **nova:** combine native Cloudflare worker and startup guards ([907252e](https://github.com/tutur3u/platform/commit/907252e65748c1d8ce28bfdd545297dc84616744))
+
+
+### Bug Fixes
+
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+
 ## [0.43.0](https://github.com/tutur3u/platform/compare/nova-v0.42.2...nova-v0.43.0) (2026-11-08)
 
 

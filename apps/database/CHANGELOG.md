@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.46.0](https://github.com/tutur3u/platform/compare/database-v1.45.0...database-v1.46.0) (2026-11-09)
+
+
+### Features
+
+* **database:** add CMS page versions and the editor permission ([6e96890](https://github.com/tutur3u/platform/commit/6e96890f084f8cb9a9df1ee44e3f95e37311a3f2))
+* **database:** add workspace document parent and position ([9616c7c](https://github.com/tutur3u/platform/commit/9616c7c1759a91fbb98626a92aeb193a8dcccab6)) ([#7877](https://github.com/tutur3u/platform/issues/7877))
+* **fee-lock:** discard a new linked invoice in one transaction ([bd1b2ec](https://github.com/tutur3u/platform/commit/bd1b2eccd41e096d1a6ce6b4c0262d850a0d6078))
+* **fee-lock:** PR-12a discard a new linked invoice in one transaction (M5) ([#7561](https://github.com/tutur3u/platform/issues/7561)) ([bd1b2ec](https://github.com/tutur3u/platform/commit/bd1b2eccd41e096d1a6ce6b4c0262d850a0d6078))
+
+
+### Bug Fixes
+
+* **auth:** atomically guard legacy cross-app UUID redemption ([#7857](https://github.com/tutur3u/platform/issues/7857)) ([c87c857](https://github.com/tutur3u/platform/commit/c87c85785c44eb3713b16feeab0223758f74894e))
+* **auth:** harden legacy token function grant contract ([32f1c38](https://github.com/tutur3u/platform/commit/32f1c384602543ec6c126f2995aaa6bb69fefbeb))
+* **database:** harden legacy cross-app token contract ([#7896](https://github.com/tutur3u/platform/issues/7896)) ([20bd1c4](https://github.com/tutur3u/platform/commit/20bd1c4396e1727132975decf8472601f4372348))
+* **database:** parse newsletter domain checks on Postgres ([#7836](https://github.com/tutur3u/platform/issues/7836)) ([0142050](https://github.com/tutur3u/platform/commit/01420502bd5902a40d3ff671116ab3cc5255e4f0))
+* **fee-lock:** restore canonical 20261109161000 guard migration ([#7832](https://github.com/tutur3u/platform/issues/7832)) ([eccee1e](https://github.com/tutur3u/platform/commit/eccee1e98365420b6695586b1e6281ba44082553))
+
 ## [1.45.0](https://github.com/tutur3u/platform/compare/database-v1.44.0...database-v1.45.0) (2026-11-08)
 
 

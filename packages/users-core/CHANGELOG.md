@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/tutur3u/platform/compare/users-core-v0.12.0...users-core-v0.12.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **contacts:** filter monthly reports by report month ([#7887](https://github.com/tutur3u/platform/issues/7887)) ([d209d72](https://github.com/tutur3u/platform/commit/d209d72bfa54e4ed84b50f2a09fdb24e466a0547))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/users-core-v0.11.2...users-core-v0.12.0) (2026-11-08)
 
 

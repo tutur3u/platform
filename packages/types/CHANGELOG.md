@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.39.0](https://github.com/tutur3u/platform/compare/types-v0.38.0...types-v0.39.0) (2026-11-09)
+
+
+### Features
+
+* **database:** add workspace document parent and position ([9616c7c](https://github.com/tutur3u/platform/commit/9616c7c1759a91fbb98626a92aeb193a8dcccab6)) ([#7877](https://github.com/tutur3u/platform/issues/7877))
+* **fee-lock:** discard a new linked invoice in one transaction ([bd1b2ec](https://github.com/tutur3u/platform/commit/bd1b2eccd41e096d1a6ce6b4c0262d850a0d6078))
+* **fee-lock:** PR-12a discard a new linked invoice in one transaction (M5) ([#7561](https://github.com/tutur3u/platform/issues/7561)) ([bd1b2ec](https://github.com/tutur3u/platform/commit/bd1b2eccd41e096d1a6ce6b4c0262d850a0d6078))
+
 ## [0.38.0](https://github.com/tutur3u/platform/compare/types-v0.37.0...types-v0.38.0) (2026-11-08)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/contacts-v0.30.0...contacts-v0.31.0) (2026-11-09)
+
+
+### Features
+
+* **contacts:** highlight unscheduled students in Excel ([#7823](https://github.com/tutur3u/platform/issues/7823)) ([0563e8a](https://github.com/tutur3u/platform/commit/0563e8a1671539e53e0b7d2e6f98ff107ece83bd))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/contacts-v0.29.0...contacts-v0.30.0) (2026-11-08)
 
 

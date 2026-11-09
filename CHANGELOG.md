@@ -1,5 +1,86 @@
 # Changelog
 
+## [0.74.0](https://github.com/tutur3u/platform/compare/platform-v0.73.0...platform-v0.74.0) (2026-11-09)
+
+
+### Features
+
+* **ci:** verify staged platform styles before promotion ([#7880](https://github.com/tutur3u/platform/issues/7880)) ([f306fb7](https://github.com/tutur3u/platform/commit/f306fb769fb14ba7913dd373deb0cc705ba4604b))
+* **cms:** package native Cloudflare cutover artifacts ([c0bf35a](https://github.com/tutur3u/platform/commit/c0bf35ac701c1a1579465255da0f4ec6c3617ee9))
+* **contacts:** highlight unscheduled students in Excel ([#7823](https://github.com/tutur3u/platform/issues/7823)) ([0563e8a](https://github.com/tutur3u/platform/commit/0563e8a1671539e53e0b7d2e6f98ff107ece83bd))
+* **database:** add CMS page versions and the editor permission ([6e96890](https://github.com/tutur3u/platform/commit/6e96890f084f8cb9a9df1ee44e3f95e37311a3f2))
+* **database:** add workspace document parent and position ([9616c7c](https://github.com/tutur3u/platform/commit/9616c7c1759a91fbb98626a92aeb193a8dcccab6)) ([#7877](https://github.com/tutur3u/platform/issues/7877))
+* **external:** rebuild the Cloudflare cutover on current main ([08e1b65](https://github.com/tutur3u/platform/commit/08e1b651ffafb0473ce362fcf222e8e49990b3a1))
+* **fee-lock:** accept fee_lock_ref on subscription invoice create ([5ffe644](https://github.com/tutur3u/platform/commit/5ffe64410017536b848ae7a2e46b1af038b4de4c))
+* **fee-lock:** discard a new linked invoice in one transaction ([bd1b2ec](https://github.com/tutur3u/platform/commit/bd1b2eccd41e096d1a6ce6b4c0262d850a0d6078))
+* **fee-lock:** explain a blocked delete of a pre-filled invoice ([13ae653](https://github.com/tutur3u/platform/commit/13ae653ea4ed1de5cccabcad1348af30a4e767bd))
+* **fee-lock:** PR-05 route gate and fee lock detail read API ([#7556](https://github.com/tutur3u/platform/issues/7556)) ([9428927](https://github.com/tutur3u/platform/commit/9428927d33bb84042d95207d7045bef122c87cb9))
+* **fee-lock:** PR-05b fee lock month view list API ([#7557](https://github.com/tutur3u/platform/issues/7557)) ([c800bed](https://github.com/tutur3u/platform/commit/c800bedc7156f094473910cdc8088d699574d16d))
+* **fee-lock:** PR-05c page the month view past max_rows ([#7566](https://github.com/tutur3u/platform/issues/7566)) ([78e4ed7](https://github.com/tutur3u/platform/commit/78e4ed709a8498dfdbbaf9502e78c544118b6e51))
+* **fee-lock:** PR-06 fee lock save, lock and reopen API ([#7558](https://github.com/tutur3u/platform/issues/7558)) ([2da9f5c](https://github.com/tutur3u/platform/commit/2da9f5c3c81eb107c5d13e3a157e791e77d46efb))
+* **fee-lock:** PR-06b batch lock API ([#7560](https://github.com/tutur3u/platform/issues/7560)) ([6b986d1](https://github.com/tutur3u/platform/commit/6b986d129f77b2ea59c259a0ef06d0a42bff5529))
+* **fee-lock:** PR-07 (1/3) list table, month helpers and copy ([#7541](https://github.com/tutur3u/platform/issues/7541)) ([8ad8bb6](https://github.com/tutur3u/platform/commit/8ad8bb61f4a8b9151abfa49117f2c4d3e92f0f10))
+* **fee-lock:** PR-07 (2/3) month view with filters ([#7542](https://github.com/tutur3u/platform/issues/7542)) ([2a57548](https://github.com/tutur3u/platform/commit/2a57548be54fe9a58666bd1c6540add9e2a646b2))
+* **fee-lock:** PR-07 (3/3) flag-gated route, nav item and pending-tab button ([#7543](https://github.com/tutur3u/platform/issues/7543)) ([f53403a](https://github.com/tutur3u/platform/commit/f53403a92a9dca661734a5c6027e073754ba6880))
+* **fee-lock:** PR-07 (4/4) wire the Excel export dialog into the fee-lock page ([#7570](https://github.com/tutur3u/platform/issues/7570)) ([4afcabc](https://github.com/tutur3u/platform/commit/4afcabca775240a96ef85830ab9cce13f1ede142))
+* **fee-lock:** PR-07 (5/5) mount the notice template tab ([2b5f09e](https://github.com/tutur3u/platform/commit/2b5f09eefb20b8187e66e573d47170108426b364))
+* **fee-lock:** PR-09 sanitizeSpreadsheetText and export workbook ([#7559](https://github.com/tutur3u/platform/issues/7559)) ([408c319](https://github.com/tutur3u/platform/commit/408c319d5558337a1053fef0c0b92cefc2cee141))
+* **fee-lock:** PR-09b ws-scoped export entry loader ([#7562](https://github.com/tutur3u/platform/issues/7562)) ([f42e0bb](https://github.com/tutur3u/platform/commit/f42e0bbc563deb9fb531e0a30a1209a02cbf9907))
+* **fee-lock:** PR-09c Excel export route and exported event ([#7564](https://github.com/tutur3u/platform/issues/7564)) ([620eb25](https://github.com/tutur3u/platform/commit/620eb251a23fd06b033bc4906e1f3d1f3180bf63))
+* **fee-lock:** PR-09d export dialog and client helper ([#7565](https://github.com/tutur3u/platform/issues/7565)) ([808697a](https://github.com/tutur3u/platform/commit/808697ae5d75449d3b8eb65b539e9dbc5f11f0c3))
+* **fee-lock:** PR-11 notice template API ([c2b2653](https://github.com/tutur3u/platform/commit/c2b2653c7e8a66d49bf2f55dd0cc0a34c1b4ef19))
+* **fee-lock:** PR-11b notice preview and HTML escaping ([f144716](https://github.com/tutur3u/platform/commit/f144716d16b17cf829dcbd836dd4b9af4def611c))
+* **fee-lock:** PR-11c notice text in the Excel export ([a7f4bf3](https://github.com/tutur3u/platform/commit/a7f4bf37620a9e6c3e85e4439628af7c9c37d641))
+* **fee-lock:** PR-11d notice template editor tab ([4d43410](https://github.com/tutur3u/platform/commit/4d434104430aa540e84f46935167e8c4fc4cc4c2))
+* **fee-lock:** PR-12a discard a new linked invoice in one transaction (M5) ([#7561](https://github.com/tutur3u/platform/issues/7561)) ([bd1b2ec](https://github.com/tutur3u/platform/commit/bd1b2eccd41e096d1a6ce6b4c0262d850a0d6078))
+* **fee-lock:** PR-12b validate fee_lock_ref and write the invoice link ([#7576](https://github.com/tutur3u/platform/issues/7576)) ([fd8a6af](https://github.com/tutur3u/platform/commit/fd8a6af0fbe73524b98caa3e84fa70c1be98b311))
+* **fee-lock:** PR-12b2 accept fee_lock_ref on subscription invoice create ([#7577](https://github.com/tutur3u/platform/issues/7577)) ([5ffe644](https://github.com/tutur3u/platform/commit/5ffe64410017536b848ae7a2e46b1af038b4de4c))
+* **fee-lock:** PR-12b3 explain a blocked delete of a pre-filled invoice ([#7578](https://github.com/tutur3u/platform/issues/7578)) ([13ae653](https://github.com/tutur3u/platform/commit/13ae653ea4ed1de5cccabcad1348af30a4e767bd))
+* **fee-lock:** PR-12c locked fee suggestion for subscription invoices ([#7579](https://github.com/tutur3u/platform/issues/7579)) ([7d6a302](https://github.com/tutur3u/platform/commit/7d6a3022739ef535282f548dc9cce77eb0bc63aa))
+* **fee-lock:** suggest the locked fee for a subscription invoice ([7d6a302](https://github.com/tutur3u/platform/commit/7d6a3022739ef535282f548dc9cce77eb0bc63aa))
+* **fee-lock:** validate fee_lock_ref and write the invoice link ([fd8a6af](https://github.com/tutur3u/platform/commit/fd8a6af0fbe73524b98caa3e84fa70c1be98b311))
+* **fee-lock:** wire the Excel export dialog into the fee-lock page ([4afcabc](https://github.com/tutur3u/platform/commit/4afcabca775240a96ef85830ab9cce13f1ede142))
+* **git:** rebuild the Cloudflare cutover on current main ([558157a](https://github.com/tutur3u/platform/commit/558157a4ac45dbef9a22becc5677ef6b1f961178))
+* **meet:** add erase subject HMAC primitives (V6) ([9d08bcd](https://github.com/tutur3u/platform/commit/9d08bcda39a4200c213d6f898915d1358c7b10c5))
+* **nova:** combine native Cloudflare worker and startup guards ([907252e](https://github.com/tutur3u/platform/commit/907252e65748c1d8ce28bfdd545297dc84616744))
+* **rewise:** compose Cloudflare wiring onto main ([c7c7cd0](https://github.com/tutur3u/platform/commit/c7c7cd0ebd248c7ad49c14ec5f1d620a29cbb127))
+* **status-api:** rebuild the public read worker on current main ([864cefe](https://github.com/tutur3u/platform/commit/864cefe345b9ba4d2801c2cedbf3d04f9f2f6059))
+* **tooling:** add scoped review lint rules ([#7856](https://github.com/tutur3u/platform/issues/7856)) ([38b85b2](https://github.com/tutur3u/platform/commit/38b85b25f137d123159d05a9837c8dcebc68771a))
+* **tools:** prepare native Cloudflare cutover artifact ([a39c34c](https://github.com/tutur3u/platform/commit/a39c34cfbad9ba67c930a7db7d2923707e986926))
+* **ui:** add localized experimental and beta status badges ([#7879](https://github.com/tutur3u/platform/issues/7879)) ([eb67676](https://github.com/tutur3u/platform/commit/eb6767651ddaaa7cc77c6dcbd519b7372fa2dd16))
+
+
+### Bug Fixes
+
+* **ai:** rebuild the native Cloudflare cutover on current main ([0f32384](https://github.com/tutur3u/platform/commit/0f3238454b5cbe1dd83e4a61a5a5e27a0b84731b))
+* **api:** regenerate retained Mastermind route digest ([#7854](https://github.com/tutur3u/platform/issues/7854)) ([a8218b5](https://github.com/tutur3u/platform/commit/a8218b50af99e1e8bb00229e59fc3739e5a2e416))
+* **api:** register retained newsletter routes ([#7841](https://github.com/tutur3u/platform/issues/7841)) ([dacf2ea](https://github.com/tutur3u/platform/commit/dacf2ea7ebb667ceef5e7a4911e5113820a282b5))
+* **auth:** atomically guard legacy cross-app UUID redemption ([#7857](https://github.com/tutur3u/platform/issues/7857)) ([c87c857](https://github.com/tutur3u/platform/commit/c87c85785c44eb3713b16feeab0223758f74894e))
+* **auth:** harden legacy token function grant contract ([32f1c38](https://github.com/tutur3u/platform/commit/32f1c384602543ec6c126f2995aaa6bb69fefbeb))
+* **auth:** keep the caller user-agent on server sessions ([#7868](https://github.com/tutur3u/platform/issues/7868)) ([eff3792](https://github.com/tutur3u/platform/commit/eff3792d6baa8f8ae4450f2aa1bef93c49d2af85))
+* **ci:** limit mobile release builds to mobile tags ([#7878](https://github.com/tutur3u/platform/issues/7878)) ([fd26885](https://github.com/tutur3u/platform/commit/fd26885350a846fbb9ac36491e4e6211f8a4670c))
+* **ci:** log producer ids on the tree-equal fallback staging proof ([7a52c36](https://github.com/tutur3u/platform/commit/7a52c36b0c20f23424e567642e07d6444120bcba))
+* **ci:** record the reviewed O5 inherited ACL diagnostic ([#7872](https://github.com/tutur3u/platform/issues/7872)) ([4382dd3](https://github.com/tutur3u/platform/commit/4382dd3223b7ec40782ae1f7fad3b0e5837d64bf))
+* **ci:** refresh the retained sessions source digest ([#7882](https://github.com/tutur3u/platform/issues/7882)) ([d0d0b0a](https://github.com/tutur3u/platform/commit/d0d0b0a9dfc13f26df96a1dad7ca575339d8485d))
+* **ci:** scope remaining app checks to dependency changes ([#7890](https://github.com/tutur3u/platform/issues/7890)) ([74181f5](https://github.com/tutur3u/platform/commit/74181f5e7bf5484dc0021efdbdde87607f69484d))
+* **ci:** track feature-flag database dependencies ([#7885](https://github.com/tutur3u/platform/issues/7885)) ([99d1343](https://github.com/tutur3u/platform/commit/99d1343af855f5579b43e57fd1d7d602beb6e230))
+* **ci:** use merge first parent for definer policy base ([9056295](https://github.com/tutur3u/platform/commit/9056295c61623dfcfa507f367fbbb526efb28c4a))
+* **contacts:** filter monthly reports by report month ([#7887](https://github.com/tutur3u/platform/issues/7887)) ([d209d72](https://github.com/tutur3u/platform/commit/d209d72bfa54e4ed84b50f2a09fdb24e466a0547))
+* **database:** harden legacy cross-app token contract ([#7896](https://github.com/tutur3u/platform/issues/7896)) ([20bd1c4](https://github.com/tutur3u/platform/commit/20bd1c4396e1727132975decf8472601f4372348))
+* **database:** parse newsletter domain checks on Postgres ([#7836](https://github.com/tutur3u/platform/issues/7836)) ([0142050](https://github.com/tutur3u/platform/commit/01420502bd5902a40d3ff671116ab3cc5255e4f0))
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+* **fee-lock:** restore canonical 20261109161000 guard migration ([#7832](https://github.com/tutur3u/platform/issues/7832)) ([eccee1e](https://github.com/tutur3u/platform/commit/eccee1e98365420b6695586b1e6281ba44082553))
+* **forms:** rebuild the native Cloudflare cutover on current main ([3b77902](https://github.com/tutur3u/platform/commit/3b779022f2a8b7d59fc436e340de123ccfa48a37))
+* **inventory:** rebuild the native Cloudflare cutover on current main ([04ac227](https://github.com/tutur3u/platform/commit/04ac2275249b37df5058e8ffea3784711f84b327))
+* **mastermind:** rebuild the native cutover on current main ([35e4754](https://github.com/tutur3u/platform/commit/35e4754e9b8f86a29683b79db66afc3f0fab88b2))
+* **tooling:** simplify the config filename matcher ([#7867](https://github.com/tutur3u/platform/issues/7867)) ([a73dc17](https://github.com/tutur3u/platform/commit/a73dc17e9fd161f91d36d6413ccfb9c2e2059cc8))
+* **web:** serve public /roadmap from the roadmap worker ([#7860](https://github.com/tutur3u/platform/issues/7860)) ([0392ae2](https://github.com/tutur3u/platform/commit/0392ae25d3a434c07f3692456b374a70d04ac7d6))
+
+
+### Performance Improvements
+
+* **ci:** remove unused Bun setup from translation sort ([#7816](https://github.com/tutur3u/platform/issues/7816)) ([9f0d505](https://github.com/tutur3u/platform/commit/9f0d505a9f0a21b5576f45c388fd945f9db194ea))
+
 ## [0.73.0](https://github.com/tutur3u/platform/compare/platform-v0.72.0...platform-v0.73.0) (2026-11-08)
 
 

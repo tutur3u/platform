@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.40.0](https://github.com/tutur3u/platform/compare/cms-v0.39.0...cms-v0.40.0) (2026-11-09)
+
+
+### Features
+
+* **cms:** package native Cloudflare cutover artifacts ([c0bf35a](https://github.com/tutur3u/platform/commit/c0bf35ac701c1a1579465255da0f4ec6c3617ee9))
+
+
+### Bug Fixes
+
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+
 ## [0.39.0](https://github.com/tutur3u/platform/compare/cms-v0.38.0...cms-v0.39.0) (2026-11-08)
 
 

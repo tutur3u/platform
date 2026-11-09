@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.39.1](https://github.com/tutur3u/platform/compare/infra-v0.39.0...infra-v0.39.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **auth:** keep the caller user-agent on server sessions ([#7868](https://github.com/tutur3u/platform/issues/7868)) ([eff3792](https://github.com/tutur3u/platform/commit/eff3792d6baa8f8ae4450f2aa1bef93c49d2af85))
+
 ## [0.39.0](https://github.com/tutur3u/platform/compare/infra-v0.38.0...infra-v0.39.0) (2026-11-08)
 
 

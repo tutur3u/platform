@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/tutur3u/platform/compare/meet-core-v1.5.0...meet-core-v1.6.0) (2026-11-09)
+
+
+### Features
+
+* **meet:** add erase subject HMAC primitives (V6) ([9d08bcd](https://github.com/tutur3u/platform/commit/9d08bcda39a4200c213d6f898915d1358c7b10c5))
+
 ## [1.5.0](https://github.com/tutur3u/platform/compare/meet-core-v1.4.2...meet-core-v1.5.0) (2026-11-08)
 
 

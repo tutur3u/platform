@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.0](https://github.com/tutur3u/platform/compare/tools-v0.23.0...tools-v0.24.0) (2026-11-09)
+
+
+### Features
+
+* **tools:** prepare native Cloudflare cutover artifact ([a39c34c](https://github.com/tutur3u/platform/commit/a39c34cfbad9ba67c930a7db7d2923707e986926))
+
 ## [0.23.0](https://github.com/tutur3u/platform/compare/tools-v0.22.1...tools-v0.23.0) (2026-11-08)
 
 

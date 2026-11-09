@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.38.1](https://github.com/tutur3u/platform/compare/inventory-v0.38.0...inventory-v0.38.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+* **inventory:** rebuild the native Cloudflare cutover on current main ([04ac227](https://github.com/tutur3u/platform/commit/04ac2275249b37df5058e8ffea3784711f84b327))
+
 ## [0.38.0](https://github.com/tutur3u/platform/compare/inventory-v0.37.0...inventory-v0.38.0) (2026-11-08)
 
 

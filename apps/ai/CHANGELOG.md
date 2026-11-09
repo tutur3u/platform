@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.1](https://github.com/tutur3u/platform/compare/ai-studio-v0.20.0...ai-studio-v0.20.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **ai:** rebuild the native Cloudflare cutover on current main ([0f32384](https://github.com/tutur3u/platform/commit/0f3238454b5cbe1dd83e4a61a5a5e27a0b84731b))
+
 ## [0.20.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.19.0...ai-studio-v0.20.0) (2026-11-08)
 
 

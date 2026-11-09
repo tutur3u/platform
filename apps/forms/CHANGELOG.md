@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.21.1](https://github.com/tutur3u/platform/compare/forms-v0.21.0...forms-v0.21.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+* **forms:** rebuild the native Cloudflare cutover on current main ([3b77902](https://github.com/tutur3u/platform/commit/3b779022f2a8b7d59fc436e340de123ccfa48a37))
+* **web:** serve public /roadmap from the roadmap worker ([#7860](https://github.com/tutur3u/platform/issues/7860)) ([0392ae2](https://github.com/tutur3u/platform/commit/0392ae25d3a434c07f3692456b374a70d04ac7d6))
+
 ## [0.21.0](https://github.com/tutur3u/platform/compare/forms-v0.20.0...forms-v0.21.0) (2026-11-08)
 
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.40.0](https://github.com/tutur3u/platform/compare/utils-v0.39.0...utils-v0.40.0) (2026-11-09)
+
+
+### Features
+
+* **fee-lock:** PR-09 sanitizeSpreadsheetText and export workbook ([#7559](https://github.com/tutur3u/platform/issues/7559)) ([408c319](https://github.com/tutur3u/platform/commit/408c319d5558337a1053fef0c0b92cefc2cee141))
+* **status-api:** rebuild the public read worker on current main ([864cefe](https://github.com/tutur3u/platform/commit/864cefe345b9ba4d2801c2cedbf3d04f9f2f6059))
+
+
+### Bug Fixes
+
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+
 ## [0.39.0](https://github.com/tutur3u/platform/compare/utils-v0.38.1...utils-v0.39.0) (2026-11-08)
 
 

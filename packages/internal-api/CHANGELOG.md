@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.57.0](https://github.com/tutur3u/platform/compare/internal-api-v0.56.0...internal-api-v0.57.0) (2026-11-09)
+
+
+### Features
+
+* **contacts:** highlight unscheduled students in Excel ([#7823](https://github.com/tutur3u/platform/issues/7823)) ([0563e8a](https://github.com/tutur3u/platform/commit/0563e8a1671539e53e0b7d2e6f98ff107ece83bd))
+* **fee-lock:** PR-09b ws-scoped export entry loader ([#7562](https://github.com/tutur3u/platform/issues/7562)) ([f42e0bb](https://github.com/tutur3u/platform/commit/f42e0bbc563deb9fb531e0a30a1209a02cbf9907))
+* **fee-lock:** PR-09d export dialog and client helper ([#7565](https://github.com/tutur3u/platform/issues/7565)) ([808697a](https://github.com/tutur3u/platform/commit/808697ae5d75449d3b8eb65b539e9dbc5f11f0c3))
+* **fee-lock:** PR-11 notice template API ([c2b2653](https://github.com/tutur3u/platform/commit/c2b2653c7e8a66d49bf2f55dd0cc0a34c1b4ef19))
+* **fee-lock:** PR-11b notice preview and HTML escaping ([f144716](https://github.com/tutur3u/platform/commit/f144716d16b17cf829dcbd836dd4b9af4def611c))
+* **fee-lock:** PR-11c notice text in the Excel export ([a7f4bf3](https://github.com/tutur3u/platform/commit/a7f4bf37620a9e6c3e85e4439628af7c9c37d641))
+
+
+### Bug Fixes
+
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+
 ## [0.56.0](https://github.com/tutur3u/platform/compare/internal-api-v0.55.0...internal-api-v0.56.0) (2026-11-08)
 
 

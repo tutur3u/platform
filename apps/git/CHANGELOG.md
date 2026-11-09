@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/git-v0.16.0...git-v0.17.0) (2026-11-09)
+
+
+### Features
+
+* **git:** rebuild the Cloudflare cutover on current main ([558157a](https://github.com/tutur3u/platform/commit/558157a4ac45dbef9a22becc5677ef6b1f961178))
+
+
+### Bug Fixes
+
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/git-v0.15.0...git-v0.16.0) (2026-11-08)
 
 

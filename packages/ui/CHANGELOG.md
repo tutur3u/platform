@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.42.0](https://github.com/tutur3u/platform/compare/ui-v0.41.0...ui-v0.42.0) (2026-11-09)
+
+
+### Features
+
+* **fee-lock:** PR-07 (3/3) flag-gated route, nav item and pending-tab button ([#7543](https://github.com/tutur3u/platform/issues/7543)) ([f53403a](https://github.com/tutur3u/platform/commit/f53403a92a9dca661734a5c6027e073754ba6880))
+* **ui:** add localized experimental and beta status badges ([#7879](https://github.com/tutur3u/platform/issues/7879)) ([eb67676](https://github.com/tutur3u/platform/commit/eb6767651ddaaa7cc77c6dcbd519b7372fa2dd16))
+
+
+### Bug Fixes
+
+* **auth:** keep the caller user-agent on server sessions ([#7868](https://github.com/tutur3u/platform/issues/7868)) ([eff3792](https://github.com/tutur3u/platform/commit/eff3792d6baa8f8ae4450f2aa1bef93c49d2af85))
+
 ## [0.41.0](https://github.com/tutur3u/platform/compare/ui-v0.40.0...ui-v0.41.0) (2026-11-08)
 
 

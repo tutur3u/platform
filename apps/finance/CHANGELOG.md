@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/finance-v0.36.0...finance-v0.37.0) (2026-11-09)
+
+
+### Features
+
+* **fee-lock:** accept fee_lock_ref on subscription invoice create ([5ffe644](https://github.com/tutur3u/platform/commit/5ffe64410017536b848ae7a2e46b1af038b4de4c))
+* **fee-lock:** explain a blocked delete of a pre-filled invoice ([13ae653](https://github.com/tutur3u/platform/commit/13ae653ea4ed1de5cccabcad1348af30a4e767bd))
+* **fee-lock:** PR-05 route gate and fee lock detail read API ([#7556](https://github.com/tutur3u/platform/issues/7556)) ([9428927](https://github.com/tutur3u/platform/commit/9428927d33bb84042d95207d7045bef122c87cb9))
+* **fee-lock:** PR-05b fee lock month view list API ([#7557](https://github.com/tutur3u/platform/issues/7557)) ([c800bed](https://github.com/tutur3u/platform/commit/c800bedc7156f094473910cdc8088d699574d16d))
+* **fee-lock:** PR-05c page the month view past max_rows ([#7566](https://github.com/tutur3u/platform/issues/7566)) ([78e4ed7](https://github.com/tutur3u/platform/commit/78e4ed709a8498dfdbbaf9502e78c544118b6e51))
+* **fee-lock:** PR-06 fee lock save, lock and reopen API ([#7558](https://github.com/tutur3u/platform/issues/7558)) ([2da9f5c](https://github.com/tutur3u/platform/commit/2da9f5c3c81eb107c5d13e3a157e791e77d46efb))
+* **fee-lock:** PR-06b batch lock API ([#7560](https://github.com/tutur3u/platform/issues/7560)) ([6b986d1](https://github.com/tutur3u/platform/commit/6b986d129f77b2ea59c259a0ef06d0a42bff5529))
+* **fee-lock:** PR-07 (1/3) list table, month helpers and copy ([#7541](https://github.com/tutur3u/platform/issues/7541)) ([8ad8bb6](https://github.com/tutur3u/platform/commit/8ad8bb61f4a8b9151abfa49117f2c4d3e92f0f10))
+* **fee-lock:** PR-07 (2/3) month view with filters ([#7542](https://github.com/tutur3u/platform/issues/7542)) ([2a57548](https://github.com/tutur3u/platform/commit/2a57548be54fe9a58666bd1c6540add9e2a646b2))
+* **fee-lock:** PR-07 (3/3) flag-gated route, nav item and pending-tab button ([#7543](https://github.com/tutur3u/platform/issues/7543)) ([f53403a](https://github.com/tutur3u/platform/commit/f53403a92a9dca661734a5c6027e073754ba6880))
+* **fee-lock:** PR-07 (4/4) wire the Excel export dialog into the fee-lock page ([#7570](https://github.com/tutur3u/platform/issues/7570)) ([4afcabc](https://github.com/tutur3u/platform/commit/4afcabca775240a96ef85830ab9cce13f1ede142))
+* **fee-lock:** PR-07 (5/5) mount the notice template tab ([2b5f09e](https://github.com/tutur3u/platform/commit/2b5f09eefb20b8187e66e573d47170108426b364))
+* **fee-lock:** PR-09 sanitizeSpreadsheetText and export workbook ([#7559](https://github.com/tutur3u/platform/issues/7559)) ([408c319](https://github.com/tutur3u/platform/commit/408c319d5558337a1053fef0c0b92cefc2cee141))
+* **fee-lock:** PR-09b ws-scoped export entry loader ([#7562](https://github.com/tutur3u/platform/issues/7562)) ([f42e0bb](https://github.com/tutur3u/platform/commit/f42e0bbc563deb9fb531e0a30a1209a02cbf9907))
+* **fee-lock:** PR-09c Excel export route and exported event ([#7564](https://github.com/tutur3u/platform/issues/7564)) ([620eb25](https://github.com/tutur3u/platform/commit/620eb251a23fd06b033bc4906e1f3d1f3180bf63))
+* **fee-lock:** PR-09d export dialog and client helper ([#7565](https://github.com/tutur3u/platform/issues/7565)) ([808697a](https://github.com/tutur3u/platform/commit/808697ae5d75449d3b8eb65b539e9dbc5f11f0c3))
+* **fee-lock:** PR-11 notice template API ([c2b2653](https://github.com/tutur3u/platform/commit/c2b2653c7e8a66d49bf2f55dd0cc0a34c1b4ef19))
+* **fee-lock:** PR-11b notice preview and HTML escaping ([f144716](https://github.com/tutur3u/platform/commit/f144716d16b17cf829dcbd836dd4b9af4def611c))
+* **fee-lock:** PR-11c notice text in the Excel export ([a7f4bf3](https://github.com/tutur3u/platform/commit/a7f4bf37620a9e6c3e85e4439628af7c9c37d641))
+* **fee-lock:** PR-11d notice template editor tab ([4d43410](https://github.com/tutur3u/platform/commit/4d434104430aa540e84f46935167e8c4fc4cc4c2))
+* **fee-lock:** PR-12b validate fee_lock_ref and write the invoice link ([#7576](https://github.com/tutur3u/platform/issues/7576)) ([fd8a6af](https://github.com/tutur3u/platform/commit/fd8a6af0fbe73524b98caa3e84fa70c1be98b311))
+* **fee-lock:** PR-12b2 accept fee_lock_ref on subscription invoice create ([#7577](https://github.com/tutur3u/platform/issues/7577)) ([5ffe644](https://github.com/tutur3u/platform/commit/5ffe64410017536b848ae7a2e46b1af038b4de4c))
+* **fee-lock:** PR-12b3 explain a blocked delete of a pre-filled invoice ([#7578](https://github.com/tutur3u/platform/issues/7578)) ([13ae653](https://github.com/tutur3u/platform/commit/13ae653ea4ed1de5cccabcad1348af30a4e767bd))
+* **fee-lock:** PR-12c locked fee suggestion for subscription invoices ([#7579](https://github.com/tutur3u/platform/issues/7579)) ([7d6a302](https://github.com/tutur3u/platform/commit/7d6a3022739ef535282f548dc9cce77eb0bc63aa))
+* **fee-lock:** suggest the locked fee for a subscription invoice ([7d6a302](https://github.com/tutur3u/platform/commit/7d6a3022739ef535282f548dc9cce77eb0bc63aa))
+* **fee-lock:** validate fee_lock_ref and write the invoice link ([fd8a6af](https://github.com/tutur3u/platform/commit/fd8a6af0fbe73524b98caa3e84fa70c1be98b311))
+* **fee-lock:** wire the Excel export dialog into the fee-lock page ([4afcabc](https://github.com/tutur3u/platform/commit/4afcabca775240a96ef85830ab9cce13f1ede142))
+
+
+### Bug Fixes
+
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/finance-v0.35.0...finance-v0.36.0) (2026-11-08)
 
 
