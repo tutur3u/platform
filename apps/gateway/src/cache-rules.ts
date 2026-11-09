@@ -125,10 +125,14 @@ export function onlyLocaleCookies(response: Response) {
   const headers = response.headers as Headers & {
     getSetCookie?: () => string[];
   };
-  const cookies =
-    typeof headers.getSetCookie === 'function'
-      ? headers.getSetCookie()
-      : [headers.get('set-cookie') ?? ''];
+  const fromApi =
+    typeof headers.getSetCookie === 'function' ? headers.getSetCookie() : [];
+  // Some runtimes expose the header only as one comma-joined string.
+  const cookies = fromApi.length
+    ? fromApi
+    : (headers.get('set-cookie') ?? '')
+        .split(/,(?=\s*[^;,=\s]+=)/)
+        .filter((cookie) => cookie.trim());
   return (
     cookies.length > 0 &&
     cookies.every((cookie) => /^\s*NEXT_LOCALE=/i.test(cookie))

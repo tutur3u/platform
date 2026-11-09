@@ -191,7 +191,11 @@ export function createHandler(deps: HandlerDeps) {
     }
 
     const reason = bypassReason(request, match);
-    if (reason) return proxy(request, origin, env, 'BYPASS');
+    if (reason) {
+      return proxy(request, origin, env, 'BYPASS', {
+        'x-gateway-bypass': reason,
+      });
+    }
 
     const options = {
       respectOriginCacheControl:
@@ -230,7 +234,9 @@ export function createHandler(deps: HandlerDeps) {
     }
     const decision = isStorable(response, options);
     if (!decision.store) {
-      const next = withGatewayHeader(response, 'BYPASS');
+      const next = withGatewayHeader(response, 'BYPASS', {
+        'x-gateway-bypass': decision.reason ?? 'not-storable',
+      });
       rewriteLocation(next, origin, env.PUBLIC_HOST);
       return next;
     }
