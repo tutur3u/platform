@@ -114,7 +114,16 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    const appSessionRefresh = isLocalAuthApi
+    const isBuildInfoRead =
+      request.nextUrl.pathname === '/api/build-info' &&
+      (request.method === 'GET' || request.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of request.cookies.getAll())
+        request.cookies.delete(cookie.name);
+      request.headers.delete('cookie');
+      request.headers.delete('authorization');
+    }
+    const appSessionRefresh = isLocalAuthApi || isBuildInfoRead
       ? null
       : await refreshAppSessionForRequest(request, {
           sessionMode: 'supabase-first',
