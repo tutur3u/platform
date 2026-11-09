@@ -145,6 +145,7 @@ export const ci = {
   'rewise-cloudflare.yaml': true,
   'hive-cloudflare.yaml': true,
   'chat-cloudflare.yaml': true,
+  'learn-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
