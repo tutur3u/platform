@@ -150,6 +150,7 @@ export const ci = {
   'mind-cloudflare.yaml': true,
   'teach-cloudflare.yaml': true,
   'marketing-cloudflare.yaml': true,
+  'workspace-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.

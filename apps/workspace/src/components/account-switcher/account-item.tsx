@@ -1,0 +1,62 @@
+'use client';
+
+import { Check } from '@tuturuuu/icons/lucide-static';
+import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
+import { useTranslations } from 'next-intl';
+
+interface AccountItemProps {
+  account: WebAccountSummary;
+  isActive: boolean;
+  onClick?: () => void;
+}
+
+export function AccountItem({ account, isActive, onClick }: AccountItemProps) {
+  const t = useTranslations();
+
+  const displayName =
+    account.metadata.displayName ||
+    account.email ||
+    t('account_switcher.unknown_user');
+  const initials = displayName
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-3 rounded-lg p-2 transition-colors hover:bg-dynamic-blue/10"
+    >
+      <Avatar className="h-8 w-8">
+        <AvatarImage
+          src={account.metadata.avatarUrl ?? undefined}
+          alt={displayName}
+        />
+        <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+      </Avatar>
+
+      <div className="flex flex-1 flex-col items-start text-left">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-sm">{displayName}</span>
+          {isActive && (
+            <Badge variant="secondary" className="text-xs">
+              {t('account_switcher.active')}
+            </Badge>
+          )}
+        </div>
+        {account.email && (
+          <span className="text-foreground/60 text-xs">{account.email}</span>
+        )}
+      </div>
+
+      {isActive && <Check className="h-4 w-4 text-dynamic-green" />}
+    </button>
+  );
+}

@@ -1,0 +1,107 @@
+---
+title: "Workspace on Start + Void"
+description: "Route groups carved from Web into the native Workspace app, the missing API guard, and the rollback to Vercel."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Workspace (`apps/workspace`) is the native TanStack Start + Vite+ + Void home for
+the signed-in workspace shell. Its source is carved from `apps/web`: each route
+group is copied with its import closure, and `@tuturuuu/start-bridge` supplies the
+Next ports, request context, proxy and central API forwarding (see
+[Start bridge](/build/devops/start-bridge) and
+[native Start migration](/build/devops/native-start-migration)).
+
+The app is a **staging candidate only**. It has no entry in
+`productionPublicationPolicy` in `tuturuuu.ci.ts`, its Worker is
+`tuturuuu-workspace-vite-staging`, and `apps/web` on Vercel keeps serving every
+path until an explicit cutover PR admits the app.
+
+## Route groups
+
+| Group | Source in Web | Status |
+| --- | --- | --- |
+| Shell and proxy | `[locale]/layout`, `(dashboard)/layout`, `(dashboard)/[wsId]/layout`, `src/proxy.ts` | Carved. Cookie names, domain and `SameSite` are the Web implementation. |
+| Auth | `(auth)/login`, `signup`, `add-account`, `auth/recovery`, `sso/consent`, `verify-token` | Carved. |
+| Dashboard home | `(dashboard)/[wsId]/(dashboard)/page.tsx` and its Mira, assistant, user-group and generative-UI closure | Carved. `/[wsId]` renders the Mira dashboard. |
+| Tasks | `(dashboard)/[wsId]/tasks/[[...slug]]` | Carved. Redirects to the Tasks app origin with the path and query preserved. |
+| Calendar | `(dashboard)/[wsId]/calendar` | Carved. Redirects to the Calendar app origin. |
+| Workspace settings | `(dashboard)/[wsId]/(workspace-settings)`: `settings` (+ `notifications`, `reports`), `members`, `roles` (redirects to `members?tab=roles`), `api-keys` (+ usage logs), `secrets`, `usage`, `sso`, `inquiries`, `billing` (+ `success`, which redirects to the Pay app) | Carved. `lib/datasets/page-access.ts` redirects a `401` to `/login` because the bridge has no `unauthorized()` boundary. |
+| Documents | `(dashboard)/[wsId]/documents`, `documents/[documentId]` | Carved. |
+| Habits | `(dashboard)/[wsId]/habits/[[...slug]]` | Carved. Redirects to the Tasks app origin with the path and query preserved. |
+| Notes | `(dashboard)/[wsId]/notes` | Carved. |
+| Memories | `(dashboard)/[wsId]/memories` | Carved. |
+| Mira | `(dashboard)/[wsId]/mira` | Carved. |
+| Integrations | `(dashboard)/[wsId]/integrations`, `integrations/discord` | Carved. |
+| AI | `(dashboard)/[wsId]/ai`: `executions`, `spark` | Carved. |
+| AI models, datasets, pipelines | `(dashboard)/[wsId]/(ai)`: `models`, `datasets`, `pipelines` | Carved. |
+| AI chat | `(dashboard)/[wsId]/ai-chat`, `[chatId]`, `chatbots`, `my-chatbots`, `new` | Carved. |
+| Locale root | `[locale]/page.tsx` (Workspace-owned) | Answers `404`. The locale-only path would otherwise match `/[wsId]` as a workspace named after the locale. Signed-in users never reach it because the proxy redirects them to their workspace. |
+| Redirected by the proxy | `workforce`, plus `finance`, `drive`, `mail`, `chat`, `time-tracker`, `meet`, `users`, `posts` and `forms` (satellite redirects in `src/proxy.ts`) | Nothing to carve. The proxy answers with a redirect to the owning app before any page renders. |
+| Not carved |  (`models`, `datasets`, `pipelines`), `changelog`, `crawlers`, `cron`, `diet`, `epm`, `external-projects`, `feedback`, `hive`, `inventory`, `link-shortener`, `metrics`, `mind`, `notifications`, `polls`, `progress`, `qr-generator`, `queues`, `readings`, `whiteboards`, `workouts`, `workspace-setup`, `(dashboard)/personal-journal` | Workspace answers `404` for them, so a router in front of it must send only the carved patterns here. |
+
+Run `bun run routes:check` after every carve. If it reports stale registries, run
+`bun ../../packages/start-bridge/src/codegen/cli.ts generate .`. The page module
+map (`src/start-bridge/page-modules.bridge.gen.ts`) is regenerated from the
+codemod's `pageModulesModule` template over the route inventory, so each new page
+gets its layout chain.
+
+## Missing API guard
+
+Web's `src/proxy.ts` runs an API cost guard and CSRF guard before an API request.
+Both import server-only modules that break the Start build, so Workspace's copy of
+the proxy does not run them. `/api` is forwarded to the central Web API, whose
+proxy still runs the guard, so the abuse and CSRF checks stay in force for every
+API call. Do not point `/api` at a Workspace-local handler and do not add an
+`apiOrigin` that bypasses Web until the guard is restored in the portable
+package.
+
+## Local verification
+
+Build the workspace package `dist` folders first (they are gitignored):
+
+```bash
+for p in types supabase internal-api editor masonry devbox sdk; do
+  (cd packages/$p && bun run build)
+done
+cd apps/workspace
+bun run routes:check
+bun run type-check:cloudflare
+bun run build:cloudflare
+CI=true CI_SOURCE_SHA=$(git rev-parse HEAD) bun run test:runtime
+```
+
+`bun run preview:cloudflare` writes `.void/preview-deploy-config.json`, which makes
+`test:runtime` fail with "Exactly one native/saved deploy pointer required". After
+a preview run, `rm -rf .void .void-wrangler.jsonc dist`, rebuild, then test. Smoke
+against `127.0.0.1:<port>`; the preview host check rejects
+`workspace.tuturuuu.com`. Stop only the preview process you started.
+
+The runtime suite uses an empty synthetic environment, so Supabase calls fail by
+design. It asserts the status of the public pages in
+`start-bridge.routes.json`, the apex mount, the unknown-path policy and the
+response policy. The `307` results for dashboard paths are expected: an
+unauthenticated request is redirected to the central login.
+
+## Rollback and cutover
+
+Rollback is a routing change, never a data change. `apps/web` is untouched and
+serves every path on Vercel. Removing the gateway route that sends Workspace
+paths to the Worker returns the traffic to Vercel. No database migration or write
+is part of this app.
+
+Before any cutover the release owner records:
+
+1. The exact accepted `main` SHA, the green `workspace-cloudflare.yaml` run and the
+   artifact hash.
+2. The immutable **prior Vercel deployment ID and URL** for the Web project.
+   Capturing it is a provider read and belongs to the release owner (Rex), not to
+   the migration lane.
+3. Secret **names** only: `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` and
+   `TUTURUUU_APP_COORDINATION_SECRET`.
+4. The gateway route table with the Workspace patterns, so the one-step removal is
+   ready before the flip.
+5. A post-deploy watch with immediate rollback on any `5xx` or login regression.
+
+DNS, zone and routing changes need release-authority approval.

@@ -1,0 +1,193 @@
+'use client';
+
+import type { UIMessage } from '@tuturuuu/ai/types';
+import type { LiveMode } from '@tuturuuu/internal-api';
+import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import {
+  classifyLiveInitializationError,
+  type LiveInitializationErrorCode,
+  useEphemeralToken,
+} from '@/hooks/use-ephemeral-token';
+import { LiveAPIProvider } from '@/hooks/use-live-api';
+import type { LiveConversationChange } from '../assistant/use-live-conversation';
+import type { LiveComposer } from '../components/mira-voice-mode-switcher';
+import { VoiceErrorState, VoiceLoadingState } from './assistant-live-state';
+import { AssistantVoiceSession } from './assistant-voice-session';
+
+export interface AssistantClientProps {
+  mode?: LiveMode;
+  modeControl?: ReactNode;
+  onInitializingChange?: (initializing: boolean) => void;
+  onResultsChange?: (results: ReactNode) => void;
+  onBeforeStart?: () => void | Promise<void>;
+  inputOpen?: boolean;
+  onToggleInput?: () => void;
+  creditSource: 'personal' | 'workspace';
+  creditWsId?: string;
+  onReturnToChat: () => void;
+  history?: UIMessage[];
+  onConversationChange?: LiveConversationChange;
+  onComposerChange?: (composer: LiveComposer | null) => void;
+  wsId: string;
+}
+
+export default function AssistantClient({
+  mode = 'flash',
+  modeControl,
+  onInitializingChange,
+  onResultsChange,
+  onBeforeStart,
+  inputOpen,
+  onToggleInput,
+  creditSource,
+  creditWsId,
+  onReturnToChat,
+  onComposerChange,
+  history,
+  onConversationChange,
+  wsId,
+}: AssistantClientProps) {
+  const t = useTranslations('dashboard.voice_assistant');
+  const [sessionError, setSessionError] = useState<Error | null>(null);
+  const [isRestarting, setIsRestarting] = useState(false);
+  const {
+    token,
+    scopeKey,
+    isLoading,
+    error,
+    errorCode,
+    expiresAt,
+    liveSessionId,
+    model,
+    refreshToken,
+  } = useEphemeralToken({ mode, creditSource, creditWsId, wsId });
+
+  useEffect(() => {
+    onInitializingChange?.(isLoading || isRestarting);
+  }, [isLoading, isRestarting, onInitializingChange]);
+
+  useEffect(() => {
+    if (error) {
+      console.error('[Voice Assistant] Failed to initialize:', error);
+    }
+  }, [error]);
+
+  const restartSession = useCallback(async () => {
+    setSessionError(null);
+    setIsRestarting(true);
+    try {
+      await onBeforeStart?.();
+      await refreshToken();
+    } finally {
+      setIsRestarting(false);
+    }
+  }, [refreshToken, onBeforeStart]);
+
+  let content: ReactNode;
+
+  const effectiveError = sessionError ?? error;
+  const effectiveErrorCode: LiveInitializationErrorCode = sessionError
+    ? classifyLiveInitializationError(sessionError)
+    : errorCode;
+  const errorDescription =
+    effectiveErrorCode === 'INSUFFICIENT_CREDITS'
+      ? t('insufficient_credits')
+      : effectiveErrorCode === 'MICROPHONE_DENIED'
+        ? t('microphone_denied')
+        : effectiveErrorCode === 'MICROPHONE_UNAVAILABLE'
+          ? t('microphone_unavailable')
+          : effectiveErrorCode === 'NOT_CONFIGURED'
+            ? t('not_configured')
+            : effectiveErrorCode === 'AUTHORIZATION_EXPIRED'
+              ? t('authorization_expired')
+              : effectiveErrorCode === 'CONNECTION_FAILED'
+                ? t('connection_failed')
+                : t('connection_error_fallback');
+  const errorTitle =
+    effectiveErrorCode === 'INSUFFICIENT_CREDITS'
+      ? t('credits_required_title')
+      : effectiveErrorCode === 'MICROPHONE_DENIED' ||
+          effectiveErrorCode === 'MICROPHONE_UNAVAILABLE'
+        ? t('microphone_error_title')
+        : effectiveErrorCode === 'NOT_CONFIGURED'
+          ? t('not_configured_title')
+          : effectiveErrorCode === 'AUTHORIZATION_EXPIRED'
+            ? t('session_expired_title')
+            : t('unable_to_connect');
+
+  if (isLoading || isRestarting) {
+    content = (
+      <VoiceLoadingState
+        compact={!!onConversationChange}
+        description={t('initializing')}
+        title={t('preparing_live')}
+      />
+    );
+  } else if (effectiveError || !token || !scopeKey || !liveSessionId) {
+    content = (
+      <VoiceErrorState
+        compact={!!onConversationChange}
+        description={errorDescription}
+        onReturnToChat={onReturnToChat}
+        onRetry={() => void restartSession()}
+        retryLabel={t('try_again')}
+        returnLabel={t('return_to_chat')}
+        title={errorTitle}
+      />
+    );
+  } else {
+    content = (
+      <LiveAPIProvider
+        key={`${scopeKey}:${token}`}
+        apiKey={token}
+        model={model ?? undefined}
+        authorizationExpiresAt={expiresAt ?? undefined}
+        liveSessionId={liveSessionId}
+        wsId={wsId}
+        scopeKey={scopeKey}
+      >
+        <AssistantVoiceSession
+          modeControl={modeControl}
+          onReturnToChat={onReturnToChat}
+          onResultsChange={onResultsChange}
+          inputOpen={inputOpen}
+          onToggleInput={onToggleInput}
+          history={history}
+          onConversationChange={onConversationChange}
+          onComposerChange={onComposerChange}
+          onError={setSessionError}
+          onRestartSession={restartSession}
+          wsId={wsId}
+        />
+      </LiveAPIProvider>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        'relative flex min-h-0 min-w-0 flex-col',
+        onConversationChange
+          ? 'w-full'
+          : 'w-full flex-1 overflow-hidden rounded-lg'
+      )}
+    >
+      {(isLoading ||
+        isRestarting ||
+        effectiveError ||
+        !token ||
+        !scopeKey ||
+        !liveSessionId) &&
+      modeControl ? (
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+          {modeControl}
+          {content}
+        </div>
+      ) : (
+        content
+      )}
+    </div>
+  );
+}

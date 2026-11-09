@@ -1,0 +1,122 @@
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
+import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
+import type { Locale } from '@/i18n/routing';
+import MiraDashboardClient from './components/mira-dashboard-client';
+
+const DEFAULT_ASSISTANT_NAME = 'Mira';
+
+async function UserGroupQuickActionsSlot({ wsId }: { wsId: string }) {
+  const { default: UserGroupQuickActions } =
+    await import('./user-groups/quick-actions');
+
+  return <UserGroupQuickActions wsId={wsId} />;
+}
+
+async function PermissionSetupBannerSlot({
+  isCreator,
+  wsId,
+}: {
+  isCreator: boolean;
+  wsId: string;
+}) {
+  if (!isCreator) return null;
+
+  const { default: PermissionSetupBanner } =
+    await import('./permission-setup-banner');
+
+  return <PermissionSetupBanner wsId={wsId} isCreator />;
+}
+
+async function ensureDashboardAccess({
+  user,
+  wsId,
+}: {
+  user: {
+    email?: string | null;
+    id: string;
+  };
+  wsId: string;
+}) {
+  const { getPermissions } = await import('@tuturuuu/utils/workspace-helper');
+  const permissions = await getPermissions({ user, wsId });
+  if (!permissions) notFound();
+}
+
+async function resolveDashboardWorkspace(routeWsId: string) {
+  const [{ getCurrentUser }, { getWorkspace }] = await Promise.all([
+    import('@tuturuuu/utils/user-helper'),
+    import('@tuturuuu/utils/workspace-helper'),
+  ]);
+
+  const currentUser = await getCurrentUser();
+  if (!currentUser) notFound();
+
+  const workspace = await getWorkspace(routeWsId, {
+    useAdmin: true,
+    user: {
+      email: currentUser.email ?? null,
+      id: currentUser.id,
+    },
+  });
+  if (!workspace) notFound();
+
+  return { currentUser, workspace };
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('dashboard.metadata');
+
+  return {
+    title: t('title'),
+    description: t('description'),
+  };
+}
+
+interface Props {
+  params: Promise<{
+    locale: Locale;
+    wsId: string;
+  }>;
+}
+
+export default async function WorkspaceHomePage({ params }: Props) {
+  await connection();
+
+  const { wsId: routeWsId } = await params;
+  const { currentUser, workspace } = await resolveDashboardWorkspace(routeWsId);
+
+  const wsId = workspace.id;
+  const isCreator = workspace.creator_id === currentUser.id;
+  await ensureDashboardAccess({
+    user: {
+      email: currentUser.email ?? null,
+      id: currentUser.id,
+    },
+    wsId,
+  });
+
+  return (
+    <>
+      {!workspace.personal && (
+        <Suspense fallback={null}>
+          <PermissionSetupBannerSlot wsId={wsId} isCreator={isCreator} />
+        </Suspense>
+      )}
+
+      {!workspace.personal && (
+        <Suspense fallback={null}>
+          <UserGroupQuickActionsSlot wsId={wsId} />
+        </Suspense>
+      )}
+
+      <MiraDashboardClient
+        currentUser={currentUser}
+        initialAssistantName={DEFAULT_ASSISTANT_NAME}
+        wsId={wsId}
+      />
+    </>
+  );
+}

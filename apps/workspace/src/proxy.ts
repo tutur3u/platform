@@ -1,0 +1,1439 @@
+import {
+  createCentralizedAuthProxy,
+  propagateAuthCookies,
+} from '@tuturuuu/auth/proxy';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import { getMalformedSupabaseAuthCookieNames } from '@tuturuuu/supabase/next/proxy';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import {
+  extractIPFromRequest,
+  isIPBlockedEdge,
+  recordMalformedAuthCookieEdge,
+  recordSuspiciousApiRequestEdge,
+} from '@tuturuuu/utils/abuse-protection/edge';
+import {
+  guardApiProxyRequest,
+  hasSupabaseSessionCookie,
+  isTrustedProxyBypassForRequest,
+  type ProxyRoutePolicy,
+  type RateLimitProfile,
+} from '@tuturuuu/utils/api-proxy-guard';
+import {
+  INTERNAL_WORKSPACE_SLUG,
+  PERSONAL_WORKSPACE_SLUG,
+  ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
+} from '@tuturuuu/utils/constants';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
+import { guardBrowserApiSession } from '@tuturuuu/utils/required-mfa-api-session';
+import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
+import {
+  isPersonalWorkspace,
+  isWorkspaceUuidLiteral,
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { BASE_URL, PUBLIC_PATHS } from './constants/common';
+import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import {
+  calendarPreferenceGuardOptions,
+  handleCalendarPreferenceGuardResponse,
+} from './lib/calendar-preference-guard';
+import { getChatAppOrigin } from './lib/chat-app-url';
+import { getContactsAppOrigin } from './lib/contacts-app-url';
+import { getDriveAppOrigin } from './lib/drive-app-url';
+import { isVersionedExternalProjectAssetDeliveryRequest } from './lib/external-projects/asset-delivery-request';
+import { getFinanceAppOrigin } from './lib/finance-app-url';
+import { getFormsAppOrigin } from './lib/forms-app-url';
+import { handleLocale } from './lib/locale-proxy';
+import { getMailAppOrigin } from './lib/mail-app-url';
+import { getMeetAppOrigin } from './lib/meet-app-url';
+import { feedbackProxyPayloadLimit } from './lib/product-feedback-limits';
+import { profileMediaProxyPayloadLimit } from './lib/profile-media-proxy';
+import { isVerifiedStaffCliSession } from './lib/staff-cli-session';
+import { withStagingOriginProof } from './lib/staging-origin-proof';
+import { getToolsAppOrigin } from './lib/tools-app-url';
+import { getTrackAppOrigin } from './lib/track-app-url';
+import { workspaceHomeRedirectUrl } from './lib/workspace-home-redirect';
+import {
+  getWorkspaceRoutePermissionRequirements,
+  hasRequiredWorkspaceRoutePermission,
+} from './lib/workspace-route-permissions';
+
+const isDev = process.env.NODE_ENV !== 'production';
+const NEXT_PUBLIC_ENV_PREFIX = 'NEXT_PUBLIC';
+function getRuntimePublicEnvValue(name: string) {
+  return process.env[`${NEXT_PUBLIC_ENV_PREFIX}_${name}`];
+}
+function resolveConfiguredOrigin(value?: string) {
+  if (!value) {
+    return null;
+  }
+  const [firstValue] = value
+    .split(/[,\n]/u)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (!firstValue) {
+    return null;
+  }
+  const normalized = /^[a-z]+:\/\//iu.test(firstValue)
+    ? firstValue
+    : `https://${firstValue}`;
+  try {
+    return new URL(normalized).origin;
+  } catch {
+    return null;
+  }
+}
+
+const WEB_APP_URL = isDev
+  ? BASE_URL
+  : resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
+    resolveConfiguredOrigin(getRuntimePublicEnvValue('WEB_APP_URL')) ||
+    resolveConfiguredOrigin(getRuntimePublicEnvValue('APP_URL')) ||
+    resolveConfiguredOrigin(process.env.COOLIFY_URL) ||
+    resolveConfiguredOrigin(process.env.COOLIFY_FQDN) ||
+    'https://tuturuuu.com';
+const OFFLINE_FALLBACK_PATH = '/~offline';
+const BROWSER_STATE_RECOVERY_PATH = '/~recover-browser-state';
+const RESERVED_ROOT_SEGMENT_PREFIX = '~';
+const BLOCKED_ROOT_SEGMENT_PREFIX = '.';
+const EMAIL_ROUTE_WORKSPACE_PATTERN =
+  /^\/api\/v1\/workspaces\/([^/]+)\/(?:users\/[^/]+\/follow-up|user-groups\/[^/]+\/group-checks\/[^/]+\/email)(?:\/|$)/;
+const EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES = [
+  'EMAIL_RATE_LIMIT_MINUTE',
+  'EMAIL_RATE_LIMIT_HOUR',
+  'EMAIL_RATE_LIMIT_DAY',
+  'EMAIL_RATE_LIMIT_USER_MINUTE',
+  'EMAIL_RATE_LIMIT_USER_HOUR',
+  'EMAIL_RATE_LIMIT_RECIPIENT_HOUR',
+  'EMAIL_RATE_LIMIT_RECIPIENT_DAY',
+  'EMAIL_RATE_LIMIT_IP_MINUTE',
+  'EMAIL_RATE_LIMIT_IP_HOUR',
+] as const;
+const EMAIL_RATE_LIMIT_OVERRIDE_PROXY_RATE_LIMITS = {
+  get: [],
+  mutate: [
+    { window: 'minute', limit: 30, duration: '1 m' },
+    { window: 'hour', limit: 120, duration: '1 h' },
+    { window: 'day', limit: 600, duration: '1 d' },
+  ],
+} satisfies RateLimitProfile;
+const EMAIL_RATE_LIMIT_OVERRIDE_ROUTE_POLICY: ProxyRoutePolicy = {
+  key: 'email-rate-limit-override',
+  matches: (req) => EMAIL_ROUTE_WORKSPACE_PATTERN.test(req.nextUrl.pathname),
+  rateLimits: EMAIL_RATE_LIMIT_OVERRIDE_PROXY_RATE_LIMITS,
+};
+const SUSPICIOUS_QUERY_LENGTH_MAX = parsePositiveIntEnv(
+  'PROXY_SUSPICIOUS_QUERY_LENGTH_MAX',
+  1024
+);
+const SUSPICIOUS_QUERY_PARAMS_MAX = parsePositiveIntEnv(
+  'PROXY_SUSPICIOUS_QUERY_PARAMS_MAX',
+  24
+);
+const SCANNER_PATH_PATTERN =
+  /(wp-admin|wp-login\.php|xmlrpc\.php|phpmyadmin|adminer|\.env|\.git|boaform|server-status|cgi-bin|vendor\/phpunit|actuator|jenkins|hudson|\/shell|\/debug)/i;
+const RATE_LIMIT_DIAGNOSTIC_HEADER_NAMES = [
+  'Retry-After',
+  'X-Proxy-Block-Reason',
+  'X-RateLimit-Caller-Class',
+  'X-RateLimit-Limit',
+  'X-RateLimit-Policy',
+  'X-RateLimit-Remaining',
+  'X-RateLimit-Reset',
+  'X-RateLimit-Window',
+  'X-Request-Id',
+  'X-Vercel-Id',
+  'CF-Ray',
+] as const;
+const STAFF_RATE_LIMIT_WARNING = 'staff-debug-bypass';
+const STAFF_RATE_LIMIT_DEBUG_BYPASS = 'tuturuuu-staff';
+const CACHEABLE_AUTH_SHELL_PATHS = new Set(['/add-account', '/login']);
+const AUTH_SHELL_BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
+const AUTH_SHELL_CDN_CACHE_CONTROL =
+  'public, max-age=86400, stale-while-revalidate=604800';
+
+function parsePositiveIntEnv(name: string, fallback: number): number {
+  const rawValue = process.env[name];
+  if (!rawValue) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(rawValue, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function prependLocalePrefix(path: string, localePrefix: string): string {
+  if (!localePrefix) {
+    return path;
+  }
+
+  return path === '/' ? localePrefix : `${localePrefix}${path}`;
+}
+
+function getLocaleAwarePathname(pathname: string) {
+  const segments = pathname.split('/').filter(Boolean);
+  const firstSegment = segments[0];
+  const locale = supportedLocales.includes((firstSegment ?? '') as Locale)
+    ? (firstSegment as Locale)
+    : null;
+  const pathSegments = locale ? segments.slice(1) : segments;
+  const pathnameWithoutLocale =
+    pathSegments.length > 0 ? `/${pathSegments.join('/')}` : '/';
+
+  return {
+    locale,
+    pathnameWithoutLocale,
+  };
+}
+
+function isInternalTasksEntryPath({
+  hasLocaleInPath,
+  pathSegments,
+}: {
+  hasLocaleInPath: boolean;
+  pathSegments: string[];
+}) {
+  const workspaceIndex = hasLocaleInPath ? 1 : 0;
+  const workspaceSlug = pathSegments[workspaceIndex]?.toLowerCase();
+
+  return (
+    workspaceSlug === INTERNAL_WORKSPACE_SLUG &&
+    pathSegments[workspaceIndex + 1] === 'tasks' &&
+    pathSegments.length === workspaceIndex + 2
+  );
+}
+
+function isAuthProxyPublicPath(pathname: string): boolean {
+  const { locale, pathnameWithoutLocale } = getLocaleAwarePathname(pathname);
+
+  if (locale && pathnameWithoutLocale === '/') {
+    return true;
+  }
+
+  return (
+    pathnameWithoutLocale === '/auth/recovery' ||
+    pathnameWithoutLocale.startsWith('/auth/recovery/')
+  );
+}
+
+function isCacheableAuthShellPath(pathname: string): boolean {
+  const { pathnameWithoutLocale } = getLocaleAwarePathname(pathname);
+
+  return CACHEABLE_AUTH_SHELL_PATHS.has(pathnameWithoutLocale);
+}
+
+function applyCacheableAuthShellHeaders(response: NextResponse): NextResponse {
+  response.headers.set('Cache-Control', AUTH_SHELL_BROWSER_CACHE_CONTROL);
+  response.headers.set('CDN-Cache-Control', AUTH_SHELL_CDN_CACHE_CONTROL);
+  response.headers.set(
+    'Vercel-CDN-Cache-Control',
+    AUTH_SHELL_CDN_CACHE_CONTROL
+  );
+  response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+
+  return response;
+}
+
+function handleCacheableAuthShellRoute(req: NextRequest): NextResponse | null {
+  if (!isCacheableAuthShellPath(req.nextUrl.pathname)) {
+    return null;
+  }
+
+  const { locale } = getLocaleAwarePathname(req.nextUrl.pathname);
+  const response = locale ? NextResponse.next() : handleLocale({ req });
+
+  return applyCacheableAuthShellHeaders(response);
+}
+
+function redirectToPath(req: NextRequest, pathname: string) {
+  return NextResponse.redirect(new URL(pathname, req.nextUrl));
+}
+
+function redirectToToolsApp(req: NextRequest, pathname: string) {
+  const redirectUrl = new URL(getToolsAppOrigin());
+  redirectUrl.pathname = pathname;
+  redirectUrl.search = req.nextUrl.search;
+
+  return NextResponse.redirect(redirectUrl);
+}
+
+function handleMailAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getMailAppOrigin(),
+    routeSegment: 'mail',
+  });
+}
+
+function handleFinanceAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getFinanceAppOrigin(),
+    routeSegment: 'finance',
+  });
+}
+
+function handleDriveAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getDriveAppOrigin(),
+    routeSegment: 'drive',
+  });
+}
+
+function handleChatAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getChatAppOrigin(),
+    routeSegment: 'chat',
+  });
+}
+
+function handleTrackAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getTrackAppOrigin(),
+    routeSegment: 'time-tracker',
+  });
+}
+
+function handleMeetAppRedirectRoute(req: NextRequest): NextResponse | null {
+  const response = handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getMeetAppOrigin(),
+    routeSegment: 'meet',
+    workspacePrefix: 'workspace',
+  });
+
+  return response;
+}
+
+function handleContactsAppRedirectRoute(req: NextRequest): NextResponse | null {
+  for (const routeSegment of ['users', 'workforce', 'posts']) {
+    const response = handleWorkspaceSatelliteRedirectRoute(req, {
+      appOrigin: getContactsAppOrigin(),
+      routeSegment,
+      preserveRouteSegment: true,
+    });
+
+    if (response) return response;
+  }
+
+  return null;
+}
+
+function handleFormsAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getFormsAppOrigin(),
+    routeSegment: 'forms',
+    preserveRouteSegment: true,
+  });
+}
+
+/**
+ * Permanent redirect for already-distributed shared-form links.
+ *
+ * Public forms moved to `forms.tuturuuu.com/f/<shareCode>`. Every link people
+ * have already sent points at `tuturuuu.com/<locale>/shared/forms/<shareCode>`,
+ * and social platforms have cached OG cards against those URLs — so this must
+ * be a permanent (308) redirect and must serve crawlers, not just browsers.
+ */
+function handleSharedFormRedirectRoute(req: NextRequest): NextResponse | null {
+  const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
+  const hasLocale =
+    pathSegments[0] && supportedLocales.includes(pathSegments[0] as Locale);
+  const offset = hasLocale ? 1 : 0;
+
+  if (
+    pathSegments[offset] !== 'shared' ||
+    pathSegments[offset + 1] !== 'forms'
+  ) {
+    return null;
+  }
+
+  const shareCode = pathSegments[offset + 2];
+  if (!shareCode) return null;
+
+  const redirectUrl = new URL(getFormsAppOrigin());
+  redirectUrl.pathname = [
+    '',
+    'f',
+    shareCode,
+    // Preserve `/opengraph-image` and `/twitter-image` sub-paths.
+    ...pathSegments.slice(offset + 3),
+  ].join('/');
+  redirectUrl.search = req.nextUrl.search;
+
+  return NextResponse.redirect(redirectUrl, 308);
+}
+
+function handleWorkspaceSatelliteRedirectRoute(
+  req: NextRequest,
+  {
+    appOrigin,
+    preserveRouteSegment = false,
+    routeSegment,
+    workspacePrefix,
+  }: {
+    appOrigin: string;
+    preserveRouteSegment?: boolean;
+    routeSegment: string;
+    workspacePrefix?: string;
+  }
+): NextResponse | null {
+  const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
+  const hasLocale =
+    pathSegments[0] && supportedLocales.includes(pathSegments[0] as Locale);
+  const workspaceIndex = hasLocale ? 1 : 0;
+  const workspaceSlug = pathSegments[workspaceIndex];
+
+  if (!workspaceSlug || pathSegments[workspaceIndex + 1] !== routeSegment) {
+    return null;
+  }
+
+  const normalizedWorkspaceSlug = workspaceSlug.toLowerCase();
+  const isWorkspaceRoute =
+    normalizedWorkspaceSlug === PERSONAL_WORKSPACE_SLUG ||
+    normalizedWorkspaceSlug === INTERNAL_WORKSPACE_SLUG ||
+    normalizedWorkspaceSlug === ROOT_WORKSPACE_ID.toLowerCase() ||
+    isWorkspaceUuidLiteral(workspaceSlug);
+
+  if (!isWorkspaceRoute) {
+    return null;
+  }
+
+  const suffixSegments = pathSegments.slice(workspaceIndex + 2);
+  const redirectUrl = new URL(appOrigin);
+  redirectUrl.pathname = [
+    '',
+    ...(workspacePrefix ? [workspacePrefix] : []),
+    workspaceSlug,
+    ...(preserveRouteSegment ? [routeSegment] : []),
+    ...suffixSegments,
+  ].join('/');
+  redirectUrl.search = req.nextUrl.search;
+
+  return NextResponse.redirect(redirectUrl);
+}
+
+function handlePublicMarketingRedirectRoute(
+  req: NextRequest
+): NextResponse | null {
+  const { locale, pathnameWithoutLocale } = getLocaleAwarePathname(
+    req.nextUrl.pathname
+  );
+
+  if (locale === defaultLocale && pathnameWithoutLocale === '/pricing') {
+    return redirectToPath(req, pathnameWithoutLocale);
+  }
+
+  if (pathnameWithoutLocale === '/docs') {
+    return NextResponse.redirect('https://docs.tuturuuu.com');
+  }
+
+  if (pathnameWithoutLocale === '/pricing') {
+    return redirectToPath(req, '/?hash-nav=1#pricing');
+  }
+
+  if (pathnameWithoutLocale === '/qr-generator') {
+    // The standalone QR app is retired; the generator lives in the tools app.
+    return redirectToToolsApp(req, '/qr');
+  }
+
+  if (pathnameWithoutLocale === '/tools/random') {
+    return redirectToToolsApp(req, '/random');
+  }
+
+  if (
+    pathnameWithoutLocale === '/calendar/meet-together' ||
+    pathnameWithoutLocale.startsWith('/calendar/meet-together/')
+  ) {
+    return redirectToPath(
+      req,
+      `${pathnameWithoutLocale.replace('/calendar/meet-together', '/meet-together')}${req.nextUrl.search}${req.nextUrl.hash}`
+    );
+  }
+
+  if (
+    pathnameWithoutLocale === '/products/meet-together' ||
+    pathnameWithoutLocale.startsWith('/products/meet-together/')
+  ) {
+    return redirectToPath(
+      req,
+      pathnameWithoutLocale.replace('/products/meet-together', '/meet-together')
+    );
+  }
+
+  return null;
+}
+
+function isWorkspaceHomeRedirectCandidate(
+  workspaceSlug: string | undefined
+): workspaceSlug is string {
+  if (!workspaceSlug) {
+    return false;
+  }
+
+  const pathname = `/${workspaceSlug}`;
+  return !PUBLIC_PATHS.includes(pathname);
+}
+
+async function hasWorkspaceEmailRateLimitOverrides(
+  pathname: string
+): Promise<boolean> {
+  const match = pathname.match(EMAIL_ROUTE_WORKSPACE_PATTERN);
+  const wsId = match?.[1];
+  const resolvedWsId = wsId ? resolveWorkspaceId(wsId) : null;
+
+  if (
+    !wsId ||
+    !resolvedWsId ||
+    wsId.startsWith(RESERVED_ROOT_SEGMENT_PREFIX) ||
+    !isWorkspaceUuidLiteral(resolvedWsId) ||
+    (await isPersonalWorkspace(resolvedWsId))
+  ) {
+    return false;
+  }
+
+  try {
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const { count, error } = await sbAdmin
+      .from('workspace_secrets')
+      .select('name', { count: 'exact', head: true })
+      .eq('ws_id', resolvedWsId)
+      .in('name', [...EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES]);
+
+    if (error) {
+      console.error(
+        'Error checking workspace email rate limit overrides in proxy:',
+        error
+      );
+      return false;
+    }
+
+    return (count ?? 0) > 0;
+  } catch (error) {
+    console.error(
+      'Failed to load workspace email rate limit overrides in proxy:',
+      error
+    );
+    return false;
+  }
+}
+
+function looksLikeSupabaseJwt(token: string): boolean {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return false;
+  }
+
+  return parts.every(
+    (part) => /^[A-Za-z0-9_-]+$/.test(part) && part.length > 0
+  );
+}
+
+function looksLikeWorkspaceApiKey(token: string): boolean {
+  return /^ttr_[A-Za-z0-9_-]+$/.test(token);
+}
+
+function getBearerToken(headers: Headers) {
+  const authHeader = headers.get('authorization')?.trim();
+  if (!authHeader?.toLowerCase().startsWith('bearer ')) {
+    return null;
+  }
+
+  const token = authHeader.slice(7).trim();
+  return token || null;
+}
+
+function hasVerifiableSessionCredential(req: NextRequest) {
+  const bearerToken = getBearerToken(req.headers);
+  return (
+    hasSupabaseSessionCookie(req) ||
+    (!!bearerToken && looksLikeSupabaseJwt(bearerToken))
+  );
+}
+
+async function resolveRateLimitDebugIdentity(req: NextRequest): Promise<{
+  isStaff: boolean;
+  userEmail: string | null;
+  userId: string | null;
+} | null> {
+  if (!hasVerifiableSessionCredential(req)) {
+    return null;
+  }
+
+  try {
+    const supabase = await createClient(req);
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+    if (!user) {
+      return null;
+    }
+    const userEmail = user.email ?? null;
+    return {
+      isStaff: isVerifiedTuturuuuStaffSession(user),
+      userEmail,
+      userId: user.id,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function appendRateLimitDebugHeaders(
+  response: NextResponse,
+  {
+    identity,
+    ipAddress,
+  }: {
+    identity: Awaited<ReturnType<typeof resolveRateLimitDebugIdentity>>;
+    ipAddress: string;
+  }
+) {
+  if (ipAddress && ipAddress !== 'unknown') {
+    response.headers.set('X-RateLimit-Client-IP', ipAddress);
+  }
+  if (identity?.userId) {
+    response.headers.set('X-RateLimit-User-Id', identity.userId);
+  }
+
+  if (identity?.userEmail) {
+    response.headers.set('X-RateLimit-User-Email', identity.userEmail);
+  }
+}
+
+function buildStaffRateLimitWarningResponse(
+  guardResponse: NextResponse,
+  {
+    identity,
+    ipAddress,
+  }: {
+    identity: NonNullable<
+      Awaited<ReturnType<typeof resolveRateLimitDebugIdentity>>
+    >;
+    ipAddress: string;
+  }
+) {
+  const headers = new Headers();
+  for (const headerName of RATE_LIMIT_DIAGNOSTIC_HEADER_NAMES) {
+    const value = guardResponse.headers.get(headerName);
+    if (value) {
+      headers.set(headerName, value);
+    }
+  }
+
+  headers.set('X-RateLimit-Warning', STAFF_RATE_LIMIT_WARNING);
+  headers.set('X-RateLimit-Debug-Bypass', STAFF_RATE_LIMIT_DEBUG_BYPASS);
+  headers.set('X-RateLimit-Original-Status', `${guardResponse.status}`);
+
+  const response = NextResponse.next({ headers });
+  appendRateLimitDebugHeaders(response, { identity, ipAddress });
+  return response;
+}
+
+async function handleProxyGuardResponse(
+  req: NextRequest,
+  guardResponse: NextResponse
+) {
+  if (guardResponse.status !== 429) {
+    return guardResponse;
+  }
+  const ipAddress = extractIPFromRequest(req.headers);
+  const identity = await resolveRateLimitDebugIdentity(req);
+  appendRateLimitDebugHeaders(guardResponse, { identity, ipAddress });
+  if (identity?.isStaff) {
+    return buildStaffRateLimitWarningResponse(guardResponse, {
+      identity,
+      ipAddress,
+    });
+  }
+  return guardResponse;
+}
+
+function hasLikelyAuthenticatedApiCredential(req: NextRequest): boolean {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    return false;
+  }
+
+  const trimmedHeader = authHeader.trim();
+  if (looksLikeWorkspaceApiKey(trimmedHeader)) {
+    return true;
+  }
+
+  if (!trimmedHeader.toLowerCase().startsWith('bearer ')) {
+    return false;
+  }
+
+  const token = trimmedHeader.slice(7).trim();
+  return looksLikeSupabaseJwt(token) || looksLikeWorkspaceApiKey(token);
+}
+
+function hasMalformedAuthorizationHeader(req: NextRequest): boolean {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    return false;
+  }
+
+  const trimmedHeader = authHeader.trim();
+  if (looksLikeWorkspaceApiKey(trimmedHeader)) {
+    return false;
+  }
+
+  if (!trimmedHeader.toLowerCase().startsWith('bearer ')) {
+    return true;
+  }
+
+  const token = trimmedHeader.slice(7).trim();
+  return token.length === 0 || /\s/.test(token);
+}
+
+function isLikelyBrowserRequest(req: NextRequest): boolean {
+  const userAgent = (req.headers.get('user-agent') ?? '').toLowerCase();
+  if (/\b(mozilla|chrome|chromium|firefox|safari|edg|opr)\b/u.test(userAgent)) {
+    return true;
+  }
+
+  if (req.headers.has('sec-fetch-mode') || req.headers.has('sec-fetch-dest')) {
+    return true;
+  }
+
+  const accept = req.headers.get('accept') ?? '';
+  return accept.includes('text/html') || accept.includes('text/x-component');
+}
+
+function buildProxyBlockResponse(
+  status: 400 | 401 | 429,
+  reason:
+    | 'ip-already-blocked'
+    | 'malformed-auth-header'
+    | 'malformed-supabase-auth-cookie'
+    | 'suspicious-anonymous-request',
+  options: {
+    ipAddress?: string | null;
+    retryAfter?: number;
+  } = {}
+) {
+  const body =
+    status === 429
+      ? { error: 'Too Many Requests', message: 'Rate limit exceeded' }
+      : status === 401
+        ? { error: 'Unauthorized' }
+        : { error: 'Bad Request' };
+
+  return NextResponse.json(body, {
+    status,
+    headers: {
+      'Cache-Control': 'no-store',
+      ...(options.retryAfter ? { 'Retry-After': `${options.retryAfter}` } : {}),
+      ...(options.ipAddress && options.ipAddress !== 'unknown'
+        ? { 'X-RateLimit-Client-IP': options.ipAddress }
+        : {}),
+      'X-Proxy-Block-Reason': reason,
+    },
+  });
+}
+
+function applyExpiredCookies(response: NextResponse, cookieNames: string[]) {
+  for (const cookieName of cookieNames) {
+    response.cookies.set(cookieName, '', {
+      expires: new Date(0),
+      maxAge: 0,
+      path: '/',
+    });
+  }
+}
+
+async function blockMalformedApiAuthCookieRequest(
+  req: NextRequest
+): Promise<NextResponse | null> {
+  if (
+    hasLikelyAuthenticatedApiCredential(req) ||
+    isTrustedProxyBypassForRequest(req)
+  ) {
+    return null;
+  }
+
+  const malformedCookieNames = getMalformedSupabaseAuthCookieNames(
+    req.cookies.getAll(),
+    getRuntimePublicEnvValue('SUPABASE_URL')
+  );
+
+  if (malformedCookieNames.length === 0) {
+    return null;
+  }
+
+  const ipAddress = extractIPFromRequest(req.headers);
+  if (isLikelyBrowserRequest(req)) {
+    const response = buildProxyBlockResponse(
+      401,
+      'malformed-supabase-auth-cookie',
+      { ipAddress }
+    );
+    applyExpiredCookies(response, malformedCookieNames);
+    return response;
+  }
+
+  const existingBlock =
+    ipAddress === 'unknown' ? null : await isIPBlockedEdge(ipAddress);
+
+  if (existingBlock) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((existingBlock.expiresAt.getTime() - Date.now()) / 1000)
+    );
+    const response = buildProxyBlockResponse(429, 'ip-already-blocked', {
+      ipAddress,
+      retryAfter,
+    });
+    applyExpiredCookies(response, malformedCookieNames);
+    return response;
+  }
+
+  const newBlock =
+    ipAddress === 'unknown'
+      ? null
+      : await recordMalformedAuthCookieEdge(ipAddress);
+
+  if (newBlock) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
+    );
+    const response = buildProxyBlockResponse(429, 'ip-already-blocked', {
+      ipAddress,
+      retryAfter,
+    });
+    applyExpiredCookies(response, malformedCookieNames);
+    return response;
+  }
+
+  const response = buildProxyBlockResponse(
+    401,
+    'malformed-supabase-auth-cookie',
+    { ipAddress }
+  );
+  applyExpiredCookies(response, malformedCookieNames);
+  return response;
+}
+
+function getSuspiciousAnonymousApiSignal(req: NextRequest): {
+  reason: 'malformed-auth-header' | 'suspicious-anonymous-request';
+  status: 400 | 401;
+} | null {
+  if (isTrustedProxyBypassForRequest(req) || hasSupabaseSessionCookie(req)) {
+    return null;
+  }
+
+  if (hasMalformedAuthorizationHeader(req)) {
+    return {
+      reason: 'malformed-auth-header',
+      status: 401,
+    };
+  }
+
+  if ((req.headers.get('user-agent') ?? '').trim().length === 0) {
+    return {
+      reason: 'suspicious-anonymous-request',
+      status: 400,
+    };
+  }
+
+  if (
+    req.nextUrl.search.length > SUSPICIOUS_QUERY_LENGTH_MAX ||
+    req.nextUrl.searchParams.size > SUSPICIOUS_QUERY_PARAMS_MAX ||
+    SCANNER_PATH_PATTERN.test(req.nextUrl.pathname)
+  ) {
+    return {
+      reason: 'suspicious-anonymous-request',
+      status: 400,
+    };
+  }
+
+  return null;
+}
+
+async function blockSuspiciousAnonymousApiRequest(
+  req: NextRequest
+): Promise<NextResponse | null> {
+  const signal = getSuspiciousAnonymousApiSignal(req);
+  if (!signal) {
+    return null;
+  }
+
+  const ipAddress = extractIPFromRequest(req.headers);
+  const existingBlock =
+    ipAddress === 'unknown' ? null : await isIPBlockedEdge(ipAddress);
+
+  if (existingBlock) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((existingBlock.expiresAt.getTime() - Date.now()) / 1000)
+    );
+    return buildProxyBlockResponse(429, 'ip-already-blocked', {
+      ipAddress,
+      retryAfter,
+    });
+  }
+
+  const newBlock =
+    ipAddress === 'unknown'
+      ? null
+      : await recordSuspiciousApiRequestEdge(ipAddress);
+
+  if (newBlock) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
+    );
+    return buildProxyBlockResponse(429, 'ip-already-blocked', {
+      ipAddress,
+      retryAfter,
+    });
+  }
+
+  return buildProxyBlockResponse(signal.status, signal.reason, { ipAddress });
+}
+
+const authProxy = createCentralizedAuthProxy({
+  webAppUrl: WEB_APP_URL,
+  publicPaths: PUBLIC_PATHS,
+  isPublicPath: isAuthProxyPublicPath,
+  skipApiRoutes: true,
+});
+
+function getRootDynamicSegment(pathname: string): string | null {
+  const segments = pathname.split('/').filter(Boolean);
+
+  if (segments.length === 0) {
+    return null;
+  }
+
+  if (supportedLocales.includes((segments[0] ?? '') as Locale)) {
+    return segments[1] ?? null;
+  }
+
+  return segments[0] ?? null;
+}
+
+function buildGuestRouteDeniedResponse(
+  req: NextRequest,
+  authRes: NextResponse
+) {
+  const deniedResponse = buildRootNotFoundResponse(req);
+  propagateAuthCookies(authRes, deniedResponse);
+  return deniedResponse;
+}
+
+function buildRootNotFoundResponse(req: NextRequest) {
+  const response = new NextResponse(null, { status: 404 });
+  response.headers.set('x-tuturuuu-proxy-not-found', req.nextUrl.pathname);
+  return response;
+}
+
+async function guardGuestWorkspaceRoute({
+  authRes,
+  hasLocaleInPath,
+  pathSegments,
+  req,
+}: {
+  authRes: NextResponse;
+  hasLocaleInPath: boolean;
+  pathSegments: string[];
+  req: NextRequest;
+}): Promise<NextResponse | null> {
+  const workspaceIndex = hasLocaleInPath ? 1 : 0;
+  const workspaceSlug = pathSegments[workspaceIndex];
+
+  if (
+    !workspaceSlug ||
+    pathSegments.length <= workspaceIndex + 1 ||
+    workspaceSlug.startsWith(RESERVED_ROOT_SEGMENT_PREFIX) ||
+    workspaceSlug.startsWith(BLOCKED_ROOT_SEGMENT_PREFIX) ||
+    !isWorkspaceHomeRedirectCandidate(workspaceSlug)
+  ) {
+    return null;
+  }
+
+  try {
+    const supabase = await createClient();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+    if (!user) {
+      return null;
+    }
+    const resolvedWorkspaceId = await normalizeWorkspaceId(
+      workspaceSlug,
+      supabase
+    );
+
+    if (await isPersonalWorkspace(resolvedWorkspaceId)) {
+      return null;
+    }
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: resolvedWorkspaceId,
+      userId: user.id,
+      supabase,
+      requiredType: 'ANY',
+    });
+
+    if (!membership.ok || membership.membershipType !== 'GUEST') {
+      return null;
+    }
+    const requiredPermissions = getWorkspaceRoutePermissionRequirements(
+      pathSegments.slice(workspaceIndex + 1)
+    );
+
+    if (!requiredPermissions) {
+      return buildGuestRouteDeniedResponse(req, authRes);
+    }
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const { data, error } = await sbAdmin
+      .from('workspace_default_permissions')
+      .select('permission')
+      .eq('ws_id', resolvedWorkspaceId)
+      .eq('member_type', 'GUEST')
+      .eq('enabled', true);
+
+    if (error) {
+      return buildGuestRouteDeniedResponse(req, authRes);
+    }
+    const grantedPermissions = (data ?? []).map((row) => row.permission);
+
+    if (
+      !hasRequiredWorkspaceRoutePermission({
+        grantedPermissions,
+        requiredPermissions,
+      })
+    ) {
+      return buildGuestRouteDeniedResponse(req, authRes);
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+async function webProxy(req: NextRequest): Promise<NextResponse> {
+  if (
+    req.nextUrl.pathname.startsWith('/api') ||
+    req.nextUrl.pathname === '/native-integrity/turnstile'
+  ) {
+    const versionedAsset = isVersionedExternalProjectAssetDeliveryRequest(
+      req.method,
+      req.nextUrl
+    );
+    if (!versionedAsset) {
+      const malformed = await blockMalformedApiAuthCookieRequest(req);
+      if (malformed) return malformed;
+      const suspicious = await blockSuspiciousAnonymousApiRequest(req);
+      if (suspicious) return suspicious;
+    }
+    // API cost accounting and CSRF checks run in the central Web proxy that
+    // serves every forwarded /api request.
+    if (versionedAsset) return NextResponse.next();
+    const additionalRoutePolicies = (await hasWorkspaceEmailRateLimitOverrides(
+      req.nextUrl.pathname
+    ))
+      ? [EMAIL_RATE_LIMIT_OVERRIDE_ROUTE_POLICY]
+      : undefined;
+    return guardBrowserApiSession(req, async () => {
+      const trustedStaffCli = await isVerifiedStaffCliSession(req.headers);
+      const guardResponse = await guardApiProxyRequest(req, {
+        additionalRoutePolicies,
+        ...calendarPreferenceGuardOptions(req),
+        maxPayloadBytes:
+          profileMediaProxyPayloadLimit(req.method, req.nextUrl) ??
+          feedbackProxyPayloadLimit(req.method, req.nextUrl.pathname),
+        trustedBypassRules: [
+          {
+            matches: () => trustedStaffCli,
+          },
+        ],
+      });
+      if (guardResponse) {
+        return handleCalendarPreferenceGuardResponse(
+          req,
+          guardResponse,
+          handleProxyGuardResponse
+        );
+      }
+      return null;
+    });
+  }
+  const cacheableAuthShellResponse = handleCacheableAuthShellRoute(req);
+  if (cacheableAuthShellResponse) {
+    return cacheableAuthShellResponse;
+  }
+  const reservedRootRouteResponse = handleReservedRootRoute(req);
+  if (reservedRootRouteResponse) {
+    return reservedRootRouteResponse;
+  }
+  const publicMarketingRedirectResponse =
+    handlePublicMarketingRedirectRoute(req);
+  if (publicMarketingRedirectResponse) {
+    return publicMarketingRedirectResponse;
+  }
+
+  const mailAppRedirectResponse = handleMailAppRedirectRoute(req);
+  if (mailAppRedirectResponse) {
+    return mailAppRedirectResponse;
+  }
+
+  const financeAppRedirectResponse = handleFinanceAppRedirectRoute(req);
+  if (financeAppRedirectResponse) {
+    return financeAppRedirectResponse;
+  }
+
+  const driveAppRedirectResponse = handleDriveAppRedirectRoute(req);
+  if (driveAppRedirectResponse) {
+    return driveAppRedirectResponse;
+  }
+
+  const chatAppRedirectResponse = handleChatAppRedirectRoute(req);
+  if (chatAppRedirectResponse) {
+    return chatAppRedirectResponse;
+  }
+
+  const trackAppRedirectResponse = handleTrackAppRedirectRoute(req);
+  if (trackAppRedirectResponse) {
+    return trackAppRedirectResponse;
+  }
+
+  const meetAppRedirectResponse = handleMeetAppRedirectRoute(req);
+  if (meetAppRedirectResponse) {
+    return meetAppRedirectResponse;
+  }
+
+  const contactsAppRedirectResponse = handleContactsAppRedirectRoute(req);
+  if (contactsAppRedirectResponse) {
+    return contactsAppRedirectResponse;
+  }
+
+  // Forms moved wholesale to forms.tuturuuu.com. Public shared-form links are
+  // redirected before the auth proxy runs so anonymous respondents and social
+  // crawlers are never bounced to /login.
+  const sharedFormRedirectResponse = handleSharedFormRedirectRoute(req);
+  if (sharedFormRedirectResponse) {
+    return sharedFormRedirectResponse;
+  }
+
+  const formsAppRedirectResponse = handleFormsAppRedirectRoute(req);
+  if (formsAppRedirectResponse) {
+    return formsAppRedirectResponse;
+  }
+
+  // Handle authentication and MFA with the centralized middleware
+  const authRes = await authProxy(req);
+
+  // If the auth middleware returned a redirect response, return it
+  if (authRes.headers.has('Location')) {
+    return authRes;
+  }
+
+  // Handle /home path - redirect to root without workspace redirect
+  const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
+  const activeLocalePrefix =
+    pathSegments[0] && supportedLocales.includes(pathSegments[0] as Locale)
+      ? `/${pathSegments[0]}`
+      : '';
+  const isHomePath =
+    req.nextUrl.pathname === '/home' ||
+    (pathSegments.length === 2 &&
+      supportedLocales.includes(pathSegments[0] as Locale) &&
+      pathSegments[1] === 'home');
+  const isDashboardRootPath =
+    req.nextUrl.pathname === '/dashboard' ||
+    (pathSegments.length === 2 &&
+      supportedLocales.includes(pathSegments[0] as Locale) &&
+      pathSegments[1] === 'dashboard');
+
+  if (isHomePath) {
+    const redirectUrl = new URL('/', req.nextUrl);
+    redirectUrl.searchParams.set('no-redirect', '1');
+    const homeRedirect = NextResponse.redirect(redirectUrl);
+    propagateAuthCookies(authRes, homeRedirect);
+    return homeRedirect;
+  }
+
+  // Handle direct navigation to workspace IDs that are personal workspaces
+  // Check if the path matches /[locale]/[wsId] or /[wsId] pattern where wsId is a UUID
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  let potentialWorkspaceId: string | null = null;
+  let hasLocaleInPath = false;
+
+  const isRootWorkspaceSegment = (segment?: string) =>
+    segment?.toLowerCase() === ROOT_WORKSPACE_ID.toLowerCase();
+
+  if (pathSegments.length >= 1) {
+    // Check if first segment is a locale
+    if (
+      pathSegments[0] &&
+      supportedLocales.includes(pathSegments[0] as Locale)
+    ) {
+      hasLocaleInPath = true;
+      // Check if second segment is a workspace ID
+      if (pathSegments.length >= 2 && pathSegments[1]) {
+        const candidate = pathSegments[1];
+        if (isRootWorkspaceSegment(candidate)) {
+          potentialWorkspaceId = ROOT_WORKSPACE_ID;
+        } else if (uuidRegex.test(candidate)) {
+          potentialWorkspaceId = candidate;
+        }
+      }
+    } else if (pathSegments[0]) {
+      // First segment is a workspace ID (no locale in path)
+      if (isRootWorkspaceSegment(pathSegments[0])) {
+        potentialWorkspaceId = ROOT_WORKSPACE_ID;
+      } else if (uuidRegex.test(pathSegments[0])) {
+        potentialWorkspaceId = pathSegments[0];
+      }
+    }
+  }
+
+  // Remap root workspace URL to the internal workspace slug for consistency
+  if (potentialWorkspaceId === ROOT_WORKSPACE_ID) {
+    const wsIdIndex = hasLocaleInPath ? 1 : 0;
+    const newPathSegments = [...pathSegments];
+
+    if (newPathSegments[wsIdIndex] !== 'internal') {
+      newPathSegments[wsIdIndex] = 'internal';
+      const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
+      redirectUrl.search = req.nextUrl.search;
+
+      const rootRedirect = NextResponse.redirect(redirectUrl);
+      propagateAuthCookies(authRes, rootRedirect);
+      return rootRedirect;
+    }
+  }
+
+  if (
+    isInternalTasksEntryPath({ hasLocaleInPath, pathSegments }) &&
+    !req.nextUrl.searchParams.has('view')
+  ) {
+    const redirectUrl = new URL(req.nextUrl);
+    redirectUrl.searchParams.set('view', 'kanban');
+    const internalTasksRedirect = NextResponse.redirect(redirectUrl);
+    propagateAuthCookies(authRes, internalTasksRedirect);
+    return internalTasksRedirect;
+  }
+
+  // If we found a potential workspace ID, check if it's a personal workspace
+  if (potentialWorkspaceId) {
+    try {
+      const supabase = await createClient();
+      const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+      if (user) {
+        const isPersonal = await isPersonalWorkspace(potentialWorkspaceId);
+
+        if (isPersonal) {
+          // Construct the redirect URL replacing the workspace ID with 'personal'
+          const newPathSegments = [...pathSegments];
+          const wsIdIndex = hasLocaleInPath ? 1 : 0;
+          newPathSegments[wsIdIndex] = 'personal';
+
+          const redirectUrl = new URL(
+            `/${newPathSegments.join('/')}`,
+            req.nextUrl
+          );
+          // Preserve query parameters
+          redirectUrl.search = req.nextUrl.search;
+
+          const personalRedirect = NextResponse.redirect(redirectUrl);
+          propagateAuthCookies(authRes, personalRedirect);
+          return personalRedirect;
+        }
+      }
+    } catch (error) {
+      console.error('Error checking personal workspace in middleware:', error);
+      // Continue with normal flow if there's an error
+    }
+  }
+
+  const guestRouteGuardResponse = await guardGuestWorkspaceRoute({
+    authRes,
+    hasLocaleInPath,
+    pathSegments,
+    req,
+  });
+  if (guestRouteGuardResponse) {
+    return guestRouteGuardResponse;
+  }
+
+  // Handle direct workspace home routes (/{wsId} or /{locale}/{wsId}).
+  // User-configured default navigation is only applied from the app root below.
+  const skipWorkspaceRedirect = req.nextUrl.searchParams.has('no-redirect');
+  const isHashNavigation = req.nextUrl.searchParams.has('hash-nav');
+  const isMultiAccountFlow = req.nextUrl.searchParams.has('multiAccount');
+  const isDirectWorkspaceHomePath =
+    (!hasLocaleInPath && pathSegments.length === 1) ||
+    (hasLocaleInPath && pathSegments.length === 2);
+
+  if (
+    isDirectWorkspaceHomePath &&
+    !isDashboardRootPath &&
+    !skipWorkspaceRedirect &&
+    !isHashNavigation &&
+    !isMultiAccountFlow
+  ) {
+    const workspaceSlug = pathSegments[hasLocaleInPath ? 1 : 0];
+
+    if (workspaceSlug === PERSONAL_WORKSPACE_SLUG) {
+      return handleLocaleWithAuthCookies(req, authRes);
+    }
+
+    if (isWorkspaceHomeRedirectCandidate(workspaceSlug)) {
+      try {
+        const supabase = await createClient();
+        const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+        if (user) {
+          const resolvedWorkspaceId = await normalizeWorkspaceId(
+            workspaceSlug,
+            supabase
+          );
+          const memberCheck = await verifyWorkspaceMembershipType({
+            wsId: resolvedWorkspaceId,
+            userId: user.id,
+            supabase,
+            requiredType: 'ANY',
+          });
+
+          if (!memberCheck.ok) {
+            return handleLocaleWithAuthCookies(req, authRes);
+          }
+
+          if (memberCheck.membershipType === 'GUEST') {
+            return buildGuestRouteDeniedResponse(req, authRes);
+          }
+        }
+      } catch (error) {
+        console.error('Error handling workspace home route:', error);
+      }
+    }
+  }
+
+  // Handle authenticated users accessing the root path, root with locale, or
+  // legacy dashboard alias.
+  // Skip workspace redirect if no-redirect parameter is present (from /home redirect)
+  const isRootPath = req.nextUrl.pathname === '/';
+
+  const isLocaleRootPath =
+    pathSegments.length === 1 &&
+    supportedLocales.includes(pathSegments[0] as Locale);
+
+  if (
+    (isRootPath || isLocaleRootPath || isDashboardRootPath) &&
+    !skipWorkspaceRedirect &&
+    !isHashNavigation &&
+    !isMultiAccountFlow &&
+    hasSupabaseSessionCookie(req)
+  ) {
+    try {
+      const supabase = await createClient();
+      const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+      if (user) {
+        const defaultWorkspace = await getUserDefaultWorkspace();
+
+        if (defaultWorkspace) {
+          const wsRedirect = NextResponse.redirect(
+            workspaceHomeRedirectUrl(defaultWorkspace, req.nextUrl, (path) =>
+              prependLocalePrefix(path, activeLocalePrefix)
+            )
+          );
+          propagateAuthCookies(authRes, wsRedirect);
+          return wsRedirect;
+        }
+      }
+    } catch (error) {
+      console.error('Error handling root path redirect:', error);
+    }
+  }
+
+  // Continue with locale handling
+  const localeRes = handleLocale({ req });
+  propagateAuthCookies(authRes, localeRes);
+  return localeRes;
+}
+
+function handleLocaleWithAuthCookies(
+  req: NextRequest,
+  authRes: NextResponse
+): NextResponse {
+  const localeRes = handleLocale({ req });
+  propagateAuthCookies(authRes, localeRes);
+  return localeRes;
+}
+
+const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
+  const { pathname } = req.nextUrl;
+  const segments = pathname.split('/').filter(Boolean);
+  const localizedReservedSegment = segments[1];
+  const rootDynamicSegment = getRootDynamicSegment(pathname);
+
+  if (pathname === OFFLINE_FALLBACK_PATH) {
+    return NextResponse.next();
+  }
+
+  if (pathname === BROWSER_STATE_RECOVERY_PATH) {
+    return NextResponse.next();
+  }
+
+  if (rootDynamicSegment?.startsWith(BLOCKED_ROOT_SEGMENT_PREFIX)) {
+    return buildRootNotFoundResponse(req);
+  }
+
+  if (segments[0]?.startsWith(RESERVED_ROOT_SEGMENT_PREFIX)) {
+    return buildRootNotFoundResponse(req);
+  }
+
+  if (
+    supportedLocales.includes((segments[0] ?? '') as Locale) &&
+    localizedReservedSegment?.startsWith(RESERVED_ROOT_SEGMENT_PREFIX)
+  ) {
+    const canonicalReservedPath =
+      localizedReservedSegment === OFFLINE_FALLBACK_PATH.slice(1)
+        ? OFFLINE_FALLBACK_PATH
+        : localizedReservedSegment === BROWSER_STATE_RECOVERY_PATH.slice(1)
+          ? BROWSER_STATE_RECOVERY_PATH
+          : `/${segments.slice(1).join('/')}`;
+    const redirectUrl = new URL(canonicalReservedPath, req.nextUrl);
+    redirectUrl.search = req.nextUrl.search;
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  return null;
+};
+
+export const proxy = withStagingOriginProof(
+  webProxy,
+  () =>
+    new NextResponse('Forbidden', {
+      status: 403,
+      headers: { 'Cache-Control': 'no-store' },
+    })
+);
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - manifest.webmanifest (PWA manifest generated by Next.js)
+     * - sw.js (service worker)
+     * - monitoring (analytics)
+     * - .well-known (domain verification files)
+     * Excludes static assets: svg, png, jpg, jpeg, mp3, wav, ogg, m4a, pdf,
+     * gif and webp.
+     */
+
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|manifest.webmanifest|sw.js|serwist|monitoring|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|mp3|wav|ogg|m4a|pdf|gif|webp)$).*)',
+  ],
+};

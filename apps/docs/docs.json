@@ -193,6 +193,7 @@
                   "build/devops/tanstack-cloudflare-migration-inventory",
                   "build/devops/worker-services-reconciliation",
                   "build/devops/playground-isolation-contract",
+                  "build/devops/workspace-start-void",
                   "build/devops/external-start-void",
                   "build/devops/playground-cutover-packet",
                   "build/devops/contacts-start-candidate",
