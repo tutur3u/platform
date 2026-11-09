@@ -37,3 +37,5 @@ tests, type-check, lint, and Next app builds. Do not run local builds or `bun va
 
 For shared rooms, cursors, collaborative editing or realtime checkpoint services,
 use `$tuturuuu-realtime` and its focused implementation reference.
+
+For workspace suppression recovery, use `references/email-suppression-appeals.md`.

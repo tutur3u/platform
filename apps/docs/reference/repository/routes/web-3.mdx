@@ -14,6 +14,11 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/notifications/mail-thread` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/notifications/mail-thread/route.ts) |
+| `/api/v1/notifications/preferences` | GET, HEAD, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/notifications/preferences/route.ts) |
+| `/api/v1/notifications/push-devices` | DELETE, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/notifications/push-devices/route.ts) |
+| `/api/v1/notifications` | GET, HEAD, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/notifications/route.ts) |
+| `/api/v1/notifications/unread-count` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/notifications/unread-count/route.ts) |
 | `/api/v1/nova/me/team` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/nova/me/team/route.ts) |
 | `/api/v1/platform/users/[userId]/roles` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/platform/users/%5BuserId%5D/roles/route.ts) |
 | `/api/v1/product-feedback/[id]/media` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/product-feedback/%5Bid%5D/media/route.ts) |
@@ -78,6 +83,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/users/sessions/[sessionId]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/users/sessions/%5BsessionId%5D/route.ts) |
 | `/api/v1/users/sessions` | DELETE, GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/users/sessions/route.ts) |
 | `/api/v1/webhooks/ai-agents/[adapter]/[channelId]` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/webhooks/ai-agents/%5Badapter%5D/%5BchannelId%5D/route.ts) |
+| `/api/v1/webhooks/email/appeals` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/webhooks/email/appeals/route.ts) |
 | `/api/v1/webhooks/sepay/[token]` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/webhooks/sepay/%5Btoken%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/ai/credits` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/ai/credits/route.ts) |
 | `/api/v1/workspaces/[wsId]/ai/memory/export` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/ai/memory/export/route.ts) |
@@ -139,6 +145,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/deleted` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/deleted/route.ts) |
 | `/api/v1/workspaces/[wsId]/documents/[documentId]` | DELETE, GET, HEAD, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/documents/%5BdocumentId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/documents` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/documents/route.ts) |
+| `/api/v1/workspaces/[wsId]/email-appeals` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/email-appeals/route.ts) |
 | `/api/v1/workspaces/[wsId]/encryption/fix` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/encryption/fix/route.ts) |
 | `/api/v1/workspaces/[wsId]/encryption/migrate` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/encryption/migrate/route.ts) |
 | `/api/v1/workspaces/[wsId]/encryption` | DELETE, GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/encryption/route.ts) |
@@ -187,12 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/external-projects/import` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/import/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/members/access` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/members/access/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/members/enhanced` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/members/enhanced/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/members/invite` | PATCH, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/members/invite/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/members/roles/[roleId]/members/[userId]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/members/roles/%5BroleId%5D/members/%5BuserId%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/members/roles/[roleId]/members` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/members/roles/%5BroleId%5D/members/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/members/roles/[roleId]` | DELETE, GET, HEAD, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/members/roles/%5BroleId%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/members/roles/default` | GET, HEAD, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/members/roles/default/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/members/roles` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/members/roles/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/members` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/members/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

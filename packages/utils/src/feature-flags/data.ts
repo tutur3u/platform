@@ -14,4 +14,5 @@ export const FEATURE_FLAGS = {
   ENABLE_AVATAR: 'ENABLE_AVATAR',
   ENABLE_LOGO: 'ENABLE_LOGO',
   newsletter_sending: 'newsletter_sending',
+  email_blacklist_appeals: 'email_blacklist_appeals',
 } as const;

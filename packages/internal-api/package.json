@@ -26,6 +26,11 @@
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "exports": {
+    "./email-appeals": {
+      "types": "./dist/email-appeals.d.ts",
+      "import": "./dist/email-appeals.js",
+      "require": "./dist/email-appeals.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",

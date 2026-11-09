@@ -43,18 +43,18 @@
     }
   ],
   "summary": {
-    "total": 844,
+    "total": 856,
     "categories": {
-      "api": 650,
+      "api": 660,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 163,
+      "page": 165,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 832 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 844 }
   },
   "routes": [
     {
@@ -1341,6 +1341,22 @@
       "cronOwner": null
     },
     {
+      "pattern": "/[locale]/email-appeals",
+      "source": "apps/web/src/app/[locale]/email-appeals/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/email-appeals/request",
+      "source": "apps/web/src/app/[locale]/email-appeals/request/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/[locale]/games/farm",
       "source": "apps/web/src/app/[locale]/games/farm/page.tsx",
       "category": "page",
@@ -2453,6 +2469,30 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/email-appeals/confirm",
+      "source": "apps/web/src/app/api/v1/email-appeals/confirm/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/email-appeals/preview",
+      "source": "apps/web/src/app/api/v1/email-appeals/preview/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/email-appeals/recipient",
+      "source": "apps/web/src/app/api/v1/email-appeals/recipient/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/exchange-rates",
       "source": "apps/web/src/app/api/v1/exchange-rates/route.ts",
       "category": "api",
@@ -2903,6 +2943,14 @@
     {
       "pattern": "/api/v1/native-integrity/enroll",
       "source": "apps/web/src/app/api/v1/native-integrity/enroll/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/newsletter/unsubscribe",
+      "source": "apps/web/src/app/api/v1/newsletter/unsubscribe/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -3485,6 +3533,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/webhooks/email/appeals",
+      "source": "apps/web/src/app/api/v1/webhooks/email/appeals/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/webhooks/sepay/[token]",
       "source": "apps/web/src/app/api/v1/webhooks/sepay/[token]/route.ts",
       "category": "api",
@@ -3975,6 +4031,14 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/documents",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/documents/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/email-appeals",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/email-appeals/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -4855,6 +4919,38 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/mobile/module-flags",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mobile/module-flags/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/newsletter/approval",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/approval/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/newsletter/domain",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/domain/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/newsletter/subscribers",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/subscribers/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/newsletter/test-send",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/test-send/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

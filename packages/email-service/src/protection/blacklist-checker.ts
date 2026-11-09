@@ -15,6 +15,7 @@ import type { BlacklistCheckResult, BlacklistedEmail } from '../types';
 const suppressionStatusSchema = z.object({
   email: z.string(),
   is_blocked: z.boolean(),
+  has_workspace_grant: z.boolean().optional(),
   reason: z.string().nullish(),
 });
 
@@ -37,6 +38,33 @@ function parseSuppressionStatuses(data: unknown, requested: Set<string>) {
   return statuses;
 }
 
+async function workspaceBlockStatuses(
+  supabase: SupabaseClient,
+  wsId: string,
+  emails: string[]
+) {
+  const result = await supabase.rpc('email_appeal_block_statuses', {
+    p_ws_id: wsId,
+    p_emails: emails,
+  });
+  // Deployments without the appeal migration preserve the existing protection.
+  if (result.error?.code === 'PGRST202' || result.error?.code === '42883') {
+    return supabase.rpc('get_email_block_statuses', { p_emails: emails });
+  }
+  if (
+    !result.error &&
+    !z
+      .array(
+        suppressionStatusSchema.extend({
+          has_workspace_grant: z.boolean(),
+        })
+      )
+      .safeParse(result.data).success
+  )
+    throw suppressionUnavailable();
+  return result;
+}
+
 // =============================================================================
 // Blacklist Checker Class
 // =============================================================================
@@ -52,7 +80,9 @@ export class BlacklistChecker {
    */
   async checkEmails(
     emails: string[],
-    supabase: SupabaseClient<Database>
+    supabase: SupabaseClient<Database>,
+    wsId?: string,
+    allowWorkspaceGrants = false
   ): Promise<BlacklistCheckResult> {
     if (emails.length === 0) {
       return { allowed: [], blocked: [] };
@@ -80,9 +110,11 @@ export class BlacklistChecker {
 
     try {
       const requested = new Set(validEmails);
-      const { data, error } = await supabase.rpc('get_email_block_statuses', {
-        p_emails: [...requested],
-      });
+      const { data, error } = wsId
+        ? await workspaceBlockStatuses(supabase, wsId, [...requested])
+        : await supabase.rpc('get_email_block_statuses', {
+            p_emails: [...requested],
+          });
       if (error) throw suppressionUnavailable();
       const statuses = parseSuppressionStatuses(data, requested);
       const result: BlacklistCheckResult = {
@@ -95,7 +127,10 @@ export class BlacklistChecker {
         const normalized = email.toLowerCase();
         const status = statuses.get(normalized);
         if (!status) throw suppressionUnavailable();
-        if (status.is_blocked) {
+        if (
+          status.is_blocked ||
+          (status.has_workspace_grant && !allowWorkspaceGrants)
+        ) {
           result.blocked.push({
             email,
             reason: status.reason || 'Blacklisted',

@@ -3,6 +3,11 @@ import { supportedLocales } from '@/i18n/routing';
 export const APP_PUBLIC_PATHS = [
   '/account/delete',
   '/invite',
+  '/email-appeals',
+  '/api/v1/email-appeals/confirm',
+  '/api/v1/email-appeals/preview',
+  '/api/v1/email-appeals/recipient',
+  '/api/v1/webhooks/email/appeals',
   '/home',
   '/login',
   '/logout',
