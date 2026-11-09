@@ -14,6 +14,8 @@ import {
   summarizePostEmailQueue,
 } from './shared';
 
+import { isReportBulkApprovalEnabled } from './report-bulk-approval';
+
 type ReportApprovalRow = {
   approved_at: string | null;
   created_at: string | null;
@@ -124,8 +126,19 @@ export async function handleGetApprovalsRequest(
       if (countError) throw countError;
       if (error) throw error;
 
+      const bulkApprovalEnabled = await isReportBulkApprovalEnabled(
+        sbAdmin,
+        wsId
+      ).catch((error: unknown) => {
+        console.error('Failed to read report bulk approval setting', {
+          error,
+          wsId,
+        });
+        return false;
+      });
       const rows = (data ?? []) as unknown as ReportApprovalRow[];
       return NextResponse.json({
+        bulkApprovalEnabled,
         items: rows.map((row) => ({
           ...row,
           creator_name:

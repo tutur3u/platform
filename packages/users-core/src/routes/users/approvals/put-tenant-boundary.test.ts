@@ -60,14 +60,20 @@ function database() {
         return builder;
       };
     builder.maybeSingle = async () => ({
-      data: selected()[0] ?? null,
+      data:
+        table === 'workspace_configs'
+          ? { value: 'true' }
+          : (selected()[0] ?? null),
       error: null,
     });
     builder.then = (resolve: (value: unknown) => unknown) =>
       Promise.resolve({ data: selected(), error: null }).then(resolve);
     return builder;
   };
-  mocks.admin.mockResolvedValue({ schema: () => ({ from, rpc: vi.fn() }) });
+  mocks.admin.mockResolvedValue({
+    from,
+    schema: () => ({ from, rpc: vi.fn() }),
+  });
   return calls;
 }
 function request(action: string, itemId?: string) {

@@ -25,6 +25,8 @@ import {
   parsePostApprovalItemId,
 } from './shared';
 
+import { isReportBulkApprovalEnabled } from './report-bulk-approval';
+
 const POST_EMAIL_SEND_PERMISSION = 'send_user_group_post_emails';
 
 async function shouldQueuePostEmails(
@@ -206,6 +208,24 @@ export async function handlePutApprovalsRequest(
     }
 
     const sbAdmin = await createAdminClient({ noCookie: true });
+    if (
+      kind === 'reports' &&
+      action === 'approveAll' &&
+      !(await isReportBulkApprovalEnabled(sbAdmin, wsId))
+    ) {
+      return NextResponse.json(
+        {
+          code: 'REPORT_BULK_APPROVAL_DISABLED',
+          message:
+            'Bulk report approval is disabled. Chức năng duyệt tất cả báo cáo tháng đang tắt.',
+          messageEn:
+            'Bulk report approval is disabled. An administrator can enable it in workspace approval settings.',
+          messageVi:
+            'Chức năng duyệt tất cả báo cáo tháng đang tắt. Quản trị viên có thể bật trong cài đặt phê duyệt của không gian làm việc.',
+        },
+        { status: 403 }
+      );
+    }
     const actorLink = await getWorkspaceUserLinkForUser(wsId, actor.id, {
       authorizationClient: sbAdmin,
     });

@@ -20,8 +20,14 @@ let rows: {
   report_approval_status: string;
 }[];
 let updated: string[];
+let bulkValue: string | null;
+let configError: boolean;
+let configScope: [string, unknown][];
 beforeEach(() => {
   updated = [];
+  bulkValue = 'true';
+  configError = false;
+  configScope = [];
   rows = [
     {
       id: 'report',
@@ -59,7 +65,24 @@ beforeEach(() => {
     };
     return q;
   };
-  mocks.admin.mockResolvedValue({ schema: () => ({ from }) });
+  mocks.admin.mockResolvedValue({
+    schema: () => ({ from }),
+    from: (table: string) => {
+      expect(table).toBe('workspace_configs');
+      const query = {
+        select: () => query,
+        eq: (key: string, value: unknown) => {
+          configScope.push([key, value]);
+          return query;
+        },
+        maybeSingle: async () => ({
+          data: bulkValue === null ? null : { value: bulkValue },
+          error: configError ? new Error('read failed') : null,
+        }),
+      };
+      return query;
+    },
+  });
 });
 const invoke = (action: 'approve' | 'approveAll') =>
   handlePutApprovalsRequest(
@@ -104,4 +127,33 @@ it('bulk approval skips empty feedback, reports counts and preserves tenant scop
     skippedEmptyCount: 2,
   });
   expect(updated).toEqual(['report']);
+});
+
+it.each([null, 'false', '', 'TRUE', ' true '])(
+  'refuses bulk approval for disabled or missing setting %j',
+  async (value) => {
+    bulkValue = value;
+    const response = await invoke('approveAll');
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({
+      code: 'REPORT_BULK_APPROVAL_DISABLED',
+      messageVi: expect.any(String),
+    });
+    expect(updated).toEqual([]);
+    expect(configScope).toEqual([
+      ['ws_id', 'ws'],
+      ['id', 'ALLOW_BULK_REPORT_APPROVAL'],
+    ]);
+  }
+);
+it('fails closed on a config read error with no approval writes', async () => {
+  configError = true;
+  expect((await invoke('approveAll')).status).toBe(500);
+  expect(updated).toEqual([]);
+});
+it('keeps single approval available when bulk approval is disabled', async () => {
+  bulkValue = null;
+  expect((await invoke('approve')).status).toBe(200);
+  expect(updated).toEqual(['report']);
+  expect(configScope).toEqual([]);
 });

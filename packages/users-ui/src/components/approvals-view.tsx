@@ -63,7 +63,6 @@ export function ApprovalsView({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Memoize URL params
   const {
     currentStatus,
     currentPage,
@@ -114,6 +113,7 @@ export function ApprovalsView({
     setDetailItem,
     closeDetailDialog,
     totalPendingCount,
+    bulkApprovalEnabled,
     sessionStats,
   } = useApprovals({
     wsId,
@@ -126,7 +126,6 @@ export function ApprovalsView({
     creatorId: currentCreatorId,
   });
 
-  // Fetch group options for filter
   const groupsQuery = useQuery({
     queryKey: ['ws', wsId, 'approvals', 'filter-groups'],
     queryFn: async () => {
@@ -448,6 +447,7 @@ export function ApprovalsView({
 
         <div className="flex items-center gap-4">
           {canApprove &&
+            bulkApprovalEnabled &&
             totalPendingCount > 0 &&
             currentStatus === 'pending' && (
               <Button

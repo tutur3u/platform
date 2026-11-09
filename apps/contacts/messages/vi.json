@@ -3880,7 +3880,10 @@
   },
   "settings": {
     "approvals": {
+      "allow_bulk_report_approval": "Cho phép duyệt tất cả báo cáo tháng",
+      "allow_bulk_report_approval_description": "Mặc định tắt, áp dụng cho tất cả báo cáo định kỳ. Khi bật, duyệt tất cả bỏ qua báo cáo chưa có nhận xét; vẫn có thể duyệt từng báo cáo.",
       "auto_approved_pending_toast": "Đã tự động phê duyệt {count, plural, one {# mục đang chờ} other {# mục đang chờ}} ({posts, plural, one {# bài viết} other {# bài viết}}, {reports, plural, one {# báo cáo} other {# báo cáo}}).",
+      "bulk_report_setting_load_error": "Không thể tải cài đặt duyệt tất cả. Vui lòng tải lại trước khi thay đổi.",
       "description": "Cấu hình quy trình phê duyệt cho bài viết và báo cáo",
       "enable_post_approval": "Bật phê duyệt bài viết",
       "enable_post_approval_description": "Khi được bật, tất cả bài viết trong nhóm người dùng sẽ yêu cầu sự phê duyệt từ người có quyền hạn phù hợp.",

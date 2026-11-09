@@ -3880,7 +3880,10 @@
   },
   "settings": {
     "approvals": {
+      "allow_bulk_report_approval": "Allow bulk approval of monthly reports",
+      "allow_bulk_report_approval_description": "Off by default. Applies to all periodic reports. When enabled, bulk approval skips reports without feedback; single approval remains available.",
       "auto_approved_pending_toast": "{count, plural, one {Auto-approved # pending item} other {Auto-approved # pending items}} ({posts, plural, one {# post} other {# posts}}, {reports, plural, one {# report} other {# reports}}).",
+      "bulk_report_setting_load_error": "Unable to load bulk approval settings. Reload before making changes.",
       "description": "Configure approval workflows for posts and reports",
       "enable_post_approval": "Enable Post Approval",
       "enable_post_approval_description": "When enabled, all posts in user groups will require approval from a person with adequate permissions.",

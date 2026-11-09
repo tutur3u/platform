@@ -1,6 +1,6 @@
-import { hasReportFeedback } from '@tuturuuu/users-core/features/reports/report-feedback';
-('use client');
+'use client';
 
+import { hasReportFeedback } from '@tuturuuu/users-core/features/reports/report-feedback';
 import {
   Check,
   ChevronLeft,

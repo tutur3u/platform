@@ -22,6 +22,21 @@ cadence and preserve their filters. The canonical hub opens **Daily** by default
 when the actor can view daily reports; explicit Periodic and Automations links
 still open their requested cadence or Automations view.
 
+## Bulk approval setting
+
+Workspace Settings → Approvals contains **Allow bulk approval of monthly reports**.
+The setting applies to every periodic report cadence and defaults to off for all
+workspaces. Only members with `manage_workspace_settings` can change it. The
+existing `workspace_configs` key `ALLOW_BULK_REPORT_APPROVAL` enables the feature
+only when its saved value is exactly `true`; missing or unreadable settings never
+permit bulk approval.
+
+When off, the periodic Approvals view hides **Approve all**, and the server refuses
+bulk approval. Single approval remains available and requires feedback. When on,
+bulk approval skips reports without feedback and reports approved and skipped
+counts. Daily/post approval is unaffected. Regression coverage lives in the
+approval handler, setting permission, and settings component tests.
+
 ## Central dashboard
 
 The Reports worklist offers Daily, Weekly, Monthly, Quarterly, Yearly and All

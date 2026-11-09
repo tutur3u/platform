@@ -24,6 +24,7 @@ interface UseApprovalsOptions {
 }
 
 interface PaginatedResult<T> {
+  bulkApprovalEnabled?: boolean;
   items: T[];
   totalCount: number;
   totalPages: number;
@@ -35,6 +36,7 @@ interface SessionStats {
 }
 
 interface UseApprovalsResult {
+  bulkApprovalEnabled: boolean;
   items: ApprovalItem[];
   totalCount: number;
   totalPages: number;
@@ -469,6 +471,10 @@ export function useApprovals({
     setRejectReason,
     pendingItemIds,
     totalPendingCount: totalCount,
+    bulkApprovalEnabled:
+      kind === 'posts' ||
+      (!reportsQuery.isError &&
+        reportsQuery.data?.bulkApprovalEnabled === true),
     closeRejectDialog,
     approveItem: approveMutation.mutate,
     unapproveItem: unapproveMutation.mutate,
