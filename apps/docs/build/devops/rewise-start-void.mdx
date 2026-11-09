@@ -21,7 +21,7 @@ Neither profile declares routes; `workers_dev` and `preview_urls` are off. The
 only canonical host is `rewise.tuturuuu.com` (the retired `rewise.me` and
 `rewise.school` origins are rejected). Any other host answers `404`.
 
-A Worker missing any required secret, or without `ABUSE_GUARD_BACKEND=upstash`,
+A Worker missing any required secret or an abuse guard configuration,
 refuses to serve (`cloudflare/required-secrets.ts`) instead of running on a
 fallback. Names only are recorded here.
 
@@ -50,8 +50,9 @@ workerd with synthetic secrets only, and uploads
 | Route | `rewise.tuturuuu.com/*`, operator-attached |
 | Static assets binding | `ASSETS` (`dist/client`, `run_worker_first`) |
 | Build command | `VITE_REWISE_NATIVE_PROFILE=production bun run --cwd apps/rewise build:cloudflare` |
-| Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
-| Vars | `ABUSE_GUARD_BACKEND=upstash`, `NEXT_PUBLIC_APP_URL=https://rewise.tuturuuu.com`, `NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com` |
+| Binding | `ABUSE_GUARD` → service `tuturuuu-abuse-guard` |
+| Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`, `ABUSE_GUARD_KEY_PEPPER` |
+| Vars | `ABUSE_GUARD_FAMILIES=proxy`, optional `ABUSE_GUARD_TIMEOUT_MS`, `NEXT_PUBLIC_APP_URL=https://rewise.tuturuuu.com`, `NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com` |
 | Optional AI keys | the provider keys listed in `env.example`, as secrets on the Worker |
 | Prior Vercel deployment | record the immutable deployment ID and URL of the `rewise` Vercel project before the switch |
 | Data | no database writes and no migrations; reuse the existing Upstash database, provision nothing new |

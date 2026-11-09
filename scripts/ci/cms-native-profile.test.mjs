@@ -78,9 +78,16 @@ test('startup refuses missing secrets, development keys and non-production mode'
       /import \{ env as nativeStartupEnv \} from 'cloudflare:workers';/,
       ''
     );
-  const valid = {
+  const secrets = {
     TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-coordination-key',
     SUPABASE_SECRET_KEY: 'synthetic-service-key',
+  };
+  const valid = {
+    ...secrets,
+    ABUSE_GUARD: {},
+    ABUSE_GUARD_KEY_PEPPER:
+      'DUMMY-cms-abuse-guard-key-pepper-synthetic-only-0000000001',
+    ABUSE_GUARD_FAMILIES: 'proxy',
   };
   const execute = (env, mode = 'production') =>
     runInNewContext(guard, {
@@ -88,7 +95,7 @@ test('startup refuses missing secrets, development keys and non-production mode'
       process: { env: { NODE_ENV: mode } },
     });
   assert.doesNotThrow(() => execute(valid));
-  for (const name of Object.keys(valid)) {
+  for (const name of Object.keys(secrets)) {
     const missing = { ...valid };
     delete missing[name];
     assert.throws(() => execute(missing), new RegExp(name));

@@ -21,7 +21,7 @@ writes.
 - Static asset binding: `ASSETS`. Optional internal API origin variable:
   `INTERNAL_WEB_API_ORIGIN`. The build profile sets `TUTURUUU_NOINDEX`.
 - Runtime secret names required by CMS: `TUTURUUU_APP_COORDINATION_SECRET`,
-  `SUPABASE_SECRET_KEY`, and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+  `SUPABASE_SECRET_KEY`, and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Abuse guard: service binding `ABUSE_GUARD` to `tuturuuu-abuse-guard`, secret `ABUSE_GUARD_KEY_PEPPER`, text variable `ABUSE_GUARD_FAMILIES=proxy`, and optional `ABUSE_GUARD_TIMEOUT_MS`. Upstash credentials are not required.
   `NEXT_PUBLIC_SUPABASE_URL` is a non-secret environment binding. Set secret
   values only in the protected runtime secret store; this page records names
   only.
