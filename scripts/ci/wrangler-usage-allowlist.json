@@ -88,6 +88,16 @@
       },
       "digest": "24ed53e4bdf4d2c96fcef553a50a4d1286b78bf56c22f3f0d4d0c2456a7f1442"
     },
+    ".github/workflows/chat-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7996",
+        "reason": "REV-7996: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "1beb88e2772be3324b55b9f33dcfe4b0c818fa7898de666878c61b1d0080214f"
+    },
     ".github/workflows/cms-cloudflare.yaml": {
       "lines": 2,
       "uses": 2,
@@ -138,6 +148,16 @@
       },
       "digest": "4c6ff97c6fb7094a52e42757868d6c78f550f049b11add0f570bc9c02c0a3578"
     },
+    ".github/workflows/drive-cloudflare-artifact.yaml": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7928",
+        "reason": "REV-7928: the artifact workflow sets WRANGLER_SEND_METRICS false. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "21b728d557b8a474e2fc8b23403773fe19ea5135689d950499755feef54151b7"
+    },
     ".github/workflows/finance-cloudflare.yaml": {
       "lines": 2,
       "uses": 2,
@@ -158,6 +178,36 @@
       },
       "digest": "12bb1c7c1a654e1c2291d0970d35c323328f40829b89d576b4fcd659dabc73ca"
     },
+    ".github/workflows/git-cloudflare.yaml": {
+      "lines": 6,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7998",
+        "reason": "REV-7998: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "1ac331e6758e482d10f10f9dff4317c623b8ee312f14797b97697c3039f63d71"
+    },
+    ".github/workflows/hive-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7999",
+        "reason": "REV-7999: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "1beb88e2772be3324b55b9f33dcfe4b0c818fa7898de666878c61b1d0080214f"
+    },
+    ".github/workflows/infrastructure-cloudflare.yaml": {
+      "lines": 6,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7976",
+        "reason": "REV-7976: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "efa9031808f00ca86fbcab9b90fd79bb1fa61fed456a8f144f50ebedae8968a6"
+    },
     ".github/workflows/inventory-cloudflare.yaml": {
       "lines": 2,
       "uses": 2,
@@ -167,6 +217,16 @@
         "reason": "REV-7620: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
       },
       "digest": "12bb1c7c1a654e1c2291d0970d35c323328f40829b89d576b4fcd659dabc73ca"
+    },
+    ".github/workflows/learn-cloudflare.yaml": {
+      "lines": 6,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7975",
+        "reason": "REV-7975: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "bb55d111575ce22dcf701a0b9850ff880ab9a3306a0b612b270d2e2a47fe6554"
     },
     ".github/workflows/lettin-cloudflare.yaml": {
       "lines": 1,
@@ -208,6 +268,16 @@
       },
       "digest": "cf6695ee9df5d0771a1d45408d20c86bc921f2eb7dc72db33eebee4f47b19b2d"
     },
+    ".github/workflows/mind-cloudflare.yaml": {
+      "lines": 6,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7982",
+        "reason": "REV-7982: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "ac57299d58f8b899f5324ea68f80f6b1908a6b10f3d096bf2e10aa94f7388093"
+    },
     ".github/workflows/native-start-app.yaml": {
       "lines": 8,
       "uses": 8,
@@ -219,14 +289,14 @@
       "digest": "cb1eac45554ff87ab8162c58fab72a218b6d4efffe8fbddbd3d6cfb272fabd5c"
     },
     ".github/workflows/nova-cloudflare.yaml": {
-      "lines": 2,
-      "uses": 2,
+      "lines": 8,
+      "uses": 8,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7846",
-        "reason": "REV-7846: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/pull/7989",
+        "reason": "REV-7989: the sealed production profile grew the cutover workflow's Wrangler mentions. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
       },
-      "digest": "12bb1c7c1a654e1c2291d0970d35c323328f40829b89d576b4fcd659dabc73ca"
+      "digest": "e01f01c14a39baafd11ce96344336a5efc01e6fea94632cae0c1d93d87a5997a"
     },
     ".github/workflows/parley-cloudflare.yaml": {
       "lines": 3,
@@ -237,6 +307,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "9277cfdb4d2c575212c57c3969b41d019932f379df4a9e677f27a655e310fb5a"
+    },
+    ".github/workflows/pay-cloudflare.yaml": {
+      "lines": 6,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8006",
+        "reason": "REV-8006: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "f7a301ca70d57d87b689bb67296f5546456979039ced51f1045b0820496cc4e9"
     },
     ".github/workflows/playground-cloudflare.yaml": {
       "lines": 2,
@@ -299,6 +379,16 @@
       },
       "digest": "cb3f9de3f9f565368ee118a6600074ef472469d84e9b363fdfb666c21ad78051"
     },
+    ".github/workflows/teach-cloudflare.yaml": {
+      "lines": 6,
+      "uses": 6,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7943",
+        "reason": "REV-7943: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "db2aefb9a0523fd00bc2ec8e79295c3d82b7e01736bd1a77d1b1850a2c4cd460"
+    },
     ".github/workflows/tools-cloudflare.yaml": {
       "lines": 2,
       "uses": 2,
@@ -358,6 +448,16 @@
         "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
       "digest": "fd80840e0ca9aeb24af8ad5857f1f12fe9748dd81423e412cc05154218cb2241"
+    },
+    ".github/workflows/workspace-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7997",
+        "reason": "REV-7997: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "1beb88e2772be3324b55b9f33dcfe4b0c818fa7898de666878c61b1d0080214f"
     },
     ".gitignore": {
       "lines": 2,
@@ -509,6 +609,46 @@
         "reason": "CAL-R1-01: the sealed offline Retry browser regression needs the owning SDK to run the real emitted Worker and its CSP locally. Same native fixture gap and Wave 1 owner/removal condition as the shared root-browser gate; no publication command is added."
       }
     },
+    "apps/chat/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7962",
+        "reason": "Start + Void candidate (#7962) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/chat/cloudflare/auth-redirect.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7962",
+        "reason": "Start + Void candidate (#7962) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/chat/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7996",
+        "reason": "Start + Void candidate (#7996) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/chat/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7962",
+        "reason": "Start + Void candidate (#7962) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
     "apps/cms/.gitignore": {
       "lines": 1,
       "uses": 1,
@@ -649,6 +789,16 @@
       },
       "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
     },
+    "apps/drive/cloudflare/cutover.runtime.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7928",
+        "reason": "Start + Void candidate (#7928) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "66f103085b57e80756d101f8e6d643838195b02c80731d24fd147f834120c634"
+    },
     "apps/drive/package.json": {
       "lines": 1,
       "uses": 1,
@@ -749,6 +899,16 @@
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
+    "apps/gateway/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7970",
+        "reason": "Gateway Worker config (#7970) is the provider-owned wrangler.jsonc, not a CI publisher. Pending migration to cloudflare.config.ts; the pending-migration removal condition remains."
+      },
+      "digest": "43facbe1ee937323e1ad40dfb202ecf12012beaa6d47ebf3919c062d23cbf772"
+    },
     "apps/git/.gitignore": {
       "lines": 1,
       "uses": 1,
@@ -776,6 +936,86 @@
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/7638",
         "reason": "REV-7638: the pinned Wrangler devDependency supplies unstable_startWorker for the local emitted-Worker fixture. The void-emitted runtime gap and its removal condition remain."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/hive/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7950",
+        "reason": "Start + Void candidate (#7950) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/hive/cloudflare/auth-redirect.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7950",
+        "reason": "Start + Void candidate (#7950) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/hive/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7999",
+        "reason": "Start + Void candidate (#7999) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/hive/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7950",
+        "reason": "Start + Void candidate (#7950) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/infrastructure/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7963",
+        "reason": "Start + Void candidate (#7963) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/infrastructure/cloudflare/auth-redirect.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7963",
+        "reason": "Start + Void candidate (#7963) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/infrastructure/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7963",
+        "reason": "Start + Void candidate (#7963) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/infrastructure/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7963",
+        "reason": "Start + Void candidate (#7963) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
@@ -816,6 +1056,46 @@
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/6771",
         "reason": "Inventory native candidate (#6771) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/learn/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7961",
+        "reason": "Start + Void candidate (#7961) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/learn/cloudflare/auth-redirect.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7961",
+        "reason": "Start + Void candidate (#7961) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/learn/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7961",
+        "reason": "Start + Void candidate (#7961) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/learn/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7961",
+        "reason": "Start + Void candidate (#7961) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
@@ -888,6 +1168,36 @@
         "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
       "digest": "5bcb3befdab6e9694274dcf0de7c88d88d1df12cde285b29781d3096a53b7bc8"
+    },
+    "apps/marketing/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7934",
+        "reason": "Start + Void candidate (#7934) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/marketing/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7934",
+        "reason": "Start + Void candidate (#7934) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/marketing/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7934",
+        "reason": "Start + Void candidate (#7934) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
     "apps/mastermind/.gitignore": {
       "gap": "shared-toolchain",
@@ -1118,6 +1428,56 @@
         "reason": "FIX-7518-R2: SR-919 containment pins change existing config bytes; the new containment scanner and its negative fixtures only read legacy config names and never invoke the CLI."
       },
       "digest": "0756e4a805c31b15ad4dbb8ebc87496421dd6ffd11ece399927d41baed002d9b"
+    },
+    "apps/mind/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7964",
+        "reason": "Start + Void candidate (#7964) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/mind/cloudflare/anonymous-smoke.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7982",
+        "reason": "Start + Void candidate (#7982) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/mind/cloudflare/auth-redirect.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7964",
+        "reason": "Start + Void candidate (#7964) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/mind/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7964",
+        "reason": "Start + Void candidate (#7964) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/mind/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7964",
+        "reason": "Start + Void candidate (#7964) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
     "apps/nova/.gitignore": {
       "lines": 1,
@@ -1503,6 +1863,36 @@
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
+    "apps/teach/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7943",
+        "reason": "Start + Void candidate (#7943) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/teach/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7943",
+        "reason": "Start + Void candidate (#7943) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/teach/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7943",
+        "reason": "Start + Void candidate (#7943) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
     "apps/tools/.gitignore": {
       "lines": 1,
       "uses": 1,
@@ -1612,6 +2002,36 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "1e59666371951ffd119241c49b99fde3d56ab48e3cb2c22f3810b9f0acb3c931"
+    },
+    "apps/workspace/.gitignore": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7944",
+        "reason": "Start + Void candidate (#7944) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "932ccfa6ecd7b462680d904df026cd9b5b144a11f36e7e1d1548c98d7f146ad5"
+    },
+    "apps/workspace/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7997",
+        "reason": "Start + Void candidate (#7997) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/workspace/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7944",
+        "reason": "Start + Void candidate (#7944) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
     "bunfig.toml": {
       "lines": 1,
@@ -2454,14 +2874,14 @@
       "digest": "c63cce5b834793d1c373b7e550aa81958f6e2645afd87d2444ef2e64043b9160"
     },
     "scripts/ci/pay-native-artifact.test.py": {
-      "lines": 7,
-      "uses": 8,
+      "lines": 8,
+      "uses": 9,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6825",
-        "reason": "Pay native candidate (#6825) on Start + Void publishes and verifies the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+        "decision": "https://github.com/tutur3u/platform/pull/8011",
+        "reason": "REV-8011: the artifact guard names the emitted wrangler.json. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
       },
-      "digest": "52abc5e63cf83a7f8f5716f6a3ca8b20c7cc1b778417bda1a4c7d9d6e3d2cf87"
+      "digest": "e7b622e75addfb4456930b33cdb9e88a733b271b4b791e61fc0e22c42b44a35a"
     },
     "scripts/ci/production-publication-policy.test.js": {
       "lines": 1,
@@ -2682,6 +3102,16 @@
         "reason": "Four fixture path literals, no CLI: the seal regression reads the sealed publication config the admitted wave1-native-artifact writes (dist/wave1/wrangler.json), tampers it, and checks the recreated Void pointer and its Void-emitted server/wrangler.json target. Remove with wave1-web-seal.mjs's entry, when the wave-1 seal publishes a cf Build Output instead of a Void-emitted Wrangler config."
       },
       "digest": "a4a353fa3c894f530726d9581cda208933d0ef09a4753282f43934c4437cade3"
+    },
+    "scripts/ci/workspace-native-artifact.test.py": {
+      "lines": 10,
+      "uses": 10,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7997",
+        "reason": "REV-7997: the workspace artifact guard names the emitted wrangler.json. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "c53074bf6c2d9a3461ec182538586222e5d1236db038af2875c7b874f2826c38"
     },
     "scripts/generate-docs-inventory.js": {
       "lines": 1,
