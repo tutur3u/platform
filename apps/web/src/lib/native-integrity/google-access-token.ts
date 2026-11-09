@@ -89,7 +89,7 @@ export function googleIntegrityAccessToken(
     const response = await fetchImpl(endpoint, {
       method: 'POST',
       cache: 'no-store',
-      redirect: 'error',
+      redirect: 'manual',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
