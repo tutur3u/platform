@@ -151,32 +151,40 @@ test('failure and restart perform no storage, network, timers or cache writes', 
 });
 
 test('host-selected SSR mount and physical transport keys remain isolated', () => {
-  for (const [url, base, path] of [
-    ['https://roadmap.tuturuuu.com/', '/', '/roadmap/'],
-    ['https://tuturuuu.com/roadmap/', '/roadmap', '/roadmap/'],
+  const mountedRequest = new Request('https://tuturuuu.com/roadmap/');
+  assert.equal(selectedBasepath(mountedRequest), '/roadmap');
+  assert.equal(roadmapBoundary(mountedRequest), undefined);
+  const prepared = prepareRoadmapRequest(mountedRequest, '/roadmap');
+  assert.equal(new URL(prepared.url).pathname, '/roadmap/');
+  assert.equal(prepared.headers.get('x-roadmap-router-base'), '/roadmap');
+
+  for (const [url, location] of [
+    ['https://roadmap.tuturuuu.com/', 'https://tuturuuu.com/roadmap/'],
     [
       'https://roadmap.tuturuuu.com/roadmap/assets/app-12345678.js',
-      '/',
-      '/roadmap/assets/app-12345678.js',
+      'https://tuturuuu.com/roadmap/assets/app-12345678.js',
     ],
     [
-      'https://roadmap.tuturuuu.com/roadmap/_serverFn/test',
-      '/',
-      '/roadmap/_serverFn/test',
+      'https://roadmap.tuturuuu.com/roadmap/_serverFn/test?q=1',
+      'https://tuturuuu.com/roadmap/_serverFn/test?q=1',
+    ],
+    [
+      'https://roadmap.tuturuuu.com/roadmap/?q=test',
+      'https://tuturuuu.com/roadmap/?q=test',
     ],
   ] as const) {
     const request = new Request(url);
-    assert.equal(selectedBasepath(request), base);
-    assert.equal(roadmapBoundary(request), undefined);
-    const prepared = prepareRoadmapRequest(request, base);
-    assert.equal(new URL(prepared.url).pathname, path);
-    assert.equal(prepared.headers.get('x-roadmap-router-base'), base);
+    assert.equal(selectedBasepath(request), '/');
+    const redirect = roadmapBoundary(request);
+    assert.equal(redirect?.status, 301);
+    assert.equal(redirect?.headers.get('location'), location);
   }
-  const redirect = roadmapBoundary(
-    new Request('https://roadmap.tuturuuu.com/roadmap/?q=test')
+
+  const worker = new Request(
+    'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/'
   );
-  assert.equal(redirect?.status, 308);
-  assert.equal(redirect?.headers.get('location'), '/?q=test');
+  assert.equal(selectedBasepath(worker), '/roadmap');
+  assert.equal(roadmapBoundary(worker), undefined);
   const mounted = roadmapBoundary(new Request('https://tuturuuu.com/other'));
   assert.equal(mounted?.status, 404);
 });

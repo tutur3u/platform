@@ -1,0 +1,256 @@
+{
+  "kind": "real Chromium synthetic first-party component fixture; not production/full-route or real-auth acceptance",
+  "base": "c87c85785c44eb3713b16feeab0223758f74894e",
+  "cases": [
+    {
+      "image": "sessions-before-default-dark-390.png",
+      "sha256": "3b1174c2ccf9cfb69bb8f71b5a0cbfddea5eda8cfeca52025ab35c0b2a0d57e9",
+      "capturedAt": "2026-11-09T06:01:43.614064+07:00",
+      "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+      "fixture": {
+        "editable": true,
+        "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+        "surface": "sessions",
+        "theme": "dark",
+        "version": "before"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "dialog": false,
+        "rows": [
+          {
+            "actionBelowLabel": 54,
+            "buttonTop": 523,
+            "rightInset": 308,
+            "rowTop": 453
+          },
+          {
+            "actionBelowLabel": 54,
+            "buttonTop": 737,
+            "rightInset": 308,
+            "rowTop": 667
+          }
+        ]
+      }
+    },
+    {
+      "image": "sessions-after-default-dark-390.png",
+      "sha256": "6a84d2091ff4948e48505bef5ea7b16254b2f5e95344c7064a38636fccecc8db",
+      "capturedAt": "2026-11-09T06:01:43.915948+07:00",
+      "source": "e0ce29253d8eb922ac39abb47b7d73efe83a2c05",
+      "fixture": {
+        "editable": true,
+        "source": "e0ce29253d8eb922ac39abb47b7d73efe83a2c05",
+        "surface": "sessions",
+        "theme": "dark",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "dialog": false,
+        "rows": [
+          {
+            "actionBelowLabel": 0,
+            "buttonTop": 469,
+            "rightInset": 16,
+            "rowTop": 453
+          },
+          {
+            "actionBelowLabel": 0,
+            "buttonTop": 621,
+            "rightInset": 16,
+            "rowTop": 605
+          }
+        ]
+      }
+    },
+    {
+      "image": "sessions-before-default-light-390.png",
+      "sha256": "25b5f66ea897d077a3480c9e02f7dddc9ebecec02ccc2cb5c37f0f9c2afc3c92",
+      "capturedAt": "2026-11-09T06:01:44.183229+07:00",
+      "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+      "fixture": {
+        "editable": true,
+        "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+        "surface": "sessions",
+        "theme": "light",
+        "version": "before"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "dialog": false,
+        "rows": [
+          {
+            "actionBelowLabel": 54,
+            "buttonTop": 523,
+            "rightInset": 308,
+            "rowTop": 453
+          },
+          {
+            "actionBelowLabel": 54,
+            "buttonTop": 737,
+            "rightInset": 308,
+            "rowTop": 667
+          }
+        ]
+      }
+    },
+    {
+      "image": "sessions-after-default-light-390.png",
+      "sha256": "920727aee454c1b09350aac3aafe3359773377dab6de10d558582c5341eca76f",
+      "capturedAt": "2026-11-09T06:01:44.432497+07:00",
+      "source": "e0ce29253d8eb922ac39abb47b7d73efe83a2c05",
+      "fixture": {
+        "editable": true,
+        "source": "e0ce29253d8eb922ac39abb47b7d73efe83a2c05",
+        "surface": "sessions",
+        "theme": "light",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "dialog": false,
+        "rows": [
+          {
+            "actionBelowLabel": 0,
+            "buttonTop": 469,
+            "rightInset": 16,
+            "rowTop": 453
+          },
+          {
+            "actionBelowLabel": 0,
+            "buttonTop": 621,
+            "rightInset": 16,
+            "rowTop": 605
+          }
+        ]
+      }
+    },
+    {
+      "image": "sessions-before-default-dark-1440.png",
+      "sha256": "d55c0ba8141d3439beee8a5bdd95309d6ad72024bd001de9496ee32b2e3e0ef6",
+      "capturedAt": "2026-11-09T06:03:20.342832+07:00",
+      "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+      "fixture": {
+        "editable": true,
+        "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+        "surface": "sessions",
+        "theme": "dark",
+        "version": "before"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "nativePng": {
+        "width": 1430,
+        "height": 900
+      },
+      "horizontalOverflow": false,
+      "metrics": {}
+    },
+    {
+      "image": "sessions-after-default-dark-1440.png",
+      "sha256": "5e73856bb60510723dea4185bcc97a18201b331a72c3a64525834e5ce26f518d",
+      "capturedAt": "2026-11-09T06:03:20.581774+07:00",
+      "source": "e0ce29253d8eb922ac39abb47b7d73efe83a2c05",
+      "fixture": {
+        "editable": true,
+        "source": "e0ce29253d8eb922ac39abb47b7d73efe83a2c05",
+        "surface": "sessions",
+        "theme": "dark",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "nativePng": {
+        "width": 1430,
+        "height": 900
+      },
+      "horizontalOverflow": false,
+      "metrics": {}
+    },
+    {
+      "image": "sessions-before-default-light-1440.png",
+      "sha256": "998efe62e2ddd797d4b850f7c85f595e23823ead3cfa912cded97cff3b23af7b",
+      "capturedAt": "2026-11-09T06:03:20.842305+07:00",
+      "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+      "fixture": {
+        "editable": true,
+        "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+        "surface": "sessions",
+        "theme": "light",
+        "version": "before"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "nativePng": {
+        "width": 1430,
+        "height": 900
+      },
+      "horizontalOverflow": false,
+      "metrics": {}
+    },
+    {
+      "image": "sessions-after-default-light-1440.png",
+      "sha256": "06972e89cff29a20b84d15ba63546041578e24ca9cb6ac383a63373ffc3bac8c",
+      "capturedAt": "2026-11-09T06:03:21.141906+07:00",
+      "source": "e0ce29253d8eb922ac39abb47b7d73efe83a2c05",
+      "fixture": {
+        "editable": true,
+        "source": "e0ce29253d8eb922ac39abb47b7d73efe83a2c05",
+        "surface": "sessions",
+        "theme": "light",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "nativePng": {
+        "width": 1430,
+        "height": 900
+      },
+      "horizontalOverflow": false,
+      "metrics": {}
+    }
+  ],
+  "boundaries": "Actual source components, shared tokens and native dialog behavior. API/navigation boundaries use synthetic stubs; fixture avatar is generated SVG and IPs are documentation addresses. No customer production reference image/data copied. Images retain native screenshot bytes; viewport and PNG dimensions are recorded separately.",
+  "limits": "Server auth User-Agent forwarding is covered by attributed author localhost tests, not by this display fixture. Current-session fallback uses actual pure helper; historical missing metadata stays unknown."
+}

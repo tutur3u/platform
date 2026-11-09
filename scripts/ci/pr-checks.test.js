@@ -80,7 +80,13 @@ const resultSet = (overrides = {}, selected = {}) =>
         {
           result:
             overrides[id] ||
-            (['scope', 'branch-name', 'staging-hosts', 'admitted'].includes(id)
+            ([
+              'scope',
+              'branch-name',
+              'commit-trailers',
+              'staging-hosts',
+              'admitted',
+            ].includes(id)
               ? 'success'
               : 'skipped'),
           outputs:
@@ -286,6 +292,27 @@ test('Security Checks bytes match the reviewed workflow', () => {
     createHash('sha256').update(bytes).digest('hex'),
     '5b1b04ec29499a4225e90b1736b3fb6abdf1158ce403421f5c3640885f1944fc'
   );
+});
+
+test('the commit trailer check runs on every full PR run and fails the aggregate', () => {
+  const job = workflow.jobs['commit-trailers'];
+  assert.equal(job.name, 'Check commit trailers');
+  assert.equal(job.if, workflow.jobs['branch-name'].if);
+  assert.deepEqual(job.permissions, {
+    contents: 'read',
+    'pull-requests': 'read',
+  });
+  assert.equal(job.steps[0].with['persist-credentials'], false);
+  assert.equal(job.steps[0].with['fetch-depth'], 1);
+  assert.match(job.steps.at(-1).run, /commit-trailer-check\.js/u);
+  assert.match(job.steps.at(-1).run, /set -euo pipefail/u);
+  assert.ok(workflow.jobs.gate.needs.includes('commit-trailers'));
+  for (const status of ['failure', 'cancelled', 'skipped'])
+    assert.equal(
+      gate(resultSet({ 'commit-trailers': status })).status,
+      1,
+      `commit-trailers ${status}`
+    );
 });
 
 test('the staging host guard runs on every full PR run and fails the aggregate', () => {

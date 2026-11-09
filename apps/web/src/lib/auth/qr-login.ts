@@ -423,7 +423,8 @@ export async function pollQrLoginChallenge(
   try {
     const session = await issueQrLoginSessionForUser(
       consumed.approver_user_id,
-      consumed.approver_email ?? undefined
+      consumed.approver_email ?? undefined,
+      { userAgent: extractUserAgentFromHeaders(context.headers) }
     );
 
     return {
@@ -574,7 +575,8 @@ export async function approveQrLoginChallenge(
 
 export async function issueQrLoginSessionForUser(
   userId: string,
-  email?: string
+  email?: string,
+  options?: { userAgent?: string | null }
 ): Promise<QrLoginSessionPayload> {
   const admin = await createAdminClient();
   let userEmail = email;
@@ -615,7 +617,9 @@ export async function issueQrLoginSessionForUser(
     throw new Error('QR login magic link token hash not found');
   }
 
-  const detached = createDetachedClient();
+  const detached = options?.userAgent
+    ? createDetachedClient({ userAgent: options.userAgent })
+    : createDetachedClient();
   const { data: otpData, error: verifyError } = await detached.auth.verifyOtp({
     token_hash: tokenHash,
     type: 'magiclink',

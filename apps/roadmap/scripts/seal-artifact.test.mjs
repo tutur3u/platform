@@ -355,50 +355,37 @@ test('packaging moves real bytes once and refuses unsafe or missing clients', (t
   assert.throws(() => packageAssets(bad), /single-link/);
 });
 
-test('dedicated exact host serves root and canonicalizes legacy pages without redirecting transport', async () => {
-  const request = (path, options) =>
+test('satellite host 301s to the canonical roadmap and workers.dev does not', async () => {
+  const satellite = (path, options) =>
     new Request(`https://roadmap.tuturuuu.com${path}`, options);
   for (const [path, target] of [
-    ['/roadmap', '/'],
-    ['/roadmap/?x=1&x=2', '/?x=1&x=2'],
-    ['/roadmap/deep?x=%2F', '/deep?x=%2F'],
+    ['/', 'https://tuturuuu.com/roadmap/'],
+    ['/?x=1', 'https://tuturuuu.com/roadmap/?x=1'],
+    ['/deep', 'https://tuturuuu.com/roadmap/deep'],
+    ['/roadmap', 'https://tuturuuu.com/roadmap'],
+    ['/roadmap/?x=1&x=2', 'https://tuturuuu.com/roadmap/?x=1&x=2'],
+    ['/roadmap/deep?x=%2F', 'https://tuturuuu.com/roadmap/deep?x=%2F'],
+    ['/roadmap/assets/app.js', 'https://tuturuuu.com/roadmap/assets/app.js'],
   ]) {
-    const response = roadmapBoundary(request(path));
-    assert.equal(response.status, 308);
+    const response = roadmapBoundary(satellite(path));
+    assert.equal(response.status, 301);
     assert.equal(response.headers.get('Location'), target);
-    assert.ok(!target.startsWith('//'));
+    assert.equal(new URL(target).host, 'tuturuuu.com');
   }
-  for (const path of [
-    '/',
-    '/?x=1',
-    '/deep',
-    '/roadmap/assets/app.js',
-    '/roadmap/_serverFn/abc?x=1',
-  ]) {
-    const original = request(path);
-    const basepath = selectedBasepath(original);
-    assert.equal(basepath, '/');
-    assert.equal(roadmapBoundary(original, basepath), undefined);
-    const prepared = prepareRoadmapRequest(original, basepath);
-    const expected = path.startsWith('/roadmap/')
-      ? original.url
-      : `https://roadmap.tuturuuu.com/roadmap${path}`;
-    assert.equal(prepared.url, expected);
-    assert.equal(prepared.headers.get(mountHeader), '/');
-    assert.equal(
-      hydrationBasepath({ roadmapBasepath: prepared.headers.get(mountHeader) }),
-      '/'
-    );
-  }
-  const post = request('/roadmap/_serverFn/abc?x=1', {
+  const worker = new Request(
+    'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/assets/app.js'
+  );
+  assert.equal(selectedBasepath(worker), '/roadmap');
+  assert.equal(roadmapBoundary(worker), undefined);
+  const post = new Request('https://tuturuuu.com/roadmap/_serverFn/abc?x=1', {
     method: 'POST',
     body: 'payload',
-    headers: { [mountHeader]: '/roadmap', 'content-type': 'text/plain' },
+    headers: { [mountHeader]: '/', 'content-type': 'text/plain' },
   });
   const prepared = prepareRoadmapRequest(post, selectedBasepath(post));
   assert.equal(prepared.method, 'POST');
   assert.equal(await prepared.text(), 'payload');
-  assert.equal(prepared.headers.get(mountHeader), '/');
+  assert.equal(prepared.headers.get(mountHeader), '/roadmap');
   assert.equal(prepared.headers.get('content-type'), 'text/plain');
 });
 
