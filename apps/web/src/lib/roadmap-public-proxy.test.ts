@@ -80,6 +80,39 @@ describe('roadmap public proxy', () => {
     );
   });
 
+  it('serves the mount root without redirecting back to the slash form', async () => {
+    const fetchImpl = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        new Response('root', { status: 200 })
+    );
+
+    const response = await proxyRoadmapPublicRequest(
+      new NextRequest('https://tuturuuu.com/roadmap?q=1'),
+      fetchImpl
+    );
+
+    expect(response?.status).toBe(200);
+    expect(response?.headers.get('location')).toBeNull();
+    expect(String(fetchImpl.mock.calls[0]?.[0])).toBe(
+      'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/?q=1'
+    );
+  });
+
+  it('redirects a localized mount to the unlocalized path without a slash', async () => {
+    const fetchImpl = vi.fn();
+
+    const response = await proxyRoadmapPublicRequest(
+      new NextRequest('https://tuturuuu.com/vi/roadmap?q=1'),
+      fetchImpl
+    );
+
+    expect(response?.status).toBe(308);
+    expect(response?.headers.get('location')).toBe(
+      'https://tuturuuu.com/roadmap?q=1'
+    );
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   it('does not treat a neighbouring private path as the roadmap', async () => {
     const fetchImpl = vi.fn();
 
