@@ -48,8 +48,8 @@ export async function publishChannelBroadcast(
     },
     body,
     signal: AbortSignal.timeout(5000),
-    redirect: 'error',
+    redirect: 'manual',
   });
-  if (!response.ok)
+  if (response.type === 'opaqueredirect' || !response.ok)
     throw new Error(`Cloudflare broadcast failed (${response.status})`);
 }

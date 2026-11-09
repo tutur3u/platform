@@ -5,6 +5,7 @@ export type NewsletterOutbound = {
   text: string;
 };
 
+/** `send` throws only when the provider definitively did not accept the message; the reserved cap slot is then released. */
 export interface NewsletterMailer {
   send(message: NewsletterOutbound): Promise<void>;
 }

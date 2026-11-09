@@ -21,7 +21,7 @@ afterEach(() => {
 const spinner = (container: HTMLElement) =>
   container.querySelector('[class*="animate-spin"]');
 
-it('shows only the meeting name, one status line, a spinner and Back while preparing', () => {
+it('shows only the meeting name, the title, one short line, a spinner and Back while preparing', () => {
   const view = render(
     localized(<CallPreparation meetingName="Weekly sync" leaveHref="/home" />)
   );
@@ -30,7 +30,7 @@ it('shows only the meeting name, one status line, a spinner and Back while prepa
   expect(screen.getByText('Weekly sync')).toBeTruthy();
   const status = screen.getByRole('status');
   expect(status.getAttribute('aria-live')).toBe('polite');
-  expect(status.textContent).toBe(copy.preparing_call);
+  expect(status.textContent).toBe(`${copy.preparing_call}${copy.connecting}`);
   expect(
     screen.getByRole('heading', { level: 1, name: copy.preparing_call })
   ).toBeTruthy();
@@ -40,7 +40,7 @@ it('shows only the meeting name, one status line, a spinner and Back while prepa
   ).toBe('/home');
   expect(screen.queryByText(copy.resource_limits_hint)).toBeNull();
   expect(section?.textContent).toBe(
-    `Weekly sync${copy.preparing_call}${copy.back_to_meet}`
+    `Weekly sync${copy.preparing_call}${copy.connecting}${copy.back_to_meet}`
   );
 });
 
@@ -60,6 +60,7 @@ it('replaces the status line with the slow message after the deadline', () => {
     copy.join_loading_slow_title
   );
   expect(screen.queryByText(copy.preparing_call)).toBeNull();
+  expect(screen.queryByText(copy.connecting)).toBeNull();
   expect(screen.queryByText('Hidden once slow')).toBeNull();
   expect(spinner(view.container)).toBeNull();
   expect(
@@ -86,5 +87,6 @@ it('keeps recovery copy and actions for settled outcomes', () => {
   expect(screen.getByText(copy.join_missing_hint)).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Recover' })).toBeTruthy();
   expect(spinner(view.container)).toBeNull();
+  expect(screen.queryByText(copy.connecting)).toBeNull();
   expect(screen.queryByRole('link', { name: copy.back_to_meet })).toBeNull();
 });

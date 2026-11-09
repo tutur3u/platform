@@ -19,6 +19,7 @@ const request = () =>
     headers: { 'x-colab-grant': 'a'.repeat(64) },
   });
 beforeEach(() => {
+  vi.clearAllMocks();
   user.mockResolvedValue({
     data: {
       user: {
@@ -45,7 +46,7 @@ it('pins canonical Colab and charges root under the verified host without an API
   expect(fetch).toHaveBeenCalledWith(
     'https://colab.tuturuuu.com/api/sponsorship/verify',
     expect.objectContaining({
-      redirect: 'error',
+      redirect: 'manual',
       cache: 'no-store',
       body: JSON.stringify({
         token: 'a'.repeat(64),
@@ -100,4 +101,53 @@ it('rejects missing capability before any outbound request', async () => {
     )
   ).rejects.toThrow();
   expect(fetch).not.toHaveBeenCalled();
+});
+
+it.each([300, 301, 302, 303, 304, 307, 308, 399])(
+  'denies Colab redirect %s before reading approval or resolving its host',
+  async (status) => {
+    const response = new Response(null, {
+      status,
+      headers: { Location: 'https://other.invalid/approval' },
+    });
+    const json = vi.spyOn(response, 'json');
+    const fetch = vi.fn().mockResolvedValue(response);
+    vi.stubGlobal('fetch', fetch);
+    await expect(
+      authenticateColabGrant(request(), body, sponsor)
+    ).rejects.toMatchObject({
+      status: 403,
+      code: 'invalid_api_key',
+    });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' });
+    expect(json).not.toHaveBeenCalled();
+    expect(user).not.toHaveBeenCalled();
+  }
+);
+it('denies an opaque Colab approval even if its status appears successful', async () => {
+  const response = Response.json({ approved: true, digest });
+  Object.defineProperty(response, 'type', { value: 'opaqueredirect' });
+  const json = vi.spyOn(response, 'json');
+  const fetch = vi.fn().mockResolvedValue(response);
+  vi.stubGlobal('fetch', fetch);
+  await expect(
+    authenticateColabGrant(request(), body, sponsor)
+  ).rejects.toMatchObject({
+    status: 403,
+    code: 'invalid_api_key',
+  });
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(json).not.toHaveBeenCalled();
+  expect(user).not.toHaveBeenCalled();
+});
+it('propagates a network failure without retrying or resolving a sponsor', async () => {
+  const failure = new Error('Synthetic network failure');
+  const fetch = vi.fn().mockRejectedValue(failure);
+  vi.stubGlobal('fetch', fetch);
+  await expect(authenticateColabGrant(request(), body, sponsor)).rejects.toBe(
+    failure
+  );
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(user).not.toHaveBeenCalled();
 });

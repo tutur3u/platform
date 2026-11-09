@@ -343,7 +343,7 @@ export async function sendNewsletterStaffTest(input: {
     }).catch(() => undefined);
     throw new NewsletterGateError('mailer_failed');
   }
-  // A crash after the mailer accepts leaves the row reserved, so it does not count.
+  // A crash after the mailer accepts leaves the row reserved, which still holds its cap slot.
   await callNewsletter(admin, 'newsletter_finish_staff_delivery', {
     p_ws_id: input.wsId,
     p_delivery_id: reserved.id,

@@ -77,3 +77,83 @@ it.each([401, 429, 500])(
     expect(fetch).toHaveBeenCalledTimes(1);
   }
 );
+
+it.each(['google', 'microsoft'] as const)(
+  'accepts direct %s responses with manual redirects',
+  async (provider) => {
+    const fetch = vi.fn().mockResolvedValue(Response.json({ messages: [] }));
+    vi.stubGlobal('fetch', fetch);
+    await expect(
+      providerRequest({ ...account, provider }, '/messages')
+    ).resolves.toHaveProperty('status', 200);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' });
+  }
+);
+it.each([300, 301, 302, 303, 304, 307, 308, 399])(
+  'denies provider redirect %s without refreshing or replaying',
+  async (status) => {
+    const response = new Response(null, {
+      status,
+      headers: { Location: 'https://other.invalid/' },
+    });
+    const fetch = vi.fn().mockResolvedValue(response);
+    vi.stubGlobal('fetch', fetch);
+    await expect(providerRequest(account, '/messages')).rejects.toMatchObject({
+      status: 502,
+      responseStatus: status,
+    });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(accessToken).toHaveBeenCalledTimes(1);
+    expect(fetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' });
+  }
+);
+it('denies an opaque response before any unauthorized-read retry', async () => {
+  const response = new Response(null, { status: 401 });
+  Object.defineProperty(response, 'type', { value: 'opaqueredirect' });
+  const fetch = vi.fn().mockResolvedValue(response);
+  vi.stubGlobal('fetch', fetch);
+  await expect(providerRequest(account, '/messages')).rejects.toMatchObject({
+    responseStatus: 401,
+  });
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(accessToken).toHaveBeenCalledTimes(1);
+});
+it('denies a successful-looking opaque provider response', async () => {
+  const response = Response.json({ messages: [] });
+  Object.defineProperty(response, 'type', { value: 'opaqueredirect' });
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+  await expect(providerRequest(account, '/messages')).rejects.toMatchObject({
+    status: 502,
+  });
+});
+it('denies a redirect after the single allowed credential refresh', async () => {
+  const fetch = vi
+    .fn()
+    .mockResolvedValueOnce(new Response(null, { status: 401 }))
+    .mockResolvedValueOnce(
+      new Response(null, {
+        status: 302,
+        headers: { Location: 'https://other.invalid/' },
+      })
+    );
+  vi.stubGlobal('fetch', fetch);
+  await expect(providerRequest(account, '/messages')).rejects.toMatchObject({
+    responseStatus: 302,
+    status: 502,
+  });
+  expect(fetch).toHaveBeenCalledTimes(2);
+  expect(fetch.mock.calls.every((call) => call[1].redirect === 'manual')).toBe(
+    true
+  );
+});
+it('never replays a mutation after a network failure', async () => {
+  const fetch = vi
+    .fn()
+    .mockRejectedValue(new Error('Synthetic network failure'));
+  vi.stubGlobal('fetch', fetch);
+  await expect(
+    providerRequest(account, '/sendMail', { method: 'POST' })
+  ).rejects.toThrow('Synthetic network failure');
+  expect(fetch).toHaveBeenCalledTimes(1);
+});

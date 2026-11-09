@@ -132,7 +132,8 @@ jobs:
         with:
           app: meet
   check-ci:
-    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    needs: affected-gate
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read

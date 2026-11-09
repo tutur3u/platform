@@ -43,9 +43,9 @@
     }
   ],
   "summary": {
-    "total": 844,
+    "total": 849,
     "categories": {
-      "api": 650,
+      "api": 655,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -54,7 +54,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 832 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 837 }
   },
   "routes": [
     {
@@ -2909,6 +2909,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/newsletter/unsubscribe",
+      "source": "apps/web/src/app/api/v1/newsletter/unsubscribe/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/notifications/[id]/metadata",
       "source": "apps/web/src/app/api/v1/notifications/[id]/metadata/route.ts",
       "category": "api",
@@ -4855,6 +4863,38 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/mobile/module-flags",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mobile/module-flags/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/newsletter/approval",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/approval/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/newsletter/domain",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/domain/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/newsletter/subscribers",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/subscribers/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/newsletter/test-send",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/test-send/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
