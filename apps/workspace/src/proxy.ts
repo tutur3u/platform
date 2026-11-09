@@ -55,7 +55,6 @@ import { getMailAppOrigin } from './lib/mail-app-url';
 import { getMeetAppOrigin } from './lib/meet-app-url';
 import { feedbackProxyPayloadLimit } from './lib/product-feedback-limits';
 import { profileMediaProxyPayloadLimit } from './lib/profile-media-proxy';
-import { guardApiCostAndCsrf } from './lib/security/api-request-guard';
 import { isVerifiedStaffCliSession } from './lib/staff-cli-session';
 import { withStagingOriginProof } from './lib/staging-origin-proof';
 import { getToolsAppOrigin } from './lib/tools-app-url';
@@ -1033,8 +1032,8 @@ async function webProxy(req: NextRequest): Promise<NextResponse> {
       const suspicious = await blockSuspiciousAnonymousApiRequest(req);
       if (suspicious) return suspicious;
     }
-    const costResponse = await guardApiCostAndCsrf(req, WEB_APP_URL);
-    if (costResponse) return costResponse;
+    // API cost accounting and CSRF checks run in the central Web proxy that
+    // serves every forwarded /api request.
     if (versionedAsset) return NextResponse.next();
     const additionalRoutePolicies = (await hasWorkspaceEmailRateLimitOverrides(
       req.nextUrl.pathname
