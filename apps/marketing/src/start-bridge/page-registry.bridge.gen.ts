@@ -9,6 +9,7 @@ export const pages = [
   { pattern: "/branding", file: "src/app/[locale]/(marketing)/branding/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/careers", file: "src/app/[locale]/(marketing)/careers/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/community-guidelines", file: "src/app/[locale]/(marketing)/community-guidelines/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/contact", file: "src/app/[locale]/(marketing)/contact/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/contributors", file: "src/app/[locale]/(marketing)/contributors/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/legal/changes/full", file: "src/app/[locale]/(marketing)/legal/changes/full/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/legal/changes", file: "src/app/[locale]/(marketing)/legal/changes/page.tsx", defaults: { "locale": "en" } },

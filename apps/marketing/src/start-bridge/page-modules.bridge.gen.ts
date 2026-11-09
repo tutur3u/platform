@@ -68,6 +68,15 @@ export const pageModules = {
       () => import('../app/[locale]/(marketing)/community-guidelines/layout'),
     ],
   },
+  'src/app/[locale]/(marketing)/contact/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/contact/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/contact/layout'),
+    ],
+  },
   'src/app/[locale]/(marketing)/contributors/page.tsx': {
     page: () => import('../app/[locale]/(marketing)/contributors/page'),
     layouts: [
