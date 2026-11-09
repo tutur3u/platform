@@ -1,5 +1,7 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
+import { documentHierarchyQueryKey } from '@/lib/documents/hierarchy';
 import type { JSONContent } from '@tiptap/react';
 import {
   AlertCircle,
@@ -10,7 +12,11 @@ import {
   Lock,
   Share2,
 } from '@tuturuuu/icons';
-import { uploadWorkspaceStorageFile } from '@tuturuuu/internal-api';
+import {
+  uploadWorkspaceStorageFile,
+  deleteWorkspaceDocument as deleteDocument,
+  updateWorkspaceDocument as updateDocument,
+} from '@tuturuuu/internal-api';
 import { buildWorkspaceStorageShareUrl } from '@tuturuuu/storage-core/signed-url-policy';
 import type { WorkspaceDocument } from '@tuturuuu/types';
 import {
@@ -46,42 +52,6 @@ interface SyncStatus {
   type: 'saving' | 'saved' | 'error';
   message: string;
   timestamp: number;
-}
-
-async function deleteDocument(wsId: string, documentId: string) {
-  const response = await fetch(
-    `/api/v1/workspaces/${wsId}/documents/${documentId}`,
-    {
-      method: 'DELETE',
-    }
-  );
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Failed to delete document');
-  }
-}
-
-async function updateDocument(
-  wsId: string,
-  documentId: string,
-  payload: Partial<Pick<WorkspaceDocument, 'name' | 'is_public' | 'content'>>
-) {
-  const response = await fetch(
-    `/api/v1/workspaces/${wsId}/documents/${documentId}`,
-    {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    }
-  );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Failed to update document');
-  }
 }
 
 export function DocumentEditor({
@@ -134,6 +104,7 @@ export function DocumentEditor({
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // Debounced sync status update
   const updateSyncStatus = useMemo(
@@ -158,6 +129,9 @@ export function DocumentEditor({
     if (document && wsId && documentId) {
       try {
         if (document.id) await deleteDocument(wsId, document.id);
+        void queryClient.invalidateQueries({
+          queryKey: documentHierarchyQueryKey(wsId),
+        });
         router.push(`/${wsId}/documents`);
       } catch (error) {
         console.error(error);
@@ -219,6 +193,9 @@ export function DocumentEditor({
         if (!document.id) return;
 
         await updateDocument(wsId, document.id, { name: newName });
+        void queryClient.invalidateQueries({
+          queryKey: documentHierarchyQueryKey(wsId),
+        });
 
         setDocument((prevDoc) => ({ ...prevDoc, name: newName }));
         updateSyncStatus({

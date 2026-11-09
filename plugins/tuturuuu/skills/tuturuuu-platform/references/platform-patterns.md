@@ -6,6 +6,13 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Document hierarchy uses the shared `documentHierarchyQueryKey` across sidebar,
+  rename, delete and create callers. Preserve the complete collection for move
+  preflight; validate Undo's saved position independently of append allocation.
+  Retain attempted and original locations across unknown writes so a read can
+  restore Undo without replaying a mutation. See the [hierarchy behavior and
+  regression coverage](../../../../../apps/docs/platform/features/document-hierarchy.mdx#web-navigation-and-moves).
+
 - Drive export links use versioned, expiring tokens plus a service-only folder
   revocation marker in the Supabase `.tuturuuu/drive-export-revocations` namespace.
   Read markers uncached on every fetch and fail closed on missing markers or

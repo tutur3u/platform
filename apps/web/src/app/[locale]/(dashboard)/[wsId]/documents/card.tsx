@@ -1,5 +1,8 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
+import { deleteWorkspaceDocument } from '@tuturuuu/internal-api';
+import { documentHierarchyQueryKey } from '@/lib/documents/hierarchy';
 import { FileText, MoreHorizontal, Trash2 } from '@tuturuuu/icons';
 import type { WorkspaceDocument } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -37,6 +40,7 @@ export const DocumentCard = ({ wsId, document, onUpdate }: Props) => {
   const { id, name, created_at } = document;
   const locale = useLocale();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const creationDate = moment(created_at).locale(locale).fromNow();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -65,16 +69,10 @@ export const DocumentCard = ({ wsId, document, onUpdate }: Props) => {
 
     setIsDeleting(true);
     try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/documents/${id}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to delete document');
-      }
+      await deleteWorkspaceDocument(wsId, id);
+      void queryClient.invalidateQueries({
+        queryKey: documentHierarchyQueryKey(wsId),
+      });
 
       toast.success('Document deleted successfully');
       setDeleteDialogOpen(false);
