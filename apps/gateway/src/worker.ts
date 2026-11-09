@@ -127,6 +127,17 @@ function originRequest(request: Request, origin: URL) {
 const NO_FOLLOW = { redirect: 'manual' } as const;
 
 /** Maps origin-host URLs in a Link header (hreflang alternates) to the public host. */
+/** A copy of the response whose Link header names the public host. */
+function withPublicLink(
+  response: Response,
+  origin: URL,
+  publicHost: string | undefined
+) {
+  const copy = new Response(response.body, response);
+  rewriteLinkHeader(copy, origin, publicHost);
+  return copy;
+}
+
 export function rewriteLinkHeader(
   response: Response,
   origin: URL,
@@ -235,7 +246,11 @@ export function createHandler(deps: HandlerDeps) {
     options: { respectOriginCacheControl: boolean }
   ) {
     try {
-      const response = await fetch(originRequest(request, origin), NO_FOLLOW);
+      const response = withPublicLink(
+        await fetch(originRequest(request, origin), NO_FOLLOW),
+        origin,
+        env.PUBLIC_HOST
+      );
       if (!isStorable(response, options).store) {
         await response.body?.cancel();
         return;
@@ -300,7 +315,11 @@ export function createHandler(deps: HandlerDeps) {
 
     let response: Response;
     try {
-      response = await fetch(originRequest(request, origin), NO_FOLLOW);
+      response = withPublicLink(
+        await fetch(originRequest(request, origin), NO_FOLLOW),
+        origin,
+        env.PUBLIC_HOST
+      );
     } catch {
       return plain(502, 'gateway origin unreachable');
     }
