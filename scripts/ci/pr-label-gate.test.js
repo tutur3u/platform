@@ -30,7 +30,7 @@ const PAUSED_JOB = /^(\$\{\{ )?false( \}\})?$/u;
 // with a reviewed push, schedule or manual trigger change.
 const PROTECTED_TRIGGERS = {
   'rewise-cloudflare.yaml': 'fe6b54462e91b1bf',
-  'git-cloudflare.yaml': '0a3cc2c97958f5cd',
+  'git-cloudflare.yaml': '518ca2530d7a63ef',
   'external-cloudflare.yaml': '0a3cc2c97958f5cd',
   'ai-cloudflare.yaml': '2b1f1ae8795d0216',
   'api-worker.yaml': '058d68d5d261d527',
