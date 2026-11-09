@@ -118,7 +118,7 @@ export function createHttpGuardTransport(options: {
     }
 
     if (
-      response.type === 'opaqueredirect' ||
+      String(response.type) === 'opaqueredirect' ||
       (response.status >= 300 && response.status < 400)
     ) {
       throw new AbuseGuardUnavailableError('network');
