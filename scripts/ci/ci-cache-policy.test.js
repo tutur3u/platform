@@ -241,7 +241,7 @@ function findBroadEnvCredentials(source) {
   return violations;
 }
 
-test('all 27 active Vercel projects cache their full Turbo build', () => {
+test('all 27 active Vercel projects preserve their exact Turbo build recipes', () => {
   assert.equal(Object.keys(activeVercelProjects).length, 27);
   assert.equal(vercelWorkflows.length, 54);
 
@@ -254,11 +254,36 @@ test('all 27 active Vercel projects cache their full Turbo build', () => {
       )
     );
 
+    const legacyProfiles = {
+      ai: { quote: '"', concurrency: ' --concurrency=2' },
+      cms: { quote: '"', concurrency: ' --concurrency=2' },
+      external: { quote: '"', concurrency: '' },
+      finance: { quote: '"', concurrency: ' --concurrency=2' },
+      git: { quote: '"', concurrency: '' },
+      tools: { quote: "'", concurrency: ' --concurrency=2' },
+    };
+    const profile = legacyProfiles[project];
+    const expectedBuild = profile
+      ? `cd ../.. && bun turbo:local run build --filter=${profile.quote}${workspace}^...${profile.quote}${profile.concurrency} && bun run --cwd apps/${project} build:legacy`
+      : `cd ../.. && bun turbo:local run build --filter=${workspace}`;
     assert.equal(
       config.buildCommand,
-      `cd ../.. && bun turbo:local run build --filter=${workspace}`,
-      `${project} must build through root Turbo`
+      expectedBuild,
+      `${project} must preserve its exact Turbo supplier and app build recipe`
     );
+    if (profile) {
+      const manifest = JSON.parse(
+        fs.readFileSync(
+          path.join(repoRoot, 'apps', project, 'package.json'),
+          'utf8'
+        )
+      );
+      assert.equal(
+        manifest.scripts['build:legacy'],
+        'next build --turbopack',
+        `${project} legacy recipe must remain the Next build`
+      );
+    }
     assert.equal(
       config.installCommand,
       vercelInstallCommand,
@@ -294,7 +319,26 @@ test('all 27 active Vercel projects cache their full Turbo build', () => {
         'utf8'
       )
     );
-    assert.equal(config.buildCommand, undefined);
+    assert.equal(
+      config.git.deploymentEnabled,
+      false,
+      `${inactiveProject} must not deploy automatically`
+    );
+    if (inactiveProject === 'external') {
+      assert.equal(
+        config.buildCommand,
+        'cd ../.. && bun turbo:local run build --filter="@tuturuuu/external^..." && bun run --cwd apps/external build:legacy'
+      );
+      const manifest = JSON.parse(
+        fs.readFileSync(
+          path.join(repoRoot, 'apps/external/package.json'),
+          'utf8'
+        )
+      );
+      assert.equal(manifest.scripts['build:legacy'], 'next build --turbopack');
+    } else {
+      assert.equal(config.buildCommand, undefined);
+    }
   }
 });
 

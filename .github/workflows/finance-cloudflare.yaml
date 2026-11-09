@@ -223,7 +223,7 @@ jobs:
         apps/finance/cloudflare apps/finance/src/start-bridge apps/finance/src/routes apps/finance/src/router.tsx apps/finance/src/start.ts apps/finance/vite.config.mts apps/finance/void.config.ts apps/finance/vitest.config.ts apps/finance/tsconfig.json apps/finance/tsconfig.cloudflare.json apps/finance/package.json apps/finance/start-bridge.routes.json apps/finance/start-bridge.config.ts
   cutover-build:
     needs: [check-ci, affected-gate]
-    if: ${{ needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:

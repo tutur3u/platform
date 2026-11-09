@@ -241,8 +241,11 @@ test('nightly, release and manual Apple/Windows checks retain platform builds', 
     assert.deepEqual(workflow.on.release.types, ['published']);
     assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
     for (const event of ['schedule', 'release', 'workflow_dispatch']) {
+      const scope = context(event);
+      if (event === 'release')
+        scope.github.event.release = { tag_name: 'mobile-v0.9.2' };
       assert.equal(
-        admitted(workflow, `build-${platform}`, context(event)),
+        admitted(workflow, `build-${platform}`, scope),
         true,
         `${platform}:${event}`
       );

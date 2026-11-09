@@ -320,7 +320,12 @@ for (const { workflow, job } of publishers) {
   test(`${workflow}: every production write depends on the early shared policy gate`, (t) => {
     const { jobs } = readWorkflow(workflow);
     const gate = jobs['production-policy'];
-    assert.equal(gate.if, "github.ref == 'refs/heads/production'");
+    assert.equal(
+      gate.if,
+      workflow === 'meet-cloudflare.yaml'
+        ? "${{ needs.affected-gate.outputs.run == 'true' && (github.ref == 'refs/heads/production') }}"
+        : "github.ref == 'refs/heads/production'"
+    );
     assert.equal(
       gate.outputs.allowed,
       '$' + '{{ steps.policy.outputs.allowed }}'
@@ -451,7 +456,12 @@ test('Mastermind has qualification jobs only and no production publisher', () =>
     false
   );
   const { jobs } = readWorkflow('mastermind-cloudflare.yaml');
-  assert.deepEqual(Object.keys(jobs), ['affected-gate', 'check-ci', 'native']);
-  assert.equal(jobs.native.uses, './.github/workflows/native-start-app.yaml');
-  assert.equal(jobs.native.with.app, 'mastermind');
+  assert.deepEqual(Object.keys(jobs), ['affected-gate', 'artifact']);
+  assert.equal(jobs.artifact['runs-on'], 'ubuntu-latest');
+  assert.ok(jobs.artifact.needs.includes('affected-gate'));
+  assert.match(JSON.stringify(jobs.artifact.steps), /apps\/mastermind/);
+  assert.doesNotMatch(
+    JSON.stringify(jobs.artifact),
+    /wrangler (?:deploy|secret)|vercel (?:deploy|promote)|secrets\./
+  );
 });

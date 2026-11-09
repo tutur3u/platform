@@ -42,7 +42,7 @@ test('Cloudflare release relevance shares the existing config job and gates vali
     assert.deepEqual(
       workflow.jobs.validate.needs,
       app === 'meet'
-        ? ['check-ci', 'production-policy']
+        ? ['check-ci', 'production-policy', 'affected-gate']
         : ['check-ci', 'affected-gate']
     );
     assert.match(

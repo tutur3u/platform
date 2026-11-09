@@ -146,7 +146,7 @@ jobs:
         with:
           app: tools
   check-ci:
-    if: github.event_name != 'workflow_dispatch' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: ${{ (github.event_name != 'workflow_dispatch' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -181,7 +181,7 @@ jobs:
 
   cutover-artifact:
     needs: affected-gate
-    if: ${{ needs.affected-gate.outputs.run == 'true' && (github.event_name == 'workflow_dispatch') }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.event_name == 'workflow_dispatch')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:

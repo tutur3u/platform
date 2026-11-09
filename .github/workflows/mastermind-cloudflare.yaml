@@ -147,7 +147,7 @@ jobs:
   # Build artifact delivery with required runtime evidence; no publisher credentials.
   artifact:
     needs: affected-gate
-    if: ${{ needs.affected-gate.outputs.run == 'true' && (github.event_name != 'pull_request' || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.event_name != 'pull_request' || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:

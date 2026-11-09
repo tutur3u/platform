@@ -70,7 +70,15 @@ describe('feature flags page access', () => {
     const keys = [...container.querySelectorAll('[data-flag-key]')].map((row) =>
       row.getAttribute('data-flag-key')
     );
-    expect(keys).toEqual(featureFlagCatalog.flags.map((flag) => flag.key));
+    const byFamily = new Map<string, string[]>();
+    for (const flag of featureFlagCatalog.flags) {
+      byFamily.set(flag.family, [
+        ...(byFamily.get(flag.family) ?? []),
+        flag.key,
+      ]);
+    }
+    expect(keys).toEqual([...byFamily.values()].flat());
+    expect(new Set(keys).size).toBe(featureFlagCatalog.flags.length);
     expect(mocks.enforceRoot.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.authorize.mock.invocationCallOrder[0]!
     );
