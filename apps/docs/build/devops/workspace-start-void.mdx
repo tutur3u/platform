@@ -50,15 +50,97 @@ map (`src/start-bridge/page-modules.bridge.gen.ts`) is regenerated from the
 codemod's `pageModulesModule` template over the route inventory, so each new page
 gets its layout chain.
 
-## Missing API guard
+## API guard and forward origin
 
 Web's `src/proxy.ts` runs an API cost guard and CSRF guard before an API request.
 Both import server-only modules that break the Start build, so Workspace's copy of
-the proxy does not run them. `/api` is forwarded to the central Web API, whose
-proxy still runs the guard, so the abuse and CSRF checks stay in force for every
-API call. Do not point `/api` at a Workspace-local handler and do not add an
-`apiOrigin` that bypasses Web until the guard is restored in the portable
-package.
+the proxy does not run them. Every `/api` request the app does not own is
+forwarded to the central Web API, whose proxy runs the guard, so the abuse and
+CSRF checks stay in force for every API call. Do not point `/api` at a
+Workspace-local handler and do not add an `apiOrigin` that bypasses Web until the
+guard is restored in the portable package.
+
+That protection holds only while the forward target runs Web's proxy.
+`start-bridge.config.ts` therefore resolves the target through
+`resolveWebApiOrigin` for every forwarded request:
+
+- `INTERNAL_WEB_API_ORIGIN` unset forwards to `https://tuturuuu.com`.
+- A set value must be an `https` origin with no credentials, port, path, query or
+  fragment, and its host must be `tuturuuu.com`, the built-in staging Web host
+  (`WEB_API_HOSTS` in `start-bridge.config.ts`) or a hostname listed in
+  `TUTURUUU_WEB_API_HOSTS`.
+- Anything else throws, and the bridge answers its generic `500` without
+  contacting the target. A blank value is invalid, not unset.
+
+`TUTURUUU_WEB_API_HOSTS` is a comma-separated list of exact dotted hostnames (no
+wildcards, no `localhost`), read from the Worker environment and never derived
+from a request. Set it only on a deployment whose Web origin is not in the
+built-in list, such as a staging Web Worker, and review the value like any other
+binding. The origin is also a binding, so a `localhost` or `http` target is
+refused: run local development against an `https` Web host and list it. The
+runtime suite binds `https://central.invalid` and never forwards an API request,
+so it does not exercise the check; `start-bridge.config.test.ts` does.
+
+## CSRF mode and origins
+
+`TTR_CSRF_MODE` (`off` by default, then `report`, then `enforce`) is read by
+Web's proxy guard, `guardWebApiCsrf` in `apps/web/src/lib/security/csrf.ts`.
+Workspace does not read it: Workspace forwards `/api` to Web, so the check runs
+there, and Workspace's own server functions use TanStack Start's CSRF middleware.
+
+The guard accepts a cookie-authenticated mutation when `Sec-Fetch-Site` is
+`same-origin`, or, for a client that sends no Fetch Metadata, when `Origin` is in
+`allowedOrigins`. That list is the request's own origin, the configured Web
+origin and `WEB_CSRF_TRUSTED_ORIGINS`.
+
+| Surface | Browser `Origin` | Decision |
+| --- | --- | --- |
+| `tuturuuu.com/workspace` mount | `https://tuturuuu.com` | Already allowed: it is the configured Web origin. No entry needed. |
+| `workspace.tuturuuu.com` | `https://workspace.tuturuuu.com` | Listed in `WEB_CSRF_TRUSTED_ORIGINS`. Browsers call the subdomain's own `/api`, which is `same-origin` and passes through the forward; the entry covers clients without Fetch Metadata. |
+| Staging hosts | Any staging Worker or staging subdomain | Not listed. Staging acceptance runs with `TTR_CSRF_MODE` at `off` or `report`. |
+
+A `same-site` request (a sibling subdomain calling another app's API directly) is
+rejected in `enforce` mode even when its `Origin` is listed. The list does not
+widen that rule, and Workspace pages never make such calls. Moving
+`TTR_CSRF_MODE` to `enforce` for Web needs no further Workspace change; run the
+mode in `report` first and check the `CSRF check failed` logs for
+`workspace.tuturuuu.com` before enforcing. Regression coverage:
+`apps/web/src/lib/security/csrf.test.ts`.
+
+## Synced copies
+
+Workspace holds copies of Web files. Re-compare the auth and account files with
+`apps/web` before each deploy. They must keep behavior parity for:
+
+- `logoutAll` removes the legacy `tuturuuu_multi_session_store` localStorage key
+  before it revokes server sessions, and tolerates a storage error.
+- The account list refetches on window focus and is never stale, and a save that
+  hits the account limit returns `errorCode: 'account_limit'` so the add-account
+  button, switcher modal and add-account page show the limit instead of
+  navigating away.
+- Recovery sessions (`lib/auth/recovery-session.ts`, `recovery.ts`) are created
+  with the recovering browser's user agent.
+- The sessions card describes devices with `lib/sessions/session-user-agent.ts`.
+- External-project scope checks live in `lib/external-projects/access-mode.ts`,
+  and the route permissions include `edit_external_projects`.
+
+Intentional differences from Web: no roadmap proxy or `/roadmap` public path
+(Web owns the public roadmap), no API cost and CSRF guard in the proxy (see
+above), `lib/datasets/page-access.ts` redirects a `401` to the login, and the
+workspace settings page omits the newsletter sending-domain form, which depends
+on Web-only services. Coverage lives in `src/context`, `src/lib/auth`,
+`src/lib/sessions` and `src/lib/external-projects`; run it with
+`bunx vitest run` from `apps/workspace`.
+
+## Hosts and Vercel
+
+`start-bridge.config.ts` sets `mounts.unknownHost` to `reject`, so only
+`workspace.tuturuuu.com` and the `tuturuuu.com/workspace` mount are served and any
+other host gets the bridge's `404`. The codemod therefore emits
+`workers_dev: false`: the staging Worker has no `workers.dev` route until a
+cutover-prep PR admits a staging host. No Vercel project is linked:
+`apps/workspace` has no `.vercel` directory, and its `vercel.json` disables Git
+deployments and the GitHub integration.
 
 ## Local verification
 

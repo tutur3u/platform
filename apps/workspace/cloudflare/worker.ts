@@ -40,6 +40,7 @@ const mounts = {
   rootHosts: ['workspace.tuturuuu.com'],
   mountHosts: ['tuturuuu.com'],
   basePath: '/workspace',
+  unknownHost: 'reject' as const,
   ...appConfig.mounts,
 };
 

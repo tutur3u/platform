@@ -25,6 +25,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
+import { describeSessionUserAgent } from '@/lib/sessions/session-user-agent';
 
 interface Session {
   session_id: string;
@@ -47,40 +48,14 @@ interface SessionsData {
 }
 
 function getDeviceIcon(userAgent: string) {
-  const ua = userAgent.toLowerCase();
-  if (
-    ua.includes('mobile') ||
-    ua.includes('android') ||
-    ua.includes('iphone')
-  ) {
+  const device = describeSessionUserAgent(userAgent).device;
+  if (device === 'phone') {
     return <Smartphone className="h-4 w-4" />;
   }
-  if (ua.includes('tablet') || ua.includes('ipad')) {
+  if (device === 'tablet') {
     return <Tablet className="h-4 w-4" />;
   }
   return <Monitor className="h-4 w-4" />;
-}
-
-function formatUserAgent(userAgent: string) {
-  if (userAgent === 'Unknown') return 'Unknown Device';
-
-  // Extract browser and OS info
-  let browser = 'Unknown Browser';
-  let os = 'Unknown OS';
-
-  if (userAgent.includes('Chrome')) browser = 'Chrome';
-  else if (userAgent.includes('Firefox')) browser = 'Firefox';
-  else if (userAgent.includes('Safari') && !userAgent.includes('Chrome'))
-    browser = 'Safari';
-  else if (userAgent.includes('Edge')) browser = 'Edge';
-
-  if (userAgent.includes('Windows')) os = 'Windows';
-  else if (userAgent.includes('Mac')) os = 'macOS';
-  else if (userAgent.includes('Linux')) os = 'Linux';
-  else if (userAgent.includes('Android')) os = 'Android';
-  else if (userAgent.includes('iOS')) os = 'iOS';
-
-  return `${browser} on ${os}`;
 }
 
 // Time ago formatter that leverages i18n translations
@@ -308,9 +283,10 @@ export default function SessionsCard() {
           sessions.map((session) => (
             <SettingItemTab
               key={session.session_id}
+              layout="compact"
               title={
                 <>
-                  {formatUserAgent(session.user_agent)}
+                  {describeSessionUserAgent(session.user_agent).label}
                   {session.is_current && (
                     <Badge
                       variant="outline"

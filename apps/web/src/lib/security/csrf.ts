@@ -18,6 +18,16 @@ export const WEB_CSRF_EXEMPTIONS: readonly CsrfExemption[] = [
   },
 ];
 
+/**
+ * Origins of satellite apps whose `/api/*` requests are forwarded verbatim to
+ * Web. A forwarded request arrives on Web's own host, so a client that sends
+ * no `Sec-Fetch-Site` identifies itself by the satellite's `Origin` instead.
+ * The `tuturuuu.com/<app>` mounts share Web's origin and need no entry.
+ */
+export const WEB_CSRF_TRUSTED_ORIGINS: readonly string[] = [
+  'https://workspace.tuturuuu.com',
+];
+
 const shouldReportCsrfFailure = createCsrfReportLimiter();
 
 /**
@@ -34,7 +44,11 @@ export function guardWebApiCsrf(
   if (mode === 'off') return null;
 
   const verdict = checkCsrf({
-    allowedOrigins: [req.nextUrl.origin, configuredOrigin],
+    allowedOrigins: [
+      req.nextUrl.origin,
+      configuredOrigin,
+      ...WEB_CSRF_TRUSTED_ORIGINS,
+    ],
     exemptions: WEB_CSRF_EXEMPTIONS,
     headers: req.headers,
     method: req.method,
