@@ -162,6 +162,28 @@ describe('SettingsDialogShell keyboard navigation', () => {
     ).toHaveClass('px-4', 'md:px-10');
   });
 
+  it('marks exactly one sidebar entry current when names repeat or share a prefix', () => {
+    renderShell(undefined, {
+      navItems: [
+        ...navItems,
+        {
+          label: 'Workspace',
+          items: [
+            { icon: TestIcon, label: 'Profile', name: 'profile' },
+            { icon: TestIcon, label: 'Profile links', name: 'profile-links' },
+          ],
+        },
+      ],
+    });
+
+    const currentEntries = document.querySelectorAll(
+      '[data-sidebar="menu-button"][aria-current="page"]'
+    );
+    expect(currentEntries).toHaveLength(1);
+    expect(currentEntries[0]).toHaveTextContent('Profile');
+    expect(currentEntries[0]).not.toHaveTextContent('Profile links');
+  });
+
   it('keeps settings groups expanded by default', () => {
     renderShell();
 

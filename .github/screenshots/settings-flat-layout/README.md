@@ -5,11 +5,13 @@ synthetic lists in a standalone Vite fixture. They cover 1440 × 900 and 390 × 
 in light and dark themes. Desktop captures include the sidebar and dialog shell;
 mobile navigation captures show the drawer. No account or workspace data is used.
 
-Image sizes: `after-1440-*` are full 1440 × 900 viewport captures from headless
-Chromium. `before-1440-*` are 1430 × 900: the browser panel that captured them
-dropped the rightmost 10 px of the 1440 px viewport. The before dialog spans the
-full viewport, so only that right edge is missing. Every 390 image is a full
-390 × 844 capture.
+Image sizes: every `after-*` image is a full-viewport headless Chromium capture
+(1440 × 900 or 390 × 844). The `after-390-*-navigation` images open the section
+drawer with a real click on the mobile selector and show its single highlight on
+the current section. `before-1440-*` are 1430 × 900: the browser panel that
+captured them dropped the rightmost 10 px of the 1440 px viewport. The before
+dialog spans the full viewport, so only that right edge is missing.
+`before-390-*` are full 390 × 844 captures.
 
 Before source: `d209d72bfa54e4ed84b50f2a09fdb24e466a0547`.
 After source: the accompanying component changes. The desktop dialog has a 32px

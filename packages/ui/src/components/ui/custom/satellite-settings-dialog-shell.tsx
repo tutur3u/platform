@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, ChevronDown, Compass, Search, X } from '@tuturuuu/icons';
+import { ArrowLeft, Compass, Search, X } from '@tuturuuu/icons';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,27 +11,11 @@ import {
 } from '@tuturuuu/ui/breadcrumb';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@tuturuuu/ui/command';
-import {
   DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@tuturuuu/ui/drawer';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import {
   Sidebar,
@@ -40,12 +24,12 @@ import {
   SidebarInput,
   SidebarProvider,
 } from '@tuturuuu/ui/sidebar';
-import { cn } from '@tuturuuu/utils/format';
 import type { ComponentType, KeyboardEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { resolveSettingsTab } from '../../../hooks/settings-dialog-url';
 import type { createSettingsSearchEngine } from './settings-dialog-search';
 import { loadSettingsSearchEngine } from './settings-dialog-search-loader';
+import { SettingsMobileNav } from './settings-mobile-nav';
 import { SettingsSidebarGroup } from './settings-sidebar-group';
 
 export interface SettingsNavItem {
@@ -195,6 +179,9 @@ export function SatelliteSettingsDialogShell({
     allNavItems.find((item) => !item.disabled) ||
     allNavItems[0];
   const showContentHeader = !activeItem?.hideContentHeader;
+  // Only the first group that owns the active tab marks it current, so a tab
+  // name repeated in another group never renders a second highlight.
+  const activeGroupLabel = activeGroup?.label;
   const persistedItem = allNavItems.find(
     (item) => !item.disabled && item.name === persistedTab
   );
@@ -431,7 +418,7 @@ export function SatelliteSettingsDialogShell({
             )}
             {filteredNavItems.map((group, index) => (
               <SettingsSidebarGroup
-                activeTab={activeTab}
+                activeTab={group.label === activeGroupLabel ? activeTab : ''}
                 collapsible={!expandAllAccordions && !searchQuery}
                 defaultOpen={isGroupExpandedByDefault(group.label, index)}
                 group={group}
@@ -445,81 +432,27 @@ export function SatelliteSettingsDialogShell({
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6">
             <div className="flex flex-1 items-center gap-2 md:flex-initial">
               {isMobile && (
-                <Drawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-                  <DrawerTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={mobileNavOpen}
-                      className="w-full flex-1 justify-between gap-2"
-                    >
-                      {activeItem && (
-                        <>
-                          <activeItem.icon className="h-4 w-4 shrink-0" />
-                          <span className="flex-1 truncate text-left">
-                            {activeItem.label}
-                          </span>
-                        </>
-                      )}
-                      <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </DrawerTrigger>
-                  <DrawerContent>
-                    <DrawerHeader className="sr-only">
-                      <DrawerTitle>{t('common.settings')}</DrawerTitle>
-                      <DrawerDescription>
-                        {t('search.search')}
-                      </DrawerDescription>
-                    </DrawerHeader>
-                    <Command
-                      className="rounded-none border-0"
-                      shouldFilter={false}
-                    >
-                      <CommandInput
-                        ref={mobileSearchInputRef}
-                        value={searchQuery}
-                        onFocus={ensureSearchEngine}
-                        onValueChange={updateSearchQuery}
-                        placeholder={t('settings.search_settings_placeholder')}
-                      />
-                      <CommandList className="max-h-[50vh]">
-                        <CommandEmpty>
-                          {t('common.no_results_found')}
-                        </CommandEmpty>
-                        {filteredNavItems.map((group) => (
-                          <CommandGroup key={group.label} heading={group.label}>
-                            {group.items.map((item) => (
-                              <CommandItem
-                                disabled={item.disabled}
-                                key={item.name}
-                                value={`${group.label} ${item.label} ${item.description || ''} ${item.keywords?.join(' ') || ''} ${item.aliases?.join(' ') || ''} ${item.searchLabels?.join(' ') || ''}`}
-                                onSelect={() => {
-                                  if (item.disabled) return;
-                                  selectActiveTab(item.name);
-                                  setMobileNavOpen(false);
-                                }}
-                                className={cn(
-                                  'flex items-center gap-2',
-                                  activeTab === item.name && 'bg-accent'
-                                )}
-                              >
-                                <item.icon className="h-4 w-4" />
-                                <div className="flex flex-col">
-                                  <span>{item.label}</span>
-                                  {item.description && (
-                                    <span className="line-clamp-1 text-muted-foreground text-xs">
-                                      {item.description}
-                                    </span>
-                                  )}
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        ))}
-                      </CommandList>
-                    </Command>
-                  </DrawerContent>
-                </Drawer>
+                <SettingsMobileNav
+                  activeGroup={activeGroup}
+                  activeItem={activeItem}
+                  activeTab={activeTab}
+                  labels={{
+                    noResults: t('common.no_results_found'),
+                    searchPlaceholder: t(
+                      'settings.search_settings_placeholder'
+                    ),
+                    title: t('common.settings'),
+                    description: t('search.search'),
+                  }}
+                  navItems={filteredNavItems}
+                  onOpenChange={setMobileNavOpen}
+                  onSearchChange={updateSearchQuery}
+                  onSearchFocus={ensureSearchEngine}
+                  onSelect={selectActiveTab}
+                  open={mobileNavOpen}
+                  searchInputRef={mobileSearchInputRef}
+                  searchQuery={searchQuery}
+                />
               )}
 
               <Breadcrumb className="hidden md:flex">
@@ -553,7 +486,7 @@ export function SatelliteSettingsDialogShell({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="ml-auto shrink-0 text-muted-foreground"
+                className="ml-auto size-11 shrink-0 text-muted-foreground md:size-9"
               >
                 <X
                   className="h-4 w-4"

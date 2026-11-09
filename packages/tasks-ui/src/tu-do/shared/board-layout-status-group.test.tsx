@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { DndContext } from '@dnd-kit/core';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { WorkspaceTaskList } from '@tuturuuu/types';
 import { describe, expect, it, vi } from 'vitest';
 import type { BoardLayoutListItemCopy } from './board-layout-list-item';
@@ -73,6 +73,15 @@ describe('Board layout status sections', () => {
       screen.queryByRole('button', { name: /^Backlog/ })
     ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Edit list' })).toBeEnabled();
+  });
+
+  it('does not repeat the status inside list rows', () => {
+    setup([list]);
+    const row = screen
+      .getByText('Planning', { selector: 'p' })
+      .closest('.group') as HTMLElement;
+    expect(within(row).queryByText('Backlog')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Backlog')).toHaveLength(1);
   });
 
   it('keeps empty statuses visible and provides a named add action', () => {

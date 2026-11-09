@@ -52,8 +52,8 @@ export function SettingsSidebarGroup({
                 item.disabled &&
                   'cursor-not-allowed opacity-70 disabled:opacity-70',
                 activeTab === item.name
-                  ? 'bg-accent font-semibold text-accent-foreground ring-1 ring-border'
-                  : 'text-foreground/80 hover:bg-accent/60 hover:text-accent-foreground'
+                  ? 'bg-accent font-semibold text-accent-foreground ring-1 ring-border hover:bg-accent hover:text-accent-foreground'
+                  : 'text-foreground/80 hover:bg-transparent hover:text-foreground/80 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-accent/60 [@media(hover:hover)_and_(pointer:fine)]:hover:text-accent-foreground'
               )}
             >
               <item.icon className="h-4 w-4 shrink-0" />

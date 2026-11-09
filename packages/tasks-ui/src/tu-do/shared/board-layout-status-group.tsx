@@ -60,7 +60,7 @@ export function BoardLayoutStatusGroup({
         <span className="text-muted-foreground text-xs">{lists.length}</span>
         <Button
           aria-label={`${addNewList}: ${label}`}
-          className="ml-auto h-8 shrink-0 gap-1.5 px-2 text-muted-foreground"
+          className="ml-auto h-11 shrink-0 gap-1.5 px-2 text-muted-foreground md:h-8"
           onClick={() => onAdd(status)}
           size="sm"
           type="button"
