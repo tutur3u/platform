@@ -104,6 +104,15 @@ const PROTECTED_TRIGGERS = {
   'type-check.yaml': '47acd08d33c6cf4c',
   'web-start-candidate.yaml': '0a3cc2c97958f5cd',
   'workspace-permission-scope-contract.yaml': '0a3cc2c97958f5cd',
+  'chat-cloudflare.yaml': '4c7010c51cef2ee2',
+  'drive-cloudflare-artifact.yaml': '0a3cc2c97958f5cd',
+  'hive-cloudflare.yaml': '170330c93275beda',
+  'infrastructure-cloudflare.yaml': '8b74315dfe557569',
+  'learn-cloudflare.yaml': 'c1dc547df2674fca',
+  'marketing-cloudflare.yaml': '975602b8f7271cbc',
+  'mind-cloudflare.yaml': '188b2dc67dc86f60',
+  'teach-cloudflare.yaml': 'b37341dc49021b0b',
+  'workspace-cloudflare.yaml': '659081e2b1855001',
 };
 
 const EXTRA_PROTECTED_INPUTS = {
