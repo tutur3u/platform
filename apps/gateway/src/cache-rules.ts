@@ -114,6 +114,27 @@ export function cacheKey(request: Request, locale: string) {
   )}`;
 }
 
+/**
+ * The Next locale middleware sets `NEXT_LOCALE` on every anonymous page. It only
+ * records the locale already encoded in the cache key (path, cookie, then
+ * Accept-Language), so a response whose Set-Cookie headers are all `NEXT_LOCALE`
+ * is cache-safe. The stored copy drops it (see `storedCopy`); the response that
+ * triggered the store keeps it.
+ */
+export function onlyLocaleCookies(response: Response) {
+  const headers = response.headers as Headers & {
+    getSetCookie?: () => string[];
+  };
+  const cookies =
+    typeof headers.getSetCookie === 'function'
+      ? headers.getSetCookie()
+      : [headers.get('set-cookie') ?? ''];
+  return (
+    cookies.length > 0 &&
+    cookies.every((cookie) => /^\s*NEXT_LOCALE=/i.test(cookie))
+  );
+}
+
 export interface StoreDecision {
   store: boolean;
   reason?: string;
@@ -125,7 +146,7 @@ export function isStorable(
   options: { respectOriginCacheControl: boolean }
 ): StoreDecision {
   if (response.status !== 200) return { store: false, reason: 'status' };
-  if (response.headers.has('set-cookie')) {
+  if (response.headers.has('set-cookie') && !onlyLocaleCookies(response)) {
     return { store: false, reason: 'set-cookie' };
   }
   if (response.headers.get('vary')?.includes('*')) {

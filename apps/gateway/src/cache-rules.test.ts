@@ -7,6 +7,7 @@ import {
   isStorable,
   localeBucket,
   normalizeUrl,
+  onlyLocaleCookies,
 } from './cache-rules';
 import { manifest, matchRoute } from './manifest';
 
@@ -157,5 +158,25 @@ describe('freshness', () => {
     expect(freshness(0, 301_000)).toBe('stale');
     expect(freshness(0, 3_900_000)).toBe('stale');
     expect(freshness(0, 3_901_000)).toBe('expired');
+  });
+});
+
+describe('locale cookie storability', () => {
+  const opts = { respectOriginCacheControl: false };
+  it('stores a response whose only cookie is NEXT_LOCALE', () => {
+    const headers = new Headers();
+    headers.append('set-cookie', 'NEXT_LOCALE=en; Path=/; SameSite=lax');
+    expect(onlyLocaleCookies(new Response('x', { headers }))).toBe(true);
+    expect(isStorable(new Response('x', { headers }), opts).store).toBe(true);
+  });
+  it('still bypasses when any other cookie is present', () => {
+    const headers = new Headers();
+    headers.append('set-cookie', 'NEXT_LOCALE=en; Path=/');
+    headers.append('set-cookie', 'sb-abc-auth-token=1; Path=/');
+    expect(onlyLocaleCookies(new Response('x', { headers }))).toBe(false);
+    expect(isStorable(new Response('x', { headers }), opts)).toEqual({
+      store: false,
+      reason: 'set-cookie',
+    });
   });
 });
