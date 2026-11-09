@@ -221,6 +221,7 @@
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",
                   "build/devops/d74-cutover-runbooks",
+                  "build/devops/drive-start-void",
                   "build/devops/nova-start-void",
                   "build/devops/lettin-start-void",
                   "build/devops/tasks-start-void",
