@@ -15,7 +15,11 @@ export function mergeWorkspaceSelectWorkspaces(
   workspaces: InternalApiWorkspaceSummary[] | undefined,
   currentWorkspaceFallback: InternalApiWorkspaceSummary | null | undefined
 ) {
-  const workspaceList = workspaces ?? [];
+  const workspaceList = [
+    ...new Map(
+      (workspaces ?? []).map((workspace) => [workspace.id, workspace])
+    ).values(),
+  ];
 
   if (!currentWorkspaceFallback) return workspaceList;
 

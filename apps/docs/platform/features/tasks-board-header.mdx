@@ -37,8 +37,11 @@ hides.
 
 ## People and projects
 
-People pills use the board's complete viewable-member roster, together with
-assignees already present on its tasks. Your pill comes first, followed by task
+People pills use only the current workspace's member roster. Task assignees
+never add people to this roster, including on personal boards containing tasks
+from other workspaces. A personal workspace offers its owner and Unassigned.
+Cross-workspace tasks remain visible under their existing access rules; their
+co-assignees do not become people filter options. Your pill comes first, followed by task
 count and name. Five people are visible; the rest are in the overflow menu.
 Picking only yourself means Mine. Adding another person changes the selection
 to those people together; it must not keep an additional Mine restriction.
@@ -121,3 +124,11 @@ Regression coverage:
 - `packages/tasks-ui/src/tu-do/shared/board-user-presence-avatars.test.tsx`
 - `packages/tasks-ui/src/tu-do/projects/projectId/task-project-detail.test.tsx`
 - `packages/tasks-ui/src/tu-do/projects/projectId/components/__tests__/tasks-tab-layout.test.tsx`
+
+Membership filtering is covered by `board-filter-state.test.ts` and
+`use-board-header-data.test.tsx` in `packages/tasks-ui/src/tu-do/shared/board-header`.
+
+The task-board member endpoint returns public profile names and avatars with
+`email: null`. Board visibility does not grant access to private member email
+addresses. The assignee picker and mention suggestions use the task home
+workspace; task cards and history retain authorized task identities.
