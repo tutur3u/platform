@@ -15,7 +15,7 @@ jobs:
   production-policy:
     name: Report wave-1 production publication hold
     if: github.ref == 'refs/heads/production'
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.PRODUCTION_RUNNER_LABELS && fromJSON(vars.PRODUCTION_RUNNER_LABELS) || 'ubuntu-latest' }}
     outputs:
       allowed: ${{ steps.policy.outputs.allowed }}
     steps:
@@ -30,7 +30,7 @@ jobs:
     needs: [production-policy]
     if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
     environment: vercel-production-calendar
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.PRODUCTION_RUNNER_LABELS && fromJSON(vars.PRODUCTION_RUNNER_LABELS) || 'ubuntu-latest' }}
     permissions:
       contents: read
       deployments: write
