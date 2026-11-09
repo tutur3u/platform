@@ -527,6 +527,7 @@
                   "reference/repository/routes/external",
                   "reference/repository/routes/finance",
                   "reference/repository/routes/forms",
+                  "reference/repository/routes/gateway",
                   "reference/repository/routes/git",
                   "reference/repository/routes/hive",
                   "reference/repository/routes/hive-realtime",
