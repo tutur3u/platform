@@ -60,14 +60,14 @@
       "name": "tools",
       "description": "Developer utility tools",
       "entryRoute": "/",
-      "loginRoute": "/login",
+      "loginRoute": "/",
       "paths": [
         "/",
-        "/login",
         "/health",
         "/robots.txt",
         "/manifest.json"
-      ]
+      ],
+      "note": "No /login route: the Vercel deployment answers a soft 404 (HTTP 200) for it and the native Worker answers 404, so the login check uses the entry route."
     },
     "playground": {
       "name": "playground",
@@ -125,14 +125,14 @@
       "name": "apps",
       "description": "App directory",
       "entryRoute": "/",
-      "loginRoute": "/login",
+      "loginRoute": "/",
       "paths": [
         "/",
-        "/login",
         "/store",
         "/robots.txt",
         "/manifest.json"
-      ]
+      ],
+      "note": "No /login route: the Vercel deployment answers a soft 404 (HTTP 200) for it and the native Worker answers 404, so the login check uses the entry route."
     },
     "mail": {
       "name": "mail",
@@ -318,15 +318,13 @@
     },
     "hive": {
       "name": "hive",
-      "description": "Hive cluster management",
+      "description": "Hive app",
       "entryRoute": "/",
       "loginRoute": "/login",
       "paths": [
         "/",
         "/login",
-        "/nodes",
-        "/robots.txt",
-        "/manifest.json"
+        "/robots.txt"
       ]
     },
     "git": {
@@ -471,13 +469,6 @@
         "/robots.txt",
         "/favicon.ico"
       ]
-    },
-    "hive": {
-      "name": "hive",
-      "description": "Hive app",
-      "entryRoute": "/",
-      "loginRoute": "/login",
-      "paths": ["/", "/login", "/robots.txt"]
     },
     "_default": {
       "name": "default",
