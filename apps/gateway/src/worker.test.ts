@@ -255,5 +255,16 @@ describe('gateway handler', () => {
         '<https://tuturuuu.com/about>; rel="alternate"; hreflang="en"'
       );
     });
+
+    it('serves /assets from the marketing origin and falls back to web when it is not set', async () => {
+      const t = setup((r) => new Response(hostOf(r)));
+      const withOrigin = await t.call('/assets/app-abc.js', undefined, {
+        ...ENV,
+        MARKETING_ORIGIN: 'https://marketing-origin.example',
+      });
+      expect(await withOrigin.text()).toBe('marketing-origin.example');
+      const without = await t.call('/assets/app-abc.js', undefined, ENV);
+      expect(await without.text()).toBe('web-origin.vercel.app');
+    });
   });
 });

@@ -129,3 +129,5 @@ Two Worker variables control the flip:
 Flip a group by adding its name and redeploying the gateway variables. Roll it back by removing the name, or by clearing `GATEWAY_MARKETING_GROUPS`. Cached pages from the other origin are keyed separately and expire within the cache window, so a rollback is complete within one stale period.
 
 Smoke for each group before the next one: anonymous 200 on two paths of the group, `x-gateway-cache` present, and `x-tuturuuu-runtime: native` on a cache MISS from the marketing origin.
+
+`/assets/*` is the Vite build output of the marketing app. It always goes to `MARKETING_ORIGIN` (cached as static) and falls back to the web origin while `MARKETING_ORIGIN` is unset. It is not tied to a page-group flag, so rolling a group back does not move `/assets/*`; Vercel web has no `/assets` path.
