@@ -1,0 +1,46 @@
+{
+  "appDir": "src/app",
+  "api": {
+    "out": "src/start-bridge/api-registry.bridge.gen.ts",
+    "patternsOut": "src/start-bridge/api-patterns.bridge.gen.ts",
+    "lazy": true
+  },
+  "pages": {
+    "out": "src/start-bridge/page-registry.bridge.gen.ts"
+  },
+  "stripSegments": {
+    "[locale]": {
+      "locale": "en"
+    }
+  },
+  "owned": {},
+  "ignored": {},
+  "runtime": {
+    "/legal/dpa": 200,
+    "/about": 200,
+    "/pricing": {
+      "redirect": "/"
+    },
+    "/contact": 200,
+    "/": 200,
+    "/contributors": 200,
+    "/branding": 200,
+    "/women-in-tech": 200,
+    "/partners": 200,
+    "/careers": 200,
+    "/blog": 200,
+    "/solutions/education": 200,
+    "/products": 200,
+    "/products/tasks": 200,
+    "/privacy": 200,
+    "/security": 200,
+    "/security/bug-bounty": 200,
+    "/security/policy": 200,
+    "/terms": 200
+  },
+  "runtimeProbes": {
+    "api": {
+      "skip": "marketing owns no API routes; /api/* is served by the web app"
+    }
+  }
+}
