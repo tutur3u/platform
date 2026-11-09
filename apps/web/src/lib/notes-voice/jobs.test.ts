@@ -175,6 +175,34 @@ describe('actor-owned voice job lifecycle', () => {
       'Paid transcript'
     );
   });
+  it('retains paid analysis when AI is disabled after the provider returns', async () => {
+    const { job } = await reserveVoiceJob(owner, request, 'hash');
+    let aiDisabled = false;
+    mock.generate
+      .mockResolvedValueOnce({ transcript: 'Paid transcript' })
+      .mockImplementationOnce(async () => {
+        aiDisabled = true;
+        return { artifact };
+      });
+    const access = vi.fn(async (phase?: unknown) => {
+      if (aiDisabled && phase !== 'result_persistence')
+        throw new NotesVoiceError(403, 'notes_voice_ai_disabled');
+    });
+    await runVoiceJob(owner, job, new Uint8Array(2), access);
+    const completed = await getVoiceJob(owner, 'job');
+    expect(completed.status).toBe('completed');
+    expect(completed.artifact).toEqual(artifact);
+    expect(access).toHaveBeenLastCalledWith('result_persistence');
+    aiDisabled = false;
+    const replay = await reserveVoiceJob(
+      owner,
+      { ...request, expectedRevision: completed.revision },
+      'hash'
+    );
+    expect(replay.start).toBe(false);
+    expect(replay.job.attempt).toBe(1);
+    expect(mock.generate).toHaveBeenCalledTimes(2);
+  });
   it('completes silence without charging a second analysis phase', async () => {
     const { job } = await reserveVoiceJob(owner, request, 'hash');
     mock.generate.mockResolvedValueOnce({ transcript: '  ' });
