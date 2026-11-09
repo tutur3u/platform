@@ -6,6 +6,7 @@ const schema = z
     enum: z.array(z.union([z.string(), z.number(), z.boolean()])).optional(),
     const: z.union([z.string(), z.number(), z.boolean()]).optional(),
     properties: z.record(z.string(), z.unknown()).optional(),
+    items: z.unknown().optional(),
     required: z.array(z.string()).optional(),
     anyOf: z.array(z.unknown()).optional(),
   })
@@ -52,6 +53,11 @@ function tsType(value: unknown): string {
           `${JSON.stringify(key)}${parsed.required?.includes(key) ? '' : '?'}: ${tsType(item)}`
       )
       .join('; ')} }`;
+  if (parsed.type === 'array') {
+    if (parsed.items === undefined)
+      throw new Error(`Unsupported client schema: ${JSON.stringify(parsed)}`);
+    return `${tsType(parsed.items)}[]`;
+  }
   if (parsed.type === 'string') return 'string';
   if (parsed.type === 'integer' || parsed.type === 'number') return 'number';
   if (parsed.type === 'boolean') return 'boolean';
@@ -61,6 +67,7 @@ function tsType(value: unknown): string {
 
 function dartType(value: unknown): string {
   const parsed = schema.parse(value);
+  if (parsed.anyOf) return 'dynamic';
   if (Array.isArray(parsed.type)) {
     const nonNull = parsed.type.filter((item) => item !== 'null');
     if (nonNull.length === 1 && parsed.type.includes('null'))
@@ -70,6 +77,12 @@ function dartType(value: unknown): string {
   if (parsed.type === 'integer') return 'int';
   if (parsed.type === 'number') return 'num';
   if (parsed.type === 'boolean') return 'bool';
+  if (parsed.type === 'array') {
+    if (parsed.items === undefined)
+      throw new Error(`Unsupported Dart field schema: ${JSON.stringify(parsed)}`);
+    return `List<${dartType(parsed.items)}>`;
+  }
+  if (parsed.type === 'object') return 'Map<String, dynamic>';
   throw new Error(`Unsupported Dart field schema: ${JSON.stringify(parsed)}`);
 }
 
@@ -89,6 +102,10 @@ function dartModel(name: string, value: unknown): string[] {
     '  );',
     '}',
   ];
+}
+
+function isObjectSchema(value: unknown): boolean {
+  return schema.parse(value).type === 'object';
 }
 
 export function clients(input: unknown) {
@@ -116,13 +133,21 @@ export function clients(input: unknown) {
   const dartModels: string[] = [];
   for (const [path, methods] of Object.entries(spec.paths)) {
     for (const [method, operation] of Object.entries(methods)) {
-      const response =
-        operation.responses['200']?.content?.['application/json']?.schema;
+      const responseEntry = Object.entries(operation.responses).find(
+        ([status, value]) =>
+          /^2\d\d$/.test(status) && value.content?.['application/json']?.schema
+      );
+      const response = responseEntry?.[1].content?.['application/json']?.schema;
+      if (!response)
+        throw new Error(`Missing JSON success schema: ${operation.operationId}`);
       const modelName =
         operation.operationId[0]?.toUpperCase() +
         operation.operationId.slice(1) +
         'Response';
-      dartModels.push(...dartModel(modelName, response));
+      const responseType = isObjectSchema(response)
+        ? modelName
+        : dartType(response);
+      if (isObjectSchema(response)) dartModels.push(...dartModel(modelName, response));
       const queryType = operation.parameters.length
         ? `{ ${operation.parameters.map((parameter) => `${parameter.name}: ${tsType(parameter.schema)}`).join('; ')} }`
         : 'Record<string, never>';
@@ -139,11 +164,11 @@ export function clients(input: unknown) {
         .map((parameter) => `required String ${parameter.name}`)
         .join(', ');
       dart.push(
-        `  Future<${modelName}> ${operation.operationId}(${params ? `{${params}}` : ''}) async {`,
+        `  Future<${responseType}> ${operation.operationId}(${params ? `{${params}}` : ''}) async {`,
         `    final uri = origin.resolve('${path}').replace(queryParameters: {${operation.parameters.map((parameter) => `'${parameter.name}': ${parameter.name}`).join(', ')}});`,
         `    final response = await transport(uri, '${method.toUpperCase()}');`,
         "    if (response.status < 200 || response.status >= 300) throw StateError('API request failed: ' + response.status.toString() + '');",
-        `    return ${modelName}.fromJson(jsonDecode(response.body) as Map<String, dynamic>);`,
+        `    return ${isObjectSchema(response) ? `${modelName}.fromJson(jsonDecode(response.body) as Map<String, dynamic>)` : `jsonDecode(response.body) as ${responseType}`};`,
         '  }'
       );
     }
