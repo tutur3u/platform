@@ -33,6 +33,7 @@ describe('cross-app token app allowlist', () => {
   it('matches the internal app domains, so every verifier can be targeted', () => {
     const domainNames = [...new Set(APP_DOMAIN_MAP.map(({ name }) => name))];
 
+    expect(domainNames).toContain('workspace');
     expect([...latestSqlInternalAppNames()].sort()).toEqual(domainNames.sort());
   });
 });
