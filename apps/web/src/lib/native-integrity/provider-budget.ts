@@ -110,6 +110,6 @@ export function budgetedNativeIntegrityFetch(
       ...(init.signal ? [init.signal] : []),
     ]);
     signal.throwIfAborted();
-    return fetchImpl(input, { ...init, redirect: 'error', signal });
+    return fetchImpl(input, { ...init, redirect: 'manual', signal });
   };
 }

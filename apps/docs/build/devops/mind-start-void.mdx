@@ -12,7 +12,7 @@ the route is flipped. `vercel-production-mind.yaml` still deploys the Next app.
 
 ## Worker
 
-- Staging candidate: `tuturuuu-mind-vite-staging` (`workers_dev` off, `TUTURUUU_NOINDEX=1`). A production Worker (`tuturuuu-mind`, `workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=0`) is created by the cutover PR; nothing here attaches a route.
+- Staging candidate: the staging Worker name (`workers_dev` off, `TUTURUUU_NOINDEX=1`). A production Worker (`tuturuuu-mind`, `workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=0`) is created by the cutover PR; nothing here attaches a route.
 - Entry: `apps/mind/cloudflare/worker.ts`; Wrangler config is emitted by `void` into `dist`.
 - Host: `mind.tuturuuu.com`. Root-only: `mountHosts` is empty and `unknownHost` is `reject`, so `tuturuuu.com/mind` and any other host answer 404 before app code runs.
 - Binding: `ASSETS` (static output, `run_worker_first`).

@@ -1,6 +1,14 @@
 let describe, it, expect, vi, beforeEach;
 
+// Root script CI runs this file with node --test. Vitest's describe throws
+// when it is loaded outside the Vitest runner, so prefer node:test there.
+const underNodeTest =
+  process.execArgv.includes('--test') ||
+  process.argv.includes('--test') ||
+  process.env.NODE_TEST_CONTEXT != null;
+
 try {
+  if (underNodeTest) throw new Error('use node:test');
   const vitest = await import('vitest');
   describe = vitest.describe;
   it = vitest.it;

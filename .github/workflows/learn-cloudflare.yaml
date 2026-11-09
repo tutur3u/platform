@@ -191,7 +191,7 @@ jobs:
         apps/learn/src/start-bridge apps/learn/src/routes apps/learn/src/router.tsx apps/learn/src/start.ts apps/learn/cloudflare apps/learn/vite.config.mts apps/learn/void.config.ts apps/learn/tsconfig.json apps/learn/package.json apps/learn/start-bridge.routes.json
   learn-cutover-artifact:
     needs: [check-ci, affected-gate]
-    if: ${{ needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:

@@ -22,7 +22,10 @@ async function decorate(
       request: new Request(`https://cms.tuturuuu.com${path}`, {
         method: options.method ?? 'GET',
       }),
-      env: { ASSETS: { fetch: async () => new Response('asset') } },
+      env: {
+        ASSETS: { fetch: async () => new Response('asset') },
+        ABUSE_GUARD: { run: async () => ({}) },
+      },
     }
   );
 }
