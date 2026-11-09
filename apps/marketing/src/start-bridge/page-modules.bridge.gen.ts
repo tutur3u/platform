@@ -95,6 +95,15 @@ export const pageModules = {
       () => import('../app/[locale]/(marketing)/legal/subprocessors/layout'),
     ],
   },
+  'src/app/[locale]/(marketing)/partners/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/partners/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/partners/layout'),
+    ],
+  },
   'src/app/[locale]/(marketing)/pricing/page.tsx': {
     page: () => import('../app/[locale]/(marketing)/pricing/page'),
     layouts: [

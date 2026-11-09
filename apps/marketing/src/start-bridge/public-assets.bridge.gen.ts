@@ -11,4 +11,12 @@ export const publicAssets: ReadonlySet<string> = new Set([
   '/media/branding/brand-mark-light.svg',
   '/media/logos/og-image.jpg',
   '/media/logos/transparent.png',
+  '/media/partners/allmind.jpg',
+  '/media/partners/exocorpse.png',
+  '/media/partners/google-for-startups.jpg',
+  '/media/partners/rbac.jpg',
+  '/media/partners/rmitnct.jpg',
+  '/media/partners/soki.jpg',
+  '/media/partners/sparkhub.jpg',
+  '/media/partners/upskii.png',
 ]);
