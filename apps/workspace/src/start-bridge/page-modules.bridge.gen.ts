@@ -358,6 +358,30 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/epm/collections/[collectionId]/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/epm/collections/[collectionId]/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/epm/entries/[entryId]/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/epm/entries/[entryId]/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/epm/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/epm/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/habits/[[...slug]]/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/habits/[[...slug]]/page'),
     layouts: [
