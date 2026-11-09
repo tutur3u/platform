@@ -96,6 +96,7 @@
               "platform/features/search-indexing",
               "platform/features/legal-publications",
               "platform/features/command-center-dashboard",
+              "platform/features/document-hierarchy",
               "platform/personal-journal",
               "platform/features/assistant-live",
               "platform/features/mira-mail-tools",

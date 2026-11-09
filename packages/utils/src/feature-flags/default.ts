@@ -9,6 +9,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlagMap = {
   ENABLE_CHAT: false,
   ENABLE_TASKS: false,
   ENABLE_DOCS: false,
+  ENABLE_DOCUMENT_HIERARCHY: false,
   ENABLE_DRIVE: false,
   ENABLE_SLIDES: false,
   DISABLE_INVITE: false,

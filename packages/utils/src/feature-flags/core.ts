@@ -39,6 +39,7 @@ export async function getFeatureFlags(
     ENABLE_CHAT,
     ENABLE_TASKS,
     ENABLE_DOCS,
+    ENABLE_DOCUMENT_HIERARCHY,
     ENABLE_DRIVE,
     ENABLE_SLIDES,
     DISABLE_INVITE,
@@ -98,6 +99,12 @@ export async function getFeatureFlags(
     verifySecret({
       forceAdmin,
       wsId,
+      name: FEATURE_FLAGS.ENABLE_DOCUMENT_HIERARCHY,
+      value: 'true',
+    }),
+    verifySecret({
+      forceAdmin,
+      wsId,
       name: FEATURE_FLAGS.ENABLE_DRIVE,
       value: 'true',
     }),
@@ -148,6 +155,7 @@ export async function getFeatureFlags(
     ENABLE_CHAT,
     ENABLE_TASKS,
     ENABLE_DOCS,
+    ENABLE_DOCUMENT_HIERARCHY,
     ENABLE_DRIVE,
     ENABLE_SLIDES,
     DISABLE_INVITE,
