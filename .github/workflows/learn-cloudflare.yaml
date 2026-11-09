@@ -65,9 +65,17 @@ jobs:
       - name: Package deployable Worker, config and assets
         run: |
           test -d apps/learn/dist/client
-          test -f apps/learn/.wrangler/deploy/config.json
+          deploy_pointer=$(node --input-type=module <<'NODE'
+          import { existsSync } from 'node:fs';
+          import { readNativeRuntimeConfig } from './scripts/ci/apps-native-runtime-pointer.mjs';
+          readNativeRuntimeConfig('apps/learn');
+          console.log(existsSync('apps/learn/.wrangler/deploy/config.json')
+            ? '.wrangler/deploy/config.json'
+            : '.void/preview-deploy-config.json');
+          NODE
+          )
           printf '%s\n' "$SOURCE_SHA" > apps/learn/dist/SOURCE_SHA
-          tar -C apps/learn -czf "$RUNNER_TEMP/learn-cloudflare.tar.gz" dist .wrangler/deploy/config.json
+          tar -C apps/learn -czf "$RUNNER_TEMP/learn-cloudflare.tar.gz" dist "$deploy_pointer"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: learn-cloudflare-${{ env.SOURCE_SHA }}
