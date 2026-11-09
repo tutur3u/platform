@@ -7359,6 +7359,12 @@
     }
   },
   "feature-flags": {
+    "audit": {
+      "actor": "Người thực hiện",
+      "empty": "Chưa có thay đổi",
+      "title": "Nhật ký",
+      "unavailable": "Không đọc được nhật ký"
+    },
     "columns": {
       "apps": "Ứng dụng",
       "created": "Ngày tạo",
@@ -7367,6 +7373,18 @@
       "owner": "Người phụ trách",
       "remove_by": "Gỡ bỏ trước",
       "verified": "Xác minh trên production"
+    },
+    "controls": {
+      "build_time": "Lúc dựng bản",
+      "conflict": "Bản ghi đã thay đổi. Tải lại trước khi lưu.",
+      "error": "Không lưu được",
+      "loading": "Đang lưu",
+      "managed_in_secrets": "Quản lý theo không gian làm việc trong Bí mật",
+      "reconcile": "Kiểm tra kết quả",
+      "reset": "Về mặc định",
+      "secrets_link": "Bí mật",
+      "storage_unavailable": "Không đọc được trạng thái đã lưu",
+      "unknown_outcome": "Chưa rõ kết quả. Kiểm tra lại, không gửi lần nữa."
     },
     "environments": {
       "development": "Development",
@@ -7377,6 +7395,10 @@
       "mobile_build": "Bản dựng mobile",
       "mobile_runtime": "Mobile runtime",
       "workspace_secret": "Cài đặt không gian làm việc"
+    },
+    "filter": {
+      "label": "Lọc cờ",
+      "placeholder": "Tên cờ"
     },
     "kinds": {
       "kill_switch": "Công tắc ngắt",
@@ -7410,6 +7432,8 @@
       "legacy_unknown": "Không rõ (cũ)",
       "not_recorded": "Chưa ghi nhận",
       "not_verified": "Chưa xác minh",
+      "off": "Tắt",
+      "on": "Bật",
       "partial": "Một phần",
       "unknown": "Không rõ",
       "untraced": "Chưa truy vết"
