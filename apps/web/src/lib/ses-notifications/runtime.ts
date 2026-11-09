@@ -28,7 +28,7 @@ export function configuredTopicArns(
  */
 export async function fetchSigningCertificate(url: URL) {
   const response = await fetch(url, {
-    redirect: 'error',
+    redirect: 'manual',
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   if (response.status >= 500 || response.status === 429)
@@ -75,7 +75,7 @@ export function createSesNotificationDeps(): SesNotificationDeps {
     verify,
     confirmSubscription: async (url) => {
       const response = await fetch(url, {
-        redirect: 'error',
+        redirect: 'manual',
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
       return response.ok;
