@@ -229,5 +229,25 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Artifact | hive-cloudflare.yaml, job hive-cutover-artifact |
 | Vercel rollback pin | none: no Vercel project, Cloudflare only |
 | Smoke | `node scripts/cutover-smoke.mjs hive https://hive.tuturuuu.com` |
+
+## cms
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-cms` |
+| Hosts | cms.tuturuuu.com |
+| Artifact | cms-cloudflare.yaml, job cutover-build (production profile; `cms-cutover-production-<sha>`) |
+| Vercel rollback pin | dpl_2q4z1TbzV96W2foT8JfLzz4ZEGZY |
+| Smoke | `node scripts/cutover-smoke.mjs cms https://cms.tuturuuu.com` |
+
+## ai
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-ai` |
+| Hosts | ai.tuturuuu.com |
+| Artifact | ai-cloudflare.yaml, job cutover-build (production profile; `ai-cutover-production-<sha>`) |
+| Vercel rollback pin | dpl_GuUpXDwZovfjHm9AvM3NSpjmYf1d |
+| Smoke | `node scripts/cutover-smoke.mjs ai https://ai.tuturuuu.com` |
 - infrastructure, mind, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
 - learn, chat, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
