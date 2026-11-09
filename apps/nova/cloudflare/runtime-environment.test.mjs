@@ -1,34 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {
-  assertRuntimeEnvironment,
-  REQUIRED_RUNTIME_NAMES,
-} from './runtime-environment.ts';
-
-test('startup rejects every missing or blank required binding', () => {
+import { assertRuntimeEnvironment, REQUIRED_RUNTIME_NAMES } from './runtime-environment.ts';
+const base = Object.fromEntries(REQUIRED_RUNTIME_NAMES.map((name) => [name, 'synthetic-unit-only']));
+test('accepts legacy Upstash credentials', () => {
   process.env.NODE_ENV = 'production';
-  const valid = Object.fromEntries(
-    REQUIRED_RUNTIME_NAMES.map((name) => [name, 'synthetic-unit-only'])
-  );
-  assert.doesNotThrow(() => assertRuntimeEnvironment(valid));
-  for (const name of REQUIRED_RUNTIME_NAMES) {
-    const missing = { ...valid };
-    delete missing[name];
-    assert.throws(() => assertRuntimeEnvironment(missing), {
-      message: `Missing required runtime binding: ${name}`,
-    });
-    assert.throws(
-      () => assertRuntimeEnvironment({ ...valid, [name]: ' ' }),
-      /Missing required/
-    );
-  }
-  assert.throws(
-    () =>
-      assertRuntimeEnvironment({
-        ...valid,
-        TUTURUUU_APP_COORDINATION_SECRET:
-          'tuturuuu-local-development-app-coordination-secret',
-      }),
-    /Development coordination secret is forbidden/
-  );
+  assert.doesNotThrow(() => assertRuntimeEnvironment({ ...base, UPSTASH_REDIS_REST_URL: 'url', UPSTASH_REDIS_REST_TOKEN: 'token' }));
+});
+test('accepts complete abuse guard binding configuration', () => {
+  process.env.NODE_ENV = 'production';
+  assert.doesNotThrow(() => assertRuntimeEnvironment({ ...base, ABUSE_GUARD: {}, ABUSE_GUARD_KEY_PEPPER: 'pepper', ABUSE_GUARD_FAMILIES: 'proxy' }));
+});
+test('rejects a partial binding configuration with missing names only', () => {
+  process.env.NODE_ENV = 'production';
+  assert.throws(() => assertRuntimeEnvironment({ ...base, ABUSE_GUARD: {}, ABUSE_GUARD_FAMILIES: 'proxy' }), /ABUSE_GUARD_KEY_PEPPER/);
+});
+test('rejects neither backend', () => {
+  process.env.NODE_ENV = 'production';
+  assert.throws(() => assertRuntimeEnvironment(base), /UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN/);
 });

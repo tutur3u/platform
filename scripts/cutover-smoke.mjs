@@ -533,7 +533,7 @@ Usage:
 
 Arguments:
   <app-name>   Target app name (e.g. web, marketing, workspace, shortener)
-  <base-url>   Target base URL (e.g. https://staging.tuturuuu.com)
+  <base-url>   Target base URL (e.g. https://web.tutur3u.com)
 
 Options:
   --config <path>   Path to custom smoke configuration table JSON

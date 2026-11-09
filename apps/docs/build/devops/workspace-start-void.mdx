@@ -1,7 +1,7 @@
 ---
 title: "Workspace on Start + Void"
 description: "Route groups carved from Web into the native Workspace app, the missing API guard, and the rollback to Vercel."
-updatedAt: "2026-11-09"
+updatedAt: "2026-11-10"
 audience: developers
 ---
 
@@ -12,10 +12,12 @@ Next ports, request context, proxy and central API forwarding (see
 [Start bridge](/build/devops/start-bridge) and
 [native Start migration](/build/devops/native-start-migration)).
 
-The app is a **staging candidate only**. It has no entry in
-`productionPublicationPolicy` in `tuturuuu.ci.ts`, its Worker is
-`tuturuuu-workspace-vite-staging`, and `apps/web` on Vercel keeps serving every
-path until an explicit cutover PR admits the app.
+Qualification stays on `tuturuuu-workspace-vite-staging`. A dispatch-only job,
+`workspace-cutover-artifact`, seals a route-free production artifact named
+`tuturuuu-workspace` (`workers_dev: false`, `preview_urls: false`, no `routes`).
+`productionPublicationPolicy` in `tuturuuu.ci.ts` does not admit the app, and
+`apps/web` on Vercel keeps serving every live path until a release owner
+attaches a host. The job does not deploy.
 
 ## Route groups
 
@@ -136,11 +138,13 @@ on Web-only services. Coverage lives in `src/context`, `src/lib/auth`,
 
 `start-bridge.config.ts` sets `mounts.unknownHost` to `reject`, so only
 `workspace.tuturuuu.com` and the `tuturuuu.com/workspace` mount are served and any
-other host gets the bridge's `404`. The codemod therefore emits
-`workers_dev: false`: the staging Worker has no `workers.dev` route until a
-cutover-prep PR admits a staging host. No Vercel project is linked:
-`apps/workspace` has no `.vercel` directory, and its `vercel.json` disables Git
-deployments and the GitHub integration.
+other host gets the bridge's `404`. Both deployment profiles emit
+`workers_dev: false` and `preview_urls: false`, and neither declares `routes`.
+`VITE_WORKSPACE_NATIVE_PROFILE=production` selects the name `tuturuuu-workspace`
+and `TUTURUUU_NOINDEX=0`; an unset profile keeps
+`tuturuuu-workspace-vite-staging` and `TUTURUUU_NOINDEX=1`. No Vercel project is
+linked: `apps/workspace` has no `.vercel` directory, and its `vercel.json`
+disables Git deployments and the GitHub integration.
 
 ## Local verification
 
@@ -169,25 +173,183 @@ design. It asserts the status of the public pages in
 response policy. The `307` results for dashboard paths are expected: an
 unauthenticated request is redirected to the central login.
 
+## Required Worker environment
+
+Names only. `vite.config.mts` calls `startBridgePreset`, which injects these at
+build time:
+
+| Name | Where it is read | Production value |
+| --- | --- | --- |
+| `NODE_ENV` | shared `define` (`process.env.NODE_ENV`) | `production` |
+| `TUTURUUU_BASE_PATH` | optional; inlined as `import.meta.env.VITE_TUTURUUU_BASE_PATH` | unset, so one artifact serves the subdomain root and the `/workspace` mount |
+| `NEXT_PUBLIC_SUPABASE_URL` | client `define` (`process.env`, every `NEXT_PUBLIC_*`) | `PRODUCTION_SUPABASE_URL` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | client `define` | `PRODUCTION_SUPABASE_PUBLISHABLE_KEY` |
+| `NEXT_PUBLIC_APP_URL` | client `define` | `https://workspace.tuturuuu.com` |
+| `NEXT_PUBLIC_WEB_APP_URL` | client `define` | `https://tuturuuu.com` |
+
+`void.config.ts` emits the Worker var `TUTURUUU_NOINDEX` (`0` on the production
+profile, `1` on staging). The `ASSETS` binding is part of the emitted config.
+
+`start-bridge.config.ts` reads these from the Worker environment at request time:
+
+| Name | Production |
+| --- | --- |
+| `INTERNAL_WEB_API_ORIGIN` | unset. The forward target stays `https://tuturuuu.com`. |
+| `TUTURUUU_WEB_API_HOSTS` | unset. Extra Web hosts are refused. |
+
+Runtime secrets, set on the Worker and never inlined by Vite:
+
+| Name | Rule |
+| --- | --- |
+| `SUPABASE_SECRET_KEY` | same value Web uses |
+| `TUTURUUU_APP_COORDINATION_SECRET` | exactly Web's signer value, which is Web's `SUPABASE_SECRET_KEY` |
+
+`TTR_CSRF_MODE` is Web's (`apps/web/src/lib/security/csrf.ts`). Workspace does
+not read it. Leave it off `enforce` until Web itself is deployed with that
+`csrf.ts` change.
+
+## Gateway plan
+
+This page does not change the gateway. The sealed artifact has no routes.
+Traffic reaches `tuturuuu-workspace` only when a release owner attaches a host
+after the deploy conditions in the [D74 cutover runbooks](/build/devops/d74-cutover-runbooks).
+
+The Worker has two surfaces (`cloudflare/worker.ts`):
+
+- `workspace.tuturuuu.com` serves the registry patterns at the host root.
+- `tuturuuu.com` serves the same patterns under the base path `/workspace`.
+
+Live Web URLs are not under `/workspace`. They are `https://tuturuuu.com` plus
+the locale prefix plus the pattern. `src/i18n/routing.ts` uses
+`localePrefix: as-needed` with locales `en` and `vi`: English has no prefix,
+Vietnamese is `/vi`. `start-bridge.routes.json` strips `[locale]` (default
+`en`), so `page-registry.bridge.gen.ts` lists the pattern without it. A real
+URL is the locale prefix plus the pattern.
+
+### Patterns that belong on Workspace
+
+Auth, with no `[wsId]` segment. English and Vietnamese:
+
+- `/login`, `/vi/login`
+- `/signup`, `/vi/signup`
+- `/add-account`, `/vi/add-account`
+- `/auth/recovery`, `/vi/auth/recovery`
+- `/auth/recovery/confirm`, `/vi/auth/recovery/confirm` (the only owned API route, `api-patterns.bridge.gen.ts`)
+- `/sso/consent`, `/vi/sso/consent`
+- `/verify-token`, `/vi/verify-token`
+
+`[wsId]` pages from `page-registry.bridge.gen.ts`. Each line is the English
+pattern; the Vietnamese URL inserts `/vi` after the origin. On the apex mount,
+prefix `/workspace` as well.
+
+| Group | Patterns |
+| --- | --- |
+| Dashboard home | `/[wsId]` |
+| Workspace settings | `/[wsId]/settings`, `/[wsId]/settings/notifications`, `/[wsId]/settings/reports`, `/[wsId]/members`, `/[wsId]/roles`, `/[wsId]/api-keys`, `/[wsId]/api-keys/[keyId]/usage-logs`, `/[wsId]/secrets`, `/[wsId]/usage`, `/[wsId]/sso`, `/[wsId]/inquiries`, `/[wsId]/billing`, `/[wsId]/billing/success` |
+| Documents | `/[wsId]/documents`, `/[wsId]/documents/[documentId]` |
+| Habits | `/[wsId]/habits`, `/[wsId]/habits/[[...slug]]` |
+| Notes | `/[wsId]/notes` |
+| Memories | `/[wsId]/memories` |
+| Mira | `/[wsId]/mira` |
+| Integrations | `/[wsId]/integrations`, `/[wsId]/integrations/discord` |
+| AI | `/[wsId]/ai/executions`, `/[wsId]/ai/spark` |
+| AI models, datasets, pipelines | `/[wsId]/models`, `/[wsId]/datasets`, `/[wsId]/datasets/[datasetId]`, `/[wsId]/datasets/[datasetId]/api-references`, `/[wsId]/datasets/[datasetId]/explore`, `/[wsId]/datasets/[datasetId]/settings`, `/[wsId]/pipelines` |
+| AI chat | `/[wsId]/ai-chat`, `/[wsId]/ai-chat/new`, `/[wsId]/ai-chat/[chatId]`, `/[wsId]/ai-chat/chatbots`, `/[wsId]/ai-chat/my-chatbots`, `/[wsId]/ai-chat/my-chatbots/new` |
+| Changelog | `/[wsId]/changelog` |
+| Crawlers | `/[wsId]/crawlers`, `/[wsId]/crawlers/uncrawled`, `/[wsId]/crawlers/[crawlerId]` |
+| Polls | `/[wsId]/polls` |
+| Queues | `/[wsId]/queues` |
+| Tasks (redirect to the Tasks app) | `/[wsId]/tasks`, `/[wsId]/tasks/[[...slug]]` |
+| Calendar (redirect to the Calendar app) | `/[wsId]/calendar` |
+
+`/` (and `/vi`) is the locale root and answers `404`. It stays off the Worker
+on `tuturuuu.com`. Every `/api/*` path other than `/auth/recovery/confirm` is
+forwarded to Web.
+
+### Patterns that stay on Web
+
+Anything not in the lists above stays on `apps/web`. That includes the uncarved
+groups: `cron`, `diet`, `epm`, `external-projects`, `feedback`, `hive`,
+`inventory`, `link-shortener`, `metrics`, `mind`, `notifications`, `progress`,
+`qr-generator`, `readings`, `whiteboards`, `workouts`, `workspace-setup`, and
+`personal-journal`. The proxy redirects `mail`, `finance`, `drive`, `chat`,
+`time-tracker`, `meet`, `users`, `workforce`, `posts`, and `forms` to their
+apps; leave those paths on Web for the first flip so satellite routing stays
+where it is.
+
+`[wsId]` is one dynamic segment. A path rule written as a prefix of that
+segment (`/:wsId/*`, or `/:locale/:wsId/*`) also matches every uncarved group.
+Workspace answers `404` for those groups, so the prefix takes them off Web. The
+same one-segment shape matches a locale (`/vi`) and any other single-segment
+Web path. A path-only split is safe when the gateway allowlists the carved
+suffixes in the table and keeps every uncarved group on Web.
+
+### Smallest safe first flip
+
+Leave every `tuturuuu.com` path on Web. Attach one host,
+`workspace.tuturuuu.com`, to the route-free artifact. That host serves the
+patterns at its root and does not split apex paths. Uncarved suffixes on that
+host answer `404`; the same paths on `tuturuuu.com` stay on Web.
+
+1. Dispatch `workspace-cloudflare.yaml` on `main` only after that commit contains `#7981` (`b84abea571`) and its required workflows are green. The job `workspace-cutover-artifact` uploads `workspace-cutover-<sha>`. It does not deploy.
+2. Confirm the sealed config name is `tuturuuu-workspace`, `workers_dev` is false, and `routes` is absent.
+3. On the production Worker, leave `INTERNAL_WEB_API_ORIGIN` and `TUTURUUU_WEB_API_HOSTS` unset. Set `TUTURUUU_APP_COORDINATION_SECRET` to exactly Web's signer value and set the same `SUPABASE_SECRET_KEY`. Leave Web's `TTR_CSRF_MODE` off `enforce` until Web is deployed with `apps/web/src/lib/security/csrf.ts`.
+4. Deploy the artifact with no route: `bunx wrangler deploy --config /tmp/workspace-cutover/dist/server/wrangler.json --name tuturuuu-workspace`.
+5. Attach only `workspace.tuturuuu.com`.
+
+Smoke that host before calling the flip done:
+
+```bash
+# Unknown host answers 404.
+curl -sS -o /dev/null -w '%{http_code}\n' \
+  -H 'Host: unknown.example' \
+  https://workspace.tuturuuu.com/login
+
+# Carved auth page.
+curl -sS -o /dev/null -w '%{http_code}\n' \
+  https://workspace.tuturuuu.com/login
+
+# /api/v1 GET is forwarded and answered by Web (JSON, including Web's 400
+# when the query is absent — not the Workspace HTML 404).
+curl -sS -D - -o /dev/null \
+  https://workspace.tuturuuu.com/api/v1/mobile/version
+
+# Apex was not moved.
+curl -sS -o /dev/null -w '%{http_code}\n' \
+  https://tuturuuu.com/login
+
+node scripts/cutover-smoke.mjs workspace https://workspace.tuturuuu.com
+```
+
+Logout-all is a signed-in browser check. Set
+`localStorage['tuturuuu_multi_session_store']`, use logout-all, and confirm the
+key is gone. The regression is
+`apps/workspace/src/context/account-switcher-context.test.tsx`.
+
+One-step rollback: delete the `workspace.tuturuuu.com` route or custom domain.
+Do not rebuild, and do not change apex DNS. `tuturuuu.com` is still the Web
+deployment recorded in the runbook.
+
 ## Rollback and cutover
 
 Rollback is a routing change, never a data change. `apps/web` is untouched and
-serves every path on Vercel. Removing the gateway route that sends Workspace
-paths to the Worker returns the traffic to Vercel. No database migration or write
-is part of this app.
+serves every path on Vercel. Removing the `workspace.tuturuuu.com` route
+returns that host to its previous origin. No database migration or write is
+part of this app.
 
 Before any cutover the release owner records:
 
-1. The exact accepted `main` SHA, the green `workspace-cloudflare.yaml` run and the
-   artifact hash.
-2. The immutable **prior Vercel deployment ID and URL** for the Web project.
-   Capturing it is a provider read and belongs to the release owner (Rex), not to
-   the migration lane.
-3. Secret **names** only: `NEXT_PUBLIC_SUPABASE_URL`,
-   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` and
-   `TUTURUUU_APP_COORDINATION_SECRET`.
-4. The gateway route table with the Workspace patterns, so the one-step removal is
-   ready before the flip.
+1. The exact accepted `main` SHA (it contains `#7981`), the green required
+   workflows for that SHA, and the `workspace-cutover-<sha>` artifact from the
+   dispatch of `workspace-cutover-artifact`.
+2. The immutable prior Vercel deployment ID and URL for the Web project.
+   Capturing it is a provider read and belongs to the release owner, not to
+   this change.
+3. The secret and variable names in Required Worker environment, with
+   `INTERNAL_WEB_API_ORIGIN` and `TUTURUUU_WEB_API_HOSTS` unset, and
+   `TTR_CSRF_MODE` left off `enforce` until Web ships `csrf.ts`.
+4. The gateway allowlist above, so deleting `workspace.tuturuuu.com` is ready
+   before the flip.
 5. A post-deploy watch with immediate rollback on any `5xx` or login regression.
 
 DNS, zone and routing changes need release-authority approval.
