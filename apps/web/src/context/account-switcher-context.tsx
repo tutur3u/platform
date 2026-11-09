@@ -28,6 +28,7 @@ import {
   useMemo,
   useRef,
 } from 'react';
+import { runSwitchIntent } from '@/lib/auth/multi-account/switch-intent';
 import { isPersistableMultiAccountRoutePath } from '@/lib/auth/multi-account/routes';
 
 const ACCOUNTS_QUERY_KEY = ['auth', 'web-accounts'] as const;
@@ -265,23 +266,21 @@ export function AccountSwitcherProvider({
           : undefined);
 
       try {
-        const response = await switchMutation.mutateAsync({
-          accountId,
-          targetRoute,
-        });
-        const result = toAccountOperationResult(response);
-
-        if (result.success) {
-          await navigateAfterMutation(result);
-        } else {
-          // A switch usually fails because the stored session died, and the
-          // server drops that account when it does. Re-read the list so the
-          // dead entry disappears instead of staying clickable and reporting
-          // "account not found" on every retry.
-          await invalidateAccounts();
-        }
-
-        return result;
+        const outcome = await runSwitchIntent(
+          () => switchMutation.mutateAsync({ accountId, targetRoute }),
+          async (response, isCurrent) => {
+            await invalidateAccounts();
+            if (!isCurrent()) return;
+            const result = toAccountOperationResult(response);
+            if (!result.success) return;
+            const target = getRedirectTarget(result);
+            if (target) window.location.assign(target);
+            else router.refresh();
+          }
+        );
+        return outcome.kind === 'current'
+          ? toAccountOperationResult(outcome.value)
+          : { success: false };
       } catch (error) {
         return {
           error:
@@ -290,7 +289,7 @@ export function AccountSwitcherProvider({
         };
       }
     },
-    [invalidateAccounts, navigateAfterMutation, switchMutation]
+    [invalidateAccounts, router, switchMutation]
   );
 
   const removeAccount = useCallback(

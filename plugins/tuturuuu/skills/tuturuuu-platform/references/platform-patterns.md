@@ -1476,3 +1476,16 @@ Keep emitted-Worker acceptance behind an explicit `test:runtime` command and
 `.acceptance.mjs` filename so source-only gates cannot invoke it without an
 artifact. Use `.invalid` hosts for isolated runtime preview fixtures; retain
 production-like preview refusal in the source auth matrix.
+
+### Multi-account switch verification
+
+Account switches use the direct private PostgreSQL connection and retain device
+and target-session row locks through the provider effect and vault writes.
+`xmin` plus `ctid` are captured in-flight comparison tokens, never durable epochs.
+Run `switch-transaction.test.ts` with `GAP01_TEST_DATABASE_URL` pointing to a
+disposable loopback database named `gap01_fixture` with the matching role. The
+suite refuses other targets; the fixture uses synthetic identifiers and tokens.
+Run the provider bookkeeping and context suites separately. An unset fixture URL
+skips PG tests and cannot count as lock acceptance. Do not infer cross-origin
+Set-Cookie ordering from these tests; see
+[shared-session scope](../../../../../apps/docs/platform/architecture/shared-session.mdx#account-switch-serialization).

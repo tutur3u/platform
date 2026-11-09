@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import { switchStoredAccount } from './switch-stored-account';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
 import { revokeUserAiTempAuthTokens } from '@tuturuuu/utils/ai-temp-auth';
-import { BASE_URL } from '@/constants/common';
 import { revokeCurrentUserSignOutCredentials } from '../sign-out-credentials';
 import {
   createDeviceSecret,
@@ -20,10 +20,8 @@ import {
 } from './device-cookies';
 import {
   getWorkspaceIdFromMultiAccountRoute,
-  isWebOriginRequest,
   normalizePersistableMultiAccountRoute,
   resolveMultiAccountAddRedirect,
-  resolveMultiAccountSwitchRedirect,
 } from './routes';
 import {
   MAX_WEB_ACCOUNT_SESSIONS,
@@ -387,60 +385,13 @@ async function revokeCurrentUserTempAuth(supabase: {
   }
 }
 
-/**
- * Copy the signed-in account's live session into its vault row before we hand
- * the browser over to a different account.
- *
- * A row's session is written when the account is added and then only when it is
- * switched *to*, but Supabase rotates the refresh token every time the browser
- * refreshes the session — so the stored copy of whoever is currently signed in
- * goes stale within the hour. Switching away and back then failed on
- * `setSession`, which deletes the row, and the next attempt reported the
- * account as missing entirely.
- */
-async function refreshActiveAccountSession(
-  device: WebAccountDevice,
-  supabase: {
-    auth: {
-      getSession: () => Promise<{
-        data: { session: SupabaseSession | null };
-      }>;
-    };
-  }
-) {
-  if (!device.activeUserId) {
-    return;
-  }
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session || session.user.id !== device.activeUserId) {
-    return;
-  }
-
-  const db = await getPrivateDb();
-  await db
-    .from('web_account_sessions')
-    .update({
-      session_ciphertext: encryptSession(session),
-      session_expires_at: getSessionExpiresAt(session),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('device_id', device.deviceId)
-    .eq('user_id', device.activeUserId);
-}
-
 async function switchToStoredWebAccount(
   request: Request,
   device: WebAccountDevice,
   accountId: string,
   payload: SwitchAccountPayload = {}
 ): Promise<WebAccountMutationResponse> {
-  const stored = await getStoredSession(device.deviceId, accountId);
-
-  if (!stored) {
+  if (!(await getStoredSession(device.deviceId, accountId))) {
     return {
       ...(await listAccountsForDevice(device)),
       error: 'Account not found',
@@ -448,77 +399,14 @@ async function switchToStoredWebAccount(
       success: false,
     } as WebAccountMutationResponse & { error: string };
   }
-
-  const db = await getPrivateDb();
-  const supabase = await createClient(request);
-
-  await refreshActiveAccountSession(device, supabase);
-  await revokeCurrentUserTempAuth(supabase);
-
-  // Satellite apps share the account vault but send their own app path as
-  // currentRoute. Only Web-originated paths can be resumed on Web later.
-  if (
-    payload.currentRoute &&
-    device.activeUserId &&
-    isWebOriginRequest(request, BASE_URL)
-  ) {
-    await updateCurrentWebAccount(request, {
-      route: payload.currentRoute,
-      workspaceId: getWorkspaceIdFromRoute(payload.currentRoute),
-    });
-  }
-
-  const { data, error } = await supabase.auth.setSession({
-    access_token: stored.session.access_token,
-    refresh_token: stored.session.refresh_token,
-  });
-
-  if (error || !data.session || data.session.user.id !== accountId) {
-    await db
-      .from('web_account_sessions')
-      .delete()
-      .eq('device_id', device.deviceId)
-      .eq('user_id', accountId);
-
-    return {
-      ...(await listAccountsForDevice(device)),
-      error: error?.message ?? 'Stored session is no longer valid',
-      requiresReauth: true,
-      success: false,
-    } as WebAccountMutationResponse & { error: string };
-  }
-
-  const now = new Date().toISOString();
-  await db
-    .from('web_account_sessions')
-    .update({
-      last_active_at: now,
-      session_ciphertext: encryptSession(data.session),
-      session_expires_at: getSessionExpiresAt(data.session),
-      updated_at: now,
-    })
-    .eq('device_id', device.deviceId)
-    .eq('user_id', accountId);
-  await updateDeviceActiveUser(device.deviceId, accountId);
-
-  const redirectTo = resolveMultiAccountSwitchRedirect(
-    {
-      lastRoute: stored.metadata.lastRoute,
-      targetRoute: payload.targetRoute,
-    },
-    request
-  );
-  const accounts = await listAccountsForDevice({
-    ...device,
-    activeUserId: accountId,
-  });
-
-  return {
-    ...accounts,
+  return switchStoredAccount({
+    request,
+    device,
     accountId,
-    redirectTo,
-    success: true,
-  };
+    payload,
+    listAccounts: listAccountsForDevice,
+    revokeTempAuth: revokeCurrentUserTempAuth,
+  });
 }
 
 export async function switchWebAccount(
