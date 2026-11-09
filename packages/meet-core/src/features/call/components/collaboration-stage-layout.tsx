@@ -27,6 +27,7 @@ export function CollaborationStageLayout({
       <div
         className={cn(
           'min-h-0 min-w-0',
+          !stage && 'hidden',
           !active
             ? 'flex-1'
             : layout === 'spotlight'

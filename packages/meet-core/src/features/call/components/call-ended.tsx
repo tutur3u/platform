@@ -4,6 +4,7 @@ import { ArrowLeft, FileText, Loader2, PhoneOff } from '@tuturuuu/icons';
 import { MeetingAiOverview } from '@tuturuuu/meet-core/features/meeting-ai/meeting-ai-overview';
 import { NotesSharingControl } from '@tuturuuu/meet-core/features/meeting-ai/notes-sharing-control';
 import { Button } from '@tuturuuu/ui/button';
+import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
@@ -43,93 +44,127 @@ export function CallEnded({
   const queryClient = useQueryClient();
   const t = useTranslations('meet.call');
   const [showNotes, setShowNotes] = useState(initialShowNotes);
+  const canSeeNotes = canManage || canReadNotes;
+  const notesButton = (primary: boolean) => (
+    <Button
+      disabled={saving}
+      size={primary ? 'lg' : 'sm'}
+      variant={primary ? (showNotes ? 'secondary' : 'default') : 'ghost'}
+      className={primary ? 'w-full' : undefined}
+      aria-expanded={showNotes}
+      onClick={() => setShowNotes(!showNotes)}
+    >
+      <FileText className="size-4" />
+      {t(showNotes ? 'hide_meeting_notes' : 'view_meeting_notes')}
+    </Button>
+  );
+  const backLink = (primary: boolean) => (
+    <Button
+      asChild
+      size={primary ? 'lg' : 'sm'}
+      variant={primary ? 'default' : 'ghost'}
+      className={primary ? 'w-full' : undefined}
+    >
+      <Link
+        href={backHref}
+        onClick={() => {
+          void queryClient.invalidateQueries({
+            queryKey: ['meetings'],
+            refetchType: 'all',
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ['meet-room-state', meetingId],
+          });
+        }}
+      >
+        <ArrowLeft className="size-4" />
+        {t('back_to_meet')}
+      </Link>
+    </Button>
+  );
+  const rejoinable = !ended;
+  const primary = rejoinable ? (
+    <Button
+      size="lg"
+      className="w-full"
+      onClick={() => window.location.reload()}
+      disabled={saving}
+    >
+      {t('rejoin_call')}
+    </Button>
+  ) : canSeeNotes ? (
+    notesButton(true)
+  ) : (
+    backLink(true)
+  );
   return (
-    <main className="grid min-h-dvh place-items-center bg-muted/25 px-4 py-10">
-      <div className="w-full max-w-2xl space-y-6">
-        <section className="rounded-3xl border bg-card p-6 text-center shadow-sm sm:p-10">
-          <div className="mx-auto mb-6 grid size-16 place-items-center rounded-2xl bg-muted">
-            <PhoneOff className="size-7 text-muted-foreground" />
+    <main className="flex min-h-dvh flex-col items-center justify-center bg-background px-5 py-10">
+      <div
+        className={cn(
+          'w-full space-y-8',
+          showNotes && canSeeNotes ? 'max-w-2xl' : 'max-w-sm'
+        )}
+      >
+        <section className="space-y-6 text-center">
+          <div className="mx-auto grid size-12 place-items-center rounded-full bg-muted">
+            <PhoneOff className="size-5 text-muted-foreground" />
           </div>
-          <p className="mb-2 truncate font-medium text-muted-foreground text-sm">
-            {meetingName}
-          </p>
-          <h1 className="text-balance font-semibold text-3xl tracking-tight">
-            {t(ended ? 'call_ended_title' : 'call_left_title')}
-          </h1>
-          <p className="mx-auto mt-3 max-w-md text-pretty text-muted-foreground text-sm">
-            {t(ended ? 'ended_hint' : 'call_left_hint')}
-          </p>
+          <div className="space-y-2">
+            <p className="truncate font-medium text-muted-foreground text-sm">
+              {meetingName}
+            </p>
+            <h1 className="text-balance font-semibold text-2xl tracking-tight">
+              {t(ended ? 'call_ended_title' : 'call_left_title')}
+            </h1>
+            <p className="text-pretty text-muted-foreground text-sm">
+              {t(ended ? 'ended_hint' : 'call_left_hint')}
+            </p>
+          </div>
           {saving && (
             <p
               role="status"
-              className="mt-4 flex items-center justify-center gap-2 text-sm"
+              className="flex items-center justify-center gap-2 text-sm"
             >
               <Loader2 className="size-4 animate-spin" />
               {t('saving_notes')}
             </p>
           )}
-          <div className="mt-7 flex flex-wrap justify-center gap-3">
-            {ended && canManage && (
-              <RestoreRoomButton
-                accountId={accountId}
-                meetingId={meetingId}
-                disabled={saving}
-              />
-            )}
-            {!ended && (
-              <Button
-                onClick={() => window.location.reload()}
-                disabled={saving}
-              >
-                {t('rejoin_call')}
-              </Button>
-            )}
-            {(canManage || canReadNotes) && (
-              <Button
-                disabled={saving}
-                variant={showNotes ? 'secondary' : 'default'}
-                aria-expanded={showNotes}
-                onClick={() => setShowNotes(!showNotes)}
-              >
-                <FileText className="size-4" />
-                {t(showNotes ? 'hide_meeting_notes' : 'view_meeting_notes')}
-              </Button>
-            )}
-            <EndedMeetingSettings
-              wsId={wsId}
-              meetingId={meetingId}
-              canManage={canManage}
-            />
-            <Button asChild variant="outline">
-              <Link
-                href={backHref}
-                onClick={() => {
-                  void queryClient.invalidateQueries({
-                    queryKey: ['meetings'],
-                    refetchType: 'all',
-                  });
-                  void queryClient.invalidateQueries({
-                    queryKey: ['meet-room-state', meetingId],
-                  });
-                }}
-              >
-                <ArrowLeft className="size-4" />
-                {t('back_to_meet')}
-              </Link>
-            </Button>
-          </div>
-          {canManage && (
-            <div className="mt-7">
-              <NotesSharingControl
+          <div className="space-y-2">
+            {primary}
+            <div className="flex flex-wrap items-center justify-center gap-1">
+              {ended && canManage && (
+                <RestoreRoomButton
+                  accountId={accountId}
+                  meetingId={meetingId}
+                  disabled={saving}
+                  variant="ghost"
+                  size="sm"
+                />
+              )}
+              {rejoinable && canSeeNotes && notesButton(false)}
+              <EndedMeetingSettings
                 wsId={wsId}
                 meetingId={meetingId}
-                initialEnabled={shareNotesAfterMeeting}
+                canManage={canManage}
+                variant="ghost"
+                size="sm"
               />
+              {(rejoinable || canSeeNotes) && backLink(false)}
             </div>
-          )}
+          </div>
         </section>
+        {canManage && (
+          <div className="border-t pt-6">
+            <NotesSharingControl
+              variant="row"
+              wsId={wsId}
+              meetingId={meetingId}
+              initialEnabled={shareNotesAfterMeeting}
+            />
+          </div>
+        )}
         {showNotes &&
-          (canManage || canReadNotes) &&
+          canSeeNotes &&
           (notes ?? <MeetingAiOverview wsId={wsId} meetingId={meetingId} />)}
       </div>
     </main>

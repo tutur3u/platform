@@ -132,3 +132,22 @@ it('never renders the notes reader for viewers without notes access', () => {
     screen.queryByRole('button', { name: /notes & transcript/i })
   ).toBeNull();
 });
+
+it('offers one primary action: the notes reader when the viewer may read notes', () => {
+  renderEnded({ canReadNotes: true });
+  const primary = screen.getByRole('button', {
+    name: 'View notes & transcript',
+  });
+  expect(primary.className).toContain('w-full');
+  expect(
+    screen.getByRole('link', { name: 'Back to Meet' }).className
+  ).not.toContain('w-full');
+});
+
+it('makes Back to Meet the primary action when the viewer cannot read notes', () => {
+  renderEnded({ canReadNotes: false });
+  expect(
+    screen.getByRole('link', { name: 'Back to Meet' }).className
+  ).toContain('w-full');
+  expect(screen.getAllByRole('link', { name: 'Back to Meet' })).toHaveLength(1);
+});

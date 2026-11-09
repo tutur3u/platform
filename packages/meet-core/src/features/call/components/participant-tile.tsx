@@ -36,6 +36,7 @@ function ParticipantTileImpl({
   onSilence,
   resumePlaybackLabel,
   handRaised,
+  floating = false,
   isSelf,
   isSpeaking,
   participant,
@@ -55,6 +56,8 @@ function ParticipantTileImpl({
   onSilence?: (key: string) => void;
   resumePlaybackLabel: string;
   handRaised?: boolean;
+  /** Compact chrome for the floating self-preview: no per-tile controls. */
+  floating?: boolean;
   isSelf?: boolean;
   isSpeaking?: boolean;
   participant: MeetRealtimePresence;
@@ -244,9 +247,14 @@ function ParticipantTileImpl({
             className="size-4 shrink-0"
           />
         )}
-        <span className="min-w-0 truncate font-medium text-sm">
-          {participant.displayName}
-          {isSelf ? ` · ${t('you')}` : ''}
+        <span
+          className={cn(
+            'min-w-0 truncate font-medium',
+            floating ? 'text-xs' : 'text-sm'
+          )}
+        >
+          {floating ? t('you') : participant.displayName}
+          {isSelf && !floating ? ` · ${t('you')}` : ''}
         </span>
         {!isSelf && (
           <MediaReceivingStatus
@@ -283,77 +291,79 @@ function ParticipantTileImpl({
             </Button>
           )}
       </div>
-      <div className="absolute top-2 right-2 flex gap-1 rounded-lg bg-background/80 p-1 opacity-100 backdrop-blur transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
-        {!isSelf && audioTrack && (
+      {!floating && (
+        <div className="absolute top-2 right-2 flex gap-1 rounded-lg bg-background/80 p-1 opacity-100 backdrop-blur transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+          {!isSelf && audioTrack && (
+            <Button
+              size="icon"
+              variant={silenced ? 'secondary' : 'ghost'}
+              className="size-8"
+              aria-label={t(
+                silenced ? 'audio_unmute_for_me' : 'audio_mute_for_me',
+                { name: participant.displayName }
+              )}
+              aria-pressed={silenced}
+              onClick={() =>
+                onSilence
+                  ? onSilence(focusKey ?? `${participant.userId}:${kind}`)
+                  : setLocalSilence((value) => !value)
+              }
+            >
+              {silenced ? (
+                <VolumeX className="size-4" />
+              ) : (
+                <Volume2 className="size-4" />
+              )}
+            </Button>
+          )}
+          {onFocus && (
+            <Button
+              size="icon"
+              variant={focused ? 'secondary' : 'ghost'}
+              className="size-8"
+              aria-label={focused ? t('unfocus_feed') : t('focus_feed')}
+              aria-pressed={focused}
+              onClick={() =>
+                onFocus(
+                  focused ? null : (focusKey ?? `${participant.userId}:${kind}`)
+                )
+              }
+            >
+              <Pin className="size-4" />
+            </Button>
+          )}
           <Button
             size="icon"
-            variant={silenced ? 'secondary' : 'ghost'}
+            variant="ghost"
             className="size-8"
             aria-label={t(
-              silenced ? 'audio_unmute_for_me' : 'audio_mute_for_me',
-              { name: participant.displayName }
+              expanded || fullscreen ? 'exit_fullscreen' : 'fullscreen_feed'
             )}
-            aria-pressed={silenced}
-            onClick={() =>
-              onSilence
-                ? onSilence(focusKey ?? `${participant.userId}:${kind}`)
-                : setLocalSilence((value) => !value)
-            }
+            onClick={() => {
+              if (expanded) {
+                setExpanded(false);
+                return;
+              }
+              if (fullscreen) {
+                void document.exitFullscreen();
+                return;
+              }
+              const tile = tileRef.current;
+              if (!tile?.requestFullscreen) {
+                setExpanded(true);
+                return;
+              }
+              void tile.requestFullscreen().catch(() => setExpanded(true));
+            }}
           >
-            {silenced ? (
-              <VolumeX className="size-4" />
+            {expanded || fullscreen ? (
+              <Minimize className="size-4" />
             ) : (
-              <Volume2 className="size-4" />
+              <Maximize className="size-4" />
             )}
           </Button>
-        )}
-        {onFocus && (
-          <Button
-            size="icon"
-            variant={focused ? 'secondary' : 'ghost'}
-            className="size-8"
-            aria-label={focused ? t('unfocus_feed') : t('focus_feed')}
-            aria-pressed={focused}
-            onClick={() =>
-              onFocus(
-                focused ? null : (focusKey ?? `${participant.userId}:${kind}`)
-              )
-            }
-          >
-            <Pin className="size-4" />
-          </Button>
-        )}
-        <Button
-          size="icon"
-          variant="ghost"
-          className="size-8"
-          aria-label={t(
-            expanded || fullscreen ? 'exit_fullscreen' : 'fullscreen_feed'
-          )}
-          onClick={() => {
-            if (expanded) {
-              setExpanded(false);
-              return;
-            }
-            if (fullscreen) {
-              void document.exitFullscreen();
-              return;
-            }
-            const tile = tileRef.current;
-            if (!tile?.requestFullscreen) {
-              setExpanded(true);
-              return;
-            }
-            void tile.requestFullscreen().catch(() => setExpanded(true));
-          }}
-        >
-          {expanded || fullscreen ? (
-            <Minimize className="size-4" />
-          ) : (
-            <Maximize className="size-4" />
-          )}
-        </Button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -373,6 +383,7 @@ export const ParticipantTile = memo(
     a.participant.media.screenEnabled === b.participant.media.screenEnabled &&
     a.handRaised === b.handRaised &&
     a.isSelf === b.isSelf &&
+    a.floating === b.floating &&
     a.isSpeaking === b.isSpeaking &&
     a.stream === b.stream &&
     a.className === b.className &&
