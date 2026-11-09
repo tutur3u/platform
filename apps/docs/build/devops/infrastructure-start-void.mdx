@@ -12,7 +12,7 @@ the route is flipped. `vercel-production-infrastructure.yaml` still deploys the 
 
 ## Worker
 
-- Staging candidate: `tuturuuu-infrastructure-vite-staging` (`workers_dev` off, `TUTURUUU_NOINDEX=1`). A production Worker (`tuturuuu-infrastructure`, `workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=0`) is created by the cutover PR; nothing here attaches a route.
+- Staging candidate: the staging Worker name (`workers_dev` off, `TUTURUUU_NOINDEX=1`). A production Worker (`tuturuuu-infrastructure`, `workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=0`) is created by the cutover PR; nothing here attaches a route.
 - Entry: `apps/infrastructure/cloudflare/worker.ts`; Wrangler config is emitted by `void` into `dist`.
 - Host: `infrastructure.tuturuuu.com`. Root-only: `mountHosts` is empty and `unknownHost` is `reject`, so `tuturuuu.com/infrastructure` and any other host answer 404 before app code runs.
 - Binding: `ASSETS` (static output, `run_worker_first`).

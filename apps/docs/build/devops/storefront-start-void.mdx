@@ -15,7 +15,7 @@ route back.
 
 | Profile | Worker | Notes |
 | --- | --- | --- |
-| Source default (`void.config.ts`) | `tuturuuu-storefront-vite-staging` | `TUTURUUU_NOINDEX=1`, no routes, `workers_dev` and `preview_urls` off |
+| Source default (`void.config.ts`) | the staging Worker name | `TUTURUUU_NOINDEX=1`, no routes, `workers_dev` and `preview_urls` off |
 | Cutover artifact | `tuturuuu-storefront` | `storefront-cloudflare.yaml` rewrites the emitted Wrangler config: `TUTURUUU_NOINDEX=0`, `TUTURUUU_REQUIRE_SECRETS=1`, `preview_urls=false`, source maps off |
 
 The Worker declares no routes. The hostname is attached at cutover by the
