@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import type React from 'react';
 import Footer from '@/components/layouts/Footer';
+import { PrivacyConsent } from '@/components/privacy-consent';
 import { QueryProvider } from '@/components/query-provider';
 import {
   getClientMessages,
@@ -41,6 +42,7 @@ export default async function Layout({ children }: LayoutProps) {
             {children}
           </div>
           <Footer />
+          <PrivacyConsent />
         </div>
       </QueryProvider>
     </NextIntlClientProvider>

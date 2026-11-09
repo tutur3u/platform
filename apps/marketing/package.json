@@ -24,6 +24,7 @@
     "@tanstack/react-query": "^5.104.5",
     "@tanstack/react-router": "1.170.45",
     "@tanstack/react-start": "1.169.3",
+    "@tuturuuu/feature-flags": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/legal": "workspace:*",
