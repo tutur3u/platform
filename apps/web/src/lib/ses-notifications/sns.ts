@@ -105,7 +105,7 @@ function trustedCertificate(
     /(^|\n)O=Amazon(\n|$)/.test(certificate.issuer) &&
     Boolean(
       certificate.checkHost('sns.amazonaws.com') ||
-        (host && certificate.checkHost(host))
+      (host && certificate.checkHost(host))
     )
   );
 }
