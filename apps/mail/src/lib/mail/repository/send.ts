@@ -1,6 +1,7 @@
 import { EmailService, sendWorkspaceEmail } from '@tuturuuu/email-service';
 import type { SendMailMessagePayload } from '@tuturuuu/internal-api';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { describeMailError, MailSendError } from '../send-error';
 import type { MailRouteContext } from '../types';
 import { loadOutboundAttachments } from './attachments';
 import { requireMailboxAccess } from './bootstrap';
@@ -96,6 +97,8 @@ export async function sendMailMessage({
   if (!claimed)
     return getMailMessage({ ctx, mailboxId, messageId: message.id });
 
+  let outboundJobId: string | null = null;
+  try {
   const { data: outboundJob, error: jobError } = await privateTable(
     access.admin,
     'mail_outbound_jobs'
@@ -117,6 +120,7 @@ export async function sendMailMessage({
   if (jobError) {
     throw new Error(`Failed to create outbound job: ${jobError.message}`);
   }
+  outboundJobId = outboundJob.id;
 
   const attachments = await loadOutboundAttachments(
     access.admin,
@@ -221,8 +225,15 @@ export async function sendMailMessage({
           credentialWorkspaceId: ROOT_WORKSPACE_ID,
         });
 
-  const nextStatus = result.success ? 'sent' : 'failed';
   const now = new Date().toISOString();
+  // A rejected or unconfirmed send returns to the drafts so it can be retried;
+  // a provider-accepted message with bounced recipients stays failed.
+  const keepFailed = result.deliveryOutcome === 'accepted';
+  const nextStatus = result.success
+    ? 'sent'
+    : keepFailed
+      ? 'failed'
+      : 'draft';
 
   await Promise.all([
     mailMessageTable(access, ctx)
@@ -238,7 +249,7 @@ export async function sendMailMessage({
         error_message: result.error ?? null,
         provider_message_id: result.messageId ?? null,
         sent_at: result.success ? now : null,
-        status: nextStatus,
+        status: result.success ? 'sent' : 'failed',
       })
       .eq('id', outboundJob.id),
   ]);
@@ -250,7 +261,29 @@ export async function sendMailMessage({
       messageId: message.id,
       wsId: ctx.normalizedWsId,
     });
+    throw new MailSendError(result.error ?? 'Mail provider rejected the send');
   }
 
   return getMailMessage({ ctx, mailboxId, messageId: message.id });
+  } catch (error) {
+    if (error instanceof MailSendError) throw error;
+    const reason = describeMailError(error);
+    console.error('[mail] outbound send threw', {
+      error: reason,
+      mailboxId,
+      messageId: message.id,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    await Promise.allSettled([
+      mailMessageTable(access, ctx)
+        .update({ status: 'draft' })
+        .eq('id', message.id),
+      outboundJobId
+        ? privateTable(access.admin, 'mail_outbound_jobs')
+            .update({ error_message: reason, status: 'failed' })
+            .eq('id', outboundJobId)
+        : Promise.resolve(),
+    ]);
+    throw new MailSendError(reason, { cause: error });
+  }
 }
