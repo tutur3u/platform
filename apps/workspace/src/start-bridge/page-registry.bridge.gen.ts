@@ -51,6 +51,8 @@ export const pages = [
   { pattern: "/[wsId]/habits/[[...slug]]", file: "src/app/[locale]/(dashboard)/[wsId]/habits/[[...slug]]/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/integrations/discord", file: "src/app/[locale]/(dashboard)/[wsId]/integrations/discord/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/integrations", file: "src/app/[locale]/(dashboard)/[wsId]/integrations/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/link-shortener/[linkId]/analytics", file: "src/app/[locale]/(dashboard)/[wsId]/link-shortener/[linkId]/analytics/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/link-shortener", file: "src/app/[locale]/(dashboard)/[wsId]/link-shortener/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/memories", file: "src/app/[locale]/(dashboard)/[wsId]/memories/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/mira", file: "src/app/[locale]/(dashboard)/[wsId]/mira/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/notes", file: "src/app/[locale]/(dashboard)/[wsId]/notes/page.tsx", defaults: { "locale": "en" } },

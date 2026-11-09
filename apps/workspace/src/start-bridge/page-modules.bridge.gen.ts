@@ -406,6 +406,24 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/link-shortener/[linkId]/analytics/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/link-shortener/[linkId]/analytics/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/link-shortener/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/link-shortener/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/link-shortener/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/link-shortener/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/memories/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/memories/page'),
     layouts: [
