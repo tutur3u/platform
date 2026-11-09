@@ -31,16 +31,20 @@ export const getWorkspaceRoleOptions = defineRoute({
   limits: readLimits,
   input: z.object({
     params: z.object({ wsId: z.string() }).strict(),
-    query: z.object({
-      page: z.string().optional(),
-      pageSize: z.string().optional(),
-    }).passthrough(),
+    query: z
+      .object({
+        page: z.string().optional(),
+        pageSize: z.string().optional(),
+      })
+      .passthrough(),
     body: z.null(),
   }),
-  output: z.object({
-    count: z.number(),
-    data: z.array(z.object({ id: z.string(), name: z.string() })),
-  }).passthrough(),
+  output: z
+    .object({
+      count: z.number(),
+      data: z.array(z.object({ id: z.string(), name: z.string() })),
+    })
+    .passthrough(),
   body: 'none',
   status: 200,
   handle: () => ({ count: 0, data: [] }),
@@ -61,17 +65,21 @@ export const listWorkspaceRoles = defineRoute({
   limits: readLimits,
   input: z.object({
     params: z.object({ wsId: z.string() }).strict(),
-    query: z.object({
-      page: z.string().optional(),
-      pageSize: z.string().optional(),
-      q: z.string().optional(),
-    }).passthrough(),
+    query: z
+      .object({
+        page: z.string().optional(),
+        pageSize: z.string().optional(),
+        q: z.string().optional(),
+      })
+      .passthrough(),
     body: z.null(),
   }),
-  output: z.object({
-    count: z.number(),
-    data: z.array(z.record(z.string(), z.unknown())),
-  }).passthrough(),
+  output: z
+    .object({
+      count: z.number(),
+      data: z.array(z.record(z.string(), z.unknown())),
+    })
+    .passthrough(),
   body: 'none',
   status: 200,
   handle: () => ({ count: 0, data: [] }),
@@ -95,10 +103,12 @@ export const createWorkspaceRole = defineRoute({
     query: empty,
     body: z.record(z.string(), z.unknown()),
   }),
-  output: z.object({
-    id: z.string(),
-    message: z.string(),
-  }).passthrough(),
+  output: z
+    .object({
+      id: z.string(),
+      message: z.string(),
+    })
+    .passthrough(),
   body: 'json',
   status: 200,
   handle: () => ({ id: 'held', message: 'success' }),
@@ -193,7 +203,9 @@ export const getWorkspaceRoleMember = defineRoute({
   guard: 'web-api',
   limits: readLimits,
   input: z.object({
-    params: z.object({ wsId: z.string(), roleId: z.string(), userId: z.string() }).strict(),
+    params: z
+      .object({ wsId: z.string(), roleId: z.string(), userId: z.string() })
+      .strict(),
     query: empty,
     body: z.null(),
   }),
@@ -243,7 +255,9 @@ export const getWorkspaceRoleWallet = defineRoute({
   guard: 'web-api',
   limits: readLimits,
   input: z.object({
-    params: z.object({ wsId: z.string(), roleId: z.string(), walletId: z.string() }).strict(),
+    params: z
+      .object({ wsId: z.string(), roleId: z.string(), walletId: z.string() })
+      .strict(),
     query: empty,
     body: z.null(),
   }),
@@ -268,11 +282,13 @@ export const listWorkspaceApiKeys = defineRoute({
   limits: readLimits,
   input: z.object({
     params: z.object({ wsId: z.string() }).strict(),
-    query: z.object({
-      page: z.string().optional(),
-      pageSize: z.string().optional(),
-      q: z.string().optional(),
-    }).passthrough(),
+    query: z
+      .object({
+        page: z.string().optional(),
+        pageSize: z.string().optional(),
+        q: z.string().optional(),
+      })
+      .passthrough(),
     body: z.null(),
   }),
   output: z.union([
@@ -305,11 +321,13 @@ export const createWorkspaceApiKey = defineRoute({
     query: empty,
     body: z.record(z.string(), z.unknown()),
   }),
-  output: z.object({
-    message: z.string(),
-    key: z.string(),
-    prefix: z.string(),
-  }).passthrough(),
+  output: z
+    .object({
+      message: z.string(),
+      key: z.string(),
+      prefix: z.string(),
+    })
+    .passthrough(),
   body: 'json',
   status: 200,
   handle: () => ({ message: 'success', key: 'held', prefix: 'ttr' }),
@@ -383,10 +401,12 @@ export const rotateWorkspaceApiKey = defineRoute({
     query: empty,
     body: empty,
   }),
-  output: z.object({
-    message: z.string(),
-    key: z.string(),
-  }).passthrough(),
+  output: z
+    .object({
+      message: z.string(),
+      key: z.string(),
+    })
+    .passthrough(),
   body: 'json',
   status: 200,
   handle: () => ({ message: 'success', key: 'held' }),
@@ -435,9 +455,11 @@ export const createWorkspaceWhiteboard = defineRoute({
     query: empty,
     body: z.record(z.string(), z.unknown()),
   }),
-  output: z.object({
-    whiteboard: z.record(z.string(), z.unknown()),
-  }).passthrough(),
+  output: z
+    .object({
+      whiteboard: z.record(z.string(), z.unknown()),
+    })
+    .passthrough(),
   body: 'json',
   status: 201,
   handle: () => ({ whiteboard: {} }),
@@ -462,9 +484,11 @@ export const getWorkspaceWhiteboard = defineRoute({
     query: empty,
     body: z.null(),
   }),
-  output: z.object({
-    whiteboard: z.record(z.string(), z.unknown()),
-  }).passthrough(),
+  output: z
+    .object({
+      whiteboard: z.record(z.string(), z.unknown()),
+    })
+    .passthrough(),
   body: 'none',
   status: 200,
   handle: () => ({ whiteboard: {} }),
@@ -683,9 +707,11 @@ export const getWorkspaceDeletedStatus = defineRoute({
     query: empty,
     body: z.null(),
   }),
-  output: z.object({
-    deleted: z.boolean(),
-  }).passthrough(),
+  output: z
+    .object({
+      deleted: z.boolean(),
+    })
+    .passthrough(),
   body: 'none',
   status: 200,
   handle: () => ({ deleted: false }),
