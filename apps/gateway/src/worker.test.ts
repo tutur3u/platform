@@ -74,6 +74,24 @@ describe('gateway handler', () => {
     expect(t.cache.entries.size).toBe(0);
   });
 
+  it('stores a NEXT_LOCALE-only page without the cookie and still sets it on the miss', async () => {
+    const t = setup(
+      () =>
+        new Response('page', {
+          headers: { 'set-cookie': 'NEXT_LOCALE=en; Path=/; SameSite=lax' },
+        })
+    );
+    const first = await t.call('/about');
+    expect(first.headers.get('x-gateway-cache')).toBe('MISS');
+    expect(first.headers.get('set-cookie')).toBe(
+      'NEXT_LOCALE=en; Path=/; SameSite=lax'
+    );
+    expect(t.cache.entries.size).toBe(1);
+    const second = await t.call('/about');
+    expect(second.headers.get('x-gateway-cache')).toBe('HIT');
+    expect(second.headers.has('set-cookie')).toBe(false);
+  });
+
   it('bypasses cache for auth cookies and Authorization, keeping them intact', async () => {
     const t = setup(() => new Response('private'));
     const withCookie = await t.call('/about', {

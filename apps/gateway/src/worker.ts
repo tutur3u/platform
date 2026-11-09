@@ -152,6 +152,7 @@ function storedCopy(response: Response, nowMs: number) {
     'cache-control',
     `public, max-age=${FRESH_SECONDS + STALE_SECONDS}`
   );
+  copy.headers.delete('set-cookie');
   copy.headers.set(STORED_AT, String(nowMs));
   return copy;
 }
