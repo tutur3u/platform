@@ -163,6 +163,28 @@ Cutovers run in this order: lowest risk first. Marketing page groups flip throug
 | Packet | `wave1-cutover-packets` |
 | Smoke | `node scripts/cutover-smoke.mjs apps https://apps.tuturuuu.com` |
 
+## 14. learn
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-learn` |
+| Hosts | learn.tuturuuu.com |
+| Artifact | learn-cloudflare.yaml, job learn-cutover-artifact |
+| Vercel rollback pin | capture before the flip |
+| Packet | `learn-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs learn https://learn.tuturuuu.com` |
+
+## 15. chat
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-chat` |
+| Hosts | chat.tuturuuu.com |
+| Artifact | chat-cloudflare.yaml, job chat-cutover-artifact |
+| Vercel rollback pin | capture before the flip |
+| Packet | `chat-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs chat https://chat.tuturuuu.com` |
+
 ## Not cut over tonight
 
 - playground: no Vercel deployment found; staff-only app, routes attach at its own hostname when wanted.
@@ -181,3 +203,4 @@ Cutovers run in this order: lowest risk first. Marketing page groups flip throug
 | Artifact | hive-cloudflare.yaml, job hive-cutover-artifact |
 | Vercel rollback pin | none found; confirm where hive.tuturuuu.com is served |
 | Smoke | `node scripts/cutover-smoke.mjs hive https://hive.tuturuuu.com` |
+- infrastructure, mind, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
