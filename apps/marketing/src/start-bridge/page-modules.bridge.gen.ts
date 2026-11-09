@@ -59,6 +59,15 @@ export const pageModules = {
       () => import('../app/[locale]/(marketing)/community-guidelines/layout'),
     ],
   },
+  'src/app/[locale]/(marketing)/contributors/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/contributors/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/contributors/layout'),
+    ],
+  },
   'src/app/[locale]/(marketing)/legal/changes/full/page.tsx': {
     page: () => import('../app/[locale]/(marketing)/legal/changes/full/page'),
     layouts: [
