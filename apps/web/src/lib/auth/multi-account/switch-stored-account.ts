@@ -32,9 +32,11 @@ export async function switchStoredAccount({
   accountId: string;
   payload: SwitchAccountPayload;
   listAccounts: (device: WebAccountDevice) => Promise<WebAccountsResponse>;
-  revokeTempAuth: (
-    client: Awaited<ReturnType<typeof createClient>>
-  ) => Promise<void>;
+  revokeTempAuth: (client: {
+    auth: {
+      getUser: () => Promise<{ data: { user: { id: string } | null } }>;
+    };
+  }) => Promise<void>;
 }): Promise<WebAccountMutationResponse> {
   try {
     const switched = await withAccountSwitchTransaction(
