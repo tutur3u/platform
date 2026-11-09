@@ -1144,9 +1144,11 @@
       "name": "@tuturuuu/marketing",
       "version": "0.1.0",
       "dependencies": {
+        "@tanstack/react-query": "^5.104.5",
         "@tanstack/react-router": "1.170.45",
         "@tanstack/react-start": "1.169.3",
         "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/legal": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/start-bridge": "workspace:*",
@@ -1161,6 +1163,7 @@
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
         "recharts": "3.10.1",
+        "zod": "^4.6.7",
       },
       "devDependencies": {
         "@cloudflare/workers-types": "5.20261022.1",
