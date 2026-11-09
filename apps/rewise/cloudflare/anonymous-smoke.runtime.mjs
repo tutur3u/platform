@@ -21,11 +21,10 @@ const EXPECTED = {
   '/login': 'https://rewise.tuturuuu.com/',
 };
 const SYNTHETIC_SECRETS = {
-  ABUSE_GUARD_BACKEND: 'upstash',
+  ABUSE_GUARD_KEY_PEPPER: 'synthetic-smoke-only',
+  ABUSE_GUARD_FAMILIES: 'proxy',
   NEXT_PUBLIC_SUPABASE_URL: 'https://rewise-smoke.supabase.invalid',
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_rewise_smoke',
-  UPSTASH_REDIS_REST_URL: 'https://fixture.upstash.invalid',
-  UPSTASH_REDIS_REST_TOKEN: 'synthetic-smoke-only',
   SUPABASE_SECRET_KEY: 'synthetic-smoke-only',
   TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-smoke-only',
 };

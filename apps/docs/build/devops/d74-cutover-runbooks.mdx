@@ -81,7 +81,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Packet | `rewise-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs rewise https://rewise.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
-| Note | Needs UPSTASH_REDIS_REST_URL/TOKEN and ABUSE_GUARD_BACKEND=upstash on the Worker. |
+| Abuse guard | Binding `ABUSE_GUARD` → service `tuturuuu-abuse-guard`; secret `ABUSE_GUARD_KEY_PEPPER`; variable `ABUSE_GUARD_FAMILIES=proxy`; optional `ABUSE_GUARD_TIMEOUT_MS`. |
 
 ## 6. drive
 
@@ -229,6 +229,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Smoke | `node scripts/cutover-smoke.mjs mind https://mind.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
 | Abuse guard | Service binding `ABUSE_GUARD` → `tuturuuu-abuse-guard`, secret `ABUSE_GUARD_KEY_PEPPER`, and text variable `ABUSE_GUARD_FAMILIES=proxy`; `ABUSE_GUARD_TIMEOUT_MS` is optional. Upstash is not required. |
+| Required secrets | Besides the coordination secret: `ABUSE_GUARD_KEY_PEPPER`. Configure binding `ABUSE_GUARD` → service `tuturuuu-abuse-guard` and variable `ABUSE_GUARD_FAMILIES=proxy`; `ABUSE_GUARD_TIMEOUT_MS` is optional. Legacy Upstash configuration remains accepted. |
 
 ## Not cut over tonight
 
