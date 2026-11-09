@@ -143,6 +143,7 @@ export const ci = {
   'external-cloudflare.yaml': true,
   'rewise-cloudflare.yaml': true,
   'hive-cloudflare.yaml': true,
+  'chat-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
