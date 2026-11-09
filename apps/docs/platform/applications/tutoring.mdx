@@ -1,7 +1,7 @@
 ---
 title: 'Tutoring'
 description: 'Schedule make-up and remedial sessions, work the support queue, and enable the module per workspace.'
-updatedAt: '2026-10-29'
+updatedAt: '2026-11-09'
 audience: users
 ---
 
@@ -84,6 +84,22 @@ payroll.
   correct on workspaces with more sessions than one page. The schedule loads
   first; counts then load behind it. The support queue is requested when its
   tab is opened, and the client reuses recent results for two minutes.
+
+## Read lesson content
+
+Every member allowed to view tutoring sessions (`view_user_groups`) can select
+its lesson-content preview in the Contacts schedule to read the full text.
+The dialog preserves line breaks and scrolls long notes. It is read-only and
+uses only the content already returned by the authorized session list.
+Changing the displayed session closes the old dialog. Blank content has no
+preview control.
+
+Editing remains a separate manager action requiring
+`update_user_groups_scores`; viewing does not save content, mark attendance,
+send a message or change the linked-content rules. The existing page and API
+workspace/group authorization still apply. Regression coverage:
+`tutoring-session-content.test.tsx` exercises a viewer without edit permission,
+manager edit availability, literal text and session replacement.
 
 Row actions mark a session done, no-show, cancelled, or back to pending, and
 generate the parent-facing message for the session. Staff can edit each
