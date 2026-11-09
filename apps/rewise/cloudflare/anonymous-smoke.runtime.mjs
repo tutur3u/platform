@@ -8,13 +8,17 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 import { assertServerArtifact } from './server-artifact-scan.mjs';
+import { assertCentralLoginRedirect } from './central-login-redirect.mjs';
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
 const ROOT_HOST = 'rewise.tuturuuu.com';
+// The local Worker receives HTTP; the native /login page has a fixed HTTPS return target.
 const EXPECTED = {
-  '/': { redirect: '/login' },
-  '/login': { redirect: 'https://tuturuuu.com/login' },
+  '/': 'http://rewise.tuturuuu.com/verify-token?nextUrl=%2F',
+  '/?smoke=return':
+    'http://rewise.tuturuuu.com/verify-token?nextUrl=%2F%3Fsmoke%3Dreturn',
+  '/login': 'https://rewise.tuturuuu.com/',
 };
 const SYNTHETIC_SECRETS = {
   ABUSE_GUARD_BACKEND: 'upstash',
@@ -119,17 +123,8 @@ test(
   },
   async (t) => {
     const call = await startWorker(t, SYNTHETIC_SECRETS);
-    for (const [path, outcome] of Object.entries(EXPECTED)) {
-      const { status, location } = await call(path);
-      if (typeof outcome === 'number') {
-        assert.equal(status, outcome, path);
-      } else {
-        assert.ok(status >= 300 && status < 400, `${path}: ${status}`);
-        const resolved = new URL(location, `https://${ROOT_HOST}`);
-        const wanted = new URL(outcome.redirect, `https://${ROOT_HOST}`);
-        assert.equal(resolved.host, wanted.host, path);
-        assert.equal(resolved.pathname, wanted.pathname, path);
-      }
+    for (const [path, returnUrl] of Object.entries(EXPECTED)) {
+      assertCentralLoginRedirect(await call(path), returnUrl);
     }
     assert.equal((await call('/', 'unknown.example')).status, 404);
     assert.equal((await call('/', 'tuturuuu.com')).status, 404);
