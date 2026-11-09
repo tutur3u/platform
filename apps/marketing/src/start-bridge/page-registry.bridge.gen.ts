@@ -2,6 +2,7 @@
 import type { BridgePage } from '@tuturuuu/start-bridge/pages';
 
 export const pages = [
+  { pattern: "/", file: "src/app/[locale]/(marketing)/(landing)/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/about", file: "src/app/[locale]/(marketing)/about/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/acceptable-use", file: "src/app/[locale]/(marketing)/acceptable-use/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/blog", file: "src/app/[locale]/(marketing)/blog/page.tsx", defaults: { "locale": "en" } },

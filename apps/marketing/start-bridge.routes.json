@@ -16,10 +16,10 @@
   "owned": {},
   "ignored": {},
   "runtime": {
-    "/": 404,
     "/legal/dpa": 200,
     "/about": 200,
     "/pricing": 200,
+    "/": 200,
     "/contributors": 200,
     "/branding": 200,
     "/women-in-tech": 200,
