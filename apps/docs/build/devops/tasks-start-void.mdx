@@ -1,0 +1,46 @@
+---
+title: "Tasks cutover packet"
+description: "Worker, route, bindings, build, smoke and Vercel rollback for the native Tasks app."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+The native Tasks source and its design are described in
+[Tasks native Start on Vite+ and Cloudflare](/build/devops/tasks-viteplus-cloudflare).
+This page holds the values the release owner needs for the cutover.
+
+## Cutover packet
+
+| Item | Value |
+| --- | --- |
+| Worker | Staging identity `tuturuuu-tasks-vite-staging` is what `void.config.ts` emits. Deploy the production artifact under `tuturuuu-tasks` with the deploy-time name override; the config declares no routes and `workers_dev` is off |
+| Host | `tasks.tuturuuu.com` (root mode). `TUTURUUU_STAGING_HOSTS` may add `*.workers.dev` or `*.tuturuuu.com` staging hosts. The apex and every other host get `404`. The `tuturuuu.com/tasks` mount is not part of this cutover |
+| Bindings | `ASSETS` (worker-first, `html_handling: none`, so `/offline.html` is read directly) |
+| Vars (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (read by the server at runtime), `TUTURUUU_STAGING_HOSTS` (staging only) |
+| Secrets (names) | `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` (required: `503` without them). Optional integrations keep the names in `apps/tasks/env.example` |
+| Build | `bun turbo:local run build --filter=@tuturuuu/tasks^...`, then `bun run --cwd apps/tasks build:cloudflare` (`vp build --configLoader runner`). Output: `dist/server/wrangler.json`, `dist/client` |
+| Routing | Attach only `tasks.tuturuuu.com/*` |
+| Known gap | `serwist/[path]` (the offline service worker) stays on the Next build; the native shell does not register a service worker |
+| Prior Vercel deployment | Not recorded in the repository. The release owner captures the production deployment id and DNS record before the flip |
+
+## Rollback
+
+Remove only the `tasks.tuturuuu.com/*` Worker route, or restore the captured DNS
+record, so the hostname returns to the captured immutable Vercel deployment.
+Do not rebuild and do not promote the Vercel project. The Worker holds no state.
+
+## Smoke
+
+```bash
+node scripts/native-cutover/smoke.mjs --origin https://tasks.tuturuuu.com --app tasks --expect native
+curl -sI https://tasks.tuturuuu.com/api/build-info    # 200, x-tuturuuu-runtime: native
+curl -sI https://tasks.tuturuuu.com/                  # redirect to the central login verify-token URL
+```
+
+The smoke runner checks the build-info route, a static file, the unauthenticated
+redirect, an API route without a session, the server-function base and the
+runtime header. The rollback smoke uses `--expect legacy`. `no 5xx` is part of
+every check.
+
+Qualification and the sealed-artifact gate are described on the design page above
+(`bun run --cwd apps/tasks test:runtime`, `scripts/ci/tasks-native-artifact.py`).
