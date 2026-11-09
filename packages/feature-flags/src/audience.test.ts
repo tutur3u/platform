@@ -116,9 +116,15 @@ describe('server feature audience', () => {
     expect(enabled(policy(101))).toBe(false);
     expect(enabled(policy(1.5))).toBe(false);
   });
-  it('retains permission and enablement gates at GA', () => {
-    expect(enabled({ ...metadata, stage: 'ga' }, null)).toBe(true);
-    expect(enabled({ ...metadata, stage: 'ga' }, user, false)).toBe(false);
+  it('retains identity, permission and enablement gates at GA', () => {
+    const policy = { ...metadata, stage: 'ga' } satisfies FeatureRollout;
+    expect(
+      [null, { ...user, id: '' }, { ...user, is_anonymous: true }].map(
+        (actor) => enabled(policy, actor)
+      )
+    ).toEqual([false, false, false]);
+    expect(enabled(policy, user)).toBe(true);
+    expect(enabled(policy, user, false)).toBe(false);
   });
   it('requires lifecycle ownership and a real removal date', () => {
     for (const value of [

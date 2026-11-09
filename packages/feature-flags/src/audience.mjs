@@ -99,6 +99,7 @@ function bucket(key, userId, workspaceId) {
 /** Identity and permissions come from the server's verified request boundary. */
 export function isFeatureEnabled(key, context, configuration) {
   if (
+    !authenticated(context.user) ||
     context.permissionGranted !== true ||
     !Object.hasOwn(configuration.enabledFlags, key) ||
     configuration.enabledFlags[key] !== true ||
