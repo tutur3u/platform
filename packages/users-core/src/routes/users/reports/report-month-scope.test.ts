@@ -69,8 +69,7 @@ const unsent = [
   row('oct-written-28-oct', 'approved', '2026-10-28T03:00:00Z'),
   row('nov-written-12-nov', 'pending', '2026-11-12T03:00:00Z'),
 ];
-// Sent reports: the send instant decides the month, never the title or the
-// covered period.
+// Sent reports retain their covered month regardless of the send instant.
 const sent = [
   // 30 Sep 23:59:59.999 in Vietnam, for an October report.
   row('sent-sep-for-oct', 'sent', '2026-09-20T03:00:00Z', {
@@ -239,9 +238,7 @@ const ids = (body: { data: { id: string }[] }) =>
 
 const OCTOBER_COVERAGE =
   'and(period_start.gte.2026-10-01,period_start.lte.2026-10-31),and(period_start.is.null,created_at.gte."2026-10-10T17:00:00.000Z",created_at.lt."2026-11-10T17:00:00.000Z")';
-const OCTOBER_SENT =
-  'delivered_at.gte."2026-09-30T17:00:00.000Z",delivered_at.lt."2026-10-31T17:00:00.000Z"';
-const OCTOBER_FILTER = `(and(report_stage.neq.sent,or(${OCTOBER_COVERAGE})),and(report_stage.eq.sent,${OCTOBER_SENT}))`;
+const OCTOBER_FILTER = `(${OCTOBER_COVERAGE})`;
 
 it('selects October by saved period and by estimated month, on the list and the summary read', async () => {
   const response = await get('stage=pending&cadence=monthly&month=2026-10');
@@ -269,18 +266,18 @@ it('selects October by saved period and by estimated month, on the list and the 
 it('summary counts follow the selected month', async () => {
   const octoberBody = await (await get('stage=pending&month=2026-10')).json();
   const novemberBody = await (await get('stage=pending&month=2026-11')).json();
-  expect(octoberBody.counts.total).toBe(5);
+  expect(octoberBody.counts.total).toBe(6);
   expect(octoberBody.counts.stages).toMatchObject({
     pending: 2,
     approved: 1,
-    sent: 2,
+    sent: 3,
     blocked: 0,
   });
-  expect(novemberBody.counts.total).toBe(2);
+  expect(novemberBody.counts.total).toBe(1);
   expect(novemberBody.counts.stages).toMatchObject({
     pending: 1,
     approved: 0,
-    sent: 1,
+    sent: 0,
   });
   expect(novemberBody.data[0]).toMatchObject({
     report_month: '2026-11',
@@ -307,32 +304,40 @@ it.each([
 });
 
 describe('Sent reports in a month', () => {
-  it('lists only reports actually sent in October, whatever their title or covered period', async () => {
+  it('lists October coverage even when sent in September or November or not yet dated', async () => {
     const body = await (await get('stage=sent&month=2026-10')).json();
-    expect(ids(body)).toEqual(['sent-oct-start', 'sent-oct-end']);
-    expect(body.total).toBe(2);
-    expect(body.counts.stages.sent).toBe(2);
-    expect(body.counts.delivered).toBe(2);
+    expect(ids(body)).toEqual([
+      'sent-sep-for-oct',
+      'sent-nov-start',
+      'sent-undated',
+    ]);
+    expect(body.total).toBe(3);
+    expect(body.counts.stages.sent).toBe(3);
+    expect(body.counts.delivered).toBe(3);
     expect(body.undatedSentCount).toBeNull();
     // Row metadata keeps the covered month.
-    expect(body.data[0]).toMatchObject({ report_month: '2026-09' });
+    expect(body.data[0]).toMatchObject({ report_month: '2026-10' });
   });
 
   it.each([
-    ['2026-09', ['sent-sep-for-oct']],
-    ['2026-11', ['sent-nov-start']],
-  ])('files boundary sends under %s', async (month, expected) => {
-    const body = await (await get(`stage=sent&month=${month}`)).json();
-    expect(ids(body)).toEqual(expected);
-    expect(body.counts.stages.sent).toBe(expected.length);
-  });
+    ['2026-08', ['sent-oct-end']],
+    ['2026-09', ['sent-oct-start']],
+    ['2026-11', []],
+  ])(
+    'files saved or estimated report months under %s',
+    async (month, expected) => {
+      const body = await (await get(`stage=sent&month=${month}`)).json();
+      expect(ids(body)).toEqual(expected);
+      expect(body.counts.stages.sent).toBe(expected.length);
+    }
+  );
 
   it.each([
     ['America/New_York', 'UTC'],
     ['auto', 'Pacific/Kiritimati'],
     [null, undefined],
   ])(
-    'counts send months in Vietnam time for workspace %s / viewer %s',
+    'keeps saved report months for workspace %s / viewer %s',
     async (workspace, viewer) => {
       state.workspaceTimezone = workspace;
       const body = await (
@@ -340,9 +345,15 @@ describe('Sent reports in a month', () => {
           `stage=sent&month=2026-10${viewer ? `&timezone=${encodeURIComponent(viewer)}` : ''}`
         )
       ).json();
-      expect(ids(body)).toEqual(['sent-oct-start', 'sent-oct-end']);
+      expect(ids(body)).toEqual([
+        'sent-sep-for-oct',
+        'sent-nov-start',
+        'sent-undated',
+      ]);
       for (const url of reportQueries())
-        expect(url.searchParams.get('or')).toContain(OCTOBER_SENT);
+        expect(url.searchParams.get('or')).toContain(
+          'period_start.gte.2026-10-01'
+        );
     }
   );
 
@@ -375,7 +386,7 @@ describe('Sent reports in a month', () => {
     ).toEqual(['blocked-accepted']);
   });
 
-  it('shows Sent reports without a send date only under All months', async () => {
+  it('keeps every authorized Sent report in All months', async () => {
     const body = await (await get('stage=sent')).json();
     expect(ids(body)).toEqual([
       'sent-sep-for-oct',
@@ -410,7 +421,7 @@ describe('Sent reports in a month', () => {
     ) =>
       Array.from({ length: count }, (_, index) =>
         row(`${prefix}-${index}`, 'sent', '2026-10-05T03:00:00Z', {
-          period: '2026-10',
+          period: prefix === 'bulk-sep' ? '2026-09' : '2026-10',
           deliveredAt,
         })
       );
@@ -418,7 +429,7 @@ describe('Sent reports in a month', () => {
       ...baseRows,
       ...synthetic('bulk-oct', 1_200, '2026-10-20T03:00:00Z'),
       ...synthetic('bulk-sep', 1_000, '2026-09-25T03:00:00Z'),
-      // Never part of a month read.
+      // A saved October period remains October without a send date.
       ...synthetic('bulk-undated', 3, null),
     ];
     const seen: string[] = [];
@@ -426,14 +437,14 @@ describe('Sent reports in a month', () => {
       const body = await (
         await get(`stage=sent&month=2026-10&pageSize=100&page=${page}`)
       ).json();
-      expect(body.total).toBe(1_202);
-      expect(body.counts.stages.sent).toBe(1_202);
+      expect(body.total).toBe(1_206);
+      expect(body.counts.stages.sent).toBe(1_206);
       expect(body.undatedSentCount).toBeNull();
       seen.push(...ids(body));
     }
-    expect(new Set(seen).size).toBe(1_202);
+    expect(new Set(seen).size).toBe(1_206);
     expect(seen.some((id) => id.startsWith('bulk-sep'))).toBe(false);
-    expect(seen.some((id) => id.includes('undated'))).toBe(false);
+    expect(seen.filter((id) => id.includes('undated'))).toHaveLength(4);
     const listOffsets = reportQueries()
       .filter((url) => url.searchParams.get('select') === '*')
       .map((url) => url.searchParams.get('offset'));
@@ -442,25 +453,29 @@ describe('Sent reports in a month', () => {
       expect(url.searchParams.getAll('or')).toEqual([OCTOBER_FILTER]);
   });
 
-  it('rejects a month whose dated rows exceed the cap instead of sampling', async () => {
-    state.rows = Array.from({ length: 20_001 }, (_, index) =>
-      row(`cap-${index}`, 'sent', '2026-10-05T03:00:00Z', {
-        deliveredAt: '2026-10-20T03:00:00Z',
-      })
-    );
-    const response = await get('stage=sent&month=2026-10');
-    expect(response.status).toBe(422);
-  });
+  it.each([null, '2026-10-20T03:00:00Z'])(
+    'rejects a covered month above the cap with send date %s',
+    async (deliveredAt) => {
+      state.rows = Array.from({ length: 20_001 }, (_, index) =>
+        row(`cap-${index}`, 'sent', '2026-10-05T03:00:00Z', {
+          period: '2026-10',
+          deliveredAt,
+        })
+      );
+      const response = await get('stage=sent&month=2026-10');
+      expect(response.status).toBe(422);
+    }
+  );
 
-  it('leaves undated Sent reports out of a month read before the row cap', async () => {
+  it('excludes other covered months before the row cap regardless of send date', async () => {
     const undated = Array.from({ length: 20_001 }, (_, index) =>
       row(`undated-${index}`, 'sent', '2026-10-05T03:00:00Z', {
-        period: '2026-10',
+        period: '2026-09',
       })
     );
     const dated = Array.from({ length: 150 }, (_, index) =>
       row(`dated-${index}`, 'sent', '2026-10-05T03:00:00Z', {
-        period: '2026-09',
+        period: '2026-10',
         deliveredAt: '2026-10-20T03:00:00Z',
       })
     );
@@ -490,7 +505,7 @@ describe('Sent reports in a month', () => {
     expect(allBody.counts.stages).toMatchObject({ sent: 150, pending: 2 });
     expect(allBody.undatedSentCount).toBeNull();
 
-    // A month with no dated Sent reports reads as empty, not as capped.
+    // A month with no covered reports reads as empty, not as capped.
     for (const query of ['stage=sent&month=2026-08', 'month=2026-08']) {
       const response = await get(query);
       expect(response.status).toBe(200);

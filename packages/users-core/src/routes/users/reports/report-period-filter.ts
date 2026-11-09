@@ -80,19 +80,7 @@ export function buildReportMonthFilter({
   return `and(period_start.gte.${start},period_start.lte.${end}),and(period_start.is.null,created_at.gte."${from}",created_at.lt."${to}")`;
 }
 
-/** Send months are always counted in Vietnam local time. */
-export const REPORT_SENT_MONTH_TIMEZONE = 'Asia/Ho_Chi_Minh';
-
-/**
- * PostgREST `or` filter for one month (`YYYY-MM`) across every report stage.
- * Reports in any stage except Sent keep the coverage month of
- * `buildReportMonthFilter`. Sent reports belong to the month they were
- * actually sent: `delivered_at` from the 1st at 00:00 to the 1st of the next
- * month in `REPORT_SENT_MONTH_TIMEZONE`, whatever the workspace or viewer
- * timezone. Sent reports without `delivered_at` match no month and are
- * excluded in the database, so they never count toward the row cap of a
- * month read; they appear only under All months.
- */
+/** The covered report month applies to every stage, including Sent. */
 export function buildReportStageMonthFilter({
   month,
   timezone,
@@ -100,11 +88,5 @@ export function buildReportStageMonthFilter({
   month: string;
   timezone: string;
 }) {
-  const from = startOfDay(`${month}-01`, REPORT_SENT_MONTH_TIMEZONE);
-  const to = startOfDay(
-    `${shiftReportMonth(month, 1)}-01`,
-    REPORT_SENT_MONTH_TIMEZONE
-  );
-  const coverage = buildReportMonthFilter({ month, timezone });
-  return `and(report_stage.neq.sent,or(${coverage})),and(report_stage.eq.sent,delivered_at.gte."${from}",delivered_at.lt."${to}")`;
+  return buildReportMonthFilter({ month, timezone });
 }
