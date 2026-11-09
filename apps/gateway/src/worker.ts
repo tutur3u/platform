@@ -11,6 +11,7 @@ import {
   type Manifest,
   manifest as defaultManifest,
   matchRoute,
+  type RouteMatch,
 } from './manifest';
 
 export interface Env {
@@ -20,6 +21,10 @@ export interface Env {
   WEB_ORIGIN?: string;
   /** Hostname clients use; origin redirects to the origin host map to it. */
   PUBLIC_HOST?: string;
+  /** Comma-separated page groups served by MARKETING_ORIGIN (empty: none). */
+  GATEWAY_MARKETING_GROUPS?: string;
+  /** Origin of the apps/marketing Worker, e.g. https://marketing.tuturuuu.com. */
+  MARKETING_ORIGIN?: string;
   /** `true` honours origin `no-store`/`private` on cacheable routes. */
   GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL?: string;
   [name: string]: string | undefined;
@@ -61,6 +66,28 @@ function resolveOrigin(env: Env, manifest: Manifest, originName: string) {
   } catch {
     return null;
   }
+}
+
+function flaggedGroups(env: Env) {
+  return new Set(
+    (env.GATEWAY_MARKETING_GROUPS ?? '')
+      .split(',')
+      .map((group) => group.trim())
+      .filter(Boolean)
+  );
+}
+
+/** The origin a matched route uses: its flagged origin when the group flag is on and that origin is configured, otherwise its default. */
+function chooseOrigin(env: Env, manifest: Manifest, match: RouteMatch) {
+  if (
+    match.group &&
+    match.flagOrigin &&
+    flaggedGroups(env).has(match.group)
+  ) {
+    const flagged = resolveOrigin(env, manifest, match.flagOrigin);
+    if (flagged) return { url: flagged, flagged: true };
+  }
+  return { url: resolveOrigin(env, manifest, match.origin), flagged: false };
 }
 
 function originRequest(request: Request, origin: URL) {
@@ -183,7 +210,8 @@ export function createHandler(deps: HandlerDeps) {
       return plain(508, 'gateway loop detected');
     }
     const match = matchRoute(new URL(request.url).pathname, deps.manifest);
-    const origin = resolveOrigin(env, deps.manifest, match.origin);
+    const chosen = chooseOrigin(env, deps.manifest, match);
+    const origin = chosen.url;
     if (!origin) return plain(500, 'gateway origin not configured');
 
     if (env.GATEWAY_MODE === 'passthrough') {
@@ -203,7 +231,8 @@ export function createHandler(deps: HandlerDeps) {
     };
     const isPage = match.cache === 'page';
     const head = request.method === 'HEAD';
-    const key = cacheKey(request, localeBucket(request, match, deps.manifest));
+    const locale = localeBucket(request, match, deps.manifest);
+    const key = cacheKey(request, chosen.flagged ? `${locale}|marketing` : locale);
     const cache = await deps.cache();
     const nowMs = deps.now();
 

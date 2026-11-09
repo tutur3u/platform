@@ -173,4 +173,45 @@ describe('gateway handler', () => {
     expect((await t.call('/about')).status).toBe(502);
     expect((await t.call('/login')).status).toBe(502);
   });
+
+  describe('marketing group flags', () => {
+    const FLAGGED: Env = {
+      ...ENV,
+      MARKETING_ORIGIN: 'https://marketing-origin.example',
+      GATEWAY_MARKETING_GROUPS: 'legal, company',
+    };
+    const hostOf = (input: Request) => new URL(input.url).host;
+
+    it('serves a flagged group from the marketing origin', async () => {
+      const t = setup((r) => new Response(hostOf(r)));
+      const response = await t.call('/privacy', undefined, FLAGGED);
+      expect(await response.text()).toBe('marketing-origin.example');
+      const vi = await t.call('/vi/terms', undefined, FLAGGED);
+      expect(await vi.text()).toBe('marketing-origin.example');
+    });
+
+    it('keeps groups without the flag on the web origin', async () => {
+      const t = setup((r) => new Response(hostOf(r)));
+      const response = await t.call('/blog', undefined, FLAGGED);
+      expect(await response.text()).toBe('web-origin.vercel.app');
+      const held = await t.call('/download', undefined, FLAGGED);
+      expect(await held.text()).toBe('web-origin.vercel.app');
+    });
+
+    it('falls back to web when the flag is on but no marketing origin is set', async () => {
+      const t = setup((r) => new Response(hostOf(r)));
+      const response = await t.call('/privacy', undefined, {
+        ...ENV,
+        GATEWAY_MARKETING_GROUPS: 'legal',
+      });
+      expect(await response.text()).toBe('web-origin.vercel.app');
+    });
+
+    it('turning the flag off returns the group to web without a stale cross-origin hit', async () => {
+      const t = setup((r) => new Response(hostOf(r)));
+      await t.call('/privacy', undefined, FLAGGED);
+      const off = await t.call('/privacy', undefined, ENV);
+      expect(await off.text()).toBe('web-origin.vercel.app');
+    });
+  });
 });
