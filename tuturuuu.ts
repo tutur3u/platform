@@ -312,6 +312,12 @@ export const cloudflareProductionTargets = [
     productionWorkflow: `${app}-cloudflare.yaml`,
   })),
   {
+    app: 'shortener',
+    appPath: 'apps/shortener',
+    packageName: '@tuturuuu/shortener',
+    productionWorkflow: 'shortener-cloudflare.yaml',
+  },
+  {
     app: 'cron-control',
     appPath: 'apps/cron-control',
     productionWorkflow: 'cron-control-cloudflare.yaml',
