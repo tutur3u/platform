@@ -55,6 +55,8 @@ export const pages = [
   { pattern: "/[wsId]/link-shortener", file: "src/app/[locale]/(dashboard)/[wsId]/link-shortener/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/memories", file: "src/app/[locale]/(dashboard)/[wsId]/memories/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/metrics", file: "src/app/[locale]/(dashboard)/[wsId]/metrics/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/mind/boards/[boardId]", file: "src/app/[locale]/(dashboard)/[wsId]/mind/boards/[boardId]/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/mind", file: "src/app/[locale]/(dashboard)/[wsId]/mind/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/mira", file: "src/app/[locale]/(dashboard)/[wsId]/mira/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/notes", file: "src/app/[locale]/(dashboard)/[wsId]/notes/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/polls", file: "src/app/[locale]/(dashboard)/[wsId]/polls/page.tsx", defaults: { "locale": "en" } },

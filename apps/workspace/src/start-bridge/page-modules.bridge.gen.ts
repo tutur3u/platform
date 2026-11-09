@@ -440,6 +440,22 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/mind/boards/[boardId]/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/mind/boards/[boardId]/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/mind/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/mind/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/mira/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/mira/page'),
     layouts: [
