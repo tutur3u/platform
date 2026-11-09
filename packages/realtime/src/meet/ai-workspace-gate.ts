@@ -5,13 +5,14 @@
  * in MEET_AI_ENABLED_WORKSPACE_IDS and nothing else denies it. Evaluation
  * order, first match wins:
  *   1. missing workspace id                          -> deny
- *   2. protected config missing/invalid or id listed -> deny
- *   3. MEET_AI_DISABLED present and not 0/false      -> deny every workspace
- *   4. MEET_AI_DISABLED_WORKSPACE_IDS malformed      -> deny every workspace
+ *   2. Easy Center (in code, whatever the env says)  -> deny
+ *   3. protected config missing/invalid or id listed -> deny
+ *   4. MEET_AI_DISABLED present and not 0/false      -> deny every workspace
+ *   5. MEET_AI_DISABLED_WORKSPACE_IDS malformed      -> deny every workspace
  *      or listing the workspace                      -> deny
- *   5. MEET_AI_ENABLED_WORKSPACE_IDS missing, empty,
+ *   6. MEET_AI_ENABLED_WORKSPACE_IDS missing, empty,
  *      non-string, '*' or with any non-UUID entry    -> deny every workspace
- *   6. the workspace id is listed in the allowlist   -> allow
+ *   7. the workspace id is listed in the allowlist   -> allow
  *
  * '*' is NOT an allow-all value. It denies and is logged; an allow-all switch
  * would need its own, separately reviewed opt-in.
@@ -22,6 +23,9 @@ export const MEET_AI_WORKSPACE_DENYLIST_ENV = 'MEET_AI_DISABLED_WORKSPACE_IDS';
 
 export const MEET_AI_PROTECTED_WORKSPACES_ENV =
   'MEET_AI_PROTECTED_WORKSPACE_IDS';
+
+/** Easy Center is never a Meet AI workspace. Checked before any env control. */
+export const EASY_CENTER_WORKSPACE_ID = '42529372-c669-4833-bb32-2cab1f4ffd83';
 
 export type MeetAiGateEnv = object | null | undefined;
 
@@ -88,6 +92,7 @@ export function isMeetAiHardDenied(
 ) {
   const id = typeof wsId === 'string' ? wsId : '';
   if (id.length !== 36 || !UUID.test(id)) return true;
+  if (id === EASY_CENTER_WORKSPACE_ID) return true;
   const protectedRaw = binding(env, MEET_AI_PROTECTED_WORKSPACES_ENV);
   if (typeof protectedRaw !== 'string') return true;
   const protectedIds = workspaceIds(protectedRaw);

@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  EASY_CENTER_WORKSPACE_ID,
   isMeetAiEnabledForWorkspace,
+  isMeetAiHardDenied,
   meetAiEnabledWorkspaceIds,
   resetMeetAiGateWarnings,
 } from './ai-workspace-gate';
@@ -92,6 +94,39 @@ describe('Meet AI workspace gate (default-off, allowlist-only)', () => {
   it('denies a missing or blank workspace id', () => {
     for (const ws of [null, undefined, '', '   '])
       expect(isMeetAiEnabledForWorkspace(ws, allow(WS))).toBe(false);
+  });
+
+  it('denies the real Easy Center id in code, ahead of every env control', () => {
+    const realEc = '42529372-c669-4833-bb32-2cab1f4ffd83';
+    expect(EASY_CENTER_WORKSPACE_ID).toBe(realEc);
+    const protectedElsewhere = {
+      MEET_AI_PROTECTED_WORKSPACE_IDS: OTHER,
+      MEET_AI_DISABLED: 'false',
+      MEET_AI_DISABLED_WORKSPACE_IDS: '',
+    };
+    for (const env of [
+      { ...protectedElsewhere, MEET_AI_ENABLED_WORKSPACE_IDS: realEc },
+      {
+        ...protectedElsewhere,
+        MEET_AI_ENABLED_WORKSPACE_IDS: `${WS},${realEc}`,
+      },
+      {
+        ...protectedElsewhere,
+        MEET_AI_ENABLED_WORKSPACE_IDS: realEc.toUpperCase(),
+      },
+      { MEET_AI_ENABLED_WORKSPACE_IDS: realEc },
+      undefined,
+    ]) {
+      expect(isMeetAiHardDenied(realEc, env)).toBe(true);
+      expect(isMeetAiEnabledForWorkspace(realEc, env)).toBe(false);
+    }
+    // A listed workspace other than Easy Center is still admitted.
+    expect(
+      isMeetAiEnabledForWorkspace(WS, {
+        ...protectedElsewhere,
+        MEET_AI_ENABLED_WORKSPACE_IDS: `${WS},${realEc}`,
+      })
+    ).toBe(true);
   });
 
   it('denies Easy Center by the protected secret even when it is the only allowlisted id', () => {
