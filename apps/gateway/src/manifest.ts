@@ -59,7 +59,11 @@ export function matchRoute(
         locale: null,
       };
     }
-    if (route.localized && split.locale && matchesRoute(route, split.pathname)) {
+    if (
+      route.localized &&
+      split.locale &&
+      matchesRoute(route, split.pathname)
+    ) {
       return {
         routeId: route.id,
         origin: route.origin,

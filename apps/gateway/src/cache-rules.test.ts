@@ -14,7 +14,7 @@ function req(path: string, init: RequestInit = {}) {
   return new Request(`https://tuturuuu.com${path}`, init);
 }
 const reason = (path: string, init?: RequestInit) =>
-  bypassReason(req(path, init), matchRoute(path));
+  bypassReason(req(path, init), matchRoute(new URL(req(path).url).pathname));
 
 describe('bypassReason', () => {
   it('serves anonymous GET and HEAD for public pages from cache', () => {
@@ -52,14 +52,14 @@ describe('bypassReason', () => {
   it('bypasses RSC, range and prefetch requests', () => {
     expect(reason('/about', { headers: { rsc: '1' } })).toBe('rsc');
     expect(reason('/about?_rsc=abc')).toBe('rsc');
-    expect(reason('/about', { headers: { range: 'bytes=0-9' } })).toBe(
-      'range'
-    );
+    expect(reason('/about', { headers: { range: 'bytes=0-9' } })).toBe('range');
   });
 
   it('lets static assets ignore session cookies but not Authorization', () => {
     const path = '/_next/static/a.js';
-    expect(reason(path, { headers: { cookie: 'sb-x-auth-token=1' } })).toBeNull();
+    expect(
+      reason(path, { headers: { cookie: 'sb-x-auth-token=1' } })
+    ).toBeNull();
     expect(reason(path, { headers: { authorization: 'Bearer x' } })).toBe(
       'authorization'
     );
@@ -82,7 +82,9 @@ describe('cache keys', () => {
   });
 
   it('separates locales and real query params', () => {
-    expect(cacheKey(req('/about'), 'en')).not.toBe(cacheKey(req('/about'), 'vi'));
+    expect(cacheKey(req('/about'), 'en')).not.toBe(
+      cacheKey(req('/about'), 'vi')
+    );
     expect(cacheKey(req('/about?a=1'), 'en')).not.toBe(
       cacheKey(req('/about?a=2'), 'en')
     );
@@ -101,31 +103,51 @@ describe('localeBucket', () => {
 
   it('prefers path, then cookie, then Accept-Language, then default', () => {
     expect(bucket('/vi/about')).toBe('vi');
-    expect(bucket('/about', { headers: { cookie: 'NEXT_LOCALE=vi' } })).toBe('vi');
-    expect(bucket('/about', { headers: { 'accept-language': 'vi-VN,en;q=0.5' } })).toBe('vi');
-    expect(bucket('/about', { headers: { 'accept-language': 'fr' } })).toBe('en');
+    expect(bucket('/about', { headers: { cookie: 'NEXT_LOCALE=vi' } })).toBe(
+      'vi'
+    );
+    expect(
+      bucket('/about', { headers: { 'accept-language': 'vi-VN,en;q=0.5' } })
+    ).toBe('vi');
+    expect(bucket('/about', { headers: { 'accept-language': 'fr' } })).toBe(
+      'en'
+    );
     expect(bucket('/about')).toBe('en');
   });
 
   it('does not vary static assets by locale', () => {
-    expect(bucket('/favicon.ico', { headers: { 'accept-language': 'vi' } })).toBe('-');
+    expect(
+      bucket('/favicon.ico', { headers: { 'accept-language': 'vi' } })
+    ).toBe('-');
   });
 });
 
 describe('isStorable', () => {
   const opts = { respectOriginCacheControl: false };
   it('never stores Set-Cookie, non-200 or Vary: * responses', () => {
-    expect(isStorable(new Response('x', { headers: { 'set-cookie': 'a=1' } }), opts).store).toBe(false);
-    expect(isStorable(new Response('x', { status: 404 }), opts).store).toBe(false);
-    expect(isStorable(new Response('x', { status: 302 }), opts).store).toBe(false);
-    expect(isStorable(new Response('x', { headers: { vary: '*' } }), opts).store).toBe(false);
+    expect(
+      isStorable(new Response('x', { headers: { 'set-cookie': 'a=1' } }), opts)
+        .store
+    ).toBe(false);
+    expect(isStorable(new Response('x', { status: 404 }), opts).store).toBe(
+      false
+    );
+    expect(isStorable(new Response('x', { status: 302 }), opts).store).toBe(
+      false
+    );
+    expect(
+      isStorable(new Response('x', { headers: { vary: '*' } }), opts).store
+    ).toBe(false);
     expect(isStorable(new Response('x'), opts).store).toBe(true);
   });
 
   it('honours origin no-store only when asked', () => {
-    const res = () => new Response('x', { headers: { 'cache-control': 'private, no-store' } });
+    const res = () =>
+      new Response('x', { headers: { 'cache-control': 'private, no-store' } });
     expect(isStorable(res(), opts).store).toBe(true);
-    expect(isStorable(res(), { respectOriginCacheControl: true }).store).toBe(false);
+    expect(isStorable(res(), { respectOriginCacheControl: true }).store).toBe(
+      false
+    );
   });
 });
 

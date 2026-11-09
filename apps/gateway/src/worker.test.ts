@@ -22,7 +22,11 @@ function setup(origin: (request: Request) => Response | Promise<Response>) {
   let now = 1_000_000;
   const fetchMock = vi.fn(async (input: Request) => origin(input));
   vi.stubGlobal('fetch', fetchMock);
-  const handle = createHandler({ cache: () => cache, now: () => now, manifest });
+  const handle = createHandler({
+    cache: () => cache,
+    now: () => now,
+    manifest,
+  });
   return {
     cache,
     fetchMock,
@@ -47,7 +51,9 @@ describe('gateway handler', () => {
     expect(await second.text()).toBe('<h1>about</h1>');
     expect(second.headers.has('set-cookie')).toBe(false);
     expect(t.fetchMock).toHaveBeenCalledTimes(1);
-    expect(t.fetchMock.mock.calls[0]?.[0].url).toBe('https://web-origin.vercel.app/about');
+    expect(t.fetchMock.mock.calls[0]?.[0].url).toBe(
+      'https://web-origin.vercel.app/about'
+    );
   });
 
   it('answers HEAD from the GET entry', async () => {
@@ -59,7 +65,9 @@ describe('gateway handler', () => {
   });
 
   it('never stores a response carrying Set-Cookie', async () => {
-    const t = setup(() => new Response('x', { headers: { 'set-cookie': 'a=1; Path=/' } }));
+    const t = setup(
+      () => new Response('x', { headers: { 'set-cookie': 'a=1; Path=/' } })
+    );
     const first = await t.call('/about');
     expect(first.headers.get('x-gateway-cache')).toBe('BYPASS');
     expect(first.headers.get('set-cookie')).toBe('a=1; Path=/');
@@ -68,7 +76,9 @@ describe('gateway handler', () => {
 
   it('bypasses cache for auth cookies and Authorization, keeping them intact', async () => {
     const t = setup(() => new Response('private'));
-    const withCookie = await t.call('/about', { headers: { cookie: 'sb-x-auth-token=1' } });
+    const withCookie = await t.call('/about', {
+      headers: { cookie: 'sb-x-auth-token=1' },
+    });
     expect(withCookie.headers.get('x-gateway-cache')).toBe('BYPASS');
     const sent = t.fetchMock.mock.calls[0]?.[0] as Request;
     expect(sent.headers.get('cookie')).toBe('sb-x-auth-token=1');
@@ -104,7 +114,10 @@ describe('gateway handler', () => {
           ],
         })
     );
-    const res = await t.call('/personal/tasks', { method: 'POST', body: 'payload' });
+    const res = await t.call('/personal/tasks', {
+      method: 'POST',
+      body: 'payload',
+    });
     expect(res.status).toBe(307);
     expect(res.headers.get('location')).toBe('https://tuturuuu.com/login?x=1');
     expect(res.headers.getSetCookie()).toEqual(['a=1', 'b=2']);
@@ -128,7 +141,9 @@ describe('gateway handler', () => {
   it('fails closed without an origin and on loops', async () => {
     const t = setup(() => new Response('x'));
     expect((await t.call('/about', undefined, {})).status).toBe(500);
-    expect((await t.call('/about', { headers: { 'x-gateway-hop': '1' } })).status).toBe(508);
+    expect(
+      (await t.call('/about', { headers: { 'x-gateway-hop': '1' } })).status
+    ).toBe(508);
     expect(t.fetchMock).not.toHaveBeenCalled();
   });
 

@@ -7,7 +7,11 @@ import {
   localeBucket,
   STALE_SECONDS,
 } from './cache-rules';
-import { type Manifest, manifest as defaultManifest, matchRoute } from './manifest';
+import {
+  type Manifest,
+  manifest as defaultManifest,
+  matchRoute,
+} from './manifest';
 
 export interface Env {
   /** `passthrough` is the rollback flag: transparent proxy, no cache. */
@@ -62,15 +66,12 @@ function resolveOrigin(env: Env, manifest: Manifest, originName: string) {
 function originRequest(request: Request, origin: URL) {
   const incoming = new URL(request.url);
   const target = new URL(`${incoming.pathname}${incoming.search}`, origin);
-  const headers = new Headers(request.headers);
-  headers.set(HOP_HEADER, '1');
-  return new Request(target, {
-    method: request.method,
-    headers,
-    body: request.body,
-    redirect: 'manual',
-  });
+  const outgoing = new Request(target, request);
+  outgoing.headers.set(HOP_HEADER, '1');
+  return outgoing;
 }
+
+const NO_FOLLOW = { redirect: 'manual' } as const;
 
 /** Maps an origin-host Location back to the public host; nothing else moves. */
 export function rewriteLocation(
@@ -79,7 +80,12 @@ export function rewriteLocation(
   publicHost: string | undefined
 ) {
   const location = response.headers.get('location');
-  if (!location || !publicHost || response.status < 300 || response.status > 399) {
+  if (
+    !location ||
+    !publicHost ||
+    response.status < 300 ||
+    response.status > 399
+  ) {
     return;
   }
   try {
@@ -115,7 +121,7 @@ async function proxy(
 ) {
   let response: Response;
   try {
-    response = await fetch(originRequest(request, origin));
+    response = await fetch(originRequest(request, origin), NO_FOLLOW);
   } catch {
     return plain(502, 'gateway origin unreachable');
   }
@@ -158,15 +164,14 @@ export function createHandler(deps: HandlerDeps) {
     options: { respectOriginCacheControl: boolean }
   ) {
     try {
-      const response = await fetch(originRequest(request, origin));
+      const response = await fetch(originRequest(request, origin), NO_FOLLOW);
       if (!isStorable(response, options).store) {
         await response.body?.cancel();
         return;
       }
-      await (await deps.cache()).put(
-        new Request(key),
-        storedCopy(response, deps.now())
-      );
+      await (
+        await deps.cache()
+      ).put(new Request(key), storedCopy(response, deps.now()));
     } catch {
       // A failed refresh leaves the stale entry for the next attempt.
     }
@@ -207,12 +212,7 @@ export function createHandler(deps: HandlerDeps) {
         return servedFromCache(cached, 'HIT', storedAt, nowMs, head, isPage);
       }
       if (state === 'stale') {
-        const revalidate = refresh(
-          new Request(request),
-          origin,
-          key,
-          options
-        );
+        const revalidate = refresh(new Request(request), origin, key, options);
         if (ctx) ctx.waitUntil(revalidate);
         else await revalidate;
         return servedFromCache(cached, 'STALE', storedAt, nowMs, head, isPage);
@@ -223,7 +223,7 @@ export function createHandler(deps: HandlerDeps) {
 
     let response: Response;
     try {
-      response = await fetch(originRequest(request, origin));
+      response = await fetch(originRequest(request, origin), NO_FOLLOW);
     } catch {
       return plain(502, 'gateway origin unreachable');
     }
@@ -233,7 +233,10 @@ export function createHandler(deps: HandlerDeps) {
       rewriteLocation(next, origin, env.PUBLIC_HOST);
       return next;
     }
-    const put = cache.put(new Request(key), storedCopy(response.clone(), nowMs));
+    const put = cache.put(
+      new Request(key),
+      storedCopy(response.clone(), nowMs)
+    );
     if (ctx) ctx.waitUntil(put);
     else await put;
     const out = withGatewayHeader(response, 'MISS');
@@ -243,7 +246,9 @@ export function createHandler(deps: HandlerDeps) {
 }
 
 const handler = createHandler({
-  cache: () => (globalThis as unknown as { caches: { default: CacheLike } }).caches.default,
+  cache: () =>
+    (globalThis as unknown as { caches: { default: CacheLike } }).caches
+      .default,
   now: () => Date.now(),
   manifest: defaultManifest,
 });
