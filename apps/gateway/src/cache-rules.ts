@@ -99,7 +99,9 @@ export function localeBucket(
 export function normalizeUrl(url: URL) {
   const params = [...url.searchParams.entries()]
     .filter(([key]) => !TRACKING_PARAMS.test(key))
-    .sort(([a, av], [b, bv]) => (a === b ? av.localeCompare(bv) : a.localeCompare(b)));
+    .sort(([a, av], [b, bv]) =>
+      a === b ? av.localeCompare(bv) : a.localeCompare(b)
+    );
   const query = new URLSearchParams(params).toString();
   return `${url.protocol}//${url.host.toLowerCase()}${url.pathname}${query ? `?${query}` : ''}`;
 }
