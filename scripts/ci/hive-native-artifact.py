@@ -36,6 +36,11 @@ def load():
 
 def main():
     # The shared CLI reads its exact source from APPS_SOURCE_SHA.
+    import sys
+    if "--profile" in sys.argv:
+        sys.argv.remove("--profile")
+        if not sys.argv or sys.argv.pop(0) != "production":
+            raise SystemExit("only the production artifact profile is supported")
     if "HIVE_SOURCE_SHA" in os.environ:
         os.environ["APPS_SOURCE_SHA"] = os.environ["HIVE_SOURCE_SHA"]
     else:

@@ -472,6 +472,13 @@
         "/favicon.ico"
       ]
     },
+    "hive": {
+      "name": "hive",
+      "description": "Hive app",
+      "entryRoute": "/",
+      "loginRoute": "/login",
+      "paths": ["/", "/login", "/robots.txt"]
+    },
     "_default": {
       "name": "default",
       "description": "Fallback configuration for unlisted services",
