@@ -41,11 +41,11 @@ function assertHeaders(response, { asset = false, publicPage = false } = {}) {
   }
 }
 
-for (const unavailable of [false, true]) {
+for (const scenario of ['normal', 'unavailable', 'minute-overflow']) {
+  const unavailable = scenario === 'unavailable';
+  const minuteOverflow = scenario === 'minute-overflow';
   test(
-    unavailable
-      ? 'emitted inventory retains response policy when the abuse-controls store fails'
-      : 'emitted inventory response policy and root host fences',
+    `emitted inventory response policy and root host fences: ${scenario}`,
     {
       timeout: 120000,
     },
@@ -69,7 +69,10 @@ for (const unavailable of [false, true]) {
       await writeFile(envFile, '', { flag: 'wx', mode: 0o600 });
       const registry = join(scratch, 'registry');
       await mkdir(registry);
-      const redis = createResponsePolicyRedisFixture({ unavailable });
+      const redis = createResponsePolicyRedisFixture({
+        unavailable,
+        minuteOverflow,
+      });
       const sdk = require('wrangler');
       const worker = await sdk.unstable_startWorker({
         config: join(scratch, relative(app, configPath)),
@@ -120,45 +123,94 @@ for (const unavailable of [false, true]) {
       });
       t.after(async () => {
         await worker.dispose();
-        console.info(
-          'Local Redis fixture audit:',
-          JSON.stringify(redis.assertRequests())
+        const audit = redis.assertRequests();
+        const commands = audit.calls.flatMap((call) => call.commands);
+        assert.ok(
+          commands.some(
+            ([name, key]) =>
+              name === 'get' &&
+              key === 'infrastructure:edge-abuse-protection-controls'
+          )
         );
+        assert.ok(
+          commands.some(
+            ([name, key]) => name === 'get' && key === 'ip:blocked:127.0.0.1'
+          )
+        );
+        assert.ok(commands.some(([name]) => name === 'mget'));
+        const observedWindows = [
+          ...new Set(
+            commands
+              .filter(([name]) => name === 'evalsha')
+              .map((command) => command[3].split(':')[6])
+          ),
+        ].sort();
+        assert.deepEqual(
+          observedWindows,
+          scenario === 'normal' ? ['day', 'hour', 'minute'] : ['minute']
+        );
+        if (unavailable) {
+          assert.ok(audit.calls.every(({ status }) => status === 503));
+          assert.deepEqual(audit.counters, {});
+        }
+        if (minuteOverflow)
+          assert.deepEqual(Object.values(audit.counters), [61]);
+        console.info('Local Redis fixture audit:', JSON.stringify(audit));
       });
       await worker.ready;
       const origin = await worker.url;
-      const get = (host, path, method = 'GET') =>
-        new Promise((resolve, reject) => {
-          const request = httpRequest(
-            {
-              hostname: origin.hostname,
-              port: origin.port,
-              path,
-              method,
-              headers: { host },
-            },
-            (response) => {
-              const bytes = [];
-              response.on('data', (part) => bytes.push(part));
-              response.on('error', reject);
-              response.on('end', () =>
-                resolve({
-                  status: response.statusCode,
-                  headers: response.headers,
-                  body: Buffer.concat(bytes),
-                })
-              );
-            }
-          );
-          request.on('error', reject);
-          request.setTimeout(15000, () =>
-            request.destroy(new Error('Runtime response deadline'))
-          );
-          request.end();
-        });
+      const get = async (host, path, method = 'GET') => {
+        const finish = redis.beginRequest();
+        try {
+          return await new Promise((resolve, reject) => {
+            const request = httpRequest(
+              {
+                hostname: origin.hostname,
+                port: origin.port,
+                path,
+                method,
+                headers: { host },
+              },
+              (response) => {
+                const bytes = [];
+                response.on('data', (part) => bytes.push(part));
+                response.on('error', reject);
+                response.on('end', () =>
+                  resolve({
+                    status: response.statusCode,
+                    headers: response.headers,
+                    body: Buffer.concat(bytes),
+                  })
+                );
+              }
+            );
+            request.on('error', reject);
+            request.setTimeout(15000, () =>
+              request.destroy(new Error('Runtime response deadline'))
+            );
+            request.end();
+          });
+        } finally {
+          finish();
+        }
+      };
+      if (minuteOverflow) {
+        const limited = await get(hosts[0], '/api/build-info');
+        assert.equal(limited.status, 429);
+        assertHeaders(limited);
+        assert.equal(limited.headers['x-ratelimit-window'], 'minute');
+        assert.equal(limited.headers['x-ratelimit-limit'], '60');
+        assert.equal(limited.headers['x-ratelimit-remaining'], '0');
+        assert.equal(
+          limited.headers['x-proxy-block-reason'],
+          'route-rate-limit'
+        );
+        assert.ok(Number(limited.headers['retry-after']) > 0);
+        return;
+      }
       if (unavailable) {
-        // Store failures retain the guard's enabled defaults; an anonymous
-        // request without an IP/session has no per-identity limiter to apply.
+        // Store failures retain enabled defaults; downstream lookup/limiter
+        // failures follow the guard's existing availability fallback.
         const info = await get(hosts[0], '/api/build-info');
         assert.equal(info.status, 200);
         assertHeaders(info);
