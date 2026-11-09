@@ -21,6 +21,7 @@ const EXPECTED = {
   '/login': 'https://rewise.tuturuuu.com/',
 };
 const SYNTHETIC_SECRETS = {
+  ABUSE_GUARD: {},
   ABUSE_GUARD_KEY_PEPPER: 'synthetic-smoke-only',
   ABUSE_GUARD_FAMILIES: 'proxy',
   NEXT_PUBLIC_SUPABASE_URL: 'https://rewise-smoke.supabase.invalid',
@@ -53,10 +54,23 @@ async function startWorker(t, secrets) {
         value: 'https://central.invalid',
       },
       ...Object.fromEntries(
-        Object.entries(secrets).map(([name, value]) => [
-          name,
-          { type: 'plain_text', value },
-        ])
+        Object.entries(secrets).flatMap(([name, value]) =>
+          name === 'ABUSE_GUARD'
+            ? [
+                [
+                  name,
+                  {
+                    type: 'fetcher',
+                    fetcher: async () =>
+                      new Response('{"error":"guard_unavailable"}', {
+                        status: 503,
+                        headers: { 'content-type': 'application/json' },
+                      }),
+                  },
+                ],
+              ]
+            : [[name, { type: 'plain_text', value }]]
+        )
       ),
     },
     build: { bundle: false, processEntrypoint: false },

@@ -165,6 +165,14 @@ test(
             TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-smoke-only',
           }).map(([name, value]) => [name, { type: 'plain_text', value }])
         ),
+        ABUSE_GUARD: {
+          type: 'fetcher',
+          fetcher: async () =>
+            new Response('{"error":"guard_unavailable"}', {
+              status: 503,
+              headers: { 'content-type': 'application/json' },
+            }),
+        },
         INTERNAL_WEB_API_ORIGIN: {
           type: 'plain_text',
           value: 'https://central.invalid',

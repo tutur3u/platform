@@ -135,6 +135,14 @@ test(
           value: fixtureSecret,
         },
         SUPABASE_SECRET_KEY: { type: 'secret_text', value: fixtureSecret },
+        ABUSE_GUARD: {
+          type: 'fetcher',
+          fetcher: async () =>
+            new Response('{"error":"guard_unavailable"}', {
+              status: 503,
+              headers: { 'content-type': 'application/json' },
+            }),
+        },
         ABUSE_GUARD_KEY_PEPPER: { type: 'secret_text', value: fixtureSecret },
         ABUSE_GUARD_FAMILIES: { type: 'plain_text', value: 'proxy' },
         NEXT_PUBLIC_SUPABASE_URL: {
