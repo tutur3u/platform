@@ -330,7 +330,7 @@ export function SelfPreviewPip({
           data-dragging={drag ? 'true' : undefined}
           data-revealed={revealed ? 'true' : undefined}
           className={cn(
-            'group/pip pointer-events-auto absolute top-0 left-0 isolate touch-none select-none overflow-hidden rounded-2xl bg-background shadow-xl ring-1 ring-border outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+            'group/pip pointer-events-auto absolute top-0 left-0 isolate [container-type:size] touch-none select-none overflow-hidden rounded-2xl bg-background shadow-xl ring-1 ring-border outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             drag
               ? 'cursor-grabbing shadow-2xl'
               : 'cursor-grab motion-safe:transition-[transform,width,height] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.2,0.9,0.3,1.08)]',

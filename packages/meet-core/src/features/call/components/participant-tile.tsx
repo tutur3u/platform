@@ -191,10 +191,14 @@ function ParticipantTileImpl({
           )}
         >
           {MEETING_APP === 'parley' && participant.assistantAudio ? (
-            <LiveAvatar size={floating ? 40 : 120} />
+            <LiveAvatar size={floating ? 48 : 120} />
           ) : (
             <Avatar
-              className={floating ? 'size-10 text-sm' : 'size-20 text-xl'}
+              className={
+                floating
+                  ? 'size-[clamp(1.75rem,calc((100cqh-1.75rem)*0.75),5rem)] text-[clamp(0.75rem,16cqh,1.25rem)]'
+                  : 'size-20 text-xl'
+              }
             >
               <AvatarImage src={participant.avatarUrl} alt="" />
               <AvatarFallback>
