@@ -43,6 +43,11 @@ const source = sourceFiles(path.join(root, 'src'))
 const quoted = (namespace) =>
   new RegExp(`['"\`]${namespace.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}[.'"\`]`, 'u');
 
+// Namespaces read as properties of the imported catalog (`en.legalRedesign`).
+const propertyNamespaces = new Set(
+  [...source.matchAll(/\b(?:en|vi)\.([A-Za-z_][\w-]*)/gu)].map((m) => m[1])
+);
+
 const check = process.argv.includes('--check');
 let stale = false;
 
@@ -52,7 +57,9 @@ for (const locale of ['en', 'vi']) {
   );
   const derived = {};
   for (const namespace of Object.keys(catalog).sort())
-    if (SHELL_NAMESPACES.includes(namespace) || quoted(namespace).test(source))
+    if (SHELL_NAMESPACES.includes(namespace) ||
+      propertyNamespaces.has(namespace) ||
+      quoted(namespace).test(source))
       derived[namespace] = catalog[namespace];
   for (const namespace of SHELL_NAMESPACES)
     if (!(namespace in derived))

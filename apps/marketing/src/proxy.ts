@@ -9,7 +9,7 @@ const intlMiddleware = createIntlMiddleware(routing);
  * Anonymous marketing pages only: locale negotiation, no session reads, no
  * auth cookies. Everything under `/api` belongs to the web app.
  */
-export function proxy(request: NextRequest): NextResponse {
+export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) return NextResponse.next();
   return intlMiddleware(request) as NextResponse;
 }
