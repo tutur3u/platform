@@ -290,7 +290,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | --- | --- |
 | Worker | `tuturuuu-git` |
 | Hosts | git.tuturuuu.com |
-| Artifact | git-cloudflare.yaml, job git-cutover-artifact |
+| Artifact | git-cloudflare.yaml, job git-cutover-artifact (`VITE_GIT_NATIVE_PROFILE=production`, sealed by `scripts/ci/git-native-artifact.py`; no routes) |
 | Vercel rollback pin | dpl_6ReHrAjbW7ahNKyL1ssgDZEdGeq4 |
 | Packet | `git-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs git https://git.tuturuuu.com` |
