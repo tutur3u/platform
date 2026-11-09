@@ -8,22 +8,13 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@tuturuuu/types/*": [
-        "../../packages/types/src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@tuturuuu/types/*": ["../../packages/types/src/*"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": [
-    "src",
-    ".next/types/**/*.ts",
-    "global.d.ts",
-    "messages"
-  ],
+  "include": ["src", ".next/types/**/*.ts", "global.d.ts", "messages"],
   "exclude": [
     "node_modules",
     "dist",

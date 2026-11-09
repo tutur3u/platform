@@ -29,7 +29,12 @@ interface WorkerContext {
 type ApiEntry = typeof import('../src/start-bridge/api-entry');
 
 // Robots policy: this app's entry in packages/utils/src/seo-policy.json.
-const seoPolicy = {"origin":"https://learn.tuturuuu.com","localePrefix":"never","publicPaths":[""],"publicPatterns":[]};
+const seoPolicy = {
+  origin: 'https://learn.tuturuuu.com',
+  localePrefix: 'never',
+  publicPaths: [''],
+  publicPatterns: [],
+};
 
 // One artifact: the subdomain root and the tuturuuu.com/learn mount.
 const mounts = {
