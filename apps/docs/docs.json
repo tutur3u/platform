@@ -197,6 +197,7 @@
                   "build/devops/playground-cutover-packet",
                   "build/devops/contacts-start-candidate",
                   "build/devops/web-native-staging",
+                  "build/devops/learn-start-void",
                   "build/devops/rewise-start-void",
                   "build/devops/apps-viteplus-cloudflare",
                   "build/devops/start-bridge",
