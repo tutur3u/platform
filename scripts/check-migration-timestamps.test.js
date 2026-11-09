@@ -258,3 +258,54 @@ test('the exemption cannot match by prefix, glob or substring', () => {
     false
   );
 });
+
+function runPrChecker(repo) {
+  return spawnSync(process.execPath, [SCRIPT], {
+    cwd: repo,
+    encoding: 'utf8',
+    env: { ...process.env, ...PR_ENV },
+  });
+}
+
+test('CLI accepts an inherited future migration without hiding new migration checks', (t) => {
+  const repo = setupRepo(t);
+  writeMigration(repo, '29990101000000_inherited.sql');
+  commitAll(repo, 'future base fact');
+  git(repo, 'push', '--quiet', 'origin', 'HEAD:main');
+  fs.writeFileSync(path.join(repo, 'README.md'), 'unrelated change\n');
+  commitAll(repo, 'unrelated PR');
+  const result = runPrChecker(repo);
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('CLI rejects a newly added future migration', (t) => {
+  const repo = setupRepo(t);
+  writeMigration(repo, '29990101000000_new.sql');
+  commitAll(repo, 'future addition');
+  const result = runPrChecker(repo);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /29990101000000_new.sql/);
+});
+
+test('CLI rejects a renamed future migration', (t) => {
+  const repo = setupRepo(t);
+  git(
+    repo,
+    'mv',
+    inDir('20260105000000_second.sql'),
+    inDir('29990101000000_renamed.sql')
+  );
+  commitAll(repo, 'future rename');
+  const result = runPrChecker(repo);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /29990101000000_renamed.sql/);
+});
+
+test('CLI still rejects a new migration below the latest base version', (t) => {
+  const repo = setupRepo(t);
+  writeMigration(repo, '20260103000000_late.sql');
+  commitAll(repo, 'out of order');
+  const result = runPrChecker(repo);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /do not sort after/);
+});
