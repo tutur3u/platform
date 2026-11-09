@@ -20,6 +20,8 @@
     "/legal/dpa": 200,
     "/about": 200,
     "/pricing": 200,
+    "/products": 200,
+    "/products/tasks": 200,
     "/privacy": 200,
     "/security": 200,
     "/security/bug-bounty": 200,
