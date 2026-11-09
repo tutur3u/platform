@@ -9,13 +9,16 @@ import os
 from pathlib import Path
 
 WORKER = "tuturuuu-teach-vite-staging"
+PRODUCTION_WORKER = "tuturuuu-teach"
 PUBLIC_FILES = (
     "robots.txt",
     "sitemap.xml",
 )
 
 
-def load():
+def load(profile="staging"):
+    if profile not in ("staging", "production"):
+        raise ValueError("unknown Teach artifact profile")
     path = Path(__file__).with_name("apps-native-artifact.py")
     spec = importlib.util.spec_from_file_location("teach_native_artifact_base", path)
     module = importlib.util.module_from_spec(spec)
@@ -30,16 +33,41 @@ def load():
     module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
     module.RECEIPT = "teach-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
+    if profile == "production":
+        module.IDENTITY = {
+            **module.IDENTITY,
+            "name": PRODUCTION_WORKER,
+            "workers_dev": False,
+            "vars": {
+                "TUTURUUU_NOINDEX": "0",
+                "NODE_ENV": "production",
+                "TUTURUUU_REQUIRE_SECRETS": "1",
+                "NEXT_PUBLIC_APP_URL": "https://teach.tuturuuu.com",
+                "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+            },
+        }
+        module.NORMALIZED_DEFAULTS = {
+            **module.NORMALIZED_DEFAULTS,
+            "topLevelName": PRODUCTION_WORKER,
+            "preview_urls": False,
+            "upload_source_maps": False,
+        }
+        module.RECEIPT = "teach-production-artifact.json"
     return module
 
 
 def main():
+    import sys
+    profile = "staging"
+    if len(sys.argv) > 1 and sys.argv[1] == "--profile":
+        profile = sys.argv[2]
+        del sys.argv[1:3]
     # The shared CLI reads its exact source from APPS_SOURCE_SHA.
     if "TEACH_SOURCE_SHA" in os.environ:
         os.environ["APPS_SOURCE_SHA"] = os.environ["TEACH_SOURCE_SHA"]
     else:
         os.environ.pop("APPS_SOURCE_SHA", None)
-    load().main()
+    load(profile).main()
 
 
 if __name__ == "__main__":
