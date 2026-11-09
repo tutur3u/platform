@@ -16,7 +16,9 @@ export function createEmailServiceMailer(
   return {
     async send(input): Promise<MailerOutcome> {
       service ??= load();
-      const result = await (await service).sendInternal({
+      const result = await (
+        await service
+      ).sendInternal({
         recipients: { to: [input.to] },
         content: {
           subject: input.subject,
