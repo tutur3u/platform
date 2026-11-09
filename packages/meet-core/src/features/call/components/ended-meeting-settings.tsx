@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Settings2 } from '@tuturuuu/icons';
 import { getMeetAiState } from '@tuturuuu/internal-api';
-import { Button } from '@tuturuuu/ui/button';
+import { Button, type ButtonProps } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -20,8 +20,12 @@ export function EndedMeetingSettings({
   wsId,
   meetingId,
   canManage,
+  variant = 'outline',
+  size,
 }: {
   canManage: boolean;
+  variant?: ButtonProps['variant'];
+  size?: ButtonProps['size'];
   wsId: string;
   meetingId: string;
 }) {
@@ -36,7 +40,7 @@ export function EndedMeetingSettings({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant={variant} size={size}>
           <Settings2 className="size-4" />
           {t('settings_title')}
         </Button>

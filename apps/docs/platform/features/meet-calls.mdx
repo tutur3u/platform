@@ -950,6 +950,29 @@ raw provider usage and null cost/token fields; cost totals and breakdowns render
 only for the room admin. Sharing permission is rechecked on every notes request.
 
 
+### Self preview and ended screen
+
+Scope: the in-call view and the ended-meeting screen in Meet and Parley.
+
+- Once the stage has other feeds (a participant, Mira, a screen share, or an open
+  document or programming panel), the local camera renders as a floating card
+  inside the stage. Alone in a room, it stays the full-size tile.
+- The card drags with a pointer (mouse or touch), snaps to the nearest corner on
+  release, and respects safe-area insets so it never covers the header or the
+  control bar. Arrow keys move the focused card between corners. Size cycles
+  through S/M/L from the card control or a pinch, and the card collapses into an
+  edge pill that restores on click. Corner, size and hidden state persist per
+  device in `localStorage` under `meet.self-preview`; unavailable storage falls
+  back to the defaults (bottom-right, medium, visible). Snap animations honour
+  `prefers-reduced-motion`.
+- The ended screen has one primary action: View notes and transcript when the
+  viewer may read them, otherwise Back to Meet. Restore, Meeting settings and
+  Back to Meet sit in a compact secondary row. The share-notes row renders only
+  for room admins; visibility rules are unchanged.
+
+Regression coverage: `pip-layout.test.ts`, `self-preview-pip.test.tsx`,
+`call-ended.test.tsx`.
+
 ## Room settings, recordings, and devices
 
 The in-call settings dialog contains audio/video input, supported audio output,

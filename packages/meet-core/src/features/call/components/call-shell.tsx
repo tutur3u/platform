@@ -2,11 +2,11 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   CalendarDays,
+  Captions,
   Circle,
   Code2,
   FileText,
   Leaf,
-  Sparkles,
   Users,
 } from '@tuturuuu/icons';
 import { MeetLivePanel } from '@tuturuuu/meet-core/features/live-assistant/live-panel';
@@ -48,6 +48,7 @@ import { CollaborationStageLayout } from './collaboration-stage-layout';
 import { type CallPanel, ControlBar, ControlButton } from './control-bar';
 import { CopyInvite } from './copy-invite';
 import { DocumentPanel } from './document-panel';
+import { FloatingSelfCamera } from './floating-self-camera';
 import { CallConnectionNotice, JoinOutcome } from './join-outcome';
 import { LeaveDialog } from './leave-dialog';
 import { MeetingActionHint } from './meeting-action-hint';
@@ -211,6 +212,10 @@ function CallShellContent({
   const self = selectSelf(state);
   const others = useMemo(() => selectOthers(state), [state]);
   const participants = self ? [self, ...others] : others;
+  const stageHasFeeds =
+    others.length > 0 || !!state.liveAssistant || !!room.screenStream;
+  const selfFloating =
+    !!self && (stageHasFeeds || showProgramming || showDocument);
   const backHref = leaveHref.includes('/meetings/')
     ? `${leaveHref.split('/meetings/')[0]}/meetings`
     : '/';
@@ -369,7 +374,7 @@ function CallShellContent({
                 setPanel(null);
               }}
             >
-              <Sparkles className="size-3.5" />
+              <Captions className="size-3.5" />
               {aiT('title')}
             </Button>
           </MeetingActionHint>
@@ -484,18 +489,28 @@ function CallShellContent({
               ) : null
             }
             stage={
-              <CallStage
-                onChat={askMira}
-                audioSuppressed={sharedAudio.shared}
-                outputDeviceId={outputDeviceId}
-                room={room}
-                layout={layout}
-                compact={showProgramming || showDocument}
-                focus={focus}
-                onFocus={focusFeed}
-              />
+              !stageHasFeeds && selfFloating ? null : (
+                <CallStage
+                  hideSelfCamera={selfFloating}
+                  onChat={askMira}
+                  audioSuppressed={sharedAudio.shared}
+                  outputDeviceId={outputDeviceId}
+                  room={room}
+                  layout={layout}
+                  compact={showProgramming || showDocument}
+                  focus={focus}
+                  onFocus={focusFeed}
+                />
+              )
             }
           />
+          {selfFloating && self && (
+            <FloatingSelfCamera
+              participant={self}
+              stream={room.localStream}
+              handRaised={isHandRaised(state, self.userId)}
+            />
+          )}
           <ReactionOverlay state={state} />
         </main>
         {showPersonalTools && MEETING_APP === 'meet' && (
