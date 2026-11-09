@@ -379,7 +379,7 @@ export function SatelliteSettingsDialogShell({
   return (
     <DialogContent
       presentation="fullscreen"
-      className="settings-surface flex-col"
+      className="settings-surface flex-col md:inset-8 md:h-auto md:max-h-none md:w-auto md:rounded-2xl md:border md:shadow-2xl"
       onKeyDown={handleKeyboardNavigation}
       showCloseButton={false}
     >
@@ -390,9 +390,9 @@ export function SatelliteSettingsDialogShell({
       <SidebarProvider className="flex h-full min-h-0 items-start">
         <Sidebar
           collapsible="none"
-          className="hidden h-full w-64 flex-col border-r bg-muted/30 md:flex"
+          className="hidden h-full w-64 shrink-0 flex-col border-r bg-muted/20 md:flex"
         >
-          <SidebarHeader className="z-10 gap-2 p-3 pb-0">
+          <SidebarHeader className="sticky top-0 z-10 gap-3 border-b bg-background p-4">
             <DialogClose asChild>
               <Button
                 type="button"
@@ -408,6 +408,7 @@ export function SatelliteSettingsDialogShell({
               <SidebarInput
                 ref={desktopSearchInputRef}
                 placeholder={t('settings.search_settings_placeholder')}
+                aria-label={t('settings.search_settings_placeholder')}
                 className="h-9 bg-background pl-8.5"
                 value={searchQuery}
                 onChange={(e) => updateSearchQuery(e.target.value)}
@@ -415,7 +416,19 @@ export function SatelliteSettingsDialogShell({
               />
             </div>
           </SidebarHeader>
-          <SidebarContent className="gap-4 overflow-y-auto p-3">
+          <SidebarContent
+            role="navigation"
+            aria-label={t('common.settings')}
+            className="gap-5 overscroll-contain overflow-y-auto p-3"
+          >
+            {filteredNavItems.length === 0 && (
+              <p
+                role="status"
+                className="px-2 py-4 text-muted-foreground text-sm"
+              >
+                {t('common.no_results_found')}
+              </p>
+            )}
             {filteredNavItems.map((group, index) => (
               <SettingsSidebarGroup
                 activeTab={activeTab}
@@ -428,7 +441,7 @@ export function SatelliteSettingsDialogShell({
             ))}
           </SidebarContent>
         </Sidebar>
-        <main className="flex h-full flex-1 flex-col overflow-hidden bg-background">
+        <main className="flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-background">
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6">
             <div className="flex flex-1 items-center gap-2 md:flex-initial">
               {isMobile && (
@@ -540,7 +553,7 @@ export function SatelliteSettingsDialogShell({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="shrink-0 text-muted-foreground md:hidden"
+                className="ml-auto shrink-0 text-muted-foreground"
               >
                 <X
                   className="h-4 w-4"
@@ -550,7 +563,7 @@ export function SatelliteSettingsDialogShell({
               </Button>
             </DialogClose>
           </header>
-          <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6 md:px-10 md:py-10">
+          <div className="flex min-h-0 flex-1 flex-col overscroll-contain overflow-y-auto px-4 py-6 md:px-10 md:py-10">
             <div className="mx-auto w-full max-w-3xl space-y-8">
               {showContentHeader && (
                 <div className="space-y-1">

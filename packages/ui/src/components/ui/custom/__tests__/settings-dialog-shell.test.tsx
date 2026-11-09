@@ -109,7 +109,7 @@ describe('SettingsDialogShell keyboard navigation', () => {
     }));
   });
 
-  it('renders the fullscreen settings sheet chrome', () => {
+  it('renders an inset desktop dialog with fullscreen mobile defaults', () => {
     renderShell();
 
     const dialog = screen.getByRole('dialog');
@@ -118,7 +118,13 @@ describe('SettingsDialogShell keyboard navigation', () => {
     expect(dialog).toHaveClass('h-dvh');
     expect(dialog).toHaveClass('w-screen');
     expect(dialog).toHaveClass('bg-background');
-    expect(dialog).toHaveClass('rounded-none');
+    expect(dialog).toHaveClass(
+      'rounded-none',
+      'md:inset-8',
+      'md:rounded-2xl',
+      'md:h-auto',
+      'md:w-auto'
+    );
     expect(className).not.toMatch(/animate-in|fade-in|zoom-in|slide-in/);
     expect(
       screen.getAllByRole('button', { name: 'settings.back_to_app' }).length

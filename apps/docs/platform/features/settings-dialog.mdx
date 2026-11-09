@@ -5,9 +5,25 @@ description: 'Shared account tabs, settings deep links, URL state and history be
 audience: users
 ---
 
-Every app opens account and app settings in one fullscreen settings dialog. Its
+Every app opens account and app settings in one shared settings dialog. Its
 open state and active tab live in the URL, so links can be shared, the page can
 be refreshed, and browser Back works.
+
+## Layout and navigation
+
+The shared shell fills mobile screens. At desktop widths (768px and above), it
+has a 32px inset, rounded corners, and a backdrop. The desktop sidebar keeps
+search visible while groups scroll independently of the panel. Selected tabs
+have a visible active state and an accessible current-page marker. Closing,
+search shortcuts, URL state, and mobile navigation retain their existing behavior.
+The shell regression suite lives in
+`packages/ui/src/components/ui/custom/__tests__/settings-dialog-shell.test.tsx`.
+
+Board layout uses always-visible status headings and divided list rows. Status
+headings do not collapse. Empty statuses retain a compact hint and an Add list
+action. Drag handles support pointer and keyboard reordering; Edit list provides
+a keyboard-accessible status selector, including empty target statuses. Ordering
+coverage lives in `packages/tasks-ui/src/tu-do/shared/board-layout-ordering.test.ts`.
 
 ## URL contract
 

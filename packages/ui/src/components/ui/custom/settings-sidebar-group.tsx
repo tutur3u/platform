@@ -41,6 +41,7 @@ export function SettingsSidebarGroup({
             <SidebarMenuButton
               disabled={item.disabled}
               isActive={activeTab === item.name}
+              aria-current={activeTab === item.name ? 'page' : undefined}
               onClick={() => {
                 if (!item.disabled) {
                   onSelect(item.name);
@@ -51,7 +52,7 @@ export function SettingsSidebarGroup({
                 item.disabled &&
                   'cursor-not-allowed opacity-70 disabled:opacity-70',
                 activeTab === item.name
-                  ? 'bg-accent font-medium text-accent-foreground'
+                  ? 'bg-accent font-semibold text-accent-foreground ring-1 ring-border'
                   : 'text-foreground/80 hover:bg-accent/60 hover:text-accent-foreground'
               )}
             >
@@ -71,7 +72,7 @@ export function SettingsSidebarGroup({
     return (
       <SidebarGroup className="p-0">
         {!labelRepeatsOnlyItem && (
-          <SidebarGroupLabel className="h-7 text-muted-foreground">
+          <SidebarGroupLabel className="h-7 px-2 font-medium text-muted-foreground text-xs">
             {group.label}
           </SidebarGroupLabel>
         )}

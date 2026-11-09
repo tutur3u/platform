@@ -95,6 +95,7 @@ export function BoardLayoutListItem({
     isDragging,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
   } = useSortable({ id: list.id });
@@ -107,40 +108,39 @@ export function BoardLayoutListItem({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        'group flex items-center gap-3 rounded-xl border border-l-4 bg-background/90 p-3 shadow-xs transition-[border-color,box-shadow,opacity,transform]',
-        boardListColorClasses[listColor],
-        isDragging
-          ? 'relative z-20 scale-[1.01] opacity-60 shadow-lg'
-          : 'hover:border-primary/30 hover:shadow-sm'
+        'group flex min-h-14 items-center gap-2 px-1 py-2 transition-colors',
+        isDragging ? 'relative z-20 bg-accent opacity-60' : 'hover:bg-muted/40'
       )}
     >
       <button
+        ref={setActivatorNodeRef}
         type="button"
         {...attributes}
         {...listeners}
-        className="flex size-8 shrink-0 cursor-grab items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground active:cursor-grabbing"
+        className="flex size-8 shrink-0 touch-none cursor-grab items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground active:cursor-grabbing"
       >
         <span className="sr-only">{listDisplayName}</span>
         <GripVertical className="size-4" />
       </button>
 
-      <div
+      <span
+        aria-hidden="true"
         className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-lg border',
-          boardStatusConfig[status].bgColor,
-          boardStatusConfig[status].borderColor
+          'h-5 shrink-0 border-l-2',
+          boardListColorClasses[listColor]
         )}
-      >
-        <StatusIcon className={cn('size-4', boardStatusConfig[status].color)} />
-      </div>
-
+      />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-sm">{listDisplayName}</p>
-        <Badge className="mt-1 h-5 px-1.5 text-[10px]" variant="outline">
-          {statusLabels[status]}
-        </Badge>
       </div>
 
+      <Badge
+        className="shrink-0 gap-1 border-0 text-muted-foreground"
+        variant="outline"
+      >
+        <StatusIcon className={cn('size-3', boardStatusConfig[status].color)} />
+        {statusLabels[status]}
+      </Badge>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
