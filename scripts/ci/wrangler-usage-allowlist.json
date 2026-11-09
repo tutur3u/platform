@@ -897,12 +897,12 @@
     "apps/mastermind/cloudflare/native-built-worker.acceptance.mjs": {
       "gap": "void-emitted-runtime",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7675",
-        "reason": "REV-7675: a second local unstable_startWorker refuses startup when the coordination secret binding is absent. Remote is disabled and provider auth is denied. The void-emitted runtime gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/pull/7901",
+        "reason": "MM-7901-CURRENT-BYTES: retain exactly two local unstable_startWorker calls for sealed Void-config acceptance and missing-coordination-secret refusal, with bundle/processEntrypoint disabled, synthetic bindings, loopback-only execution, intercepted fixture JWKS/permission responses, provider auth denied, registered disposal and the existing 120-second test deadline. No SDK build, publication or deployment is admitted. Remove this entry when a qualified cf/Vite harness preserves both controls with the saved emitted config and these isolation boundaries, and both Wrangler SDK calls are removed."
       },
       "lines": 2,
       "uses": 2,
-      "digest": "0237422907598ee7a39a10dc713e863717d472bb08d390ffd18cd4500dc1ba87"
+      "digest": "1189c0451506a0cb5d5ae11dbe49f32222dec6c05bc8fc2724d4b1d211b8a4de"
     },
     "apps/mastermind/package.json": {
       "gap": "void-emitted-runtime",
