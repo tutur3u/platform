@@ -47,6 +47,7 @@ export const pages = [
   { pattern: "/solutions/restaurants", file: "src/app/[locale]/(marketing)/solutions/restaurants/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/solutions/retail", file: "src/app/[locale]/(marketing)/solutions/retail/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/terms", file: "src/app/[locale]/(marketing)/terms/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/women-in-tech", file: "src/app/[locale]/(marketing)/women-in-tech/page.tsx", defaults: { "locale": "en" } },
 ] as const satisfies readonly BridgePage[];
 
 export type PagePattern = (typeof pages)[number]['pattern'];

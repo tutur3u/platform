@@ -428,4 +428,13 @@ export const pageModules = {
       () => import('../app/[locale]/(marketing)/terms/layout'),
     ],
   },
+  'src/app/[locale]/(marketing)/women-in-tech/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/women-in-tech/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/women-in-tech/layout'),
+    ],
+  },
 } satisfies Record<PageFile, BridgePageModules>;
