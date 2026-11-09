@@ -3877,6 +3877,28 @@
       "title": "Find the right workspace for your team"
     }
   },
+  "legalRedesign": {
+    "added": "Added",
+    "all": "All documents",
+    "changes": "What changed",
+    "compare": "Open the full redline",
+    "contents": "Contents",
+    "effective": "Effective",
+    "exact": "Show the exact wording change",
+    "from": "In force",
+    "language": "Language",
+    "navigation": "Legal documents",
+    "notice": "Not yet in effect",
+    "print": "Print or save as PDF",
+    "published": "Published",
+    "removed": "Removed",
+    "revised": "Revised",
+    "skip": "Skip to legal content",
+    "summary": "Summary, not legal text",
+    "to": "Proposed",
+    "unchanged": "Unchanged",
+    "version": "Version"
+  },
   "login": {
     "account_switch_failed": "Could not switch account.",
     "account_switch_requires_reauth": "That account's saved sign-in has expired. Choose \"Use another account\" to sign into it again.",
