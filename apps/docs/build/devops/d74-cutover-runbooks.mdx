@@ -231,3 +231,14 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Smoke | `node scripts/cutover-smoke.mjs hive https://hive.tuturuuu.com` |
 - infrastructure, mind, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
 - learn, chat, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
+
+## 16. git
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-git` |
+| Hosts | git.tuturuuu.com |
+| Artifact | git-cloudflare.yaml, job git-cutover-artifact |
+| Vercel rollback pin | dpl_6ReHrAjbW7ahNKyL1ssgDZEdGeq4 |
+| Packet | `git-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs git https://git.tuturuuu.com` |
