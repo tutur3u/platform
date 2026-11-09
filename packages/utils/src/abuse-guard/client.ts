@@ -70,7 +70,7 @@ function isAbortError(error: unknown) {
 }
 
 /**
- * Signed HTTPS transport for Vercel-hosted callers. Throws before anything is
+ * Signed HTTPS transport for server callers. Throws before anything is
  * signed or sent when the origin is not HTTPS (loopback HTTP excepted).
  */
 export function createHttpGuardTransport(options: {
@@ -103,7 +103,7 @@ export function createHttpGuardTransport(options: {
       response = await fetchImpl(endpoint, {
         method: 'POST',
         body,
-        redirect: 'error',
+        redirect: 'manual',
         headers: {
           'content-type': 'application/json',
           'x-guard-ts': timestamp,
@@ -115,6 +115,13 @@ export function createHttpGuardTransport(options: {
       throw new AbuseGuardUnavailableError(
         isAbortError(error) ? 'timeout' : 'network'
       );
+    }
+
+    if (
+      response.type === 'opaqueredirect' ||
+      (response.status >= 300 && response.status < 400)
+    ) {
+      throw new AbuseGuardUnavailableError('network');
     }
 
     let payload: unknown;
