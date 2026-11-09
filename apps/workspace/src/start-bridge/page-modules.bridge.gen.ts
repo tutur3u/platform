@@ -193,6 +193,14 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/memories/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/memories/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/notes/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/notes/page'),
     layouts: [

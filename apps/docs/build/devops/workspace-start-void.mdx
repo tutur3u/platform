@@ -30,6 +30,7 @@ path until an explicit cutover PR admits the app.
 | Documents | `(dashboard)/[wsId]/documents`, `documents/[documentId]` | Carved. |
 | Habits | `(dashboard)/[wsId]/habits/[[...slug]]` | Carved. Redirects to the Tasks app origin with the path and query preserved. |
 | Notes | `(dashboard)/[wsId]/notes` | Carved. |
+| Memories | `(dashboard)/[wsId]/memories` | Carved. |
 | Locale root | `[locale]/page.tsx` (Workspace-owned) | Answers `404`. The locale-only path would otherwise match `/[wsId]` as a workspace named after the locale. Signed-in users never reach it because the proxy redirects them to their workspace. |
 | Every other `[wsId]/*` group | `ai`, `documents`, `habits`, `inventory`, `notes`, `polls`, `workforce`, and the rest | Not carved. Workspace answers `404` for them, so a router in front of it must send only the carved patterns here. |
 
