@@ -9,6 +9,7 @@ Cutovers run in this order: lowest risk first. Marketing page groups flip throug
 
 1. Record the source SHA, the sealed artifact (CI run id) and the Vercel rollback pin below.
 2. Download the artifact: `gh run download <run-id> -R tutur3u/platform -n <artifact-name> -D /tmp/<app>-cutover`.
+   Take the run id from a run on the production ref (`main`) at the accepted source SHA, and verify the run's head SHA. Never take an artifact by name alone: a name can match a pull-request run.
 3. Provision the secret names from the packet on the Worker, then deploy the artifact config route-free: `bunx wrangler deploy --config /tmp/<app>-cutover/dist/server/wrangler.json --name <worker>` (no route yet).
 4. Smoke the Worker on its own hostname before any route change: `node scripts/cutover-smoke.mjs <app> https://<worker-hostname>`.
 5. Attach the route or custom domain for the host (proxied, in front of the still-valid Vercel origin where possible).
