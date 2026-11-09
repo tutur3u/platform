@@ -232,11 +232,11 @@ jobs:
           import { readFileSync, writeFileSync } from 'node:fs';
           const path = 'apps/teach/dist/server/wrangler.json';
           const c = JSON.parse(readFileSync(path, 'utf8'));
-          for (const k of ['configPath', 'userConfigPath', 'topLevelName', 'definedEnvironments']) delete c[k];
           c.name = 'tuturuuu-teach';
           c.workers_dev = false;
           c.preview_urls = false;
           c.upload_source_maps = false;
+          c.topLevelName = 'tuturuuu-teach';
           c.vars = {
             TUTURUUU_NOINDEX: '0',
             NODE_ENV: 'production',
