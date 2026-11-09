@@ -3,3 +3,9 @@
 /* Tailwind processes source directives with the stylesheet that imports it. */
 @source "../../../../../packages/meet-core/src/features";
 @source "../../../../../packages/meet-core/src/parley";
+
+/* Scrim over participant media: keeps names legible on any video or avatar. */
+@theme {
+  --color-media-scrim: rgb(0 0 0 / 0.7);
+  --color-media-scrim-foreground: rgb(255 255 255);
+}
