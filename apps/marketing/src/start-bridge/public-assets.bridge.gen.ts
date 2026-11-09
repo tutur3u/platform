@@ -17,6 +17,7 @@ export const publicAssets: ReadonlySet<string> = new Set([
   '/media/branding/rewise.svg',
   '/media/branding/tudo.svg',
   '/media/branding/tuturuuu.svg',
+  '/media/google-for-startups-transparent.png',
   '/media/logos/og-image.jpg',
   '/media/logos/transparent.png',
   '/media/marketing/events/women-in-tech/anh-thu-first-women-contributor.jpg',
@@ -50,4 +51,5 @@ export const publicAssets: ReadonlySet<string> = new Set([
   '/media/partners/soki.jpg',
   '/media/partners/sparkhub.jpg',
   '/media/partners/upskii.png',
+  '/media/privacy/product-tour.jpg',
 ]);

@@ -1191,6 +1191,40 @@
     "year": "Năm",
     "yesterday": "Hôm qua"
   },
+  "capabilities": {
+    "illustration": "Minh họa sản phẩm tương tác · nội dung mẫu",
+    "meet": {
+      "action": "Khám phá cuộc trò chuyện",
+      "answer": "So sánh hai quy trình, thống nhất tiêu chí thành công và cùng đánh giá kết quả.",
+      "colleague": "Cộng sự AI",
+      "followup": "Xem xét việc tiếp theo",
+      "optIn": "Chủ động bật đầu vào giọng nói",
+      "privacy": "Thao tác với không gian riêng cần bạn phê duyệt. Chia sẻ với phòng phải được xác nhận.",
+      "private": "Hỗ trợ riêng tư",
+      "question": "@mira Chúng ta nên thử nghiệm gì tiếp?",
+      "room": "Phòng nghiên cứu sản phẩm",
+      "shared": "Trao đổi trong phòng",
+      "team": "Đội ngũ của bạn",
+      "title": "Cộng sự trong cuộc trò chuyện."
+    },
+    "tasks": {
+      "action": "Sắp xếp tuần này",
+      "calendar": "Lịch",
+      "done": "Hoàn thành",
+      "inbox": "Ghi lại",
+      "items": [
+        "Chuẩn bị đề cương nghiên cứu",
+        "Đánh giá nguyên mẫu",
+        "Lên kế hoạch thử nghiệm"
+      ],
+      "planned": "Lên kế hoạch",
+      "reset": "Đặt lại minh họa",
+      "review": "Xem xét gợi ý",
+      "scheduled": "Kế hoạch dành chỗ cho tập trung.",
+      "suggestion": "Gợi ý ưu tiên, thời lượng và bước tiếp theo. Bạn xem xét.",
+      "title": "Từ ý tưởng đến kế hoạch."
+    }
+  },
   "chat": {
     "accept_friend": "Chấp nhận",
     "add_friend_by_email": "Thêm bạn bằng email",
@@ -2728,6 +2762,313 @@
     "search_wallets": "Tìm kiếm ví...",
     "unknown_user": "Người dùng không xác định"
   },
+  "finance-analytics": {
+    "all-categories-description": "Chọn danh mục trong chú giải để hiện hoặc ẩn trên biểu đồ.",
+    "all-time": "Tất cả",
+    "balance-trend": "Xu hướng số dư",
+    "category-breakdown": "Phân tích theo danh mục",
+    "daily": "Hàng ngày",
+    "daily-avg-expense": "Chi tiêu TB/ngày",
+    "daily-avg-income": "Thu nhập TB/ngày",
+    "date-range": "Khoảng thời gian",
+    "description": "Thông tin chi tiết về mô hình chi tiêu và xu hướng tài chính của bạn",
+    "failed-to-load-data": "Không thể tải dữ liệu",
+    "hide-confidential": "Ẩn bảo mật",
+    "income-vs-expense": "Thu nhập vs Chi tiêu",
+    "interval": "Khoảng cách",
+    "last-30-days": "30 ngày qua",
+    "last-7-days": "7 ngày qua",
+    "last-month": "Tháng trước",
+    "monthly": "Hàng tháng",
+    "net-total": "Tổng ròng",
+    "next-period": "Kỳ tiếp theo",
+    "no-data": "Không có dữ liệu",
+    "other-categories": "Danh mục khác",
+    "previous-period": "Kỳ trước",
+    "show-all-categories": "Xem tất cả danh mục",
+    "show-confidential": "Hiện bảo mật",
+    "show-top-categories": "Xem các danh mục lớn nhất",
+    "spending-trends": "Xu hướng chi tiêu",
+    "this-month": "Tháng này",
+    "this-quarter": "Quý này",
+    "this-year": "Năm nay",
+    "title": "Phân tích tài chính",
+    "top-categories-description": "Ưu tiên các danh mục có tổng tiền lớn nhất. Các danh mục nhỏ hơn được gộp lại.",
+    "total-expense": "Tổng chi tiêu",
+    "total-income": "Tổng thu nhập",
+    "week-of": "Tuần bắt đầu {date}",
+    "weekly": "Hàng tuần",
+    "yearly": "Hàng năm"
+  },
+  "finance-budgets": {
+    "alert": "Cảnh báo",
+    "alert_exceeded_description": "Bạn đã chi {spent} trong ngân sách {amount} ({percentage}% đã sử dụng).",
+    "alert_exceeded_title": "Đã vượt ngân sách: {name}",
+    "alert_near_threshold_description": "Bạn đã sử dụng {percentage}% ngân sách. Hãy xem lại chi tiêu.",
+    "alert_near_threshold_title": "Cảnh báo ngân sách: {name}",
+    "alert_threshold": "Ngưỡng cảnh báo (%)",
+    "alert_threshold_description": "Nhận cảnh báo khi chi tiêu đạt tỷ lệ này.",
+    "all_categories": "Tất cả danh mục",
+    "all_wallets": "Tất cả ví",
+    "amount_required": "Vui lòng nhập số tiền",
+    "budget": "Ngân sách",
+    "budget_amount": "Số tiền ngân sách",
+    "cancel": "Hủy",
+    "category": "Danh mục",
+    "category_description": "Giới hạn ngân sách theo một danh mục giao dịch, hoặc áp dụng rộng hơn.",
+    "create": "Tạo ngân sách",
+    "create_new": "Tạo ngân sách mới",
+    "created_successfully": "Đã tạo ngân sách",
+    "custom": "Tùy chỉnh",
+    "delete": "Xóa",
+    "delete_budget": "Xóa ngân sách",
+    "delete_budget_confirmation": "Bạn có chắc muốn xóa \"{name}\"? Hành động này không thể hoàn tác.",
+    "deleted_successfully": "Đã xóa ngân sách",
+    "deleting": "Đang xóa...",
+    "description": "Mô tả",
+    "description_placeholder": "Mô tả tùy chọn cho ngân sách này",
+    "edit": "Chỉnh sửa",
+    "edit_budget": "Chỉnh sửa ngân sách",
+    "empty_description": "Chưa có ngân sách. Tạo ngân sách đầu tiên để bắt đầu theo dõi chi tiêu.",
+    "end_date": "Ngày kết thúc (tùy chọn)",
+    "end_date_description": "Để trống cho ngân sách lặp lại.",
+    "failed_to_delete": "Không thể xóa ngân sách",
+    "failed_to_save": "Không thể lưu ngân sách",
+    "loading_categories": "Đang tải danh mục...",
+    "loading_wallets": "Đang tải ví...",
+    "monthly": "Hàng tháng",
+    "name": "Tên",
+    "name_placeholder": "Ngân sách ăn uống hàng tháng",
+    "name_required": "Vui lòng nhập tên",
+    "open_menu": "Mở menu",
+    "over_budget": "Vượt ngân sách",
+    "period": "Kỳ",
+    "period_value": "Kỳ: {period}",
+    "plural": "Ngân sách",
+    "remaining": "Còn lại",
+    "select_period": "Chọn kỳ",
+    "spent": "Đã chi",
+    "start_date": "Ngày bắt đầu",
+    "start_date_required": "Vui lòng chọn ngày bắt đầu",
+    "title_description": "Theo dõi và quản lý ngân sách của không gian làm việc.",
+    "unnamed_category": "Danh mục chưa đặt tên",
+    "unnamed_wallet": "Ví chưa đặt tên",
+    "update": "Cập nhật ngân sách",
+    "updated_successfully": "Đã cập nhật ngân sách",
+    "used": "Đã dùng",
+    "view_details": "Xem chi tiết ngân sách",
+    "wallet": "Ví",
+    "wallet_description": "Giới hạn ngân sách theo một ví, hoặc bao gồm mọi ví.",
+    "yearly": "Hàng năm"
+  },
+  "finance-overview": {
+    "apply_filter": "Áp dụng",
+    "confidential-mode": "Chế độ bảo mật",
+    "confidential-mode-tooltip": "Chuyển đổi để bao gồm hoặc loại trừ các giao dịch bảo mật trong số liệu tài chính. Điều này giúp đo lường tác động của dữ liệu bảo mật đối với tổng quan tài chính của bạn.",
+    "date_range": "Khoảng ngày",
+    "exclude-confidential": "Loại trừ bảo mật",
+    "filter_by": "Lọc theo",
+    "finance": "Tài chính",
+    "include-confidential": "Bao gồm bảo mật",
+    "income-by-category": "Thu nhập theo danh mục",
+    "month_range": "Khoảng tháng",
+    "monthly-expense": "Chi tháng này",
+    "monthly-income": "Thu tháng này",
+    "monthly-income-by-category": "Thu nhập hàng tháng theo danh mục",
+    "monthly-spending-by-category": "Chi tiêu hàng tháng theo danh mục",
+    "net-total": "Tổng ròng",
+    "next_decade": "Chuyển tới thập kỷ sau",
+    "next_year": "Chuyển tới năm sau",
+    "no-transaction": "Không có giao dịch nào",
+    "overview": "Tổng quan",
+    "pick_month": "Chọn tháng",
+    "pick_year": "Chọn năm",
+    "previous_decade": "Chuyển tới thập kỷ trước",
+    "previous_year": "Chuyển tới năm trước",
+    "recent-transactions": "Giao dịch gần đây",
+    "reset_filter": "Đặt lại",
+    "select_end_date": "Chọn ngày kết thúc",
+    "select_end_month": "Chọn tháng kết thúc",
+    "select_end_year": "Chọn năm kết thúc",
+    "select_start_date": "Chọn ngày bắt đầu",
+    "select_start_month": "Chọn tháng bắt đầu",
+    "select_start_year": "Chọn năm bắt đầu",
+    "show-finance-stats": "Hiển thị số liệu thống kê tài chính",
+    "spending-by-category": "Chi tiêu theo danh mục",
+    "total-balance": "Tổng tiền",
+    "total-expense": "Tổng chi",
+    "total-income": "Tổng thu",
+    "year_range": "Khoảng năm"
+  },
+  "habit-tracker": {
+    "archive_tracker": "Lưu trữ bộ theo dõi",
+    "badge": "Thói quen chuyên biệt",
+    "best_streak": "Chuỗi tốt nhất",
+    "clear_search": "Xóa tìm kiếm",
+    "complete_now": "Đánh dấu ngay",
+    "create_tracker": "Tạo bộ theo dõi",
+    "current_streak": "Chuỗi hiện tại",
+    "description": "Theo dõi thói quen, chỉ số và nhịp điệu của cả nhóm mà không phải nhét mọi thứ vào mục công việc.",
+    "detail": {
+      "active_members": "Thành viên hoạt động",
+      "average_consistency": "Độ ổn định trung bình",
+      "best_line": "Tốt nhất {count}",
+      "best_streak": "Chuỗi tốt nhất",
+      "close": "Đóng",
+      "consistency_line": "{rate}% ổn định",
+      "current_period": "Kỳ hiện tại",
+      "current_streak": "Chuỗi hiện tại",
+      "entries_description": "Các bản ghi gần đây được giữ tại đây để bạn thêm ngữ cảnh mà không phải rời khỏi bộ theo dõi.",
+      "entry_date": "Ngày ghi nhận",
+      "entry_note": "Ghi chú",
+      "entry_tags": "Thẻ",
+      "freezes_remaining": "Còn {count} lượt đóng băng",
+      "goal_progress": "Tiến độ mục tiêu",
+      "leaderboard": "Bảng xếp hạng",
+      "leaderboard_description": "So sánh sức bền chuỗi và độ ổn định của cả nhóm.",
+      "log_entry": "Ghi nhận",
+      "log_entry_description": "Lưu lại tiến độ mà không cần rời khỏi khu vực thói quen.",
+      "mark_done": "Đánh dấu hoàn thành",
+      "marked_done": "Đã đánh dấu",
+      "member_scope": "Phạm vi cá nhân",
+      "no_description": "Chưa có mô tả.",
+      "no_entries": "Chưa có bản ghi nào.",
+      "no_leaderboard": "Chưa có dữ liệu bảng xếp hạng.",
+      "perfect_weeks": "Tuần hoàn hảo",
+      "period_count": "{count} kỳ",
+      "recent_entries": "Bản ghi gần đây",
+      "repair_streak": "Phục hồi chuỗi",
+      "save_entry": "Lưu bản ghi",
+      "streak_suffix": "chuỗi",
+      "tabs": {
+        "entries": "Bản ghi",
+        "leaderboard": "Xếp hạng",
+        "overview": "Tổng quan"
+      },
+      "team_scope": "Phạm vi nhóm",
+      "top_streak": "Chuỗi cao nhất",
+      "total_entries": "Tổng bản ghi",
+      "trend_title": "Xu hướng",
+      "unknown_member": "Thành viên không xác định",
+      "use_freeze": "Dùng đóng băng"
+    },
+    "detail_placeholder_description": "Chọn một bộ theo dõi để xem tiến độ, bản ghi gần đây và nhịp độ của cả nhóm trong cùng một nơi.",
+    "detail_placeholder_title": "Chọn một bộ theo dõi",
+    "edit_tracker": "Chỉnh sửa bộ theo dõi",
+    "empty_description": "Chưa có mô tả.",
+    "empty_filtered_description": "Thử một từ khóa khác hoặc xóa tìm kiếm để xem thêm bộ theo dõi.",
+    "empty_filtered_title": "Không có bộ theo dõi phù hợp",
+    "empty_state_description": "Tạo bộ theo dõi đầu tiên để biến các thói quen lặp lại thành điều mà cả không gian làm việc có thể cùng theo dõi.",
+    "empty_title": "Chưa có bộ theo dõi nào",
+    "entry_deleted": "Đã xóa bản ghi",
+    "entry_saved": "Đã lưu bản ghi",
+    "form": {
+      "add_field": "Thêm trường",
+      "add_quick_value": "Thêm giá trị",
+      "advanced_description": "Chỉ tinh chỉnh quy tắc phục hồi và cấu hình trường khi bạn cần nhiều quyền kiểm soát hơn.",
+      "advanced_tab": "Nâng cao",
+      "aggregation_strategy": "Cách tổng hợp",
+      "at_least": "Ít nhất",
+      "basics_description": "Thiết lập nhận diện của bộ theo dõi và thời điểm bắt đầu hoạt động.",
+      "basics_tab": "Cơ bản",
+      "boolean": "Đúng/Sai",
+      "boolean_any": "Chỉ cần có đánh dấu",
+      "cancel": "Hủy",
+      "color": "Màu",
+      "count_entries": "Đếm bản ghi",
+      "create_description": "Bắt đầu từ mẫu có sẵn rồi điều chỉnh cho phù hợp với không gian làm việc của bạn.",
+      "create_title": "Tạo bộ theo dõi thói quen",
+      "create_tracker": "Tạo bộ theo dõi",
+      "daily": "Hàng ngày",
+      "daily_summary": "Tổng hợp theo ngày",
+      "description": "Mô tả",
+      "duration": "Thời lượng",
+      "edit_description": "Điều chỉnh quy tắc theo dõi, cấu trúc trường và cách tính chuỗi.",
+      "edit_title": "Chỉnh sửa bộ theo dõi",
+      "event_log": "Nhật ký sự kiện",
+      "exactly": "Chính xác",
+      "field_key": "Khóa trường",
+      "field_key_hint": "Tự động tạo từ nhãn. Chỉ ghi đè khi bạn cần cho tích hợp hoặc di trú nâng cao.",
+      "field_label": "Nhãn trường",
+      "field_options": "Tùy chọn chọn",
+      "field_type": "Loại trường",
+      "field_unit": "Đơn vị",
+      "fields_description": "Dùng tối đa bốn trường dữ liệu để hỗ trợ các trường hợp như nước uống, hiệp/lần, số trang hoặc độ khó.",
+      "fields_title": "Các trường",
+      "freeze_allowance": "Số lượt đóng băng",
+      "goal_description": "Xác định cách đo tiến độ và các phím tắt giúp việc ghi nhận nhanh hơn.",
+      "goal_tab": "Mục tiêu & ghi nhận",
+      "icon": "Biểu tượng",
+      "is_active": "Bộ theo dõi đang hoạt động",
+      "max": "Lấy giá trị lớn nhất",
+      "name": "Tên",
+      "number": "Số",
+      "primary_metric": "Chỉ số chính",
+      "quick_add_empty": "Chưa có giá trị nhanh nào.",
+      "quick_add_input": "Thêm một số",
+      "quick_add_values": "Giá trị thêm nhanh",
+      "recovery_window_periods": "Số kỳ phục hồi",
+      "remove_field": "Xóa",
+      "remove_quick_value": "Gỡ",
+      "required": "Bắt buộc",
+      "save_changes": "Lưu thay đổi",
+      "select": "Danh sách chọn",
+      "start_date": "Ngày bắt đầu",
+      "status": "Trạng thái",
+      "sum": "Cộng dồn",
+      "summary_preview": "Xem trước",
+      "target_operator": "Quy tắc mục tiêu",
+      "target_period": "Chu kỳ mục tiêu",
+      "target_value": "Giá trị mục tiêu",
+      "template_label": "Mẫu",
+      "text": "Văn bản",
+      "tracking_mode": "Chế độ theo dõi",
+      "weekly": "Hàng tuần"
+    },
+    "generic_error": "Đã có lỗi xảy ra. Vui lòng thử lại.",
+    "leaderboard_preview": "Xem nhanh bảng xếp hạng",
+    "member_label": "Thành viên",
+    "member_placeholder": "Chọn thành viên",
+    "metadata": {
+      "description": "Theo dõi thói quen, nhịp sinh hoạt và tiến độ chung của cả không gian làm việc.",
+      "title": "Thói quen"
+    },
+    "mode_daily_summary": "Tổng hợp theo ngày",
+    "mode_event_log": "Nhật ký sự kiện",
+    "no_leader": "Chưa có người dẫn đầu",
+    "open_detail": "Mở chi tiết",
+    "period_daily": "hàng ngày",
+    "period_weekly": "hàng tuần",
+    "refresh": "Làm mới",
+    "refresh_detail": "Làm mới chi tiết",
+    "repair_available": "Có thể phục hồi",
+    "repair_clear": "Ổn định",
+    "repair_status": "Cửa sổ phục hồi",
+    "save": "Lưu",
+    "scope_description": "Chuyển giữa chuỗi của bạn, một thành viên cụ thể hoặc chế độ tổng quan của cả nhóm.",
+    "scope_label": "Phạm vi",
+    "scope_member": "Một thành viên",
+    "scope_self": "Chuỗi của tôi",
+    "scope_team": "Tổng quan nhóm",
+    "scope_title": "Chế độ xem",
+    "search_label": "Tìm bộ theo dõi",
+    "search_placeholder": "Tìm thói quen, nghi thức hoặc chỉ số",
+    "selected_tracker": "Bộ theo dõi đang chọn",
+    "streak_suffix": "chuỗi",
+    "streak_updated": "Đã cập nhật chuỗi",
+    "summary": {
+      "met": "Đạt mục tiêu",
+      "streak": "Chuỗi cao nhất",
+      "total": "Bộ theo dõi hoạt động",
+      "volume": "Khối lượng hiện tại"
+    },
+    "team_members": "Thành viên nhóm",
+    "title": "Thói quen",
+    "today_total": "Tổng hôm nay",
+    "tracker_archived": "Đã lưu trữ bộ theo dõi",
+    "tracker_created": "Đã tạo bộ theo dõi",
+    "tracker_updated": "Đã cập nhật bộ theo dõi"
+  },
   "inventory": {
     "default_referral_promotion": "Khuyến mãi được cấp mặc định",
     "referral_count_cap": "Giới hạn giảm giá giới thiệu",
@@ -2737,6 +3078,804 @@
     "reward_receiver_only": "Chỉ người được giới thiệu",
     "reward_referrer_only": "Chỉ người giới thiệu",
     "select_reward_type": "Chọn người nhận thưởng"
+  },
+  "landing": {
+    "ai": {
+      "mira": {
+        "capabilities": {
+          "contextAware": "Hiểu ngữ cảnh",
+          "learning": "Học liên tục",
+          "proactive": "Làm việc thực tế"
+        },
+        "description": "Mira là trợ lý AI ngay trong Tuturuuu. Bạn chỉ cần nhờ, Mira sẽ sắp xếp ngày làm việc, xếp task vào lịch, soạn thư trả lời hay ghi lại chi tiêu, dựa trên những gì đã có trong workspace của bạn.",
+        "prompts": [
+          "Đặt lịch standup 9h sáng mai",
+          "Tóm tắt việc tuần này",
+          "Giúp mình ưu tiên deadline"
+        ],
+        "title": "Gặp Mira - Trợ Lý AI Của Bạn",
+        "tryAsking": "Thử hỏi Mira..."
+      }
+    },
+    "aiCapabilities": {
+      "capabilities": {
+        "drafting": {
+          "description": "Tài liệu, phản hồi và báo cáo bắt đầu từ ngữ cảnh của bạn thay vì trang trắng.",
+          "title": "Viết bản nháp đầu tiên"
+        },
+        "extraction": {
+          "description": "Đọc một cuộc trao đổi, nhận ra điều bạn đã hứa và biến nó thành công việc có hạn chót.",
+          "title": "Không bỏ sót cam kết"
+        },
+        "insight": {
+          "description": "Chỉ ra khoản chi, dòng tiền và điểm bất thường trước khi chúng thành vấn đề.",
+          "title": "Theo dõi các con số"
+        },
+        "meetings": {
+          "description": "Ghi lại nội dung, viết tóm tắt và giao những hành động phát sinh từ cuộc họp.",
+          "title": "Lo phần việc sau cuộc họp"
+        },
+        "scheduling": {
+          "description": "Tìm những khoảng thời gian thật sự để làm việc sâu, xoay quanh các cuộc họp không thể dời.",
+          "title": "Bảo vệ thời gian tập trung"
+        },
+        "search": {
+          "description": "Hỏi theo điều bạn mang máng nhớ và nhận đúng tài liệu, không phải danh sách từ khoá.",
+          "title": "Tìm theo ý nghĩa"
+        },
+        "title": "Cụ thể thì AI làm gì"
+      },
+      "eyebrow": "Lõi AI",
+      "pipeline": {
+        "act": {
+          "description": "Mira đặt lịch, soạn phản hồi hoặc tạo công việc — rồi báo lại cho bạn.",
+          "label": "Hành động"
+        },
+        "caption": "Một yêu cầu đi qua lõi AI như thế nào",
+        "reason": {
+          "description": "Rewise chuyển câu hỏi tới mô hình phù hợp nhất, dưới sự dẫn dắt của Nova.",
+          "label": "Suy luận"
+        },
+        "sense": {
+          "description": "Aurora liên kết email, công việc, tệp và sự kiện cùng thuộc một mạch công việc.",
+          "label": "Cảm nhận"
+        }
+      },
+      "subtitle": "Năm hệ thống phối hợp đọc ngữ cảnh của bạn, suy luận và hành động ngay trong những sản phẩm bạn đang dùng.",
+      "title": "Trợ lý làm việc thật, không chỉ trò chuyện"
+    },
+    "aiCore": {
+      "aurora": {
+        "description": "Hệ thống ngữ cảnh liên kết email, task, file và sự kiện liên quan",
+        "name": "Aurora",
+        "role": "Hệ thần kinh"
+      },
+      "crystal": {
+        "description": "Giao diện đa phương thức cho voice, video và screen sharing",
+        "name": "Crystal",
+        "role": "Cầu nối con người"
+      },
+      "mira": {
+        "description": "Mira là trợ lý AI ngay trong Tuturuuu. Mira làm việc cùng task, lịch, email, tài chính và thời gian của bạn: bạn nhờ, Mira lên kế hoạch, xếp lịch, soạn thư và ghi chép giúp bạn.",
+        "title": "Gặp Mira - Trợ Lý AI"
+      },
+      "nova": {
+        "description": "Nền tảng prompt engineering định hình cách Mira suy luận",
+        "name": "Nova",
+        "role": "Lương tâm & Lò rèn"
+      },
+      "rewise": {
+        "description": "Tổng hợp các model AI hàng đầu (OpenAI, Gemini, Anthropic)",
+        "name": "Rewise",
+        "role": "Trí tuệ tập thể"
+      },
+      "subtitle": "Gặp Mira và hệ thống AI khiến Tuturuuu thực sự thông minh",
+      "title": {
+        "highlight": "AI",
+        "part1": "Sức mạnh của"
+      }
+    },
+    "cta": {
+      "description": "Bắt đầu với những công cụ đội nhóm cần hôm nay. Khám phá không gian làm việc mã nguồn mở, dùng thử gói miễn phí và mở rộng theo nhu cầu.",
+      "note": "Không cần thẻ. Miễn phí mãi mãi.",
+      "primary": "Dùng Thử Miễn Phí",
+      "secondary": "Nói Chuyện Với Mình",
+      "title": "Kết nối công việc của cả đội nhóm",
+      "trust": {
+        "openSource": "Mã nguồn mở & minh bạch",
+        "security": "Bảo mật cấp doanh nghiệp",
+        "selfHost": "Tự host được luôn"
+      }
+    },
+    "demo": {
+      "aiChat": {
+        "aiResponse1": {
+          "intro": "Mai bạn có 4 cuộc họp và 2 khung focus:",
+          "item1": "9:00 - Họp nhóm (30 phút)",
+          "item2": "11:00 - Focus: Project Alpha (2 tiếng)",
+          "item3": "2:00 - Review với khách hàng (1 tiếng)"
+        },
+        "aiResponse2": "Mình tìm được 3 slot trống. Thứ Sáu 3h chiều là tốt nhất theo lịch mọi người. Gửi lời mời luôn không?",
+        "contextAware": {
+          "description": "Mira hiểu cách bạn làm việc, sở thích và mục tiêu để hỗ trợ đúng lúc đúng chỗ.",
+          "title": "Hiểu ngữ cảnh"
+        },
+        "cta": "Chat với Mira",
+        "inputPlaceholder": "Hỏi Mira gì đó...",
+        "quickActions": {
+          "reminder": "Tạo nhắc nhở",
+          "summary": "Tóm tắt tuần",
+          "tasks": "Xem task"
+        },
+        "status": "Online",
+        "subtitle": "Trợ lý AI cho công việc của bạn",
+        "title": "Mira - Trợ Lý AI",
+        "toolCall": {
+          "checking": "Đang kiểm tra 3 lịch",
+          "done": "Tìm thấy 3 khung giờ trống"
+        },
+        "userMessage1": "Mai mình có lịch gì?",
+        "userMessage2": "Dời họp 2h chiều được không?"
+      },
+      "aiCore": {
+        "components": {
+          "aurora": {
+            "description": "Công cụ ngữ cảnh kết nối email, tác vụ, tệp và sự kiện liên quan",
+            "name": "Aurora",
+            "role": "Hệ Thần Kinh"
+          },
+          "crystal": {
+            "description": "Giao diện đa phương thức cho giọng nói, video và chia sẻ màn hình",
+            "name": "Crystal",
+            "role": "Cầu Nối Với Nhân Loại"
+          },
+          "nova": {
+            "description": "Nền tảng kỹ thuật prompt định hình cách Mira suy luận",
+            "name": "Nova",
+            "role": "Lương Tâm & Lò Rèn"
+          },
+          "rewise": {
+            "description": "Tổng hợp các mô hình AI hàng đầu (OpenAI, Gemini, Anthropic)",
+            "name": "Rewise",
+            "role": "Tâm Trí Tập Thể"
+          }
+        },
+        "mira": {
+          "badges": {
+            "learning": "Luôn Học Hỏi",
+            "proactive": "Làm việc thực tế"
+          },
+          "description": "Mira là trợ lý AI ngay trong Tuturuuu. Mira làm việc cùng task, lịch, email, tài chính và thời gian của bạn: bạn nhờ, Mira lên kế hoạch, xếp lịch, soạn thư và ghi chép giúp bạn.",
+          "title": "Mira: Đối Tác AI Của Bạn"
+        },
+        "subtitle": "Gặp gỡ Mira và hệ thống AI giúp Tuturuuu thực sự thông minh",
+        "title": {
+          "highlight": "Trí Tuệ Nhân Tạo",
+          "part1": "Được Hỗ Trợ Bởi"
+        }
+      },
+      "analytics": {
+        "cta": "Xem Dashboard Đầy Đủ",
+        "metrics": {
+          "focus": {
+            "change": "+3.2 giờ so với tuần trước",
+            "label": "Tập Trung",
+            "value": "18.5 giờ"
+          },
+          "goals": {
+            "label": "Mục Tiêu",
+            "subtitle": "Tỷ lệ hoàn thành",
+            "value": "89%"
+          },
+          "meetings": {
+            "change": "-8% tuần này",
+            "label": "Cuộc Họp",
+            "value": "12"
+          },
+          "tasks": {
+            "change": "+15% tuần này",
+            "label": "Công Việc",
+            "value": "24"
+          }
+        },
+        "performance": {
+          "description": "Bạn đang dành nhiều thời gian hơn 65% cho công việc chuyên sâu so với tháng trước. Hãy tiếp tục phát huy!",
+          "title": "Hiệu Suất"
+        },
+        "productivityScore": {
+          "badge": "Xuất Sắc",
+          "rank": "Top 10% người dùng",
+          "title": "Điểm Năng Suất",
+          "value": "87/100"
+        },
+        "subtitle": "Theo dõi năng suất và xu hướng làm việc",
+        "title": "Phân Tích & Thông Tin",
+        "weeklyDistribution": {
+          "admin": {
+            "label": "Hành Chính",
+            "value": "15%"
+          },
+          "deepWork": {
+            "label": "Công Việc Chuyên Sâu",
+            "value": "65%"
+          },
+          "meetings": {
+            "label": "Cuộc Họp",
+            "value": "20%"
+          },
+          "title": "Phân Bổ Thời Gian Tuần Này"
+        }
+      },
+      "badge": "Minh hoạ",
+      "calendar": {
+        "cta": "Dùng Thử Lịch Thông Minh",
+        "event1": {
+          "meta": "5 người tham gia",
+          "period": "SA",
+          "time": "9:00",
+          "title": "Daily Standup"
+        },
+        "event2": {
+          "meta": "Được AI tự động sắp xếp",
+          "period": "SA",
+          "time": "10:30",
+          "title": "Thời Gian Tập Trung: Deep Work"
+        },
+        "event3": {
+          "meta": "Cuộc gọi video",
+          "period": "CH",
+          "time": "2:00",
+          "title": "Thuyết Trình Khách Hàng"
+        },
+        "eventCount": "6 sự kiện",
+        "smartSuggestion": {
+          "description": "Lịch trình của bạn hiệu quả hơn 15% so với tuần trước. Hãy thử thêm một khung thời gian tập trung vào thứ Sáu.",
+          "title": "Gợi Ý Thông Minh"
+        },
+        "stats": {
+          "focusTime": {
+            "label": "Thời Gian Tập Trung",
+            "value": "3.5 giờ"
+          },
+          "optimized": {
+            "label": "Đã Tối Ưu",
+            "value": "85%"
+          }
+        },
+        "subtitle": "Sắp xếp lịch và phân chia thời gian bằng AI",
+        "title": "Lịch Trình Thông Minh",
+        "todaySchedule": "Lịch Hôm Nay"
+      },
+      "calendarGrid": {
+        "events": {
+          "clientCall": "Gọi Khách Hàng",
+          "focusTime": "Tập Trung: Deep Work",
+          "oneOnOne": "Họp 1:1",
+          "planning": "Lập Kế Hoạch Sprint",
+          "review": "Review Code",
+          "standup": "Họp Standup",
+          "teamOffsite": "Team Offsite",
+          "teamSync": "Họp Đồng Bộ Nhóm",
+          "weeklyReview": "Tổng Kết Tuần"
+        }
+      },
+      "kanban": {
+        "columns": {
+          "done": "Hoàn Thành",
+          "inProgress": "Đang Thực Hiện",
+          "todo": "Cần Làm"
+        },
+        "tasks": {
+          "task1": {
+            "dueDate": "Ngày mai",
+            "label": "Marketing",
+            "name": "Đánh giá chiến lược marketing Q1"
+          },
+          "task2": {
+            "label": "Thiết kế",
+            "name": "Cập nhật mockup trang landing"
+          },
+          "task3": {
+            "dueDate": "Hôm nay",
+            "label": "Phát triển",
+            "name": "Triển khai xác thực người dùng"
+          },
+          "task4": {
+            "label": "Kiểm thử",
+            "name": "Viết unit test cho API"
+          },
+          "task5": {
+            "label": "Phát triển",
+            "name": "Sửa responsive navbar"
+          },
+          "task6": {
+            "label": "Tài liệu",
+            "name": "Cập nhật tài liệu API"
+          }
+        }
+      },
+      "shell": {
+        "illustration": "Giao diện minh hoạ",
+        "search": "Tìm kiếm",
+        "synced": "Đã đồng bộ"
+      },
+      "subtitle": "Minh hoạ cách các ứng dụng dùng chung một không gian làm việc — đổi khu vực mà ngữ cảnh, phím tắt và trợ lý vẫn đi cùng bạn.",
+      "tabs": {
+        "analytics": "Analytics",
+        "calendar": "Lịch",
+        "chat": "Chat AI",
+        "meeting": "Họp",
+        "tasks": "Task"
+      },
+      "taskManagement": {
+        "aiInsight": {
+          "description": "Bạn có 3 công việc ưu tiên cao đến hạn trong tuần này. Hãy dành 2 giờ vào sáng mai để tập trung hoàn thành chúng.",
+          "title": "Phân Tích AI"
+        },
+        "cta": "Dùng Thử Quản Lý Công Việc",
+        "subtitle": "Tổ chức phân cấp với phân tích AI",
+        "task1": {
+          "assignees": "3 người phụ trách",
+          "dueDate": "Đến hạn ngày mai",
+          "files": "2 tệp",
+          "priority": "Cao",
+          "title": "Xem lại đề xuất marketing"
+        },
+        "task2": {
+          "dueDate": "Tuần tới",
+          "priority": "Trung bình",
+          "tag": "Phát triển",
+          "title": "Triển khai tính năng đồng bộ lịch"
+        },
+        "task3": {
+          "dueDate": "Trong 2 tuần",
+          "priority": "Thấp",
+          "tag": "Xây dựng đội ngũ",
+          "title": "Lên kế hoạch hoạt động team building"
+        },
+        "title": "Quản Lý Công Việc Thông Minh"
+      },
+      "title": {
+        "highlight": "không gian làm việc",
+        "part1": "Nhìn vào bên trong"
+      },
+      "videoMeeting": {
+        "aiFeatures": {
+          "actionItems": {
+            "description": "Tự tạo task & phân công luôn",
+            "title": "Việc Cần Làm"
+          },
+          "liveNotes": {
+            "description": "Ghi chú trực tiếp, tự bắt highlight",
+            "title": "Ghi Chú Live"
+          },
+          "summary": {
+            "description": "AI tóm tắt ngay khi họp xong",
+            "title": "Tóm Tắt Nhanh"
+          }
+        },
+        "cta": "Thử Họp Thông Minh",
+        "duration": "32:15",
+        "header": {
+          "participants": "4 người",
+          "recording": "Đang ghi",
+          "title": "Weekly Sync—Product"
+        },
+        "insights": {
+          "actionItems": "Phát hiện 3 việc cần làm",
+          "sentiment": "Tích cực",
+          "topics": "5 chủ đề đã thảo luận"
+        },
+        "participants": {
+          "alex": "Alex Chen",
+          "mira": "Mira AI",
+          "sarah": "Sarah Kim",
+          "you": "Bạn"
+        },
+        "subtitle": "Họp video với AI hỗ trợ & tự phiên âm",
+        "title": "Họp Video Thông Minh",
+        "transcript": {
+          "alex": "API integration xong rồi. Mai có thể bắt đầu test.",
+          "mira": "Mình sẽ tạo task cho phase testing và đặt lịch họp follow-up nhé.",
+          "sarah": "Design mockup sẵn sàng review rồi. Mình đi qua luôn không?",
+          "title": "Phiên Âm Trực Tiếp"
+        }
+      }
+    },
+    "features": {
+      "apps": {
+        "calendar": {
+          "description": "Cuộc họp, hạn chót và các khối tập trung trong một khung nhìn, với lịch trình tôn trọng những gì bạn đã cam kết.",
+          "subtitle": "Lịch Thông Minh",
+          "title": "Tuturuuu Calendar"
+        },
+        "chat": {
+          "description": "Kênh, tin nhắn riêng và tệp trong cùng không gian làm việc với công việc, lịch và tài liệu của bạn.",
+          "subtitle": "Giao Tiếp Nhóm",
+          "title": "Tuturuuu Chat"
+        },
+        "crm": {
+          "description": "Liên hệ, cơ hội và lịch sử trao đổi trong một hồ sơ, để việc cần theo dõi thành một công việc có hạn thay vì một ghi chú.",
+          "subtitle": "Quản Lý Khách Hàng",
+          "title": "Tuturuuu CRM"
+        },
+        "documents": {
+          "description": "Tài liệu nằm ngay cạnh công việc, lịch và tệp liên quan, để một bản mô tả không còn là đường link phải đi tìm.",
+          "subtitle": "Tài Liệu Cộng Tác",
+          "title": "Tuturuuu Docs"
+        },
+        "drive": {
+          "description": "Lưu trữ ngay trong không gian làm việc, để tệp, công việc liên quan và người cần dùng không nằm ở ba sản phẩm khác nhau.",
+          "subtitle": "Lưu Trữ Chung",
+          "title": "Tuturuuu Drive"
+        },
+        "finance": {
+          "description": "Chi tiêu, ngân sách, hoá đơn và dòng tiền, với hoá đơn được đọc và phân loại sẵn để chốt sổ không mất cả cuối tuần.",
+          "subtitle": "Quản Lý Tài Chính",
+          "title": "Tuturuuu Finance"
+        },
+        "inventory": {
+          "description": "Theo dõi tồn kho ở mọi địa điểm, với quét mã, điểm đặt lại hàng và cảnh báo trước khi một mặt hàng hết.",
+          "subtitle": "Quản Lý Kho",
+          "title": "Tuturuuu Inventory"
+        },
+        "meet": {
+          "description": "So sánh lịch rảnh của mọi người và chốt đúng khung giờ phù hợp, không cần chuỗi email trả lời tất cả.",
+          "subtitle": "Cuộc Họp Thông Minh",
+          "title": "Tuturuuu Meet"
+        },
+        "nova": {
+          "description": "Thực hành kỹ thuật prompt, tham gia thử thách AI và nâng cao kỹ năng của bạn với việc học thực hành.",
+          "subtitle": "Nền Tảng Học Tập",
+          "title": "Nova"
+        },
+        "tasks": {
+          "description": "Danh sách, bảng và dòng thời gian trên cùng một tập công việc, với người phụ trách, thời hạn và mức ưu tiên trụ vững cả khi tuần bận rộn.",
+          "subtitle": "Quản Lý Công Việc",
+          "title": "Tuturuuu Tasks"
+        },
+        "track": {
+          "description": "Bấm giờ cho một công việc thật, dừng khi bạn chuyển việc, và kết tuần biết rõ thời gian đã đi đâu.",
+          "subtitle": "Theo Dõi Thời Gian",
+          "title": "Tuturuuu Track"
+        },
+        "workflows": {
+          "description": "Dựng quy trình một lần với trình kích hoạt và điều kiện, rồi để phê duyệt, bàn giao và cập nhật tự chạy mà không cần ai nhắc.",
+          "subtitle": "Tự Động Hoá",
+          "title": "Tuturuuu Workflows"
+        }
+      },
+      "eyebrow": "Một nền tảng",
+      "more": {
+        "subtitle": "Thêm những gì bạn cần, bỏ qua phần còn lại. Một không gian làm việc, một lần đăng nhập, một hoá đơn.",
+        "title": "Và phần còn lại của bộ sản phẩm"
+      },
+      "subtitle": "Kết nối công việc, lịch, tài liệu và công cụ kinh doanh hằng ngày trong một không gian làm việc chung để đội nhóm giảm thời gian chuyển đổi ứng dụng.",
+      "title": "Một không gian làm việc. Mọi phần của công việc."
+    },
+    "hero": {
+      "cta": {
+        "primary": "Bắt Đầu Miễn Phí",
+        "secondary": "Khám phá không gian làm việc"
+      },
+      "description": "Quản lý dự án, lên lịch cho đội nhóm và kết nối tài liệu cùng công cụ kinh doanh. Mira giúp bạn biến kế hoạch thành hành động.",
+      "title": {
+        "line1": "Đội nhóm của bạn.",
+        "line2": "Một nơi làm việc."
+      },
+      "trust": {
+        "free": "Gói miễn phí trọn đời",
+        "noCard": "Không cần thẻ",
+        "openSource": "Mã nguồn mở",
+        "selfHost": "Tự vận hành được"
+      },
+      "video": {
+        "floatingCards": {
+          "aiCard": {
+            "action": "Đã thêm vào lịch",
+            "message": "\"Đã chặn ba giờ tập trung cho ngày mai.\"",
+            "title": "Mira"
+          },
+          "calendarCard": {
+            "event": "Khối tập trung",
+            "time": "09:00 – 11:00",
+            "title": "Lịch"
+          },
+          "taskCard": {
+            "description": "Duyệt thiết kế",
+            "status": "Xong",
+            "title": "Công việc"
+          },
+          "trackCard": {
+            "period": "Tuần này",
+            "title": "Thời gian đã ghi",
+            "value": "24h 10m"
+          }
+        },
+        "tab": "Tuturuuu — Không gian làm việc",
+        "thumbnail": "Demo Tuturuuu",
+        "title": "Video Demo Tuturuuu",
+        "watchNow": "Xem demo"
+      }
+    },
+    "outcomes": {
+      "audience": {
+        "businesses": {
+          "description": "Tài chính, kho hàng và khách hàng nói chuyện được với nhau.",
+          "label": "Doanh nghiệp nhỏ"
+        },
+        "freelancers": {
+          "description": "Khách hàng, hoá đơn và giờ công mà không cần năm gói thuê bao.",
+          "label": "Người làm tự do"
+        },
+        "students": {
+          "description": "Bài vở, hạn nộp và giờ học trong cùng một nơi.",
+          "label": "Sinh viên"
+        },
+        "teams": {
+          "description": "Chung bảng công việc, chung lịch, chung ngữ cảnh.",
+          "label": "Đội nhóm"
+        },
+        "title": "Dành cho mọi người, ở mọi nơi"
+      },
+      "eyebrow": "Điều thay đổi",
+      "items": {
+        "context": {
+          "description": "Lịch, công việc, tài liệu và tài chính nằm chung một không gian, để bạn thôi phải trả giá cho mười hai tab đang mở.",
+          "title": "Một nơi, một ngữ cảnh"
+        },
+        "dropped": {
+          "description": "Lời hứa nằm sâu trong một cuộc trao đổi trở thành công việc có người phụ trách và hạn chót, mà bạn không cần nhớ để ghi lại.",
+          "title": "Không gì bị bỏ sót"
+        },
+        "evenings": {
+          "description": "Những khoảng tập trung được xếp quanh các cuộc họp không thể dời, và phần cuối ngày của bạn được bảo vệ như mọi lịch hẹn khác.",
+          "title": "Trả lại buổi tối cho bạn"
+        },
+        "head": {
+          "description": "Việc sắp xếp, lên lịch và nhắc nhở đã có người lo, để phần chú ý còn lại dành cho công việc chỉ bạn mới làm được.",
+          "title": "Một cái đầu nhẹ hơn"
+        }
+      },
+      "subtitle": "Mục tiêu chưa bao giờ là sở hữu thêm phần mềm, mà là gấp máy lại và biết rằng không có gì bị bỏ sót.",
+      "title": "Bớt thời gian vận hành cuộc sống. Thêm thời gian để sống."
+    },
+    "pricing": {
+      "compare": "So sánh tất cả tính năng",
+      "eyebrow": "Bảng giá",
+      "faq": {
+        "q1": {
+          "answer": "Gói Miễn phí không có phí thuê bao. Các giới hạn sử dụng và tính khả dụng của sản phẩm vẫn áp dụng.",
+          "question": "Có thật sự có gói miễn phí không?"
+        },
+        "q2": {
+          "answer": "Có! Thanh toán hàng năm tiết kiệm khoảng 17% so với thanh toán hàng tháng.",
+          "question": "Tôi có tiết kiệm với thanh toán hàng năm không?"
+        },
+        "q3": {
+          "answer": "Mỗi không gian làm việc có gói riêng; gói trả phí tính theo thành viên. Mỗi tài khoản được tạo tối đa 10 không gian làm việc. Nâng cấp không tự động tăng giới hạn này.",
+          "question": "Giá theo workspace hoạt động thế nào?"
+        },
+        "q4": {
+          "answer": "Liên hệ đội ngũ sales của chúng tôi để được báo giá tùy chỉnh, hỗ trợ chuyên dụng và tính năng doanh nghiệp phù hợp với tổ chức của bạn.",
+          "question": "Còn giá doanh nghiệp thì sao?"
+        },
+        "title": "Câu Hỏi Thường Gặp"
+      },
+      "matrix": {
+        "categories": {
+          "advanced": "Nâng Cao",
+          "collaboration": "Cộng Tác",
+          "core": "Tính Năng Cốt Lõi",
+          "enterprise": "Doanh Nghiệp",
+          "tools": "Sản Phẩm & Công Cụ"
+        },
+        "featuresLabel": "Tính Năng",
+        "featuresList": {
+          "advancedAI": "Tín dụng AI dồi dào; có thể mua thêm",
+          "aiChat": "Chat AI",
+          "analytics": "Báo Cáo & Analytics",
+          "calendar": "Đồng Bộ Lịch",
+          "crmInventory": "CRM & Kho Hàng",
+          "customIntegrations": "Tích Hợp Tùy Chỉnh",
+          "customSolutions": "Giải Pháp Tùy Chỉnh",
+          "dedicatedSupport": "Đội Ngũ Support Riêng",
+          "drive": "Lưu Trữ Drive",
+          "granularRoles": "Phân Quyền Chi Tiết",
+          "prioritySupport": "Hỗ Trợ Ưu Tiên",
+          "qrGenerator": "Tạo Mã QR",
+          "selfHosting": "Tự Host",
+          "sla": "Tùy chọn SLA theo hợp đồng",
+          "tasks": "Quản Lý Công Việc",
+          "timeTracker": "Chấm Công",
+          "tuchat": "Tuchat (Nhắn Tin)",
+          "tumeet": "Tumeet (Video Call)",
+          "tuwrite": "Tuwrite (Tài Liệu)",
+          "whiteboards": "Bảng Trắng",
+          "workspaces": "Workspaces"
+        },
+        "values": {
+          "advanced": "nâng cao",
+          "limited": "giới hạn",
+          "soon": "Sắp có",
+          "unlimited": "Theo giới hạn gói"
+        }
+      },
+      "payAsYouGo": {
+        "badge": "Sắp Ra Mắt",
+        "description": "Cần thêm? Mở rộng linh hoạt theo nhu cầu.",
+        "features": [
+          "Thêm AI credits",
+          "Thời gian xử lý workflow",
+          "Ưu tiên hàng đợi"
+        ],
+        "title": "Trả theo nhu cầu sử dụng"
+      },
+      "pricesLoading": "Đang tải giá hiện tại…",
+      "pricesUnavailable": "Giá tạm thời chưa khả dụng. Vui lòng xác nhận giá hiện tại khi thanh toán.",
+      "subtitle": "Mỗi không gian làm việc có gói riêng, tính phí theo thành viên. Tài khoản thông thường có thể tạo tối đa 10 không gian làm việc; nâng cấp không tăng giới hạn này.",
+      "tiers": {
+        "enterprise": {
+          "cta": "Liên Hệ Tư Vấn",
+          "description": "Dành cho tổ chức lớn",
+          "features": [
+            "Mọi thứ của Pro +",
+            "Tùy chỉnh theo nhu cầu",
+            "Đội ngũ support riêng",
+            "SLA theo hợp đồng đã ký",
+            "Tự host được"
+          ],
+          "name": "Doanh Nghiệp",
+          "price": "Liên hệ"
+        },
+        "free": {
+          "cta": "Dùng Ngay",
+          "description": "Khởi đầu nhẹ nhàng",
+          "features": [
+            "Công việc, lịch và ghi chú",
+            "Bảng trắng và theo dõi thời gian",
+            "AI trong hạn mức tín dụng hữu hạn",
+            "Tài chính, danh bạ và kho cơ bản",
+            "Quyền trong không gian và xuất dữ liệu",
+            "100 MiB Drive mỗi không gian"
+          ],
+          "name": "Miễn Phí",
+          "period": "miễn phí mãi",
+          "price": "$0"
+        },
+        "plus": {
+          "badge": "Phổ Biến Nhất",
+          "cta": "Chọn Plus",
+          "description": "Khi team cần phối hợp",
+          "features": [
+            "Công cụ cốt lõi trong bộ ứng dụng",
+            "Thanh toán theo chỗ cho đội nhóm",
+            "20 GiB Drive mỗi không gian",
+            "Tín dụng AI dùng chung trong không gian",
+            "Cộng tác qua Chat",
+            "Tùy chọn mua thêm tín dụng AI phù hợp",
+            "Chủ trì Meet: thử nghiệm giới hạn"
+          ],
+          "name": "Plus",
+          "period": {
+            "monthly": "/thành viên/tháng",
+            "yearly": "/thành viên/năm"
+          }
+        },
+        "pro": {
+          "badge": "Mạnh Nhất",
+          "cta": "Chọn Pro",
+          "description": "Cho team cần sức mạnh tối đa",
+          "features": [
+            "Mọi tính năng Plus",
+            "Ngân sách AI hữu hạn lớn hơn",
+            "Hỗ trợ ưu tiên",
+            "Phòng thí nghiệm AI và Mira",
+            "Quản trị nhân sự",
+            "100 GiB Drive mỗi không gian"
+          ],
+          "name": "Pro",
+          "period": {
+            "monthly": "/thành viên/tháng",
+            "yearly": "/thành viên/năm"
+          }
+        }
+      },
+      "title": "Giá rõ ràng. Không phí ẩn.",
+      "toggle": {
+        "monthly": "Hàng Tháng",
+        "save": "Tiết kiệm 17%",
+        "yearly": "Hàng Năm"
+      }
+    },
+    "problem": {
+      "day": {
+        "consolidated": {
+          "label": "Cũng ngày đó, trong một không gian",
+          "meta": "{count} khối làm việc thật sự"
+        },
+        "fragmented": {
+          "label": "Một ngày trải trên cả chục app",
+          "meta": "{count} lần chuyển ngữ cảnh"
+        }
+      },
+      "eyebrow": "Vấn đề",
+      "stats": {
+        "apps": {
+          "label": "app mỗi ngày",
+          "value": "12+"
+        },
+        "context": {
+          "label": "mất ngữ cảnh",
+          "value": "47%"
+        },
+        "hours": {
+          "label": "lãng phí mỗi ngày",
+          "value": "3 giờ"
+        }
+      },
+      "subtitle": "Mỗi công cụ đều muốn làm trung tâm, và chẳng công cụ nào nói chuyện với nhau. Thế là bạn thành lớp tích hợp: sao chép giữa các app, giải thích lại cùng một ngữ cảnh, mở bốn nơi để trả lời một câu hỏi.",
+      "symptoms": {
+        "duplicated": {
+          "description": "Bắt đầu từ một tin nhắn, lặp lại trong công cụ quản lý, rơi vào bảng tính, rồi kết thúc trên một mẩu giấy nhớ. Bốn bản sao, bốn phiên bản sự thật.",
+          "title": "Cùng một việc, nhập bốn lần"
+        },
+        "glue": {
+          "description": "Mọi bàn giao đều đi qua một người: chép cái này sang kia, dán cái kia vào đây, rồi nhắc lại lần nữa. Không phải công việc, nhưng ngốn cả ngày.",
+          "title": "Bạn chính là lớp tích hợp"
+        },
+        "stale": {
+          "description": "Một mốc thời gian đổi ở app này và vẫn sai ở ba app kia. Không có sợi dây nào nối chúng, nên bản cập nhật phụ thuộc vào việc ai đó nhớ ra.",
+          "title": "Không cái nào báo cho cái nào"
+        }
+      },
+      "title": "Công việc không phải vấn đề. Việc nhảy qua nhảy lại mới là."
+    },
+    "socialProof": {
+      "backedBy": "Được hỗ trợ bởi",
+      "cta": "Xem trên GitHub",
+      "eyebrow": "Mã nguồn mở",
+      "stats": {
+        "commits": {
+          "label": "Commit",
+          "value": "20K+"
+        },
+        "contributors": {
+          "label": "Người đóng góp",
+          "value": "30+"
+        },
+        "potential": {
+          "label": "Tiềm năng",
+          "value": "Vô hạn"
+        },
+        "years": {
+          "label": "Năm đổi mới sáng tạo",
+          "value": "4+"
+        }
+      },
+      "title": "Build in public"
+    },
+    "teamFaq": {
+      "items": {
+        "ai": {
+          "answer": "Mira là trợ lý AI của Tuturuuu. Bạn có thể đặt câu hỏi, lên kế hoạch và nhận hỗ trợ với công việc trong không gian làm việc. Các thao tác khả dụng phụ thuộc vào quyền của bạn và công cụ đã kết nối.",
+          "question": "Mira hỗ trợ những gì?"
+        },
+        "openSource": {
+          "answer": "Có. Mã nguồn Tuturuuu được công khai trên GitHub. Bạn có thể xem mã nguồn, đóng góp cho dự án và tham khảo tài liệu tự lưu trữ.",
+          "question": "Tuturuuu có phải mã nguồn mở không?"
+        },
+        "start": {
+          "answer": "Tạo không gian làm việc, mời đồng đội và bắt đầu với công việc cùng lịch dùng chung. Khám phá các trang sản phẩm để chọn công cụ phù hợp với quy trình của đội nhóm.",
+          "question": "Đội nhóm của tôi bắt đầu như thế nào?"
+        },
+        "workspace": {
+          "answer": "Tuturuuu là không gian làm việc mã nguồn mở kết nối công việc dự án, lịch, tài liệu và công cụ kinh doanh. Đội nhóm có thể tổ chức công việc tại một nơi và sử dụng trợ lý AI Mira.",
+          "question": "Tuturuuu là gì?"
+        }
+      },
+      "title": "Tìm không gian làm việc phù hợp cho đội nhóm"
+    }
   },
   "login": {
     "account_switch_failed": "Không thể chuyển tài khoản.",
@@ -5104,6 +6243,55 @@
     "task_marked_incomplete": "Nhiệm vụ đánh dấu chưa hoàn thành",
     "task_not_associated": "Nhiệm vụ không liên kết với bảng nào"
   },
+  "transaction-category-data-table": {
+    "amount": "Giao dịch",
+    "amount_range": "Khoảng số tiền",
+    "amount_range_description": "Đặt số tiền tối thiểu và tối đa",
+    "apply_filter": "Áp dụng bộ lọc",
+    "category_name": "Tên danh mục",
+    "category_type": "Loại danh mục",
+    "color": "Màu sắc",
+    "created_at": "Tạo lúc",
+    "expense": "Chi phí",
+    "filter_by_amount": "Lọc theo số tiền",
+    "icon": "Biểu tượng",
+    "icon_description": "Chọn biểu tượng đại diện cho danh mục này.",
+    "id": "Mã số",
+    "income": "Thu nhập",
+    "is_expense": "Chi phí",
+    "maximum_amount": "Số tiền tối đa",
+    "minimum_amount": "Số tiền tối thiểu",
+    "name": "Tên",
+    "name_examples": "Tiền mặt, chuyển khoản, v.v.",
+    "no_color": "Màu mặc định",
+    "no_icon": "Chưa chọn biểu tượng",
+    "no_limit": "Không giới hạn",
+    "preview": "Xem trước",
+    "randomize_color": "Màu ngẫu nhiên",
+    "search_icons": "Tìm biểu tượng...",
+    "select_icon": "Chọn biểu tượng",
+    "select_type": "Chọn loại",
+    "total_amount": "Tổng số tiền",
+    "transaction_count": "Số giao dịch",
+    "type": "Loại",
+    "view_transactions": "Xem giao dịch"
+  },
+  "user-field-data-table": {
+    "boolean": "Có/Không",
+    "created_at": "Tạo lúc",
+    "date": "Ngày, tháng, năm",
+    "datetime": "Ngày và giờ",
+    "default_value": "Giá trị mặc định",
+    "description": "Mô tả",
+    "id": "Mã số",
+    "name": "Tên",
+    "notes": "Ghi chú",
+    "null": "Không có giá trị",
+    "number": "Số",
+    "possible_values": "Giá trị khả dụng",
+    "text": "Văn bản",
+    "type": "Loại dữ liệu"
+  },
   "vietnameseWomensDay": {
     "achievements": {
       "items": {
@@ -5402,5 +6590,87 @@
     "team_availability": "Đội ngũ sẵn có",
     "tuesday_10_00_am": "Thứ ba, 10:00 sáng",
     "unified_workspace": "Không gian làm việc thống nhất"
+  },
+  "ws-memories": {
+    "category": "Danh mục",
+    "delete": "Xoá",
+    "description": "Kiểm tra, tìm kiếm và tạo ký ức AI nội bộ cho không gian làm việc này.",
+    "empty": "Không tìm thấy ký ức nào.",
+    "export": "Xuất",
+    "key": "Khóa",
+    "limit": "Giới hạn",
+    "load_failed": "Không thể tải ký ức.",
+    "loading": "Đang tải ký ức...",
+    "memory_create_failed": "Không thể tạo ký ức",
+    "memory_created": "Đã tạo ký ức",
+    "memory_delete_failed": "Không thể xoá ký ức",
+    "memory_deleted": "Đã xoá ký ức",
+    "memory_export_failed": "Không thể xuất ký ức",
+    "memory_skipped": "Đã bỏ qua ký ức: {reason}",
+    "new_memory": "Ký ức mới",
+    "plural": "Ký ức",
+    "product": "Sản phẩm",
+    "query": "Truy vấn",
+    "query_badge": "Truy vấn: {query}",
+    "refresh": "Làm mới",
+    "remember": "Ghi nhớ",
+    "result_count": "{count, plural, one {# mục} other {# mục}}",
+    "results": "Kết quả",
+    "score": "Điểm {score}",
+    "search": "Tìm kiếm",
+    "singular": "Ký ức",
+    "value": "Nội dung"
+  },
+  "ws-polls": {
+    "active": "Đang hoạt động",
+    "active_polls": "Bỏ phiếu đang hoạt động",
+    "add": "Thêm",
+    "average_rating": "Đánh giá trung bình",
+    "cancel": "Hủy",
+    "cannot_use_anonymous": "Vui lòng đăng nhập bằng tài khoản Khách hoặc tài khoản Tuturuuu để sử dụng tính năng này",
+    "completed": "Đã hoàn thành",
+    "confirm": "Xác nhận",
+    "create": "Tạo bỏ phiếu",
+    "create_description": "Tạo cuộc bỏ phiếu mới để thu thập ý kiến và phản hồi từ các thành viên trong nhóm",
+    "create_first_poll": "Tạo cuộc bỏ phiếu đầu tiên",
+    "create_new_option": "Thêm tùy chọn của bạn...",
+    "created_by": "bởi",
+    "delete": "Xóa",
+    "delete_option": "Xóa Tùy chọn",
+    "delete_option_confirm": "Bạn có chắc chắn muốn xóa tùy chọn này không? Hành động này không thể hoàn tác.",
+    "delete_poll": "Xóa Bình chọn",
+    "delete_poll_confirm": "Bạn có chắc chắn muốn xóa bình chọn \"{pollName}\"? Hành động này không thể hoàn tác và sẽ xóa tất cả phiếu bầu và tùy chọn.",
+    "description": "Tạo và quản lý các cuộc bỏ phiếu để thu thập phản hồi và đưa ra quyết định tập thể trong không gian làm việc của bạn.",
+    "draft": "Bản nháp",
+    "enable_where_poll": "Bật tính năng bình chọn 'Nơi gặp mặt'",
+    "enable_where_poll_desc": "Bạn có thể bật tính năng bình chọn 'Nơi gặp mặt' cho kế hoạch của mình.",
+    "ended": "Đã kết thúc",
+    "ends": "Kết thúc",
+    "expired": "Đã hết hạn",
+    "filter": "Lọc",
+    "more_options": "tùy chọn khác",
+    "multiple_choice": "Nhiều lựa chọn",
+    "no_more_polls": "Không còn cuộc bỏ phiếu nào",
+    "no_more_polls_desc": "Tạo cuộc bỏ phiếu đầu tiên để bắt đầu thu thập phản hồi từ nhóm của bạn.",
+    "participation_rate": "Tỷ lệ tham gia",
+    "plural": "Bỏ phiếu",
+    "ranking": "Xếp hạng",
+    "rating": "Đánh giá",
+    "recent_polls": "Bỏ phiếu gần đây",
+    "select_options": "Chọn các tùy chọn để bỏ phiếu",
+    "singular": "Bỏ phiếu",
+    "sort": "Sắp xếp",
+    "total_polls": "Tổng số bỏ phiếu",
+    "total_votes": "Tổng số lượt bỏ phiếu",
+    "vote": "lượt bỏ phiếu",
+    "vote_again": "Bỏ phiếu lại",
+    "vote_confirm": "Bạn có chắc chắn muốn gửi phiếu bầu cho những tùy chọn này không?",
+    "vote_for": "Bỏ phiếu cho",
+    "vote_now": "Bỏ phiếu ngay",
+    "voted_for": "Bạn đã bình chọn cho",
+    "voter": "người bỏ phiếu",
+    "voters": "người bỏ phiếu",
+    "votes": "lượt bỏ phiếu",
+    "yes_no": "Có/Không"
   }
 }

@@ -5,6 +5,15 @@ import type { pages } from './page-registry.bridge.gen';
 type PageFile = (typeof pages)[number]['file'];
 
 export const pageModules = {
+  'src/app/[locale]/(marketing)/(landing)/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/(landing)/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/(landing)/layout'),
+    ],
+  },
   'src/app/[locale]/(marketing)/about/page.tsx': {
     page: () => import('../app/[locale]/(marketing)/about/page'),
     layouts: [
