@@ -1,0 +1,173 @@
+---
+title: "D74 cutover runbooks"
+description: "Order, commands, rollback pins and smoke for each app cutover to a Cloudflare Worker."
+---
+
+Cutovers run in this order: lowest risk first. Marketing page groups flip through the gateway instead (see the gateway Worker page). Each section is the whole runbook for one app; the linked packet has the full binding, secret and variable names.
+
+## Common steps
+
+1. Record the source SHA, the sealed artifact (CI run id) and the Vercel rollback pin below.
+2. Download the artifact: `gh run download <run-id> -R tutur3u/platform -n <artifact-name> -D /tmp/<app>-cutover`.
+3. Provision the secret names from the packet on the Worker, then deploy the artifact config route-free: `bunx wrangler deploy --config /tmp/<app>-cutover/dist/server/wrangler.json --name <worker>` (no route yet).
+4. Smoke the Worker on its own hostname before any route change: `node scripts/cutover-smoke.mjs <app> https://<worker-hostname>`.
+5. Attach the route or custom domain for the host (proxied, in front of the still-valid Vercel origin where possible).
+6. Re-run the smoke on the public host and watch for 5 minutes: no 5xx, login renders, entry route as expected.
+7. Rollback on any 5xx above 1% for 5 minutes, a wrong redirect or a broken login: remove the route or repoint the DNS record to the Vercel pin. Never rebuild on the rollback path. No data or migration is involved.
+
+## 1. shortener
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-shortener` |
+| Hosts | ttr.gg |
+| Artifact | shortener-cloudflare.yaml (artifact job) |
+| Vercel rollback pin | dpl_GE8wpZUZZs2vrATVXHhsWhrcei8e |
+| Packet | `shortener-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs shortener https://ttr.gg` |
+| Note | Publication is held in tuturuuu.ci.ts until the cutover PR. |
+
+## 2. tools
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-tools` |
+| Hosts | tools.tuturuuu.com, tools.tutur3u.com, tuturuuu.com/tools |
+| Artifact | tools-cloudflare.yaml, job cutover-artifact |
+| Vercel rollback pin | dpl_LUqZb9KjEXhA16gM7qpGRYNfs2ja |
+| Packet | `tools-cutover-packet` |
+| Smoke | `node scripts/cutover-smoke.mjs tools https://tools.tuturuuu.com` |
+
+## 3. storefront
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-storefront` |
+| Hosts | store.tuturuuu.com (+ alias hosts redirect) |
+| Artifact | storefront-cloudflare.yaml, job cutover-artifact |
+| Vercel rollback pin | dpl_9hTHzckmpYsjzFBFyQ9uz4n7gN5R (Vercel project named storefronts) |
+| Packet | `storefront-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs storefront https://store.tuturuuu.com` |
+
+## 4. external
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-external` |
+| Hosts | external.tuturuuu.com |
+| Artifact | external-cloudflare.yaml, job build (uploads the external-cutover artifact) |
+| Vercel rollback pin | none found (no Vercel project; confirm before the flip) |
+| Packet | `external-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs external https://external.tuturuuu.com` |
+
+## 5. rewise
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-rewise` |
+| Hosts | rewise.tuturuuu.com |
+| Artifact | rewise-cloudflare.yaml, job cutover-artifact |
+| Vercel rollback pin | dpl_AEYG1siChNBLcnUBZ4xDKQcbn1Fh |
+| Packet | `rewise-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs rewise https://rewise.tuturuuu.com` |
+| Note | Needs UPSTASH_REDIS_REST_URL/TOKEN and ABUSE_GUARD_BACKEND=upstash on the Worker. |
+
+## 6. drive
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-drive` |
+| Hosts | drive.tuturuuu.com |
+| Artifact | drive-cloudflare.yaml (sealed artifact) |
+| Vercel rollback pin | dpl_7NqvsJbGgYnDMSj1Z2hpQY6NduiC |
+| Packet | `drive-start-void (PR #7928, merge pending Selene)` |
+| Smoke | `node scripts/cutover-smoke.mjs drive https://drive.tuturuuu.com` |
+| Note | Source and workflow arrive with PR #7928. |
+
+## 7. teach
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-teach` |
+| Hosts | teach.tuturuuu.com (mount tuturuuu.com/teach) |
+| Artifact | teach-cloudflare.yaml, job teach-cutover-artifact |
+| Vercel rollback pin | dpl_F5hAajM98yzKJXAyp8x6UykSursf |
+| Packet | `teach-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs teach https://teach.tuturuuu.com` |
+| Note | Not restricted to its declared hosts: attach only the teach route. |
+
+## 8. tasks
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-tasks` |
+| Hosts | tasks.tuturuuu.com |
+| Artifact | mail-calendar-tasks-builds.yaml, job tasks-cutover-artifact |
+| Vercel rollback pin | dpl_EgKBkkw84zWdxgNARiXiZssD9PB7 |
+| Packet | `tasks-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs tasks https://tasks.tuturuuu.com` |
+
+## 9. track
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-track` |
+| Hosts | track.tuturuuu.com |
+| Artifact | track-cloudflare.yaml, job track-cutover-artifact |
+| Vercel rollback pin | dpl_34ReWMgzXVogGXXUtoid386QqSNC |
+| Packet | `track-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs track https://track.tuturuuu.com` |
+
+## 10. finance
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-finance` |
+| Hosts | finance.tuturuuu.com |
+| Artifact | finance-cloudflare.yaml (production profile) |
+| Vercel rollback pin | dpl_AEY3N6yzW5RoNgXubJxfajAgNhfm |
+| Packet | `finance-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs finance https://finance.tuturuuu.com` |
+
+## 11. calendar
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-calendar` |
+| Hosts | calendar.tuturuuu.com |
+| Artifact | wave1-native-production.yaml, input app=calendar, environment wave1-calendar-production |
+| Vercel rollback pin | dpl_EDfFFKFtpxeJ29UUmxZc1VNqLsX2 |
+| Packet | `wave1-cutover-packets` |
+| Smoke | `node scripts/cutover-smoke.mjs calendar https://calendar.tuturuuu.com` |
+
+## 12. mail
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-mail` |
+| Hosts | mail.tuturuuu.com |
+| Artifact | wave1-native-production.yaml, input app=mail, environment wave1-mail-production |
+| Vercel rollback pin | dpl_G7VbMYiwb9BhAm9i2FK8N3Udw3s3 |
+| Packet | `wave1-cutover-packets` |
+| Smoke | `node scripts/cutover-smoke.mjs mail https://mail.tuturuuu.com` |
+| Note | Vercel cannot rebuild mail from main; the Cloudflare cutover is the only way forward. |
+
+## 13. apps
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-apps` |
+| Hosts | apps.tuturuuu.com |
+| Artifact | wave1-native-production.yaml, input app=apps, environment wave1-apps-production |
+| Vercel rollback pin | dpl_7jwSj1yvqqtjxagQqsVr8kZ97ByS |
+| Packet | `wave1-cutover-packets` |
+| Smoke | `node scripts/cutover-smoke.mjs apps https://apps.tuturuuu.com` |
+
+## Not cut over tonight
+
+- playground: no Vercel deployment found; staff-only app, routes attach at its own hostname when wanted.
+- colab: already on Cloudflare; Start/Void port is a separate change.
+- parley: already on Cloudflare (OpenNext).
+- contacts: stays on Vercel (a client uses it daily); its conversion needs its own rehearsed rollback.
+- mastermind: held by the wave-2 security hold.
+- learn, chat, infrastructure, mind, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
