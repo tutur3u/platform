@@ -168,6 +168,23 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/documents/[documentId]/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/documents/[documentId]/layout'),
+    ],
+  },
+  'src/app/[locale]/(dashboard)/[wsId]/documents/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/documents/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/tasks/[[...slug]]/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/tasks/[[...slug]]/page'),
     layouts: [
