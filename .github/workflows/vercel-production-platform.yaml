@@ -61,11 +61,12 @@ jobs:
 
       - name: Install dependencies
         if: steps.package_release_gate.outputs.packages_ready == 'true'
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Install Vercel CLI
         if: steps.package_release_gate.outputs.packages_ready == 'true'
-        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0
+        # unfrozen-bun-install: pinned global CLI has no project lockfile
+        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts
 
       - name: Pull Vercel Environment Information
         if: steps.package_release_gate.outputs.packages_ready == 'true'
@@ -114,6 +115,47 @@ jobs:
           VERCEL_STAGED_DEPLOYMENT_URL: ${{ steps.stage_deployment.outputs.url }}
           VERCEL_STAGED_APP: platform
         run: node scripts/ci/verify-staged-critical-app.js
+
+      - name: Restore shared Chromium input
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/finance-native-playwright
+          # Finance seeds this exact-lock cache with the same Web Playwright CLI.
+          key: finance-browser-v1-${{ runner.os }}-${{ runner.arch }}-bun1.4.4-node24.22.0-${{ hashFiles('bun.lock') }}
+
+      - name: Install staged Chromium prerequisites
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
+        timeout-minutes: 5
+        uses: ./.github/actions/install-native-runtime-prerequisites
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/finance-native-playwright
+        with:
+          working-directory: .
+          command: bun apps/web/node_modules/playwright/cli.js install --with-deps chromium
+
+      - name: Verify staged CSS and styled viewports
+        id: verify_styles
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
+        timeout-minutes: 3
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_STAGED_DEPLOYMENT_URL: ${{ steps.stage_deployment.outputs.url }}
+          VERCEL_STAGED_APP: platform
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/finance-native-playwright
+        run: node scripts/ci/verify-staged-style.js
+
+      - name: Retain staged style proof
+        if: always() && steps.package_release_gate.outputs.packages_ready == 'true' && steps.stage_deployment.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: staged-platform-styles-${{ steps.resolve_target.outputs.sha }}
+          path: ${{ runner.temp }}/staged-style-proof/${{ steps.resolve_target.outputs.sha }}
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
 
       - name: Promote verified production deployment
         id: promote

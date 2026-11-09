@@ -115,6 +115,24 @@ describe('mergeWorkspaceSelectWorkspaces', () => {
     ]);
   });
 
+  it('deduplicates workspace ids while retaining distinct workspaces with the same name', () => {
+    const workspace: InternalApiWorkspaceSummary = {
+      access_type: 'member',
+      avatar_url: null,
+      id: 'workspace-1',
+      logo_url: null,
+      name: 'Shared name',
+      personal: false,
+    };
+    const other = { ...workspace, id: 'workspace-2' };
+    expect(
+      mergeWorkspaceSelectWorkspaces([workspace, workspace, other], workspace)
+    ).toEqual([workspace, other]);
+    expect(
+      mergeWorkspaceSelectWorkspaces([workspace, workspace], null)
+    ).toEqual([workspace]);
+  });
+
   it('keeps workspace fallback images outside Radix AvatarImage context', () => {
     const workspaceIconSource = readFileSync(
       join(process.cwd(), 'src/components/ui/custom/workspace-select-icon.tsx'),

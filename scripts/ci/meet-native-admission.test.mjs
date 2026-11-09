@@ -33,7 +33,19 @@ test('finite Meet admission preserves full config, manifest and typed edges', as
   assert.equal(plan.profile, 'meet-emitted-v1');
   assert.ok(Object.isFrozen(plan.config.services));
   assert.equal(plan.seal['empty-directory/'], null);
-  assert.equal(plan.edges.length, 7);
+  assert.equal(plan.edges.length, 8);
+  assert.deepEqual(
+    plan.edges.find(([role, name]) => role === 'app' && name === 'ABUSE_GUARD'),
+    ['app', 'ABUSE_GUARD', 'stub-service', 'fixture:abuse-guard-stub']
+  );
+  assert.deepEqual(
+    plan.config.services.find((s) => s.binding === 'ABUSE_GUARD'),
+    {
+      binding: 'ABUSE_GUARD',
+      service: 'tuturuuu-abuse-guard',
+      entrypoint: 'AbuseGuardEntrypoint',
+    }
+  );
   assert.equal(plan.config.r2_buckets[0].binding, 'NEXT_INC_CACHE_R2_BUCKET');
   assert.deepEqual(plan.config.images, { binding: 'IMAGES' });
   assert.equal(plan.config.configPath, f.normalization.inputPath);
@@ -78,6 +90,21 @@ const mutations = {
   },
   selfReference: (c) => {
     c.services[0].service = 'ambient-worker';
+  },
+  missingAbuseGuard: (c) => {
+    c.services.splice(1, 1);
+  },
+  abuseGuardService: (c) => {
+    c.services[1].service = 'meet-ci-binding-probe';
+  },
+  abuseGuardEntrypoint: (c) => {
+    c.services[1].entrypoint = 'MeetingAIProvider';
+  },
+  abuseGuardDefaultEntrypoint: (c) => {
+    delete c.services[1].entrypoint;
+  },
+  abuseGuardRemote: (c) => {
+    c.services[1].remote = true;
   },
   customBuild: (c) => {
     c.build = { command: 'forbidden' };

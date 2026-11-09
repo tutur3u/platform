@@ -31,7 +31,6 @@ extension _AssistantChatCreationSubmission on AssistantChatCubit {
       _emitIfOpen(state.copyWith(status: AssistantChatStatus.idle));
       return null;
     }
-    _emitIfOpen(state.copyWith(creationOutcomeUnknown: true));
     if (plan != null && !hasAttachments) {
       return _FirstMessagePreparedChat(
         AssistantFirstMessageCreation(plan.take(), plan.isCurrent),

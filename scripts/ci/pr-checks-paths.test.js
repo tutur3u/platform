@@ -6,16 +6,16 @@ const { readWorkflow } = require('./workflow-yaml-test-helper');
 // Vite is a declared root dependency and owns this locked matcher.
 const picomatch = createRequire(require.resolve('vite'))('picomatch');
 const workflow = readWorkflow('pr-checks.yaml', { raw: true });
+const mapStep = workflow.jobs.scope.steps.find((step) => step.id === 'map');
+const pathsStep = workflow.jobs.scope.steps.find((step) => step.id === 'paths');
+assert.equal(mapStep.run, 'node scripts/ci/check-map.js --ci-filters');
+assert.equal(pathsStep.with.filters, '${{ steps.map.outputs.filters }}');
 const filters = JSON.parse(
-  execFileSync(
-    'bun',
-    [
-      '-e',
-      'console.log(JSON.stringify(Bun.YAML.parse(process.argv[1])))',
-      workflow.jobs.scope.steps[0].with.filters,
-    ],
-    { encoding: 'utf8' }
-  )
+  execFileSync(process.execPath, ['scripts/ci/check-map.js', '--ci-filters'], {
+    cwd: require('node:path').resolve(__dirname, '../..'),
+    encoding: 'utf8',
+    env: { ...process.env, GITHUB_OUTPUT: '' },
+  })
 );
 const matches = (patterns, file) => picomatch(patterns, { dot: true })(file);
 const common = {
@@ -27,14 +27,20 @@ const common = {
   'bun.lock': ['bun.lock'],
 };
 const cases = {
-  biome: {
+  oxc: {
     ...common,
-    '**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx,json,jsonc,css,graphql,gql}': [
-      'scripts/check.js',
-      '.ci/policy.json',
-      'packages/ui/src/view.tsx',
-      'apps/web/messages/en.json',
-    ],
+    '**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx,json,jsonc,css,graphql,gql,md,mdx,yaml,yml,html}':
+      [
+        'README.md',
+        'apps/docs/platform/overview.mdx',
+        'config.yml',
+        'config.yaml',
+        'public/index.html',
+        'scripts/check.js',
+        '.ci/policy.json',
+        'packages/ui/src/view.tsx',
+        'apps/web/messages/en.json',
+      ],
     '.editorconfig': ['.editorconfig'],
     '.gitignore': ['.gitignore'],
   },
@@ -146,7 +152,7 @@ for (const [category, patterns] of Object.entries(cases)) {
 }
 
 test('unrelated prose and mobile screen edits do not select unrelated checks', () => {
-  for (const category of ['biome', 'i18n', 'migrations', 'mobile', 'plugin'])
+  for (const category of ['i18n', 'migrations', 'mobile', 'plugin'])
     assert.equal(
       matches(filters[category], 'apps/docs/platform/overview.mdx'),
       false,
@@ -158,5 +164,5 @@ test('unrelated prose and mobile screen edits do not select unrelated checks', (
       false,
       category
     );
-  assert.equal(matches(filters.biome, 'README.md'), false);
+  assert.equal(matches(filters.oxc, 'README.md'), true);
 });

@@ -11,10 +11,6 @@ const workflowsDir = path.resolve(__dirname, '../../.github/workflows');
 // ls-remote work for this public repository and need no exception.
 const persistedCredentialJobs = new Map([
   ['release-please-auto-merge.yaml:merge', 'git push of the release merge'],
-  [
-    'release-please.yaml:release-please',
-    'git push of the normalized release branch',
-  ],
 ]);
 // Blob-pinned producer contract for Supabase Production; the workflow_run
 // trust fix opts it out together with its allowlist update, so this entry is
@@ -195,4 +191,17 @@ test('credential check flags a write-token job that persists credentials', () =>
     persistedCheckouts(changed).filter((key) => !allowed(key)),
     ['vercel-production-ai.yaml:Deploy-Production']
   );
+});
+
+test('CI configuration check never persists checkout credentials on any runner', () => {
+  const checkouts = workflows['ci-check.yml'].jobs.check.steps.filter((step) =>
+    step.uses?.startsWith('actions/checkout@')
+  );
+  assert.ok(
+    checkouts.length > 0,
+    'CI configuration check must check out source'
+  );
+  for (const checkout of checkouts) {
+    assert.equal(checkout.with?.['persist-credentials'], false);
+  }
 });

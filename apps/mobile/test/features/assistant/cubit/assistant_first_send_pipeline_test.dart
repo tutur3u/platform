@@ -180,7 +180,9 @@ void main() {
       expect(repository.sends, 0);
       expect(repository.firstSends, 1);
       expect(repository.dispatchedChat, clientId);
-      expect(chat.state.creationOutcomeUnknown, isTrue);
+      // The outcome is not unknown merely because transport was entered.
+      expect(chat.state.creationOutcomeUnknown, isFalse);
+      expect(chat.state.status, AssistantChatStatus.submitting);
       repository.events.add(
         AssistantChatCreatedStreamEvent(
           AssistantCreatedChat(id: clientId),
@@ -203,6 +205,97 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(repository.sends, 0);
     expect(preferences.writes, 0);
+  });
+
+  group('first message outcome timing', () {
+    Future<String> sendFirst() async {
+      await chat.close();
+      chat = AssistantChatCubit(
+        repository: repository,
+        preferences: preferences,
+        prepareCreationSettings: (ws, model, current) =>
+            AssistantCreationSettingsPlan(
+              ChatInitialAiSettings(
+                modelId: model,
+                creditSource: 'workspace',
+                creditWsId: null,
+                thinkingMode: 'fast',
+              ),
+              current,
+            ),
+        onWorkspaceContextChanged: (_) async {},
+        onSoulRefreshRequested: () async {},
+        onImmersiveModeChanged: (_) {},
+        onChatRestored: (_) async {},
+      );
+      await chat.loadWorkspace(_ws);
+      final clientId = chat.state.fallbackChatId;
+      await send();
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.firstSends, 1);
+      return clientId;
+    }
+
+    for (final failure in <Object>[
+      TimeoutException('Synthetic request timeout'),
+      const ApiException(message: 'Synthetic 503', statusCode: 503),
+      const FormatException('Synthetic dropped connection'),
+    ]) {
+      test('an unacknowledged ${failure.runtimeType} is unknown', () async {
+        await sendFirst();
+        expect(chat.state.creationOutcomeUnknown, isFalse);
+        repository.events.addError(failure);
+        await Future<void>.delayed(Duration.zero);
+        expect(chat.state.creationOutcomeUnknown, isTrue);
+        expect(chat.state.storedChatId, isNull);
+        expect(chat.state.status, AssistantChatStatus.error);
+      });
+    }
+
+    test('a failure after acknowledgement stays known', () async {
+      final clientId = await sendFirst();
+      repository.events.add(
+        AssistantChatCreatedStreamEvent(
+          AssistantCreatedChat(id: clientId),
+          chat.state.messages.first.clientRequestId!,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      repository.events.addError(TimeoutException('Synthetic reply drop'));
+      await Future<void>.delayed(Duration.zero);
+      expect(chat.state.creationOutcomeUnknown, isFalse);
+      expect(chat.state.storedChatId, clientId);
+    });
+
+    test('a second send cannot supersede an in-flight first message', () async {
+      await sendFirst();
+      await send();
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.firstSends, 1);
+      expect(repository.sends, 0);
+      expect(chat.state.status, AssistantChatStatus.submitting);
+      expect(chat.state.messages.where((m) => m.role == 'user'), hasLength(1));
+    });
+
+    test('a definite pre-effect denial stays known', () async {
+      await send();
+      repository.creation.completeError(
+        const ApiException(
+          message: 'Synthetic denial',
+          statusCode: 400,
+          code: 'chat_create_invalid_request',
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(chat.state.creationOutcomeUnknown, isFalse);
+      expect(chat.state.status, AssistantChatStatus.error);
+    });
+
+    test('a separate create is not unknown while in flight', () async {
+      await send();
+      expect(repository.creating, isTrue);
+      expect(chat.state.creationOutcomeUnknown, isFalse);
+    });
   });
 
   test('an uncertain creation retains its hold and never dispatches', () async {

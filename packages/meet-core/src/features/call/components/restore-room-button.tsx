@@ -3,7 +3,7 @@ import {
   getMeetCallRoomState,
   restoreMeetCallRoom,
 } from '@tuturuuu/internal-api';
-import { Button } from '@tuturuuu/ui/button';
+import { Button, type ButtonProps } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { forgetEndedRoom } from '../lib/ended-room-cache';
@@ -13,11 +13,15 @@ export function RestoreRoomButton({
   accountId,
   meetingId,
   disabled,
+  variant,
+  size,
   onRestored = () => window.location.reload(),
 }: {
   accountId: string;
   meetingId: string;
   disabled?: boolean;
+  variant?: ButtonProps['variant'];
+  size?: ButtonProps['size'];
   onRestored?: () => void;
 }) {
   const t = useTranslations('meet.call');
@@ -81,6 +85,8 @@ export function RestoreRoomButton({
   return (
     <div className="space-y-2">
       <Button
+        variant={variant}
+        size={size}
         onClick={() => void restore()}
         disabled={disabled || currentStatus?.pending}
       >

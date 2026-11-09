@@ -1,0 +1,19 @@
+{
+  "name": "@tuturuuu/gateway",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.3",
+  "scripts": {
+    "test": "vp test",
+    "type-check": "tsc --project tsconfig.json",
+    "lint": "vp lint --config .oxlintrc.json src --deny-warnings",
+    "format:check": "vp fmt --config .oxfmtrc.json src --check",
+    "smoke": "node scripts/gateway-smoke.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
+    "vite-plus": "1.3.0"
+  }
+}

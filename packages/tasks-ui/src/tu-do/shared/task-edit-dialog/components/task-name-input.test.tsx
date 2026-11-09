@@ -15,11 +15,13 @@ function renderTaskNameInput({
   targetCursor = 12,
   variant = 'fullscreen',
   onSubmit,
+  ticketLabel,
 }: {
   isCreateMode?: boolean;
   targetCursor?: number | null;
   variant?: 'fullscreen' | 'compact';
   onSubmit?: () => void;
+  ticketLabel?: string | null;
 } = {}) {
   const editorWrapper = document.createElement('div');
   const editorElement = document.createElement('div');
@@ -45,6 +47,7 @@ function renderTaskNameInput({
     flushNameUpdate: vi.fn(),
     variant,
     onSubmit,
+    ticketLabel,
   };
 
   render(<TaskNameInput {...props} />);
@@ -77,6 +80,19 @@ describe('TaskNameInput', () => {
       expect(input).toHaveFocus();
       expect(input).toHaveProperty('selectionStart', expectedCursorPosition);
       expect(input).toHaveProperty('selectionEnd', expectedCursorPosition);
+    }
+  );
+
+  it.each(['fullscreen', 'compact'] as const)(
+    'shows the %s title after its project key, outside the editable text',
+    (variant) => {
+      const { input } = renderTaskNameInput({
+        variant,
+        ticketLabel: 'PLAT-4',
+      });
+
+      expect(screen.getByText('PLAT-4')).toBeInTheDocument();
+      expect(input).toHaveValue('APIs for Agent Pi');
     }
   );
 

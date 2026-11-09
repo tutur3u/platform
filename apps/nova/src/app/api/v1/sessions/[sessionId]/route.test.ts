@@ -51,7 +51,6 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
             data: { id: 'session-1', ...mocks.session },
             error: null,
           }),
-          // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
           then: (resolve: (value: unknown) => unknown) =>
             Promise.resolve({ error: null }).then(resolve),
           update: (value: unknown) => {

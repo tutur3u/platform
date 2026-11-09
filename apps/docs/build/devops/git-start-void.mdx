@@ -1,0 +1,63 @@
+---
+title: "Git on Start + Void"
+description: "Cutover packet for the native Git Worker: names, bindings, build, smoke checks and rollback to Vercel."
+updatedAt: "2026-11-10"
+audience: developers
+---
+
+`apps/git` runs natively on TanStack Start + Vite+ + Void on `main`, beside its Next build.
+`vercel-production-git.yaml` still deploys the Next app, so the current Vercel deployment
+keeps serving until the route is flipped.
+
+## Worker
+
+- Worker: `tuturuuu-git` when `VITE_GIT_NATIVE_PROFILE=production`, and `tuturuuu-git-vite-staging` by default. `workers_dev` and `preview_urls` stay off. Production sets `TUTURUUU_NOINDEX=0`; the default build sets `1`. Nothing here attaches a route.
+- Entry: `apps/git/cloudflare/worker.ts`; Wrangler config is emitted by `void` into `dist`.
+- Host: `git.tuturuuu.com`. Root-only: `mountHosts` is empty and `unknownHost` is `reject`, so `tuturuuu.com/git` and any other host answer 404 before app code runs.
+- Binding: `ASSETS` (static output, `run_worker_first`).
+- Variables (names): `TUTURUUU_NOINDEX`, optional `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`).
+- Secrets (names, set in the Worker, never in the repo): `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `ENCRYPTION_MASTER_KEY`,
+  `TUTURUUU_APP_COORDINATION_SECRET`. Compare with the Vercel project environment list
+  before the flip.
+
+## Build and qualification
+
+```bash
+bun install --frozen-lockfile --ignore-scripts
+bun turbo:local run build --filter=@tuturuuu/git^... --concurrency=2
+bun scripts/ci/generate-build-metadata.ts
+bun run --cwd apps/git build:cloudflare
+bun run --cwd apps/git routes:check
+bun run --cwd apps/git type-check:cloudflare
+CI=true CI_SOURCE_SHA=$(git rev-parse HEAD) bun run --cwd apps/git test:runtime
+```
+
+`git-cloudflare.yaml` runs the same steps for the default build, records the emitted config receipt and packages
+`dist` with the receipt. `git-cutover-artifact` builds with `VITE_GIT_NATIVE_PROFILE=production` and seals that output with `scripts/ci/git-native-artifact.py` (`config`, `seal`, `pack`). `cloudflare/anonymous.runtime.mjs` starts the emitted Worker in
+workerd: the canonical host answers the public root (a redirect to `/tutur3u/platform`, or
+`200`), an unknown host answers `404`, and closed public ingress such as
+`/api/storage/probe` answers `403`.
+
+## Smoke checks after the route is attached
+
+```bash
+curl -sI https://git.tuturuuu.com/api/build-info          # 200, JSON, no-store
+curl -sI https://git.tuturuuu.com/                        # redirect to /tutur3u/platform
+curl -sI https://git.tuturuuu.com/tutur3u/platform        # 200, renders
+curl -sI https://git.tuturuuu.com/api/storage/probe       # 403, ingress closed
+curl -sI https://tuturuuu.com/git                         # 404 (root-only app)
+```
+
+No smoke request may return `5xx`.
+
+## Rollback
+
+1. Before the flip, record the current production Vercel deployment id (the repo does not
+   store it) and the DNS records and TTLs for `git.tuturuuu.com` in the release record.
+2. Roll back by detaching the Worker route or restoring the captured DNS records to the
+   recorded deployment. `vercel-production-git.yaml` still deploys the Next app.
+3. Rerun the smoke checks against the Vercel origin.
+
+Rolling back touches no database rows and no migrations. Route, DNS and deployment
+changes belong to the release owner.

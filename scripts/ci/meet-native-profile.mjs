@@ -5,6 +5,12 @@ import { createRequire } from 'node:module';
 import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkNormalization, checkPolicy } from './meet-emitted-defaults.mjs';
+import {
+  ABUSE_GUARD_BINDING,
+  ABUSE_GUARD_STUB,
+  admitAbuseGuardEdge,
+  admitAbuseGuardStub,
+} from './meet-native-abuse-guard-stub.mjs';
 import { ASSURANCE_ORIGIN } from './meet-native-assurance.mjs';
 import { sealMeetApp } from './meet-native-inventory.mjs';
 
@@ -27,6 +33,7 @@ export const EDGES = Object.freeze(
     ['app', 'WORKER_SELF_REFERENCE', 'service', 'app:default'],
     ['app', 'NEXT_INC_CACHE_R2_BUCKET', 'local-r2', 'scratch'],
     ['app', 'IMAGES', 'local-images', 'scratch'],
+    ['app', ABUSE_GUARD_BINDING, 'stub-service', ABUSE_GUARD_STUB],
     ['probe', 'LIVE', 'external-sqlite', 'app:MeetLiveDurableObject'],
     ['probe', 'PROVIDER', 'service', 'app:MeetingAIProvider'],
   ].map(Object.freeze)
@@ -89,6 +96,10 @@ export function admitProbe(config) {
 export function admitApp(config, normalization) {
   checkPolicy(config, identity, secretNames);
   checkNormalization(config, normalization);
+  admitAbuseGuardEdge(
+    config.services,
+    EDGES.find(([role, name]) => role === 'app' && name === ABUSE_GUARD_BINDING)
+  );
 }
 export function fixtureBindings(secret) {
   assert.match(secret, /^[a-f0-9-]{72}$/);
@@ -107,6 +118,14 @@ export function fixtureBindings(secret) {
       type: 'secret_text',
       value: 'disposable-unused-fixture',
     },
+  };
+}
+// Fixture values plus the local abuse-guard stub, which replaces the emitted
+// service binding of the same name; nothing else may be overridden.
+export function appBindings(secret, abuseGuard) {
+  return {
+    ...fixtureBindings(secret),
+    [ABUSE_GUARD_BINDING]: admitAbuseGuardStub(abuseGuard),
   };
 }
 

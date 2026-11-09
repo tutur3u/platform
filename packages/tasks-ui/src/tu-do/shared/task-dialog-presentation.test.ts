@@ -1,6 +1,8 @@
 import { cn } from '@tuturuuu/utils/format';
 import { describe, expect, it } from 'vitest';
 import {
+  getTaskDialogContentClassName,
+  getTaskDialogContentPresentation,
   resolveTaskDialogOpeningPresentation,
   TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME,
   TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME,
@@ -83,6 +85,38 @@ describe('resolveTaskDialogOpeningPresentation', () => {
     ).toBe('compact');
   });
 
+  it('opens task edits in the side panel on a board surface', () => {
+    const onBoard = { preferences, panelSurface: true };
+    expect(
+      resolveTaskDialogOpeningPresentation({
+        ...onBoard,
+        mode: 'edit',
+        selectedListStatus: 'active',
+      })
+    ).toBe('panel');
+    expect(
+      resolveTaskDialogOpeningPresentation({
+        ...onBoard,
+        mode: 'create',
+        selectedListStatus: 'active',
+      })
+    ).toBe('compact');
+    expect(
+      resolveTaskDialogOpeningPresentation({
+        ...onBoard,
+        mode: 'edit',
+        selectedListStatus: 'documents',
+      })
+    ).toBe(preferences.documentEdit);
+    expect(
+      resolveTaskDialogOpeningPresentation({
+        ...onBoard,
+        draftId: 'draft-1',
+        mode: 'edit',
+      })
+    ).toBe('fullscreen');
+  });
+
   it('keeps drafts fullscreen', () => {
     expect(
       resolveTaskDialogOpeningPresentation({
@@ -92,5 +126,28 @@ describe('resolveTaskDialogOpeningPresentation', () => {
         selectedListStatus: 'documents',
       })
     ).toBe('fullscreen');
+  });
+});
+
+describe('getTaskDialogContentClassName', () => {
+  it('picks one class set per presentation', () => {
+    const pick = (compact: boolean, focused: boolean, panel: boolean) =>
+      getTaskDialogContentClassName({ compact, focused, panel });
+    expect(pick(true, true, true)).toContain('max-w-[30rem]');
+    expect(pick(false, true, true)).toBe(
+      TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME
+    );
+    expect(pick(false, false, true)).toContain('--task-panel-width');
+    expect(pick(false, false, false)).toBeUndefined();
+  });
+});
+
+describe('getTaskDialogContentPresentation', () => {
+  it('keeps fullscreen, then the panel, else the centred dialog', () => {
+    expect(getTaskDialogContentPresentation('fullscreen', true)).toBe(
+      'fullscreen'
+    );
+    expect(getTaskDialogContentPresentation('panel', true)).toBe('panel');
+    expect(getTaskDialogContentPresentation('focused', false)).toBe('default');
   });
 });

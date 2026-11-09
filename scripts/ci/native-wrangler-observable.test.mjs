@@ -514,9 +514,8 @@ test('dedicated preload outcome stays distinct from observable syntax closure', 
       throw error;
     });
     const { receipt } = await producer.finish();
-    const { requireChildOutcome } = await import(
-      './native-wrangler-evidence.mjs'
-    );
+    const { requireChildOutcome } =
+      await import('./native-wrangler-evidence.mjs');
     assert.equal(
       requireChildOutcome(receipt, 'preload', { code: 0, signal: null }),
       'PROVEN_PRESTART_PRELOAD_REJECTION'

@@ -91,37 +91,35 @@ const bridge = startBridgePreset({
   ],
 });
 
-export default defineConfig(
-  ({ command }): UserConfig => ({
-    base: bridge.base,
-    experimental: bridge.experimental,
-    define: bridge.define,
-    plugins: [
-      actionPorts,
-      workerCjsBrowserEntries,
-      voidPlugin(),
-      tanstackStart({ ...bridge.tanstackStart, rsc: { enabled: false } }),
-      react(),
-      tailwindcss(),
-    ],
-    resolve: {
-      tsconfigPaths: true,
-      conditions: ['bun', 'module', 'browser', 'development|production'],
-      alias: bridge.alias,
+export default defineConfig(({ command }): UserConfig => ({
+  base: bridge.base,
+  experimental: bridge.experimental,
+  define: bridge.define,
+  plugins: [
+    actionPorts,
+    workerCjsBrowserEntries,
+    voidPlugin(),
+    tanstackStart({ ...bridge.tanstackStart, rsc: { enabled: false } }),
+    react(),
+    tailwindcss(),
+  ],
+  resolve: {
+    tsconfigPaths: true,
+    conditions: ['bun', 'module', 'browser', 'development|production'],
+    alias: bridge.alias,
+  },
+  environments: {
+    client: { define: bridge.clientDefine(command) },
+    // The Worker bundle has circular chunks (a dayjs CJS interop wrapper
+    // was called before its chunk initialized); run module bodies in source
+    // order instead of chunk order.
+    ssr: {
+      build: { rolldownOptions: { output: { strictExecutionOrder: true } } },
     },
-    environments: {
-      client: { define: bridge.clientDefine(command) },
-      // The Worker bundle has circular chunks (a dayjs CJS interop wrapper
-      // was called before its chunk initialized); run module bodies in source
-      // order instead of chunk order.
-      ssr: {
-        build: { rolldownOptions: { output: { strictExecutionOrder: true } } },
-      },
-    },
-    server: {
-      host: '127.0.0.1',
-      port: Number(process.env.PORT ?? 7809),
-      strictPort: true,
-    },
-  })
-);
+  },
+  server: {
+    host: '127.0.0.1',
+    port: Number(process.env.PORT ?? 7809),
+    strictPort: true,
+  },
+}));

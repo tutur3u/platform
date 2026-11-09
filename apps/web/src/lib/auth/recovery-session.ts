@@ -66,7 +66,8 @@ async function ensureAuthRecoveryUser(email: string, overrideId: string) {
 
 export async function issueAuthRecoverySession(
   email: string,
-  overrideId: string
+  overrideId: string,
+  options?: { userAgent?: string | null }
 ): Promise<AuthRecoverySessionPayload> {
   await ensureAuthRecoveryUser(email, overrideId);
   const admin = await createAdminClient({ noCookie: true });
@@ -92,7 +93,9 @@ export async function issueAuthRecoverySession(
     magicLinkUrl.searchParams.get('token_hash');
   if (!tokenHash) throw new Error('Recovery magic link token hash not found');
 
-  const detached = createDetachedClient();
+  const detached = options?.userAgent
+    ? createDetachedClient({ userAgent: options.userAgent })
+    : createDetachedClient();
   const { data: otpData, error: verifyError } = await detached.auth.verifyOtp({
     token_hash: tokenHash,
     type: 'magiclink',

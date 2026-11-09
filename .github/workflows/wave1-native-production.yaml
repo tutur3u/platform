@@ -5,7 +5,7 @@ on:
       app:
         description: App admitted by its separate cutover PR
         type: choice
-        options: [calendar]
+        options: [calendar, mail, apps]
         required: true
 permissions:
   contents: read
@@ -38,7 +38,7 @@ jobs:
     needs: production-policy
     if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
     runs-on: ubuntu-latest
-    environment: wave1-calendar-production
+    environment: wave1-${{ inputs.app }}-production
     timeout-minutes: 45
     env:
       APP: ${{ inputs.app }}
@@ -137,12 +137,12 @@ jobs:
     needs: [production-policy, qualify, restored]
     if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
     runs-on: ubuntu-latest
-    environment: wave1-calendar-production
+    environment: wave1-${{ inputs.app }}-production
     timeout-minutes: 15
     env:
       APP: ${{ inputs.app }}
       SOURCE_SHA: ${{ github.sha }}
-      PUBLICATION_ENVIRONMENT: wave1-calendar-production
+      PUBLICATION_ENVIRONMENT: wave1-${{ inputs.app }}-production
       WRANGLER_SEND_METRICS: 'false'
       WRANGLER_WRITE_LOGS: 'false'
     steps:

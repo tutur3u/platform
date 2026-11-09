@@ -35,6 +35,7 @@ function database() {
     { id: 'foreign-both', user_ws_id: 'foreign', group_ws_id: 'foreign' },
   ].map((row) => ({
     ...row,
+    feedback: 'Teacher comment',
     report_approval_status: 'PENDING',
     delivery_status: 'draft',
   }));
@@ -42,7 +43,10 @@ function database() {
     const filters = new Map<string, unknown>();
     const builder: Record<string, unknown> = {};
     const selected = () =>
-      table === 'external_user_monthly_reports_workspace_view'
+      [
+        'external_user_monthly_reports_workspace_view',
+        'external_user_monthly_reports',
+      ].includes(table)
         ? rows.filter((row) =>
             [...filters].every(
               ([key, value]) => row[key as keyof typeof row] === value
@@ -56,15 +60,20 @@ function database() {
         return builder;
       };
     builder.maybeSingle = async () => ({
-      data: selected()[0] ?? null,
+      data:
+        table === 'workspace_configs'
+          ? { value: 'true' }
+          : (selected()[0] ?? null),
       error: null,
     });
-    // biome-ignore lint/suspicious/noThenProperty: actual awaited PostgREST builder contract.
     builder.then = (resolve: (value: unknown) => unknown) =>
       Promise.resolve({ data: selected(), error: null }).then(resolve);
     return builder;
   };
-  mocks.admin.mockResolvedValue({ schema: () => ({ from, rpc: vi.fn() }) });
+  mocks.admin.mockResolvedValue({
+    from,
+    schema: () => ({ from, rpc: vi.fn() }),
+  });
   return calls;
 }
 function request(action: string, itemId?: string) {
@@ -148,10 +157,16 @@ describe('periodic approval initial subject and group tenancy', () => {
       actor
     );
     expect(response.status).toBe(200);
-    expect(calls.find((call) => call.method === 'in')?.args).toEqual([
-      'id',
-      ['own'],
-    ]);
+    expect(
+      calls
+        .filter(
+          (call) =>
+            call.table === 'external_user_monthly_reports' &&
+            call.method === 'eq' &&
+            call.args[0] === 'id'
+        )
+        .map((call) => call.args)
+    ).toEqual([['id', 'own']]);
   });
   it('preserves permission denial before privileged queries and updates', async () => {
     mocks.permissions.mockResolvedValue({

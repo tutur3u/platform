@@ -18,6 +18,7 @@ beforeAll(async () => {
 });
 let team = 0;
 const jwksFetch = vi.fn<typeof fetch>();
+const permissionFetch = vi.fn<typeof fetch>();
 beforeEach(async () => {
   env = {
     CF_ACCESS_TEAM_DOMAIN: `fixture-${++team}.cloudflareaccess.com`,
@@ -32,7 +33,15 @@ beforeEach(async () => {
       keys: [{ ...(await exportJWK(keys.publicKey)), kid: 'fixture' }],
     })
   );
-  vi.stubGlobal('fetch', jwksFetch);
+  permissionFetch.mockReset();
+  permissionFetch.mockImplementation(async () =>
+    Response.json({ enabled: true })
+  );
+  vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) =>
+    String(input) === 'https://tuturuuu.com/api/v1/mastermind/access'
+      ? permissionFetch(input, init)
+      : jwksFetch(input, init)
+  );
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -137,6 +146,7 @@ test.each(denied)('auth matrix: %s -> 403 and zero reads', async (kind) => {
   );
   expect(response.status).toBe(403);
   expect(reads).toBe(0);
+  expect(permissionFetch).not.toHaveBeenCalled();
   expect(response.headers.get('Cache-Control')).toBe('private, no-store');
 });
 test('valid owner -> 200; permission revocation is immediate even with warm memo', async () => {
@@ -198,7 +208,7 @@ test('memo expires at 60s, is per owner and per instance, and respects session e
   clock++;
   expect(memo.get(owner)).toBeUndefined();
 });
-test('org API client forwards only the user session and refuses redirects', async () => {
+test('org API client forwards only the user session and never follows redirects', async () => {
   const original = globalThis.fetch;
   let captured: Request | undefined;
   globalThis.fetch = async (input) => {
@@ -211,7 +221,48 @@ test('org API client forwards only the user session and refuses redirects', asyn
       { id: 'owner', email, token: 'user-fixture', expiresAt: now + 1000 }
     ).orgLinks('root');
     expect(captured?.headers.get('Authorization')).toBe('Bearer user-fixture');
-    expect(captured?.redirect).toBe('error');
+    expect(captured?.redirect).toBe('manual');
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+test('data clients refuse redirect responses without reading the target', async () => {
+  const original = globalThis.fetch;
+  const owner = {
+    id: 'owner',
+    email,
+    token: 'user-fixture',
+    expiresAt: now + 1000,
+  };
+  const redirected = () =>
+    new Response(null, {
+      status: 307,
+      headers: { Location: 'https://attacker.invalid/' },
+    });
+  let captured: Request | undefined;
+  globalThis.fetch = async (input) => {
+    captured = new Request(input);
+    return redirected();
+  };
+  try {
+    await expect(createDataClients({}, owner).orgLinks('root')).rejects.toThrow(
+      'Upstream redirect refused'
+    );
+    expect(captured?.redirect).toBe('manual');
+    let hubRequest: Request | undefined;
+    const hub = {
+      fetch: async (input: Request) => {
+        hubRequest = input;
+        return redirected();
+      },
+    };
+    await expect(
+      createDataClients(
+        { OPS_HUB: hub } as unknown as MastermindEnvironment,
+        owner
+      ).agentSnapshot()
+    ).rejects.toThrow('Upstream redirect refused');
+    expect(hubRequest?.redirect).toBe('manual');
   } finally {
     globalThis.fetch = original;
   }
@@ -308,3 +359,59 @@ test('rotated key is refused during cooldown and accepted after JWKS refetch', a
   expect(jwksFetch).toHaveBeenCalledTimes(2);
   expect(reads).toBe(2);
 });
+
+test('live permission revocation denies the next request with unchanged env and warm memo', async () => {
+  const request = new Request('https://mastermind.tuturuuu.com/en', {
+    headers: {
+      'Cf-Access-Jwt-Assertion': await access(),
+      Authorization: `Bearer ${session()}`,
+    },
+  });
+  const memo = createOwnerMemo<string>(() => now);
+  let reads = 0;
+  const render = async (_request: Request, owner: Owner) => {
+    reads++;
+    memo.set(owner, 'private');
+    return new Response(memo.get(owner));
+  };
+  expect((await mastermindRequest(request, env, render, now)).status).toBe(200);
+  permissionFetch.mockImplementation(async () =>
+    Response.json({ enabled: false })
+  );
+  expect((await mastermindRequest(request, env, render, now)).status).toBe(403);
+  expect(reads).toBe(1);
+  expect(permissionFetch).toHaveBeenCalledTimes(2);
+  expect(permissionFetch).toHaveBeenLastCalledWith(
+    'https://tuturuuu.com/api/v1/mastermind/access',
+    expect.objectContaining({
+      headers: { Authorization: expect.stringContaining('Bearer ttr_app_') },
+      cache: 'no-store',
+      redirect: 'manual',
+      signal: expect.any(AbortSignal),
+    })
+  );
+});
+
+test.each(['error', 'timeout', 'unauthorized', 'malformed', 'wrong type'])(
+  'live permission failure denies without rendering: %s',
+  async (kind) => {
+    permissionFetch.mockImplementation(async () => {
+      if (kind === 'error') throw new Error('Offline');
+      if (kind === 'timeout')
+        throw new DOMException('Timed out', 'TimeoutError');
+      if (kind === 'unauthorized') return new Response(null, { status: 401 });
+      return Response.json(kind === 'malformed' ? {} : { enabled: 'true' });
+    });
+    const render = vi.fn(async () => new Response('private'));
+    const request = new Request('https://mastermind.tuturuuu.com/en', {
+      headers: {
+        'Cf-Access-Jwt-Assertion': await access(),
+        Authorization: `Bearer ${session()}`,
+      },
+    });
+    expect((await mastermindRequest(request, env, render, now)).status).toBe(
+      403
+    );
+    expect(render).not.toHaveBeenCalled();
+  }
+);

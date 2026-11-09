@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/inventory",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
@@ -29,7 +29,8 @@
     "preview:cloudflare": "vp preview --configLoader runner --host 127.0.0.1 --port ${PORT:-7815}",
     "routes:check": "bun ../../packages/start-bridge/src/codegen/cli.ts check .",
     "type-check:cloudflare": "tsc --noEmit -p tsconfig.cloudflare.json",
-    "test:runtime": "node --test cloudflare/*.runtime.mjs"
+    "test:runtime": "node --test cloudflare/*.runtime.mjs",
+    "build:legacy": "next build --turbopack"
   },
   "packageManager": "bun@1.4.4",
   "portless": {
@@ -55,7 +56,7 @@
     "@tuturuuu/start-bridge": "workspace:*",
     "@tuturuuu/storage-core": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
-    "@tuturuuu/turnstile": "workspace:*",
+    "@tuturuuu/cloudflare": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",

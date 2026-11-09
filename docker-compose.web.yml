@@ -154,8 +154,8 @@ services:
       - platform-web-transactional-dist:/workspace/packages/transactional/dist
       - platform-web-trigger-node_modules:/workspace/packages/trigger/node_modules
       - platform-web-trigger-dist:/workspace/packages/trigger/dist
-      - platform-web-turnstile-node_modules:/workspace/packages/turnstile/node_modules
-      - platform-web-turnstile-dist:/workspace/packages/turnstile/dist
+      - platform-web-cloudflare-node_modules:/workspace/packages/cloudflare/node_modules
+      - platform-web-cloudflare-dist:/workspace/packages/cloudflare/dist
       - platform-web-types-node_modules:/workspace/packages/types/node_modules
       - platform-web-types-dist:/workspace/packages/types/dist
       - platform-web-typescript-config-node_modules:/workspace/packages/typescript-config/node_modules
@@ -558,8 +558,8 @@ volumes:
   platform-web-transactional-dist:
   platform-web-trigger-node_modules:
   platform-web-trigger-dist:
-  platform-web-turnstile-node_modules:
-  platform-web-turnstile-dist:
+  platform-web-cloudflare-node_modules:
+  platform-web-cloudflare-dist:
   platform-web-types-node_modules:
   platform-web-types-dist:
   platform-web-typescript-config-node_modules:

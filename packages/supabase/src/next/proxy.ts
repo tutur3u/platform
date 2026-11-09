@@ -15,6 +15,7 @@ import {
   getSupabaseAuthCookieUrls,
   getSupabaseCookieOptions,
 } from './common';
+import { sessionUserAgentHeaders } from './session-user-agent';
 import type { SupabaseJwtPayload } from './user';
 
 export { getMalformedSupabaseAuthCookieNames };
@@ -89,7 +90,9 @@ export async function updateSession(request: NextRequest): Promise<{
       request.headers.get('cookie'),
       authCookieUrls
     );
+    const sessionHeaders = sessionUserAgentHeaders(request.headers);
     const supabase = createServerClient<Database>(url, key, {
+      ...(sessionHeaders ? { global: { headers: sessionHeaders } } : {}),
       cookieOptions,
       cookies: {
         getAll() {

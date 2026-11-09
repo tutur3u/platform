@@ -1,0 +1,30 @@
+{
+  // Gateway Worker for tuturuuu.com. Not deployed from source control: the
+  // provider owner deploys it. See apps/docs/build/devops/gateway-worker.mdx.
+  "name": "tuturuuu-gateway",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-09-28",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "tuturuuu.com/*", "zone_name": "tuturuuu.com" }],
+  "limits": { "cpu_ms": 50 },
+  "observability": { "enabled": true, "head_sampling_rate": 0.01 },
+  "vars": {
+    // `active` serves the route manifest. `passthrough` is the rollback flag:
+    // every request is proxied to WEB_ORIGIN untouched, no cache reads/writes.
+    "GATEWAY_MODE": "active",
+    // Public hostname clients see; origin redirects to WEB_ORIGIN's host are
+    // rewritten to it.
+    "PUBLIC_HOST": "tuturuuu.com",
+    // Origin that serves the Next app on Vercel. Set per environment (name only
+    // here; the value is configured at deploy time, never committed).
+    // "WEB_ORIGIN": "https://<vercel production web hostname>",
+    // Comma-separated page groups served by the apps/marketing Worker (legal,
+    // company, products, solutions, blog, home). Empty keeps every page on
+    // WEB_ORIGIN; clearing a group is the one-flag rollback for that group.
+    "GATEWAY_MARKETING_GROUPS": "",
+    // Origin of the apps/marketing Worker (value set at deploy time).
+    // "MARKETING_ORIGIN": "https://<marketing worker hostname>",
+    "GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL": "false"
+  }
+}

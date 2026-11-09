@@ -9,19 +9,10 @@ const {
 } = require('./github-expression-test-helper');
 const workflows = readAllWorkflows(undefined, { raw: true });
 const workflow = workflows['pr-checks.yaml'];
-const filters = JSON.parse(
-  execFileSync(
-    'bun',
-    [
-      '-e',
-      'console.log(JSON.stringify(Bun.YAML.parse(process.argv[1])))',
-      workflow.jobs.scope.steps[0].with.filters,
-    ],
-    { encoding: 'utf8' }
-  )
-);
+const { ciFilters } = require('./check-map.js');
+const filters = ciFilters();
 const converted = [
-  'biome-check.yaml',
+  'oxc-check.yaml',
   'i18n-check.yaml',
   'docs-seo-check.yaml',
   'check-migrations.yml',
@@ -53,9 +44,9 @@ test('one unfiltered PR entrypoint replaces seven independent PR runs', () => {
 
 test('existing check display names remain stable in the consolidated run', () => {
   const expected = {
-    'biome-check.yaml': {
-      format: 'Biome Format Check',
-      lint: 'Biome Lint Check',
+    'oxc-check.yaml': {
+      format: 'Oxfmt Format Check',
+      lint: 'Oxlint Lint Check',
     },
     'i18n-check.yaml': {
       'i18n-sort-check': 'Translation Sort Check',
@@ -89,7 +80,13 @@ const resultSet = (overrides = {}, selected = {}) =>
         {
           result:
             overrides[id] ||
-            (['scope', 'branch-name', 'staging-hosts', 'admitted'].includes(id)
+            ([
+              'scope',
+              'branch-name',
+              'commit-trailers',
+              'staging-hosts',
+              'admitted',
+            ].includes(id)
               ? 'success'
               : 'skipped'),
           outputs:
@@ -135,13 +132,13 @@ test('the always-run gate accepts path skips and rejects failures, cancellation 
       `admitted ${status}`
     );
     assert.equal(
-      gate(resultSet({ biome: status }, { biome: true }), true).status,
+      gate(resultSet({ oxc: status }, { oxc: true }), true).status,
       1,
-      `selected biome ${status}`
+      `selected oxc ${status}`
     );
   }
   assert.equal(
-    gate(resultSet({ biome: 'success' }, { biome: true }), true).status,
+    gate(resultSet({ oxc: 'success' }, { oxc: true }), true).status,
     0
   );
   assert.equal(gate(resultSet({ migrations: 'failure' }, {})).status, 1);
@@ -163,7 +160,7 @@ test('gated callers stay deferred until ready while script-only checks remain el
       },
     },
   });
-  for (const name of ['biome', 'i18n', 'docs']) {
+  for (const name of ['oxc', 'i18n', 'docs']) {
     assert.equal(
       Boolean(evaluateExpression(workflow.jobs[name].if, scope(false))),
       false,
@@ -212,7 +209,7 @@ test('security scope remains always on for every security-relevant path without 
 
 test('all new third-party actions are immutable and callees cannot cancel their parent', () => {
   assert.match(
-    workflow.jobs.scope.steps[0].uses,
+    workflow.jobs.scope.steps.find((step) => step.id === 'paths').uses,
     /^dorny\/paths-filter@[a-f0-9]{40}$/u
   );
   const context = {
@@ -237,7 +234,7 @@ test('all new third-party actions are immutable and callees cannot cancel their 
     'ci-admitted.yaml',
   ].map((file) => renderTemplate(workflows[file].concurrency.group, context));
   assert.equal(new Set([parent, ...groups]).size, groups.length + 1);
-  assert.ok(!Object.hasOwn(workflows['biome-check.yaml'], 'concurrency'));
+  assert.ok(!Object.hasOwn(workflows['oxc-check.yaml'], 'concurrency'));
 });
 
 test('the inventory records all baseline PR entrypoints and the required-check mapping', () => {
@@ -284,7 +281,8 @@ test('the consolidated branch check executes the existing policy with branch nam
   }
 });
 
-test('Security Checks bytes match the reviewed definer-guard workflow', () => {
+test('Security Checks bytes match the reviewed workflow', () => {
+  // Includes the authenticated supplier accepted at 5e4bfbc4 / SOURCE 5817616989.
   const { createHash } = require('node:crypto');
   const { readFileSync } = require('node:fs');
   const bytes = readFileSync(
@@ -292,8 +290,29 @@ test('Security Checks bytes match the reviewed definer-guard workflow', () => {
   );
   assert.equal(
     createHash('sha256').update(bytes).digest('hex'),
-    '710679d84c07604d3301635e54240a735fc9d00133240f4a258b609430334ee1'
+    '378e4f3e60564381710d49477c8f8d182cdff6521ddbfae3ac8995fbf22c717e'
   );
+});
+
+test('the commit trailer check runs on every full PR run and fails the aggregate', () => {
+  const job = workflow.jobs['commit-trailers'];
+  assert.equal(job.name, 'Check commit trailers');
+  assert.equal(job.if, workflow.jobs['branch-name'].if);
+  assert.deepEqual(job.permissions, {
+    contents: 'read',
+    'pull-requests': 'read',
+  });
+  assert.equal(job.steps[0].with['persist-credentials'], false);
+  assert.equal(job.steps[0].with['fetch-depth'], 1);
+  assert.match(job.steps.at(-1).run, /commit-trailer-check\.js/u);
+  assert.match(job.steps.at(-1).run, /set -euo pipefail/u);
+  assert.ok(workflow.jobs.gate.needs.includes('commit-trailers'));
+  for (const status of ['failure', 'cancelled', 'skipped'])
+    assert.equal(
+      gate(resultSet({ 'commit-trailers': status })).status,
+      1,
+      `commit-trailers ${status}`
+    );
 });
 
 test('the staging host guard runs on every full PR run and fails the aggregate', () => {

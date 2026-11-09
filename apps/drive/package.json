@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/drive",
-  "version": "0.33.0",
+  "version": "0.34.0",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build && bun run type-check:cloudflare",
@@ -28,7 +28,8 @@
     "preview:cloudflare": "vp preview --configLoader runner --host 127.0.0.1 --port ${PORT:-7817}",
     "routes:check": "bun ../../packages/start-bridge/src/codegen/cli.ts check .",
     "type-check:cloudflare": "tsc --noEmit -p tsconfig.cloudflare.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:legacy": "next build --turbopack"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.2",

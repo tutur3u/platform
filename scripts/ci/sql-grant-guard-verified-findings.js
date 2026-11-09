@@ -317,4 +317,43 @@ module.exports = [
     reason:
       'rollback of 20261030131100_apply_creator_grant_checks_to_name_based_role_paths.sql; restores the body from 20260722111411_inventory_pos_operator_roles.sql; apply only with the matching forward fix ready',
   },
+  {
+    path: 'apps/database/supabase/migrations/20261109180000_guard_legacy_cross_app_token_uuid.sql',
+    line: 1,
+    rule: 'definer-public',
+    fileDigest:
+      '519ceb35caf61da65898895fb208cbf1e3b115a3d91263fdd9d671a331fbbc31',
+    digest: '8e56a8c131891176f26c3a880d3090cbef8212269a5694ca0c38016a8d5b1ad4',
+    class: 'fixed-forward',
+    requiredMigration:
+      'apps/database/supabase/migrations/20261109190001_harden_legacy_cross_app_token_contract.sql',
+    reason:
+      'fixed forward by apps/database/supabase/migrations/20261109190001_harden_legacy_cross_app_token_contract.sql; explicit exact-signature PUBLIC/anon revoke in reviewed same-body replacement; SOURCE https://github.com/tutur3u/platform/pull/7896#pullrequestreview-5821992165; preserve applied180000; never apply without the reviewed forward migration',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261109180000_guard_legacy_cross_app_token_uuid.sql',
+    line: 1,
+    rule: 'function-acl',
+    fileDigest:
+      '519ceb35caf61da65898895fb208cbf1e3b115a3d91263fdd9d671a331fbbc31',
+    digest: '8e56a8c131891176f26c3a880d3090cbef8212269a5694ca0c38016a8d5b1ad4',
+    class: 'fixed-forward',
+    requiredMigration:
+      'apps/database/supabase/migrations/20261109190001_harden_legacy_cross_app_token_contract.sql',
+    reason:
+      'fixed forward by apps/database/supabase/migrations/20261109190001_harden_legacy_cross_app_token_contract.sql; explicit exact-signature revoke/regrant retaining only authenticated/service_role with the reviewed client signature; SOURCE https://github.com/tutur3u/platform/pull/7896#pullrequestreview-5821992165; preserve applied180000; never apply without the reviewed forward migration',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261109180000_guard_legacy_cross_app_token_uuid.sql',
+    line: 1,
+    rule: 'definer-search-path',
+    fileDigest:
+      '519ceb35caf61da65898895fb208cbf1e3b115a3d91263fdd9d671a331fbbc31',
+    digest: '8e56a8c131891176f26c3a880d3090cbef8212269a5694ca0c38016a8d5b1ad4',
+    class: 'fixed-forward',
+    requiredMigration:
+      'apps/database/supabase/migrations/20261109190001_harden_legacy_cross_app_token_contract.sql',
+    reason:
+      'fixed forward by apps/database/supabase/migrations/20261109190001_harden_legacy_cross_app_token_contract.sql; pg_catalog first and pg_temp last, with all unchanged body references explicitly qualified; SOURCE https://github.com/tutur3u/platform/pull/7896#pullrequestreview-5821992165; preserve applied180000; never apply without the reviewed forward migration',
+  },
 ];

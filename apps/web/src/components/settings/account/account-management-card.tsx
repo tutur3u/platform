@@ -4,14 +4,12 @@ import { ArrowRightLeft, Loader2, LogOut, Trash2 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
-import { Separator } from '@tuturuuu/ui/separator';
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import { toast } from '@tuturuuu/ui/sonner';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { formatDistanceToNow } from 'date-fns';
@@ -68,149 +66,142 @@ export function AccountManagementCard(): JSX.Element {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('account_switcher.manage_accounts')}</CardTitle>
-          <CardDescription>
-            {t('account_switcher.manage_accounts_description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading && (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          )}
+      <SettingsSection
+        title={t('account_switcher.manage_accounts')}
+        description={t('account_switcher.manage_accounts_description')}
+      >
+        {isLoading && (
+          <SettingsSectionMessage className="justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-foreground" />
+          </SettingsSectionMessage>
+        )}
 
-          {!isLoading && accounts.length === 0 && (
-            <div className="space-y-4 p-8 text-center">
-              <p className="text-foreground/60 text-sm">
-                {t('account_switcher.no_accounts_found')}
-              </p>
-              <AddAccountButton />
-            </div>
-          )}
+        {!isLoading && accounts.length === 0 && (
+          <SettingsSectionMessage action={<AddAccountButton />}>
+            {t('account_switcher.no_accounts_found')}
+          </SettingsSectionMessage>
+        )}
 
-          {!isLoading && accounts.length > 0 && (
-            <div className="space-y-4">
-              {sortedAccounts.map((account, index) => {
-                const isActive = account.id === activeAccountId;
-                const displayName =
-                  account.metadata.displayName ||
-                  account.email ||
-                  t('account_switcher.unknown_user');
-                const initials = getInitials(displayName);
-                const lastActive =
-                  account.metadata.lastActiveAt != null
-                    ? formatDistanceToNow(account.metadata.lastActiveAt, {
-                        addSuffix: true,
-                      })
-                    : 'Never';
+        {!isLoading &&
+          accounts.length > 0 &&
+          sortedAccounts.map((account) => {
+            const isActive = account.id === activeAccountId;
+            const displayName =
+              account.metadata.displayName ||
+              account.email ||
+              t('account_switcher.unknown_user');
+            const initials = getInitials(displayName);
+            const lastActive =
+              account.metadata.lastActiveAt != null
+                ? formatDistanceToNow(account.metadata.lastActiveAt, {
+                    addSuffix: true,
+                  })
+                : 'Never';
 
-                return (
-                  <div key={account.id}>
-                    {index > 0 && <Separator />}
-                    <div className="flex items-start gap-4 py-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage
-                          src={account.metadata.avatarUrl ?? undefined}
-                          alt={displayName}
-                        />
-                        <AvatarFallback>{initials}</AvatarFallback>
-                      </Avatar>
+            return (
+              <SettingItemTab
+                key={account.id}
+                title={
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar className="size-10">
+                      <AvatarImage
+                        src={account.metadata.avatarUrl ?? undefined}
+                        alt={displayName}
+                      />
+                      <AvatarFallback>{initials}</AvatarFallback>
+                    </Avatar>
 
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{displayName}</p>
-                          {isActive && (
-                            <Badge variant="secondary">
-                              {t('account_switcher.active')}
-                            </Badge>
-                          )}
-                        </div>
-                        {account.email && (
-                          <p className="text-foreground/60 text-sm">
-                            {account.email}
-                          </p>
-                        )}
-                        <p className="text-foreground/40 text-xs">
-                          {t('account_switcher.last_active')}: {lastActive}
-                        </p>
-                        {account.metadata.lastWorkspaceId && (
-                          <p className="text-foreground/40 text-xs">
-                            {t('account_switcher.last_workspace')}:{' '}
-                            {account.metadata.lastWorkspaceId.substring(0, 8)}
-                            ...
-                          </p>
-                        )}
-                      </div>
-
+                    <div className="min-w-0 space-y-0.5 font-normal">
                       <div className="flex items-center gap-2">
-                        {!isActive && (
-                          <>
-                            <Button
-                              type="button"
-                              variant="default"
-                              size="sm"
-                              onClick={() => handleSwitchAccount(account.id)}
-                              disabled={switchingAccountId === account.id}
-                            >
-                              {switchingAccountId === account.id ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              ) : (
-                                <ArrowRightLeft className="mr-2 h-4 w-4" />
-                              )}
-                              {t('account_switcher.switch')}
-                            </Button>
-                            {accounts.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setAccountToRemove(account.id)}
-                                disabled={switchingAccountId === account.id}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                {t('account_switcher.remove')}
-                              </Button>
-                            )}
-                          </>
-                        )}
+                        <p className="truncate font-medium">{displayName}</p>
                         {isActive && (
-                          <span className="text-foreground/40 text-xs">
-                            {t('account_switcher.current_account')}
-                          </span>
+                          <Badge variant="secondary">
+                            {t('account_switcher.active')}
+                          </Badge>
                         )}
                       </div>
+                      {account.email && (
+                        <p className="truncate text-muted-foreground">
+                          {account.email}
+                        </p>
+                      )}
+                      <p className="text-muted-foreground text-xs">
+                        {t('account_switcher.last_active')}: {lastActive}
+                      </p>
+                      {account.metadata.lastWorkspaceId && (
+                        <p className="text-muted-foreground text-xs">
+                          {t('account_switcher.last_workspace')}:{' '}
+                          {account.metadata.lastWorkspaceId.substring(0, 8)}
+                          ...
+                        </p>
+                      )}
                     </div>
                   </div>
-                );
-              })}
-
-              <Separator />
-
-              <div className="pt-2">
-                <AddAccountButton />
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleLogoutAll}
-                disabled={isLoggingOutAll}
-                className="w-full justify-start gap-2"
+                }
               >
-                {isLoggingOutAll ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <LogOut className="h-4 w-4 text-dynamic-red" />
-                )}
-                {t('account_switcher.logout_all')}
-              </Button>
+                <div className="flex items-center gap-2">
+                  {!isActive && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSwitchAccount(account.id)}
+                        disabled={switchingAccountId === account.id}
+                      >
+                        {switchingAccountId === account.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ArrowRightLeft className="h-4 w-4" />
+                        )}
+                        {t('account_switcher.switch')}
+                      </Button>
+                      {accounts.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAccountToRemove(account.id)}
+                          disabled={switchingAccountId === account.id}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          {t('account_switcher.remove')}
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  {isActive && (
+                    <span className="text-muted-foreground text-sm">
+                      {t('account_switcher.current_account')}
+                    </span>
+                  )}
+                </div>
+              </SettingItemTab>
+            );
+          })}
+
+        {!isLoading && accounts.length > 0 && (
+          <SettingsSectionBlock className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <AddAccountButton />
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleLogoutAll}
+              disabled={isLoggingOutAll}
+            >
+              {isLoggingOutAll ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="h-4 w-4 text-dynamic-red" />
+              )}
+              {t('account_switcher.logout_all')}
+            </Button>
+          </SettingsSectionBlock>
+        )}
+      </SettingsSection>
 
       <RemoveAccountDialog
         accountId={accountToRemove}

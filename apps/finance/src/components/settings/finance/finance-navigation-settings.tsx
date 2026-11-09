@@ -3,8 +3,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionFooter,
+} from '@tuturuuu/ui/custom/settings-section';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
-import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -12,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -212,19 +215,16 @@ export default function FinanceNavigationSettings({ workspaceId }: Props) {
   return (
     <div className="space-y-8">
       {/* User Personal Preference Section */}
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <h3 className="font-medium text-lg">
-            {t('personal_navigation_title')}
-          </h3>
-          <p className="text-muted-foreground text-sm">
-            {t('personal_navigation_description')}
-          </p>
-        </div>
-
-        <form onSubmit={handleUserSubmit} className="space-y-4">
-          <div className="grid gap-2">
-            <Label>{t('personal_default_route_label')}</Label>
+      <SettingsSection
+        title={t('personal_navigation_title')}
+        description={t('personal_navigation_description')}
+      >
+        <form onSubmit={handleUserSubmit}>
+          <SettingItemTab
+            title={t('personal_default_route_label')}
+            description={t('personal_default_route_help')}
+            controlWidth="lg"
+          >
             <Select
               onValueChange={setSelectedUserRoute}
               value={selectedUserRoute}
@@ -243,40 +243,36 @@ export default function FinanceNavigationSettings({ workspaceId }: Props) {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-muted-foreground text-xs">
-              {t('personal_default_route_help')}
-            </p>
-          </div>
+          </SettingItemTab>
 
-          <Button
-            type="submit"
-            disabled={
-              isLoadingUserConfig || updateUserConfig.isPending || !isUserDirty
-            }
-          >
-            {updateUserConfig.isPending
-              ? tCommon('saving')
-              : tCommon('save_changes')}
-          </Button>
+          <SettingsSectionFooter>
+            <Button
+              type="submit"
+              disabled={
+                isLoadingUserConfig ||
+                updateUserConfig.isPending ||
+                !isUserDirty
+              }
+            >
+              {updateUserConfig.isPending
+                ? tCommon('saving')
+                : tCommon('save_changes')}
+            </Button>
+          </SettingsSectionFooter>
         </form>
-      </div>
-
-      <Separator />
+      </SettingsSection>
 
       {/* Workspace Default Section */}
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <h3 className="font-medium text-lg">
-            {t('workspace_navigation_title')}
-          </h3>
-          <p className="text-muted-foreground text-sm">
-            {t('workspace_navigation_description')}
-          </p>
-        </div>
-
-        <form onSubmit={handleWorkspaceSubmit} className="space-y-4">
-          <div className="grid gap-2">
-            <Label>{t('workspace_default_route_label')}</Label>
+      <SettingsSection
+        title={t('workspace_navigation_title')}
+        description={t('workspace_navigation_description')}
+      >
+        <form onSubmit={handleWorkspaceSubmit}>
+          <SettingItemTab
+            title={t('workspace_default_route_label')}
+            description={t('workspace_default_route_help')}
+            controlWidth="lg"
+          >
             <Select
               onValueChange={setSelectedWorkspaceRoute}
               value={selectedWorkspaceRoute}
@@ -292,25 +288,24 @@ export default function FinanceNavigationSettings({ workspaceId }: Props) {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-muted-foreground text-xs">
-              {t('workspace_default_route_help')}
-            </p>
-          </div>
+          </SettingItemTab>
 
-          <Button
-            type="submit"
-            disabled={
-              isLoadingWorkspaceConfig ||
-              updateWorkspaceConfig.isPending ||
-              !isWorkspaceDirty
-            }
-          >
-            {updateWorkspaceConfig.isPending
-              ? tCommon('saving')
-              : tCommon('save_changes')}
-          </Button>
+          <SettingsSectionFooter>
+            <Button
+              type="submit"
+              disabled={
+                isLoadingWorkspaceConfig ||
+                updateWorkspaceConfig.isPending ||
+                !isWorkspaceDirty
+              }
+            >
+              {updateWorkspaceConfig.isPending
+                ? tCommon('saving')
+                : tCommon('save_changes')}
+            </Button>
+          </SettingsSectionFooter>
         </form>
-      </div>
+      </SettingsSection>
     </div>
   );
 }

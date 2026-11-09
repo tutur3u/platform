@@ -1,8 +1,9 @@
 {
   "name": "@tuturuuu/tasks",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "private": true,
   "scripts": {
+    "test": "vitest run",
     "type-check": "node ../../scripts/run-tsc-build.js --build && bun run type-check:native",
     "type-check:native": "tsc --noEmit --project tsconfig.native.json && tsc --noEmit --project tsconfig.config.json",
     "build:cloudflare": "vp build --configLoader runner",
@@ -51,7 +52,7 @@
     "@tuturuuu/tasks-api": "workspace:*",
     "@tuturuuu/tasks-ui": "workspace:*",
     "@tuturuuu/trigger": "workspace:*",
-    "@tuturuuu/turnstile": "workspace:*",
+    "@tuturuuu/cloudflare": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",

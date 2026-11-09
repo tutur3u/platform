@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Brain, Download, Search, Trash2 } from '@tuturuuu/icons';
+import { Download, Search, Trash2 } from '@tuturuuu/icons';
 import {
   exportWorkspaceAiMemoryItems,
   getWorkspaceAiMemorySettings,
@@ -9,6 +9,12 @@ import {
 } from '@tuturuuu/internal-api/ai-memory';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import {
   Dialog,
   DialogClose,
@@ -23,20 +29,13 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useState } from 'react';
+import { Fragment, useCallback, useMemo, useState } from 'react';
 import {
   useDeleteMiraMemory,
   useMiraMemories,
 } from '../../../app/[locale]/(dashboard)/[wsId]/(dashboard)/hooks/use-mira-memories';
-
-const CATEGORY_COLORS: Record<string, string> = {
-  preference: 'bg-dynamic-blue/15 text-dynamic-blue',
-  fact: 'bg-dynamic-green/15 text-dynamic-green',
-  conversation_topic: 'bg-dynamic-purple/15 text-dynamic-purple',
-  event: 'bg-dynamic-orange/15 text-dynamic-orange',
-  person: 'bg-dynamic-pink/15 text-dynamic-pink',
-};
 
 const AI_MEMORY_PRODUCT_OPTIONS = [
   'mira',
@@ -156,14 +155,11 @@ export function MiraMemorySettings({ wsId }: MiraMemorySettingsProps) {
 
   if (!wsId) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 py-16">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-          <Brain className="h-6 w-6 text-muted-foreground" />
-        </div>
-        <p className="text-center font-medium text-sm">
+      <SettingsSection>
+        <SettingsSectionMessage tone="default">
           {t('workspace_required')}
-        </p>
-      </div>
+        </SettingsSectionMessage>
+      </SettingsSection>
     );
   }
 
@@ -175,129 +171,116 @@ export function MiraMemorySettings({ wsId }: MiraMemorySettingsProps) {
     );
   }
 
-  const controls = (
-    <div className="space-y-4 rounded-lg border border-border/60 p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="font-medium text-sm">{t('ai_memory')}</p>
-          <p className="mt-1 text-muted-foreground text-xs">
-            {t('ai_memory_description')}
-          </p>
-        </div>
-        <Switch
-          checked={globallyEnabled}
-          disabled={settingsQuery.isLoading || updateSettingsMutation.isPending}
-          onCheckedChange={(enabled) =>
-            updateSettingsMutation.mutate({ enabled, products })
-          }
-        />
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        {AI_MEMORY_PRODUCT_OPTIONS.map((product) => (
-          <div
-            key={product}
-            className="flex items-center justify-between gap-3 rounded-md border border-border/60 px-3 py-2"
-          >
-            <Label htmlFor={`ai-memory-${product}`} className="text-sm">
-              {t(`product_${product}`)}
-            </Label>
-            <Switch
-              id={`ai-memory-${product}`}
-              checked={products[product] ?? true}
-              disabled={
-                !globallyEnabled ||
-                settingsQuery.isLoading ||
-                updateSettingsMutation.isPending
-              }
-              onCheckedChange={(enabled) =>
-                updateSettingsMutation.mutate({
-                  enabled: globallyEnabled,
-                  products: { ...products, [product]: enabled },
-                })
-              }
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const toolbar = (
-    <div className="flex flex-col gap-3 sm:flex-row">
-      <div className="relative min-w-0 flex-1">
-        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t('search_memories')}
-          className="pl-9"
-        />
-      </div>
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => exportMutation.mutate()}
-        disabled={exportMutation.isPending}
-      >
-        <Download className="h-4 w-4" />
-        {t('export_memories')}
-      </Button>
-    </div>
-  );
-
-  if (!categories.length) {
-    return (
-      <div className="space-y-6">
-        {controls}
-        {toolbar}
-        <div className="flex flex-col items-center justify-center gap-3 py-16">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-            <Brain className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <div className="text-center">
-            <p className="font-medium text-sm">{t('no_memories')}</p>
-            <p className="mt-1 max-w-xs text-muted-foreground text-xs">
-              {t('no_memories_description')}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const productTogglesDisabled =
+    !globallyEnabled ||
+    settingsQuery.isLoading ||
+    updateSettingsMutation.isPending;
 
   return (
-    <div className="space-y-6">
-      {controls}
-      {toolbar}
-      {categories.map((category) => {
-        const memories = grouped[category] ?? [];
-        return (
-          <div key={category}>
-            <div className="mb-3 flex items-center gap-2">
-              <Badge
-                variant="secondary"
-                className={CATEGORY_COLORS[category] ?? ''}
+    <div className="space-y-8">
+      <SettingsSection>
+        <SettingItemTab
+          title={t('ai_memory')}
+          description={t('ai_memory_description')}
+        >
+          <Switch
+            checked={globallyEnabled}
+            disabled={
+              settingsQuery.isLoading || updateSettingsMutation.isPending
+            }
+            onCheckedChange={(enabled) =>
+              updateSettingsMutation.mutate({ enabled, products })
+            }
+          />
+        </SettingItemTab>
+
+        <SettingsSectionBlock className="@container py-2">
+          <div className="grid @lg:grid-cols-2 gap-x-8">
+            {AI_MEMORY_PRODUCT_OPTIONS.map((product) => (
+              <div
+                key={product}
+                className="flex items-center justify-between gap-3 py-2"
               >
-                {category.replace('_', ' ')}
-              </Badge>
-              <span className="text-muted-foreground text-xs">
-                ({memories.length})
-              </span>
+                <Label
+                  htmlFor={`ai-memory-${product}`}
+                  className={cn(
+                    'text-sm',
+                    !globallyEnabled &&
+                      'cursor-not-allowed text-muted-foreground'
+                  )}
+                >
+                  {t(`product_${product}`)}
+                </Label>
+                <Switch
+                  id={`ai-memory-${product}`}
+                  checked={products[product] ?? true}
+                  disabled={productTogglesDisabled}
+                  onCheckedChange={(enabled) =>
+                    updateSettingsMutation.mutate({
+                      enabled: globallyEnabled,
+                      products: { ...products, [product]: enabled },
+                    })
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        </SettingsSectionBlock>
+      </SettingsSection>
+
+      <SettingsSection>
+        <SettingsSectionBlock className="flex flex-col gap-3 py-3 sm:flex-row">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t('search_memories')}
+              className="pl-9"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => exportMutation.mutate()}
+            disabled={exportMutation.isPending}
+          >
+            <Download className="h-4 w-4" />
+            {t('export_memories')}
+          </Button>
+        </SettingsSectionBlock>
+
+        {!categories.length && (
+          <SettingsSectionMessage>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">{t('no_memories')}</p>
+              <p>{t('no_memories_description')}</p>
             </div>
-            <div className="space-y-2">
+          </SettingsSectionMessage>
+        )}
+
+        {categories.map((category) => {
+          const memories = grouped[category] ?? [];
+          return (
+            <Fragment key={category}>
+              <SettingsSectionBlock className="flex items-center gap-2 py-2.5">
+                <Badge variant="outline">{category.replace('_', ' ')}</Badge>
+                <span className="text-muted-foreground text-xs">
+                  ({memories.length})
+                </span>
+              </SettingsSectionBlock>
               {memories.map((memory) => (
-                <div
+                <SettingsSectionBlock
+                  className="group flex items-start gap-3 py-3 transition-colors hover:bg-muted/30"
                   key={memory.id}
-                  className="group flex items-start gap-3 rounded-lg border border-border/60 p-3 transition-colors hover:bg-muted/30"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm">{memory.key}</p>
-                    <p className="mt-0.5 text-muted-foreground text-xs leading-relaxed">
+                    <p className="mt-0.5 text-muted-foreground text-sm">
                       {memory.value}
                     </p>
                     {memory.confidence < 1 && (
-                      <p className="mt-1 text-muted-foreground/60 text-xs">
+                      <p className="mt-1 text-muted-foreground text-xs">
                         {t('confidence', {
                           value: Math.round(memory.confidence * 100),
                         })}
@@ -310,7 +293,7 @@ export function MiraMemorySettings({ wsId }: MiraMemorySettingsProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                        className="h-7 w-7 shrink-0 opacity-0 pointer-coarse:opacity-100 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
                         disabled={isDeleting}
                       >
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
@@ -325,7 +308,7 @@ export function MiraMemorySettings({ wsId }: MiraMemorySettingsProps) {
                       </DialogHeader>
                       <div className="rounded-lg border p-3">
                         <p className="font-medium text-sm">{memory.key}</p>
-                        <p className="mt-1 text-muted-foreground text-xs">
+                        <p className="mt-1 text-muted-foreground text-sm">
                           {memory.value}
                         </p>
                       </div>
@@ -347,12 +330,12 @@ export function MiraMemorySettings({ wsId }: MiraMemorySettingsProps) {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
-                </div>
+                </SettingsSectionBlock>
               ))}
-            </div>
-          </div>
-        );
-      })}
+            </Fragment>
+          );
+        })}
+      </SettingsSection>
     </div>
   );
 }

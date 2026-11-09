@@ -61,6 +61,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get assistantNotAvailableOffline => 'Không khả dụng khi ngoại tuyến';
+
+  @override
   String get assistantDownloadPhasePending => 'Đang chờ';
 
   @override
@@ -11514,6 +11517,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantNewChatConfirmCreation => 'Bắt đầu cuộc trò chuyện mới';
+
+  @override
+  String get assistantCreationHoldBannerMessage => 'Cuộc trò chuyện gần nhất của bạn có thể chưa được lưu. Bắt đầu cuộc trò chuyện mới sẽ không thử lại cuộc trò chuyện đó và có thể tạo một cuộc trò chuyện riêng.';
+
+  @override
+  String get assistantCreationHoldDismiss => 'Đóng';
 
   @override
   String get assistantNewChatResetDenied => 'Chưa bắt đầu cuộc trò chuyện mới. Bản nháp của bạn được giữ lại. Hãy kiểm tra lịch sử trò chuyện trước khi chọn thao tác khác.';

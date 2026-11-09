@@ -71,7 +71,7 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - uses: ./.github/actions/cache-supabase-images
       - name: Verify TAP parser and bounded fixture sessions
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/external-project-storage-analytics-contract.test.mjs

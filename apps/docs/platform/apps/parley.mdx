@@ -30,7 +30,16 @@ instructions never enter the discovery client payload.
 
 `/sessions` is the signed-in facilitator's paginated archive. Each
 `/sessions/[meetingId]` review reuses Meet's metered AI transcript, summary,
-decision and follow-up tools. The review includes a **Meeting details in Meet** link targeting the same
+decision and follow-up tools. Meet and Parley rebuild transcript speaker labels
+from surviving source selectors and current profile records. Empty or email-shaped
+profile names appear as "Participant"; missing or erased sources remain unattributed.
+Stored transcript names and AI-generated action-owner names are never label sources.
+Action owners must resolve to that surviving roster or remain unassigned. Erased
+segments stay omitted, including retained combined-text fallbacks. This reader
+compatibility applies even while erase flags are off and must deploy before erase
+writers. Regression coverage lives in `transcript.test.ts`, `sessions.test.ts`,
+`meeting-transcript.test.tsx` and `scripts/meet-transcript-readers.test.mjs`.
+ The review includes a **Meeting details in Meet** link targeting the same
 workspace and meeting, plus invitation controls that copy the Parley room URL
 or room code. Invitations do not grant app access or bypass room admission.
 The saved scenario debrief rubric is shown only after facilitator ownership and

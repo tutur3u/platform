@@ -29,12 +29,10 @@ function builder(terminal: 'maybeSingle' | 'single' | 'then', result: unknown) {
   for (const method of ['select', 'eq', 'is', 'insert', 'delete'] as const)
     value[method] = vi.fn(() => value);
   if (terminal === 'then') {
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     value.then = vi.fn((resolve) => Promise.resolve(result).then(resolve));
   } else value[terminal] = vi.fn(async () => result);
   value.maybeSingle ??= vi.fn();
   value.single ??= vi.fn();
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
   value.then ??= vi.fn();
   return value;
 }
@@ -86,7 +84,6 @@ describe('task project update reactions route', () => {
     [
       'DELETE',
       async () => {
-        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
         reaction.then = vi.fn((resolve) =>
           Promise.resolve({ error: null }).then(resolve)
         );
@@ -242,7 +239,6 @@ describe('task project update reactions route', () => {
   });
 
   it('DELETE authorizes Tasks app sessions and scopes the deletion', async () => {
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     reaction.then = vi.fn((resolve) =>
       Promise.resolve({ error: null }).then(resolve)
     );

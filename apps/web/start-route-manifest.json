@@ -43,9 +43,9 @@
     }
   ],
   "summary": {
-    "total": 843,
+    "total": 850,
     "categories": {
-      "api": 649,
+      "api": 656,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -54,7 +54,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 831 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 838 }
   },
   "routes": [
     {
@@ -2877,6 +2877,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/mobile/feature-flags",
+      "source": "apps/web/src/app/api/v1/mobile/feature-flags/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/mobile/version-check",
       "source": "apps/web/src/app/api/v1/mobile/version-check/route.ts",
       "category": "api",
@@ -2895,6 +2903,14 @@
     {
       "pattern": "/api/v1/native-integrity/enroll",
       "source": "apps/web/src/app/api/v1/native-integrity/enroll/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/newsletter/unsubscribe",
+      "source": "apps/web/src/app/api/v1/newsletter/unsubscribe/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -3471,6 +3487,14 @@
     {
       "pattern": "/api/v1/webhooks/ai-agents/[adapter]/[channelId]",
       "source": "apps/web/src/app/api/v1/webhooks/ai-agents/[adapter]/[channelId]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/webhooks/email/ses",
+      "source": "apps/web/src/app/api/v1/webhooks/email/ses/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -4847,6 +4871,38 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/mobile/module-flags",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mobile/module-flags/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/newsletter/approval",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/approval/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/newsletter/domain",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/domain/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/newsletter/subscribers",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/subscribers/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/newsletter/test-send",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/test-send/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

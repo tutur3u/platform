@@ -1,0 +1,110 @@
+import { resolve } from 'node:path';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    server: {
+      deps: {
+        // https://github.com/vercel/next.js/issues/77200
+        inline: ['next-intl'],
+      },
+    },
+    exclude: ['**/.void/**', '**/dist/**', '**/node_modules/**'],
+    environment: 'node',
+    setupFiles: ['./vitest.setup.ts'],
+    testTimeout: 30_000,
+    env: {
+      // Set test Supabase environment variables
+      NEXT_PUBLIC_SUPABASE_URL: 'https://test.supabase.co',
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'test-key',
+    },
+  },
+  resolve: {
+    alias: [
+      {
+        find: '@tuturuuu/supabase/next/user',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/user.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/supabase/next/proxy',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/proxy.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/supabase/request/server',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/request/server.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/supabase/next/common',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/common.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/supabase/auth-errors',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/auth-errors.ts'
+        ),
+      },
+      { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: /^@tuturuuu\/internal-api\/(.+)$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/$1.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/internal-api$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/index.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/types$/,
+        replacement: resolve(__dirname, '../../packages/types/src/index.ts'),
+      },
+      {
+        find: /^@tuturuuu\/types\/primitives\/(.+)$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/types/src/primitives/$1.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/supabase/next/client',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/client.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/supabase/next/auth-session-user',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/auth-session-user.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/supabase/next/server',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/server.ts'
+        ),
+      },
+    ],
+  },
+});

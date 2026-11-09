@@ -175,6 +175,12 @@ abstract class AppLocalizations {
   /// **'Queued {time}'**
   String mastermindReplyQueuedAt(String time);
 
+  /// No description provided for @assistantNotAvailableOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get assistantNotAvailableOffline;
+
   /// No description provided for @assistantDownloadPhasePending.
   ///
   /// In en, this message translates to:
@@ -22032,6 +22038,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start a new chat'**
   String get assistantNewChatConfirmCreation;
+
+  /// No description provided for @assistantCreationHoldBannerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last chat may not have been saved. Starting a new chat does not retry it and may create a separate conversation.'**
+  String get assistantCreationHoldBannerMessage;
+
+  /// No description provided for @assistantCreationHoldDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get assistantCreationHoldDismiss;
 
   /// No description provided for @assistantNewChatResetDenied.
   ///

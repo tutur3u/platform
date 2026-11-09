@@ -294,3 +294,35 @@ it.each(['google', 'microsoft'] as const)(
     );
   }
 );
+
+it.each([301, 302, 307, 308])(
+  'denies mailbox profile redirect %s before storing credentials',
+  async (status) => {
+    const response = new Response(null, {
+      status,
+      headers: { Location: 'https://other.invalid/' },
+    });
+    const json = vi.spyOn(response, 'json');
+    mocks.fetch.mockResolvedValue(response);
+    await expect(finishOAuth(request(), 'owner')).rejects.toMatchObject({
+      status: 409,
+    });
+    expect(mocks.fetch).toHaveBeenCalledTimes(1);
+    expect(mocks.fetch.mock.calls[0]?.[1]).toMatchObject({
+      redirect: 'manual',
+    });
+    expect(json).not.toHaveBeenCalled();
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  }
+);
+it('denies an opaque mailbox profile before storing credentials', async () => {
+  const response = Response.json({ emailAddress: 'fixture@example.test' });
+  Object.defineProperty(response, 'type', { value: 'opaqueredirect' });
+  const json = vi.spyOn(response, 'json');
+  mocks.fetch.mockResolvedValue(response);
+  await expect(finishOAuth(request(), 'owner')).rejects.toMatchObject({
+    status: 409,
+  });
+  expect(json).not.toHaveBeenCalled();
+  expect(mocks.upsert).not.toHaveBeenCalled();
+});

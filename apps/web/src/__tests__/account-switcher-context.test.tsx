@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AccountSwitcherProvider,
   useAccountSwitcher,
@@ -213,5 +213,75 @@ describe('AccountSwitcherProvider', () => {
       route: '/en/personal/tasks',
     });
     expect(mocks.updateCurrentWebAccountWithInternalApi).not.toHaveBeenCalled();
+  });
+
+  describe('logoutAll legacy storage', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    async function readyLogoutAll() {
+      mocks.logoutAllWebAccountsWithInternalApi.mockResolvedValue({
+        accounts: [],
+        activeAccountId: null,
+        success: true,
+      });
+      const hook = renderHook(() => useAccountSwitcher(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => expect(hook.result.current.isInitialized).toBe(true));
+      mocks.routerRefresh.mockClear();
+      return hook;
+    }
+
+    it('still revokes the server session when storage access is denied', async () => {
+      const { result } = await readyLogoutAll();
+      vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
+        throw new DOMException('denied', 'SecurityError');
+      });
+
+      await result.current.logoutAll();
+
+      expect(mocks.logoutAllWebAccountsWithInternalApi).toHaveBeenCalledTimes(
+        1
+      );
+      expect(mocks.routerRefresh).toHaveBeenCalledTimes(1);
+    });
+
+    it('still revokes the server session when removal throws', async () => {
+      const { result } = await readyLogoutAll();
+      vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+        throw new Error('remove failed');
+      });
+
+      await result.current.logoutAll();
+
+      expect(mocks.logoutAllWebAccountsWithInternalApi).toHaveBeenCalledTimes(
+        1
+      );
+      expect(mocks.routerRefresh).toHaveBeenCalledTimes(1);
+    });
+
+    it('removes the legacy key and still reports a server revocation failure', async () => {
+      const { result } = await readyLogoutAll();
+      window.localStorage.setItem(
+        'tuturuuu_multi_session_store',
+        'synthetic-legacy'
+      );
+      mocks.logoutAllWebAccountsWithInternalApi.mockRejectedValue(
+        new Error('revoke failed')
+      );
+
+      await expect(result.current.logoutAll()).rejects.toThrow('revoke failed');
+
+      expect(window.localStorage.getItem('tuturuuu_multi_session_store')).toBe(
+        null
+      );
+      expect(mocks.logoutAllWebAccountsWithInternalApi).toHaveBeenCalledTimes(
+        1
+      );
+      expect(mocks.routerRefresh).not.toHaveBeenCalled();
+    });
   });
 });

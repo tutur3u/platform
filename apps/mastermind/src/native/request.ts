@@ -1,4 +1,14 @@
+import {
+  type AppMountConfig,
+  resolveAppBase,
+} from '@tuturuuu/start-bridge/mounts';
 import { authenticate, type MastermindEnvironment, type Owner } from './auth';
+
+const mount = {
+  app: 'mastermind',
+  rootHosts: ['mastermind.tuturuuu.com'],
+  unknownHost: 'reject',
+} satisfies AppMountConfig;
 
 export function secure(response: Response) {
   const headers = new Headers(response.headers);
@@ -23,7 +33,16 @@ export async function mastermindRequest(
   render: (request: Request, owner: Owner) => Promise<Response> | Response,
   now = Date.now()
 ) {
+  const url = new URL(request.url);
+  if (url.protocol !== 'https:' || !resolveAppBase(url, mount)) {
+    return secure(new Response('Forbidden', { status: 403 }));
+  }
   const owner = await authenticate(request, env, now);
+  if (!owner && request.method === 'GET' && url.pathname === '/') {
+    return secure(
+      new Response(null, { status: 303, headers: { Location: '/login' } })
+    );
+  }
   if (!owner) return secure(new Response('Forbidden', { status: 403 }));
   if (!['GET', 'HEAD'].includes(request.method)) {
     return secure(new Response('Method not allowed', { status: 405 }));

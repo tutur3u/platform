@@ -488,9 +488,8 @@ it('concurrent real handler outcomes retain their own local scope and response i
 });
 
 it('R21 accepts only strict enum projection on the terminal handler/login/proxy record', async () => {
-  const { createLoginRedirectProbe } = await import(
-    './login-redirect-diagnostics'
-  );
+  const { createLoginRedirectProbe } =
+    await import('./login-redirect-diagnostics');
   const loginRedirect = createLoginRedirectProbe(
     'https://meet.invalid/login'
   ).seal(new Response(null), 'returnedother');

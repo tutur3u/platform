@@ -142,6 +142,30 @@ describe('Supabase Proxy', () => {
     );
   });
 
+  it('forwards only the refresh request user-agent', async () => {
+    const browserUserAgent =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    mockRequest.headers = new Map([
+      ['cookie', 'sb-test=secret'],
+      ['user-agent', browserUserAgent],
+      ['x-forwarded-for', '203.0.113.8'],
+    ]);
+
+    await updateSession(mockRequest as any);
+
+    const options = (createServerClient as any).mock.calls[0][2];
+    expect(options.global).toEqual({
+      headers: { 'User-Agent': browserUserAgent },
+    });
+  });
+
+  it('omits User-Agent when the refresh request has none', async () => {
+    await updateSession(mockRequest as any);
+
+    const options = (createServerClient as any).mock.calls[0][2];
+    expect(options.global).toBeUndefined();
+  });
+
   it('should handle cookies correctly', async () => {
     const mockCookies = [
       { name: 'test-cookie', value: 'test-value', options: {} },

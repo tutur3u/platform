@@ -17,6 +17,9 @@ interface __BaseEnv_CloudflareEnv {
     import('./cloudflare/worker').MeetLiveDurableObject
   >;
   WORKER_SELF_REFERENCE: Service<typeof import('./cloudflare/worker').default>;
+  /** RPC entrypoint AbuseGuardEntrypoint from tuturuuu-abuse-guard. */
+  ABUSE_GUARD: Service &
+    import('@tuturuuu/utils/abuse-guard/client').AbuseGuardBinding;
 }
 declare namespace Cloudflare {
   interface GlobalProps {
@@ -32,19 +35,18 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
     : string;
 };
 declare namespace NodeJS {
-  interface ProcessEnv
-    extends StringifyValues<
-      Pick<
-        Cloudflare.Env,
-        | 'NEXT_PUBLIC_APP_URL'
-        | 'NEXT_PUBLIC_WEB_APP_URL'
-        | 'MEET_REALTIME_URL'
-        | 'PARLEY_APP_URL'
-        | 'MEET_REALTIME_TOKEN_SECRET'
-        | 'NEXT_PUBLIC_SUPABASE_URL'
-        | 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'
-        | 'SUPABASE_SECRET_KEY'
-        | 'GOOGLE_GENERATIVE_AI_API_KEY'
-      >
-    > {}
+  interface ProcessEnv extends StringifyValues<
+    Pick<
+      Cloudflare.Env,
+      | 'NEXT_PUBLIC_APP_URL'
+      | 'NEXT_PUBLIC_WEB_APP_URL'
+      | 'MEET_REALTIME_URL'
+      | 'PARLEY_APP_URL'
+      | 'MEET_REALTIME_TOKEN_SECRET'
+      | 'NEXT_PUBLIC_SUPABASE_URL'
+      | 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'
+      | 'SUPABASE_SECRET_KEY'
+      | 'GOOGLE_GENERATIVE_AI_API_KEY'
+    >
+  > {}
 }

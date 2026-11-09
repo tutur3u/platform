@@ -34,7 +34,7 @@ const serialized = [
   'release-sdk-dev.yaml',
   'release-sdk-package.yaml',
   'release-supabase-package.yaml',
-  'release-turnstile-package.yaml',
+  'release-cloudflare-package.yaml',
   'release-types-package.yaml',
   'release-typescript-config-package.yaml',
   'release-ui-package.yaml',
@@ -85,6 +85,8 @@ const prExceptions = {
 };
 const mainExceptions = {
   ...prExceptions,
+  'turbo-unit-tests.yaml':
+    'Every main push retains its own non-cancelling validation result',
   'supabase-staging.yaml':
     'Protected main migrations serialize exact-SHA marker evidence',
   'release-sdk-dev.yaml':
@@ -94,7 +96,7 @@ const mainExceptions = {
     'Staging publication consumes the durable attempt ledger',
   'mail-cloudflare.yaml':
     'Staging publication consumes the durable attempt ledger',
-  'biome-check.yaml':
+  'oxc-check.yaml':
     'Job-level validation and separate repository mutation locks',
   'tanstack-route-manifest.yaml': 'TanStack runtime is paused',
   'codeql.yml':
@@ -102,7 +104,7 @@ const mainExceptions = {
 };
 // Main pushes of these workflows queue (one running, newest pending) instead of
 // cancelling; every other qualification assertion still applies.
-const queuedMainBaselines = new Set(['codeql.yml']);
+const queuedMainBaselines = new Set(['codeql.yml', 'turbo-unit-tests.yaml']);
 const workflows = Object.fromEntries(
   fs
     .readdirSync(workflowRoot)
@@ -232,8 +234,8 @@ for (const [file, workflow] of Object.entries(workflows)) {
   for (const event of ['pull_request', 'pull_request_target']) {
     if (!Object.hasOwn(events(workflow), event)) continue;
     test(`${file}: ${event} revisions supersede or have an explicit exception`, () => {
-      if (file === 'biome-check.yaml') {
-        // Biome keeps mutation locks outside any parent group, so each
+      if (file === 'oxc-check.yaml') {
+        // Oxc keeps mutation locks outside any parent group, so each
         // validation job supersedes its own PR revisions.
         for (const id of [
           'check-ci',
@@ -324,12 +326,10 @@ test('regression controls reject missing, non-cancelling, SHA-specific and cross
     { ...workflow.concurrency, 'cancel-in-progress': false },
     {
       ...workflow.concurrency,
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
       group: '${{ github.workflow }}-${{ github.sha }}',
     },
     {
       ...workflow.concurrency,
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
       group: '${{ github.workflow }}-${{ github.ref }}',
     },
     { ...workflow.concurrency, queue: 'max' },
@@ -445,7 +445,7 @@ for (const [file, workflow] of Object.entries(workflows)) {
     });
   }
 }
-test('main validation inventory requires isolated qualification, including Biome jobs', () => {
+test('main validation inventory requires isolated qualification, including Oxc jobs', () => {
   for (const [file, workflow] of Object.entries(workflows)) {
     if (mainExceptions[file] || file.startsWith('vercel-preview-')) continue;
     if (!Object.hasOwn(events(workflow), 'push')) continue;
@@ -499,8 +499,8 @@ function assertMutationLocks(workflow) {
     assertQualification(job.concurrency, workflow.name);
   }
 }
-test('Biome repository writes are outside every cancelling parent and validation group', () => {
-  const workflow = workflows['biome-check.yaml'];
+test('Oxc repository writes are outside every cancelling parent and validation group', () => {
+  const workflow = workflows['oxc-check.yaml'];
   assertMutationLocks(workflow);
   assert.throws(() =>
     assertMutationLocks({
@@ -648,4 +648,23 @@ test('PR path filters never apply to CodeQL main baselines', () => {
   const push = events(workflows['codeql.yml']).push;
   assert.deepEqual(push, { branches: ['main'] });
   assert.ok(events(workflows['codeql.yml']).pull_request['paths-ignore']);
+});
+
+test('main Test pushes retain separate results and never cancel prior validation', () => {
+  const workflow = workflows['turbo-unit-tests.yaml'];
+  assert.ok(events(workflow).push.branches.includes('main'));
+  const first = { ...context('refs/heads/main'), workflow: workflow.name };
+  const later = { ...first, sha: 'later', run_id: 2 };
+  assert.equal(
+    render(workflow.concurrency['cancel-in-progress'], first),
+    false
+  );
+  assert.equal(
+    render(workflow.concurrency['cancel-in-progress'], later),
+    false
+  );
+  assert.notEqual(
+    render(workflow.concurrency.group, first),
+    render(workflow.concurrency.group, later)
+  );
 });

@@ -59,8 +59,8 @@ function normalizeTransactionListRow<TTransaction extends TransactionListRow>(
 ) {
   const hasCreator = Boolean(
     transaction.creator_full_name ||
-      transaction.creator_email ||
-      transaction.creator_avatar_url
+    transaction.creator_email ||
+    transaction.creator_avatar_url
   );
 
   return {

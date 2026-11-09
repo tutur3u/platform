@@ -147,9 +147,20 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
+    // Release identity is public: no refresh, and no ambient identity reaches
+    // the handler.
+    const isBuildInfoRead =
+      request.nextUrl.pathname === '/api/build-info' &&
+      (request.method === 'GET' || request.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of request.cookies.getAll())
+        request.cookies.delete(cookie.name);
+      request.headers.delete('cookie');
+      request.headers.delete('authorization');
+    }
     const hasBearerApiSession = hasAuthenticatedBearerToken(request.headers);
     const appSessionRefresh =
-      isLocalAuthApi || hasBearerApiSession
+      isLocalAuthApi || isBuildInfoRead || hasBearerApiSession
         ? null
         : await refreshAppSessionForRequest(request, {
             sessionMode: 'supabase-first',

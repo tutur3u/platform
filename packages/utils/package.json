@@ -1,7 +1,7 @@
 {
   "name": "@tuturuuu/utils",
   "license": "MIT",
-  "version": "0.38.1",
+  "version": "0.39.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/tutur3u/platform",
@@ -27,7 +27,7 @@
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
-    "@tuturuuu/turnstile": "workspace:*",
+    "@tuturuuu/cloudflare": "workspace:*",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
     "cn": "^0.3.3",

@@ -106,9 +106,8 @@ describe('time tracking period stats route', () => {
   });
 
   it('keeps accepting standard IANA timezone values used by web consumers', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/stats/period/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/stats/period/route');
 
     const response = await GET(
       new NextRequest(
@@ -129,9 +128,8 @@ describe('time tracking period stats route', () => {
   });
 
   it('accepts non-canonical timezone strings sent by mobile clients', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/stats/period/route'
-    );
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/stats/period/route');
 
     const response = await GET(
       new NextRequest(

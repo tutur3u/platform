@@ -1,0 +1,345 @@
+---
+title: "D74 cutover runbooks"
+description: "Order, commands, rollback pins and smoke for each app cutover to a Cloudflare Worker."
+---
+
+Cutovers run in this order: lowest risk first. Marketing page groups flip through the gateway instead (see the gateway Worker page). Each section is the whole runbook for one app; the linked packet has the full binding, secret and variable names.
+
+## Web apex pin
+
+Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web): `dpl_FZuaw8J2RRS3ust79agjwyKo2AAf` (source d209d72b). The current production deployment is `dpl_9NxJS4nsCaYZwEjSWe2bJwj2Hjdk` (prebuilt from a7826c1f). Pins read 9 Nov 23:40.
+
+## Common steps
+
+1. Record the source SHA, the sealed artifact (CI run id) and the Vercel rollback pin below.
+2. Download the artifact: `gh run download <run-id> -R tutur3u/platform -n <artifact-name> -D /tmp/<app>-cutover`.
+   Take the run id from a run on the production ref (`main`) at the accepted source SHA, and verify the run's head SHA. Never take an artifact by name alone: a name can match a pull-request run.
+3. Secrets: set `TUTURUUU_APP_COORDINATION_SECRET` on every Worker to EXACTLY the value of Web's signer (the `SUPABASE_SECRET_KEY` value) and also set the same `SUPABASE_SECRET_KEY`. Drive, Mind and Rewise refuse requests when `TUTURUUU_APP_COORDINATION_SECRET` is unset, so leaving it unset is not an option. The dedicated signing value comes later through the accept-only slot (see the app-coordination secret rollout page).
+4. Provision the secret names from the packet on the Worker, then deploy the artifact config route-free: `bunx wrangler deploy --config /tmp/<app>-cutover/dist/server/wrangler.json --name <worker>` (no route yet).
+5. Smoke the Worker on its own hostname before any route change: `node scripts/cutover-smoke.mjs <app> https://<worker-hostname>`.
+6. Attach the route or custom domain for the host (proxied, in front of the still-valid Vercel origin where possible).
+7. Re-run the smoke on the public host and watch for 5 minutes: no 5xx, login renders, entry route as expected.
+8. Rollback on any 5xx above 1% for 5 minutes, a wrong redirect or a broken login: remove the route or repoint the DNS record to the Vercel pin. Never rebuild on the rollback path. No data or migration is involved.
+
+## 1. shortener
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-shortener` |
+| Hosts | ttr.gg |
+| Artifact | shortener-cloudflare.yaml (artifact job) |
+| Vercel rollback pin | dpl_GE8wpZUZZs2vrATVXHhsWhrcei8e |
+| Packet | `shortener-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs shortener https://ttr.gg` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Note | Publication is held in tuturuuu.ci.ts until the cutover PR. |
+
+## 2. tools
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-tools` |
+| Hosts | tools.tuturuuu.com, tools.tutur3u.com, tuturuuu.com/tools |
+| Artifact | tools-cloudflare.yaml, job cutover-artifact |
+| Vercel rollback pin | dpl_2EBL3XVwhpRw94GJ9tL2zc4Xr9UQ |
+| Packet | `tools-cutover-packet` |
+| Smoke | `node scripts/cutover-smoke.mjs tools https://tools.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## 3. storefront
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-storefront` |
+| Hosts | store.tuturuuu.com (+ alias hosts redirect) |
+| Artifact | storefront-cloudflare.yaml, job cutover-artifact |
+| Vercel rollback pin | dpl_9hTHzckmpYsjzFBFyQ9uz4n7gN5R (Vercel project named storefronts) |
+| Packet | `storefront-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs storefront https://store.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## 4. external
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-external` |
+| Hosts | external.tuturuuu.com |
+| Artifact | external-cloudflare.yaml, job build (uploads the external-cutover artifact) |
+| Vercel rollback pin | none found (no Vercel project; confirm before the flip) |
+| Packet | `external-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs external https://external.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## 5. rewise
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-rewise` |
+| Hosts | rewise.tuturuuu.com |
+| Artifact | rewise-cloudflare.yaml, job cutover-artifact |
+| Vercel rollback pin | dpl_AEYG1siChNBLcnUBZ4xDKQcbn1Fh |
+| Packet | `rewise-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs rewise https://rewise.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Note | Needs UPSTASH_REDIS_REST_URL/TOKEN and ABUSE_GUARD_BACKEND=upstash on the Worker. |
+
+## 6. drive
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-drive` |
+| Hosts | drive.tuturuuu.com |
+| Artifact | drive-cloudflare.yaml (sealed artifact) |
+| Vercel rollback pin | dpl_7NqvsJbGgYnDMSj1Z2hpQY6NduiC |
+| Packet | `drive-start-void (PR #7928, merge pending Selene)` |
+| Smoke | `node scripts/cutover-smoke.mjs drive https://drive.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Note | Source and workflow arrive with PR #7928. |
+
+## 7. teach
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-teach` |
+| Hosts | teach.tuturuuu.com (mount tuturuuu.com/teach) |
+| Artifact | teach-cloudflare.yaml, job teach-cutover-artifact |
+| Vercel rollback pin | dpl_F5hAajM98yzKJXAyp8x6UykSursf |
+| Packet | `teach-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs teach https://teach.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Note | Not restricted to its declared hosts: attach only the teach route. |
+
+## 8. tasks
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-tasks` |
+| Hosts | tasks.tuturuuu.com |
+| Artifact | mail-calendar-tasks-builds.yaml, job tasks-cutover-artifact |
+| Vercel rollback pin | dpl_EgKBkkw84zWdxgNARiXiZssD9PB7 |
+| Packet | `tasks-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs tasks https://tasks.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## 9. track
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-track` |
+| Hosts | track.tuturuuu.com |
+| Artifact | track-cloudflare.yaml, job track-cutover-artifact |
+| Vercel rollback pin | dpl_34ReWMgzXVogGXXUtoid386QqSNC |
+| Packet | `track-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs track https://track.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## 10. finance
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-finance` |
+| Hosts | finance.tuturuuu.com |
+| Artifact | finance-cloudflare.yaml (production profile) |
+| Vercel rollback pin | dpl_AEY3N6yzW5RoNgXubJxfajAgNhfm |
+| Packet | `finance-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs finance https://finance.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## 11. calendar
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-calendar` |
+| Hosts | calendar.tuturuuu.com |
+| Artifact | wave1-native-production.yaml, input app=calendar, environment wave1-calendar-production |
+| Vercel rollback pin | dpl_EDfFFKFtpxeJ29UUmxZc1VNqLsX2 |
+| Packet | `wave1-cutover-packets` |
+| Smoke | `node scripts/cutover-smoke.mjs calendar https://calendar.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## 12. mail
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-mail` |
+| Hosts | mail.tuturuuu.com |
+| Artifact | wave1-native-production.yaml, input app=mail, environment wave1-mail-production |
+| Vercel rollback pin | dpl_G7VbMYiwb9BhAm9i2FK8N3Udw3s3 |
+| Packet | `wave1-cutover-packets` |
+| Smoke | `node scripts/cutover-smoke.mjs mail https://mail.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Note | Vercel cannot rebuild mail from main; the Cloudflare cutover is the only way forward. |
+
+## 13. apps
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-apps` |
+| Hosts | apps.tuturuuu.com |
+| Artifact | wave1-native-production.yaml, input app=apps, environment wave1-apps-production |
+| Vercel rollback pin | dpl_7jwSj1yvqqtjxagQqsVr8kZ97ByS |
+| Packet | `wave1-cutover-packets` |
+| Smoke | `node scripts/cutover-smoke.mjs apps https://apps.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## 14. learn
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-learn` |
+| Hosts | learn.tuturuuu.com |
+| Artifact | learn-cloudflare.yaml, job learn-cutover-artifact |
+| Vercel rollback pin | dpl_2Q4f1WgzDA2RMPowNNvsgqSwST2C |
+| Packet | `learn-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs learn https://learn.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## 15. chat
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-chat` |
+| Hosts | chat.tuturuuu.com |
+| Artifact | chat-cloudflare.yaml, job chat-cutover-artifact |
+| Vercel rollback pin | dpl_AufjhfQ3Kq74ibco2BTyAtwhH5YT |
+| Packet | `chat-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs chat https://chat.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+## 14. infrastructure
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-infrastructure` |
+| Hosts | infrastructure.tuturuuu.com |
+| Artifact | infrastructure-cloudflare.yaml (`infrastructure-cutover-<sha>`) |
+| Vercel rollback pin | dpl_AZghhKoj3zwcE6ZfotQJmdo7Lang (the one before the 23:37 prebuilt promotion dpl_GjkU1QKSV7woJRssbm8bmZK1WfNB) |
+| Packet | `infrastructure-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs infrastructure https://infrastructure.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## 15. mind
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-mind` |
+| Hosts | mind.tuturuuu.com |
+| Artifact | mind-cloudflare.yaml (`mind-cutover-<sha>`) |
+| Vercel rollback pin | dpl_9H1vKG4Pkup7TeBhY5umdpvg7pqn |
+| Packet | `mind-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs mind https://mind.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Abuse guard | Service binding `ABUSE_GUARD` → `tuturuuu-abuse-guard`, secret `ABUSE_GUARD_KEY_PEPPER`, and text variable `ABUSE_GUARD_FAMILIES=proxy`; `ABUSE_GUARD_TIMEOUT_MS` is optional. Upstash is not required. |
+
+## Not cut over tonight
+
+- playground: no Vercel deployment found; staff-only app, routes attach at its own hostname when wanted.
+- colab: already on Cloudflare; Start/Void port is a separate change.
+- parley: already on Cloudflare (OpenNext).
+- contacts: stays on Vercel (a client uses it daily); its conversion needs its own rehearsed rollback.
+- mastermind: held by the wave-2 security hold.
+- learn, chat, infrastructure, mind, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
+
+## Hive
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-hive` |
+| Hosts | hive.tuturuuu.com |
+| Artifact | hive-cloudflare.yaml, job hive-cutover-artifact |
+| Vercel rollback pin | none: no Vercel project, Cloudflare only |
+| Smoke | `node scripts/cutover-smoke.mjs hive https://hive.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## cms
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-cms` |
+| Hosts | cms.tuturuuu.com |
+| Artifact | cms-cloudflare.yaml, job cutover-build (production profile; `cms-cutover-production-<sha>`) |
+| Vercel rollback pin | dpl_2q4z1TbzV96W2foT8JfLzz4ZEGZY |
+| Smoke | `node scripts/cutover-smoke.mjs cms https://cms.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## ai
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-ai` |
+| Hosts | ai.tuturuuu.com |
+| Artifact | ai-cloudflare.yaml, job cutover-build (production profile; `ai-cutover-production-<sha>`) |
+| Vercel rollback pin | dpl_GuUpXDwZovfjHm9AvM3NSpjmYf1d |
+| Smoke | `node scripts/cutover-smoke.mjs ai https://ai.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+## Forms
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-forms` |
+| Hosts | forms.tuturuuu.com |
+| Artifact | forms-cloudflare.yaml, job cutover-build (`forms-cutover-<sha>`) |
+| Vercel rollback pin | dpl_HfGqF1JjoZev7CNQYFEqonFsB33h |
+| Smoke | `node scripts/cutover-smoke.mjs forms https://forms.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+- infrastructure, mind, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
+- learn, chat, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
+
+## 16. git
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-git` |
+| Hosts | git.tuturuuu.com |
+| Artifact | git-cloudflare.yaml, job git-cutover-artifact (`VITE_GIT_NATIVE_PROFILE=production`, sealed by `scripts/ci/git-native-artifact.py`; no routes) |
+| Vercel rollback pin | dpl_6ReHrAjbW7ahNKyL1ssgDZEdGeq4 |
+| Packet | `git-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs git https://git.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+## Inventory
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-inventory` |
+| Hosts | inventory.tuturuuu.com |
+| Artifact | inventory-cloudflare.yaml, job cutover-build (`inventory-cutover-<sha>`) |
+| Vercel rollback pin | dpl_2qe5xFZEHUSNbbmm3sR6TgbHDG5h |
+| Smoke | `node scripts/cutover-smoke.mjs inventory https://inventory.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+## nova
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-nova` |
+| Hosts | nova.tuturuuu.com |
+| Artifact | nova-cloudflare.yaml, job nova-cutover-artifact |
+| Vercel rollback pin | dpl_5GdmHYYQ1AfLeZcZ1pZ79zKDokGQ |
+| Packet | `nova-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs nova https://nova.tuturuuu.com` |
+| Abuse guard | Service binding `ABUSE_GUARD` (`tuturuuu-abuse-guard`), secret `ABUSE_GUARD_KEY_PEPPER`, `ABUSE_GUARD_FAMILIES=proxy`, optional `ABUSE_GUARD_TIMEOUT_MS`. Upstash credentials are not required. |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## pay
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-pay` |
+| Hosts | pay.tuturuuu.com |
+| Artifact | pay-cloudflare.yaml, job pay-cutover-artifact |
+| Vercel rollback pin | dpl_4vY3ZuCcANuyt4qbUrsgDhQBM1yy |
+| Packet | `pay-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs pay https://pay.tuturuuu.com` |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## workspace
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-workspace` |
+| Hosts | First flip: `workspace.tuturuuu.com` only. `tuturuuu.com` paths stay on Web. |
+| Artifact | workspace-cloudflare.yaml, job `workspace-cutover-artifact` (`workspace-cutover-<sha>`). Route-free: `workers_dev` false, `preview_urls` false, no routes. Dispatch on `main`; the job does not deploy. |
+| Vercel rollback pin | none for `apps/workspace` (no Vercel project). Apex stays on the Web pin in Web apex pin; re-read that pin at flip time. |
+| Packet | `workspace-start-void` |
+| Smoke | unknown host answers 404; `GET /api/v1/mobile/version` is forwarded and answered by Web; logout-all clears `tuturuuu_multi_session_store`. Commands are in the packet's gateway plan. |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Deploy conditions | (a) `#7981` (`b84abea571`) is in the main commit, that commit's required workflows are green, and the artifact is built from that commit. (b) `INTERNAL_WEB_API_ORIGIN` unset and `TUTURUUU_WEB_API_HOSTS` unset on the production Worker. (c) Post-deploy smoke: unknown host answers 404, an `/api/v1` GET is forwarded and answered by Web, logout-all clears `tuturuuu_multi_session_store`. (d) `TTR_CSRF_MODE` stays off `enforce` until Web itself is deployed with `apps/web/src/lib/security/csrf.ts`. |
+| Required names | Build injection from `vite.config.mts`: `NODE_ENV`, optional `TUTURUUU_BASE_PATH`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`. Worker var `TUTURUUU_NOINDEX=0`. Request env from `start-bridge.config.ts`: `INTERNAL_WEB_API_ORIGIN` and `TUTURUUU_WEB_API_HOSTS`, both unset in production. Runtime secrets: `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`. |

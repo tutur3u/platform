@@ -1,0 +1,46 @@
+---
+title: "Finance cutover packet"
+description: "Worker, route, bindings, build, smoke and Vercel rollback for the native Finance app."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Finance (`apps/finance`) already has native Start + Void source on `main`. Its
+design, route ownership, qualification and the direct-cutover procedure are in
+[Finance and Pay on Start](/build/devops/finance-pay-start). This page holds the
+values the release owner needs.
+
+## Cutover packet
+
+| Item | Value |
+| --- | --- |
+| Worker | Profile `production` (`VITE_FINANCE_NATIVE_PROFILE=production`): `tuturuuu-finance`. Profile `staging` (default): `tuturuuu-finance-vite-staging`. `workers_dev` and preview URLs are off; the config declares no routes |
+| Host | `finance.tuturuuu.com` (root mode, one host per profile; staging admits `finance.tutur3u.com` only). The `tuturuuu.com/finance` mount is not part of this cutover |
+| Bindings | `ASSETS` (worker-first, no SPA fallback) |
+| Vars (production profile, names) | `INTERNAL_WEB_API_ORIGIN`, `NEXT_PUBLIC_WEB_APP_URL`, `NEXT_PUBLIC_APP_URL`, `FINANCE_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`; values live in `cloudflare/native-profiles.json`, never mixed with the staging profile |
+| Secrets (names) | `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`. The Worker refuses to serve without them |
+| Build | `bun turbo:local run build --filter=@tuturuuu/finance^...`, then `VITE_FINANCE_NATIVE_PROFILE=production bun run --cwd apps/finance build:cloudflare`. `finance-cloudflare.yaml` builds the same profile and uploads the sealed `finance-cutover-production-<sha>` artifact; it never publishes |
+| Routing | Attach only `finance.tuturuuu.com/*`; keep the Vercel CNAME and enable its proxy |
+| Prior Vercel deployment | Not recorded in the repository. Capture the production deployment id, source SHA and the DNS record id, content, proxy state and TTL before the flip |
+
+## Rollback
+
+Remove only the `finance.tuturuuu.com/*` Worker route and restore the captured DNS
+payload; assign only the Finance hostname to the captured immutable Vercel
+deployment if needed. Never promote the Vercel project as a whole. Freeze
+production sync during the flip and watch, because `vercel-production-finance.yaml`
+runs on `production` pushes and a new Vercel deployment would move the alias the
+rollback relies on. The Worker holds no state and the rollback touches no data.
+
+## Smoke
+
+```bash
+node scripts/native-cutover/smoke.mjs --origin https://finance.tuturuuu.com --app finance --expect native
+curl -s https://finance.tuturuuu.com/api/build-info     # commitHash equals the sealed artifact's source SHA
+curl -sI https://finance.tuturuuu.com/                  # signed out: redirect to the central login
+curl -s -o /dev/null -w '%{http_code}\n' https://finance.tuturuuu.com/api/v1/workspaces   # denied without a session, never 5xx
+```
+
+Only exact GET and HEAD `/api/build-info` are public. The rollback smoke is the
+same runner with `--expect legacy`. After the flip, watch 5xx rate, authentication
+failures and p95 latency for 30 to 60 minutes and roll back on regression.

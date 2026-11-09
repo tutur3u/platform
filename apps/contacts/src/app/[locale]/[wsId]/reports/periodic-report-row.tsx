@@ -1,12 +1,15 @@
 'use client';
 
+import { hasReportFeedback } from '@tuturuuu/users-core/features/reports/report-feedback';
 import {
+  CalendarDays,
   Check,
   ChevronDown,
   Eye,
   Mail,
   MoreHorizontal,
   Pencil,
+  RotateCcw,
   Send,
   Sparkles,
   XCircle,
@@ -21,9 +24,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import {
+  isReportSent,
+  reportMonthLabel,
+} from '@tuturuuu/users-core/features/reports/report-month';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { periodicDeliveryCategory } from './periodic-delivery-category';
+import {
+  isBlockingDeliveryCategory,
+  periodicDeliveryCategory,
+} from './periodic-delivery-category';
+import { periodicResendReason } from './periodic-resend';
 import {
   PeriodicStageBadge,
   PeriodicStatusBadge,
@@ -44,13 +55,19 @@ export function PeriodicReportRow({
   selectable = false,
   selected = false,
   onToggleSelection,
+  onResend,
+  onSetMonth,
   report,
   wsId,
 }: {
+  /** Saves the estimated month of a report without one (edit permission). */
+  onSetMonth?: (month: string) => void;
   onEditRecipient?: () => void;
   selectable?: boolean;
   selected?: boolean;
   onToggleSelection?: () => void;
+  /** Admin resend (server-checked). Held rows keep Send instead. */
+  onResend?: () => void;
   approvalPending: boolean;
   generationPending: boolean;
   onApprove: () => void;
@@ -68,6 +85,20 @@ export function PeriodicReportRow({
 }) {
   const t = useTranslations('reports-hub');
   const category = periodicDeliveryCategory(report);
+  const emptyFeedback = !hasReportFeedback(report.feedback);
+  const resendReason = onResend
+    ? periodicResendReason(report, Date.now())
+    : null;
+  const month = report.report_month
+    ? reportMonthLabel(report.report_month)
+    : null;
+  const estimatedMonth =
+    report.report_month && report.report_month_estimated
+      ? report.report_month
+      : null;
+  // A sent report moves to another month only with approve_reports.
+  const canSetMonth =
+    onSetMonth && (permissions.canApproveReports || !isReportSent(report));
   return (
     <article className="border-border/60 border-b transition-colors last:border-b-0 hover:bg-muted/30">
       <div className="grid gap-3 p-3 md:px-4 xl:grid-cols-[minmax(0,1fr)_10rem_12rem] xl:items-center">
@@ -111,9 +142,19 @@ export function PeriodicReportRow({
               </p>
             ) : null}
             <p className="text-muted-foreground text-xs">
-              {report.period_start && report.period_end
-                ? `${report.period_start} – ${report.period_end}`
-                : t('manual_report')}
+              {month
+                ? t('month_option', { month })
+                : report.period_start && report.period_end
+                  ? `${report.period_start} – ${report.period_end}`
+                  : t('manual_report')}
+              {estimatedMonth ? (
+                <span
+                  className="ml-1.5 rounded border border-dashed px-1"
+                  title={t('estimated_month_hint')}
+                >
+                  {t('estimated_month')}
+                </span>
+              ) : null}
             </p>
             {report.last_delivery_error ? (
               <p className="mt-1 line-clamp-1 text-destructive text-xs">
@@ -151,6 +192,18 @@ export function PeriodicReportRow({
           )}
         </div>
         <div className="flex min-h-9 flex-wrap items-center justify-end gap-1 xl:w-48">
+          {estimatedMonth && canSetMonth && month ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onSetMonth?.(estimatedMonth)}
+              aria-label={t('set_month', { month })}
+              title={t('set_month', { month })}
+            >
+              <CalendarDays className="size-3.5" />
+              {t('set_month', { month })}
+            </Button>
+          ) : null}
           {report.generation_mode === 'ai' &&
           report.generation_status !== 'ready' ? (
             <Button
@@ -167,16 +220,19 @@ export function PeriodicReportRow({
           {permissions.canApproveReports &&
           (report.report_approval_status === 'PENDING' ||
             report.report_approval_status === null) ? (
-            <Button
-              size="icon"
-              className="size-8"
-              variant="outline"
-              disabled={approvalPending}
-              onClick={onApprove}
-              aria-label={t('approve')}
-            >
-              <Check className="h-4 w-4" />
-            </Button>
+            <span title={emptyFeedback ? t('feedback_required') : undefined}>
+              <Button
+                size="icon"
+                className="size-8"
+                variant="outline"
+                disabled={approvalPending || emptyFeedback}
+                title={emptyFeedback ? t('feedback_required') : undefined}
+                onClick={onApprove}
+                aria-label={t('approve')}
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+            </span>
           ) : null}
           <Button
             size="icon"
@@ -201,14 +257,30 @@ export function PeriodicReportRow({
           !['queued', 'processing', 'sent', 'failed', 'blocked'].includes(
             report.delivery_status
           ) &&
-          !category ? (
+          !isBlockingDeliveryCategory(category) ? (
+            <span title={emptyFeedback ? t('feedback_required') : undefined}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={emptyFeedback}
+                title={emptyFeedback ? t('feedback_required') : undefined}
+                onClick={() => onDeliveryIntent('send')}
+              >
+                <Send className="size-3.5" />
+                {t('send')}
+              </Button>
+            </span>
+          ) : null}
+          {onResend &&
+          (resendReason === 'failed' || resendReason === 'stuck') ? (
             <Button
               size="sm"
               variant="outline"
-              onClick={() => onDeliveryIntent('send')}
+              onClick={onResend}
+              aria-label={t('resend_report')}
             >
-              <Send className="size-3.5" />
-              {t('send')}
+              <RotateCcw className="size-3.5" />
+              {t('resend')}
             </Button>
           ) : null}
           {permissions.canSendReports ? (
@@ -263,14 +335,30 @@ function DeliveryMenu({
         !['queued', 'processing', 'sent', 'failed', 'blocked'].includes(
           report.delivery_status
         ) &&
-        !periodicDeliveryCategory(report) ? (
+        !isBlockingDeliveryCategory(periodicDeliveryCategory(report)) ? (
           <>
-            <DropdownMenuItem onSelect={() => onDeliveryIntent('test')}>
+            <DropdownMenuItem
+              disabled={!hasReportFeedback(report.feedback)}
+              title={
+                !hasReportFeedback(report.feedback)
+                  ? t('feedback_required')
+                  : undefined
+              }
+              onSelect={() => onDeliveryIntent('test')}
+            >
               <Send className="mr-2 h-4 w-4" />
               {t('test_send')}
             </DropdownMenuItem>
             {report.delivery_status !== 'sent' ? (
-              <DropdownMenuItem onSelect={() => onDeliveryIntent('send')}>
+              <DropdownMenuItem
+                disabled={!hasReportFeedback(report.feedback)}
+                title={
+                  !hasReportFeedback(report.feedback)
+                    ? t('feedback_required')
+                    : undefined
+                }
+                onSelect={() => onDeliveryIntent('send')}
+              >
                 <Mail className="mr-2 h-4 w-4" />
                 {t('send')}
               </DropdownMenuItem>

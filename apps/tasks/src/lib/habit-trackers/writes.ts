@@ -224,7 +224,7 @@ export async function createHabitTrackerEntry(
       note,
       tags,
     ]);
-    const rpc = supabase.rpc.bind(supabase) as unknown as ReceiptRpc;
+    const rpc = (supabase.rpc as unknown as ReceiptRpc).bind(supabase);
     const { data, error } = await rpc(
       'record_habit_tracker_entry_with_receipt',
       {

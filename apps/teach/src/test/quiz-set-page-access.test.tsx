@@ -98,7 +98,6 @@ beforeEach(() => {
               : { id: 'set', name: 'set' },
         error: null,
       }),
-      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
       then: (resolve: (value: unknown) => void) =>
         resolve({ data: [], count: 0, error: null }),
     };

@@ -1,5 +1,4 @@
 import {
-  type AppCoordinationTokenClaims,
   getBearerAppCoordinationToken,
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
@@ -30,6 +29,11 @@ import {
   getWorkspaceInviteStatus,
   type WorkspaceInvitationRecord,
 } from '@/lib/workspace-invitations/status';
+import {
+  appTokenHasRequiredScope,
+  hasWorkspaceExternalProjectPermission,
+  type WorkspaceExternalProjectMode,
+} from './access-mode';
 import { appTokenTargetMatchesExternalProjectBinding } from './app-binding';
 import {
   authorizeExternalAppRequest,
@@ -41,6 +45,10 @@ import {
   verifyCmsOrCliSession,
 } from './root-access';
 
+export {
+  appTokenHasRequiredScope,
+  type WorkspaceExternalProjectMode,
+} from './access-mode';
 export {
   getDefaultCanonicalExternalProjectId,
   resolveWorkspaceExternalProjectBinding,
@@ -57,8 +65,6 @@ export {
 
 type AdminDb = TypedSupabaseClient;
 
-export type WorkspaceExternalProjectMode = 'read' | 'manage' | 'publish';
-
 type ExternalProjectAppTokenExchangeAuthorization =
   | {
       mode: WorkspaceExternalProjectMode | null;
@@ -73,21 +79,6 @@ type ExternalProjectAppTokenExchangeAuthorization =
       ok: false;
       status: 400 | 403 | 404 | 500;
     };
-
-function hasWorkspaceExternalProjectPermission(
-  permissions: PermissionsResult | null,
-  mode: WorkspaceExternalProjectMode
-) {
-  if (!permissions) return false;
-  if (permissions.containsPermission('manage_external_projects')) return true;
-  if (mode === 'read') {
-    return permissions.containsPermission('publish_external_projects');
-  }
-  if (mode === 'publish') {
-    return permissions.containsPermission('publish_external_projects');
-  }
-  return false;
-}
 
 function isWorkspaceHandleCandidate(value: string) {
   return /^[a-z0-9](?:[a-z0-9_-]{0,62}[a-z0-9])?$/u.test(value);
@@ -158,36 +149,6 @@ async function getPermissionsForUserId({
     },
     wsId,
   });
-}
-
-export function appTokenHasRequiredScope(
-  claims: AppCoordinationTokenClaims,
-  mode: WorkspaceExternalProjectMode
-) {
-  if (claims.scopes.length === 0) {
-    return false;
-  }
-
-  // Broader scopes answer for narrower ones. `manage` is the right to change the
-  // content model, which nobody can exercise without also reading and
-  // publishing — yet a token holding it was refused a plain read. An app granted
-  // everything could therefore do nothing, and no permission change fixed it,
-  // because the grant was never what was missing.
-  const acceptedScopes =
-    mode === 'read'
-      ? [
-          'external-projects:read',
-          'external-projects:publish',
-          'external-projects:manage',
-        ]
-      : mode === 'publish'
-        ? ['external-projects:publish', 'external-projects:manage']
-        : ['external-projects:manage'];
-
-  return (
-    claims.scopes.includes('external-projects:*') ||
-    acceptedScopes.some((scope) => claims.scopes.includes(scope))
-  );
 }
 
 export function getExternalProjectModeForScopes(

@@ -29,12 +29,30 @@ extension _AssistantPageNewChat on _AssistantPageState {
     }
   }
 
+  String _creationBannerScope(String wsId) => '${_currentActor()}::$wsId';
+
+  bool _showCreationBanner(AssistantChatState state, String wsId) =>
+      state.creationOutcomeUnknown &&
+      state.status != AssistantChatStatus.restoring &&
+      !AssistantCreationHoldBanner.isDismissed(_creationBannerScope(wsId));
+
+  Future<void> _startNewFromCreationBanner(String wsId) =>
+      _startNewConversation(
+        wsId,
+        _chatCubit.state,
+        _liveCubit.state,
+        preserveDraft: true,
+        informedTap: true,
+      );
+
   Future<_AssistantNewChatResult> _startNewConversation(
     String wsId,
     AssistantChatState chatState,
     AssistantLiveState liveState, {
     BuildContext? historyContext,
     bool preserveDraft = false,
+    // The inline banner's explicit "Start a new chat" tap is the consent.
+    bool informedTap = false,
   }) async {
     if (_localCubit.state.local || _localCubit.state.blocked) {
       _dismissKeyboard();
@@ -90,7 +108,9 @@ extension _AssistantPageNewChat on _AssistantPageState {
         return _AssistantNewChatResult.retained;
       }
       if (target.requiresConsent) {
-        final decision = await showAssistantNewChatConfirmation(context);
+        final decision = informedTap
+            ? AssistantNewChatDecision.createNew
+            : await showAssistantNewChatConfirmation(context);
         if (!mounted || !current()) {
           await notice(l10n.assistantNewChatResetStale);
           return _AssistantNewChatResult.retained;

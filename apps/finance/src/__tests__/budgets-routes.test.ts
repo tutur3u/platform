@@ -108,9 +108,8 @@ describe('budget routes', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/finance/budgets/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/finance/budgets/route');
 
     const response = await GET(
       new NextRequest(
@@ -134,9 +133,8 @@ describe('budget routes', () => {
       error: null,
     });
 
-    const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/finance/budgets/route'
-    );
+    const { POST } =
+      await import('@/app/api/v1/workspaces/[wsId]/finance/budgets/route');
 
     const response = await POST(
       new NextRequest(
@@ -172,9 +170,8 @@ describe('budget routes', () => {
       error: null,
     });
 
-    const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/finance/budgets/status/route'
-    );
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/finance/budgets/status/route');
 
     const response = await GET(
       new NextRequest(
@@ -200,9 +197,8 @@ describe('budget routes', () => {
       error: null,
     });
 
-    const { DELETE } = await import(
-      '@/app/api/v1/workspaces/[wsId]/finance/budgets/[budgetId]/route'
-    );
+    const { DELETE } =
+      await import('@/app/api/v1/workspaces/[wsId]/finance/budgets/[budgetId]/route');
 
     const response = await DELETE(
       new NextRequest(

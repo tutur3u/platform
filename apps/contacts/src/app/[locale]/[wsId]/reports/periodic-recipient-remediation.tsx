@@ -49,11 +49,11 @@ export function PeriodicRecipientRemediation(props: Props) {
   const { intent, wsId, epoch, canUpdateUsers, onClose } = props;
   const valid = Boolean(
     intent &&
-      actor === intent.actor &&
-      actor.lifetime.active &&
-      wsId === intent.wsId &&
-      epoch === intent.epoch &&
-      canUpdateUsers
+    actor === intent.actor &&
+    actor.lifetime.active &&
+    wsId === intent.wsId &&
+    epoch === intent.epoch &&
+    canUpdateUsers
   );
   // Unmounting removes editable state when an account, workspace or filter changes.
   useEffect(() => {

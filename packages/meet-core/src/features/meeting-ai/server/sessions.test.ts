@@ -5,10 +5,12 @@ const mocks = vi.hoisted(() => ({
   access: vi.fn(),
   cloudflare: vi.fn(),
   generate: vi.fn(),
+  roster: vi.fn(),
 }));
 vi.mock('@opennextjs/cloudflare', () => ({
   getCloudflareContext: mocks.cloudflare,
 }));
+vi.mock('./transcript-roster', () => ({ readTranscriptRoster: mocks.roster }));
 vi.mock('server-only', () => ({}));
 // Limiter behavior is covered by usage-limit and chunks-limit tests.
 vi.mock('./usage-limit', () => ({ enforceMeetAiUsage: async () => {} }));
@@ -35,6 +37,7 @@ const params = { params: Promise.resolve({ wsId: id, meetingId: id }) };
 const session = {
   id,
   notes_status: 'pending',
+  notes: null,
   notes_unpriced_attempts: 0,
   ended_at: null,
 };
@@ -63,7 +66,6 @@ function dbWith(results: unknown[]) {
         ? Promise.reject(result)
         : Promise.resolve(result);
     chain.single = () => Promise.resolve(result);
-    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     chain.then = (
       resolve: (value: unknown) => void,
       reject: (reason: unknown) => void
@@ -93,6 +95,7 @@ const request = (overrides: Record<string, unknown> = {}) =>
 describe('Meet notes finalization', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mocks.roster.mockResolvedValue(new Map());
     vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'test-only');
   });
   it('does not regenerate completed notes', async () => {
@@ -120,6 +123,21 @@ describe('Meet notes finalization', () => {
   });
   it.each([
     ['no chunks', []],
+    ...[
+      { erased: true },
+      { segments: [{ erased: true }] },
+      { segments: [{ erased: true }, { malformed: true }] },
+    ].map((usage) => [
+      'erased saved speech',
+      [
+        {
+          status: 'completed',
+          start_seconds: 0,
+          transcript: 'REMOVED fallback',
+          usage,
+        },
+      ],
+    ]),
     [
       'blank mixed segments',
       [
@@ -321,7 +339,10 @@ it('reports workspace availability from runtime controls', async () => {
   dbWith([result([]), result([])]);
   expect((await readMeetAi(request(), params)).available).toBe(false);
   mocks.cloudflare.mockResolvedValue({
-    env: { MEET_AI_ENABLED_WORKSPACE_IDS: id },
+    env: {
+      MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+      MEET_AI_ENABLED_WORKSPACE_IDS: id,
+    },
   });
   dbWith([result([]), result([])]);
   expect((await readMeetAi(request(), params)).available).toBe(true);
@@ -433,6 +454,7 @@ it('retries failed ended-session notes from saved chunks without changing transc
 describe('generated Meet notes persistence recovery', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mocks.roster.mockResolvedValue(new Map());
     vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'test-only');
   });
   it.each([
@@ -599,4 +621,66 @@ describe('generated Meet notes persistence recovery', () => {
       'processing',
     ]);
   });
+});
+
+it('persists action owners only from the current roster', async () => {
+  mocks.roster.mockResolvedValue(new Map([[id, 'Roster Alice']]));
+  const writes = dbWith([
+    result(session),
+    result(null),
+    result([
+      {
+        status: 'completed',
+        start_seconds: 0,
+        transcript: 'Speech',
+        usage: null,
+      },
+    ]),
+    result({ id }),
+    result({ id }),
+  ]);
+  mocks.generate.mockResolvedValue({
+    notes: {
+      actionItems: [
+        { task: 'Known', ownerId: id, owner: 'AI name' },
+        { task: 'Erased', ownerId: 'missing', owner: 'Erased name' },
+        { task: 'Unknown', ownerId: null, owner: 'Erased name' },
+      ],
+    },
+    usage: null,
+    costUsd: 0,
+  });
+  await changeMeetAi(request(), params);
+  expect(writes[2]).toMatchObject({
+    notes: {
+      actionItems: [
+        { ownerId: id, owner: 'Roster Alice' },
+        { ownerId: null, owner: null },
+        { ownerId: null, owner: null },
+      ],
+    },
+  });
+});
+
+it('rebuilds saved action owners on read so stale names never return', async () => {
+  mocks.roster.mockResolvedValue(new Map([[id, 'Current Alice']]));
+  dbWith([
+    result([
+      {
+        ...session,
+        notes: {
+          actionItems: [
+            { task: 'Known', ownerId: id, owner: 'Old name' },
+            { task: 'Removed', ownerId: 'removed', owner: 'Erased name' },
+          ],
+        },
+      },
+    ]),
+    result([]),
+  ]);
+  const state = await readMeetAi(request(), params);
+  expect(state.sessions[0]?.notes?.actionItems).toEqual([
+    { task: 'Known', ownerId: id, owner: 'Current Alice' },
+    { task: 'Removed', ownerId: null, owner: null },
+  ]);
 });

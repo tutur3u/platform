@@ -55,7 +55,6 @@ function database(
       };
     }
     builder.maybeSingle = async () => response();
-    // biome-ignore lint/suspicious/noThenProperty: emulate the awaited PostgREST builder.
     builder.then = (resolve: (value: unknown) => unknown) =>
       Promise.resolve(response()).then(resolve);
     return builder;
@@ -96,7 +95,7 @@ describe('Ordinary report draft PUT acknowledgement', () => {
       {
         table: 'external_user_monthly_reports_workspace_view',
         method: 'select',
-        args: ['id, user_id, group_id, generation_mode'],
+        args: ['id, user_id, group_id, generation_mode, feedback'],
       },
       {
         table: 'external_user_monthly_reports_workspace_view',

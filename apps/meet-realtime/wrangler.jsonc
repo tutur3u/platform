@@ -5,39 +5,46 @@
   "compatibility_date": "2026-06-20",
   "compatibility_flags": ["nodejs_compat"],
   "alias": {
-    "@tuturuuu/types/primitives/playgrounds": "../../packages/types/src/primitives/playgrounds.ts"
+    "@tuturuuu/types/primitives/playgrounds": "../../packages/types/src/primitives/playgrounds.ts",
   },
   "dev": {
     "port": 8786,
-    "local_protocol": "http"
+    "local_protocol": "http",
   },
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 0.05
+    "head_sampling_rate": 0.05,
+  },
+  "vars": {
+    "MEET_AI_DISABLED": "true",
+    "MEET_AI_ENABLED_WORKSPACE_IDS": "",
   },
   "durable_objects": {
     "bindings": [
       { "name": "CHANNEL_ROOM", "class_name": "ChannelRoomDurableObject" },
       {
         "name": "COLLABORATION_ROOM",
-        "class_name": "CollaborationRoomDurableObject"
+        "class_name": "CollaborationRoomDurableObject",
       },
       {
         "name": "MEET_ROOM",
-        "class_name": "MeetRoomDurableObject"
-      }
-    ]
+        "class_name": "MeetRoomDurableObject",
+      },
+    ],
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["MeetRoomDurableObject"]
+      "new_sqlite_classes": ["MeetRoomDurableObject"],
     },
     {
       "tag": "v2-collaboration",
-      "new_sqlite_classes": ["CollaborationRoomDurableObject"]
+      "new_sqlite_classes": ["CollaborationRoomDurableObject"],
     },
-    { "tag": "v3-channels", "new_sqlite_classes": ["ChannelRoomDurableObject"] }
+    {
+      "tag": "v3-channels",
+      "new_sqlite_classes": ["ChannelRoomDurableObject"],
+    },
   ],
   "secrets": {
     "required": [
@@ -45,15 +52,17 @@
       "CLOUDFLARE_REALTIME_APP_ID",
       "CLOUDFLARE_REALTIME_APP_SECRET",
       "CLOUDFLARE_TURN_KEY_ID",
-      "CLOUDFLARE_TURN_API_TOKEN"
-    ]
+      "CLOUDFLARE_TURN_API_TOKEN",
+      "MEET_AI_DISABLED_WORKSPACE_IDS",
+      "MEET_AI_PROTECTED_WORKSPACE_IDS",
+    ],
   },
   "account_id": "e8912e2867beecc673d171907bf09649",
   "routes": [
     {
       "pattern": "meet-realtime.tuturuuu.com",
-      "custom_domain": true
-    }
+      "custom_domain": true,
+    },
   ],
-  "workers_dev": true
+  "workers_dev": true,
 }

@@ -1,0 +1,192 @@
+{
+  "locales": [
+    "en",
+    "vi"
+  ],
+  "origins": {
+    "web": {
+      "env": "WEB_ORIGIN"
+    },
+    "marketing": {
+      "env": "MARKETING_ORIGIN"
+    }
+  },
+  "default": {
+    "origin": "web",
+    "cache": "bypass"
+  },
+  "routes": [
+    {
+      "id": "marketing-legal",
+      "group": "legal",
+      "flagOrigin": "marketing",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": [
+        "/privacy",
+        "/terms",
+        "/acceptable-use",
+        "/community-guidelines",
+        "/security"
+      ],
+      "prefix": [
+        "/legal/",
+        "/security/"
+      ]
+    },
+    {
+      "id": "marketing-company",
+      "group": "company",
+      "flagOrigin": "marketing",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": [
+        "/about",
+        "/branding",
+        "/careers",
+        "/contact",
+        "/contributors",
+        "/partners",
+        "/women-in-tech"
+      ],
+      "prefix": []
+    },
+    {
+      "id": "marketing-products",
+      "group": "products",
+      "flagOrigin": "marketing",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": [
+        "/products"
+      ],
+      "prefix": [
+        "/products/"
+      ]
+    },
+    {
+      "id": "marketing-solutions",
+      "group": "solutions",
+      "flagOrigin": "marketing",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": [],
+      "prefix": [
+        "/solutions/"
+      ]
+    },
+    {
+      "id": "marketing-blog",
+      "group": "blog",
+      "flagOrigin": "marketing",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": [
+        "/blog"
+      ],
+      "prefix": [
+        "/blog/"
+      ]
+    },
+    {
+      "id": "marketing-home",
+      "group": "home",
+      "flagOrigin": "marketing",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": [
+        "/",
+        "/pricing"
+      ],
+      "prefix": []
+    },
+    {
+      "id": "marketing-pages",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": [
+        "/changelog",
+        "/download",
+        "/meet",
+        "/meet-together",
+        "/models",
+        "/portfolio",
+        "/qr-generator"
+      ],
+      "prefix": [
+        "/changelog/",
+        "/visualizations/"
+      ]
+    },
+    {
+      "id": "satellite-landings",
+      "origin": "web",
+      "cache": "page",
+      "localized": false,
+      "exact": [
+        "/roadmap",
+        "/design"
+      ],
+      "prefix": [
+        "/roadmap/",
+        "/design/"
+      ]
+    },
+    {
+      "id": "seo-metadata",
+      "origin": "web",
+      "cache": "page",
+      "localized": false,
+      "exact": [
+        "/robots.txt",
+        "/sitemap.xml",
+        "/manifest.webmanifest",
+        "/manifest.json"
+      ],
+      "prefix": [
+        "/.well-known/"
+      ]
+    },
+    {
+      "id": "marketing-assets",
+      "origin": "marketing",
+      "cache": "static",
+      "localized": false,
+      "exact": [],
+      "prefix": [
+        "/assets/"
+      ]
+    },
+    {
+      "id": "static-assets",
+      "origin": "web",
+      "cache": "static",
+      "localized": false,
+      "exact": [
+        "/favicon.ico",
+        "/favicon-16x16.png",
+        "/favicon-32x32.png",
+        "/apple-touch-icon.png",
+        "/android-chrome-192x192.png",
+        "/android-chrome-512x512.png",
+        "/icon-192x192.png",
+        "/icon-512x512.png",
+        "/logo.svg",
+        "/cover.png",
+        "/wallpaper.jpg"
+      ],
+      "prefix": [
+        "/_next/static/",
+        "/media/",
+        "/screenshots/"
+      ]
+    }
+  ]
+}

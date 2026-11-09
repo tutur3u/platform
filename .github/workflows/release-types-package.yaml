@@ -103,7 +103,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Build package
         uses: ./.github/actions/run-with-turbo-remote-cache
@@ -135,7 +135,7 @@ jobs:
           package-manager-cache: false
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Check whether the version already exists on npm
         id: version-check
@@ -359,14 +359,33 @@ jobs:
                 encodeURIComponent(workflowName) +
                 '/dispatches';
 
+              const headers = {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'X-GitHub-Api-Version': '2022-11-28',
+                'User-Agent': 'tuturuuu-package-release-dispatch',
+              };
+              const workflow = await fetch(url.slice(0, -'/dispatches'.length), {
+                headers,
+                method: 'GET',
+              });
+              if (!workflow.ok) {
+                throw new Error(
+                  `Unable to inspect ${workflowName} workflow state: ${workflow.status} ${workflow.statusText}`
+                );
+              }
+              const { state } = await workflow.json();
+              if (state === 'disabled_manually') {
+                console.log(`Skipping disabled dependent workflow ${workflowName}.`);
+                continue;
+              }
+              if (state !== 'active') {
+                throw new Error(`Unable to confirm ${workflowName} workflow state.`);
+              }
+
               const response = await fetch(url, {
                 body: JSON.stringify({ ref }),
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                  'X-GitHub-Api-Version': '2022-11-28',
-                  'User-Agent': 'tuturuuu-package-release-dispatch',
-                },
+                headers,
                 method: 'POST',
               });
 

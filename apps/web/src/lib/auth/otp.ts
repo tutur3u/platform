@@ -1,13 +1,13 @@
 import {
+  isTurnstileError,
+  resolveTurnstileToken,
+  verifyTurnstileToken,
+} from '@tuturuuu/cloudflare/turnstile/server';
+import {
   createAdminClient,
   createClient,
   createDetachedClient,
 } from '@tuturuuu/supabase/next/server';
-import {
-  isTurnstileError,
-  resolveTurnstileToken,
-  verifyTurnstileToken,
-} from '@tuturuuu/turnstile/server';
 import {
   checkOTPSendAllowed,
   checkOTPVerifyLimit,
@@ -362,7 +362,7 @@ export async function sendOtp(
   }
 
   const supabase = turnstile.shouldBypassForDev
-    ? createDetachedClient()
+    ? createDetachedClient({ userAgent })
     : await createClient(context.request);
   const metadata = buildOtpMetadata({
     client: input.client,
@@ -512,7 +512,7 @@ export async function verifyOtp(
   }
   const supabase =
     input.client === 'mobile'
-      ? createDetachedClient()
+      ? createDetachedClient({ userAgent: suspiciousAgentCheck.userAgent })
       : await createClient(context.request);
 
   let { data, error } = await supabase.auth.verifyOtp({

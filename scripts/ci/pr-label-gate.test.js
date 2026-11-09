@@ -29,13 +29,17 @@ const PAUSED_JOB = /^(\$\{\{ )?false( \}\})?$/u;
 // Trigger digests on origin/main when the gate landed. Update a digest only
 // with a reviewed push, schedule or manual trigger change.
 const PROTECTED_TRIGGERS = {
-  'ai-cloudflare.yaml': '1e5f4be0329251eb',
+  'rewise-cloudflare.yaml': 'fe6b54462e91b1bf',
+  'git-cloudflare.yaml': '0a3cc2c97958f5cd',
+  'external-cloudflare.yaml': '0a3cc2c97958f5cd',
+  'ai-cloudflare.yaml': '2b1f1ae8795d0216',
   'api-worker.yaml': '058d68d5d261d527',
-  'apps-cloudflare.yaml': '5dadb22de50806df',
-  'biome-check.yaml': '6c39e758f15186ed',
+  'app-builds-affected.yaml': 'fcb6485f818aa571',
+  'apps-cloudflare.yaml': '257f752668dce766',
+  'oxc-check.yaml': '6c39e758f15186ed',
   'calendar-cloudflare.yaml': 'e3e096233a6e8a60',
   'calendar-generation-contract.yaml': '0a3cc2c97958f5cd',
-  'cms-cloudflare.yaml': '5f4174ce584d0533',
+  'cms-cloudflare.yaml': 'c43009624296a37c',
   'codeql.yml': '4a4a1b519370f1bc',
   'colab-cloudflare.yaml': 'dce28d216351f5af',
   'connected-mail-accounts-contract.yaml': '36344b32dd7e88da',
@@ -48,43 +52,50 @@ const PROTECTED_TRIGGERS = {
   'discord-python-ci.yml': 'df10679b45d420bb',
   'docs-seo-check.yaml': '78c7f5ff99020ac9',
   'external-internal-packages.yaml': '4d532cf88497bbd2',
+  'external-project-page-versions-contract.yaml': '0a3cc2c97958f5cd',
   'external-project-storage-analytics-contract.yaml': '02e3e1d0d939ac56',
-  'finance-cloudflare.yaml': 'd5dc7fa96048fd6b',
-  'forms-cloudflare.yaml': '4c98fb3cb1df4d96',
+  'fee-lock-database-contract.yaml': '0a3cc2c97958f5cd',
+  // Finance also watches its owning input-cache action; other trigger fields stay fixed.
+  'finance-cloudflare.yaml': 'fabf7d45e110e58d',
+  'forms-cloudflare.yaml': '0e554fe52a0af9c8',
   'i18n-check.yaml': '78c7f5ff99020ac9',
-  'inventory-cloudflare.yaml': '4558d318d6aaaba3',
+  'inventory-cloudflare.yaml': '56aef454e313add1',
   'inventory-offline-contract.yaml': '0a3cc2c97958f5cd',
   'lettin-cloudflare.yaml': 'd043498fabfde801',
   'mail-calendar-tasks-builds.yaml': '25ba8eefde41880f',
   'mail-cloudflare.yaml': 'dd965acde3d1fd0a',
   'mail-profile-runtime-contract.yaml': '44136fa355b3678a',
-  'mastermind-cloudflare.yaml': 'a2d2aa460044fa45',
-  'meet-cloudflare.yaml': '94511c89d2621e60',
+  'mastermind-cloudflare.yaml': 'd1f8275025d3586a',
+  'meet-cloudflare.yaml': 'f3e7c418a0e49ecb',
   'mobile-build-android.yaml': 'ef27f9c72cee2485',
   'mobile-build-ios.yaml': '1223a8396111881f',
   'mobile-build-linux.yaml': '7469a02578f1c4c3',
   'mobile-build-macos.yaml': 'cca5083fd78920dc',
   'mobile-build-windows.yaml': 'ff0b86edd5297973',
-  'mobile.yaml': '2bd82a7675ba9ab3',
-  'nova-cloudflare.yaml': '2033d2d0bbf8194b',
+  // Add only the checksum-pinned native input action to push/PR paths.
+  'mobile.yaml': 'ed6d793aecbe7293',
+  'nova-cloudflare.yaml': 'a2d9cd99b1329afe',
   'ops-hub-cloudflare.yaml': '0a3cc2c97958f5cd',
   'parley-cloudflare.yaml': 'f1777123fb48e37c',
+  'pay-cloudflare.yaml': 'a31b0975203c9817',
   'periodic-report-delivery-contract.yaml': 'dc372af9059d0c07',
+  'playground-cloudflare.yaml': '7c22fc6d616e6d01',
   'playground-runtime-acceptance.yaml': '0a3cc2c97958f5cd',
-  'programming-app-builds.yaml': '0a3cc2c97958f5cd',
   'programming-database-contract.yaml': '0a3cc2c97958f5cd',
   'report-review-receipts-contract.yaml': '433352a4fb0e56e6',
   'required-account-mfa-contract.yaml': 'f803778bc2859492',
+  'roadmap-cloudflare.yaml': '226a232389cbc09b',
   'sdk-package-qualification.yaml': '0a3cc2c97958f5cd',
   'security-egress-contract.yaml': '0a3cc2c97958f5cd',
-  'shortener-cloudflare.yaml': '95e0a84a4fdf354e',
+  'shortener-cloudflare.yaml': '91506e88fa4e6dd8',
   'sso-persistence-contract.yaml': '939d2042696cddd9',
-  'storefront-cloudflare.yaml': 'a9efe716b3f7059c',
+  'storefront-cloudflare.yaml': '1e3b010d7a0ce910',
   'supabase-baseline.yaml': 'dcdf48b8132ff123',
+  'task-board-database-contract.yaml': '0a3cc2c97958f5cd',
   'time-tracker-control-contract.yaml': '25ad429ead647fb8',
-  'tools-cloudflare.yaml': '6dd83e0e67660aad',
+  'tools-cloudflare.yaml': 'a17e28a9976d224b',
   'topic-delivery-foundation-contract.yaml': '6880af5bb579ac39',
-  'track-cloudflare.yaml': '9c02c75a8da5ddae',
+  'track-cloudflare.yaml': 'f354cac2984f6165',
   'tsrs-shadow.yaml': '0b7a9bf95294a1fd',
   'turbo-cache-cloudflare.yaml': 'c8aeb63fcad4a92e',
   'turbo-unit-tests.yaml': 'e94a048af91d2cc0',
@@ -94,6 +105,28 @@ const PROTECTED_TRIGGERS = {
   'web-start-candidate.yaml': '0a3cc2c97958f5cd',
   'workspace-permission-scope-contract.yaml': '0a3cc2c97958f5cd',
 };
+
+const EXTRA_PROTECTED_INPUTS = {
+  'ai-cloudflare.yaml': ['scripts/ci/ai-cutover-smoke.mjs'],
+  'cms-cloudflare.yaml': ['scripts/ci/cms-cutover-smoke.mjs'],
+  'finance-cloudflare.yaml': ['scripts/ci/finance-cutover-*'],
+};
+
+function assertProtectedTriggers(file, on) {
+  const triggers = structuredClone(on);
+  for (const input of EXTRA_PROTECTED_INPUTS[file] ?? []) {
+    assert.ok(
+      triggers.push.paths.includes(input),
+      `${file} must watch ${input}`
+    );
+    triggers.push.paths = triggers.push.paths.filter((path) => path !== input);
+  }
+  assert.equal(
+    protectedTriggerDigest(file, triggers),
+    PROTECTED_TRIGGERS[file],
+    file
+  );
+}
 
 function events(workflow) {
   const on = workflow.on;
@@ -135,7 +168,10 @@ function assertGeneratedWorkflowGates(file, workflow) {
     HEAVY_PR_WORKFLOWS.includes(file),
     `${file}: generated workflow is not heavy`
   );
-  for (const id of ['check-ci', 'native']) {
+  assert.ok(workflow.jobs?.['check-ci'], `${file}: missing check-ci job`);
+  const ids = Object.keys(workflow.jobs).filter((id) => id !== 'affected-gate');
+  assert.ok(ids.length >= 2, `${file}: missing qualification job`);
+  for (const id of ids) {
     assert.ok(workflow.jobs?.[id], `${file}: missing ${id} job`);
     assert.ok(
       String(workflow.jobs[id].if ?? '').includes(PR_LABEL_GATE),
@@ -316,11 +352,7 @@ test('main, production, schedule and manual triggers are untouched', () => {
     [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS].sort()
   );
   for (const file of [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS]) {
-    assert.equal(
-      protectedTriggerDigest(file, workflows[file].on),
-      PROTECTED_TRIGGERS[file],
-      file
-    );
+    assertProtectedTriggers(file, workflows[file].on);
   }
   for (const [file, branches] of Object.entries(PUSH_TO_PR)) {
     const push = events(workflows[file]).push;
@@ -445,7 +477,7 @@ test('reported build push selectors preserve protected refs and release branches
   for (const file of [
     'turbo-unit-tests.yaml',
     'type-check.yaml',
-    'biome-check.yaml',
+    'oxc-check.yaml',
   ]) {
     assert.deepEqual(
       events(workflows[file]).push.branches,
@@ -462,4 +494,59 @@ test('reported build push selectors preserve protected refs and release branches
     JSON.stringify(release),
     /release-please--branches--production--release-notes/u
   );
+});
+
+test('roadmap artifact admission rejects unlabelled PRs and preserves main dispatch', () => {
+  const jobs = workflows['roadmap-cloudflare.yaml'].jobs;
+  const decide = (event, labels, ref, relevant = true) => {
+    const context = {
+      github: {
+        event_name: event,
+        ref,
+        event: { pull_request: { labels: labels.map((name) => ({ name })) } },
+      },
+      needs: {
+        'check-ci': { outputs: { should_run: String(relevant) } },
+        'affected-gate': { outputs: { run: 'true' } },
+      },
+    };
+    return Object.fromEntries(
+      Object.entries(jobs).map(([id, job]) => [
+        id,
+        evaluateExpression(job.if, context),
+      ])
+    );
+  };
+  assert.deepEqual(decide('pull_request', [], 'refs/pull/42/merge'), {
+    'affected-gate': false,
+    'check-ci': false,
+    build: false,
+  });
+  assert.deepEqual(
+    decide('pull_request', [READY_LABEL], 'refs/pull/42/merge'),
+    { 'affected-gate': true, 'check-ci': true, build: true }
+  );
+  assert.equal(
+    decide('pull_request', [READY_LABEL], 'refs/pull/42/merge', false).build,
+    false
+  );
+  assert.equal(decide('workflow_dispatch', [], 'refs/heads/main').build, true);
+  assert.equal(
+    decide('workflow_dispatch', [], 'refs/heads/unreviewed').build,
+    false
+  );
+});
+
+test('exact smoke-input additions preserve every other protected trigger input', () => {
+  const file = 'ai-cloudflare.yaml';
+  const on = workflows[file].on;
+  assertProtectedTriggers(file, on);
+  for (const path of ['apps/ai/**', 'scripts/ci/ai-cutover-smoke.mjs']) {
+    const changed = structuredClone(on);
+    changed.push.paths = changed.push.paths.filter((input) => input !== path);
+    assert.throws(() => assertProtectedTriggers(file, changed));
+  }
+  const widened = structuredClone(on);
+  widened.push.paths.push('unreviewed/**');
+  assert.throws(() => assertProtectedTriggers(file, widened));
 });

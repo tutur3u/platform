@@ -43,7 +43,7 @@ describe('server coordination client', () => {
       new URL('https://coordination.example.com/v1/coordinate'),
       expect.objectContaining({
         cache: 'no-store',
-        redirect: 'error',
+        redirect: 'manual',
         method: 'POST',
         signal: expect.any(AbortSignal),
       })

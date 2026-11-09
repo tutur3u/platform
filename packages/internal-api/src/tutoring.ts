@@ -97,6 +97,7 @@ export interface TutoringDetailedExportRow {
   group_name: string;
   student_name: string;
   teacher_name: string;
+  teacher_user_id?: string | null;
 }
 
 export interface TutoringPayrollExportRow {

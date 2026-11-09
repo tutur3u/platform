@@ -8,6 +8,7 @@ import {
 
 const report = {
   id: 'report-1',
+  feedback: 'Teacher comment',
   user_id: 'user-1',
   user_email: 'recipient@example.com',
   report_approval_status: 'APPROVED',
@@ -106,6 +107,10 @@ describe('recorded blocker categories', () => {
         user_email: null,
       })
     ).toBeNull());
-  it('does not label unblocked draft as failure', () =>
-    expect(periodicDeliveryCategory(report)).toBeNull());
+  it('labels an unblocked approved draft as held, not as a failure', () =>
+    expect(periodicDeliveryCategory(report)).toBe('held'));
+});
+
+it('never selects an empty-feedback report for bulk send', () => {
+  expect(canSelectPeriodicDelivery({ ...report, feedback: '  ' })).toBe(false);
 });

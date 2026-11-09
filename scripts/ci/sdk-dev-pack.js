@@ -77,7 +77,6 @@ async function pack({
   ).version;
   const version = devVersion(
     base,
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: standalone uncached pack input
     runId ?? process.env.GITHUB_RUN_NUMBER ?? String(Date.now()),
     sourceSha
   );
@@ -143,9 +142,7 @@ async function pack({
 
 if (require.main === module) {
   pack({
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: standalone uncached pack input
     output: process.env.QUALIFICATION_OUTPUT,
-    // biome-ignore lint/suspicious/noUndeclaredEnvVars: standalone uncached pack input
     internalOnly: process.env.SDK_DEV_INTERNAL_ONLY !== 'false',
   })
     .then((result) => console.log(JSON.stringify(result)))

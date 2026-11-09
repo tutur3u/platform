@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import type { EmployeeRejectionRecoveryState } from '@tuturuuu/internal-api/infrastructure';
 import { beforeEach, expect, it, vi } from 'vitest';
@@ -338,8 +339,9 @@ it('retries only an explicit fresh eligible adjudication with the original event
 });
 
 it('denies overlapping dispatch and actor retirement during fresh inspection', async () => {
-  let resolveInspection: (value: EmployeeRejectionRecoveryState) => void =
-    () => {};
+  let resolveInspection: (
+    value: EmployeeRejectionRecoveryState
+  ) => void = () => {};
   const inspectRejection = vi.fn(
     () =>
       new Promise<EmployeeRejectionRecoveryState>((resolve) => {

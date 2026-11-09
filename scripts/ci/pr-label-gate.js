@@ -23,7 +23,7 @@ const PROTECTED_PUSH_BRANCHES = [
   'release-please--branches--**',
 ];
 const PUSH_TO_PR = {
-  'biome-check.yaml': PROTECTED_PUSH_BRANCHES,
+  'oxc-check.yaml': PROTECTED_PUSH_BRANCHES,
   'discord-python-ci.yml': PROTECTED_PUSH_BRANCHES,
   'supabase-baseline.yaml': ['main', 'release-please--branches--**'],
   'turbo-unit-tests.yaml': PROTECTED_PUSH_BRANCHES,
@@ -33,6 +33,7 @@ const PUSH_TO_PR = {
 const HEAVY_PR_WORKFLOWS = [
   'ai-cloudflare.yaml',
   'api-worker.yaml',
+  'app-builds-affected.yaml',
   'apps-cloudflare.yaml',
   'calendar-cloudflare.yaml',
   'calendar-generation-contract.yaml',
@@ -47,10 +48,14 @@ const HEAVY_PR_WORKFLOWS = [
   'desktop-beta.yaml',
   'devbox-control-cloudflare.yaml',
   'discord-python-ci.yml',
+  'external-cloudflare.yaml',
   'external-internal-packages.yaml',
+  'external-project-page-versions-contract.yaml',
   'external-project-storage-analytics-contract.yaml',
+  'fee-lock-database-contract.yaml',
   'finance-cloudflare.yaml',
   'forms-cloudflare.yaml',
+  'git-cloudflare.yaml',
   'inventory-cloudflare.yaml',
   'inventory-offline-contract.yaml',
   'lettin-cloudflare.yaml',
@@ -68,18 +73,22 @@ const HEAVY_PR_WORKFLOWS = [
   'nova-cloudflare.yaml',
   'ops-hub-cloudflare.yaml',
   'parley-cloudflare.yaml',
+  'pay-cloudflare.yaml',
   'periodic-report-delivery-contract.yaml',
+  'playground-cloudflare.yaml',
   'playground-runtime-acceptance.yaml',
-  'programming-app-builds.yaml',
   'programming-database-contract.yaml',
   'report-review-receipts-contract.yaml',
   'required-account-mfa-contract.yaml',
+  'rewise-cloudflare.yaml',
+  'roadmap-cloudflare.yaml',
   'sdk-package-qualification.yaml',
   'security-egress-contract.yaml',
   'shortener-cloudflare.yaml',
   'sso-persistence-contract.yaml',
   'storefront-cloudflare.yaml',
   'supabase-baseline.yaml',
+  'task-board-database-contract.yaml',
   'time-tracker-control-contract.yaml',
   'topic-delivery-foundation-contract.yaml',
   'tools-cloudflare.yaml',
@@ -96,14 +105,15 @@ const HEAVY_PR_WORKFLOWS = [
 
 // Sub-minute, script-only or security checks that stay on for every PR push.
 const ALWAYS_ON_PR_WORKFLOWS = [
+  'ci-summary-poster.yml',
   'security-checks.yaml',
   'security-review-classifier.yaml',
 ];
 
-// The mixed entrypoint always reports admission and selects its validation callers.
-const ADMISSION_PR_WORKFLOWS = ['pr-checks.yaml'];
+// Admission controls run before label-gated validation can start.
+const ADMISSION_PR_WORKFLOWS = ['auto-ready-for-ci.yaml', 'pr-checks.yaml'];
 const REUSABLE_GATED_WORKFLOWS = [
-  'biome-check.yaml',
+  'oxc-check.yaml',
   'docs-seo-check.yaml',
   'i18n-check.yaml',
 ];

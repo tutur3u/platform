@@ -93,8 +93,8 @@ export function BundleComponentPicker({
   );
   const canAddCategoryComponent = Boolean(
     onCategoryComponentsChange &&
-      selectedCategory &&
-      Number(quantityRequired) > 0
+    selectedCategory &&
+    Number(quantityRequired) > 0
   );
 
   return (

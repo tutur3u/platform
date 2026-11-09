@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import type { Workspace } from '@tuturuuu/types';
@@ -108,7 +109,6 @@ describe('WorkspaceMembersSettingsPanel', () => {
     expect(inviteLinksMock).toHaveBeenCalledWith({
       canManageMembers: true,
       disableInvite: true,
-      embedded: true,
       wsId: 'ws_1',
     });
     expect(standardWorkspaceAccessMock).toHaveBeenCalledWith(

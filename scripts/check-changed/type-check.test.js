@@ -31,7 +31,7 @@ test('typeCheckProjects follows script chains and checker flags', () => {
     }),
     ['packages/types/tsconfig.build.json']
   );
-  assert.deepEqual(typeCheckProjects('packages/x', { lint: 'biome' }), []);
+  assert.deepEqual(typeCheckProjects('packages/x', { lint: 'oxc' }), []);
   assert.deepEqual(
     typeCheckProjects('packages/x', { 'type-check': 'vue-tsc --noEmit' }),
     []

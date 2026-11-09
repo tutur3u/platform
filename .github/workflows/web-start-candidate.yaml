@@ -3,13 +3,13 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
-      - 'apps/web/**'
-      - 'packages/start-bridge/**'
-      - 'packages/legal/**'
-      - 'packages/utils/src/abuse-protection/**'
-      - 'packages/utils/package.json'
-      - 'bun.lock'
-      - '.github/workflows/web-start-candidate.yaml'
+      - "apps/web/**"
+      - "packages/start-bridge/**"
+      - "packages/legal/**"
+      - "packages/utils/src/abuse-protection/**"
+      - "packages/utils/package.json"
+      - "bun.lock"
+      - ".github/workflows/web-start-candidate.yaml"
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,8 +17,43 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
-  check-ci:
+  affected-gate:
+    # Pull requests only: skip the heavy jobs when web is unaffected.
+    # Other events never check out or run the gate: they resolve to run=true, so a
+    # gate failure can never block a production deploy. Any error also resolves to run=true.
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    outputs:
+      run: ${{ github.event_name != 'pull_request' && 'true' || steps.app.outputs.run || 'true' }}
+      reason: ${{ steps.app.outputs.reason }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+          sparse-checkout: |
+            /.github/actions/affected-gate/
+            /scripts/ci/affected-apps.mjs
+            /scripts/ci/affected-apps.extra-edges.json
+            /scripts/ci/affected-gate.mjs
+            /apps/*/package.json
+            /packages/*/package.json
+          sparse-checkout-cone-mode: false
+      - id: app
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: ./.github/actions/affected-gate
+        with:
+          app: web
+  check-ci:
+    needs: affected-gate
+    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -26,12 +61,12 @@ jobs:
     with:
       workflow_name: web-start-candidate.yaml
   candidate:
-    needs: check-ci
-    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    needs: [check-ci, affected-gate]
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      WRANGLER_SEND_METRICS: 'false'
+      WRANGLER_SEND_METRICS: "false"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -57,4 +92,4 @@ jobs:
       - run: bun run --cwd apps/web build:candidate
       - run: bun run --cwd apps/web test:candidate:runtime
       - run: bun run --cwd apps/web type-check:candidate
-      - run: bun x --no-install biome check apps/web/cloudflare apps/web/vite.config.mts apps/web/tsconfig.candidate.json
+      - run: node scripts/oxc-check.js apps/web/cloudflare apps/web/vite.config.mts apps/web/tsconfig.candidate.json

@@ -1,0 +1,144 @@
+---
+title: "Marketing on Start + Void"
+description: "Native Marketing runtime, emitted-Worker qualification, route ownership, and the cutover and rollback runbook."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Marketing (`apps/marketing`) is part of the TTR D74 Cloudflare migration, moving
+public marketing and legal pages from Vercel to native Cloudflare Workers powered
+by TanStack Start, Vite+, and Void SDK.
+
+Its request context, Next.js shims (`next/headers`, `next/navigation`,
+`next-intl/server`), Vite preset, and response policies come from
+[`@tuturuuu/start-bridge`](/build/devops/start-bridge). The application maintains
+its own Worker entrypoint (`cloudflare/worker.ts`), route tree, and layout hierarchy.
+
+## Worker identity and mounts
+
+The Worker targets the following staging and production identities:
+
+- **Worker Name:** `tuturuuu-marketing` (production and staging candidate)
+- **Root Hosts:** `marketing.tuturuuu.com`
+- **Mount Hosts:** `tuturuuu.com`
+- **Base Path:** `/marketing`
+
+On the apex domain (`tuturuuu.com`), pages are mounted under `/marketing/*` or
+routed via Cloudflare path routing rules. On the canonical subdomain
+(`marketing.tuturuuu.com`), pages are served directly from `/`.
+
+## Bindings and configuration
+
+The Worker requires only standard asset and routing bindings; **no secrets**
+are placed on the Cloudflare Worker.
+
+| Binding | Type | Purpose |
+| --- | --- | --- |
+| `ASSETS` | Asset binding | Serves static assets emitted into `dist/client`. |
+| `TUTURUUU_NOINDEX` | Environment variable (var) | Optional. Set to `"1"` on staging and preview deployments to prevent indexing. |
+| `INTERNAL_WEB_API_ORIGIN` | Environment variable (var) | Optional. Origin for central internal API forwarding (defaults to `https://tuturuuu.com`). |
+
+## Route groups and ownership
+
+Route outcomes are declared in `start-bridge.routes.json` under `runtime` and
+verified against workerd during CI qualification.
+
+| Page group | Routes | Expected outcome |
+| --- | --- | --- |
+| **Landing & Core** | `/` | `200` |
+| **Pricing** | `/pricing` | `307` redirect to `/?hash-nav=1#pricing` |
+| **Contact** | `/contact` | `200` |
+| **Company & Ecosystem** | `/about`, `/branding`, `/contributors`, `/careers`, `/partners`, `/women-in-tech` | `200` |
+| **Content** | `/blog`, `/community-guidelines` | `200` |
+| **Products & Solutions** | `/products`, `/products/tasks`, `/solutions/education` | `200` |
+| **Trust & Legal** | `/privacy`, `/terms`, `/security`, `/security/bug-bounty`, `/security/policy`, `/legal/dpa`, `/legal/sla`, `/legal/subprocessors`, `/legal/changes` | `200` |
+
+### Pass-through routes (retained in `apps/web` on Vercel)
+
+The following routes are intentionally **not** ported to the Worker and stay in
+`apps/web` on Vercel as gateway pass-through routes:
+
+- `/download`
+- `/models`
+- `/changelog` (including `[slug]` articles and dynamic OG/Twitter image routes)
+
+**Rationale:** These surfaces rely directly on the Supabase admin client
+(`createAdminClient`) with `SUPABASE_SECRET_KEY`, and `/download` depends on
+per-request client detection headers. `apps/web` does not provide dedicated public
+APIs for these operations. Injecting service-role credentials into the public
+Cloudflare Worker is forbidden, and adding new backend endpoints would require
+modifying `apps/web` (which is kept strictly untouched during this migration).
+Routing rules on Cloudflare forward these paths directly to the Vercel deployment.
+
+## Build and local verification
+
+Local build prerequisites require compiling workspace package distributions
+first so that Rolldown resolves dependencies:
+
+```bash
+# 1. Build workspace package dependencies
+bun turbo:local run build --filter='@tuturuuu/marketing^...' --concurrency=2
+
+# 2. Build Cloudflare Worker output
+cd apps/marketing
+bun run build:cloudflare
+```
+
+To run runtime verification and type checks:
+
+```bash
+# Execute runtime contract tests under workerd
+CI=true bun run test:runtime
+
+# Run Cloudflare TypeScript type check
+bun run type-check:cloudflare
+```
+
+## Cutover and rollback runbook
+
+### Prerequisites
+
+1. **Vercel deployment ID:** The prior Vercel deployment ID is **not** recorded in
+   the repository. Rex must capture and record the active immutable Vercel
+   deployment ID and domain configuration before applying routing rules.
+2. **Untouched origin:** `apps/web` remains deployed and functional on Vercel; no
+   destructive changes or deletions are performed on the Vercel origin.
+
+### Traffic cutover
+
+1. Traffic cutover is performed progressively via Cloudflare route patterns
+   assigned to the Worker.
+2. Cloudflare routes are applied per page group (e.g. `/privacy`, `/terms`,
+   `/security/*`, etc.).
+3. Once routed, verify live smoke responses immediately.
+
+### Smoke verification
+
+Verify status codes and runtime identification header `x-tuturuuu-runtime: native`:
+
+```bash
+# English routes
+curl -s -o /dev/null -w '%{http_code}\n' https://<host>/privacy
+curl -s -o /dev/null -w '%{http_code}\n' https://<host>/terms
+curl -s -o /dev/null -w '%{http_code}\n' https://<host>/security
+
+# Localized route
+curl -s -o /dev/null -w '%{http_code}\n' https://<host>/vi/privacy
+
+# Header check
+curl -sI https://<host>/privacy | grep -i x-tuturuuu-runtime
+# Expected: x-tuturuuu-runtime: native
+```
+
+All status codes must return `200`, and `x-tuturuuu-runtime` must equal `native`.
+
+### Rollback procedure
+
+There is **no in-repo gateway feature flag** per page group.
+
+- **Mechanism:** Per-group rollback is executed by removing that group's Cloudflare
+  route pattern (owned by Rex).
+- **Behavior:** Because `apps/web` on Vercel remains running and completely
+  untouched, deleting or disabling the Cloudflare Worker route pattern immediately
+  restores Vercel as the origin for that page group with zero downtime.
+- **RTO:** Under 5 minutes without requiring repository commits or code rebuilds.

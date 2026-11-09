@@ -8,7 +8,7 @@
  * installed by consumers, so a workspace dependency that is private or has no
  * release workflow of its own makes the published version uninstallable (npm
  * answers 404 for the dependency). `@tuturuuu/ui` and `@tuturuuu/internal-api`
- * shipped broken that way via `@tuturuuu/realtime` and `@tuturuuu/turnstile`.
+ * shipped broken that way via `@tuturuuu/realtime` and `@tuturuuu/cloudflare`.
  *
  * Fix a violation by releasing the dependency (add a release workflow), moving
  * the needed code into an already-published package, or demoting the

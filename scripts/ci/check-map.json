@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "contract": "Selection inventory, not an exhaustive required-context contract. CI owns full suites. Security contexts, auth guards and workflow policy validation remain independent.",
+  "ciScopes": {
+    "oxc": [
+      ".github/**",
+      "package.json",
+      "bun.lock",
+      "**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx,json,jsonc,css,graphql,gql,md,mdx,yaml,yml,html}",
+      ".editorconfig",
+      ".gitignore"
+    ],
+    "i18n": [
+      ".github/**",
+      "package.json",
+      "bun.lock",
+      "apps/*/messages/**",
+      "packages/*/messages/**",
+      "apps/*/src/**",
+      "packages/*/src/**",
+      "apps/*/package.json",
+      "packages/*/package.json",
+      "scripts/i18n-*",
+      "scripts/run-i18n-check.js",
+      "i18n-*.json"
+    ],
+    "docs": [
+      ".github/**",
+      "package.json",
+      "bun.lock",
+      "apps/docs/**",
+      "apps/*/src/app/**",
+      "apps/*/public/**",
+      "apps/*/package.json",
+      "packages/*/package.json",
+      "apps/*/next.config.*",
+      "packages/utils/**",
+      "scripts/docs-*",
+      "scripts/generate-*",
+      "scripts/local-docs*",
+      "scripts/paused-*",
+      "scripts/ci/paused-*",
+      "scripts/ci/release-docs-*",
+      "scripts/ci/cf-adoption-*",
+      "apps/mobile/pubspec.*",
+      "apps/discord/pyproject.toml",
+      "apps/discord/uv.lock",
+      "scripts/safe-fs.js"
+    ],
+    "migrations": [
+      ".github/**",
+      "apps/database/supabase/migrations/**.sql",
+      "scripts/check-migration-timestamps*",
+      "tuturuuu*.ts"
+    ],
+    "mobile": [
+      ".github/**",
+      "package.json",
+      "apps/mobile/lib/core/config/api_config.dart",
+      "apps/*/src/app/api/**",
+      "apps/web/src/legacy-api-routes/**",
+      "apps/tanstack-web/migration/route-manifest.json",
+      "packages/sdk/src/**",
+      "scripts/check-mobile-api-mappings.*",
+      "tuturuuu*.ts"
+    ],
+    "plugin": [
+      ".github/**",
+      "plugins/**",
+      ".agents/**",
+      ".claude/**",
+      ".claude-plugin/**",
+      ".codex/**",
+      "skills.sh.json",
+      "apps/docs/build/skills/**",
+      "apps/docs/build/development-tools/codex-plugin.mdx",
+      "apps/docs/build/development-tools/git-conventions.mdx",
+      "AGENTS.md",
+      "apps/docs/docs.json",
+      "tuturuuu*.ts"
+    ]
+  },
+  "localChecks": {
+    "docs-audit": "^apps/docs/",
+    "sdk-portable": "^packages/(internal-api|sdk|utils|types)/",
+    "package-release-dependencies": "^packages/[^/]+/package\\.json$|^\\.github/workflows/release-.+-package\\.ya?ml$|^scripts/ci/package-release-(dependency-guard|readiness)\\.js$",
+    "i18n": "^apps/[^/]+/messages/.*\\.json$",
+    "migration-timestamps": "^apps/database/supabase/migrations/",
+    "api-route-wrappers": "^apps/web/src/(app/api|legacy-api-routes)/",
+    "mobile-lucide-sync": "^(bun\\.lock$|apps/mobile/(lib/core/ui/icons/generated|assets/fonts/lucide|test/fixtures/lucide)/|scripts/(mobile-lucide/|check-mobile-lucide-sync\\.js$))",
+    "mobile-shadcn-ratchet": "^(apps/mobile/(lib|test)/|apps/mobile/tool/shadcn_import_allowlist\\.txt$|scripts/(check-mobile-shadcn-imports|dart-directive-uris)\\.js$)",
+    "mobile-api-mappings": "^(apps/mobile/lib|apps/web/src/app/api)/"
+  }
+}

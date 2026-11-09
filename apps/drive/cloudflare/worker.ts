@@ -1,5 +1,7 @@
-// Drive staging entry. Keep the environment fence before loading bridge routes.
 /// <reference types="@vitejs/plugin-rsc/types" />
+// Drive staging entry. Keep the environment fence before loading bridge routes.
+
+import { missingRequiredBindings } from './required-bindings';
 
 import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
 import { createFunctionProxy } from '@tuturuuu/start-bridge/function-proxy';
@@ -15,15 +17,18 @@ import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-polic
 import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
+import { isDriveProductionEnvironment } from '../src/start-candidate/production-policy';
 import {
   isDriveStagingEnvironment,
   type stagingVars,
 } from '../src/start-candidate/staging-policy';
 import appConfig from '../start-bridge.config';
 
-export interface DriveEnvironment
-  extends Partial<Record<keyof typeof stagingVars, string>> {
+export interface DriveEnvironment extends Partial<
+  Record<keyof typeof stagingVars, string>
+> {
   ASSETS: AssetsBinding;
+  DRIVE_NATIVE_PROFILE?: string;
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;
 }
@@ -71,6 +76,12 @@ let handler: ReturnType<typeof createHandler> | undefined;
 
 export default {
   async fetch(request: Request, env: DriveEnvironment, ctx: WorkerContext) {
+    if (missingRequiredBindings(env)) {
+      return new Response('Required configuration unavailable', {
+        status: 503,
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
     if (!resolveAppBase(new URL(request.url), mounts)) {
       const notFound = new Response('Not Found', {
         status: 404,
@@ -84,8 +95,12 @@ export default {
         })) ?? notFound
       );
     }
-    if (!isDriveStagingEnvironment(env)) {
-      return new Response('Staging configuration unavailable', {
+    if (
+      !(new URL(request.url).hostname === 'drive.tuturuuu.com'
+        ? isDriveProductionEnvironment(env)
+        : isDriveStagingEnvironment(env))
+    ) {
+      return new Response('Drive configuration unavailable', {
         status: 503,
         headers: {
           'Cache-Control': 'private, no-store',

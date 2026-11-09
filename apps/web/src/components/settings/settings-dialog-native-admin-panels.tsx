@@ -13,6 +13,19 @@ import {
 import { listWorkspaceRoles } from '@tuturuuu/internal-api/settings';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+} from '@tuturuuu/ui/custom/settings-section';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@tuturuuu/ui/table';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import SecretForm from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/form';
@@ -75,42 +88,50 @@ function ApiKeysNativePanel({ wsId }: { wsId: string }) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="overflow-hidden rounded-lg border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-muted-foreground">
-            <tr>
+    <div className="space-y-8">
+      <SettingsSection>
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
               {['name', 'key_prefix', 'last_used_at', 'expires_at', ''].map(
                 (column) => (
-                  <th className="px-3 py-2 text-left font-medium" key={column}>
+                  <TableHead className="md:px-5" key={column}>
                     {column}
-                  </th>
+                  </TableHead>
                 )
               )}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {apiKeysQuery.data.data.map((key) => (
-              <tr className="border-t" key={key.id}>
-                <td className="px-3 py-2">{key.name}</td>
-                <td className="px-3 py-2 font-mono">{key.key_prefix}</td>
-                <td className="px-3 py-2">{key.last_used_at ?? '-'}</td>
-                <td className="px-3 py-2">{key.expires_at ?? '-'}</td>
-                <td className="px-3 py-2 text-right">
+              <TableRow className="hover:bg-transparent" key={key.id}>
+                <TableCell className="px-4 py-2.5 md:px-5">
+                  {key.name}
+                </TableCell>
+                <TableCell className="px-4 py-2.5 font-mono md:px-5">
+                  {key.key_prefix}
+                </TableCell>
+                <TableCell className="px-4 py-2.5 md:px-5">
+                  {key.last_used_at ?? '-'}
+                </TableCell>
+                <TableCell className="px-4 py-2.5 md:px-5">
+                  {key.expires_at ?? '-'}
+                </TableCell>
+                <TableCell className="px-4 py-2.5 text-right md:px-5">
                   <Button
                     onClick={() => setSelectedKeyId(key.id)}
                     size="sm"
                     type="button"
-                    variant="secondary"
+                    variant="outline"
                   >
                     {t('common.details')}
                   </Button>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </SettingsSection>
       {selectedKeyId && (
         <ApiKeyUsageLogsNativePanel keyId={selectedKeyId} wsId={wsId} />
       )}
@@ -161,7 +182,7 @@ function SecretsNativePanel({ wsId }: { wsId: string }) {
       .filter(Boolean) ?? [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       {reportReadinessQuery.data && (
         <PeriodicReportDeliveryReadiness
           existingSecrets={secretNames}
@@ -177,17 +198,20 @@ function SecretsNativePanel({ wsId }: { wsId: string }) {
           wsId={wsId}
         />
       )}
-      <div className="rounded-lg border p-4">
-        <SecretForm
-          existingSecrets={secretNames}
-          onFinish={() =>
-            queryClient.invalidateQueries({
-              queryKey: ['native-settings', 'secrets', wsId],
-            })
-          }
-          wsId={wsId}
-        />
-      </div>
+      <SettingsSection>
+        <SettingsSectionBlock>
+          <SecretForm
+            existingSecrets={secretNames}
+            onFinish={() =>
+              queryClient.invalidateQueries({
+                queryKey: ['native-settings', 'secrets', wsId],
+              })
+            }
+            submitClassName="ml-auto flex w-fit"
+            wsId={wsId}
+          />
+        </SettingsSectionBlock>
+      </SettingsSection>
       {secretsQuery.isPending ? (
         <NativePanelLoading />
       ) : secretsQuery.isError ? (
@@ -266,34 +290,34 @@ function IntegrationsNativePanel() {
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <SettingsSection>
       {integrations.map((integration) => (
-        <div className="rounded-lg border bg-card p-4" key={integration.name}>
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2">
-              {integration.name === 'Discord' ? (
-                <Bot className="h-4 w-4 text-primary" />
-              ) : (
-                <Settings className="h-4 w-4 text-primary" />
-              )}
-              <h3 className="font-medium">{integration.name}</h3>
-            </div>
-            <Badge variant="secondary">{integration.status}</Badge>
+        <SettingItemTab
+          description={integration.description}
+          icon={
+            integration.name === 'Discord' ? (
+              <Bot className="h-4 w-4" />
+            ) : (
+              <Settings className="h-4 w-4" />
+            )
+          }
+          key={integration.name}
+          title={integration.name}
+        >
+          <div className="flex items-center gap-3">
+            <Badge variant="outline">{integration.status}</Badge>
+            {integration.name === 'Discord' && (
+              <Button asChild size="sm" variant="outline">
+                <a href={`${INFRASTRUCTURE_APP_URL}/internal/ai-agents`}>
+                  <KeyRound className="h-4 w-4" />
+                  AI agents
+                </a>
+              </Button>
+            )}
           </div>
-          <p className="mt-3 text-muted-foreground text-sm">
-            {integration.description}
-          </p>
-          {integration.name === 'Discord' && (
-            <Button asChild className="mt-4" size="sm" variant="secondary">
-              <a href={`${INFRASTRUCTURE_APP_URL}/internal/ai-agents`}>
-                <KeyRound className="h-4 w-4" />
-                AI agents
-              </a>
-            </Button>
-          )}
-        </div>
+        </SettingItemTab>
       ))}
-    </div>
+    </SettingsSection>
   );
 }
 

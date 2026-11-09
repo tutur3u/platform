@@ -89,7 +89,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   ) => mocks.createDetachedClient(...args),
 }));
 
-vi.mock('@tuturuuu/turnstile/server', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile/server', () => ({
   isTurnstileError: (...args: Parameters<typeof mocks.isTurnstileError>) =>
     mocks.isTurnstileError(...args),
   resolveTurnstileToken: (
@@ -512,6 +512,7 @@ describe('otp auth service', () => {
     });
 
     it('returns the token pair to the native app, which sends no browser headers', async () => {
+      mocks.extractUserAgentFromHeaders.mockReturnValue('Dart/3.9 (dart:io)');
       const { verifyOtp } = await import('./otp');
 
       const result = await verifyOtp(mobileInput, {
@@ -528,6 +529,9 @@ describe('otp auth service', () => {
       expect(result.status).toBe(200);
       expect(result.body).toMatchObject({
         session: { access_token: 'access', refresh_token: 'refresh' },
+      });
+      expect(mocks.createDetachedClient).toHaveBeenCalledWith({
+        userAgent: 'Dart/3.9 (dart:io)',
       });
     });
 

@@ -11,6 +11,22 @@ The retired `apps/tanstack-web` tree is not part of this program and is not
 revived. Current hosting (Vercel, or Next.js/OpenNext Workers) stays canonical
 for an app until its explicit cutover PR merges.
 
+## Mastermind build artifact delivery
+
+`mastermind-cloudflare.yaml` builds the native Worker on GitHub and uploads
+`mastermind-cutover-<source SHA>` with `mastermind-native.tar.gz`. The app-owned
+job requires emitted-runtime smoke after uploading and has no publication steps. The archive contains the emitted Worker,
+assets, Wrangler config, deployment pointer and exact-source hash receipt.
+Discover its config with `scripts/ci/mastermind-native-artifact.py config` after
+restoring the archive with that helper's `restore` command. Set
+`MASTERMIND_SOURCE_SHA` to the artifact's full source SHA for either operation.
+
+This build-only delivery does not admit production publication. Mastermind's
+security review and owner-only authentication remain in force. The release
+operator must preserve the canonical host's Access policy and capture the
+existing route and immutable rollback target before switching it. Auth/data
+adapter changes belong in separate PRs from build wiring.
+
 ## Web candidate pre-publication requirements
 
 Before publishing the separate Web 1 staging profile,
@@ -70,6 +86,43 @@ the transitive dependency on preflight for every protected or secret-bearing job
   native code, or ignored with a reason.
 - Domain libraries stay framework-independent. Inject request identity,
   storage, navigation and localization at the adapter.
+
+### Request-scoped satellite authentication
+
+`@tuturuuu/satellite/auth-request` exposes the shared satellite session and
+profile helpers without importing Next request globals. Native adapters pass the
+current `request`, the registered `targetApp`, and a request-bound
+`getSupabaseSessionUser` callback. That callback must use the existing verified
+Supabase session resolver; a caller-provided actor ID is not authentication.
+App-session verification retains its target scope and takes precedence over the
+Supabase fallback for session and user reads. Profile reads retain the existing
+central API forwarding and fallback behavior.
+
+Next callers keep `@tuturuuu/satellite/auth`, which obtains headers and the
+Supabase resolver from the Next adapter. The shared Start preset already owns
+the Next aliases, RSC/SSR ports and mount handling; apps should reuse those
+ports rather than create alternate identity or navigation implementations.
+`packages/satellite/src/auth-request.test.ts` covers explicit request/target
+forwarding, rejected identities, profile fallback and interleaved requests;
+`auth.test.ts` covers the Next adapter.
+
+### Provider requests that forbid redirects
+
+Workers supports `redirect: 'manual'` and `redirect: 'follow'`. The Fetch-standard
+`redirect: 'error'` mode throws before dispatch on Workers. For credential-bearing
+provider requests that must not follow redirects, use `manual` and reject
+`opaqueredirect` and every 3xx before reading a response body or refreshing
+credentials. Do not forward `Location` or retry a redirected mutation.
+
+Calendar's Graph sync transport retains its single-attempt cancellation budget.
+Mail's provider transport permits only its existing GET-on-401 credential refresh;
+its OAuth token/profile and SNS certificate readers require a direct successful
+response. Focused tests cover direct success, redirect and opaque-response denial,
+and the existing retry limits. Verify the transport in local workerd with synthetic
+identity boundaries and an outbound interceptor; record every attempted host and
+require that a redirect never reaches its destination. Provider and production
+acceptance remain separate from this local check. See the
+[Workers Request reference](https://developers.cloudflare.com/workers/runtime-apis/request/).
 
 ## basePath readiness
 
@@ -159,3 +212,19 @@ the gates above pass. There are no staged canaries or traffic percentages.
 Rolling back an app restores the captured routing to the immutable prior
 deployment in one step. Never delete the prior deployment or its routing record until the native
 runtime has served all traffic through a full release cycle.
+
+### Rewise anonymous smoke diagnostics
+
+Rewise's centralized auth proxy handles signed-out `/` before its native page.
+The redirect targets `https://tuturuuu.com/login` with an app-session `returnUrl`
+pointing to `/verify-token?nextUrl=...` on the Rewise origin. The native `/login`
+page instead supplies the Rewise root as its return target. Check the full return
+target as well as the login origin and path; retain unknown-host, apex-host,
+missing-secret and outbound-isolation probes.
+
+The Rewise server-artifact scanner permits original `process.env.NODE_ENV`
+branches in validated v3 source maps. Executable files still reject that text,
+and both raw and JSON-decoded source maps reject development-secret prefixes.
+Run `node --test apps/rewise/cloudflare/server-artifact-scan.test.mjs
+apps/rewise/cloudflare/central-login-redirect.test.mjs` for the build-free
+regressions. These fixtures do not replace the emitted-Worker smoke gate.

@@ -44,7 +44,6 @@ export function ResizableCallPanel({
       style={{ '--call-panel-width': `${effectiveWidth}px` } as CSSProperties}
       className="relative flex max-h-[45dvh] min-h-0 w-full shrink-0 flex-col border-l bg-background md:max-h-none md:w-(--call-panel-width) md:max-w-[60vw]"
     >
-      {/* biome-ignore lint/a11y/useSemanticElements: Interactive splitter with a grip and keyboard range controls. */}
       <div
         role="separator"
         tabIndex={0}

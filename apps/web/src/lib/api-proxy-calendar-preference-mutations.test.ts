@@ -72,9 +72,8 @@ function verifiedKey(value = token) {
   }).find((subject) => subject.subject_type === 'session')!.subject_key;
 }
 async function request(pathname: string) {
-  const { guardApiProxyRequest } = await import(
-    '@tuturuuu/utils/api-proxy-guard'
-  );
+  const { guardApiProxyRequest } =
+    await import('@tuturuuu/utils/api-proxy-guard');
   const req = new NextRequest(`https://tuturuuu.com${pathname}`, {
     method: 'PATCH',
     headers: {

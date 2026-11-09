@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: disposable CI persistence override.
 import { cloudflare } from '@cloudflare/vite-plugin';
 import { defineConfig } from 'vite-plus';
 import clientConfig from './vite.config';

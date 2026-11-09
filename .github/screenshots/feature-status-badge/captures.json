@@ -1,0 +1,480 @@
+{
+  "source": "8fb396b3dd6a0720802c3da6bcd109c42d955af3",
+  "fixture": "Real first-party FeatureStatusBadge, Badge, SettingsSection and SettingItemTab plus shared globals.css; synthetic presentation-only nav/title/row examples. No audience, auth or customer data.",
+  "browser": "T3 native Chromium preview",
+  "captures": [
+    {
+      "theme": "light",
+      "viewport": {
+        "height": 1000,
+        "width": 390
+      },
+      "image": {
+        "mimeType": "image/png",
+        "width": 390,
+        "height": 1000
+      },
+      "artifact": "feature-status-light-390.png",
+      "metrics": {
+        "badges": [
+          {
+            "contrast": 18.159588039824865,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 255.625,
+            "right": 349,
+            "tag": "SPAN",
+            "text": "Experimental"
+          },
+          {
+            "contrast": 19.79814571052481,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 160.359375,
+            "right": 204.375,
+            "tag": "SPAN",
+            "text": "Beta"
+          },
+          {
+            "contrast": 18.921259553498604,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 33,
+            "right": 126.375,
+            "tag": "SPAN",
+            "text": "Experimental"
+          },
+          {
+            "contrast": 18.921259553498604,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 33,
+            "right": 77.015625,
+            "tag": "SPAN",
+            "text": "Beta"
+          },
+          {
+            "contrast": 18.159588039824865,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 261.640625,
+            "right": 349,
+            "tag": "SPAN",
+            "text": "Th\u1eed nghi\u1ec7m"
+          },
+          {
+            "contrast": 19.79814571052481,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 229.78125,
+            "right": 273.796875,
+            "tag": "SPAN",
+            "text": "Beta"
+          },
+          {
+            "contrast": 18.921259553498604,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 33,
+            "right": 120.359375,
+            "tag": "SPAN",
+            "text": "Th\u1eed nghi\u1ec7m"
+          },
+          {
+            "contrast": 18.921259553498604,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 33,
+            "right": 77.015625,
+            "tag": "SPAN",
+            "text": "Beta"
+          }
+        ],
+        "fixture": {
+          "fixtures": ["navigation", "page-title", "settings-row"],
+          "locales": ["en", "vi"],
+          "source": "8fb396b3dd6a0720802c3da6bcd109c42d955af3",
+          "synthetic": true,
+          "theme": "light",
+          "variants": ["experimental", "beta"]
+        },
+        "scrollWidth": 390,
+        "viewport": {
+          "height": 1000,
+          "width": 390
+        }
+      },
+      "consoleErrors": [],
+      "route": "/?theme=light",
+      "previewImage": {
+        "mimeType": "image/png",
+        "width": 390,
+        "height": 1000
+      },
+      "sha256": "8780855796f301a0dcb9bc827ab79062545119430fc8c0851ec987d791abe71c"
+    },
+    {
+      "theme": "light",
+      "viewport": {
+        "height": 900,
+        "width": 1440
+      },
+      "image": {
+        "mimeType": "image/png",
+        "width": 1430,
+        "height": 900
+      },
+      "artifact": "feature-status-light-1440.png",
+      "metrics": {
+        "badges": [
+          {
+            "contrast": 18.159588039824865,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 585.625,
+            "right": 679,
+            "tag": "SPAN",
+            "text": "Experimental"
+          },
+          {
+            "contrast": 19.79814571052481,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 352.359375,
+            "right": 396.375,
+            "tag": "SPAN",
+            "text": "Beta"
+          },
+          {
+            "contrast": 18.921259553498604,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 229,
+            "right": 322.375,
+            "tag": "SPAN",
+            "text": "Experimental"
+          },
+          {
+            "contrast": 18.921259553498604,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 229,
+            "right": 273.015625,
+            "tag": "SPAN",
+            "text": "Beta"
+          },
+          {
+            "contrast": 18.159588039824865,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 1119.640625,
+            "right": 1207,
+            "tag": "SPAN",
+            "text": "Th\u1eed nghi\u1ec7m"
+          },
+          {
+            "contrast": 19.79814571052481,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 949.78125,
+            "right": 993.796875,
+            "tag": "SPAN",
+            "text": "Beta"
+          },
+          {
+            "contrast": 18.921259553498604,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 757,
+            "right": 844.359375,
+            "tag": "SPAN",
+            "text": "Th\u1eed nghi\u1ec7m"
+          },
+          {
+            "contrast": 18.921259553498604,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 757,
+            "right": 801.015625,
+            "tag": "SPAN",
+            "text": "Beta"
+          }
+        ],
+        "fixture": {
+          "fixtures": ["navigation", "page-title", "settings-row"],
+          "locales": ["en", "vi"],
+          "source": "8fb396b3dd6a0720802c3da6bcd109c42d955af3",
+          "synthetic": true,
+          "theme": "light",
+          "variants": ["experimental", "beta"]
+        },
+        "scrollWidth": 1440,
+        "viewport": {
+          "height": 900,
+          "width": 1440
+        }
+      },
+      "consoleErrors": [],
+      "route": "/?theme=light",
+      "previewImage": {
+        "mimeType": "image/png",
+        "width": 1271,
+        "height": 800
+      },
+      "sha256": "6819465467f3e3ced7fb81b61f446c873344b4ea34d0ba41b5cdacca9433fa91"
+    },
+    {
+      "theme": "dark",
+      "viewport": {
+        "height": 1000,
+        "width": 390
+      },
+      "image": {
+        "mimeType": "image/png",
+        "width": 390,
+        "height": 1000
+      },
+      "artifact": "feature-status-dark-390.png",
+      "metrics": {
+        "badges": [
+          {
+            "contrast": 14.498978405673947,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 255.625,
+            "right": 349,
+            "tag": "SPAN",
+            "text": "Experimental"
+          },
+          {
+            "contrast": 18.96800669384249,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 160.359375,
+            "right": 204.375,
+            "tag": "SPAN",
+            "text": "Beta"
+          },
+          {
+            "contrast": 18.96800669384249,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 33,
+            "right": 126.375,
+            "tag": "SPAN",
+            "text": "Experimental"
+          },
+          {
+            "contrast": 18.96800669384249,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 33,
+            "right": 77.015625,
+            "tag": "SPAN",
+            "text": "Beta"
+          },
+          {
+            "contrast": 14.498978405673947,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 261.640625,
+            "right": 349,
+            "tag": "SPAN",
+            "text": "Th\u1eed nghi\u1ec7m"
+          },
+          {
+            "contrast": 18.96800669384249,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 229.78125,
+            "right": 273.796875,
+            "tag": "SPAN",
+            "text": "Beta"
+          },
+          {
+            "contrast": 18.96800669384249,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 33,
+            "right": 120.359375,
+            "tag": "SPAN",
+            "text": "Th\u1eed nghi\u1ec7m"
+          },
+          {
+            "contrast": 18.96800669384249,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 33,
+            "right": 77.015625,
+            "tag": "SPAN",
+            "text": "Beta"
+          }
+        ],
+        "fixture": {
+          "fixtures": ["navigation", "page-title", "settings-row"],
+          "locales": ["en", "vi"],
+          "source": "8fb396b3dd6a0720802c3da6bcd109c42d955af3",
+          "synthetic": true,
+          "theme": "dark",
+          "variants": ["experimental", "beta"]
+        },
+        "scrollWidth": 390,
+        "viewport": {
+          "height": 1000,
+          "width": 390
+        }
+      },
+      "consoleErrors": [],
+      "route": "/?theme=dark",
+      "previewImage": {
+        "mimeType": "image/png",
+        "width": 390,
+        "height": 1000
+      },
+      "sha256": "f815458f7e7753e8a3c3810cdf56ac5a23bd6a281f1ae75388442965a1cba389"
+    },
+    {
+      "theme": "dark",
+      "viewport": {
+        "height": 900,
+        "width": 1440
+      },
+      "image": {
+        "mimeType": "image/png",
+        "width": 1430,
+        "height": 900
+      },
+      "artifact": "feature-status-dark-1440.png",
+      "metrics": {
+        "badges": [
+          {
+            "contrast": 14.498978405673947,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 585.625,
+            "right": 679,
+            "tag": "SPAN",
+            "text": "Experimental"
+          },
+          {
+            "contrast": 18.96800669384249,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 352.359375,
+            "right": 396.375,
+            "tag": "SPAN",
+            "text": "Beta"
+          },
+          {
+            "contrast": 18.96800669384249,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 229,
+            "right": 322.375,
+            "tag": "SPAN",
+            "text": "Experimental"
+          },
+          {
+            "contrast": 18.96800669384249,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "en",
+            "left": 229,
+            "right": 273.015625,
+            "tag": "SPAN",
+            "text": "Beta"
+          },
+          {
+            "contrast": 14.498978405673947,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 1119.640625,
+            "right": 1207,
+            "tag": "SPAN",
+            "text": "Th\u1eed nghi\u1ec7m"
+          },
+          {
+            "contrast": 18.96800669384249,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 949.78125,
+            "right": 993.796875,
+            "tag": "SPAN",
+            "text": "Beta"
+          },
+          {
+            "contrast": 18.96800669384249,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 757,
+            "right": 844.359375,
+            "tag": "SPAN",
+            "text": "Th\u1eed nghi\u1ec7m"
+          },
+          {
+            "contrast": 18.96800669384249,
+            "fontSize": "12px",
+            "height": 22,
+            "lang": "vi",
+            "left": 757,
+            "right": 801.015625,
+            "tag": "SPAN",
+            "text": "Beta"
+          }
+        ],
+        "fixture": {
+          "fixtures": ["navigation", "page-title", "settings-row"],
+          "locales": ["en", "vi"],
+          "source": "8fb396b3dd6a0720802c3da6bcd109c42d955af3",
+          "synthetic": true,
+          "theme": "dark",
+          "variants": ["experimental", "beta"]
+        },
+        "scrollWidth": 1440,
+        "viewport": {
+          "height": 900,
+          "width": 1440
+        }
+      },
+      "consoleErrors": [],
+      "route": "/?theme=dark",
+      "previewImage": {
+        "mimeType": "image/png",
+        "width": 1271,
+        "height": 800
+      },
+      "sha256": "930276a63659b04e32e247a4b15b79c726743a3e9dd47bf19b123292f7f4ecc5"
+    }
+  ],
+  "limits": "CSS viewport and native raw PNG dimensions are recorded separately. Images are copied unchanged; no normalization. Stateless presentation has no request/loading/empty/error machine. Does not prove access gating, consumer adoption, package publication or production."
+}

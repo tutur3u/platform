@@ -7358,6 +7358,87 @@
       "tablet": "Tablet"
     }
   },
+  "feature-flags": {
+    "audit": {
+      "actor": "Người thực hiện",
+      "empty": "Chưa có thay đổi",
+      "title": "Nhật ký",
+      "unavailable": "Không đọc được nhật ký"
+    },
+    "columns": {
+      "apps": "Ứng dụng",
+      "created": "Ngày tạo",
+      "flag": "Cờ",
+      "kind": "Loại",
+      "owner": "Người phụ trách",
+      "remove_by": "Gỡ bỏ trước",
+      "verified": "Xác minh trên production"
+    },
+    "controls": {
+      "build_time": "Lúc dựng bản",
+      "conflict": "Bản ghi đã thay đổi. Tải lại trước khi lưu.",
+      "error": "Không lưu được",
+      "loading": "Đang lưu",
+      "managed_in_secrets": "Quản lý theo không gian làm việc trong Bí mật",
+      "reconcile": "Kiểm tra kết quả",
+      "reset": "Về mặc định",
+      "secrets_link": "Bí mật",
+      "storage_unavailable": "Không đọc được trạng thái đã lưu",
+      "unknown_outcome": "Chưa rõ kết quả. Kiểm tra lại, không gửi lần nữa."
+    },
+    "environments": {
+      "development": "Development",
+      "production": "Production",
+      "staging": "Staging"
+    },
+    "families": {
+      "mobile_build": "Bản dựng mobile",
+      "mobile_runtime": "Mobile runtime",
+      "workspace_secret": "Cài đặt không gian làm việc"
+    },
+    "filter": {
+      "label": "Lọc cờ",
+      "placeholder": "Tên cờ"
+    },
+    "kinds": {
+      "kill_switch": "Công tắc ngắt",
+      "operational": "Vận hành",
+      "release": "Phát hành",
+      "safety_control": "Kiểm soát an toàn",
+      "workspace_gate": "Cổng không gian làm việc"
+    },
+    "lifecycle": {
+      "awaiting_verification": "Chờ xác minh",
+      "overdue": "Quá hạn",
+      "retained": "Giữ lại",
+      "scheduled": "Đã hẹn"
+    },
+    "scopes": {
+      "build": "Lúc dựng bản",
+      "global": "Toàn cục",
+      "workspace": "Theo không gian làm việc"
+    },
+    "summary": {
+      "awaitingVerification": "Chờ xác minh production",
+      "legacy": "Siêu dữ liệu cũ",
+      "overdue": "Quá hạn",
+      "scheduled": "Đã hẹn gỡ bỏ",
+      "total": "Cờ"
+    },
+    "title": "Cờ tính năng",
+    "values": {
+      "default_off": "Mặc định tắt",
+      "default_on": "Mặc định bật",
+      "legacy_unknown": "Không rõ (cũ)",
+      "not_recorded": "Chưa ghi nhận",
+      "not_verified": "Chưa xác minh",
+      "off": "Tắt",
+      "on": "Bật",
+      "partial": "Một phần",
+      "unknown": "Không rõ",
+      "untraced": "Chưa truy vết"
+    }
+  },
   "finance": {
     "expense": "Chi tiêu",
     "failed_to_load_categories": "Không thể tải danh sách danh mục",
@@ -8915,6 +8996,7 @@
     "email_templates": "Mẫu Email",
     "entity_creation_limits": "Giới hạn tạo thực thể",
     "external_apps": "Ứng dụng bên ngoài",
+    "feature_flags": "Cờ tính năng",
     "features": "Tính năng",
     "fleet": "Đội máy",
     "fleet_runs": "Lượt chạy",
@@ -15244,6 +15326,9 @@
       },
       "health_status_label": "Tình trạng sức khỏe",
       "health_status_placeholder": "Chọn tình trạng sức khỏe",
+      "key_invalid": "Dùng 2–10 chữ cái in hoa hoặc chữ số, bắt đầu bằng chữ cái.",
+      "key_label": "Mã",
+      "key_preview": "Xem trước: {identifier}",
       "priority": {
         "critical": "Nghiêm trọng",
         "high": "Cao",
@@ -21662,6 +21747,7 @@
     "create_description": "Tạo bảng nhiệm vụ",
     "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể.",
     "dialog": {
+      "resize_panel": "Đổi độ rộng bảng công việc",
       "activity": "Hoạt động",
       "after_deadline": "sau hạn chót",
       "all_changes_synced": "Đã đồng bộ tất cả thay đổi",
@@ -21885,6 +21971,20 @@
       },
       "status_label": "Trạng thái"
     },
+    "header": {
+      "focus": "Tập trung",
+      "focus_hint": "Công việc đang mở của tôi, ưu tiên cao trước",
+      "more": "Thêm thao tác bảng",
+      "more_people": "Thêm {count}",
+      "new_task": "Công việc mới",
+      "no_projects": "Chưa có dự án",
+      "project": "Dự án",
+      "projects_selected": "{count} dự án",
+      "share": "Chia sẻ",
+      "shift_click": "Shift-click",
+      "task_count": "{count} công việc",
+      "you": "{name} (bạn)"
+    },
     "icon_label": "Biểu tượng",
     "icon_picker": {
       "clear": "Xóa",
@@ -22087,6 +22187,84 @@
       }
     },
     "singular": "Bảng nhiệm vụ",
+    "sprints": {
+      "active": "Đang chạy",
+      "backlog_move_failed": "Đã thêm vào sprint đang chạy: không thể chuyển vào backlog",
+      "done_count": "{done}/{total} xong",
+      "length_failed": "Không thể lưu độ dài sprint",
+      "length_saved": "Đã lưu độ dài sprint",
+      "next": "Kế tiếp",
+      "off": "Tắt",
+      "settings_description": "Lên kế hoạch tối đa năm sprint cùng lúc trên bảng này. Công việc chưa có hạn riêng sẽ đến hạn khi sprint của nó kết thúc.",
+      "settings_title": "Sprint",
+      "sprint_length": "Độ dài sprint",
+      "sprints": "Sprint",
+      "start": "Bắt đầu {name}",
+      "start_failed": "Không thể bắt đầu sprint",
+      "started": "Đã bắt đầu {name}",
+      "switcher_label": "{name}, đổi sprint",
+      "task_count": "{count} công việc",
+      "turned_off": "Đã tắt sprint",
+      "unavailable": "Sprint chưa khả dụng",
+      "weeks": "{count} tuần",
+      "add_to_backlog": "Thêm vào backlog",
+      "assign_failed": "Không thể giao công việc",
+      "backlog": "Backlog",
+      "backlog_empty": "Mọi người đều đã có việc.",
+      "board_tab": "Bảng",
+      "create_failed": "Không thể tạo công việc",
+      "end_first": "Kết thúc {name} trước",
+      "new_backlog_task": "Công việc backlog mới",
+      "new_task_placeholder": "Tên công việc, rồi nhấn Enter",
+      "open_task": "Mở {name}",
+      "plan_hint": "Kéo công việc vào một người, hoặc dùng nút ảnh đại diện. Kéo về backlog để bỏ giao.",
+      "plan_tab": "Kế hoạch",
+      "tabs_label": "Chế độ sprint",
+      "all_done": "Mọi việc trong sprint đã xong.",
+      "carried_next": "Chuyển sang sprint sau",
+      "close": "Đóng",
+      "days_left": "Còn {count} ngày",
+      "end_and_plan": "Kết thúc sprint và lên kế hoạch {name}",
+      "end_failed": "Không thể kết thúc sprint",
+      "end_sprint": "Kết thúc {name}…",
+      "ended": "đã kết thúc",
+      "ended_toast": "Đã kết thúc {name}. {count} việc chuyển sang {next}.",
+      "show_in_plan": "Xem {count} việc ở sprint khác",
+      "search_empty_owners": "Không có việc đã lên kế hoạch nào khớp “{query}”.",
+      "search_empty_backlog": "Không có việc nào trong backlog khớp “{query}”.",
+      "move_to": "Chuyển sang…",
+      "new_sprint": "Sprint mới",
+      "more_in_plan": "{count} việc khác ở sprint khác",
+      "next_sprint": "sprint sau",
+      "not_yet": "Chưa",
+      "report_title": "Báo cáo {name}",
+      "summary_title": "Tổng kết {name}",
+      "tasks_done": "Việc đã xong",
+      "unfinished": "Chưa xong",
+      "loading_tasks": "Đang tải công việc của sprint…",
+      "retry": "Thử lại",
+      "tasks_failed": "Không thể tải công việc của sprint",
+      "due_with_sprint": "Hạn theo sprint · {date}",
+      "move_failed": "Không thể chuyển công việc",
+      "moved_to_sprint": "Đã chuyển sang {name}",
+      "not_in_sprint": "Không thuộc sprint nào",
+      "sprint_field": "Sprint",
+      "sprint_history": "Các sprint {list}",
+      "add_sprint": "Thêm sprint",
+      "add_sprint_failed": "Không thể thêm sprint",
+      "all_sprints": "Tất cả sprint",
+      "ended_sprints": "Đã kết thúc",
+      "moved_out_of_sprints": "Đã đưa ra khỏi sprint",
+      "remove_sprint": "Xóa {name}",
+      "remove_sprint_failed": "Không thể xóa sprint",
+      "sprint_limit": "Tối đa {count}",
+      "sprint_menu": "Chuyển {name} sang sprint khác",
+      "add_to_current_sprint": "Thêm vào sprint hiện tại",
+      "move_to_next_sprint": "Chuyển sang sprint sau",
+      "remove_from_sprint": "Bỏ khỏi sprint",
+      "end_moves": "{count} việc chưa xong sẽ chuyển sang {name}, giữ nguyên người phụ trách.",
+      "other_status": "Khác"
+    },
     "stats": {
       "lists": "cột",
       "tasks": "công việc"

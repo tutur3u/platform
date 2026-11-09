@@ -63,7 +63,6 @@ function mount() {
 describe('tuition analytics interaction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // biome-ignore lint/suspicious/noDocumentCookie: Reset the persisted visibility preference for each test.
     document.cookie = 'finance-confidential-mode=true;path=/';
     mocks.get.mockResolvedValue(report);
   });

@@ -43,7 +43,6 @@ function chain(result: unknown) {
     value[key] = vi.fn(() => value);
   value.maybeSingle = vi.fn().mockResolvedValue(result);
   value.single = vi.fn().mockResolvedValue(result);
-  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
   value.then = (resolve: (value: unknown) => void) =>
     Promise.resolve(result).then(resolve);
   return value;
@@ -141,7 +140,13 @@ describe('Meet chunk limiter', () => {
   it('does not charge the limiter for an already completed chunk', async () => {
     const done = { id, status: 'completed' };
     db(openSession, { data: done, error: null });
-    expect(await transcribeMeetChunk(chunkRequest(), params)).toEqual(done);
+    expect(await transcribeMeetChunk(chunkRequest(), params)).toEqual({
+      ...done,
+      erased: false,
+      segments: [],
+      speaker: null,
+      transcript: undefined,
+    });
     expect(mocks.enforce).not.toHaveBeenCalled();
   });
 

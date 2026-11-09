@@ -19,6 +19,8 @@ const {
 
 const secretNames = [
   'GOOGLE_GENERATIVE_AI_API_KEY',
+  'MEET_AI_DISABLED_WORKSPACE_IDS',
+  'MEET_AI_PROTECTED_WORKSPACE_IDS',
   'MEET_REALTIME_TOKEN_SECRET',
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
   'NEXT_PUBLIC_SUPABASE_URL',
@@ -30,7 +32,14 @@ const identity = {
   compatibility_date: '2026-09-06',
   compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
   placement: { region: 'aws:ap-southeast-1' },
-  services: [{ binding: 'WORKER_SELF_REFERENCE', service: 'tuturuuu-meet' }],
+  services: [
+    { binding: 'WORKER_SELF_REFERENCE', service: 'tuturuuu-meet' },
+    {
+      binding: 'ABUSE_GUARD',
+      service: 'tuturuuu-abuse-guard',
+      entrypoint: 'AbuseGuardEntrypoint',
+    },
+  ],
   r2_buckets: [
     { binding: 'NEXT_INC_CACHE_R2_BUCKET', bucket_name: 'tuturuuu-meet-cache' },
   ],
@@ -49,6 +58,8 @@ const identity = {
     NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
     MEET_REALTIME_URL: 'wss://meet-realtime.tuturuuu.com/realtime',
     PARLEY_APP_URL: 'https://parley.tuturuuu.com',
+    MEET_AI_DISABLED: 'true',
+    MEET_AI_ENABLED_WORKSPACE_IDS: '',
   },
 };
 

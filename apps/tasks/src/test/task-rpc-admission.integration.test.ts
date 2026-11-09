@@ -157,7 +157,12 @@ describe.skipIf(!enabled)(
       );
     });
     it('keeps the Mira Tasks caller on authenticated self', async () => {
-      const rpc = vi.spyOn(client, 'rpc');
+      // Spying on the typed rpc overloads exceeds the type instantiation
+      // depth (TS2589); the spy only needs the call and its result.
+      const rpc = vi.spyOn(
+        client as unknown as { rpc: (...args: unknown[]) => Promise<unknown> },
+        'rpc'
+      );
       const response = await readMiraTasks(
         new Request(`http://localhost/tasks?wsId=${wsId}`)
       );

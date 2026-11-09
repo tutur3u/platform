@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, Loader2, Plus, Tag, Trash2 } from '@tuturuuu/icons';
+import { Bot, Loader2, Plus, Trash2 } from '@tuturuuu/icons';
 import {
   createMailLabel,
   deleteMailLabel,
@@ -17,7 +17,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  SettingsSection,
+  SettingsSectionBlock,
+  SettingsSectionMessage,
+} from '@tuturuuu/ui/custom/settings-section';
 import { Input } from '@tuturuuu/ui/input';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
@@ -92,131 +98,124 @@ export function MailLabelSettings({
     }
   );
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="font-semibold text-lg">{t('label_management')}</h2>
-        <p className="mt-1 text-muted-foreground text-sm">
-          {t('label_management_description')}
-        </p>
-      </div>
-
-      {canManage ? (
-        <div className="grid gap-3 border-dynamic border-y py-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_3rem_auto]">
-          <Input
-            className={fieldClass}
-            onChange={(event) => setName(event.target.value)}
-            placeholder={t('label_name')}
-            value={name}
-          />
-          <Input
-            className={fieldClass}
-            onChange={(event) => setDescription(event.target.value)}
-            placeholder={t('label_description_placeholder')}
-            value={description}
-          />
-          <Input
-            aria-label={t('label_color')}
-            className="h-9 cursor-pointer border-0 p-1 outline-none focus-visible:outline-none focus-visible:ring-0"
-            onChange={(event) => setColor(event.target.value)}
-            type="color"
-            value={color}
-          />
-          <Button
-            disabled={!name.trim() || createMutation.isPending}
-            onClick={() =>
-              createMutation.mutate({ color, description, name: name.trim() })
-            }
-          >
-            <Plus className="size-4" /> {t('create_label')}
-          </Button>
-        </div>
-      ) : null}
-
-      {organization.isLoading ? (
-        <div className="flex items-center gap-2 py-8 text-muted-foreground text-sm">
-          <Loader2 className="size-4 animate-spin" /> {t('loading')}
-        </div>
-      ) : customLabels.length ? (
-        <Accordion className="divide-y divide-dynamic" type="multiple">
-          {customLabels.map((label) => (
-            <LabelEditor
-              canManage={canManage}
-              key={label.id}
-              label={label}
-              mailboxId={mailboxId}
-              onChanged={invalidate}
-              workspaceId={workspaceId}
+    <div className="space-y-8">
+      <SettingsSection
+        title={t('label_management')}
+        description={t('label_management_description')}
+      >
+        {canManage ? (
+          <SettingsSectionBlock className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_3rem_auto]">
+            <Input
+              className={fieldClass}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={t('label_name')}
+              value={name}
             />
-          ))}
-        </Accordion>
-      ) : (
-        <div className="flex flex-col items-start gap-2 border-dynamic border-y py-8">
-          <Tag className="size-5 text-muted-foreground" />
-          <div className="font-medium text-sm">{t('no_custom_labels')}</div>
-          <p className="text-muted-foreground text-sm">
-            {t('no_custom_labels_description')}
-          </p>
-        </div>
-      )}
+            <Input
+              className={fieldClass}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder={t('label_description_placeholder')}
+              value={description}
+            />
+            <Input
+              aria-label={t('label_color')}
+              className="h-9 cursor-pointer border-0 p-1 outline-none focus-visible:outline-none focus-visible:ring-0"
+              onChange={(event) => setColor(event.target.value)}
+              type="color"
+              value={color}
+            />
+            <Button
+              disabled={!name.trim() || createMutation.isPending}
+              onClick={() =>
+                createMutation.mutate({ color, description, name: name.trim() })
+              }
+            >
+              <Plus className="size-4" /> {t('create_label')}
+            </Button>
+          </SettingsSectionBlock>
+        ) : null}
+
+        {organization.isLoading ? (
+          <SettingsSectionMessage
+            icon={<Loader2 className="size-4 animate-spin" />}
+          >
+            {t('loading')}
+          </SettingsSectionMessage>
+        ) : customLabels.length ? (
+          <Accordion className="divide-y" type="multiple">
+            {customLabels.map((label) => (
+              <LabelEditor
+                canManage={canManage}
+                key={label.id}
+                label={label}
+                mailboxId={mailboxId}
+                onChanged={invalidate}
+                workspaceId={workspaceId}
+              />
+            ))}
+          </Accordion>
+        ) : (
+          <SettingsSectionMessage>
+            <div className="font-medium text-foreground">
+              {t('no_custom_labels')}
+            </div>
+            <p>{t('no_custom_labels_description')}</p>
+          </SettingsSectionMessage>
+        )}
+      </SettingsSection>
 
       {canManage ? (
-        <div className="space-y-3 border-dynamic border-t pt-5">
-          <div className="flex items-center gap-2">
-            <Bot className="size-4" />
-            <h3 className="font-semibold text-sm">
-              {t('ai_label_suggestions')}
-            </h3>
-          </div>
-          <Textarea
-            className={`${fieldClass} min-h-20 resize-y`}
-            onChange={(event) => setSuggestionPrompt(event.target.value)}
-            placeholder={t('ai_label_suggestions_placeholder')}
-            value={suggestionPrompt}
-          />
-          <Button
-            disabled={suggestMutation.isPending}
-            onClick={() => suggestMutation.mutate()}
-            variant="outline"
-          >
-            {suggestMutation.isPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Bot className="size-4" />
-            )}
-            {t('suggest_labels')}
-          </Button>
-          {visibleSuggestions.length ? (
-            <div className="divide-y divide-dynamic border-dynamic border-y">
-              {visibleSuggestions.map((suggestion) => (
-                <div
-                  className="flex items-start gap-3 py-3"
-                  key={`${suggestion.name}-${suggestion.description}`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm">{suggestion.name}</div>
-                    <p className="mt-1 text-muted-foreground text-xs">
-                      {suggestion.description}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() =>
-                      createMutation.mutate({
-                        aiEnabled: true,
-                        aiInstructions: suggestion.aiInstructions,
-                        description: suggestion.description,
-                        name: suggestion.name,
-                      })
-                    }
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <Plus className="size-4" /> {t('add')}
-                  </Button>
-                </div>
-              ))}
+        <SettingsSection title={t('ai_label_suggestions')}>
+          <SettingsSectionBlock className="space-y-3">
+            <Textarea
+              className={`${fieldClass} min-h-20 resize-y`}
+              onChange={(event) => setSuggestionPrompt(event.target.value)}
+              placeholder={t('ai_label_suggestions_placeholder')}
+              value={suggestionPrompt}
+            />
+            <div className="flex justify-end">
+              <Button
+                disabled={suggestMutation.isPending}
+                onClick={() => suggestMutation.mutate()}
+                variant="outline"
+              >
+                {suggestMutation.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Bot className="size-4" />
+                )}
+                {t('suggest_labels')}
+              </Button>
             </div>
-          ) : null}
-        </div>
+          </SettingsSectionBlock>
+          {visibleSuggestions.map((suggestion) => (
+            <SettingsSectionBlock
+              className="flex items-start gap-3 py-3"
+              key={`${suggestion.name}-${suggestion.description}`}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="font-medium text-sm">{suggestion.name}</div>
+                <p className="mt-1 text-muted-foreground text-sm">
+                  {suggestion.description}
+                </p>
+              </div>
+              <Button
+                onClick={() =>
+                  createMutation.mutate({
+                    aiEnabled: true,
+                    aiInstructions: suggestion.aiInstructions,
+                    description: suggestion.description,
+                    name: suggestion.name,
+                  })
+                }
+                size="sm"
+                variant="ghost"
+              >
+                <Plus className="size-4" /> {t('add')}
+              </Button>
+            </SettingsSectionBlock>
+          ))}
+        </SettingsSection>
       ) : null}
     </div>
   );
@@ -267,7 +266,7 @@ function LabelEditor({
     aiInstructions !== label.aiInstructions;
 
   return (
-    <AccordionItem className="border-0" value={label.id}>
+    <AccordionItem className="border-0 px-4 md:px-5" value={label.id}>
       <AccordionTrigger className="py-3 hover:no-underline">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span
@@ -276,9 +275,7 @@ function LabelEditor({
           />
           <span className="truncate font-medium text-sm">{label.name}</span>
           {label.aiEnabled ? (
-            <span className="rounded-md bg-foreground/[0.06] px-1.5 py-0.5 text-[0.68rem] text-muted-foreground">
-              {t('smart')}
-            </span>
+            <Badge variant="outline">{t('smart')}</Badge>
           ) : null}
         </div>
       </AccordionTrigger>
@@ -309,7 +306,7 @@ function LabelEditor({
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
             <div className="font-medium text-sm">{t('smart_label')}</div>
-            <p className="mt-1 text-muted-foreground text-xs">
+            <p className="mt-1 text-muted-foreground text-sm">
               {t('smart_label_description')}
             </p>
           </div>
@@ -336,7 +333,7 @@ function LabelEditor({
                 <div className="font-medium text-sm">
                   {t('auto_apply_label')}
                 </div>
-                <p className="mt-1 text-muted-foreground text-xs">
+                <p className="mt-1 text-muted-foreground text-sm">
                   {t('auto_apply_label_description')}
                 </p>
               </div>

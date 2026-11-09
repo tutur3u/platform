@@ -39,9 +39,8 @@ describe('user workspace config route', () => {
   });
 
   it('deletes the workspace override when the value is null', async () => {
-    const route = await import(
-      '@/legacy-api-routes/v1/users/me/workspaces/[wsId]/configs/[configId]/route'
-    );
+    const route =
+      await import('@/legacy-api-routes/v1/users/me/workspaces/[wsId]/configs/[configId]/route');
     const query = {
       delete: vi.fn(() => query),
       eq: vi.fn(() => query),

@@ -332,6 +332,2190 @@
         },
         "x-guard": "metadata"
       }
+    },
+    "/api/v1/workspaces/{wsId}/roles/options": {
+      "get": {
+        "operationId": "getWorkspaceRoleOptions",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "number"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "count",
+                    "data"
+                  ],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_workspace_roles"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/roles": {
+      "get": {
+        "operationId": "listWorkspaceRoles",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "number"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      }
+                    }
+                  },
+                  "required": [
+                    "count",
+                    "data"
+                  ],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_workspace_roles"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      },
+      "post": {
+        "operationId": "createWorkspaceRole",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "message"
+                  ],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_workspace_roles"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 1048576,
+          "deadlineMs": 10000,
+          "ratePolicy": "workspace-write"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/roles/default": {
+      "get": {
+        "operationId": "getWorkspaceDefaultRole",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_workspace_roles"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/roles/{roleId}": {
+      "get": {
+        "operationId": "getWorkspaceRole",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_workspace_roles",
+          "object": {
+            "param": "roleId",
+            "resource": "workspace_roles"
+          }
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/roles/{roleId}/members": {
+      "get": {
+        "operationId": "listWorkspaceRoleMembers",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_workspace_roles",
+          "object": {
+            "param": "roleId",
+            "resource": "workspace_roles"
+          }
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/roles/{roleId}/members/{userId}": {
+      "get": {
+        "operationId": "getWorkspaceRoleMember",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_workspace_roles",
+          "object": {
+            "param": "roleId",
+            "resource": "workspace_roles"
+          }
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/roles/{roleId}/wallets": {
+      "get": {
+        "operationId": "listWorkspaceRoleWallets",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_workspace_roles",
+          "object": {
+            "param": "roleId",
+            "resource": "workspace_roles"
+          }
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/roles/{roleId}/wallets/{walletId}": {
+      "get": {
+        "operationId": "getWorkspaceRoleWallet",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_workspace_roles",
+          "object": {
+            "param": "roleId",
+            "resource": "workspace_roles"
+          }
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/api-keys": {
+      "get": {
+        "operationId": "listWorkspaceApiKeys",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {}
+                          }
+                        },
+                        "count": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "data",
+                        "count"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_api_keys"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      },
+      "post": {
+        "operationId": "createWorkspaceApiKey",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    },
+                    "prefix": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "key",
+                    "prefix"
+                  ],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_api_keys"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 1048576,
+          "deadlineMs": 10000,
+          "ratePolicy": "workspace-write"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/api-keys/roles": {
+      "get": {
+        "operationId": "getWorkspaceApiKeyRoles",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_api_keys"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/api-keys/{keyId}": {
+      "get": {
+        "operationId": "getWorkspaceApiKey",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_api_keys",
+          "object": {
+            "param": "keyId",
+            "resource": "workspace_api_keys"
+          }
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/api-keys/{keyId}/rotate": {
+      "post": {
+        "operationId": "rotateWorkspaceApiKey",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "key"
+                  ],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_api_keys",
+          "object": {
+            "param": "keyId",
+            "resource": "workspace_api_keys"
+          }
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 1048576,
+          "deadlineMs": 10000,
+          "ratePolicy": "workspace-write"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/api-keys/{keyId}/usage-logs": {
+      "get": {
+        "operationId": "listWorkspaceApiKeyUsageLogs",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_api_keys",
+          "object": {
+            "param": "keyId",
+            "resource": "workspace_api_keys"
+          }
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/whiteboards": {
+      "post": {
+        "operationId": "createWorkspaceWhiteboard",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "whiteboard": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "whiteboard"
+                  ],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_whiteboards"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 1048576,
+          "deadlineMs": 10000,
+          "ratePolicy": "workspace-write"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/whiteboards/{boardId}": {
+      "get": {
+        "operationId": "getWorkspaceWhiteboard",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "whiteboard": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "whiteboard"
+                  ],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_whiteboards",
+          "object": {
+            "param": "boardId",
+            "resource": "workspace_whiteboards"
+          }
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/whiteboards/{boardId}/image-url": {
+      "post": {
+        "operationId": "getWorkspaceWhiteboardImageUrl",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_whiteboards",
+          "object": {
+            "param": "boardId",
+            "resource": "workspace_whiteboards"
+          }
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 1048576,
+          "deadlineMs": 10000,
+          "ratePolicy": "workspace-write"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/workforce/users": {
+      "get": {
+        "operationId": "listWorkspaceWorkforceUsers",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_workforce"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/workforce/users/{userId}": {
+      "get": {
+        "operationId": "getWorkspaceWorkforceUser",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_workforce"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/user-profile-links": {
+      "get": {
+        "operationId": "listWorkspaceUserProfileLinks",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_user_profile_links"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/user-profile-links/users": {
+      "get": {
+        "operationId": "listWorkspaceUserProfileLinkUsers",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_user_profile_links"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/user-profile-links/{linkId}": {
+      "get": {
+        "operationId": "getWorkspaceUserProfileLink",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_user_profile_links",
+          "object": {
+            "param": "linkId",
+            "resource": "workspace_user_profile_links"
+          }
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/programming/problems": {
+      "get": {
+        "operationId": "listWorkspaceProgrammingProblems",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_programming_problems"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/programming/problems/{problemId}": {
+      "get": {
+        "operationId": "getWorkspaceProgrammingProblem",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "manage_programming_problems",
+          "object": {
+            "param": "problemId",
+            "resource": "workspace_programming_problems"
+          }
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
+    },
+    "/api/v1/workspaces/{wsId}/deleted": {
+      "get": {
+        "operationId": "getWorkspaceDeletedStatus",
+        "security": [
+          {
+            "principal": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Validated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "deleted"
+                  ],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Request failure; writes are never automatically retried",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-policy": {
+          "kind": "workspace",
+          "workspaceParam": "wsId",
+          "permission": "view_workspace"
+        },
+        "x-runtime": "worker",
+        "x-limits": {
+          "bodyBytes": 0,
+          "deadlineMs": 5000,
+          "ratePolicy": "workspace-read"
+        },
+        "x-guard": "web-api"
+      }
     }
   }
 }

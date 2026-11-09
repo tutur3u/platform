@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Protected CI publication entrypoint.
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -80,7 +79,7 @@ export async function main({
   );
   assert.equal(env.GITHUB_REF, 'refs/heads/production');
   assert.equal(env.GITHUB_EVENT_NAME, 'workflow_dispatch');
-  assert.equal(env.PUBLICATION_ENVIRONMENT, 'wave1-calendar-production');
+  assert.equal(env.PUBLICATION_ENVIRONMENT, `wave1-${app}-production`);
   assert.equal(env.GITHUB_SHA, sha);
   assert.match(env.GITHUB_RUN_ATTEMPT ?? '', /^[1-9]\d*$/);
   assert.match(env.GITHUB_RUN_ID ?? '', /^\d+$/);

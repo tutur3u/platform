@@ -11,6 +11,7 @@ import 'package:mobile/data/sources/api_client.dart';
 class DocumentRepository {
   DocumentRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
 
+  static const int screenPageSize = 30;
   final ApiClient _api;
 
   Future<WorkspaceDocumentsPage> listDocuments(

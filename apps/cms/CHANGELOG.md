@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.39.0](https://github.com/tutur3u/platform/compare/cms-v0.38.0...cms-v0.39.0) (2026-11-08)
+
+
+### Features
+
+* **satellite:** regroup shared and tasks settings into sections ([#7793](https://github.com/tutur3u/platform/issues/7793)) ([ada23b2](https://github.com/tutur3u/platform/commit/ada23b29059530a6adb56a6107d9372dc92bc834))
+* **tasks:** apply the preview review round to the header, panel, Details and cards ([#7193](https://github.com/tutur3u/platform/issues/7193)) ([7f7b479](https://github.com/tutur3u/platform/commit/7f7b4793458788e632a3c7967b596baf92c517b5))
+* **tasks:** end sprints from a summary with carry or backlog decisions ([cafc56c](https://github.com/tutur3u/platform/commit/cafc56c3a7590bb000ffd7625022f97a5fee1a59)) ([#7089](https://github.com/tutur3u/platform/issues/7089)) ([6596ff5](https://github.com/tutur3u/platform/commit/6596ff54da29eaebd5c13338223330b30479de2b))
+* **tasks:** number tasks per project with editable keys ([39e5342](https://github.com/tutur3u/platform/commit/39e534251f9d4b643463043c6af4e77b480bb8bf))
+* **tasks:** plan the next sprint from a Plan tab ([457c109](https://github.com/tutur3u/platform/commit/457c10949a77eb7d0494a4d0fad728249d45a9e2)) ([#7088](https://github.com/tutur3u/platform/issues/7088)) ([02844d7](https://github.com/tutur3u/platform/commit/02844d7084d83571607a67c8790cc6b75dacb619))
+* **tasks:** plan up to five sprints ahead and park tasks outside sprints ([#7224](https://github.com/tutur3u/platform/issues/7224)) ([d114c02](https://github.com/tutur3u/platform/commit/d114c02b0f4ea11bb41ea68c057d9d50bf1abf1e))
+* **tasks:** show the board's sprint in the header and Board view ([9d91b1a](https://github.com/tutur3u/platform/commit/9d91b1aae612b205f723542b02d7e43a51a0862e)) ([#7046](https://github.com/tutur3u/platform/issues/7046)) ([f3f31bd](https://github.com/tutur3u/platform/commit/f3f31bde4003f4db9b70f154619eb665a2df5597))
+* **tasks:** show the task's sprint in the task panel ([#7108](https://github.com/tutur3u/platform/issues/7108)) ([978e783](https://github.com/tutur3u/platform/commit/978e7839909bfee471a304e942705f733f215421))
+* **tasks:** simplify sprint planning, summary and board filtering ([#7396](https://github.com/tutur3u/platform/issues/7396)) ([9d45884](https://github.com/tutur3u/platform/commit/9d458840f0064f6c37e43da5d4fca3bccd4fa88c))
+* **tasks:** two-row board header with people, project and focus filters ([8d53440](https://github.com/tutur3u/platform/commit/8d53440a1a2f08b1f1632558bb8e480e5d2bac32)) ([#7042](https://github.com/tutur3u/platform/issues/7042)) ([b48007d](https://github.com/tutur3u/platform/commit/b48007d34f18a714a2d6379273850d813c959998))
+
+
+### Bug Fixes
+
+* **release:** preserve cycle compatibility and publication holds ([#7779](https://github.com/tutur3u/platform/issues/7779)) ([ee6e298](https://github.com/tutur3u/platform/commit/ee6e298f623857f543dd74aa7f7d47bb9b0471bf))
+* **tasks:** pluralize the per-person task totals in the sprint summary ([5ad85ec](https://github.com/tutur3u/platform/commit/5ad85ec2eded60fa0016bae84eaf034d243a874d))
+* **tasks:** trash a new backlog task that cannot leave the running sprint ([d2aa74c](https://github.com/tutur3u/platform/commit/d2aa74c748b56969024ab49d990bd856d95687e4))
+* **tasks:** wait for the sprint's tasks before allowing End ([5b61c32](https://github.com/tutur3u/platform/commit/5b61c329e87a8bfa46f58678d005f9485693e35a))
+
 ## [0.38.0](https://github.com/tutur3u/platform/compare/cms-v0.37.1...cms-v0.38.0) (2026-10-24)
 
 

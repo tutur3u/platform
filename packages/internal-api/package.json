@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/internal-api",
-  "version": "0.55.0",
+  "version": "0.56.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -10,7 +10,10 @@
   "main": "./dist/index.js",
   "sideEffects": false,
   "types": "./dist/index.d.ts",
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -138,6 +141,16 @@
       "import": "./dist/finance-exchange-rates.js",
       "require": "./dist/finance-exchange-rates.js"
     },
+    "./finance-fee-lock": {
+      "types": "./dist/finance-fee-lock.d.ts",
+      "import": "./dist/finance-fee-lock.js",
+      "require": "./dist/finance-fee-lock.js"
+    },
+    "./finance-fee-lock-contracts": {
+      "types": "./dist/finance-fee-lock-contracts.d.ts",
+      "import": "./dist/finance-fee-lock-contracts.js",
+      "require": "./dist/finance-fee-lock-contracts.js"
+    },
     "./finance-subscription-analytics": {
       "types": "./dist/finance-subscription-analytics.d.ts",
       "import": "./dist/finance-subscription-analytics.js",
@@ -212,6 +225,11 @@
       "types": "./dist/mail.d.ts",
       "import": "./dist/mail.js",
       "require": "./dist/mail.js"
+    },
+    "./meetings": {
+      "types": "./dist/meetings.d.ts",
+      "import": "./dist/meetings.js",
+      "require": "./dist/meetings.js"
     },
     "./meet": {
       "types": "./dist/meet.d.ts",
@@ -288,6 +306,11 @@
       "import": "./dist/task-history.js",
       "require": "./dist/task-history.js"
     },
+    "./task-sprints": {
+      "types": "./dist/task-sprints.d.ts",
+      "import": "./dist/task-sprints.js",
+      "require": "./dist/task-sprints.js"
+    },
     "./tutoring": {
       "types": "./dist/tutoring.d.ts",
       "import": "./dist/tutoring.js",
@@ -307,6 +330,11 @@
       "types": "./dist/tutoring-queue-rules.d.ts",
       "import": "./dist/tutoring-queue-rules.js",
       "require": "./dist/tutoring-queue-rules.js"
+    },
+    "./task-cycles": {
+      "types": "./dist/task-cycles.d.ts",
+      "import": "./dist/task-cycles.js",
+      "require": "./dist/task-cycles.js"
     },
     "./task-templates": {
       "types": "./dist/task-templates.d.ts",

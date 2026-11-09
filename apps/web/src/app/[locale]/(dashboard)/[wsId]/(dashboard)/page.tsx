@@ -9,9 +9,8 @@ import MiraDashboardClient from './components/mira-dashboard-client';
 const DEFAULT_ASSISTANT_NAME = 'Mira';
 
 async function UserGroupQuickActionsSlot({ wsId }: { wsId: string }) {
-  const { default: UserGroupQuickActions } = await import(
-    './user-groups/quick-actions'
-  );
+  const { default: UserGroupQuickActions } =
+    await import('./user-groups/quick-actions');
 
   return <UserGroupQuickActions wsId={wsId} />;
 }
@@ -25,9 +24,8 @@ async function PermissionSetupBannerSlot({
 }) {
   if (!isCreator) return null;
 
-  const { default: PermissionSetupBanner } = await import(
-    './permission-setup-banner'
-  );
+  const { default: PermissionSetupBanner } =
+    await import('./permission-setup-banner');
 
   return <PermissionSetupBanner wsId={wsId} isCreator />;
 }

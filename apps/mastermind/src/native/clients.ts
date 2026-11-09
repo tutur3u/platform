@@ -23,28 +23,48 @@ export function createOwnerMemo<T>(now = Date.now) {
   };
 }
 
+/**
+ * workerd rejects `redirect: 'error'` when the Request is built. Bearer-bearing
+ * requests use `manual` and every redirect response is refused before the body
+ * or `Location` is read.
+ */
+async function refuseRedirect(pending: Promise<Response>) {
+  const response = await pending;
+  if (
+    String(response.type) === 'opaqueredirect' ||
+    (response.status >= 300 && response.status < 400)
+  ) {
+    throw new Error('Upstream redirect refused');
+  }
+  return response;
+}
+
 /** W2 supplies validated response schemas; W1 never calls or renders these clients. */
 export function createDataClients(env: MastermindEnvironment, owner: Owner) {
   return {
     agentSnapshot() {
       if (!env.OPS_HUB) throw new Error('Ops hub binding unavailable');
       // Hub-side owner checks still apply. No public Worker URL or gateway credential.
-      return env.OPS_HUB.fetch(
-        new Request('https://ops-hub/snapshot', {
-          headers: { Authorization: `Bearer ${owner.token}` },
-          redirect: 'error',
-        })
+      return refuseRedirect(
+        env.OPS_HUB.fetch(
+          new Request('https://ops-hub/snapshot', {
+            headers: { Authorization: `Bearer ${owner.token}` },
+            redirect: 'manual',
+          })
+        )
       );
     },
     orgLinks(rootWorkspaceId: string) {
-      return fetch(
-        new Request(
-          `https://tuturuuu.com/api/v1/workspaces/${encodeURIComponent(rootWorkspaceId)}/mastermind/org`,
-          {
-            headers: { Authorization: `Bearer ${owner.token}` },
-            redirect: 'error',
-            cache: 'no-store',
-          }
+      return refuseRedirect(
+        fetch(
+          new Request(
+            `https://tuturuuu.com/api/v1/workspaces/${encodeURIComponent(rootWorkspaceId)}/mastermind/org`,
+            {
+              headers: { Authorization: `Bearer ${owner.token}` },
+              redirect: 'manual',
+              cache: 'no-store',
+            }
+          )
         )
       );
     },

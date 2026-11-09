@@ -10,36 +10,36 @@ interface PrepareAddAccountParams {
 }
 
 /**
- * Prepares for adding a new account by:
- * 1. Saving the current session to the store (if not already stored)
- * 2. Navigating to the login page with multiAccount flag
- *
- * This shared logic is used by both AddAccountButton and AccountSwitcherModal
- * to ensure consistent behavior when initiating the add-account flow.
- *
- * @throws Error if preparation fails (navigation will still proceed)
+ * Saves the current session, then opens login so another account can be added.
+ * A full account list stays on this page and returns the limit result.
  */
 export async function prepareAddAccountAndNavigate({
   saveCurrentAccount,
-}: PrepareAddAccountParams): Promise<void> {
+}: PrepareAddAccountParams): Promise<AccountOperationResult> {
   const currentRoute = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
+  const returnUrl = encodeURIComponent(currentRoute);
+  const loginUrl = `/login?multiAccount=true&returnUrl=${returnUrl}`;
+
   try {
-    await saveCurrentAccount({
+    const result = await saveCurrentAccount({
       route: currentRoute,
       switchImmediately: false,
     });
 
-    // Navigate to login with multiAccount flag
-    // Note: Using hard reload (window.location.href) is required here because:
-    // - The login page needs a clean auth state
-    // - Server components need to re-render with new session context
-    // - Supabase auth cookies need to be properly set/cleared
-    const returnUrl = encodeURIComponent(currentRoute);
-    window.location.href = `/login?multiAccount=true&returnUrl=${returnUrl}`;
-  } catch {
-    // Still navigate even if saving fails to prevent user from being stuck
-    const returnUrl = encodeURIComponent(currentRoute);
-    window.location.href = `/login?multiAccount=true&returnUrl=${returnUrl}`;
+    if (!result.success && result.errorCode === 'account_limit') {
+      return result;
+    }
+
+    // Hard reload so the login page gets a clean auth state.
+    window.location.href = loginUrl;
+    return result;
+  } catch (error) {
+    window.location.href = loginUrl;
+    return {
+      error: error instanceof Error ? error.message : 'save_failed',
+      errorCode: 'save_failed',
+      success: false,
+    };
   }
 }

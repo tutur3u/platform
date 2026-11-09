@@ -30,7 +30,9 @@ export async function startOAuth(
   const callback = resolveOAuthCallback(provider, request.url);
   const state = randomBytes(32).toString('base64url');
   const verifier = randomBytes(32).toString('base64url');
-  const { error } = await (await table('mail_oauth_requests')).insert({
+  const { error } = await (
+    await table('mail_oauth_requests')
+  ).insert({
     state_hash: hashState(state),
     user_id: ctx.user.id,
     ws_id: ctx.normalizedWsId,
@@ -70,7 +72,9 @@ export async function finishOAuth(request: NextRequest, userId: string) {
     !matchesState(state, request.cookies.get(cookieName)?.value)
   )
     throw new ConnectedMailError(400, 'Invalid mail authorization state');
-  const { data: pending, error } = await (await table('mail_oauth_requests'))
+  const { data: pending, error } = await (
+    await table('mail_oauth_requests')
+  )
     .delete()
     .eq('state_hash', hashState(state))
     .eq('user_id', userId)
@@ -122,10 +126,10 @@ export async function finishOAuth(request: NextRequest, userId: string) {
   const response = await fetch(endpoint, {
     headers: { Authorization: `Bearer ${credentials.accessToken}` },
     cache: 'no-store',
-    redirect: 'error',
+    redirect: 'manual',
     signal: AbortSignal.timeout(20000),
   });
-  if (!response.ok)
+  if (response.type === 'opaqueredirect' || !response.ok)
     throw new ConnectedMailError(409, 'Unable to verify connected mailbox');
   const profile = await response.json();
   const address =

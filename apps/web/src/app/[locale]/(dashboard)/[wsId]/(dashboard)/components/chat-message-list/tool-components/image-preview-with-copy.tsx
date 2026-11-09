@@ -32,7 +32,6 @@ export function ImagePreviewWithCopy({
         onClick={() => onFullscreen(imageUrl)}
         className="w-fit overflow-hidden rounded-lg border border-border/50 text-left transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-dynamic-blue focus:ring-offset-2"
       >
-        {/* biome-ignore lint/performance/noImgElement: Dynamic URL from tool output */}
         <img
           src={imageUrl}
           alt={alt}

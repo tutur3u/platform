@@ -244,7 +244,6 @@ describe('owner-only Hidden preferences', () => {
             return query;
           },
           like: () => query,
-          // biome-ignore lint/suspicious/noThenProperty: PostgREST builders are intentionally awaitable.
           then: async (resolve) => {
             const matches = (row: Record<string, string>) =>
               (admin || table !== 'user_workspace_configs') &&
@@ -366,7 +365,6 @@ it('owner GET scopes each preference store independently for two synthetic actor
           .replaceAll(String.fromCharCode(92), '');
         return query;
       },
-      // biome-ignore lint/suspicious/noThenProperty: Supabase read builders are intentionally awaitable.
       then: (
         resolve: (result: {
           data: Record<string, string>[];

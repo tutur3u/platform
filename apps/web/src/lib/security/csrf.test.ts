@@ -1,7 +1,11 @@
 // @vitest-environment node
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { guardWebApiCsrf, WEB_CSRF_EXEMPTIONS } from './csrf';
+import {
+  guardWebApiCsrf,
+  WEB_CSRF_EXEMPTIONS,
+  WEB_CSRF_TRUSTED_ORIGINS,
+} from './csrf';
 
 const SESSION_COOKIE = 'sb-abc-auth-token=value';
 
@@ -148,5 +152,60 @@ describe('guardWebApiCsrf', () => {
     expect(WEB_CSRF_EXEMPTIONS.every((entry) => entry.reason.length > 0)).toBe(
       true
     );
+  });
+
+  it('trusts the workspace subdomain and the tuturuuu.com/workspace mount without Fetch Metadata', () => {
+    const forwarded = (origin: string) =>
+      request('/api/v1/workspaces/ws/tasks', {
+        cookie: SESSION_COOKIE,
+        origin,
+      });
+
+    expect(WEB_CSRF_TRUSTED_ORIGINS).toContain(
+      'https://workspace.tuturuuu.com'
+    );
+    for (const origin of [
+      'https://workspace.tuturuuu.com',
+      'https://tuturuuu.com',
+    ]) {
+      expect(
+        guardWebApiCsrf(forwarded(origin), {
+          configuredOrigin: 'https://tuturuuu.com',
+          mode: 'enforce',
+        })
+      ).toBeNull();
+    }
+  });
+
+  it('still rejects lookalike and sibling origins in enforce mode', () => {
+    for (const origin of [
+      'https://workspace.tuturuuu.com.evil.example',
+      'http://workspace.tuturuuu.com',
+      'https://workspace.tuturuuu.com:8443',
+      'https://other.tuturuuu.com',
+    ]) {
+      expect(
+        guardWebApiCsrf(
+          request('/api/v1/workspaces/ws/tasks', {
+            cookie: SESSION_COOKIE,
+            origin,
+          }),
+          { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
+        )?.status
+      ).toBe(403);
+    }
+  });
+
+  it('keeps a same-site Fetch Metadata request from the workspace subdomain rejected', () => {
+    expect(
+      guardWebApiCsrf(
+        request('/api/v1/workspaces/ws/tasks', {
+          cookie: SESSION_COOKIE,
+          origin: 'https://workspace.tuturuuu.com',
+          'sec-fetch-site': 'same-site',
+        }),
+        { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
+      )?.status
+    ).toBe(403);
   });
 });

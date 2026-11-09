@@ -1,25 +1,97 @@
 ---
 title: Feature flags
-description: Default-off registry and the mobile evaluation contract.
+description: Flag policy, lifecycle catalog, admin dashboard and the mobile evaluation contract.
 ---
 
-The root `config/feature-flags.json` owns the flag inventory. Each array entry has
+The root `config/feature-flags.json` owns the mobile runtime flag inventory. Each
+array entry has
 `key` (unique snake_case), `description`, `owner`, `class` (`read`, `write`, `ui`,
 `kill`), `default: false`, and `removeBy` (ISO date). The initial 16 mobile flags
-belong to `mona` and expire on `2027-01-31`.
+belong to `mona` and retain legacy removal-date metadata of `2027-01-31`.
+Removal eligibility follows the catalog kind below.
 
 ## Add a flag
 
 Name the flag in its PR, add its registry entry with default OFF, assign an owner
-and removal date, and wire its kill switch before enabling the feature. Follow the
+and lifecycle metadata, and wire its kill switch before enabling the feature.
+Follow the
 [trunk-based delivery rule](/build/development-tools/git-conventions#trunk-based-delivery):
 flags default OFF; kill switch first, rollback second.
 
 Run `cd packages/feature-flags && bun run generate` after editing the JSON, then
-format the generated file with Biome and commit it. `@tuturuuu/feature-flags`
+format the generated file with Oxc and commit it. `@tuturuuu/feature-flags`
 exports `registry`, the generated `FlagKey` union, and the pure
 `evaluateFlags(registry, context, overrides?)` function. Its tests validate the
 registry and detect generated-source drift.
+
+## When to add a flag
+
+Gate new features behind a flag. Routine UX/UI changes and non-critical fixes ship
+without one.
+
+## Lifecycle catalog
+
+`config/feature-flag-catalog.json` lists every platform flag family with its
+lifecycle metadata. `@tuturuuu/feature-flags` exports it as `featureFlagCatalog`
+together with `getFlagLifecycle` and `validateCatalog`.
+
+| Family | Scope | Source of truth |
+| --- | --- | --- |
+| `mobile-runtime` | global | `config/feature-flags.json` and the mobile endpoint |
+| `workspace-secret` | workspace | Workspace secrets read through `@tuturuuu/utils/feature-flags` and Infrastructure secret definitions |
+| `mobile-build` | build | Non-secret mobile deployment settings compiled with `bool.fromEnvironment` |
+
+Each entry records `owner`, `createdAt`, `apps` (with `appsComplete` when every
+consumer app is traced), `sources`, `defaults` per environment (`development`,
+`staging`, `production`) and `verifiedOnProdAt`. Defaults are the declared value
+when no override or workspace setting exists; they are not observed production
+state.
+
+`kind` separates removable feature flags from retained controls:
+
+- `release` flags gate a new feature. Once `verifiedOnProdAt` is recorded,
+  `removeBy` is derived as that instant plus 48 hours and the flag is overdue
+  after it.
+- `kill-switch`, `workspace-gate`, `safety-control` and `operational` entries are
+  retained controls. Neither verification nor legacy deadline metadata makes them
+  removal-due.
+
+Entries adopted without historic metadata have `legacy: true`; their unknown owner
+or creation date stays `null` and renders as unknown. For release flags only, a
+`legacyRemoveBy` date is due through the end of that UTC day. New entries need
+`legacy: false`, an owner,
+`createdAt`, a description and a complete app list. Record `verifiedOnProdAt`
+only from an actual production verification, never from defaults or CI results.
+
+`packages/feature-flags/src/catalog.test.ts` fails when a source family gains or
+loses a flag without a catalog change, when a recorded source stops naming its
+flag, or when a new entry is marked legacy.
+
+### Overdue check
+
+`node packages/feature-flags/scripts/check-lifecycle.mjs` reports malformed
+metadata and overdue flags as GitHub annotations. Cheap PR Checks runs it in
+warning mode, which exits 0. `--strict` exits 1 on any report; `--now <iso>` and
+`--catalog <path>` pin the clock and input.
+
+### Dashboard
+
+Infrastructure `/<wsId>/feature-flags` renders every catalog flag for root
+workspace members with `view_infrastructure`. A root member with
+`manage_workspace_roles` can override the 16 mobile-runtime registry keys per
+`development`, `staging`, and `production`. The page shows the declared default
+and the effective value after the `mobile_offline` master gate. Workspace-secret
+flags stay read-only, with the label "Managed per workspace in Secrets" and a
+link to `/<wsId>/workspaces`. Mobile-build flags stay read-only and are labeled
+build-time. `cookieConsentBanner` is a separate export and is not a registry
+toggle. Saved-state or audit failure stays explicit. The page does not invent a
+persisted OFF value, and it does not select a workspace or write workspace
+secrets.
+
+Platform state is one row per flag key and environment. Resetting to the declared
+default keeps the revision and stores an empty override. Audit is append-only.
+Merging this documentation does not apply the database migration or expose the
+private functions; that deployment is separate.
 
 ## Mobile endpoint
 
@@ -51,14 +123,28 @@ parameters cannot select a user. The handler uses
 Both `CDN-Cache-Control` and `Vercel-CDN-Cache-Control` are `no-store`, including
 304 and error responses.
 
-## v0 semantics
+## Evaluation
 
-v0 returns defaults; store-backed targeting (user/%/workspace, kill switch, audit)
-replaces v0 behind the same contract. The endpoint supplies no overrides. The
-pure evaluator accepts future overrides for known keys only and applies the kill
+After authentication and membership, the endpoint reads platform overrides for
+one server-selected environment. `VERCEL_ENV=production` selects production,
+`preview` selects staging, and `development` selects development. An unknown
+`VERCEL_ENV` selects production. When `VERCEL_ENV` is unset, `NODE_ENV` of
+`development` or `test` selects development and every other value selects
+production. A query or body field cannot select the environment.
+
+Missing or unreachable storage uses each registry default. An authorization
+failure or a malformed payload returns an error and does not substitute defaults.
+The pure evaluator accepts overrides for known keys only and applies the kill
 switch last: `mobile_offline: false` forces every `offline_` key OFF, including
-reads, writes and status UI. Context currently has no effect. This endpoint does
-not enable offline functionality or grant access to underlying data.
+reads, writes and status UI. Context currently has no effect on the boolean
+result. This endpoint does not enable offline functionality or grant access to
+underlying data.
 
-Regression coverage lives in `packages/feature-flags/src/index.test.ts` and
-`apps/web/src/app/api/v1/mobile/feature-flags/route.test.ts`.
+Regression coverage lives in `packages/feature-flags/src/index.test.ts`,
+`packages/feature-flags/src/{catalog,lifecycle,check-lifecycle}.test.ts`,
+`apps/web/src/app/api/v1/mobile/feature-flags/route.test.ts` and the Infrastructure
+`feature-flags` page and table tests.
+
+Cookie-authenticated state mutations require the Infrastructure origin and the
+`x-tuturuuu-feature-flag-action: 1` header. Bearer API requests use verified token
+authentication without a cookie fallback.

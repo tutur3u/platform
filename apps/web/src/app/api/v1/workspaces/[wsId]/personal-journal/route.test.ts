@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {

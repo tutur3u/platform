@@ -192,7 +192,7 @@ test('hold and enable flag reject production, PRs, branch dispatch and unprovisi
     true
   );
 });
-test('production policy CLI reports hold without loading artifact or provider credentials', () => {
+test('production policy CLI reports admission without loading artifact or provider credentials', () => {
   const result = execFileSync(
     'node',
     [
@@ -213,7 +213,7 @@ test('production policy CLI reports hold without loading artifact or provider cr
       },
     }
   );
-  assert.match(result, /held for wave-1 cutover/);
+  assert.match(result, /Explicit source cutover admission required/);
 });
 for (const phase of ['stopped', 'verify', 'write', 'accept', 'success']) {
   test(`one-shot publication bounds writes and preserves ${phase} outcome`, async () => {
@@ -326,7 +326,8 @@ test('original, restored and publication jobs cannot bypass seal/runtime or poli
   assert.equal(publish.jobs.publish.steps[runtime].env, undefined);
   assert.ok(publish.jobs.publish.steps[write].env.CLOUDFLARE_STAGING_API_TOKEN);
 });
-test('Meet staging profile isolates frontend, realtime, DO namespaces and R2', () => {
+test('Meet staging profile isolates frontend, realtime, DO namespaces and R2', async () => {
+  const { parseJsonc } = await import('./cf-worker-parity.mjs');
   const result = JSON.parse(
     execFileSync(
       'bun',
@@ -363,9 +364,10 @@ test('Meet staging profile isolates frontend, realtime, DO namespaces and R2', (
       'tuturuuu-meet-realtime-wave1-staging.'
     )
   );
-  const realtime = JSON.parse(
+  const realtime = parseJsonc(
     fs.readFileSync(
-      path.join(root, 'apps/meet-realtime/wrangler.staging.jsonc')
+      path.join(root, 'apps/meet-realtime/wrangler.staging.jsonc'),
+      'utf8'
     )
   );
   assert.equal(realtime.name, 'tuturuuu-meet-realtime-wave1-staging');
@@ -392,8 +394,11 @@ test('Meet staging profile isolates frontend, realtime, DO namespaces and R2', (
       }
     )
   );
-  const productionRealtime = JSON.parse(
-    fs.readFileSync(path.join(root, 'apps/meet-realtime/wrangler.jsonc'))
+  const productionRealtime = parseJsonc(
+    fs.readFileSync(
+      path.join(root, 'apps/meet-realtime/wrangler.jsonc'),
+      'utf8'
+    )
   );
   const forbidden = [
     production.name,

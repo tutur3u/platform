@@ -23,7 +23,6 @@ function Avatar({
   size: 'lg' | 'md';
 }) {
   return (
-    // biome-ignore lint/performance/noImgElement: the marketing bundle is kept off next/image by the public shell compile graph.
     <img
       alt=""
       className={cn(

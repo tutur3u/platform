@@ -239,14 +239,12 @@ export async function runResourcesCommand(argv: string[]) {
       (multiHost ||
         (shim ? isHeavyCommand(name, command) : trivial === undefined));
     if (enabled && !shim && multiHost) {
-      const { assertNestedHostRequirements, hostsRequirements } = await import(
-        './resources-hosts-requirements.js'
-      );
+      const { assertNestedHostRequirements, hostsRequirements } =
+        await import('./resources-hosts-requirements.js');
       const requires = hostsRequirements(name, command, options);
       if (parent || !queued) {
-        const { readHostRegistry } = await import(
-          './resources-hosts-config.js'
-        );
+        const { readHostRegistry } =
+          await import('./resources-hosts-config.js');
         assertNestedHostRequirements(await readHostRegistry(home), requires);
       }
     }
@@ -292,13 +290,11 @@ export async function runResourcesCommand(argv: string[]) {
     if (!shim && queued && !parent && multiHost) {
       if (offload) throw new Error('Use --hosts or --offload, not both.');
       const { hostsRun } = await import('./resources-hosts-dispatch.js');
-      const { hostsDependencies, hostsJobClass } = await import(
-        './resources-hosts-cli.js'
-      );
+      const { hostsDependencies, hostsJobClass } =
+        await import('./resources-hosts-cli.js');
       const jobClass = hostsJobClass(optionValue(options, '--class'));
-      const { hostsRequirements } = await import(
-        './resources-hosts-requirements.js'
-      );
+      const { hostsRequirements } =
+        await import('./resources-hosts-requirements.js');
       const timeout = optionValue(options, '--timeout');
       process.exitCode = await hostsRun({
         home,

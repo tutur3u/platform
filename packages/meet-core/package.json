@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/meet-core",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "private": true,
   "exports": {
     "./styles.css": "./src/styles.css",
@@ -108,6 +108,8 @@
     "./features/loading/meet-loading.tsx": "./src/features/loading/meet-loading.tsx",
     "./features/meeting-ai/followup-conflicts": "./src/features/meeting-ai/followup-conflicts.tsx",
     "./features/meeting-ai/followup-conflicts.tsx": "./src/features/meeting-ai/followup-conflicts.tsx",
+    "./features/meeting-ai/failure-toast": "./src/features/meeting-ai/failure-toast.ts",
+    "./features/meeting-ai/failure-toast.ts": "./src/features/meeting-ai/failure-toast.ts",
     "./features/meeting-ai/use-meeting-ai": "./src/features/meeting-ai/use-meeting-ai.ts",
     "./features/meeting-ai/use-meeting-ai.ts": "./src/features/meeting-ai/use-meeting-ai.ts",
     "./features/meeting-ai/meeting-ai-panel": "./src/features/meeting-ai/meeting-ai-panel.tsx",
@@ -152,6 +154,7 @@
     "./features/meeting-ai/server/followup-context.ts": "./src/features/meeting-ai/server/followup-context.ts",
     "./features/meeting-ai/server/followup-create": "./src/features/meeting-ai/server/followup-create.ts",
     "./features/meeting-ai/server/followup-create.ts": "./src/features/meeting-ai/server/followup-create.ts",
+    "./features/meeting-ai/server/transcript-roster": "./src/features/meeting-ai/server/transcript-roster.ts",
     "./features/meeting-ai/server/notes-admin": "./src/features/meeting-ai/server/notes-admin.ts",
     "./features/meeting-ai/server/notes-admin.ts": "./src/features/meeting-ai/server/notes-admin.ts",
     "./features/meeting-ai/server/room-access": "./src/features/meeting-ai/server/room-access.ts",
@@ -558,7 +561,6 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.13",
     "@cloudflare/workers-types": "^5.20261022.1",
     "@opennextjs/cloudflare": "^1.20.6",
     "@tailwindcss/postcss": "^4.3.3",

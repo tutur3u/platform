@@ -6,9 +6,8 @@ export const workspaceReadInput = z.object({}).strict();
 const readWorkspaces = createServerFn({ method: 'POST' })
   .validator(workspaceReadInput)
   .handler(async () => {
-    const { fetchAuthorizedWorkspaces } = await import(
-      './legacy-action-ports.server'
-    );
+    const { fetchAuthorizedWorkspaces } =
+      await import('./legacy-action-ports.server');
     return fetchAuthorizedWorkspaces();
   });
 

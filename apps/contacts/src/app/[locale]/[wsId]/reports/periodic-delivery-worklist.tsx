@@ -2,7 +2,9 @@
 import {
   Ban,
   CircleHelp,
+  Hourglass,
   MailX,
+  RotateCcw,
   ServerCrash,
   ShieldAlert,
   TriangleAlert,
@@ -26,10 +28,15 @@ export function PeriodicDeliveryWorklist({
   currentRows,
   pending,
   categoryFilter,
+  heldCount,
   onCategoryChange,
   onSelectAll,
   onClear,
   onReview,
+  canResend = false,
+  resendSelectedCount = 0,
+  onResendSelected,
+  onResendScope,
 }: {
   reports: PeriodicReport[];
   total?: number;
@@ -40,10 +47,17 @@ export function PeriodicDeliveryWorklist({
   currentRows: boolean;
   pending: boolean;
   categoryFilter: DeliveryCategory | null;
+  /** Held reports across every stage in scope, not only the listed rows. */
+  heldCount?: number;
   onCategoryChange: (category: DeliveryCategory | null) => void;
   onSelectAll: () => void;
   onClear: () => void;
   onReview: () => void;
+  /** Admin-only resend of failed, stuck or approved-unsent reports. */
+  canResend?: boolean;
+  resendSelectedCount?: number;
+  onResendSelected?: () => void;
+  onResendScope?: () => void;
 }) {
   const t = useTranslations('reports-hub');
   const common = useTranslations('common');
@@ -69,7 +83,7 @@ export function PeriodicDeliveryWorklist({
             >
               {t('select_visible_eligible')}
             </Button>
-            {selectedCount > 0 && (
+            {(selectedCount > 0 || resendSelectedCount > 0) && (
               <Button size="sm" variant="ghost" onClick={onClear}>
                 {t('clear_selection')}
               </Button>
@@ -81,6 +95,22 @@ export function PeriodicDeliveryWorklist({
             >
               {t('review_selected', { count: selectedCount })}
             </Button>
+            {canResend && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!resendSelectedCount || !currentRows || pending}
+                  onClick={onResendSelected}
+                >
+                  <RotateCcw className="size-3.5" aria-hidden="true" />
+                  {t('resend_selected', { count: resendSelectedCount })}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={onResendScope}>
+                  {t('resend_by_scope')}
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -100,6 +130,10 @@ export function PeriodicDeliveryWorklist({
           {DELIVERY_CATEGORIES.map((category) => {
             const appearance = CATEGORY_APPEARANCE[category];
             const Icon = appearance.icon;
+            const count =
+              category === 'held'
+                ? (heldCount ?? categoryCounts?.held)
+                : categoryCounts?.[category];
             return (
               <Button
                 key={category}
@@ -116,7 +150,7 @@ export function PeriodicDeliveryWorklist({
                 <Icon className="size-3.5" aria-hidden="true" />
                 {t(`category_${category}`)}{' '}
                 <span className="tabular-nums">
-                  {categoryCounts?.[category]?.toLocaleString() ?? '—'}
+                  {count?.toLocaleString() ?? '—'}
                 </span>
               </Button>
             );
@@ -154,5 +188,9 @@ const CATEGORY_APPEARANCE = {
   failure: {
     icon: TriangleAlert,
     className: 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red',
+  },
+  held: {
+    icon: Hourglass,
+    className: 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue',
   },
 } as const;

@@ -148,14 +148,12 @@ export async function PUT(req: Request, { params }: Params) {
   const { error } = await supabase.from('workspace_default_permissions').upsert(
     permissions
       .filter((permission) => !isExplicitGrantPermission(permission.id))
-      .map(
-        (permission): TablesInsert<'workspace_default_permissions'> => ({
-          ws_id: resolvedWsId,
-          permission: permission.id as WorkspaceRolePermissionValue,
-          member_type: bodyMemberType,
-          enabled: permission.enabled,
-        })
-      ),
+      .map((permission): TablesInsert<'workspace_default_permissions'> => ({
+        ws_id: resolvedWsId,
+        permission: permission.id as WorkspaceRolePermissionValue,
+        member_type: bodyMemberType,
+        enabled: permission.enabled,
+      })),
     { onConflict: 'ws_id,permission,member_type' }
   );
 

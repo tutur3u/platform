@@ -11,6 +11,7 @@ import {
 } from '@tuturuuu/internal-api/users';
 import type { Workspace } from '@tuturuuu/types';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import {
   useUpdateUserConfig,
   useUserBooleanConfig,
@@ -24,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
@@ -231,7 +231,7 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-6">
+      <SettingsSection>
         <SettingItemTab
           title={t('auto_assign_to_self')}
           description={
@@ -248,7 +248,6 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             }
           />
         </SettingItemTab>
-        <Separator />
         <SettingItemTab
           title={t('fade_completed_tasks')}
           description={t('fade_completed_tasks_description')}
@@ -259,7 +258,95 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             disabled={isLoading || updateSettings.isPending}
           />
         </SettingItemTab>
-        <Separator />
+        <TaskPrioritySettings />
+        <SettingItemTab
+          title={t('quick_create_target_list')}
+          description={t('quick_create_target_list_description')}
+        >
+          <Select
+            value={quickCreateTargetList}
+            onValueChange={handleQuickCreateTargetListChange}
+            disabled={
+              quickCreateTargetListLoading ||
+              updateQuickCreateTargetList.isPending
+            }
+          >
+            <SelectTrigger
+              aria-label={t('quick_create_target_list')}
+              className="w-44"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default_list">
+                {t('quick_create_target_list_default')}
+              </SelectItem>
+              <SelectItem value="hovered_list">
+                {t('quick_create_target_list_hovered')}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingItemTab>
+        <SettingItemTab
+          title={t('submit_shortcut')}
+          description={t('submit_shortcut_description')}
+        >
+          <Select
+            value={submitShortcut ?? 'enter'}
+            onValueChange={(val) =>
+              updateSubmitShortcut.mutate({
+                configId: 'TASK_SUBMIT_SHORTCUT',
+                value: val,
+              })
+            }
+            disabled={submitShortcutLoading || updateSubmitShortcut.isPending}
+          >
+            <SelectTrigger className="w-45">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="enter">
+                {t('submit_shortcut_enter')}
+              </SelectItem>
+              <SelectItem value="cmd_enter">
+                {t('submit_shortcut_cmd_enter')}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingItemTab>
+        <SettingItemTab
+          title={t('draft_mode')}
+          description={t('draft_mode_description')}
+        >
+          <Switch
+            checked={draftModeEnabled}
+            onCheckedChange={setDraftModeEnabled}
+            disabled={draftModeLoading || draftModePending}
+          />
+        </SettingItemTab>
+        <SettingItemTab
+          title={t('expand_mira_sections')}
+          description={t('expand_mira_sections_description')}
+        >
+          <Switch
+            checked={expandMiraSections}
+            onCheckedChange={setExpandMiraSections}
+            disabled={expandMiraSectionsLoading || expandMiraSectionsPending}
+          />
+        </SettingItemTab>
+        <SettingItemTab
+          title={t('show_review_due_dates')}
+          description={t('show_review_due_dates_description')}
+        >
+          <Switch
+            checked={showReviewDueDates}
+            onCheckedChange={setShowReviewDueDates}
+            disabled={showReviewDueDatesLoading || showReviewDueDatesPending}
+          />
+        </SettingItemTab>
+      </SettingsSection>
+
+      <SettingsSection>
         <SettingItemTab
           title={t('sound_effects')}
           description={t('sound_effects_description')}
@@ -271,7 +358,6 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             disabled={soundEffectsEnabledLoading || soundEffectsEnabledPending}
           />
         </SettingItemTab>
-        <Separator />
         <SettingItemTab
           title={t('sound_effects_volume')}
           description={t('sound_effects_volume_description')}
@@ -307,62 +393,13 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             </SelectContent>
           </Select>
         </SettingItemTab>
-        <Separator />
-        <TaskPrioritySettings />
-        <Separator />
+      </SettingsSection>
+
+      <SettingsSection>
         <TaskDialogPresentationSettings />
-        <Separator />
-        <SettingItemTab
-          title={t('quick_create_target_list')}
-          description={t('quick_create_target_list_description')}
-        >
-          <Select
-            value={quickCreateTargetList}
-            onValueChange={handleQuickCreateTargetListChange}
-            disabled={
-              quickCreateTargetListLoading ||
-              updateQuickCreateTargetList.isPending
-            }
-          >
-            <SelectTrigger
-              aria-label={t('quick_create_target_list')}
-              className="w-44"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="default_list">
-                {t('quick_create_target_list_default')}
-              </SelectItem>
-              <SelectItem value="hovered_list">
-                {t('quick_create_target_list_hovered')}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </SettingItemTab>
-        <Separator />
-        <SettingItemTab
-          title={t('draft_mode')}
-          description={t('draft_mode_description')}
-        >
-          <Switch
-            checked={draftModeEnabled}
-            onCheckedChange={setDraftModeEnabled}
-            disabled={draftModeLoading || draftModePending}
-          />
-        </SettingItemTab>
-        <Separator />
-        <SettingItemTab
-          title={t('expand_mira_sections')}
-          description={t('expand_mira_sections_description')}
-        >
-          <Switch
-            checked={expandMiraSections}
-            onCheckedChange={setExpandMiraSections}
-            disabled={expandMiraSectionsLoading || expandMiraSectionsPending}
-          />
-        </SettingItemTab>
-        <Separator />
+      </SettingsSection>
+
+      <SettingsSection>
         <SettingItemTab
           title={t('force_default_workspace_redirect')}
           description={t('force_default_workspace_redirect_description')}
@@ -375,7 +412,6 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             }
           />
         </SettingItemTab>
-        <Separator />
         <SettingItemTab
           title={t('open_default_board')}
           description={t('open_default_board_description')}
@@ -386,18 +422,9 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             disabled={openDefaultBoardLoading || openDefaultBoardPending}
           />
         </SettingItemTab>
-        <Separator />
-        <SettingItemTab
-          title={t('show_review_due_dates')}
-          description={t('show_review_due_dates_description')}
-        >
-          <Switch
-            checked={showReviewDueDates}
-            onCheckedChange={setShowReviewDueDates}
-            disabled={showReviewDueDatesLoading || showReviewDueDatesPending}
-          />
-        </SettingItemTab>
-        <Separator />
+      </SettingsSection>
+
+      <SettingsSection>
         <SettingItemTab
           title={t('navigation_progress')}
           description={t('navigation_progress_description')}
@@ -411,7 +438,6 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             }
           />
         </SettingItemTab>
-        <Separator />
         <SettingItemTab
           title={t('navigation_goals')}
           description={t('navigation_goals_description')}
@@ -424,7 +450,6 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             }
           />
         </SettingItemTab>
-        <Separator />
         <SettingItemTab
           title={t('navigation_stats')}
           description={t('navigation_stats_description')}
@@ -437,7 +462,6 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             }
           />
         </SettingItemTab>
-        <Separator />
         <SettingItemTab
           title={t('navigation_leaderboards')}
           description={t('navigation_leaderboards_description')}
@@ -451,7 +475,6 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             }
           />
         </SettingItemTab>
-        <Separator />
         <SettingItemTab
           title={t('navigation_import')}
           description={t('navigation_import_description')}
@@ -464,36 +487,7 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             }
           />
         </SettingItemTab>
-        <Separator />
-        <SettingItemTab
-          title={t('submit_shortcut')}
-          description={t('submit_shortcut_description')}
-        >
-          <Select
-            value={submitShortcut ?? 'enter'}
-            onValueChange={(val) =>
-              updateSubmitShortcut.mutate({
-                configId: 'TASK_SUBMIT_SHORTCUT',
-                value: val,
-              })
-            }
-            disabled={submitShortcutLoading || updateSubmitShortcut.isPending}
-          >
-            <SelectTrigger className="w-45">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="enter">
-                {t('submit_shortcut_enter')}
-              </SelectItem>
-              <SelectItem value="cmd_enter">
-                {t('submit_shortcut_cmd_enter')}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </SettingItemTab>
-        <Separator />
-      </div>
+      </SettingsSection>
     </div>
   );
 }

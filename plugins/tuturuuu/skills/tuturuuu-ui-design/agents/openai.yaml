@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tuturuuu UI Design"
+  short_description: "Apply shared UI, tokens, and responsive settings patterns"
+  default_prompt: "Apply the Tuturuuu UI design proposal while preserving behavior, permissions, and accessibility."

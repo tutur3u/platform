@@ -15,7 +15,17 @@ const { dirname, join } = require('node:path');
 const { repoRoot } = require('./workflow-config-test-helpers.js');
 const { readWorkflow } = require('./workflow-yaml-test-helper.js');
 
-const apps = ['meet', 'calendar', 'mail', 'apps', 'shortener', 'mastermind'];
+const apps = [
+  'forms',
+  'inventory',
+  'nova',
+  'meet',
+  'calendar',
+  'mail',
+  'apps',
+  'shortener',
+  'mastermind',
+];
 const heldPolicy = Object.fromEntries(
   apps.map((app) => [
     app,
@@ -26,6 +36,21 @@ const heldPolicy = Object.fromEntries(
   ])
 );
 const heldReason = /held for wave-\d cutover/;
+
+const hasPublicationCommand = (publicationStepCommand) =>
+  /vercel (?:pull|build|deploy)|wrangler (?:deploy|secret)/.test(
+    publicationStepCommand
+  );
+
+function publicationWrites(jobs) {
+  return Object.entries(jobs).filter(([, value]) =>
+    value.steps?.some(
+      (step) =>
+        hasPublicationCommand(step.run ?? step.with?.command ?? '') &&
+        !/--dry-run/.test(step.run ?? step.with?.command ?? '')
+    )
+  );
+}
 
 function fixture(t, policy) {
   const root = mkdtempSync(join(tmpdir(), 'publication-policy-'));
@@ -237,7 +262,7 @@ for (const app of apps) {
       surfaces: app === 'meet' ? ['frontend', 'realtime-do'] : ['frontend'],
     };
     const workflow = `${app}-cloudflare.yaml`;
-    const target = ['meet', 'calendar'].includes(app)
+    const target = ['meet', 'calendar', 'mail', 'apps'].includes(app)
       ? workflow
       : `vercel-production-${app}.yaml`;
     const root = fixture(t, policy);
@@ -259,7 +284,7 @@ test('known unrelated publisher retains normal selection even with malformed pro
   );
 });
 
-test('Calendar and Meet admissions open only their publishers while other wave-1 apps remain held', (t) => {
+test('Calendar, Meet, Mail and Apps admissions open only their publishers while Shortener remains held', (t) => {
   const root = fixture(t);
   for (const workflow of ['calendar-cloudflare.yaml', 'meet-cloudflare.yaml'])
     assert.equal(runPolicy(root, workflow).output, 'allowed=true\n');
@@ -282,8 +307,12 @@ test('Calendar and Meet admissions open only their publishers while other wave-1
   for (const app of ['mail', 'apps'])
     assert.equal(
       runPolicy(root, `${app}-cloudflare.yaml`).output,
-      'allowed=false\n'
+      'allowed=true\n'
     );
+  assert.equal(
+    runPolicy(root, 'shortener-cloudflare.yaml').output,
+    'allowed=false\n'
+  );
 });
 
 const publishers = [
@@ -299,7 +328,7 @@ for (const { workflow, job } of publishers) {
   test(`${workflow}: every production write depends on the early shared policy gate`, (t) => {
     const { jobs } = readWorkflow(workflow);
     const gate = jobs['production-policy'];
-    assert.equal(gate.if, "github.ref == 'refs/heads/production'");
+    assert.match(gate.if, /github\.ref == 'refs\/heads\/production'/);
     assert.equal(
       gate.outputs.allowed,
       '$' + '{{ steps.policy.outputs.allowed }}'
@@ -327,14 +356,7 @@ for (const { workflow, job } of publishers) {
       jobs[job].if,
       "github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'"
     );
-    const writes = Object.entries(jobs).filter(([, value]) =>
-      value.steps?.some(
-        (step) =>
-          /vercel (?:pull|build|deploy)|wrangler (?:deploy|secret)/.test(
-            step.run ?? step.with?.command ?? ''
-          ) && !/--dry-run/.test(step.run ?? step.with?.command ?? '')
-      )
-    );
+    const writes = publicationWrites(jobs);
     assert.deepEqual(
       writes.map(([name]) => name),
       [job]
@@ -430,7 +452,6 @@ test('Mastermind has qualification jobs only and no production publisher', () =>
     false
   );
   const { jobs } = readWorkflow('mastermind-cloudflare.yaml');
-  assert.deepEqual(Object.keys(jobs), ['check-ci', 'native']);
-  assert.equal(jobs.native.uses, './.github/workflows/native-start-app.yaml');
-  assert.equal(jobs.native.with.app, 'mastermind');
+  assert.deepEqual(Object.keys(jobs), ['affected-gate', 'artifact']);
+  assert.match(jobs.artifact.env.MASTERMIND_SOURCE_SHA, /github\.sha/);
 });

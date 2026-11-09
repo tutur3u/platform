@@ -23,7 +23,7 @@ export async function publishLiveTranscript(
   if (saved.claims.mode !== 'room' || role !== 'assistant' || !text.trim())
     return;
   const transcript = text.trim();
-  for (let offset = 0; offset < transcript.length; ) {
+  for (let offset = 0; offset < transcript.length;) {
     let end = Math.min(offset + 8000, transcript.length);
     // Keep a Unicode surrogate pair together at a chunk boundary.
     const last = transcript.charCodeAt(end - 1);

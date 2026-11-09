@@ -149,9 +149,9 @@ export function ContactTable({
                     {contact.workspaceUserId ? (
                       workspaceUsersById.get(contact.workspaceUserId) ? (
                         <LinkedWorkspaceUserChip
-                          user={
-                            workspaceUsersById.get(contact.workspaceUserId)!
-                          }
+                          user={workspaceUsersById.get(
+                            contact.workspaceUserId
+                          )!}
                         />
                       ) : (
                         <div className="mt-1 flex items-center gap-1 text-dynamic-green text-xs">

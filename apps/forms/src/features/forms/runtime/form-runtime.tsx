@@ -1,7 +1,7 @@
 'use client';
 
 import type { TurnstileInstance } from '@marsidev/react-turnstile';
-import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
+import { resolveTurnstileClientState } from '@tuturuuu/cloudflare/turnstile/client';
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -289,11 +289,11 @@ function FormRuntimeContent({
     readOnly && Boolean(advanceTarget.targetSectionId);
   const canTriggerReadOnlyResponseCopy = Boolean(
     readOnly &&
-      canRequestResponseCopy &&
-      onRequestResponseCopy &&
-      readOnlyResponseId &&
-      readOnlyResponseSessionId &&
-      !readOnlyResponseCopySentTo
+    canRequestResponseCopy &&
+    onRequestResponseCopy &&
+    readOnlyResponseId &&
+    readOnlyResponseSessionId &&
+    !readOnlyResponseCopySentTo
   );
   const shouldShowTurnstile =
     requiresTurnstile &&

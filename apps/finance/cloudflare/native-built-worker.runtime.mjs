@@ -3,6 +3,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import test from 'node:test';
+import './native-signed-ssr-fixture.test.mjs';
 import {
   runtimeExpectationProblems,
   runtimeOutcomeFailure,
@@ -289,6 +290,7 @@ async function qualifyMode(t, mode) {
     }
     assert.ok(signedCalls.some((path) => path.startsWith('/auth/v1/')));
     assert.ok(signedCalls.includes('/rest/v1/workspaces'));
+    assert.ok(signedCalls.includes('/rest/v1/workspace_secrets'));
     assert.ok(
       signedCalls.includes(
         `/api/workspaces/${fixtureWorkspaceId}/finance/overview`
@@ -395,10 +397,14 @@ async function qualifyMode(t, mode) {
   );
 }
 
-test('emitted Finance Worker: auth redirects, API ownership and action admission', {
-  timeout: 180000,
-}, async (t) => {
-  for (const mode of modes) {
-    await t.test(mode.origin, (modeTest) => qualifyMode(modeTest, mode));
+test(
+  'emitted Finance Worker: auth redirects, API ownership and action admission',
+  {
+    timeout: 180000,
+  },
+  async (t) => {
+    for (const mode of modes) {
+      await t.test(mode.origin, (modeTest) => qualifyMode(modeTest, mode));
+    }
   }
-});
+);

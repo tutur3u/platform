@@ -130,7 +130,6 @@ export function CategoryBreakdownDialog({
   }, [open, initialType]);
 
   // Reset hidden categories when type changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset when type changes
   useEffect(() => {
     setHiddenCategories(new Set());
   }, [type]);

@@ -5,6 +5,13 @@ import {
 } from './workspace-route-permissions';
 
 describe('workspace route permission mapping', () => {
+  it('shows CMS routes to editor-only members', () => {
+    for (const route of ['epm', 'external-projects']) {
+      expect(getWorkspaceRoutePermissionRequirements([route])).toContain(
+        'edit_external_projects'
+      );
+    }
+  });
   it('denies routes without a mapped permission by returning null', () => {
     expect(getWorkspaceRoutePermissionRequirements([])).toBeNull();
     expect(
