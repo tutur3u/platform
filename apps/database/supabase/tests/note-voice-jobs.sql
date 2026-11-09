@@ -25,8 +25,6 @@ select throws_ok($q$ update private.note_voice_jobs set status='completed' $q$,'
 select throws_ok($q$ delete from private.note_voice_jobs $q$,'42501',null,'authenticated cannot bypass checked deletion');
 select throws_ok($q$ insert into private.note_voice_jobs(id,ws_id,user_id,input_hash,timezone) values(gen_random_uuid(),'00005827-0000-4000-8000-000000000011','00005827-0000-4000-8000-000000000001',repeat('c',64),'UTC') $q$,'42501',null,'authenticated cannot bypass billing to create jobs');
 reset role;
-set local role authenticated;
-reset role;
 set local role anon;
 select throws_ok($q$ select * from private.note_voice_jobs $q$,'42501',null,'anonymous cannot read voice artifacts');
 reset role;
