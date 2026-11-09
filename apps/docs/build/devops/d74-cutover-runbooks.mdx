@@ -271,3 +271,12 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Vercel rollback pin | dpl_6ReHrAjbW7ahNKyL1ssgDZEdGeq4 |
 | Packet | `git-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs git https://git.tuturuuu.com` |
+## Inventory
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-inventory` |
+| Hosts | inventory.tuturuuu.com |
+| Artifact | inventory-cloudflare.yaml, job cutover-build (`inventory-cutover-<sha>`) |
+| Vercel rollback pin | dpl_2qe5xFZEHUSNbbmm3sR6TgbHDG5h |
+| Smoke | `node scripts/cutover-smoke.mjs inventory https://inventory.tuturuuu.com` |
