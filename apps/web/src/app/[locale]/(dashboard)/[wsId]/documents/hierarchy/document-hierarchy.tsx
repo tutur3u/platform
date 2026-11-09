@@ -17,7 +17,7 @@ import {
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useRef, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ancestors,
   documentHierarchyQueryKey,
@@ -67,6 +67,10 @@ export function DocumentHierarchy({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moveState, setMoveState] = useState<MoveState>({ kind: 'idle' });
   const moving = useRef(false);
+  const keyboardOrigin = useRef<{
+    id: string;
+    navigation: HTMLElement | null;
+  } | null>(null);
   const dragged = useRef<string | null>(null);
   const parents = selectedId ? ancestors(documents, selectedId) : [];
   const openIds = new Set([
@@ -92,7 +96,11 @@ export function DocumentHierarchy({
       }
     });
   };
-  async function move(id: string, result: MoveResult) {
+  async function move(
+    id: string,
+    result: MoveResult,
+    focusHandle?: HTMLButtonElement
+  ) {
     if (
       !canManage ||
       moving.current ||
@@ -115,6 +123,9 @@ export function DocumentHierarchy({
         position: result.previousPosition ?? document.position ?? null,
       },
     };
+    keyboardOrigin.current = focusHandle
+      ? { id, navigation: focusHandle.closest<HTMLElement>('nav') }
+      : null;
     moving.current = true;
     setMoveState({ kind: 'pending' });
     try {
@@ -166,6 +177,18 @@ export function DocumentHierarchy({
     moveState.kind === 'error' ||
     query.isFetching ||
     query.isError;
+  useLayoutEffect(() => {
+    if (disabled) return;
+    const origin = keyboardOrigin.current;
+    keyboardOrigin.current = null;
+    if (!origin?.navigation?.isConnected) return;
+    const handle = Array.from(
+      origin.navigation.querySelectorAll<HTMLButtonElement>(
+        'button[data-document-id]'
+      )
+    ).find((button) => button.dataset.documentId === origin.id);
+    if (handle && !handle.disabled) handle.focus({ preventScroll: true });
+  }, [disabled]);
   const navigation = (
     <nav aria-label={t('pages')} className="flex min-h-0 flex-col gap-3">
       {canManage && (
@@ -265,6 +288,7 @@ export function DocumentHierarchy({
                       className="size-8 shrink-0"
                       disabled={disabled}
                       draggable={!disabled}
+                      data-document-id={document.id}
                       aria-label={t('move-document', {
                         name: document.name ?? t('untitled'),
                       })}
@@ -298,7 +322,8 @@ export function DocumentHierarchy({
                               id: document.id,
                               direction,
                               canManage,
-                            })
+                            }),
+                            event.currentTarget
                           );
                         }
                       }}
