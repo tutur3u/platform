@@ -22,6 +22,9 @@ WORKER = "tuturuuu-pay-vite-staging"
 
 
 class PayArtifactTest(unittest.TestCase):
+    def tearDown(self):
+        wrapper.PRODUCTION = False
+
     def fixture(self):
         temporary = tempfile.TemporaryDirectory(prefix="pay-output-fixture-")
         self.addCleanup(temporary.cleanup)
@@ -72,6 +75,42 @@ class PayArtifactTest(unittest.TestCase):
                 with patch.object(wrapper, 'PROFILE', profile):
                     with self.assertRaisesRegex(RuntimeError, 'requires Polar sandbox'):
                         wrapper.load()
+
+    def production_output(self, *, web="https://tuturuuu.com", vars_extra=None, client="client", server="server"):
+        wrapper.PRODUCTION = True
+        app, config = self.fixture()
+        config["vars"] = {"NEXT_PUBLIC_WEB_APP_URL": web, **(vars_extra or {})}
+        config_path = app / "dist/native/wrangler.json"
+        config_path.write_text(json.dumps(config))
+        client_path = app / "dist/client/assets/entry.js"
+        client_path.write_text(client)
+        server_path = app / "dist/native/index.js"
+        server_path.write_text(server)
+        return app, {"config": config_path, "assets": app / "dist/client", "main": server_path}
+
+    def test_production_profile_accepts_production_output(self):
+        app, output = self.production_output()
+        wrapper.reject_staging_production(app, output)
+
+    def test_production_profile_rejects_staging_web_host(self):
+        app, output = self.production_output(web="https://web.tutur3u.com")
+        with self.assertRaisesRegex(ValueError, "NEXT_PUBLIC_WEB_APP_URL"):
+            wrapper.reject_staging_production(app, output)
+
+    def test_production_profile_rejects_staging_host_in_built_files(self):
+        app, output = self.production_output(client="https://web.tutur3u.com")
+        with self.assertRaisesRegex(ValueError, "staging marker"):
+            wrapper.reject_staging_production(app, output)
+
+    def test_production_profile_rejects_staging_supabase_project_ref(self):
+        app, output = self.production_output(server="https://fxefojytwimjiqxseqag.supabase.co")
+        with self.assertRaisesRegex(ValueError, "staging marker"):
+            wrapper.reject_staging_production(app, output)
+
+    def test_production_profile_rejects_polar_sandbox_server(self):
+        app, output = self.production_output(vars_extra={"POLAR_SERVER": "https://sandbox-api.polar.sh"})
+        with self.assertRaisesRegex(ValueError, "Polar server"):
+            wrapper.reject_staging_production(app, output)
 
     def test_seal_pack_restore_round_trip(self):
         app, _ = self.fixture()
