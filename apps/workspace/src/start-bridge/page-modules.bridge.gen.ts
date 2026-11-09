@@ -553,6 +553,14 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/workspace-setup/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/workspace-setup/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/page.tsx': {
     page: () => import('../app/[locale]/page'),
     layouts: [

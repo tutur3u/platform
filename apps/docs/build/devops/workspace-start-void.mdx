@@ -51,9 +51,10 @@ path until an explicit cutover PR admits the app.
 | Notifications | `(dashboard)/[wsId]/notifications` | Carved. |
 | Progress | `(dashboard)/[wsId]/progress` | Carved. |
 | QR generator | `(dashboard)/[wsId]/qr-generator` | Carved. Redirects to the QR app origin with the query preserved. |
+| Workspace setup | `(dashboard)/[wsId]/workspace-setup` | Carved. |
 | Locale root | `[locale]/page.tsx` (Workspace-owned) | Answers `404`. The locale-only path would otherwise match `/[wsId]` as a workspace named after the locale. Signed-in users never reach it because the proxy redirects them to their workspace. |
 | Redirected by the proxy | `workforce`, plus `finance`, `drive`, `mail`, `chat`, `time-tracker`, `meet`, `users`, `posts` and `forms` (satellite redirects in `src/proxy.ts`) | Nothing to carve. The proxy answers with a redirect to the owning app before any page renders. |
-| Not carved | `cron`, `external-projects`, `feedback`, `hive`, `inventory`, `workspace-setup`, `(dashboard)/personal-journal` | Workspace answers `404` for them, so a router in front of it must send only the carved patterns here. |
+| Not carved | `cron`, `external-projects`, `feedback`, `hive`, `inventory`, `(dashboard)/personal-journal` | Workspace answers `404` for them, so a router in front of it must send only the carved patterns here. |
 
 Run `bun run routes:check` after every carve. If it reports stale registries, run
 `bun ../../packages/start-bridge/src/codegen/cli.ts generate .`. The page module
