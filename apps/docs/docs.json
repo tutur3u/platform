@@ -191,6 +191,7 @@
                   "build/devops/wave1-cutover-packets",
                   "build/devops/mastermind-web",
                   "build/devops/tanstack-cloudflare-migration-inventory",
+                  "build/devops/worker-services-reconciliation",
                   "build/devops/playground-isolation-contract",
                   "build/devops/playground-cutover-packet",
                   "build/devops/contacts-start-candidate",
