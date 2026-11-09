@@ -192,6 +192,7 @@
                   "build/devops/mastermind-web",
                   "build/devops/tanstack-cloudflare-migration-inventory",
                   "build/devops/worker-services-reconciliation",
+                  "build/devops/app-coordination-secret-rollout",
                   "build/devops/playground-isolation-contract",
                   "build/devops/workspace-start-void",
                   "build/devops/external-start-void",
