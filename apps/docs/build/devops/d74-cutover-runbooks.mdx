@@ -228,6 +228,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Packet | `mind-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs mind https://mind.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Required secrets | Besides the coordination secret: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` and the variable `ABUSE_GUARD_BACKEND=upstash`. Missing any of them makes every request answer 500 (`required-secrets.ts`). |
 
 ## Not cut over tonight
 
