@@ -299,6 +299,14 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/changelog/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/changelog/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/documents/[documentId]/page'),
     layouts: [

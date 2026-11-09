@@ -38,6 +38,7 @@ export const pages = [
   { pattern: "/[wsId]/ai/executions", file: "src/app/[locale]/(dashboard)/[wsId]/ai/executions/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/ai/spark", file: "src/app/[locale]/(dashboard)/[wsId]/ai/spark/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/calendar", file: "src/app/[locale]/(dashboard)/[wsId]/calendar/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/changelog", file: "src/app/[locale]/(dashboard)/[wsId]/changelog/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/documents/[documentId]", file: "src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/documents", file: "src/app/[locale]/(dashboard)/[wsId]/documents/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/habits/[[...slug]]", file: "src/app/[locale]/(dashboard)/[wsId]/habits/[[...slug]]/page.tsx", defaults: { "locale": "en" } },
