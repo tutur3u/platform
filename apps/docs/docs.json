@@ -207,6 +207,7 @@
                   "build/devops/finance-pay-start",
                   "build/devops/pay-start",
                   "build/devops/pay-start-void",
+                  "build/devops/cms-start-void",
                   "build/devops/nova-inventory-start-bridge",
                   "build/devops/shortener-start-void",
                   "build/devops/storefront-start-void",
