@@ -16,7 +16,7 @@ production publication stays held in `tuturuuu.ci.ts` until a cutover PR.
 
 | Item | Value |
 | --- | --- |
-| Worker | `void.config.ts` emits the staging identity `tuturuuu-teach-vite-staging` (`TUTURUUU_NOINDEX=1`, `workers_dev` on). Deploy the production artifact under `tuturuuu-teach` with the deploy-time name override, `workers_dev` off and `TUTURUUU_NOINDEX` unset. The config declares no routes |
+| Worker | `void.config.ts` emits the staging identity `tuturuuu-teach-vite-staging` (`TUTURUUU_NOINDEX=1`, `workers_dev` on). The `teach-cutover-artifact` job emits a production artifact named `tuturuuu-teach`, with `workers_dev` and preview URLs off, no routes, and `TUTURUUU_NOINDEX=0`. The config declares no routes |
 | Hosts | Root: `teach.tuturuuu.com`. Mount: `tuturuuu.com/teach` |
 | Bindings | `ASSETS` (static assets, worker-first, no SPA fallback) |
 | Vars (names) | `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`), `TUTURUUU_NOINDEX` (staging only) |
@@ -27,7 +27,7 @@ production publication stays held in `tuturuuu.ci.ts` until a cutover PR.
 
 Unlike Track and Tasks, `start-bridge.config.ts` does not set
 `unknownHost: 'reject'`, so the Worker is not restricted to its two declared hosts.
-Keep `workers_dev` off and attach only the Teach route in production.
+The cutover artifact keeps `workers_dev` off and declares no routes; attach only the Teach route during the production cutover.
 
 ## Rollback
 
