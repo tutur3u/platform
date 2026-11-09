@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import type React from 'react';
 import Footer from '@/components/layouts/Footer';
+import { QueryProvider } from '@/components/query-provider';
 import {
   getClientMessages,
   MARKETING_CLIENT_MESSAGE_NAMESPACES,
@@ -26,17 +27,22 @@ export default async function Layout({ children }: LayoutProps) {
 
   return (
     <NextIntlClientProvider messages={messages}>
-      {/* Display + mono faces are scoped to marketing so product surfaces keep
+      <QueryProvider>
+        {/* Display + mono faces are scoped to marketing so product surfaces keep
           the app font untouched. */}
-      <div className={cn('contents', marketingFontVariables)}>
-        <ScrollToTop />
-        <MarketingNavbar />
-        {/* pt clears the floating pill navbar (top offset + 3.5rem bar) */}
-        <div className="flex flex-col overflow-x-clip pt-20" id="main-content">
-          {children}
+        <div className={cn('contents', marketingFontVariables)}>
+          <ScrollToTop />
+          <MarketingNavbar />
+          {/* pt clears the floating pill navbar (top offset + 3.5rem bar) */}
+          <div
+            className="flex flex-col overflow-x-clip pt-20"
+            id="main-content"
+          >
+            {children}
+          </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </QueryProvider>
     </NextIntlClientProvider>
   );
 }

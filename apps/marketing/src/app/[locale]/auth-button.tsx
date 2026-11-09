@@ -1,6 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
@@ -16,13 +15,7 @@ export function AuthButton({
   onClick?: () => void;
   className?: string;
 }) {
-  const supabase = createClient();
-
   const signOut = async () => {
-    await supabase.auth.signOut({
-      scope: 'local',
-    });
-
     return redirect('/login');
   };
 

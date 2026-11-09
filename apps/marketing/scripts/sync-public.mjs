@@ -23,7 +23,8 @@ const ALWAYS = [
 function sourceFiles(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(directory, entry.name);
-    if (entry.isDirectory()) return entry.name === 'node_modules' ? [] : sourceFiles(full);
+    if (entry.isDirectory())
+      return entry.name === 'node_modules' ? [] : sourceFiles(full);
     return /\.(ts|tsx|css)$/u.test(entry.name) ? [full] : [];
   });
 }

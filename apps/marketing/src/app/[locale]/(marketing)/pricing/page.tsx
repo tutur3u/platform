@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   robots: NO_INDEX_ROBOTS,
 };
 
-function PricingPage() {
+async function PricingPage() {
   redirect('/?hash-nav=1#pricing');
 }
 

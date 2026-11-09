@@ -3,7 +3,15 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { request as httpRequest } from 'node:http';
-import { cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import {
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
@@ -21,34 +29,127 @@ import { effectiveWorkerConfig } from '../../../scripts/start-bridge-codemod/wor
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
-const WORKER = "tuturuuu-marketing-vite-staging";
-const PUBLIC_FILES = ["android-chrome-192x192.png", "android-chrome-512x512.png", "apple-touch-icon.png", "favicon-16x16.png", "favicon-32x32.png", "favicon.ico", "logo.svg", "media/background/transparent-light.png", "media/background/transparent.png", "media/branding/brand-mark-dark.svg", "media/branding/brand-mark-light.svg", "media/branding/gaming.svg", "media/branding/mira.svg", "media/branding/nova.svg", "media/branding/rewise.svg", "media/branding/tudo.svg", "media/branding/tuturuuu.svg", "media/google-for-startups-transparent.png", "media/logos/og-image.jpg", "media/logos/transparent.png", "media/marketing/events/women-in-tech/anh-thu-first-women-contributor.jpg", "media/marketing/events/women-in-tech/dai-rbac-project-leader.jpg", "media/marketing/events/women-in-tech/empowering-women-in-stem-from-student-club.jpg", "media/marketing/events/women-in-tech/empowering-women-led-startup-partners-from-allmind-2.jpeg", "media/marketing/events/women-in-tech/experiences-with-women-in-tech-peers-from-vietnam-to-the-world-2.jpg", "media/marketing/events/women-in-tech/experiences-with-women-in-tech-peers-from-vietnam-to-the-world.jpg", "media/marketing/events/women-in-tech/first-women-coo-with-first-women-people-and-operations-coordinator.jpeg", "media/marketing/events/women-in-tech/founder.jpg", "media/marketing/events/women-in-tech/henry-coo-of-tuturuuu.jpg", "media/marketing/events/women-in-tech/khang-junior-software-engineer-at-tuturuuu.jpg", "media/marketing/events/women-in-tech/khoi-software-engineer-intern-at-tuturuuu.jpg", "media/marketing/events/women-in-tech/linh-dan-first-remote-women-software-engineer-intern.jpeg", "media/marketing/events/women-in-tech/next-generation-of-women-marketing-leader.jpg", "media/marketing/events/women-in-tech/nhu-rbac-project-assistant.jpg", "media/marketing/events/women-in-tech/og.jpg", "media/marketing/events/women-in-tech/phuc-founder-ceo-of-tuturuuu.jpg", "media/marketing/events/women-in-tech/professor-iwona-miliszewska-dean-of-sset-rmit.jpg", "media/marketing/events/women-in-tech/rbac-website-designed-and-developed-by-mai-nhung.jpg", "media/marketing/events/women-in-tech/sam-software-engineer-at-tuturuuu.jpg", "media/marketing/events/women-in-tech/soki-startup-another-women-led-startup-also-tuturuuus-neighbor-inside-spark-hub-community.jpg", "media/marketing/events/women-in-tech/spark-hub-program-coordinator.jpeg", "media/marketing/events/women-in-tech/team.jpg", "media/marketing/events/women-in-tech/tuturuuu-male-colleagues.jpg", "media/partners/allmind.jpg", "media/partners/exocorpse.png", "media/partners/google-for-startups.jpg", "media/partners/rbac.jpg", "media/partners/rmitnct.jpg", "media/partners/soki.jpg", "media/partners/sparkhub.jpg", "media/partners/upskii.png", "media/privacy/product-tour.jpg"];
+const WORKER = 'tuturuuu-marketing-vite-staging';
+const PUBLIC_FILES = [
+  'android-chrome-192x192.png',
+  'android-chrome-512x512.png',
+  'apple-touch-icon.png',
+  'favicon-16x16.png',
+  'favicon-32x32.png',
+  'favicon.ico',
+  'logo.svg',
+  'media/background/transparent-light.png',
+  'media/background/transparent.png',
+  'media/branding/brand-mark-dark.svg',
+  'media/branding/brand-mark-light.svg',
+  'media/branding/gaming.svg',
+  'media/branding/mira.svg',
+  'media/branding/nova.svg',
+  'media/branding/rewise.svg',
+  'media/branding/tudo.svg',
+  'media/branding/tuturuuu.svg',
+  'media/google-for-startups-transparent.png',
+  'media/logos/og-image.jpg',
+  'media/logos/transparent.png',
+  'media/marketing/events/women-in-tech/anh-thu-first-women-contributor.jpg',
+  'media/marketing/events/women-in-tech/dai-rbac-project-leader.jpg',
+  'media/marketing/events/women-in-tech/empowering-women-in-stem-from-student-club.jpg',
+  'media/marketing/events/women-in-tech/empowering-women-led-startup-partners-from-allmind-2.jpeg',
+  'media/marketing/events/women-in-tech/experiences-with-women-in-tech-peers-from-vietnam-to-the-world-2.jpg',
+  'media/marketing/events/women-in-tech/experiences-with-women-in-tech-peers-from-vietnam-to-the-world.jpg',
+  'media/marketing/events/women-in-tech/first-women-coo-with-first-women-people-and-operations-coordinator.jpeg',
+  'media/marketing/events/women-in-tech/founder.jpg',
+  'media/marketing/events/women-in-tech/henry-coo-of-tuturuuu.jpg',
+  'media/marketing/events/women-in-tech/khang-junior-software-engineer-at-tuturuuu.jpg',
+  'media/marketing/events/women-in-tech/khoi-software-engineer-intern-at-tuturuuu.jpg',
+  'media/marketing/events/women-in-tech/linh-dan-first-remote-women-software-engineer-intern.jpeg',
+  'media/marketing/events/women-in-tech/next-generation-of-women-marketing-leader.jpg',
+  'media/marketing/events/women-in-tech/nhu-rbac-project-assistant.jpg',
+  'media/marketing/events/women-in-tech/og.jpg',
+  'media/marketing/events/women-in-tech/phuc-founder-ceo-of-tuturuuu.jpg',
+  'media/marketing/events/women-in-tech/professor-iwona-miliszewska-dean-of-sset-rmit.jpg',
+  'media/marketing/events/women-in-tech/rbac-website-designed-and-developed-by-mai-nhung.jpg',
+  'media/marketing/events/women-in-tech/sam-software-engineer-at-tuturuuu.jpg',
+  'media/marketing/events/women-in-tech/soki-startup-another-women-led-startup-also-tuturuuus-neighbor-inside-spark-hub-community.jpg',
+  'media/marketing/events/women-in-tech/spark-hub-program-coordinator.jpeg',
+  'media/marketing/events/women-in-tech/team.jpg',
+  'media/marketing/events/women-in-tech/tuturuuu-male-colleagues.jpg',
+  'media/partners/allmind.jpg',
+  'media/partners/exocorpse.png',
+  'media/partners/google-for-startups.jpg',
+  'media/partners/rbac.jpg',
+  'media/partners/rmitnct.jpg',
+  'media/partners/soki.jpg',
+  'media/partners/sparkhub.jpg',
+  'media/partners/upskii.png',
+  'media/privacy/product-tour.jpg',
+];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
-const EXPECTED = {"/legal/dpa":200,"/about":200,"/pricing":200,"/contact":200,"/":200,"/contributors":200,"/branding":200,"/women-in-tech":200,"/partners":200,"/careers":200,"/blog":200,"/solutions/education":200,"/products":200,"/products/tasks":200,"/privacy":200,"/security":200,"/security/bug-bounty":200,"/security/policy":200,"/terms":200};
+const EXPECTED = {
+  '/legal/dpa': 200,
+  '/about': 200,
+  '/pricing': { redirect: '/' },
+  '/contact': 200,
+  '/': 200,
+  '/contributors': 200,
+  '/branding': 200,
+  '/women-in-tech': 200,
+  '/partners': 200,
+  '/careers': 200,
+  '/blog': 200,
+  '/solutions/education': 200,
+  '/products': 200,
+  '/products/tasks': 200,
+  '/privacy': 200,
+  '/security': 200,
+  '/security/bug-bounty': 200,
+  '/security/policy': 200,
+  '/terms': 200,
+};
 // Response-policy probes (start-bridge.routes.json `runtimeProbes`).
-const POLICY_PROBES = [{"kind":"page","path":"/legal/dpa"},{"kind":"api","skip":"marketing owns no API routes; /api/* is served by the web app"},{"kind":"notFound","path":"/__native-smoke-missing__"}];
+const POLICY_PROBES = [
+  { kind: 'page', path: '/legal/dpa' },
+  {
+    kind: 'api',
+    skip: 'marketing owns no API routes; /api/* is served by the web app',
+  },
+  { kind: 'notFound', path: '/__native-smoke-missing__' },
+];
 // The Worker's mounts: the generated defaults plus the app-owned
 // start-bridge.config.ts overrides, exactly as cloudflare/worker.ts spreads
 // them (loaded with Node's type stripping).
-const DEFAULT_MOUNTS = {"rootHosts":["marketing.tuturuuu.com"],"mountHosts":["tuturuuu.com"],"basePath":"/marketing"};
+const DEFAULT_MOUNTS = {
+  rootHosts: ['marketing.tuturuuu.com'],
+  mountHosts: ['tuturuuu.com'],
+  basePath: '/marketing',
+};
 const { default: appConfig } = await import(
   pathToFileURL(join(app, 'start-bridge.config.ts')).href
 );
 const MOUNTS = { ...DEFAULT_MOUNTS, ...appConfig.mounts };
 // The Worker settings the codemod emitted from start-bridge.config.ts `worker`.
-const WORKER_CONFIG = {"workersDev":true,"compatibilityFlags":["nodejs_compat","global_fetch_strictly_public"]};
+const WORKER_CONFIG = {
+  workersDev: true,
+  compatibilityFlags: ['nodejs_compat', 'global_fetch_strictly_public'],
+};
 const APEX = 'tuturuuu.com';
-const MOUNTED = (MOUNTS.mountHosts ?? []).some((host) => host.toLowerCase() === APEX);
-const BASE = (MOUNTS.basePath ?? "/marketing").replace(/\/+$/u, '');
+const MOUNTED = (MOUNTS.mountHosts ?? []).some(
+  (host) => host.toLowerCase() === APEX
+);
+const BASE = (MOUNTS.basePath ?? '/marketing').replace(/\/+$/u, '');
 
 async function sha256(path) {
-  return createHash('sha256').update(await readFile(path)).digest('hex');
+  return createHash('sha256')
+    .update(await readFile(path))
+    .digest('hex');
 }
 
 // Run a disposable copy so runtime state can never touch the sealed output.
 async function stageArtifact() {
   const { configPath, config } = readNativeRuntimeConfig(app);
-  const scratch = await realpath(await mkdtemp(join(tmpdir(), 'marketing-native-')));
+  const scratch = await realpath(
+    await mkdtemp(join(tmpdir(), 'marketing-native-'))
+  );
   await cp(join(app, 'dist'), join(scratch, 'dist'), {
     recursive: true,
     verbatimSymlinks: true,
@@ -66,210 +167,270 @@ async function stageArtifact() {
   };
 }
 
-test('emitted marketing Worker serves its root, mount and unknown paths', {
-  timeout: 120000,
-}, async (t) => {
-  assert.equal(
-    process.env.CI,
-    'true',
-    'Run only after the owning CI native build, never as a source-only unit test'
-  );
-  const source = process.env.CI_SOURCE_SHA;
-  assert.match(source ?? '', /^[a-f0-9]{40}$/);
-  const staged = await stageArtifact();
-  t.after(() => rm(staged.scratch, { recursive: true, force: true }));
-  const { config } = staged;
-  assert.equal(config.name, WORKER);
-  assert.equal(config.no_bundle, true);
-  assert.equal(config.assets.run_worker_first, true);
-  assert.deepEqual(
-    effectiveWorkerConfig(appConfig, DEFAULT_MOUNTS),
-    WORKER_CONFIG,
-    'start-bridge.config.ts changed since the codemod ran: re-run it'
-  );
-  assert.deepEqual(config.compatibility_flags, WORKER_CONFIG.compatibilityFlags);
-  assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
-  assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
-  for (const name of PUBLIC_FILES)
+test(
+  'emitted marketing Worker serves its root, mount and unknown paths',
+  {
+    timeout: 120000,
+  },
+  async (t) => {
     assert.equal(
-      await sha256(join(app, 'dist/client', name)),
-      await sha256(join(app, 'public', name)),
-      `Public file drift: ${name}`
+      process.env.CI,
+      'true',
+      'Run only after the owning CI native build, never as a source-only unit test'
+    );
+    const source = process.env.CI_SOURCE_SHA;
+    assert.match(source ?? '', /^[a-f0-9]{40}$/);
+    const staged = await stageArtifact();
+    t.after(() => rm(staged.scratch, { recursive: true, force: true }));
+    const { config } = staged;
+    assert.equal(config.name, WORKER);
+    assert.equal(config.no_bundle, true);
+    assert.equal(config.assets.run_worker_first, true);
+    assert.deepEqual(
+      effectiveWorkerConfig(appConfig, DEFAULT_MOUNTS),
+      WORKER_CONFIG,
+      'start-bridge.config.ts changed since the codemod ran: re-run it'
+    );
+    assert.deepEqual(
+      config.compatibility_flags,
+      WORKER_CONFIG.compatibilityFlags
+    );
+    assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
+    assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
+    for (const name of PUBLIC_FILES)
+      assert.equal(
+        await sha256(join(app, 'dist/client', name)),
+        await sha256(join(app, 'public', name)),
+        `Public file drift: ${name}`
+      );
+
+    // Every outbound request is denied and recorded; nothing leaves the host.
+    const egress = [];
+    const sdk = require('wrangler');
+    const worker = await sdk.unstable_startWorker({
+      config: staged.configPath,
+      envFiles: [staged.envFile],
+      sendMetrics: false,
+      bindings: {
+        INTERNAL_WEB_API_ORIGIN: {
+          type: 'plain_text',
+          value: 'https://central.invalid',
+        },
+      },
+      build: { bundle: false, processEntrypoint: false },
+      dev: {
+        remote: false,
+        watch: false,
+        persist: false,
+        inspector: false,
+        liveReload: false,
+        generateTypes: false,
+        enableContainers: false,
+        registry: staged.registry,
+        server: { hostname: '127.0.0.1', port: 0 },
+        inferOriginFromRoutes: false,
+        routeRequestsByRoutes: false,
+        auth: () => {
+          throw new Error(
+            'Provider auth forbidden in the marketing smoke test'
+          );
+        },
+        outboundService: (request) => {
+          egress.push(new URL(request.url).origin);
+          return new Response('{"error":"denied by the smoke test"}', {
+            status: 401,
+            headers: { 'content-type': 'application/json' },
+          });
+        },
+      },
+    });
+    t.after(() => worker.dispose());
+    await worker.ready;
+    const origin = (await worker.url).origin;
+    // Every probe sends a raw Host header (node:http; fetch() drops it), so no
+    // dev origin or canonical-host default can turn an apex or unknown-host
+    // probe into a canonical-root request.
+    const call = (path, host) =>
+      new Promise((resolve, reject) => {
+        const target = new URL(origin);
+        httpRequest(
+          { host: target.hostname, port: target.port, path, headers: { host } },
+          (response) => {
+            const chunks = [];
+            response.on('data', (chunk) => chunks.push(chunk));
+            response.on('end', () =>
+              resolve({
+                status: response.statusCode ?? 0,
+                location: response.headers.location ?? null,
+                headers: response.headers,
+                body: Buffer.concat(chunks).toString('utf8'),
+              })
+            );
+          }
+        )
+          .on('error', reject)
+          .end();
+      });
+    const ROOT_HOST = MOUNTS.rootHosts[0];
+    const get = (path) => call(path, ROOT_HOST);
+
+    await t.test(
+      'public pages answer as start-bridge.routes.json expects',
+      async () => {
+        assert.deepEqual(runtimeExpectationProblems(EXPECTED), []);
+        for (const [path, expected] of Object.entries(EXPECTED)) {
+          const response = await get(path);
+          const failure = runtimeOutcomeFailure({
+            path,
+            expected,
+            ...response,
+            origin: `http://${ROOT_HOST}`,
+          });
+          assert.equal(failure, null, failure ?? '');
+        }
+      }
     );
 
-  // Every outbound request is denied and recorded; nothing leaves the host.
-  const egress = [];
-  const sdk = require('wrangler');
-  const worker = await sdk.unstable_startWorker({
-    config: staged.configPath,
-    envFiles: [staged.envFile],
-    sendMetrics: false,
-    bindings: {
-      INTERNAL_WEB_API_ORIGIN: { type: 'plain_text', value: 'https://central.invalid' },
-    },
-    build: { bundle: false, processEntrypoint: false },
-    dev: {
-      remote: false,
-      watch: false,
-      persist: false,
-      inspector: false,
-      liveReload: false,
-      generateTypes: false,
-      enableContainers: false,
-      registry: staged.registry,
-      server: { hostname: '127.0.0.1', port: 0 },
-      inferOriginFromRoutes: false,
-      routeRequestsByRoutes: false,
-      auth: () => {
-        throw new Error('Provider auth forbidden in the marketing smoke test');
-      },
-      outboundService: (request) => {
-        egress.push(new URL(request.url).origin);
-        return new Response('{"error":"denied by the smoke test"}', {
-          status: 401,
-          headers: { 'content-type': 'application/json' },
-        });
-      },
-    },
-  });
-  t.after(() => worker.dispose());
-  await worker.ready;
-  const origin = (await worker.url).origin;
-  // Every probe sends a raw Host header (node:http; fetch() drops it), so no
-  // dev origin or canonical-host default can turn an apex or unknown-host
-  // probe into a canonical-root request.
-  const call = (path, host) =>
-    new Promise((resolve, reject) => {
-      const target = new URL(origin);
-      httpRequest(
-        { host: target.hostname, port: target.port, path, headers: { host } },
-        (response) => {
-          const chunks = [];
-          response.on('data', (chunk) => chunks.push(chunk));
-          response.on('end', () =>
-            resolve({
-              status: response.statusCode ?? 0,
-              location: response.headers.location ?? null,
-              headers: response.headers,
-              body: Buffer.concat(chunks).toString('utf8'),
-            })
+    await t.test(
+      'every configured root host serves the root page',
+      async () => {
+        for (const host of MOUNTS.rootHosts) {
+          const failure = runtimeOutcomeFailure({
+            path: '/',
+            expected: EXPECTED['/'],
+            ...(await call('/', host)),
+            origin: `http://${host}`,
+          });
+          assert.equal(failure, null, `${host}: ${failure}`);
+        }
+      }
+    );
+
+    if (MOUNTED) {
+      await t.test(
+        'the apex mount serves every declared page alike',
+        async () => {
+          for (const [path, expected] of Object.entries(EXPECTED)) {
+            const response = await call(mountedPath(BASE, path), APEX);
+            const failure = runtimeOutcomeFailure({
+              path,
+              expected,
+              ...response,
+              origin: `http://${APEX}`,
+              base: BASE,
+            });
+            assert.equal(failure, null, failure ?? '');
+          }
+        }
+      );
+    } else {
+      await t.test(
+        'a root-only app rejects the apex before any app code runs',
+        async () => {
+          assert.equal(
+            MOUNTS.unknownHost,
+            'reject',
+            'a root-only app (no tuturuuu.com mount) must set mounts.unknownHost to "reject"'
+          );
+          const probes = [
+            ...new Set(
+              Object.keys(EXPECTED).map((path) => mountedPath(BASE, path))
+            ),
+            '/',
+          ].map((path) => [APEX, path]);
+          probes.push(['unknown-host.invalid', '/']);
+          for (const [host, path] of probes) {
+            const before = egress.length;
+            const response = await call(path, host);
+            // The bridge's own rejection, not an app page or an app 404.
+            assert.equal(
+              response.status,
+              404,
+              `${host}${path}: ${response.status}`
+            );
+            assert.equal(
+              response.body,
+              'Not Found',
+              `${host}${path}: app content`
+            );
+            assert.equal(egress.length, before, `${host}${path}: egress`);
+          }
+        }
+      );
+    }
+
+    await t.test('an unknown path is not a server error', async () => {
+      const response = await get('/__native-smoke-missing__');
+      assert.ok(response.status < 500, String(response.status));
+    });
+
+    await t.test(
+      'the response policy covers a rendered page, an API response and a 404',
+      async () => {
+        // Real responses only: a redirect or an error never stands in for a page.
+        let executed = 0;
+        for (const probe of POLICY_PROBES) {
+          if (probe.skip) {
+            // A skipped page or 404 probe is covered by the named app fixture,
+            // which test:runtime runs alongside this file.
+            if (probe.fixture) {
+              // A distinct, app-owned file that test:runtime's glob selects.
+              assert.match(
+                probe.fixture,
+                FIXTURE,
+                `${probe.kind}: ${probe.fixture} is not run by test:runtime`
+              );
+              assert.notEqual(
+                probe.fixture,
+                RUNTIME_GATE,
+                `${probe.kind}: the gate cannot replace its own probe`
+              );
+              assert.ok(
+                existsSync(join(app, probe.fixture)),
+                `${probe.kind}: ${probe.fixture} is missing`
+              );
+            }
+            t.diagnostic(
+              `policy probe ${probe.kind} skipped (${probe.fixture ?? 'no fixture'}): ${probe.skip}`
+            );
+            continue;
+          }
+          executed += 1;
+          const { status, headers, body } = await get(probe.path);
+          const type = headers['content-type'] ?? '';
+          const where = `${probe.kind} ${probe.path} (${status} ${type})`;
+          if (probe.kind === 'api') {
+            assert.equal(status, 200, where);
+            assert.match(type, /application\/json/u, where);
+            assert.doesNotThrow(() => JSON.parse(body), where);
+          } else {
+            assert.equal(status, probe.kind === 'page' ? 200 : 404, where);
+            assert.match(type, /text\/html/u, where);
+            assert.match(body, /<html[\s>]/iu, `${where}: an HTML document`);
+          }
+          assert.match(
+            headers['cache-control'] ?? '',
+            /\bno-store\b/u,
+            `${where}: Cache-Control no-store`
+          );
+          assert.ok(headers['x-robots-tag'], `${where}: X-Robots-Tag`);
+          assert.equal(
+            headers['x-frame-options'],
+            'DENY',
+            `${where}: X-Frame-Options`
+          );
+          assert.match(
+            headers['content-security-policy'] ?? '',
+            /frame-ancestors 'none'/u,
+            `${where}: CSP frame-ancestors`
           );
         }
-      )
-        .on('error', reject)
-        .end();
-    });
-  const ROOT_HOST = MOUNTS.rootHosts[0];
-  const get = (path) => call(path, ROOT_HOST);
-
-  await t.test('public pages answer as start-bridge.routes.json expects', async () => {
-    assert.deepEqual(runtimeExpectationProblems(EXPECTED), []);
-    for (const [path, expected] of Object.entries(EXPECTED)) {
-      const response = await get(path);
-      const failure = runtimeOutcomeFailure({
-        path,
-        expected,
-        ...response,
-        origin: `http://${ROOT_HOST}`,
-      });
-      assert.equal(failure, null, failure ?? '');
-    }
-  });
-
-  await t.test('every configured root host serves the root page', async () => {
-    for (const host of MOUNTS.rootHosts) {
-      const failure = runtimeOutcomeFailure({
-        path: '/',
-        expected: EXPECTED['/'],
-        ...(await call('/', host)),
-        origin: `http://${host}`,
-      });
-      assert.equal(failure, null, `${host}: ${failure}`);
-    }
-  });
-
-  if (MOUNTED) {
-    await t.test('the apex mount serves every declared page alike', async () => {
-      for (const [path, expected] of Object.entries(EXPECTED)) {
-        const response = await call(mountedPath(BASE, path), APEX);
-        const failure = runtimeOutcomeFailure({
-          path,
-          expected,
-          ...response,
-          origin: `http://${APEX}`,
-          base: BASE,
-        });
-        assert.equal(failure, null, failure ?? '');
+        assert.ok(executed > 0, 'no response-policy probe ran');
       }
-    });
-  } else {
-    await t.test('a root-only app rejects the apex before any app code runs', async () => {
-      assert.equal(
-        MOUNTS.unknownHost,
-        'reject',
-        'a root-only app (no tuturuuu.com mount) must set mounts.unknownHost to "reject"'
-      );
-      const probes = [
-        ...new Set(Object.keys(EXPECTED).map((path) => mountedPath(BASE, path))),
-        '/',
-      ].map((path) => [APEX, path]);
-      probes.push(['unknown-host.invalid', '/']);
-      for (const [host, path] of probes) {
-        const before = egress.length;
-        const response = await call(path, host);
-        // The bridge's own rejection, not an app page or an app 404.
-        assert.equal(response.status, 404, `${host}${path}: ${response.status}`);
-        assert.equal(response.body, 'Not Found', `${host}${path}: app content`);
-        assert.equal(egress.length, before, `${host}${path}: egress`);
-      }
-    });
+    );
+
+    t.diagnostic(
+      `denied egress origins: ${[...new Set(egress)].join(', ') || 'none'}`
+    );
   }
-
-  await t.test('an unknown path is not a server error', async () => {
-    const response = await get('/__native-smoke-missing__');
-    assert.ok(response.status < 500, String(response.status));
-  });
-
-  await t.test('the response policy covers a rendered page, an API response and a 404', async () => {
-    // Real responses only: a redirect or an error never stands in for a page.
-    let executed = 0;
-    for (const probe of POLICY_PROBES) {
-      if (probe.skip) {
-        // A skipped page or 404 probe is covered by the named app fixture,
-        // which test:runtime runs alongside this file.
-        if (probe.fixture) {
-          // A distinct, app-owned file that test:runtime's glob selects.
-          assert.match(probe.fixture, FIXTURE, `${probe.kind}: ${probe.fixture} is not run by test:runtime`);
-          assert.notEqual(probe.fixture, RUNTIME_GATE, `${probe.kind}: the gate cannot replace its own probe`);
-          assert.ok(existsSync(join(app, probe.fixture)), `${probe.kind}: ${probe.fixture} is missing`);
-        }
-        t.diagnostic(`policy probe ${probe.kind} skipped (${probe.fixture ?? 'no fixture'}): ${probe.skip}`);
-        continue;
-      }
-      executed += 1;
-      const { status, headers, body } = await get(probe.path);
-      const type = headers['content-type'] ?? '';
-      const where = `${probe.kind} ${probe.path} (${status} ${type})`;
-      if (probe.kind === 'api') {
-        assert.equal(status, 200, where);
-        assert.match(type, /application\/json/u, where);
-        assert.doesNotThrow(() => JSON.parse(body), where);
-      } else {
-        assert.equal(status, probe.kind === 'page' ? 200 : 404, where);
-        assert.match(type, /text\/html/u, where);
-        assert.match(body, /<html[\s>]/iu, `${where}: an HTML document`);
-      }
-      assert.match(headers['cache-control'] ?? '', /\bno-store\b/u, `${where}: Cache-Control no-store`);
-      assert.ok(headers['x-robots-tag'], `${where}: X-Robots-Tag`);
-      assert.equal(headers['x-frame-options'], 'DENY', `${where}: X-Frame-Options`);
-      assert.match(
-        headers['content-security-policy'] ?? '',
-        /frame-ancestors 'none'/u,
-        `${where}: CSP frame-ancestors`
-      );
-    }
-    assert.ok(executed > 0, 'no response-policy probe ran');
-  });
-
-  t.diagnostic(`denied egress origins: ${[...new Set(egress)].join(', ') || 'none'}`);
-});
+);

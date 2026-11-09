@@ -41,11 +41,16 @@ const source = sourceFiles(path.join(root, 'src'))
   .map((file) => fs.readFileSync(file, 'utf8'))
   .join('\n');
 const quoted = (namespace) =>
-  new RegExp(`['"\`]${namespace.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}[.'"\`]`, 'u');
+  new RegExp(
+    `['"\`]${namespace.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}[.'"\`]`,
+    'u'
+  );
 
 // Namespaces read as properties of the imported catalog (`en.legalRedesign`).
 const propertyNamespaces = new Set(
-  [...source.matchAll(/\b(?:en|vi)\.([A-Za-z_][\w-]*)/gu)].map((m) => m[1])
+  [...source.matchAll(/\b(?:en|vi|messages)\.([A-Za-z_][\w-]*)/gu)].map(
+    (m) => m[1]
+  )
 );
 
 const check = process.argv.includes('--check');
@@ -57,9 +62,11 @@ for (const locale of ['en', 'vi']) {
   );
   const derived = {};
   for (const namespace of Object.keys(catalog).sort())
-    if (SHELL_NAMESPACES.includes(namespace) ||
+    if (
+      SHELL_NAMESPACES.includes(namespace) ||
       propertyNamespaces.has(namespace) ||
-      quoted(namespace).test(source))
+      quoted(namespace).test(source)
+    )
       derived[namespace] = catalog[namespace];
   for (const namespace of SHELL_NAMESPACES)
     if (!(namespace in derived))

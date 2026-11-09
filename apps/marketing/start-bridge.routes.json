@@ -18,7 +18,9 @@
   "runtime": {
     "/legal/dpa": 200,
     "/about": 200,
-    "/pricing": 200,
+    "/pricing": {
+      "redirect": "/"
+    },
     "/contact": 200,
     "/": 200,
     "/contributors": 200,
