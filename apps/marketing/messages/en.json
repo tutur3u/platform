@@ -527,6 +527,177 @@
     "weighted_score": "Weighted Score",
     "worst_performing": "Worst performing"
   },
+  "branding": {
+    "assetActions": {
+      "copiedPath": "Asset path copied",
+      "copyPath": "Copy asset path",
+      "downloadSvg": "SVG",
+      "pathCopied": "Copied {path}"
+    },
+    "assets": {
+      "brandMarkDark": {
+        "alt": "Tuturuuu wordmark for dark backgrounds",
+        "name": "For dark backgrounds"
+      },
+      "brandMarkLight": {
+        "alt": "Tuturuuu wordmark for light backgrounds",
+        "name": "For light backgrounds"
+      },
+      "description": "Use the source SVGs from the public branding library for press, product, partnership, and editorial placements.",
+      "eyebrow": "Asset library",
+      "gaming": {
+        "alt": "Tuturuuu Gaming mark",
+        "name": "Gaming"
+      },
+      "mira": {
+        "alt": "Mira AI mark",
+        "name": "Mira"
+      },
+      "nova": {
+        "alt": "Nova mark",
+        "name": "Nova"
+      },
+      "rewise": {
+        "alt": "Rewise mark",
+        "name": "Rewise"
+      },
+      "title": "Core marks and product symbols",
+      "tudo": {
+        "alt": "Tudo mark",
+        "name": "Tudo"
+      },
+      "tuturuuu": {
+        "alt": "Tuturuuu mark",
+        "name": "Tuturuuu"
+      }
+    },
+    "colorCopied": "Copied {color} to clipboard",
+    "colors": {
+      "description": "Our color palette reflects our brand values and ensures visual harmony across all platforms.",
+      "eyebrow": "Color system",
+      "primary": {
+        "energy": {
+          "description": "Dynamic and passionate approach to challenges",
+          "title": "Energy"
+        },
+        "growth": {
+          "description": "Sustainable development and continuous improvement",
+          "title": "Growth"
+        },
+        "impact": {
+          "description": "Making a real difference in people's lives",
+          "title": "Impact"
+        },
+        "innovation": {
+          "description": "Pushing boundaries with cutting-edge technology",
+          "title": "Innovation"
+        }
+      },
+      "primaryTitle": "Primary Colors",
+      "system": {
+        "backgroundDark": "Background Dark",
+        "backgroundLight": "Background Light",
+        "surfaceDark": "Surface Dark",
+        "surfaceLight": "Surface Light"
+      },
+      "systemTitle": "System Colors",
+      "title": "Color System"
+    },
+    "cta": {
+      "description": "For press, partnership, or co-marketing requests, contact us for reviewed usage guidance and expanded media assets.",
+      "primaryAction": "Request assets",
+      "secondaryAction": "Learn our story",
+      "title": "Need a reviewed media kit?"
+    },
+    "guidelines": {
+      "color": {
+        "rule1": "Use primary colors for key elements",
+        "rule2": "Maintain proper contrast ratios",
+        "rule3": "Follow accessibility guidelines",
+        "rule4": "Use system colors appropriately",
+        "title": "Color Application"
+      },
+      "description": "Follow these guidelines to maintain brand consistency across all applications.",
+      "eyebrow": "Usage rules",
+      "logo": {
+        "rule1": "Maintain clear space around logos",
+        "rule2": "Never alter the logo colors",
+        "rule3": "Use appropriate logo versions for different backgrounds",
+        "rule4": "Maintain minimum size requirements",
+        "title": "Logo Usage"
+      },
+      "title": "Usage Guidelines",
+      "typography": {
+        "rule1": "Maintain hierarchy in text elements",
+        "rule2": "Use appropriate font weights",
+        "rule3": "Ensure readability at all sizes",
+        "rule4": "Follow spacing guidelines",
+        "title": "Typography Rules"
+      }
+    },
+    "hero": {
+      "badge": "Brand Guidelines",
+      "description": "A practical source for Tuturuuu logos, product marks, colors, typography, and usage rules across public-facing touchpoints.",
+      "primaryAction": "Browse assets",
+      "secondaryAction": "Request media kit",
+      "title": "Tuturuuu",
+      "titleAccent": "Branding"
+    },
+    "logos": {
+      "mira": {
+        "description": "Our AI platform brand embodies intelligence, reliability, and innovation."
+      },
+      "tuturuuu": {
+        "description": "Our primary brand mark represents innovation, trust, and excellence."
+      }
+    },
+    "plate": {
+      "clearSpaceLabel": "Clear space",
+      "clearSpaceValue": "1x mark",
+      "formatLabel": "Format",
+      "minWidthLabel": "Min width"
+    },
+    "preview": {
+      "dark": "Dark",
+      "description": "Fullscreen preview for {name} across available background modes.",
+      "fullscreen": "Preview fullscreen",
+      "light": "Light",
+      "monoDark": "Mono dark",
+      "monoLight": "Mono light",
+      "title": "preview"
+    },
+    "summary": {
+      "assets": {
+        "description": "Wordmarks and product symbols are available as production-ready SVG files.",
+        "eyebrow": "01",
+        "title": "Canonical assets"
+      },
+      "colors": {
+        "description": "The palette balances blue, green, orange, and red for recognizability without visual noise.",
+        "eyebrow": "02",
+        "title": "Defined palette"
+      },
+      "rules": {
+        "description": "Clear usage notes help partners, editors, and product teams keep the brand consistent.",
+        "eyebrow": "03",
+        "title": "Practical guidance"
+      }
+    },
+    "typography": {
+      "description": "Our typeface selection ensures clarity and readability while maintaining brand consistency.",
+      "eyebrow": "Typography",
+      "inter": {
+        "usage": "Primary font for UI elements, headings, and body text"
+      },
+      "notoSans": {
+        "usage": "Multilingual support and extended character sets"
+      },
+      "sampleLatin": "Build calm, capable software for ambitious teams.",
+      "sampleVietnamese": "Xây dựng phần mềm rõ ràng cho đội ngũ tham vọng.",
+      "title": "Typography",
+      "weightsLabel": "weights"
+    }
+  },
   "breaks": {
     "break_after": "Break after {name}",
     "break_duration": "Break Duration",
