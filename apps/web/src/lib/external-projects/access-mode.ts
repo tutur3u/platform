@@ -1,8 +1,8 @@
 import type { AppCoordinationTokenClaims } from '@tuturuuu/auth/app-coordination';
 import type { PermissionsResult } from '@tuturuuu/utils/workspace-helper';
 
-// `edit` (save and privately preview CMS page drafts) is held by editors,
-// publishers and managers; the other modes keep their legacy meaning.
+// Editors can read the studio and save or privately preview page drafts.
+// Publication and content-model management retain separate grants.
 export type WorkspaceExternalProjectMode =
   | 'read'
   | 'edit'
@@ -15,13 +15,11 @@ export function hasWorkspaceExternalProjectPermission(
 ) {
   if (!permissions) return false;
   if (permissions.containsPermission('manage_external_projects')) return true;
-  if (mode === 'read') {
-    return permissions.containsPermission('publish_external_projects');
-  }
+
   if (mode === 'publish') {
     return permissions.containsPermission('publish_external_projects');
   }
-  if (mode === 'edit') {
+  if (mode === 'edit' || mode === 'read') {
     return (
       permissions.containsPermission('publish_external_projects') ||
       permissions.containsPermission('edit_external_projects')

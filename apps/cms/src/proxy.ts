@@ -32,6 +32,7 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 import {
+  hasCmsEditPermission,
   hasRootExternalProjectsAdminPermission,
   resolveWorkspaceExternalProjectBinding,
 } from './lib/external-projects/access';
@@ -336,13 +337,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
             const canAccessWorkspace =
               binding.enabled &&
               Boolean(binding.canonical_project) &&
-              (workspacePermissions?.containsPermission(
-                'manage_external_projects'
-              ) ||
-                workspacePermissions?.containsPermission(
-                  'publish_external_projects'
-                ) ||
-                isRootAdmin);
+              (hasCmsEditPermission(workspacePermissions) || isRootAdmin);
 
             return canAccessWorkspace ? workspace : null;
           })

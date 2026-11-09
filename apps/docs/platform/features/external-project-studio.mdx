@@ -97,6 +97,102 @@ workspace-scoped under `/{wsId}`; the root workspace uses the `internal` slug
 - CMS members data must load through external-project-aware `apps/web` API routes and `@tuturuuu/internal-api` helpers. Reads should authorize by CMS workspace access so app-session users do not hit workspace settings-route 403s; writes still respect member and role management permissions.
 - Use CMS copy in this area: team access, people, invites, access levels, member defaults, guest defaults, and Advanced access.
 
+## Onboard editors for the first site
+
+Use this runbook after the site-builder permission and publish changes have
+passed security review. Keep editor invitations on hold until
+the acceptance checks below pass on the deployed revision.
+
+### Verify the permission contract
+
+Verify the reviewed data/API contract before onboarding:
+
+- Confirm `edit_external_projects` exists in the permission enum and generated types.
+- Map **editor** to edit and preview; map **publisher** to edit, preview, and
+  `publish_external_projects`. Role names are labels; authorize by effective
+  permissions, workspace membership, and the enabled site connection.
+- Keep `manage_external_projects` for existing administrators. It currently
+  implies publish access; do not grant it to editors or add edit access to the
+  existing manage helper, which the publish helper also calls.
+- Add an edit authorization helper and policies for draft writes and private
+  preview. Deny non-members and permission lookup errors. Restrict page versions
+  and entries to the connected workspace and site.
+- Require publish permission for every public transition, including direct
+  status updates, bulk actions, imports, scheduling, and pointer changes.
+- Keep preview read-only. The legacy entry publish endpoint accepts
+  `eventKind: 'preview'` but writes `status: 'published'`; it cannot serve as
+  editor preview.
+- Commit the published version and its `workspace_external_project_publish_events`
+  record atomically. Include the authenticated actor, workspace, entry, site,
+  event kind, and version identity. A failed audit write must leave the public
+  version unchanged. The legacy store updates the entry before inserting the
+  event and does not provide that guarantee.
+
+The editor route and publish controls must consume the same permission contract
+as the API. Hiding a button does not authorize a request. Do not substitute an
+unrecognized permission string or a role-name comparison for the generated
+permission type and existing external-project access helpers.
+
+### Connect the workspace and configure access levels
+
+1. Have an authorized operator select the workspace for **first site** in the
+   internal CMS **Projects** console and enable its site connection.
+2. Open that workspace's **Members** page. Create the **editor** and
+   **publisher** access levels with the reviewed permissions above.
+3. Check member defaults, guest defaults, and every additional role. Remove
+   publishing grants from the editor's effective permissions before inviting.
+   Keep administrative, member-management, role-management, and billing grants
+   out of both content roles unless separately authorized.
+4. Record the selected workspace, site, role IDs, reviewed source revision, and
+   operator in the private operations record. Keep real IDs and addresses out
+   of source control.
+
+### Invite an editor with an access level
+
+1. In **Members**, select **Invite**, enter the approved address, and select
+   **editor**. Use an operator authorized to manage members and roles.
+2. Submit through the existing CMS invitation flow. It uses
+   `inviteWorkspaceExternalProjectMembers(workspaceId, emails, { roleIds })`
+   from `@tuturuuu/internal-api` and sends `POST` to
+   `/api/v1/workspaces/{wsId}/external-projects/members/invite`.
+3. Inspect each result in `results` and confirm `successCount`. A successful
+   HTTP response alone does not mean every invitation succeeded. Seat limits,
+   invalid roles, and existing invitations can reject individual addresses.
+4. For an existing pending invitation, use the access-level editor. It calls
+   `updateWorkspaceExternalProjectInvitationRoles` through `PATCH` on the same
+   endpoint. Do not create a second invitation to change its role.
+5. Have the invitee sign in with Tuturuuu Auth and accept the workspace
+   invitation. Confirm membership and the assigned access level after acceptance.
+   An invitation alone must not grant editor access.
+
+The existing invitation code validates that selected role IDs belong to the
+workspace, checks assignment authority and seat limits, and stores roles through
+`create_workspace_email_invitation_with_roles`. Use the external-project member
+routes; ordinary workspace settings routes can reject valid CMS app sessions.
+
+### Verify gates before enabling the first site
+
+Run these checks with disposable identities in an isolated test environment.
+Exercise direct API requests as well as the CMS controls:
+
+- **Editor:** open the page editor, save a draft, and preview it. Confirm the
+  public version stays unchanged. Publish controls are unavailable, and publish,
+  unpublish, public status updates, and scheduled publication are denied.
+- **Publisher:** edit and publish. Confirm one successful publish event records
+  the actor and the correct workspace, entry, site, and version.
+- **Non-member or pending invite:** deny editor, draft, preview, and publish
+  access, including requests with another workspace's entry or role ID.
+- **Lookup failure:** fail membership, connection, or permission resolution and
+  confirm no content is returned or changed. A loading or error state must not
+  enable the publish control.
+- **Audit failure:** reject the publish-event insert and confirm neither the
+  published pointer nor public entry status changes.
+
+Record the exact source revision, executed checks, security approval, and any
+remaining failures privately. If a gate fails, keep onboarding held and return
+custody to the permission or publish API owner. Do not broaden an editor's role
+as a workaround.
+
 ## Linked-Site Email Security
 
 Outbound email requested through
