@@ -171,3 +171,13 @@ Cutovers run in this order: lowest risk first. Marketing page groups flip throug
 - contacts: stays on Vercel (a client uses it daily); its conversion needs its own rehearsed rollback.
 - mastermind: held by the wave-2 security hold.
 - learn, chat, infrastructure, mind, hive: sources merged; packets exist but production artifact jobs and Vercel pins are still to capture.
+
+## Hive
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-hive` |
+| Hosts | hive.tuturuuu.com |
+| Artifact | hive-cloudflare.yaml, job hive-cutover-artifact |
+| Vercel rollback pin | none found; confirm where hive.tuturuuu.com is served |
+| Smoke | `node scripts/cutover-smoke.mjs hive https://hive.tuturuuu.com` |
