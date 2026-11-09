@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { runVoiceJob } from '@/lib/notes-voice/jobs';
 
 const mock = vi.hoisted(() => ({
   access: vi.fn(),
@@ -7,7 +8,7 @@ const mock = vi.hoisted(() => ({
   remove: vi.fn(),
   after: vi.fn(),
   form: vi.fn(),
-  run: vi.fn(),
+  run: vi.fn<typeof runVoiceJob>(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({
@@ -135,11 +136,18 @@ describe('Notes voice honours MEET_AI_DISABLED', () => {
     expect(response.status).toBe(202);
     expect(scheduled).toHaveLength(1);
     await scheduled[0]!();
-    const verifyAccess = mock.run.mock.calls[0]![3] as () => Promise<unknown>;
+    const verifyAccess = mock.run.mock.calls[0]![3];
     process.env.MEET_AI_DISABLED = 'true';
-    await expect(verifyAccess()).rejects.toMatchObject({
+    await expect(verifyAccess('provider_admission')).rejects.toMatchObject({
       status: 403,
       code: 'notes_voice_ai_disabled',
+    });
+    await expect(verifyAccess('result_persistence')).resolves.toBeUndefined();
+    mock.access.mockRejectedValueOnce(
+      new NotesVoiceError(403, 'workspace_denied')
+    );
+    await expect(verifyAccess('result_persistence')).rejects.toMatchObject({
+      code: 'workspace_denied',
     });
   });
 });

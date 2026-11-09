@@ -51,9 +51,9 @@ export const POST = withSessionAuth<{ wsId: string }>(
       );
       if (reservation.start)
         after(() =>
-          runVoiceJob(owner, reservation.job, audio, async () => {
+          runVoiceJob(owner, reservation.job, audio, async (phase) => {
             await notesVoiceWorkspace(auth.supabase, auth.user, wsId);
-            assertNotesVoiceAiEnabled(wsId);
+            if (phase === 'provider_admission') assertNotesVoiceAiEnabled(wsId);
           })
         );
       return NextResponse.json(publicVoiceJob(reservation.job), {

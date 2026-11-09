@@ -107,7 +107,9 @@ export async function runVoiceJob(
   owner: VoiceOwner,
   pending: VoiceJob,
   audio: Uint8Array,
-  verifyAccess: () => Promise<unknown>
+  verifyAccess: (
+    phase: 'provider_admission' | 'result_persistence'
+  ) => Promise<unknown>
 ) {
   let job = pending;
   try {
@@ -119,7 +121,7 @@ export async function runVoiceJob(
     return;
   }
   try {
-    await verifyAccess();
+    await verifyAccess('provider_admission');
     if (job.transcript === null) {
       const generated = await generateBilledNotesVoice(
         { audio, mediaType: 'audio/wav' },
@@ -130,7 +132,7 @@ export async function runVoiceJob(
         status: 'summarizing',
       });
     }
-    await verifyAccess();
+    await verifyAccess('provider_admission');
     if (!job.transcript?.trim()) {
       await updateVoiceJob(owner, job, {
         status: 'completed',
@@ -153,7 +155,7 @@ export async function runVoiceJob(
       },
       { ...owner, jobId: job.id, attempt: job.attempt }
     );
-    await verifyAccess();
+    await verifyAccess('result_persistence');
     await updateVoiceJob(owner, job, {
       status: 'completed',
       artifact: generated.artifact as Json,
