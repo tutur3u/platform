@@ -24,7 +24,7 @@ const require = createRequire(join(app, 'package.json'));
 const WORKER = "tuturuuu-marketing-vite-staging";
 const PUBLIC_FILES = [];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
-const EXPECTED = {"/":404,"/legal/dpa":200,"/privacy":200,"/terms":200};
+const EXPECTED = {"/":404,"/legal/dpa":200,"/privacy":200,"/security":200,"/security/bug-bounty":200,"/security/policy":200,"/terms":200};
 // Response-policy probes (start-bridge.routes.json `runtimeProbes`).
 const POLICY_PROBES = [{"kind":"page","path":"/legal/dpa"},{"kind":"api","skip":"marketing owns no API routes; /api/* is served by the web app"},{"kind":"notFound","path":"/__native-smoke-missing__"}];
 // The Worker's mounts: the generated defaults plus the app-owned

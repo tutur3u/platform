@@ -77,6 +77,34 @@ export const pageModules = {
       () => import('../app/[locale]/(marketing)/privacy/layout'),
     ],
   },
+  'src/app/[locale]/(marketing)/security/bug-bounty/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/security/bug-bounty/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/security/layout'),
+      () => import('../app/[locale]/(marketing)/security/bug-bounty/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/security/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/security/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/security/layout'),
+    ],
+  },
+  'src/app/[locale]/(marketing)/security/policy/page.tsx': {
+    page: () => import('../app/[locale]/(marketing)/security/policy/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(marketing)/layout'),
+      () => import('../app/[locale]/(marketing)/template'),
+      () => import('../app/[locale]/(marketing)/security/layout'),
+    ],
+  },
   'src/app/[locale]/(marketing)/terms/page.tsx': {
     page: () => import('../app/[locale]/(marketing)/terms/page'),
     layouts: [

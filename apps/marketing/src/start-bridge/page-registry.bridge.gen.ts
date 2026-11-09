@@ -10,6 +10,9 @@ export const pages = [
   { pattern: "/legal/sla", file: "src/app/[locale]/(marketing)/legal/sla/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/legal/subprocessors", file: "src/app/[locale]/(marketing)/legal/subprocessors/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/privacy", file: "src/app/[locale]/(marketing)/privacy/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/security/bug-bounty", file: "src/app/[locale]/(marketing)/security/bug-bounty/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/security", file: "src/app/[locale]/(marketing)/security/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/security/policy", file: "src/app/[locale]/(marketing)/security/policy/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/terms", file: "src/app/[locale]/(marketing)/terms/page.tsx", defaults: { "locale": "en" } },
 ] as const satisfies readonly BridgePage[];
 

@@ -19,6 +19,9 @@
     "/": 404,
     "/legal/dpa": 200,
     "/privacy": 200,
+    "/security": 200,
+    "/security/bug-bounty": 200,
+    "/security/policy": 200,
     "/terms": 200
   },
   "runtimeProbes": {
