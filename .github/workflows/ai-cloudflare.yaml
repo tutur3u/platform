@@ -192,7 +192,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           test -n "$NEXT_PUBLIC_SUPABASE_URL"
           test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
-      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - name: Build required workspace suppliers
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -206,8 +206,11 @@ jobs:
           PLATFORM_BUILD_ENVIRONMENT: ${{ matrix.profile }}
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build TanStack Start Worker and assets
-        working-directory: apps/ai
-        run: bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/ai && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Record emitted configuration receipt
         if: always()
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/ai "$SOURCE_SHA" "$RUNNER_TEMP/ai-emitted-config.json"

@@ -268,8 +268,11 @@ jobs:
           PLATFORM_BUILD_ENVIRONMENT: ${{ matrix.profile }}
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build TanStack Start Worker and assets
-        working-directory: apps/finance
-        run: bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/finance && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Record emitted configuration receipt
         if: always()
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/finance "$SOURCE_SHA" "$RUNNER_TEMP/finance-emitted-config.json"

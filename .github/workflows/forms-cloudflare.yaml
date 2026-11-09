@@ -212,13 +212,17 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.22.0
-      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - name: Require production public build inputs
         run: |
           test -n "$NEXT_PUBLIC_SUPABASE_URL"
           test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
       - name: Build app suppliers
-        run: bun turbo:local run build --filter='@tuturuuu/forms^...' --concurrency=2
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter='@tuturuuu/forms^...' --concurrency=2
+          token: ''
+          team: ''
       - name: Stamp exact build identity
         env:
           PLATFORM_BUILD_COMMIT_HASH: ${{ github.sha }}
@@ -226,8 +230,11 @@ jobs:
           PLATFORM_BUILD_ENVIRONMENT: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build native Cloudflare app
-        working-directory: apps/forms
-        run: bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/forms && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Exercise anonymous root and host isolation in workerd
         working-directory: apps/forms
         env:
@@ -242,6 +249,7 @@ jobs:
         with:
           name: forms-emitted-config-${{ github.sha }}
           path: ${{ runner.temp }}/forms-emitted-config.json
+          retention-days: 7
           if-no-files-found: error
       - name: Package deployable Worker, assets and emitted Wrangler config
         run: |

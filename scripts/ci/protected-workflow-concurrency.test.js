@@ -85,6 +85,8 @@ const prExceptions = {
 };
 const mainExceptions = {
   ...prExceptions,
+  'turbo-unit-tests.yaml':
+    'Every main push retains its own non-cancelling validation result',
   'supabase-staging.yaml':
     'Protected main migrations serialize exact-SHA marker evidence',
   'release-sdk-dev.yaml':
@@ -102,7 +104,7 @@ const mainExceptions = {
 };
 // Main pushes of these workflows queue (one running, newest pending) instead of
 // cancelling; every other qualification assertion still applies.
-const queuedMainBaselines = new Set(['codeql.yml']);
+const queuedMainBaselines = new Set(['codeql.yml', 'turbo-unit-tests.yaml']);
 const workflows = Object.fromEntries(
   fs
     .readdirSync(workflowRoot)
@@ -646,4 +648,23 @@ test('PR path filters never apply to CodeQL main baselines', () => {
   const push = events(workflows['codeql.yml']).push;
   assert.deepEqual(push, { branches: ['main'] });
   assert.ok(events(workflows['codeql.yml']).pull_request['paths-ignore']);
+});
+
+test('main Test pushes retain separate results and never cancel prior validation', () => {
+  const workflow = workflows['turbo-unit-tests.yaml'];
+  assert.ok(events(workflow).push.branches.includes('main'));
+  const first = { ...context('refs/heads/main'), workflow: workflow.name };
+  const later = { ...first, sha: 'later', run_id: 2 };
+  assert.equal(
+    render(workflow.concurrency['cancel-in-progress'], first),
+    false
+  );
+  assert.equal(
+    render(workflow.concurrency['cancel-in-progress'], later),
+    false
+  );
+  assert.notEqual(
+    render(workflow.concurrency.group, first),
+    render(workflow.concurrency.group, later)
+  );
 });

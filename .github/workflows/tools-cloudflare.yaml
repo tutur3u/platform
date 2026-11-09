@@ -220,8 +220,11 @@ jobs:
       - name: Build production Start Worker
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
-        working-directory: apps/tools
-        run: bun run build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/tools && bun run build
+          token: ''
+          team: ''
       - name: Record emitted configuration receipt
         if: always()
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/tools "$SOURCE_SHA" "$RUNNER_TEMP/tools-emitted-config.json"
