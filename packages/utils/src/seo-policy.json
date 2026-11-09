@@ -186,5 +186,11 @@
     "localePrefix": "as-needed",
     "publicPaths": [],
     "publicPatterns": []
+  },
+  "workspace": {
+    "origin": "https://workspace.tuturuuu.com",
+    "localePrefix": "as-needed",
+    "publicPaths": [],
+    "publicPatterns": []
   }
 }
