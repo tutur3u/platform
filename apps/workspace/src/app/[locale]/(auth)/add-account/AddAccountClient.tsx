@@ -1,5 +1,6 @@
 'use client';
 
+import { describeWebAccountSaveError } from '@tuturuuu/internal-api/auth';
 import { Loader2 } from '@tuturuuu/icons';
 import { Check } from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
@@ -12,7 +13,7 @@ import {
 } from '@tuturuuu/ui/card';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { type JSX, useEffect, useRef, useState } from 'react';
+import { type JSX, useCallback, useEffect, useRef, useState } from 'react';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
 
 export function AddAccountContent(): JSX.Element {
@@ -28,40 +29,36 @@ export function AddAccountContent(): JSX.Element {
 
   const returnUrl = searchParams.get('returnUrl');
 
+  const handleAddAccount = useCallback(async () => {
+    try {
+      const result = await addAccount({
+        returnUrl,
+      });
+
+      if (result.success) {
+        setStatus('success');
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        window.location.assign(result.redirectTo || '/');
+        return;
+      }
+
+      setStatus('error');
+      setErrorMessage(describeWebAccountSaveError(result, t));
+    } catch (error) {
+      setStatus('error');
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : t('account_switcher.account_added_error')
+      );
+    }
+  }, [addAccount, returnUrl, t]);
+
   useEffect(() => {
     if (!isInitialized || hasRun.current) return;
     hasRun.current = true;
-
-    const handleAddAccount = async () => {
-      try {
-        const result = await addAccount({
-          returnUrl,
-        });
-
-        if (result.success) {
-          // Show success UI briefly before redirecting
-          setStatus('success');
-
-          // Wait a moment to show the success UI, then redirect
-          await new Promise((resolve) => setTimeout(resolve, 500));
-
-          window.location.assign(result.redirectTo || '/');
-        } else {
-          setStatus('error');
-          setErrorMessage(result.error || 'Failed to add account');
-        }
-      } catch (error) {
-        setStatus('error');
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred'
-        );
-      }
-    };
-
-    handleAddAccount();
-  }, [isInitialized, addAccount, returnUrl]);
+    void handleAddAccount();
+  }, [handleAddAccount, isInitialized]);
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
@@ -104,6 +101,18 @@ export function AddAccountContent(): JSX.Element {
               </div>
               <Button
                 type="button"
+                onClick={() => {
+                  setStatus('loading');
+                  setErrorMessage('');
+                  void handleAddAccount();
+                }}
+                className="w-full"
+              >
+                {t('account_switcher.retry')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => router.push('/')}
                 className="w-full"
               >
