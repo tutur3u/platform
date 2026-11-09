@@ -13,6 +13,7 @@ import appConfig from '../start-bridge.config';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import { assertRequiredSecrets } from './required-secrets';
+import { configureMindAbuseGuard } from '../src/runtime/abuse-guard';
 
 export interface MindEnvironment {
   ASSETS: AssetsBinding;
@@ -73,6 +74,7 @@ export default {
   async fetch(request: Request, env: MindEnvironment, ctx: WorkerContext) {
     let response: Response;
     try {
+      configureMindAbuseGuard(env);
       assertRequiredSecrets(env);
       response = await (await handler)(request, env, ctx);
     } catch (error) {

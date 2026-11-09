@@ -5,8 +5,6 @@ export const REQUIRED_SECRETS = [
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
   'SUPABASE_SECRET_KEY',
   'TUTURUUU_APP_COORDINATION_SECRET',
-  'UPSTASH_REDIS_REST_URL',
-  'UPSTASH_REDIS_REST_TOKEN',
 ] as const;
 
 export function assertRequiredSecrets(env: object) {
@@ -15,13 +13,37 @@ export function assertRequiredSecrets(env: object) {
     const value = bindings[name];
     return typeof value !== 'string' || value.trim() === '';
   });
-  if (
-    !('ABUSE_GUARD_BACKEND' in env) ||
-    env.ABUSE_GUARD_BACKEND !== 'upstash'
-  ) {
-    throw new Error('Mind production requires ABUSE_GUARD_BACKEND=upstash');
+  const legacyUpstash =
+    nonEmpty(bindings.UPSTASH_REDIS_REST_URL) &&
+    nonEmpty(bindings.UPSTASH_REDIS_REST_TOKEN) &&
+    bindings.ABUSE_GUARD_BACKEND === 'upstash';
+  const serviceBinding =
+    isObject(bindings.ABUSE_GUARD) &&
+    nonEmpty(bindings.ABUSE_GUARD_KEY_PEPPER) &&
+    nonEmpty(bindings.ABUSE_GUARD_FAMILIES);
+  if (!legacyUpstash && !serviceBinding) {
+    const missingGuardNames = [
+      ...(!isObject(bindings.ABUSE_GUARD) ? ['ABUSE_GUARD'] : []),
+      ...(!nonEmpty(bindings.ABUSE_GUARD_KEY_PEPPER)
+        ? ['ABUSE_GUARD_KEY_PEPPER']
+        : []),
+      ...(!nonEmpty(bindings.ABUSE_GUARD_FAMILIES)
+        ? ['ABUSE_GUARD_FAMILIES']
+        : []),
+    ];
+    throw new Error(
+      `Missing valid abuse guard configuration; set either Upstash configuration or: ${missingGuardNames.join(', ')}`
+    );
   }
   if (missing.length > 0) {
     throw new Error(`Missing required secrets: ${missing.join(', ')}`);
   }
+}
+
+function nonEmpty(value: unknown): value is string {
+  return typeof value === 'string' && value.trim() !== '';
+}
+
+function isObject(value: unknown): value is object {
+  return typeof value === 'object' && value !== null;
 }
