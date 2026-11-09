@@ -36,6 +36,47 @@ const session = {
   },
 } satisfies SupabaseSession;
 
+describe('web multi-account storage size', () => {
+  beforeEach(() => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      SUPABASE_SECRET_KEY: 'supabase-secret',
+      WEB_MULTI_ACCOUNT_SESSION_SECRET: 'synthetic-web-secret',
+    };
+  });
+
+  afterEach(() => {
+    process.env = ORIGINAL_ENV;
+  });
+
+  it('keeps the device cookie small while ten synthetic sessions exceed 4KB only if packed together', () => {
+    const filler = 'synthetic-filler'.repeat(40);
+    const ciphertexts = Array.from({ length: 10 }, (_, index) =>
+      encryptSession({
+        ...session,
+        access_token: `synthetic-access-${index}-${filler}`,
+        refresh_token: `synthetic-refresh-${index}-${filler}`,
+        user: {
+          ...session.user,
+          id: `00000000-0000-0000-0000-00000000000${index}`,
+        },
+      })
+    );
+    const cookie = createDeviceCookieValue(
+      '11111111-1111-1111-1111-111111111111',
+      'synthetic-device-secret'
+    );
+
+    expect(cookie.length).toBeLessThan(500);
+    expect(cookie).not.toContain('synthetic-access');
+    expect(ciphertexts.join('').length).toBeGreaterThan(4096);
+    for (const ciphertext of ciphertexts) {
+      expect(ciphertext).not.toContain('synthetic-access');
+      expect(ciphertext.startsWith('v1.')).toBe(true);
+    }
+  });
+});
+
 describe('web multi-account crypto', () => {
   beforeEach(() => {
     vi.resetModules();

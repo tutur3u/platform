@@ -61,7 +61,9 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: ./.github/actions/setup-bun-with-retry
-      - run: bun install --frozen-lockfile --ignore-scripts
+        with:
+          bun-version: 1.4.4
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - name: Build workspace dependencies
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -69,13 +71,17 @@ jobs:
           token: ''
           team: ''
       - name: Build Start Worker
-        working-directory: apps/external
-        run: bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/external && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Check bridge routes and native types
-        working-directory: apps/external
-        run: |
-          bun run routes:check
-          bun run type-check:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/external && bun run routes:check && bun run type-check:cloudflare
+          token: ''
+          team: ''
       - name: Record emitted config receipt
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/external "$CI_SOURCE_SHA" "$RUNNER_TEMP/external-config-receipt.json"
       - name: Anonymous root and closed ingress smoke

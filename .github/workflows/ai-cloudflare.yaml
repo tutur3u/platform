@@ -149,7 +149,8 @@ jobs:
         with:
           app: ai
   check-ci:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    needs: affected-gate
+    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -158,7 +159,7 @@ jobs:
       workflow_name: ai-cloudflare.yaml
   cutover-build:
     needs: [check-ci, affected-gate]
-    if: ${{ needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -192,7 +193,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           test -n "$NEXT_PUBLIC_SUPABASE_URL"
           test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
-      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - name: Build required workspace suppliers
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -206,8 +207,11 @@ jobs:
           PLATFORM_BUILD_ENVIRONMENT: ${{ matrix.profile }}
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build TanStack Start Worker and assets
-        working-directory: apps/ai
-        run: bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/ai && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Record emitted configuration receipt
         if: always()
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/ai "$SOURCE_SHA" "$RUNNER_TEMP/ai-emitted-config.json"

@@ -18,6 +18,12 @@ interface DeviceRow {
   secret_hash: string;
 }
 
+interface ProfileRow {
+  avatar_url: string | null;
+  display_name: string | null;
+  id: string;
+}
+
 interface SessionRow {
   avatar_url: string | null;
   created_at: string;
@@ -35,12 +41,18 @@ interface SessionRow {
 
 type Row = Record<string, unknown>;
 
-const store: { devices: DeviceRow[]; sessions: SessionRow[] } = {
+const store: {
+  devices: DeviceRow[];
+  profiles: ProfileRow[];
+  sessions: SessionRow[];
+} = {
   devices: [],
+  profiles: [],
   sessions: [],
 };
 
 const TABLES: Record<string, () => Row[]> = {
+  users: () => store.profiles as unknown as Row[],
   web_account_devices: () => store.devices as unknown as Row[],
   web_account_sessions: () => store.sessions as unknown as Row[],
 };
@@ -49,6 +61,7 @@ const TABLES: Record<string, () => Row[]> = {
 class FakeQuery implements PromiseLike<{ count?: number; error: null }> {
   private readonly rows: Row[];
   private readonly filters: Array<[string, unknown]> = [];
+  private readonly inclusions: Array<[string, readonly unknown[]]> = [];
   private mode: 'delete' | 'insert' | 'select' | 'update' | 'upsert' = 'select';
   private payload: Row | null = null;
   private headOnly = false;
@@ -70,6 +83,11 @@ class FakeQuery implements PromiseLike<{ count?: number; error: null }> {
 
   eq(column: string, value: unknown) {
     this.filters.push([column, value]);
+    return this;
+  }
+
+  in(column: string, values: readonly unknown[]) {
+    this.inclusions.push([column, values]);
     return this;
   }
 
@@ -119,8 +137,12 @@ class FakeQuery implements PromiseLike<{ count?: number; error: null }> {
   }
 
   private matches() {
-    return this.rows.filter((row) =>
-      this.filters.every(([column, value]) => row[column] === value)
+    return this.rows.filter(
+      (row) =>
+        this.filters.every(([column, value]) => row[column] === value) &&
+        this.inclusions.every(([column, values]) =>
+          values.includes(row[column])
+        )
     );
   }
 
@@ -173,6 +195,8 @@ const auth = vi.hoisted(() => ({
   setSession: vi.fn(),
   signOut: vi.fn(),
 }));
+const encryptCalls = vi.hoisted(() => ({ n: 0 }));
+const cookieWrites = vi.hoisted(() => [] as string[]);
 const rpc = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/database/platform-sql', () => ({ getPlatformSql: () => ({}) }));
@@ -194,13 +218,16 @@ vi.mock('next/headers', () => ({
     Promise.resolve({
       get: (name: string) =>
         name === 'device-cookie' ? { value: 'device-1.secret-1' } : undefined,
-      set: vi.fn(),
+      set: (name: string, value: string) => {
+        cookieWrites.push(`${name}=${value}`);
+      },
     }),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () =>
     Promise.resolve({
+      from: (table: string) => new FakeQuery(table),
       schema: () => ({ from: (table: string) => new FakeQuery(table) }),
     }),
   createClient: () => Promise.resolve({ auth, rpc }),
@@ -215,7 +242,10 @@ vi.mock('./crypto', () => ({
     `${deviceId}.${secret}`,
   createDeviceSecret: () => 'secret-new',
   decryptSession: (ciphertext: string) => JSON.parse(ciphertext),
-  encryptSession: (session: unknown) => JSON.stringify(session),
+  encryptSession: (session: unknown) => {
+    encryptCalls.n += 1;
+    return JSON.stringify(session);
+  },
   getAllDeviceCookieClearTargets: () => [],
   getDeviceCookieName: () => 'device-cookie',
   getDeviceCookieOptions: () => ({}),
@@ -280,6 +310,7 @@ describe('switchWebAccount', () => {
         secret_hash: 'hashed:secret-1',
       },
     ];
+    store.profiles = [];
     store.sessions = [
       sessionRow('user-a', 'refresh-a-stored'),
       sessionRow('user-b', 'refresh-b-stored'),
@@ -448,6 +479,137 @@ describe('switchWebAccount', () => {
   });
 });
 
+describe('saveCurrentWebAccount account cap', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    encryptCalls.n = 0;
+    cookieWrites.length = 0;
+    store.devices = [
+      {
+        active_user_id: 'user-1',
+        id: 'device-1',
+        revoked_at: null,
+        secret_hash: 'hashed:secret-1',
+      },
+    ];
+    store.profiles = [];
+    store.sessions = [];
+  });
+
+  it('saves 10 synthetic accounts and refuses the 11th before encrypting it', async () => {
+    const { saveCurrentWebAccount } = await import('./vault');
+
+    for (let index = 1; index <= 10; index += 1) {
+      auth.getSession.mockResolvedValue({
+        data: { session: session(`user-${index}`, `refresh-${index}`) },
+      });
+      const result = await saveCurrentWebAccount(request(), {
+        route: '/en/personal/tasks',
+      });
+      expect(result.success).toBe(true);
+    }
+
+    expect(store.sessions).toHaveLength(10);
+    const encryptCallsAfterTen = encryptCalls.n;
+
+    auth.getSession.mockResolvedValue({
+      data: { session: session('user-11', 'refresh-11') },
+    });
+    const limited = await saveCurrentWebAccount(request(), {
+      route: '/en/personal/tasks',
+    });
+
+    expect(limited).toMatchObject({
+      errorCode: 'account_limit',
+      success: false,
+    });
+    expect(store.sessions).toHaveLength(10);
+    expect(store.sessions.map((row) => row.user_id)).not.toContain('user-11');
+    expect(encryptCalls.n).toBe(encryptCallsAfterTen);
+    expect(cookieWrites.join('')).not.toContain('refresh-11');
+  });
+});
+
+describe('canonical profile identity', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    store.devices = [
+      {
+        active_user_id: 'user-a',
+        id: 'device-1',
+        revoked_at: null,
+        secret_hash: 'hashed:secret-1',
+      },
+    ];
+    store.profiles = [
+      {
+        avatar_url: 'https://cdn.test/profile-a.png',
+        display_name: 'Profile Ada',
+        id: 'user-a',
+      },
+      {
+        avatar_url: 'https://cdn.test/profile-b.png',
+        display_name: 'Profile Bao',
+        id: 'user-b',
+      },
+    ];
+    store.sessions = [
+      {
+        ...sessionRow('user-a', 'refresh-a-stored'),
+        avatar_url: 'https://oauth.test/stale-a.png',
+        display_name: 'OAuth Ada',
+      },
+      {
+        ...sessionRow('user-b', 'refresh-b-stored'),
+        avatar_url: 'https://oauth.test/stale-b.png',
+        display_name: 'OAuth Bao',
+      },
+    ];
+  });
+
+  it('lists the Settings profile avatar and name instead of the stored oauth copy', async () => {
+    const { listWebAccounts } = await import('./vault');
+    const result = await listWebAccounts(request());
+
+    expect(result.accounts.map((account) => account.metadata)).toEqual([
+      expect.objectContaining({
+        avatarUrl: 'https://cdn.test/profile-a.png',
+        displayName: 'Profile Ada',
+      }),
+      expect.objectContaining({
+        avatarUrl: 'https://cdn.test/profile-b.png',
+        displayName: 'Profile Bao',
+      }),
+    ]);
+  });
+
+  it('refreshes the switched account from the profile source', async () => {
+    auth.getSession.mockResolvedValue({
+      data: { session: session('user-a', 'refresh-a-rotated') },
+    });
+    auth.setSession.mockResolvedValue({
+      data: { session: session('user-b', 'refresh-b-fresh') },
+      error: null,
+    });
+
+    const { switchWebAccount } = await import('./vault');
+    const result = await switchWebAccount(request(), 'user-b');
+
+    expect(
+      result.accounts.find((account) => account.id === 'user-b')?.metadata
+    ).toMatchObject({
+      avatarUrl: 'https://cdn.test/profile-b.png',
+      displayName: 'Profile Bao',
+    });
+    expect(
+      store.sessions.find((row) => row.user_id === 'user-b')
+    ).toMatchObject({
+      avatar_url: 'https://cdn.test/profile-b.png',
+      display_name: 'Profile Bao',
+    });
+  });
+});
+
 describe('web account logout revokes derived credentials before sign-out', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -459,6 +621,7 @@ describe('web account logout revokes derived credentials before sign-out', () =>
         secret_hash: 'hashed:secret-1',
       },
     ];
+    store.profiles = [];
     store.sessions = [sessionRow('user-a', 'refresh-a-stored')];
     auth.getUser.mockResolvedValue({ data: { user: { id: 'user-a' } } });
     auth.signOut.mockResolvedValue({ error: null });

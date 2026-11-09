@@ -75,3 +75,10 @@ it('does not duplicate the mute icon with a disabled host action', () => {
     })
   ).not.toContain('Mute Peer');
 });
+
+it('uses theme-aware name bar colors on avatar tiles', () => {
+  const html = renderTile({ participant, resumePlaybackLabel: 'Play audio' });
+  expect(html).toContain('from-background/90');
+  expect(html).toContain('text-foreground');
+  expect(html).not.toContain('from-media-scrim');
+});

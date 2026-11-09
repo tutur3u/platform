@@ -1,11 +1,14 @@
 import type { MeetRealtimeServerMessage } from '@tuturuuu/realtime/meet';
 import { describe, expect, it } from 'vitest';
 import {
+  type CallLifecycle,
   type CallState,
   countUnreadChatMessages,
   INITIAL_CALL_STATE,
+  isCallLifecycleBusy,
   isHandRaised,
   reduceCallState,
+  selectCallLifecycle,
   selectFocusedUserId,
   selectOthers,
   selectSelf,
@@ -495,4 +498,51 @@ it('tracks Mira separately from human presence and removes it on stop', () => {
       ownerId: SELF,
     }).liveAssistant
   ).toBeUndefined();
+});
+
+describe('call lifecycle', () => {
+  const at = (
+    admission: CallState['admission'],
+    joined: boolean,
+    ended = false
+  ) => selectCallLifecycle({ admission, ended }, joined);
+
+  it('derives every lifecycle from the room flags', () => {
+    expect(at('connecting', false)).toBe('preparing');
+    expect(at('admitted', false)).toBe('joining');
+    expect(at('waiting', true)).toBe('joining');
+    expect(at('admitted', true)).toBe('live');
+    expect(at('connecting', true)).toBe('live');
+    expect(at('denied', true)).toBe('error');
+    expect(at('admitted', true, true)).toBe('ended');
+  });
+
+  it('lets an ended room win over a denied admission', () => {
+    expect(at('denied', false, true)).toBe('ended');
+  });
+
+  it('classifies every lifecycle as busy or settled', () => {
+    const busy: Record<CallLifecycle, boolean> = {
+      preparing: true,
+      joining: true,
+      live: false,
+      ended: false,
+      error: false,
+    };
+    for (const [lifecycle, expected] of Object.entries(busy))
+      expect(isCallLifecycleBusy(lifecycle as CallLifecycle)).toBe(expected);
+  });
+
+  it('follows a room from connecting to ended', () => {
+    let state = INITIAL_CALL_STATE;
+    expect(selectCallLifecycle(state, false)).toBe('preparing');
+    state = reduceCallState(state, {
+      type: 'admission.result',
+      admitted: true,
+    } as MeetRealtimeServerMessage);
+    expect(selectCallLifecycle(state, true)).toBe('live');
+    state = reduceCallState(state, { type: 'room.ended' });
+    expect(selectCallLifecycle(state, true)).toBe('ended');
+    expect(state.ended).toBe(true);
+  });
 });

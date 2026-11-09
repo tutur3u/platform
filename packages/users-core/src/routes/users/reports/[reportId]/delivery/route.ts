@@ -1,3 +1,7 @@
+import {
+  hasReportFeedback,
+  REPORT_FEEDBACK_REQUIRED,
+} from '../../../../../features/reports/report-feedback';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getReportReadGroupIds } from '@tuturuuu/users-core/routes/users/reports/group-read-access';
 import { verifySecret } from '@tuturuuu/utils/workspace-helper';
@@ -170,6 +174,12 @@ export async function POST(request: Request, { params }: Params) {
         { message: 'Approve this report before sending it.' },
         { status: 409 }
       );
+    }
+    if (
+      parsed.data.action !== 'cancel' &&
+      !hasReportFeedback(report.feedback)
+    ) {
+      return NextResponse.json(REPORT_FEEDBACK_REQUIRED, { status: 422 });
     }
     let deliveryEnabled = false;
     if (parsed.data.action !== 'cancel') {

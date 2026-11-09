@@ -29,6 +29,9 @@ const PAUSED_JOB = /^(\$\{\{ )?false( \}\})?$/u;
 // Trigger digests on origin/main when the gate landed. Update a digest only
 // with a reviewed push, schedule or manual trigger change.
 const PROTECTED_TRIGGERS = {
+  'rewise-cloudflare.yaml': 'fe6b54462e91b1bf',
+  'git-cloudflare.yaml': '0a3cc2c97958f5cd',
+  'external-cloudflare.yaml': '0a3cc2c97958f5cd',
   'ai-cloudflare.yaml': '2b1f1ae8795d0216',
   'api-worker.yaml': '058d68d5d261d527',
   'app-builds-affected.yaml': 'fcb6485f818aa571',
@@ -49,6 +52,7 @@ const PROTECTED_TRIGGERS = {
   'discord-python-ci.yml': 'df10679b45d420bb',
   'docs-seo-check.yaml': '78c7f5ff99020ac9',
   'external-internal-packages.yaml': '4d532cf88497bbd2',
+  'external-project-page-versions-contract.yaml': '0a3cc2c97958f5cd',
   'external-project-storage-analytics-contract.yaml': '02e3e1d0d939ac56',
   'fee-lock-database-contract.yaml': '0a3cc2c97958f5cd',
   // Finance also watches its owning input-cache action; other trigger fields stay fixed.
@@ -62,7 +66,7 @@ const PROTECTED_TRIGGERS = {
   'mail-cloudflare.yaml': 'dd965acde3d1fd0a',
   'mail-profile-runtime-contract.yaml': '44136fa355b3678a',
   'mastermind-cloudflare.yaml': 'd1f8275025d3586a',
-  'meet-cloudflare.yaml': '94511c89d2621e60',
+  'meet-cloudflare.yaml': 'f3e7c418a0e49ecb',
   'mobile-build-android.yaml': 'ef27f9c72cee2485',
   'mobile-build-ios.yaml': '1223a8396111881f',
   'mobile-build-linux.yaml': '7469a02578f1c4c3',
@@ -101,6 +105,28 @@ const PROTECTED_TRIGGERS = {
   'web-start-candidate.yaml': '0a3cc2c97958f5cd',
   'workspace-permission-scope-contract.yaml': '0a3cc2c97958f5cd',
 };
+
+const EXTRA_PROTECTED_INPUTS = {
+  'ai-cloudflare.yaml': ['scripts/ci/ai-cutover-smoke.mjs'],
+  'cms-cloudflare.yaml': ['scripts/ci/cms-cutover-smoke.mjs'],
+  'finance-cloudflare.yaml': ['scripts/ci/finance-cutover-*'],
+};
+
+function assertProtectedTriggers(file, on) {
+  const triggers = structuredClone(on);
+  for (const input of EXTRA_PROTECTED_INPUTS[file] ?? []) {
+    assert.ok(
+      triggers.push.paths.includes(input),
+      `${file} must watch ${input}`
+    );
+    triggers.push.paths = triggers.push.paths.filter((path) => path !== input);
+  }
+  assert.equal(
+    protectedTriggerDigest(file, triggers),
+    PROTECTED_TRIGGERS[file],
+    file
+  );
+}
 
 function events(workflow) {
   const on = workflow.on;
@@ -142,7 +168,10 @@ function assertGeneratedWorkflowGates(file, workflow) {
     HEAVY_PR_WORKFLOWS.includes(file),
     `${file}: generated workflow is not heavy`
   );
-  for (const id of ['check-ci', 'native']) {
+  assert.ok(workflow.jobs?.['check-ci'], `${file}: missing check-ci job`);
+  const ids = Object.keys(workflow.jobs).filter((id) => id !== 'affected-gate');
+  assert.ok(ids.length >= 2, `${file}: missing qualification job`);
+  for (const id of ids) {
     assert.ok(workflow.jobs?.[id], `${file}: missing ${id} job`);
     assert.ok(
       String(workflow.jobs[id].if ?? '').includes(PR_LABEL_GATE),
@@ -323,11 +352,7 @@ test('main, production, schedule and manual triggers are untouched', () => {
     [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS].sort()
   );
   for (const file of [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS]) {
-    assert.equal(
-      protectedTriggerDigest(file, workflows[file].on),
-      PROTECTED_TRIGGERS[file],
-      file
-    );
+    assertProtectedTriggers(file, workflows[file].on);
   }
   for (const [file, branches] of Object.entries(PUSH_TO_PR)) {
     const push = events(workflows[file]).push;
@@ -480,7 +505,10 @@ test('roadmap artifact admission rejects unlabelled PRs and preserves main dispa
         ref,
         event: { pull_request: { labels: labels.map((name) => ({ name })) } },
       },
-      needs: { 'check-ci': { outputs: { should_run: String(relevant) } } },
+      needs: {
+        'check-ci': { outputs: { should_run: String(relevant) } },
+        'affected-gate': { outputs: { run: 'true' } },
+      },
     };
     return Object.fromEntries(
       Object.entries(jobs).map(([id, job]) => [
@@ -490,12 +518,13 @@ test('roadmap artifact admission rejects unlabelled PRs and preserves main dispa
     );
   };
   assert.deepEqual(decide('pull_request', [], 'refs/pull/42/merge'), {
+    'affected-gate': false,
     'check-ci': false,
     build: false,
   });
   assert.deepEqual(
     decide('pull_request', [READY_LABEL], 'refs/pull/42/merge'),
-    { 'check-ci': true, build: true }
+    { 'affected-gate': true, 'check-ci': true, build: true }
   );
   assert.equal(
     decide('pull_request', [READY_LABEL], 'refs/pull/42/merge', false).build,
@@ -506,4 +535,18 @@ test('roadmap artifact admission rejects unlabelled PRs and preserves main dispa
     decide('workflow_dispatch', [], 'refs/heads/unreviewed').build,
     false
   );
+});
+
+test('exact smoke-input additions preserve every other protected trigger input', () => {
+  const file = 'ai-cloudflare.yaml';
+  const on = workflows[file].on;
+  assertProtectedTriggers(file, on);
+  for (const path of ['apps/ai/**', 'scripts/ci/ai-cutover-smoke.mjs']) {
+    const changed = structuredClone(on);
+    changed.push.paths = changed.push.paths.filter((input) => input !== path);
+    assert.throws(() => assertProtectedTriggers(file, changed));
+  }
+  const widened = structuredClone(on);
+  widened.push.paths.push('unreviewed/**');
+  assert.throws(() => assertProtectedTriggers(file, widened));
 });

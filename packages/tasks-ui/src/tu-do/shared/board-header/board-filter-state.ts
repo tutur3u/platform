@@ -249,7 +249,7 @@ export function sanitizePresenceBoardView(
 }
 
 /**
- * People shown as pills: board members and existing task assignees, you first,
+ * People shown as pills: current workspace members only, you first,
  * then by how many loaded tasks they own.
  */
 type TaskAssigneeLike = {
@@ -279,14 +279,6 @@ export function collectBoardPeople(
       if (!assignee?.id) continue;
       const existing = byId.get(assignee.id);
       if (existing) existing.taskCount += 1;
-      else
-        byId.set(assignee.id, {
-          id: assignee.id,
-          display_name: assignee.display_name ?? null,
-          avatar_url: assignee.avatar_url ?? null,
-          email: assignee.email ?? null,
-          taskCount: 1,
-        });
     }
   }
 

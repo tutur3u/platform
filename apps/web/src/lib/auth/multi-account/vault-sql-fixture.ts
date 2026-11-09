@@ -7,6 +7,8 @@ export function createVaultSqlFixture(store: {
     session_ciphertext: string;
     last_route: string | null;
     last_workspace_id: string | null;
+    avatar_url?: string | null;
+    display_name?: string | null;
   }[];
 }) {
   return async (parts: TemplateStringsArray, ...values: unknown[]) => {
@@ -33,11 +35,16 @@ export function createVaultSqlFixture(store: {
       const outgoing = query.includes('coalesce');
       const row = store.sessions.find(
         (entry) =>
-          entry.device_id === values[outgoing ? 5 : 2] &&
-          entry.user_id === values[outgoing ? 6 : 3]
+          entry.device_id === values[outgoing ? 5 : 4] &&
+          entry.user_id === values[outgoing ? 6 : 5]
       );
       if (row) {
-        if (typeof values[0] === 'string') row.session_ciphertext = values[0];
+        if (typeof values[outgoing ? 0 : 2] === 'string')
+          row.session_ciphertext = values[outgoing ? 0 : 2] as string;
+        if (!outgoing) {
+          row.avatar_url = values[0] as string | null;
+          row.display_name = values[1] as string | null;
+        }
         if (outgoing && typeof values[2] === 'string') {
           row.last_route = values[2];
           if (typeof values[4] === 'string' || values[4] === null)

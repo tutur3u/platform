@@ -30,12 +30,12 @@ export async function authenticateColabGrant(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token, digest, roomId: sponsor.workshopId }),
-      redirect: 'error',
+      redirect: 'manual',
       cache: 'no-store',
       signal: AbortSignal.timeout(10_000),
     }
   );
-  if (!response.ok) throw reject();
+  if (response.type === 'opaqueredirect' || !response.ok) throw reject();
   const approval = await response.json();
   if (approval.approved !== true || approval.digest !== digest) throw reject();
   const admin = await createAdminClient({ noCookie: true });

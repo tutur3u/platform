@@ -107,8 +107,9 @@ export async function verifySnsEnvelope(envelope: SnsEnvelope) {
     return false;
   }
 
-  const certificate = await fetch(signingCertUrl, { redirect: 'error' }).then(
-    (response) => (response.ok ? response.text() : null)
+  const certificate = await fetch(signingCertUrl, { redirect: 'manual' }).then(
+    (response) =>
+      response.type !== 'opaqueredirect' && response.ok ? response.text() : null
   );
 
   if (!certificate) {

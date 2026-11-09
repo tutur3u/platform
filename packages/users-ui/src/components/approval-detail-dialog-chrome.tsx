@@ -1,5 +1,6 @@
 'use client';
 
+import { hasReportFeedback } from '@tuturuuu/users-core/features/reports/report-feedback';
 import {
   Check,
   ChevronLeft,
@@ -285,7 +286,16 @@ export function ApprovalDetailHeader({
                 <Button
                   size="sm"
                   onClick={() => onApprove(item.id)}
-                  disabled={isApproving}
+                  disabled={
+                    isApproving ||
+                    (item.kind === 'reports' &&
+                      !hasReportFeedback(item.feedback))
+                  }
+                  title={
+                    item.kind === 'reports' && !hasReportFeedback(item.feedback)
+                      ? t('actions.feedbackRequired')
+                      : undefined
+                  }
                   className="h-9 gap-1 bg-dynamic-green hover:bg-dynamic-green/90"
                 >
                   {isApproving ? (

@@ -250,7 +250,8 @@ describe('selected month', () => {
     expect(queries).toHaveLength(2);
     const [list, summary] = queries.map((url) => url.searchParams.getAll('or'));
     expect(list).toEqual(summary);
-    expect(list?.[0]).toContain('and(report_stage.eq.sent,delivered_at.gte.');
+    expect(list?.[0]).toContain('period_start.gte.2026-10-01');
+    expect(list?.[0]).not.toContain('delivered_at');
     expect(list?.[0]).not.toContain('delivered_at.is.null');
     expect(body.undatedSentCount).toBeNull();
     expect(body.summaryPartial).toBe(false);

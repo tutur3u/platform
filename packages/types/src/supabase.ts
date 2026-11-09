@@ -56684,7 +56684,8 @@ export type Database = {
         | 'manage_git_repositories'
         | 'manage_desktop_deployment_vault'
         | 'manage_sso_clients'
-        | 'manage_mastermind';
+        | 'manage_mastermind'
+        | 'edit_external_projects';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -59519,6 +59520,7 @@ export const Constants = {
         'manage_desktop_deployment_vault',
         'manage_sso_clients',
         'manage_mastermind',
+        'edit_external_projects',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

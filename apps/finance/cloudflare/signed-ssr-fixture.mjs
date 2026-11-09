@@ -129,6 +129,20 @@ export function signedSsrFixtureResponse(request, calls, financeOrigin) {
       new_email: null,
     });
   }
+  if (url.pathname === '/rest/v1/workspace_secrets') {
+    if (
+      !request.headers.has('authorization') ||
+      request.headers.get('accept')?.includes('vnd.pgrst.object') ||
+      url.searchParams.size !== 3 ||
+      url.searchParams.get('select') !== '*' ||
+      url.searchParams.get('ws_id') !== 'eq.' + fixtureWorkspaceId ||
+      url.searchParams.get('order') !== 'created_at.desc' ||
+      calls.filter((path) => path === url.pathname).length >= 2
+    )
+      return null;
+    calls.push(url.pathname);
+    return Response.json([]);
+  }
   if (url.pathname.startsWith('/rest/v1/')) {
     const table = url.pathname.slice('/rest/v1/'.length);
     const single = request.headers.get('accept')?.includes('vnd.pgrst.object');

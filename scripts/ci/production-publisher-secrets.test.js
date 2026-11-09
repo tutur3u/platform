@@ -30,6 +30,7 @@ function context(ref, allowed = 'false', event = 'workflow_dispatch') {
   return {
     github: { ref, event_name: event, actor: 'trusted-author' },
     needs: {
+      'affected-gate': { result: 'success', outputs: { run: 'true' } },
       'production-policy': { result: 'success', outputs: { allowed } },
       'check-ci': {
         result: 'success',
@@ -544,4 +545,13 @@ test('Tasks cutover cache steps reject an unguarded Turbo team fallback', () => 
       /reads TURBO_TEAM on a PR/
     );
   }
+});
+
+test('Meet affected gate cannot expose production credentials or admit validation when false', () => {
+  const scope = context('refs/heads/production', 'true');
+  scope.needs['affected-gate'].outputs.run = 'false';
+  assert.equal(
+    evaluate(workflows['meet-cloudflare.yaml'].jobs.validate.if, scope),
+    false
+  );
 });

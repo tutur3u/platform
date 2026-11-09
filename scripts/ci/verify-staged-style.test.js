@@ -1,9 +1,19 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { mkdtemp, mkdir, writeFile, rm, symlink } = require('node:fs/promises');
+const {
+  mkdtemp,
+  mkdir,
+  readFile,
+  writeFile,
+  rm,
+  symlink,
+} = require('node:fs/promises');
 const { tmpdir } = require('node:os');
 const { resolve } = require('node:path');
 const {
+  FAILURE_REASONS,
+  describeFailure,
+  main,
   responseHeaders,
   safeEnvironment,
   verifyCss,
@@ -103,4 +113,83 @@ test('platform promotion requires staged CSS and uploaded 390/1440 proof first',
   );
   assert.equal(steps[style].env.VERCEL_STAGED_APP, 'platform');
   assert.ok(steps[upload].with.path.includes('staged-style-proof'));
+});
+
+test('failure descriptions use only listed reasons, never raw error text', () => {
+  assert.equal(
+    describeFailure(
+      new Error('Staged CSS bytes differ from the built artifact')
+    ),
+    'Staged CSS bytes differ from the built artifact'
+  );
+  assert.equal(
+    describeFailure(
+      new Error('page.evaluate: Error: Unverified stylesheet\n    at stack')
+    ),
+    'Unverified stylesheet'
+  );
+  const leaked = describeFailure(
+    Object.assign(
+      new Error('Command failed: vercel curl --token SECRET-VALUE'),
+      {
+        code: 1,
+      }
+    )
+  );
+  assert.equal(leaked, 'Unclassified Error:exit-1');
+  assert.equal(
+    describeFailure(
+      Object.assign(new Error('SECRET-VALUE'), { code: 'ETIMEDOUT' })
+    ),
+    'Unclassified Error:ETIMEDOUT'
+  );
+  assert.equal(describeFailure(undefined), 'Unclassified Error');
+});
+
+test('every reason the script raises is listed for reporting', async () => {
+  const source = await readFile(
+    resolve(__dirname, 'verify-staged-style.js'),
+    'utf8'
+  );
+  const raised = [
+    ...source.matchAll(/new Error\(\s*'([^']+)'/gu),
+    ...source.matchAll(/^\s*'((?:Candidate|Staged|An exact)[^']+)'\s*$/gmu),
+  ].map((match) => match[1]);
+  assert.ok(raised.length >= FAILURE_REASONS.length - 1);
+  for (const reason of raised)
+    assert.ok(FAILURE_REASONS.includes(reason), reason);
+});
+
+test('a failed proof logs its reason and still leaves evidence to upload', async (t) => {
+  const temp = await mkdtemp(resolve(tmpdir(), 'staged-failure-test-'));
+  t.after(() => rm(temp, { recursive: true, force: true }));
+  const sha = 'a'.repeat(40);
+  const runCommand = async () => {
+    throw Object.assign(new Error('Command failed: vercel curl SECRET-VALUE'), {
+      code: 1,
+    });
+  };
+  const env = {
+    VERCEL_STAGED_DEPLOYMENT_URL: 'https://platform-fixture.vercel.app',
+    VERCEL_STAGED_APP: 'platform',
+    VERCEL_TOKEN: 'SECRET-VALUE',
+    GITHUB_SHA: sha,
+    RUNNER_TEMP: temp,
+  };
+  await assert.rejects(main({ env, runCommand }), (error) => {
+    assert.equal(error.stagedReason, 'Unclassified Error:exit-1');
+    return true;
+  });
+  const text = await readFile(
+    resolve(temp, 'staged-style-proof', sha, 'failure.json'),
+    'utf8'
+  );
+  assert.deepEqual(JSON.parse(text), {
+    source: sha,
+    deployment: 'https://platform-fixture.vercel.app',
+    stage: 'identity',
+    reason: 'Unclassified Error:exit-1',
+    resourceFailures: [],
+  });
+  assert.ok(!text.includes('SECRET-VALUE'));
 });

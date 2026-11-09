@@ -34,6 +34,7 @@ const context = {
 };
 const report = {
   id: 'report-1',
+  feedback: 'Teacher comment',
   user_id: 'user-1',
   user_email: 'user@example.com',
   report_approval_status: 'APPROVED',
@@ -255,3 +256,26 @@ describe('periodic report delivery route', () => {
     ).toBe(false);
   });
 });
+
+it.each(['send', 'retry', 'test'])(
+  'refuses %s of an approved empty report without queueing',
+  async (action) => {
+    vi.clearAllMocks();
+    mocks.permissions.mockResolvedValue({
+      wsId: 'workspace-1',
+      containsPermission: () => true,
+    });
+    database({
+      external_user_monthly_reports_workspace_view: {
+        ...report,
+        feedback: ' \n\t',
+      },
+    });
+    const response = await POST(request(action), context);
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({
+      code: 'REPORT_FEEDBACK_REQUIRED',
+    });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  }
+);

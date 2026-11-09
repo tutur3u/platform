@@ -22,6 +22,21 @@ cadence and preserve their filters. The canonical hub opens **Daily** by default
 when the actor can view daily reports; explicit Periodic and Automations links
 still open their requested cadence or Automations view.
 
+## Bulk approval setting
+
+Workspace Settings → Approvals contains **Allow bulk approval of monthly reports**.
+The setting applies to every periodic report cadence and defaults to off for all
+workspaces. Only members with `manage_workspace_settings` can change it. The
+existing `workspace_configs` key `ALLOW_BULK_REPORT_APPROVAL` enables the feature
+only when its saved value is exactly `true`; missing or unreadable settings never
+permit bulk approval.
+
+When off, the periodic Approvals view hides **Approve all**, and the server refuses
+bulk approval. Single approval remains available and requires feedback. When on,
+bulk approval skips reports without feedback and reports approved and skipped
+counts. Daily/post approval is unaffected. Regression coverage lives in the
+approval handler, setting permission, and settings component tests.
+
 ## Central dashboard
 
 The Reports worklist offers Daily, Weekly, Monthly, Quarterly, Yearly and All
@@ -131,24 +146,18 @@ that month or the first days of the next one.
   estimated month: created after day 10 of the month and up to day 10 of the next
   month, in the workspace timezone (else the viewer's, else UTC). A report written
   on 28 Oct or on 2 Nov is therefore listed under October.
-- **Sent stage: send month.** Sent reports (`report_stage = 'sent'`) belong to
-  the month they were actually sent, not the month they cover: `delivered_at`
-  from the 1st at 00:00 to the 1st of the next month in `Asia/Ho_Chi_Minh`, for
-  every workspace and viewer timezone (`buildReportStageMonthFilter`). October
-  2026 is `[2026-09-30T17:00:00Z, 2026-10-31T17:00:00Z)`. A report covering
-  October but sent on 30 Sep is in September's Sent list; title, saved period and
-  creation date are never used for Sent. Every other stage, including a blocked
-  report with a provider-accepted `delivered_at`, keeps its covered month. The
-  list, its pages and the stage cards share one filter, so the Sent card matches
-  the Sent list. Row month labels, the month picker default, new-report periods,
-  titles, Custom date range and All months are unchanged.
-- **Sent without a send date.** A Sent report with no `delivered_at` is in no
-  month and appears only under All months. The month filter excludes these rows
-  in the database, before the 20,000-row cap, so they never make a month read
-  fail or count toward a month's totals. A month read therefore never sees them:
-  `undatedSentCount` is always `null` (unknown, never 0), including when the
-  actor has no accessible group, and Contacts shows no count notice. All months
-  reads them with the existing cap. Records are not backfilled.
+- **Every stage uses the report month.** Sent reports use the same saved period
+  or estimated-month fallback as every other stage. An October report sent in
+  November belongs to October; a September report sent in October belongs to
+  September. The send date, delivery status and title do not select its month.
+  A Sent report without a send date still belongs to its saved or estimated
+  report month. The list, its pages, stage cards and category counts share this
+  filter (`report-month-scope.test.ts`, `report-summary-scope.test.ts`).
+- **Collection limits.** Month filtering happens before the 20,000-row cap.
+  Reports in other covered months do not consume that cap. More than 20,000
+  matching reports return the existing limit error rather than partial results,
+  whether or not they have a send date. All months keeps the same cap. Records
+  are not backfilled, and `undatedSentCount` remains unknown (`null`).
 - **New reports** save `period_start`/`period_end` as the chosen month's calendar
   bounds with `cadence: monthly`. The workspace default title (`<title> MM/YYYY`)
   follows the chosen month until the teacher edits the title.
@@ -765,3 +774,8 @@ authorized explicit approval of EVERY email entry, the specific monthly action,
 recipient approval, provider readiness and canonical parent inbox delivery remain
 separate held outcomes. Draft save/reload and foreign-teacher topic notification
 verification are also still required.
+
+
+### Feedback required for approval and delivery
+
+Periodic reports require non-whitespace feedback before approval or email queueing. This rule applies to single and bulk approval, manual sends, retries, held-report batches, and the delivery worker. Drafts can remain empty. Bulk approval skips empty reports and returns approved and skipped counts. English and Vietnamese controls explain why approval or sending is disabled. Workspace, class, reviewer and send permissions remain required. Cancelling a queued delivery does not require feedback. Regression coverage exercises the approval and delivery boundaries with empty and populated feedback.

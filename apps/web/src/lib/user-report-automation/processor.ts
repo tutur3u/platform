@@ -1,3 +1,7 @@
+import {
+  hasReportFeedback,
+  REPORT_FEEDBACK_REQUIRED,
+} from '@tuturuuu/users-core/features/reports/report-feedback';
 import { EmailService } from '@tuturuuu/email-service';
 import type { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types/supabase';
@@ -211,6 +215,11 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
     }
     if (reportResult.data.report_approval_status !== 'APPROVED') {
       await fail('blocked', 'Report is not approved.', true);
+      return;
+    }
+
+    if (!hasReportFeedback(reportResult.data.feedback)) {
+      await fail('blocked', REPORT_FEEDBACK_REQUIRED.message, true);
       return;
     }
 

@@ -24,10 +24,14 @@ export function toTranscriptLines(chunks: MeetAiChunk[]): TranscriptLine[] {
             },
           ];
       return [...segments]
+        .filter((segment) => 'startSeconds' in segment)
         .sort((a, b) => a.startSeconds - b.startSeconds)
         .map((segment, index) => ({
           id: `${chunk.id}:${index}`,
-          speaker: segment.speaker?.displayName ?? null,
+          speaker:
+            segment.speaker && 'displayName' in segment.speaker
+              ? (segment.speaker.displayName ?? null)
+              : null,
           kind: segment.kind ?? null,
           startSeconds: segment.startSeconds,
           text: segment.transcript?.trim() ?? '',

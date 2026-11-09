@@ -70,7 +70,7 @@ describe('createHttpGuardTransport', () => {
       expect(body).not.toContain('203.0.113.4');
       expect(body).not.toContain('session-secret');
       expect(JSON.parse(body).id).toMatch(/^[A-Za-z0-9_-]{22,64}$/u);
-      expect(init?.redirect).toBe('error');
+      expect(init?.redirect).toBe('manual');
       return jsonResponse(hitReply(JSON.parse(body), () => true));
     });
     const client = createAbuseGuardClient({

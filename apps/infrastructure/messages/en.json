@@ -7359,6 +7359,12 @@
     }
   },
   "feature-flags": {
+    "audit": {
+      "actor": "Actor",
+      "empty": "No changes",
+      "title": "Audit",
+      "unavailable": "Audit is unavailable"
+    },
     "columns": {
       "apps": "Apps",
       "created": "Created",
@@ -7367,6 +7373,18 @@
       "owner": "Owner",
       "remove_by": "Remove by",
       "verified": "Verified on prod"
+    },
+    "controls": {
+      "build_time": "Build time",
+      "conflict": "This flag changed. Reload before saving.",
+      "error": "Could not save",
+      "loading": "Saving",
+      "managed_in_secrets": "Managed per workspace in Secrets",
+      "reconcile": "Check result",
+      "reset": "Use default",
+      "secrets_link": "Secrets",
+      "storage_unavailable": "Saved state is unavailable",
+      "unknown_outcome": "The result is unknown. Check it before trying again."
     },
     "environments": {
       "development": "Development",
@@ -7377,6 +7395,10 @@
       "mobile_build": "Mobile build",
       "mobile_runtime": "Mobile runtime",
       "workspace_secret": "Workspace settings"
+    },
+    "filter": {
+      "label": "Filter flags",
+      "placeholder": "Flag name"
     },
     "kinds": {
       "kill_switch": "Kill switch",
@@ -7410,6 +7432,8 @@
       "legacy_unknown": "Unknown (legacy)",
       "not_recorded": "Not recorded",
       "not_verified": "Not verified",
+      "off": "Off",
+      "on": "On",
       "partial": "Partial",
       "unknown": "Unknown",
       "untraced": "Untraced"

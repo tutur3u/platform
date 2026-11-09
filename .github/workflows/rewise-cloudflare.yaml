@@ -147,7 +147,8 @@ jobs:
         with:
           app: rewise
   check-ci:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    needs: affected-gate
+    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -226,8 +227,11 @@ jobs:
           PLATFORM_BUILD_ENVIRONMENT: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build the production Start Worker and assets
-        working-directory: apps/rewise
-        run: bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/rewise && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Seal and pack Worker, assets and emitted Wrangler config
         run: |
           python3 scripts/ci/rewise-native-artifact.py config apps/rewise

@@ -5,7 +5,7 @@ export const WEB_ACCOUNT_DEVICE_COOKIE_NAME =
 export const LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME =
   'tuturuuu_web_account_device';
 export const LEGACY_MULTI_SESSION_STORAGE_KEY = 'tuturuuu_multi_session_store';
-export const MAX_WEB_ACCOUNT_SESSIONS = 5;
+export const MAX_WEB_ACCOUNT_SESSIONS = 10;
 
 export interface WebAccountMetadata {
   addedAt: number | null;
@@ -27,9 +27,16 @@ export interface WebAccountsResponse {
   activeAccountId: string | null;
 }
 
+export type WebAccountErrorCode =
+  | 'account_limit'
+  | 'device_unavailable'
+  | 'save_failed'
+  | 'session_missing';
+
 export interface WebAccountMutationResponse extends WebAccountsResponse {
   accountId?: string;
   error?: string;
+  errorCode?: WebAccountErrorCode;
   redirectTo?: string;
   /**
    * The stored session for that account can no longer be used, so the only way

@@ -1814,7 +1814,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/mobile/feature-flags/route.ts",
-    "sourceSha256": "5278888a7e06fdf3228decd8b8e6fe80ede9275752ac6fa992a0cc6b8842509f",
+    "sourceSha256": "9950ed4842215387195d69020b36ab7285e8a25d67c0950d4b9566185a91379c",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -1825,6 +1825,16 @@
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/mobile/version-check/route.ts",
     "sourceSha256": "f4b9571878bd6e39f770d1426fe277df63c4507e6629c99054246256a82d9e87",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/mobile/version",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mobile/version/route.ts",
+    "sourceSha256": "8db08ebee8c6cbf83401c1c7a9977322d934ba66a7c983c86cecd50ecabe513d",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2575,6 +2585,16 @@
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/webhooks/ai-agents/[adapter]/[channelId]/route.ts",
     "sourceSha256": "e6e595cd78bfb5e235fd11ed05e35f15b19cce32a0988375ffc2f24c8cd4c5b1",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/webhooks/email/ses",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/webhooks/email/ses/route.ts",
+    "sourceSha256": "0c9b2a999ad63bd4e103f4b4b839e0e3f35295c9a571caeabce95e019092ecc4",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -4224,7 +4244,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/review/route.ts",
-    "sourceSha256": "e6991e4280db78cedb65727386e13201feec67cb765acf478395217597968cca",
+    "sourceSha256": "4c4d8b782a319416c66451a68af8fe2f7ae4730ded1a765e24020588e3c3f425",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -4404,7 +4424,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/voice-jobs/route.ts",
-    "sourceSha256": "34c57d13564c6477202b92bb640c9340e09a6a0580159448e594b1a9b67f9b0a",
+    "sourceSha256": "9151bcd912e9a680b67e58369b4a528d8c7b580b92af4874430eabcbb6397778",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

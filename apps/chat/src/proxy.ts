@@ -82,7 +82,16 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = LOCAL_AUTH_API_PATHS.has(request.nextUrl.pathname);
-    const appSessionRefresh = isLocalAuthApi
+    const isBuildInfoRead =
+      request.nextUrl.pathname === '/api/build-info' &&
+      (request.method === 'GET' || request.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of request.cookies.getAll())
+        request.cookies.delete(cookie.name);
+      request.headers.delete('cookie');
+      request.headers.delete('authorization');
+    }
+    const appSessionRefresh = isLocalAuthApi || isBuildInfoRead
       ? null
       : await refreshAppSessionForRequest(request, {
           sessionMode: 'supabase-first',

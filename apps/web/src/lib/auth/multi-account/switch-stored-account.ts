@@ -25,6 +25,7 @@ export async function switchStoredAccount({
   accountId,
   payload,
   listAccounts,
+  resolveIdentity,
   revokeTempAuth,
 }: {
   request: Request;
@@ -32,6 +33,10 @@ export async function switchStoredAccount({
   accountId: string;
   payload: SwitchAccountPayload;
   listAccounts: (device: WebAccountDevice) => Promise<WebAccountsResponse>;
+  resolveIdentity: (fallback: {
+    avatarUrl: string | null;
+    displayName: string | null;
+  }) => { avatar_url: string | null; display_name: string | null };
   revokeTempAuth: (client: {
     auth: {
       getUser: () => Promise<{ data: { user: { id: string } | null } }>;
@@ -51,9 +56,14 @@ export async function switchStoredAccount({
           select active_user_id from private.web_account_devices where id::text = ${device.deviceId}
         `;
         const [row] = await transaction<
-          { session_ciphertext: string; last_route: string | null }[]
+          {
+            session_ciphertext: string;
+            last_route: string | null;
+            avatar_url: string | null;
+            display_name: string | null;
+          }[]
         >`
-          select session_ciphertext, last_route from private.web_account_sessions
+          select session_ciphertext, last_route, avatar_url, display_name from private.web_account_sessions
           where device_id::text = ${device.deviceId} and user_id::text = ${accountId}
         `;
         if (!row || !deviceRow) throw new StaleAccountSwitchError();
@@ -101,8 +111,14 @@ export async function switchStoredAccount({
             error: error?.message ?? 'Stored session is no longer valid',
           };
         }
+        const identity = resolveIdentity({
+          avatarUrl: row.avatar_url,
+          displayName: row.display_name,
+        });
         const updated = await transaction`
           update private.web_account_sessions set last_active_at = now(),
+            avatar_url = ${identity.avatar_url},
+            display_name = ${identity.display_name},
             session_ciphertext = ${encryptSession(data.session)},
             session_expires_at = ${data.session.expires_at ? new Date(data.session.expires_at * 1000).toISOString() : null},
             updated_at = now()

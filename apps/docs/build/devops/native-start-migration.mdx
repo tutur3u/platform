@@ -106,6 +106,24 @@ ports rather than create alternate identity or navigation implementations.
 forwarding, rejected identities, profile fallback and interleaved requests;
 `auth.test.ts` covers the Next adapter.
 
+### Provider requests that forbid redirects
+
+Workers supports `redirect: 'manual'` and `redirect: 'follow'`. The Fetch-standard
+`redirect: 'error'` mode throws before dispatch on Workers. For credential-bearing
+provider requests that must not follow redirects, use `manual` and reject
+`opaqueredirect` and every 3xx before reading a response body or refreshing
+credentials. Do not forward `Location` or retry a redirected mutation.
+
+Calendar's Graph sync transport retains its single-attempt cancellation budget.
+Mail's provider transport permits only its existing GET-on-401 credential refresh;
+its OAuth token/profile and SNS certificate readers require a direct successful
+response. Focused tests cover direct success, redirect and opaque-response denial,
+and the existing retry limits. Verify the transport in local workerd with synthetic
+identity boundaries and an outbound interceptor; record every attempted host and
+require that a redirect never reaches its destination. Provider and production
+acceptance remain separate from this local check. See the
+[Workers Request reference](https://developers.cloudflare.com/workers/runtime-apis/request/).
+
 ## basePath readiness
 
 Each app must serve both its subdomain and `tuturuuu.com/<app>` from the same
@@ -194,3 +212,19 @@ the gates above pass. There are no staged canaries or traffic percentages.
 Rolling back an app restores the captured routing to the immutable prior
 deployment in one step. Never delete the prior deployment or its routing record until the native
 runtime has served all traffic through a full release cycle.
+
+### Rewise anonymous smoke diagnostics
+
+Rewise's centralized auth proxy handles signed-out `/` before its native page.
+The redirect targets `https://tuturuuu.com/login` with an app-session `returnUrl`
+pointing to `/verify-token?nextUrl=...` on the Rewise origin. The native `/login`
+page instead supplies the Rewise root as its return target. Check the full return
+target as well as the login origin and path; retain unknown-host, apex-host,
+missing-secret and outbound-isolation probes.
+
+The Rewise server-artifact scanner permits original `process.env.NODE_ENV`
+branches in validated v3 source maps. Executable files still reject that text,
+and both raw and JSON-decoded source maps reject development-secret prefixes.
+Run `node --test apps/rewise/cloudflare/server-artifact-scan.test.mjs
+apps/rewise/cloudflare/central-login-redirect.test.mjs` for the build-free
+regressions. These fixtures do not replace the emitted-Worker smoke gate.

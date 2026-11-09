@@ -144,22 +144,17 @@ describe('useBoardHeaderData', () => {
       [{ id: later.id, user_id: later.id, display_name: later.display_name }]
     );
     const { result } = setup({ queryClient });
-    expect(result.current.people.map((person) => person.id)).toEqual([
-      'me',
-      'later',
-    ]);
+    expect(result.current.people.map((person) => person.id)).toEqual(['later']);
     expect(listMembers).not.toHaveBeenCalled();
   });
 
-  it('keeps assigned nonmembers available and ignores deleted tasks in counts', async () => {
+  it('excludes assigned nonmembers and ignores deleted tasks in counts', async () => {
     listMembers.mockResolvedValueOnce({ members: [] });
     const { result } = setup({
       tasks: [task, { ...task, id: 'old-task', deleted_at: '2026-10-01' }],
     });
     await waitFor(() => expect(listMembers).toHaveBeenCalledTimes(1));
-    expect(
-      result.current.people.find((person) => person.id === me.id)?.taskCount
-    ).toBe(1);
+    await waitFor(() => expect(result.current.people).toEqual([]));
     expect(result.current.projectTaskCounts.get('project-1')).toBe(1);
   });
 

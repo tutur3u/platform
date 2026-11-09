@@ -43,3 +43,55 @@ test('accepts clean emitted files across extensions and subdirectories', async (
   await writeFile(join(directory, 'assets', 'config.json'), '{}');
   await assertServerArtifact(directory);
 });
+
+function sourceMap(source) {
+  return JSON.stringify({
+    version: 3,
+    sources: ['original.ts'],
+    sourcesContent: [source],
+    names: [],
+    mappings: '',
+  });
+}
+
+test('accepts original NODE_ENV text in a valid source map', async (t) => {
+  const directory = await fixture(t);
+  await writeFile(join(directory, 'index.mjs'), 'export default "production";');
+  await writeFile(
+    join(directory, 'index.mjs.map'),
+    sourceMap('process.env.NODE_ENV')
+  );
+  await assertServerArtifact(directory);
+});
+
+test('a source map cannot hide executable NODE_ENV', async (t) => {
+  const directory = await fixture(t);
+  await writeFile(
+    join(directory, 'index.mjs.map'),
+    sourceMap('process.env.NODE_ENV')
+  );
+  await writeFile(
+    join(directory, 'index.mjs'),
+    'export default process.env.NODE_ENV;'
+  );
+  await assert.rejects(assertServerArtifact(directory), /index\.mjs/u);
+});
+
+test('rejects development secrets in source maps including JSON escapes', async (t) => {
+  const directory = await fixture(t);
+  await writeFile(join(directory, 'index.mjs'), 'export default {};');
+  for (const escaped of [false, true]) {
+    let map = sourceMap('tuturuuu-local-development-synthetic-secret');
+    if (escaped) map = map.replace('tuturuuu', String.raw`\u0074uturuuu`);
+    await writeFile(join(directory, 'index.mjs.map'), map);
+    await assert.rejects(assertServerArtifact(directory), /index\.mjs\.map/u);
+  }
+});
+
+test('rejects invalid or disguised source maps', async (t) => {
+  const directory = await fixture(t);
+  for (const content of ['process.env.NODE_ENV', '{}', '{"version":3}']) {
+    await writeFile(join(directory, 'index.mjs.map'), content);
+    await assert.rejects(assertServerArtifact(directory));
+  }
+});

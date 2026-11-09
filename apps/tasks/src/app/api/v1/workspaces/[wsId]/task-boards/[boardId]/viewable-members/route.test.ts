@@ -143,7 +143,7 @@ describe('task board viewable members route GET', () => {
     expect(body.members).toEqual([
       expect.objectContaining({
         display_name: 'Creator',
-        email: 'creator@example.com',
+        email: null,
         is_creator: true,
         permission: 'edit',
         roles: [],
@@ -151,7 +151,7 @@ describe('task board viewable members route GET', () => {
       }),
       expect.objectContaining({
         display_name: 'Project Manager',
-        email: 'pm@example.com',
+        email: null,
         is_creator: false,
         permission: 'edit',
         roles: [{ id: 'role-1', name: 'Project manager' }],
@@ -159,7 +159,7 @@ describe('task board viewable members route GET', () => {
       }),
       expect.objectContaining({
         display_name: 'Viewer',
-        email: 'viewer@example.com',
+        email: null,
         permission: 'view',
         roles: [],
         user_id: 'user-viewer',

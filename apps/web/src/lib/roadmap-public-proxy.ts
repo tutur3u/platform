@@ -61,21 +61,22 @@ export function isRoadmapPublicPath(pathname: string): boolean {
 }
 
 function canonicalRoadmapRedirectPath(pathname: string): string | null {
-  const { locale, pathnameWithoutLocale } =
-    roadmapPathnameWithoutLocale(pathname);
+  const { locale } = roadmapPathnameWithoutLocale(pathname);
 
-  if (!isRoadmapPublicPath(pathname)) return null;
+  if (!isRoadmapPublicPath(pathname) || !locale) return null;
 
-  const bareRoadmap =
-    pathnameWithoutLocale === '/roadmap' && !pathname.endsWith('/');
-  if (!locale && !bareRoadmap) return null;
-
-  const unlocalized = locale
-    ? pathname.slice(locale.length + 1) || '/'
-    : pathname;
-  if (unlocalized === '/roadmap') return '/roadmap/';
-
+  const unlocalized = pathname.slice(locale.length + 1) || '/';
   return unlocalized.startsWith('/') ? unlocalized : `/${unlocalized}`;
+}
+
+/**
+ * Next strips the trailing slash before the proxy runs, so the mount root
+ * arrives as `/roadmap`. The worker serves its root at `/roadmap/` and
+ * redirects the bare form there, which would loop against Next, so the root
+ * is requested with the slash directly.
+ */
+function roadmapUpstreamPathname(pathname: string): string {
+  return pathname === '/roadmap' ? '/roadmap/' : pathname;
 }
 
 function forwardedRequestHeaders(req: NextRequest): Headers {
@@ -147,7 +148,10 @@ export async function proxyRoadmapPublicRequest(
     });
   }
 
-  const upstream = new URL(req.nextUrl.pathname, ROADMAP_UPSTREAM_ORIGIN);
+  const upstream = new URL(
+    roadmapUpstreamPathname(req.nextUrl.pathname),
+    ROADMAP_UPSTREAM_ORIGIN
+  );
   upstream.search = req.nextUrl.search;
 
   let upstreamResponse: Response;
