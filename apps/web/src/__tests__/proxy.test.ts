@@ -1522,7 +1522,6 @@ describe('web proxy api handling', () => {
     vi.unstubAllGlobals();
   });
 
-
   it('keeps the legacy signup entry public for its login redirect', async () => {
     const { proxy } = await import('../proxy');
     await proxy(new NextRequest('http://localhost/signup'));
