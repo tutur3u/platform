@@ -38,6 +38,12 @@ describe('app public paths', () => {
     );
   });
 
+  it('allows anonymous access to the public roadmap', () => {
+    expect(APP_PUBLIC_PATHS).toEqual(
+      expect.arrayContaining(['/roadmap', '/en/roadmap', '/vi/roadmap'])
+    );
+  });
+
   it('allows unauthenticated access to public marketing tool and share routes', () => {
     expect(APP_PUBLIC_PATHS).toEqual(
       expect.arrayContaining([

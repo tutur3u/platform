@@ -60,6 +60,10 @@ import { getMailAppOrigin } from './lib/mail-app-url';
 import { getMeetAppOrigin } from './lib/meet-app-url';
 import { feedbackProxyPayloadLimit } from './lib/product-feedback-limits';
 import { profileMediaProxyPayloadLimit } from './lib/profile-media-proxy';
+import {
+  isRoadmapPublicPath,
+  proxyRoadmapPublicRequest,
+} from './lib/roadmap-public-proxy';
 import { guardApiCostAndCsrf } from './lib/security/api-request-guard';
 import { isVerifiedStaffCliSession } from './lib/staff-cli-session';
 import { withStagingOriginProof } from './lib/staging-origin-proof';
@@ -221,6 +225,10 @@ function isAuthProxyPublicPath(pathname: string): boolean {
   const { locale, pathnameWithoutLocale } = getLocaleAwarePathname(pathname);
 
   if (locale && pathnameWithoutLocale === '/') {
+    return true;
+  }
+
+  if (isRoadmapPublicPath(pathname)) {
     return true;
   }
 
@@ -909,9 +917,12 @@ async function blockSuspiciousAnonymousApiRequest(
 
 const authProxy = createCentralizedAuthProxy({
   webAppUrl: WEB_APP_URL,
-  // `/design` is authorized by segment in isPublicPath. A raw prefix would
-  // also make `/design-private` public.
-  publicPaths: PUBLIC_PATHS.filter((path) => !isDesignPublicPath(path)),
+  // publicPaths is a raw prefix list. `/design` and `/roadmap` stay on
+  // APP_PUBLIC_PATHS for exact checks. Segment checks admit only those
+  // complete segments, so `/design-private` and `/roadmap-private` stay private.
+  publicPaths: PUBLIC_PATHS.filter(
+    (path) => !isDesignPublicPath(path) && !isRoadmapPublicPath(path)
+  ),
   isPublicPath: (pathname) =>
     isAuthProxyPublicPath(pathname) || isDesignPublicPath(pathname),
   skipApiRoutes: true,
@@ -1029,7 +1040,11 @@ async function guardGuestWorkspaceRoute({
     return null;
   }
 }
+
 async function webProxy(req: NextRequest): Promise<NextResponse> {
+  const roadmapResponse = await proxyRoadmapPublicRequest(req);
+  if (roadmapResponse) return roadmapResponse;
+
   if (
     req.nextUrl.pathname.startsWith('/api') ||
     req.nextUrl.pathname === '/native-integrity/turnstile'
@@ -1447,8 +1462,12 @@ export const config = {
      * - .well-known (domain verification files)
      * Excludes static assets: svg, png, jpg, jpeg, mp3, wav, ogg, m4a, pdf,
      * gif and webp.
+     * `/roadmap` is listed on its own so mounted worker assets keep those
+     * extensions and still reach the public proxy.
      */
 
+    '/roadmap',
+    '/roadmap/:path*',
     '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|manifest.webmanifest|sw.js|serwist|monitoring|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|mp3|wav|ogg|m4a|pdf|gif|webp)$).*)',
   ],
 };

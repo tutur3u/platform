@@ -254,7 +254,9 @@ export async function consumeAuthRecoveryCredential({
   const overrideId = String(row.override_id);
   const tokenId = String(row.token_id);
   const consumedBy = String(row.consumed_by);
-  const session = await issueAuthRecoverySession(consumedEmail, overrideId);
+  const session = await issueAuthRecoverySession(consumedEmail, overrideId, {
+    userAgent: extractUserAgentFromHeaders(request.headers),
+  });
   await logAuthRecoveryEvent({
     email: consumedEmail,
     eventType:
