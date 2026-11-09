@@ -73,7 +73,7 @@ describe('download relay protects every file transfer', () => {
     );
     expect(mocks.fetch.mock.calls[0]?.[1]).toMatchObject({
       method: 'HEAD',
-      redirect: 'error',
+      redirect: 'manual',
     });
   });
 

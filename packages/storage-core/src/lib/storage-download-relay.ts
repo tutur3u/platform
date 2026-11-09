@@ -85,14 +85,14 @@ export async function relayStorageDownload(request: Request, token: string) {
     };
     cleanup = finish;
     const options: RequestInit = {
-      redirect: 'error',
+      redirect: 'manual',
       cache: 'no-store',
       signal: controller.signal,
       headers: { 'Accept-Encoding': 'identity' },
     };
     // Inspect without downloading bytes; ranges reserve their exact span.
     const head = await fetch(ticket.url, { ...options, method: 'HEAD' });
-    if (!head.ok) {
+    if (head.type === 'opaqueredirect' || !head.ok) {
       finish();
       throw new StorageDownloadError(
         'Storage object unavailable',
@@ -123,6 +123,7 @@ export async function relayStorageDownload(request: Request, token: string) {
       throw new StorageDownloadError('Range not satisfiable', 416);
     }
     if (
+      upstream.type === 'opaqueredirect' ||
       (resolvedRange &&
         (upstream.status !== 206 ||
           upstream.headers.get('content-range') !==
