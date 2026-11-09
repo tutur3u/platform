@@ -280,3 +280,24 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Artifact | inventory-cloudflare.yaml, job cutover-build (`inventory-cutover-<sha>`) |
 | Vercel rollback pin | dpl_2qe5xFZEHUSNbbmm3sR6TgbHDG5h |
 | Smoke | `node scripts/cutover-smoke.mjs inventory https://inventory.tuturuuu.com` |
+## nova
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-nova` |
+| Hosts | nova.tuturuuu.com |
+| Artifact | nova-cloudflare.yaml, job nova-cutover-artifact |
+| Vercel rollback pin | dpl_5GdmHYYQ1AfLeZcZ1pZ79zKDokGQ |
+| Packet | `nova-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs nova https://nova.tuturuuu.com` |
+
+## pay
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-pay` |
+| Hosts | pay.tuturuuu.com |
+| Artifact | pay-cloudflare.yaml, job pay-cutover-artifact |
+| Vercel rollback pin | dpl_4vY3ZuCcANuyt4qbUrsgDhQBM1yy |
+| Packet | `pay-start-void` |
+| Smoke | `node scripts/cutover-smoke.mjs pay https://pay.tuturuuu.com` |

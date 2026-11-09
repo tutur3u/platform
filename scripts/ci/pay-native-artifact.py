@@ -38,6 +38,17 @@ def load():
 
 
 def main():
+    import sys
+    production = False
+    if "--profile" in sys.argv:
+        index = sys.argv.index("--profile")
+        del sys.argv[index]
+        if index >= len(sys.argv) or sys.argv.pop(index) != "production":
+            raise SystemExit("only the production artifact profile is supported")
+        production = True
+    global WORKER
+    if production:
+        WORKER = "tuturuuu-pay"
     # The shared CLI reads its exact source from APPS_SOURCE_SHA.
     if "PAY_SOURCE_SHA" in os.environ:
         os.environ["APPS_SOURCE_SHA"] = os.environ["PAY_SOURCE_SHA"]
