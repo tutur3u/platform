@@ -251,7 +251,14 @@ function ParticipantTileImpl({
           {t('hand_raised')}
         </div>
       )}
-      <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-media-scrim to-transparent px-3 py-3 text-media-scrim-foreground">
+      <div
+        className={cn(
+          'absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t to-transparent px-3 py-3',
+          showVideo
+            ? 'from-media-scrim text-media-scrim-foreground'
+            : 'from-background/90 text-foreground'
+        )}
+      >
         {kind === 'screen' && (
           <MonitorUp
             aria-label={t('sharing_screen')}
@@ -292,7 +299,12 @@ function ParticipantTileImpl({
             <Button
               size="icon"
               variant="ghost"
-              className="ml-auto size-8 shrink-0 rounded-full bg-background/30 text-media-scrim-foreground opacity-100 hover:bg-background/60 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
+              className={cn(
+                'ml-auto size-8 shrink-0 rounded-full opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100',
+                showVideo
+                  ? 'bg-background/30 text-media-scrim-foreground hover:bg-background/60'
+                  : 'bg-foreground/10 text-foreground hover:bg-foreground/20'
+              )}
               aria-label={t('mute_participant', {
                 name: participant.displayName,
               })}
