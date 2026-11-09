@@ -34,7 +34,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: async () => ({ ok: mocks.member }),
   getPermissions: async () => ({ withoutPermission: () => !mocks.permission }),
 }));
-vi.mock('@tuturuuu/utils/feature-flags', () => ({
+vi.mock('@tuturuuu/utils/feature-flags/core', () => ({
   getFeatureFlag: async () => mocks.enabled,
 }));
 vi.mock('next/server', async (original) => ({

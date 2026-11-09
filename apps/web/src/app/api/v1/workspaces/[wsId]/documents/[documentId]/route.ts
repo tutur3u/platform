@@ -10,7 +10,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { connection } from 'next/server';
 import { NextResponse } from 'next/server';
-import { getFeatureFlag } from '@tuturuuu/utils/feature-flags';
+import { getFeatureFlag } from '@tuturuuu/utils/feature-flags/core';
 import {
   documentPatchSchema,
   hasHierarchyFields,
@@ -23,7 +23,10 @@ interface Params {
   }>;
 }
 
-async function authorizeDocumentsRequest(request: Request, wsIdParam: string) {
+async function authorizeDocumentsRequest(
+  request: Request,
+  wsIdParam: string
+): Promise<{ error: Response } | { wsId: string }> {
   const supabase = await createClient(request);
   const wsId = await normalizeWorkspaceId(wsIdParam, supabase);
 

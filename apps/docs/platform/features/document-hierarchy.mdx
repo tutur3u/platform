@@ -32,5 +32,5 @@ write IDs, timestamps, workspace identity or legacy content through these routes
 
 Regression coverage is in
 `apps/web/src/app/api/v1/workspaces/[wsId]/documents/route.test.ts`; the schema
-contract is covered by `supabase/tests` hierarchy tests. API mocks verify the
+contract is covered by `apps/database/supabase/tests/workspace-document-hierarchy.sql`. API mocks verify the
 boundary and write arguments; database tests cover hierarchy consistency.
