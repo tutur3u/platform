@@ -1,5 +1,5 @@
 -- Manual rollback only: drops the SES notification receipts and recorder
--- created by 20261109004500_ses_delivery_notifications.sql. Deploy app code
+-- created by 20261109190300_ses_delivery_notifications.sql. Deploy app code
 -- without the SES webhook route first. Static SQL: no DO block, no EXECUTE.
 -- Suppression rows, bounce records and ledger statuses already written stay;
 -- they are platform data, not part of this migration.
