@@ -66,7 +66,8 @@ function bindingFindings(source, file) {
   for (const match of stripped.matchAll(key)) {
     const rest = stripped.slice(match.index + match[0].length).trimStart();
     if (!rest.startsWith('{')) continue;
-    if (/\bbinding\b\s*:/.test(readObject(rest)))
+    // A quoted JSON key is `"binding":`. A word boundary does not cross the quote.
+    if (/["']?binding["']?\s*:/.test(readObject(rest)))
       findings.push(`${file}: declares an ai binding`);
   }
   if (/^\s*\[ai\]\s*$/m.test(stripped))
