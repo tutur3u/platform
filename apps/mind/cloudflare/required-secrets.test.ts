@@ -5,6 +5,9 @@ import { assertRequiredSecrets, REQUIRED_SECRETS } from './required-secrets.ts';
 const bindings = {
   ...Object.fromEntries(REQUIRED_SECRETS.map((name) => [name, 'fixture'])),
   ABUSE_GUARD_BACKEND: 'upstash',
+  ABUSE_GUARD: {},
+  ABUSE_GUARD_KEY_PEPPER: 'pepper',
+  ABUSE_GUARD_FAMILIES: 'proxy',
 };
 test('all required bindings admit startup', () => {
   assert.doesNotThrow(() => assertRequiredSecrets(bindings));
@@ -41,6 +44,7 @@ test('half binding configuration reports the missing pepper name', () => {
     UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN,
     ABUSE_GUARD_BACKEND,
+    ABUSE_GUARD_KEY_PEPPER,
     ...rest
   } = bindings;
   assert.throws(
@@ -58,6 +62,9 @@ test('neither configuration reports missing names only', () => {
     UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN,
     ABUSE_GUARD_BACKEND,
+    ABUSE_GUARD,
+    ABUSE_GUARD_KEY_PEPPER,
+    ABUSE_GUARD_FAMILIES,
     ...rest
   } = bindings;
   assert.throws(() => assertRequiredSecrets(rest), /ABUSE_GUARD/);
