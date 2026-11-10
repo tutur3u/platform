@@ -17,10 +17,12 @@ const publishedCmsPageVersionSchema = z.object({
 
 /** Published layout only; legacy entries without a version remain supported. */
 export function readPublishedCmsPageVersion(entry: unknown) {
-  const result = z.object({
-    publishedPageVersion: publishedCmsPageVersionSchema.nullish(),
-  }).safeParse(entry);
-  return result.success ? result.data.publishedPageVersion ?? null : null;
+  const result = z
+    .object({
+      publishedPageVersion: publishedCmsPageVersionSchema.nullish(),
+    })
+    .safeParse(entry);
+  return result.success ? (result.data.publishedPageVersion ?? null) : null;
 }
 
 export { CMS_SITE_V1_COLLECTIONS } from '@tuturuuu/types';
