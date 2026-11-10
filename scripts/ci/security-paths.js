@@ -42,7 +42,9 @@ const reviewCategories = [
     patterns: [
       /^apps\/database\//u,
       /^packages\/supabase\//u,
-      /(?:^|\/)[^/]*(?:rls|polic(?:y|ies))[^/]*$/iu,
+      // An RLS filename token. The substring "policy" is product code
+      // (cache-policy.ts), and the letters rls inside "urls" are not RLS.
+      /(?:^|\/)(?:[^/]*[^A-Za-z0-9])?rls(?:[^A-Za-z0-9][^/]*)?$/iu,
     ],
   },
   {
