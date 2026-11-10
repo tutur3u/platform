@@ -32,16 +32,6 @@ export function formatDate(iso: string, lang: Lang, withTime = false) {
   }).format(new Date(iso));
 }
 
-export function relative(iso: string, now: number, lang: Lang) {
-  const seconds = Math.round((Date.parse(iso) - now) / 1000);
-  const format = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' });
-  const abs = Math.abs(seconds);
-  if (abs < 45) return format.format(0, 'second');
-  if (abs < 3600) return format.format(Math.round(seconds / 60), 'minute');
-  if (abs < 86_400) return format.format(Math.round(seconds / 3600), 'hour');
-  return format.format(Math.round(seconds / 86_400), 'day');
-}
-
 export function dayLabel(day: string, today: string, t: Messages, lang: Lang) {
   if (day === today) return t.shipped.today;
   const yesterday = new Date(Date.parse(`${today}T00:00:00Z`) - 86_400_000)

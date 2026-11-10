@@ -7,15 +7,8 @@
   "language": "Language",
   "theme": "Toggle theme",
   "skip": "Skip to tracks",
-  "fresh": {
-    "live": "Live",
-    "refreshing": "Checking…",
-    "snapshot": "Snapshot",
-    "failed": "Live check unavailable",
-    "updated": "Updated",
-    "showing": "Showing data from",
-    "refresh": "Refresh now"
-  },
+  "footerChecked": "Public data from",
+  "liveCheckFailed": "Live check unavailable.",
   "stats": {
     "shippedWeek": "Shipped this week",
     "live": "Live deliverables",

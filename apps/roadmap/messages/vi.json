@@ -7,15 +7,8 @@
   "language": "Ngôn ngữ",
   "theme": "Đổi giao diện",
   "skip": "Tới các hạng mục",
-  "fresh": {
-    "live": "Trực tiếp",
-    "refreshing": "Đang kiểm tra…",
-    "snapshot": "Bản chụp",
-    "failed": "Không thể kiểm tra trực tiếp",
-    "updated": "Cập nhật",
-    "showing": "Dữ liệu từ",
-    "refresh": "Làm mới"
-  },
+  "footerChecked": "Dữ liệu công khai từ",
+  "liveCheckFailed": "Không thể kiểm tra trực tiếp.",
   "stats": {
     "shippedWeek": "Ra mắt tuần này",
     "live": "Hạng mục đã chạy",

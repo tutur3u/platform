@@ -19,6 +19,7 @@ export function MarketingShell({
   LinkComponent,
   ImageComponent,
   siteUrl,
+  navCompact = false,
 }: MarketingShellProps) {
   return (
     <div className={cn('marketing-fonts contents')}>
@@ -27,6 +28,7 @@ export function MarketingShell({
         LinkComponent={LinkComponent}
         locale={locale}
         logoSrc={logoSrc}
+        navCompact={navCompact}
         onLocaleChange={onLocaleChange}
         pathname={pathname}
         signInHref={signInHref}

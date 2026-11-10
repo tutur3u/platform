@@ -1,6 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { createTranslator, MarketingShell } from '@tuturuuu/marketing-shell';
-import { useMemo, useState } from 'react';
+import {
+  createTranslator,
+  MarketingShell,
+  shellNavOffset,
+} from '@tuturuuu/marketing-shell';
+import { useCallback, useMemo, useState, type CSSProperties } from 'react';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
 import { Footer } from '../components/chrome';
@@ -22,6 +26,10 @@ const initialData = parseLiveData(generated);
 function RoadmapPage() {
   const [lang, setLang] = useState<Lang>('en');
   const [filter, setFilter] = useState<StatusFilter>('all');
+  const [navCompact, setNavCompact] = useState(false);
+  const onDock = useCallback((docked: boolean) => {
+    setNavCompact(docked);
+  }, []);
   const t = lang === 'en' ? en : vi;
   const live = useLiveData(initialData);
   const view = useMemo(
@@ -36,6 +44,12 @@ function RoadmapPage() {
       className="roadmap"
       lang={lang}
       data-source-sha={__ROADMAP_BUILD_SHA__}
+      data-nav-compact={navCompact ? '' : undefined}
+      style={
+        {
+          '--shell-nav-offset': `${shellNavOffset(navCompact)}px`,
+        } as CSSProperties
+      }
     >
       <a className="skip-link" href="#tracks">
         {t.skip}
@@ -44,12 +58,13 @@ function RoadmapPage() {
         locale={lang}
         logoSrc={logo}
         onLocaleChange={setLang}
+        navCompact={navCompact}
         pathname="/roadmap"
         signInHref="https://tuturuuu.com/login"
         t={shellT}
       >
         <main className="page">
-          <Hero t={t} lang={lang} live={live} view={view} />
+          <Hero t={t} view={view} />
           <ComingSoon t={t} />
           <TimelineSection
             t={t}
@@ -65,6 +80,7 @@ function RoadmapPage() {
             view={view}
             filter={filter}
             setFilter={setFilter}
+            onDock={onDock}
           />
           <HostingSection
             t={t}
@@ -74,7 +90,12 @@ function RoadmapPage() {
             hostsCheckedAt={initialData.generatedAt}
           />
           <Method t={t} />
-          <Footer t={t} data={live.data} />
+          <Footer
+            t={t}
+            lang={lang}
+            data={live.data}
+            liveCheckFailed={live.state === 'failed'}
+          />
         </main>
       </MarketingShell>
     </div>

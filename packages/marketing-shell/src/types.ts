@@ -24,4 +24,9 @@ export interface MarketingShellProps {
   ImageComponent?: ShellImage;
   /** Base for footer links; defaults to https://tuturuuu.com. */
   siteUrl?: string;
+  /**
+   * Shrink the floating pill so a page can dock its own bar underneath.
+   * Off by default: other marketing pages keep the full pill.
+   */
+  navCompact?: boolean;
 }

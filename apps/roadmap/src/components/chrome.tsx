@@ -1,10 +1,9 @@
-import { Moon, RefreshCw, Sun } from '@tuturuuu/icons';
+import { Moon, Sun } from '@tuturuuu/icons';
 import type { ComponentProps } from 'react';
 import logo from '../assets/tuturuuu-logo.png?no-inline';
 import { useEffect, useState } from 'react';
 import { REPO_URL } from '../live/model';
-import type { LiveState } from '../live/use-live-data';
-import { formatDate, type Lang, type Messages, relative } from './shared';
+import { formatDate, type Lang, type Messages } from './shared';
 
 /**
  * The shell's only image is the brand logo. Serve it from this Worker's own
@@ -50,76 +49,28 @@ export function ThemeToggle({ label }: { label: string }) {
   );
 }
 
-export function FreshnessPill({
+export function Footer({
   t,
   lang,
-  state,
-  generatedAt,
-  now,
-  mounted,
-  onRefresh,
+  data,
+  liveCheckFailed,
 }: {
   t: Messages;
   lang: Lang;
-  state: LiveState;
-  generatedAt: string;
-  now: number;
-  mounted: boolean;
-  onRefresh: () => void;
-}) {
-  const label =
-    state === 'live'
-      ? t.fresh.live
-      : state === 'refreshing'
-        ? t.fresh.refreshing
-        : state === 'failed'
-          ? t.fresh.failed
-          : t.fresh.snapshot;
-  const when = mounted
-    ? relative(generatedAt, now, lang)
-    : `${formatDate(generatedAt, lang, true)} (UTC+7)`;
-  return (
-    <div className={`freshness ${state}`} role="status" aria-live="polite">
-      <span className="pulse" aria-hidden />
-      <strong>{label}</strong>
-      <span className="freshness-time">
-        {state === 'failed' ? t.fresh.showing : t.fresh.updated}{' '}
-        <time
-          dateTime={generatedAt}
-          title={formatDate(generatedAt, lang, true)}
-        >
-          {when}
-        </time>
-      </span>
-      <button
-        type="button"
-        className="icon-button small"
-        onClick={onRefresh}
-        disabled={state === 'refreshing'}
-        aria-label={t.fresh.refresh}
-        title={t.fresh.refresh}
-      >
-        <RefreshCw
-          size={14}
-          aria-hidden
-          className={state === 'refreshing' ? 'spin' : ''}
-        />
-      </button>
-    </div>
-  );
-}
-
-export function Footer({
-  t,
-  data,
-}: {
-  t: Messages;
   data: { generatedAt: string };
+  liveCheckFailed: boolean;
 }) {
   const sha = __ROADMAP_BUILD_SHA__;
   return (
     <div className="footer-inner">
       <p>{t.footer}</p>
+      <p>
+        {liveCheckFailed ? `${t.liveCheckFailed} ` : null}
+        {t.footerChecked}{' '}
+        <time dateTime={data.generatedAt}>
+          {formatDate(data.generatedAt, lang, true)}
+        </time>
+      </p>
       <p>
         <a href={REPO_URL}>GitHub</a>
         {/^[a-f0-9]{40}$/.test(sha) ? (
@@ -131,7 +82,6 @@ export function Footer({
             </a>
           </>
         ) : null}
-        <span className="sr-only"> {data.generatedAt}</span>
       </p>
     </div>
   );
