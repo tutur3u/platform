@@ -569,3 +569,61 @@ describe('mounted no-writer guard', () => {
     expect(await root.text()).toBe('app logout');
   });
 });
+
+describe('the one-origin switch TTR_ONE_ORIGIN_<APP>', () => {
+  const nav = (url: string, flag?: Record<string, string>) =>
+    handle(
+      new Request(url, {
+        headers: { 'sec-fetch-mode': 'navigate', accept: 'text/html' },
+      }),
+      { ...env, ...flag } as Env,
+      ctx
+    );
+
+  it('changes nothing while the variable is unset', async () => {
+    expect((await nav('https://tuturuuu.com/meet/r/abc')).status).toBe(200);
+    expect((await nav('https://meet.tuturuuu.com/r/abc')).status).toBe(200);
+  });
+
+  it('refuses the shared origin while off and serves the subdomain', async () => {
+    const flag = { TTR_ONE_ORIGIN_MEET: 'off' };
+    expect((await nav('https://tuturuuu.com/meet/r/abc', flag)).status).toBe(
+      404
+    );
+    expect((await nav('https://meet.tuturuuu.com/r/abc', flag)).status).toBe(
+      200
+    );
+  });
+
+  it('serves the shared origin noindex in shadow, without redirecting', async () => {
+    const flag = { TTR_ONE_ORIGIN_MEET: 'shadow' };
+    const apex = await nav('https://tuturuuu.com/meet/r/abc', flag);
+    expect(apex.status).toBe(200);
+    expect(apex.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+    const sub = await nav('https://meet.tuturuuu.com/r/abc', flag);
+    expect(sub.status).toBe(200);
+  });
+
+  it('redirects subdomain navigations once on, 307 then 301, no trailing slash', async () => {
+    const on = { TTR_ONE_ORIGIN_MEET: 'on' };
+    const first = await nav('https://meet.tuturuuu.com/r/abc?x=1', on);
+    expect(first.status).toBe(307);
+    expect(first.headers.get('location')).toBe(
+      'https://tuturuuu.com/meet/r/abc?x=1'
+    );
+    const promoted = await nav('https://meet.tuturuuu.com/r/abc', {
+      ...on,
+      TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS: '301',
+    });
+    expect(promoted.status).toBe(301);
+    expect((await nav('https://tuturuuu.com/meet/r/abc', on)).status).toBe(200);
+  });
+
+  it('never redirects machine paths on the subdomain', async () => {
+    const on = { TTR_ONE_ORIGIN_MEET: 'on' };
+    const asset = await nav('https://meet.tuturuuu.com/assets/a.js', on);
+    expect(asset.status).toBe(200);
+    const api = await nav('https://meet.tuturuuu.com/api/own', on);
+    expect(api.status).toBe(200);
+  });
+});
