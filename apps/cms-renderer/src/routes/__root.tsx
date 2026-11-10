@@ -15,7 +15,7 @@ export const Route = createRootRoute({
     ],
   }),
   shellComponent: ({ children }: { children: ReactNode }) => (
-    <html>
+    <html lang="en">
       <head>
         <HeadContent />
       </head>
