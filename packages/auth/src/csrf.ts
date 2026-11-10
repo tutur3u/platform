@@ -29,6 +29,14 @@ export interface CsrfCheckInput {
   allowedOrigins: readonly string[];
   exemptions?: readonly CsrfExemption[];
   isSessionCookieName?: (name: string) => boolean;
+  /**
+   * When true, an `Authorization: Bearer` header exempts only a request that
+   * carries no session cookie. Set on a shared origin (`tuturuuu.com/<app>`
+   * mounts), where an app may fall back to the cookie when a bearer token does
+   * not authenticate, so a cross-origin request with the cookie and any
+   * bearer string must still prove it is same-origin.
+   */
+  bearerRequiresNoSessionCookie?: boolean;
 }
 
 export type CsrfAllowReason =
@@ -117,16 +125,18 @@ export function checkCsrf(input: CsrfCheckInput): CsrfVerdict {
   if (SAFE_METHODS.has(method)) return { ok: true, reason: 'safe-method' };
 
   const authorization = input.headers.get('authorization');
-  if (authorization && /^bearer\s+\S/iu.test(authorization)) {
+  const hasBearer = Boolean(
+    authorization && /^bearer\s+\S/iu.test(authorization)
+  );
+  const hasCookie = hasSessionCookie(
+    input.headers.get('cookie'),
+    input.isSessionCookieName ?? isDefaultSessionCookieName
+  );
+  if (hasBearer && !(input.bearerRequiresNoSessionCookie && hasCookie)) {
     return { ok: true, reason: 'bearer' };
   }
 
-  if (
-    !hasSessionCookie(
-      input.headers.get('cookie'),
-      input.isSessionCookieName ?? isDefaultSessionCookieName
-    )
-  ) {
+  if (!hasCookie) {
     return { ok: true, reason: 'no-session-cookie' };
   }
 

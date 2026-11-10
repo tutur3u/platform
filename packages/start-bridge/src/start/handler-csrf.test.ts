@@ -73,6 +73,36 @@ describe('bridge CSRF admission', () => {
     expect(start).not.toHaveBeenCalled();
   });
 
+  it('refuses a sibling mutation on a mount even with a junk bearer token', async () => {
+    const response = await post(
+      'https://tuturuuu.com/meet/api/own',
+      'enforce',
+      {
+        authorization: 'Bearer junk',
+        cookie: SESSION,
+        origin: 'https://evil.tuturuuu.com',
+        'sec-fetch-site': 'same-site',
+      }
+    );
+
+    expect(response.status).toBe(403);
+    expect(proxy).not.toHaveBeenCalled();
+    expect(start).not.toHaveBeenCalled();
+  });
+
+  it('keeps bearer-only (no cookie) clients working on a mount', async () => {
+    const response = await post(
+      'https://tuturuuu.com/meet/api/own',
+      'enforce',
+      {
+        authorization: 'Bearer eyJ.token',
+        'sec-fetch-site': 'cross-site',
+      }
+    );
+
+    expect(await response.text()).toBe('own');
+  });
+
   it('admits a same-origin mutation on a mount', async () => {
     const response = await post(
       'https://tuturuuu.com/meet/api/own',
