@@ -136,7 +136,7 @@ describe('guardWebApiCsrf', () => {
   });
 
   it('does not let a bearer string exempt a cross-origin cookie mutation', () => {
-    for (const headers of [
+    for (const headers of <Record<string, string>[]>[
       {
         authorization: 'Bearer junk',
         cookie: SESSION_COOKIE,
@@ -162,7 +162,7 @@ describe('guardWebApiCsrf', () => {
     '/api/v1/auth/accounts/logout',
     '/api/v1/auth/accounts/logout-all',
   ])('holds %s to same-origin even without a session cookie', (path) => {
-    for (const headers of [
+    for (const headers of <Record<string, string>[]>[
       { 'sec-fetch-site': 'cross-site' },
       { origin: 'https://evil.example' },
     ]) {
