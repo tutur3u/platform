@@ -8,7 +8,7 @@ import {
 } from './pre-seal-doctor.mjs';
 import '../../../scripts/ci/asset-smoke.test.mjs';
 
-const LOGO = 'https://tuturuuu.com/media/logos/transparent.png';
+const LOGO = '/roadmap/assets/tuturuuu-logo-Abcd1234.png';
 const COMMIT = 'a'.repeat(40);
 
 function passing() {
@@ -50,4 +50,19 @@ test('D79: the doctor fails on a broken variant', () => {
   const report = reportBrokenVariant(passing());
   assert.equal(report.ok, true);
   for (const line of report.lines) console.error(line);
+});
+
+test('D79: an apex logo outside the roadmap mount fails the doctor', () => {
+  const observation = passing();
+  observation.canonical.body = observation.canonical.body.replace(
+    LOGO,
+    'https://tuturuuu.com/media/logos/transparent.png'
+  );
+  const verdict = assessDoctor(observation);
+  assert.equal(verdict.ok, false);
+  assert.ok(
+    verdict.failures.includes(
+      'canonical HTML missing the mounted Tuturuuu logo'
+    )
+  );
 });

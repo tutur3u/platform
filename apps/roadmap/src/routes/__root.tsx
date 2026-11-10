@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-router';
 import { PublicSatelliteProviders } from '@tuturuuu/satellite/public';
 import type { ReactNode } from 'react';
+import logo from '../assets/tuturuuu-logo.png?no-inline';
 import styles from '../styles.css?url';
 
 export const Route = createRootRoute({
@@ -35,6 +36,8 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: 'stylesheet', href: styles },
+      { rel: 'icon', type: 'image/png', href: logo },
+      { rel: 'apple-touch-icon', href: logo },
       { rel: 'canonical', href: 'https://tuturuuu.com/roadmap/' },
     ],
   }),

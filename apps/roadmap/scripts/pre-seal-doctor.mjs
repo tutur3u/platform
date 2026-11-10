@@ -40,7 +40,11 @@ export const STAGE_LABELS = [
   'Mira subscription plans',
 ];
 
-const LOGO = 'https://tuturuuu.com/media/logos/transparent.png';
+/** The logo ships inside the roadmap mount; the apex /media path is not ours. */
+export const MOUNTED_LOGO =
+  /<img\b[^>]*\bsrc="\/roadmap\/assets\/tuturuuu-logo-[A-Za-z0-9_-]{8,}\.png"/;
+const LOGO_TAG =
+  '<img src="/roadmap/assets/tuturuuu-logo-Abcd1234.png" alt="">';
 
 export function assessDoctor(observation) {
   const failures = [];
@@ -52,8 +56,8 @@ export function assessDoctor(observation) {
   if (!body.includes('aria-label="Tuturuuu"')) {
     failures.push('canonical HTML missing Tuturuuu branding');
   }
-  if (!body.includes(LOGO)) {
-    failures.push('canonical HTML missing the Tuturuuu logo');
+  if (!MOUNTED_LOGO.test(body)) {
+    failures.push('canonical HTML missing the mounted Tuturuuu logo');
   }
   if (!body.includes('public-satellite-shell')) {
     failures.push('canonical HTML missing the shared satellite shell');
@@ -154,6 +158,7 @@ function probe(port, path, host) {
             location: headerValue(response.headers.location),
             cacheControl: headerValue(response.headers['cache-control']),
             contentType: headerValue(response.headers['content-type']),
+            bytes: Buffer.concat(chunks),
             body: Buffer.concat(chunks).toString('utf8'),
           });
         });
@@ -245,6 +250,12 @@ const ASSET_TYPES = {
   '.ttf': 'font/ttf',
   '.otf': 'font/otf',
   '.eot': 'application/vnd.ms-fontobject',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.webp': 'image/webp',
+  '.jpg': 'image/jpeg',
+  '.avif': 'image/avif',
 };
 
 function localAssets(root) {
@@ -318,7 +329,8 @@ function responseFromProbe(result) {
   if (result.contentType) headers.set('content-type', result.contentType);
   if (result.location) headers.set('location', result.location);
   if (result.cacheControl) headers.set('cache-control', result.cacheControl);
-  return new Response(result.body ?? '', {
+  // Keep raw bytes so binary assets (images) are checked as served.
+  return new Response(result.bytes ?? result.body ?? '', {
     status: result.status || 500,
     headers,
   });
@@ -380,7 +392,7 @@ async function main() {
             ...observation,
             canonical: {
               status: 200,
-              body: `<div class="public-satellite-shell" aria-label="Tuturuuu">${LOGO} Sign in https://tuturuuu.com/login ${STAGE_LABELS.join(' ')} /roadmap/assets/index-CGgt8iCG.js</div>`,
+              body: `<div class="public-satellite-shell" aria-label="Tuturuuu">${LOGO_TAG} Sign in https://tuturuuu.com/login ${STAGE_LABELS.join(' ')} /roadmap/assets/index-CGgt8iCG.js</div>`,
               cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
             },
             satellite: {
