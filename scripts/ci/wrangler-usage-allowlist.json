@@ -1718,10 +1718,10 @@
       "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7786",
-        "reason": "PR7786 ignores the pinned Void/Cloudflare toolchain state directory; data-only ignore, no CLI or provider action."
+        "decision": "https://github.com/tutur3u/platform/pull/8120",
+        "reason": "The roadmap gitignore keeps .void-wrangler.jsonc so Void's generated scratch config stays untracked. The redundant .wrangler/ line is removed because the repository root already ignores **/.wrangler/. This is a filename, not a CLI invocation. Remove it when Void stops emitting that scratch file."
       },
-      "digest": "fb576a0a285ec483f842c79f48d22e695b41ec7df3f3f3afc9ab5e01b846a24d"
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
     },
     "apps/roadmap/package.json": {
       "lines": 1,
