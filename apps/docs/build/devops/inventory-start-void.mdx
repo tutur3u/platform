@@ -17,7 +17,7 @@ available as the rollback target through cutover.
 | Item | Value |
 | --- | --- |
 | Production Worker | `tuturuuu-inventory` (`VITE_INVENTORY_NATIVE_PROFILE=production`) |
-| Staging Worker | `tuturuuu-inventory-vite-staging` |
+| Staging Worker | the staging Worker name |
 | Host | `inventory.tuturuuu.com` (operator-attached; no source route) |
 | Bindings and vars | `ASSETS` (`dist/client`), `TUTURUUU_NOINDEX` (`0` production, `1` staging) |
 | Secret names | `CRON_SECRET`, `SEPAY_OAUTH_CLIENT_ID`, `SEPAY_OAUTH_CLIENT_SECRET`, `SEPAY_OAUTH_STATE_SECRET`, `SEPAY_OAUTH_TOKEN_ENCRYPTION_SECRET`, `ENCRYPTION_MASTER_KEY`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and one of `SEPAY_WEBHOOK_API_KEY` or `SEPAY_WEBHOOK_SECRET` |

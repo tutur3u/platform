@@ -124,12 +124,16 @@ function sitemap(config) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${entries.join('\n')}\n</urlset>\n`;
 }
 
+// These apps share the apex origin; its robots.txt and sitemap come from the
+// web app's publication-aware metadata routes, so no static file is generated
+// here (a static robots.txt would also drop the sitemap line).
+const APEX_METADATA_APPS = new Set(['web', 'marketing']);
+
 function outputs() {
   const files = new Map();
   for (const [app, config] of Object.entries(policy)) {
     validateConfig(app, config);
-    // The platform uses its publication-aware Next metadata routes.
-    if (app === 'web') continue;
+    if (APEX_METADATA_APPS.has(app)) continue;
     const base = `apps/${app}/public`;
     const sitemapLine = config.publicPaths.length
       ? `\nSitemap: ${config.origin}/sitemap.xml\n`

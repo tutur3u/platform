@@ -191,6 +191,28 @@ jobs:
       contents: read
       deployments: read
 
+  blast-radius:
+    name: Pull request blast radius
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ready-for-ci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout workflow path filters
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/workflows
+            /scripts/ci/pr-blast-radius.mjs
+            /scripts/ci/pr-blast-radius.test.mjs
+            /scripts/ci/affected-gate.mjs
+            /scripts/ci/affected-apps.mjs
+      - name: Lock app-local workflow selection
+        run: node --test scripts/ci/pr-blast-radius.test.mjs
+
   gate:
     name: ${{ (github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'ready-for-ci') && 'Cheap PR Checks (label event)' || 'Cheap PR Checks' }}
     if: "!cancelled()"
@@ -201,6 +223,7 @@ jobs:
         commit-trailers,
         staging-hosts,
         feature-flag-lifecycle,
+        blast-radius,
         admitted,
         oxc,
         i18n,
@@ -230,6 +253,7 @@ jobs:
             'branch-name': full,
             'commit-trailers': full,
             'staging-hosts': full,
+            'blast-radius': full,
             // Warning-only: a skip never blocks; a checker crash still fails.
             'feature-flag-lifecycle': false,
             admitted: true,
