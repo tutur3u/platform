@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 
 HERE = Path(__file__).parent
@@ -88,6 +89,19 @@ class InfrastructureProfileTest(unittest.TestCase):
             "NEXT_PUBLIC_APP_URL": "https://infrastructure.tuturuuu.com",
             "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
         })
+
+    def test_actual_workflow_rewrite_preserves_emitted_contract(self):
+        app = self.fixture(staging)
+        workflow = (HERE.parents[1] / ".github/workflows/infrastructure-cloudflare.yaml").read_text()
+        script = workflow.split("          node --input-type=module <<'JS'\n", 1)[1].split("          JS\n", 1)[0]
+        with tempfile.TemporaryDirectory(prefix="infrastructure-workflow-") as temporary:
+            root = Path(temporary)
+            server = root / "apps/infrastructure/dist/server"
+            server.parent.mkdir(parents=True)
+            server.symlink_to(app / "dist/native", target_is_directory=True)
+            result = subprocess.run(["node", "--input-type=module"], input=textwrap.dedent(script), cwd=root, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        production.validate_output(app)
 
     def test_rewritten_production_output_passes(self):
         production.validate_output(self.fixture(production))
