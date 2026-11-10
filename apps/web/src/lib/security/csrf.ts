@@ -49,6 +49,11 @@ export function guardWebApiCsrf(
       configuredOrigin,
       ...WEB_CSRF_TRUSTED_ORIGINS,
     ],
+    // Web's credentialed CORS (the accounts API) admits every *.tuturuuu.com
+    // origin, wider than this allowlist, so a bearer string never stands in
+    // for proving the origin of a cookie-bearing mutation. Rolls out with
+    // TTR_CSRF_MODE: hits are only reported until `enforce`.
+    bearerRequiresNoSessionCookie: true,
     exemptions: WEB_CSRF_EXEMPTIONS,
     headers: req.headers,
     method: req.method,

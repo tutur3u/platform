@@ -113,13 +113,14 @@ describe('guardWebApiCsrf', () => {
     ).toBeNull();
   });
 
-  it('passes same-origin, bearer and cookie-less mutations in enforce mode', () => {
+  it('passes same-origin, bearer-only and cookie-less mutations in enforce mode', () => {
     const cases: Record<string, string>[] = [
       { cookie: SESSION_COOKIE, 'sec-fetch-site': 'same-origin' },
+      { authorization: 'Bearer token', 'sec-fetch-site': 'cross-site' },
       {
         authorization: 'Bearer token',
         cookie: SESSION_COOKIE,
-        'sec-fetch-site': 'cross-site',
+        'sec-fetch-site': 'same-origin',
       },
       { origin: 'https://evil.example', 'sec-fetch-site': 'cross-site' },
     ];
@@ -131,6 +132,28 @@ describe('guardWebApiCsrf', () => {
           mode: 'enforce',
         })
       ).toBeNull();
+    }
+  });
+
+  it('does not let a bearer string exempt a cross-origin cookie mutation', () => {
+    for (const headers of [
+      {
+        authorization: 'Bearer junk',
+        cookie: SESSION_COOKIE,
+        origin: 'https://evil.tuturuuu.com',
+        'sec-fetch-site': 'same-site',
+      },
+      {
+        authorization: 'Bearer junk',
+        cookie: SESSION_COOKIE,
+        origin: 'https://evil.tuturuuu.com',
+      },
+    ]) {
+      const response = guardWebApiCsrf(
+        request('/api/v1/auth/accounts/switch', headers),
+        { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
+      );
+      expect(response?.status).toBe(403);
     }
   });
 
