@@ -6,7 +6,7 @@
     "dev": "vp dev",
     "build": "vp build && node scripts/package-assets.mjs",
     "type-check": "node scripts/generate-route-tree.cjs && tsc --noEmit",
-    "test": "node --test src/roadmap-data.test.ts",
+    "test": "node --test src/roadmap-data.test.ts src/cache-policy.test.ts scripts/pre-seal-doctor.test.mjs",
     "deploy:cloudflare": "void deploy --platform cloudflare",
     "build:cloudflare": "vp build && node scripts/package-assets.mjs",
     "seal:cloudflare": "node scripts/seal-artifact.mjs"

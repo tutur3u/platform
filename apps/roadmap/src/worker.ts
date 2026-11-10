@@ -1,18 +1,58 @@
 import handler from '@tanstack/react-start/server-entry';
-import { withRoadmapCachePolicy } from './cache-policy';
+import { buildInfoResponse, isBuildInfoPath } from './build-info.ts';
+import { isHashedAssetPath, withRoadmapCachePolicy } from './cache-policy.ts';
 import {
+  normalizeLocalHost,
   prepareRoadmapRequest,
   roadmapBoundary,
   selectedBasepath,
-} from './request-boundary';
+} from './request-boundary.ts';
+
+function assetFetch(
+  env: unknown
+): ((request: Request) => Promise<Response>) | undefined {
+  if (!env || typeof env !== 'object' || !('ASSETS' in env)) return undefined;
+  const assets = (env as { ASSETS?: { fetch?: unknown } }).ASSETS;
+  if (!assets || typeof assets.fetch !== 'function') return undefined;
+  return assets.fetch.bind(assets);
+}
+
+async function hashedAssetResponse(
+  request: Request,
+  env: unknown
+): Promise<Response | undefined> {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return undefined;
+  const url = new URL(request.url);
+  if (!isHashedAssetPath(url.pathname)) return undefined;
+  const fetchAsset = assetFetch(env);
+  if (!fetchAsset) return undefined;
+  const upstream = await fetchAsset(
+    new Request(url, { method: request.method })
+  );
+  if (!upstream.ok) return undefined;
+  return withRoadmapCachePolicy(request, upstream);
+}
 
 export default {
   ...handler,
   async fetch(...args: Parameters<typeof handler.fetch>) {
-    const basepath = selectedBasepath(args[0]);
-    const boundary = roadmapBoundary(args[0], basepath);
-    if (boundary) return withRoadmapCachePolicy(args[0], boundary);
-    const [request, ...options] = args;
+    const [incoming, ...options] = args;
+    const request = normalizeLocalHost(incoming);
+    const basepath = selectedBasepath(request);
+    const boundary = roadmapBoundary(request, basepath);
+    if (boundary) return withRoadmapCachePolicy(request, boundary);
+    const url = new URL(request.url);
+    if (
+      isBuildInfoPath(url.pathname) &&
+      (request.method === 'GET' || request.method === 'HEAD')
+    ) {
+      return withRoadmapCachePolicy(
+        request,
+        buildInfoResponse(__ROADMAP_BUILD_SHA__, request.method)
+      );
+    }
+    const asset = await hashedAssetResponse(request, options[0]);
+    if (asset) return asset;
     const response = await handler.fetch(
       prepareRoadmapRequest(request, basepath),
       ...options

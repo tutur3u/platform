@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { buildInfoResponse } from './build-info.ts';
 import {
+  normalizeLocalHost,
   prepareRoadmapRequest,
   roadmapBoundary,
   selectedBasepath,
@@ -9,6 +11,8 @@ import {
   withRoadmapCachePolicy,
   PUBLIC_DOCUMENT_CACHE,
   PRIVATE_RESPONSE_CACHE,
+  IMMUTABLE_ASSET_CACHE,
+  isHashedAssetPath,
 } from './cache-policy.ts';
 const document = 'https://tuturuuu.com/roadmap/';
 const html = (headers: Record<string, string> = {}, status = 200) =>
@@ -70,8 +74,6 @@ test('auth, variants, unknown hosts and unsuccessful responses remain private', 
     { vary: 'Cookie' },
     { vary: '*' },
     { vary: 'Accept-Language' },
-    { 'cache-control': 'private' },
-    { 'cache-control': 'no-store' },
   ];
   for (const headers of unsafeHeaders) {
     const result = withRoadmapCachePolicy(new Request(document), html(headers));
@@ -79,6 +81,13 @@ test('auth, variants, unknown hosts and unsuccessful responses remain private', 
     for (const [key, value] of Object.entries(headers)) {
       if (key !== 'cache-control') assert.equal(result.headers.get(key), value);
     }
+  }
+  for (const cacheControl of ['private', 'no-store', 'no-cache']) {
+    assert.equal(
+      control(new Request(document), html({ 'cache-control': cacheControl })),
+      PUBLIC_DOCUMENT_CACHE,
+      cacheControl
+    );
   }
   for (const status of [301, 400, 401, 404, 500]) {
     assert.equal(
@@ -121,7 +130,7 @@ test('composition preserves streams, status, MIME bytes and native asset policy'
   const asset = new Response('js', {
     headers: {
       'content-type': 'text/javascript',
-      'cache-control': 'public,max-age=31536000,immutable',
+      'cache-control': IMMUTABLE_ASSET_CACHE,
     },
   });
   assert.equal(
@@ -131,6 +140,40 @@ test('composition preserves streams, status, MIME bytes and native asset policy'
     ),
     asset
   );
+  const uncached = withRoadmapCachePolicy(
+    new Request('https://tuturuuu.com/roadmap/assets/index-CGgt8iCG.js'),
+    new Response('js', { headers: { 'content-type': 'text/javascript' } })
+  );
+  assert.equal(uncached.headers.get('cache-control'), IMMUTABLE_ASSET_CACHE);
+  assert.equal(await uncached.text(), 'js');
+  const mutable = new Response('js', {
+    headers: {
+      'content-type': 'text/javascript',
+      'cache-control': 'public,max-age=60',
+    },
+  });
+  assert.equal(
+    withRoadmapCachePolicy(
+      new Request('https://tuturuuu.com/roadmap/assets/app.js'),
+      mutable
+    ),
+    mutable
+  );
+  assert.equal(isHashedAssetPath('/roadmap/assets/app.js'), false);
+  const personalized = withRoadmapCachePolicy(
+    new Request('https://tuturuuu.com/roadmap/assets/index-CGgt8iCG.js'),
+    new Response('js', {
+      headers: {
+        'content-type': 'text/javascript',
+        'set-cookie': 'synthetic=one',
+      },
+    })
+  );
+  assert.equal(
+    personalized.headers.get('cache-control'),
+    PRIVATE_RESPONSE_CACHE
+  );
+  assert.equal(personalized.headers.get('set-cookie'), 'synthetic=one');
   assert.equal(
     control(
       new Request(document, { method: 'HEAD' }),
@@ -150,7 +193,7 @@ test('failure and restart perform no storage, network, timers or cache writes', 
   }
 });
 
-test('host-selected SSR mount and physical transport keys remain isolated', () => {
+test('host-selected SSR mount and physical transport keys remain isolated', async () => {
   const mountedRequest = new Request('https://tuturuuu.com/roadmap/');
   assert.equal(selectedBasepath(mountedRequest), '/roadmap');
   assert.equal(roadmapBoundary(mountedRequest), undefined);
@@ -172,6 +215,14 @@ test('host-selected SSR mount and physical transport keys remain isolated', () =
       'https://roadmap.tuturuuu.com/roadmap/?q=test',
       'https://tuturuuu.com/roadmap/?q=test',
     ],
+    [
+      'https://roadmap.tuturuuu.com/notes?x=1',
+      'https://tuturuuu.com/roadmap/notes?x=1',
+    ],
+    [
+      'https://roadmap.tuturuuu.com/api/build-info',
+      'https://tuturuuu.com/roadmap/api/build-info',
+    ],
   ] as const) {
     const request = new Request(url);
     assert.equal(selectedBasepath(request), '/');
@@ -187,4 +238,52 @@ test('host-selected SSR mount and physical transport keys remain isolated', () =
   assert.equal(roadmapBoundary(worker), undefined);
   const mounted = roadmapBoundary(new Request('https://tuturuuu.com/other'));
   assert.equal(mounted?.status, 404);
+  assert.equal(
+    roadmapBoundary(new Request('https://tuturuuu.com/roadmap/api/build-info')),
+    undefined
+  );
+  assert.equal(
+    roadmapBoundary(new Request('https://tuturuuu.com/api/build-info')),
+    undefined
+  );
+  const info = buildInfoResponse('a'.repeat(40));
+  assert.equal(info.status, 200);
+  assert.match(info.headers.get('cache-control') ?? '', /no-store/);
+  assert.equal(JSON.parse(await info.text()).commit, 'a'.repeat(40));
+  assert.equal(buildInfoResponse('development').status, 500);
+});
+
+test('loopback Host selects the public host contract', () => {
+  const canonical = normalizeLocalHost(
+    new Request('http://127.0.0.1:8787/roadmap/', {
+      headers: { host: 'tuturuuu.com' },
+    })
+  );
+  assert.equal(canonical.url, 'https://tuturuuu.com/roadmap/');
+  assert.equal(canonical.headers.get('host'), 'tuturuuu.com');
+  assert.equal(roadmapBoundary(canonical), undefined);
+
+  const satellite = normalizeLocalHost(
+    new Request('http://127.0.0.1:8787/notes?x=1', {
+      headers: { host: 'roadmap.tuturuuu.com' },
+    })
+  );
+  assert.equal(satellite.url, 'https://roadmap.tuturuuu.com/notes?x=1');
+  const redirect = roadmapBoundary(satellite);
+  assert.equal(redirect?.status, 301);
+  assert.equal(
+    redirect?.headers.get('location'),
+    'https://tuturuuu.com/roadmap/notes?x=1'
+  );
+
+  const foreign = normalizeLocalHost(
+    new Request('http://127.0.0.1:8787/roadmap/', {
+      headers: { host: 'evil.example' },
+    })
+  );
+  assert.equal(new URL(foreign.url).host, '127.0.0.1:8787');
+  const production = normalizeLocalHost(
+    new Request('https://roadmap.tuturuuu.com/')
+  );
+  assert.equal(production.url, 'https://roadmap.tuturuuu.com/');
 });
