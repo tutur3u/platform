@@ -187,6 +187,23 @@ describe('gateway handler', () => {
     expect(parsed.searchParams.get('lang')).toBe('vi');
   });
 
+  it('re-encodes only the rewritten parameter and keeps sibling bytes verbatim', async () => {
+    const siblings = 'sig=a%2Fb%2Bc%3D%3D&note=hello%20world&tag=1&tag=2&flag';
+    const t = setup(
+      () =>
+        new Response(null, {
+          status: 307,
+          headers: {
+            location: `https://tuturuuu.com/login?${siblings.split('&').slice(0, 2).join('&')}&returnUrl=https%3A%2F%2Fweb-origin.vercel.app%2Fx%3Fa%3D1&${siblings.split('&').slice(2).join('&')}`,
+          },
+        })
+    );
+    const res = await t.call('/personal');
+    expect(res.headers.get('location')).toBe(
+      'https://tuturuuu.com/login?sig=a%2Fb%2Bc%3D%3D&note=hello%20world&returnUrl=https%3A%2F%2Ftuturuuu.com%2Fx%3Fa%3D1&tag=1&tag=2&flag'
+    );
+  });
+
   it('leaves foreign and public-host query URLs untouched', async () => {
     const location =
       'https://tuturuuu.com/login?returnUrl=https%3A%2F%2Ftasks.tuturuuu.com%2Fverify-token';

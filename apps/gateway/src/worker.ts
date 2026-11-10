@@ -181,20 +181,33 @@ export function rewriteLinkHeader(
  * top-level parameters whose whole value is an origin-host URL change.
  */
 function rewriteOriginQueryUrls(target: URL, origin: URL, publicHost: string) {
+  const raw = target.search.slice(1);
+  if (!raw) return false;
   let changed = false;
-  for (const [name, value] of [...target.searchParams]) {
+  // Only the changed parameter is re-encoded; every other byte of the query
+  // (sibling encodings, signatures, duplicate keys, order) is kept verbatim.
+  const segments = raw.split('&').map((segment) => {
+    const equals = segment.indexOf('=');
+    if (equals < 0) return segment;
+    let value: string;
+    try {
+      value = decodeURIComponent(segment.slice(equals + 1).replace(/\+/g, ' '));
+    } catch {
+      return segment;
+    }
     let nested: URL;
     try {
       nested = new URL(value);
     } catch {
-      continue;
+      return segment;
     }
-    if (nested.host !== origin.host) continue;
+    if (nested.host !== origin.host) return segment;
     nested.protocol = 'https:';
     nested.host = publicHost;
-    target.searchParams.set(name, nested.toString());
     changed = true;
-  }
+    return `${segment.slice(0, equals + 1)}${encodeURIComponent(nested.toString())}`;
+  });
+  if (changed) target.search = `?${segments.join('&')}`;
   return changed;
 }
 
