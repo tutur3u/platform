@@ -329,11 +329,13 @@ export async function consumeVerifyTokenRequest(
     fallbackPath
   );
   // A mounted app shares the root session: a handoff token is never redeemed
-  // on the apex (its verify endpoint is refused there), so the verifier only
-  // forwards to the target.
-  const token = req.nextUrl.basePath
-    ? null
-    : req.nextUrl.searchParams.get('token');
+  // on the apex (its verify endpoint is refused there), and the shared
+  // session cookie is never touched, so the verifier only forwards.
+  if (req.nextUrl.basePath) {
+    return redirectToNormalizedVerifyTarget(req, nextPath);
+  }
+
+  const token = req.nextUrl.searchParams.get('token');
 
   if (!token) {
     return clearSupabaseAuthCookies(

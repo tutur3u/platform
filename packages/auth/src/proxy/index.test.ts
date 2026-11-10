@@ -369,6 +369,26 @@ describe('auth proxy redirect helpers', () => {
       expect(response?.headers.getSetCookie() ?? []).toEqual([]);
     });
 
+    it('never clears any Supabase cookie on an apex mount, even a foreign one', async () => {
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://abcd.supabase.co');
+      const request = new NextRequest(
+        'https://tuturuuu.com/learn/verify-token?nextUrl=%2Fpersonal',
+        {
+          headers: {
+            cookie: 'sb-abcd-auth-token=shared; sb-other-auth-token=stale',
+          },
+          nextConfig: { basePath: '/learn' },
+        }
+      );
+
+      const response = await consumeVerifyTokenRequest(request);
+
+      expect(response?.headers.get('location')).toBe(
+        'https://tuturuuu.com/learn/personal'
+      );
+      expect(response?.headers.getSetCookie() ?? []).toEqual([]);
+    });
+
     it('lets the client verifier page handle Portless verify-token requests', async () => {
       vi.stubEnv('PORT', '4725');
       const fetchMock = vi.fn();
