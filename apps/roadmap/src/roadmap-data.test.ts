@@ -7,8 +7,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
-import { comingSoon } from './content/coming-soon.ts';
-import { tracks } from './content/tracks.ts';
+import { comingSoon, visibleComingSoon } from './content/coming-soon.ts';
+import { showPlans, tracks } from './content/tracks.ts';
 import {
   feedItem,
   INCIDENT_TERMS,
@@ -733,6 +733,20 @@ describe('production hosting regression (same-zone probes)', () => {
         '<html>'
       ),
       { platform: 'unknown', commit: null }
+    );
+  });
+});
+
+describe('plans flag', () => {
+  it('is on by default and shows exactly the approved copy', () => {
+    assert.equal(showPlans, true);
+    assert.deepEqual(visibleComingSoon(), comingSoon);
+  });
+  it('hides the card with the flag off, without touching the copy', () => {
+    assert.deepEqual(visibleComingSoon(false), []);
+    assert.equal(
+      comingSoon[0].body,
+      'Mira subscription plans at $100 and $200/month for access to Mira at the highest limits and capabilities.'
     );
   });
 });
