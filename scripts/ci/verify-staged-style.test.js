@@ -1,22 +1,26 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const {
+  lstat,
   mkdtemp,
   mkdir,
   readFile,
-  writeFile,
   rm,
+  stat,
   symlink,
+  writeFile,
 } = require('node:fs/promises');
 const { tmpdir } = require('node:os');
-const { resolve } = require('node:path');
+const { basename, dirname, join, resolve } = require('node:path');
 const {
   FAILURE_REASONS,
   describeFailure,
   main,
+  proofDirectory,
   responseHeaders,
   safeEnvironment,
   verifyCss,
+  writeProof,
 } = require('./verify-staged-style');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
@@ -192,4 +196,75 @@ test('a failed proof logs its reason and still leaves evidence to upload', async
     resourceFailures: [],
   });
   assert.ok(!text.includes('SECRET-VALUE'));
+});
+
+test('a step killed mid-run still leaves the last stage in the evidence', async (t) => {
+  const temp = await mkdtemp(resolve(tmpdir(), 'staged-stage-test-'));
+  t.after(() => rm(temp, { recursive: true, force: true }));
+  const sha = 'b'.repeat(40);
+  const env = {
+    VERCEL_STAGED_DEPLOYMENT_URL: 'https://platform-fixture.vercel.app',
+    VERCEL_STAGED_APP: 'platform',
+    VERCEL_TOKEN: 'SECRET-VALUE',
+    GITHUB_SHA: sha,
+    RUNNER_TEMP: temp,
+  };
+  const evidence = resolve(temp, 'staged-style-proof', sha);
+  const never = () => new Promise(() => {});
+  main({ env, runCommand: never }).catch(() => {});
+  let text;
+  for (let attempt = 0; attempt < 200 && !text; attempt += 1) {
+    text = await readFile(resolve(evidence, 'stage.json'), 'utf8').catch(
+      () => undefined
+    );
+    if (!text) await new Promise((done) => setTimeout(done, 10));
+  }
+  assert.ok(text, 'stage.json is written before any command can hang');
+  const record = JSON.parse(text);
+  assert.deepEqual(Object.keys(record).sort(), ['at', 'stage']);
+  assert.equal(record.stage, 'identity');
+  assert.ok(Number.isFinite(Date.parse(record.at)));
+  assert.ok(!text.includes('SECRET-VALUE'));
+  await assert.rejects(readFile(resolve(evidence, 'failure.json')), /ENOENT/);
+});
+
+test('unset RUNNER_TEMP keeps the proof in a private random directory', async (t) => {
+  const sha = 'c'.repeat(40);
+  const evidence = proofDirectory({ sha });
+  const base = dirname(evidence);
+  t.after(() => rm(base, { recursive: true, force: true }));
+  assert.equal(basename(evidence), sha);
+  assert.match(basename(base), /^staged-style-proof-[A-Za-z0-9]{6}$/);
+  assert.notEqual(evidence, join(tmpdir(), 'staged-style-proof', sha));
+  assert.equal((await stat(base)).mode & 0o777, 0o700);
+  assert.equal((await stat(evidence)).mode & 0o777, 0o700);
+  const outside = join(base, 'outside.txt');
+  await writeFile(outside, 'kept');
+  await symlink(outside, join(evidence, 'stage.json'));
+  await writeProof(
+    evidence,
+    'stage.json',
+    `${JSON.stringify({ stage: 'identity' })}\n`
+  );
+  assert.equal(await readFile(outside, 'utf8'), 'kept');
+  const written = await lstat(join(evidence, 'stage.json'));
+  assert.equal(written.isSymbolicLink(), false);
+  assert.equal(written.isFile(), true);
+  assert.equal(written.mode & 0o777, 0o600);
+  assert.equal(
+    await readFile(join(evidence, 'stage.json'), 'utf8'),
+    `${JSON.stringify({ stage: 'identity' })}\n`
+  );
+});
+
+test('every stage change is recorded through one helper', async () => {
+  const source = await readFile(
+    resolve(__dirname, 'verify-staged-style.js'),
+    'utf8'
+  );
+  const assignments = [...source.matchAll(/^\s*stage = /gmu)];
+  assert.equal(assignments.length, 1, 'only the helper assigns the stage');
+  assert.match(source, /await markStage\('browser'\)/u);
+  assert.match(source, /await markStage\(`viewport-\$\{width\}`\)/u);
+  assert.match(source, /await markStage\('receipt'\)/u);
 });
