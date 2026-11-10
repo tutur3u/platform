@@ -200,7 +200,11 @@ export async function inspectAssetBody(
   if (!response.body || declared === 0) {
     return { response, problem: 'empty-body' };
   }
-  if (identity && Number.isFinite(declared) && declared <= VERIFY_BODY_MAX_BYTES) {
+  if (
+    identity &&
+    Number.isFinite(declared) &&
+    declared <= VERIFY_BODY_MAX_BYTES
+  ) {
     const bytes = await response.arrayBuffer();
     const problem =
       bytes.byteLength === 0
@@ -213,7 +217,8 @@ export async function inspectAssetBody(
   // Unknown or encoded length: only an empty stream can be detected up front.
   const reader = response.body.getReader();
   const first = await reader.read();
-  if (first.done) return { response: new Response(null, response), problem: 'empty-body' };
+  if (first.done)
+    return { response: new Response(null, response), problem: 'empty-body' };
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       controller.enqueue(first.value);

@@ -483,7 +483,8 @@ export function createHandler(deps: HandlerDeps) {
     }
     if (!decision.store) {
       const brokenBody =
-        decision.reason === 'empty-body' || decision.reason === 'truncated-body';
+        decision.reason === 'empty-body' ||
+        decision.reason === 'truncated-body';
       const next = withGatewayHeader(response, 'BYPASS', {
         'x-gateway-bypass': decision.reason ?? 'not-storable',
         // A broken body must not be kept by the edge either.
