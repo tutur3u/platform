@@ -265,6 +265,73 @@ describe('gateway handler', () => {
     expect((await t.call('/login')).status).toBe(502);
   });
 
+  describe('asset body integrity', () => {
+    const png = (body: BodyInit | null, headers: Record<string, string> = {}) =>
+      new Response(body, {
+        headers: { 'content-type': 'image/png', ...headers },
+      });
+
+    it('never stores or lets the edge keep an empty 200 asset', async () => {
+      const t = setup(() => png(null));
+      const first = await t.call('/media/logos/transparent.png');
+      expect(first.headers.get('x-gateway-cache')).toBe('BYPASS');
+      expect(first.headers.get('x-gateway-bypass')).toBe('empty-body');
+      expect(first.headers.get('cache-control')).toBe('no-store');
+      expect(t.cache.entries.size).toBe(0);
+    });
+
+    it('never stores a 200 whose content-length is zero', async () => {
+      const t = setup(() => png('', { 'content-length': '0' }));
+      const first = await t.call('/media/logos/transparent.png');
+      expect(first.headers.get('x-gateway-bypass')).toBe('empty-body');
+      expect(t.cache.entries.size).toBe(0);
+    });
+
+    it('never stores an asset shorter than the declared length', async () => {
+      const t = setup(() => png('abc', { 'content-length': '2572' }));
+      const first = await t.call('/media/logos/transparent.png');
+      expect(first.headers.get('x-gateway-bypass')).toBe('truncated-body');
+      expect(first.headers.get('cache-control')).toBe('no-store');
+      expect(await first.text()).toBe('abc');
+      expect(t.cache.entries.size).toBe(0);
+    });
+
+    it('does not refresh a stale entry with an empty body', async () => {
+      let broken = false;
+      const t = setup(() =>
+        broken ? png(null) : png('PNGDATA', { 'content-length': '7' })
+      );
+      await t.call('/media/logos/transparent.png');
+      expect(t.cache.entries.size).toBe(1);
+      t.advance(600);
+      broken = true;
+      const stale = await t.call('/media/logos/transparent.png');
+      expect(stale.headers.get('x-gateway-cache')).toBe('STALE');
+      expect(await stale.text()).toBe('PNGDATA');
+      const next = await t.call('/media/logos/transparent.png');
+      expect(await next.text()).toBe('PNGDATA');
+    });
+
+    it('still stores a complete asset and serves it from the cache', async () => {
+      const t = setup(() => png('PNGDATA', { 'content-length': '7' }));
+      const first = await t.call('/media/logos/transparent.png');
+      expect(first.headers.get('x-gateway-cache')).toBe('MISS');
+      expect(await first.text()).toBe('PNGDATA');
+      const second = await t.call('/media/logos/transparent.png');
+      expect(second.headers.get('x-gateway-cache')).toBe('HIT');
+      expect(await second.text()).toBe('PNGDATA');
+      expect(t.fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('stores a streamed asset with no declared length when it has bytes', async () => {
+      const t = setup(() => png(new Blob(['PNGDATA']).stream()));
+      const first = await t.call('/media/logos/transparent.png');
+      expect(first.headers.get('x-gateway-cache')).toBe('MISS');
+      expect(await first.text()).toBe('PNGDATA');
+      expect(t.cache.entries.size).toBe(1);
+    });
+  });
+
   describe('marketing group flags', () => {
     const FLAGGED: Env = {
       ...ENV,

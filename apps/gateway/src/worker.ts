@@ -2,11 +2,13 @@ import {
   bypassReason,
   hasAuthCookie,
   cacheKey,
+  inspectAssetBody,
   FRESH_SECONDS,
   freshness,
   isStorable,
   localeBucket,
   STALE_SECONDS,
+  type StoreDecision,
 } from './cache-rules';
 import {
   type Manifest,
@@ -365,10 +367,11 @@ export function createHandler(deps: HandlerDeps) {
     origin: URL,
     key: string,
     options: { respectOriginCacheControl: boolean },
-    publicHost: string | undefined
+    publicHost: string | undefined,
+    isPage: boolean
   ) {
     try {
-      const response = withPublicLink(
+      let response = withPublicLink(
         await fetch(originRequest(request, origin, publicHost), NO_FOLLOW),
         origin,
         publicHost
@@ -376,6 +379,14 @@ export function createHandler(deps: HandlerDeps) {
       if (!isStorable(response, options).store) {
         await response.body?.cancel();
         return;
+      }
+      if (!isPage) {
+        const checked = await inspectAssetBody(response);
+        if (checked.problem) {
+          await checked.response.body?.cancel();
+          return;
+        }
+        response = checked.response;
       }
       await (
         await deps.cache()
@@ -443,7 +454,8 @@ export function createHandler(deps: HandlerDeps) {
           origin,
           key,
           options,
-          env.PUBLIC_HOST
+          env.PUBLIC_HOST,
+          isPage
         );
         if (ctx) ctx.waitUntil(revalidate);
         else await revalidate;
@@ -463,10 +475,19 @@ export function createHandler(deps: HandlerDeps) {
     } catch {
       return plain(502, 'gateway origin unreachable');
     }
-    const decision = isStorable(response, options);
+    let decision: StoreDecision = isStorable(response, options);
+    if (decision.store && !isPage) {
+      const checked = await inspectAssetBody(response);
+      response = checked.response;
+      if (checked.problem) decision = { store: false, reason: checked.problem };
+    }
     if (!decision.store) {
+      const brokenBody =
+        decision.reason === 'empty-body' || decision.reason === 'truncated-body';
       const next = withGatewayHeader(response, 'BYPASS', {
         'x-gateway-bypass': decision.reason ?? 'not-storable',
+        // A broken body must not be kept by the edge either.
+        ...(brokenBody ? { 'cache-control': 'no-store' } : {}),
       });
       rewriteLocation(next, origin, env.PUBLIC_HOST);
       rewriteLinkHeader(next, origin, env.PUBLIC_HOST);

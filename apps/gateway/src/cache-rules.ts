@@ -150,6 +150,9 @@ export function isStorable(
   options: { respectOriginCacheControl: boolean }
 ): StoreDecision {
   if (response.status !== 200) return { store: false, reason: 'status' };
+  if (response.headers.get('content-length')?.trim() === '0') {
+    return { store: false, reason: 'empty-body' };
+  }
   if (response.headers.has('set-cookie') && !onlyLocaleCookies(response)) {
     return { store: false, reason: 'set-cookie' };
   }
@@ -172,4 +175,56 @@ export function freshness(storedAtMs: number, nowMs: number): FreshnessState {
   if (age <= FRESH_SECONDS) return 'hit';
   if (age <= FRESH_SECONDS + STALE_SECONDS) return 'stale';
   return 'expired';
+}
+
+/** Largest asset the gateway buffers to compare its length with the origin's. */
+export const VERIFY_BODY_MAX_BYTES = 8 * 1024 * 1024;
+
+export type BodyProblem = 'empty-body' | 'truncated-body';
+
+/**
+ * Inspects an origin 200 for an asset before it can be stored. An empty body,
+ * or fewer bytes than the origin declared, is never cached: the edge would
+ * keep serving a broken file for the whole freshness window. Returns a
+ * replacement response whose body is still readable.
+ */
+export async function inspectAssetBody(
+  response: Response
+): Promise<{ response: Response; problem: BodyProblem | null }> {
+  const declared = Number(response.headers.get('content-length'));
+  const encoded = (response.headers.get('content-encoding') ?? '')
+    .trim()
+    .toLowerCase();
+  const identity = encoded === '' || encoded === 'identity';
+  if (!response.body || declared === 0) {
+    return { response, problem: 'empty-body' };
+  }
+  if (identity && Number.isFinite(declared) && declared <= VERIFY_BODY_MAX_BYTES) {
+    const bytes = await response.arrayBuffer();
+    const problem =
+      bytes.byteLength === 0
+        ? 'empty-body'
+        : bytes.byteLength !== declared
+          ? 'truncated-body'
+          : null;
+    return { response: new Response(bytes, response), problem };
+  }
+  // Unknown or encoded length: only an empty stream can be detected up front.
+  const reader = response.body.getReader();
+  const first = await reader.read();
+  if (first.done) return { response: new Response(null, response), problem: 'empty-body' };
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(first.value);
+    },
+    async pull(controller) {
+      const next = await reader.read();
+      if (next.done) controller.close();
+      else controller.enqueue(next.value);
+    },
+    cancel(reason) {
+      return reader.cancel(reason);
+    },
+  });
+  return { response: new Response(stream, response), problem: null };
 }
