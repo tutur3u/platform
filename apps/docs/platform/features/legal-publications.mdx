@@ -181,8 +181,11 @@ Terms, DPA and Subprocessors (EN and VI, 46 section ids, same ids in both locale
 Its text lives in `packages/legal/src/revision-2026-11-11/source/*.generated.ts`,
 extracted verbatim from legal's frozen FINAL by
 `packages/legal/scripts/extract-final-revision.ts` (it checks the FINAL's SHA-256 and
-that every extracted line equals a FINAL line once tags are removed; run Biome on the
-output). Wording changes go back to legal and security, then re-extraction; never
+that every extracted line equals a FINAL line once tags are removed, and formats
+the output with the repository's pinned Oxfmt). Run it with `--check` to verify
+committed output without writing, or `--output-dir <directory>` for an isolated
+reproduction. The frozen input is supplied through legal custody and is never
+committed. Wording changes go back to legal and security, then re-extraction; never
 edit the generated files. The change notice (`notice-copy.ts`) comes from the same
 FINAL; `{N}`, `{N30}` and `{ARCHIVE_LINKS}` are filled from the notice config.
 
