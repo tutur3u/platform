@@ -432,3 +432,30 @@ describe('PageEditorShell', () => {
     ).toBe('true');
   });
 });
+
+describe('pageEditorLabelsFromStrings', () => {
+  it('fills %tokens% and reuses existing saved/unsaved strings', async () => {
+    const { fillTokens, pageEditorLabelsFromStrings } =
+      await import('./page-editor-labels-from-strings');
+    expect(fillTokens('Move %title% up', { title: 'Hero' })).toBe(
+      'Move Hero up'
+    );
+    expect(fillTokens('Keep %other%', { title: 'x' })).toBe('Keep %other%');
+    const strings = new Proxy(
+      {},
+      { get: (_t, key) => `${String(key)}:%title%%n%%by%%when%` }
+    ) as Parameters<typeof pageEditorLabelsFromStrings>[0];
+    const built = pageEditorLabelsFromStrings(strings);
+    expect(built.moveSectionUp('Hero')).toBe(
+      'pageEditorMoveSectionUp:Hero%n%%by%%when%'
+    );
+    expect(built.untitledSection(3)).toBe(
+      'pageEditorUntitledSection:%title%3%by%%when%'
+    );
+    expect(built.saveSaved).toBe('editorSavedLabel:%title%%n%%by%%when%');
+    expect(built.showOutline).toBe(built.outlineTitle);
+    expect(built.historyKind('unpublish')).toBe(
+      'pageEditorHistoryKindUnpublish:%title%%n%%by%%when%'
+    );
+  });
+});
