@@ -156,10 +156,24 @@ test('metadata-only runs cannot cancel validation or each other, including the a
   );
   const first = context('labeled', 'WIP', true, 3);
   const second = context('unlabeled', 'WIP', true, 4);
-  // Label edits land in the same group, and cancel stays off so they cannot
-  // replace an in-progress admitted run.
-  assert.equal(renderTemplate(workflow.concurrency.group, first), normalGroup);
-  assert.equal(renderTemplate(workflow.concurrency.group, second), normalGroup);
+  // GitHub drops an older pending run that shares a group, even when cancel
+  // is off. Metadata labels therefore keep the distinct -metadata- slot.
+  const firstGroup = renderTemplate(workflow.concurrency.group, first);
+  const secondGroup = renderTemplate(workflow.concurrency.group, second);
+  assert.notEqual(firstGroup, normalGroup);
+  assert.notEqual(secondGroup, normalGroup);
+  assert.notEqual(firstGroup, secondGroup);
+  assert.match(firstGroup, /-metadata-3-1$/u);
+  assert.match(secondGroup, /-metadata-4-1$/u);
+  const securityLabel = context('labeled', 'security-review-required', true, 5);
+  assert.notEqual(
+    renderTemplate(workflow.concurrency.group, securityLabel),
+    normalGroup
+  );
+  assert.match(
+    renderTemplate(workflow.concurrency.group, securityLabel),
+    /-metadata-5-1$/u
+  );
   assert.equal(
     evaluateExpression(workflow.concurrency['cancel-in-progress'], first),
     false
