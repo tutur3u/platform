@@ -21,6 +21,17 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 7. Re-run the smoke on the public host and watch for 5 minutes: no 5xx, login renders, entry route as expected.
 8. Rollback on any 5xx above 1% for 5 minutes, a wrong redirect or a broken login: remove the route or repoint the DNS record to the Vercel pin. Never rebuild on the rollback path. No data or migration is involved.
 
+### Wave-1 apps (apps, calendar, mail)
+
+Build these only as a production artifact. A plain `bun run build:cloudflare` produces the staging profile: the apps Worker then lacks `APPS_CANONICAL_HOST_ENABLED=1` and answers 503 "Staging gateway only", and calendar lacks `CALENDAR_DEPLOYMENT_PROFILE=production`. The production profile in `scripts/ci/wave1-native-profile.mjs` sets both.
+
+1. `bun turbo:local run build --filter=@tuturuuu/<app> --concurrency=2` with `CALENDAR_DEPLOYMENT_PROFILE=production` exported.
+2. `node scripts/ci/wave1-native-artifact.mjs prepare <app> production <sha>`.
+3. `CI=true node scripts/ci/wave1-native-runtime.mjs <app> production <sha>`.
+4. `node scripts/ci/wave1-native-artifact.mjs verify <app> production <sha>`.
+
+Run it through `wave1-native-production.yaml` (input `app`, from the `production` ref) rather than by hand. The `build:cloudflare` steps in `apps-cloudflare.yaml` and `meet-cloudflare.yaml` build CI fixtures with placeholder Supabase values and are never a cutover artifact. Meet is not a wave-1 profile; its Worker is already live and is redeployed from `meet-cloudflare.yaml`.
+
 ## 1. shortener
 
 | Item | Value |
@@ -151,7 +162,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | --- | --- |
 | Worker | `tuturuuu-calendar` |
 | Hosts | calendar.tuturuuu.com |
-| Artifact | wave1-native-production.yaml, input app=calendar, environment wave1-calendar-production |
+| Artifact | wave1-native-production.yaml, input app=calendar, environment wave1-calendar-production; `node scripts/ci/wave1-native-artifact.mjs prepare calendar production <sha>`, then its runtime and verify steps (never plain `build:cloudflare`) |
 | Vercel rollback pin | dpl_EDfFFKFtpxeJ29UUmxZc1VNqLsX2 |
 | Packet | `wave1-cutover-packets` |
 | Smoke | `node scripts/cutover-smoke.mjs calendar https://calendar.tuturuuu.com` |
@@ -163,7 +174,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | --- | --- |
 | Worker | `tuturuuu-mail` |
 | Hosts | mail.tuturuuu.com |
-| Artifact | wave1-native-production.yaml, input app=mail, environment wave1-mail-production |
+| Artifact | wave1-native-production.yaml, input app=mail, environment wave1-mail-production; `node scripts/ci/wave1-native-artifact.mjs prepare mail production <sha>`, then its runtime and verify steps (never plain `build:cloudflare`) |
 | Vercel rollback pin | dpl_G7VbMYiwb9BhAm9i2FK8N3Udw3s3 |
 | Packet | `wave1-cutover-packets` |
 | Smoke | `node scripts/cutover-smoke.mjs mail https://mail.tuturuuu.com` |
@@ -176,7 +187,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | --- | --- |
 | Worker | `tuturuuu-apps` |
 | Hosts | apps.tuturuuu.com |
-| Artifact | wave1-native-production.yaml, input app=apps, environment wave1-apps-production |
+| Artifact | wave1-native-production.yaml, input app=apps, environment wave1-apps-production; `node scripts/ci/wave1-native-artifact.mjs prepare apps production <sha>`, then its runtime and verify steps (never plain `build:cloudflare`) |
 | Vercel rollback pin | dpl_7jwSj1yvqqtjxagQqsVr8kZ97ByS |
 | Packet | `wave1-cutover-packets` |
 | Smoke | `node scripts/cutover-smoke.mjs apps https://apps.tuturuuu.com` |
