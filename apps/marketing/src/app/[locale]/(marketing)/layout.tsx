@@ -1,8 +1,8 @@
-import { cn } from '@tuturuuu/utils/format';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import type React from 'react';
-import Footer from '@/components/layouts/Footer';
+import '@tuturuuu/marketing-shell/fonts.css';
+import { MarketingFrame } from '@/components/layouts/marketing-frame';
 import { PrivacyConsent } from '@/components/privacy-consent';
 import { QueryProvider } from '@/components/query-provider';
 import {
@@ -10,8 +10,6 @@ import {
   MARKETING_CLIENT_MESSAGE_NAMESPACES,
   ROOT_CLIENT_MESSAGE_NAMESPACES,
 } from '@/i18n/client-messages';
-import MarketingNavbar from '../marketing-navbar';
-import { marketingFontVariables } from './marketing-fonts';
 import { ScrollToTop } from './scroll-to-top';
 
 interface LayoutProps {
@@ -29,21 +27,11 @@ export default async function Layout({ children }: LayoutProps) {
   return (
     <NextIntlClientProvider messages={messages}>
       <QueryProvider>
-        {/* Display + mono faces are scoped to marketing so product surfaces keep
-          the app font untouched. */}
-        <div className={cn('contents', marketingFontVariables)}>
-          <ScrollToTop />
-          <MarketingNavbar />
-          {/* pt clears the floating pill navbar (top offset + 3.5rem bar) */}
-          <div
-            className="flex flex-col overflow-x-clip pt-20"
-            id="main-content"
-          >
-            {children}
-          </div>
-          <Footer />
-          <PrivacyConsent />
-        </div>
+        {/* The shared marketing layout: navbar, frame, footer and the
+          self-hosted marketing faces (@tuturuuu/marketing-shell). */}
+        <ScrollToTop />
+        <MarketingFrame>{children}</MarketingFrame>
+        <PrivacyConsent />
       </QueryProvider>
     </NextIntlClientProvider>
   );
