@@ -43,3 +43,27 @@ test('accepts clean emitted files across extensions and subdirectories', async (
   await writeFile(join(directory, 'assets', 'config.json'), '{}');
   await assertServerArtifact(directory);
 });
+
+test('inspects a source map as JSON and ignores NODE_ENV in its original sources', async (t) => {
+  const directory = await fixture(t);
+  await writeFile(join(directory, 'index.mjs'), 'export default {};');
+  const map = (sourcesContent) =>
+    JSON.stringify({
+      version: 3,
+      sources: ['a.ts'],
+      sourcesContent,
+      mappings: 'AAAA',
+    });
+  await writeFile(
+    join(directory, 'index.mjs.map'),
+    map(['const mode = process.env.NODE_ENV;'])
+  );
+  await assertServerArtifact(directory);
+  await writeFile(
+    join(directory, 'index.mjs.map'),
+    map(['tuturuuu-local-development-secret'])
+  );
+  await assert.rejects(assertServerArtifact(directory), /index\.mjs\.map/u);
+  await writeFile(join(directory, 'index.mjs.map'), 'not json');
+  await assert.rejects(assertServerArtifact(directory));
+});
