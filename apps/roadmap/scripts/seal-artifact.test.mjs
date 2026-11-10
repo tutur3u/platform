@@ -237,19 +237,28 @@ const mappedPaths = [
 const checkMapping = (config, paths = mappedPaths) =>
   assertEmittedMapping(config, 'dist/server/wrangler.json', paths, '/build');
 
-test('root and bare mount canonicalize with query; mounted URLs pass through', () => {
-  for (const path of ['/', '/?x=1', '/roadmap', '/roadmap?x=1&x=2']) {
-    const request = new Request(`https://example.test${path}`);
-    const response = roadmapBoundary(request);
-    assert.equal(response.status, 308);
+test('root and slash forms canonicalize to no-slash in one 301; the document is /roadmap', () => {
+  for (const [path, target] of [
+    ['/', '/roadmap'],
+    ['/?x=1', '/roadmap?x=1'],
+    ['/roadmap/', '/roadmap'],
+    ['/roadmap/?x=1&x=2', '/roadmap?x=1&x=2'],
+    ['/roadmap/notes/', '/roadmap/notes'],
+    ['/roadmap/notes/?x=1', '/roadmap/notes?x=1'],
+  ]) {
+    const response = roadmapBoundary(
+      new Request(`https://example.test${path}`)
+    );
+    assert.equal(response.status, 301, path);
     assert.equal(
       response.headers.get('Location'),
-      `/roadmap/${new URL(request.url).search}`
+      `https://example.test${target}`
     );
   }
   for (const path of [
-    '/roadmap/',
-    '/roadmap/?x=1',
+    '/roadmap',
+    '/roadmap?x=1',
+    '/roadmap/notes',
     '/roadmap/assets/app.js',
     '/roadmap/_serverFn/abc?x=1',
   ]) {
@@ -359,12 +368,13 @@ test('satellite host 301s to the canonical roadmap and workers.dev does not', as
   const satellite = (path, options) =>
     new Request(`https://roadmap.tuturuuu.com${path}`, options);
   for (const [path, target] of [
-    ['/', 'https://tuturuuu.com/roadmap/'],
-    ['/?x=1', 'https://tuturuuu.com/roadmap/?x=1'],
+    ['/', 'https://tuturuuu.com/roadmap'],
+    ['/?x=1', 'https://tuturuuu.com/roadmap?x=1'],
     ['/deep', 'https://tuturuuu.com/roadmap/deep'],
-    ['/roadmap', 'https://tuturuuu.com/roadmap/'],
-    ['/roadmap?x=1', 'https://tuturuuu.com/roadmap/?x=1'],
-    ['/roadmap/?x=1&x=2', 'https://tuturuuu.com/roadmap/?x=1&x=2'],
+    ['/deep/?x=1', 'https://tuturuuu.com/roadmap/deep?x=1'],
+    ['/roadmap', 'https://tuturuuu.com/roadmap'],
+    ['/roadmap?x=1', 'https://tuturuuu.com/roadmap?x=1'],
+    ['/roadmap/?x=1&x=2', 'https://tuturuuu.com/roadmap?x=1&x=2'],
     ['/roadmap/deep?x=%2F', 'https://tuturuuu.com/roadmap/deep?x=%2F'],
     ['/roadmap/assets/app.js', 'https://tuturuuu.com/roadmap/assets/app.js'],
   ]) {
@@ -373,13 +383,13 @@ test('satellite host 301s to the canonical roadmap and workers.dev does not', as
     assert.equal(response.headers.get('Location'), target);
     assert.equal(new URL(target).host, 'tuturuuu.com');
   }
-  const bare = roadmapBoundary(new Request('https://tuturuuu.com/roadmap?x=1'));
-  assert.equal(bare.status, 308);
-  assert.equal(bare.headers.get('Location'), '/roadmap/?x=1');
   assert.equal(
-    roadmapBoundary(new Request('https://tuturuuu.com/roadmap/')),
+    roadmapBoundary(new Request('https://tuturuuu.com/roadmap?x=1')),
     undefined
   );
+  const slash = roadmapBoundary(new Request('https://tuturuuu.com/roadmap/'));
+  assert.equal(slash.status, 301);
+  assert.equal(slash.headers.get('Location'), 'https://tuturuuu.com/roadmap');
   const worker = new Request(
     'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/assets/app.js'
   );
@@ -414,14 +424,15 @@ test('host selection ignores forwarded spoofing and preserves mounted fallback h
     assert.equal(selectedBasepath(request), '/roadmap');
     assert.equal(
       roadmapBoundary(request).headers.get('Location'),
-      '/roadmap/?x=1'
+      `https://${host}/roadmap?x=1`
     );
-    const mounted = new Request(`https://${host}/roadmap/?x=1`, {
+    const mounted = new Request(`https://${host}/roadmap?x=1`, {
       headers: request.headers,
     });
     assert.equal(roadmapBoundary(mounted), undefined);
     const prepared = prepareRoadmapRequest(mounted, selectedBasepath(mounted));
-    assert.equal(prepared.url, mounted.url);
+    // The public /roadmap reaches the router as its basepath root, internally.
+    assert.equal(prepared.url, `https://${host}/roadmap/?x=1`);
     assert.equal(prepared.headers.get(mountHeader), '/roadmap');
   }
   const mismatch = new Request('https://roadmap.tuturuuu.com/', {

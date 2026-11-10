@@ -750,3 +750,33 @@ describe('plans flag', () => {
     );
   });
 });
+
+describe('no-slash canonical address', () => {
+  it('restores /roadmap after the router writes its slash root', async () => {
+    const { canonicalAddress, canonicalRoadmapLocation, withoutTrailingSlash } =
+      await import('./request-boundary.ts');
+    assert.equal(
+      canonicalAddress({
+        pathname: '/roadmap/',
+        search: '?x=1',
+        hash: '#tracks',
+      }),
+      '/roadmap?x=1#tracks'
+    );
+    assert.equal(
+      canonicalAddress({ pathname: '/roadmap', search: '', hash: '' }),
+      null
+    );
+    assert.equal(withoutTrailingSlash('/roadmap/notes//'), '/roadmap/notes');
+    assert.equal(withoutTrailingSlash('/'), '/');
+    // Broken variant: a slash canonical would be a second hop.
+    assert.equal(
+      canonicalRoadmapLocation(new URL('https://roadmap.tuturuuu.com/')),
+      'https://tuturuuu.com/roadmap'
+    );
+    assert.notEqual(
+      canonicalRoadmapLocation(new URL('https://roadmap.tuturuuu.com/?q=1')),
+      'https://tuturuuu.com/roadmap/?q=1'
+    );
+  });
+});

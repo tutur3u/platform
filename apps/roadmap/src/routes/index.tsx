@@ -40,7 +40,7 @@ function RoadmapPage() {
       </a>
       <PublicSatelliteShell
         appName={t.appName}
-        appHref="https://tuturuuu.com/roadmap/"
+        appHref="https://tuturuuu.com/roadmap"
         homeHref="https://tuturuuu.com"
         navigationLabel={t.eyebrow}
         signIn={{ href: 'https://tuturuuu.com/login', label: t.signIn }}

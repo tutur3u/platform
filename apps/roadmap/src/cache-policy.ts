@@ -41,7 +41,7 @@ export function withRoadmapCachePolicy(
   const contentType = response.headers.get('content-type') ?? '';
   const html = /^text\/html(?:;|$)/i.test(contentType);
   const document =
-    (url.host === 'tuturuuu.com' && url.pathname === '/roadmap/') ||
+    (url.host === 'tuturuuu.com' && url.pathname === '/roadmap') ||
     (url.host === 'roadmap.tuturuuu.com' && url.pathname === '/');
 
   if (safe && isHashedAssetPath(url.pathname)) {
