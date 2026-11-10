@@ -48,3 +48,39 @@ for (const locale of ['en', 'vi'] as const) {
     });
   });
 }
+
+for (const locale of ['en', 'vi'] as const) {
+  it(`requires guardian-aware processing for minor students in ${locale}`, () => {
+    const text = (kind: ClassroomLegalKind) =>
+      getClassroomLegalProposal(kind, locale)
+        .sections.filter((section) => section.id?.includes('-meet-classroom-'))
+        .map((section) => section.content)
+        .join('\n');
+    if (locale === 'en') {
+      expect(text('privacy')).toContain(
+        'verifiable parent or guardian consent'
+      );
+      expect(text('privacy')).toContain("the child's own consent");
+      expect(text('privacy')).toContain(
+        'Tab-switch telemetry and full AI for children'
+      );
+      expect(text('privacy')).toContain('guardian-consent requirements above');
+      expect(text('dpa')).toContain('lawful basis and guardian consent');
+    } else {
+      expect(text('privacy')).toContain(
+        'sự đồng ý có thể xác minh của cha mẹ hoặc người giám hộ'
+      );
+      expect(text('privacy')).toContain('sự đồng ý của chính trẻ');
+      expect(text('privacy')).toContain(
+        'Theo dõi chuyển tab và AI đầy đủ cho trẻ em'
+      );
+      expect(text('privacy')).toContain(
+        'yêu cầu về sự đồng ý của người giám hộ nêu trên'
+      );
+      expect(text('dpa')).toContain(
+        'cơ sở pháp lý và sự đồng ý của người giám hộ'
+      );
+    }
+    expect(legalNotice.published).toBe(false);
+  });
+}
