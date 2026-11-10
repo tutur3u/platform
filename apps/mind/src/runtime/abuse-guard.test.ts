@@ -19,12 +19,16 @@ describe('configureMindAbuseGuard', () => {
     });
     const selection = selectAbuseGuard('proxy', {});
     expect(selection.kind).toBe('durable-object');
-    if (selection.kind === 'durable-object') await selection.client.get('probe');
+    if (selection.kind === 'durable-object')
+      await selection.client.get('probe');
     expect(run).toHaveBeenCalledTimes(1);
   });
 
   it('turns an assigned family off when the pepper is missing', () => {
-    configureMindAbuseGuard({ ABUSE_GUARD: { run: vi.fn() }, ABUSE_GUARD_FAMILIES: 'proxy' });
+    configureMindAbuseGuard({
+      ABUSE_GUARD: { run: vi.fn() },
+      ABUSE_GUARD_FAMILIES: 'proxy',
+    });
     expect(selectAbuseGuard('proxy', {}).kind).toBe('off');
   });
 });

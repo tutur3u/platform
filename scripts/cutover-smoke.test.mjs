@@ -86,7 +86,12 @@ function createMockResponse(status, bodyText = '', headers = {}) {
   }
   return {
     status,
-    statusText: status === 200 ? 'OK' : status === 500 ? 'Internal Server Error' : 'Redirect',
+    statusText:
+      status === 200
+        ? 'OK'
+        : status === 500
+          ? 'Internal Server Error'
+          : 'Redirect',
     headers: {
       get: (key) => headerMap.get(key.toLowerCase()) || null,
       ...headers,
@@ -98,12 +103,18 @@ function createMockResponse(status, bodyText = '', headers = {}) {
 describe('cutover-smoke harness', () => {
   describe('normalizeBaseUrl', () => {
     it('normalizes valid origins', () => {
-      expect(normalizeBaseUrl('https://example.com/')).toBe('https://example.com');
-      expect(normalizeBaseUrl('http://localhost:3000/some/path')).toBe('http://localhost:3000');
+      expect(normalizeBaseUrl('https://example.com/')).toBe(
+        'https://example.com'
+      );
+      expect(normalizeBaseUrl('http://localhost:3000/some/path')).toBe(
+        'http://localhost:3000'
+      );
     });
 
     it('defaults to https when protocol is missing', () => {
-      expect(normalizeBaseUrl('staging.tuturuuu.com')).toBe('https://staging.tuturuuu.com');
+      expect(normalizeBaseUrl('staging.tuturuuu.com')).toBe(
+        'https://staging.tuturuuu.com'
+      );
     });
 
     it('throws on empty or non-string input', () => {
@@ -112,7 +123,9 @@ describe('cutover-smoke harness', () => {
     });
 
     it('throws on invalid protocols', () => {
-      expect(() => normalizeBaseUrl('ftp://example.com')).toThrow(/http or https/);
+      expect(() => normalizeBaseUrl('ftp://example.com')).toThrow(
+        /http or https/
+      );
     });
   });
 
@@ -147,9 +160,15 @@ describe('cutover-smoke harness', () => {
 
   describe('fetchWithRedirectTracking', () => {
     it('returns direct 200 response', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(createMockResponse(200, '<html>OK</html>'));
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue(createMockResponse(200, '<html>OK</html>'));
 
-      const res = await fetchWithRedirectTracking('https://example.com/', {}, { fetchImpl: mockFetch });
+      const res = await fetchWithRedirectTracking(
+        'https://example.com/',
+        {},
+        { fetchImpl: mockFetch }
+      );
 
       expect(res.status).toBe(200);
       expect(res.loopDetected).toBe(false);
@@ -161,7 +180,9 @@ describe('cutover-smoke harness', () => {
     it('follows valid redirects cleanly', async () => {
       const mockFetch = vi.fn().mockImplementation(async (url) => {
         if (url === 'https://example.com/') {
-          return createMockResponse(301, '', { location: 'https://example.com/en' });
+          return createMockResponse(301, '', {
+            location: 'https://example.com/en',
+          });
         }
         if (url === 'https://example.com/en') {
           return createMockResponse(200, '<html>Welcome</html>');
@@ -169,11 +190,18 @@ describe('cutover-smoke harness', () => {
         return createMockResponse(404, 'Not found');
       });
 
-      const res = await fetchWithRedirectTracking('https://example.com/', {}, { fetchImpl: mockFetch });
+      const res = await fetchWithRedirectTracking(
+        'https://example.com/',
+        {},
+        { fetchImpl: mockFetch }
+      );
 
       expect(res.status).toBe(200);
       expect(res.finalUrl).toBe('https://example.com/en');
-      expect(res.chain).toEqual(['https://example.com/', 'https://example.com/en']);
+      expect(res.chain).toEqual([
+        'https://example.com/',
+        'https://example.com/en',
+      ]);
       expect(res.loopDetected).toBe(false);
       expect(mockFetch).toHaveBeenCalledTimes(2);
     });
@@ -181,15 +209,23 @@ describe('cutover-smoke harness', () => {
     it('detects circular redirect loops', async () => {
       const mockFetch = vi.fn().mockImplementation(async (url) => {
         if (url === 'https://example.com/a') {
-          return createMockResponse(302, '', { location: 'https://example.com/b' });
+          return createMockResponse(302, '', {
+            location: 'https://example.com/b',
+          });
         }
         if (url === 'https://example.com/b') {
-          return createMockResponse(302, '', { location: 'https://example.com/a' });
+          return createMockResponse(302, '', {
+            location: 'https://example.com/a',
+          });
         }
         return createMockResponse(404, '');
       });
 
-      const res = await fetchWithRedirectTracking('https://example.com/a', {}, { fetchImpl: mockFetch });
+      const res = await fetchWithRedirectTracking(
+        'https://example.com/a',
+        {},
+        { fetchImpl: mockFetch }
+      );
 
       expect(res.loopDetected).toBe(true);
       expect(res.status).toBe(0);
@@ -200,13 +236,19 @@ describe('cutover-smoke harness', () => {
       let count = 0;
       const mockFetch = vi.fn().mockImplementation(async () => {
         count++;
-        return createMockResponse(302, '', { location: `https://example.com/step-${count}` });
+        return createMockResponse(302, '', {
+          location: `https://example.com/step-${count}`,
+        });
       });
 
-      const res = await fetchWithRedirectTracking('https://example.com/start', {}, {
-        fetchImpl: mockFetch,
-        maxRedirects: 3,
-      });
+      const res = await fetchWithRedirectTracking(
+        'https://example.com/start',
+        {},
+        {
+          fetchImpl: mockFetch,
+          maxRedirects: 3,
+        }
+      );
 
       expect(res.maxRedirectsExceeded).toBe(true);
       expect(res.error).toContain('Exceeded maximum redirect limit');
@@ -215,33 +257,52 @@ describe('cutover-smoke harness', () => {
 
   describe('checkEntryRoute and checkLoginRoute', () => {
     it('checkEntryRoute passes on anonymous 200', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(createMockResponse(200, '<html>Entry</html>'));
-      const res = await checkEntryRoute('https://example.com', '/', { fetchImpl: mockFetch });
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue(createMockResponse(200, '<html>Entry</html>'));
+      const res = await checkEntryRoute('https://example.com', '/', {
+        fetchImpl: mockFetch,
+      });
       expect(res.passed).toBe(true);
       expect(res.status).toBe(200);
     });
 
     it('checkEntryRoute fails on non-200', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(createMockResponse(502, 'Bad Gateway'));
-      const res = await checkEntryRoute('https://example.com', '/', { fetchImpl: mockFetch });
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue(createMockResponse(502, 'Bad Gateway'));
+      const res = await checkEntryRoute('https://example.com', '/', {
+        fetchImpl: mockFetch,
+      });
       expect(res.passed).toBe(false);
       expect(res.status).toBe(502);
       expect(res.error).toContain('Expected HTTP 200');
     });
 
     it('checkLoginRoute passes when page renders with 200 and html', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(
-        createMockResponse(200, '<!DOCTYPE html><html><body><form action="/login">Sign in</form></body></html>')
-      );
-      const res = await checkLoginRoute('https://example.com', '/login', { fetchImpl: mockFetch });
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue(
+          createMockResponse(
+            200,
+            '<!DOCTYPE html><html><body><form action="/login">Sign in</form></body></html>'
+          )
+        );
+      const res = await checkLoginRoute('https://example.com', '/login', {
+        fetchImpl: mockFetch,
+      });
       expect(res.passed).toBe(true);
       expect(res.renders).toBe(true);
       expect(res.status).toBe(200);
     });
 
     it('checkLoginRoute fails if login returns empty body', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(createMockResponse(200, '   '));
-      const res = await checkLoginRoute('https://example.com', '/login', { fetchImpl: mockFetch });
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue(createMockResponse(200, '   '));
+      const res = await checkLoginRoute('https://example.com', '/login', {
+        fetchImpl: mockFetch,
+      });
       expect(res.passed).toBe(false);
       expect(res.error).toContain('body was empty');
     });
@@ -250,9 +311,11 @@ describe('cutover-smoke harness', () => {
   describe('checkPathsNo5xx', () => {
     it('passes when none of the 5 paths return 5xx status', async () => {
       const mockFetch = vi.fn().mockImplementation(async (url) => {
-        if (url.includes('/robots.txt')) return createMockResponse(200, 'User-agent: *');
+        if (url.includes('/robots.txt'))
+          return createMockResponse(200, 'User-agent: *');
         if (url.includes('/about')) return createMockResponse(200, 'About us');
-        if (url.includes('/pricing')) return createMockResponse(200, 'Pricing plans');
+        if (url.includes('/pricing'))
+          return createMockResponse(200, 'Pricing plans');
         if (url.includes('/login')) return createMockResponse(200, 'Login');
         return createMockResponse(200, 'Home');
       });
@@ -270,7 +333,8 @@ describe('cutover-smoke harness', () => {
 
     it('fails when any path returns 500', async () => {
       const mockFetch = vi.fn().mockImplementation(async (url) => {
-        if (url.includes('/broken')) return createMockResponse(500, 'Internal Server Error');
+        if (url.includes('/broken'))
+          return createMockResponse(500, 'Internal Server Error');
         return createMockResponse(200, 'OK');
       });
 
@@ -291,12 +355,19 @@ describe('cutover-smoke harness', () => {
   describe('runCutoverSmoke end-to-end simulation', () => {
     it('produces PASS report when all smoke requirements succeed', async () => {
       const mockFetch = vi.fn().mockImplementation(async (url) => {
-        return createMockResponse(200, '<html><div class="app">OK</div></html>');
+        return createMockResponse(
+          200,
+          '<html><div class="app">OK</div></html>'
+        );
       });
 
-      const report = await runCutoverSmoke('web', 'https://staging.tuturuuu.com', {
-        fetchImpl: mockFetch,
-      });
+      const report = await runCutoverSmoke(
+        'web',
+        'https://staging.tuturuuu.com',
+        {
+          fetchImpl: mockFetch,
+        }
+      );
 
       expect(report.status).toBe('PASS');
       expect(report.pass).toBe(true);
@@ -317,9 +388,13 @@ describe('cutover-smoke harness', () => {
         return createMockResponse(200, '<html>OK</html>');
       });
 
-      const report = await runCutoverSmoke('web', 'https://staging.tuturuuu.com', {
-        fetchImpl: mockFetch,
-      });
+      const report = await runCutoverSmoke(
+        'web',
+        'https://staging.tuturuuu.com',
+        {
+          fetchImpl: mockFetch,
+        }
+      );
 
       expect(report.status).toBe('FAIL');
       expect(report.pass).toBe(false);
