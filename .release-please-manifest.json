@@ -55,6 +55,7 @@
   "packages/internal-api": "0.56.0",
   "packages/inventory-core": "0.11.2",
   "packages/legal": "0.3.1",
+  "packages/marketing-shell": "0.1.0",
   "packages/masonry": "0.5.1",
   "packages/microsoft": "0.1.2",
   "packages/mind-core": "0.2.2",
