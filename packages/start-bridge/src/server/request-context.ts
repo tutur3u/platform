@@ -16,7 +16,14 @@ import {
  * `@tuturuuu/start-bridge/request-context` entry; the portable core is
  * `@tuturuuu/start-bridge/request-context/core`.
  */
-installRequestStore(new AsyncLocalStorage<BridgeRequestContext>());
+// Bridged request state lives on the server only. The browser build reaches
+// this module through the `next/headers` and `next-intl/server` shims, where
+// `node:async_hooks` is an empty module, so the store is installed only when
+// Vite is not building for the client.
+const clientBuild =
+  (import.meta as { env?: { SSR?: boolean } }).env?.SSR === false;
+if (!clientBuild)
+  installRequestStore(new AsyncLocalStorage<BridgeRequestContext>());
 
 export * from '../core/request-context';
 
