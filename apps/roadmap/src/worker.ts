@@ -1,6 +1,7 @@
 import handler from '@tanstack/react-start/server-entry';
 import { buildInfoResponse, isBuildInfoPath } from './build-info.ts';
 import { isHashedAssetPath, withRoadmapCachePolicy } from './cache-policy.ts';
+import { withContentSecurityPolicy } from './csp.ts';
 import { hostsResponse, isHostsPath } from './live/host-probe.ts';
 import {
   normalizeLocalHost,
@@ -70,6 +71,9 @@ export default {
       prepareRoadmapRequest(request, basepath),
       ...options
     );
-    return withRoadmapCachePolicy(request, response);
+    return withRoadmapCachePolicy(
+      request,
+      await withContentSecurityPolicy(response)
+    );
   },
 };

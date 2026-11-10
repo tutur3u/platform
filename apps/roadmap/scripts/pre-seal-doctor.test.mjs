@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   assessDoctor,
+  inlineScriptHashes,
   CANONICAL_URL,
   REDIRECT_CHAINS,
   PLAN_LABEL,
@@ -14,7 +15,7 @@ import '../../../scripts/ci/asset-smoke.test.mjs';
 const LOGO = '/roadmap/assets/tuturuuu-logo-Abcd1234.png';
 const COMMIT = 'a'.repeat(40);
 
-function passing() {
+function passingRaw() {
   return {
     expectedCommit: COMMIT,
     canonical: {
@@ -39,6 +40,18 @@ function passing() {
       cacheControl: 'public, max-age=31536000, immutable',
     },
   };
+}
+
+const CSP_REST =
+  "default-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; connect-src 'self' https://api.github.com";
+
+function passing() {
+  const observation = passingRaw();
+  observation.canonical.body += '<script>self.boot=1</script >';
+  observation.canonical.csp = `script-src 'self' ${inlineScriptHashes(
+    observation.canonical.body
+  ).join(' ')}; ${CSP_REST}`;
+  return observation;
 }
 
 test('a correct worker passes the pre-seal doctor', () => {
@@ -169,5 +182,43 @@ test('D79: the satellite shell instead of the marketing layout fails', () => {
   );
   assert.ok(
     verdict.failures.includes('canonical HTML still uses the satellite shell')
+  );
+});
+
+test('D79: an inline script missing from the CSP fails the doctor', () => {
+  const observation = passing();
+  observation.canonical.body += '<script>self.injected=1</script\t\nfoo>';
+  const verdict = assessDoctor(observation);
+  assert.equal(verdict.ok, false);
+  assert.ok(
+    verdict.failures.some((f) => f.startsWith('CSP script-src does not allow'))
+  );
+});
+
+test('D79: a missing or permissive CSP fails the doctor', () => {
+  const missing = passing();
+  delete missing.canonical.csp;
+  assert.ok(
+    assessDoctor(missing).failures.includes(
+      'canonical HTML missing content-security-policy'
+    )
+  );
+  const loose = passing();
+  loose.canonical.csp = loose.canonical.csp.replace(
+    "script-src 'self'",
+    "script-src 'self' 'unsafe-inline'"
+  );
+  assert.ok(
+    assessDoctor(loose).failures.some((f) =>
+      f.startsWith('CSP script-src too broad')
+    )
+  );
+  const noObject = passing();
+  noObject.canonical.csp = noObject.canonical.csp.replace(
+    "object-src 'none'; ",
+    ''
+  );
+  assert.ok(
+    assessDoctor(noObject).failures.includes("CSP missing object-src 'none'")
   );
 });

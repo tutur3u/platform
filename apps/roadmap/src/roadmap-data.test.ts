@@ -7,6 +7,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
+import './csp.test.ts';
 import './history/history.test.ts';
 import './live/regressions.test.ts';
 import { comingSoon, visibleComingSoon } from './content/coming-soon.ts';
