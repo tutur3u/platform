@@ -173,6 +173,7 @@ jobs:
       artifact-script: scripts/ci/mind-native-artifact.py
       env-interface: MindGeneratedEnv
       worker-environment-type: MindEnvironment
+      unit-command: node --test cloudflare/required-secrets.test.mjs cloudflare/required-secrets.test.ts cloudflare/server-artifact-scan.test.mjs && bun run test
       # Public staging values from repository variables for same-repository
       # events; fork pull requests (and unset variables) build with fixtures.
       public-env: |
