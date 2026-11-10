@@ -62,12 +62,17 @@ describe('subdomain navigations', () => {
     expect(decision.response.headers.get('cache-control')).toBe('no-store');
   });
 
-  it('maps the subdomain root to the canonical mount with a trailing slash', () => {
+  it('maps the subdomain root and slashed paths to the canonical mount without a trailing slash', () => {
     for (const [from, to] of [
-      ['https://meet.tuturuuu.com/', 'https://tuturuuu.com/meet/'],
+      ['https://meet.tuturuuu.com/', 'https://tuturuuu.com/meet'],
       [
         'https://meet.tuturuuu.com/?utm_source=x',
-        'https://tuturuuu.com/meet/?utm_source=x',
+        'https://tuturuuu.com/meet?utm_source=x',
+      ],
+      ['https://meet.tuturuuu.com/r/abc/', 'https://tuturuuu.com/meet/r/abc'],
+      [
+        'https://meet.tuturuuu.com/r/abc//?a=1',
+        'https://tuturuuu.com/meet/r/abc?a=1',
       ],
     ]) {
       const root = decideOneOriginRequest(nav(from!), base);
