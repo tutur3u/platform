@@ -1,7 +1,7 @@
 {
   "appName": "Roadmap",
   "eyebrow": "Product roadmap",
-  "title": "What we’re building at Tuturuuu",
+  "title": "What we’re building.",
   "intro": "Every product, milestone and deliverable, with what has shipped and what’s next. Statuses come straight from public pull requests and live deploy checks.",
   "signIn": "Sign in",
   "language": "Language",
@@ -121,5 +121,6 @@
     "moreFix": "fix",
     "moreOtherOne": "other change",
     "changeOne": "change"
-  }
+  },
+  "titleAccent": "Shipped in the open."
 }

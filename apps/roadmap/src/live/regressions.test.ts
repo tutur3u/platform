@@ -6,7 +6,7 @@
  * client wording must turn this suite red.
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { comingSoon, visibleComingSoon } from '../content/coming-soon.ts';
 import { showPlans, tracks } from '../content/tracks.ts';
@@ -202,5 +202,36 @@ describe('no-slash canonical address', () => {
       canonicalRoadmapLocation(new URL('https://roadmap.tuturuuu.com/?q=1')),
       'https://tuturuuu.com/roadmap/?q=1'
     );
+  });
+});
+
+describe('shared marketing shell package', () => {
+  const root = new URL(
+    '../../../../packages/marketing-shell/src/',
+    import.meta.url
+  );
+  it('stays framework-agnostic (no Next imports) so every app can share it', () => {
+    const files = readdirSync(root, { recursive: true })
+      .map(String)
+      .filter((f) => /\.(ts|tsx)$/.test(f));
+    assert.ok(files.length >= 8);
+    for (const file of files)
+      assert.doesNotMatch(
+        readFileSync(new URL(file, root), 'utf8'),
+        /from ['"](next|next\/[^'"]+|next-intl[^'"]*|framer-motion)['"]/,
+        file
+      );
+  });
+  it('ships the OFL licences beside the self-hosted fonts', () => {
+    const fonts = readdirSync(new URL('fonts/', root)).map(String);
+    assert.ok(fonts.some((f) => f.startsWith('be-vietnam-pro-')));
+    assert.ok(fonts.includes('jetbrains-mono-variable.woff2'));
+    for (const licence of ['OFL-BeVietnamPro.txt', 'OFL-JetBrainsMono.txt']) {
+      assert.ok(fonts.includes(licence), licence);
+      assert.match(
+        readFileSync(new URL(`fonts/${licence}`, root), 'utf8'),
+        /SIL Open Font License/
+      );
+    }
   });
 });

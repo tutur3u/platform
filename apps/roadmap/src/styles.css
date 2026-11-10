@@ -1,6 +1,11 @@
 @import "@tuturuuu/ui/globals.css";
-@import "@tuturuuu/satellite/public/styles.css";
-@source '../../../../packages/satellite/src/components/public-satellite-shell.tsx';
+@import "@tuturuuu/marketing-shell/fonts.css";
+/* The shared marketing layout and the UI primitives it renders. */
+@source '../../../packages/marketing-shell/src';
+@source '../../../packages/ui/src/components/ui/sheet.tsx';
+@source '../../../packages/ui/src/components/ui/accordion.tsx';
+@source '../../../packages/ui/src/components/ui/button.tsx';
+@source '../../../packages/ui/src/components/ui/custom/theme-toggle.tsx';
 
 /* Mobile first. Colours come from the shared Tuturuuu tokens, so the page
    follows the same light/dark theme as every satellite. */
@@ -23,36 +28,32 @@
   color: var(--rm-ink);
   -webkit-text-size-adjust: 100%;
 }
-* {
-  box-sizing: border-box;
-}
-body {
-  margin: 0;
-  background: var(--rm-bg);
-}
-a {
-  color: inherit;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
-}
-button {
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-:focus-visible {
-  outline: 2px solid var(--rm-sync);
-  outline-offset: 3px;
-  border-radius: 6px;
-}
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+/* Element resets live in the base layer so Tailwind utilities used by the
+   shared marketing shell (e.g. the Get Started button colours) win. */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: var(--rm-bg);
+  }
+  a {
+    color: inherit;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible {
+    outline: 2px solid var(--rm-sync);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
 }
 .skip-link {
   position: absolute;
@@ -70,27 +71,21 @@ button {
 
 /* Shell */
 .roadmap {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 0 16px;
+  min-height: 100dvh;
+  background: var(--rm-bg);
 }
-.public-satellite-header {
-  min-height: 64px;
-  gap: 12px;
-}
-.public-satellite-header nav {
-  gap: 10px;
-  font-size: 14px;
-}
-.public-satellite-shell > footer {
+.footer-inner {
+  padding-top: 8px;
   border-top: 1px solid var(--rm-line);
-  margin-top: 48px;
-  padding: 24px 0 40px;
   color: var(--rm-muted);
-  font-size: 13px;
+  font-size: 12.5px;
 }
 .footer-inner p {
-  margin: 4px 0;
+  margin: 6px 0 0;
+}
+.footer-inner a {
+  text-decoration: underline;
+  text-decoration-color: var(--rm-line);
 }
 .segmented {
   display: inline-flex;
@@ -153,36 +148,131 @@ button {
 
 /* Hero */
 .page {
+  /* Same container as the marketing pages: max-w-7xl, px-6 / lg:px-8. */
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 24px 24px;
   display: grid;
-  gap: 40px;
+  gap: 48px;
 }
 .hero {
-  padding-top: 32px;
+  position: relative;
+  isolation: isolate;
+  padding: 48px 0 8px;
   display: grid;
-  gap: 16px;
+  justify-items: center;
+  gap: 18px;
+  text-align: center;
+}
+.hero-backdrop {
+  position: absolute;
+  inset: -96px -24px 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.bloom {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(64px);
+  opacity: 0.55;
+  animation: drift 18s ease-in-out infinite alternate;
+}
+.bloom-a {
+  width: 420px;
+  height: 320px;
+  top: 0;
+  left: 18%;
+  background: color-mix(in oklab, var(--purple) 32%, transparent);
+}
+.bloom-b {
+  width: 380px;
+  height: 300px;
+  top: 40px;
+  right: 14%;
+  background: color-mix(in oklab, var(--blue) 26%, transparent);
+  animation-delay: -6s;
+}
+.grid-lines {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(
+      color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at 50% 30%, #000 20%, transparent 70%);
+}
+@keyframes drift {
+  to {
+    transform: translate3d(24px, 16px, 0) scale(1.06);
+  }
 }
 .eyebrow {
   margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--rm-line);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--rm-panel) 70%, transparent);
+  font-family: var(--font-mono-ui);
+  font-size: 11px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--rm-sync);
+  color: var(--rm-muted);
+}
+.eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rm-live);
 }
 .hero h1 {
   margin: 0;
-  font-size: clamp(30px, 8.4vw, 56px);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  font-weight: 700;
+  display: grid;
+  font-family: var(--font-display);
+  font-size: clamp(42px, 10vw, 92px);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  font-weight: 800;
   text-wrap: balance;
+}
+.hero h1 .accent {
+  background: linear-gradient(
+    100deg,
+    var(--cyan),
+    var(--blue) 55%,
+    var(--purple)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding-bottom: 0.06em;
 }
 .intro {
   margin: 0;
-  max-width: 640px;
-  font-size: 16px;
-  line-height: 1.55;
+  max-width: 620px;
+  font-size: 17px;
+  line-height: 1.6;
   color: var(--rm-muted);
+  text-wrap: pretty;
+}
+.hero .stats,
+.hero .overall {
+  width: 100%;
+  text-align: left;
+}
+.hero .freshness {
+  justify-self: center;
 }
 .freshness {
   justify-self: start;
@@ -365,8 +455,11 @@ button {
 .section-head h2,
 .method h2 {
   margin: 0;
-  font-size: 22px;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: clamp(26px, 5vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
 }
 .section-head p {
   margin: 6px 0 0;
@@ -537,8 +630,8 @@ button {
   z-index: 5;
   display: grid;
   gap: 10px;
-  margin: 0 -16px;
-  padding: 10px 16px;
+  margin: 0 -24px;
+  padding: 10px 24px;
   background: color-mix(in oklab, var(--rm-bg) 88%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -772,11 +865,8 @@ code {
 }
 
 @media (min-width: 720px) {
-  .roadmap {
-    padding: 0 32px;
-  }
   .page {
-    gap: 56px;
+    gap: 72px;
   }
   .hero {
     padding-top: 56px;
@@ -785,8 +875,8 @@ code {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .sticky-bar {
-    margin: 0 -32px;
-    padding: 12px 32px;
+    margin: 0 -24px;
+    padding: 12px 24px;
   }
   .track {
     padding: 22px;
@@ -809,6 +899,7 @@ code {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .bloom,
   .spin,
   .freshness.live .pulse {
     animation: none;

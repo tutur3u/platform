@@ -1,0 +1,143 @@
+{
+  "common": {
+    "products": "Các sản phẩm",
+    "resources": "Tài nguyên",
+    "main_navigation": "Điều hướng chính",
+    "pricing": "Bảng giá",
+    "about": "Giới thiệu",
+    "contact": "Liên hệ",
+    "home": "Trang chủ",
+    "apps": "Ứng dụng",
+    "blog": "Blog",
+    "blog-description": "Đọc các bài viết và cập nhật mới nhất của chúng tôi.",
+    "changelog": "Nhật ký thay đổi",
+    "changelog-description": "Cập nhật những thay đổi mới nhất về sản phẩm và cải tiến.",
+    "careers": "Việc làm",
+    "careers-description": "Tham gia cùng chúng tôi và giúp chúng tôi xây dựng tương lai của Tuturuuu.",
+    "partners": "Đối tác",
+    "partners-description": "Khám phá cơ hội hợp tác với Tuturuuu.",
+    "contributors": "Người đóng góp",
+    "contributors-description": "Gặp gỡ những người đã giúp tạo nên Tuturuuu.",
+    "security": "Bảo mật",
+    "security-description": "Tìm hiểu về cách chúng tôi bảo vệ dữ liệu và thông tin của bạn.",
+    "random_generator": "Trình tạo ngẫu nhiên",
+    "random_generator-description": "Tạo ID, token, khóa API và mật khẩu bảo mật ngay trong trình duyệt.",
+    "branding": "Thương hiệu",
+    "branding-description": "Xem bộ nhận diện thương hiệu của Tuturuuu.",
+    "ui": "Giao diện",
+    "ui-description": "Duyệt thư viện thành phần giao diện Tuturuuu.",
+    "documentation": "Tài liệu",
+    "documentation-description": "Tìm tài liệu và hướng dẫn chi tiết.",
+    "get-started": "Bắt đầu ngay",
+    "company": "Công ty",
+    "legal": "Pháp lý",
+    "developers": "Nhà phát triển",
+    "meet-together": "Tuturuuu Meet",
+    "qr_generator": "Tạo mã QR",
+    "facebook_mockup": "Mockup Facebook",
+    "terms": "Điều khoản sử dụng",
+    "privacy": "Chính sách bảo mật",
+    "community-guidelines": "Nguyên tắc cộng đồng",
+    "acceptable-use": "Chính sách sử dụng",
+    "open-source": "Mã nguồn mở",
+    "footer_tagline": "Một không gian làm việc AI cho công việc, lịch, tài liệu và đội nhóm của bạn.",
+    "copyright": "Bản quyền © 2026 Công ty Cổ phần Tuturuuu (MST: 0318898402) – Mọi quyền được bảo lưu."
+  },
+  "marketing-nav": {
+    "all_apps": "Khám phá mọi ứng dụng Tuturuuu",
+    "groups": {
+      "create": "Tạo & chia sẻ",
+      "operate": "Vận hành doanh nghiệp",
+      "plan": "Lên kế hoạch & thực thi"
+    },
+    "index": {
+      "description": "Một không gian làm việc, một lần đăng nhập, một hoá đơn. Mỗi ứng dụng bên dưới dùng riêng được, và dùng cùng nhau thì tốt hơn.",
+      "learn_more": "Tìm hiểu thêm",
+      "seo": {
+        "description": "Mọi ứng dụng Tuturuuu ở cùng một nơi — lập kế hoạch, sáng tạo và vận hành doanh nghiệp.",
+        "title": "Sản phẩm"
+      },
+      "title": "Mọi ứng dụng đội ngũ của bạn cần"
+    },
+    "portfolio": "Hồ sơ năng lực",
+    "portfolio_description": "Sản phẩm, kỹ thuật và hợp tác nghiên cứu.",
+    "products": {
+      "ai": {
+        "description": "Mira và các trợ lý vận hành mọi bề mặt sản phẩm.",
+        "label": "AI"
+      },
+      "calendar": {
+        "description": "AI tự động xếp lịch theo ưu tiên thực tế của bạn.",
+        "label": "Lịch"
+      },
+      "chat": {
+        "description": "Kênh, tin nhắn riêng và tệp trong cùng không gian làm việc với công việc của bạn.",
+        "label": "Trò chuyện"
+      },
+      "crm": {
+        "description": "Liên hệ, pipeline và lịch sử khách hàng.",
+        "label": "CRM"
+      },
+      "documents": {
+        "description": "Tài liệu cộng tác nằm ngay cạnh công việc.",
+        "label": "Tài liệu"
+      },
+      "drive": {
+        "description": "Kho lưu trữ chung với phân quyền theo workspace.",
+        "label": "Lưu trữ"
+      },
+      "finance": {
+        "description": "Theo dõi chi tiêu, ngân sách, hoá đơn và ví.",
+        "label": "Tài chính"
+      },
+      "forms": {
+        "description": "Tạo biểu mẫu, thu thập phản hồi và xem kết quả ngay tại chỗ.",
+        "label": "Biểu mẫu"
+      },
+      "hive": {
+        "description": "Phòng thí nghiệm cho tác tử bầy đàn: dựng quy trình, chạy mô phỏng, xem kết quả.",
+        "label": "Tác tử"
+      },
+      "inventory": {
+        "description": "Sản phẩm, tồn kho, nhà cung cấp và kho bãi.",
+        "label": "Kho hàng"
+      },
+      "lms": {
+        "description": "Khoá học, bài kiểm tra và theo dõi tiến độ.",
+        "label": "Học tập"
+      },
+      "mail": {
+        "description": "Hộp thư nhóm kết nối với công việc và lịch.",
+        "label": "Thư"
+      },
+      "meet": {
+        "description": "Tìm thời gian phù hợp cho tất cả mọi người.",
+        "label": "Meet"
+      },
+      "qr": {
+        "description": "Mã QR cho liên kết, sự kiện, thực đơn và thanh toán.",
+        "label": "QR"
+      },
+      "storefront": {
+        "description": "Cửa hàng cho người mua, dựng ngay trên kho hàng của bạn.",
+        "label": "Gian hàng"
+      },
+      "tasks": {
+        "description": "Bảng Kanban, phân cấp và hộp thu thập nhanh.",
+        "label": "Công việc"
+      },
+      "track": {
+        "description": "Bấm giờ và thấy rõ tuần vừa rồi đã trôi đi đâu.",
+        "label": "Chấm công"
+      },
+      "workflows": {
+        "description": "Tự động hoá các bước chuyển giao giữa công cụ.",
+        "label": "Quy trình"
+      }
+    }
+  },
+  "desktop_download": {
+    "badge": "Truy cập sớm Tuturuuu",
+    "navigation_description": "Ứng dụng cho Windows, macOS và Linux"
+  }
+}

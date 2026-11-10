@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { PublicSatelliteShell } from '@tuturuuu/satellite/public';
+import { createTranslator, MarketingShell } from '@tuturuuu/marketing-shell';
 import { useMemo, useState } from 'react';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
-import { Footer, ThemeToggle } from '../components/chrome';
+import { Footer } from '../components/chrome';
+import logo from '../assets/tuturuuu-logo.png?no-inline';
 import { ComingSoon, Hero } from '../components/hero';
 import { HostingSection, Method } from '../components/hosting';
 import type { Lang } from '../components/shared';
@@ -13,7 +14,6 @@ import generated from '../generated/live.json';
 import { parseLiveData } from '../live/model';
 import { useLiveData } from '../live/use-live-data';
 import { buildView, type StatusFilter } from '../view-model';
-import { MountedLogo } from '../components/chrome';
 
 export const Route = createFileRoute('/')({ component: RoadmapPage });
 
@@ -29,6 +29,8 @@ function RoadmapPage() {
     [live.data, live.now]
   );
 
+  const shellT = useMemo(() => createTranslator(lang), [lang]);
+
   return (
     <div
       className="roadmap"
@@ -38,32 +40,13 @@ function RoadmapPage() {
       <a className="skip-link" href="#tracks">
         {t.skip}
       </a>
-      <PublicSatelliteShell
-        appName={t.appName}
-        appHref="https://tuturuuu.com/roadmap"
-        homeHref="https://tuturuuu.com"
-        navigationLabel={t.eyebrow}
-        signIn={{ href: 'https://tuturuuu.com/login', label: t.signIn }}
-        ImageComponent={MountedLogo}
-        navigation={
-          <>
-            <fieldset className="segmented lang-switch">
-              <legend className="sr-only">{t.language}</legend>
-              {(['en', 'vi'] as const).map((code) => (
-                <button
-                  key={code}
-                  type="button"
-                  aria-pressed={lang === code}
-                  onClick={() => setLang(code)}
-                >
-                  {code.toUpperCase()}
-                </button>
-              ))}
-            </fieldset>
-            <ThemeToggle label={t.theme} />
-          </>
-        }
-        footer={<Footer t={t} data={live.data} />}
+      <MarketingShell
+        locale={lang}
+        logoSrc={logo}
+        onLocaleChange={setLang}
+        pathname="/roadmap"
+        signInHref="https://tuturuuu.com/login"
+        t={shellT}
       >
         <main className="page">
           <Hero t={t} lang={lang} live={live} view={view} />
@@ -91,8 +74,9 @@ function RoadmapPage() {
             hostsCheckedAt={initialData.generatedAt}
           />
           <Method t={t} />
+          <Footer t={t} data={live.data} />
         </main>
-      </PublicSatelliteShell>
+      </MarketingShell>
     </div>
   );
 }

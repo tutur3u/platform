@@ -1,7 +1,7 @@
 {
   "appName": "Lộ trình",
   "eyebrow": "Lộ trình sản phẩm",
-  "title": "Tuturuuu đang xây dựng gì",
+  "title": "Những gì chúng tôi đang xây dựng.",
   "intro": "Mọi sản phẩm, cột mốc và hạng mục, kèm những gì đã ra mắt và sắp tới. Trạng thái lấy trực tiếp từ pull request công khai và kiểm tra triển khai thực tế.",
   "signIn": "Đăng nhập",
   "language": "Ngôn ngữ",
@@ -121,5 +121,6 @@
     "moreFix": "sửa lỗi",
     "moreOtherOne": "thay đổi khác",
     "changeOne": "thay đổi"
-  }
+  },
+  "titleAccent": "Ra mắt công khai."
 }

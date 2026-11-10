@@ -43,8 +43,19 @@ export function Hero({
   ];
   return (
     <section className="hero" aria-labelledby="page-title">
-      <p className="eyebrow">{t.eyebrow}</p>
-      <h1 id="page-title">{t.title}</h1>
+      <div className="hero-backdrop" aria-hidden>
+        <span className="bloom bloom-a" />
+        <span className="bloom bloom-b" />
+        <span className="grid-lines" />
+      </div>
+      <p className="eyebrow">
+        <span className="eyebrow-dot" aria-hidden />
+        {t.eyebrow}
+      </p>
+      <h1 id="page-title">
+        <span>{t.title}</span>
+        <span className="accent">{t.titleAccent}</span>
+      </h1>
       <p className="intro">{t.intro}</p>
       <FreshnessPill
         t={t}
