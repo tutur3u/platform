@@ -120,11 +120,29 @@ function chooseOrigin(
   return { url, flagged: false };
 }
 
-function originRequest(request: Request, origin: URL) {
+const FORWARDED_HOST = 'x-forwarded-host';
+const FORWARDED_PROTO = 'x-forwarded-proto';
+
+/**
+ * The origin request. Client-supplied X-Forwarded-Host/-Proto never reach the
+ * origin: the gateway states the public host itself, so an origin that trusts
+ * these headers (the marketing Worker) builds public URLs, never spoofed ones.
+ */
+function originRequest(
+  request: Request,
+  origin: URL,
+  publicHost: string | undefined
+) {
   const incoming = new URL(request.url);
   const target = new URL(`${incoming.pathname}${incoming.search}`, origin);
   const outgoing = new Request(target, request);
   outgoing.headers.set(HOP_HEADER, '1');
+  outgoing.headers.delete(FORWARDED_HOST);
+  outgoing.headers.delete(FORWARDED_PROTO);
+  if (publicHost) {
+    outgoing.headers.set(FORWARDED_HOST, publicHost);
+    outgoing.headers.set(FORWARDED_PROTO, 'https');
+  }
   return outgoing;
 }
 
@@ -157,7 +175,30 @@ export function rewriteLinkHeader(
   if (rewritten !== link) response.headers.set('link', rewritten);
 }
 
-/** Maps an origin-host Location back to the public host; nothing else moves. */
+/**
+ * Absolute origin-host URLs carried in a public-host Location's query (for
+ * example the sign-in `returnUrl`) point at the public host instead. Only
+ * top-level parameters whose whole value is an origin-host URL change.
+ */
+function rewriteOriginQueryUrls(target: URL, origin: URL, publicHost: string) {
+  let changed = false;
+  for (const [name, value] of [...target.searchParams]) {
+    let nested: URL;
+    try {
+      nested = new URL(value);
+    } catch {
+      continue;
+    }
+    if (nested.host !== origin.host) continue;
+    nested.protocol = 'https:';
+    nested.host = publicHost;
+    target.searchParams.set(name, nested.toString());
+    changed = true;
+  }
+  return changed;
+}
+
+/** Maps an origin-host Location (and origin-host URLs in its query) to the public host. */
 export function rewriteLocation(
   response: Response,
   origin: URL,
@@ -172,15 +213,39 @@ export function rewriteLocation(
   ) {
     return;
   }
+  let target: URL;
+  let relative = false;
   try {
-    const target = new URL(location);
-    if (target.host !== origin.host) return;
+    target = new URL(location);
+  } catch {
+    // A relative Location resolves against the public host; only its query
+    // can still name the origin host.
+    try {
+      target = new URL(location, `https://${publicHost}`);
+      relative = true;
+    } catch {
+      return;
+    }
+  }
+  let changed = false;
+  if (!relative && target.host === origin.host) {
     target.protocol = 'https:';
     target.host = publicHost;
-    response.headers.set('location', target.toString());
-  } catch {
-    // Relative Location values already resolve against the public host.
+    changed = true;
   }
+  if (
+    target.host === publicHost &&
+    rewriteOriginQueryUrls(target, origin, publicHost)
+  ) {
+    changed = true;
+  }
+  if (!changed) return;
+  response.headers.set(
+    'location',
+    relative
+      ? `${target.pathname}${target.search}${target.hash}`
+      : target.toString()
+  );
 }
 
 function withGatewayHeader(
@@ -205,7 +270,10 @@ async function proxy(
 ) {
   let response: Response;
   try {
-    response = await fetch(originRequest(request, origin), NO_FOLLOW);
+    response = await fetch(
+      originRequest(request, origin, env.PUBLIC_HOST),
+      NO_FOLLOW
+    );
   } catch {
     return plain(502, 'gateway origin unreachable');
   }
@@ -252,7 +320,7 @@ export function createHandler(deps: HandlerDeps) {
   ) {
     try {
       const response = withPublicLink(
-        await fetch(originRequest(request, origin), NO_FOLLOW),
+        await fetch(originRequest(request, origin, publicHost), NO_FOLLOW),
         origin,
         publicHost
       );
@@ -330,7 +398,7 @@ export function createHandler(deps: HandlerDeps) {
     let response: Response;
     try {
       response = withPublicLink(
-        await fetch(originRequest(request, origin), NO_FOLLOW),
+        await fetch(originRequest(request, origin, env.PUBLIC_HOST), NO_FOLLOW),
         origin,
         env.PUBLIC_HOST
       );
