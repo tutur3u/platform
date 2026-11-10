@@ -12,7 +12,7 @@ Vercel deployment keeps serving until the route is flipped.
 
 ## Worker
 
-- `apps/learn/void.config.ts` names the staging candidate `tuturuuu-learn-vite-staging` (`workers_dev` on, `TUTURUUU_NOINDEX=1`). A production Worker (`tuturuuu-learn`, `workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=0`) is created by the cutover PR; nothing here attaches a route.
+- `apps/learn/void.config.ts` names the staging candidate (`workers_dev` on, `TUTURUUU_NOINDEX=1`). A production Worker (`tuturuuu-learn`, `workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=0`) is created by the cutover PR; nothing here attaches a route.
 - Entry: `apps/learn/cloudflare/worker.ts`; Wrangler config is emitted by `void` into `dist`.
 - Root host: `learn.tuturuuu.com` (compiled in `start-bridge.config.ts` or the generated default).
 - Mount: `tuturuuu.com/learn` (base path `/learn`), served by the same Worker.

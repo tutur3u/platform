@@ -41,7 +41,7 @@ describe('address migration RPC supplier', () => {
       'http://127.0.0.1:54321/rest/v1/rpc/employee_address_migration'
     );
     expect(options).toMatchObject({
-      redirect: 'error',
+      redirect: 'manual',
       cache: 'no-store',
       headers: { Prefer: 'tx=commit', 'Content-Profile': 'private' },
     });
@@ -197,4 +197,17 @@ describe('address migration RPC supplier', () => {
       expect(fetcher).toHaveBeenCalledTimes(1);
     }
   );
+  it('refuses a redirect response as an unavailable acknowledgement', async () => {
+    const { journal, fetcher } = setup();
+    fetcher.mockResolvedValue(
+      new Response(null, {
+        status: 307,
+        headers: { Location: 'https://attacker.invalid/' },
+      })
+    );
+    await expect(
+      journal.claimAttempt(binding, request.operationId)
+    ).rejects.toThrow('Migration acknowledgement unavailable');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
 });

@@ -109,7 +109,7 @@ describe('SettingsDialogShell keyboard navigation', () => {
     }));
   });
 
-  it('renders the fullscreen settings sheet chrome', () => {
+  it('renders an inset desktop dialog with fullscreen mobile defaults', () => {
     renderShell();
 
     const dialog = screen.getByRole('dialog');
@@ -118,7 +118,13 @@ describe('SettingsDialogShell keyboard navigation', () => {
     expect(dialog).toHaveClass('h-dvh');
     expect(dialog).toHaveClass('w-screen');
     expect(dialog).toHaveClass('bg-background');
-    expect(dialog).toHaveClass('rounded-none');
+    expect(dialog).toHaveClass(
+      'rounded-none',
+      'md:inset-8',
+      'md:rounded-2xl',
+      'md:h-auto',
+      'md:w-auto'
+    );
     expect(className).not.toMatch(/animate-in|fade-in|zoom-in|slide-in/);
     expect(
       screen.getAllByRole('button', { name: 'settings.back_to_app' }).length
@@ -154,6 +160,28 @@ describe('SettingsDialogShell keyboard navigation', () => {
     expect(
       screen.getByTestId('active-tab').parentElement?.parentElement
     ).toHaveClass('px-4', 'md:px-10');
+  });
+
+  it('marks exactly one sidebar entry current when names repeat or share a prefix', () => {
+    renderShell(undefined, {
+      navItems: [
+        ...navItems,
+        {
+          label: 'Workspace',
+          items: [
+            { icon: TestIcon, label: 'Profile', name: 'profile' },
+            { icon: TestIcon, label: 'Profile links', name: 'profile-links' },
+          ],
+        },
+      ],
+    });
+
+    const currentEntries = document.querySelectorAll(
+      '[data-sidebar="menu-button"][aria-current="page"]'
+    );
+    expect(currentEntries).toHaveLength(1);
+    expect(currentEntries[0]).toHaveTextContent('Profile');
+    expect(currentEntries[0]).not.toHaveTextContent('Profile links');
   });
 
   it('keeps settings groups expanded by default', () => {

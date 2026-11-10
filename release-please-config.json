@@ -92,6 +92,10 @@
       "component": "mail",
       "package-name": "@tuturuuu/mail"
     },
+    "apps/marketing": {
+      "component": "marketing",
+      "package-name": "@tuturuuu/marketing"
+    },
     "apps/meet": {
       "component": "meet",
       "package-name": "@tuturuuu/meet"
@@ -162,6 +166,10 @@
     "apps/track": {
       "component": "track",
       "package-name": "@tuturuuu/track"
+    },
+    "apps/workspace": {
+      "component": "workspace",
+      "package-name": "@tuturuuu/workspace"
     },
     "packages/agent-quota": {
       "component": "agent-quota",

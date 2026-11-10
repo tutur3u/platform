@@ -74,7 +74,7 @@ it('sends the same credential and original key only to the read-only outcome vie
   );
   expect(init).toMatchObject({
     method: 'GET',
-    redirect: 'error',
+    redirect: 'manual',
     cache: 'no-store',
     signal,
   });
@@ -155,3 +155,16 @@ it.each([
     expect(fetch).toHaveBeenCalledTimes(1);
   }
 );
+it('refuses a redirect response from the outcome view', async () => {
+  const fetch = vi.fn<typeof globalThis.fetch>(
+    async () =>
+      new Response(null, {
+        status: 307,
+        headers: { Location: 'https://attacker.invalid/' },
+      })
+  );
+  await expect(
+    observeEmployeeCliRecoveryOutcome(identity, { fetch })
+  ).rejects.toThrow();
+  expect(fetch).toHaveBeenCalledTimes(1);
+});

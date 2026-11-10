@@ -20,12 +20,58 @@ for (const name of REQUIRED_SECRETS) {
     );
   });
 }
-test('an override cannot disable the required Upstash backend', () => {
-  assert.throws(
-    () => assertRequiredSecrets({ ...bindings, ABUSE_GUARD_BACKEND: 'off' }),
-    /ABUSE_GUARD_BACKEND/
-  );
+test('binding configuration admits startup without Upstash', () => {
+  const {
+    UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN,
+    ABUSE_GUARD_BACKEND,
+    ...rest
+  } = bindings;
   assert.doesNotThrow(() =>
-    assertRequiredSecrets({ ...bindings, ABUSE_GUARD_BACKEND: 'upstash' })
+    assertRequiredSecrets({
+      ...rest,
+      ABUSE_GUARD: {},
+      ABUSE_GUARD_KEY_PEPPER: 'pepper',
+      ABUSE_GUARD_FAMILIES: 'proxy',
+    })
+  );
+});
+test('half binding configuration reports the missing pepper name', () => {
+  const {
+    UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN,
+    ABUSE_GUARD_BACKEND,
+    ...rest
+  } = bindings;
+  assert.throws(
+    () =>
+      assertRequiredSecrets({
+        ...rest,
+        ABUSE_GUARD: {},
+        ABUSE_GUARD_FAMILIES: 'proxy',
+      }),
+    /ABUSE_GUARD_KEY_PEPPER/
+  );
+});
+test('neither configuration reports missing names only', () => {
+  const {
+    UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN,
+    ABUSE_GUARD_BACKEND,
+    ...rest
+  } = bindings;
+  assert.throws(() => assertRequiredSecrets(rest), /ABUSE_GUARD/);
+  assert.throws(
+    () =>
+      assertRequiredSecrets({
+        ...rest,
+        ABUSE_GUARD: {},
+        ABUSE_GUARD_KEY_PEPPER: 'secret-value',
+      }),
+    (error) => {
+      assert.match(error.message, /ABUSE_GUARD_FAMILIES/);
+      assert.doesNotMatch(error.message, /secret-value/);
+      return true;
+    }
   );
 });

@@ -110,7 +110,7 @@ export function createMcpReadFetch(
       method: 'GET',
       cache: 'no-store',
       credentials: 'omit',
-      redirect: 'error',
+      redirect: 'manual',
       headers: {
         Authorization: `Bearer ${actor.providerAccessToken}`,
         Accept: 'application/json',

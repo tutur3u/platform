@@ -370,7 +370,7 @@ function outputs(root = ROOT) {
     }
     const indexPolicy = policy[app.name];
     catalogRows.push(
-      `| ${sourceLink(`apps/${app.name}`, app.name)} | ${app.next ? 'Next.js' : app.name === 'mobile' ? 'Flutter' : app.name === 'backend' ? 'Rust migration' : app.name === 'tanstack-web' ? 'TanStack migration' : 'Service/support'} | ${indexPolicy ? (indexPolicy.publicPaths.length || indexPolicy.publicPatterns.length || app.name === 'web' ? 'Explicit public pages; private routes noindex' : 'Private: noindex') : 'See owning runtime'} | ${references.join(', ')} |`
+      `| ${sourceLink(`apps/${app.name}`, app.name)} | ${app.next ? 'Next.js' : app.name === 'mobile' ? 'Flutter' : app.name === 'backend' ? 'Rust migration' : app.name === 'tanstack-web' ? 'TanStack migration' : 'Service/support'} | ${indexPolicy ? (indexPolicy.publicPaths.length || indexPolicy.publicPatterns.length || app.name === 'web' || app.name === 'marketing' ? 'Explicit public pages; private routes noindex' : 'Private: noindex') : 'See owning runtime'} | ${references.join(', ')} |`
     );
   }
   files.set(

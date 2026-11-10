@@ -28,7 +28,7 @@ import {
   useMemo,
   useRef,
 } from 'react';
-import { isPersistableMultiAccountRoutePath } from '@/lib/auth/multi-account/routes';
+import { isPersistableMultiAccountRoutePath } from '@/lib/auth/account-switch-routes';
 
 const ACCOUNTS_QUERY_KEY = ['auth', 'web-accounts'] as const;
 const LEGACY_MULTI_SESSION_STORAGE_KEY = 'tuturuuu_multi_session_store';

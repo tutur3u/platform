@@ -185,18 +185,19 @@ jobs:
         apps/chat/src/start-bridge apps/chat/src/routes apps/chat/src/router.tsx apps/chat/src/start.ts apps/chat/cloudflare apps/chat/vite.config.mts apps/chat/void.config.ts apps/chat/tsconfig.json apps/chat/package.json apps/chat/start-bridge.routes.json
   chat-cutover-artifact:
     needs: [check-ci, affected-gate]
-    if: ${{ needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
       contents: read
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://chat-ci.supabase.invalid' }}
+      CHAT_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VITE_CHAT_NATIVE_PROFILE: production
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_chat_ci_placeholder' }}
       NEXT_PUBLIC_APP_URL: https://chat.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      TUTURUUU_NOINDEX: '0'
       WRANGLER_SEND_METRICS: 'false'
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
@@ -210,63 +211,53 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.22.0
-      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
-      - name: Generate build metadata
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Build owning workspace dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter='@tuturuuu/chat^...' --concurrency=2
+          token: ''
+          team: ''
+      - name: Generate exact-source build identity
         env:
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
           PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
           PLATFORM_BUILD_ENVIRONMENT: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
-      - name: Build shared dependencies
-        uses: ./.github/actions/run-with-turbo-remote-cache
-        with:
-          command: bun turbo:local run build --filter="@tuturuuu/chat^..." --concurrency=2
-          token: ''
-          team: ''
-      - name: Build the Start Worker
+      - name: Build production Start Worker
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://chat-ci.supabase.invalid' }}
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: cd apps/chat && bun run build:cloudflare
           token: ''
           team: ''
-      - name: Qualify the staging output before rewriting
-        run: python3 scripts/ci/chat-native-artifact.py config apps/chat
-      - name: Write the production wrangler config
-        run: |
-          node --input-type=module <<'JS'
-          import { readFileSync, writeFileSync } from 'node:fs';
-          const path = 'apps/chat/dist/server/wrangler.json';
-          const c = JSON.parse(readFileSync(path, 'utf8'));
-          for (const k of ['configPath', 'userConfigPath', 'topLevelName', 'definedEnvironments']) delete c[k];
-          c.name = 'tuturuuu-chat';
-          c.workers_dev = false;
-          c.preview_urls = false;
-          c.upload_source_maps = false;
-          c.vars = {
-            TUTURUUU_NOINDEX: '0',
-            NODE_ENV: 'production',
-            TUTURUUU_REQUIRE_SECRETS: '1',
-            NEXT_PUBLIC_APP_URL: 'https://chat.tuturuuu.com',
-            NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
-          };
-          writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);
-          JS
-          test "$(node -p "require('./apps/chat/dist/server/wrangler.json').name")" = tuturuuu-chat
-          test "$(node -p "require('./apps/chat/dist/server/wrangler.json').workers_dev")" = false
-          test "$(node -p "require('./apps/chat/dist/server/wrangler.json').preview_urls")" = false
-          test -f apps/chat/dist/server/index.mjs
-          test -d apps/chat/dist/client
-      - name: Validate, seal and pack the final production output
+      - name: Record emitted configuration receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/chat "$SOURCE_SHA" "$RUNNER_TEMP/chat-emitted-config.json"
+      - name: Upload emitted configuration receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: chat-config-receipt-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/chat-emitted-config.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Exercise the built Worker with synthetic runtime bindings
+        working-directory: apps/chat
         env:
-          CHAT_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+          CI: 'true'
+          CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: bun run test:runtime
+      - name: Package Worker, assets and emitted Wrangler config
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          python3 scripts/ci/chat-native-artifact.py --profile production config apps/chat
-          python3 scripts/ci/chat-native-artifact.py --profile production seal apps/chat --receipt "$RUNNER_TEMP/chat-production-artifact.json"
-          python3 scripts/ci/chat-native-artifact.py --profile production pack apps/chat --receipt "$RUNNER_TEMP/chat-production-artifact.json" --archive "$RUNNER_TEMP/chat-production-artifact.tar.gz"
+          python3 scripts/ci/chat-native-artifact.py config apps/chat
+          python3 scripts/ci/chat-native-artifact.py seal apps/chat --receipt "$RUNNER_TEMP/chat-native-artifact.json"
+          python3 scripts/ci/chat-native-artifact.py pack apps/chat --receipt "$RUNNER_TEMP/chat-native-artifact.json" --archive "$RUNNER_TEMP/chat-cutover.tar.gz"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: chat-cutover-${{ env.TRUSTED == 'true' && 'production' || 'fixture' }}-${{ env.SOURCE_SHA }}
-          path: ${{ runner.temp }}/chat-production-artifact.tar.gz
-          retention-days: 14
+          name: chat-cutover-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/chat-cutover.tar.gz
           if-no-files-found: error
+          retention-days: 7

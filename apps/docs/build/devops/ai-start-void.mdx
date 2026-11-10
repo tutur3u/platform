@@ -16,7 +16,7 @@ The existing Vercel deployment remains the rollback target until cutover.
 | Item | Value |
 | --- | --- |
 | Production Worker | `tuturuuu-ai` (`VITE_AI_NATIVE_PROFILE=production`) |
-| Staging Worker | `tuturuuu-ai-vite-staging` |
+| Staging Worker | the staging Worker name |
 | Host | `ai.tuturuuu.com` (operator-attached; no source route) |
 | Bindings | `ASSETS` (`dist/client`), `TUTURUUU_NOINDEX=1` in the source config; production artifact policy must be checked in its emitted config |
 | Secret names | `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`; provider credentials are optional: `GOOGLE_GENERATIVE_AI_API_KEY` or `GOOGLE_API_KEY`, `AI_GATEWAY_API_KEY` or `VERCEL_OIDC_TOKEN` |

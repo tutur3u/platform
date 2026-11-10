@@ -81,7 +81,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Packet | `rewise-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs rewise https://rewise.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
-| Note | Needs UPSTASH_REDIS_REST_URL/TOKEN and ABUSE_GUARD_BACKEND=upstash on the Worker. |
+| Abuse guard | Binding `ABUSE_GUARD` → service `tuturuuu-abuse-guard`; secret `ABUSE_GUARD_KEY_PEPPER`; variable `ABUSE_GUARD_FAMILIES=proxy`; optional `ABUSE_GUARD_TIMEOUT_MS`. |
 
 ## 6. drive
 
@@ -228,7 +228,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Packet | `mind-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs mind https://mind.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
-| Required secrets | Besides the coordination secret: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` and the variable `ABUSE_GUARD_BACKEND=upstash`. Missing any of them makes every request answer 500 (`required-secrets.ts`). |
+| Abuse guard | Service binding `ABUSE_GUARD` → `tuturuuu-abuse-guard`, secret `ABUSE_GUARD_KEY_PEPPER`, and text variable `ABUSE_GUARD_FAMILIES=proxy`; `ABUSE_GUARD_TIMEOUT_MS` is optional. Upstash is not required. |
 
 ## Not cut over tonight
 
@@ -260,6 +260,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Vercel rollback pin | dpl_2q4z1TbzV96W2foT8JfLzz4ZEGZY |
 | Smoke | `node scripts/cutover-smoke.mjs cms https://cms.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Abuse guard | Service binding `ABUSE_GUARD` to `tuturuuu-abuse-guard`, secret `ABUSE_GUARD_KEY_PEPPER`, text variable `ABUSE_GUARD_FAMILIES=proxy`, and optional `ABUSE_GUARD_TIMEOUT_MS`. Upstash credentials are not required. |
 
 ## ai
 
@@ -290,7 +291,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | --- | --- |
 | Worker | `tuturuuu-git` |
 | Hosts | git.tuturuuu.com |
-| Artifact | git-cloudflare.yaml, job git-cutover-artifact |
+| Artifact | git-cloudflare.yaml, job git-cutover-artifact (`VITE_GIT_NATIVE_PROFILE=production`, sealed by `scripts/ci/git-native-artifact.py`; no routes) |
 | Vercel rollback pin | dpl_6ReHrAjbW7ahNKyL1ssgDZEdGeq4 |
 | Packet | `git-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs git https://git.tuturuuu.com` |
@@ -315,6 +316,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Vercel rollback pin | dpl_5GdmHYYQ1AfLeZcZ1pZ79zKDokGQ |
 | Packet | `nova-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs nova https://nova.tuturuuu.com` |
+| Abuse guard | Service binding `ABUSE_GUARD` (`tuturuuu-abuse-guard`), secret `ABUSE_GUARD_KEY_PEPPER`, `ABUSE_GUARD_FAMILIES=proxy`, optional `ABUSE_GUARD_TIMEOUT_MS`. Upstash credentials are not required. |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
 
 ## pay
@@ -328,3 +330,17 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Packet | `pay-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs pay https://pay.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## workspace
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-workspace` |
+| Hosts | First flip: `workspace.tuturuuu.com` only. `tuturuuu.com` paths stay on Web. |
+| Artifact | workspace-cloudflare.yaml, job `workspace-cutover-artifact` (`workspace-cutover-<sha>`). Route-free: `workers_dev` false, `preview_urls` false, no routes. Dispatch on `main`; the job does not deploy. |
+| Vercel rollback pin | none for `apps/workspace` (no Vercel project). Apex stays on the Web pin in Web apex pin; re-read that pin at flip time. |
+| Packet | `workspace-start-void` |
+| Smoke | unknown host answers 404; `GET /api/v1/mobile/version` is forwarded and answered by Web; logout-all clears `tuturuuu_multi_session_store`. Commands are in the packet's gateway plan. |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Deploy conditions | (a) `#7981` (`b84abea571`) is in the main commit, that commit's required workflows are green, and the artifact is built from that commit. (b) `INTERNAL_WEB_API_ORIGIN` unset and `TUTURUUU_WEB_API_HOSTS` unset on the production Worker. (c) Post-deploy smoke: unknown host answers 404, an `/api/v1` GET is forwarded and answered by Web, logout-all clears `tuturuuu_multi_session_store`. (d) `TTR_CSRF_MODE` stays off `enforce` until Web itself is deployed with `apps/web/src/lib/security/csrf.ts`. |
+| Required names | Build injection from `vite.config.mts`: `NODE_ENV`, optional `TUTURUUU_BASE_PATH`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`. Worker var `TUTURUUU_NOINDEX=0`. Request env from `start-bridge.config.ts`: `INTERNAL_WEB_API_ORIGIN` and `TUTURUUU_WEB_API_HOSTS`, both unset in production. Runtime secrets: `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`. |

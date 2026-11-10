@@ -20,7 +20,10 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const DEFAULT_CONFIG_PATH = path.join(__dirname, 'cutover-smoke-config.json');
+export const DEFAULT_CONFIG_PATH = path.join(
+  __dirname,
+  'cutover-smoke-config.json'
+);
 export const DEFAULT_TIMEOUT_MS = 10_000;
 export const DEFAULT_MAX_REDIRECTS = 10;
 
@@ -49,7 +52,9 @@ export function normalizeBaseUrl(rawUrl) {
   }
 
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    throw new Error(`Base URL protocol must be http or https, got '${parsed.protocol}'`);
+    throw new Error(
+      `Base URL protocol must be http or https, got '${parsed.protocol}'`
+    );
   }
 
   // Strip trailing slashes for clean path appending
@@ -69,7 +74,9 @@ export function loadConfig(configPath = DEFAULT_CONFIG_PATH) {
   try {
     return JSON.parse(content);
   } catch (err) {
-    throw new Error(`Failed to parse smoke config JSON from ${resolved}: ${err.message}`);
+    throw new Error(
+      `Failed to parse smoke config JSON from ${resolved}: ${err.message}`
+    );
   }
 }
 
@@ -86,8 +93,12 @@ export function resolveAppConfig(appName, configTable) {
 
   const found = apps[normalizedKey] || apps[appName] || apps._default;
   if (!found) {
-    const available = Object.keys(apps).filter((key) => key !== '_default').join(', ');
-    throw new Error(`App '${appName}' not found in smoke config. Available apps: ${available}`);
+    const available = Object.keys(apps)
+      .filter((key) => key !== '_default')
+      .join(', ');
+    throw new Error(
+      `App '${appName}' not found in smoke config. Available apps: ${available}`
+    );
   }
 
   const entryRoute = found.entryRoute || '/';
@@ -99,7 +110,12 @@ export function resolveAppConfig(appName, configTable) {
   pathsSet.add(entryRoute);
   pathsSet.add(loginRoute);
   if (pathsSet.size < 5) {
-    for (const fallback of ['/robots.txt', '/manifest.json', '/health', '/api/health']) {
+    for (const fallback of [
+      '/robots.txt',
+      '/manifest.json',
+      '/health',
+      '/api/health',
+    ]) {
       pathsSet.add(fallback);
       if (pathsSet.size >= 5) break;
     }
@@ -193,7 +209,10 @@ export async function fetchWithRedirectTracking(
         redirectsCount,
         loopDetected: false,
         maxRedirectsExceeded: false,
-        error: err.name === 'AbortError' ? `Request timed out after ${timeoutMs}ms` : err.message,
+        error:
+          err.name === 'AbortError'
+            ? `Request timed out after ${timeoutMs}ms`
+            : err.message,
       };
     } finally {
       clearTimeout(timeoutId);
@@ -276,9 +295,17 @@ export async function fetchWithRedirectTracking(
  */
 export async function checkEntryRoute(baseUrl, route, options = {}) {
   const url = `${baseUrl}${route.startsWith('/') ? route : `/${route}`}`;
-  const res = await fetchWithRedirectTracking(url, { headers: { 'User-Agent': 'TTR-Cutover-Smoke/1.0' } }, options);
+  const res = await fetchWithRedirectTracking(
+    url,
+    { headers: { 'User-Agent': 'TTR-Cutover-Smoke/1.0' } },
+    options
+  );
 
-  const passed = res.status === 200 && !res.loopDetected && !res.maxRedirectsExceeded && !res.error;
+  const passed =
+    res.status === 200 &&
+    !res.loopDetected &&
+    !res.maxRedirectsExceeded &&
+    !res.error;
   return {
     name: 'entry_route_anon_200',
     route,
@@ -289,7 +316,11 @@ export async function checkEntryRoute(baseUrl, route, options = {}) {
     durationMs: res.durationMs,
     chain: res.chain,
     loopDetected: res.loopDetected,
-    error: res.error || (res.status !== 200 ? `Expected HTTP 200 on entry route, got ${res.status}` : null),
+    error:
+      res.error ||
+      (res.status !== 200
+        ? `Expected HTTP 200 on entry route, got ${res.status}`
+        : null),
   };
 }
 
@@ -299,11 +330,20 @@ export async function checkEntryRoute(baseUrl, route, options = {}) {
  */
 export async function checkLoginRoute(baseUrl, route, options = {}) {
   const url = `${baseUrl}${route.startsWith('/') ? route : `/${route}`}`;
-  const res = await fetchWithRedirectTracking(url, { headers: { 'User-Agent': 'TTR-Cutover-Smoke/1.0' } }, options);
+  const res = await fetchWithRedirectTracking(
+    url,
+    { headers: { 'User-Agent': 'TTR-Cutover-Smoke/1.0' } },
+    options
+  );
 
   const isHtmlOrText = res.body && res.body.trim().length > 0;
   const is200 = res.status === 200;
-  const renders = is200 && isHtmlOrText && !res.loopDetected && !res.maxRedirectsExceeded && !res.error;
+  const renders =
+    is200 &&
+    isHtmlOrText &&
+    !res.loopDetected &&
+    !res.maxRedirectsExceeded &&
+    !res.error;
 
   return {
     name: 'login_page_renders',
@@ -319,7 +359,11 @@ export async function checkLoginRoute(baseUrl, route, options = {}) {
     loopDetected: res.loopDetected,
     error:
       res.error ||
-      (!is200 ? `Expected HTTP 200 on login route, got ${res.status}` : !isHtmlOrText ? 'Login response body was empty' : null),
+      (!is200
+        ? `Expected HTTP 200 on login route, got ${res.status}`
+        : !isHtmlOrText
+          ? 'Login response body was empty'
+          : null),
   };
 }
 
@@ -333,10 +377,19 @@ export async function checkPathsNo5xx(baseUrl, paths, options = {}) {
 
   for (const p of paths) {
     const url = `${baseUrl}${p.startsWith('/') ? p : `/${p}`}`;
-    const res = await fetchWithRedirectTracking(url, { headers: { 'User-Agent': 'TTR-Cutover-Smoke/1.0' } }, options);
+    const res = await fetchWithRedirectTracking(
+      url,
+      { headers: { 'User-Agent': 'TTR-Cutover-Smoke/1.0' } },
+      options
+    );
 
     const is5xx = res.status >= 500 && res.status < 600;
-    const ok = !is5xx && res.status !== 0 && !res.loopDetected && !res.maxRedirectsExceeded && !res.error;
+    const ok =
+      !is5xx &&
+      res.status !== 0 &&
+      !res.loopDetected &&
+      !res.maxRedirectsExceeded &&
+      !res.error;
 
     if (is5xx || res.status === 0 || res.error) {
       allNon5xx = false;
@@ -422,29 +475,55 @@ export async function runCutoverSmoke(
   const probeOptions = { fetchImpl, timeoutMs, maxRedirects };
 
   // 1. Entry route anon 200
-  const entryResult = await checkEntryRoute(baseUrl, appConfig.entryRoute, probeOptions);
+  const entryResult = await checkEntryRoute(
+    baseUrl,
+    appConfig.entryRoute,
+    probeOptions
+  );
   if (!entryResult.passed) {
     errors.push(`[EntryRoute] ${entryResult.error}`);
   }
 
   // 2. Login page renders
-  const loginResult = await checkLoginRoute(baseUrl, appConfig.loginRoute, probeOptions);
+  const loginResult = await checkLoginRoute(
+    baseUrl,
+    appConfig.loginRoute,
+    probeOptions
+  );
   if (!loginResult.passed) {
     errors.push(`[LoginRoute] ${loginResult.error}`);
   }
 
   // 3. Five listed paths no 5xx
-  const pathsResult = await checkPathsNo5xx(baseUrl, appConfig.paths, probeOptions);
+  const pathsResult = await checkPathsNo5xx(
+    baseUrl,
+    appConfig.paths,
+    probeOptions
+  );
   if (!pathsResult.passed) {
-    const failedPaths = pathsResult.paths.filter((p) => !p.ok).map((p) => `${p.path} (${p.status})`);
+    const failedPaths = pathsResult.paths
+      .filter((p) => !p.ok)
+      .map((p) => `${p.path} (${p.status})`);
     errors.push(`[5xxCheck] Routes failed: ${failedPaths.join(', ')}`);
   }
 
   // 4. No redirect loop across all probes
   const allChains = [
-    { source: 'entry', loopDetected: entryResult.loopDetected, chain: entryResult.chain },
-    { source: 'login', loopDetected: loginResult.loopDetected, chain: loginResult.chain },
-    ...pathsResult.paths.map((p) => ({ source: p.path, loopDetected: p.loopDetected, chain: p.chain })),
+    {
+      source: 'entry',
+      loopDetected: entryResult.loopDetected,
+      chain: entryResult.chain,
+    },
+    {
+      source: 'login',
+      loopDetected: loginResult.loopDetected,
+      chain: loginResult.chain,
+    },
+    ...pathsResult.paths.map((p) => ({
+      source: p.path,
+      loopDetected: p.loopDetected,
+      chain: p.chain,
+    })),
   ];
   const redirectLoopFound = allChains.some((c) => c.loopDetected);
   const redirectCheck = {
@@ -456,7 +535,11 @@ export async function runCutoverSmoke(
     errors.push(`[RedirectLoop] Circular redirect loop detected in probe`);
   }
 
-  const pass = entryResult.passed && loginResult.passed && pathsResult.passed && redirectCheck.passed;
+  const pass =
+    entryResult.passed &&
+    loginResult.passed &&
+    pathsResult.passed &&
+    redirectCheck.passed;
 
   return {
     status: pass ? 'PASS' : 'FAIL',
@@ -466,10 +549,21 @@ export async function runCutoverSmoke(
     timestamp: startTimestamp,
     durationMs: Date.now() - startTime,
     summary: {
-      entryRoute: { passed: entryResult.passed, status: entryResult.status, path: appConfig.entryRoute },
-      loginRoute: { passed: loginResult.passed, status: loginResult.status, path: appConfig.loginRoute },
+      entryRoute: {
+        passed: entryResult.passed,
+        status: entryResult.status,
+        path: appConfig.entryRoute,
+      },
+      loginRoute: {
+        passed: loginResult.passed,
+        status: loginResult.status,
+        path: appConfig.loginRoute,
+      },
       noRedirectLoops: { passed: redirectCheck.passed },
-      no5xxOn5Paths: { passed: pathsResult.passed, testedCount: pathsResult.testedCount },
+      no5xxOn5Paths: {
+        passed: pathsResult.passed,
+        testedCount: pathsResult.testedCount,
+      },
     },
     checks: {
       entryRoute: entryResult,
@@ -533,7 +627,7 @@ Usage:
 
 Arguments:
   <app-name>   Target app name (e.g. web, marketing, workspace, shortener)
-  <base-url>   Target base URL (e.g. https://staging.tuturuuu.com)
+  <base-url>   Target base URL (e.g. https://web.tutur3u.com)
 
 Options:
   --config <path>   Path to custom smoke configuration table JSON
@@ -553,7 +647,9 @@ Output:
       app: parsed.app || null,
       baseUrl: parsed.baseUrl || null,
       timestamp: new Date().toISOString(),
-      errors: ['Both <app-name> and <base-url> arguments are required. Run with --help for details.'],
+      errors: [
+        'Both <app-name> and <base-url> arguments are required. Run with --help for details.',
+      ],
     };
     console.log(JSON.stringify(errorReport, null, 2));
     return 1;
@@ -568,7 +664,10 @@ Output:
   return result.pass ? 0 : 1;
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === path.resolve(__filename)
+) {
   main().then((code) => {
     process.exit(code);
   });

@@ -10,6 +10,7 @@ import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import appConfig from '../start-bridge.config';
+import { configureNovaAbuseGuard } from '../src/runtime/abuse-guard';
 
 import {
   assertRuntimeEnvironment,
@@ -63,6 +64,7 @@ const handler = (
 export default {
   async fetch(request: Request, env: NovaEnvironment, ctx: WorkerContext) {
     assertRuntimeEnvironment(env);
+    configureNovaAbuseGuard(env);
     const response = await (await handler)(request, env, ctx);
     return appConfig.wrapResponse
       ? appConfig.wrapResponse(response, { request, env })

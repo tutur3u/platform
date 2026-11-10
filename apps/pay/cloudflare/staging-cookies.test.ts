@@ -4,10 +4,12 @@ import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
 import { expect, it } from 'vitest';
 import appConfig from '../start-bridge.config';
+import { resolvePayNativeProfile } from './native-profile';
 import { stagingCookieRequest, stagingCookieResponse } from './staging-cookies';
 
 it('keeps every Pay staging root host outside the production cookie zone', () => {
-  expect(appConfig.mounts.rootHosts).toEqual(['pay.tutur3u.com']);
+  expect(resolvePayNativeProfile('staging').rootHost).toBe('pay.tutur3u.com');
+  expect(appConfig.mounts.rootHosts).toEqual([]);
   for (const host of appConfig.mounts.rootHosts ?? [])
     expect(host === 'tuturuuu.com' || host.endsWith('.tuturuuu.com')).toBe(
       false
@@ -43,6 +45,19 @@ it.each(['pay.tutur3u.com', 'pay.tuturuuu.com'])(
     );
   }
 );
+
+it('selects production host and shared cookie domain only for production builds', () => {
+  const staging = resolvePayNativeProfile('staging');
+  const production = resolvePayNativeProfile('production');
+  expect(staging.rootHost).toBe('pay.tutur3u.com');
+  expect(staging.vars.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN).toBe(
+    '.staging.tutur3u.com'
+  );
+  expect(production.rootHost).toBe('pay.tuturuuu.com');
+  expect(production.vars.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN).toBe(
+    '.tuturuuu.com'
+  );
+});
 
 it.each(['pay.tutur3u.com', 'pay.tuturuuu.com'])(
   'rejects Domain only at the staging %s exit',

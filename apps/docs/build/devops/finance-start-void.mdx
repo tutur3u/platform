@@ -14,8 +14,8 @@ values the release owner needs.
 
 | Item | Value |
 | --- | --- |
-| Worker | Profile `production` (`VITE_FINANCE_NATIVE_PROFILE=production`): `tuturuuu-finance`. Profile `staging` (default): `tuturuuu-finance-vite-staging`. `workers_dev` and preview URLs are off; the config declares no routes |
-| Host | `finance.tuturuuu.com` (root mode, one host per profile; staging admits `finance.tutur3u.com` only). The `tuturuuu.com/finance` mount is not part of this cutover |
+| Worker | Profile `production` (`VITE_FINANCE_NATIVE_PROFILE=production`): `tuturuuu-finance`. Profile `staging` (default): the staging Worker name. `workers_dev` and preview URLs are off; the config declares no routes |
+| Host | `finance.tuturuuu.com` (root mode, one host per profile; staging admits only its reserved staging host). The `tuturuuu.com/finance` mount is not part of this cutover |
 | Bindings | `ASSETS` (worker-first, no SPA fallback) |
 | Vars (production profile, names) | `INTERNAL_WEB_API_ORIGIN`, `NEXT_PUBLIC_WEB_APP_URL`, `NEXT_PUBLIC_APP_URL`, `FINANCE_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`; values live in `cloudflare/native-profiles.json`, never mixed with the staging profile |
 | Secrets (names) | `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`. The Worker refuses to serve without them |

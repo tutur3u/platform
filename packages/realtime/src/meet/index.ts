@@ -1,4 +1,5 @@
 export {
+  EASY_CENTER_WORKSPACE_ID,
   isMeetAiEnabledForWorkspace,
   isMeetAiHardDenied,
   MEET_AI_DISABLED_ENV,

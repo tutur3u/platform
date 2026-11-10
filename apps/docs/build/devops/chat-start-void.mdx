@@ -1,7 +1,7 @@
 ---
 title: "Chat on Start + Void"
 description: "Cutover packet for the native Chat Worker: names, bindings, build, smoke checks and rollback."
-updatedAt: "2026-11-09"
+updatedAt: "2026-11-10"
 audience: developers
 ---
 
@@ -12,27 +12,28 @@ the route is flipped. `vercel-production-chat.yaml` still deploys the Next app.
 
 ## Worker
 
-- Staging candidate: `tuturuuu-chat-vite-staging` (`workers_dev` off, `TUTURUUU_NOINDEX=1`). A production Worker (`tuturuuu-chat`, `workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=0`) is created by the cutover PR; nothing here attaches a route.
-- Entry: `apps/chat/cloudflare/worker.ts`; Wrangler config is emitted by `void` into `dist`.
+- Staging candidate: the staging Worker name (`workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=1`). Production profile `VITE_CHAT_NATIVE_PROFILE=production` emits `tuturuuu-chat` with the same flags, `TUTURUUU_NOINDEX=0`, and no routes. The operator attaches `chat.tuturuuu.com` at cutover; config never declares a route.
+- Entry: `apps/chat/cloudflare/worker.ts`; Wrangler config is emitted by `void` into `dist`. The cutover job seals that emitted config, including `configPath`, `userConfigPath`, `topLevelName`, and `definedEnvironments`.
 - Host: `chat.tuturuuu.com`. Root-only: `mountHosts` is empty and `unknownHost` is `reject`, so `tuturuuu.com/chat` and any other host answer 404 before app code runs.
-- Binding: `ASSETS` (static output, `run_worker_first`).
-- Variables (names): `TUTURUUU_NOINDEX`, optional `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`).
-- Secrets (names, set in the Worker, never in the repo): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`. Compare with the Vercel project environment list before the flip.
-- Optional variables read by the source: `CHAT_APP_URL`, `WEB_APP_URL`. Realtime ownership is in the [Chat realtime runbook](/build/devops/chat-realtime-runbook).
+- Binding: `ASSETS` only (static output, `run_worker_first`). No Durable Object binding and no realtime service binding.
+- Variables (names): `TUTURUUU_NOINDEX` (`0` on the production profile), optional `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`).
+- Secrets (names, set on the Worker before the flip, never in the repo): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`. `TUTURUUU_APP_COORDINATION_SECRET` must be exactly Web's signer value (the `SUPABASE_SECRET_KEY` value). `apps/chat/vite.config.mts` does not inject a startup secret check, and the Worker entry has no `required-secrets` assertion, so a missing name is not a startup 500 from those gates. Auth and the Supabase server client read the four names above. Compare with the Vercel project environment list before the flip.
+- Not Worker requirements: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and `ABUSE_GUARD_BACKEND`. The API proxy guard fails open when Upstash is absent. `CHAT_REALTIME_TOKEN_SECRET` and `CHAT_REALTIME_INTERNAL_URL` belong to `apps/web` and `apps/chat-realtime`, not this Worker. See the [Chat realtime runbook](/build/devops/chat-realtime-runbook).
+- Optional variables read by the source: `CHAT_APP_URL`, `NEXT_PUBLIC_CHAT_APP_URL`, `NEXT_PUBLIC_APP_URL`, `WEB_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`. Production falls back to `https://chat.tuturuuu.com` and `https://tuturuuu.com` when they are unset.
 
 ## Build and qualification
 
 ```bash
 bun install --frozen-lockfile --ignore-scripts
-bun turbo:local run build --filter=@tuturuuu/chat^... --concurrency=2
-bun scripts/ci/generate-build-metadata.ts
-bun run --cwd apps/chat routes:check
-bun run --cwd apps/chat type-check:cloudflare
-bun run --cwd apps/chat build:cloudflare
-CI=true CI_SOURCE_SHA=$(git rev-parse HEAD) bun run --cwd apps/chat test:runtime
+bun turbo:local run build --filter='@tuturuuu/chat^...' --concurrency=2
+bun run --silent scripts/ci/generate-build-metadata.ts
+VITE_CHAT_NATIVE_PROFILE=production bun run --cwd apps/chat build:cloudflare
+CI=true CI_SOURCE_SHA=$(git rev-parse HEAD) VITE_CHAT_NATIVE_PROFILE=production bun run --cwd apps/chat test:runtime
 ```
 
-`chat-cloudflare.yaml` runs the same steps in CI. `test:runtime` starts the emitted Worker in workerd
+`chat-cloudflare.yaml` job `chat-cutover-artifact` runs the same production-profile build and seals the output with `scripts/ci/chat-native-artifact.py` (`CHAT_SOURCE_SHA` mapped onto `APPS_SOURCE_SHA`). The sealed Worker name is `tuturuuu-chat`, `workers_dev` is false, and the config has no routes. Run the build on a CI or remote runner, not a developer machine.
+
+The `native` job builds with the profile unset (the staging Worker name). `test:runtime` starts the emitted Worker in workerd
 with synthetic secrets and no network egress: build identity, root host, apex rejection,
 unknown paths, and the signed-out redirect through the app-owned
 `cloudflare/auth-redirect.runtime.mjs` fixture (8 checks).

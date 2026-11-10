@@ -32,6 +32,8 @@ const APPS = [
   { name: 'apps/rewise', dir: 'apps/rewise' },
   { name: 'apps/storefront', dir: 'apps/storefront' },
   { name: 'apps/shortener', dir: 'apps/shortener' },
+  { name: 'apps/marketing', dir: 'apps/marketing' },
+  { name: 'apps/workspace', dir: 'apps/workspace' },
 ];
 
 module.exports = { APPS, SHARED_PACKAGES };
