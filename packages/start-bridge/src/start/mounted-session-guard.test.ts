@@ -43,6 +43,25 @@ describe('stripMountedSessionWrites', () => {
     ]);
   });
 
+  it('also drops prefixed and chunked forms of the session cookies', () => {
+    const response = new Response('x');
+    for (const value of [
+      '__Secure-tuturuuu_app_session=a; Path=/; Secure',
+      '__Host-tuturuuu_web_app_session=b; Path=/; Secure',
+      'tuturuuu_app_session.0=c; Path=/',
+      'tuturuuu_app_session_refresh.12=d; Path=/',
+      '__Secure-tuturuuu_web_app_session_refresh.1=e; Path=/; Secure',
+      'tuturuuu_app_session.x=keep; Path=/',
+      '__Other-tuturuuu_app_session=keep; Path=/',
+    ]) {
+      response.headers.append('set-cookie', value);
+    }
+    expect(stripMountedSessionWrites(response).headers.getSetCookie()).toEqual([
+      'tuturuuu_app_session.x=keep; Path=/',
+      '__Other-tuturuuu_app_session=keep; Path=/',
+    ]);
+  });
+
   it('keeps status, body and other headers', async () => {
     const response = new Response('body', {
       status: 302,

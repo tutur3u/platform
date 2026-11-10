@@ -66,6 +66,17 @@ function cookieName(setCookie: string) {
 }
 
 /**
+ * Whether a cookie name is a per-app session cookie, including the
+ * `__Secure-`/`__Host-` prefixed and chunked (`name.0`, `name.1`) forms a
+ * writer could emit.
+ */
+export function isMountedForbiddenCookieName(name: string): boolean {
+  const unprefixed = name.replace(/^__(?:Secure|Host)-/u, '');
+  const base = unprefixed.replace(/\.\d+$/u, '');
+  return MOUNTED_FORBIDDEN_COOKIE_NAMES.has(base);
+}
+
+/**
  * Response backstop for mounted requests: drops every `Set-Cookie` (writes and
  * deletions) for the per-app session cookies, and `Service-Worker-Allowed` so
  * no mounted app can widen a service worker past its own base. Returns the
@@ -74,7 +85,7 @@ function cookieName(setCookie: string) {
 export function stripMountedSessionWrites(response: Response): Response {
   const setCookies = response.headers.getSetCookie();
   const kept = setCookies.filter(
-    (value) => !MOUNTED_FORBIDDEN_COOKIE_NAMES.has(cookieName(value))
+    (value) => !isMountedForbiddenCookieName(cookieName(value))
   );
   const widensServiceWorker = response.headers.has('service-worker-allowed');
   if (kept.length === setCookies.length && !widensServiceWorker) {
