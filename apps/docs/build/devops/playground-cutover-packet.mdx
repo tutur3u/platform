@@ -1,0 +1,68 @@
+---
+title: "Playground cutover packet"
+description: "Worker identity, bindings, build, acceptance, rollback and smoke checks for publishing the native Playground Worker."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Playground (`apps/playground`) runs on TanStack Start, Vite+ and Void through
+the [start bridge](/build/devops/start-bridge). It is a staff-only surface; the
+behaviour it must keep is recorded in the
+[isolation contract](/build/devops/playground-isolation-contract). The emitted
+Worker builds and passes its workerd suite, so source needs no change to
+publish. Routes are never attached from config.
+
+## Worker identity
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-playground` (production profile), the staging Worker name (default) |
+| Profile selector | `VITE_PLAYGROUND_NATIVE_PROFILE=production` at build time |
+| Hosts | `playground.tuturuuu.com`, `playground.tutur3u.com`, and the `tuturuuu.com/playground` mount; any other host is rejected |
+| Compatibility | `nodejs_compat`, `global_fetch_strictly_public`; `workers_dev` and `preview_urls` off |
+| Binding | `ASSETS` |
+| Variables | `TUTURUUU_NOINDEX` (`0` in production), `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`, optional `INTERNAL_WEB_API_ORIGIN` |
+| Secrets (names) | `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
+
+`cloudflare/startup.mjs` refuses to serve when a secret is empty or when the
+coordination secret is the development value.
+
+## Build
+
+```bash
+bun turbo:local run build --filter='@tuturuuu/playground^...' --concurrency=2
+bun run --silent scripts/ci/generate-build-metadata.ts
+VITE_PLAYGROUND_NATIVE_PROFILE=production bun run --cwd apps/playground build
+CI=true CI_SOURCE_SHA=<sha> bun run --cwd apps/playground test:runtime
+```
+
+`playground-cloudflare.yaml` runs the same steps and seals the output with
+`scripts/ci/playground-native-artifact.py` in its `cutover-artifact` job. Run the
+build on a CI or remote runner, not a developer machine.
+
+## Acceptance covered by `test:runtime`
+
+- the emitted Worker verifies a staff session before it renders any private page
+- AI routes answer `401` signed out and `403` for non-staff or non-root members
+- every response carries `X-Robots-Tag`; `robots.txt` disallows all crawling
+- no execution, iframe or sandbox surface exists in the app
+
+The root layout loads Geist through `next/font/google`; the RSC plugin resolver
+handles it and the build succeeds. Compare rendered fonts on the staging host
+before the switch, since that is a visual check the suite does not cover.
+
+## Rollback
+
+Capture the current Vercel deployment ID before the switch. Remove or repoint the
+prepared Worker route, or restore the captured DNS, to that deployment. Route
+rollback does not touch data.
+
+## Smoke checks
+
+Pages are staff-only, so an anonymous `200` is not expected on `/`.
+
+- signed-out `GET /` redirects to the Web sign-in page with a return URL
+- `/api/build-info` answers `200` JSON
+- `/api/ai/object-generation` answers `401` signed out
+- `/robots.txt` disallows all crawling
+- no `5xx` across the above

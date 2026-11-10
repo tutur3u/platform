@@ -21,6 +21,7 @@ import {
   hasAuthenticatedBearerToken,
 } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { getAllowedFirstPartyCorsOrigin } from '@tuturuuu/utils/first-party-cors';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
@@ -55,25 +56,7 @@ const CORS_HEADERS =
   'authorization,content-type,x-requested-with,x-sdk-client,x-tuturuuu-client';
 
 function getAllowedFirstPartyOrigin(origin: string | null) {
-  if (!origin) return null;
-
-  try {
-    const url = new URL(origin);
-    const hostname = url.hostname.toLowerCase();
-    const isFirstPartyHost =
-      hostname === 'tuturuuu.com' ||
-      hostname.endsWith('.tuturuuu.com') ||
-      hostname === 'tuturuuu.localhost' ||
-      hostname.endsWith('.tuturuuu.localhost') ||
-      hostname === 'localhost' ||
-      hostname === '127.0.0.1' ||
-      hostname === '::1' ||
-      hostname === '[::1]';
-
-    return isFirstPartyHost ? url.origin : null;
-  } catch {
-    return null;
-  }
+  return getAllowedFirstPartyCorsOrigin(origin);
 }
 
 function withMailApiCors(request: NextRequest, response: NextResponse) {

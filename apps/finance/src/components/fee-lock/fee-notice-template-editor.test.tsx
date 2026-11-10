@@ -44,11 +44,21 @@ const version = (v: number, is_active: boolean, body = fields.body) => ({
 });
 // biome-ignore format: compact labels
 const labels = {
-  template_body: 'Nội dung', payment_line: 'Dòng thanh toán', item_format: 'Định dạng khoản thêm',
-  item_separator: 'Ký tự ngăn cách', grouping: 'Học viên học nhiều lớp', grouping_combined: 'Gộp một thông báo',
-  grouping_per_class: 'Mỗi lớp một thông báo', placeholders: 'Chèn trường',
-  unknown_placeholder: (name: string) => `unknown:${name}`, preview: 'Xem trước', versions: 'Phiên bản',
-  restore_version: 'Khôi phục', template_saved: 'saved', conflict_body: 'conflict', save: 'Lưu',
+  template_body: 'Nội dung',
+  payment_line: 'Dòng thanh toán',
+  item_format: 'Định dạng khoản thêm',
+  item_separator: 'Ký tự ngăn cách',
+  grouping: 'Học viên học nhiều lớp',
+  grouping_combined: 'Gộp một thông báo',
+  grouping_per_class: 'Mỗi lớp một thông báo',
+  placeholders: 'Chèn trường',
+  unknown_placeholder: (name: string) => `unknown:${name}`,
+  preview: 'Xem trước',
+  versions: 'Phiên bản',
+  restore_version: 'Khôi phục',
+  template_saved: 'saved',
+  conflict_body: 'conflict',
+  save: 'Lưu',
 };
 const mount = (canEdit = true) =>
   render(

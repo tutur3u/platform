@@ -1,0 +1,28 @@
+{
+  "appDir": "src/app",
+  "stripSegments": {
+    "[locale]": {
+      "locale": "en"
+    }
+  },
+  "api": {
+    "out": "src/start-bridge/api-registry.bridge.gen.ts",
+    "patternsOut": "src/start-bridge/api-patterns.bridge.gen.ts",
+    "lazy": true
+  },
+  "pages": {
+    "out": "src/start-bridge/page-registry.bridge.gen.ts"
+  },
+  "owned": {},
+  "ignored": {},
+  "runtime": {
+    "/": 404,
+    "/login": 200
+  },
+  "runtimeProbes": {
+    "api": {
+      "skip": "the app owns a single auth-recovery confirmation route; every other /api request is forwarded to the central Web API"
+    },
+    "notFound": "/login/__native-smoke-missing__"
+  }
+}

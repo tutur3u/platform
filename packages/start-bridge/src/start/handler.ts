@@ -1,4 +1,9 @@
 import { createFramablePathMatcher } from '@tuturuuu/utils/framable-paths';
+import {
+  applyOneOriginNoindex,
+  decideOneOriginRequest,
+  readOneOriginEnv,
+} from '@tuturuuu/utils/one-origin-routing';
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { forwardToCentralApi } from '../core/api-forward';
 import { type AssetsBinding, fetchAsset } from '../core/assets';
@@ -18,6 +23,12 @@ import {
 } from '../next/proxy-bridge';
 import type { BridgeRequestContext } from '../server/request-context';
 import { admitMountedMutation, type BridgeCsrfOptions } from './csrf-admission';
+import {
+  isMountedLogoutPath,
+  refuseCrossOriginMountedLogout,
+  refuseMountedSessionMinting,
+  stripMountedSessionWrites,
+} from './mounted-session-guard';
 
 export type { AssetsBinding } from '../core/assets';
 
@@ -84,7 +95,8 @@ export interface BridgeHandlerOptions<Env, Ctx> {
   framablePaths?: readonly RegExp[];
   /**
    * Same-origin admission for cookie-authenticated mutations on mounted
-   * (apex) requests, before `proxy.ts`. Root-mode requests are unaffected.
+   * (apex) requests, before `proxy.ts`. Mounted requests are always enforced;
+   * only `exemptions` is read here. Root-mode requests are unaffected.
    */
   csrf?: BridgeCsrfOptions<Env>;
 }
@@ -115,6 +127,32 @@ export function createBridgeHandler<
   const inFunctionBase = (path: string) =>
     !!options.functionBase && inBase(path, options.functionBase);
 
+  /**
+   * The one-origin switch `TTR_ONE_ORIGIN_<APP>` (`off`/`shadow`/`on`, with
+   * `TTR_ONE_ORIGIN_<APP>_REDIRECT_STATUS` `307`/`301`). It applies only once
+   * the variable is set, so apps that have not started their cutover behave
+   * exactly as before. Then the shared origin is refused while `off`, served
+   * `noindex` while `shadow`, and canonical while `on`, when subdomain
+   * navigations redirect to `https://<mount host><base><path>` (machine paths
+   * never redirect).
+   */
+  function decideOneOrigin(incoming: Request, env: Env) {
+    const mounts = options.mounts;
+    const rootHost = mounts?.rootHosts[0];
+    const mountHost = mounts?.mountHosts?.[0];
+    if (!mounts || !rootHost || !mountHost || !mounts.basePath) return null;
+    const vars = env as unknown as Record<string, unknown>;
+    const key = `TTR_ONE_ORIGIN_${mounts.app.toUpperCase()}`;
+    if (typeof vars[key] !== 'string') return null;
+    return decideOneOriginRequest(incoming, {
+      basePath: mounts.basePath,
+      basePathReady: true,
+      sharedOrigin: `https://${mountHost}`,
+      subdomainOrigin: `https://${rootHost}`,
+      ...readOneOriginEnv(vars, mounts.app),
+    });
+  }
+
   async function handleRequest(
     incoming: Request,
     env: Env,
@@ -137,14 +175,27 @@ export function createBridgeHandler<
     headers.delete(APP_BASE_HEADER);
     if (!base.isRoot) headers.set(APP_BASE_HEADER, base.basePath);
     const request = new Request(incoming, { headers });
-    if (!base.isRoot && options.csrf) {
+    // A mounted app shares the root session: it never mints or refreshes a
+    // per-app session, so those endpoints are refused before anything runs.
+    if (!base.isRoot) {
+      const refused = refuseMountedSessionMinting(appPath);
+      if (refused) return refused;
+    }
+    // On the shared origin, Origin/Fetch Metadata are the only thing telling
+    // a mounted app's own pages from another origin, so a cookie-authenticated
+    // mutation is always held to same-origin there, whatever the app's mode.
+    if (!base.isRoot) {
       const refused = admitMountedMutation({
         appPath,
-        exemptions: options.csrf.exemptions,
-        mode: options.csrf.mode(env),
+        exemptions: options.csrf?.exemptions,
+        mode: 'enforce',
         request: incoming,
       });
       if (refused) return refused;
+      if (isMountedLogoutPath(appPath)) {
+        const refusedLogout = refuseCrossOriginMountedLogout(incoming);
+        if (refusedLogout) return refusedLogout;
+      }
     }
     const nonce = options.csp ? createNonce() : undefined;
     let response: Response;
@@ -161,7 +212,11 @@ export function createBridgeHandler<
     } else {
       const dispatch: BridgeDispatch = async (forwarded) => {
         const pathname = forwarded.nextUrl.pathname;
-        const central = isCentralFirst(pathname);
+        // A mounted app signs out through Web: one global logout of the
+        // shared session, never an app-local cookie clear.
+        const central =
+          isCentralFirst(pathname) ||
+          (!base.isRoot && isMountedLogoutPath(pathname));
         const endpoint =
           options.endpoints && !central
             ? await dispatchEndpoint(options.endpoints, forwarded, {
@@ -208,12 +263,19 @@ export function createBridgeHandler<
         nonce,
       });
     }
-    const final = base.finalizeResponse(response);
+    const finalized = base.finalizeResponse(response);
+    const final = base.isRoot
+      ? finalized
+      : stripMountedSessionWrites(finalized);
     if (!nonce || !options.csp) return final;
     // A framable path's upstream policy (Web's `sandbox` CSP for uploaded
     // WebGL builds) must reach the browser untouched, or the uploaded
     // scripts run unsandboxed on the app origin.
     if (isFramable(appPath)) return final;
+    // A response that already carries a policy keeps it: HTML forwarded from
+    // Web (CLI copy-token, SAML post-response, unsubscribe) or an endpoint's
+    // own CSP is never replaced by the app's page policy.
+    if (final.headers.has('Content-Security-Policy')) return final;
     const policy = options.csp(nonce, {
       request: incoming,
       response: final,
@@ -231,7 +293,10 @@ export function createBridgeHandler<
     ctx: Ctx
   ): Promise<Response> {
     try {
-      return await handleRequest(incoming, env, ctx);
+      const oneOrigin = decideOneOrigin(incoming, env);
+      if (oneOrigin && oneOrigin.action !== 'serve') return oneOrigin.response;
+      const response = await handleRequest(incoming, env, ctx);
+      return oneOrigin?.noindex ? applyOneOriginNoindex(response) : response;
     } catch (error) {
       // A failure in the proxy, an endpoint or Start still answers through
       // the app's response policy (no-store, robots, framing), never with

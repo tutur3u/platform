@@ -186,8 +186,8 @@ test('version derivation sees drafts and concurrency queues racing publishers', 
     /run: node scripts\/desktop-deployment\/release-version\.mjs/
   );
   assert.match(
-    workflow,
-    /concurrency:\n {2}group: desktop-beta-\$\{\{ github.ref \}\}[^\n]*\n {2}cancel-in-progress: false\n {2}queue: max/
+    publish,
+    /concurrency:\n {6}group: desktop-beta-production-publish\n {6}cancel-in-progress: false\n {6}queue: max/
   );
   assert.match(
     publish,

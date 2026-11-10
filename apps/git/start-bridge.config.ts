@@ -8,7 +8,11 @@ import {
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 
 export default defineBridgeAppConfig({
-  mounts: { rootHosts: ['git.tuturuuu.com'], mountHosts: [], unknownHost: 'reject' },
+  mounts: {
+    rootHosts: ['git.tuturuuu.com'],
+    mountHosts: [],
+    unknownHost: 'reject',
+  },
   worker: { workersDev: false },
   // Robots (the app's seo-policy.json allowlist on its canonical host),
   // framing, sniffing, referrer and private caching on every response; only

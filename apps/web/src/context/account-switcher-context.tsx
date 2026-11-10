@@ -37,6 +37,7 @@ export interface AccountOperationResult {
   accountId?: string;
   diagnosticCode?: string;
   error?: string;
+  errorCode?: WebAccountMutationResponse['errorCode'];
   redirectTo?: string;
   requiresReauth?: boolean;
   success: boolean;
@@ -86,6 +87,7 @@ function toAccountOperationResult(
     accountId: response.accountId,
     diagnosticCode: response.diagnosticCode,
     error: response.error,
+    errorCode: response.errorCode,
     redirectTo: response.redirectTo,
     requiresReauth: response.requiresReauth,
     success: response.success,
@@ -121,8 +123,9 @@ export function AccountSwitcherProvider({
   const accountsQuery = useQuery({
     queryFn: () => listWebAccountsWithInternalApi(),
     queryKey: ACCOUNTS_QUERY_KEY,
+    refetchOnWindowFocus: 'always',
     retry: 1,
-    staleTime: 30_000,
+    staleTime: 0,
   });
 
   const invalidateAccounts = useCallback(async () => {
@@ -331,6 +334,12 @@ export function AccountSwitcherProvider({
   }, [logoutMutation, navigateAfterMutation]);
 
   const logoutAll = useCallback(async () => {
+    try {
+      window.localStorage.removeItem(LEGACY_MULTI_SESSION_STORAGE_KEY);
+    } catch {
+      // Storage can throw SecurityError. Server revocation still has to run.
+    }
+
     const response = await logoutAllMutation.mutateAsync();
     await navigateAfterMutation(toAccountOperationResult(response));
   }, [logoutAllMutation, navigateAfterMutation]);

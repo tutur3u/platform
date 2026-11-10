@@ -126,10 +126,10 @@ export async function finishOAuth(request: NextRequest, userId: string) {
   const response = await fetch(endpoint, {
     headers: { Authorization: `Bearer ${credentials.accessToken}` },
     cache: 'no-store',
-    redirect: 'error',
+    redirect: 'manual',
     signal: AbortSignal.timeout(20000),
   });
-  if (!response.ok)
+  if (response.type === 'opaqueredirect' || !response.ok)
     throw new ConnectedMailError(409, 'Unable to verify connected mailbox');
   const profile = await response.json();
   const address =

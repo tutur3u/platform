@@ -42,6 +42,23 @@ const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
+    // Release identity is public (commit and build metadata only): no session
+    // refresh, and no ambient identity reaches the handler.
+    const isBuildInfoRead =
+      req.nextUrl.pathname === '/api/build-info' &&
+      (req.method === 'GET' || req.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of req.cookies.getAll())
+        req.cookies.delete(cookie.name);
+      req.headers.delete('cookie');
+      req.headers.delete('authorization');
+      // Anonymous callers are still rate limited like every other API path.
+      const guardResponse = await guardApiProxyRequest(req, {
+        prefixBase: 'proxy:rewise:api',
+      });
+      if (guardResponse) return guardResponse;
+      return NextResponse.next({ request: { headers: req.headers } });
+    }
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );

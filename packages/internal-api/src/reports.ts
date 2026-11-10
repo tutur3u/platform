@@ -212,6 +212,11 @@ export interface ListPeriodicReportsParams {
   periodEnd?: string;
   /** `YYYY-MM`: the month reports cover (saved period, else estimated). */
   month?: string;
+  /**
+   * The month named in the report title, for every stage: `YYYY-MM` (title
+   * has a year), `MM` (month only) or `none` (title names no month).
+   */
+  titleMonth?: string;
   cadence?: PeriodicReportCadence | 'all';
   category?: PeriodicReportDeliveryCategory;
   deliveryStatus?: PeriodicReportDeliveryStatus;
@@ -224,6 +229,13 @@ export interface ListPeriodicReportsParams {
   timezone?: string;
 }
 
+/** A month found in report titles and how many reports carry it. */
+export interface PeriodicReportTitleMonth {
+  /** `YYYY-MM`, `MM` (no year in the title) or `none`. */
+  key: string;
+  count: number;
+}
+
 export interface ListPeriodicReportsResponse {
   categoryCounts: Record<PeriodicReportDeliveryCategory, number>;
   counts: PeriodicReportCounts;
@@ -232,6 +244,12 @@ export interface ListPeriodicReportsResponse {
   pageSize: number;
   /** True when `counts` cover only the selected stage (all-stage read unavailable). */
   summaryPartial?: boolean;
+  /**
+   * Months found in the titles of every report in scope (all stages), newest
+   * first, before `titleMonth` is applied. Counts are not exact when
+   * `summaryPartial` is true.
+   */
+  titleMonths?: PeriodicReportTitleMonth[];
   total: number;
   workspace: { id: string; timezone: string | null };
 }
@@ -440,6 +458,7 @@ export async function listPeriodicReports(
         periodStart: params.periodStart,
         periodEnd: params.periodEnd,
         month: params.month,
+        titleMonth: params.titleMonth,
         cadence: params.cadence,
         category: params.category,
         generationStatus: params.generationStatus,

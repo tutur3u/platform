@@ -29,6 +29,19 @@ try {
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: plain('sb_publishable_fixture'),
     TUTURUUU_APP_COORDINATION_SECRET: { type: 'secret_text', value: secret },
     SUPABASE_SECRET_KEY: { type: 'secret_text', value: secret },
+    ABUSE_GUARD: {
+      type: 'fetcher',
+      fetcher: async () =>
+        new Response('{"error":"guard_unavailable"}', {
+          status: 503,
+          headers: { 'content-type': 'application/json' },
+        }),
+    },
+    ABUSE_GUARD_KEY_PEPPER: {
+      type: 'secret_text',
+      value: 'DUMMY-cms-abuse-guard-key-pepper-synthetic-only-0000000001',
+    },
+    ABUSE_GUARD_FAMILIES: plain('proxy'),
   };
   const options = {
     config: join(scratch, relative(app, configPath)),
@@ -60,20 +73,33 @@ try {
   ]) {
     const incomplete = { ...bindings };
     delete incomplete[missing];
-    let refused = false;
+    const runtime = new sdk.unstable_DevEnv();
+    const expectedRefusal = (error) =>
+      error?.code === 'ERR_RUNTIME_FAILURE' &&
+      error.message.includes('Missing or unsafe required secret: ' + missing);
+    const startup = new Promise((resolve) => {
+      runtime.once('reloadComplete', () => resolve(null));
+      runtime.once('error', (event) => resolve(event.cause ?? event));
+      runtime.once('buildFailed', (event) => resolve(event.cause ?? event));
+    });
+    // Proxy readiness can precede the application's startup guard.
+    void runtime.proxy.ready.promise.catch((error) => {
+      if (!expectedRefusal(error.cause ?? error)) throw error;
+    });
     try {
-      worker = await sdk.unstable_startWorker({
-        ...options,
-        bindings: incomplete,
-      });
-      await worker.ready;
-    } catch {
-      refused = true;
+      await runtime.startWorker({ ...options, bindings: incomplete });
+      const error = await startup;
+      assert.equal(
+        expectedRefusal(error),
+        true,
+        `Worker must refuse missing ${missing}`
+      );
     } finally {
-      await worker?.dispose();
-      worker = undefined;
+      await runtime.teardown().catch((error) => {
+        if (!expectedRefusal(error)) throw error;
+      });
+      runtime.removeAllListeners();
     }
-    assert.equal(refused, true, `Worker must refuse missing ${missing}`);
   }
   worker = await sdk.unstable_startWorker({ ...options, bindings });
   await worker.ready;

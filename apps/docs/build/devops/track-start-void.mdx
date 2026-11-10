@@ -1,0 +1,57 @@
+---
+title: "Track on Start + Void"
+description: "Native Track Worker, qualification commands, cutover packet and Vercel rollback."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Track (`apps/track`) runs as a native TanStack Start app on Vite+ and Void through
+[`@tuturuuu/start-bridge`](/build/devops/start-bridge). The App Router source is
+rendered unchanged by the generic RSC adapter; `cloudflare/worker.ts` is the
+Worker entry. `next build` (package `build`) remains the Vercel path. Production
+publication stays held in `tuturuuu.ci.ts` until a cutover PR admits the app.
+
+## Cutover packet
+
+| Item | Value |
+| --- | --- |
+| Worker | The staging identity is what `void.config.ts` emits. Deploy the production artifact under `tuturuuu-track` with the deploy-time name override; the config declares no routes |
+| Hosts | Root: `track.tuturuuu.com`. Mount: `tuturuuu.com/track`. `TUTURUUU_STAGING_HOSTS` (Worker var, staging only) may add `track.tutur3u.com` or reviewed `workers.dev` hosts. Every other host gets `404` |
+| Bindings | `ASSETS` (static assets, worker-first, no SPA fallback) |
+| Vars (names) | `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`), `TUTURUUU_NOINDEX` (set `1` on staging only), `TUTURUUU_STAGING_HOSTS` (staging only) |
+| Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`. The Worker answers `503` without the last two |
+| Build | `bun turbo:local run build --filter=@tuturuuu/track^...`, then `bun run --cwd apps/track build:cloudflare`. Output: `apps/track/dist/server/wrangler.json` and `dist/client` |
+| Routing | Attach only `track.tuturuuu.com/*` to the Worker. Do not attach `tuturuuu.com/*` |
+| Prior Vercel deployment | Not recorded in the repository. The release owner captures the current production deployment id and DNS record before the flip |
+
+## Rollback
+
+Remove only the new `track.tuturuuu.com/*` Worker route (or restore the captured
+DNS record) so the hostname resolves to the captured immutable Vercel deployment.
+Never rebuild on the rollback path and never promote the Vercel project as a
+whole. Keep the Vercel project and domain until the new Worker has been stable.
+Track keeps no state in the Worker, so rollback touches no data.
+
+## Smoke
+
+Anonymous probes after the route is attached:
+
+```bash
+node scripts/native-cutover/smoke.mjs --origin https://track.tuturuuu.com --app track --expect native
+curl -sI https://track.tuturuuu.com/api/build-info          # 200, no-store
+curl -sI https://track.tuturuuu.com/                        # redirect to https://tuturuuu.com/login
+curl -s -o /dev/null -w '%{http_code}\n' https://track.tuturuuu.com/__missing__   # 404, never 5xx
+```
+
+Check that every response carries `X-Robots-Tag: noindex, nofollow, nosnippet`,
+`X-Frame-Options: DENY` and `Cache-Control: private, no-store, max-age=0`
+(except hashed assets and public files). The rollback smoke is the same command
+with `--expect legacy`.
+
+## Qualification
+
+`track-cloudflare.yaml` builds the native output, rejects route-tree drift,
+type-checks (`type-check:cloudflare`), seals the emitted Worker with
+`scripts/ci/track-native-artifact.py` and runs the emitted-Worker suite in
+workerd (`bun run --cwd apps/track test:runtime`), with all egress denied.
+Heavy builds run on a remote host, not the local hub.

@@ -27,7 +27,7 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
   ) =>
     action({
       user: { id: 'authenticated-owner' },
-      meeting: { ws_id: 'ws-team' },
+      meeting: { ws_id: '00000000-0000-4000-8000-0000000000a1' },
     }),
 }));
 vi.mock('@tuturuuu/meet-core/features/live-assistant/workspace-tools', () => ({
@@ -61,7 +61,9 @@ beforeEach(() => {
         idFromName: (id: string) => id,
         get: () => ({ fetch: f.fetch }),
       },
-      MEET_AI_ENABLED_WORKSPACE_IDS: 'ws-team',
+      MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+      MEET_AI_ENABLED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000a1',
+      MEET_AI_DISABLED: 'false',
     },
   });
   f.fetch.mockImplementation(async (_url, options) => {
@@ -100,7 +102,10 @@ it('executes only the claimed arguments under the authenticated requester', asyn
   const claim = JSON.parse(f.fetch.mock.calls[0]![1].body);
   expect(claim.ownerId).toBe('authenticated-owner');
   expect(f.tools).toHaveBeenCalledWith(
-    { user: { id: 'authenticated-owner' }, meeting: { ws_id: 'ws-team' } },
+    {
+      user: { id: 'authenticated-owner' },
+      meeting: { ws_id: '00000000-0000-4000-8000-0000000000a1' },
+    },
     'selected-workspace',
     'UTC'
   );
@@ -143,15 +148,21 @@ it('does not rerun an operation when reporting its outcome fails', async () => {
   expect(f.execute).toHaveBeenCalledOnce();
 });
 it('denies review writes outside the Meet AI allowlist before any Durable Object or tool call', async () => {
-  for (const MEET_AI_ENABLED_WORKSPACE_IDS of [undefined, '', 'other-ws']) {
+  for (const MEET_AI_ENABLED_WORKSPACE_IDS of [
+    undefined,
+    '',
+    '*',
+    '00000000-0000-4000-8000-0000000000a2',
+  ]) {
     vi.stubGlobal(Symbol.for('__cloudflare-context__'), {
       env: {
         MEET_LIVE: {
           idFromName: (id: string) => id,
           get: () => ({ fetch: f.fetch }),
         },
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
         MEET_AI_ENABLED_WORKSPACE_IDS,
-        MEET_AI_DISABLED: MEET_AI_ENABLED_WORKSPACE_IDS ? undefined : 'true',
+        MEET_AI_DISABLED: MEET_AI_ENABLED_WORKSPACE_IDS ? 'false' : 'true',
       },
     });
     for (const approved of [true, false])

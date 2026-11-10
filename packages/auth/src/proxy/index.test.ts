@@ -60,6 +60,7 @@ describe('auth proxy redirect helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     vi.stubEnv('PORT', '');
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
     mocks.updateSession.mockResolvedValue({
@@ -177,6 +178,46 @@ describe('auth proxy redirect helpers', () => {
     });
     expect(resolveCanonicalRequestOrigin(request, 'https://tuturuuu.com')).toBe(
       'https://tuturuuu.com'
+    );
+  });
+
+  it('maps the gateway origin alias host to the central origin', () => {
+    const forwarded = new NextRequest('https://origin.tuturuuu.com/personal', {
+      headers: {
+        'x-forwarded-host': 'origin.tuturuuu.com',
+        'x-forwarded-proto': 'https',
+      },
+    });
+    expect(
+      resolveCanonicalRequestOrigin(forwarded, 'https://tuturuuu.com')
+    ).toBe('https://tuturuuu.com');
+
+    const direct = new NextRequest('https://ORIGIN.tuturuuu.com/personal');
+    expect(resolveCanonicalRequestOrigin(direct, 'https://tuturuuu.com')).toBe(
+      'https://tuturuuu.com'
+    );
+  });
+
+  it('maps configured extra gateway origin aliases to the central origin', () => {
+    vi.stubEnv('TUTURUUU_GATEWAY_ORIGIN_HOSTS', 'edge-origin.example.com');
+    try {
+      const request = new NextRequest('https://edge-origin.example.com/x', {
+        headers: { 'x-forwarded-host': 'edge-origin.example.com' },
+      });
+      expect(
+        resolveCanonicalRequestOrigin(request, 'https://tuturuuu.com')
+      ).toBe('https://tuturuuu.com');
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('keeps satellite public hosts as their own origin', () => {
+    const request = new NextRequest('https://tasks.tuturuuu.com/personal', {
+      headers: { 'x-forwarded-host': 'tasks.tuturuuu.com' },
+    });
+    expect(resolveCanonicalRequestOrigin(request, 'https://tuturuuu.com')).toBe(
+      'https://tasks.tuturuuu.com'
     );
   });
 
@@ -302,6 +343,50 @@ describe('auth proxy redirect helpers', () => {
       const setCookie = response?.headers.get('set-cookie') ?? '';
       expect(setCookie).toContain('tuturuuu_app_session=ttr_app_local');
       expect(setCookie).toContain('tuturuuu_web_app_session=ttr_app_web');
+    });
+
+    it('never redeems a handoff token on an apex mount', async () => {
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://abcd.supabase.co');
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      const request = new NextRequest(
+        'https://tuturuuu.com/learn/verify-token?token=copy-token&nextUrl=%2Fpersonal',
+        {
+          headers: {
+            cookie: 'sb-abcd-auth-token.0=shared; sb-abcd-auth-token.1=rest',
+          },
+          nextConfig: { basePath: '/learn' },
+        }
+      );
+
+      const response = await consumeVerifyTokenRequest(request);
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(response?.headers.get('location')).toBe(
+        'https://tuturuuu.com/learn/personal'
+      );
+      // The shared root session cookie is never cleared on the apex.
+      expect(response?.headers.getSetCookie() ?? []).toEqual([]);
+    });
+
+    it('never clears any Supabase cookie on an apex mount, even a foreign one', async () => {
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://abcd.supabase.co');
+      const request = new NextRequest(
+        'https://tuturuuu.com/learn/verify-token?nextUrl=%2Fpersonal',
+        {
+          headers: {
+            cookie: 'sb-abcd-auth-token=shared; sb-other-auth-token=stale',
+          },
+          nextConfig: { basePath: '/learn' },
+        }
+      );
+
+      const response = await consumeVerifyTokenRequest(request);
+
+      expect(response?.headers.get('location')).toBe(
+        'https://tuturuuu.com/learn/personal'
+      );
+      expect(response?.headers.getSetCookie() ?? []).toEqual([]);
     });
 
     it('lets the client verifier page handle Portless verify-token requests', async () => {

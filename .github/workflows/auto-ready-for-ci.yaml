@@ -7,7 +7,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: auto-ready-for-ci-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:

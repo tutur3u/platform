@@ -22,6 +22,21 @@ cadence and preserve their filters. The canonical hub opens **Daily** by default
 when the actor can view daily reports; explicit Periodic and Automations links
 still open their requested cadence or Automations view.
 
+## Bulk approval setting
+
+Workspace Settings → Approvals contains **Allow bulk approval of monthly reports**.
+The setting applies to every periodic report cadence and defaults to off for all
+workspaces. Only members with `manage_workspace_settings` can change it. The
+existing `workspace_configs` key `ALLOW_BULK_REPORT_APPROVAL` enables the feature
+only when its saved value is exactly `true`; missing or unreadable settings never
+permit bulk approval.
+
+When off, the periodic Approvals view hides **Approve all**, and the server refuses
+bulk approval. Single approval remains available and requires feedback. When on,
+bulk approval skips reports without feedback and reports approved and skipped
+counts. Daily/post approval is unaffected. Regression coverage lives in the
+approval handler, setting permission, and settings component tests.
+
 ## Central dashboard
 
 The Reports worklist offers Daily, Weekly, Monthly, Quarterly, Yearly and All
@@ -34,9 +49,10 @@ retain separate URL state so switching cadence does not reinterpret an old filte
 Every displayed count is a server total over the same active result predicate,
 including statuses, search, dates, category and access scope. The list, its
 matching total and the category counts also include the selected stage. The
-periodic stage cards do not: each card counts its own stage under every other
-active filter, so opening the default Pending view shows every stage's real count
-instead of zero for the stages that are not selected (`report-summary-scope.test.ts`).
+Daily and periodic stage cards do not: each card counts its own stage under every
+other active filter, and the grand total covers every stage, so opening the default
+Pending view shows every stage's real count instead of zero for the stages that are
+not selected (`report-summary-scope.test.ts`, Daily `lib/posts/data.test.ts`).
 That all-stage read never fails the page: if it exceeds the 20,000-report guard or
 errors, the list still loads, the response sets `summaryPartial`, and the cards show
 only the selected stage's count with "—" for the rest plus a hint to narrow the
@@ -60,8 +76,10 @@ The current periodic reader walks ordered server chunks to classify recorded
 errors consistently without changing database schema. It refuses scopes over
 20,000 reports with an instruction to narrow dates or search, and rejects missing
 or incomplete count receipts. Reads scale with the scoped dataset. Daily stage
-counts use the existing rows RPC across complete scoped chunks. Neither reader
-presents a partial page as a dashboard total.
+cards and total come from the all-stage summary RPC (never narrowed to the selected
+stage); the list uses the rows RPC filtered to the stage, and the two reads must
+agree on the selected stage's count or the request fails. Neither reader presents a
+partial page as a dashboard total.
 
 Regression coverage includes `report-list-query.test.ts`, `search-pagination.test.ts`,
 `report-filters.test.ts`, `reports-list.test.ts`, Daily `lib/posts/data.test.ts`,
@@ -119,36 +137,39 @@ that month or the first days of the next one.
 - **Default month.** `REPORT_MONTH_GRACE_DAYS = 10`
   (`packages/users-core/src/features/reports/report-month.ts`): from day 1 to day
   10 of a month, the default is the previous month; from day 11, the current
-  month. The worklist's Month picker and the new-report month picker both use it,
-  reading "today" in the viewer's timezone.
-- **Worklist.** The Monthly view shows a **Month** picker ("Tháng 10/2026") with
-  an **All months** option, kept in the `reportMonth` URL key. The from/to range
-  stays available as **Custom date range**; a range replaces the month, and the
-  API rejects both together. The stage cards and category counts come from the
-  same month-scoped response as the list.
-- **Matching.** `GET /users/reports?month=YYYY-MM` matches a saved period that
+  month. The new-report month picker uses it, reading "today" in the viewer's
+  timezone. The worklist does not: it opens on every month.
+- **Worklist: month in the title.** The Monthly view shows a **Month in report
+  title** picker that lists the months found in the report titles, each with its
+  report count ("Tháng 9 (12)"), plus **All months** (the default) and **No month
+  in title**. It is kept in the `reportTitleMonth` URL key. The month comes from the
+  title only (`report-title-month.ts`): "tháng N" with N 1-12, with or without a
+  year ("tháng 9", "Tháng 09", "THÁNG 9/2026", "tháng 10 năm 2026", also without
+  diacritics). A title with a year files under `YYYY-MM`, a title without one under
+  `MM`, and a title with no month under `none`. Years are never guessed, so
+  "tháng 9" and "tháng 9/2026" are separate entries. Reports in every stage,
+  including Sent, are filed this way; the send date and the saved period do not
+  select the month. `GET /users/reports?titleMonth=` filters the complete scope
+  before pagination and returns `titleMonths` (`{ key, count }[]`, newest first)
+  counted over every stage and before the month is applied, so the picker never
+  loses a month. The status cards, totals and category counts follow the chosen
+  month. When the all-stage read is unavailable (`summaryPartial`) the picker shows
+  no numbers. The from/to range stays available as **Custom date range** and
+  combines with the month (`report-title-month.test.ts`,
+  `report-title-month-scope.test.ts`, `report-title-month-select.test.tsx`).
+- **Period month (not used by the worklist).** `GET /users/reports?month=YYYY-MM`
+  and the per-report month still exist for the report page.
+- **Matching the period month.** `month=YYYY-MM` matches a saved period that
   starts in that month. A report without a saved period matches by its
   estimated month: created after day 10 of the month and up to day 10 of the next
   month, in the workspace timezone (else the viewer's, else UTC). A report written
   on 28 Oct or on 2 Nov is therefore listed under October.
-- **Sent stage: send month.** Sent reports (`report_stage = 'sent'`) belong to
-  the month they were actually sent, not the month they cover: `delivered_at`
-  from the 1st at 00:00 to the 1st of the next month in `Asia/Ho_Chi_Minh`, for
-  every workspace and viewer timezone (`buildReportStageMonthFilter`). October
-  2026 is `[2026-09-30T17:00:00Z, 2026-10-31T17:00:00Z)`. A report covering
-  October but sent on 30 Sep is in September's Sent list; title, saved period and
-  creation date are never used for Sent. Every other stage, including a blocked
-  report with a provider-accepted `delivered_at`, keeps its covered month. The
-  list, its pages and the stage cards share one filter, so the Sent card matches
-  the Sent list. Row month labels, the month picker default, new-report periods,
-  titles, Custom date range and All months are unchanged.
-- **Sent without a send date.** A Sent report with no `delivered_at` is in no
-  month and appears only under All months. The month filter excludes these rows
-  in the database, before the 20,000-row cap, so they never make a month read
-  fail or count toward a month's totals. A month read therefore never sees them:
-  `undatedSentCount` is always `null` (unknown, never 0), including when the
-  actor has no accessible group, and Contacts shows no count notice. All months
-  reads them with the existing cap. Records are not backfilled.
+- **Every stage uses the same month.** The period month applies the same saved
+  period or estimated-month fallback to every stage, Sent included
+  (`report-month-scope.test.ts`, `report-summary-scope.test.ts`). The worklist's
+  title month is applied in memory after the collection, so the 20,000-row cap
+  applies to the scope before the month. `undatedSentCount` remains unknown
+  (`null`) and Contacts no longer shows a notice for it.
 - **New reports** save `period_start`/`period_end` as the chosen month's calendar
   bounds with `cadence: monthly`. The workspace default title (`<title> MM/YYYY`)
   follows the chosen month until the teacher edits the title.
@@ -765,3 +786,8 @@ authorized explicit approval of EVERY email entry, the specific monthly action,
 recipient approval, provider readiness and canonical parent inbox delivery remain
 separate held outcomes. Draft save/reload and foreign-teacher topic notification
 verification are also still required.
+
+
+### Feedback required for approval and delivery
+
+Periodic reports require non-whitespace feedback before approval or email queueing. This rule applies to single and bulk approval, manual sends, retries, held-report batches, and the delivery worker. Drafts can remain empty. Bulk approval skips empty reports and returns approved and skipped counts. English and Vietnamese controls explain why approval or sending is disabled. Workspace, class, reviewer and send permissions remain required. Cancelling a queued delivery does not require feedback. Regression coverage exercises the approval and delivery boundaries with empty and populated feedback.

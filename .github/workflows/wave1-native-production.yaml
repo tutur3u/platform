@@ -5,7 +5,7 @@ on:
       app:
         description: App admitted by its separate cutover PR
         type: choice
-        options: [calendar]
+        options: [calendar, mail, apps]
         required: true
 permissions:
   contents: read
@@ -38,7 +38,7 @@ jobs:
     needs: production-policy
     if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
     runs-on: ubuntu-latest
-    environment: wave1-calendar-production
+    environment: wave1-${{ inputs.app }}-production
     timeout-minutes: 45
     env:
       APP: ${{ inputs.app }}
@@ -83,11 +83,21 @@ jobs:
           command: bun turbo:local run build --filter=@tuturuuu/${{ inputs.app }} --concurrency=2
           token: ''
           team: ''
-      - name: Seal and exercise the original route-free production bytes
-        timeout-minutes: 5
+      - name: Prepare the production profile and receipt
+        timeout-minutes: 2
         run: |
           node scripts/ci/wave1-native-artifact.mjs prepare "$APP" production "$SOURCE_SHA"
           if [ "$APP" = calendar ]; then node scripts/ci/calendar-host-scan.mjs "apps/$APP/dist" production; fi
+      - name: Pre-seal doctor on the production Host header
+        timeout-minutes: 3
+        run: |
+          HOST="$(node --input-type=module -e "import { profileFor } from './scripts/ci/wave1-native-profile.mjs'; console.log(profileFor(process.env.APP, 'production').host)")"
+          FLAGS=()
+          if [ "$APP" = calendar ] || [ "$APP" = mail ]; then FLAGS+=(--expect-redirect); fi
+          node scripts/ci/pre-seal-doctor.mjs "$APP" "apps/$APP" "$HOST" "$SOURCE_SHA" --wave1 "${FLAGS[@]}"
+      - name: Seal and exercise the original route-free production bytes
+        timeout-minutes: 5
+        run: |
           node scripts/ci/wave1-native-runtime.mjs "$APP" production "$SOURCE_SHA"
           node scripts/ci/wave1-native-publish.mjs dry-run "$APP" production "$SOURCE_SHA"
           node scripts/ci/wave1-native-artifact.mjs verify "$APP" production "$SOURCE_SHA"
@@ -137,12 +147,12 @@ jobs:
     needs: [production-policy, qualify, restored]
     if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
     runs-on: ubuntu-latest
-    environment: wave1-calendar-production
+    environment: wave1-${{ inputs.app }}-production
     timeout-minutes: 15
     env:
       APP: ${{ inputs.app }}
       SOURCE_SHA: ${{ github.sha }}
-      PUBLICATION_ENVIRONMENT: wave1-calendar-production
+      PUBLICATION_ENVIRONMENT: wave1-${{ inputs.app }}-production
       WRANGLER_SEND_METRICS: 'false'
       WRANGLER_WRITE_LOGS: 'false'
     steps:

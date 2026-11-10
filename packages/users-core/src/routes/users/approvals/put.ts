@@ -1,3 +1,7 @@
+import {
+  hasReportFeedback,
+  REPORT_FEEDBACK_REQUIRED,
+} from '../../../features/reports/report-feedback';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
@@ -20,6 +24,8 @@ import {
   type PostApprovalCheckWithGroup,
   parsePostApprovalItemId,
 } from './shared';
+
+import { isReportBulkApprovalEnabled } from './report-bulk-approval';
 
 const POST_EMAIL_SEND_PERMISSION = 'send_user_group_post_emails';
 
@@ -62,13 +68,13 @@ async function assertReportInWorkspace(
   const { data, error } = await sbAdmin
     .schema('private')
     .from('external_user_monthly_reports_workspace_view')
-    .select('id')
+    .select('id, feedback')
     .eq('id', reportId)
     .eq('user_ws_id', wsId)
     .eq('group_ws_id', wsId)
     .maybeSingle();
   if (error) throw error;
-  return Boolean(data);
+  return data;
 }
 
 async function getPostCheckInWorkspace(
@@ -202,6 +208,24 @@ export async function handlePutApprovalsRequest(
     }
 
     const sbAdmin = await createAdminClient({ noCookie: true });
+    if (
+      kind === 'reports' &&
+      action === 'approveAll' &&
+      !(await isReportBulkApprovalEnabled(sbAdmin, wsId))
+    ) {
+      return NextResponse.json(
+        {
+          code: 'REPORT_BULK_APPROVAL_DISABLED',
+          message:
+            'Bulk report approval is disabled. Chức năng duyệt tất cả báo cáo tháng đang tắt.',
+          messageEn:
+            'Bulk report approval is disabled. An administrator can enable it in workspace approval settings.',
+          messageVi:
+            'Chức năng duyệt tất cả báo cáo tháng đang tắt. Quản trị viên có thể bật trong cài đặt phê duyệt của không gian làm việc.',
+        },
+        { status: 403 }
+      );
+    }
     const actorLink = await getWorkspaceUserLinkForUser(wsId, actor.id, {
       authorizationClient: sbAdmin,
     });
@@ -215,20 +239,39 @@ export async function handlePutApprovalsRequest(
     const privateDb = sbAdmin.schema('private');
     const actorWorkspaceUserId = actorLink.virtual_user_id;
     let approvedPosts = false;
+    let approvedCount = 0;
+    let skippedEmptyCount = 0;
 
     if (action === 'approve' || action === 'reject') {
       if (kind === 'reports') {
-        if (!(await assertReportInWorkspace(sbAdmin, itemId!, wsId))) {
+        const report = await assertReportInWorkspace(sbAdmin, itemId!, wsId);
+        if (!report) {
           return NextResponse.json(
             { message: 'Report not found' },
             { status: 404 }
           );
         }
-        const { error } = await privateDb
+        if (action === 'approve' && !hasReportFeedback(report.feedback)) {
+          return NextResponse.json(REPORT_FEEDBACK_REQUIRED, { status: 422 });
+        }
+        let mutation = privateDb
           .from('external_user_monthly_reports')
           .update(reportApprovalUpdate(action, actorWorkspaceUserId, reason))
           .eq('id', itemId!);
+        if (action === 'approve') {
+          // Approval cannot race an edit that clears the checked feedback.
+          if (!hasReportFeedback(report.feedback))
+            return NextResponse.json(REPORT_FEEDBACK_REQUIRED, { status: 422 });
+          mutation = mutation.eq('feedback', report.feedback);
+        }
+        const { data, error } = await mutation.select('id');
         if (error) throw error;
+        if (!data?.length)
+          return NextResponse.json(
+            { message: 'Report changed. Refresh before approving.' },
+            { status: 409 }
+          );
+        approvedCount = action === 'approve' ? data.length : 0;
       } else {
         if (!parsePostApprovalItemId(itemId!)) {
           return NextResponse.json(
@@ -262,7 +305,7 @@ export async function handlePutApprovalsRequest(
       if (kind === 'reports') {
         let query = privateDb
           .from('external_user_monthly_reports_workspace_view')
-          .select('id')
+          .select('id, feedback')
           .eq('user_ws_id', wsId)
           .eq('group_ws_id', wsId)
           .eq('report_approval_status', 'PENDING');
@@ -272,15 +315,20 @@ export async function handlePutApprovalsRequest(
           query = query.eq('creator_id', filters.creatorId);
         const { data, error } = await query;
         if (error) throw error;
-        const reportIds = (data ?? [])
-          .map((row) => row.id)
-          .filter((id): id is string => typeof id === 'string');
-        if (reportIds.length > 0) {
-          const { error: updateError } = await privateDb
+        for (const report of data ?? []) {
+          if (!report.id || !hasReportFeedback(report.feedback)) {
+            skippedEmptyCount += 1;
+            continue;
+          }
+          const result = await privateDb
             .from('external_user_monthly_reports')
             .update(reportApprovalUpdate('approve', actorWorkspaceUserId))
-            .in('id', reportIds);
-          if (updateError) throw updateError;
+            .eq('id', report.id)
+            .eq('report_approval_status', 'PENDING')
+            .eq('feedback', report.feedback)
+            .select('id');
+          if (result.error) throw result.error;
+          approvedCount += result.data?.length ?? 0;
         }
       } else {
         let query = privateDb
@@ -357,7 +405,10 @@ export async function handlePutApprovalsRequest(
       await reconcileApprovedPostEmails(sbAdmin, wsId);
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      ...(kind === 'reports' ? { approvedCount, skippedEmptyCount } : {}),
+    });
   } catch (error) {
     if (isReportDeliveryLocked(error))
       return NextResponse.json(

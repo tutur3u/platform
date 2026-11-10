@@ -101,6 +101,12 @@
     "publicPaths": [],
     "publicPatterns": []
   },
+  "marketing": {
+    "origin": "https://tuturuuu.com",
+    "localePrefix": "as-needed",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
   "meet": {
     "origin": "https://meet.tuturuuu.com",
     "localePrefix": "never",
@@ -183,6 +189,12 @@
   },
   "web": {
     "origin": "https://tuturuuu.com",
+    "localePrefix": "as-needed",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "workspace": {
+    "origin": "https://workspace.tuturuuu.com",
     "localePrefix": "as-needed",
     "publicPaths": [],
     "publicPatterns": []

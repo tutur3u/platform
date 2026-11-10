@@ -51,7 +51,8 @@ describe('multi-account route diagnostics', () => {
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
       diagnosticCode: 'AUTH-ACC-SAVE-ABC123',
-      error: 'Failed to save current account',
+      error: 'Could not save this account. Retry.',
+      errorCode: 'save_failed',
     });
     expect(mocks.logAuthDiagnostic).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -60,6 +61,35 @@ describe('multi-account route diagnostics', () => {
         stage: 'account_save',
       })
     );
+  });
+
+  it('returns the account limit without a generic save failure', async () => {
+    mocks.saveCurrentWebAccount.mockResolvedValue({
+      accounts: [],
+      activeAccountId: null,
+      error: 'account_limit',
+      errorCode: 'account_limit',
+      success: false,
+    });
+
+    const { POST } =
+      await import('@/legacy-api-routes/v1/auth/accounts/current/route');
+    const response = await POST(
+      new NextRequest('http://localhost/api/v1/auth/accounts/current', {
+        body: JSON.stringify({ route: '/en/personal/tasks' }),
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      accounts: [],
+      activeAccountId: null,
+      error: 'account_limit',
+      errorCode: 'account_limit',
+      success: false,
+    });
+    expect(mocks.logAuthDiagnostic).not.toHaveBeenCalled();
   });
 
   it('logs and returns a visible diagnostic code for account-switch misses', async () => {

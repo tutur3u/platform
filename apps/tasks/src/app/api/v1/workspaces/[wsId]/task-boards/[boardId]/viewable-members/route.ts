@@ -44,7 +44,7 @@ function serializeMember(member: FocusedMemberRow) {
     id: userId,
     user_id: userId,
     display_name: member.display_name ?? null,
-    email: member.email ?? null,
+    email: null,
     handle: member.handle ?? null,
     avatar_url: member.avatar_url ?? null,
     is_creator: member.is_creator === true,

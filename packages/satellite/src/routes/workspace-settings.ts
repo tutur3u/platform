@@ -19,6 +19,7 @@ import {
   isWorkspaceAvatarPath,
   ownedWorkspaceAvatarPath,
 } from '@tuturuuu/utils/workspace-avatar';
+import { isReservedWorkspaceHandle } from '@tuturuuu/utils/workspace-handle';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { getSatelliteAppSessionUser } from '../auth';
@@ -26,13 +27,7 @@ import { getSatelliteAppSessionUser } from '../auth';
 type RouteContext = { params: Promise<{ wsId: string }> };
 
 const WORKSPACE_HANDLE_PATTERN = /^[a-z0-9](?:[a-z0-9_-]{0,62}[a-z0-9])?$/;
-const RESERVED_WORKSPACE_HANDLES = new Set([
-  'home',
-  'internal',
-  'login',
-  'onboarding',
-  'personal',
-]);
+
 const WORKSPACE_AVATAR_EXTENSIONS = new Set([
   'gif',
   'jpeg',
@@ -122,7 +117,7 @@ export function createSatelliteWorkspaceRouteHandlers(
         handle !== undefined &&
         (handle.length > MAX_ID_LENGTH ||
           !WORKSPACE_HANDLE_PATTERN.test(handle) ||
-          RESERVED_WORKSPACE_HANDLES.has(handle))
+          isReservedWorkspaceHandle(handle))
       ) {
         return NextResponse.json(
           { message: 'Invalid or reserved workspace handle' },

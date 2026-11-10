@@ -226,6 +226,11 @@
       "import": "./dist/mail.js",
       "require": "./dist/mail.js"
     },
+    "./meetings": {
+      "types": "./dist/meetings.d.ts",
+      "import": "./dist/meetings.js",
+      "require": "./dist/meetings.js"
+    },
     "./meet": {
       "types": "./dist/meet.d.ts",
       "import": "./dist/meet.js",

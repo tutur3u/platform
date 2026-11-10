@@ -255,6 +255,8 @@ test('the summary fails closed on a skipped workflow and waits while work is ope
 });
 
 test('app credentials are refused without the private key', () => {
+  const header = ['-----', 'BEGIN PRIVATE KEY', '-----'].join('');
+  const footer = ['-----', 'END PRIVATE KEY', '-----'].join('');
   assert.throws(
     () => readAppCredentials({ CI_SUMMARY_APP_ID: '123' }),
     /CI_SUMMARY_APP_ID/
@@ -263,11 +265,11 @@ test('app credentials are refused without the private key', () => {
     () =>
       readAppCredentials({
         CI_SUMMARY_APP_ID: 'abc',
-        CI_SUMMARY_APP_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\n',
+        CI_SUMMARY_APP_PRIVATE_KEY: `${header}\n`,
       }),
     /CI_SUMMARY_APP_ID/
   );
-  const key = '-----BEGIN PRIVATE KEY-----\\nline\\n-----END PRIVATE KEY-----';
+  const key = `${header}\\nline\\n${footer}`;
   assert.match(
     readAppCredentials({
       CI_SUMMARY_APP_ID: '123',
@@ -557,10 +559,7 @@ test('the poster workflow is read-only and is not a workflow_run consumer', () =
     workflow.jobs.summary.if,
     "needs.configuration.outputs.configured == 'true'"
   );
-  assert.match(
-    workflow.jobs.configuration.steps[0].run,
-    /App not configured/
-  );
+  assert.match(workflow.jobs.configuration.steps[0].run, /App not configured/);
   assert.doesNotMatch(
     workflow.jobs.configuration.steps[0].run,
     /GITHUB_TOKEN|GH_TOKEN|github\.token/

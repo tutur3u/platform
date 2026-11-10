@@ -3,55 +3,86 @@ import {
   starterScenarios,
   type Team,
 } from '@tuturuuu/multiplayer';
-import { describe, expect, it, vi } from 'vite-plus/test';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import { compileSkills, makeScenario, runAgent } from './ai';
 import type { Env } from './env';
 
+afterEach(() => vi.unstubAllGlobals());
+
+function gateway(...contents: unknown[]) {
+  let sequence = 0;
+  const run = vi.fn(
+    async (_url: unknown, _init?: { body?: BodyInit | null }) => {
+      sequence += 1;
+      return Response.json(
+        {
+          id: `request-${sequence}`,
+          choices: [{ message: { content: contents.shift() } }],
+          tuturuuu: { run_id: 'ledger-run', billing: { billedCredits: 1 } },
+        },
+        {
+          headers: {
+            'x-colab-sponsor-workspace': '00000000-0000-0000-0000-000000000000',
+          },
+        }
+      );
+    }
+  );
+  vi.stubGlobal('fetch', run);
+  const env = {
+    COLAB_AI_API_KEY: 'test-only-key',
+    sponsorship: {
+      workshopId: 'room',
+      workshopTitle: 'RISE',
+      hostId: 'host',
+      teamId: 'team-1',
+      teamName: 'Marketing',
+      participantId: 'guest:member',
+      operation: 'compile',
+      scenarioId: 'rise-induction-post',
+      jobId: '07a13d30-0599-4572-8d1d-159860105e10',
+      sequence: 0,
+      receipts: [],
+    },
+  } as unknown as Env;
+  return { env, run };
+}
 function model(...values: unknown[]) {
-  const run = vi.fn(async (..._args: unknown[]) => ({
-    response: JSON.stringify(values.shift()),
-  }));
-  return { env: { AI: { run } } as unknown as Env, run };
+  return gateway(
+    ...values.map((value) => ({ response: JSON.stringify(value) }))
+  );
 }
 describe('AI output boundaries', () => {
-  it('accepts parsed JSON returned by Workers AI JSON mode', async () => {
-    const env = {
-      AI: {
-        run: async () => ({
-          response: {
-            skills: [
-              {
-                name: 'draft',
-                description: 'Draft safely',
-                body: '# Ask first',
-              },
-            ],
+  it('accepts parsed JSON returned inside a response envelope', async () => {
+    const { env } = gateway({
+      response: {
+        skills: [
+          {
+            name: 'draft',
+            description: 'Draft safely',
+            body: '# Ask first',
           },
-        }),
+        ],
       },
-    } as unknown as Env;
+    });
     expect((await compileSkills(env, 'Draft safely', false))[0]?.name).toBe(
       'draft'
     );
   });
-  it('unwraps Workers AI responses that include usage metadata', async () => {
-    const env = {
-      AI: {
-        run: async () => ({
-          response: JSON.stringify({
-            skills: [
-              {
-                name: 'study-planner',
-                description: 'Plan study work',
-                body: 'Check deadlines and capacity.',
-              },
-            ],
-          }),
-          usage: { prompt_tokens: 120, completion_tokens: 80 },
-          tool_calls: [],
-        }),
-      },
-    } as unknown as Env;
+  it('unwraps response envelopes that include usage metadata', async () => {
+    const { env } = gateway({
+      response: JSON.stringify({
+        skills: [
+          {
+            name: 'study-planner',
+            description: 'Plan study work',
+            body: 'Check deadlines and capacity.',
+          },
+        ],
+      }),
+      usage: { prompt_tokens: 120, completion_tokens: 80 },
+      tool_calls: [],
+    });
     expect((await compileSkills(env, 'Plan study work', false))[0]?.name).toBe(
       'study-planner'
     );
@@ -73,11 +104,10 @@ describe('AI output boundaries', () => {
     expect(skills[0]?.markdown).toContain('# Steps');
   });
   it('recovers valid skills from fenced model prose and alternate field names', async () => {
-    const run = vi.fn(async () => ({
+    const { env } = gateway({
       response:
         'Here is the requested skill:\n```json\n{"skill":{"title":"Event Planning Helper","summary":"Plan events with evidence","markdown":"# Workflow\\n\\nCheck dates before proposing a plan."}}\n```',
-    }));
-    const env = { AI: { run } } as unknown as Env;
+    });
     const skills = await compileSkills(env, 'Plan our induction day', false);
     expect(skills).toHaveLength(1);
     expect(skills[0]?.name).toBe('event-planning-helper');
@@ -85,11 +115,10 @@ describe('AI output boundaries', () => {
     expect(skills[0]?.markdown).toContain('Check dates before proposing');
   });
   it('ignores bracketed prose before a valid JSON object', async () => {
-    const run = vi.fn(async () => ({
+    const { env } = gateway({
       response:
         '[Draft complete] {"skills":[{"name":"evidence-checker","body":"Check evidence before acting."}]}',
-    }));
-    const env = { AI: { run } } as unknown as Env;
+    });
     const skills = await compileSkills(env, 'Check evidence first.', false);
     expect(skills).toHaveLength(1);
     expect(skills[0]?.name).toBe('evidence-checker');
@@ -167,16 +196,16 @@ describe('AI output boundaries', () => {
     const { env, run } = model(scenario, scenario);
     await makeScenario(env, '', true);
     await makeScenario(env, '', false);
-    const surpriseRequest = run.mock.calls[0]?.[1] as {
-      messages: Array<{ role: string; content: string }>;
-    };
-    const promptedRequest = run.mock.calls[1]?.[1] as {
-      messages: Array<{ role: string; content: string }>;
-    };
-    const surpriseInput = JSON.parse(surpriseRequest.messages[1]!.content) as {
+    const surpriseRequest = JSON.parse(
+      String(run.mock.calls[0]?.[1]?.body)
+    ) as { prompt: string };
+    const promptedRequest = JSON.parse(
+      String(run.mock.calls[1]?.[1]?.body)
+    ) as { prompt: string };
+    const surpriseInput = JSON.parse(surpriseRequest.prompt) as {
       creativeSeed?: string;
     };
-    const promptedInput = JSON.parse(promptedRequest.messages[1]!.content) as {
+    const promptedInput = JSON.parse(promptedRequest.prompt) as {
       creativeSeed?: string;
     };
     expect(surpriseInput.creativeSeed).toBeTruthy();

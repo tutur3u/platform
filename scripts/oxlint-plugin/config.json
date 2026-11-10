@@ -1,0 +1,9 @@
+{
+  "jsPlugins": ["./index.mjs"],
+  "categories": { "correctness": "off" },
+  "rules": {
+    "tuturuuu/no-wallclock-in-tests": "error",
+    "tuturuuu/require-suppression-reason": "error",
+    "tuturuuu/no-hardcoded-app-origin": "error"
+  }
+}

@@ -10,6 +10,7 @@ import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import appConfig from '../start-bridge.config';
+import { configureNovaAbuseGuard } from '../src/runtime/abuse-guard';
 
 import {
   assertRuntimeEnvironment,
@@ -36,11 +37,17 @@ const handler = (
   createBridgeHandler<NovaEnvironment, WorkerContext>({
     // One artifact: the subdomain root and the tuturuuu.com/nova mount.
     mounts: {
-      app: 'nova',
-      rootHosts: ['nova.tuturuuu.com'],
       mountHosts: ['tuturuuu.com'],
       basePath: '/nova',
       ...appConfig.mounts,
+      app: 'nova',
+      // The production host is always served; the app config adds hosts.
+      rootHosts: [
+        ...new Set([
+          'nova.tuturuuu.com',
+          ...(appConfig.mounts.rootHosts ?? []),
+        ]),
+      ],
     },
     csp: appConfig.csp,
     apiOrigin: appConfig.apiOrigin,
@@ -63,6 +70,7 @@ const handler = (
 export default {
   async fetch(request: Request, env: NovaEnvironment, ctx: WorkerContext) {
     assertRuntimeEnvironment(env);
+    configureNovaAbuseGuard(env);
     const response = await (await handler)(request, env, ctx);
     return appConfig.wrapResponse
       ? appConfig.wrapResponse(response, { request, env })

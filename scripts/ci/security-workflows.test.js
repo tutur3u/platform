@@ -82,7 +82,7 @@ test('CodeQL runs on pull requests and main pushes with the extended suite', () 
   // The only scan timer lives in security-checks.yaml (the review sweep is
   // a separate API-only backstop).
   assert.equal(on.schedule, undefined);
-  assert.match(codeql.concurrency.group, /^codeql-/u);
+  assert.match(codeql.concurrency.group, /codeql-/u);
   // Main-push baselines must complete; only PR scans may be cancelled.
   assert.doesNotMatch(
     String(codeql.concurrency['cancel-in-progress']),

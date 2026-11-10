@@ -10,11 +10,15 @@ import react from '@vitejs/plugin-react';
 import rsc from '@vitejs/plugin-rsc';
 import { defineConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
+import productionVars from './cloudflare/production-profile.json';
 import { stagingVars } from './src/start-candidate/staging-policy';
 
-for (const [name, expected] of Object.entries(stagingVars)) {
+const production = process.env.VITE_DRIVE_NATIVE_PROFILE === 'production';
+for (const [name, expected] of Object.entries(
+  production ? productionVars : stagingVars
+)) {
   if (process.env[name] && process.env[name] !== expected) {
-    throw new Error(`Drive candidate refuses non-staging ${name}`);
+    throw new Error(`Drive profile refuses mismatched ${name}`);
   }
 }
 
@@ -29,12 +33,18 @@ const bridge = startBridgePreset(
       '@tuturuuu/supabase/next/server',
     ],
   },
-  { ...process.env, ...stagingVars }
+  { ...process.env, ...(production ? productionVars : stagingVars) }
 );
 
 export default defineConfig(({ command }) => ({
   base: bridge.base,
-  define: bridge.define,
+  define: {
+    ...bridge.define,
+    'process.env.NODE_ENV': JSON.stringify('production'),
+    'process.env.VITE_DRIVE_NATIVE_PROFILE': JSON.stringify(
+      process.env.VITE_DRIVE_NATIVE_PROFILE ?? 'staging'
+    ),
+  },
   plugins: [
     startBridgeRscPlugin({
       rscEntries: {

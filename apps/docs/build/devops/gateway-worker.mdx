@@ -1,0 +1,157 @@
+---
+title: "Gateway Worker"
+description: "Cloudflare Worker in front of tuturuuu.com: route manifest, public-page cache, rollback flag, cutover packet and smoke checks."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+`apps/gateway` is a Cloudflare Worker routed on `tuturuuu.com/*`. It serves
+anonymous public pages from the Workers Cache API and proxies everything else to
+the Vercel production web deployment unchanged. It exists to cut Vercel
+serverless and bandwidth cost for traffic that does not need a render.
+
+The Worker is not deployed from source control. The provider owner deploys it
+and attaches the route; more specific routes (for example the roadmap Worker on
+`tuturuuu.com/roadmap*`) keep winning over `tuturuuu.com/*`.
+
+## Behavior
+
+- **Manifest:** `apps/gateway/src/manifest.json` maps URL patterns to an origin
+  and a cache class. `page` is an anonymous public page, `static` is a build or
+  public asset, and anything unmatched is `bypass` (pure pass-through). A unit
+  test checks that every path in
+  `apps/web/src/lib/seo/public-routes.generated.json` is a `page` route, so the
+  manifest cannot drift from the marketing pages.
+- **Cache:** `GET` and `HEAD` on `page` and `static` routes. Fresh for 5 minutes,
+  then served stale for up to 1 hour while a background refresh runs
+  (`X-Gateway-Cache: HIT | STALE | MISS`). Only `200` responses without
+  `Set-Cookie` and without `Vary: *` are stored. Pages vary by locale bucket
+  (path prefix, then `NEXT_LOCALE`, then `Accept-Language`); `GET` and `HEAD`
+  share an entry; tracking query parameters (`utm_*`, `fbclid`, `gclid`,
+  `msclkid`) are not part of the key.
+- **Bypass:** non-`GET`/`HEAD` methods, `Authorization`, `Range`, RSC requests
+  (`RSC`, `Next-Router-*`, `Next-Action` headers or `_rsc` parameter) and, for
+  pages, any session-like cookie (`sb-*`, names containing `session`, `auth` or
+  `token`, `tuturuuu*`, `__Secure-`/`__Host-`). Static assets ignore cookies.
+  Bypassed requests are forwarded with method, headers, body and cookies
+  untouched; redirects are not followed and `Set-Cookie` is returned as sent.
+- **Redirects:** a `Location` that points at the origin host is rewritten to
+  `PUBLIC_HOST`, because the Next proxy builds absolute redirects from the
+  request host. No other response header is changed except `X-Gateway-Cache`.
+- **Origin `Cache-Control`:** ignored on cacheable routes by default (dynamic
+  Next pages send `private, no-store`). Set
+  `GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL=true` to honour `no-store` and
+  `private`.
+- **Failure:** missing `WEB_ORIGIN` returns `500`, an unreachable origin `502`,
+  and a request that already passed through the gateway (`x-gateway-hop`) `508`.
+
+## Configuration
+
+| Name | Kind | Purpose |
+| --- | --- | --- |
+| `WEB_ORIGIN` | variable, set at deploy | Vercel production web origin, `https://<hostname>`. Must not be `tuturuuu.com` itself (that loops back). |
+| `PUBLIC_HOST` | variable | Public hostname for redirect rewriting. Default `tuturuuu.com`. |
+| `GATEWAY_MODE` | variable | `active` or `passthrough` (rollback flag). |
+| `GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL` | variable | `true` honours origin `no-store`/`private`. |
+
+No secrets are used. The Vercel origin hostname has to accept requests for its
+own host; a custom origin hostname such as `origin.tuturuuu.com` must be added
+as a domain on the Vercel web project before cutover.
+
+## Cutover packet
+
+Deploy (provider owner):
+
+```bash
+cd apps/gateway
+bunx wrangler deploy --var WEB_ORIGIN:https://<vercel-web-hostname>
+```
+
+The route `tuturuuu.com/*` comes from `wrangler.jsonc`. Record the prior Vercel
+production deployment id before the first deploy; Vercel keeps serving
+`tuturuuu.com` unchanged until the route is attached.
+
+Pre-flight smoke against the Worker with the route not yet attached is not
+possible, so deploy first with `GATEWAY_MODE=passthrough`, verify, then switch:
+
+```bash
+node apps/gateway/scripts/gateway-smoke.mjs --base https://tuturuuu.com \
+  --origin https://<vercel-web-hostname> --expect-mode passthrough
+# after switching the variable to active:
+node apps/gateway/scripts/gateway-smoke.mjs --base https://tuturuuu.com \
+  --origin https://<vercel-web-hostname>
+```
+
+The smoke script checks 17 anonymous public URLs (`200`, second request served
+from cache, no `Set-Cookie` on cacheable responses), the login page, that an
+anonymous dashboard path redirects to login on the public host, that session
+cookies and `Authorization` bypass the cache, and that `Set-Cookie` names match
+the origin when `--origin` is given.
+
+## Rollback
+
+1. Fastest, keeps the Worker: set `GATEWAY_MODE=passthrough` (variable change,
+   no code deploy). The Worker becomes a transparent proxy with no cache reads
+   or writes.
+2. Full removal: delete the `tuturuuu.com/*` route (or the Worker) in the
+   Cloudflare dashboard. Traffic returns to the unchanged Vercel deployment.
+3. No purge is needed: cache entries expire within 65 minutes and are
+   never read in `passthrough` mode.
+
+## Local checks
+
+```bash
+cd apps/gateway
+vp test
+vp lint --config .oxlintrc.json src --deny-warnings
+```
+
+## Marketing page groups
+
+The gateway can serve a page group from the `apps/marketing` Worker instead of the Vercel web origin. Each group is one flag.
+
+| Group | Paths |
+| --- | --- |
+| `legal` | `/privacy`, `/terms`, `/acceptable-use`, `/community-guidelines`, `/security`, `/legal/*`, `/security/*` |
+| `company` | `/about`, `/branding`, `/careers`, `/contact`, `/contributors`, `/partners`, `/women-in-tech` |
+| `products` | `/products`, `/products/*` |
+| `solutions` | `/solutions/*` |
+| `blog` | `/blog`, `/blog/*` |
+| `home` | `/`, `/pricing` |
+
+`/changelog`, `/download`, `/models`, `/meet`, `/meet-together`, `/portfolio`, `/qr-generator` and `/visualizations/*` always stay on the web origin.
+
+Two Worker variables control the flip:
+
+- `MARKETING_ORIGIN`: the `https://` origin of the marketing Worker. Without it, every group stays on web.
+- `GATEWAY_MARKETING_GROUPS`: comma-separated group names served by the marketing origin, for example `legal,company`.
+
+Flip a group by adding its name and redeploying the gateway variables. Roll it back by removing the name, or by clearing `GATEWAY_MARKETING_GROUPS`. Cached pages from the other origin are keyed separately and expire within the cache window, so a rollback is complete within one stale period.
+
+Smoke for each group before the next one: anonymous 200 on two paths of the group, `x-gateway-cache` present, and `x-tuturuuu-runtime: native` on a cache MISS from the marketing origin.
+
+`/assets/*` is the Vite build output of the marketing app. It always goes to `MARKETING_ORIGIN` (cached as static) and falls back to the web origin while `MARKETING_ORIGIN` is unset. It is not tied to a page-group flag, so rolling a group back does not move `/assets/*`; Vercel web has no `/assets` path.
+
+## Apps mounted at tuturuuu.com/&lt;app&gt;
+
+An app moved from `<app>.tuturuuu.com` to `tuturuuu.com/<app>` gets two zone
+routes on its own Worker: `tuturuuu.com/<app>` and `tuturuuu.com/<app>/*`. They
+are more specific than the gateway's `tuturuuu.com/*`, so those requests never
+reach the gateway. One case slips through: a zone route cannot match the bare
+path once a query string is present, so `tuturuuu.com/<app>?x=1` would fall to
+the gateway and on to Web.
+
+For that case the gateway hands **exactly** `/<app>` (any query) to the app's
+Worker through a service binding:
+
+- Add the mount path to `GATEWAY_MOUNTED_PATHS` (comma-separated, e.g.
+  `/learn,/tasks`).
+- Bind the app Worker as `MOUNT_<SEGMENT>` (`MOUNT_LEARN`, `MOUNT_STORE`).
+
+A service binding is not a same-zone subrequest, so the request reaches the
+Worker, not the Vercel origin. Responses carry `x-gateway-cache: MOUNT` and are
+never cached by the gateway. Nested paths (`/<app>/x`), lookalikes
+(`/learning`) and unlisted or unbound paths keep going to `WEB_ORIGIN`.
+
+**Rollback for one app:** remove its two zone routes and its
+`GATEWAY_MOUNTED_PATHS` entry. Its subdomain serves again.

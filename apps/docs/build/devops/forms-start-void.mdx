@@ -1,0 +1,56 @@
+---
+title: "Forms on Start + Void"
+description: "Forms Worker identity, acceptance commands, smoke checks and Vercel rollback packet."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Forms (`apps/forms`) runs on TanStack Start, Vite+ and Void with the shared
+Start bridge. The native Worker owns `forms.tuturuuu.com`; its configuration
+declares no routes, so the release operator attaches the host. Production
+publication remains held until exact-head CI, sealed emitted-Worker acceptance,
+staging acceptance and rollback capture pass. Vercel remains available as the
+rollback target through cutover.
+
+## Cutover packet
+
+| Item | Value |
+| --- | --- |
+| Production Worker | `tuturuuu-forms` (`VITE_FORMS_NATIVE_PROFILE=production`) |
+| Staging Worker | the staging Worker name |
+| Host | `forms.tuturuuu.com` (operator-attached; no source route) |
+| Bindings and vars | `ASSETS` (`dist/client`), `TUTURUUU_NOINDEX` (`0` production, `1` staging) |
+| Secret names | `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
+| Build | `VITE_FORMS_NATIVE_PROFILE=production bun run --cwd apps/forms build:cloudflare` |
+| Prior Vercel deployment | No immutable deployment ID is recorded in the repository. Rex must capture the active Forms Vercel deployment ID and URL before cutover. |
+| Data | No database writes or migrations are part of this cutover. |
+
+## Acceptance and smoke
+
+Run the production build and emitted suite from the repository root:
+
+```bash
+VITE_FORMS_NATIVE_PROFILE=production bun run --cwd apps/forms build:cloudflare
+CI=true CI_SOURCE_SHA="$(git rev-parse HEAD)" bun run --cwd apps/forms test:runtime
+```
+
+After the release owner deploys the accepted artifact and attaches the host:
+
+```bash
+curl -sS -D - -o /dev/null https://forms.tuturuuu.com/
+curl -sS https://forms.tuturuuu.com/api/build-info
+curl -sS -o /dev/null -w '%{http_code}\n' https://forms.tuturuuu.com/api/build-info
+```
+
+Confirm expected page/auth behavior, the exact accepted source SHA in build
+info, and `x-tuturuuu-runtime: native`. Smoke the canonical subdomain and the
+`https://tuturuuu.com/forms` mount if it is admitted by the cutover. This packet
+does not authorize routing or provider changes.
+
+## Rollback
+
+Before switching, Rex records the active Vercel deployment ID, immutable URL,
+and routing it serves. If smoke, authentication, error rate or latency regresses,
+restore the captured host routing to that Vercel deployment in one step; do not
+rebuild during rollback. Retain the Vercel deployment and routing until the
+native Worker completes its stable release window.

@@ -10,6 +10,11 @@ import {
   isReportMonth,
   resolveReportMonth,
 } from '../../../features/reports/report-month';
+import {
+  isReportTitleMonthKey,
+  matchesReportTitleMonth,
+  summarizeReportTitleMonths,
+} from '../../../features/reports/report-title-month';
 import { getUserGroupMembershipsForActor } from '../../../lib/user-groups/groups-utils';
 import { getUserGroupRoutePermissions } from '../../../lib/user-groups/route-auth';
 import {
@@ -71,9 +76,12 @@ const ListReportsSchema = z.object({
     .optional(),
   periodStart: z.iso.date().optional(),
   periodEnd: z.iso.date().optional(),
-  // Sent reports: the month they were sent. Other stages: the month they
-  // cover (saved period, else estimated from created_at).
+  // The month a report covers in every stage (saved period, else estimated
+  // from created_at). The worklist filters by `titleMonth` instead.
   month: z.string().refine(isReportMonth).optional(),
+  // The month named in the report TITLE: `YYYY-MM`, `MM` (no year) or `none`.
+  // Applies to every stage, including Sent; the send date is not used.
+  titleMonth: z.string().refine(isReportTitleMonthKey).optional(),
   cadence: z
     .enum(['all', 'weekly', 'monthly', 'quarterly', 'yearly'])
     .default('monthly'),
@@ -100,7 +108,7 @@ const ListReportsSchema = z.object({
 
 // Columns needed to summarize the stage cards and delivery categories.
 const SUMMARY_COLUMNS =
-  'id,report_stage,delivery_status,user_email,last_delivery_error,report_approval_status,generation_status,delivered_at';
+  'id,title,report_stage,delivery_status,user_email,last_delivery_error,report_approval_status,generation_status,delivered_at';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -163,6 +171,7 @@ export async function GET(request: Request, { params }: Params) {
         page: parsed.data.page,
         pageSize: parsed.data.pageSize,
         summaryPartial: false,
+        titleMonths: [],
         total: 0,
         undatedSentCount: null,
         workspace: { id: wsId, timezone: null },
@@ -333,6 +342,7 @@ export async function GET(request: Request, { params }: Params) {
     type SummaryRow = Pick<
       Awaited<ReturnType<typeof collect>>[number],
       | 'id'
+      | 'title'
       | 'report_stage'
       | 'delivery_status'
       | 'user_email'
@@ -367,13 +377,30 @@ export async function GET(request: Request, { params }: Params) {
             (row) => periodicDeliveryCategory(row) === parsed.data.category
           )
         : rows;
-    const filteredRows = inCategory(allRows);
+    // The title month is read from the complete scope, so it narrows the list,
+    // the stage cards and the category counts alike (never just the loaded page).
+    const inTitleMonth = <Row extends { title?: string | null }>(
+      rows: Row[]
+    ) =>
+      parsed.data.titleMonth
+        ? rows.filter((row) =>
+            matchesReportTitleMonth(row.title, parsed.data.titleMonth as string)
+          )
+        : rows;
+    const filteredRows = inCategory(inTitleMonth(allRows));
     // Category counts follow the listed rows; stage counts cover every stage
     // unless the summary read was unavailable (`summaryPartial`).
     const summaryPartial = Boolean(parsed.data.stage) && !stageSummaryRows;
     const { categoryCounts } = summarizeReportList(filteredRows);
     const { counts } = summarizeReportList(
-      stageSummaryRows ? inCategory(stageSummaryRows) : filteredRows
+      stageSummaryRows
+        ? inCategory(inTitleMonth(stageSummaryRows))
+        : filteredRows
+    );
+    // The months found in the titles, counted over every stage in scope and
+    // before the month itself is applied, so the picker never loses a month.
+    const titleMonths = summarizeReportTitleMonths(
+      (stageSummaryRows ?? allRows).map((row) => row.title)
     );
     const listResult = {
       data: filteredRows.slice(from, from + parsed.data.pageSize),
@@ -420,6 +447,7 @@ export async function GET(request: Request, { params }: Params) {
       page: parsed.data.page,
       pageSize: parsed.data.pageSize,
       summaryPartial,
+      titleMonths,
       total: listResult.count,
       // Sent reports without a send date match no month, so a month read
       // never sees them and their number is unknown: always null, never 0.

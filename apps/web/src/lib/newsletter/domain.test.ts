@@ -27,7 +27,9 @@ const readyDomain = {
 
 const readySender = { approval: 'approved' as const, localPart: 'news' };
 
-function ses(overrides: Partial<SesIdentitySnapshot> = {}): SesIdentitySnapshot {
+function ses(
+  overrides: Partial<SesIdentitySnapshot> = {}
+): SesIdentitySnapshot {
   return {
     dkimTokens: ['aaaaaaaa', 'bbbbbbbb', 'cccccccc'],
     dkimVerified: true,
@@ -217,9 +219,9 @@ describe('staff test decision', () => {
     );
     expect(refused({ localPart: 'admin' })).toBe('local_part_denied');
     expect(refused({ domain: null })).toBe('domain_missing');
-    expect(
-      refused({ domain: { ...readyDomain, approval: 'suspended' } })
-    ).toBe('domain_suspended');
+    expect(refused({ domain: { ...readyDomain, approval: 'suspended' } })).toBe(
+      'domain_suspended'
+    );
     expect(refused({ domain: { ...readyDomain, approval: 'pending' } })).toBe(
       'domain_not_approved'
     );
@@ -233,9 +235,9 @@ describe('staff test decision', () => {
     expect(refused({ recipient: 'other@example.com' })).toBe(
       'recipient_not_actor'
     );
-    expect(
-      refused({ recipient: 'ada@example.com,other@example.com' })
-    ).toBe('not_one_recipient');
+    expect(refused({ recipient: 'ada@example.com,other@example.com' })).toBe(
+      'not_one_recipient'
+    );
     expect(refused({ acceptedToday: NEWSLETTER_DAILY_CAP })).toBe('daily_cap');
     expect(decision({ acceptedToday: NEWSLETTER_DAILY_CAP - 1 }).ok).toBe(true);
   });

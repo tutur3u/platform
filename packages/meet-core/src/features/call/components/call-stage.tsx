@@ -32,6 +32,7 @@ export function CallStage({
   audioSuppressed = false,
   layout,
   compact = false,
+  hideSelfCamera = false,
   focus,
   onFocus,
   onChat,
@@ -41,6 +42,8 @@ export function CallStage({
   audioSuppressed?: boolean;
   layout: CallLayout;
   compact?: boolean;
+  /** Omit the local camera tile when it renders as a floating preview. */
+  hideSelfCamera?: boolean;
   focus: string | null;
   onFocus: (key: string | null) => void;
   onChat: () => void;
@@ -85,14 +88,15 @@ export function CallStage({
       const self = participant.userId === room.state.selfUserId;
       const remote = room.remoteMedia[participant.userId];
       const key = `${participant.userId}:camera`;
-      result.push({
-        key,
-        participant,
-        kind: 'camera',
-        stream: self
-          ? room.localStream
-          : streamFor(key, [remote?.audio, remote?.video]),
-      });
+      if (!(self && hideSelfCamera))
+        result.push({
+          key,
+          participant,
+          kind: 'camera',
+          stream: self
+            ? room.localStream
+            : streamFor(key, [remote?.audio, remote?.video]),
+        });
       if (participant.media.screenEnabled) {
         const screenKey = `${participant.userId}:screen`;
         result.push({
@@ -115,6 +119,7 @@ export function CallStage({
     room.remoteMedia,
     room.localStream,
     room.screenStream,
+    hideSelfCamera,
   ]);
   const mira = room.state.liveAssistant;
   const renderMira = (className: string, compact = false) =>

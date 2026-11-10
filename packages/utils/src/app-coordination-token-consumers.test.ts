@@ -51,6 +51,10 @@ const REVIEWED_CONSUMERS: Record<string, { calls: number; gates: string[] }> = {
     calls: 1,
     gates: ["'profile-media-upload'", 'profile-media:'],
   },
+  'apps/workspace/src/lib/external-projects/access.ts': {
+    calls: 2,
+    gates: ['appTokenHasRequiredScope(verification.claims'],
+  },
   'packages/auth/src/app-session-core.ts': {
     calls: 2,
     gates: ['APP_SESSION_SCOPE', 'APP_SESSION_REFRESH_SCOPE'],

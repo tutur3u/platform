@@ -4,6 +4,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostStatusSummary } from './status-summary';
+import {
+  getPostReviewStageAppearance,
+  POST_REVIEW_STAGE_ORDER,
+} from './status-meta';
 import type { PostEmailStatusSummary } from './types';
 
 const setQueryStateMock = vi.fn();
@@ -112,5 +116,23 @@ describe('PostStatusSummary', () => {
       showAll: null,
       stage: 'pending_approval',
     });
+  });
+
+  it('shows the full total and every stage count on first render with a stage selected', () => {
+    // Synthetic scope: the default stage (pending_approval) is selected on
+    // open, yet every other card must carry its real count, not 0.
+    render(
+      <PostStatusSummary activeStage="pending_approval" summary={summary} />
+    );
+
+    expect(screen.getByText('17')).toBeInTheDocument();
+    for (const stage of POST_REVIEW_STAGE_ORDER) {
+      const label = getPostReviewStageAppearance(stage).labelKey;
+      expect(
+        screen.getByRole('button', {
+          name: `${label} ${summary.stages[stage]}`,
+        })
+      ).toBeInTheDocument();
+    }
   });
 });

@@ -32,6 +32,8 @@ import { useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import * as z from 'zod';
 
+import { ReportBulkApprovalSetting } from './report-bulk-approval-setting';
+
 interface Props {
   wsId: string;
 }
@@ -298,6 +300,10 @@ export function ApprovalsSettings({ wsId }: Props) {
 
   return (
     <SettingsSection>
+      <ReportBulkApprovalSetting
+        wsId={wsId}
+        canManage={canManageWorkspaceSettings}
+      />
       <Form {...form}>
         <form onSubmit={form.handleSubmit((v) => updateMutation.mutate(v))}>
           <FormField

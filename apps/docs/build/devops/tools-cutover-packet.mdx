@@ -1,0 +1,56 @@
+---
+title: "Tools cutover packet"
+description: "Worker identity, bindings, build, rollback and smoke checks for publishing the native Tools Worker."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Tools (`apps/tools`) runs on TanStack Start, Vite+ and Void through the
+[start bridge](/build/devops/start-bridge). Source needs no change to publish:
+the emitted Worker builds and serves its mount, root and unknown paths in
+workerd. Routes are never attached from config; the release operator attaches
+them at cutover.
+
+## Worker identity
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-tools` (production profile), the staging Worker name (default) |
+| Profile selector | `VITE_TOOLS_NATIVE_PROFILE=production` at build time |
+| Hosts | `tools.tuturuuu.com`, `tools.tutur3u.com`, and the `tuturuuu.com/tools` mount; any other host is rejected |
+| Compatibility | `nodejs_compat`, `global_fetch_strictly_public`; `workers_dev` and `preview_urls` off |
+| Binding | `ASSETS` |
+| Variables | `TUTURUUU_NOINDEX` (`0` in production), optional `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`) |
+| Secrets (names) | `TUTURUUU_APP_COORDINATION_SECRET`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
+
+`cloudflare/startup.mjs` refuses to serve when a secret is empty or when the
+coordination secret is the development value.
+
+## Build
+
+```bash
+bun turbo:local run build --filter='@tuturuuu/tools^...' --concurrency=2
+bun run --silent scripts/ci/generate-build-metadata.ts
+VITE_TOOLS_NATIVE_PROFILE=production bun run --cwd apps/tools build
+CI=true CI_SOURCE_SHA=<sha> bun run --cwd apps/tools test:runtime
+```
+
+`tools-cloudflare.yaml` runs the same steps and seals the output with
+`scripts/ci/tools-native-artifact.py` in its `cutover-artifact` job. Run the
+build on a CI or remote runner, not a developer machine.
+
+Tools has no `next/font` imports, so no font resolver parity work applies.
+
+## Rollback
+
+Remove or repoint the prepared Worker route, or restore the captured DNS, to
+the last Vercel deployment. The `vercel-production-tools.yaml` publisher is
+unchanged by the cutover. Route rollback does not touch data.
+
+## Smoke checks
+
+- `GET /` on the tools host answers `200` with an `X-Robots-Tag` header
+- `/qr` and `/random` answer `200`
+- `/api/build-info` answers `200` JSON with no-store caching
+- `/robots.txt` answers `200`
+- no `5xx` across the above

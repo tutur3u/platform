@@ -187,13 +187,20 @@ describe('Contacts approval mutation handler', () => {
     const select = {
       eq: vi.fn(),
       maybeSingle: vi.fn().mockResolvedValue({
-        data: found ? { id: 'report-1' } : null,
+        data: found ? { id: 'report-1', feedback: 'Teacher comment' } : null,
         error: null,
       }),
     };
     select.eq.mockReturnValue(select);
-    const eq = vi.fn().mockResolvedValue({ error: null });
-    const update = vi.fn().mockReturnValue({ eq });
+    const eq = vi.fn();
+    const mutation = {
+      eq,
+      select: vi
+        .fn()
+        .mockResolvedValue({ data: [{ id: 'report-1' }], error: null }),
+    };
+    eq.mockReturnValue(mutation);
+    const update = vi.fn().mockReturnValue(mutation);
     mocks.privateFrom.mockImplementation((table: string) => {
       if (table === 'external_user_monthly_reports_workspace_view')
         return { select: vi.fn().mockReturnValue(select) };

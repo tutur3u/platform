@@ -2,56 +2,49 @@
 
 import { RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { reportMonthLabel } from '@tuturuuu/users-core/features/reports/report-month';
+import { NO_TITLE_MONTH } from '@tuturuuu/users-core/features/reports/report-title-month';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { reportTitleMonthLabel } from './report-title-month-select';
 
-/**
- * Sent reports with no send date, which no month includes. The list response
- * carries the count; it is null when the server could not read every stage.
- */
-function undatedSentCount(page: object | undefined) {
-  const count =
-    page && 'undatedSentCount' in page ? page.undatedSentCount : null;
-  return typeof count === 'number' && count > 0 ? count : 0;
-}
-
-/** What the worklist shows (a month, a range, or all periods) and Refresh. */
+/** What the worklist shows (a title month, a range, or all) and Refresh. */
 export function PeriodicReportsScopeHeader({
-  month,
   onRefresh,
-  page,
   periodEnd,
   periodStart,
+  titleMonth,
 }: {
-  month: string | null;
   onRefresh: () => Promise<unknown>;
-  /** First page of the current list response, when it is current. */
-  page?: object;
   periodEnd: string;
   periodStart: string;
+  /** Month named in the report title (`YYYY-MM`, `MM`, `none`) or empty. */
+  titleMonth: string;
 }) {
   const t = useTranslations('reports-hub');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const undatedSent = month ? undatedSentCount(page) : 0;
+  const range =
+    periodStart || periodEnd
+      ? t('period_scope', {
+          start: periodStart || t('all_time_start'),
+          end: periodEnd || t('all_time_end'),
+        })
+      : null;
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="space-y-1 text-muted-foreground text-xs">
         <p>
-          {month
-            ? t('month_scope', { month: reportMonthLabel(month) })
-            : periodStart || periodEnd
-              ? t('period_scope', {
-                  start: periodStart || t('all_time_start'),
-                  end: periodEnd || t('all_time_end'),
+          {titleMonth === NO_TITLE_MONTH
+            ? t('title_month_scope_none')
+            : titleMonth
+              ? t('title_month_scope', {
+                  month: reportTitleMonthLabel(titleMonth, {
+                    month: (month) => t('month_option', { month }),
+                    none: t('no_title_month'),
+                  }),
                 })
-              : t('all_periods')}
+              : (range ?? t('all_periods'))}
         </p>
-        {undatedSent > 0 && (
-          <p role="status">
-            {t('undated_sent_notice', { count: undatedSent })}
-          </p>
-        )}
+        {titleMonth && range && <p>{range}</p>}
       </div>
       <Button
         size="icon"

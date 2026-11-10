@@ -60,20 +60,33 @@ try {
   ]) {
     const incomplete = { ...bindings };
     delete incomplete[missing];
-    let refused = false;
+    const runtime = new sdk.unstable_DevEnv();
+    const expectedRefusal = (error) =>
+      error?.code === 'ERR_RUNTIME_FAILURE' &&
+      error.message.includes('Missing or unsafe required secret: ' + missing);
+    const startup = new Promise((resolve) => {
+      runtime.once('reloadComplete', () => resolve(null));
+      runtime.once('error', (event) => resolve(event.cause ?? event));
+      runtime.once('buildFailed', (event) => resolve(event.cause ?? event));
+    });
+    // Proxy readiness can precede the application's startup guard.
+    void runtime.proxy.ready.promise.catch((error) => {
+      if (!expectedRefusal(error.cause ?? error)) throw error;
+    });
     try {
-      worker = await sdk.unstable_startWorker({
-        ...options,
-        bindings: incomplete,
-      });
-      await worker.ready;
-    } catch {
-      refused = true;
+      await runtime.startWorker({ ...options, bindings: incomplete });
+      const error = await startup;
+      assert.equal(
+        expectedRefusal(error),
+        true,
+        `Worker must refuse missing ${missing}`
+      );
     } finally {
-      await worker?.dispose();
-      worker = undefined;
+      await runtime.teardown().catch((error) => {
+        if (!expectedRefusal(error)) throw error;
+      });
+      runtime.removeAllListeners();
     }
-    assert.equal(refused, true, `Worker must refuse missing ${missing}`);
   }
   worker = await sdk.unstable_startWorker({ ...options, bindings });
   await worker.ready;

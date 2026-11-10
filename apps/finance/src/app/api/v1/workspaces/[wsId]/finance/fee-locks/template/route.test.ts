@@ -124,9 +124,16 @@ describe('PUT /finance/fee-locks/template', () => {
       {
         fn: 'fee_notice_template_save',
         args: {
-          p_ws_id: WS, p_actor_id: ACTOR, p_body: input.body, p_item_format: input.item_format,
-          p_item_separator: ', ', p_payment_line: input.payment_line, p_notice_grouping: 'combined',
-          p_locale: 'vi', p_expected_version: 3, p_restored_from: 2,
+          p_ws_id: WS,
+          p_actor_id: ACTOR,
+          p_body: input.body,
+          p_item_format: input.item_format,
+          p_item_separator: ', ',
+          p_payment_line: input.payment_line,
+          p_notice_grouping: 'combined',
+          p_locale: 'vi',
+          p_expected_version: 3,
+          p_restored_from: 2,
         },
       },
     ]); // biome-ignore format: one arg map

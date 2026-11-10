@@ -13,11 +13,14 @@ export type NewsletterDnsRow = {
 
 export type NewsletterClaimActionState = {
   approval?: string;
+  dkimVerified?: boolean;
   error?: boolean;
+  mailFromVerified?: boolean;
   records?: NewsletterDnsRow[];
   status: 'idle' | 'saved' | 'error';
   subdomain?: string;
   token?: string;
+  txtVerified?: boolean;
 };
 
 export async function createNewsletterClaimAction(
@@ -39,10 +42,13 @@ export async function createNewsletterClaimAction(
     });
     return {
       approval: created.approval,
+      dkimVerified: created.dkimVerified,
+      mailFromVerified: created.mailFromVerified,
       records: created.dnsRecords,
       status: 'saved',
       subdomain: created.subdomain,
       token: created.token,
+      txtVerified: created.txtVerified,
     };
   } catch {
     return { error: true, status: 'error' };

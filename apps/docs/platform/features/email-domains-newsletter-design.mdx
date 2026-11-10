@@ -33,7 +33,7 @@ No credentials, live catalog, production database or sandbox organization was re
 
 ## Workspace staff-test gate
 
-The workspace staff-test send is closed unless `newsletter_sending` is on, the customer subdomain is a verified non-apex name outside `tuturuuu.com`, a platform admin has approved the domain and the sender local-part, and the workspace has fewer than 10 accepted sends in the current UTC day. The only recipient is the signed-in actor. Subscriber rows are stored and are not recipients of this send.
+The workspace staff-test send is closed unless `newsletter_sending` is on, the customer subdomain is a verified non-apex name outside `tuturuuu.com`, a platform admin has approved the domain and the sender local-part, and the workspace holds fewer than 10 reserved or accepted sends for the current UTC day. A send reserves its slot before the mailer is called, reservations are serialized per workspace, and only a definite mailer rejection releases a slot; a reservation that never finishes keeps its slot until the UTC day ends. Regression coverage: `apps/database/supabase/tests/newsletter-delivery-cap-reservation.sql` and the concurrent race in `apps/database/scripts/newsletter-cap-concurrency.mjs`. The only recipient is the signed-in actor. Subscriber rows are stored and are not recipients of this send.
 
 ## Existing inventory and reuse boundaries
 

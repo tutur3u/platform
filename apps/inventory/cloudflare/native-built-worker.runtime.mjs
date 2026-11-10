@@ -114,10 +114,7 @@ test(
     );
     assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
     assert.equal(config.preview_urls, false);
-    assert.equal(
-      config.vars?.TUTURUUU_NOINDEX,
-      PROFILE.vars.TUTURUUU_NOINDEX
-    );
+    assert.equal(config.vars?.TUTURUUU_NOINDEX, PROFILE.vars.TUTURUUU_NOINDEX);
     for (const name of PUBLIC_FILES)
       assert.equal(
         await sha256(join(app, 'dist/client', name)),

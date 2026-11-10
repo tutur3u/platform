@@ -1,0 +1,95 @@
+---
+title: "Storefront on Start + Void"
+description: "Native Storefront Worker, the cutover artifact, and the cutover and Vercel rollback packet."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Storefront (`apps/storefront`) runs on TanStack Start, Vite+ and Void behind
+[`@tuturuuu/start-bridge`](/build/devops/start-bridge) with the React Server
+Components plugin. The Next.js build (`build`) and the Vercel project stay in
+place until the cutover has been stable, so the canonical host keeps a one-step
+route back.
+
+## Worker profiles
+
+| Profile | Worker | Notes |
+| --- | --- | --- |
+| Source default (`void.config.ts`) | the staging Worker name | `TUTURUUU_NOINDEX=1`, no routes, `workers_dev` and `preview_urls` off |
+| Cutover artifact | `tuturuuu-storefront` | `storefront-cloudflare.yaml` rewrites the emitted Wrangler config: `TUTURUUU_NOINDEX=0`, `TUTURUUU_REQUIRE_SECRETS=1`, `preview_urls=false`, source maps off |
+
+The Worker declares no routes. The hostname is attached at cutover by the
+release operator. With `TUTURUUU_REQUIRE_SECRETS=1` the Worker answers `503
+Service misconfigured` (no-store) until `INVENTORY_APP_URL`,
+`SUPABASE_SECRET_KEY` and `TUTURUUU_APP_COORDINATION_SECRET` are present
+(`cloudflare/startup.ts`). Names only are recorded here.
+
+## Request ownership
+
+| Request | Behavior |
+| --- | --- |
+| `store.tuturuuu.com`, `storefront.tutur3u.com` | Canonical hosts. |
+| `storefront.tuturuuu.com`, `stores.tuturuuu.com`, `storefronts.tuturuuu.com` | `307` to `https://store.tuturuuu.com` with path and query preserved. |
+| `/` | Redirects to `/demo`. |
+| `/api/build-info` | Local build identity. |
+| `/api/v1/inventory/*` | Forwarded to `INVENTORY_APP_URL`. |
+| Other `/api/*` | Forwarded to `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`). |
+| Unknown host | Rejected. |
+
+Every response carries `X-Robots-Tag: noindex, nofollow` from the app's
+response wrapper.
+
+## Build and artifact
+
+`storefront-cloudflare.yaml` builds the Worker, rejects route-tree drift,
+records the emitted configuration receipt, runs the emitted-Worker runtime
+suites (`cloudflare/*.runtime.mjs`) and uploads `storefront-cutover-production-<source SHA>`
+(14 days). It never deploys. Do not run `build:cloudflare` on a shared
+development machine.
+
+## Cutover packet
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-storefront` |
+| Route | `store.tuturuuu.com/*`, plus the redirect aliases above; operator-attached |
+| Static assets binding | `ASSETS` (`dist/client`, `run_worker_first`) |
+| Build command | `bun run --cwd apps/storefront build:cloudflare` (the workflow then applies the production overrides) |
+| Secrets (names) | `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
+| Vars | `INVENTORY_APP_URL=https://inventory.tuturuuu.com`, `NEXT_PUBLIC_APP_URL=https://store.tuturuuu.com`, `NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com` |
+| Prior Vercel deployment | record the immutable deployment ID and URL of the `storefront` Vercel project before the switch |
+| Data | no database writes and no migrations |
+
+### Switch
+
+1. Record the source SHA, the artifact name and the Vercel deployment ID.
+2. Provision the secrets on `tuturuuu-storefront`, deploy the artifact, and
+   run the smoke below against the Worker's own address.
+3. Attach `store.tuturuuu.com` (a proxied route in front of the still-valid
+   Vercel origin where possible), then the alias hosts.
+
+### Smoke
+
+```bash
+# Entry route and no 5xx
+curl -sI https://store.tuturuuu.com/ | head -5
+# Login page renders
+curl -s -o /dev/null -w '%{http_code}\n' https://store.tuturuuu.com/login
+# Build identity matches the accepted SHA
+curl -s https://store.tuturuuu.com/api/build-info
+# Alias host redirects to the canonical host
+curl -sI https://storefront.tuturuuu.com/ | head -3
+```
+
+Expected: a redirect to `/demo`, `200`, the accepted commit, and a `307` to
+`store.tuturuuu.com`.
+
+### Rollback
+
+- **Triggers:** 5xx above 1% for 5 minutes, a wrong redirect, a checkout
+  handoff failure, or a private store served anonymously.
+- **Action:** remove the Worker route (or repoint the mapping) so the hosts
+  resolve to the recorded Vercel deployment. Never rebuild on the rollback path.
+- **Data:** a route rollback changes no catalog, order or payment data.
+- **Stability:** keep the Vercel project and domains for 14 consecutive stable
+  days before decommissioning, which is a separate approval.

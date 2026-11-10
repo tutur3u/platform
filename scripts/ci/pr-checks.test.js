@@ -9,17 +9,8 @@ const {
 } = require('./github-expression-test-helper');
 const workflows = readAllWorkflows(undefined, { raw: true });
 const workflow = workflows['pr-checks.yaml'];
-const filters = JSON.parse(
-  execFileSync(
-    'bun',
-    [
-      '-e',
-      'console.log(JSON.stringify(Bun.YAML.parse(process.argv[1])))',
-      workflow.jobs.scope.steps[0].with.filters,
-    ],
-    { encoding: 'utf8' }
-  )
-);
+const { ciFilters } = require('./check-map.js');
+const filters = ciFilters();
 const converted = [
   'oxc-check.yaml',
   'i18n-check.yaml',
@@ -89,7 +80,14 @@ const resultSet = (overrides = {}, selected = {}) =>
         {
           result:
             overrides[id] ||
-            (['scope', 'branch-name', 'staging-hosts', 'admitted'].includes(id)
+            ([
+              'scope',
+              'branch-name',
+              'commit-trailers',
+              'staging-hosts',
+              'blast-radius',
+              'admitted',
+            ].includes(id)
               ? 'success'
               : 'skipped'),
           outputs:
@@ -184,6 +182,122 @@ test('gated callers stay deferred until ready while script-only checks remain el
   assert.equal(workflow.jobs.admitted.if, undefined);
 });
 
+test('a scope error or timeout runs the selected suite and a false output still skips', () => {
+  const withScope = (
+    result,
+    outputs,
+    { ready = true, base = 'main' } = {}
+  ) => ({
+    github: {
+      base_ref: base,
+      event: {
+        pull_request: { labels: ready ? [{ name: 'ready-for-ci' }] : [] },
+      },
+    },
+    needs: { scope: { result, outputs } },
+  });
+  for (const name of [
+    'oxc',
+    'i18n',
+    'docs',
+    'migration-timestamps',
+    'migrations',
+    'mobile',
+    'plugin',
+  ]) {
+    assert.match(workflow.jobs[name].if, /^always\(\) && !cancelled\(\) && /u);
+    assert.equal(
+      Boolean(
+        evaluateExpression(workflow.jobs[name].if, withScope('failure', {}))
+      ),
+      true,
+      name
+    );
+    assert.equal(
+      Boolean(
+        evaluateExpression(workflow.jobs[name].if, withScope('cancelled', {}))
+      ),
+      true,
+      name
+    );
+    assert.equal(
+      Boolean(
+        evaluateExpression(workflow.jobs[name].if, withScope('skipped', {}))
+      ),
+      false,
+      name
+    );
+  }
+  assert.equal(
+    Boolean(
+      evaluateExpression(
+        workflow.jobs.oxc.if,
+        withScope('success', { oxc: 'false' })
+      )
+    ),
+    false
+  );
+  assert.equal(
+    Boolean(
+      evaluateExpression(
+        workflow.jobs.oxc.if,
+        withScope('success', { oxc: 'true' })
+      )
+    ),
+    true
+  );
+  assert.equal(
+    Boolean(
+      evaluateExpression(
+        workflow.jobs.oxc.if,
+        withScope('failure', {}, { ready: false })
+      )
+    ),
+    false
+  );
+  assert.equal(
+    Boolean(
+      evaluateExpression(
+        workflow.jobs.mobile.if,
+        withScope('failure', {}, { base: 'production' })
+      )
+    ),
+    false
+  );
+});
+
+test('a missing path-filter output selects the check and the string false does not', () => {
+  for (const name of [
+    'oxc',
+    'i18n',
+    'docs',
+    'migrations',
+    'mobile',
+    'plugin',
+  ]) {
+    const expression = workflow.jobs.scope.outputs[name];
+    assert.equal(evaluateExpression(expression, { steps: {} }), 'true', name);
+    assert.equal(
+      evaluateExpression(expression, {
+        steps: { paths: { outputs: { [name]: 'false' } } },
+      }),
+      'false',
+      name
+    );
+    assert.equal(
+      evaluateExpression(expression, {
+        steps: { paths: { outputs: { [name]: 'true' } } },
+      }),
+      'true',
+      name
+    );
+  }
+  for (const step of workflow.jobs.scope.steps)
+    assert.equal(step['continue-on-error'], true);
+  const paths = workflow.jobs.scope.steps.find((step) => step.id === 'paths');
+  assert.equal(paths.with.token, undefined);
+});
+
 test('security scope remains always on for every security-relevant path without readiness', () => {
   const security = workflows['security-checks.yaml'];
   assert.equal(security.on.pull_request, null);
@@ -212,7 +326,7 @@ test('security scope remains always on for every security-relevant path without 
 
 test('all new third-party actions are immutable and callees cannot cancel their parent', () => {
   assert.match(
-    workflow.jobs.scope.steps[0].uses,
+    workflow.jobs.scope.steps.find((step) => step.id === 'paths').uses,
     /^dorny\/paths-filter@[a-f0-9]{40}$/u
   );
   const context = {
@@ -293,8 +407,29 @@ test('Security Checks bytes match the reviewed workflow', () => {
   );
   assert.equal(
     createHash('sha256').update(bytes).digest('hex'),
-    '5b1b04ec29499a4225e90b1736b3fb6abdf1158ce403421f5c3640885f1944fc'
+    '378e4f3e60564381710d49477c8f8d182cdff6521ddbfae3ac8995fbf22c717e'
   );
+});
+
+test('the commit trailer check runs on every full PR run and fails the aggregate', () => {
+  const job = workflow.jobs['commit-trailers'];
+  assert.equal(job.name, 'Check commit trailers');
+  assert.equal(job.if, workflow.jobs['branch-name'].if);
+  assert.deepEqual(job.permissions, {
+    contents: 'read',
+    'pull-requests': 'read',
+  });
+  assert.equal(job.steps[0].with['persist-credentials'], false);
+  assert.equal(job.steps[0].with['fetch-depth'], 1);
+  assert.match(job.steps.at(-1).run, /commit-trailer-check\.js/u);
+  assert.match(job.steps.at(-1).run, /set -euo pipefail/u);
+  assert.ok(workflow.jobs.gate.needs.includes('commit-trailers'));
+  for (const status of ['failure', 'cancelled', 'skipped'])
+    assert.equal(
+      gate(resultSet({ 'commit-trailers': status })).status,
+      1,
+      `commit-trailers ${status}`
+    );
 });
 
 test('the staging host guard runs on every full PR run and fails the aggregate', () => {
@@ -310,5 +445,21 @@ test('the staging host guard runs on every full PR run and fails the aggregate',
       gate(resultSet({ 'staging-hosts': status })).status,
       1,
       `staging-hosts ${status}`
+    );
+});
+
+test('the blast-radius lock runs on every full PR run and fails the aggregate', () => {
+  const job = workflow.jobs['blast-radius'];
+  assert.equal(job.name, 'Pull request blast radius');
+  assert.equal(job.if, workflow.jobs['branch-name'].if);
+  assert.deepEqual(job.permissions, { contents: 'read' });
+  assert.equal(job.steps[0].with['persist-credentials'], false);
+  assert.match(job.steps.at(-1).run, /pr-blast-radius\.test\.mjs/u);
+  assert.ok(workflow.jobs.gate.needs.includes('blast-radius'));
+  for (const status of ['failure', 'cancelled', 'skipped'])
+    assert.equal(
+      gate(resultSet({ 'blast-radius': status })).status,
+      1,
+      `blast-radius ${status}`
     );
 });

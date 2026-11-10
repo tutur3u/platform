@@ -1,468 +1,657 @@
-import { createHash } from 'node:crypto';
-import { verifyPublicSource } from './source-proof.ts';
-import {
-  encodePathSegment,
-  githubSourceUrl,
-  publicEvidenceUrl,
-} from './public-evidence-url.ts';
+/**
+ * D79 data tests for the public roadmap. Every guard has a broken variant
+ * that must fail: a validator that accepts anything, a status engine that
+ * claims "live" without deploy proof, or a feed that leaks incident or
+ * client wording must turn this suite red.
+ */
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { describe, it } from 'node:test';
+import './csp.test.ts';
+import './history/history.test.ts';
+import './live/regressions.test.ts';
+import { comingSoon, visibleComingSoon } from './content/coming-soon.ts';
+import { showPlans, tracks } from './content/tracks.ts';
 import {
-  deriveStage,
-  emptyEvidence,
-  isSnapshotStale,
-  parseEvidence,
-  parseEvidenceInputs,
-  publicProducts,
-  stages,
-  type MigrationEvidence,
-  type PullEvidence,
-  type ProductionEvidence,
-} from './migration-evidence.ts';
+  feedItem,
+  INCIDENT_TERMS,
+  localDay,
+  shippedFeed,
+  termHash,
+} from './live/feed.ts';
 import {
-  filterProducts,
-  parseSnapshot,
-  snapshot,
-  stageCounts,
-  rowSummaryKey,
-} from './roadmap-data.ts';
-import en from '../messages/en.json' with { type: 'json' };
-import vi from '../messages/vi.json' with { type: 'json' };
-const at = '2026-11-07T12:00:00Z',
-  head = 'a'.repeat(40),
-  merged = 'b'.repeat(40);
-function pull(): PullEvidence {
+  classifyProbeResponse,
+  hostsResponse,
+  parseHostsPayload,
+  isSameZoneUrl,
+  PROBED_APPS,
+  probeHosts,
+  resetHostsMemo,
+  RUNTIME_PROBED_APPS,
+} from './live/host-probe.ts';
+import {
+  type LiveData,
+  mergeLiveData,
+  type PrFact,
+  parseLiveData,
+} from './live/model.ts';
+import {
+  type Deliverable,
+  deriveDeliverable,
+  deriveTracks,
+  indexLiveData,
+} from './live/status.ts';
+import { buildView, matchesFilter } from './view-model.ts';
+
+const NOW = Date.parse('2026-11-10T08:00:00Z');
+const SHA_A = 'a'.repeat(40);
+const SHA_B = 'b'.repeat(40);
+
+function pr(overrides: Partial<PrFact> & { number: number }): PrFact {
   return {
-    url: 'https://github.com/tutur3u/platform/pull/1',
-    scope: 'migration_completion',
-    provenanceUrl: 'https://api.github.com/repos/tutur3u/platform/pulls/1',
-    state: 'open',
-    headSha: head,
+    title: 'feat(tasks): plan sprints from the board',
+    state: 'merged',
     draft: false,
-    review: 'APPROVED',
-    reviewedHeadSha: head,
-    observedAt: at,
-    requiredChecks: ['test'],
-    checks: [{ name: 'test', headSha: head, conclusion: 'SUCCESS' }],
-    merge: null,
+    approved: false,
+    mergedAt: '2026-11-09T03:00:00.000Z',
+    ...overrides,
   };
 }
-function evidence(pr = pull()): MigrationEvidence {
+
+function data(overrides: Partial<LiveData> = {}): LiveData {
   return {
-    source: { commit: head, appSubtree: 'c'.repeat(40) },
-    pr,
-    production: null,
+    schema: 1,
+    generatedAt: '2026-11-10T07:55:00.000Z',
+    source: 'build',
+    main: { sha: SHA_B, at: '2026-11-10T07:00:00.000Z' },
+    prs: [],
+    hosts: [],
+    ...overrides,
   };
 }
-function productionFixture(): ProductionEvidence {
-  return {
-    kind: 'production_readback',
-    scope: 'mail',
-    url: 'https://tuturuuu.com/mail/',
-    receiptUrl: `https://github.com/tutur3u/platform/blob/${head}/proof.json`,
-    receiptSha256: 'd'.repeat(64),
-    versionId: '11111111-1111-1111-1111-111111111111',
-    equivalence: {
-      kind: 'git_app_subtree',
-      app: 'mail',
-      sourceCommit: head,
-      mergeCommit: merged,
-      deployedCommit: merged,
-      appSubtree: 'c'.repeat(40),
-    },
-    deployedSha: merged,
-    responseSha: merged,
-    accepted: true,
-    observedAt: at,
-  };
-}
-const stage = (e: MigrationEvidence, work = false, included = false) =>
-  deriveStage(work, parseEvidence(e, 'mail'), at, included);
-test('each lifecycle stage requires its own evidence; scaffolding is only work in progress', () => {
-  assert.equal(stage(emptyEvidence), 'planned');
-  assert.equal(stage(emptyEvidence, true), 'rolling_out');
-  assert.equal(stage(evidence()), 'waiting_for_merge');
-  const e = evidence({
-    ...pull(),
-    state: 'merged',
-    merge: { sha: merged, at },
-  });
-  assert.equal(stage(e, true, true), 'waiting_for_production_sync');
-  assert.equal(stage(e, true, false), 'rolling_out');
-  e.production = productionFixture();
-  assert.equal(stage(e, true, true), 'live');
-  e.production.accepted = false;
-  assert.equal(stage(e, true, true), 'waiting_for_production_sync');
-  e.production.accepted = true;
-  e.production.observedAt = '2026-11-05T12:00:00Z';
-  if (e.pr?.merge) e.pr.merge.at = '2026-11-04T12:00:00Z';
-  assert.equal(stage(e, true, true), 'waiting_for_production_sync');
-});
-test('empty/skipped/unknown/stale/mismatched or unapproved evidence is never green', () => {
-  const variants: PullEvidence[] = [
-    { ...pull(), checks: [] },
-    { ...pull(), requiredChecks: [] },
-    { ...pull(), requiredChecks: ['missing'] },
-    { ...pull(), draft: true },
-    { ...pull(), review: 'REVIEW_REQUIRED' },
-    { ...pull(), review: 'UNKNOWN' },
-    { ...pull(), review: 'CHANGES_REQUESTED' },
-    { ...pull(), reviewedHeadSha: merged },
-    { ...pull(), observedAt: '2026-11-05T12:00:00Z' },
-    { ...pull(), observedAt: '2026-11-08T12:00:00Z' },
-    ...(['SKIPPED', 'PENDING', 'UNKNOWN', 'FAILURE'] as const).map(
-      (conclusion) => ({
-        ...pull(),
-        checks: [{ name: 'test', headSha: head, conclusion }],
-      })
-    ),
-    {
-      ...pull(),
-      checks: [{ name: 'test', headSha: merged, conclusion: 'SUCCESS' }],
-    },
-  ];
-  for (const pr of variants)
-    assert.notEqual(stage(evidence(pr)), 'waiting_for_merge');
-  assert.equal(stage(evidence({ ...pull(), state: 'closed' })), 'planned');
-});
-test('unsupported live claims and unknown/private-shaped inputs fail closed', () => {
-  const e = evidence({
-    ...pull(),
-    state: 'merged',
-    merge: { sha: merged, at },
-  });
-  const production = productionFixture();
-  parseEvidence({ ...e, production }, 'mail');
-  for (const delta of [
-    { kind: 'build_success' },
-    { responseSha: head },
-    { deployedSha: head },
-    { url: 'https://private.example/mail/' },
-    { receiptUrl: 'https://github.com/tutur3u/platform/blob/main/proof.json' },
-  ]) {
-    assert.throws(() =>
-      parseEvidence({ ...e, production: { ...production, ...delta } }, 'mail')
-    );
-  }
-  assert.throws(() => parseEvidence({ pr: null, production }, 'mail'));
-  assert.throws(() => parseEvidence({ ...e, reason: 'private' }, 'mail'));
-  assert.throws(() =>
-    parseEvidence(
-      { pr: { ...pull(), headSha: 'bad' }, production: null },
-      'mail'
-    )
-  );
-  assert.throws(() =>
-    parseEvidenceInputs({ schemaVersion: 2, apps: { private: emptyEvidence } })
-  );
-  assert.throws(() => parseEvidenceInputs({ schemaVersion: 99, apps: {} }));
-  assert.deepEqual(
-    parseEvidenceInputs({ schemaVersion: 2, apps: { mail: emptyEvidence } }),
-    [{ id: 'mail', evidence: emptyEvidence }]
-  );
-});
-test('public snapshot preserves allowlist, provenance, conservative stages and bilingual labels', () => {
-  assert.deepEqual(snapshot.apps.map((app) => app.id).sort(), [
-    ...publicProducts,
-  ]);
-  for (const app of snapshot.apps) {
-    assert.equal(app.checkedAt, snapshot.checkedAt);
-    assert.notEqual(app.stage, 'live');
-    for (const entry of app.evidence)
-      assert.ok(
-        entry.label === 'Migration PR' ||
-          entry.url.includes(`/blob/${snapshot.sourceCommit}/`)
-      );
-  }
-  for (const value of stages)
-    assert.ok(
-      en[value] && vi[value] && en.summaries[value] && vi.summaries[value]
-    );
-  for (const id of ['calendar', 'meet'])
-    assert.equal(
-      snapshot.apps.find((app) => app.id === id)?.stage,
-      'rolling_out'
-    );
-  assert.throws(() => parseSnapshot({ ...snapshot, unexpected: true }));
-  const bad = structuredClone(snapshot);
-  bad.apps[0].stage = 'live';
-  assert.throws(() => parseSnapshot(bad), /supporting evidence/);
-  bad.apps[0].stage = snapshot.apps[0].stage;
-  bad.apps[0].evidence[0].url = 'https://private.example/';
-  assert.throws(() => parseSnapshot(bad));
-});
-test('blocked remains orthogonal to every stage, search, filters and counts', () => {
-  const app = snapshot.apps[0];
-  const products = stages.flatMap((stage) =>
-    [false, true].map((blocked) => ({ ...app, stage, blocked }))
-  );
-  for (const value of stages) {
-    assert.equal(filterProducts(products, ' AI ', value).length, 2);
-    assert.equal(filterProducts(products, ' AI ', value, true).length, 1);
-  }
-  assert.equal(filterProducts(products, '', 'all', true).length, stages.length);
-  assert.equal(filterProducts(products, 'missing', 'all').length, 0);
-  assert.deepEqual(
-    stageCounts(products),
-    stages.map((stage) => ({ stage, count: 2 }))
-  );
-  assert.equal(
-    stageCounts(snapshot.apps).reduce((sum, item) => sum + item.count, 0),
-    publicProducts.length
-  );
-});
-test('freshness boundary is deterministic and invalid/future observations are stale', () => {
-  assert.equal(isSnapshotStale(at, Date.parse(at) + 86_400_000), false);
-  assert.equal(isSnapshotStale(at, Date.parse(at) + 86_400_001), true);
-  assert.equal(isSnapshotStale(at, Date.parse(at) - 1), true);
-  assert.equal(isSnapshotStale('bad', Date.parse(at)), true);
+
+const deliverable = (overrides: Partial<Deliverable> = {}): Deliverable => ({
+  id: 'x',
+  title: 'X',
+  prs: [1],
+  app: 'tasks',
+  fallback: 'planned',
+  ...overrides,
 });
 
-test('all evidence URLs use canonical RFC3986 segments and the exact category host', () => {
-  assert.equal(encodePathSegment('[locale]'), '%5Blocale%5D');
-  assert.equal(encodePathSegment('(marketing)'), '%28marketing%29');
-  const path = 'apps/web/src/app/[locale]/(marketing)/products/ai/page.tsx';
-  const url = githubSourceUrl(head, path);
-  assert.ok(url.includes('%5Blocale%5D/%28marketing%29'));
-  assert.equal(
-    decodeURIComponent(new URL(url).pathname.split(`/blob/${head}/`)[1]),
-    path
-  );
-  assert.equal(publicEvidenceUrl(url, 'github.com').href, url);
-  for (const app of snapshot.apps) {
-    for (const entry of app.evidence) {
-      const host =
-        entry.label === 'Production readback' ? 'tuturuuu.com' : 'github.com';
-      publicEvidenceUrl(entry.url, host);
-      assert.doesNotMatch(entry.url, /[[\]()]/);
-    }
-  }
-  for (const bad of [
-    'https://github.com/tutur3u/platform/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/apps/web/src/app/[locale%5D/%28marketing%29/products/ai/page.tsx',
-    'https://github.com/tutur3u/platform/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/apps/web/src/app/%5Blocale%5D/(marketing%29/products/ai/page.tsx',
-    'https://github.com/tutur3u/platform/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/apps/web/src/app/%5blocale%5D/%28marketing%29/products/ai/page.tsx',
-    'https://github.com/tutur3u/platform/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/apps/web/src/app/%ZZlocale%5D/%28marketing%29/products/ai/page.tsx',
-    url.replace('https:', 'http:'),
-    url.replace('github.com', 'github.com.evil.test'),
-    url.replace('github.com', 'tuturuuu.com'),
-    url.replace('https://', '//'),
-    url + '?token=x',
-    url + '#fragment',
-    url.replace('/apps/', '/apps//'),
-    url.replace('/apps/', '/%2Fapps/'),
-    url.replace('/apps/', '/%5Capps/'),
-  ])
-    assert.throws(() => publicEvidenceUrl(bad, 'github.com'));
-});
-
-test('reviewable public merge inputs retain unknown metadata and no production claim', () => {
-  for (const id of ['playground', 'shortener', 'roadmap']) {
-    const app = snapshot.apps.find((app) => app.id === id);
-    assert.ok(app);
-    assert.equal(app.stage, 'waiting_for_production_sync');
-    assert.equal(app.stageEvidence.pr?.review, 'UNKNOWN');
-    assert.deepEqual(app.stageEvidence.pr?.checks, []);
-    assert.equal(app.stageEvidence.production, null);
-    assert.ok(
-      app.productUrl.includes(
-        `/blob/${snapshot.sourceCommit}/apps/${id}/src/routes/`
-      )
+describe('live data validator', () => {
+  it('accepts the committed generated data', () => {
+    const raw = JSON.parse(
+      readFileSync(new URL('./generated/live.json', import.meta.url), 'utf8')
     );
-    assert.equal(app.evidence[0].label, 'Migration PR');
-  }
-});
-
-test('cohort release needs exact app source, ancestry, receipt bytes, target and response', () => {
-  const cohort = 'e'.repeat(40),
-    subtree = 'c'.repeat(40);
-  const original = evidence({
-    ...pull(),
-    state: 'merged',
-    merge: { sha: merged, at },
+    const parsed = parseLiveData(raw);
+    assert.equal(parsed.schema, 1);
+    assert.ok(parsed.prs.length > 0, 'generated data has pull requests');
   });
-  original.production = productionFixture();
-  original.production.scope = 'roadmap';
-  original.production.url = 'https://roadmap.tuturuuu.com/roadmap/';
-  original.production.equivalence.app = 'roadmap';
-  original.production.equivalence.deployedCommit = cohort;
-  original.production.deployedSha = cohort;
-  original.production.responseSha = cohort;
-  const {
-    receiptUrl: _url,
-    receiptSha256: _hash,
-    ...attestation
-  } = original.production;
-  const receipt = Buffer.from(JSON.stringify(attestation));
-  original.production.receiptSha256 = createHash('sha256')
-    .update(receipt)
-    .digest('hex');
-  const e = parseEvidence(original, 'roadmap');
-  const options = {
-    id: 'roadmap' as const,
-    evidence: e,
-    sourceCommit: head,
-    readSubtree: () => subtree,
-    isAncestor: () => true,
-    readReceipt: () => receipt,
-  };
-  verifyPublicSource(options);
-  assert.equal(deriveStage(true, e, at, true), 'live');
-  assert.equal(deriveStage(true, e, at, false), 'rolling_out');
-  assert.equal(
-    deriveStage(true, e, '2026-11-09T12:00:00Z', true),
-    'waiting_for_production_sync'
-  );
-  assert.throws(
-    () => verifyPublicSource({ ...options, isAncestor: () => false }),
-    /ancestry/
-  );
-  assert.throws(
-    () => verifyPublicSource({ ...options, readSubtree: () => head }),
-    /source identity/
-  );
-  assert.throws(
-    () =>
-      verifyPublicSource({
-        ...options,
-        readSubtree: (commit) => (commit === cohort ? head : subtree),
-      }),
-    /equivalence/
-  );
-  assert.throws(
-    () =>
-      verifyPublicSource({
-        ...options,
-        readReceipt: () => {
-          throw new Error('Missing public receipt');
-        },
-      }),
-    /Missing public receipt/
-  );
-  assert.throws(
-    () =>
-      verifyPublicSource({ ...options, readReceipt: () => Buffer.from('{}') }),
-    /receipt identity/
-  );
-  const wrongReceipt = Buffer.from(
-    JSON.stringify({ ...attestation, accepted: false })
-  );
-  const wrongEvidence = structuredClone(original);
-  if (wrongEvidence.production)
-    wrongEvidence.production.receiptSha256 = createHash('sha256')
-      .update(wrongReceipt)
-      .digest('hex');
-  assert.throws(
-    () =>
-      verifyPublicSource({
-        ...options,
-        evidence: parseEvidence(wrongEvidence, 'roadmap'),
-        readReceipt: () => wrongReceipt,
-      }),
-    /content mismatch/
-  );
-  for (const delta of [
-    { scope: 'shortener' },
-    { kind: 'build_artifact' },
-    { responseSha: head },
-    { receiptSha256: 'unknown' },
-    { url: 'https://tuturuuu.com/roadmap/' },
-    { versionId: 'unknown' },
-    { extra: true },
-  ]) {
-    assert.throws(() =>
-      parseEvidence(
-        { ...original, production: { ...original.production, ...delta } },
-        'roadmap'
-      )
-    );
-  }
-  for (const delta of [
-    { app: 'shortener' },
-    { sourceCommit: merged },
-    { mergeCommit: head },
-    { deployedCommit: head },
-    { appSubtree: head },
-    { kind: 'approved' },
-  ]) {
-    assert.throws(() =>
-      parseEvidence(
-        {
-          ...original,
-          production: {
-            ...original.production,
-            equivalence: { ...original.production?.equivalence, ...delta },
+
+  it('accepts a well-formed payload', () => {
+    const parsed = parseLiveData(
+      data({
+        prs: [pr({ number: 1 })],
+        hosts: [
+          {
+            app: 'tasks',
+            platform: 'workers',
+            commit: SHA_A,
+            commitAt: '2026-11-10T01:00:00Z',
+            behindBy: 3,
           },
+        ],
+      }),
+      NOW
+    );
+    assert.equal(parsed.hosts[0].commitAt, '2026-11-10T01:00:00.000Z');
+  });
+
+  const broken: [string, unknown][] = [
+    ['null', null],
+    ['wrong schema', { ...data(), schema: 2 }],
+    ['extra field', { ...data(), secret: 'x' }],
+    ['missing hosts', (({ hosts: _h, ...rest }) => rest)(data())],
+    ['future observation', data({ generatedAt: '2026-11-11T08:00:00Z' })],
+    ['bad time', data({ generatedAt: 'yesterday' })],
+    ['merged without time', data({ prs: [pr({ number: 1, mergedAt: null })] })],
+    ['open with merge time', data({ prs: [pr({ number: 1, state: 'open' })] })],
+    ['duplicate PR', data({ prs: [pr({ number: 1 }), pr({ number: 1 })] })],
+    [
+      'PR extra field',
+      data({ prs: [{ ...pr({ number: 1 }), body: 'x' } as PrFact] }),
+    ],
+    [
+      'bad commit',
+      data({
+        hosts: [
+          {
+            app: 'tasks',
+            platform: 'workers',
+            commit: 'local',
+            commitAt: null,
+            behindBy: null,
+          },
+        ],
+      }),
+    ],
+    [
+      'unknown platform',
+      data({
+        hosts: [
+          {
+            app: 'tasks',
+            platform: 'aws' as 'workers',
+            commit: null,
+            commitAt: null,
+            behindBy: null,
+          },
+        ],
+      }),
+    ],
+    [
+      'compare facts without commit',
+      data({
+        hosts: [
+          {
+            app: 'tasks',
+            platform: 'vercel',
+            commit: null,
+            commitAt: null,
+            behindBy: 4,
+          },
+        ],
+      }),
+    ],
+  ];
+  for (const [name, value] of broken) {
+    it(`rejects a broken variant: ${name}`, () => {
+      assert.throws(() => parseLiveData(value, NOW));
+    });
+  }
+});
+
+describe('status engine', () => {
+  const host = (
+    commitAt: string | null,
+    platform: 'workers' | 'vercel' | 'unknown' = 'workers'
+  ) => ({
+    app: 'tasks',
+    platform,
+    commit: commitAt ? SHA_A : null,
+    commitAt,
+    behindBy: commitAt ? 0 : null,
+  });
+
+  it('is live only when the deploy is at or after the merge', () => {
+    const index = indexLiveData(
+      data({ prs: [pr({ number: 1 })], hosts: [host('2026-11-09T05:00:00Z')] })
+    );
+    const state = deriveDeliverable(deliverable(), index);
+    assert.equal(state.status, 'live');
+    assert.equal(state.shippedAt, '2026-11-09T03:00:00.000Z');
+  });
+
+  it('broken variant: an older deploy is not live', () => {
+    const index = indexLiveData(
+      data({ prs: [pr({ number: 1 })], hosts: [host('2026-11-08T00:00:00Z')] })
+    );
+    assert.equal(
+      deriveDeliverable(deliverable(), index).status,
+      'waiting_for_prod_sync'
+    );
+  });
+
+  it('broken variant: an unverifiable deploy is never live', () => {
+    const index = indexLiveData(
+      data({ prs: [pr({ number: 1 })], hosts: [host(null, 'vercel')] })
+    );
+    const state = deriveDeliverable(deliverable(), index);
+    assert.equal(state.status, 'waiting_for_prod_sync');
+    assert.equal(state.unverifiedDeploy, true);
+  });
+
+  it('needs every PR merged before shipping', () => {
+    const index = indexLiveData(
+      data({
+        prs: [
+          pr({ number: 1 }),
+          pr({ number: 2, state: 'open', mergedAt: null }),
+        ],
+        hosts: [host('2026-11-10T00:00:00Z')],
+      })
+    );
+    assert.equal(
+      deriveDeliverable(deliverable({ prs: [1, 2] }), index).status,
+      'in_progress'
+    );
+  });
+
+  it('waits for merge only when every open PR is ready and approved', () => {
+    const ready = indexLiveData(
+      data({
+        prs: [pr({ number: 1, state: 'open', mergedAt: null, approved: true })],
+      })
+    );
+    assert.equal(
+      deriveDeliverable(deliverable(), ready).status,
+      'waiting_for_merge'
+    );
+    const draft = indexLiveData(
+      data({
+        prs: [
+          pr({
+            number: 1,
+            state: 'open',
+            mergedAt: null,
+            approved: true,
+            draft: true,
+          }),
+        ],
+      })
+    );
+    assert.equal(deriveDeliverable(deliverable(), draft).status, 'in_progress');
+  });
+
+  it('broken variant: missing evidence falls back, never to live', () => {
+    const index = indexLiveData(data());
+    assert.equal(deriveDeliverable(deliverable(), index).status, 'planned');
+    assert.equal(
+      deriveDeliverable(deliverable({ fallback: 'in_progress' }), index).status,
+      'in_progress'
+    );
+    const closed = indexLiveData(
+      data({ prs: [pr({ number: 1, state: 'closed', mergedAt: null })] })
+    );
+    assert.equal(deriveDeliverable(deliverable(), closed).status, 'planned');
+  });
+
+  it('hosting moves are live only while the probe answers from Workers', () => {
+    const onVercel = indexLiveData(
+      data({ prs: [pr({ number: 1 })], hosts: [host(null, 'vercel')] })
+    );
+    assert.equal(
+      deriveDeliverable(deliverable({ requires: 'workers' }), onVercel).status,
+      'waiting_for_prod_sync'
+    );
+    const onWorkers = indexLiveData(
+      data({ prs: [pr({ number: 1 })], hosts: [host(null, 'workers')] })
+    );
+    assert.equal(
+      deriveDeliverable(deliverable({ requires: 'workers' }), onWorkers).status,
+      'live'
+    );
+  });
+
+  it('mobile ships only once a store release contains the merge', () => {
+    const release = (commitAt: string) =>
+      indexLiveData(
+        data({
+          prs: [pr({ number: 1 })],
+          hosts: [
+            {
+              app: 'mobile',
+              platform: 'store',
+              commit: SHA_A,
+              commitAt,
+              behindBy: 1,
+            },
+          ],
+        })
+      );
+    const item = deliverable({ app: 'mobile' });
+    assert.equal(
+      deriveDeliverable(item, release('2026-11-10T00:00:00Z')).status,
+      'live'
+    );
+    assert.equal(
+      deriveDeliverable(item, release('2026-11-01T00:00:00Z')).status,
+      'waiting_for_prod_sync'
+    );
+  });
+});
+
+describe('curated content', () => {
+  it('covers every requested track', () => {
+    const ids = tracks.map((track) => track.id);
+    for (const id of [
+      'platform',
+      'tasks',
+      'chat',
+      'calendar',
+      'finance',
+      'drive',
+      'mail',
+      'meet',
+      'mastermind',
+      'mobile',
+      'mira',
+      'upskii',
+      'security',
+      'dx',
+    ])
+      assert.ok(ids.includes(id), `missing track ${id}`);
+  });
+
+  it('has unique ids, real PR numbers and no curated live claims', () => {
+    const seen = new Set<string>();
+    for (const track of tracks)
+      for (const milestone of track.milestones)
+        for (const item of milestone.deliverables) {
+          assert.ok(!seen.has(item.id), `duplicate ${item.id}`);
+          seen.add(item.id);
+          assert.ok(['planned', 'in_progress'].includes(item.fallback));
+          for (const number of item.prs)
+            assert.ok(Number.isInteger(number) && number > 0);
+          assert.ok(item.title.length <= 90, item.title);
+        }
+    assert.ok(seen.size >= 150, 'roadmap stays granular');
+  });
+
+  it('never publishes internal or incident wording', () => {
+    const text = JSON.stringify(tracks);
+    for (const term of [
+      /\bAtlas\b/,
+      /\bRex\b/,
+      /\bPax\b/,
+      /\bSelene\b/,
+      /\bD\d{2}\b/,
+      /incident/i,
+      /vulnerab/i,
+      /\bCVE\b/i,
+      /breach/i,
+      /token/i,
+      /\blane\b/i,
+      /\bfleet\b/i,
+    ])
+      assert.doesNotMatch(text, term);
+  });
+
+  it('keeps the approved plan copy verbatim', () => {
+    assert.deepEqual(
+      comingSoon.map(({ title, body }) => ({ title, body })),
+      [
+        {
+          title: 'Mira subscription plans',
+          body: 'Mira subscription plans at $100 and $200/month for access to Mira at the highest limits and capabilities.',
         },
-        'roadmap'
+      ]
+    );
+  });
+});
+
+describe('shipped feed safety', () => {
+  const merged = (number: number, title: string) =>
+    pr({ number, title, mergedAt: '2026-11-10T02:00:00.000Z' });
+
+  it('publishes user-facing features from public product scopes', () => {
+    const item = feedItem(
+      merged(
+        10,
+        'feat(meet): floating self-preview and calmer ended screen (#10)'
       )
     );
+    assert.deepEqual(item && { title: item.title, track: item.track }, {
+      title: 'Floating self-preview and calmer ended screen',
+      track: 'meet',
+    });
+  });
+
+  const denied = [
+    'feat(tasks): fix the data leak in shared boards',
+    'feat(chat): incident follow-up for message delivery',
+    'feat(mail): patch XSS in the renderer',
+    'feat(calendar): rotate the provider token',
+    'feat(finance): customer-specific invoice preset',
+    'feat(meet): outage banner after the postmortem',
+    'feat(ci): seal the production artifact',
+    'chore(tasks): bump dependencies',
+    'fix(tasks): repair drag and drop',
+    'feat(unknown-scope): something new',
+    'feat(tasks): ship the D74 runbook',
+    'feat(drive): vulnerability disclosure page',
+  ];
+  for (const title of denied) {
+    it(`denylist drops: ${title}`, () => {
+      assert.equal(feedItem(merged(11, title)), null);
+    });
   }
+
+  it('drops hashed client names without publishing them', () => {
+    const hashes = new Set([termHash('Acme Academy'), termHash('globex')]);
+    assert.equal(
+      feedItem(
+        merged(12, 'feat(tasks): board presets for Acme Academy'),
+        hashes
+      ),
+      null
+    );
+    assert.equal(
+      feedItem(merged(13, 'feat(finance): Globex tuition view'), hashes),
+      null
+    );
+    assert.ok(
+      feedItem(merged(14, 'feat(tasks): board presets for every team'), hashes)
+    );
+  });
+
+  it('broken variant: an empty incident pattern would leak', () => {
+    assert.ok(INCIDENT_TERMS.test('security incident'));
+    assert.ok(INCIDENT_TERMS.test('Client portal'));
+  });
+
+  it('keeps only the last 7 days, newest first', () => {
+    const feed = shippedFeed(
+      [
+        merged(20, 'feat(tasks): newest sprint view'),
+        pr({
+          number: 21,
+          title: 'feat(tasks): very old sprint view',
+          mergedAt: '2026-10-01T00:00:00Z',
+        }),
+        pr({
+          number: 22,
+          title: 'feat(meet): yesterday room layout',
+          mergedAt: '2026-11-09T02:00:00Z',
+        }),
+      ],
+      NOW
+    );
+    assert.deepEqual(
+      feed.map((item) => item.number),
+      [20, 22]
+    );
+  });
+
+  it('groups days in Vietnam time', () => {
+    assert.equal(localDay('2026-11-09T17:30:00Z'), '2026-11-10');
+    assert.equal(localDay('2026-11-09T16:59:00Z'), '2026-11-09');
+  });
 });
 
-test('roadmap row explains the missing public receipt in both languages without changing evidence or stages', () => {
-  const before = structuredClone(snapshot);
-  const counts = stageCounts(snapshot.apps);
-  const roadmap = snapshot.apps.find((app) => app.id === 'roadmap');
-  assert.ok(roadmap);
-  assert.equal(roadmap.stageEvidence.production, null);
-  assert.equal(roadmap.stage, 'waiting_for_production_sync');
-  assert.equal(
-    en.summaries[rowSummaryKey(roadmap)],
-    'Awaiting public production receipt'
-  );
-  assert.equal(
-    vi.summaries[rowSummaryKey(roadmap)],
-    'Chờ bằng chứng production công khai'
-  );
-  for (const app of snapshot.apps.filter((app) => app.id !== 'roadmap')) {
-    assert.equal(rowSummaryKey(app), app.stage);
-    assert.equal(en.summaries[rowSummaryKey(app)], en.summaries[app.stage]);
-    assert.equal(vi.summaries[rowSummaryKey(app)], vi.summaries[app.stage]);
-  }
-  assert.deepEqual(snapshot, before);
-  assert.deepEqual(stageCounts(snapshot.apps), counts);
-  assert.deepEqual(
-    filterProducts(snapshot.apps, '', 'waiting_for_production_sync'),
-    before.apps.filter((app) => app.stage === 'waiting_for_production_sync')
-  );
+describe('freshness', () => {
+  it('a failed host probe never erases a known observation', () => {
+    const older = data({
+      hosts: [
+        {
+          app: 'tasks',
+          platform: 'workers',
+          commit: SHA_A,
+          commitAt: '2026-11-10T01:00:00Z',
+          behindBy: 0,
+        },
+      ],
+    });
+    const newer = data({
+      generatedAt: '2026-11-10T07:59:00.000Z',
+      source: 'live',
+      hosts: [
+        {
+          app: 'tasks',
+          platform: 'unknown',
+          commit: null,
+          commitAt: null,
+          behindBy: null,
+        },
+      ],
+    });
+    const merged = mergeLiveData(older, newer);
+    assert.equal(merged.hosts[0].platform, 'workers');
+    assert.equal(merged.generatedAt, '2026-11-10T07:59:00.000Z');
+    assert.equal(merged.source, 'live');
+  });
+
+  it('a narrow live refresh keeps older merged PRs', () => {
+    const merged = mergeLiveData(
+      data({ prs: [pr({ number: 1 })] }),
+      data({ prs: [pr({ number: 2, state: 'open', mergedAt: null })] })
+    );
+    assert.deepEqual(
+      merged.prs.map((p) => p.number),
+      [2, 1]
+    );
+  });
+
+  it('view counts and filters stay consistent', () => {
+    const view = buildView(data({ prs: [pr({ number: 1 })] }), NOW, [
+      {
+        id: 'tasks',
+        name: 'Tasks',
+        summary: 's',
+        milestones: [
+          {
+            id: 'm',
+            title: 'M',
+            deliverables: [
+              deliverable({ app: null }),
+              deliverable({ id: 'y', prs: [] }),
+            ],
+          },
+        ],
+      },
+    ]);
+    assert.equal(view.total, 2);
+    assert.equal(view.totals.live, 1);
+    assert.equal(view.totals.planned, 1);
+    assert.equal(view.recent.length, 1);
+    assert.ok(matchesFilter('waiting_for_prod_sync', 'shipped'));
+    assert.ok(!matchesFilter('planned', 'shipped'));
+    assert.equal(deriveTracks([], indexLiveData(data())).length, 0);
+  });
 });
 
-test('roadmap pending-receipt copy disappears when accepted production evidence derives live', () => {
-  const roadmap = snapshot.apps.find((app) => app.id === 'roadmap');
-  assert.ok(roadmap?.stageEvidence.source && roadmap.stageEvidence.pr?.merge);
-  const source = roadmap.stageEvidence.source;
-  const merge = roadmap.stageEvidence.pr.merge;
-  const production = productionFixture();
-  production.scope = 'roadmap';
-  production.url = 'https://roadmap.tuturuuu.com/roadmap/';
-  production.deployedSha = merge.sha;
-  production.responseSha = merge.sha;
-  production.observedAt = snapshot.checkedAt;
-  production.equivalence = {
-    kind: 'git_app_subtree',
-    app: 'roadmap',
-    sourceCommit: source.commit,
-    mergeCommit: merge.sha,
-    deployedCommit: merge.sha,
-    appSubtree: source.appSubtree,
-  };
-  const stageEvidence = parseEvidence(
-    { ...roadmap.stageEvidence, production },
-    'roadmap'
-  );
-  const stage = deriveStage(
-    roadmap.workInSource,
-    stageEvidence,
-    snapshot.checkedAt,
-    roadmap.mergeIncluded
-  );
-  assert.equal(stage, 'live');
-  const later = { ...roadmap, stageEvidence, stage };
-  assert.equal(rowSummaryKey(later), 'live');
-  assert.equal(en.summaries[rowSummaryKey(later)], en.summaries.live);
-  assert.equal(vi.summaries[rowSummaryKey(later)], vi.summaries.live);
-  assert.equal(
-    rowSummaryKey({ ...roadmap, mergeIncluded: false }),
-    'waiting_for_production_sync'
-  );
+describe('host probe', () => {
+  const json = { 'content-type': 'application/json; charset=utf-8' };
+  it('classifies Workers, Vercel and unknown hosts', () => {
+    assert.deepEqual(
+      classifyProbeResponse(
+        200,
+        new Headers({ ...json, server: 'cloudflare' }),
+        JSON.stringify({ commitHash: SHA_A })
+      ),
+      { platform: 'workers', commit: SHA_A }
+    );
+    assert.deepEqual(
+      classifyProbeResponse(
+        200,
+        new Headers({ ...json, server: 'cloudflare' }),
+        '{"commitHash":"local"}'
+      ),
+      { platform: 'workers', commit: null }
+    );
+    assert.deepEqual(
+      classifyProbeResponse(
+        401,
+        new Headers({ ...json, 'x-vercel-id': 'hkg1::x' }),
+        '{}'
+      ),
+      { platform: 'vercel', commit: null }
+    );
+    assert.deepEqual(
+      classifyProbeResponse(503, new Headers({ server: 'cloudflare' }), 'down'),
+      {
+        platform: 'unknown',
+        commit: null,
+      }
+    );
+  });
+
+  it('broken variant: never leaks probe body or header content', () => {
+    const result = classifyProbeResponse(
+      200,
+      new Headers({
+        ...json,
+        server: 'cloudflare',
+        'set-cookie': 'session=secret',
+      }),
+      JSON.stringify({
+        commitHash: SHA_A,
+        environment: 'internal-secret',
+        deploymentUrl: 'x',
+      })
+    );
+    assert.deepEqual(Object.keys(result).sort(), ['commit', 'platform']);
+    assert.doesNotMatch(JSON.stringify(result), /secret|internal/);
+  });
+
+  it('probes only the fixed allowlist, without following redirects', async () => {
+    const seen: { url: string; redirect?: RequestRedirect }[] = [];
+    const fetcher = (async (url: string, init?: RequestInit) => {
+      seen.push({ url, redirect: init?.redirect });
+      return new Response(JSON.stringify({ commitHash: SHA_A }), {
+        headers: { ...json, server: 'cloudflare' },
+      });
+    }) as typeof fetch;
+    const results = await probeHosts(fetcher, SHA_B);
+    assert.deepEqual(
+      seen.map((s) => s.url).sort(),
+      PROBED_APPS.map((a) => a.url).sort()
+    );
+    assert.ok(seen.every((s) => s.redirect === 'manual'));
+    assert.ok(
+      seen.every((s) =>
+        /^https:\/\/([a-z0-9-]+\.)?(tuturuuu\.com|ttr\.gg)\//.test(s.url)
+      )
+    );
+    assert.equal(results.find((r) => r.app === 'roadmap')?.commit, SHA_B);
+  });
+
+  it('serves only {app, platform, commit}, uncached, and coalesces bursts', async () => {
+    resetHostsMemo();
+    let calls = 0;
+    const fetcher = (async () => {
+      calls += 1;
+      return new Response('{}', { status: 404 });
+    }) as unknown as typeof fetch;
+    const first = await hostsResponse('GET', fetcher, SHA_B, NOW);
+    const second = await hostsResponse('GET', fetcher, SHA_B, NOW + 5_000);
+    assert.equal(calls, RUNTIME_PROBED_APPS.length, 'one fan-out per minute');
+    assert.match(first.headers.get('cache-control') ?? '', /no-store/);
+    const payload = parseHostsPayload(await second.json());
+    for (const host of payload.hosts)
+      assert.deepEqual(Object.keys(host).sort(), ['app', 'commit', 'platform']);
+    assert.equal(
+      (await hostsResponse('POST', fetcher, SHA_B, NOW)).status,
+      405
+    );
+    resetHostsMemo();
+  });
+
+  it('broken variant: hosts payload with extra fields or unknown apps is rejected', () => {
+    assert.throws(() =>
+      parseHostsPayload({
+        checkedAt: new Date(NOW).toISOString(),
+        hosts: [
+          { app: 'tasks', platform: 'workers', commit: null, ip: '1.2.3.4' },
+        ],
+      })
+    );
+    assert.throws(() =>
+      parseHostsPayload({
+        checkedAt: new Date(NOW).toISOString(),
+        hosts: [{ app: 'ops-hub', platform: 'workers', commit: null }],
+      })
+    );
+  });
 });

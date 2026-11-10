@@ -3,6 +3,7 @@
 import type { WorkspaceTaskBoardDetail } from '@tuturuuu/internal-api/tasks';
 import { BoardLayoutSettingsContent } from '@tuturuuu/tasks-ui/tu-do/shared/board-layout-settings';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
@@ -40,14 +41,7 @@ export function BoardLayoutSettingsSection({
   );
 
   return (
-    <div className="space-y-4 rounded-lg border bg-background p-4">
-      <div className="space-y-1">
-        <h3 className="font-medium">{t('settings.tasks.board_layout')}</h3>
-        <p className="text-muted-foreground text-sm">
-          {t('settings.tasks.board_layout_description')}
-        </p>
-      </div>
-
+    <SettingsSection surface="plain" title={t('settings.tasks.board_layout')}>
       <BoardLayoutSettingsContent
         boardId={board.id}
         disableScrollArea
@@ -55,6 +49,6 @@ export function BoardLayoutSettingsSection({
         onUpdate={onRefresh}
         wsId={wsId}
       />
-    </div>
+    </SettingsSection>
   );
 }

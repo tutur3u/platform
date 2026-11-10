@@ -53,6 +53,7 @@ function database(approvalEnabled = false, existing = true) {
                   user_id: userId,
                   group_id: groupId,
                   generation_mode: 'manual',
+                  feedback: 'Teacher comment',
                 }
               : null
             : table === 'external_user_monthly_reports'
@@ -279,4 +280,21 @@ describe('Report create/edit requires an explicit approval action', () => {
     expect((await POST(request(create), context)).status).toBe(401);
     expect(mocks.admin).not.toHaveBeenCalled();
   });
+});
+
+it('refuses an explicit approval PUT that supplies empty feedback', async () => {
+  vi.clearAllMocks();
+  mocks.actor.mockResolvedValue('actor-1');
+  mocks.link.mockResolvedValue({ virtual_user_id: 'workspace-actor-1' });
+  mocks.permissions.mockResolvedValue({ containsPermission: () => true });
+  const calls = database();
+  const response = await PUT(
+    request({ feedback: '  ', report_approval_status: 'APPROVED' }),
+    context
+  );
+  expect(response.status).toBe(422);
+  expect(await response.json()).toMatchObject({
+    code: 'REPORT_FEEDBACK_REQUIRED',
+  });
+  expect(calls.filter((c) => c.method === 'update')).toEqual([]);
 });

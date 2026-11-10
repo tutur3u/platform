@@ -3,15 +3,53 @@ on:
   workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
-    paths: ['apps/git/**', 'packages/**', 'bun.lock', '.github/workflows/git-cloudflare.yaml']
+    paths: ['apps/git/**', 'packages/**', 'scripts/ci/git-native-artifact.py', 'scripts/ci/git-native-artifact.test.py', 'scripts/ci/apps-native-artifact.py', 'bun.lock', '.github/workflows/git-cloudflare.yaml']
+  push:
+    branches: [main]
+    paths: ['apps/git/**', 'packages/**', 'scripts/ci/git-native-artifact.py', 'scripts/ci/git-native-artifact.test.py', 'scripts/ci/apps-native-artifact.py', 'bun.lock', '.github/workflows/git-cloudflare.yaml']
 permissions:
   contents: read
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
-  build:
+  affected-gate:
+    # Pull requests only: skip the heavy jobs when git is unaffected.
+    # Other events never check out or run the gate: they resolve to run=true, so a
+    # gate failure can never block a production deploy. Any error also resolves to run=true.
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    outputs:
+      run: ${{ github.event_name != 'pull_request' && 'true' || steps.app.outputs.run || 'true' }}
+      reason: ${{ steps.app.outputs.reason }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+          sparse-checkout: |
+            /.github/actions/affected-gate/
+            /scripts/ci/affected-apps.mjs
+            /scripts/ci/affected-apps.extra-edges.json
+            /scripts/ci/affected-gate.mjs
+            /apps/*/package.json
+            /packages/*/package.json
+          sparse-checkout-cone-mode: false
+      - id: app
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: ./.github/actions/affected-gate
+        with:
+          app: git
+  build:
+    needs: affected-gate
+    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -26,7 +64,9 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: ./.github/actions/setup-bun-with-retry
-      - run: bun install --frozen-lockfile --ignore-scripts
+        with:
+          bun-version: 1.4.4
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - name: Build workspace dependencies
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -34,13 +74,17 @@ jobs:
           token: ''
           team: ''
       - name: Build Start Worker
-        working-directory: apps/git
-        run: bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/git && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Check bridge routes and native types
-        working-directory: apps/git
-        run: |
-          bun run routes:check
-          bun run type-check:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/git && bun run routes:check && bun run type-check:cloudflare
+          token: ''
+          team: ''
       - name: Record emitted config receipt
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/git "$CI_SOURCE_SHA" "$RUNNER_TEMP/git-config-receipt.json"
       - name: Anonymous root and closed ingress smoke
@@ -57,4 +101,71 @@ jobs:
           name: git-cutover-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/cutover/
           retention-days: 7
+          if-no-files-found: error
+  git-cutover-artifact:
+    needs: [build, affected-gate]
+    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      GIT_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VITE_GIT_NATIVE_PROFILE: production
+      TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://git-ci.supabase.invalid' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_git_ci_placeholder' }}
+      NEXT_PUBLIC_APP_URL: https://git.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      WRANGLER_SEND_METRICS: 'false'
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - name: Generate build metadata
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build shared dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="@tuturuuu/git^..." --concurrency=2
+          token: ''
+          team: ''
+      - name: Build the Start Worker
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/git && bun run build:cloudflare
+          token: ''
+          team: ''
+      - name: Package Worker, assets and emitted Wrangler config
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          python3 scripts/ci/git-native-artifact.py config apps/git
+          python3 scripts/ci/git-native-artifact.py seal apps/git --receipt "$RUNNER_TEMP/git-native-artifact.json"
+          python3 scripts/ci/git-native-artifact.py pack apps/git --receipt "$RUNNER_TEMP/git-native-artifact.json" --archive "$RUNNER_TEMP/git-production-artifact.tar.gz"
+          test "$(node -p "require('./apps/git/dist/server/wrangler.json').name")" = tuturuuu-git
+          test "$(node -p "require('./apps/git/dist/server/wrangler.json').workers_dev")" = false
+          test "$(node -p "require('./apps/git/dist/server/wrangler.json').preview_urls")" = false
+          test "$(node -p "String(require('./apps/git/dist/server/wrangler.json').routes)")" = undefined
+          test -f apps/git/dist/server/index.mjs
+          test -d apps/git/dist/client
+          test -f "$RUNNER_TEMP/git-production-artifact.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: git-cutover-${{ env.TRUSTED == 'true' && 'production' || 'fixture' }}-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/git-production-artifact.tar.gz
+          retention-days: 14
           if-no-files-found: error

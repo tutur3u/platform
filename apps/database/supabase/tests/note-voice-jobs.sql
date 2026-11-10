@@ -19,15 +19,11 @@ reset role;
 -- Disposable transaction-only USAGE permits exercising the table policy independently.
 grant usage on schema private to authenticated;
 set local role authenticated;
-select is((select count(*)::int from private.note_voice_jobs),1,'actor sees only own artifact jobs in shared workspace');
-select is((select count(*)::int from private.note_voice_jobs where user_id='00005827-0000-4000-8000-000000000002'),0,'other actor artifacts hidden');
+-- SR-924: authenticated has no table grant, so even with schema USAGE it cannot read; service role is the only reader.
+select throws_ok($q$ select * from private.note_voice_jobs $q$,'42501',null,'authenticated has no SELECT grant on voice artifacts even with schema usage');
 select throws_ok($q$ update private.note_voice_jobs set status='completed' $q$,'42501',null,'authenticated cannot forge job completion');
 select throws_ok($q$ delete from private.note_voice_jobs $q$,'42501',null,'authenticated cannot bypass checked deletion');
 select throws_ok($q$ insert into private.note_voice_jobs(id,ws_id,user_id,input_hash,timezone) values(gen_random_uuid(),'00005827-0000-4000-8000-000000000011','00005827-0000-4000-8000-000000000001',repeat('c',64),'UTC') $q$,'42501',null,'authenticated cannot bypass billing to create jobs');
-reset role;
-delete from public.workspace_members where ws_id='00005827-0000-4000-8000-000000000011' and user_id='00005827-0000-4000-8000-000000000001';
-set local role authenticated;
-select is((select count(*)::int from private.note_voice_jobs),0,'revoked membership hides own retained artifacts');
 reset role;
 set local role anon;
 select throws_ok($q$ select * from private.note_voice_jobs $q$,'42501',null,'anonymous cannot read voice artifacts');

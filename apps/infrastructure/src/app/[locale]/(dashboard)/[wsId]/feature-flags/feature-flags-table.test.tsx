@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import type { CatalogFlag, FeatureFlagCatalog } from '@tuturuuu/feature-flags';
 import { featureFlagCatalog } from '@tuturuuu/feature-flags';
 import { render, screen, within } from '@testing-library/react';
@@ -130,5 +131,52 @@ describe('feature flags read model and table', () => {
       featureFlagCatalog.flags.length
     );
     expect(screen.queryByText('lifecycle.overdue')).not.toBeInTheDocument();
+  });
+
+  it('labels read-only families without turning them into toggles', () => {
+    renderGroups('2026-11-09T00:00:00Z');
+    const legacy = within(row('legacy_gate'));
+    expect(legacy.getByText('controls.managed_in_secrets')).toBeInTheDocument();
+    expect(legacy.queryByRole('switch')).not.toBeInTheDocument();
+    const model = buildFeatureFlagDashboardModel(
+      new Date('2026-11-09T00:00:00Z'),
+      {
+        ...fixture,
+        flags: [
+          {
+            ...base,
+            family: 'mobile-build',
+            scope: 'build',
+            key: 'build_flag',
+          },
+        ],
+      }
+    );
+    render(
+      <FeatureFlagsTable
+        group={model.groups[0]!}
+        secretsHref="/root/workspaces"
+        t={t}
+      />
+    );
+    expect(screen.getByText('controls.build_time')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'controls.secrets_link' })
+    ).toBeNull();
+    render(
+      <FeatureFlagsTable
+        group={
+          buildFeatureFlagDashboardModel(
+            new Date('2026-11-09T00:00:00Z'),
+            fixture
+          ).groups[1]!
+        }
+        secretsHref="/root/workspaces"
+        t={t}
+      />
+    );
+    expect(
+      screen.getByRole('link', { name: 'controls.secrets_link' })
+    ).toHaveAttribute('href', '/root/workspaces');
   });
 });

@@ -6,16 +6,16 @@ const { readWorkflow } = require('./workflow-yaml-test-helper');
 // Vite is a declared root dependency and owns this locked matcher.
 const picomatch = createRequire(require.resolve('vite'))('picomatch');
 const workflow = readWorkflow('pr-checks.yaml', { raw: true });
+const mapStep = workflow.jobs.scope.steps.find((step) => step.id === 'map');
+const pathsStep = workflow.jobs.scope.steps.find((step) => step.id === 'paths');
+assert.equal(mapStep.run, 'node scripts/ci/check-map.js --ci-filters');
+assert.equal(pathsStep.with.filters, '${{ steps.map.outputs.filters }}');
 const filters = JSON.parse(
-  execFileSync(
-    'bun',
-    [
-      '-e',
-      'console.log(JSON.stringify(Bun.YAML.parse(process.argv[1])))',
-      workflow.jobs.scope.steps[0].with.filters,
-    ],
-    { encoding: 'utf8' }
-  )
+  execFileSync(process.execPath, ['scripts/ci/check-map.js', '--ci-filters'], {
+    cwd: require('node:path').resolve(__dirname, '../..'),
+    encoding: 'utf8',
+    env: { ...process.env, GITHUB_OUTPUT: '' },
+  })
 );
 const matches = (patterns, file) => picomatch(patterns, { dot: true })(file);
 const common = {
@@ -25,6 +25,8 @@ const common = {
   ],
   'package.json': ['package.json'],
   'bun.lock': ['bun.lock'],
+  'turbo.json': ['turbo.json'],
+  'tsconfig*.json': ['tsconfig.json', 'tsconfig.base.json'],
 };
 const cases = {
   oxc: {
@@ -82,6 +84,10 @@ const cases = {
   },
   migrations: {
     '.github/**': common['.github/**'],
+    'package.json': common['package.json'],
+    'bun.lock': common['bun.lock'],
+    'turbo.json': common['turbo.json'],
+    'tsconfig*.json': common['tsconfig*.json'],
     'apps/database/supabase/migrations/**.sql': [
       'apps/database/supabase/migrations/20261027000000_change.sql',
     ],
@@ -93,6 +99,9 @@ const cases = {
   mobile: {
     '.github/**': common['.github/**'],
     'package.json': common['package.json'],
+    'bun.lock': common['bun.lock'],
+    'turbo.json': common['turbo.json'],
+    'tsconfig*.json': common['tsconfig*.json'],
     'apps/mobile/lib/core/config/api_config.dart': [
       'apps/mobile/lib/core/config/api_config.dart',
     ],
@@ -111,6 +120,10 @@ const cases = {
   },
   plugin: {
     '.github/**': common['.github/**'],
+    'package.json': common['package.json'],
+    'bun.lock': common['bun.lock'],
+    'turbo.json': common['turbo.json'],
+    'tsconfig*.json': common['tsconfig*.json'],
     'plugins/**': ['plugins/tuturuuu/scripts/validate_plugin.py'],
     '.agents/**': ['.agents/plugins/marketplace.json'],
     '.claude/**': ['.claude/settings.json'],
@@ -165,4 +178,27 @@ test('unrelated prose and mobile screen edits do not select unrelated checks', (
       category
     );
   assert.equal(matches(filters.oxc, 'README.md'), true);
+  for (const category of Object.keys(filters)) {
+    assert.equal(matches(filters[category], 'bun.lock'), true, category);
+    assert.equal(matches(filters[category], 'package.json'), true, category);
+    assert.equal(matches(filters[category], 'turbo.json'), true, category);
+    assert.equal(matches(filters[category], 'tsconfig.json'), true, category);
+    assert.equal(
+      matches('tsconfig*.json', 'apps/calendar/tsconfig.json'),
+      false,
+      category
+    );
+    // oxc already selects every JSON file, including a nested tsconfig.
+    if (category !== 'oxc') {
+      assert.equal(
+        matches(filters[category], 'apps/calendar/tsconfig.json'),
+        false,
+        category
+      );
+    }
+  }
+  assert.equal(
+    matches(filters.migrations, 'apps/calendar/src/page.test.tsx'),
+    false
+  );
 });

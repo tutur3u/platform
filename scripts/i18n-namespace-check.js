@@ -64,6 +64,10 @@ const APP_NAMESPACE_ALLOWLIST = new Map([
   ['apps/roadmap', new Set()],
   ['apps/storefront', new Set(['common'])],
   ['apps/shortener', new Set(['common'])],
+  // Marketing's public site imports only label-free shared primitives (buttons,
+  // accordion, logo, theme toggle, price and comparison tables); copy comes from
+  // its own message bundle, which keeps the account/common namespace.
+  ['apps/marketing', new Set(['common'])],
 ]);
 
 // Apps that ship message bundles and depend on shared UI but are intentionally

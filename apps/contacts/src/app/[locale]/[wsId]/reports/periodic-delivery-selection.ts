@@ -1,3 +1,4 @@
+import { hasReportFeedback } from '@tuturuuu/users-core/features/reports/report-feedback';
 import {
   MAX_PERIODIC_DELIVERY_BATCH_SIZE,
   type PeriodicReport,
@@ -8,6 +9,7 @@ export const MAX_SELECTED_DELIVERIES = MAX_PERIODIC_DELIVERY_BATCH_SIZE;
 // A retry, cancelled delivery, or intentionally skipped report is never a new batch send.
 export function canSelectPeriodicDelivery(report: PeriodicReport) {
   return (
+    hasReportFeedback(report.feedback) &&
     report.report_approval_status === 'APPROVED' &&
     report.generation_status === 'ready' &&
     report.delivery_status === 'draft' &&

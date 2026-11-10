@@ -1,3 +1,4 @@
+import { getAppProductionBaseUrl } from './app-mounts';
 import { toWorkspaceSlug } from './constants';
 import { getTuturuuuPortlessAppOrigin } from './portless';
 
@@ -532,7 +533,10 @@ export function getLaunchableAppOrigin(
   const resolvedEnvironment =
     environment === 'auto' ? getAutoEnvironment(currentOrigin) : environment;
 
-  if (resolvedEnvironment === 'production') return app.productionUrl;
+  // A mounted app resolves to https://tuturuuu.com/<base>; unchanged otherwise.
+  if (resolvedEnvironment === 'production') {
+    return getAppProductionBaseUrl(app.slug, app.productionUrl);
+  }
   if (resolvedEnvironment === 'localhost') {
     return app.localhostOrigin ?? getTuturuuuPortlessAppOrigin(app.portlessApp);
   }

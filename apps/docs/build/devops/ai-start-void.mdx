@@ -1,0 +1,59 @@
+---
+title: "AI Studio on Start + Void"
+description: "AI Studio Worker identity, acceptance commands, smoke checks and Vercel rollback packet."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+AI Studio (`apps/ai`) runs on TanStack Start, Vite+ and Void with the shared
+Start bridge. The native Worker owns `ai.tuturuuu.com`; no route or domain is
+declared in source. Production publication remains held until exact-head CI,
+sealed emitted-Worker acceptance, staging acceptance and rollback capture pass.
+The existing Vercel deployment remains the rollback target until cutover.
+
+## Cutover packet
+
+| Item | Value |
+| --- | --- |
+| Production Worker | `tuturuuu-ai` (`VITE_AI_NATIVE_PROFILE=production`) |
+| Staging Worker | the staging Worker name |
+| Host | `ai.tuturuuu.com` (operator-attached; no source route) |
+| Bindings | `ASSETS` (`dist/client`), `TUTURUUU_NOINDEX=1` in the source config; production artifact policy must be checked in its emitted config |
+| Secret names | `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`; provider credentials are optional: `GOOGLE_GENERATIVE_AI_API_KEY` or `GOOGLE_API_KEY`, `AI_GATEWAY_API_KEY` or `VERCEL_OIDC_TOKEN` |
+| Build | `VITE_AI_NATIVE_PROFILE=production bun run --cwd apps/ai build:cloudflare` |
+| Prior Vercel deployment | No immutable deployment ID is recorded in the repository. Rex must capture the active AI Vercel deployment ID and URL before cutover. |
+| Data | No database writes or migrations are part of this cutover. |
+
+The AI Worker requires the coordination and Supabase secrets at startup. The
+build logs only the selected provider category, never credential values.
+
+## Acceptance and smoke
+
+Run the production build and emitted suite from the repository root:
+
+```bash
+VITE_AI_NATIVE_PROFILE=production bun run --cwd apps/ai build:cloudflare
+CI=true CI_SOURCE_SHA="$(git rev-parse HEAD)" bun run --cwd apps/ai test:runtime
+```
+
+After the release owner deploys the accepted artifact and attaches the host,
+probe the canonical origin without credentials:
+
+```bash
+curl -sS -D - -o /dev/null https://ai.tuturuuu.com/
+curl -sS https://ai.tuturuuu.com/api/build-info
+curl -sS -o /dev/null -w '%{http_code}\n' https://ai.tuturuuu.com/api/build-info
+```
+
+Confirm expected page/auth behavior, the exact accepted source SHA in build
+info, and `x-tuturuuu-runtime: native`. Smoke both the canonical subdomain and
+the `https://tuturuuu.com/ai` mount if that mount is admitted by the cutover.
+This packet does not authorize routing or provider changes.
+
+## Rollback
+
+Before switching, Rex records the active Vercel deployment ID, immutable URL,
+and routing it serves. If smoke, authentication, error rate or latency regresses,
+restore the captured host routing to that Vercel deployment in one step; do not
+rebuild during rollback. Retain the Vercel deployment and routing until the
+native Worker completes its stable release window.

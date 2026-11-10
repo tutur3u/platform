@@ -1,0 +1,29 @@
+{
+  "name": "@tuturuuu/marketing-shell",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "One marketing layout (navbar, footer, fonts, tokens) for every Tuturuuu marketing page, framework-agnostic.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./fonts.css": "./src/fonts.css",
+    "./messages/en.json": "./src/messages/en.json",
+    "./messages/vi.json": "./src/messages/vi.json"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@tuturuuu/icons": "workspace:*",
+    "@tuturuuu/ui": "workspace:*",
+    "@tuturuuu/utils": "workspace:*"
+  },
+  "peerDependencies": {
+    "next-themes": "^0.4.6",
+    "react": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "typescript": "7.0.2"
+  }
+}

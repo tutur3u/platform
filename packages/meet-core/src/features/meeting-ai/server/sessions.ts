@@ -1,13 +1,15 @@
 import {
   formatTranscriptChunk,
+  hasErasedTranscript,
+  readTranscriptChunk,
   readTranscriptSegments,
-  readTranscriptSpeaker,
-  transcriptSpeakers,
+  resolveTranscriptActionOwners,
 } from '@tuturuuu/ai/meetings/transcript';
 import { MEETING_APP } from '../../../runtime';
 import { generateBilledMeetArtifact } from './artifact-billing';
 import { meetingProviderTransport } from './provider-transport';
 import { readMeetingRoomPolicy } from './room-access';
+import { readTranscriptRoster } from './transcript-roster';
 import 'server-only';
 import { meetNotesSchema } from '@tuturuuu/ai/meetings/gemini';
 import { MEET_AI_MODEL } from '@tuturuuu/ai/meetings/usage';
@@ -49,6 +51,7 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
         throw new MeetAiError(413, 'Meeting transcript exceeds display limit');
     }
   }
+  const roster = await readTranscriptRoster(db, chunks);
   let estimatedCostUsd = chunks.reduce(
       (sum, chunk) => sum + (chunk.prior_cost_usd ?? 0),
       0
@@ -116,16 +119,25 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
       notes_status: session.notes_status,
       notes_cost_usd: canManage ? session.notes_cost_usd : null,
       notes:
-        session.notes === null ? null : meetNotesSchema.parse(session.notes),
+        session.notes === null
+          ? null
+          : (() => {
+              const notes = meetNotesSchema.parse(session.notes);
+              return {
+                ...notes,
+                actionItems: resolveTranscriptActionOwners(
+                  notes.actionItems,
+                  roster
+                ),
+              };
+            })(),
     })),
     chunks: chunks.map((chunk) => ({
       id: chunk.id,
       sequence: chunk.sequence,
       start_seconds: chunk.start_seconds,
       duration_seconds: chunk.duration_seconds,
-      transcript: chunk.transcript,
-      speaker: readTranscriptSpeaker(chunk.usage),
-      segments: readTranscriptSegments(chunk.usage),
+      ...readTranscriptChunk(chunk, roster),
       cost_usd: canManage ? chunk.cost_usd : null,
       status:
         chunk.status === 'processing' &&
@@ -305,8 +317,12 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
     const hasSavedSpeech = chunks.some((chunk) => {
       const segments = readTranscriptSegments(chunk.usage);
       return segments.length
-        ? segments.some((segment) => Boolean(segment.transcript.trim()))
-        : Boolean(chunk.transcript?.trim());
+        ? segments.some(
+            (segment) =>
+              !('erased' in segment) && Boolean(segment.transcript.trim())
+          )
+        : !hasErasedTranscript(chunk.usage) &&
+            Boolean(chunk.transcript?.trim());
     });
     const transcript =
       (incomplete
@@ -336,21 +352,11 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
         )
       : null;
     if (result?.notes) {
-      const roster = new Map(
-        chunks.flatMap((chunk) =>
-          transcriptSpeakers(chunk.usage).map(
-            (speaker) => [speaker.accountId, speaker.displayName] as const
-          )
-        )
+      const roster = await readTranscriptRoster(db, chunks);
+      result.notes.actionItems = resolveTranscriptActionOwners(
+        result.notes.actionItems,
+        roster
       );
-      result.notes.actionItems = result.notes.actionItems.map((item) => ({
-        ...item,
-        ownerId: item.ownerId && roster.has(item.ownerId) ? item.ownerId : null,
-        owner:
-          item.ownerId && roster.has(item.ownerId)
-            ? roster.get(item.ownerId)!
-            : item.owner,
-      }));
     }
     // Reuse the settled output; only the idempotent CAS write is retried.
     const payload = {

@@ -148,7 +148,8 @@ jobs:
         with:
           app: nova
   check-ci:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    needs: affected-gate
+    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -186,7 +187,7 @@ jobs:
 
   cutover-build:
     needs: affected-gate
-    if: ${{ needs.affected-gate.outputs.run == 'true' && (github.event_name == 'workflow_dispatch') }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.event_name == 'workflow_dispatch')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -219,7 +220,11 @@ jobs:
           test -n "$NEXT_PUBLIC_SUPABASE_URL"
           test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
       - name: Build app suppliers
-        run: bun turbo:local run build --filter='@tuturuuu/nova^...' --concurrency=2
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter='@tuturuuu/nova^...' --concurrency=2
+          token: ''
+          team: ''
       - name: Stamp exact build identity
         env:
           PLATFORM_BUILD_COMMIT_HASH: ${{ github.sha }}
@@ -227,8 +232,11 @@ jobs:
           PLATFORM_BUILD_ENVIRONMENT: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build native Cloudflare app
-        working-directory: apps/nova
-        run: bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/nova && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Exercise anonymous root and host isolation in workerd
         working-directory: apps/nova
         env:
@@ -241,6 +249,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
+          retention-days: 7
           name: nova-emitted-config-${{ github.sha }}
           path: ${{ runner.temp }}/nova-emitted-config.json
           if-no-files-found: error
@@ -253,4 +262,94 @@ jobs:
           name: nova-cutover-${{ github.sha }}
           path: ${{ runner.temp }}/nova-native-production.tar.gz
           retention-days: 7
+          if-no-files-found: error
+  nova-cutover-artifact:
+    needs: [check-ci, affected-gate]
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://nova-ci.supabase.invalid' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_nova_ci_placeholder' }}
+      NEXT_PUBLIC_APP_URL: https://nova.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      WRANGLER_SEND_METRICS: 'false'
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - name: Generate build metadata
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build shared dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="@tuturuuu/nova^..." --concurrency=2
+          token: ''
+          team: ''
+      - name: Build the Start Worker
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/nova && bun run build:cloudflare
+          token: ''
+          team: ''
+      - name: Qualify the staging output before rewriting
+        run: python3 scripts/ci/nova-native-artifact.py config apps/nova
+      - name: Write the production wrangler config
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const path = 'apps/nova/dist/server/wrangler.json';
+          const c = JSON.parse(readFileSync(path, 'utf8'));
+          c.name = 'tuturuuu-nova';
+          c.workers_dev = false;
+          c.preview_urls = false;
+          c.upload_source_maps = false;
+          c.topLevelName = 'tuturuuu-nova';
+          c.vars = {
+            TUTURUUU_NOINDEX: '0',
+            NODE_ENV: 'production',
+            TUTURUUU_REQUIRE_SECRETS: '1',
+            NEXT_PUBLIC_APP_URL: 'https://nova.tuturuuu.com',
+            NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
+          };
+          writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);
+          JS
+          test "$(node -p "require('./apps/nova/dist/server/wrangler.json').name")" = tuturuuu-nova
+          test "$(node -p "require('./apps/nova/dist/server/wrangler.json').workers_dev")" = false
+          test "$(node -p "require('./apps/nova/dist/server/wrangler.json').preview_urls")" = false
+          test -f apps/nova/dist/server/index.mjs
+          test -d apps/nova/dist/client
+      - name: Pre-seal doctor on the production Host header
+        timeout-minutes: 3
+        run: node scripts/ci/pre-seal-doctor.mjs nova apps/nova nova.tuturuuu.com "$SOURCE_SHA"
+      - name: Validate, seal and pack the final production output
+        env:
+          NOVA_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          python3 scripts/ci/nova-native-artifact.py --profile production config apps/nova
+          python3 scripts/ci/nova-native-artifact.py --profile production seal apps/nova --receipt "$RUNNER_TEMP/nova-production-artifact.json"
+          python3 scripts/ci/nova-native-artifact.py --profile production pack apps/nova --receipt "$RUNNER_TEMP/nova-production-artifact.json" --archive "$RUNNER_TEMP/nova-production-artifact.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: nova-cutover-${{ env.TRUSTED == 'true' && 'production' || 'fixture' }}-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/nova-production-artifact.tar.gz
+          retention-days: 14
           if-no-files-found: error

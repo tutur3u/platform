@@ -134,4 +134,30 @@ describe('Apple reviewer metadata handoff', () => {
       fetchMock.mockRestore();
     }
   });
+
+  it('never follows an Apple redirect or reads its body', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () =>
+        new Response('credential in redirect body', {
+          status: 307,
+          headers: { Location: 'https://attacker.invalid/' },
+        })
+    );
+    try {
+      await expect(
+        publishReviewerToApple({
+          db: {} as never,
+          actorUserId: 'actor',
+          reviewerUserId: 'reviewer',
+          email: 'review@tutur3u.com',
+          password: 'private-review-password',
+        })
+      ).rejects.toThrow('Apple review metadata update failed (307)');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls[0]?.[1]?.redirect).toBe('manual');
+      expect(mocks.audit).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+    }
+  });
 });

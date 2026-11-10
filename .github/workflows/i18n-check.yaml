@@ -51,12 +51,6 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: ${{ runner.environment != 'self-hosted' }}
-      - name: Setup Bun
-        uses: ./.github/actions/setup-bun-with-retry
-        with:
-          bun-version: 1.4.4
-          cache-enabled: ${{ runner.environment != 'self-hosted' }}
-
       - name: Check if translations are sorted
         id: sort-check
         run: |

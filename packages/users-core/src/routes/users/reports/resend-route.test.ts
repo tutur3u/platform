@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 // Synthetic workspaces, classes and reports only. The enqueue boundary
 // (request_periodic_report_delivery) and the shared rate-limit budget are
 // in-memory fakes: nothing here can reach a real database, queue or email
@@ -84,6 +83,7 @@ function report(suffix: string, change: Row = {}): Row {
     delivery_requested_at: null,
     generation_status: 'ready',
     last_delivery_error: null,
+    feedback: 'Teacher comment',
     report_approval_status: 'APPROVED',
     report_stage: 'approved',
     user_email: `learner-${suffix}@example.com`,

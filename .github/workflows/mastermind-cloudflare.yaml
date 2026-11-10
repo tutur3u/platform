@@ -147,7 +147,7 @@ jobs:
   # Build artifact delivery with required runtime evidence; no publisher credentials.
   artifact:
     needs: affected-gate
-    if: ${{ needs.affected-gate.outputs.run == 'true' && (github.event_name != 'pull_request' || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.event_name != 'pull_request' || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -166,9 +166,13 @@ jobs:
         with:
           node-version: 24.22.0
       - name: Install frozen dependencies without lifecycle scripts
-        run: bun install --frozen-lockfile --ignore-scripts
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - name: Build active workspace dependencies
-        run: bun turbo:local run build --filter='@tuturuuu/mastermind^...' --concurrency=2
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter='@tuturuuu/mastermind^...' --concurrency=2
+          token: ''
+          team: ''
       - name: Generate source identity
         env:
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
@@ -176,8 +180,11 @@ jobs:
           PLATFORM_BUILD_ENVIRONMENT: preview
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build native Start Worker and assets
-        working-directory: apps/mastermind
-        run: bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/mastermind && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Record emitted config receipt
         if: always()
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/mastermind "$SOURCE_SHA" "$RUNNER_TEMP/native-emitted-config.json"

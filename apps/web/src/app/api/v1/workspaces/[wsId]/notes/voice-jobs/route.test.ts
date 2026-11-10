@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { runVoiceJob } from '@/lib/notes-voice/jobs';
 
 const mock = vi.hoisted(() => ({
   access: vi.fn(),
@@ -7,7 +8,9 @@ const mock = vi.hoisted(() => ({
   remove: vi.fn(),
   after: vi.fn(),
   form: vi.fn(),
+  run: vi.fn<typeof runVoiceJob>(),
 }));
+vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({
   connection: async () => {},
   after: mock.after,
@@ -26,7 +29,11 @@ vi.mock('@/lib/notes-voice/jobs', () => ({
   getVoiceJob: mock.get,
   deleteVoiceJob: mock.remove,
   publicVoiceJob: (job: unknown) => job,
-  runVoiceJob: vi.fn(),
+  runVoiceJob: mock.run,
+}));
+vi.mock('@/lib/notes-voice/audio', () => ({
+  validateNotesVoiceAudio: () => {},
+  notesVoiceInputHash: () => 'hash',
 }));
 vi.mock('@/lib/notes-voice/request', async () => ({
   ...(await vi.importActual<object>('@/lib/notes-voice/request')),
@@ -38,6 +45,8 @@ import { DELETE, GET } from './[jobId]/route';
 import { POST } from './route';
 
 const auth = { user: { id: 'actor' }, supabase: {} };
+const workspaceId = '0b4ad3c4-6f51-4b1e-9a4c-0d6f7f1e2a10';
+const protectedWorkspaceId = '9a1b2c3d-4e5f-4a6b-8c7d-0e1f2a3b4c5d';
 const params = {
   wsId: 'personal',
   jobId: 'd6fb2145-ae9f-4f43-a209-6bb4c24c7a87',
@@ -53,7 +62,11 @@ const invoke = (handler: unknown) =>
   )(new Request('https://api.example'), auth, params);
 beforeEach(() => {
   vi.resetAllMocks();
-  mock.access.mockResolvedValue('resolved-workspace');
+  delete process.env.MEET_AI_DISABLED;
+  delete process.env.MEET_AI_PROTECTED_WORKSPACE_IDS;
+  delete process.env.MEET_AI_DISABLED_WORKSPACE_IDS;
+  delete process.env.MEET_AI_ENABLED_WORKSPACE_IDS;
+  mock.access.mockResolvedValue(workspaceId);
 });
 describe('Notes voice route ownership', () => {
   it('rejects lost membership before reading audio, reserving or scheduling paid work', async () => {
@@ -69,7 +82,7 @@ describe('Notes voice route ownership', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(mock.get).toHaveBeenCalledWith(
-      { userId: 'actor', wsId: 'resolved-workspace' },
+      { userId: 'actor', wsId: workspaceId },
       params.jobId
     );
   });
@@ -83,8 +96,63 @@ describe('Notes voice route ownership', () => {
   it('deletes only the actor-owned resolved workspace job', async () => {
     expect((await invoke(DELETE)).status).toBe(200);
     expect(mock.remove).toHaveBeenCalledWith(
-      { userId: 'actor', wsId: 'resolved-workspace' },
+      { userId: 'actor', wsId: workspaceId },
       params.jobId
     );
+  });
+});
+
+describe('Notes voice honours MEET_AI_DISABLED', () => {
+  it('refuses new voice work before reading audio, reserving or scheduling paid work', async () => {
+    process.env.MEET_AI_DISABLED = 'true';
+    const response = await invoke(POST);
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ code: 'notes_voice_ai_disabled' });
+    expect(mock.form).not.toHaveBeenCalled();
+    expect(mock.reserve).not.toHaveBeenCalled();
+    expect(mock.after).not.toHaveBeenCalled();
+    expect(mock.run).not.toHaveBeenCalled();
+  });
+
+  it('still lets the owner read and delete existing jobs while AI is off', async () => {
+    process.env.MEET_AI_DISABLED = 'true';
+    mock.get.mockResolvedValue({ status: 'completed' });
+    expect((await invoke(GET)).status).toBe(200);
+    expect((await invoke(DELETE)).status).toBe(200);
+  });
+
+  it('re-checks the switch inside the scheduled job before each provider step', async () => {
+    const audio = new File([new Uint8Array(64)], 'a.wav', {
+      type: 'audio/wav',
+    });
+    const form = new FormData();
+    form.set('requestId', 'd6fb2145-ae9f-4f43-a209-6bb4c24c7a87');
+    form.set('timezone', 'UTC');
+    form.set('audio', audio);
+    mock.form.mockResolvedValue(form);
+    mock.reserve.mockResolvedValue({ start: true, job: { status: 'queued' } });
+    process.env.MEET_AI_PROTECTED_WORKSPACE_IDS = protectedWorkspaceId;
+    process.env.MEET_AI_ENABLED_WORKSPACE_IDS = workspaceId;
+    const scheduled: Array<() => unknown> = [];
+    mock.after.mockImplementation((task: () => unknown) =>
+      scheduled.push(task)
+    );
+    const response = await invoke(POST);
+    expect(response.status).toBe(202);
+    expect(scheduled).toHaveLength(1);
+    await scheduled[0]!();
+    const verifyAccess = mock.run.mock.calls[0]![3];
+    process.env.MEET_AI_DISABLED = 'true';
+    await expect(verifyAccess('provider_admission')).rejects.toMatchObject({
+      status: 403,
+      code: 'notes_voice_ai_disabled',
+    });
+    await expect(verifyAccess('result_persistence')).resolves.toBeUndefined();
+    mock.access.mockRejectedValueOnce(
+      new NotesVoiceError(403, 'workspace_denied')
+    );
+    await expect(verifyAccess('result_persistence')).rejects.toMatchObject({
+      code: 'workspace_denied',
+    });
   });
 });

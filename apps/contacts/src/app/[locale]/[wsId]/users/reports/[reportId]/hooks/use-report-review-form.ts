@@ -1,3 +1,4 @@
+import { hasReportFeedback } from '@tuturuuu/users-core/features/reports/report-feedback';
 import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import {
@@ -52,6 +53,7 @@ export function useReportReviewForm({
     if (historical) return 'approval_view_current';
     if (saving) return 'approval_wait_save';
     const current = form.getValues();
+    if (!hasReportFeedback(current.feedback)) return 'feedback_required';
     if (
       form.formState.isDirty ||
       current.title !== saved.title ||

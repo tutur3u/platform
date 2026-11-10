@@ -4,17 +4,19 @@
   "type": "module",
   "scripts": {
     "dev": "vp dev",
-    "build": "vp build && node scripts/package-assets.mjs",
+    "build": "node scripts/generate-roadmap-data.mjs && node scripts/generate-history.mjs && vp build && node scripts/package-assets.mjs",
     "type-check": "node scripts/generate-route-tree.cjs && tsc --noEmit",
-    "test": "node --test src/roadmap-data.test.ts",
+    "test": "node --test src/roadmap-data.test.ts src/cache-policy.test.ts scripts/pre-seal-doctor.test.mjs",
+    "data:refresh": "node scripts/generate-roadmap-data.mjs && node scripts/generate-history.mjs",
     "deploy:cloudflare": "void deploy --platform cloudflare",
-    "build:cloudflare": "vp build && node scripts/package-assets.mjs",
+    "build:cloudflare": "node scripts/generate-roadmap-data.mjs && node scripts/generate-history.mjs && vp build && node scripts/package-assets.mjs",
     "seal:cloudflare": "node scripts/seal-artifact.mjs"
   },
   "dependencies": {
     "@tanstack/react-router": "1.170.45",
     "@tanstack/react-start": "1.169.3",
     "@tuturuuu/icons": "workspace:*",
+    "@tuturuuu/marketing-shell": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "react": "19.2.8",

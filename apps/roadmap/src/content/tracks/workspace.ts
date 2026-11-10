@@ -1,0 +1,188 @@
+import type { Track } from '../../live/status.ts';
+
+export const workspaceTrack: Track = {
+  id: 'workspace',
+  name: 'Workspace & website',
+  summary: 'Accounts, workspaces, settings and the tuturuuu.com website.',
+  milestones: [
+    {
+      id: 'workspace-up-next',
+      title: 'Up next',
+      deliverables: [
+        {
+          id: 'documents-hierarchy',
+          title: 'Nest documents and move them with drag and drop',
+          prs: [7895, 7918],
+          app: 'web',
+          fallback: 'in_progress',
+        },
+        {
+          id: 'website-design-page',
+          title: 'Public design system page at tuturuuu.com/design',
+          prs: [7876],
+          app: 'web',
+          fallback: 'in_progress',
+        },
+        {
+          id: 'workspace-avatar-editor',
+          title: 'One avatar editor for profiles and workspaces',
+          prs: [7871],
+          app: 'web',
+          fallback: 'in_progress',
+        },
+        {
+          id: 'legal-nov-2026',
+          title: 'Updated Terms, Privacy Policy and data processing terms',
+          prs: [7582],
+          app: 'web',
+          fallback: 'in_progress',
+        },
+      ],
+    },
+    {
+      id: 'workspace-settings',
+      title: 'Profiles and settings',
+      deliverables: [
+        {
+          id: 'workspace-public-profiles',
+          title: 'Public profiles from the account menu',
+          prs: [6106],
+          app: 'web',
+          fallback: 'planned',
+        },
+        {
+          id: 'workspace-profile-banner',
+          title: 'Edit your profile banner on the web',
+          prs: [5916],
+          app: 'web',
+          fallback: 'planned',
+        },
+        {
+          id: 'workspace-hidden-choices',
+          title: 'Hide workspaces and pick from a full-screen list',
+          prs: [5699],
+          app: 'web',
+          fallback: 'planned',
+        },
+        {
+          id: 'workspace-settings-groups',
+          title: 'Settings grouped into clearer sections',
+          prs: [7790, 7791],
+          app: 'web',
+          fallback: 'planned',
+        },
+        {
+          id: 'workspace-settings-dialog',
+          title: 'Flatter board settings in an inset dialog',
+          prs: [7920],
+          app: 'web',
+          fallback: 'planned',
+        },
+      ],
+    },
+    {
+      id: 'workspace-website',
+      title: 'tuturuuu.com',
+      deliverables: [
+        {
+          id: 'website-localized-metadata',
+          title: 'Localized titles and previews for product pages',
+          prs: [5159],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'website-sitemap',
+          title: 'Automatic sitemap and bilingual team page',
+          prs: [5729],
+          app: 'web',
+          fallback: 'planned',
+        },
+        {
+          id: 'website-consent-banner',
+          title: 'Privacy consent banner on the website',
+          prs: [8045],
+          app: 'marketing',
+          fallback: 'planned',
+        },
+      ],
+    },
+    {
+      id: 'workspace-earlier-start',
+      title: 'Earlier: Where it began',
+      summary: '2022 to 2023.',
+      deliverables: [
+        {
+          id: 'workspace-prototype',
+          title: 'First prototype with sign-in',
+          prs: [3],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'workspace-organizations',
+          title: 'Organizations, later renamed workspaces',
+          prs: [16, 187],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'workspace-member-roles',
+          title: 'Workspace member roles',
+          prs: [474],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'workspace-landing-2023',
+          title: 'New tuturuuu.com landing page',
+          prs: [104],
+          app: null,
+          fallback: 'planned',
+        },
+      ],
+    },
+    {
+      id: 'workspace-earlier-everyone',
+      title: 'Earlier: Open to everyone',
+      summary: '2023 to 2025.',
+      deliverables: [
+        {
+          id: 'workspace-vietnamese',
+          title: 'Full Vietnamese translation',
+          prs: [283, 926],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'workspace-themes',
+          title: 'Light, dark and colour themes',
+          prs: [902, 1001],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'workspace-invites',
+          title: 'Invite by email or with a link',
+          prs: [1431, 3796],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'workspace-personal',
+          title: 'Personal workspace and open workspace creation',
+          prs: [3451, 3817],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'workspace-short-links-qr',
+          title: 'Short links with passwords and a QR generator',
+          prs: [3203, 4179, 3560],
+          app: null,
+          fallback: 'planned',
+        },
+      ],
+    },
+  ],
+};

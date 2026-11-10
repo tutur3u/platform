@@ -240,55 +240,6 @@ function mapSummaryRow(
   };
 }
 
-// Counts are recipient rows, with the same predicate as the displayed worklist.
-// The summary RPC cannot accept a review stage; scan that filtered RPC instead.
-async function getStagedSummary(
-  loadRows: (offset: number) => Promise<PostEmailRowRpc[]>
-): Promise<PostEmailStatusSummary> {
-  const summary = mapSummaryRow();
-  const seen = new Set<string>();
-  let expectedTotal: number | undefined;
-  for (;;) {
-    const rows = await loadRows(seen.size);
-    if (rows.length === 0) {
-      if (expectedTotal !== undefined && seen.size !== expectedTotal) {
-        throw new Error('Report counts are incomplete. Refresh and try again.');
-      }
-      return summary;
-    }
-    for (const row of rows) {
-      const total = Number(row.total_count);
-      if (
-        row.total_count == null ||
-        !Number.isSafeInteger(total) ||
-        total < 0 ||
-        (expectedTotal !== undefined && expectedTotal !== total) ||
-        seen.has(row.row_key)
-      ) {
-        throw new Error('Report counts changed. Refresh and try again.');
-      }
-      expectedTotal = total;
-      seen.add(row.row_key);
-      summary.total++;
-      if (!(row.review_stage in summary.stages)) {
-        throw new Error('Report status is unavailable. Refresh and try again.');
-      }
-      summary.stages[row.review_stage]++;
-      const approvalKey = row.approval_status?.toLowerCase();
-      if (approvalKey && approvalKey in summary.approvals) {
-        summary.approvals[approvalKey as keyof typeof summary.approvals]++;
-      }
-      if (row.queue_status && row.queue_status in summary.queue) {
-        summary.queue[row.queue_status as keyof typeof summary.queue]++;
-      }
-    }
-    if (seen.size === expectedTotal) return summary;
-    if (seen.size > (expectedTotal ?? 0)) {
-      throw new Error('Report counts changed. Refresh and try again.');
-    }
-  }
-}
-
 export async function getWorkspacePostsPageData(
   wsId: string,
   {
@@ -344,12 +295,11 @@ export async function getWorkspacePostsPageData(
     if (result.error) throw new Error(result.error.message);
     return (result.data ?? []) as PostEmailRowRpc[];
   };
+  // The status cards and the grand total always cover every review stage in
+  // the scope (same recipients, dates, groups and filters as the list, minus
+  // the stage). Counting them from the stage-filtered rows would show 0 on
+  // every card but the selected one until another stage was clicked.
   const loadSummary = async () => {
-    if (stage) {
-      return getStagedSummary((offset) =>
-        loadRows({ ...rowsArgs, p_limit: 500, p_offset: offset })
-      );
-    }
     const result = await sbAdmin
       .schema('private')
       .rpc('get_workspace_post_review_summary', summaryArgs);
@@ -364,13 +314,16 @@ export async function getWorkspacePostsPageData(
     loadRows(rowsArgs),
     loadSummary(),
   ]);
-  if (rows.some((row) => Number(row.total_count) !== summary.total)) {
+  // The list count is the selected stage's share of the same scope, so a
+  // drift between the two reads fails closed instead of inventing a number.
+  const listCount = stage ? summary.stages[stage] : summary.total;
+  if (rows.some((row) => Number(row.total_count) !== listCount)) {
     throw new Error('Report counts changed. Refresh and try again.');
   }
 
   return {
     postsData: {
-      count: summary.total,
+      count: listCount,
       data: rows.map(mapPostEmailRow),
     },
     postsStatus: summary,
