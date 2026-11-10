@@ -88,5 +88,38 @@
     "sources": "Sources: public GitHub pull requests in tutur3u/platform and each app’s public /api/build-info. The page refreshes in your browser every 10 minutes."
   },
   "footer": "Public roadmap. No private operational data. Dates are in Vietnam time (UTC+7).",
-  "build": "Build"
+  "build": "Build",
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "Everything that shipped, from the first commit in October 2022 to today. Pick a week, month or year.",
+    "views": {
+      "week": "Week",
+      "month": "Month",
+      "year": "Year"
+    },
+    "periods": "Periods",
+    "prev": "Previous period",
+    "next": "Next period",
+    "current": "Now",
+    "loading": "Loading full history…",
+    "failed": "Full history is unavailable right now; showing recent work.",
+    "weekOf": "Week",
+    "deliverables": "deliverables shipped",
+    "features": "features",
+    "fixes": "fixes",
+    "changes": "changes",
+    "merged": "merged changes",
+    "moreFixes": "fixes",
+    "moreOther": "other changes",
+    "showMore": "Show {n} more",
+    "showLess": "Show less",
+    "nothing": "No merged changes in this period.",
+    "otherNote": "changes across other products, client projects and internal work.",
+    "plannedTitle": "Planned next",
+    "plannedNote": "Work in progress and on the plan, from the tracks below.",
+    "jump": "Jump to",
+    "moreFix": "fix",
+    "moreOtherOne": "other change",
+    "changeOne": "change"
+  }
 }

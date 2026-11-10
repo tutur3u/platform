@@ -7,7 +7,7 @@ import { Footer, ThemeToggle } from '../components/chrome';
 import { ComingSoon, Hero } from '../components/hero';
 import { HostingSection, Method } from '../components/hosting';
 import type { Lang } from '../components/shared';
-import { ShippedSection } from '../components/shipped';
+import { TimelineSection } from '../components/timeline';
 import { TracksSection } from '../components/tracks';
 import generated from '../generated/live.json';
 import { parseLiveData } from '../live/model';
@@ -68,7 +68,14 @@ function RoadmapPage() {
         <main className="page">
           <Hero t={t} lang={lang} live={live} view={view} />
           <ComingSoon t={t} />
-          <ShippedSection t={t} lang={lang} view={view} />
+          <TimelineSection
+            t={t}
+            lang={lang}
+            view={view}
+            live={live.data}
+            now={live.now}
+            mounted={live.mounted}
+          />
           <TracksSection
             t={t}
             lang={lang}

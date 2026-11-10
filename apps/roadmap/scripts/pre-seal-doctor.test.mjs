@@ -20,7 +20,7 @@ function passing() {
     canonical: {
       status: 200,
       cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
-      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><meta property="og:url" content="https://tuturuuu.com/roadmap"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><div class="public-satellite-shell"><a aria-label="Tuturuuu" href="https://tuturuuu.com"><img src="${LOGO}" alt=""></a><a href="https://tuturuuu.com/login">Sign in</a><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div>`,
+      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><link rel="prefetch" href="/roadmap/assets/history-Abcd1234.json" as="fetch"/><h2 id="timeline-title">Timeline</h2><meta property="og:url" content="https://tuturuuu.com/roadmap"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><div class="public-satellite-shell"><a aria-label="Tuturuuu" href="https://tuturuuu.com"><img src="${LOGO}" alt=""></a><a href="https://tuturuuu.com/login">Sign in</a><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div>`,
     },
     satellite: { status: 301, location: 'https://tuturuuu.com/roadmap' },
     redirects: REDIRECT_CHAINS.map((chain) => ({
@@ -138,5 +138,19 @@ test('D79: a trailing-slash canonical tag fails', () => {
   );
   assert.ok(
     verdict.failures.includes('HTML still references the trailing-slash URL')
+  );
+});
+
+test('D79: a page without the timeline or its history asset fails', () => {
+  const observation = passing();
+  observation.canonical.body = observation.canonical.body
+    .replace('id="timeline-title"', '')
+    .replace('history-Abcd1234.json', 'history.json');
+  const verdict = assessDoctor(observation);
+  assert.ok(verdict.failures.includes('canonical HTML missing the timeline'));
+  assert.ok(
+    verdict.failures.includes(
+      'canonical HTML missing the hashed history prefetch'
+    )
   );
 });

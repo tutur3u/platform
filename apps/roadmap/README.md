@@ -29,6 +29,24 @@ never written by hand; `src/live/status.ts` derives it from evidence:
 only with an approved replacement. Never add private products, client names,
 security incidents, operational notes or tokens to content.
 
+## Timeline and full history
+
+`scripts/generate-history.mjs` (run by `build`, `build:cloudflare` and
+`data:refresh`, with `GITHUB_TOKEN`) reads every merged PR in tutur3u/platform
+since the first one (October 2022), drops bots and dependency churn, and
+classifies each into a public track and a kind (feature, fix, maintenance) in
+`src/history/classify.ts`. Titles are published only for user-facing features in
+a public product track that pass the incident/security/customer, plumbing and
+internal-implementation filters; everything else (including client work) is
+counted, never titled. The result, with per-week/month/year aggregates
+(`src/history/build.ts`, validated by `parseHistory`), is committed as
+`src/generated/history.json` and emitted as a hashed, immutable asset that the
+page prefetches and loads after first paint. Without a token the committed file is
+kept. Curated deliverables absorb their PRs, so each shows once in its period.
+The Timeline offers Week, Month and Year views with a period scrubber; state
+lives in the URL (`/roadmap?view=month&period=2025-03`). Transitions use the View
+Transitions API when available; everything respects `prefers-reduced-motion`.
+
 ## Live data
 
 Data comes from public sources only, in two layers:

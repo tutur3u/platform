@@ -88,5 +88,38 @@
     "sources": "Nguồn: pull request công khai trong tutur3u/platform và /api/build-info công khai của từng ứng dụng. Trang tự làm mới trong trình duyệt mỗi 10 phút."
   },
   "footer": "Lộ trình công khai. Không có dữ liệu vận hành nội bộ. Ngày theo giờ Việt Nam (UTC+7).",
-  "build": "Bản dựng"
+  "build": "Bản dựng",
+  "timeline": {
+    "title": "Dòng thời gian",
+    "subtitle": "Mọi thứ đã ra mắt, từ commit đầu tiên vào tháng 10/2022 đến hôm nay. Chọn tuần, tháng hoặc năm.",
+    "views": {
+      "week": "Tuần",
+      "month": "Tháng",
+      "year": "Năm"
+    },
+    "periods": "Các giai đoạn",
+    "prev": "Giai đoạn trước",
+    "next": "Giai đoạn sau",
+    "current": "Hiện tại",
+    "loading": "Đang tải toàn bộ lịch sử…",
+    "failed": "Chưa tải được toàn bộ lịch sử; đang hiển thị việc gần đây.",
+    "weekOf": "Tuần",
+    "deliverables": "hạng mục đã ra mắt",
+    "features": "tính năng",
+    "fixes": "sửa lỗi",
+    "changes": "thay đổi",
+    "merged": "thay đổi đã merge",
+    "moreFixes": "sửa lỗi",
+    "moreOther": "thay đổi khác",
+    "showMore": "Xem thêm {n}",
+    "showLess": "Thu gọn",
+    "nothing": "Không có thay đổi nào được merge trong giai đoạn này.",
+    "otherNote": "thay đổi ở các sản phẩm khác, dự án khách hàng và việc nội bộ.",
+    "plannedTitle": "Sắp tới",
+    "plannedNote": "Việc đang làm và trong kế hoạch, từ các mảng bên dưới.",
+    "jump": "Tới",
+    "moreFix": "sửa lỗi",
+    "moreOtherOne": "thay đổi khác",
+    "changeOne": "thay đổi"
+  }
 }

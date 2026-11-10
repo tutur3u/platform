@@ -65,6 +65,7 @@ export function buildView(
     );
   return {
     tracks: derived,
+    items,
     totals,
     total: items.length,
     recent,
