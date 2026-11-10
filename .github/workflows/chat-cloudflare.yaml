@@ -185,7 +185,7 @@ jobs:
         apps/chat/src/start-bridge apps/chat/src/routes apps/chat/src/router.tsx apps/chat/src/start.ts apps/chat/cloudflare apps/chat/vite.config.mts apps/chat/void.config.ts apps/chat/tsconfig.json apps/chat/package.json apps/chat/start-bridge.routes.json
   chat-cutover-artifact:
     needs: [check-ci, affected-gate]
-    if: ${{ needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:

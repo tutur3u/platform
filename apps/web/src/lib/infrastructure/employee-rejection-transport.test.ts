@@ -99,7 +99,7 @@ it.each(['infra', 'cli'])(
     expect(headers.get('Prefer')).toBe('tx=commit');
     expect(init?.method).toBe('POST');
     expect(init?.cache).toBe('no-store');
-    expect(init?.redirect).toBe('error');
+    expect(init?.redirect).toBe('manual');
     expect(init?.signal).toBeInstanceOf(AbortSignal);
     expect(
       kind === 'infra' ? authorizeEmployeeCreation : cli

@@ -12,7 +12,7 @@ Next ports, request context, proxy and central API forwarding (see
 [Start bridge](/build/devops/start-bridge) and
 [native Start migration](/build/devops/native-start-migration)).
 
-Qualification stays on `tuturuuu-workspace-vite-staging`. A dispatch-only job,
+Qualification stays on the staging Worker name. A dispatch-only job,
 `workspace-cutover-artifact`, seals a route-free production artifact named
 `tuturuuu-workspace` (`workers_dev: false`, `preview_urls: false`, no `routes`).
 `productionPublicationPolicy` in `tuturuuu.ci.ts` does not admit the app, and
@@ -142,7 +142,7 @@ other host gets the bridge's `404`. Both deployment profiles emit
 `workers_dev: false` and `preview_urls: false`, and neither declares `routes`.
 `VITE_WORKSPACE_NATIVE_PROFILE=production` selects the name `tuturuuu-workspace`
 and `TUTURUUU_NOINDEX=0`; an unset profile keeps
-`tuturuuu-workspace-vite-staging` and `TUTURUUU_NOINDEX=1`. No Vercel project is
+the staging Worker name and `TUTURUUU_NOINDEX=1`. No Vercel project is
 linked: `apps/workspace` has no `.vercel` directory, and its `vercel.json`
 disables Git deployments and the GitHub integration.
 

@@ -29,7 +29,7 @@ it('preserves null lookup email and sends only the fixed inspection tuple', asyn
   );
   expect(init).toMatchObject({
     method: 'POST',
-    redirect: 'error',
+    redirect: 'manual',
     cache: 'no-store',
   });
   expect(JSON.parse(String(init?.body))).toEqual({
@@ -113,4 +113,17 @@ it.each([
       authorize: async () => true,
     })
   ).toThrow();
+});
+it('treats a redirect response as unavailable without reading its body', async () => {
+  const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+    new Response(null, {
+      status: 307,
+      headers: { Location: 'https://attacker.invalid/' },
+    })
+  );
+  expect(await reader(fetcher).inspect(args)).toEqual({
+    data: null,
+    error: { code: 'UNAVAILABLE' },
+  });
+  expect(fetcher).toHaveBeenCalledTimes(1);
 });

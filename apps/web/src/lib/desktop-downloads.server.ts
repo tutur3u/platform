@@ -15,7 +15,7 @@ export async function getDesktopRelease() {
           Accept: 'application/vnd.github+json',
           'X-GitHub-Api-Version': '2022-11-28',
         },
-        redirect: 'error',
+        redirect: 'manual',
         signal: AbortSignal.timeout(5000),
       }
     );

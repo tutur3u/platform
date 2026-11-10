@@ -280,4 +280,25 @@ export const features2: ComparisonFeature[] = [
     values: ['internal', 'internal', 'internal', 'internal'],
     detail: 'standard',
   },
+  {
+    id: 'gateway_0',
+    app: 'gateway',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
+  {
+    id: 'marketing_0',
+    app: 'marketing',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
+  {
+    id: 'workspace_0',
+    app: 'workspace',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
 ];

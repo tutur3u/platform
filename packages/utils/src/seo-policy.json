@@ -101,6 +101,12 @@
     "publicPaths": [],
     "publicPatterns": []
   },
+  "marketing": {
+    "origin": "https://tuturuuu.com",
+    "localePrefix": "as-needed",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
   "meet": {
     "origin": "https://meet.tuturuuu.com",
     "localePrefix": "never",

@@ -13,7 +13,7 @@ This page holds the values the release owner needs for the cutover.
 
 | Item | Value |
 | --- | --- |
-| Worker | Staging identity `tuturuuu-tasks-vite-staging` is what `void.config.ts` emits. Deploy the production artifact under `tuturuuu-tasks` with the deploy-time name override; the config declares no routes and `workers_dev` is off |
+| Worker | The staging identity is what `void.config.ts` emits. Deploy the production artifact under `tuturuuu-tasks` with the deploy-time name override; the config declares no routes and `workers_dev` is off |
 | Host | `tasks.tuturuuu.com` (root mode). `TUTURUUU_STAGING_HOSTS` may add `*.workers.dev` or `*.tuturuuu.com` staging hosts. The apex and every other host get `404`. The `tuturuuu.com/tasks` mount is not part of this cutover |
 | Bindings | `ASSETS` (worker-first, `html_handling: none`, so `/offline.html` is read directly) |
 | Vars (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (read by the server at runtime), `TUTURUUU_STAGING_HOSTS` (staging only) |

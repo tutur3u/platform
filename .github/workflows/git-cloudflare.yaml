@@ -104,7 +104,7 @@ jobs:
           if-no-files-found: error
   git-cutover-artifact:
     needs: [build, affected-gate]
-    if: ${{ needs.affected-gate.outputs.run == 'true' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:

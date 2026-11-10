@@ -11,7 +11,7 @@ keeps serving until the route is flipped.
 
 ## Worker
 
-- Worker: `tuturuuu-git` when `VITE_GIT_NATIVE_PROFILE=production`, and `tuturuuu-git-vite-staging` by default. `workers_dev` and `preview_urls` stay off. Production sets `TUTURUUU_NOINDEX=0`; the default build sets `1`. Nothing here attaches a route.
+- Worker: `tuturuuu-git` when `VITE_GIT_NATIVE_PROFILE=production`, and the staging Worker name by default. `workers_dev` and `preview_urls` stay off. Production sets `TUTURUUU_NOINDEX=0`; the default build sets `1`. Nothing here attaches a route.
 - Entry: `apps/git/cloudflare/worker.ts`; Wrangler config is emitted by `void` into `dist`.
 - Host: `git.tuturuuu.com`. Root-only: `mountHosts` is empty and `unknownHost` is `reject`, so `tuturuuu.com/git` and any other host answer 404 before app code runs.
 - Binding: `ASSETS` (static output, `run_worker_first`).

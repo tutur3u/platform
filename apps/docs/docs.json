@@ -249,6 +249,7 @@
                   "build/devops/e2e-proof-reuse",
                   "build/devops/turbo-remote-cache",
                   "build/devops/gateway-worker",
+                  "build/devops/cutover-smoke-harness",
                   "build/devops/marketing-start-void",
                   "build/devops/background-work-inventory",
                   "build/devops/cloudflare-processor-migration",
@@ -542,6 +543,7 @@
                   "reference/repository/routes/learn",
                   "reference/repository/routes/lettin",
                   "reference/repository/routes/mail",
+                  "reference/repository/routes/marketing",
                   "reference/repository/routes/mastermind",
                   "reference/repository/routes/meet",
                   "reference/repository/routes/meet-realtime",
@@ -569,7 +571,8 @@
                   "reference/repository/routes/web-2",
                   "reference/repository/routes/web-3",
                   "reference/repository/routes/web-4",
-                  "reference/repository/routes/web-5"
+                  "reference/repository/routes/web-5",
+                  "reference/repository/routes/workspace"
                 ],
                 "expanded": false
               }
