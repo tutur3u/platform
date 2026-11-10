@@ -13,8 +13,11 @@
 
 REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA private FROM PUBLIC, anon, authenticated, authenticator;
 
+-- tuturuuu: reviewed(function-grant): private.can_join_form_realtime_topic(text,uuid) review=SR-924-keep
 GRANT EXECUTE ON FUNCTION private.can_join_form_realtime_topic(text, uuid) TO authenticated;
+-- tuturuuu: reviewed(function-grant): private.can_join_task_realtime_topic(text,uuid) review=SR-924-keep
 GRANT EXECUTE ON FUNCTION private.can_join_task_realtime_topic(text, uuid) TO authenticated;
+-- tuturuuu: reviewed(function-grant): private.valid_subscription_months(date[]) review=SR-924-keep
 GRANT EXECUTE ON FUNCTION private.valid_subscription_months(date[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION private.get_rate_limit_trust_decision(uuid, inet, uuid) TO authenticator;
 
