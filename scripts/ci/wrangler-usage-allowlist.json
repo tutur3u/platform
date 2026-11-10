@@ -1714,14 +1714,14 @@
       "kind": "manifest"
     },
     "apps/roadmap/.gitignore": {
-      "lines": 1,
-      "uses": 1,
+      "lines": 2,
+      "uses": 2,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7786",
-        "reason": "PR7786 ignores the pinned Void/Cloudflare toolchain state directory; data-only ignore, no CLI or provider action."
+        "decision": "https://github.com/tutur3u/platform/pull/8073",
+        "reason": "PR 8073 ignores generated .void-wrangler.jsonc beside the existing .wrangler directory. Both lines are local toolchain output. No CLI invocation or provider action is added, and the void-wave1 publication gap is unchanged."
       },
-      "digest": "fb576a0a285ec483f842c79f48d22e695b41ec7df3f3f3afc9ab5e01b846a24d"
+      "digest": "c7a29cb275ea3b1127101f9a286ac3edb5127408dd5a4785094fde01b11c9090"
     },
     "apps/roadmap/package.json": {
       "lines": 1,

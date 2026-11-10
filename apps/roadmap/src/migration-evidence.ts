@@ -1,3 +1,4 @@
+import { publicProbeUrl } from './host-probe.ts';
 import { githubSourceUrl, publicEvidenceUrl } from './public-evidence-url.ts';
 export const stages = [
   'planned',
@@ -84,15 +85,23 @@ export type ProductionEvidence = {
   accepted: boolean;
   observedAt: string;
 };
+export type HostObservation = {
+  url: string;
+  platform: 'workers' | 'vercel' | 'unknown';
+  commit: string | null;
+  observedAt: string;
+};
 export type MigrationEvidence = {
   source: { commit: string; appSubtree: string } | null;
   pr: PullEvidence | null;
   production: ProductionEvidence | null;
+  host: HostObservation | null;
 };
 export const emptyEvidence: MigrationEvidence = {
   source: null,
   pr: null,
   production: null,
+  host: null,
 };
 const DAY = 86_400_000;
 export function isSnapshotStale(at: string, now: number) {
@@ -244,7 +253,12 @@ export function parseEvidence(
   id: ProductId
 ): MigrationEvidence {
   const e = object(value);
-  keys(e, ['source', 'pr', 'production']);
+  const field = Object.keys(e);
+  if (
+    field.some((key) => !['source', 'pr', 'production', 'host'].includes(key)) ||
+    ['source', 'pr', 'production'].some((key) => !field.includes(key))
+  )
+    throw new Error('Unknown or missing evidence field');
   const rawSource = e.source === null ? null : object(e.source);
   if (rawSource) keys(rawSource, ['commit', 'appSubtree']);
   const source = rawSource
@@ -338,26 +352,27 @@ export function parseEvidence(
     )
       throw new Error('Unsupported live claim');
   }
-  return { source, pr, production };
+  return { source, pr, production, host: parseHost(e.host, id) };
 }
 export function deriveStage(
   workInSource: boolean,
   evidence: MigrationEvidence,
   observedAt: string,
-  mergeIncluded: boolean
+  mergeIncluded: boolean,
+  sourceCommit: string | null = null
 ): MigrationStage {
   const now = Date.parse(observedAt);
-  const { pr, production } = evidence;
+  const { pr, production, host } = evidence;
+  let stage: MigrationStage;
   if (pr?.state === 'merged' && mergeIncluded) {
     if (
       production?.accepted &&
       evidence.source &&
       !isSnapshotStale(production.observedAt, now)
     )
-      return 'live';
-    return 'waiting_for_production_sync';
-  }
-  if (pr?.state === 'open' && !isSnapshotStale(pr.observedAt, now)) {
+      stage = 'live';
+    else stage = 'waiting_for_production_sync';
+  } else if (pr?.state === 'open' && !isSnapshotStale(pr.observedAt, now)) {
     const green =
       pr.requiredChecks.length > 0 &&
       pr.checks.length > 0 &&
@@ -368,16 +383,42 @@ export function deriveStage(
       pr.requiredChecks.every((name) =>
         pr.checks.some((check) => check.name === name)
       );
-    if (
+    stage =
       !pr.draft &&
       pr.review === 'APPROVED' &&
       pr.reviewedHeadSha === pr.headSha &&
       green
-    )
-      return 'waiting_for_merge';
-    return 'rolling_out';
-  }
-  return workInSource ? 'rolling_out' : 'planned';
+        ? 'waiting_for_merge'
+        : 'rolling_out';
+  } else stage = workInSource ? 'rolling_out' : 'planned';
+  if (stage === 'live') return stage;
+  if (
+    host?.platform === 'workers' &&
+    host.commit &&
+    sourceCommit &&
+    !isSnapshotStale(host.observedAt, now)
+  )
+    return host.commit === sourceCommit
+      ? 'live'
+      : 'waiting_for_production_sync';
+  return stage;
+}
+function parseHost(value: unknown, id: ProductId): HostObservation | null {
+  if (value === null || value === undefined) return null;
+  const host = object(value);
+  keys(host, ['url', 'platform', 'commit', 'observedAt']);
+  const url = text(host.url);
+  if (url !== publicProbeUrl(id)) throw new Error('Unexpected public probe URL');
+  const platform = choice(host.platform, ['workers', 'vercel', 'unknown']);
+  const commit = host.commit === null ? null : sha(host.commit);
+  if ((platform === 'workers') !== (commit !== null))
+    throw new Error('Workers probe commit mismatch');
+  return {
+    url,
+    platform,
+    commit,
+    observedAt: timestamp(host.observedAt),
+  };
 }
 export function parseEvidenceInputs(value: unknown) {
   const root = object(value);

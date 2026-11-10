@@ -67,7 +67,8 @@ export function parseSnapshot(input: unknown) {
       app.workInSource,
       stageEvidence,
       checkedAt,
-      app.mergeIncluded
+      app.mergeIncluded,
+      sourceCommit
     );
     if (stage !== app.stage) throw new Error('Stage lacks supporting evidence');
     if (
@@ -92,6 +93,8 @@ export function parseSnapshot(input: unknown) {
         label === 'Production receipt' &&
         url === stageEvidence.production?.receiptUrl
       )
+        return { label, url };
+      if (label === 'Deploy readback' && url === stageEvidence.host?.url)
         return { label, url };
       if (
         ![

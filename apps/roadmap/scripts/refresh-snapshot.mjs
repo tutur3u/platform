@@ -130,7 +130,13 @@ const apps = publicProducts.map((id) => {
       url: stageEvidence.production.receiptUrl,
     });
   }
-  const stage = deriveStage(native, stageEvidence, checkedAt, mergeIncluded);
+  const stage = deriveStage(
+    native,
+    stageEvidence,
+    checkedAt,
+    mergeIncluded,
+    sourceCommit
+  );
   return {
     id,
     name,
