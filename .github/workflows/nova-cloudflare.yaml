@@ -317,11 +317,11 @@ jobs:
           import { readFileSync, writeFileSync } from 'node:fs';
           const path = 'apps/nova/dist/server/wrangler.json';
           const c = JSON.parse(readFileSync(path, 'utf8'));
-          for (const k of ['configPath', 'userConfigPath', 'topLevelName', 'definedEnvironments']) delete c[k];
           c.name = 'tuturuuu-nova';
           c.workers_dev = false;
           c.preview_urls = false;
           c.upload_source_maps = false;
+          c.topLevelName = 'tuturuuu-nova';
           c.vars = {
             TUTURUUU_NOINDEX: '0',
             NODE_ENV: 'production',
@@ -338,7 +338,7 @@ jobs:
           test -d apps/nova/dist/client
       - name: Validate, seal and pack the final production output
         env:
-          TEACH_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+          NOVA_SOURCE_SHA: ${{ env.SOURCE_SHA }}
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           python3 scripts/ci/nova-native-artifact.py --profile production config apps/nova
