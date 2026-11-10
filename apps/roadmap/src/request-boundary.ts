@@ -42,7 +42,10 @@ export function isRoadmapSatelliteHost(request: Request): boolean {
   );
 }
 
-/** Map a satellite URL onto the canonical public path, keeping the query. */
+/**
+ * Map a satellite URL onto the canonical public path, keeping the query.
+ * The served document is `/roadmap/`. A bare `/roadmap` target would 308 again.
+ */
 export function canonicalRoadmapLocation(url: URL): string {
   const path = url.pathname;
   const mounted =
@@ -51,7 +54,8 @@ export function canonicalRoadmapLocation(url: URL): string {
       : path === '/'
         ? '/roadmap/'
         : `/roadmap${path}`;
-  return `${ROADMAP_CANONICAL_ORIGIN}${mounted}${url.search}`;
+  const canonical = mounted === '/roadmap' ? '/roadmap/' : mounted;
+  return `${ROADMAP_CANONICAL_ORIGIN}${canonical}${url.search}`;
 }
 
 export function selectedBasepath(request: Request): RoadmapBasepath {

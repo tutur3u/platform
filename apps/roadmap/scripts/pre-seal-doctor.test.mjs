@@ -6,6 +6,7 @@ import {
   reportBrokenVariant,
   STAGE_LABELS,
 } from './pre-seal-doctor.mjs';
+import '../../../scripts/ci/asset-smoke.test.mjs';
 
 const LOGO = 'https://tuturuuu.com/media/logos/transparent.png';
 const COMMIT = 'a'.repeat(40);

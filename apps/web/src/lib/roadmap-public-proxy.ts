@@ -106,7 +106,8 @@ function withoutSatelliteLoop(location: string): string {
       : path === '/'
         ? '/roadmap/'
         : `/roadmap${path}`;
-  return `https://tuturuuu.com${mounted}${parsed.search}`;
+  const canonical = mounted === '/roadmap' ? '/roadmap/' : mounted;
+  return `https://tuturuuu.com${canonical}${parsed.search}`;
 }
 
 function roadmapResponseHeaders(upstream: Headers): Headers {

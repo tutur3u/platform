@@ -88,7 +88,26 @@
       "description": "Public product roadmap",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": ["/", "/login", "/feedback", "/robots.txt", "/manifest.json"]
+      "paths": ["/", "/login", "/feedback", "/robots.txt", "/manifest.json"],
+      "assetSmoke": {
+        "canonicalOrigin": "https://tuturuuu.com",
+        "pages": [
+          { "path": "/roadmap", "redirectsTo": "/roadmap/" },
+          { "path": "/roadmap/", "status": 200 }
+        ],
+        "satellitePages": [
+          {
+            "url": "https://roadmap.tuturuuu.com/",
+            "status": 301,
+            "location": "https://tuturuuu.com/roadmap/"
+          },
+          {
+            "url": "https://roadmap.tuturuuu.com/roadmap",
+            "status": 301,
+            "location": "https://tuturuuu.com/roadmap/"
+          }
+        ]
+      }
     },
     "storefront": {
       "name": "storefront",

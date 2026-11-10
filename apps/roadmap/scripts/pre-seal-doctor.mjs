@@ -12,6 +12,10 @@ import { createServer, request as httpRequest } from 'node:http';
 import { registerHooks } from 'node:module';
 import { join, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import {
+  reportAssetSmokeRejection,
+  smokeAssets,
+} from '../../../scripts/ci/asset-smoke.mjs';
 
 const CLOUDFLARE_WORKERS_STUB = new URL(
   './cloudflare-workers-stub.mjs',
@@ -148,6 +152,7 @@ function probe(port, path, host) {
             status: response.statusCode ?? 0,
             location: headerValue(response.headers.location),
             cacheControl: headerValue(response.headers['cache-control']),
+            contentType: headerValue(response.headers['content-type']),
             body: Buffer.concat(chunks).toString('utf8'),
           });
         });
@@ -234,6 +239,11 @@ const ASSET_TYPES = {
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.map': 'application/json; charset=utf-8',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
+  '.eot': 'application/vnd.ms-fontobject',
 };
 
 function localAssets(root) {
@@ -302,6 +312,44 @@ export async function startBuiltWorker(root = appRoot()) {
   };
 }
 
+function responseFromProbe(result) {
+  const headers = new Headers();
+  if (result.contentType) headers.set('content-type', result.contentType);
+  if (result.location) headers.set('location', result.location);
+  if (result.cacheControl) headers.set('cache-control', result.cacheControl);
+  return new Response(result.body ?? '', {
+    status: result.status || 500,
+    headers,
+  });
+}
+
+/** Host-selected fetch for the asset smoke. node:http keeps the Host header. */
+export function doctorFetch(port) {
+  return async (input) => {
+    const url = new URL(typeof input === 'string' ? input : input.url);
+    const probed = await probe(port, `${url.pathname}${url.search}`, url.host);
+    return responseFromProbe(probed);
+  };
+}
+
+const DOCTOR_ASSET_PAGES = [
+  {
+    url: 'https://tuturuuu.com/roadmap',
+    redirectsTo: 'https://tuturuuu.com/roadmap/',
+  },
+  { url: 'https://tuturuuu.com/roadmap/', status: 200 },
+  {
+    url: 'https://roadmap.tuturuuu.com/',
+    status: 301,
+    location: 'https://tuturuuu.com/roadmap/',
+  },
+  {
+    url: 'https://roadmap.tuturuuu.com/roadmap',
+    status: 301,
+    location: 'https://tuturuuu.com/roadmap/',
+  },
+];
+
 export function reportBrokenVariant(observation) {
   const broken = assessDoctor(brokenVariant(observation));
   const lines = ['D79 broken variant rejected:'];
@@ -351,7 +399,37 @@ async function main() {
           }
     );
     for (const line of broken.lines) console.error(line);
-    if (!verdict.ok || !broken.ok) process.exit(1);
+    const assetSmoke = await smokeAssets({
+      pages: DOCTOR_ASSET_PAGES,
+      canonicalOrigin: 'https://tuturuuu.com',
+      fetchImpl: doctorFetch(running.port),
+    });
+    for (const failure of assetSmoke.failures) console.error(`- ${failure}`);
+    const brokenAssets = await smokeAssets({
+      pages: ['https://tuturuuu.com/roadmap/'],
+      canonicalOrigin: 'https://tuturuuu.com',
+      fetchImpl: async (url) => {
+        const target = String(url);
+        if (target.endsWith('.css')) {
+          return new Response('<html>missing</html>', {
+            status: 404,
+            headers: { 'content-type': 'text/html; charset=utf-8' },
+          });
+        }
+        return new Response(
+          '<link rel="stylesheet" href="/roadmap/assets/styles-Abcd1234.css">',
+          {
+            status: 200,
+            headers: { 'content-type': 'text/html; charset=utf-8' },
+          }
+        );
+      },
+    });
+    const assetRejection = reportAssetSmokeRejection(brokenAssets);
+    console.error(assetRejection);
+    if (!verdict.ok || !broken.ok || !assetSmoke.ok || brokenAssets.ok) {
+      process.exit(1);
+    }
     console.log(
       `pre-seal doctor passed for ${expectedCommit} on 127.0.0.1:${running.port}`
     );
