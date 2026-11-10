@@ -55,6 +55,30 @@ describe('Tasks API proxy', () => {
     );
   });
 
+  it('emits no Supabase cookie deletions on the tuturuuu.com/tasks mount', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Set-Cookie': 'sb-nzamlz-auth-token=next; Path=/',
+        },
+        status: 200,
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await GET(
+      new NextRequest('https://tuturuuu.com/tasks/api/v1/workspaces', {
+        headers: { cookie: 'sb-nzamlz-auth-token=shared; sidebar=hover' },
+        nextConfig: { basePath: '/tasks' },
+      }),
+      { params: Promise.resolve({ path: ['v1', 'workspaces'] }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.getSetCookie()).toEqual([]);
+  });
+
   it('does not proxy task-owned user config APIs to Web', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
