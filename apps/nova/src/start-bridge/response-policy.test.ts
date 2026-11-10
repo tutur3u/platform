@@ -50,19 +50,21 @@ afterEach(() => {
 
 describe('nova root-only response policy', () => {
   it.each([canonical, staging, production])(
-    'admits only the declared root %s', (host) => {
-    const mounts = {
-      app: 'nova',
-      rootHosts: [canonical],
-      mountHosts: ['tuturuuu.com'],
-      basePath: '/nova',
-      ...config.mounts,
-    };
-    expect(resolveAppBase(new URL(`https://${host}/`), mounts)).toEqual({
-      mode: 'root',
-      basePath: '',
-    });
-  });
+    'admits only the declared root %s',
+    (host) => {
+      const mounts = {
+        app: 'nova',
+        rootHosts: [canonical],
+        mountHosts: ['tuturuuu.com'],
+        basePath: '/nova',
+        ...config.mounts,
+      };
+      expect(resolveAppBase(new URL(`https://${host}/`), mounts)).toEqual({
+        mode: 'root',
+        basePath: '',
+      });
+    }
+  );
 
   it.each([
     'tuturuuu.com',
