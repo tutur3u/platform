@@ -1,21 +1,33 @@
 import handler from '@tanstack/react-start/server-entry';
-import { withRoadmapCachePolicy } from './cache-policy';
+import { buildInfoResponse, isBuildInfoPath } from './build-info.ts';
+import { withRoadmapCachePolicy } from './cache-policy.ts';
 import {
+  normalizeLocalHost,
   prepareRoadmapRequest,
   roadmapBoundary,
   selectedBasepath,
-} from './request-boundary';
+} from './request-boundary.ts';
 
 export default {
   ...handler,
   async fetch(...args: Parameters<typeof handler.fetch>) {
-    const basepath = selectedBasepath(args[0]);
-    const boundary = roadmapBoundary(args[0], basepath);
-    if (boundary) return withRoadmapCachePolicy(args[0], boundary);
-    const [request, ...options] = args;
+    const request = normalizeLocalHost(args[0]);
+    const basepath = selectedBasepath(request);
+    const boundary = roadmapBoundary(request, basepath);
+    if (boundary) return withRoadmapCachePolicy(request, boundary);
+    const url = new URL(request.url);
+    if (
+      isBuildInfoPath(url.pathname) &&
+      (request.method === 'GET' || request.method === 'HEAD')
+    ) {
+      return withRoadmapCachePolicy(
+        request,
+        buildInfoResponse(__ROADMAP_BUILD_SHA__, request.method)
+      );
+    }
     const response = await handler.fetch(
       prepareRoadmapRequest(request, basepath),
-      ...options
+      ...args.slice(1)
     );
     return withRoadmapCachePolicy(request, response);
   },

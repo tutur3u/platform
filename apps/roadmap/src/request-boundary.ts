@@ -1,7 +1,36 @@
+import { isBuildInfoPath } from './build-info.ts';
+
 export type RoadmapBasepath = '/' | '/roadmap';
 export const mountHeader = 'x-roadmap-router-base';
 export const ROADMAP_SATELLITE_HOST = 'roadmap.tuturuuu.com';
 export const ROADMAP_CANONICAL_ORIGIN = 'https://tuturuuu.com';
+
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
+
+function headerHost(request: Request): string | null {
+  const raw = request.headers.get('host');
+  if (!raw) return null;
+  return raw.split(',')[0]?.trim().toLowerCase() || null;
+}
+
+/**
+ * A local server keeps the loopback URL. When its Host header is one of the
+ * public roadmap hosts, treat the request as that https origin so the same
+ * worker answers a pre-seal probe and a Cloudflare route.
+ */
+export function normalizeLocalHost(request: Request): Request {
+  const url = new URL(request.url);
+  if (!LOOPBACK_HOSTS.has(url.hostname.toLowerCase())) return request;
+  const host = headerHost(request);
+  if (host !== 'tuturuuu.com' && host !== ROADMAP_SATELLITE_HOST)
+    return request;
+  url.protocol = 'https:';
+  url.hostname = host;
+  url.port = '';
+  const headers = new Headers(request.headers);
+  headers.set('host', host);
+  return new Request(url, new Request(request, { headers }));
+}
 
 export function isRoadmapSatelliteHost(request: Request): boolean {
   const url = new URL(request.url);
@@ -70,6 +99,7 @@ export function roadmapBoundary(
     }
     return undefined;
   }
+  if (isBuildInfoPath(url.pathname)) return undefined;
   if (url.pathname === '/' || url.pathname === '/roadmap') {
     return new Response(null, {
       status: 308,

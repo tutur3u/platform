@@ -2,7 +2,7 @@
   "all": "All products",
   "appName": "Roadmap",
   "blocked": "Blocked",
-  "definition": "Planned → work in progress → approved with green checks → merged, awaiting production verification → live with public readback. Blocked is a separate flag at any stage.",
+  "definition": "Planned → Rolling out → Waiting for merge → Waiting for prod sync → Live. Blocked is a separate flag at any stage.",
   "details": "Migration evidence",
   "empty": "No products match these filters.",
   "en": "English",
@@ -27,7 +27,7 @@
   "planned": "Planned",
   "repo": "View source",
   "reset": "Clear filters",
-  "rolling_out": "Work in progress",
+  "rolling_out": "Rolling out",
   "search": "Find a product",
   "signIn": "Sign in",
   "snapshot": "Source snapshot",
@@ -45,6 +45,6 @@
   "title": "A clearer path to Cloudflare.",
   "updated": "Evidence checked",
   "vi": "Tiếng Việt",
-  "waiting_for_merge": "Awaiting merge",
-  "waiting_for_production_sync": "Awaiting production sync"
+  "waiting_for_merge": "Waiting for merge",
+  "waiting_for_production_sync": "Waiting for prod sync"
 }

@@ -46,7 +46,8 @@ It does not fetch or authenticate manually supplied metadata: retain the actual
 public evidence and review its provenance, scope and observation before inclusion.
 
 The lifecycle is `planned` → `rolling_out` → `waiting_for_merge` →
-`waiting_for_production_sync` → `live`. Configuration only supports work in
+`waiting_for_production_sync` → `live`. The public labels are Planned, Rolling
+out, Waiting for merge, Waiting for prod sync and Live. Configuration only supports work in
 progress. Awaiting merge requires a fresh non-draft open PR, explicit approval at
 its current head, a nonempty required check set and all recorded checks successful
 at that head. Missing, skipped, pending, unknown, stale or mismatched checks cannot
@@ -121,7 +122,8 @@ physical client key beneath `roadmap/`, and source identity in emitted code.
 Public `basePath` and `providerAssetBase` are distinct manifest fields. It does not attest runtime behavior or deployment. SSR HTML exposes the
 build identity as `data-source-sha` for the release readback.
 Run `node --test apps/roadmap/src/roadmap-data.test.ts
-apps/roadmap/scripts/seal-artifact.test.mjs` for data, boundary, packaging, mapping
+apps/roadmap/src/cache-policy.test.ts apps/roadmap/scripts/seal-artifact.test.mjs
+apps/roadmap/scripts/pre-seal-doctor.test.mjs` for data, boundary, packaging, mapping
 and descriptor-security checks. Linux-only descriptor cases skip on other hosts.
 Run the data tests directly through Node; no database or app server is needed.
 No local machine release build is required.
@@ -138,24 +140,27 @@ basepath and the router basepath all match `/roadmap`. Before production traffic
 verify the emitted Worker and client artifacts, the exact source SHA and account,
 and both the bare `/roadmap` and `/roadmap/*` routes against existing zone routes.
 The app-owned `src/worker.ts`, selected through Void's supported `cloudflare.main`,
-selects the external router basepath once per request. Only the exact URL host
-`roadmap.tuturuuu.com`, with no conflicting Host header or non-default port,
-selects `/`. Forwarded-host headers do not select a mount. Apex, workers.dev and
-unknown hosts retain `/roadmap` behavior: root and bare mount return 308 to
-`/roadmap/` with the query preserved, and outside-prefix requests return 404.
+answers two hosts. `https://roadmap.tuturuuu.com` returns 301 to
+`https://tuturuuu.com/roadmap` plus the same path and query (`/` becomes
+`/roadmap/`). `https://tuturuuu.com/roadmap/` serves the app. `GET` and `HEAD`
+`/roadmap/api/build-info` (and `/api/build-info` on the canonical host) return
+the build commit as JSON and are not cached. workers.dev keeps the `/roadmap`
+mount: root and the bare mount return 308 to `/roadmap/` with the query
+preserved, and outside-prefix requests return 404. A loopback request whose
+Host header is one of those two public hosts uses the same contract; any other
+Host on loopback is left unchanged. Forwarded-host headers do not select a mount.
 
-On the dedicated host, `/` serves the app. Legacy `/roadmap` and `/roadmap/*`
-page paths redirect 308 to the corresponding root path with the query preserved.
 The reserved `/roadmap/assets` and `/roadmap/_serverFn` paths are transport
-exceptions: they retain the physical asset and server-function URLs, including
-POST bodies and query strings. This app emits client resources under its Vite
-`assets` directory; additional public asset roots require an explicit transport
-contract before use. Encoded paths, backslashes and repeated slashes return 400,
-preventing alias fallthrough and protocol-relative redirect targets.
+exceptions on the canonical mount: they retain the physical asset and
+server-function URLs, including POST bodies and query strings. This app emits
+client resources under its Vite `assets` directory; additional public asset
+roots require an explicit transport contract before use. Encoded paths,
+backslashes and repeated slashes return 400, preventing alias fallthrough and
+protocol-relative redirect targets.
 
 Pinned Start server-core 1.169.44 and client-core 1.170.38 overwrite the router
-basepath with the compiled mount. The source therefore internally rewrites
-root-host page requests beneath `/roadmap`, retaining the compiled SSR router,
+basepath with the compiled mount. The source therefore rewrites a non-satellite root-mounted page request
+beneath `/roadmap`, retaining the compiled SSR router,
 asset base and server-function base. The Worker overwrites an internal mount
 header for every delegated request. The router reads that server-owned value,
 dehydrates it and restores the external client basepath during Router's hydrate
@@ -175,14 +180,16 @@ functions against that artifact. Synthetic source tests do not attest a build,
 seal, runtime or deployment. A PR synthetic merge SHA is distinct from its PR head
 and from the reviewed main commit used for release.
 
-The canonical page remains https://tuturuuu.com/roadmap/. The dedicated host's
-root behavior is an application route contract, not a declaration that a new
-source commit is live. The release owner must reconcile any existing zone
+The canonical page remains https://tuturuuu.com/roadmap/. The satellite host
+only redirects there. The release owner must reconcile any existing zone
 redirect with this contract and capture routing preimages before a hosted rollout.
 No DNS, zone, provider or deployment operation follows from source publication.
-Verify the exact-host root page, query and legacy-page redirects, reserved asset
-and server-function transport, hydration, direct reload, spoofed hosts, malformed
-paths and unchanged apex/workers.dev behavior before accepting delivery.
+Before sealing, `scripts/pre-seal-doctor.mjs` serves the built Worker on
+loopback with `Host: tuturuuu.com` (200, Tuturuuu branding, the five stage
+labels, public HTML cache, immutable hashed asset) and `Host:
+roadmap.tuturuuu.com` (301), and reads `/roadmap/api/build-info` for
+`ROADMAP_SOURCE_SHA`. The same checker must reject a broken variant. Verify
+that local result against the hosted routes after publication.
 
 Capture the existing route mapping and immutable Worker version before a write.
 For a regression, the release owner restores those exact route mappings and the
@@ -213,18 +220,22 @@ router selection and the canonical apex URL remain owned by the request adapter.
 `src/cache-policy.ts` composes headers after the native response. Only successful
 GET/HEAD HTML at `https://tuturuuu.com/roadmap/` and
 `https://roadmap.tuturuuu.com/`, without query variants, receives
-`public,s-maxage=300,stale-while-revalidate=86400`. Cookie-bearing requests do not
-select a different document or read identity. Set-Cookie, unsafe Vary,
-private/no-store upstream responses, unknown hosts, auth/serverFn paths, errors
-and non-document responses receive `private,no-store`. Unsafe headers remain
-present. Successful native assets retain their supplier's cache policy and MIME;
-this wrapper does not establish immutable asset delivery.
+`public,s-maxage=300,stale-while-revalidate=86400`. A renderer default of
+`private` or `no-store` does not keep that document private: the page has no
+actor. Cookie-bearing requests do not select a different document or read
+identity. Set-Cookie, a Vary other than `accept-encoding`, unknown hosts,
+auth/serverFn paths, errors and non-document responses receive `private,no-store`.
+Unsafe headers remain present. Hashed files under `/roadmap/assets/`
+(`name-<8+ hash>.ext`) receive `public, max-age=31536000, immutable`. Unhashed
+files keep the supplier's cache policy.
 
 The wrapper preserves response body streams, status and Content-Type bytes.
 It has no Cache API, storage, network work, timers or background operations;
 rollback is the owning source revert and normal reviewed release process.
-`node --test src/cache-policy.test.ts src/roadmap-data.test.ts` exercises the
-header boundary with synthetic requests and preserves stage/evidence controls.
+`node --test src/cache-policy.test.ts src/roadmap-data.test.ts
+scripts/pre-seal-doctor.test.mjs` exercises the header boundary with synthetic
+requests and preserves stage/evidence controls. The doctor test prints the
+broken-variant rejection.
 
 Source tests do not establish hosted edge hits. The release owner must verify
 exact-artifact SSR/hydration, immutable hashed assets, response headers and actual
