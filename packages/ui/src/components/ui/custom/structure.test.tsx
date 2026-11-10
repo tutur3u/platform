@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { render, screen, within } from '@testing-library/react';
+import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Structure } from './structure';
 
@@ -94,5 +95,66 @@ describe('Structure', () => {
     expect(
       sidebarQueries.queryByRole('button', { name: 'Account' })
     ).not.toBeInTheDocument();
+  });
+
+  describe('hover overlay', () => {
+    const mounts = vi.fn();
+    function MountProbe() {
+      useEffect(() => {
+        mounts();
+      }, []);
+      return <span>Probe</span>;
+    }
+    const renderStructure = (
+      isCollapsed: boolean,
+      overlayOnExpand: boolean
+    ) => (
+      <Structure
+        isCollapsed={isCollapsed}
+        overlayOnExpand={overlayOnExpand}
+        setIsCollapsed={vi.fn()}
+        sidebarContent={<MountProbe />}
+      >
+        <span>Page content</span>
+      </Structure>
+    );
+
+    beforeEach(() => mounts.mockClear());
+
+    it('reserves a constant rail and never transitions in-flow padding or width', () => {
+      const { container, rerender } = render(renderStructure(true, true));
+      const main = container.querySelector('main') as HTMLElement;
+      const aside = container.querySelector('aside') as HTMLElement;
+
+      for (const collapsed of [true, false]) {
+        rerender(renderStructure(collapsed, true));
+        expect(main).toHaveClass('md:pl-[var(--sidebar-collapsed-width)]');
+        expect(main).not.toHaveClass('md:pl-[var(--sidebar-expanded-width)]');
+        expect(main.className).not.toContain('transition');
+        expect(aside.className).not.toContain('transition-all');
+      }
+      expect(aside).toHaveClass('sidebar-overlay-reveal', 'md:z-40');
+    });
+
+    it('remounts the sidebar body between rail and panel so no element is repositioned', () => {
+      const { rerender } = render(renderStructure(true, true));
+      expect(mounts).toHaveBeenCalledTimes(1);
+      rerender(renderStructure(false, true));
+      expect(mounts).toHaveBeenCalledTimes(2);
+      rerender(renderStructure(true, true));
+      expect(mounts).toHaveBeenCalledTimes(3);
+    });
+
+    it('keeps the animated reflow and mounted body for non-overlay sidebars', () => {
+      const { container, rerender } = render(renderStructure(true, false));
+      rerender(renderStructure(false, false));
+
+      expect(mounts).toHaveBeenCalledTimes(1);
+      expect(container.querySelector('aside')).toHaveClass('transition-all');
+      expect(container.querySelector('aside')).not.toHaveClass(
+        'sidebar-overlay-reveal'
+      );
+      expect(container.querySelector('main')).toHaveClass('transition-all');
+    });
   });
 });
