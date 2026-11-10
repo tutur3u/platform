@@ -1,28 +1,31 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+  resolveSatellitePageActor,
+  resolveSatelliteRequestActor,
+} from '@tuturuuu/satellite/workspace-access';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 export const DATASET_PERMISSION = 'ai_lab';
 
+const DATASET_AUDIENCE = ['workspace', 'platform'] as const;
+
 export async function resolveDatasetWorkspaceAccess(
   wsId: string,
   request?: Request
 ) {
-  const session = await createClient(request);
-  const { user, authError } = await resolveAuthenticatedSessionUser(session);
-  if (authError || !user) {
+  const actor = request
+    ? await resolveSatelliteRequestActor(request, DATASET_AUDIENCE)
+    : await resolveSatellitePageActor(DATASET_AUDIENCE);
+  if (!actor) {
     return {
       ok: false,
       response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
     } as const;
   }
 
-  const permissions = await getPermissions({ wsId, user });
+  const permissions = await getPermissions({ wsId, user: actor.user });
   if (!permissions) {
     return {
       ok: false,
@@ -45,7 +48,9 @@ export async function resolveDatasetWorkspaceAccess(
   return {
     ok: true,
     wsId: permissions.wsId,
-    supabase: await createAdminClient(),
+    supabase: (await createAdminClient({
+      noCookie: true,
+    })) as TypedSupabaseClient,
   } as const;
 }
 
