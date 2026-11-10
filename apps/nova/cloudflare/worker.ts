@@ -37,11 +37,17 @@ const handler = (
   createBridgeHandler<NovaEnvironment, WorkerContext>({
     // One artifact: the subdomain root and the tuturuuu.com/nova mount.
     mounts: {
-      app: 'nova',
-      rootHosts: ['nova.tuturuuu.com'],
       mountHosts: ['tuturuuu.com'],
       basePath: '/nova',
       ...appConfig.mounts,
+      app: 'nova',
+      // The production host is always served; the app config adds hosts.
+      rootHosts: [
+        ...new Set([
+          'nova.tuturuuu.com',
+          ...(appConfig.mounts.rootHosts ?? []),
+        ]),
+      ],
     },
     csp: appConfig.csp,
     apiOrigin: appConfig.apiOrigin,
