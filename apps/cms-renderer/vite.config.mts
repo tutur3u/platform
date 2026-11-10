@@ -5,7 +5,9 @@ import { voidPlugin } from 'void';
 export default defineConfig({
   define: { 'process.env.NODE_ENV': JSON.stringify('production') },
   environments: {
-    server: { define: { 'process.env.NODE_ENV': JSON.stringify('production') } },
+    server: {
+      define: { 'process.env.NODE_ENV': JSON.stringify('production') },
+    },
   },
   plugins: [voidPlugin(), tanstackStart(), react()],
 });
