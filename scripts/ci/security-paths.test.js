@@ -77,6 +77,27 @@ test('security-sensitive paths require review by category', () => {
   }
 });
 
+test('cache-policy is not rls-database and a real RLS path still is', () => {
+  assert.ok(
+    !categoriesOf(['apps/roadmap/src/cache-policy.ts']).includes('rls-database')
+  );
+  assert.ok(
+    !categoriesOf([
+      'apps/calendar/src/lib/calendar/google-oauth-urls.ts',
+    ]).includes('rls-database')
+  );
+  assert.ok(
+    categoriesOf([
+      'supabase/migrations/20260101000000_enable_rls.sql',
+    ]).includes('rls-database')
+  );
+  assert.ok(
+    categoriesOf([
+      'apps/database/supabase/migrations/20261023000000_x.sql',
+    ]).includes('rls-database')
+  );
+});
+
 test('ordinary product, docs and translation changes need no security review', () => {
   for (const filePath of [
     'apps/calendar/src/components/event-card.tsx',
