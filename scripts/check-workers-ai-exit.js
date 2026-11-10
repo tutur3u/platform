@@ -79,7 +79,8 @@ function bindingFindings(source, file) {
 
 function invocationFindings(source, file) {
   const typeDeclaration = file.endsWith('.d.ts');
-  const envAi = /env\s*(?:\.\s*AI(?![\w$])|\[\s*['"]AI['"]\s*\])/;
+  const envAi =
+    /\b(?:env|bindings)\s*(?:\?\.|\.)\s*AI(?![\w$])|\{\s*AI\s*[,}]|\b(?:env|bindings)\s*\[\s*['"]AI['"]\s*\]/;
   const modelId = new RegExp('@' + 'cf/');
   const restApi = /\/ai\/run\//;
   const gateway = 'workers' + '-ai';
@@ -121,8 +122,25 @@ function workersAiFindings(repoRoot = REPO_ROOT) {
   return findings;
 }
 
+function main(findings = workersAiFindings()) {
+  if (findings.length === 0) {
+    process.stdout.write('Workers AI exit check passed.\n');
+    return 0;
+  }
+  process.stderr.write(
+    `Workers AI exit check failed.\n${findings
+      .map((finding) => ` - ${finding}`)
+      .join('\n')}\n`
+  );
+  process.exitCode = 1;
+  return 1;
+}
+
+if (require.main === module) main();
+
 module.exports = {
   bindingFindings,
   invocationFindings,
+  main,
   workersAiFindings,
 };
