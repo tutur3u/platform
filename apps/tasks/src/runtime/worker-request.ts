@@ -43,7 +43,18 @@ export type TasksBridgeHandler = (
   ctx: TasksExecutionContext
 ) => Promise<Response>;
 
-/** Root-only and fail-closed: no apex mount, unlisted hosts get 404. */
+/** The shared origin that serves Tasks under {@link TASKS_BASE_PATH}. */
+export const TASKS_MOUNT_HOSTS = ['tuturuuu.com'] as const;
+
+/** Tasks' mount on the shared origin: `https://tuturuuu.com/tasks`. */
+export const TASKS_BASE_PATH = '/tasks';
+
+/**
+ * One artifact serves the subdomain root and the `tuturuuu.com/tasks` mount
+ * (one-origin, D87). Fail-closed: unlisted hosts get 404, and the apex outside
+ * `/tasks` is not Tasks'. Whether the apex is served at all is decided by
+ * `TTR_ONE_ORIGIN_TASKS` in the bridge, and by the zone routes.
+ */
 export function tasksMounts(env: TasksWorkerEnv): AppMountConfig {
   const staging = (env.TUTURUUU_STAGING_HOSTS ?? '')
     .split(',')
@@ -52,7 +63,8 @@ export function tasksMounts(env: TasksWorkerEnv): AppMountConfig {
   return {
     app: 'tasks',
     rootHosts: [...TASKS_ROOT_HOSTS, ...staging],
-    mountHosts: [],
+    mountHosts: [...TASKS_MOUNT_HOSTS],
+    basePath: TASKS_BASE_PATH,
     unknownHost: 'reject',
   };
 }
@@ -160,7 +172,11 @@ export function createTasksRequestHandler(
           )
         : null;
     if (buildInfo) return decorate(buildInfo, appPath, request.method);
-    const key = mounts.rootHosts.join(',');
+    const key = [
+      mounts.rootHosts.join(','),
+      (mounts.mountHosts ?? []).join(','),
+      mounts.basePath ?? '',
+    ].join('|');
     let bridge = bridges.get(key);
     if (!bridge) {
       bridge = createBridge(mounts);
