@@ -140,31 +140,52 @@ test('a failed branch check leaves selected validation eligible but fails the ag
 });
 
 test('metadata-only runs cannot cancel validation or each other, including the admission callee', () => {
-  for (const policy of [workflow.concurrency, admission.concurrency]) {
-    const normal = context();
-    const normalGroup = renderTemplate(policy.group, normal);
-    assert.equal(
-      normalGroup,
-      renderTemplate(policy.group, context('labeled', 'ready-for-ci', true, 2))
-    );
-    const first = context('labeled', 'WIP', true, 3);
-    const second = context('unlabeled', 'WIP', true, 4);
-    const group = renderTemplate(policy.group, first);
-    assert.notEqual(group, normalGroup);
-    assert.notEqual(group, renderTemplate(policy.group, second));
-    assert.equal(
-      evaluateExpression(policy['cancel-in-progress'], first),
-      false
-    );
-    assert.equal(
-      evaluateExpression(policy['cancel-in-progress'], second),
-      false
-    );
-    assert.notEqual(
-      normalGroup,
-      renderTemplate(policy.group, context('synchronize', undefined, false))
-    );
-  }
+  const normal = context();
+  const normalGroup = renderTemplate(workflow.concurrency.group, normal);
+  assert.equal(
+    normalGroup,
+    `${workflow.name}-pr-42`,
+    'a pull request shares one superseding group'
+  );
+  assert.equal(
+    normalGroup,
+    renderTemplate(
+      workflow.concurrency.group,
+      context('labeled', 'ready-for-ci', true, 2)
+    )
+  );
+  const first = context('labeled', 'WIP', true, 3);
+  const second = context('unlabeled', 'WIP', true, 4);
+  // Label edits land in the same group, and cancel stays off so they cannot
+  // replace an in-progress admitted run.
+  assert.equal(renderTemplate(workflow.concurrency.group, first), normalGroup);
+  assert.equal(renderTemplate(workflow.concurrency.group, second), normalGroup);
+  assert.equal(
+    evaluateExpression(workflow.concurrency['cancel-in-progress'], first),
+    false
+  );
+  assert.equal(
+    evaluateExpression(workflow.concurrency['cancel-in-progress'], second),
+    false
+  );
+  assert.equal(
+    normalGroup,
+    renderTemplate(
+      workflow.concurrency.group,
+      context('synchronize', undefined, false)
+    )
+  );
+  const callee = admission.concurrency;
+  const calleeGroup = renderTemplate(callee.group, normal);
+  const calleeFirst = renderTemplate(callee.group, first);
+  assert.notEqual(calleeFirst, calleeGroup);
+  assert.notEqual(calleeFirst, renderTemplate(callee.group, second));
+  assert.equal(evaluateExpression(callee['cancel-in-progress'], first), false);
+  assert.equal(evaluateExpression(callee['cancel-in-progress'], second), false);
+  assert.notEqual(
+    calleeGroup,
+    renderTemplate(callee.group, context('synchronize', undefined, false))
+  );
 });
 
 test('cancellation prevents the aggregate from allocating a runner', () => {
