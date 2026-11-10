@@ -9,6 +9,7 @@ import appConfig from '../../start-bridge.config';
 const config: BridgeAppConfig = appConfig;
 const canonical = 'nova.ai.vn';
 const staging = 'nova.tutur3u.com';
+const production = 'nova.tuturuuu.com';
 const publicFile = '/favicon.ico';
 
 function apply(path: string, method = 'GET', host = canonical) {
@@ -48,7 +49,8 @@ afterEach(() => {
 });
 
 describe('nova root-only response policy', () => {
-  it.each([canonical, staging])('admits only the declared root %s', (host) => {
+  it.each([canonical, staging, production])(
+    'admits only the declared root %s', (host) => {
     const mounts = {
       app: 'nova',
       rootHosts: [canonical],
@@ -65,7 +67,7 @@ describe('nova root-only response policy', () => {
   it.each([
     'tuturuuu.com',
     'unknown.invalid',
-    'nova.tuturuuu.com',
+    'nova.tuturuuu.com.attacker.invalid',
     'nova.ai.vn.attacker.invalid',
     'tuturuuu-nova-vite-staging.example.workers.dev',
   ])('rejects apex and unlisted host %s', (host) => {
