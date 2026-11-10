@@ -1,4 +1,3 @@
-import { cn } from '@tuturuuu/utils/format';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
 import { Skeleton } from '../../skeleton';
 import { DAY_HEIGHT, HOUR_HEIGHT, MIN_COLUMN_WIDTH } from './config';
@@ -113,22 +112,10 @@ export function CalendarLoadingSkeleton({
 
   if (view === 'agenda') return <AgendaCalendarSkeleton />;
 
+  // The weekday bar above the scroll area is always mounted, so the timed
+  // skeleton holds only the grid and swaps for it without moving anything.
   return (
-    <div className="h-full min-h-0 space-y-2" aria-busy="true">
-      <div
-        className={cn(
-          'grid rounded-lg border bg-background/70 p-2',
-          columns === 1 && 'max-w-lg'
-        )}
-        style={{
-          gridTemplateColumns: `4rem repeat(${columns}, minmax(${MIN_COLUMN_WIDTH}px, 1fr))`,
-        }}
-      >
-        <Skeleton className="h-5 w-5 self-center justify-self-center rounded-sm" />
-        {Array.from({ length: columns }).map((_, index) => (
-          <Skeleton key={index} className="mx-1 h-5 rounded-sm" />
-        ))}
-      </div>
+    <div className="h-full min-h-0" aria-busy="true">
       <TimedCalendarSkeleton columns={columns} />
     </div>
   );

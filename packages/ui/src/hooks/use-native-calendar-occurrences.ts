@@ -40,14 +40,14 @@ export function useNativeCalendarOccurrences(
   const to = range?.end.toISOString();
   const key = [...nativeOccurrencesKey(wsId), actorId, from, to];
   const enabled = !external && !!actor && !!wsId && !!from && !!to;
-  useEffect(
-    () => () => {
-      client.removeQueries({
-        queryKey: [...nativeOccurrencesKey(wsId), actorId],
-      });
-    },
-    [client, wsId, actorId]
-  );
+  // Drop snapshots that belong to any other actor. The actor is part of the key,
+  // so this only trims memory; the same actor keeps its ranges across remounts.
+  useEffect(() => {
+    client.removeQueries({
+      queryKey: nativeOccurrencesKey(wsId),
+      predicate: (cached) => cached.queryKey[2] !== actorId,
+    });
+  }, [client, wsId, actorId]);
   const query = useQuery({
     queryKey: key,
     enabled,
@@ -67,6 +67,13 @@ export function useNativeCalendarOccurrences(
         throw error;
       }
     },
+    // Keep the previous range's rows while a new range loads, but never across
+    // an actor or workspace change.
+    placeholderData: (previous, previousQuery) =>
+      previousQuery?.queryKey[1] === wsId &&
+      previousQuery.queryKey[2] === actorId
+        ? previous
+        : undefined,
     staleTime: 30_000,
     gcTime: 30 * 60_000,
     retry: (count, error) =>

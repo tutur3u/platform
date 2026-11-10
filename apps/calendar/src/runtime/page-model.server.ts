@@ -86,19 +86,19 @@ async function loadResolvedPageModel(url: URL) {
       invitation: scope.invitation,
     };
   if (segments.length === 1) {
-    const calendar = await calendarPageModel({
-      params: Promise.resolve({ wsId, locale }),
-      searchParams: Promise.resolve({
-        date: url.searchParams.get('date') ?? undefined,
-        eventId: url.searchParams.get('eventId') ?? undefined,
+    // The shell only needs the verified workspace scope, so it loads beside the
+    // page model, whose own permission checks still gate the response.
+    const [calendar, shell] = await Promise.all([
+      calendarPageModel({
+        params: Promise.resolve({ wsId, locale }),
+        searchParams: Promise.resolve({
+          date: url.searchParams.get('date') ?? undefined,
+          eventId: url.searchParams.get('eventId') ?? undefined,
+        }),
       }),
-    });
-    return {
-      ...common,
-      kind: 'calendar' as const,
-      shell: await workspaceShellModel(scope),
-      calendar,
-    };
+      workspaceShellModel(scope),
+    ]);
+    return { ...common, kind: 'calendar' as const, shell, calendar };
   }
   if (segments[1] === 'lab') {
     const lab = await labModel(wsId);
