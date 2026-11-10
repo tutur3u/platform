@@ -20,9 +20,11 @@ import {
   classifyProbeResponse,
   hostsResponse,
   parseHostsPayload,
+  isSameZoneUrl,
   PROBED_APPS,
   probeHosts,
   resetHostsMemo,
+  RUNTIME_PROBED_APPS,
 } from './live/host-probe.ts';
 import {
   type LiveData,
@@ -621,7 +623,7 @@ describe('host probe', () => {
     }) as unknown as typeof fetch;
     const first = await hostsResponse('GET', fetcher, SHA_B, NOW);
     const second = await hostsResponse('GET', fetcher, SHA_B, NOW + 5_000);
-    assert.equal(calls, PROBED_APPS.length, 'one fan-out per minute');
+    assert.equal(calls, RUNTIME_PROBED_APPS.length, 'one fan-out per minute');
     assert.match(first.headers.get('cache-control') ?? '', /no-store/);
     const payload = parseHostsPayload(await second.json());
     for (const host of payload.hosts)
@@ -647,6 +649,90 @@ describe('host probe', () => {
         checkedAt: new Date(NOW).toISOString(),
         hosts: [{ app: 'ops-hub', platform: 'workers', commit: null }],
       })
+    );
+  });
+});
+
+describe('production hosting regression (same-zone probes)', () => {
+  const build = parseLiveData(
+    JSON.parse(
+      readFileSync(new URL('./generated/live.json', import.meta.url), 'utf8')
+    )
+  );
+  const VERCEL_COMMIT = '4382dd3223b7ec40782ae1f7fad3b0e5837d64bf';
+  const buildWorkers = build.hosts.filter(
+    (h) => h.platform === 'workers'
+  ).length;
+
+  it('the build-time probe sees the apps that run on Workers', () => {
+    assert.ok(buildWorkers >= 10, `only ${buildWorkers} apps on Workers`);
+  });
+
+  it('the Worker never probes hosts in its own zone at runtime', async () => {
+    assert.ok(RUNTIME_PROBED_APPS.length > 0);
+    assert.ok(RUNTIME_PROBED_APPS.every((entry) => !isSameZoneUrl(entry.url)));
+    assert.ok(PROBED_APPS.some((entry) => isSameZoneUrl(entry.url)));
+    resetHostsMemo();
+    const seen: string[] = [];
+    const fetcher = (async (url: string) => {
+      seen.push(url);
+      return new Response('{}', { status: 404 });
+    }) as unknown as typeof fetch;
+    await hostsResponse('GET', fetcher, SHA_B, NOW);
+    assert.ok(seen.length > 0);
+    assert.ok(
+      seen.every((url) => !isSameZoneUrl(url)),
+      seen.join(',')
+    );
+    resetHostsMemo();
+  });
+
+  it('broken variant: same-zone probes misread as Vercel cannot flip Workers apps', () => {
+    // Shape of the production /roadmap/api/hosts answer on 10 Nov 2026.
+    const misread = data({
+      generatedAt: new Date(NOW).toISOString(),
+      source: 'live',
+      hosts: build.hosts
+        .filter((h) => h.app !== 'mobile' && h.app !== 'roadmap')
+        .map((h) => ({
+          app: h.app,
+          platform: 'vercel' as const,
+          commit: h.platform === 'workers' ? VERCEL_COMMIT : null,
+          commitAt:
+            h.platform === 'workers' ? '2026-11-08T23:42:45.000Z' : null,
+          behindBy: h.platform === 'workers' ? 190 : null,
+        })),
+    });
+    const merged = mergeLiveData(build, misread);
+    const view = buildView(merged, NOW);
+    assert.equal(view.onWorkers, buildView(build, NOW).onWorkers);
+    for (const host of build.hosts.filter((h) => h.platform === 'workers')) {
+      const after = merged.hosts.find((h) => h.app === host.app);
+      assert.equal(after?.platform, 'workers', host.app);
+      assert.equal(after?.commit, host.commit, host.app);
+    }
+    assert.equal(view.totals.live, buildView(build, NOW).totals.live);
+  });
+
+  it('a failed probe is unknown, never Vercel', async () => {
+    const results = await probeHosts(
+      (async () => {
+        throw new Error('network');
+      }) as unknown as typeof fetch,
+      null
+    );
+    assert.ok(
+      results
+        .filter((r) => r.app !== 'roadmap')
+        .every((r) => r.platform === 'unknown')
+    );
+    assert.deepEqual(
+      classifyProbeResponse(
+        200,
+        new Headers({ 'content-type': 'text/html' }),
+        '<html>'
+      ),
+      { platform: 'unknown', commit: null }
     );
   });
 });

@@ -8,7 +8,8 @@ import {
 import { parseHostsPayload } from './host-probe.ts';
 import { type LiveData, mergeLiveData, parseLiveData } from './model.ts';
 
-const CACHE_KEY = 'tuturuuu-roadmap-live-v1';
+// v2: v1 caches may hold same-zone probes misread as Vercel; never reuse them.
+const CACHE_KEY = 'tuturuuu-roadmap-live-v2';
 /** Ten minutes keeps a viewer well inside GitHub's anonymous hourly quota. */
 export const REFRESH_MS = 10 * 60_000;
 

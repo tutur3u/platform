@@ -207,11 +207,16 @@ export function mergeLiveData(older: LiveData, newer: LiveData): LiveData {
   const hosts = new Map(older.hosts.map((host) => [host.app, host]));
   for (const host of newer.hosts) {
     const previous = hosts.get(host.app);
-    // A failed probe (unknown, no commit) never erases a known observation.
+    // A failed probe (unknown, no commit) never erases a known observation,
+    // and a conflicting platform is ambiguous: keep the earlier, authoritative
+    // classification instead of flipping an app between Workers and Vercel.
     if (
-      host.platform === 'unknown' &&
       previous &&
-      previous.platform !== 'unknown'
+      previous.platform !== 'unknown' &&
+      (host.platform === 'unknown' ||
+        host.platform !== previous.platform ||
+        // A commit-less answer is ambiguous too: never erase a known commit.
+        (previous.commit !== null && host.commit === null))
     )
       continue;
     hosts.set(host.app, host);
