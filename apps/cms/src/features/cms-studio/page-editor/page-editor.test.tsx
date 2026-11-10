@@ -361,8 +361,8 @@ describe('PageEditorTopBar', () => {
         context="Library"
         status={{ label: 'Draft', live: false }}
         saveState={{ kind: 'unsaved' }}
-        backLabel="Back"
-        onBack={onBack}
+        back={{ label: 'Back', onBack }}
+        badges={[{ id: 'cover', label: 'Cover' }]}
         publish={{ label: 'Publish', pending: false, onPublish }}
         moreActionsLabel="More actions"
       />
@@ -374,6 +374,7 @@ describe('PageEditorTopBar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(onPublish).toHaveBeenCalledOnce();
     expect(onBack).toHaveBeenCalledOnce();
+    expect(screen.getByText('Cover')).toBeTruthy();
   });
 
   it('disables publish while it is pending', () => {
@@ -383,8 +384,7 @@ describe('PageEditorTopBar', () => {
         title="AI handbook"
         status={{ label: 'Live', live: true }}
         saveState={{ kind: 'saved' }}
-        backLabel="Back"
-        onBack={() => undefined}
+
         publish={{
           label: 'Publish',
           pending: true,
@@ -399,6 +399,7 @@ describe('PageEditorTopBar', () => {
     const publish = screen.getByRole('button', { name: 'Publish' });
     expect((publish as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByRole('button', { name: 'More actions' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
   });
 });
 

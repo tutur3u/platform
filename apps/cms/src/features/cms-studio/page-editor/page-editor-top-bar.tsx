@@ -30,10 +30,12 @@ export type PageEditorTopBarProps = {
   /** Where the page lives, e.g. the collection name. */
   context?: string;
   status: { label: string; live: boolean };
+  /** Extra facts next to the status, e.g. "Cover" or "Processing media". */
+  badges?: readonly { id: string; label: string }[];
   saveState: PageEditorSaveState;
   onRetrySave?: () => void;
-  backLabel: string;
-  onBack: () => void;
+  /** Omitted where the surrounding chrome already closes the editor. */
+  back?: { label: string; onBack: () => void };
   save?: { label: string; disabled: boolean; onSave: () => void };
   preview?: { label: string; onPreview: () => void };
   publish?: {
@@ -51,10 +53,10 @@ export function PageEditorTopBar({
   title,
   context,
   status,
+  badges = [],
   saveState,
   onRetrySave,
-  backLabel,
-  onBack,
+  back,
   save,
   preview,
   publish,
@@ -67,15 +69,17 @@ export function PageEditorTopBar({
   return (
     <header className="mx-auto flex w-full max-w-[1480px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:px-6 lg:px-8">
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <button
-          type="button"
-          className={cn(ieeai.iconButton, ieeai.focus, 'size-9 shrink-0')}
-          aria-label={backLabel}
-          title={backLabel}
-          onClick={onBack}
-        >
-          <ArrowLeft className="size-4" aria-hidden />
-        </button>
+        {back ? (
+          <button
+            type="button"
+            className={cn(ieeai.iconButton, ieeai.focus, 'size-9 shrink-0')}
+            aria-label={back.label}
+            title={back.label}
+            onClick={back.onBack}
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+          </button>
+        ) : null}
         <span
           aria-hidden
           className="hidden h-8 w-1 shrink-0 rounded-full bg-[var(--ieeai-yellow)] sm:block"
@@ -100,6 +104,14 @@ export function PageEditorTopBar({
         >
           {status.label}
         </span>
+        {badges.map((badge) => (
+          <span
+            key={badge.id}
+            className="hidden shrink-0 rounded-full px-2.5 py-0.5 text-[var(--ieeai-muted)] text-xs ring-1 ring-[var(--ieeai-border)] md:inline-flex"
+          >
+            {badge.label}
+          </span>
+        ))}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
