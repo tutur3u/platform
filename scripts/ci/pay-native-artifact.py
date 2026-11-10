@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 
 WORKER = "tuturuuu-pay-vite-staging"
-PROFILE = Path(__file__).resolve().parents[2] / "apps/pay/cloudflare/staging-profile.json"
+PROFILE = Path(__file__).resolve().parents[2] / "apps/pay/cloudflare/native-profiles.json"
 PUBLIC_FILES = (
     "robots.txt",
 )
@@ -45,7 +45,7 @@ def reject_staging_production(directory, output):
     vars_ = config.get("vars", {})
     if vars_.get("NEXT_PUBLIC_WEB_APP_URL") != "https://tuturuuu.com":
         raise ValueError("production NEXT_PUBLIC_WEB_APP_URL must be https://tuturuuu.com")
-    staging = json.loads(PROFILE.read_text())
+    staging = json.loads(PROFILE.read_text())["staging"]["vars"]
     # Runtime configuration never tolerates a staging host, allowlists included.
     if STAGING_ZONE in json.dumps(config).lower():
         raise ValueError("staging marker in production config: " + STAGING_ZONE)
@@ -77,7 +77,8 @@ def load():
     spec = importlib.util.spec_from_file_location("pay_native_artifact_base", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    profile = json.loads(PROFILE.read_text())
+    profiles = json.loads(PROFILE.read_text())
+    profile = profiles["staging"]["vars"]
     if profile.get("POLAR_SANDBOX") != "true":
         raise RuntimeError("Pay staging qualification requires Polar sandbox")
     module.IDENTITY = {
