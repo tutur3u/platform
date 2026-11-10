@@ -113,12 +113,16 @@ verify the emitted Worker and client artifacts, the exact source SHA and account
 and both the bare `/roadmap` and `/roadmap/*` routes against existing zone routes.
 The app-owned `src/worker.ts`, selected through Void's supported `cloudflare.main`,
 answers two hosts. `https://roadmap.tuturuuu.com` returns 301 to
-`https://tuturuuu.com/roadmap` plus the same path and query (`/` becomes
-`/roadmap/`). `https://tuturuuu.com/roadmap/` serves the app. `GET` and `HEAD`
+`https://tuturuuu.com/roadmap` plus the same path and query, with no trailing
+slash, in one hop (`/` becomes `/roadmap`). `https://tuturuuu.com/roadmap` (no
+slash, the Tuturuuu-wide canonical form) serves the app; `/roadmap/` and any
+`/roadmap/x/` return 301 to the no-slash form with the query kept. Internally
+the Worker hands `/roadmap` to the SSR handler as the router's basepath root
+`/roadmap/`, and the client restores `/roadmap` in the address bar after
+hydration. `GET` and `HEAD`
 `/roadmap/api/build-info` (and `/api/build-info` on the canonical host) return
 the build commit as JSON and are not cached. workers.dev keeps the `/roadmap`
-mount: root and the bare mount return 308 to `/roadmap/` with the query
-preserved, and outside-prefix requests return 404. A loopback request whose
+mount: root returns 301 to `/roadmap` with the query preserved, and outside-prefix requests return 404. A loopback request whose
 Host header is one of those two public hosts uses the same contract; any other
 Host on loopback is left unchanged. Forwarded-host headers do not select a mount.
 
@@ -152,16 +156,19 @@ functions against that artifact. Synthetic source tests do not attest a build,
 seal, runtime or deployment. A PR synthetic merge SHA is distinct from its PR head
 and from the reviewed main commit used for release.
 
-The canonical page remains https://tuturuuu.com/roadmap/. `https://tuturuuu.com/roadmap`
-and `https://roadmap.tuturuuu.com/roadmap` each redirect once, directly to that
-URL. The satellite host only redirects there. The release owner must reconcile
+The canonical page is https://tuturuuu.com/roadmap (no trailing slash; the
+canonical link, `og:url` and hreflang alternates all use it).
+`https://tuturuuu.com/roadmap/` and `https://roadmap.tuturuuu.com/roadmap` each
+redirect once, directly to that URL. The satellite host only redirects there. The release owner must reconcile
 any existing zone redirect with this contract and capture routing preimages
 before a hosted rollout.
 No DNS, zone, provider or deployment operation follows from source publication.
 Before sealing, `scripts/pre-seal-doctor.mjs` serves the built Worker on
 loopback with `Host: tuturuuu.com` (200, Tuturuuu branding, the five status
 labels and the approved plan card, public HTML cache, immutable hashed asset) and `Host:
-roadmap.tuturuuu.com` (301 straight to `https://tuturuuu.com/roadmap/`), and
+roadmap.tuturuuu.com` (301 straight to `https://tuturuuu.com/roadmap`). It
+asserts the no-slash canonical, `og:url` and hreflang, and that every slash
+and satellite form reaches the canonical in exactly one 301 (`REDIRECT_CHAINS`), and
 reads `/roadmap/api/build-info` for `ROADMAP_SOURCE_SHA`. It also runs
 `scripts/ci/asset-smoke.mjs`: every CSS, JS, font, `<img>` and icon-link URL
 referenced by the canonical and satellite documents must return 200 with the
@@ -202,7 +209,7 @@ A central sign-in link is the only account affordance. Root and mounted-host
 router selection and the canonical apex URL remain owned by the request adapter.
 
 `src/cache-policy.ts` composes headers after the native response. Only successful
-GET/HEAD HTML at `https://tuturuuu.com/roadmap/` and
+GET/HEAD HTML at `https://tuturuuu.com/roadmap` and
 `https://roadmap.tuturuuu.com/`, without query variants, receives
 `public,s-maxage=300,stale-while-revalidate=86400`. A renderer default of
 `private` or `no-store` does not keep that document private: the page has no

@@ -49,6 +49,65 @@ export const MOUNTED_LOGO =
 const LOGO_TAG =
   '<img src="/roadmap/assets/tuturuuu-logo-Abcd1234.png" alt="">';
 
+/** Canonical: no trailing slash, like every Tuturuuu URL. */
+export const CANONICAL_URL = 'https://tuturuuu.com/roadmap';
+
+/** Every slash or satellite form reaches the canonical in exactly one 301. */
+export const REDIRECT_CHAINS = [
+  { host: 'tuturuuu.com', path: '/roadmap/', location: CANONICAL_URL },
+  {
+    host: 'tuturuuu.com',
+    path: '/roadmap/?q=1',
+    location: `${CANONICAL_URL}?q=1`,
+  },
+  {
+    host: 'tuturuuu.com',
+    path: '/roadmap/notes/',
+    location: `${CANONICAL_URL}/notes`,
+  },
+  { host: 'roadmap.tuturuuu.com', path: '/', location: CANONICAL_URL },
+  {
+    host: 'roadmap.tuturuuu.com',
+    path: '/roadmap/?x=1',
+    location: `${CANONICAL_URL}?x=1`,
+  },
+  {
+    host: 'roadmap.tuturuuu.com',
+    path: '/notes/?x=1',
+    location: `${CANONICAL_URL}/notes?x=1`,
+  },
+];
+
+function canonicalFailures(observation, body) {
+  const failures = [];
+  if (!body.includes(`rel="canonical" href="${CANONICAL_URL}"`))
+    failures.push(`canonical link is not ${CANONICAL_URL}`);
+  if (!body.includes(`property="og:url" content="${CANONICAL_URL}"`))
+    failures.push(`og:url is not ${CANONICAL_URL}`);
+  if (
+    !body.includes(`hrefLang="x-default" href="${CANONICAL_URL}"`) &&
+    !body.includes(`hreflang="x-default" href="${CANONICAL_URL}"`)
+  )
+    failures.push('hreflang x-default is not the canonical URL');
+  if (body.includes(`"${CANONICAL_URL}/"`))
+    failures.push('HTML still references the trailing-slash URL');
+  const seen = new Map(
+    (observation.redirects ?? []).map((r) => [`${r.host}${r.path}`, r])
+  );
+  for (const expected of REDIRECT_CHAINS) {
+    const actual = seen.get(`${expected.host}${expected.path}`);
+    if (
+      !actual ||
+      actual.status !== 301 ||
+      actual.location !== expected.location
+    )
+      failures.push(
+        `${expected.host}${expected.path} answered ${actual?.status ?? '(missing)'} ${actual?.location ?? ''}, expected one 301 to ${expected.location}`
+      );
+  }
+  return failures;
+}
+
 export function assessDoctor(observation) {
   const failures = [];
   const canonical = observation.canonical ?? {};
@@ -91,11 +150,12 @@ export function assessDoctor(observation) {
   ) {
     failures.push(`canonical HTML cache-control ${cache || '(missing)'}`);
   }
+  failures.push(...canonicalFailures(observation, body));
   const satellite = observation.satellite ?? {};
   if (satellite.status !== 301) {
     failures.push(`satellite status ${satellite.status}, expected 301`);
   }
-  if (satellite.location !== 'https://tuturuuu.com/roadmap/') {
+  if (satellite.location !== CANONICAL_URL) {
     failures.push(`satellite location ${satellite.location ?? '(missing)'}`);
   }
   const query = observation.satelliteQuery ?? {};
@@ -129,6 +189,9 @@ export function brokenVariant(observation) {
   return {
     ...observation,
     satellite: { status: 200, location: null },
+    redirects: [
+      { path: '/roadmap/', host: 'tuturuuu.com', status: 200, location: null },
+    ],
     buildInfo: { ...observation.buildInfo, commit: '0'.repeat(40) },
   };
 }
@@ -181,7 +244,17 @@ function probe(port, path, host) {
 }
 
 export async function observeWorker(port, expectedCommit) {
-  const canonical = await probe(port, '/roadmap/', 'tuturuuu.com');
+  const canonical = await probe(port, '/roadmap', 'tuturuuu.com');
+  const redirects = [];
+  for (const expected of REDIRECT_CHAINS) {
+    const result = await probe(port, expected.path, expected.host);
+    redirects.push({
+      path: expected.path,
+      host: expected.host,
+      status: result.status,
+      location: result.location,
+    });
+  }
   const satellite = await probe(port, '/', 'roadmap.tuturuuu.com');
   const satelliteQuery = await probe(
     port,
@@ -209,6 +282,7 @@ export async function observeWorker(port, expectedCommit) {
     canonical,
     satellite,
     satelliteQuery,
+    redirects,
     buildInfo: { status: buildInfoResponse.status, commit },
     asset: assetPath
       ? {
@@ -358,20 +432,21 @@ export function doctorFetch(port) {
 }
 
 const DOCTOR_ASSET_PAGES = [
+  { url: CANONICAL_URL, status: 200 },
   {
-    url: 'https://tuturuuu.com/roadmap',
-    redirectsTo: 'https://tuturuuu.com/roadmap/',
+    url: 'https://tuturuuu.com/roadmap/',
+    status: 301,
+    location: CANONICAL_URL,
   },
-  { url: 'https://tuturuuu.com/roadmap/', status: 200 },
   {
     url: 'https://roadmap.tuturuuu.com/',
     status: 301,
-    location: 'https://tuturuuu.com/roadmap/',
+    location: CANONICAL_URL,
   },
   {
     url: 'https://roadmap.tuturuuu.com/roadmap',
     status: 301,
-    location: 'https://tuturuuu.com/roadmap/',
+    location: CANONICAL_URL,
   },
 ];
 
@@ -409,7 +484,7 @@ async function main() {
             },
             satellite: {
               status: 301,
-              location: 'https://tuturuuu.com/roadmap/',
+              location: CANONICAL_URL,
             },
             satelliteQuery: {
               status: 301,
@@ -431,7 +506,7 @@ async function main() {
     });
     for (const failure of assetSmoke.failures) console.error(`- ${failure}`);
     const brokenAssets = await smokeAssets({
-      pages: ['https://tuturuuu.com/roadmap/'],
+      pages: [CANONICAL_URL],
       canonicalOrigin: 'https://tuturuuu.com',
       fetchImpl: async (url) => {
         const target = String(url);

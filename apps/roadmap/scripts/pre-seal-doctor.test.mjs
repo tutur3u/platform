@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   assessDoctor,
+  CANONICAL_URL,
+  REDIRECT_CHAINS,
   PLAN_LABEL,
   brokenVariant,
   reportBrokenVariant,
@@ -18,9 +20,15 @@ function passing() {
     canonical: {
       status: 200,
       cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
-      body: `<div class="public-satellite-shell"><a aria-label="Tuturuuu" href="https://tuturuuu.com"><img src="${LOGO}" alt=""></a><a href="https://tuturuuu.com/login">Sign in</a><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div>`,
+      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><meta property="og:url" content="https://tuturuuu.com/roadmap"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><div class="public-satellite-shell"><a aria-label="Tuturuuu" href="https://tuturuuu.com"><img src="${LOGO}" alt=""></a><a href="https://tuturuuu.com/login">Sign in</a><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div>`,
     },
-    satellite: { status: 301, location: 'https://tuturuuu.com/roadmap/' },
+    satellite: { status: 301, location: 'https://tuturuuu.com/roadmap' },
+    redirects: REDIRECT_CHAINS.map((chain) => ({
+      host: chain.host,
+      path: chain.path,
+      status: 301,
+      location: chain.location,
+    })),
     satelliteQuery: {
       status: 301,
       location: 'https://tuturuuu.com/roadmap/notes?x=1',
@@ -84,4 +92,51 @@ test('D79: the plans card must follow the showPlans flag both ways', () => {
     )
   );
   assert.equal(assessDoctor({ ...missing, showPlans: false }).ok, true);
+});
+
+test('D79: a slash form served as a page fails the no-slash canonical', () => {
+  const observation = passing();
+  observation.redirects[0] = {
+    ...observation.redirects[0],
+    status: 200,
+    location: null,
+  };
+  const verdict = assessDoctor(observation);
+  assert.equal(verdict.ok, false);
+  assert.ok(
+    verdict.failures.some((f) =>
+      f.startsWith('tuturuuu.com/roadmap/ answered 200')
+    )
+  );
+});
+
+test('D79: a two-hop chain (via the slash form) fails', () => {
+  const observation = passing();
+  const satellite = observation.redirects.find(
+    (r) => r.host === 'roadmap.tuturuuu.com' && r.path === '/'
+  );
+  satellite.location = 'https://tuturuuu.com/roadmap/';
+  observation.satellite.location = 'https://tuturuuu.com/roadmap/';
+  const verdict = assessDoctor(observation);
+  assert.equal(verdict.ok, false);
+  assert.ok(
+    verdict.failures.some((f) =>
+      f.includes(`expected one 301 to ${CANONICAL_URL}`)
+    )
+  );
+});
+
+test('D79: a trailing-slash canonical tag fails', () => {
+  const observation = passing();
+  observation.canonical.body = observation.canonical.body.replace(
+    'rel="canonical" href="https://tuturuuu.com/roadmap"',
+    'rel="canonical" href="https://tuturuuu.com/roadmap/"'
+  );
+  const verdict = assessDoctor(observation);
+  assert.ok(
+    verdict.failures.includes(`canonical link is not ${CANONICAL_URL}`)
+  );
+  assert.ok(
+    verdict.failures.includes('HTML still references the trailing-slash URL')
+  );
 });

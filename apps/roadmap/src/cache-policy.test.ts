@@ -20,7 +20,7 @@ import {
   personalizationFindings,
   scanRoadmapSource,
 } from './public-cache-guard.ts';
-const document = 'https://tuturuuu.com/roadmap/';
+const document = 'https://tuturuuu.com/roadmap';
 const html = (headers: Record<string, string> = {}, status = 200) =>
   new Response('public', {
     status,
@@ -63,6 +63,7 @@ test('auth, variants, unknown hosts and unsuccessful responses remain private', 
     document + '_serverFn/a',
     document + 'auth',
     'https://other.example/roadmap/',
+    'https://tuturuuu.com/roadmap/',
     'http://tuturuuu.com/roadmap/',
     'https://roadmap.tuturuuu.com/roadmap/',
     'https://tuturuuu.com/',
@@ -200,19 +201,20 @@ test('failure and restart perform no storage, network, timers or cache writes', 
 });
 
 test('host-selected SSR mount and physical transport keys remain isolated', async () => {
-  const mountedRequest = new Request('https://tuturuuu.com/roadmap/');
+  const mountedRequest = new Request('https://tuturuuu.com/roadmap');
   assert.equal(selectedBasepath(mountedRequest), '/roadmap');
   assert.equal(roadmapBoundary(mountedRequest), undefined);
   const prepared = prepareRoadmapRequest(mountedRequest, '/roadmap');
+  // Internal only: the router's basepath root; the public URL stays /roadmap.
   assert.equal(new URL(prepared.url).pathname, '/roadmap/');
   assert.equal(prepared.headers.get('x-roadmap-router-base'), '/roadmap');
 
   for (const [url, location] of [
-    ['https://roadmap.tuturuuu.com/', 'https://tuturuuu.com/roadmap/'],
-    ['https://roadmap.tuturuuu.com/roadmap', 'https://tuturuuu.com/roadmap/'],
+    ['https://roadmap.tuturuuu.com/', 'https://tuturuuu.com/roadmap'],
+    ['https://roadmap.tuturuuu.com/roadmap', 'https://tuturuuu.com/roadmap'],
     [
       'https://roadmap.tuturuuu.com/roadmap?q=1',
-      'https://tuturuuu.com/roadmap/?q=1',
+      'https://tuturuuu.com/roadmap?q=1',
     ],
     [
       'https://roadmap.tuturuuu.com/roadmap/assets/app-12345678.js',
@@ -224,7 +226,7 @@ test('host-selected SSR mount and physical transport keys remain isolated', asyn
     ],
     [
       'https://roadmap.tuturuuu.com/roadmap/?q=test',
-      'https://tuturuuu.com/roadmap/?q=test',
+      'https://tuturuuu.com/roadmap?q=test',
     ],
     [
       'https://roadmap.tuturuuu.com/notes?x=1',
@@ -243,7 +245,7 @@ test('host-selected SSR mount and physical transport keys remain isolated', asyn
   }
 
   const worker = new Request(
-    'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/'
+    'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap'
   );
   assert.equal(selectedBasepath(worker), '/roadmap');
   assert.equal(roadmapBoundary(worker), undefined);
@@ -266,11 +268,11 @@ test('host-selected SSR mount and physical transport keys remain isolated', asyn
 
 test('loopback Host selects the public host contract', () => {
   const canonical = normalizeLocalHost(
-    new Request('http://127.0.0.1:8787/roadmap/', {
+    new Request('http://127.0.0.1:8787/roadmap', {
       headers: { host: 'tuturuuu.com' },
     })
   );
-  assert.equal(canonical.url, 'https://tuturuuu.com/roadmap/');
+  assert.equal(canonical.url, 'https://tuturuuu.com/roadmap');
   assert.equal(canonical.headers.get('host'), 'tuturuuu.com');
   assert.equal(roadmapBoundary(canonical), undefined);
 

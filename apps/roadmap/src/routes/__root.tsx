@@ -9,6 +9,9 @@ import type { ReactNode } from 'react';
 import logo from '../assets/tuturuuu-logo.png?no-inline';
 import styles from '../styles.css?url';
 
+/** Canonical: no trailing slash, like every Tuturuuu URL. */
+const ROADMAP_URL = 'https://tuturuuu.com/roadmap';
+
 export const Route = createRootRoute({
   head: () => ({
     meta: [
@@ -28,6 +31,10 @@ export const Route = createRootRoute({
         media: '(prefers-color-scheme: light)',
       },
       { title: 'Roadmap · Tuturuuu' },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:site_name', content: 'Tuturuuu' },
+      { property: 'og:title', content: 'Roadmap · Tuturuuu' },
+      { property: 'og:url', content: ROADMAP_URL },
       {
         name: 'description',
         content:
@@ -38,7 +45,11 @@ export const Route = createRootRoute({
       { rel: 'stylesheet', href: styles },
       { rel: 'icon', type: 'image/png', href: logo },
       { rel: 'apple-touch-icon', href: logo },
-      { rel: 'canonical', href: 'https://tuturuuu.com/roadmap/' },
+      { rel: 'canonical', href: ROADMAP_URL },
+      // One URL serves both languages (the EN/VI switch is client-side).
+      { rel: 'alternate', hrefLang: 'en', href: ROADMAP_URL },
+      { rel: 'alternate', hrefLang: 'vi', href: ROADMAP_URL },
+      { rel: 'alternate', hrefLang: 'x-default', href: ROADMAP_URL },
     ],
   }),
   component: Outlet,
