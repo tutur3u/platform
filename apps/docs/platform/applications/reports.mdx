@@ -49,9 +49,10 @@ retain separate URL state so switching cadence does not reinterpret an old filte
 Every displayed count is a server total over the same active result predicate,
 including statuses, search, dates, category and access scope. The list, its
 matching total and the category counts also include the selected stage. The
-periodic stage cards do not: each card counts its own stage under every other
-active filter, so opening the default Pending view shows every stage's real count
-instead of zero for the stages that are not selected (`report-summary-scope.test.ts`).
+Daily and periodic stage cards do not: each card counts its own stage under every
+other active filter, and the grand total covers every stage, so opening the default
+Pending view shows every stage's real count instead of zero for the stages that are
+not selected (`report-summary-scope.test.ts`, Daily `lib/posts/data.test.ts`).
 That all-stage read never fails the page: if it exceeds the 20,000-report guard or
 errors, the list still loads, the response sets `summaryPartial`, and the cards show
 only the selected stage's count with "—" for the rest plus a hint to narrow the
@@ -75,8 +76,10 @@ The current periodic reader walks ordered server chunks to classify recorded
 errors consistently without changing database schema. It refuses scopes over
 20,000 reports with an instruction to narrow dates or search, and rejects missing
 or incomplete count receipts. Reads scale with the scoped dataset. Daily stage
-counts use the existing rows RPC across complete scoped chunks. Neither reader
-presents a partial page as a dashboard total.
+cards and total come from the all-stage summary RPC (never narrowed to the selected
+stage); the list uses the rows RPC filtered to the stage, and the two reads must
+agree on the selected stage's count or the request fails. Neither reader presents a
+partial page as a dashboard total.
 
 Regression coverage includes `report-list-query.test.ts`, `search-pagination.test.ts`,
 `report-filters.test.ts`, `reports-list.test.ts`, Daily `lib/posts/data.test.ts`,
@@ -134,30 +137,39 @@ that month or the first days of the next one.
 - **Default month.** `REPORT_MONTH_GRACE_DAYS = 10`
   (`packages/users-core/src/features/reports/report-month.ts`): from day 1 to day
   10 of a month, the default is the previous month; from day 11, the current
-  month. The worklist's Month picker and the new-report month picker both use it,
-  reading "today" in the viewer's timezone.
-- **Worklist.** The Monthly view shows a **Month** picker ("Tháng 10/2026") with
-  an **All months** option, kept in the `reportMonth` URL key. The from/to range
-  stays available as **Custom date range**; a range replaces the month, and the
-  API rejects both together. The stage cards and category counts come from the
-  same month-scoped response as the list.
-- **Matching.** `GET /users/reports?month=YYYY-MM` matches a saved period that
+  month. The new-report month picker uses it, reading "today" in the viewer's
+  timezone. The worklist does not: it opens on every month.
+- **Worklist: month in the title.** The Monthly view shows a **Month in report
+  title** picker that lists the months found in the report titles, each with its
+  report count ("Tháng 9 (12)"), plus **All months** (the default) and **No month
+  in title**. It is kept in the `reportTitleMonth` URL key. The month comes from the
+  title only (`report-title-month.ts`): "tháng N" with N 1-12, with or without a
+  year ("tháng 9", "Tháng 09", "THÁNG 9/2026", "tháng 10 năm 2026", also without
+  diacritics). A title with a year files under `YYYY-MM`, a title without one under
+  `MM`, and a title with no month under `none`. Years are never guessed, so
+  "tháng 9" and "tháng 9/2026" are separate entries. Reports in every stage,
+  including Sent, are filed this way; the send date and the saved period do not
+  select the month. `GET /users/reports?titleMonth=` filters the complete scope
+  before pagination and returns `titleMonths` (`{ key, count }[]`, newest first)
+  counted over every stage and before the month is applied, so the picker never
+  loses a month. The status cards, totals and category counts follow the chosen
+  month. When the all-stage read is unavailable (`summaryPartial`) the picker shows
+  no numbers. The from/to range stays available as **Custom date range** and
+  combines with the month (`report-title-month.test.ts`,
+  `report-title-month-scope.test.ts`, `report-title-month-select.test.tsx`).
+- **Period month (not used by the worklist).** `GET /users/reports?month=YYYY-MM`
+  and the per-report month still exist for the report page.
+- **Matching the period month.** `month=YYYY-MM` matches a saved period that
   starts in that month. A report without a saved period matches by its
   estimated month: created after day 10 of the month and up to day 10 of the next
   month, in the workspace timezone (else the viewer's, else UTC). A report written
   on 28 Oct or on 2 Nov is therefore listed under October.
-- **Every stage uses the report month.** Sent reports use the same saved period
-  or estimated-month fallback as every other stage. An October report sent in
-  November belongs to October; a September report sent in October belongs to
-  September. The send date, delivery status and title do not select its month.
-  A Sent report without a send date still belongs to its saved or estimated
-  report month. The list, its pages, stage cards and category counts share this
-  filter (`report-month-scope.test.ts`, `report-summary-scope.test.ts`).
-- **Collection limits.** Month filtering happens before the 20,000-row cap.
-  Reports in other covered months do not consume that cap. More than 20,000
-  matching reports return the existing limit error rather than partial results,
-  whether or not they have a send date. All months keeps the same cap. Records
-  are not backfilled, and `undatedSentCount` remains unknown (`null`).
+- **Every stage uses the same month.** The period month applies the same saved
+  period or estimated-month fallback to every stage, Sent included
+  (`report-month-scope.test.ts`, `report-summary-scope.test.ts`). The worklist's
+  title month is applied in memory after the collection, so the 20,000-row cap
+  applies to the scope before the month. `undatedSentCount` remains unknown
+  (`null`) and Contacts no longer shows a notice for it.
 - **New reports** save `period_start`/`period_end` as the chosen month's calendar
   bounds with `cadence: monthly`. The workspace default title (`<title> MM/YYYY`)
   follows the chosen month until the teacher edits the title.

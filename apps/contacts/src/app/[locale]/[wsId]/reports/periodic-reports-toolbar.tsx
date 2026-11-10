@@ -26,7 +26,10 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { ReportMonthSelect } from './report-month-select';
+import {
+  ReportTitleMonthSelect,
+  type ReportTitleMonthOption,
+} from './report-title-month-select';
 
 const cadences: (PeriodicReportCadence | 'all')[] = [
   'all',
@@ -53,9 +56,10 @@ export function PeriodicReportsToolbar({
   periodStart = '',
   periodEnd = '',
   onPeriodChange,
-  reportMonth = '',
-  defaultMonth,
-  onMonthChange,
+  titleMonth = '',
+  titleMonths,
+  titleMonthsPartial = false,
+  onTitleMonthChange,
   approvalStatus,
   generationStatus = 'all',
   cadence,
@@ -78,10 +82,13 @@ export function PeriodicReportsToolbar({
   periodStart?: string;
   periodEnd?: string;
   onPeriodChange?: (start: string, end: string) => void;
-  /** Monthly worklist: shown month (`YYYY-MM`), `all`, or empty for a range. */
-  reportMonth?: string;
-  defaultMonth?: string;
-  onMonthChange?: (value: string) => void;
+  /** Month named in the report title (`YYYY-MM`, `MM`, `none`) or empty for all. */
+  titleMonth?: string;
+  /** Months found in the titles with their report counts, when known. */
+  titleMonths?: ReportTitleMonthOption[];
+  /** Counts are not exact (large scope); the picker shows no numbers. */
+  titleMonthsPartial?: boolean;
+  onTitleMonthChange?: (value: string) => void;
   approvalStatus: PeriodicApprovalFilter;
   generationStatus?: 'all' | 'draft';
   cadence: PeriodicReportCadence | 'all';
@@ -111,24 +118,23 @@ export function PeriodicReportsToolbar({
     Boolean(periodStart || periodEnd),
   ].filter(Boolean).length;
   const sortValue = `${sortBy}:${sortDirection}`;
-  const monthMode = Boolean(onMonthChange && defaultMonth);
+  const monthMode = Boolean(onTitleMonthChange);
   const [rangeOpen, setRangeOpen] = useState(false);
   const showRange =
     !monthMode || rangeOpen || Boolean(periodStart || periodEnd);
 
   return (
     <div className="min-w-0 space-y-3">
-      {monthMode && onMonthChange && defaultMonth && (
+      {monthMode && onTitleMonthChange && (
         <div className="flex flex-wrap items-end gap-2">
           <label className="grid min-w-0 flex-1 gap-1 text-xs">
-            <span>{reportsT('month_label')}</span>
-            <ReportMonthSelect
-              anchor={defaultMonth}
-              ariaLabel={reportsT('month_label')}
-              placeholder={reportsT('custom_range')}
-              value={reportMonth}
-              onChange={onMonthChange}
-              withAll
+            <span>{reportsT('title_month_label')}</span>
+            <ReportTitleMonthSelect
+              ariaLabel={reportsT('title_month_label')}
+              options={titleMonths}
+              partial={titleMonthsPartial}
+              value={titleMonth}
+              onChange={onTitleMonthChange}
             />
           </label>
           <Button
