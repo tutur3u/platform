@@ -57,6 +57,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getColumns, type TaskHistoryLogEntry } from './columns';
 import LogsTimeline from './logs-timeline';
+import { tasksApiPath } from '../shared/tasks-paths';
 
 interface Board {
   id: string;
@@ -161,7 +162,7 @@ export default function LogsClient({
     queryKey: ['workspace-task-history', wsId, queryParams],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/history?${queryParams}`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/tasks/history?${queryParams}`),
         { cache: 'no-store' }
       );
       if (!response.ok) {

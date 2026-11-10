@@ -31,6 +31,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useState } from 'react';
+import { tasksApiPath } from '../shared/tasks-paths';
 
 interface SaveAsTemplateDialogProps {
   board: Pick<WorkspaceTaskBoard, 'id' | 'ws_id' | 'name'>;
@@ -133,7 +134,9 @@ export function SaveAsTemplateDialog({
     setIsLoading(true);
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${board.ws_id}/task-boards/${board.id}/templates`,
+        tasksApiPath(
+          `/api/v1/workspaces/${board.ws_id}/task-boards/${board.id}/templates`
+        ),
         {
           method: 'POST',
           headers: {

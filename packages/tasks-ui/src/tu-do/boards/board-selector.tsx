@@ -17,6 +17,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useId, useMemo, useState } from 'react';
 import { CreateListDialog } from '../shared/create-list-dialog';
 import { TaskBoardForm } from './form';
+import { tasksApiPath } from '../shared/tasks-paths';
 
 interface Board {
   id: string;
@@ -64,7 +65,7 @@ export function BoardSelector({
     queryKey: ['boards-with-lists', wsId],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/boards-with-lists`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/boards-with-lists`),
         { cache: 'no-store' }
       );
       if (!response.ok) {
