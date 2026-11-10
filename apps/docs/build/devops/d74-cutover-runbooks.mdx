@@ -21,6 +21,27 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 7. Re-run the smoke on the public host and watch for 5 minutes: no 5xx, login renders, entry route as expected.
 8. Rollback on any 5xx above 1% for 5 minutes, a wrong redirect or a broken login: remove the route or repoint the DNS record to the Vercel pin. Never rebuild on the rollback path. No data or migration is involved.
 
+### Pre-seal doctor
+
+The artifact jobs of nova, rewise and the wave-1 apps run `scripts/ci/pre-seal-doctor.mjs` before the seal and pack. It starts the Worker from the emitted config in a disposable copy of `dist` (local workerd, synthetic secret values, every outbound request refused) and requests the PRODUCTION host with an explicit `Host` header. The seal is refused unless both answers hold:
+
+- `GET /` answers 200, or with `--expect-redirect` a 30x whose `Location` is an auth path (`/login`, `/verify-token`). Pass the flag for apps that hand anonymous visitors to login; it is on for rewise, calendar and mail.
+- `GET /api/build-info` answers 200 JSON whose `commitHash` equals the source SHA.
+
+Any 401, 404 or 5xx on either request fails the step with the status and host in the message, so no seal exists for the app. It removes its temp directory and stops the Worker on every exit path and gives up after 120 seconds.
+
+```sh
+node scripts/ci/pre-seal-doctor.mjs <app> apps/<app> <production-host> <sha> [--expect-redirect] [--config dist/wave1/wrangler.json]
+```
+
+`--config` names the emitted Worker config inside the artifact directory (default `dist/server/wrangler.json`; the wave-1 production profile lives at `dist/wave1/wrangler.json`). It is the first check to run by hand against a downloaded artifact too.
+
+Misses it exists to catch:
+
+- nova: the production host is not in the Worker's `rootHosts`, so `/` and `/api/build-info` answer 404.
+- rewise: the proxy rejects the anonymous build identity, so `/api/build-info` answers 401.
+- apps: the production profile lacks `APPS_CANONICAL_HOST_ENABLED=1`, so every request answers 503 "Staging gateway only".
+
 ### Wave-1 apps (apps, calendar, mail)
 
 Build these only as a production artifact. A plain `bun run build:cloudflare` produces the staging profile: the apps Worker then lacks `APPS_CANONICAL_HOST_ENABLED=1` and answers 503 "Staging gateway only", and calendar lacks `CALENDAR_DEPLOYMENT_PROFILE=production`. The production profile in `scripts/ci/wave1-native-profile.mjs` sets both.
