@@ -40,11 +40,11 @@ test('a flow path list and a block path list select the same file', () => {
 `);
   assert.deepEqual(flow, block);
   assert.equal(fileSelectsWorkflow(flow, CALENDAR_FILE), true);
+  assert.equal(fileSelectsWorkflow(flow, 'apps/calendar/README.md'), false);
   assert.equal(
-    fileSelectsWorkflow(flow, 'apps/calendar/README.md'),
+    fileSelectsWorkflow(flow, 'apps/finance/src/app/page.tsx'),
     false
   );
-  assert.equal(fileSelectsWorkflow(flow, 'apps/finance/src/app/page.tsx'), false);
 });
 
 test('calendar-only page avoids 75 of 83 pull_request workflows', () => {

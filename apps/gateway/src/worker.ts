@@ -116,8 +116,7 @@ function chooseOrigin(
   const own = resolveOrigin(env, manifest, match.origin);
   // A route that names an optional origin (for example the marketing assets)
   // falls back to the default origin while that origin is not configured.
-  const url =
-    own ?? resolveOrigin(env, manifest, manifest.default.origin);
+  const url = own ?? resolveOrigin(env, manifest, manifest.default.origin);
   return { url, flagged: false };
 }
 
@@ -296,7 +295,10 @@ export function createHandler(deps: HandlerDeps) {
     const isPage = match.cache === 'page';
     const head = request.method === 'HEAD';
     const locale = localeBucket(request, match, deps.manifest);
-    const key = cacheKey(request, chosen.flagged ? `${locale}|marketing` : locale);
+    const key = cacheKey(
+      request,
+      chosen.flagged ? `${locale}|marketing` : locale
+    );
     const cache = await deps.cache();
     const nowMs = deps.now();
 

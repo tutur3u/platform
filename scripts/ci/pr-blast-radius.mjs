@@ -48,7 +48,9 @@ function parseList(lines, start) {
   if (rest.startsWith('[')) {
     let buffer = rest;
     let index = start;
-    while ((buffer.match(/\[/gu) ?? []).length > (buffer.match(/\]/gu) ?? []).length) {
+    while (
+      (buffer.match(/\[/gu) ?? []).length > (buffer.match(/\]/gu) ?? []).length
+    ) {
       index += 1;
       buffer += `\n${lines[index]}`;
     }
@@ -58,7 +60,9 @@ function parseList(lines, start) {
   while (index < lines.length && !lines[index].trim()) index += 1;
   if (index < lines.length && lines[index].trim().startsWith('[')) {
     let buffer = lines[index];
-    while ((buffer.match(/\[/gu) ?? []).length > (buffer.match(/\]/gu) ?? []).length) {
+    while (
+      (buffer.match(/\[/gu) ?? []).length > (buffer.match(/\]/gu) ?? []).length
+    ) {
       index += 1;
       buffer += `\n${lines[index]}`;
     }
@@ -107,7 +111,7 @@ export function parsePullRequestFilters(text) {
 
 function globToRegExp(pattern) {
   let source = '^';
-  for (let index = 0; index < pattern.length; ) {
+  for (let index = 0; index < pattern.length;) {
     if (pattern.startsWith('**/', index)) {
       source += '(?:.*/)?';
       index += 3;
@@ -142,7 +146,11 @@ export function fileSelectsWorkflow(filters, file) {
   if (positives.length > 0) {
     if (!positives.some((pattern) => matches(file, pattern).hit)) return false;
     if (negatives.some((pattern) => matches(file, pattern).hit)) return false;
-    if (filters.ignore.some((pattern) => matches(file, pattern.replace(/^!/u, '')).hit))
+    if (
+      filters.ignore.some(
+        (pattern) => matches(file, pattern.replace(/^!/u, '')).hit
+      )
+    )
       return false;
     return true;
   }
