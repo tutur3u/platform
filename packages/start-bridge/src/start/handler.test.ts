@@ -559,6 +559,7 @@ describe('mounted no-writer guard', () => {
     });
     const mounted = await call('https://tuturuuu.com/learn/api/auth/logout', {
       method: 'POST',
+      headers: { 'sec-fetch-site': 'same-origin' },
     });
     expect(await mounted.text()).toBe(
       'POST https://central.example/api/auth/logout'
@@ -569,31 +570,40 @@ describe('mounted no-writer guard', () => {
     expect(await root.text()).toBe('app logout');
   });
 
-  it('only takes a POST logout on a mount, and holds it to same-origin', async () => {
+  it('only takes a same-origin POST logout on a mount, cookie or not', async () => {
     const fetchSpy = vi
       .spyOn(globalThis, 'fetch')
       .mockImplementation(async () => new Response('web logout'));
-    const get = await call('https://tuturuuu.com/learn/api/auth/logout');
-    expect(get.status).toBe(405);
-    expect(get.headers.get('allow')).toBe('POST');
+    for (const path of ['/learn/api/auth/logout', '/learn/api/auth/logout/']) {
+      const url = `https://tuturuuu.com${path}`;
+      for (const method of ['GET', 'HEAD', 'PUT', 'DELETE']) {
+        const refused = await call(url, { method });
+        expect(refused.status).toBe(405);
+        expect(refused.headers.get('allow')).toBe('POST');
+      }
+      for (const headers of [
+        { cookie: 'sb-ref-auth-token=x', 'sec-fetch-site': 'cross-site' },
+        { 'sec-fetch-site': 'cross-site' },
+        { 'sec-fetch-site': 'same-site' },
+        { origin: 'https://evil.tuturuuu.com' },
+        {},
+      ]) {
+        const forged = await call(url, { method: 'POST', headers });
+        expect(forged.status).toBe(403);
+      }
+      expect(fetchSpy).not.toHaveBeenCalled();
 
-    const forged = await call('https://tuturuuu.com/learn/api/auth/logout', {
-      method: 'POST',
-      headers: {
-        cookie: 'sb-ref-auth-token=x',
-        'sec-fetch-site': 'cross-site',
-      },
-    });
-    expect(forged.status).toBe(403);
-    expect(fetchSpy).not.toHaveBeenCalled();
-
-    const own = await call('https://tuturuuu.com/learn/api/auth/logout', {
-      method: 'POST',
-      headers: {
-        cookie: 'sb-ref-auth-token=x',
-        'sec-fetch-site': 'same-origin',
-      },
-    });
-    expect(await own.text()).toBe('web logout');
+      const own = await call(url, {
+        method: 'POST',
+        headers: { 'sec-fetch-site': 'same-origin' },
+      });
+      expect(await own.text()).toBe('web logout');
+      const byOrigin = await call(url, {
+        method: 'POST',
+        headers: { origin: 'https://tuturuuu.com' },
+      });
+      expect(await byOrigin.text()).toBe('web logout');
+      fetchSpy.mockClear();
+    }
   });
 });
