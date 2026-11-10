@@ -19,8 +19,8 @@
     "@tuturuuu/utils": "workspace:*"
   },
   "peerDependencies": {
-    "react": "*",
-    "next-themes": "*"
+    "next-themes": "^0.4.6",
+    "react": "^19.2.8"
   },
   "devDependencies": {
     "@types/react": "19.2.18",
