@@ -604,7 +604,7 @@ describe('mounted no-writer guard', () => {
         expect(refused.status).toBe(405);
         expect(refused.headers.get('allow')).toBe('POST');
       }
-      for (const headers of [
+      for (const headers of <Record<string, string>[]>[
         { cookie: 'sb-ref-auth-token=x', 'sec-fetch-site': 'cross-site' },
         { 'sec-fetch-site': 'cross-site' },
         { 'sec-fetch-site': 'same-site' },
