@@ -863,24 +863,39 @@ code {
   }
 }
 
-/* Once the navbar shrinks, the filter row sits in one line on a wide screen. */
-.roadmap[data-nav-compact] .sticky-bar {
-  gap: 6px;
-  padding-top: 6px;
-  padding-bottom: 6px;
+/* Compact controls share the logo pill; only this row scrolls. */
+.roadmap[data-nav-compact] #navbar-content > div:last-child,
+.roadmap[data-nav-compact] #navbar-content > div:nth-child(2) > div,
+.roadmap[data-nav-compact] #navbar-content a > span {
+  display: none;
 }
-@media (min-width: 720px) {
-  .roadmap[data-nav-compact] .sticky-bar {
-    display: flex;
-    align-items: center;
-  }
-  .roadmap[data-nav-compact] .track-nav {
-    flex: 1;
-    min-width: 0;
-  }
-  .roadmap[data-nav-compact] .filters {
-    flex: none;
-  }
+.roadmap[data-nav-compact] .sticky-bar {
+  position: fixed;
+  top: 12px;
+  left: max(60px, calc((100vw - 1280px) / 2 + 48px));
+  right: max(20px, calc((100vw - 1280px) / 2 + 8px));
+  height: 36px;
+  z-index: 51;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.roadmap[data-nav-compact] .track-nav {
+  display: flex;
+  flex: none;
+  overflow: visible;
+}
+.roadmap[data-nav-compact] .filters {
+  flex: none;
+  overflow: visible;
 }
 
 /* Timeline (week / month / year) */

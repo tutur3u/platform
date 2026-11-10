@@ -140,7 +140,7 @@ for (const width of [390, 768, 1024, 1280, 1440, 1920]) {
       const bar = document.querySelector('.sticky-bar').getBoundingClientRect();
       const nav = document.querySelector('#navbar').getBoundingClientRect();
       return { viewport: innerWidth, page: document.documentElement.scrollWidth,
-        left: bar.left, right: bar.right, top: bar.top, navBottom: nav.bottom,
+        left: bar.left, right: bar.right, top: bar.top, bottom: bar.bottom, navTop: nav.top, navBottom: nav.bottom,
         compact: document.querySelector('.roadmap').hasAttribute('data-nav-compact') };
     })()`);
       assert.ok(layout.compact, 'exercise the docked layout');
@@ -149,10 +149,20 @@ for (const width of [390, 768, 1024, 1280, 1440, 1920]) {
         layout.left >= -1 && layout.right <= width + 1,
         JSON.stringify(layout)
       );
-      assert.ok(layout.top >= layout.navBottom, JSON.stringify(layout));
+      assert.ok(layout.top >= layout.navTop + 4, JSON.stringify(layout));
+      assert.ok(layout.bottom <= layout.navBottom - 4, JSON.stringify(layout));
+      const rows = await evaluate(`(() => {
+        const controls = [...document.querySelectorAll('.track-nav a, .filters button')];
+        const centers = controls.map(el => {
+          const rect = el.getBoundingClientRect();
+          return rect.top + rect.height / 2;
+        });
+        return Math.max(...centers) - Math.min(...centers);
+      })()`);
+      assert.ok(rows <= 1, 'compact chips and filters occupy one row');
       const reachable = await evaluate(`(() => {
-      const row = document.querySelector('.track-nav');
-      const last = row.querySelector('a:last-child');
+      const row = document.querySelector('.sticky-bar');
+      const last = row.querySelector('.filters button:last-child');
       last.focus({ preventScroll: true });
       row.scrollLeft = row.scrollWidth;
       const item = last.getBoundingClientRect(), bounds = row.getBoundingClientRect();
