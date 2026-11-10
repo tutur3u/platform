@@ -15,7 +15,12 @@ export type { TasksExecutionContext, TasksWorkerEnv } from './worker-request';
 
 /** `/offline.html` loads only its own same-origin `offline.js`. */
 export const OFFLINE_PAGE_POLICY =
-  "script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
+  "script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+
+/** Tasks' page script policy: the bridge default plus same-origin forms. */
+export function tasksPagePolicy(nonce: string) {
+  return `${defaultContentSecurityPolicy(nonce)}; form-action 'self'`;
+}
 
 export const handleTasksRequest = createTasksRequestHandler((mounts) =>
   createBridgeHandler<TasksWorkerEnv, TasksExecutionContext>({
@@ -25,9 +30,7 @@ export const handleTasksRequest = createTasksRequestHandler((mounts) =>
     // `TTR_CSP_TASKS=enforce` (D87 per-app gate). The static offline page has
     // no nonce, so it gets a same-origin script policy instead.
     csp: (nonce, { path }) =>
-      path === '/offline.html'
-        ? OFFLINE_PAGE_POLICY
-        : defaultContentSecurityPolicy(nonce),
+      path === '/offline.html' ? OFFLINE_PAGE_POLICY : tasksPagePolicy(nonce),
     start: createBridgeStartHandler(),
     serverFnBase: '/_serverFn',
     proxy,
