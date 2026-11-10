@@ -59,9 +59,21 @@ describe('rewise proxy build identity', () => {
       );
       expect(response.status).toBe(200);
       expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
-      expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
     }
   );
+
+  it('applies the API rate limit to the build identity', async () => {
+    mocks.guardApiProxyRequest.mockResolvedValueOnce(
+      new Response('limited', { status: 429 })
+    );
+    const { proxy } = await import('./proxy');
+    const response = await proxy(
+      new NextRequest('https://rewise.tuturuuu.com/api/build-info')
+    );
+    expect(response.status).toBe(429);
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
 
   it('keeps other API routes behind the session check', async () => {
     const { proxy } = await import('./proxy');
