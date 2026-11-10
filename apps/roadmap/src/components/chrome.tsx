@@ -1,9 +1,24 @@
 import { Moon, RefreshCw, Sun } from '@tuturuuu/icons';
+import type { ComponentProps } from 'react';
+import logo from '../assets/tuturuuu-logo.png?no-inline';
 import { useEffect, useState } from 'react';
 import { REPO_URL } from '../live/model';
 import type { LiveState } from '../live/use-live-data';
 import { formatDate, type Lang, type Messages, relative } from './shared';
 
+/**
+ * The shell's only image is the brand logo. Serve it from this Worker's own
+ * hashed assets under /roadmap, not the apex /media path another app owns.
+ */
+export function MountedLogo({
+  src: _remote,
+  alt,
+  ...props
+}: ComponentProps<'img'>) {
+  return <img {...props} src={logo} alt={alt ?? ''} />;
+}
+
+/** Same storage key and class contract as the shared theme provider. */
 export function ThemeToggle({ label }: { label: string }) {
   const [dark, setDark] = useState(false);
   useEffect(() => {
