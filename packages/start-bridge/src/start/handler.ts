@@ -274,8 +274,20 @@ export function createBridgeHandler<
     if (isFramable(appPath)) return final;
     // A response that already carries a policy keeps it: HTML forwarded from
     // Web (CLI copy-token, SAML post-response, unsubscribe) or an endpoint's
-    // own CSP is never replaced by the app's page policy.
-    if (final.headers.has('Content-Security-Policy')) return final;
+    // own CSP is never replaced by the app's page policy. Framing still fails
+    // closed: when that policy sets no frame-ancestors, a second policy denies
+    // framing (browsers enforce every policy). A forwarded frame-ancestors
+    // value is left as sent.
+    const forwarded = final.headers.get('Content-Security-Policy');
+    if (forwarded !== null) {
+      if (setsFrameAncestors(forwarded)) return final;
+      const denied = new Response(final.body, final);
+      denied.headers.append(
+        'Content-Security-Policy',
+        "frame-ancestors 'none'"
+      );
+      return denied;
+    }
     const policy = options.csp(nonce, {
       request: incoming,
       response: final,
@@ -305,6 +317,16 @@ export function createBridgeHandler<
       return bridgeErrorResponse();
     }
   };
+}
+
+/**
+ * Whether a Content-Security-Policy header value (one policy, or several
+ * joined with commas) sets the frame-ancestors directive.
+ */
+function setsFrameAncestors(value: string) {
+  return value
+    .split(/[;,]/u)
+    .some((directive) => /^frame-ancestors(?:\s|$)/iu.test(directive.trim()));
 }
 
 /** The bridge's own failure response: generic text, never error details. */
