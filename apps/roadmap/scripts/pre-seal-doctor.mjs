@@ -1,8 +1,8 @@
 /**
  * Pre-seal doctor for the roadmap Worker.
  *
- * Serves the built worker on loopback and probes it with Host tuturuuu.com
- * and Host roadmap.tuturuuu.com. A passing live probe is not enough: the same
+ * Serves the built worker in workerd (miniflare) behind a loopback HTTP server
+ * and probes it with Host tuturuuu.com and Host roadmap.tuturuuu.com. A passing live probe is not enough: the same
  * checker must reject a broken variant (D79) before the artifact is sealed.
  */
 import { createHash } from 'node:crypto';
@@ -10,29 +10,15 @@ import { once } from 'node:events';
 import { existsSync, readdirSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { createServer, request as httpRequest } from 'node:http';
-import { registerHooks } from 'node:module';
 import { join, sep } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { Miniflare, supportedCompatibilityDate } from 'miniflare';
 import { showPlans } from '../src/content/tracks.ts';
 import { inlineScriptTexts } from '../src/html-scripts.ts';
 import {
   reportAssetSmokeRejection,
   smokeAssets,
 } from '../../../scripts/ci/asset-smoke.mjs';
-
-const CLOUDFLARE_WORKERS_STUB = new URL(
-  './cloudflare-workers-stub.mjs',
-  import.meta.url
-);
-
-registerHooks({
-  resolve(specifier, context, nextResolve) {
-    if (specifier === 'cloudflare:workers') {
-      return { url: CLOUDFLARE_WORKERS_STUB.href, shortCircuit: true };
-    }
-    return nextResolve(specifier, context);
-  },
-});
 
 export const STAGE_LABELS = [
   'Planned',
@@ -151,7 +137,7 @@ const REQUIRED_CSP = [
   "connect-src 'self' https://api.github.com",
 ];
 
-/** sha256 of each real inline script (same tokenizer as src/csp.ts). */
+/** sha256 of each real inline script (independent of the Worker's HTMLRewriter). */
 export function inlineScriptHashes(html) {
   return inlineScriptTexts(String(html)).map(
     (text) => `'sha256-${createHash('sha256').update(text).digest('base64')}'`
@@ -524,17 +510,76 @@ function localAssets(root) {
   };
 }
 
-/** Serve dist/server/index.js. The Host header selects the public contract. */
+/** Carries the probe's intended Host past miniflare, which sends loopback. */
+const DOCTOR_HOST_HEADER = 'x-roadmap-doctor-host';
+
+/**
+ * First module: restores the Host a Cloudflare edge request would carry (or
+ * none, like the old in-process probe) before the built worker sees it.
+ */
+const DOCTOR_ENTRY = `import worker from './index.js';
+export default {
+  fetch(request, env, ctx) {
+    const headers = new Headers(request.headers);
+    const host = headers.get('${DOCTOR_HOST_HEADER}');
+    headers.delete('${DOCTOR_HOST_HEADER}');
+    if (host) headers.set('host', host);
+    else headers.delete('host');
+    return worker.fetch(new Request(request, { headers }), env, ctx);
+  },
+};`;
+
+/** Every module of the built worker; workerd needs them listed up front. */
+function builtModules(serverRoot) {
+  return [
+    {
+      type: 'ESModule',
+      path: join(serverRoot, '__doctor-entry.js'),
+      contents: DOCTOR_ENTRY,
+    },
+    ...readdirSync(serverRoot, { recursive: true })
+      .map(String)
+      .filter((file) => file.endsWith('.js'))
+      .map((file) => ({ type: 'ESModule', path: join(serverRoot, file) })),
+  ];
+}
+
+/**
+ * The worker's compatibility date, capped at what this workerd supports.
+ * HTMLRewriter (the CSP's script collection) is not date-gated.
+ */
+export function doctorCompatibilityDate(
+  configured,
+  supported = supportedCompatibilityDate
+) {
+  return configured && configured <= supported ? configured : supported;
+}
+
+/**
+ * Serve dist/server/index.js in workerd, the runtime Cloudflare runs it in
+ * (Node has no HTMLRewriter, which the CSP needs). The Host header selects
+ * the public contract.
+ */
 export async function startBuiltWorker(root = appRoot()) {
-  const bundle = join(root, 'dist/server/index.js');
+  const serverRoot = join(root, 'dist/server');
+  const bundle = join(serverRoot, 'index.js');
   const client = join(root, 'dist/client/roadmap');
   if (!existsSync(bundle) || !existsSync(client)) {
     throw new Error(
       'Built worker is missing. Run build:cloudflare before the pre-seal doctor.'
     );
   }
-  const worker = await import(pathToFileURL(bundle).href);
-  const env = { ASSETS: localAssets(root) };
+  const config = JSON.parse(
+    await readFile(join(serverRoot, 'wrangler.json'), 'utf8')
+  );
+  const assets = localAssets(root);
+  const worker = new Miniflare({
+    modulesRoot: serverRoot,
+    modules: builtModules(serverRoot),
+    compatibilityDate: doctorCompatibilityDate(config.compatibility_date),
+    compatibilityFlags: config.compatibility_flags ?? [],
+    serviceBindings: { ASSETS: (request) => assets.fetch(request) },
+  });
   const server = createServer(async (incoming, outgoing) => {
     try {
       const host = headerValue(incoming.headers.host);
@@ -545,11 +590,11 @@ export async function startBuiltWorker(root = appRoot()) {
       const target = publicHost
         ? `https://${publicHost}${incoming.url ?? '/'}`
         : `http://127.0.0.1${incoming.url ?? '/'}`;
-      const response = await worker.default.fetch(
-        new Request(target, { method: incoming.method ?? 'GET' }),
-        env,
-        { waitUntil() {}, passThroughOnException() {} }
-      );
+      const response = await worker.dispatchFetch(target, {
+        method: incoming.method ?? 'GET',
+        headers: publicHost ? { [DOCTOR_HOST_HEADER]: publicHost } : {},
+        redirect: 'manual',
+      });
       const bytes = Buffer.from(await response.arrayBuffer());
       const out = {};
       response.headers.forEach((value, name) => {
@@ -569,6 +614,7 @@ export async function startBuiltWorker(root = appRoot()) {
     async stop() {
       server.close();
       await once(server, 'close').catch(() => undefined);
+      await worker.dispose();
     },
   };
 }

@@ -10,8 +10,10 @@
  * content is never markup. Only the text of an actual `script` element with
  * no `src` attribute is returned.
  *
- * Pure and dependency-free so the Worker (src/csp.ts) and the Node pre-seal
- * doctor compute exactly the same set.
+ * Pure and dependency-free, for the Node pre-seal doctor. The Worker
+ * (src/csp.ts) collects scripts with the runtime's HTMLRewriter instead, so
+ * the doctor is an independent parser checking the live policy, and
+ * src/csp.test.ts asserts the two agree on the same documents.
  */
 
 /** Elements whose content is text until their own end tag. */
