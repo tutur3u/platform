@@ -13,6 +13,7 @@ import generated from '../generated/live.json';
 import { parseLiveData } from '../live/model';
 import { useLiveData } from '../live/use-live-data';
 import { buildView, type StatusFilter } from '../view-model';
+import { MountedLogo } from '../components/chrome';
 
 export const Route = createFileRoute('/')({ component: RoadmapPage });
 
@@ -43,6 +44,7 @@ function RoadmapPage() {
         homeHref="https://tuturuuu.com"
         navigationLabel={t.eyebrow}
         signIn={{ href: 'https://tuturuuu.com/login', label: t.signIn }}
+        ImageComponent={MountedLogo}
         navigation={
           <>
             <fieldset className="segmented lang-switch">
@@ -81,5 +83,3 @@ function RoadmapPage() {
     </div>
   );
 }
-
-/** Same storage key and class contract as the shared theme provider. */

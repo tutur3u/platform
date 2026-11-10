@@ -57,10 +57,9 @@ shares a result for 60 seconds, so bursts fan out at most once a minute.
 
 The shipped feed (`src/live/feed.ts`) publishes merged PR titles only when
 they are `feat`/`perf` in a public product scope and contain no incident,
-security, customer or internal-plumbing wording. Client or organisation names
-are blocked through hashed terms in `src/content/title-denylist.ts`; add one
-with `node apps/roadmap/scripts/hash-denylist-term.mjs "Name"` and never
-commit the name itself.
+security, customer or internal-plumbing wording. `src/content/title-denylist.ts`
+keeps a hashed-term hook but is intentionally empty: hashes of short names are
+guessable, so client names are never shipped, even hashed.
 
 ```sh
 GITHUB_TOKEN=$(gh auth token) bun run --cwd apps/roadmap data:refresh
@@ -164,9 +163,12 @@ loopback with `Host: tuturuuu.com` (200, Tuturuuu branding, the five status
 labels and the approved plan card, public HTML cache, immutable hashed asset) and `Host:
 roadmap.tuturuuu.com` (301 straight to `https://tuturuuu.com/roadmap/`), and
 reads `/roadmap/api/build-info` for `ROADMAP_SOURCE_SHA`. It also runs
-`scripts/ci/asset-smoke.mjs`: every CSS, JS and font URL referenced by the
-canonical and satellite documents must return 200 with the matching MIME type
-on `tuturuuu.com`. The same checker must reject a broken variant, including a
+`scripts/ci/asset-smoke.mjs`: every CSS, JS, font, `<img>` and icon-link URL
+referenced by the canonical and satellite documents must return 200 with the
+matching MIME type on `tuturuuu.com`, and images must be non-empty. The brand
+logo and favicon ship inside the mount (`src/assets/tuturuuu-logo.png`, served
+as a hashed `/roadmap/assets/` file) rather than from the apex `/media` path,
+and the doctor requires that mounted logo. The same checker must reject a broken variant, including a
 stylesheet that returns 404 `text/html`. Post-deploy D15 runs that smoke for
 any app whose cutover entry sets `assetSmoke` (`node scripts/ci/asset-smoke.mjs`,
 or `node scripts/cutover-smoke.mjs roadmap https://tuturuuu.com`). Verify that
