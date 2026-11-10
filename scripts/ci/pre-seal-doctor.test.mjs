@@ -87,6 +87,11 @@ test('judgeRoot accepts only an auth redirect and only when expected', () => {
   );
   assert.match(judgeRoot(redirect(null), expecting)[0], /not an auth path/u);
   assert.match(
+    judgeRoot(redirect('https://evil.example/login'), expecting)[0],
+    /neither rewise\.tuturuuu\.com nor the web login host/u
+  );
+  assert.deepEqual(judgeRoot(redirect('/login?x=1'), expecting), []);
+  assert.match(
     judgeRoot(redirect('/login'), { host: HOST, expectRedirect: false })[0],
     /--expect-redirect/u
   );

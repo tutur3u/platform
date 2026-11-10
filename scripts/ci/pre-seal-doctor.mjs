@@ -26,6 +26,8 @@ export const HARD_TIMEOUT_MS = 120_000;
 // A redirect only counts when it hands an anonymous visitor to an auth page.
 const AUTH_PATH =
   /\/(?:login|verify-token|sign-?in|auth|callback)(?:[/?#]|$)/iu;
+const WEB_LOGIN_HOSTS = ['tuturuuu.com', 'www.tuturuuu.com'];
+const REDIRECT_HOSTS = (host) => new Set([host.toLowerCase(), ...WEB_LOGIN_HOSTS]);
 // Names only; the values are synthetic and never reach a supplier.
 const SYNTHETIC_NAMES = [
   'ABUSE_GUARD_FAMILIES',
@@ -83,14 +85,21 @@ export function judgeRoot(response, { host, expectRedirect }) {
       ];
     const location = response.location ?? '';
     let path = location;
+    let target = null;
     try {
-      path = new URL(location, `https://${host}`).pathname;
+      target = new URL(location, `https://${host}`);
+      path = target.pathname;
     } catch {
       // A malformed Location is judged below as a non-auth target.
     }
-    return AUTH_PATH.test(path)
+    if (!target || !AUTH_PATH.test(path))
+      return [`${where} redirected to "${location}", which is not an auth path`];
+    // The auth page must live on the app's own host or on the web login host.
+    return REDIRECT_HOSTS(host).has(target.hostname.toLowerCase())
       ? []
-      : [`${where} redirected to "${location}", which is not an auth path`];
+      : [
+          `${where} redirected to "${location}", whose host is neither ${host} nor the web login host`,
+        ];
   }
   const why =
     status === 404
