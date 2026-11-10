@@ -1,0 +1,2590 @@
+{
+  "schema": 1,
+  "generatedAt": "2026-11-10T06:40:58.711Z",
+  "source": "build",
+  "main": {
+    "sha": "8d3f02d1ad3c57ad867a8586939c9aead928739b",
+    "at": "2026-11-10T05:55:48.000Z"
+  },
+  "prs": [
+    {
+      "number": 8077,
+      "title": "fix(roadmap): smoke canonical assets and land the slash redirect once",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-10T05:55:48.000Z"
+    },
+    {
+      "number": 8073,
+      "title": "fix(roadmap): serve the public roadmap and redirect the satellite host",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-10T04:33:47.000Z"
+    },
+    {
+      "number": 8071,
+      "title": "fix(chat): unread count 401 for signed-in users",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-10T04:59:13.000Z"
+    },
+    {
+      "number": 8068,
+      "title": "fix(calendar): bound the stored sync diagnostics and redact secrets from error messages",
+      "state": "open",
+      "draft": false,
+      "approved": false,
+      "mergedAt": null
+    },
+    {
+      "number": 8064,
+      "title": "fix(nova): serve the production host and sweep Worker root hosts",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-10T05:06:35.000Z"
+    },
+    {
+      "number": 8035,
+      "title": "feat(workers): bind rewise and cms to the tuturuuu-abuse-guard service",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T23:38:42.000Z"
+    },
+    {
+      "number": 8034,
+      "title": "fix(web): use manual redirect handling in Worker-reachable server requests",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T23:15:53.000Z"
+    },
+    {
+      "number": 8033,
+      "title": "fix(internal-api,utils): use manual redirect handling in shared infrastructure clients",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T23:15:33.000Z"
+    },
+    {
+      "number": 8012,
+      "title": "fix(mail): return a failed send to drafts and report the real error",
+      "state": "open",
+      "draft": false,
+      "approved": false,
+      "mergedAt": null
+    },
+    {
+      "number": 8002,
+      "title": "feat(nova): run the abuse guard through the Cloudflare service binding",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T18:48:38.000Z"
+    },
+    {
+      "number": 8001,
+      "title": "feat(mind): run the abuse guard through the Cloudflare service binding",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T18:48:30.000Z"
+    },
+    {
+      "number": 7999,
+      "title": "fix(hive): seal the production cutover artifact from the build profile",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T18:27:39.000Z"
+    },
+    {
+      "number": 7998,
+      "title": "fix(git): seal the production cutover artifact from the emitted config",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T18:27:31.000Z"
+    },
+    {
+      "number": 7996,
+      "title": "fix(chat): seal the production Worker from the emitted config",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T18:13:07.000Z"
+    },
+    {
+      "number": 7993,
+      "title": "feat(gateway): route marketing /assets to the marketing origin",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T17:40:13.000Z"
+    },
+    {
+      "number": 7991,
+      "title": "fix(drive): serve the build identity without a session refresh",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T17:27:33.000Z"
+    },
+    {
+      "number": 7989,
+      "title": "ci(nova,pay): package the production cutover artifacts",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T17:25:19.000Z"
+    },
+    {
+      "number": 7986,
+      "title": "ci(cms,ai): production profile for the cutover artifact scripts and runbook rows",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T17:22:28.000Z"
+    },
+    {
+      "number": 7979,
+      "title": "fix(gateway): keep signed-in requests on web for marketing groups and rewrite Link header hosts",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T16:46:48.000Z"
+    },
+    {
+      "number": 7975,
+      "title": "ci(learn,chat): package the production cutover artifacts",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T16:30:28.000Z"
+    },
+    {
+      "number": 7972,
+      "title": "feat(workspace): carve the changelog, crawlers, polls and queues groups and register page modules",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T16:23:59.000Z"
+    },
+    {
+      "number": 7970,
+      "title": "feat(gateway): serve marketing page groups from the marketing origin behind per-group flags",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T16:21:01.000Z"
+    },
+    {
+      "number": 7965,
+      "title": "fix(gateway): cache pages whose only Set-Cookie is NEXT_LOCALE",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T15:45:26.000Z"
+    },
+    {
+      "number": 7964,
+      "title": "feat(mind): native TanStack Start + Void source for Cloudflare Workers",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T16:14:07.000Z"
+    },
+    {
+      "number": 7962,
+      "title": "feat(chat): native TanStack Start + Void source for Cloudflare Workers",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T15:46:38.000Z"
+    },
+    {
+      "number": 7961,
+      "title": "feat(learn): native TanStack Start + Void source for Cloudflare Workers",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T15:56:19.000Z"
+    },
+    {
+      "number": 7957,
+      "title": "feat(ci): admit mail and apps native production publication",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T15:40:26.000Z"
+    },
+    {
+      "number": 7950,
+      "title": "feat(hive): native TanStack Start + Void source for Cloudflare Workers",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T15:36:03.000Z"
+    },
+    {
+      "number": 7947,
+      "title": "fix(mastermind): refuse redirects in native data clients without redirect error mode",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T16:02:05.000Z"
+    },
+    {
+      "number": 7946,
+      "title": "feat(api): define workspace endpoints slice 1",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T16:04:58.000Z"
+    },
+    {
+      "number": 7944,
+      "title": "feat(workspace): carve authenticated app out of web onto Start",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T16:20:55.000Z"
+    },
+    {
+      "number": 7943,
+      "title": "feat(teach): native TanStack Start candidate on Vite+ and Void",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T16:16:53.000Z"
+    },
+    {
+      "number": 7941,
+      "title": "feat(ci): build cross-app cutover smoke harness for D15 checks",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T16:05:08.000Z"
+    },
+    {
+      "number": 7940,
+      "title": "feat(gateway): add tuturuuu.com gateway Worker with public-page cache",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T15:20:13.000Z"
+    },
+    {
+      "number": 7934,
+      "title": "feat(marketing): native Start app for anonymous marketing pages",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T16:19:55.000Z"
+    },
+    {
+      "number": 7928,
+      "title": "feat(drive): admit a separate production Start profile with sealed artifact and cutover packet",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T16:40:24.000Z"
+    },
+    {
+      "number": 7924,
+      "title": "feat(meet): floating self-preview and calmer ended screen",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T15:51:49.000Z"
+    },
+    {
+      "number": 7922,
+      "title": "fix(meet): inline the Mira mark and tighten the preparing screen",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T14:11:40.000Z"
+    },
+    {
+      "number": 7912,
+      "title": "fix(storage-core): deny redirects in download relay",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T14:11:23.000Z"
+    },
+    {
+      "number": 7911,
+      "title": "feat(mastermind): add schedule occurrence core",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T16:08:40.000Z"
+    },
+    {
+      "number": 7910,
+      "title": "fix(utils): deny redirects in shared edge transports",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T15:51:29.000Z"
+    },
+    {
+      "number": 7907,
+      "title": "fix(edge): reject Calendar and Mail provider redirects",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-09T13:07:45.000Z"
+    },
+    {
+      "number": 7850,
+      "title": "feat(rewise): compose Cloudflare wiring onto main",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T20:53:48.000Z"
+    },
+    {
+      "number": 7839,
+      "title": "docs(cloudflare): add version-scoped migration references",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T18:51:06.000Z"
+    },
+    {
+      "number": 7834,
+      "title": "fix(forms): rebuild the native Cloudflare cutover on current main",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T18:22:08.000Z"
+    },
+    {
+      "number": 7831,
+      "title": "fix(ai): rebuild the native Cloudflare cutover on current main",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T18:04:59.000Z"
+    },
+    {
+      "number": 7802,
+      "title": "feat(roadmap): adopt public satellite shell and cache boundaries",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-07T23:41:45.000Z"
+    },
+    {
+      "number": 7792,
+      "title": "feat(web): regroup workspace and developer settings into sections",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T14:06:22.000Z"
+    },
+    {
+      "number": 7791,
+      "title": "feat(web): regroup account and preference settings into sections",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T06:49:02.000Z"
+    },
+    {
+      "number": 7789,
+      "title": "refactor(satellite): expose request-scoped auth adapters for native apps",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T00:52:17.000Z"
+    },
+    {
+      "number": 7788,
+      "title": "feat(shortener): build a production native profile in CI",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-07T14:03:55.000Z"
+    },
+    {
+      "number": 7785,
+      "title": "chore(tooling): replace Biome with oxfmt and oxlint",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-07T10:25:21.000Z"
+    },
+    {
+      "number": 7777,
+      "title": "feat(tasks): add dedicated sprint creation and deletion permissions",
+      "state": "open",
+      "draft": true,
+      "approved": false,
+      "mergedAt": null
+    },
+    {
+      "number": 7757,
+      "title": "feat(rewise): make rewise.tuturuuu.com the only canonical URL",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-05T00:21:14.000Z"
+    },
+    {
+      "number": 7755,
+      "title": "feat(fee-lock): PR-07 (5/5) notice template tab on the fee-lock page",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T20:44:42.000Z"
+    },
+    {
+      "number": 7682,
+      "title": "fix(start-bridge): inline server environment and guard Worker startup",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-07T09:18:44.000Z"
+    },
+    {
+      "number": 7666,
+      "title": "fix(cf): fail closed on missing Worker secrets and inline production NODE_ENV",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-05T21:35:48.000Z"
+    },
+    {
+      "number": 7645,
+      "title": "ci(track): build and upload the production Start Worker artifact",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T17:47:47.000Z"
+    },
+    {
+      "number": 7644,
+      "title": "ci(tasks): build and upload the production Start Worker artifact",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T17:23:09.000Z"
+    },
+    {
+      "number": 7643,
+      "title": "ci(storefront): build and upload the production Start Worker artifact",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T17:33:11.000Z"
+    },
+    {
+      "number": 7621,
+      "title": "feat(finance): package native Cloudflare cutover artifacts",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T17:31:12.000Z"
+    },
+    {
+      "number": 7618,
+      "title": "feat(cms): package native Cloudflare cutover artifacts",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T18:06:52.000Z"
+    },
+    {
+      "number": 7616,
+      "title": "feat(chat): Cloudflare Start cutover source 2/2",
+      "state": "open",
+      "draft": true,
+      "approved": false,
+      "mergedAt": null
+    },
+    {
+      "number": 7613,
+      "title": "feat(chat): Cloudflare Start cutover source 1/2",
+      "state": "open",
+      "draft": true,
+      "approved": false,
+      "mergedAt": null
+    },
+    {
+      "number": 7590,
+      "title": "feat(tools): prepare native Cloudflare cutover artifact",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T17:49:26.000Z"
+    },
+    {
+      "number": 7579,
+      "title": "feat(fee-lock): PR-12c locked fee suggestion for subscription invoices",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T19:56:33.000Z"
+    },
+    {
+      "number": 7577,
+      "title": "feat(fee-lock): PR-12b2 accept fee_lock_ref on subscription invoice create",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T19:49:38.000Z"
+    },
+    {
+      "number": 7576,
+      "title": "feat(fee-lock): PR-12b validate fee_lock_ref and write the invoice link",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T19:44:36.000Z"
+    },
+    {
+      "number": 7574,
+      "title": "feat(fee-lock): PR-11d notice template editor tab",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T20:42:23.000Z"
+    },
+    {
+      "number": 7572,
+      "title": "feat(fee-lock): PR-11b notice preview and HTML escaping",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T20:33:19.000Z"
+    },
+    {
+      "number": 7571,
+      "title": "feat(fee-lock): PR-11 notice template API",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T20:28:17.000Z"
+    },
+    {
+      "number": 7570,
+      "title": "feat(fee-lock): PR-07 (4/4) wire the Excel export dialog into the fee-lock page",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T19:28:54.000Z"
+    },
+    {
+      "number": 7565,
+      "title": "feat(fee-lock): PR-09d export dialog and client helper",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T19:25:08.000Z"
+    },
+    {
+      "number": 7564,
+      "title": "feat(fee-lock): PR-09c Excel export route and exported event",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T19:21:51.000Z"
+    },
+    {
+      "number": 7560,
+      "title": "feat(fee-lock): PR-06b batch lock API",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T19:09:47.000Z"
+    },
+    {
+      "number": 7558,
+      "title": "feat(fee-lock): PR-06 fee lock save, lock and reopen API",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T19:02:36.000Z"
+    },
+    {
+      "number": 7555,
+      "title": "feat(fee-lock): PR-03 baseline and save, lock and reopen functions (M2)",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T17:40:04.000Z"
+    },
+    {
+      "number": 7543,
+      "title": "feat(fee-lock): PR-07 (3/3) flag-gated route, nav item and pending-tab button",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T18:30:20.000Z"
+    },
+    {
+      "number": 7542,
+      "title": "feat(fee-lock): PR-07 (2/3) month view with filters",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T18:29:57.000Z"
+    },
+    {
+      "number": 7541,
+      "title": "feat(fee-lock): PR-07 (1/3) list table, month helpers and copy",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-08T18:29:20.000Z"
+    },
+    {
+      "number": 7525,
+      "title": "feat(ai): enforce provider-independent workspace AI policy",
+      "state": "open",
+      "draft": false,
+      "approved": false,
+      "mergedAt": null
+    },
+    {
+      "number": 7523,
+      "title": "feat(meet): add erase settings and protected workspace checks (V2)",
+      "state": "open",
+      "draft": true,
+      "approved": false,
+      "mergedAt": null
+    },
+    {
+      "number": 7522,
+      "title": "feat(meet): add erase core, P1 and finality (V10)",
+      "state": "open",
+      "draft": true,
+      "approved": false,
+      "mergedAt": null
+    },
+    {
+      "number": 7479,
+      "title": "fix(release): register @tuturuuu/feature-flags with Release Please",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T13:25:57.000Z"
+    },
+    {
+      "number": 7475,
+      "title": "feat(meet): reach the AI usage limiter through a service binding",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T08:21:40.000Z"
+    },
+    {
+      "number": 7474,
+      "title": "feat(mobile): prepare the Drive root list for offline reading behind offline_read_drive_list",
+      "state": "open",
+      "draft": false,
+      "approved": false,
+      "mergedAt": null
+    },
+    {
+      "number": 7473,
+      "title": "feat(mobile): prepare the Mail inbox list for offline reading behind offline_read_mail",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T14:28:14.000Z"
+    },
+    {
+      "number": 7472,
+      "title": "feat(mobile): prepare the Documents list for offline reading behind offline_read_documents",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T14:19:39.000Z"
+    },
+    {
+      "number": 7471,
+      "title": "feat(mobile): prepare Notes for offline reading behind offline_read_notes",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T14:09:08.000Z"
+    },
+    {
+      "number": 7470,
+      "title": "feat(mobile): prepare native Mira conversations for offline reading behind offline_read_mira",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T13:26:58.000Z"
+    },
+    {
+      "number": 7469,
+      "title": "feat(mobile): read Home offline from task, calendar and class caches behind offline_read_home",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T07:36:15.000Z"
+    },
+    {
+      "number": 7468,
+      "title": "feat(mobile): prepare the Mastermind snapshot for offline reading behind offline_read_mastermind",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T07:54:58.000Z"
+    },
+    {
+      "number": 7467,
+      "title": "feat(mobile): prepare Time tracker for offline reading behind offline_read_time_tracker",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T07:54:26.000Z"
+    },
+    {
+      "number": 7466,
+      "title": "feat(mobile): prepare Habits for offline reading behind offline_read_habits",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T07:42:14.000Z"
+    },
+    {
+      "number": 7464,
+      "title": "feat(mobile): prepare Chat for offline reading behind offline_read_chat",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T06:30:58.000Z"
+    },
+    {
+      "number": 7461,
+      "title": "feat(mobile): add offline status UI behind offline_status_ui",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T05:26:26.000Z"
+    },
+    {
+      "number": 7459,
+      "title": "feat(mobile): Mastermind undo window setting (default 5 s) + Send now (MONA-10)",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T05:17:49.000Z"
+    },
+    {
+      "number": 7456,
+      "title": "feat(mobile): add MobileFlags reader and flag-gated offline registration",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T06:09:47.000Z"
+    },
+    {
+      "number": 7455,
+      "title": "perf(meet): send a verified root sign-in straight to personal meetings",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T05:17:41.000Z"
+    },
+    {
+      "number": 7453,
+      "title": "perf(meet): split the worker entry and page views into on-demand chunks",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T05:16:48.000Z"
+    },
+    {
+      "number": 7451,
+      "title": "feat(mobile): offline edit conflicts, server wins with local copy (MONA-22)",
+      "state": "open",
+      "draft": true,
+      "approved": false,
+      "mergedAt": null
+    },
+    {
+      "number": 7449,
+      "title": "feat(meet): make the preparing-call screen minimal",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T04:34:26.000Z"
+    },
+    {
+      "number": 7448,
+      "title": "fix(meet): render Mira avatar without the image optimizer",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T04:34:21.000Z"
+    },
+    {
+      "number": 7447,
+      "title": "feat(meet): admit native production cutover",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T04:34:31.000Z"
+    },
+    {
+      "number": 7446,
+      "title": "feat(mobile): direct Mira voice send with optimistic bubble and retry (MONA-19)",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T05:15:31.000Z"
+    },
+    {
+      "number": 7445,
+      "title": "perf(meet): cut sequential round trips in room and workspace loaders",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T05:15:51.000Z"
+    },
+    {
+      "number": 7443,
+      "title": "feat(mobile): Iris chat read-only unless iris_send (MONA-15)",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T03:57:18.000Z"
+    },
+    {
+      "number": 7442,
+      "title": "refactor: rename @tuturuuu/turnstile to @tuturuuu/cloudflare",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-04T03:29:41.000Z"
+    },
+    {
+      "number": 7436,
+      "title": "feat(mobile): mastermind inbox tier header design (M2b)",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T02:45:04.000Z"
+    },
+    {
+      "number": 7427,
+      "title": "feat(mobile): mastermind batch sheet v2 with risky/incomplete exclusion (Slice C)",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-01T19:53:37.000Z"
+    },
+    {
+      "number": 7425,
+      "title": "feat(mobile): wire mastermind inbox tiers, ?tier/?q and undo-all bar (M2b-a)",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-01T19:28:40.000Z"
+    },
+    {
+      "number": 7421,
+      "title": "feat(meet): pre-join waiting room UI call integration",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T02:54:58.000Z"
+    },
+    {
+      "number": 7419,
+      "title": "feat(meet): pre-join waiting room UI preview",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T02:54:09.000Z"
+    },
+    {
+      "number": 7418,
+      "title": "feat(meet): pre-join waiting room UI controls",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T02:53:10.000Z"
+    },
+    {
+      "number": 7417,
+      "title": "feat(meet): fail-closed per-user Meet AI limiter",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-01T19:14:49.000Z"
+    },
+    {
+      "number": 7416,
+      "title": "feat(meet): lobby device store and media meter",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T02:52:04.000Z"
+    },
+    {
+      "number": 7414,
+      "title": "feat(mobile): 30-second reply undo + undo-all (M3a)",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-01T18:08:18.000Z"
+    },
+    {
+      "number": 7412,
+      "title": "feat(mobile): mastermind inbox tiers model (M2a)",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-01T18:07:11.000Z"
+    },
+    {
+      "number": 7411,
+      "title": "feat(tools): run Tools on TanStack Start + Void through the start bridge",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-01T18:06:14.000Z"
+    },
+    {
+      "number": 7410,
+      "title": "feat(meet): default-allow Meet AI with a kill switch",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-01T19:15:30.000Z"
+    },
+    {
+      "number": 7396,
+      "title": "feat(tasks): simplify sprint planning, summary and board filtering",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-05T15:09:17.000Z"
+    },
+    {
+      "number": 7395,
+      "title": "feat(mastermind): add the Inbox ask card and accept the new hub fields",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-01T17:23:36.000Z"
+    },
+    {
+      "number": 7390,
+      "title": "feat(mastermind): add the Inbox ask-v2 contract and shared fixture",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-01T05:59:08.000Z"
+    },
+    {
+      "number": 7389,
+      "title": "fix(packages): make the published @tuturuuu chain installable and guard it",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-01T06:20:43.000Z"
+    },
+    {
+      "number": 7364,
+      "title": "feat(mobile): hardware-backed Iris device key and signer (M0)",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-01T17:54:32.000Z"
+    },
+    {
+      "number": 7351,
+      "title": "docs: add What's new, Upskii overview and product directory rows",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-31T12:07:10.000Z"
+    },
+    {
+      "number": 7301,
+      "title": "feat(mastermind): scaffold private native Start Worker",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-30T12:34:02.000Z"
+    },
+    {
+      "number": 7293,
+      "title": "feat(meet): limit transcript and notes reads to participants and admins",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-30T06:51:29.000Z"
+    },
+    {
+      "number": 7288,
+      "title": "perf(web): subset public-page fonts",
+      "state": "open",
+      "draft": false,
+      "approved": false,
+      "mergedAt": null
+    },
+    {
+      "number": 7285,
+      "title": "feat(meet): finalize sessions and auto-generate notes",
+      "state": "open",
+      "draft": true,
+      "approved": true,
+      "mergedAt": null
+    },
+    {
+      "number": 7283,
+      "title": "feat(meet): notes and transcript tabs on the meeting page",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-04T03:29:12.000Z"
+    },
+    {
+      "number": 7276,
+      "title": "feat(meet): add a fenced 365-day transcript retention purge",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T19:48:48.000Z"
+    },
+    {
+      "number": 7267,
+      "title": "feat(meet): improve transcription quality and support solo meetings",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T16:13:58.000Z"
+    },
+    {
+      "number": 7266,
+      "title": "feat(meet): add transcription state and consent protocol",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T17:44:04.000Z"
+    },
+    {
+      "number": 7241,
+      "title": "perf(mobile): overlap Firebase with local reads and defer push setup past first frame",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T02:17:39.000Z"
+    },
+    {
+      "number": 7224,
+      "title": "feat(tasks): plan up to five sprints ahead and park tasks outside sprints",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-05T15:08:29.000Z"
+    },
+    {
+      "number": 7218,
+      "title": "feat(mobile): full Mastermind decision details",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T04:31:25.000Z"
+    },
+    {
+      "number": 7214,
+      "title": "feat(mobile): telemetry consent prompt and privacy choice",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T23:21:13.000Z"
+    },
+    {
+      "number": 7213,
+      "title": "feat(mastermind): catch-up section on Today",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T11:18:03.000Z"
+    },
+    {
+      "number": 7205,
+      "title": "feat(mobile): answer Mastermind decisions from Home and Inbox",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-28T22:43:05.000Z"
+    },
+    {
+      "number": 7193,
+      "title": "feat(tasks): apply the preview review round to the header, panel, Details and cards",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-05T14:13:59.000Z"
+    },
+    {
+      "number": 7176,
+      "title": "feat(mobile): Mastermind UX foundation and Home redesign (E-PR1)",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-28T18:45:36.000Z"
+    },
+    {
+      "number": 7158,
+      "title": "feat(mastermind): gate access on an explicit manage_mastermind grant",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-30T16:27:45.000Z"
+    },
+    {
+      "number": 7146,
+      "title": "feat(mail): tighten the inbox list hierarchy and density",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-28T07:49:57.000Z"
+    },
+    {
+      "number": 7145,
+      "title": "feat(mail): settle the sync icon smoothly and move the mail source into Settings",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-28T07:44:28.000Z"
+    },
+    {
+      "number": 7144,
+      "title": "perf(mail): load the inbox list without waiting on bootstrap writes",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-28T07:44:27.000Z"
+    },
+    {
+      "number": 7140,
+      "title": "fix(drive): expire and revoke export links",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-28T07:34:47.000Z"
+    },
+    {
+      "number": 7120,
+      "title": "feat(contacts): add default-off Start candidate",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-28T05:21:52.000Z"
+    },
+    {
+      "number": 7108,
+      "title": "feat(tasks): show the task's sprint in the task panel",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-05T13:28:18.000Z"
+    },
+    {
+      "number": 7097,
+      "title": "feat(tasks): number tasks per project with editable ticket keys",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-05T04:52:39.000Z"
+    },
+    {
+      "number": 7089,
+      "title": "feat(tasks): end sprints from a summary with carry or backlog decisions",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T21:17:55.000Z"
+    },
+    {
+      "number": 7088,
+      "title": "feat(tasks): plan the next sprint from a Plan tab",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T21:17:11.000Z"
+    },
+    {
+      "number": 7085,
+      "title": "feat(drive): add staging Start candidate",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-01T19:27:51.000Z"
+    },
+    {
+      "number": 7079,
+      "title": "feat(mobile): set and clear task dates from the quick actions sheet",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T11:17:31.000Z"
+    },
+    {
+      "number": 7046,
+      "title": "feat(tasks): show the board's sprint in the header and Board view",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T21:15:48.000Z"
+    },
+    {
+      "number": 7045,
+      "title": "feat(tasks): open board tasks in a right side panel",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T21:15:08.000Z"
+    },
+    {
+      "number": 7043,
+      "title": "feat(tasks): add per-board sprint data model",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T21:14:29.000Z"
+    },
+    {
+      "number": 7042,
+      "title": "feat(tasks): two-row board header with people, project and focus filters",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T20:39:00.000Z"
+    },
+    {
+      "number": 7041,
+      "title": "feat(tasks): inline task IDs on cards and drop Overdue/Upcoming columns",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-02T20:40:01.000Z"
+    },
+    {
+      "number": 7040,
+      "title": "feat(mobile): accessible chart kit for Mastermind insights",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-27T13:33:56.000Z"
+    },
+    {
+      "number": 6982,
+      "title": "feat(mobile): add Education mode and the Today classes card",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-28T05:39:06.000Z"
+    },
+    {
+      "number": 6981,
+      "title": "feat(mobile): redesign the board timeline as a day agenda",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T11:14:04.000Z"
+    },
+    {
+      "number": 6976,
+      "title": "feat(mobile): rebuild inventory item list with scan and search",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T06:13:05.000Z"
+    },
+    {
+      "number": 6974,
+      "title": "feat(mobile): redesign the task quick actions sheet",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T06:20:35.000Z"
+    },
+    {
+      "number": 6972,
+      "title": "fix(ci): guard native uploads and disable source maps",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T06:16:09.000Z"
+    },
+    {
+      "number": 6952,
+      "title": "feat(calendar): admit native production cutover",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T21:36:04.000Z"
+    },
+    {
+      "number": 6943,
+      "title": "feat(tasks): one cycle per task, backlog API and Cycles nav",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-05T01:17:25.000Z"
+    },
+    {
+      "number": 6940,
+      "title": "feat(tasks): add cycle and backlog planning view",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-05T06:57:32.000Z"
+    },
+    {
+      "number": 6938,
+      "title": "feat(mobile): sync Appearance per account with a device override",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T21:40:45.000Z"
+    },
+    {
+      "number": 6937,
+      "title": "feat(mobile): open the task menu on Kanban card long-press",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T21:37:56.000Z"
+    },
+    {
+      "number": 6922,
+      "title": "feat(mobile): count Focus Time as all task-linked tracked time",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T21:28:23.000Z"
+    },
+    {
+      "number": 6900,
+      "title": "feat(mobile): grouped task detail fields and a device Pomodoro",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T19:50:47.000Z"
+    },
+    {
+      "number": 6898,
+      "title": "feat(mobile): grouped Mira starters and a You tab with Focus Time and rows",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T19:44:59.000Z"
+    },
+    {
+      "number": 6897,
+      "title": "feat(mobile): name the root tabs Mira, Inbox and You and add dock search",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T19:39:07.000Z"
+    },
+    {
+      "number": 6893,
+      "title": "feat(mobile): regroup Home into Today, Up next and Calendar with workspace chips",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T19:29:56.000Z"
+    },
+    {
+      "number": 6889,
+      "title": "feat(mobile): add Appearance interface styles, density, corners and motion",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T19:23:04.000Z"
+    },
+    {
+      "number": 6882,
+      "title": "feat(mobile): swipe actions and a context menu on task rows",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T19:07:46.000Z"
+    },
+    {
+      "number": 6862,
+      "title": "feat(mobile): redesign Mira Live around one obvious start action",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T18:50:11.000Z"
+    },
+    {
+      "number": 6858,
+      "title": "feat(forms): qualify the native root Worker",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T11:34:21.000Z"
+    },
+    {
+      "number": 6852,
+      "title": "feat(utils): atomic password reservations on the abuse-guard store",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T10:46:14.000Z"
+    },
+    {
+      "number": 6849,
+      "title": "feat(tasks): seal the native artifact, gate signed-in root SSR, keep the exact offline fallback",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T10:56:28.000Z"
+    },
+    {
+      "number": 6847,
+      "title": "feat(auth): add a framework-free CSRF check in report mode",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T10:27:09.000Z"
+    },
+    {
+      "number": 6846,
+      "title": "feat(calendar): prompt owners to reconnect quarantined calendar accounts",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T07:42:38.000Z"
+    },
+    {
+      "number": 6842,
+      "title": "feat(finance): add an explicit native production profile",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T05:12:32.000Z"
+    },
+    {
+      "number": 6837,
+      "title": "feat(abuse-guard): add Durable Object guard store Worker",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T10:44:12.000Z"
+    },
+    {
+      "number": 6835,
+      "title": "feat(calendar): self-heal revoked calendar OAuth credentials during sync",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T06:24:03.000Z"
+    },
+    {
+      "number": 6826,
+      "title": "feat(start-bridge): shared root response policy (wrapResponse), safe failures and a runtime policy gate",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T11:13:37.000Z"
+    },
+    {
+      "number": 6815,
+      "title": "feat(track): native TanStack Start candidate, root-only and fail-closed",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T00:45:56.000Z"
+    },
+    {
+      "number": 6813,
+      "title": "feat(tasks): root-only fail-closed Worker hosts and production response headers",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T00:18:11.000Z"
+    },
+    {
+      "number": 6795,
+      "title": "feat(web): move app marketing pages under products",
+      "state": "open",
+      "draft": false,
+      "approved": false,
+      "mergedAt": null
+    },
+    {
+      "number": 6791,
+      "title": "feat(calendar): adopt the shared Start bridge and scoped native runtime",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T23:05:38.000Z"
+    },
+    {
+      "number": 6776,
+      "title": "fix(offline): namespace service worker caches per app",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T23:05:41.000Z"
+    },
+    {
+      "number": 6763,
+      "title": "feat(mail): adopt the shared Start bridge and request mounts",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-29T06:13:11.000Z"
+    },
+    {
+      "number": 6761,
+      "title": "feat(api): add standalone Worker foundation and generated contracts",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T19:36:18.000Z"
+    },
+    {
+      "number": 6760,
+      "title": "feat(start-bridge): add the RSC generic page adapter and the conversion codemod",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T20:02:43.000Z"
+    },
+    {
+      "number": 6759,
+      "title": "feat(tasks): native TanStack Start candidate on @tuturuuu/start-bridge",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T22:41:53.000Z"
+    },
+    {
+      "number": 6757,
+      "title": "feat(finance): add qualified native Start staging candidate",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T00:24:45.000Z"
+    },
+    {
+      "number": 6749,
+      "title": "feat(meet,mail): add per-app document security headers",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T18:11:20.000Z"
+    },
+    {
+      "number": 6742,
+      "title": "feat(start-bridge): add the bridge package with a frozen v0 API",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T19:47:34.000Z"
+    },
+    {
+      "number": 6725,
+      "title": "perf(ai): cut Mira time to first token",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T20:27:13.000Z"
+    },
+    {
+      "number": 6714,
+      "title": "feat(mobile): make Mira Live a full-screen native call",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T11:10:25.000Z"
+    },
+    {
+      "number": 6696,
+      "title": "feat(sdk): add versioned side-by-side CLI installs to ttr upgrade",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T16:08:32.000Z"
+    },
+    {
+      "number": 6685,
+      "title": "feat(mobile): add tablet list/detail layout and instant Mail preview",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T11:11:37.000Z"
+    },
+    {
+      "number": 6679,
+      "title": "feat(mobile): redesign Home and Notifications with grouped surfaces",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T06:39:51.000Z"
+    },
+    {
+      "number": 6664,
+      "title": "feat(mobile): apply Mira UI actions and share screen context",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T11:49:53.000Z"
+    },
+    {
+      "number": 6662,
+      "title": "feat(ai): gate Mira UI tools by client capabilities and add open_app",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-24T21:03:28.000Z"
+    },
+    {
+      "number": 6660,
+      "title": "feat(ai): add Mira body weight, habit and day overview tools",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T12:09:23.000Z"
+    },
+    {
+      "number": 6659,
+      "title": "feat(ai): add Mira mail read and draft tools",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T05:26:52.000Z"
+    },
+    {
+      "number": 6657,
+      "title": "feat(mobile): restore scoped Calendar settings before revalidation",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T05:31:54.000Z"
+    },
+    {
+      "number": 6655,
+      "title": "feat(mobile): cache Mail settings with guarded offline edits",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T05:30:46.000Z"
+    },
+    {
+      "number": 6649,
+      "title": "feat(mobile): add Assistant message actions and chat appearance",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T10:41:13.000Z"
+    },
+    {
+      "number": 6631,
+      "title": "feat(mobile): migrate calendar editors to hosted sheets",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-24T18:04:48.000Z"
+    },
+    {
+      "number": 6627,
+      "title": "feat(meet): compact coding room workbench, full-height shared document, and reliable document backups",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T18:00:01.000Z"
+    },
+    {
+      "number": 6625,
+      "title": "perf(mail): tree-shake internal-api, defer the composer and preload fonts",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-24T18:16:50.000Z"
+    },
+    {
+      "number": 6624,
+      "title": "perf(meet): cut first-load JavaScript and unblock text rendering",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-24T18:16:43.000Z"
+    },
+    {
+      "number": 6621,
+      "title": "refactor(colab): replace local Wrangler preview with Vite+",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-25T05:37:14.000Z"
+    },
+    {
+      "number": 6620,
+      "title": "docs(cloudflare): use cf commands for migrated native services",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-24T16:47:12.000Z"
+    },
+    {
+      "number": 6534,
+      "title": "feat(mobile): redesign settings and add customizable appearance themes",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-23T21:11:49.000Z"
+    },
+    {
+      "number": 6484,
+      "title": "feat(turbo-cache): add self-hosted Turborepo remote cache Worker on R2",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-26T09:03:06.000Z"
+    },
+    {
+      "number": 6477,
+      "title": "feat(satellite): shared account, profile and security settings in every app",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-24T10:20:50.000Z"
+    },
+    {
+      "number": 6475,
+      "title": "perf(turbo): stop global hash busts and hash result-changing env files",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-24T10:18:18.000Z"
+    },
+    {
+      "number": 6467,
+      "title": "chore(tooling): add build-free changed-files pre-push gate",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-23T18:14:20.000Z"
+    },
+    {
+      "number": 6432,
+      "title": "feat(shortener): move the redirect runtime to Start on Void",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-24T10:54:35.000Z"
+    },
+    {
+      "number": 6356,
+      "title": "feat(apps): migrate gateway to native Start and Void",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-22T10:44:19.000Z"
+    },
+    {
+      "number": 6350,
+      "title": "feat(meet): migrate to native Start and Void with Bun 1.4.3",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-22T10:26:23.000Z"
+    },
+    {
+      "number": 6255,
+      "title": "feat(mail): notify managed mailbox owners on inbound delivery",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-14T18:42:48.000Z"
+    },
+    {
+      "number": 6222,
+      "title": "feat(tasks): add optional authored planning notes",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-10T15:31:36.000Z"
+    },
+    {
+      "number": 6191,
+      "title": "feat(tasks): add optional project association",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-10T15:23:24.000Z"
+    },
+    {
+      "number": 6189,
+      "title": "feat(tasks): add explicit planning priority",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-10T15:02:44.000Z"
+    },
+    {
+      "number": 6182,
+      "title": "fix(mobile): keep Drive controls visible on narrow screens",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-10T14:03:42.000Z"
+    },
+    {
+      "number": 6172,
+      "title": "fix(mobile): label Drive selection controls",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-10T00:11:06.000Z"
+    },
+    {
+      "number": 6158,
+      "title": "feat(mobile): apply Mira theme tools with session-safe persistence",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-09T21:18:36.000Z"
+    },
+    {
+      "number": 6148,
+      "title": "feat(mobile): theme Mira message bubbles and long-press selection",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-09T19:58:23.000Z"
+    },
+    {
+      "number": 6136,
+      "title": "chore(colab): adopt Vite+ and scoped Oxc validation",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-10T05:08:37.000Z"
+    },
+    {
+      "number": 6130,
+      "title": "chore(tooling): establish Oxc and portable Worker adoption foundation",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-09T19:56:01.000Z"
+    },
+    {
+      "number": 6085,
+      "title": "feat(docs): expand platform guides, enforce SEO, and pause inactive runtimes",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-08T15:42:31.000Z"
+    },
+    {
+      "number": 6075,
+      "title": "fix(finance): stabilize attendance calendar status summaries",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-09T07:25:25.000Z"
+    },
+    {
+      "number": 6043,
+      "title": "fix(chat): preserve sanitized upstream stream errors",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-07T14:02:11.000Z"
+    },
+    {
+      "number": 6040,
+      "title": "fix(finance): keep invoice templates usable with invalid dates",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-07T12:39:01.000Z"
+    },
+    {
+      "number": 6010,
+      "title": "fix(finance): stabilize projected invoice calendar dates",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-07T06:57:38.000Z"
+    },
+    {
+      "number": 5997,
+      "title": "feat(mail): connect Gmail and Outlook as personal email clients",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-11T17:34:49.000Z"
+    },
+    {
+      "number": 5976,
+      "title": "feat(mira): edit saved memories with scoped revision review",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-06T22:15:37.000Z"
+    },
+    {
+      "number": 5974,
+      "title": "feat(mobile): rename Mira from the shared header",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-06T22:04:42.000Z"
+    },
+    {
+      "number": 5969,
+      "title": "feat(ai): expose scoped memory editing with truthful audit receipts",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-06T21:19:53.000Z"
+    },
+    {
+      "number": 5965,
+      "title": "fix(chat): preserve saved replies when cleanup fails",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-06T18:29:48.000Z"
+    },
+    {
+      "number": 5963,
+      "title": "feat(mobile): manage Mira personality and memories",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-06T18:15:22.000Z"
+    },
+    {
+      "number": 5962,
+      "title": "fix(chat): honor durable stream completion",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-06T18:14:44.000Z"
+    },
+    {
+      "number": 5948,
+      "title": "fix(mail): follow app theme and preserve email contrast",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-06T15:10:48.000Z"
+    },
+    {
+      "number": 5935,
+      "title": "feat(meet): keep participant media visible alongside collaboration",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-06T11:24:21.000Z"
+    },
+    {
+      "number": 5918,
+      "title": "feat(meet): simplify the in-call document toolbar",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-06T07:41:43.000Z"
+    },
+    {
+      "number": 5914,
+      "title": "feat(mira): resumable model downloads and cellular consent",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-06T07:10:52.000Z"
+    },
+    {
+      "number": 5881,
+      "title": "fix(mobile): retain Drive files during MFA challenges",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T23:46:12.000Z"
+    },
+    {
+      "number": 5870,
+      "title": "feat(mobile): manage native Mira models and private local chat",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T22:17:07.000Z"
+    },
+    {
+      "number": 5868,
+      "title": "perf(calendar): overlap deep-link date and startup reads",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T21:59:28.000Z"
+    },
+    {
+      "number": 5867,
+      "title": "perf(calendar): reuse verified workspace for permissions",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T21:52:28.000Z"
+    },
+    {
+      "number": 5866,
+      "title": "perf(calendar): overlap independent startup enrichment reads",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T21:32:03.000Z"
+    },
+    {
+      "number": 5864,
+      "title": "feat(calendar): edit monthly and yearly weekday recurrence",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T21:18:48.000Z"
+    },
+    {
+      "number": 5844,
+      "title": "feat(calendar): preserve unsupported provider recurrence as read only",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T19:06:36.000Z"
+    },
+    {
+      "number": 5838,
+      "title": "feat(mobile): load Chat conversations near the viewport end",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T18:08:33.000Z"
+    },
+    {
+      "number": 5834,
+      "title": "feat(calendar): reconcile canonical provider recurring snapshots",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T17:48:10.000Z"
+    },
+    {
+      "number": 5829,
+      "title": "feat(mobile): record Mira voice inside the persistent dock",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T17:10:41.000Z"
+    },
+    {
+      "number": 5827,
+      "title": "perf(calendar): batch per-user task scheduling summaries",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T16:52:30.000Z"
+    },
+    {
+      "number": 5825,
+      "title": "feat(calendar): add native recurring event creation and scoped editing",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T16:40:18.000Z"
+    },
+    {
+      "number": 5822,
+      "title": "fix(mobile): refine Drive dock search and automatic pagination",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T16:18:07.000Z"
+    },
+    {
+      "number": 5821,
+      "title": "feat(meet): open a blank IDE with authorized resource discovery",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T16:05:47.000Z"
+    },
+    {
+      "number": 5819,
+      "title": "feat(calendar): add transactional native recurring series API",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T15:54:02.000Z"
+    },
+    {
+      "number": 5818,
+      "title": "fix(mail): restore RSVP for duplicate Google calendar MIME parts",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T15:48:08.000Z"
+    },
+    {
+      "number": 5816,
+      "title": "feat(meet): add private personal task and calendar panel",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T15:45:19.000Z"
+    },
+    {
+      "number": 5808,
+      "title": "feat(calendar): add canonical recurrence rules and provider adapters",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-05T15:16:34.000Z"
+    },
+    {
+      "number": 5785,
+      "title": "feat(education): add personal To do in Teach and Learn",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-04T07:36:09.000Z"
+    },
+    {
+      "number": 5783,
+      "title": "feat(mobile): introduce branded Mira onboarding",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-04T05:45:23.000Z"
+    },
+    {
+      "number": 5710,
+      "title": "feat(learn): add canonical Programming catalog, author forms and scoped drafts",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-02T20:00:01.000Z"
+    },
+    {
+      "number": 5709,
+      "title": "feat(learn): persist workspace Programming problems and authorized catalog APIs",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-02T17:54:11.000Z"
+    },
+    {
+      "number": 5707,
+      "title": "feat(learn): improve Programming workspace controls and layout",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-02T03:11:05.000Z"
+    },
+    {
+      "number": 5673,
+      "title": "feat(mail): link invitations to Calendar with explicit preview on web and mobile",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-02T09:15:58.000Z"
+    },
+    {
+      "number": 5672,
+      "title": "feat(calendar): expose authorized event link previews",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-30T20:15:24.000Z"
+    },
+    {
+      "number": 5671,
+      "title": "feat(mail): add canonical Calendar association preview service",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-30T22:29:38.000Z"
+    },
+    {
+      "number": 5668,
+      "title": "fix(mail): add invitation RSVP and settle final inbox archive",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-30T21:24:53.000Z"
+    },
+    {
+      "number": 5661,
+      "title": "feat(calendar): support full Google color choices and scoped edits",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-10-03T17:19:15.000Z"
+    },
+    {
+      "number": 5637,
+      "title": "feat(learn): add resizable coding workspace and execution history",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-29T11:42:23.000Z"
+    },
+    {
+      "number": 5618,
+      "title": "fix(finance): respect class join dates in pending tuition",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-29T04:09:52.000Z"
+    },
+    {
+      "number": 5609,
+      "title": "feat(learn): add multilingual coding lab",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-28T16:50:36.000Z"
+    },
+    {
+      "number": 5602,
+      "title": "fix(tasks): render task media in Tasks satellite",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-28T09:28:43.000Z"
+    },
+    {
+      "number": 5596,
+      "title": "fix(tasks): preserve cross-column card drops",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-28T08:16:05.000Z"
+    },
+    {
+      "number": 5593,
+      "title": "fix(tasks): allow media uploads in task creation",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-28T07:02:26.000Z"
+    },
+    {
+      "number": 5583,
+      "title": "feat(notes): add device lock with passkey and QR recovery",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-27T11:17:10.000Z"
+    },
+    {
+      "number": 5576,
+      "title": "feat(notes): archive views and structured editing",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-27T06:26:19.000Z"
+    },
+    {
+      "number": 5567,
+      "title": "style(education): align Learn and Teach with satellite UI",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-27T03:45:58.000Z"
+    },
+    {
+      "number": 5563,
+      "title": "fix(chat): restore earlier media and finish persisted replies",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-27T02:36:26.000Z"
+    },
+    {
+      "number": 5560,
+      "title": "feat(mobile): visualize and limit cached storage",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-26T19:08:16.000Z"
+    },
+    {
+      "number": 5553,
+      "title": "feat(mobile): preview Chat media attachments",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-26T18:43:31.000Z"
+    },
+    {
+      "number": 5543,
+      "title": "feat(notes): link tasks, events, and meetings",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-26T14:57:47.000Z"
+    },
+    {
+      "number": 5541,
+      "title": "fix(finance): count recurring sessions in subscription previews",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-26T14:07:13.000Z"
+    },
+    {
+      "number": 5535,
+      "title": "feat(notes): add workspace Notes on web and mobile",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-26T10:55:01.000Z"
+    },
+    {
+      "number": 5533,
+      "title": "feat(education): adopt satellite shells for Learn and Teach",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-09-26T08:05:08.000Z"
+    }
+  ],
+  "hosts": [
+    {
+      "app": "ai",
+      "platform": "vercel",
+      "commit": "4382dd3223b7ec40782ae1f7fad3b0e5837d64bf",
+      "commitAt": "2026-11-08T23:42:45.000Z",
+      "behindBy": 190
+    },
+    {
+      "app": "apps",
+      "platform": "workers",
+      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
+      "commitAt": "2026-11-10T00:26:04.000Z",
+      "behindBy": 31
+    },
+    {
+      "app": "calendar",
+      "platform": "workers",
+      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
+      "commitAt": "2026-11-10T00:26:04.000Z",
+      "behindBy": 31
+    },
+    {
+      "app": "chat",
+      "platform": "vercel",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    },
+    {
+      "app": "cms",
+      "platform": "workers",
+      "commit": "a71e906194eff1a5e9e23113c5443e6273b75061",
+      "commitAt": "2026-11-10T01:14:49.000Z",
+      "behindBy": 20
+    },
+    {
+      "app": "colab",
+      "platform": "unknown",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    },
+    {
+      "app": "contacts",
+      "platform": "vercel",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    },
+    {
+      "app": "drive",
+      "platform": "workers",
+      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
+      "commitAt": "2026-11-10T00:26:04.000Z",
+      "behindBy": 31
+    },
+    {
+      "app": "finance",
+      "platform": "workers",
+      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
+      "commitAt": "2026-11-10T00:26:04.000Z",
+      "behindBy": 31
+    },
+    {
+      "app": "forms",
+      "platform": "workers",
+      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
+      "commitAt": "2026-11-10T00:26:04.000Z",
+      "behindBy": 31
+    },
+    {
+      "app": "hive",
+      "platform": "unknown",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    },
+    {
+      "app": "inventory",
+      "platform": "vercel",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    },
+    {
+      "app": "learn",
+      "platform": "workers",
+      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
+      "commitAt": "2026-11-10T00:26:04.000Z",
+      "behindBy": 31
+    },
+    {
+      "app": "mail",
+      "platform": "vercel",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    },
+    {
+      "app": "marketing",
+      "platform": "vercel",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    },
+    {
+      "app": "meet",
+      "platform": "workers",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    },
+    {
+      "app": "mind",
+      "platform": "vercel",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    },
+    {
+      "app": "mobile",
+      "platform": "store",
+      "commit": "fb2df520d8778a092023f762dbb1aaeda8c3b2cb",
+      "commitAt": "2026-11-08T17:49:20.000Z",
+      "behindBy": 277
+    },
+    {
+      "app": "nova",
+      "platform": "vercel",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    },
+    {
+      "app": "pay",
+      "platform": "vercel",
+      "commit": "4382dd3223b7ec40782ae1f7fad3b0e5837d64bf",
+      "commitAt": "2026-11-08T23:42:45.000Z",
+      "behindBy": 190
+    },
+    {
+      "app": "playground",
+      "platform": "unknown",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    },
+    {
+      "app": "rewise",
+      "platform": "vercel",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    },
+    {
+      "app": "roadmap",
+      "platform": "workers",
+      "commit": "8d3f02d1ad3c57ad867a8586939c9aead928739b",
+      "commitAt": "2026-11-10T05:55:48.000Z",
+      "behindBy": 0
+    },
+    {
+      "app": "shortener",
+      "platform": "workers",
+      "commit": "58825f154b90e59af8ff93768f2601a758ae0f39",
+      "commitAt": "2026-11-09T16:47:40.000Z",
+      "behindBy": 90
+    },
+    {
+      "app": "storefront",
+      "platform": "workers",
+      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
+      "commitAt": "2026-11-10T00:26:04.000Z",
+      "behindBy": 31
+    },
+    {
+      "app": "tasks",
+      "platform": "workers",
+      "commit": "89ebac54c0cf58e446640c617008776a20bde11d",
+      "commitAt": "2026-11-10T05:19:51.000Z",
+      "behindBy": 3
+    },
+    {
+      "app": "teach",
+      "platform": "workers",
+      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
+      "commitAt": "2026-11-10T00:26:04.000Z",
+      "behindBy": 31
+    },
+    {
+      "app": "tools",
+      "platform": "workers",
+      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
+      "commitAt": "2026-11-10T00:26:04.000Z",
+      "behindBy": 31
+    },
+    {
+      "app": "track",
+      "platform": "workers",
+      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
+      "commitAt": "2026-11-10T00:26:04.000Z",
+      "behindBy": 31
+    },
+    {
+      "app": "web",
+      "platform": "vercel",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    },
+    {
+      "app": "workspace",
+      "platform": "vercel",
+      "commit": null,
+      "commitAt": null,
+      "behindBy": null
+    }
+  ]
+}
