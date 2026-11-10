@@ -36,7 +36,8 @@ async function hashedAssetResponse(
 export default {
   ...handler,
   async fetch(...args: Parameters<typeof handler.fetch>) {
-    const request = normalizeLocalHost(args[0]);
+    const [incoming, ...options] = args;
+    const request = normalizeLocalHost(incoming);
     const basepath = selectedBasepath(request);
     const boundary = roadmapBoundary(request, basepath);
     if (boundary) return withRoadmapCachePolicy(request, boundary);
@@ -50,11 +51,11 @@ export default {
         buildInfoResponse(__ROADMAP_BUILD_SHA__, request.method)
       );
     }
-    const asset = await hashedAssetResponse(request, args[1]);
+    const asset = await hashedAssetResponse(request, options[0]);
     if (asset) return asset;
     const response = await handler.fetch(
       prepareRoadmapRequest(request, basepath),
-      ...args.slice(1)
+      ...options
     );
     return withRoadmapCachePolicy(request, response);
   },

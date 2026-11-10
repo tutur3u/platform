@@ -9,8 +9,23 @@ import { once } from 'node:events';
 import { existsSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { createServer, request as httpRequest } from 'node:http';
+import { registerHooks } from 'node:module';
 import { join, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const CLOUDFLARE_WORKERS_STUB = new URL(
+  './cloudflare-workers-stub.mjs',
+  import.meta.url
+);
+
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier === 'cloudflare:workers') {
+      return { url: CLOUDFLARE_WORKERS_STUB.href, shortCircuit: true };
+    }
+    return nextResolve(specifier, context);
+  },
+});
 
 export const STAGE_LABELS = [
   'Planned',
@@ -199,11 +214,18 @@ function clientFile(root, pathname) {
   } catch {
     return null;
   }
-  if (decoded.includes('\0') || decoded.split('/').includes('..')) return null;
-  const clientRoot = realpathSync(join(root, 'dist/client'));
-  const file = join(clientRoot, decoded);
-  if (file !== clientRoot && !file.startsWith(`${clientRoot}${sep}`))
+  // path.join treats a leading slash as absolute and drops the client root.
+  const relative = decoded.replace(/^\/+/, '');
+  if (
+    relative === '' ||
+    relative.includes('\0') ||
+    relative.split('/').includes('..')
+  ) {
     return null;
+  }
+  const clientRoot = realpathSync(join(root, 'dist/client'));
+  const file = join(clientRoot, relative);
+  if (!file.startsWith(`${clientRoot}${sep}`)) return null;
   if (!existsSync(file)) return null;
   return realpathSync(file).startsWith(`${clientRoot}${sep}`) ? file : null;
 }
@@ -254,7 +276,8 @@ export async function startBuiltWorker(root = appRoot()) {
         : `http://127.0.0.1${incoming.url ?? '/'}`;
       const response = await worker.default.fetch(
         new Request(target, { method: incoming.method ?? 'GET' }),
-        env
+        env,
+        { waitUntil() {}, passThroughOnException() {} }
       );
       const bytes = Buffer.from(await response.arrayBuffer());
       const out = {};
