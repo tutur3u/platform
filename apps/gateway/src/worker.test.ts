@@ -266,3 +266,70 @@ describe('gateway handler', () => {
     });
   });
 });
+
+describe('bare mount paths', () => {
+  function mountEnv(
+    paths: string,
+    fetch = vi.fn(
+      async (request: Request) =>
+        new Response(
+          `learn ${new URL(request.url).pathname}${new URL(request.url).search}`
+        )
+    )
+  ) {
+    return {
+      fetch,
+      env: {
+        ...ENV,
+        GATEWAY_MOUNTED_PATHS: paths,
+        MOUNT_LEARN: { fetch },
+      } as unknown as Env,
+    };
+  }
+
+  it('hands exactly /<app> with a query to the app binding, untouched', async () => {
+    const t = setup(() => new Response('web'));
+    const { env, fetch } = mountEnv('/learn, /tasks');
+    const res = await t.call('/learn?x=1&y=%20z', undefined, env);
+    expect(await res.text()).toBe('learn /learn?x=1&y=%20z');
+    expect(res.headers.get('x-gateway-cache')).toBe('MOUNT');
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(t.fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps unlisted, unbound, nested and lookalike paths on the web origin', async () => {
+    const t = setup(() => new Response('web'));
+    const { env, fetch } = mountEnv('/learn,/tasks');
+    for (const path of [
+      '/tasks?x=1',
+      '/learn/courses',
+      '/learning',
+      '/Learn',
+      '/en/learn',
+    ]) {
+      expect(await (await t.call(path, undefined, env)).text()).toBe('web');
+    }
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('ignores the binding when the path is not listed (rollback)', async () => {
+    const t = setup(() => new Response('web'));
+    const { env, fetch } = mountEnv('');
+    expect(await (await t.call('/learn?x=1', undefined, env)).text()).toBe(
+      'web'
+    );
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('answers 502 when the mounted app throws', async () => {
+    const t = setup(() => new Response('web'));
+    const { env } = mountEnv(
+      '/learn',
+      vi.fn(async () => {
+        throw new Error('down');
+      })
+    );
+    const res = await t.call('/learn?x=1', undefined, env);
+    expect(res.status).toBe(502);
+  });
+});

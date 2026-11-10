@@ -131,3 +131,27 @@ Flip a group by adding its name and redeploying the gateway variables. Roll it b
 Smoke for each group before the next one: anonymous 200 on two paths of the group, `x-gateway-cache` present, and `x-tuturuuu-runtime: native` on a cache MISS from the marketing origin.
 
 `/assets/*` is the Vite build output of the marketing app. It always goes to `MARKETING_ORIGIN` (cached as static) and falls back to the web origin while `MARKETING_ORIGIN` is unset. It is not tied to a page-group flag, so rolling a group back does not move `/assets/*`; Vercel web has no `/assets` path.
+
+## Apps mounted at tuturuuu.com/&lt;app&gt;
+
+An app moved from `<app>.tuturuuu.com` to `tuturuuu.com/<app>` gets two zone
+routes on its own Worker: `tuturuuu.com/<app>` and `tuturuuu.com/<app>/*`. They
+are more specific than the gateway's `tuturuuu.com/*`, so those requests never
+reach the gateway. One case slips through: a zone route cannot match the bare
+path once a query string is present, so `tuturuuu.com/<app>?x=1` would fall to
+the gateway and on to Web.
+
+For that case the gateway hands **exactly** `/<app>` (any query) to the app's
+Worker through a service binding:
+
+- Add the mount path to `GATEWAY_MOUNTED_PATHS` (comma-separated, e.g.
+  `/learn,/tasks`).
+- Bind the app Worker as `MOUNT_<SEGMENT>` (`MOUNT_LEARN`, `MOUNT_STORE`).
+
+A service binding is not a same-zone subrequest, so the request reaches the
+Worker, not the Vercel origin. Responses carry `x-gateway-cache: MOUNT` and are
+never cached by the gateway. Nested paths (`/<app>/x`), lookalikes
+(`/learning`) and unlisted or unbound paths keep going to `WEB_ORIGIN`.
+
+**Rollback for one app:** remove its two zone routes and its
+`GATEWAY_MOUNTED_PATHS` entry. Its subdomain serves again.
