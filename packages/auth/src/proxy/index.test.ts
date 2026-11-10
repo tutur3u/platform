@@ -180,6 +180,46 @@ describe('auth proxy redirect helpers', () => {
     );
   });
 
+  it('maps the gateway origin alias host to the central origin', () => {
+    const forwarded = new NextRequest('https://origin.tuturuuu.com/personal', {
+      headers: {
+        'x-forwarded-host': 'origin.tuturuuu.com',
+        'x-forwarded-proto': 'https',
+      },
+    });
+    expect(
+      resolveCanonicalRequestOrigin(forwarded, 'https://tuturuuu.com')
+    ).toBe('https://tuturuuu.com');
+
+    const direct = new NextRequest('https://ORIGIN.tuturuuu.com/personal');
+    expect(resolveCanonicalRequestOrigin(direct, 'https://tuturuuu.com')).toBe(
+      'https://tuturuuu.com'
+    );
+  });
+
+  it('maps configured extra gateway origin aliases to the central origin', () => {
+    vi.stubEnv('TUTURUUU_GATEWAY_ORIGIN_HOSTS', 'edge-origin.example.com');
+    try {
+      const request = new NextRequest('https://edge-origin.example.com/x', {
+        headers: { 'x-forwarded-host': 'edge-origin.example.com' },
+      });
+      expect(
+        resolveCanonicalRequestOrigin(request, 'https://tuturuuu.com')
+      ).toBe('https://tuturuuu.com');
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('keeps satellite public hosts as their own origin', () => {
+    const request = new NextRequest('https://tasks.tuturuuu.com/personal', {
+      headers: { 'x-forwarded-host': 'tasks.tuturuuu.com' },
+    });
+    expect(resolveCanonicalRequestOrigin(request, 'https://tuturuuu.com')).toBe(
+      'https://tasks.tuturuuu.com'
+    );
+  });
+
   it('preserves explicit loopback ports for local satellite auth returns', () => {
     const request = new NextRequest(
       'http://localhost:7809/workspace/tasks?source=sidebar-apps',

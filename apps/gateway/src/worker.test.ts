@@ -147,6 +147,97 @@ describe('gateway handler', () => {
     expect(t.cache.entries.size).toBe(0);
   });
 
+  it('maps an origin-host returnUrl in the sign-in redirect to the public host', async () => {
+    const returnUrl =
+      'https://web-origin.vercel.app/verify-token?nextUrl=%2Fpersonal';
+    const t = setup(
+      () =>
+        new Response(null, {
+          status: 307,
+          headers: {
+            location: `https://tuturuuu.com/login?returnUrl=${encodeURIComponent(returnUrl)}`,
+          },
+        })
+    );
+    const res = await t.call('/personal');
+    const location = new URL(res.headers.get('location') ?? '');
+    expect(location.origin).toBe('https://tuturuuu.com');
+    expect(location.pathname).toBe('/login');
+    expect(location.searchParams.get('returnUrl')).toBe(
+      'https://tuturuuu.com/verify-token?nextUrl=%2Fpersonal'
+    );
+  });
+
+  it('maps origin-host query URLs in a relative Location and keeps it relative', async () => {
+    const t = setup(
+      () =>
+        new Response(null, {
+          status: 307,
+          headers: {
+            location:
+              '/login?returnUrl=https%3A%2F%2Fweb-origin.vercel.app%2Fx&lang=vi',
+          },
+        })
+    );
+    const res = await t.call('/personal');
+    const location = res.headers.get('location') ?? '';
+    expect(location.startsWith('/login?')).toBe(true);
+    const parsed = new URL(location, 'https://tuturuuu.com');
+    expect(parsed.searchParams.get('returnUrl')).toBe('https://tuturuuu.com/x');
+    expect(parsed.searchParams.get('lang')).toBe('vi');
+  });
+
+  it('re-encodes only the rewritten parameter and keeps sibling bytes verbatim', async () => {
+    const siblings = 'sig=a%2Fb%2Bc%3D%3D&note=hello%20world&tag=1&tag=2&flag';
+    const t = setup(
+      () =>
+        new Response(null, {
+          status: 307,
+          headers: {
+            location: `https://tuturuuu.com/login?${siblings.split('&').slice(0, 2).join('&')}&returnUrl=https%3A%2F%2Fweb-origin.vercel.app%2Fx%3Fa%3D1&${siblings.split('&').slice(2).join('&')}`,
+          },
+        })
+    );
+    const res = await t.call('/personal');
+    expect(res.headers.get('location')).toBe(
+      'https://tuturuuu.com/login?sig=a%2Fb%2Bc%3D%3D&note=hello%20world&returnUrl=https%3A%2F%2Ftuturuuu.com%2Fx%3Fa%3D1&tag=1&tag=2&flag'
+    );
+  });
+
+  it('leaves foreign and public-host query URLs untouched', async () => {
+    const location =
+      'https://tuturuuu.com/login?returnUrl=https%3A%2F%2Ftasks.tuturuuu.com%2Fverify-token';
+    const t = setup(
+      () => new Response(null, { status: 307, headers: { location } })
+    );
+    const res = await t.call('/personal');
+    expect(res.headers.get('location')).toBe(location);
+  });
+
+  it('replaces client X-Forwarded-Host/-Proto with the public host', async () => {
+    const t = setup(() => new Response('ok'));
+    await t.call('/personal', {
+      headers: {
+        'x-forwarded-host': 'evil.example.com',
+        'x-forwarded-proto': 'http',
+      },
+    });
+    const sent = t.fetchMock.mock.calls[0]?.[0] as Request;
+    expect(sent.headers.get('x-forwarded-host')).toBe('tuturuuu.com');
+    expect(sent.headers.get('x-forwarded-proto')).toBe('https');
+  });
+
+  it('drops client X-Forwarded-Host when no public host is configured', async () => {
+    const t = setup(() => new Response('ok'));
+    await t.call(
+      '/personal',
+      { headers: { 'x-forwarded-host': 'evil.example.com' } },
+      { WEB_ORIGIN: ENV.WEB_ORIGIN }
+    );
+    const sent = t.fetchMock.mock.calls[0]?.[0] as Request;
+    expect(sent.headers.has('x-forwarded-host')).toBe(false);
+  });
+
   it('GATEWAY_MODE=passthrough skips the cache for public pages too', async () => {
     const t = setup(() => new Response('x'));
     const env = { ...ENV, GATEWAY_MODE: 'passthrough' };

@@ -79,6 +79,32 @@ function isInternalHostname(hostname: string): boolean {
   return INTERNAL_HOSTNAME_PATTERN.test(hostname);
 }
 
+/**
+ * Hostnames that serve the central web app only behind the tuturuuu.com
+ * gateway Worker (its WEB_ORIGIN). The hosting platform overwrites
+ * X-Forwarded-Host with this hostname, so a public URL built from it would send
+ * browsers to a host they cannot use. Such requests resolve to the configured
+ * central origin instead. Extra aliases come from TUTURUUU_GATEWAY_ORIGIN_HOSTS
+ * (comma-separated hostnames).
+ */
+const GATEWAY_ORIGIN_ALIAS_HOSTNAMES = ['origin.tuturuuu.com'] as const;
+
+function isGatewayOriginAliasHostname(hostname: string): boolean {
+  const normalized = hostname.toLowerCase();
+  if (
+    (GATEWAY_ORIGIN_ALIAS_HOSTNAMES as readonly string[]).includes(normalized)
+  ) {
+    return true;
+  }
+  const extra = process.env.TUTURUUU_GATEWAY_ORIGIN_HOSTS;
+  if (!extra) return false;
+  return extra
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+    .includes(normalized);
+}
+
 function isLoopbackBrowserHostname(hostname: string): boolean {
   return (
     hostname === 'localhost' ||
@@ -124,12 +150,20 @@ export function resolveCanonicalRequestOrigin(
       const forwardedOrigin = new URL(
         `${forwardedProto || 'https'}://${forwardedHost}`
       ).origin;
-      if (!isInternalHostname(new URL(forwardedOrigin).hostname)) {
+      const forwardedHostname = new URL(forwardedOrigin).hostname;
+      if (isGatewayOriginAliasHostname(forwardedHostname)) {
+        return fallbackOrigin;
+      }
+      if (!isInternalHostname(forwardedHostname)) {
         return forwardedOrigin;
       }
     } catch {
       // Ignore malformed forwarded headers and fall back to safer origins.
     }
+  }
+
+  if (isGatewayOriginAliasHostname(req.nextUrl.hostname)) {
+    return fallbackOrigin;
   }
 
   if (!isInternalHostname(req.nextUrl.hostname)) {
