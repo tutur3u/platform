@@ -15,7 +15,6 @@ import {
 } from '@tuturuuu/internal-api';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
@@ -26,6 +25,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { GuestSelfJoinSetting } from './guest-self-join-setting';
 import { InviteLinksSection } from './invite-links-section';
+import { PlanName } from './plan-name';
 import { WorkspaceAvatarEditor } from './workspace-avatar-editor';
 import { WorkspaceIdentityForm } from './workspace-identity-form';
 
@@ -174,12 +174,7 @@ export function SatelliteWorkspaceSettingsPanel({
           {aiCreditsQuery.isPending ? (
             <Skeleton className="h-6 w-28" />
           ) : creditStatus ? (
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-sm">
-                {t(getPlanTranslationKey(creditStatus.tier))}
-              </span>
-              <Badge variant="secondary">{creditStatus.tier}</Badge>
-            </div>
+            <PlanName tier={creditStatus.tier} />
           ) : (
             <BillingMetricError onRetry={() => aiCreditsQuery.refetch()} />
           )}
@@ -266,17 +261,6 @@ function formatCredits(value: number) {
     maximumFractionDigits: 0,
     notation: value >= 1_000_000 ? 'compact' : 'standard',
   }).format(value);
-}
-
-function getPlanTranslationKey(tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE') {
-  const keys = {
-    ENTERPRISE: 'billing_plan_enterprise',
-    FREE: 'billing_plan_free',
-    PLUS: 'billing_plan_plus',
-    PRO: 'billing_plan_pro',
-  } as const;
-
-  return keys[tier];
 }
 
 function RestrictedNotice() {
