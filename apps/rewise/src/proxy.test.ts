@@ -13,7 +13,8 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   hasWebAppSessionTokenFromRequest: vi.fn(),
 }));
 vi.mock('@tuturuuu/auth/proxy', () => ({
-  appSessionFailureResponse: () => new Response('unauthorized', { status: 401 }),
+  appSessionFailureResponse: () =>
+    new Response('unauthorized', { status: 401 }),
   consumeVerifyTokenRequest: vi.fn(),
   createCentralizedAuthProxy: () => vi.fn(),
   getRequestHeadersWithResponseCookies: vi.fn(),
