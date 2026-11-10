@@ -3,13 +3,15 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { findForbiddenMarkers, scanClientBundle } from './client-bundle-guard.mjs';
+import {
+  findForbiddenMarkers,
+  scanClientBundle,
+} from './client-bundle-guard.mjs';
 
 test('flags a chunk that constructs an AsyncLocalStorage', () => {
-  assert.deepEqual(
-    findForbiddenMarkers('nn(new V.AsyncLocalStorage),w(`x`)'),
-    ['AsyncLocalStorage']
-  );
+  assert.deepEqual(findForbiddenMarkers('nn(new V.AsyncLocalStorage),w(`x`)'), [
+    'AsyncLocalStorage',
+  ]);
   assert.deepEqual(findForbiddenMarkers('import "node:async_hooks"'), [
     'node:async_hooks',
   ]);
@@ -23,10 +25,7 @@ test('scans nested client chunks and ignores non-script files', () => {
     writeFileSync(join(root, 'assets', 'ok.js'), 'export const a = 1');
     writeFileSync(join(root, 'assets', 'note.css'), 'AsyncLocalStorage');
     assert.deepEqual(scanClientBundle(root), []);
-    writeFileSync(
-      join(root, 'assets', 'bad.js'),
-      'new x.AsyncLocalStorage()'
-    );
+    writeFileSync(join(root, 'assets', 'bad.js'), 'new x.AsyncLocalStorage()');
     const violations = scanClientBundle(root);
     assert.equal(violations.length, 1);
     assert.match(violations[0].file, /bad\.js$/u);
