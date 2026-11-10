@@ -1,4 +1,9 @@
 import { createFramablePathMatcher } from '@tuturuuu/utils/framable-paths';
+import {
+  applyOneOriginNoindex,
+  decideOneOriginRequest,
+  readOneOriginEnv,
+} from '@tuturuuu/utils/one-origin-routing';
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { forwardToCentralApi } from '../core/api-forward';
 import { type AssetsBinding, fetchAsset } from '../core/assets';
@@ -120,6 +125,32 @@ export function createBridgeHandler<
     path === prefix || path.startsWith(`${prefix}/`);
   const inFunctionBase = (path: string) =>
     !!options.functionBase && inBase(path, options.functionBase);
+
+  /**
+   * The one-origin switch `TTR_ONE_ORIGIN_<APP>` (`off`/`shadow`/`on`, with
+   * `TTR_ONE_ORIGIN_<APP>_REDIRECT_STATUS` `307`/`301`). It applies only once
+   * the variable is set, so apps that have not started their cutover behave
+   * exactly as before. Then the shared origin is refused while `off`, served
+   * `noindex` while `shadow`, and canonical while `on`, when subdomain
+   * navigations redirect to `https://<mount host><base><path>` (machine paths
+   * never redirect).
+   */
+  function decideOneOrigin(incoming: Request, env: Env) {
+    const mounts = options.mounts;
+    const rootHost = mounts?.rootHosts[0];
+    const mountHost = mounts?.mountHosts?.[0];
+    if (!mounts || !rootHost || !mountHost || !mounts.basePath) return null;
+    const vars = env as unknown as Record<string, unknown>;
+    const key = `TTR_ONE_ORIGIN_${mounts.app.toUpperCase()}`;
+    if (typeof vars[key] !== 'string') return null;
+    return decideOneOriginRequest(incoming, {
+      basePath: mounts.basePath,
+      basePathReady: true,
+      sharedOrigin: `https://${mountHost}`,
+      subdomainOrigin: `https://${rootHost}`,
+      ...readOneOriginEnv(vars, mounts.app),
+    });
+  }
 
   async function handleRequest(
     incoming: Request,
@@ -259,7 +290,10 @@ export function createBridgeHandler<
     ctx: Ctx
   ): Promise<Response> {
     try {
-      return await handleRequest(incoming, env, ctx);
+      const oneOrigin = decideOneOrigin(incoming, env);
+      if (oneOrigin && oneOrigin.action !== 'serve') return oneOrigin.response;
+      const response = await handleRequest(incoming, env, ctx);
+      return oneOrigin?.noindex ? applyOneOriginNoindex(response) : response;
     } catch (error) {
       // A failure in the proxy, an endpoint or Start still answers through
       // the app's response policy (no-store, robots, framing), never with
