@@ -714,10 +714,10 @@
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8075",
-        "reason": "Remove the Colab Workers AI binding. Inference uses the AI Studio Gemini gateway, so this Worker config no longer declares an ai binding."
+        "decision": "https://github.com/tutur3u/platform/pull/8076",
+        "reason": "Drop the unread COLAB_REQUIRE_SPONSORSHIP var. Colab inference is the AI Studio Gemini gateway, and this Worker config no longer carries that flag."
       },
-      "digest": "6185be27a89256829ab322fbb4fa5db24050237d3a91123ea094e6bace88981f"
+      "digest": "3f3a539d6ef4196196c7cf147c244d77694d25fd9e950fbec11127a2bc7e87c2"
     },
     "apps/contacts/cloudflare/.gitignore": {
       "lines": 2,

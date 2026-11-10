@@ -2,7 +2,7 @@
 title: Colab team prompt workshops
 updated: 2026-10-10
 description: Run invite-only AI learning workshops on Cloudflare with isolated mock tools.
-updatedAt: "2026-10-23"
+updatedAt: "2026-11-10"
 audience: users
 ---
 
@@ -319,8 +319,8 @@ workshops. Hosts may promote only other eligible Tuturuuu accounts. External
 members retain attendee, multi-team collaboration, learning and showcase access;
 legacy external admin flags are removed during room normalization.
 
-Production AI uses automatic first-party authorization with
-`COLAB_REQUIRE_SPONSORSHIP=true`; no AI API key needs to be created or copied.
+Production AI uses automatic first-party authorization; no AI API key needs
+to be created or copied.
 The authorized room job stores a random, one-use capability bound to the SHA-256
 digest of the exact model request. AI Studio redeems it over HTTPS at the pinned
 canonical `https://colab.tuturuuu.com/api/sponsorship/verify` endpoint. Redemption
@@ -339,8 +339,8 @@ cannot approve their own root-credit requests. No shared machine secret is neede
 `COLAB_AI_API_KEY` remains an optional legacy transport for callers without room
 approval support; app-bound keys are rejected. Invalid approval, disabled hosts,
 unavailable verification or insufficient credits fails closed.
-The direct Cloudflare AI binding remains available only for local/legacy setups
-that do not require sponsorship; local verification uses deterministic responses.
+Inference goes through the AI Studio Gemini gateway. Local verification uses
+deterministic responses.
 
 The dedicated endpoint checks root workspace ownership, reserves and settles
 credits through AI Studio, and records workshop, host, team, participant, scenario,

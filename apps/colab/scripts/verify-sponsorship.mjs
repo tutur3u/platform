@@ -17,7 +17,6 @@ const mf = new Miniflare({
     COLAB_SESSION_SECRET: secret,
     APP_ORIGIN: 'http://localhost',
     AUTH_ORIGIN: 'https://tuturuuu.com',
-    COLAB_REQUIRE_SPONSORSHIP: 'true',
   },
   outboundService: async (request) => {
     try {
