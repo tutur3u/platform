@@ -5,11 +5,11 @@
  * and Host roadmap.tuturuuu.com. A passing live probe is not enough: the same
  * checker must reject a broken variant (D79) before the artifact is sealed.
  */
-import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { createServer, request as httpRequest } from 'node:http';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const STAGE_LABELS = [
@@ -182,14 +182,6 @@ export async function observeWorker(port, expectedCommit) {
   };
 }
 
-function findWorkerConfig(root) {
-  for (const relative of ['dist/server/wrangler.json', 'dist/wrangler.json']) {
-    const path = join(root, relative);
-    if (existsSync(path)) return path;
-  }
-  return null;
-}
-
 async function listen(server) {
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
@@ -200,88 +192,58 @@ async function listen(server) {
   return address.port;
 }
 
-/**
- * Serve the built worker. Prefer the emitted Wrangler config. Fall back to
- * the source entry only when the build already replaced its server import,
- * which the caller checks by requiring dist/client.
- */
-export async function startBuiltWorker(root = appRoot()) {
-  const client = join(root, 'dist/client/roadmap');
-  if (!existsSync(client)) {
-    throw new Error(
-      'Built client is missing. Run build:cloudflare before the pre-seal doctor.'
-    );
+function clientFile(root, pathname) {
+  let decoded;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    return null;
   }
-  const config = findWorkerConfig(root);
-  if (config) {
-    return startWrangler(root, config);
-  }
-  return startInProcess();
+  if (decoded.includes('\0') || decoded.split('/').includes('..')) return null;
+  const clientRoot = realpathSync(join(root, 'dist/client'));
+  const file = join(clientRoot, decoded);
+  if (file !== clientRoot && !file.startsWith(`${clientRoot}${sep}`))
+    return null;
+  if (!existsSync(file)) return null;
+  return realpathSync(file).startsWith(`${clientRoot}${sep}`) ? file : null;
 }
 
-function startWrangler(root, config) {
-  const port = 18080 + Math.floor(Math.random() * 1000);
-  const child = spawn(
-    'bunx',
-    [
-      'wrangler',
-      'dev',
-      '--config',
-      config,
-      '--port',
-      String(port),
-      '--ip',
-      '127.0.0.1',
-      '--local',
-      '--show-interactive-dev-session=false',
-    ],
-    { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] }
-  );
-  let logs = '';
-  const append = (chunk) => {
-    logs += chunk.toString();
-    if (logs.length > 20000) logs = logs.slice(-20000);
-  };
-  child.stdout.on('data', append);
-  child.stderr.on('data', append);
-  const ready = new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error(`Wrangler did not become ready\n${logs}`));
-    }, 90000);
-    const watch = () => {
-      if (/Ready on http:\/\/127\.0\.0\.1:\d+/.test(logs)) {
-        clearTimeout(timer);
-        resolve();
-      }
-    };
-    child.stdout.on('data', watch);
-    child.stderr.on('data', watch);
-    child.once('exit', (code) => {
-      clearTimeout(timer);
-      reject(new Error(`Wrangler exited ${code} before ready\n${logs}`));
-    });
-  });
+const ASSET_TYPES = {
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
+};
+
+function localAssets(root) {
   return {
-    port,
-    ready,
-    async stop() {
-      child.kill('SIGTERM');
-      await once(child, 'exit').catch(() => undefined);
+    async fetch(request) {
+      const file = clientFile(root, new URL(request.url).pathname);
+      if (!file) return new Response(null, { status: 404 });
+      const extension = file.slice(file.lastIndexOf('.'));
+      const body = request.method === 'HEAD' ? null : await readFile(file);
+      return new Response(body, {
+        status: 200,
+        headers: {
+          'content-type': ASSET_TYPES[extension] ?? 'application/octet-stream',
+        },
+      });
     },
   };
 }
 
-async function startInProcess() {
-  const workerUrl = new URL('../src/worker.ts', import.meta.url);
-  const worker = await import(workerUrl.href);
+/** Serve dist/server/index.js. The Host header selects the public contract. */
+export async function startBuiltWorker(root = appRoot()) {
+  const bundle = join(root, 'dist/server/index.js');
+  const client = join(root, 'dist/client/roadmap');
+  if (!existsSync(bundle) || !existsSync(client)) {
+    throw new Error(
+      'Built worker is missing. Run build:cloudflare before the pre-seal doctor.'
+    );
+  }
+  const worker = await import(pathToFileURL(bundle).href);
+  const env = { ASSETS: localAssets(root) };
   const server = createServer(async (incoming, outgoing) => {
     try {
-      const headers = new Headers();
-      for (const [name, value] of Object.entries(incoming.headers)) {
-        if (name.toLowerCase() === 'host' || typeof value !== 'string')
-          continue;
-        headers.set(name, value);
-      }
       const host = headerValue(incoming.headers.host);
       const publicHost =
         host === 'tuturuuu.com' || host === 'roadmap.tuturuuu.com'
@@ -291,10 +253,8 @@ async function startInProcess() {
         ? `https://${publicHost}${incoming.url ?? '/'}`
         : `http://127.0.0.1${incoming.url ?? '/'}`;
       const response = await worker.default.fetch(
-        new Request(target, {
-          headers,
-          method: incoming.method,
-        })
+        new Request(target, { method: incoming.method ?? 'GET' }),
+        env
       );
       const bytes = Buffer.from(await response.arrayBuffer());
       const out = {};
@@ -302,9 +262,9 @@ async function startInProcess() {
         out[name] = value;
       });
       outgoing.writeHead(response.status, out);
-      outgoing.end(bytes);
+      outgoing.end(incoming.method === 'HEAD' ? undefined : bytes);
     } catch (error) {
-      outgoing.writeHead(500, { 'content-type': 'text/plain' });
+      outgoing.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
       outgoing.end(error instanceof Error ? error.message : 'doctor error');
     }
   });
@@ -377,14 +337,16 @@ async function main() {
   }
 }
 
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
-  main().catch((error) => {
-    console.error(
-      error instanceof Error ? (error.stack ?? error.message) : error
-    );
-    process.exit(1);
-  });
+function isDirectRun() {
+  const arg = process.argv[1];
+  if (!arg) return false;
+  try {
+    return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(arg);
+  } catch {
+    return import.meta.url === pathToFileURL(arg).href;
+  }
+}
+
+if (isDirectRun()) {
+  await main();
 }
