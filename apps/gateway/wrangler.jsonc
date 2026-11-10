@@ -25,6 +25,6 @@
     "GATEWAY_MARKETING_GROUPS": "",
     // Origin of the apps/marketing Worker (value set at deploy time).
     // "MARKETING_ORIGIN": "https://<marketing worker hostname>",
-    "GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL": "false"
-  }
+    "GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL": "false",
+  },
 }

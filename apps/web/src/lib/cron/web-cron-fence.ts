@@ -84,7 +84,7 @@ export async function withWebCronFence(
         'User-Agent': 'Tuturuuu-Web-Cron-Gate/1.0',
       },
       body: JSON.stringify(body),
-      redirect: 'error',
+      redirect: 'manual',
       signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) {

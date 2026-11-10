@@ -185,7 +185,7 @@ jobs:
         apps/pay/src/start-bridge apps/pay/src/routes apps/pay/src/router.tsx apps/pay/src/start.ts apps/pay/cloudflare apps/pay/vite.config.mts apps/pay/void.config.ts apps/pay/tsconfig.json apps/pay/package.json apps/pay/start-bridge.routes.json apps/pay/start-bridge.config.ts apps/pay/tsconfig.cloudflare.json apps/pay/src/proxy.ts apps/pay/src/proxy-build-info.test.ts
   pay-cutover-artifact:
     needs: [check-ci, affected-gate]
-    if: ${{ needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:

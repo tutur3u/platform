@@ -43,7 +43,7 @@ describe('Google server decode verifier', () => {
       'https://playintegrity.googleapis.com/v1/com.example.app:decodeIntegrityToken',
       expect.objectContaining({
         method: 'POST',
-        redirect: 'error',
+        redirect: 'manual',
         signal: expect.any(AbortSignal),
         headers: {
           Authorization: 'Bearer fixture-access-token',
@@ -133,5 +133,18 @@ describe('Google server decode verifier', () => {
       ).rejects.toThrow();
       expect(fetchMock.mock.calls.length).toBe(before + 1);
     }
+  });
+  it('refuses a redirect response without following it', async () => {
+    fetchMock.mockImplementation(
+      async () =>
+        new Response(null, {
+          status: 307,
+          headers: { Location: 'https://attacker.invalid/' },
+        })
+    );
+    await expect(
+      verifier()({ token: 'integrity-token', requestHash: hash })
+    ).rejects.toThrow('play-verification-unavailable');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

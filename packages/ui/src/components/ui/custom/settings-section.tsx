@@ -8,6 +8,8 @@ interface SettingsSectionProps {
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** Flat collections provide their own row dividers. */
+  surface?: 'card' | 'plain';
 }
 
 /**
@@ -20,6 +22,7 @@ export function SettingsSection({
   action,
   children,
   className,
+  surface = 'card',
 }: SettingsSectionProps) {
   const hasHeader = title || description || action;
 
@@ -41,8 +44,12 @@ export function SettingsSection({
         </div>
       )}
       <div
-        className="divide-y rounded-xl border bg-card [&>form]:divide-y"
-        data-slot="settings-card"
+        className={
+          surface === 'card'
+            ? 'divide-y rounded-xl border bg-card [&>form]:divide-y'
+            : undefined
+        }
+        data-slot={surface === 'card' ? 'settings-card' : 'settings-content'}
       >
         {children}
       </div>

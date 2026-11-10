@@ -14,7 +14,7 @@ stable, so the canonical host keeps a one-step route back.
 
 | Profile | Selected by | Worker | Vars |
 | --- | --- | --- | --- |
-| Staging (default) | no profile variable | `tuturuuu-drive-vite-staging` | `src/start-candidate/staging-policy.ts`; the build refuses a non-staging value |
+| Staging (default) | no profile variable | the staging Worker name | `src/start-candidate/staging-policy.ts`; the build refuses a non-staging value |
 | Production | `VITE_DRIVE_NATIVE_PROFILE=production` | `tuturuuu-drive` | `cloudflare/production-profile.json` |
 
 Neither profile declares routes, custom domains, `workers_dev` or

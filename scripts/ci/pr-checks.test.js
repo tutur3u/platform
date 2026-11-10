@@ -85,6 +85,7 @@ const resultSet = (overrides = {}, selected = {}) =>
               'branch-name',
               'commit-trailers',
               'staging-hosts',
+              'blast-radius',
               'admitted',
             ].includes(id)
               ? 'success'
@@ -328,5 +329,21 @@ test('the staging host guard runs on every full PR run and fails the aggregate',
       gate(resultSet({ 'staging-hosts': status })).status,
       1,
       `staging-hosts ${status}`
+    );
+});
+
+test('the blast-radius lock runs on every full PR run and fails the aggregate', () => {
+  const job = workflow.jobs['blast-radius'];
+  assert.equal(job.name, 'Pull request blast radius');
+  assert.equal(job.if, workflow.jobs['branch-name'].if);
+  assert.deepEqual(job.permissions, { contents: 'read' });
+  assert.equal(job.steps[0].with['persist-credentials'], false);
+  assert.match(job.steps.at(-1).run, /pr-blast-radius\.test\.mjs/u);
+  assert.ok(workflow.jobs.gate.needs.includes('blast-radius'));
+  for (const status of ['failure', 'cancelled', 'skipped'])
+    assert.equal(
+      gate(resultSet({ 'blast-radius': status })).status,
+      1,
+      `blast-radius ${status}`
     );
 });

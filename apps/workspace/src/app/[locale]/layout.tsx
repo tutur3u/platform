@@ -82,6 +82,7 @@ async function ServiceWorkerBoundary({
 
   return (
     <OfflineProvider
+      register={false}
       options={{ updateViaCache: 'none' }}
       swUrl={serviceWorkerUrl}
     >
