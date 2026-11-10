@@ -112,21 +112,26 @@ describe('bridge CSRF admission', () => {
     expect(proxy).toHaveBeenCalled();
   });
 
-  it('only reports in report mode', async () => {
-    const response = await post('https://tuturuuu.com/meet/api/own', 'report', {
+  it.each(['report', 'off'] as const)(
+    'enforces a mount even when the app mode is %s',
+    async (mode) => {
+      const response = await post('https://tuturuuu.com/meet/api/own', mode, {
+        cookie: SESSION,
+        'sec-fetch-site': 'cross-site',
+      });
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toMatchObject({ code: 'CSRF_REJECTED' });
+    }
+  );
+
+  it('still admits a same-origin mount mutation when the app mode is off', async () => {
+    const response = await post('https://tuturuuu.com/meet/api/own', 'off', {
       cookie: SESSION,
-      'sec-fetch-site': 'cross-site',
+      'sec-fetch-site': 'same-origin',
     });
 
     expect(await response.text()).toBe('own');
-    expect(console.warn).toHaveBeenCalledWith(
-      'CSRF check failed',
-      expect.objectContaining({
-        mounted: true,
-        reason: 'cross-site',
-        route: '/api/own',
-      })
-    );
   });
 
   it('leaves root-mode (subdomain) requests to the app, even in enforce mode', async () => {
@@ -142,8 +147,8 @@ describe('bridge CSRF admission', () => {
     expect(await response.text()).toBe('own');
   });
 
-  it('admits everything when the mode is off', async () => {
-    const response = await post('https://tuturuuu.com/meet/api/own', 'off', {
+  it('leaves root-mode requests to the app when the mode is off', async () => {
+    const response = await post('https://meet.tuturuuu.com/api/own', 'off', {
       cookie: SESSION,
       'sec-fetch-site': 'cross-site',
     });

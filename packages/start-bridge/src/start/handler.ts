@@ -89,7 +89,8 @@ export interface BridgeHandlerOptions<Env, Ctx> {
   framablePaths?: readonly RegExp[];
   /**
    * Same-origin admission for cookie-authenticated mutations on mounted
-   * (apex) requests, before `proxy.ts`. Root-mode requests are unaffected.
+   * (apex) requests, before `proxy.ts`. Mounted requests are always enforced;
+   * only `exemptions` is read here. Root-mode requests are unaffected.
    */
   csrf?: BridgeCsrfOptions<Env>;
 }
@@ -148,14 +149,23 @@ export function createBridgeHandler<
       const refused = refuseMountedSessionMinting(appPath);
       if (refused) return refused;
     }
-    if (!base.isRoot && options.csrf) {
+    // On the shared origin, Origin/Fetch Metadata are the only thing telling
+    // a mounted app's own pages from another origin, so a cookie-authenticated
+    // mutation is always held to same-origin there, whatever the app's mode.
+    if (!base.isRoot) {
       const refused = admitMountedMutation({
         appPath,
-        exemptions: options.csrf.exemptions,
-        mode: options.csrf.mode(env),
+        exemptions: options.csrf?.exemptions,
+        mode: 'enforce',
         request: incoming,
       });
       if (refused) return refused;
+      if (isMountedLogoutPath(appPath) && incoming.method !== 'POST') {
+        return new Response('Method Not Allowed', {
+          status: 405,
+          headers: { Allow: 'POST', 'Cache-Control': 'no-store' },
+        });
+      }
     }
     const nonce = options.csp ? createNonce() : undefined;
     let response: Response;

@@ -568,4 +568,32 @@ describe('mounted no-writer guard', () => {
     });
     expect(await root.text()).toBe('app logout');
   });
+
+  it('only takes a POST logout on a mount, and holds it to same-origin', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => new Response('web logout'));
+    const get = await call('https://tuturuuu.com/learn/api/auth/logout');
+    expect(get.status).toBe(405);
+    expect(get.headers.get('allow')).toBe('POST');
+
+    const forged = await call('https://tuturuuu.com/learn/api/auth/logout', {
+      method: 'POST',
+      headers: {
+        cookie: 'sb-ref-auth-token=x',
+        'sec-fetch-site': 'cross-site',
+      },
+    });
+    expect(forged.status).toBe(403);
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    const own = await call('https://tuturuuu.com/learn/api/auth/logout', {
+      method: 'POST',
+      headers: {
+        cookie: 'sb-ref-auth-token=x',
+        'sec-fetch-site': 'same-origin',
+      },
+    });
+    expect(await own.text()).toBe('web logout');
+  });
 });
