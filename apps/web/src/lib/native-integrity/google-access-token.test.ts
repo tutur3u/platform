@@ -30,7 +30,7 @@ it('signs the scoped Google OAuth assertion, bounds the fetch and coalesces acce
   expect(network).toHaveBeenCalledTimes(1);
   const call = network.mock.calls[0];
   expect(call?.[0]).toBe('https://oauth2.googleapis.com/token');
-  expect(call?.[1]?.redirect).toBe('error');
+  expect(call?.[1]?.redirect).toBe('manual');
   expect(call?.[1]?.signal).toBeInstanceOf(AbortSignal);
   const form = new URLSearchParams(String(call?.[1]?.body));
   const jwt = form.get('assertion')?.split('.') ?? [];

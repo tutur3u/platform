@@ -36,7 +36,7 @@ describe('composed synthetic signed-user task read', () => {
       expect(read.init).toMatchObject({
         method: 'GET',
         credentials: 'omit',
-        redirect: 'error',
+        redirect: 'manual',
         cache: 'no-store',
       });
       expect(new Headers(read.init.headers).has('authorization')).toBe(true);

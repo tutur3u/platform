@@ -231,11 +231,7 @@ describe('gateway handler', () => {
         FLAGGED
       );
       expect(await auth.text()).toBe('web-origin.vercel.app');
-      const rsc = await t.call(
-        '/about',
-        { headers: { rsc: '1' } },
-        FLAGGED
-      );
+      const rsc = await t.call('/about', { headers: { rsc: '1' } }, FLAGGED);
       expect(await rsc.text()).toBe('web-origin.vercel.app');
       const anon = await t.call('/about', undefined, FLAGGED);
       expect(await anon.text()).toBe('marketing-origin.example');

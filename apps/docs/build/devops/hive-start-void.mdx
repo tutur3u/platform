@@ -18,7 +18,7 @@ release owner. It is not a build defect, and this packet does not perform the fl
 
 | | Maintenance | Native Start Worker |
 | --- | --- | --- |
-| Script | `tuturuuu-hive-maintenance` | `tuturuuu-hive` when `VITE_HIVE_NATIVE_PROFILE=production`; `tuturuuu-hive-vite-staging` otherwise |
+| Script | `tuturuuu-hive-maintenance` | `tuturuuu-hive` when `VITE_HIVE_NATIVE_PROFILE=production`; the staging Worker name otherwise |
 | Module | `apps/hive/maintenance/worker.mjs` | `apps/hive/cloudflare/worker.ts`, emitted into `dist` |
 | Config that deploys it | `apps/hive/maintenance/metadata.json` (Workers script upload metadata: `main_module` `worker.mjs`, compatibility date `2026-10-26`, empty `bindings`). There is no Wrangler file for this page. | Wrangler config emitted by `apps/hive/void.config.ts` (`dist/server/wrangler.json` through the deploy pointer). The config attaches no route. |
 | Route | Zone route `hive.tuturuuu.com/*` bound to `tuturuuu-hive-maintenance`. DNS stays a proxied discard record, so the Worker answers the host and does not fall through to the old tunnel origin. | None until cutover. |

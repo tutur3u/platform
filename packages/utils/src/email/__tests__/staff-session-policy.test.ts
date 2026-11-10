@@ -15,6 +15,7 @@ const XWF_GATES = [
   'apps/web/src/app/api/v1/inquiries/route.ts',
   'apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts',
   'apps/web/src/legacy-api-routes/v1/admin/ai/memory/backfill-mira/route.ts',
+  'apps/workspace/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/inquiries/page.tsx',
   'packages/utils/src/workspace-inquiries.ts',
   'packages/utils/src/workspace-limits.ts',
 ];

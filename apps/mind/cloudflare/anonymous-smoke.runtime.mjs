@@ -116,30 +116,38 @@ test('the emitted server has NODE_ENV inlined', async () => {
   await assertServerArtifact(join(app, 'dist/server'));
 });
 
-test('signed-out requests answer as production does', {
-  timeout: 120000,
-}, async (t) => {
-  const call = await startWorker(t, SYNTHETIC_SECRETS);
-  for (const [path, outcome] of Object.entries(EXPECTED)) {
-    const { status, location } = await call(path);
-    if (typeof outcome === 'number') {
-      assert.equal(status, outcome, path);
-    } else {
-      assert.ok(status >= 300 && status < 400, `${path}: ${status}`);
-      const resolved = new URL(location, `https://${ROOT_HOST}`);
-      const wanted = new URL(outcome.redirect, `https://${ROOT_HOST}`);
-      assert.equal(resolved.host, wanted.host, path);
-      assert.equal(resolved.pathname, wanted.pathname, path);
+test(
+  'signed-out requests answer as production does',
+  {
+    timeout: 120000,
+  },
+  async (t) => {
+    const call = await startWorker(t, SYNTHETIC_SECRETS);
+    for (const [path, outcome] of Object.entries(EXPECTED)) {
+      const { status, location } = await call(path);
+      if (typeof outcome === 'number') {
+        assert.equal(status, outcome, path);
+      } else {
+        assert.ok(status >= 300 && status < 400, `${path}: ${status}`);
+        const resolved = new URL(location, `https://${ROOT_HOST}`);
+        const wanted = new URL(outcome.redirect, `https://${ROOT_HOST}`);
+        assert.equal(resolved.host, wanted.host, path);
+        assert.equal(resolved.pathname, wanted.pathname, path);
+      }
     }
+    assert.equal((await call('/', 'unknown.example')).status, 404);
+    assert.equal((await call('/', 'tuturuuu.com')).status, 404);
   }
-  assert.equal((await call('/', 'unknown.example')).status, 404);
-  assert.equal((await call('/', 'tuturuuu.com')).status, 404);
-});
+);
 
-test('a Worker missing a required secret refuses to serve', {
-  timeout: 120000,
-}, async (t) => {
-  const { SUPABASE_SECRET_KEY: _omitted, ...secrets } = SYNTHETIC_SECRETS;
-  const call = await startWorker(t, secrets);
-  assert.equal((await call('/')).status, 500);
-});
+test(
+  'a Worker missing a required secret refuses to serve',
+  {
+    timeout: 120000,
+  },
+  async (t) => {
+    const { SUPABASE_SECRET_KEY: _omitted, ...secrets } = SYNTHETIC_SECRETS;
+    const call = await startWorker(t, secrets);
+    assert.equal((await call('/')).status, 500);
+  }
+);

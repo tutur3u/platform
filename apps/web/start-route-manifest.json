@@ -43,9 +43,9 @@
     }
   ],
   "summary": {
-    "total": 850,
+    "total": 854,
     "categories": {
-      "api": 656,
+      "api": 660,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -54,7 +54,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 838 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 842 }
   },
   "routes": [
     {
@@ -2893,6 +2893,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/mobile/version",
+      "source": "apps/web/src/app/api/v1/mobile/version/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/native-integrity/challenge",
       "source": "apps/web/src/app/api/v1/native-integrity/challenge/route.ts",
       "category": "api",
@@ -4287,6 +4295,30 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/duplicate",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/duplicate/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions/[versionId]/publish",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions/[versionId]/publish/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions/[versionId]",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions/[versionId]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

@@ -69,7 +69,7 @@ export function createEmployeeRuntimeRpc(input: {
     const response = await fetcher(new URL(`/rest/v1/rpc/${name}`, origin), {
       method: 'POST',
       cache: 'no-store',
-      redirect: 'error',
+      redirect: 'manual',
       signal: AbortSignal.timeout(8000),
       headers: {
         apikey: input.key,
@@ -81,6 +81,11 @@ export function createEmployeeRuntimeRpc(input: {
       },
       body: JSON.stringify(body),
     });
+    if (
+      response.type === 'opaqueredirect' ||
+      (response.status >= 300 && response.status < 400)
+    )
+      throw new EmployeeRpcError();
     const text = await response.text();
     if (new TextEncoder().encode(text).byteLength > 262144)
       throw new EmployeeRpcError();

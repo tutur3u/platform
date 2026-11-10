@@ -37,7 +37,7 @@ export async function inspectEmployeeCliRecovery(
     await getInternalApiClient(options).json<unknown>(endpoint(operationId), {
       cache: 'no-store',
       headers: { 'Idempotency-Key': operationId },
-      redirect: 'error',
+      redirect: 'manual',
     })
   );
   if (state.operationId !== operationId)
@@ -60,7 +60,7 @@ export async function submitEmployeeCliRecovery(
     {
       method: 'POST',
       cache: 'no-store',
-      redirect: 'error',
+      redirect: 'manual',
       headers: {
         'Content-Type': 'application/json',
         'x-tuturuuu-account-action': '1',

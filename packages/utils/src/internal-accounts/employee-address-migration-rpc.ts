@@ -109,7 +109,7 @@ export function createEmployeeAddressMigrationJournal(input: {
       {
         method: 'POST',
         cache: 'no-store',
-        redirect: 'error',
+        redirect: 'manual',
         signal: AbortSignal.timeout(8000),
         headers: {
           apikey: input.key,
