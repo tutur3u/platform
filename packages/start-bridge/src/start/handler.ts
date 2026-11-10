@@ -18,6 +18,11 @@ import {
 } from '../next/proxy-bridge';
 import type { BridgeRequestContext } from '../server/request-context';
 import { admitMountedMutation, type BridgeCsrfOptions } from './csrf-admission';
+import {
+  isMountedLogoutPath,
+  refuseMountedSessionMinting,
+  stripMountedSessionWrites,
+} from './mounted-session-guard';
 
 export type { AssetsBinding } from '../core/assets';
 
@@ -137,6 +142,12 @@ export function createBridgeHandler<
     headers.delete(APP_BASE_HEADER);
     if (!base.isRoot) headers.set(APP_BASE_HEADER, base.basePath);
     const request = new Request(incoming, { headers });
+    // A mounted app shares the root session: it never mints or refreshes a
+    // per-app session, so those endpoints are refused before anything runs.
+    if (!base.isRoot) {
+      const refused = refuseMountedSessionMinting(appPath);
+      if (refused) return refused;
+    }
     if (!base.isRoot && options.csrf) {
       const refused = admitMountedMutation({
         appPath,
@@ -161,7 +172,11 @@ export function createBridgeHandler<
     } else {
       const dispatch: BridgeDispatch = async (forwarded) => {
         const pathname = forwarded.nextUrl.pathname;
-        const central = isCentralFirst(pathname);
+        // A mounted app signs out through Web: one global logout of the
+        // shared session, never an app-local cookie clear.
+        const central =
+          isCentralFirst(pathname) ||
+          (!base.isRoot && isMountedLogoutPath(pathname));
         const endpoint =
           options.endpoints && !central
             ? await dispatchEndpoint(options.endpoints, forwarded, {
@@ -208,7 +223,10 @@ export function createBridgeHandler<
         nonce,
       });
     }
-    const final = base.finalizeResponse(response);
+    const finalized = base.finalizeResponse(response);
+    const final = base.isRoot
+      ? finalized
+      : stripMountedSessionWrites(finalized);
     if (!nonce || !options.csp) return final;
     // A framable path's upstream policy (Web's `sandbox` CSP for uploaded
     // WebGL builds) must reach the browser untouched, or the uploaded
