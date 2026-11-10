@@ -223,7 +223,11 @@ GET/HEAD HTML at `https://tuturuuu.com/roadmap/` and
 `public,s-maxage=300,stale-while-revalidate=86400`. A renderer default of
 `private` or `no-store` does not keep that document private: the page has no
 actor. Cookie-bearing requests do not select a different document or read
-identity. Set-Cookie, a Vary other than `accept-encoding`, unknown hosts,
+identity. `src/public-cache-guard.ts` fails the cache test if `src` imports
+an auth or session module, or reads `Cookie` or `Authorization`, while that
+document still uses the shared cache. The only escape is an explicit
+`private` cache-control with no `s-maxage` on the document. Set-Cookie, a
+Vary other than `accept-encoding`, unknown hosts,
 auth/serverFn paths, errors and non-document responses receive `private,no-store`.
 Unsafe headers remain present. Hashed files under `/roadmap/assets/`
 (`name-<8+ hash>.ext`) receive `public, max-age=31536000, immutable`. Unhashed

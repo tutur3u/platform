@@ -14,6 +14,12 @@ import {
   IMMUTABLE_ASSET_CACHE,
   isHashedAssetPath,
 } from './cache-policy.ts';
+import { fileURLToPath } from 'node:url';
+import {
+  assessPublicCacheGuard,
+  personalizationFindings,
+  scanRoadmapSource,
+} from './public-cache-guard.ts';
 const document = 'https://tuturuuu.com/roadmap/';
 const html = (headers: Record<string, string> = {}, status = 200) =>
   new Response('public', {
@@ -286,4 +292,60 @@ test('loopback Host selects the public host contract', () => {
     new Request('https://roadmap.tuturuuu.com/')
   );
   assert.equal(production.url, 'https://roadmap.tuturuuu.com/');
+});
+
+test('roadmap source stays anonymous while the public document is shared', () => {
+  const findings = scanRoadmapSource(
+    fileURLToPath(new URL('.', import.meta.url))
+  );
+  const cacheControl = control(new Request(document));
+  const verdict = assessPublicCacheGuard({ findings, cacheControl });
+  assert.deepEqual(verdict.failures, []);
+  assert.equal(verdict.ok, true);
+  if (findings.length === 0) {
+    assert.equal(cacheControl, PUBLIC_DOCUMENT_CACHE);
+  }
+});
+
+test('D79: auth, session, cookie or authorization cannot stay on the public cache', () => {
+  const broken = [
+    "import { getSession } from '@tuturuuu/auth/session'",
+    "const cookie = request.headers.get('cookie')",
+    "const header = request.headers.get('Authorization')",
+    'const jar = document.cookie',
+  ].join('\n');
+  const findings = personalizationFindings(
+    broken,
+    'apps/roadmap/src/routes/index.tsx'
+  );
+  const verdict = assessPublicCacheGuard({
+    findings,
+    cacheControl: control(new Request(document)),
+  });
+  assert.equal(verdict.ok, false);
+  assert.equal(
+    findings.map((finding) => finding.kind).join(','),
+    'auth-session-import,cookie-read,authorization-read,cookie-read'
+  );
+  const lines = ['D79 public-cache guard rejected:'];
+  for (const failure of verdict.failures) lines.push(`- ${failure}`);
+  for (const line of lines) console.error(line);
+  assert.equal(
+    assessPublicCacheGuard({
+      findings,
+      cacheControl: PRIVATE_RESPONSE_CACHE,
+    }).ok,
+    true
+  );
+  assert.deepEqual(
+    personalizationFindings("response.headers.has('set-cookie')"),
+    []
+  );
+  assert.deepEqual(personalizationFindings("request.headers.get('host')"), []);
+  assert.deepEqual(
+    personalizationFindings(
+      "// import { getSession } from '@tuturuuu/auth/session'\nconst note = 'cookie'"
+    ),
+    []
+  );
 });
