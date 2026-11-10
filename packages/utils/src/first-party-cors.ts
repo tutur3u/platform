@@ -8,8 +8,12 @@
  * same-origin and need no CORS at all. Loopback, `*.tuturuuu.localhost` and
  * non-https Tuturuuu origins are admitted only when `NODE_ENV` is
  * `development` or `test`. The gateway's origin hostnames, which no browser
- * uses, are never admitted.
+ * uses, are never admitted. A staging deployment (cookie domain
+ * `.staging.tutur3u.com`, accepted only off production) admits its own
+ * https host and one-label subdomains the same way.
  */
+
+import { getConfiguredSharedCookieDomainOverride } from './shared-cookie';
 
 const GATEWAY_ORIGIN_HOSTNAMES = new Set(['origin.tuturuuu.com']);
 
@@ -21,9 +25,24 @@ const DEVELOPMENT_HOSTNAMES = new Set([
   'tuturuuu.localhost',
 ]);
 
-/** One label below the apex, e.g. `tasks` in `tasks.tuturuuu.com`. */
-const SINGLE_LABEL_SUBDOMAIN =
-  /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.tuturuuu\.com$/u;
+const PRODUCTION_BASE_HOSTNAME = 'tuturuuu.com';
+const LABEL = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/u;
+
+/** The base itself, or exactly one label below it (`tasks.tuturuuu.com`). */
+function isBaseOrSingleLabel(hostname: string, base: string) {
+  if (hostname === base) return true;
+  const suffix = `.${base}`;
+  return (
+    hostname.endsWith(suffix) && LABEL.test(hostname.slice(0, -suffix.length))
+  );
+}
+
+function sharedBaseHostnames(): string[] {
+  const staging = getConfiguredSharedCookieDomainOverride();
+  return staging
+    ? [PRODUCTION_BASE_HOSTNAME, staging.hostname]
+    : [PRODUCTION_BASE_HOSTNAME];
+}
 
 function isDevelopmentEnvironment() {
   if (typeof process === 'undefined') return false;
@@ -49,8 +68,9 @@ export function getAllowedFirstPartyCorsOrigin(
   const hostname = url.hostname.toLowerCase();
   if (GATEWAY_ORIGIN_HOSTNAMES.has(hostname)) return null;
 
-  const isTuturuuuHost =
-    hostname === 'tuturuuu.com' || SINGLE_LABEL_SUBDOMAIN.test(hostname);
+  const isTuturuuuHost = sharedBaseHostnames().some((base) =>
+    isBaseOrSingleLabel(hostname, base)
+  );
   if (isTuturuuuHost) {
     if (development) return url.origin;
     return url.protocol === 'https:' && url.port === '' ? url.origin : null;
