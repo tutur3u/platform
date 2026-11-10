@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   assessDoctor,
+  PLAN_LABEL,
   brokenVariant,
   reportBrokenVariant,
   STAGE_LABELS,
@@ -17,7 +18,7 @@ function passing() {
     canonical: {
       status: 200,
       cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
-      body: `<div class="public-satellite-shell"><a aria-label="Tuturuuu" href="https://tuturuuu.com"><img src="${LOGO}" alt=""></a><a href="https://tuturuuu.com/login">Sign in</a><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${STAGE_LABELS.join(' ')}</div>`,
+      body: `<div class="public-satellite-shell"><a aria-label="Tuturuuu" href="https://tuturuuu.com"><img src="${LOGO}" alt=""></a><a href="https://tuturuuu.com/login">Sign in</a><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div>`,
     },
     satellite: { status: 301, location: 'https://tuturuuu.com/roadmap/' },
     satelliteQuery: {
@@ -65,4 +66,22 @@ test('D79: an apex logo outside the roadmap mount fails the doctor', () => {
       'canonical HTML missing the mounted Tuturuuu logo'
     )
   );
+});
+
+test('D79: the plans card must follow the showPlans flag both ways', () => {
+  const shown = passing();
+  assert.equal(assessDoctor({ ...shown, showPlans: true }).ok, true);
+  const missing = passing();
+  missing.canonical.body = missing.canonical.body.replace(PLAN_LABEL, '');
+  assert.ok(
+    assessDoctor({ ...missing, showPlans: true }).failures.some((f) =>
+      f.includes('while showPlans is on')
+    )
+  );
+  assert.ok(
+    assessDoctor({ ...shown, showPlans: false }).failures.some((f) =>
+      f.includes('while showPlans is off')
+    )
+  );
+  assert.equal(assessDoctor({ ...missing, showPlans: false }).ok, true);
 });

@@ -12,6 +12,7 @@ import { createServer, request as httpRequest } from 'node:http';
 import { registerHooks } from 'node:module';
 import { join, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { showPlans } from '../src/content/tracks.ts';
 import {
   reportAssetSmokeRejection,
   smokeAssets,
@@ -37,8 +38,10 @@ export const STAGE_LABELS = [
   'Waiting for merge',
   'Waiting for prod sync',
   'Live',
-  'Mira subscription plans',
 ];
+
+/** The plans card follows the single `showPlans` content flag. */
+export const PLAN_LABEL = 'Mira subscription plans';
 
 /** The logo ships inside the roadmap mount; the apex /media path is not ours. */
 export const MOUNTED_LOGO =
@@ -67,6 +70,14 @@ export function assessDoctor(observation) {
     !body.includes('Sign in')
   ) {
     failures.push('canonical HTML missing the optional sign-in link');
+  }
+  const plansShown = observation.showPlans ?? true;
+  if (plansShown !== body.includes(PLAN_LABEL)) {
+    failures.push(
+      plansShown
+        ? `canonical HTML missing "${PLAN_LABEL}" while showPlans is on`
+        : `canonical HTML shows "${PLAN_LABEL}" while showPlans is off`
+    );
   }
   for (const label of STAGE_LABELS) {
     if (!body.includes(label)) {
@@ -194,6 +205,7 @@ export async function observeWorker(port, expectedCommit) {
     : { url: null };
   return {
     expectedCommit,
+    showPlans,
     canonical,
     satellite,
     satelliteQuery,

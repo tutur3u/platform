@@ -1,5 +1,5 @@
 import { Sparkles } from '@tuturuuu/icons';
-import { comingSoon } from '../content/coming-soon';
+import { visibleComingSoon } from '../content/coming-soon';
 import { type Status, statuses } from '../live/status';
 import type { useLiveData } from '../live/use-live-data';
 import type { RoadmapView } from '../view-model';
@@ -105,9 +105,11 @@ export function OverallBar({
 }
 
 export function ComingSoon({ t }: { t: Messages }) {
+  const items = visibleComingSoon();
+  if (!items.length) return null;
   return (
     <section className="coming-soon" aria-labelledby="coming-soon-title">
-      {comingSoon.map((item) => (
+      {items.map((item) => (
         <article key={item.id}>
           <span className="chip glow">
             <Sparkles size={14} aria-hidden /> {t.comingSoon}

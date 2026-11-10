@@ -15,6 +15,12 @@ import { securityTrack } from './tracks/security.ts';
 import { dxTrack } from './tracks/dx.ts';
 
 /**
+ * Show the "Coming soon" Mira subscription plans card. Default ON. Set to
+ * false to hide it; nothing else changes (copy lives in coming-soon.ts).
+ */
+export const showPlans = true;
+
+/**
  * Curated public roadmap, one file per track. Every PR number is a public PR
  * in tutur3u/platform. Status is never written here: it is derived from live
  * PR state and the app's deployed commit (see src/live/status.ts). Items
