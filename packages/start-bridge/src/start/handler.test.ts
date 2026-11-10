@@ -2,6 +2,7 @@ import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AssetsBinding } from '../core/assets';
 import { createRootResponsePolicy } from '../core/response-policy';
+import { requestNonce } from '../core/csp';
 import { cookies } from '../server/request-context';
 import { routerBasepath } from './base-path';
 import {
@@ -287,7 +288,8 @@ describe('framable paths keep the upstream CSP (uploaded WebGL builds)', () => {
   });
 
   it('still applies the app CSP on neighbouring and lookalike paths', async () => {
-    const handler = build();
+    // Without an upstream policy, only the framable path is left bare.
+    const handler = build({ forwardApi: async () => new Response('page') });
     for (const path of [
       '/api/v1/workspaces/ws-1/external-projects/assets/a-1',
       '/api/v1/workspaces/ws-1/external-projects/assets/a-1/webglx',
@@ -306,11 +308,13 @@ describe('framable paths keep the upstream CSP (uploaded WebGL builds)', () => {
   });
 
   it('matches the normalized, case-sensitive path', async () => {
-    const handler = build();
+    const bare = build({ forwardApi: async () => new Response('page') });
     for (const path of [`${webgl}/../x`, `${webgl}%2Fx`, webgl.toUpperCase()]) {
-      const csp = await cspOf(handler, `https://cms.tuturuuu.com${path}`);
+      const csp = await cspOf(bare, `https://cms.tuturuuu.com${path}`);
       expect(csp, path).toMatch(/frame-ancestors 'none'$/u);
     }
+    expect(await cspOf(bare, `https://cms.tuturuuu.com${webgl}`)).toBeNull();
+    const handler = build();
     // A dot segment that resolves into the WebGL path is that path.
     expect(
       await cspOf(
@@ -318,6 +322,25 @@ describe('framable paths keep the upstream CSP (uploaded WebGL builds)', () => {
         `https://cms.tuturuuu.com/api/v1/workspaces/ws-1/x/../external-projects/assets/a-1/webgl`
       )
     ).toBe(sandbox);
+  });
+
+  it('never replaces a policy the response already carries (HTML forwarded from Web)', async () => {
+    const own = "sandbox; default-src 'none'";
+    const handler = build({
+      forwardApi: async () =>
+        new Response('<!doctype html><p>copy this token</p>', {
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Content-Security-Policy': own,
+          },
+        }),
+    });
+    for (const url of [
+      'https://cms.tuturuuu.com/api/cli/auth/copy-token',
+      'https://tuturuuu.com/cms/api/v1/sso/saml/post-response',
+      'https://cms.tuturuuu.com/api/v1/unsubscribe',
+    ])
+      expect(await cspOf(handler, url), url).toBe(own);
   });
 
   it('lets an app keep an upstream policy or add framable paths', async () => {
@@ -663,5 +686,39 @@ describe('the one-origin switch TTR_ONE_ORIGIN_<APP>', () => {
     expect(asset.status).toBe(200);
     const api = await nav('https://meet.tuturuuu.com/api/own', on);
     expect(api.status).toBe(200);
+  });
+});
+
+describe('one nonce per response', () => {
+  it('stamps the header nonce on the rendered markup, fresh per response', async () => {
+    const handler = createBridgeHandler<Env, typeof ctx>({
+      start: {
+        fetch: async () =>
+          new Response(
+            `<!doctype html><script nonce="${requestNonce()}">1</script>`,
+            { headers: { 'Content-Type': 'text/html' } }
+          ),
+      },
+      proxy: async () => NextResponse.next(),
+      assets: (current) => current.ASSETS,
+      centralApiOrigin: () => 'https://central.example',
+      csp: (nonce) => `script-src 'nonce-${nonce}' 'strict-dynamic'`,
+    });
+    const nonces = new Set<string>();
+    for (let index = 0; index < 3; index += 1) {
+      const response = await handler(
+        new Request('https://app.test/page'),
+        env,
+        ctx
+      );
+      const header = /'nonce-([^']+)'/u.exec(
+        response.headers.get('content-security-policy') ?? ''
+      )?.[1];
+      const markup = /nonce="([^"]+)"/u.exec(await response.text())?.[1];
+      expect(header).toBeTruthy();
+      expect(markup).toBe(header);
+      nonces.add(header!);
+    }
+    expect(nonces.size).toBe(3);
   });
 });

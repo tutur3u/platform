@@ -272,6 +272,10 @@ export function createBridgeHandler<
     // WebGL builds) must reach the browser untouched, or the uploaded
     // scripts run unsandboxed on the app origin.
     if (isFramable(appPath)) return final;
+    // A response that already carries a policy keeps it: HTML forwarded from
+    // Web (CLI copy-token, SAML post-response, unsubscribe) or an endpoint's
+    // own CSP is never replaced by the app's page policy.
+    if (final.headers.has('Content-Security-Policy')) return final;
     const policy = options.csp(nonce, {
       request: incoming,
       response: final,
