@@ -232,6 +232,8 @@ jobs:
           command: cd apps/chat && bun run build:cloudflare
           token: ''
           team: ''
+      - name: Refuse server-only APIs in the client bundle
+        run: node scripts/ci/client-bundle-guard.mjs apps/chat/dist/client
       - name: Record emitted configuration receipt
         if: always()
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/chat "$SOURCE_SHA" "$RUNNER_TEMP/chat-emitted-config.json"
