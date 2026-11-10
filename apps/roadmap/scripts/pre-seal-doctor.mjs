@@ -151,6 +151,14 @@ export function assessDoctor(observation) {
     failures.push(`canonical HTML cache-control ${cache || '(missing)'}`);
   }
   failures.push(...canonicalFailures(observation, body));
+  if (!body.includes('id="timeline-title"'))
+    failures.push('canonical HTML missing the timeline');
+  if (
+    !/rel="prefetch" href="\/roadmap\/assets\/history-[A-Za-z0-9_-]{8,}\.json"/.test(
+      body
+    )
+  )
+    failures.push('canonical HTML missing the hashed history prefetch');
   const satellite = observation.satellite ?? {};
   if (satellite.status !== 301) {
     failures.push(`satellite status ${satellite.status}, expected 301`);
@@ -336,6 +344,7 @@ const ASSET_TYPES = {
   '.ttf': 'font/ttf',
   '.otf': 'font/otf',
   '.eot': 'application/vnd.ms-fontobject',
+  '.json': 'application/json',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',

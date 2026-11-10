@@ -7,6 +7,7 @@ import {
 import { PublicSatelliteProviders } from '@tuturuuu/satellite/public';
 import type { ReactNode } from 'react';
 import logo from '../assets/tuturuuu-logo.png?no-inline';
+import historyUrl from '../generated/history.json?url';
 import styles from '../styles.css?url';
 
 /** Canonical: no trailing slash, like every Tuturuuu URL. */
@@ -44,6 +45,8 @@ export const Route = createRootRoute({
     links: [
       { rel: 'stylesheet', href: styles },
       { rel: 'icon', type: 'image/png', href: logo },
+      // Full history for the timeline: hashed, immutable, fetched at idle.
+      { rel: 'prefetch', href: historyUrl, as: 'fetch' },
       { rel: 'apple-touch-icon', href: logo },
       { rel: 'canonical', href: ROADMAP_URL },
       // One URL serves both languages (the EN/VI switch is client-side).

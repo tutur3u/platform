@@ -45,7 +45,7 @@ export const INCIDENT_TERMS =
 
 /** Internal plumbing is real work but not a user-facing deliverable. */
 export const PLUMBING_TERMS =
-  /(\bci\b|seal|artifact|guard|allowlist|wrangler|node:test|vitest|digest|fixture|receipt|staging|runbook|\bD\d+\b|lint|format|oxfmt|type-?check|\bstub|\bmock|lockfile|manifest|inventory|normali[sz]|\bspy\b|\brpc\b|cutover|retained|admit|qualif|preview deploy|release please|agent|fleet|native|candidate|carve|registry|bridge|origin|hydrat|mount|evidence|satellite|worker|smoke|loop|redirect|route|cache|cookie|\bses\b|\bsns\b|\bdns\b|\(ut-|\(v\d|primitive|staff|lifecycle|module|endpoint|\bapi\b|start|vite|void|tanstack|next\.?js|vercel|cloudflare|migration|newsletter|dataset)/i;
+  /(\bci\b|seal|artifact|guard|allowlist|wrangler|node:test|vitest|digest|fixture|receipt|staging|runbook|\bD\d+\b|lint|format|oxfmt|type-?check|\bstub|\bmock|lockfile|manifest|repository inventory|normali[sz]|\bspy\b|\brpc\b|cutover|retained|admit|qualif|preview deploy|release please|agent|fleet|native|candidate|carve|registry|bridge|origin|hydrat|mount|evidence|satellite|worker|smoke|loop|redirect|route|cache|cookie|\bses\b|\bsns\b|\bdns\b|\(ut-|\(v\d|primitive|staff|lifecycle|module|endpoint|\bapi\b|start|vite|void|tanstack|next\.?js|vercel|cloudflare|migration|newsletter|dataset)/i;
 
 const TITLE = /^([a-z]+)\(([a-z0-9,-]+)\)!?:\s*(.+)$/;
 

@@ -338,3 +338,37 @@ test('D79: a logo outside the mount that returns 404 text/html fails', async () 
     result.failures.join('\n')
   );
 });
+
+test('D79: an empty JSON data asset fails; a real one passes', async () => {
+  const html = `<!doctype html><link rel="stylesheet" href="/roadmap/assets/styles-Abcd1234.css"><link rel="prefetch" href="/roadmap/assets/history-Abcd1234.json" as="fetch">`;
+  const run = (body) =>
+    smokeAssets({
+      pages: ['https://tuturuuu.com/roadmap'],
+      canonicalOrigin: 'https://tuturuuu.com',
+      fetchImpl: async (url) => {
+        const target = String(url);
+        if (target.endsWith('.css'))
+          return new Response('body{}', {
+            status: 200,
+            headers: { 'content-type': 'text/css' },
+          });
+        if (target.endsWith('.json'))
+          return new Response(body, {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          });
+        return okDocument(html);
+      },
+    });
+  const empty = await run('');
+  assert.equal(empty.ok, false);
+  assert.ok(
+    empty.failures.some(
+      (f) =>
+        f.startsWith(
+          'data https://tuturuuu.com/roadmap/assets/history-Abcd1234.json'
+        ) && f.includes('bytes 0')
+    )
+  );
+  assert.equal((await run('{"schema":1}')).ok, true);
+});

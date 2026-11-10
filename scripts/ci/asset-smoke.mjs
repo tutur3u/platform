@@ -40,12 +40,14 @@ const KIND_LABEL = {
   js: 'script',
   font: 'font',
   image: 'image',
+  data: 'data',
 };
 const EXPECTED_TYPE = {
   css: 'text/css',
   js: 'text/javascript or application/javascript',
   font: 'font/*',
   image: 'non-empty image/*',
+  data: 'non-empty application/json',
 };
 
 export function contentTypeValue(header) {
@@ -65,6 +67,7 @@ export function mimeMatches(kind, header) {
   if (kind === 'font')
     return value.startsWith('font/') || FONT_TYPES.has(value);
   if (kind === 'image') return value.startsWith('image/');
+  if (kind === 'data') return value === 'application/json';
   return false;
 }
 
@@ -73,6 +76,7 @@ function kindFromPath(reference) {
   if (path.endsWith('.css')) return 'css';
   if (/\.(?:js|mjs|cjs)$/.test(path)) return 'js';
   if (/\.(?:woff2?|ttf|otf|eot)$/.test(path)) return 'font';
+  if (path.endsWith('.json')) return 'data';
   return null;
 }
 
@@ -395,7 +399,7 @@ export async function smokeAssets({
     const ok =
       asset.status === 200 &&
       mimeMatches(item.kind, asset.type) &&
-      (item.kind !== 'image' || asset.bytes > 0);
+      ((item.kind !== 'image' && item.kind !== 'data') || asset.bytes > 0);
     assets.push({
       url: item.url,
       kind: item.kind,
@@ -405,7 +409,7 @@ export async function smokeAssets({
     });
     if (!ok) {
       failures.push(
-        `${KIND_LABEL[item.kind]} ${item.url} status ${asset.status} content-type ${contentTypeValue(asset.type) || '(missing)'}${item.kind === 'image' ? ` bytes ${asset.bytes}` : ''}, expected 200 ${EXPECTED_TYPE[item.kind]}`
+        `${KIND_LABEL[item.kind]} ${item.url} status ${asset.status} content-type ${contentTypeValue(asset.type) || '(missing)'}${item.kind === 'image' || item.kind === 'data' ? ` bytes ${asset.bytes}` : ''}, expected 200 ${EXPECTED_TYPE[item.kind]}`
       );
       continue;
     }
