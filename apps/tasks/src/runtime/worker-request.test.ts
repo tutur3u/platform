@@ -560,3 +560,53 @@ describe('Tasks CSP report collector', () => {
     warn.mockRestore();
   });
 });
+
+describe('Tasks CSP report collector limits', () => {
+  it('stops reading a chunked body past 16 KB and logs nothing', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { handle } = setup();
+    const chunk = new TextEncoder().encode('x'.repeat(8 * 1024));
+    let pulled = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1;
+        if (pulled > 64) controller.close();
+        else controller.enqueue(chunk);
+      },
+    });
+    const response = await handle(
+      new Request('https://tasks.tuturuuu.com/api/csp-report', {
+        method: 'POST',
+        body,
+        // Node's Request needs `duplex` for a stream body.
+        duplex: 'half',
+      } as RequestInit),
+      {},
+      ctx
+    );
+    expect(response.status).toBe(204);
+    expect(pulled).toBeLessThan(10);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('never logs script samples, which can carry inline code', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { handle } = setup();
+    await handle(
+      new Request('https://tasks.tuturuuu.com/api/csp-report', {
+        method: 'POST',
+        body: JSON.stringify({
+          'csp-report': {
+            'document-uri': 'https://tasks.tuturuuu.com/p',
+            'script-sample': 'secretInlineCode()',
+          },
+        }),
+      }),
+      {},
+      ctx
+    );
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('secretInlineCode');
+    warn.mockRestore();
+  });
+});

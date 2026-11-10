@@ -175,13 +175,41 @@ function sanitizeViolation(raw: Record<string, unknown>) {
     ),
     disposition: text(pick('disposition')),
     line: pick('line-number', 'lineNumber'),
-    sample: text(pick('script-sample', 'sample'))?.slice(0, 80),
   };
+}
+
+/** The body as text, or `null` once it passes `cap` bytes (stream cancelled). */
+async function readCapped(
+  request: Request,
+  cap: number
+): Promise<string | null> {
+  const reader = request.body?.getReader();
+  if (!reader) return '';
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > cap) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
 }
 
 /**
  * The Tasks CSP report collector (`<base>/api/csp-report`): accepts
- * `report-uri` and Reporting API bodies, logs at most a fixed budget per
+ * `report-uri` and Reporting API bodies (read with a 16 KB cap), logs at most
+ * a fixed budget per
  * minute per isolate with query strings and fragments stripped, never echoes
  * anything, and always answers 204.
  */
@@ -194,8 +222,9 @@ export async function collectCspReport(request: Request): Promise<Response> {
   if (declared > MAX_REPORT_BYTES) return done();
   let body: unknown;
   try {
-    const text = await request.text();
-    if (text.length > MAX_REPORT_BYTES) return done();
+    // Chunked bodies carry no Content-Length: stop reading past the cap.
+    const text = await readCapped(request, MAX_REPORT_BYTES);
+    if (text === null) return done();
     body = JSON.parse(text);
   } catch {
     return done();
