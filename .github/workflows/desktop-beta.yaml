@@ -24,10 +24,11 @@ on:
         type: boolean
         default: true
 
+# Pull requests supersede. Production pushes and manual runs keep a unique
+# non-cancelling group. The publish job holds the production publication lock.
 concurrency:
-  group: desktop-beta-${{ github.ref }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
-  cancel-in-progress: false
-  queue: max
+  group: ${{ ((github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1) && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('desktop-beta-{0}-{1}-{2}', github.ref, github.sha, github.run_id) }}
+  cancel-in-progress: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1 }}
 
 permissions:
   contents: read
@@ -299,6 +300,10 @@ jobs:
 
   publish:
     name: Publish verified desktop beta
+    concurrency:
+      group: desktop-beta-production-publish
+      cancel-in-progress: false
+      queue: max
     needs: [build, release-status]
     env:
       DESKTOP_BETA_PLATFORMS: ${{ needs.release-status.outputs.platforms }}

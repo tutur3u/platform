@@ -329,12 +329,23 @@ for (const file of [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS]) {
         renderTemplate(policy.group, push),
         'label events must share the admitted run group'
       );
-      assert.ok(policy.group.endsWith(UNADMITTED_GROUP_SUFFIX), policy.group);
-      assert.notEqual(
-        renderTemplate(policy.group, unadmitted),
-        renderTemplate(policy.group, labelled),
-        'unadmitted runs must never cancel an admitted run'
-      );
+      const admittedGroup = renderTemplate(policy.group, labelled);
+      if (admittedGroup === `${workflow.name}-pr-42`) {
+        // One pull-request slot. A later admitted run cancels the older one,
+        // including a run whose payload had not yet received ready-for-ci.
+        assert.equal(
+          renderTemplate(policy.group, unadmitted),
+          admittedGroup,
+          'one pull request uses one group'
+        );
+      } else {
+        assert.ok(policy.group.endsWith(UNADMITTED_GROUP_SUFFIX), policy.group);
+        assert.notEqual(
+          renderTemplate(policy.group, unadmitted),
+          admittedGroup,
+          'unadmitted runs must never cancel an admitted run'
+        );
+      }
       if (policy.queue !== 'max') {
         assert.equal(
           evaluateExpression(String(policy['cancel-in-progress']), labelled),
