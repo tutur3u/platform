@@ -18,6 +18,13 @@ export default defineConfig({
       // node:test profile check; the native job runs it with node --test.
       'cloudflare/**',
     ],
+    // The native job exports public build fixtures such as NEXT_PUBLIC_APP_URL
+    // (the production origin). Pin the app URL so redirect assertions do not
+    // depend on the ambient build environment; HIVE_APP_URL wins over the
+    // other candidates in lib/hive-public-url.
+    env: {
+      HIVE_APP_URL: 'https://hive.tuturuuu.localhost',
+    },
     globals: true,
     testTimeout: 15000,
   },
