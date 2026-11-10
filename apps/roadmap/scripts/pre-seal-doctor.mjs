@@ -11,7 +11,7 @@ import { existsSync, readdirSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { createServer, request as httpRequest } from 'node:http';
 import { join, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Miniflare, supportedCompatibilityDate } from 'miniflare';
 import { showPlans } from '../src/content/tracks.ts';
 import { inlineScriptTexts } from '../src/html-scripts.ts';
@@ -569,9 +569,10 @@ export async function startBuiltWorker(root = appRoot()) {
       'Built worker is missing. Run build:cloudflare before the pre-seal doctor.'
     );
   }
-  const config = JSON.parse(
-    await readFile(join(serverRoot, 'wrangler.json'), 'utf8')
-  );
+  // The deployed Worker's runtime settings, from the app's own config.
+  const { cloudflare: config } = (
+    await import(pathToFileURL(join(root, 'void.config.ts')).href)
+  ).default;
   const assets = localAssets(root);
   const worker = new Miniflare({
     modulesRoot: serverRoot,
