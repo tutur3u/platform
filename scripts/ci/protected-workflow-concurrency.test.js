@@ -372,7 +372,9 @@ test('production validation and generated release evidence retain immutable atte
       !c?.group.includes('github.workflow') ||
       mainExceptions[file] ||
       serialized.includes(file) ||
-      file.startsWith('vercel-preview-')
+      file.startsWith('vercel-preview-') ||
+      // Production pushes share one group. The desktop beta test locks it.
+      file === 'desktop-beta.yaml'
     )
       continue;
     for (const ref of [
@@ -782,9 +784,17 @@ test('desktop beta pull requests supersede and publication stays serialized', ()
     render(workflow.concurrency['cancel-in-progress'], production),
     false
   );
-  assert.notEqual(
+  assert.equal(
+    render(workflow.concurrency.group, production),
+    'desktop-beta-production'
+  );
+  assert.equal(
     render(workflow.concurrency.group, production),
     render(workflow.concurrency.group, { ...production, sha: 'two', run_id: 2 })
+  );
+  assert.notEqual(
+    render(workflow.concurrency.group, production),
+    render(workflow.concurrency.group, manual)
   );
   const publish = workflow.jobs.publish.concurrency;
   assert.equal(publish.group, 'desktop-beta-production-publish');
