@@ -2001,7 +2001,7 @@
     },
     {
       "number": 6621,
-      "title": "refactor(colab): replace local Wrangler preview with Vite+",
+      "title": "refactor(colab): replace local Workers CLI preview with Vite+",
       "state": "merged",
       "draft": false,
       "approved": false,

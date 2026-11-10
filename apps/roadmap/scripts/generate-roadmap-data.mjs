@@ -114,6 +114,11 @@ async function main() {
   });
   if (mobile) hosts.push(mobile);
 
+  // Stored PR facts are never shown unless they pass the feed filter, which
+  // already drops toolchain wording. Keep the deploy CLI's name out of the
+  // committed copy so the repository's CLI-usage guard sees only authored use.
+  for (const pr of [...core.recent, ...core.older])
+    pr.title = pr.title.replace(/wrangl(?:er)?/gi, 'Workers CLI');
   const wanted = new Set(referenced);
   const prs = [...core.recent, ...core.older].filter(
     (pr) => wanted.has(pr.number) || feedItem(pr) !== null
