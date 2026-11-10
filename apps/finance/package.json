@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
-    "test": "vitest run --passWithNoTests",
+    "test": "node --test cloudflare/native-signed-ssr-fixture.test.mjs && vitest run --passWithNoTests",
     "test:watch": "vitest",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7808} --turbopack",

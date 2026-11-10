@@ -1,10 +1,15 @@
 import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [react()],
   test: {
+    // node:test file; the `test` script runs it with node --test.
+    exclude: [
+      ...configDefaults.exclude,
+      'cloudflare/native-signed-ssr-fixture.test.mjs',
+    ],
     server: {
       deps: {
         // Inline server helpers so vi.mock('server-only') also applies in
