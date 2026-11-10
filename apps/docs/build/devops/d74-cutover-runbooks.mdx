@@ -15,9 +15,9 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 2. Download the artifact: `gh run download <run-id> -R tutur3u/platform -n <artifact-name> -D /tmp/<app>-cutover`.
    Take the run id from a run on the production ref (`main`) at the accepted source SHA, and verify the run's head SHA. Never take an artifact by name alone: a name can match a pull-request run.
 3. Secrets: set `TUTURUUU_APP_COORDINATION_SECRET` on every Worker to EXACTLY the value of Web's signer (the `SUPABASE_SECRET_KEY` value) and also set the same `SUPABASE_SECRET_KEY`. Drive, Mind and Rewise refuse requests when `TUTURUUU_APP_COORDINATION_SECRET` is unset, so leaving it unset is not an option. The dedicated signing value comes later through the accept-only slot (see the app-coordination secret rollout page).
-4. Provision the secret names from the packet on the Worker, then deploy the artifact config route-free: `bunx wrangler deploy --config /tmp/<app>-cutover/dist/server/wrangler.json --name <worker>` (no route yet).
+4. Provision every secret name from the packet on the Worker BEFORE the code upload, then deploy the artifact config route-free. A Worker with the abuse guard (`ABUSE_GUARD` service binding) needs `ABUSE_GUARD_KEY_PEPPER` and the other required secrets set first; upload validation fails closed without them. `bunx wrangler deploy --config /tmp/<app>-cutover/dist/server/wrangler.json --name <worker>` (no route yet).
 5. Smoke the Worker on its own hostname before any route change: `node scripts/cutover-smoke.mjs <app> https://<worker-hostname>`.
-6. Attach the route or custom domain for the host (proxied, in front of the still-valid Vercel origin where possible).
+6. Attach the route or custom domain for the host (proxied, in front of the still-valid Vercel origin where possible). Proxied DNS flips happen only after the smoke in step 5 passes.
 7. Re-run the smoke on the public host and watch for 5 minutes: no 5xx, login renders, entry route as expected.
 8. Rollback on any 5xx above 1% for 5 minutes, a wrong redirect or a broken login: remove the route or repoint the DNS record to the Vercel pin. Never rebuild on the rollback path. No data or migration is involved.
 
