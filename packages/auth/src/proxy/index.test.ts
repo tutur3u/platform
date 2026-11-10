@@ -60,6 +60,7 @@ describe('auth proxy redirect helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     vi.stubEnv('PORT', '');
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
     mocks.updateSession.mockResolvedValue({
@@ -302,6 +303,30 @@ describe('auth proxy redirect helpers', () => {
       const setCookie = response?.headers.get('set-cookie') ?? '';
       expect(setCookie).toContain('tuturuuu_app_session=ttr_app_local');
       expect(setCookie).toContain('tuturuuu_web_app_session=ttr_app_web');
+    });
+
+    it('never redeems a handoff token on an apex mount', async () => {
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://abcd.supabase.co');
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      const request = new NextRequest(
+        'https://tuturuuu.com/learn/verify-token?token=copy-token&nextUrl=%2Fpersonal',
+        {
+          headers: {
+            cookie: 'sb-abcd-auth-token.0=shared; sb-abcd-auth-token.1=rest',
+          },
+          nextConfig: { basePath: '/learn' },
+        }
+      );
+
+      const response = await consumeVerifyTokenRequest(request);
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(response?.headers.get('location')).toBe(
+        'https://tuturuuu.com/learn/personal'
+      );
+      // The shared root session cookie is never cleared on the apex.
+      expect(response?.headers.getSetCookie() ?? []).toEqual([]);
     });
 
     it('lets the client verifier page handle Portless verify-token requests', async () => {
