@@ -4,6 +4,12 @@ import {
   resolveAppBase,
 } from '@tuturuuu/start-bridge/mounts';
 import type { AssetsBinding } from '@tuturuuu/start-bridge/start/handler';
+import {
+  type AppSecurityProfile,
+  applyDocumentSecurityHeaders,
+  DEFAULT_PERMISSIONS,
+  originSources,
+} from '@tuturuuu/utils/security-headers';
 import { PRIVATE_ROBOTS_HEADER } from '@tuturuuu/utils/seo';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { withoutPageRewrite } from '../lib/page-rewrite';
@@ -31,6 +37,21 @@ export interface TasksWorkerEnv {
    * request.
    */
   TUTURUUU_STAGING_HOSTS?: string;
+  /** Supabase origin for the report-only document policy's connect/img. */
+  NEXT_PUBLIC_SUPABASE_URL?: string;
+  /** Optional CSP report endpoint (must not log full query strings). */
+  TTR_CSP_REPORT_URI?: string;
+  /**
+   * `enforce` enforces the bridge's script CSP. Anything else sends it
+   * report-only (the D87 window before Bea's check and 24 h of clean reports).
+   */
+  TTR_CSP_TASKS?: string;
+  /**
+   * `enforce` adds `require-trusted-types-for 'script'` to the enforced CSP
+   * (only meaningful with `TTR_CSP_TASKS=enforce`). Anything else keeps
+   * Trusted Types report-only.
+   */
+  TTR_TRUSTED_TYPES_TASKS?: string;
 }
 
 export interface TasksExecutionContext {
@@ -117,8 +138,85 @@ export function denyFraming(csp: string | null) {
  * (a handler's `private, max-age` would keep it in the browser); only reads of
  * hashed assets and public files keep theirs.
  */
-function decorate(response: Response, appPath: string | null, method: string) {
-  const tagged = tagResponse(response, NATIVE);
+const TRUSTED_TYPES_DIRECTIVE = "require-trusted-types-for 'script'";
+
+function readVar(env: TasksWorkerEnv, name: keyof TasksWorkerEnv) {
+  const value =
+    env[name] ??
+    (typeof process === 'undefined' ? undefined : process.env[name]);
+  return typeof value === 'string' && value ? value : undefined;
+}
+
+function isHtml(response: Response) {
+  return (response.headers.get('content-type') ?? '')
+    .toLowerCase()
+    .startsWith('text/html');
+}
+
+/**
+ * Document security for every HTML response (pages, 404s, error and fallback
+ * pages): the full policy report-only, including Trusted Types, and Trusted
+ * Types enforced once `TTR_TRUSTED_TYPES_TASKS=enforce` (D87 A1).
+ */
+function secureDocument(
+  response: Response,
+  request: Request,
+  env: TasksWorkerEnv,
+  framable: boolean
+): Response {
+  if (response.status === 101 || !isHtml(response)) return response;
+  const supabase = readVar(env, 'NEXT_PUBLIC_SUPABASE_URL');
+  const profile: AppSecurityProfile = {
+    basePath: TASKS_BASE_PATH,
+    connect: originSources(supabase, true),
+    img: [...originSources(supabase), 'https:'],
+    permissions: DEFAULT_PERMISSIONS,
+  };
+  const secured = applyDocumentSecurityHeaders(response, profile, {
+    requestOrigin: new URL(request.url).origin,
+    sharedOrigin: `https://${TASKS_MOUNT_HOSTS[0]}`,
+    reportUri: readVar(env, 'TTR_CSP_REPORT_URI'),
+  });
+  // A framable path's upstream policy (e.g. the WebGL sandbox) stays enforced.
+  if (framable) return secured;
+  if (readVar(env, 'TTR_CSP_TASKS') !== 'enforce') {
+    // Report-only window: the script policy moves to its own report-only
+    // header; framing is still enforced by `decorate`.
+    const policy = secured.headers.get('Content-Security-Policy');
+    if (!policy) return secured;
+    const result = new Response(secured.body, secured);
+    result.headers.delete('Content-Security-Policy');
+    result.headers.append('Content-Security-Policy-Report-Only', policy);
+    return result;
+  }
+  if (readVar(env, 'TTR_TRUSTED_TYPES_TASKS') !== 'enforce') return secured;
+  const policy = secured.headers.get('Content-Security-Policy');
+  if (policy?.includes(TRUSTED_TYPES_DIRECTIVE)) return secured;
+  const result = new Response(secured.body, secured);
+  result.headers.set(
+    'Content-Security-Policy',
+    policy ? `${policy}; ${TRUSTED_TYPES_DIRECTIVE}` : TRUSTED_TYPES_DIRECTIVE
+  );
+  return result;
+}
+
+function decorate(
+  response: Response,
+  appPath: string | null,
+  method: string,
+  document?: { request: Request; env: TasksWorkerEnv }
+) {
+  const tagged = tagResponse(
+    document
+      ? secureDocument(
+          response,
+          document.request,
+          document.env,
+          appPath !== null && FRAMABLE.test(appPath)
+        )
+      : response,
+    NATIVE
+  );
   const { headers } = tagged;
   headers.set('X-Robots-Tag', PRIVATE_ROBOTS_HEADER);
   if (appPath === null || !FRAMABLE.test(appPath)) {
@@ -182,6 +280,9 @@ export function createTasksRequestHandler(
       bridge = createBridge(mounts);
       bridges.set(key, bridge);
     }
-    return decorate(await bridge(request, env, ctx), appPath, request.method);
+    return decorate(await bridge(request, env, ctx), appPath, request.method, {
+      request,
+      env,
+    });
   };
 }

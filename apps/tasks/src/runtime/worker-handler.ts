@@ -1,3 +1,4 @@
+import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
 import { createFunctionProxy } from '@tuturuuu/start-bridge/function-proxy';
 import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
@@ -12,9 +13,21 @@ import {
 
 export type { TasksExecutionContext, TasksWorkerEnv } from './worker-request';
 
+/** `/offline.html` loads only its own same-origin `offline.js`. */
+export const OFFLINE_PAGE_POLICY =
+  "script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
+
 export const handleTasksRequest = createTasksRequestHandler((mounts) =>
   createBridgeHandler<TasksWorkerEnv, TasksExecutionContext>({
     mounts,
+    // Nonce + strict-dynamic scripts, no plugins, no base rewrites (the policy
+    // Track enforces). The Worker's outer step keeps it report-only until
+    // `TTR_CSP_TASKS=enforce` (D87 per-app gate). The static offline page has
+    // no nonce, so it gets a same-origin script policy instead.
+    csp: (nonce, { path }) =>
+      path === '/offline.html'
+        ? OFFLINE_PAGE_POLICY
+        : defaultContentSecurityPolicy(nonce),
     start: createBridgeStartHandler(),
     serverFnBase: '/_serverFn',
     proxy,

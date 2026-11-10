@@ -1,4 +1,5 @@
 import { ClientProviders } from '@tuturuuu/satellite/client-providers';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { BridgeParamsContext } from '@tuturuuu/start-bridge/next/navigation';
 import { FadeSettingInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/fade-setting-initializer';
 import { TaskSoundEffectsInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/task-sound-effects';
@@ -35,6 +36,7 @@ export function AppProviders({
       themes={['system', 'light', 'dark']}
       enableSystem
       scriptProps={{ 'data-cfasync': 'false' }}
+      nonce={requestNonce()}
     >
       <NextIntlClientProvider
         locale={locale}

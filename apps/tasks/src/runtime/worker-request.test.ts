@@ -358,3 +358,125 @@ describe('Tasks Worker request step (subdomain root + tuturuuu.com/tasks, fail-c
     expect(createBridge).not.toHaveBeenCalled();
   });
 });
+
+describe('Tasks document security headers (D87 per-app gate)', () => {
+  const html = () =>
+    new Response('<!doctype html><p>tasks</p>', {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'content-security-policy': "script-src 'nonce-n0nce' 'strict-dynamic'",
+      },
+    });
+
+  it('reports Trusted Types on every HTML response, root and mount, 404s included', async () => {
+    for (const [url, status] of [
+      ['https://tasks.tuturuuu.com/personal', 200],
+      ['https://tuturuuu.com/tasks/personal', 200],
+      ['https://tuturuuu.com/tasks/missing', 404],
+    ] as const) {
+      const { handle } = setup(
+        () =>
+          new Response('<!doctype html>', {
+            status,
+            headers: { 'content-type': 'text/html' },
+          })
+      );
+      const response = await handle(new Request(url), {}, ctx);
+      expect(response.status).toBe(status);
+      expect(
+        response.headers.get('content-security-policy-report-only')
+      ).toContain("require-trusted-types-for 'script'");
+    }
+  });
+
+  it('scopes the report-only policy to /tasks on the mount', async () => {
+    const { handle } = setup(html);
+    const response = await handle(
+      new Request('https://tuturuuu.com/tasks/personal'),
+      {},
+      ctx
+    );
+    expect(
+      response.headers.get('content-security-policy-report-only')
+    ).toContain('https://tuturuuu.com/tasks/');
+  });
+
+  it('keeps the script policy report-only until TTR_CSP_TASKS=enforce, framing always enforced', async () => {
+    const { handle } = setup(html);
+    const report = await handle(
+      new Request('https://tasks.tuturuuu.com/personal'),
+      {},
+      ctx
+    );
+    expect(report.headers.get('content-security-policy')).toBe(
+      "frame-ancestors 'none'"
+    );
+    expect(report.headers.get('x-frame-options')).toBe('DENY');
+    expect(report.headers.get('content-security-policy-report-only')).toContain(
+      "script-src 'nonce-n0nce' 'strict-dynamic'"
+    );
+
+    const enforcedCsp = await handle(
+      new Request('https://tasks.tuturuuu.com/personal'),
+      { TTR_CSP_TASKS: 'enforce' },
+      ctx
+    );
+    const scriptPolicy =
+      enforcedCsp.headers.get('content-security-policy') ?? '';
+    expect(scriptPolicy).toContain("script-src 'nonce-n0nce' 'strict-dynamic'");
+    expect(scriptPolicy).not.toContain('require-trusted-types-for');
+  });
+
+  it('enforces Trusted Types only with both switches on', async () => {
+    const { handle } = setup(html);
+    const enforced = await handle(
+      new Request('https://tasks.tuturuuu.com/personal'),
+      { TTR_CSP_TASKS: 'enforce', TTR_TRUSTED_TYPES_TASKS: 'enforce' },
+      ctx
+    );
+    const policy = enforced.headers.get('content-security-policy') ?? '';
+    expect(policy).toContain("script-src 'nonce-n0nce' 'strict-dynamic'");
+    expect(policy).toContain("require-trusted-types-for 'script'");
+    expect(policy).toContain("frame-ancestors 'none'");
+  });
+
+  it('never demotes a framable HTML path’s upstream sandbox policy', async () => {
+    const { handle } = setup(
+      () =>
+        new Response('<!doctype html>', {
+          headers: {
+            'content-type': 'text/html',
+            'content-security-policy': 'sandbox allow-scripts',
+          },
+        })
+    );
+    const response = await handle(
+      new Request(
+        'https://tasks.tuturuuu.com/api/v1/workspaces/ws/external-projects/assets/a/webgl/index.html'
+      ),
+      {},
+      ctx
+    );
+    expect(response.headers.get('content-security-policy')).toBe(
+      'sandbox allow-scripts'
+    );
+  });
+
+  it('serves the static offline page under a same-origin script policy', async () => {
+    const { OFFLINE_PAGE_POLICY } = await import('./worker-handler');
+    expect(OFFLINE_PAGE_POLICY).toContain("script-src 'self'");
+    expect(OFFLINE_PAGE_POLICY).toContain("frame-ancestors 'none'");
+  });
+
+  it('adds no document policy to non-HTML responses', async () => {
+    const { handle } = setup(() => Response.json({ ok: true }));
+    const response = await handle(
+      new Request('https://tasks.tuturuuu.com/api/x'),
+      { TTR_TRUSTED_TYPES_TASKS: 'enforce' },
+      ctx
+    );
+    expect(response.headers.has('content-security-policy-report-only')).toBe(
+      false
+    );
+  });
+});
