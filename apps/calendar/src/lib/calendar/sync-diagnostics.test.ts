@@ -95,8 +95,8 @@ describe('bounded calendar diagnostics', () => {
   });
 
   it('caps a long message', () => {
-    expect(sanitizeSyncErrorMessage('x'.repeat(5000)).length).toBeLessThanOrEqual(
-      503
-    );
+    expect(
+      sanitizeSyncErrorMessage('x'.repeat(5000)).length
+    ).toBeLessThanOrEqual(503);
   });
 });
