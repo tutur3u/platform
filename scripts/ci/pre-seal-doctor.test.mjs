@@ -72,7 +72,7 @@ test('judgeRoot accepts only an auth redirect and only when expected', () => {
   assert.deepEqual(judgeRoot({ status: 200 }, expecting), []);
   assert.deepEqual(
     judgeRoot(
-      redirect('http://rewise.tuturuuu.com/verify-token?nextUrl=%2F'),
+      redirect(`http://${HOST}/verify-token?nextUrl=%2F`),
       expecting
     ),
     []
@@ -88,7 +88,7 @@ test('judgeRoot accepts only an auth redirect and only when expected', () => {
   assert.match(judgeRoot(redirect(null), expecting)[0], /not an auth path/u);
   assert.match(
     judgeRoot(redirect('https://evil.example/login'), expecting)[0],
-    /neither rewise\.tuturuuu\.com nor the web login host/u
+    /neither nova\.tuturuuu\.com nor the web login host/u
   );
   assert.deepEqual(judgeRoot(redirect('/login?x=1'), expecting), []);
   assert.match(

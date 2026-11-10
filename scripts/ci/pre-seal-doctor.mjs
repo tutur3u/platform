@@ -27,7 +27,8 @@ export const HARD_TIMEOUT_MS = 120_000;
 const AUTH_PATH =
   /\/(?:login|verify-token|sign-?in|auth|callback)(?:[/?#]|$)/iu;
 const WEB_LOGIN_HOSTS = ['tuturuuu.com', 'www.tuturuuu.com'];
-const REDIRECT_HOSTS = (host) => new Set([host.toLowerCase(), ...WEB_LOGIN_HOSTS]);
+const REDIRECT_HOSTS = (host) =>
+  new Set([host.toLowerCase(), ...WEB_LOGIN_HOSTS]);
 // Names only; the values are synthetic and never reach a supplier.
 const SYNTHETIC_NAMES = [
   'ABUSE_GUARD_FAMILIES',
@@ -93,7 +94,9 @@ export function judgeRoot(response, { host, expectRedirect }) {
       // A malformed Location is judged below as a non-auth target.
     }
     if (!target || !AUTH_PATH.test(path))
-      return [`${where} redirected to "${location}", which is not an auth path`];
+      return [
+        `${where} redirected to "${location}", which is not an auth path`,
+      ];
     // The auth page must live on the app's own host or on the web login host.
     return REDIRECT_HOSTS(host).has(target.hostname.toLowerCase())
       ? []
