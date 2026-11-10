@@ -71,10 +71,7 @@ test('judgeRoot accepts only an auth redirect and only when expected', () => {
   const redirect = (location) => ({ status: 307, location });
   assert.deepEqual(judgeRoot({ status: 200 }, expecting), []);
   assert.deepEqual(
-    judgeRoot(
-      redirect(`http://${HOST}/verify-token?nextUrl=%2F`),
-      expecting
-    ),
+    judgeRoot(redirect(`http://${HOST}/verify-token?nextUrl=%2F`), expecting),
     []
   );
   assert.deepEqual(
