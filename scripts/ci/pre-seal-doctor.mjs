@@ -20,8 +20,10 @@ import { fileURLToPath } from 'node:url';
 // gateway variable (503) before bytes are sealed, not after a DNS flip.
 
 const USAGE =
-  'Usage: pre-seal-doctor.mjs <app> <artifact-dir> <production-host> <expected-commit-sha> [--expect-redirect] [--config <path-inside-artifact-dir>]';
+  'Usage: pre-seal-doctor.mjs <app> <artifact-dir> <production-host> <expected-commit-sha> [--expect-redirect] [--wave1 | --config <path-inside-artifact-dir>]';
 export const DEFAULT_CONFIG = 'dist/server/wrangler.json';
+// The wave-1 profile writes its sealed publication config here.
+export const WAVE1_CONFIG = 'dist/wave1/wrangler.json';
 export const HARD_TIMEOUT_MS = 120_000;
 // A redirect only counts when it hands an anonymous visitor to an auth page.
 const AUTH_PATH =
@@ -48,6 +50,7 @@ export function parseArgs(argv) {
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--expect-redirect') options.expectRedirect = true;
+    else if (arg === '--wave1') options.config = WAVE1_CONFIG;
     else if (arg === '--config') {
       const value = argv[(index += 1)];
       if (!value || value.startsWith('--'))
