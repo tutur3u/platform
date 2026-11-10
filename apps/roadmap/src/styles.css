@@ -394,6 +394,7 @@
 /* Sections */
 .section {
   display: grid;
+  min-width: 0;
   gap: 16px;
   scroll-margin-top: 16px;
 }
@@ -576,6 +577,8 @@
 }
 .sticky-bar {
   position: sticky;
+  min-width: 0;
+  max-width: calc(100% + 48px);
   top: var(--shell-nav-offset, 76px);
   z-index: 40;
   display: grid;
@@ -590,6 +593,7 @@
 }
 .track-nav {
   display: flex;
+  min-width: 0;
   gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
@@ -619,6 +623,7 @@
 }
 .filters {
   justify-self: start;
+  min-width: 0;
   max-width: 100%;
   overflow-x: auto;
 }
