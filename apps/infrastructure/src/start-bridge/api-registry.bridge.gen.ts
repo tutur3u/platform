@@ -195,6 +195,7 @@ export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/v1/infrastructure/package-stock-changes", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/package-stock-changes/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/packages", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/packages/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/payment-methods", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/payment-methods/route'), ["GET"]) },
+  { pattern: "/api/v1/infrastructure/policy-notice", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/policy-notice/route'), ["POST"]) },
   { pattern: "/api/v1/infrastructure/post-email-queue", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/post-email-queue/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/post-email-queue/run-now", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/post-email-queue/run-now/route'), ["POST"]) },
   { pattern: "/api/v1/infrastructure/product-categories", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/product-categories/route'), ["GET"]) },
