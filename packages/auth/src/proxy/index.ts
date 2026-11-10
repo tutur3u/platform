@@ -1,9 +1,6 @@
 import { updateSession } from '@tuturuuu/supabase/next/proxy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type {
-  AuthenticatorAssuranceLevels,
-  SupabaseUser,
-} from '@tuturuuu/supabase/next/user';
+import type { AuthenticatorAssuranceLevels } from '@tuturuuu/supabase/next/user';
 import type { Database } from '@tuturuuu/types/db';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
@@ -331,7 +328,12 @@ export async function consumeVerifyTokenRequest(
     req.nextUrl.origin,
     fallbackPath
   );
-  const token = req.nextUrl.searchParams.get('token');
+  // A mounted app shares the root session: a handoff token is never redeemed
+  // on the apex (its verify endpoint is refused there), so the verifier only
+  // forwards to the target.
+  const token = req.nextUrl.basePath
+    ? null
+    : req.nextUrl.searchParams.get('token');
 
   if (!token) {
     return clearSupabaseAuthCookies(
@@ -930,32 +932,4 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
       return appSessionFailureResponse(req, 'Account assurance unavailable');
     }
   };
-}
-
-/**
- * Creates a redirect handler for the central web app to redirect back to the original app after login
- */
-export function createReturnUrlHandler(
-  req: NextRequest,
-  user: SupabaseUser | null
-): NextResponse | null {
-  if (user) {
-    // Get the returnUrl from the query parameters
-    const returnUrl = req.nextUrl.searchParams.get('returnUrl');
-
-    if (returnUrl) {
-      try {
-        // Decode and validate the returnUrl
-        const decodedUrl = decodeURIComponent(returnUrl);
-        const url = new URL(decodedUrl);
-
-        return NextResponse.redirect(url);
-      } catch (error) {
-        console.error('Invalid returnUrl:', error);
-      }
-    }
-  }
-
-  // Return null if we shouldn't redirect
-  return null;
 }

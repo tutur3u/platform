@@ -219,12 +219,50 @@ describe('cross-app return route', () => {
       const returnUrl = new URL(body.returnUrl);
 
       expect(body.targetApp).toBe('inventory');
-      expect(returnUrl.origin).toBe('https://tuturuuu.com');
-      expect(returnUrl.pathname).toBe('/inventory/verify-token');
-      expect(returnUrl.searchParams.get('nextUrl')).toBe('/personal/catalog');
-      expect(returnUrl.searchParams.get('targetApp')).toBe('inventory');
+      // Same origin: straight to the mounted page, never a handoff token.
+      expect(body.returnUrl).toBe(
+        'https://tuturuuu.com/inventory/personal/catalog'
+      );
+      expect(returnUrl.searchParams.has('token')).toBe(false);
+      expect(mocks.createClient).toHaveBeenCalled();
     }
   );
+
+  it.each([
+    ['%2F', 'https://tuturuuu.com/inventory'],
+    ['%2F%3Ftab%3Dall', 'https://tuturuuu.com/inventory?tab=all'],
+    ['%2Fitems%3Fq%3D1', 'https://tuturuuu.com/inventory/items?q=1'],
+  ])(
+    'returns nextUrl %s to %s with no trailing slash',
+    async (nextUrl, expected) => {
+      vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', 'inventory');
+      const response = await POST(
+        createRequest(
+          `https://tuturuuu.com/inventory/verify-token?nextUrl=${nextUrl}`
+        )
+      );
+      const body = (await response.json()) as { returnUrl: string };
+      expect(body.returnUrl).toBe(expected);
+    }
+  );
+
+  it('still requires a signed-in user before returning to a mount', async () => {
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', 'inventory');
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: null },
+          error: null,
+        }),
+      },
+    });
+    const response = await POST(
+      createRequest(
+        'https://tuturuuu.com/inventory/verify-token?nextUrl=%2Fpersonal'
+      )
+    );
+    expect(response.status).toBe(401);
+  });
 
   it.each([
     ['an unsafe nextUrl', 'https%3A%2F%2Fevil.test', '/'],
@@ -237,10 +275,12 @@ describe('cross-app return route', () => {
       )
     );
     const body = (await response.json()) as { returnUrl: string };
-    const returnUrl = new URL(body.returnUrl);
 
-    expect(returnUrl.pathname).toBe('/inventory/verify-token');
-    expect(returnUrl.searchParams.get('nextUrl')).toBe(expected);
+    expect(body.returnUrl).toBe(
+      expected === '/'
+        ? 'https://tuturuuu.com/inventory'
+        : `https://tuturuuu.com/inventory${expected}`
+    );
   });
 
   it('never mints an app token to an apex path that is not an active mount', async () => {
