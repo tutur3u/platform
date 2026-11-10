@@ -714,10 +714,10 @@
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7785",
-        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
+        "decision": "https://github.com/tutur3u/platform/pull/8075",
+        "reason": "Remove the Colab Workers AI binding. Inference uses the AI Studio Gemini gateway, so this Worker config no longer declares an ai binding."
       },
-      "digest": "bb7e047f841314ea97f3bb9194a91c233151bb1f131388a1ea5f1fc8b4cf70e8"
+      "digest": "6185be27a89256829ab322fbb4fa5db24050237d3a91123ea094e6bace88981f"
     },
     "apps/contacts/cloudflare/.gitignore": {
       "lines": 2,
