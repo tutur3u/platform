@@ -40,10 +40,12 @@ function expectParityHeaders(response: Response) {
   );
 }
 
-describe('Tasks Worker request step (root-only, fail-closed)', () => {
+describe('Tasks Worker request step (subdomain root + tuturuuu.com/tasks, fail-closed)', () => {
   it.each([
-    'https://tuturuuu.com/tasks/personal/tasks',
     'https://tuturuuu.com/api/build-info',
+    'https://tuturuuu.com/personal/tasks',
+    'https://tuturuuu.com/tasks-team/x',
+    'https://tuturuuu.com/',
     'https://evil.example/personal/tasks',
     'https://tuturuuu-tasks-vite-staging.someone.workers.dev/',
   ])('answers an unlisted host with a decorated 404: %s', async (url) => {
@@ -55,6 +57,42 @@ describe('Tasks Worker request step (root-only, fail-closed)', () => {
       expectParityHeaders(response);
     }
     expect(createBridge).not.toHaveBeenCalled();
+  });
+
+  it('serves build-info under the tuturuuu.com/tasks mount', async () => {
+    const { createBridge, handle } = setup();
+    for (const url of [
+      'https://tuturuuu.com/tasks/api/build-info',
+      'https://tuturuuu.com/tasks/api/build-info?x=1',
+    ]) {
+      const response = await handle(new Request(url), {}, ctx);
+      expect(response.status).toBe(200);
+      expect(((await response.json()) as { appName: string }).appName).toBe(
+        'tasks'
+      );
+      expectParityHeaders(response);
+    }
+    expect(createBridge).not.toHaveBeenCalled();
+  });
+
+  it('hands mounted pages to the bridge with the mount config', async () => {
+    const { bridge, createBridge, handle } = setup();
+    for (const url of [
+      'https://tuturuuu.com/tasks',
+      'https://tuturuuu.com/tasks?view=board',
+      'https://tuturuuu.com/tasks/personal/tasks',
+    ]) {
+      const response = await handle(new Request(url), {}, ctx);
+      expect(response.status).toBe(200);
+    }
+    expect(createBridge).toHaveBeenCalledTimes(1);
+    expect(createBridge).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mountHosts: ['tuturuuu.com'],
+        basePath: '/tasks',
+      })
+    );
+    expect(bridge).toHaveBeenCalledTimes(3);
   });
 
   it('serves build-info at the subdomain root', async () => {
@@ -295,7 +333,8 @@ describe('Tasks Worker request step (root-only, fail-closed)', () => {
         'tuturuuu-tasks-vite-staging.ops.workers.dev',
         'tasks.tutur3u.com',
       ],
-      mountHosts: [],
+      mountHosts: ['tuturuuu.com'],
+      basePath: '/tasks',
       unknownHost: 'reject',
     });
     expect(createBridge).toHaveBeenCalledTimes(1);
