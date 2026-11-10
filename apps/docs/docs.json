@@ -521,6 +521,7 @@
                   "reference/repository/routes/chat",
                   "reference/repository/routes/chat-realtime",
                   "reference/repository/routes/cms",
+                  "reference/repository/routes/cms-renderer",
                   "reference/repository/routes/colab",
                   "reference/repository/routes/contacts",
                   "reference/repository/routes/coordination",
