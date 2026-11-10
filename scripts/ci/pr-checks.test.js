@@ -182,6 +182,122 @@ test('gated callers stay deferred until ready while script-only checks remain el
   assert.equal(workflow.jobs.admitted.if, undefined);
 });
 
+test('a scope error or timeout runs the selected suite and a false output still skips', () => {
+  const withScope = (
+    result,
+    outputs,
+    { ready = true, base = 'main' } = {}
+  ) => ({
+    github: {
+      base_ref: base,
+      event: {
+        pull_request: { labels: ready ? [{ name: 'ready-for-ci' }] : [] },
+      },
+    },
+    needs: { scope: { result, outputs } },
+  });
+  for (const name of [
+    'oxc',
+    'i18n',
+    'docs',
+    'migration-timestamps',
+    'migrations',
+    'mobile',
+    'plugin',
+  ]) {
+    assert.match(workflow.jobs[name].if, /^always\(\) && !cancelled\(\) && /u);
+    assert.equal(
+      Boolean(
+        evaluateExpression(workflow.jobs[name].if, withScope('failure', {}))
+      ),
+      true,
+      name
+    );
+    assert.equal(
+      Boolean(
+        evaluateExpression(workflow.jobs[name].if, withScope('cancelled', {}))
+      ),
+      true,
+      name
+    );
+    assert.equal(
+      Boolean(
+        evaluateExpression(workflow.jobs[name].if, withScope('skipped', {}))
+      ),
+      false,
+      name
+    );
+  }
+  assert.equal(
+    Boolean(
+      evaluateExpression(
+        workflow.jobs.oxc.if,
+        withScope('success', { oxc: 'false' })
+      )
+    ),
+    false
+  );
+  assert.equal(
+    Boolean(
+      evaluateExpression(
+        workflow.jobs.oxc.if,
+        withScope('success', { oxc: 'true' })
+      )
+    ),
+    true
+  );
+  assert.equal(
+    Boolean(
+      evaluateExpression(
+        workflow.jobs.oxc.if,
+        withScope('failure', {}, { ready: false })
+      )
+    ),
+    false
+  );
+  assert.equal(
+    Boolean(
+      evaluateExpression(
+        workflow.jobs.mobile.if,
+        withScope('failure', {}, { base: 'production' })
+      )
+    ),
+    false
+  );
+});
+
+test('a missing path-filter output selects the check and the string false does not', () => {
+  for (const name of [
+    'oxc',
+    'i18n',
+    'docs',
+    'migrations',
+    'mobile',
+    'plugin',
+  ]) {
+    const expression = workflow.jobs.scope.outputs[name];
+    assert.equal(evaluateExpression(expression, { steps: {} }), 'true', name);
+    assert.equal(
+      evaluateExpression(expression, {
+        steps: { paths: { outputs: { [name]: 'false' } } },
+      }),
+      'false',
+      name
+    );
+    assert.equal(
+      evaluateExpression(expression, {
+        steps: { paths: { outputs: { [name]: 'true' } } },
+      }),
+      'true',
+      name
+    );
+  }
+  for (const step of workflow.jobs.scope.steps)
+    assert.equal(step['continue-on-error'], true);
+  const paths = workflow.jobs.scope.steps.find((step) => step.id === 'paths');
+  assert.equal(paths.with.token, undefined);
+});
+
 test('security scope remains always on for every security-relevant path without readiness', () => {
   const security = workflows['security-checks.yaml'];
   assert.equal(security.on.pull_request, null);
