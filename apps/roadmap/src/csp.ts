@@ -13,20 +13,18 @@
  * nonce would be replayable. No 'unsafe-inline' or 'unsafe-eval' for scripts.
  */
 
-/** End tags may carry whitespace or attributes (`</script >`, `</script x>`). */
-const INLINE_SCRIPT = /<script\b([^>]*)>([\s\S]*?)<\/script[^>]*>/gi;
+import { inlineScriptTexts } from './html-scripts.ts';
+
 const MAX_INLINE_SCRIPTS = 32;
 const MAX_DOCUMENT_BYTES = 2 * 1024 * 1024;
 
-/** Text of every inline (no src) script element, exactly as served. */
+/**
+ * Text of every real inline (no src) script element, exactly as served.
+ * Tokenized, not regex-matched: `<script>` inside attribute values, comments
+ * or raw-text elements is data and must never be hashed into script-src.
+ */
 export function inlineScripts(html: string): string[] {
-  const scripts: string[] = [];
-  for (const match of html.matchAll(INLINE_SCRIPT)) {
-    if (/(?:^|\s)src\s*=/i.test(match[1] ?? '')) continue;
-    const body = match[2] ?? '';
-    if (body.length) scripts.push(body);
-  }
-  return scripts;
+  return inlineScriptTexts(html);
 }
 
 export async function sha256Base64(text: string): Promise<string> {
