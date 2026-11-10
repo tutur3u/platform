@@ -27,6 +27,12 @@ const runtime = vi.hoisted(() => {
 vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
   createBridgeStartHandler: () => ({ fetch: runtime.start }),
 }));
+// The deploy gate refuses every request outside a production build, which
+// includes vitest (NODE_ENV=test). These tests cover what the Worker does
+// once deployed; the gate itself is tested in required-bindings.test.ts.
+vi.mock('../../cloudflare/required-bindings', () => ({
+  missingRequiredBindings: () => false,
+}));
 vi.mock('@tuturuuu/supabase/next/proxy', () => ({
   updateSession: () => {
     throw new Error('No provider session');
