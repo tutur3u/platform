@@ -37,6 +37,13 @@ export interface CsrfCheckInput {
    * bearer string must still prove it is same-origin.
    */
   bearerRequiresNoSessionCookie?: boolean;
+  /**
+   * When true, a request without a session cookie still needs same-origin
+   * proof (a cookie-less bearer request stays exempt). For endpoints such as
+   * logout whose response clears session cookies: a browser applies those
+   * deletions even to a cross-site top-level POST that carried no cookie.
+   */
+  requireOriginWithoutSessionCookie?: boolean;
 }
 
 export type CsrfAllowReason =
@@ -136,7 +143,7 @@ export function checkCsrf(input: CsrfCheckInput): CsrfVerdict {
     return { ok: true, reason: 'bearer' };
   }
 
-  if (!hasCookie) {
+  if (!hasCookie && !input.requireOriginWithoutSessionCookie) {
     return { ok: true, reason: 'no-session-cookie' };
   }
 

@@ -131,6 +131,43 @@ describe('checkCsrf', () => {
     });
   });
 
+  describe('requireOriginWithoutSessionCookie (session-clearing endpoints)', () => {
+    const clearing = (headers: Record<string, string>) =>
+      checkCsrf({
+        allowedOrigins: [APEX],
+        headers: new Headers(headers),
+        method: 'POST',
+        pathname: '/api/auth/logout',
+        requireOriginWithoutSessionCookie: true,
+      });
+
+    it('refuses a cookie-less cross-site POST', () => {
+      expect(clearing({ 'sec-fetch-site': 'cross-site' })).toMatchObject({
+        ok: false,
+        reason: 'cross-site',
+      });
+      expect(clearing({ origin: 'https://evil.example' })).toMatchObject({
+        ok: false,
+        reason: 'origin-mismatch',
+      });
+      expect(clearing({})).toMatchObject({ ok: false });
+    });
+
+    it('admits same-origin proof and cookie-less bearer clients', () => {
+      expect(clearing({ 'sec-fetch-site': 'same-origin' })).toEqual({
+        ok: true,
+        reason: 'same-origin',
+      });
+      expect(clearing({ origin: APEX })).toMatchObject({ ok: true });
+      expect(
+        clearing({
+          authorization: 'Bearer eyJ.token',
+          'sec-fetch-site': 'cross-site',
+        })
+      ).toEqual({ ok: true, reason: 'bearer' });
+    });
+  });
+
   it('does not treat an empty bearer as bearer auth', () => {
     expect(
       check({

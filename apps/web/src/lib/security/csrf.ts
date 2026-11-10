@@ -19,6 +19,17 @@ export const WEB_CSRF_EXEMPTIONS: readonly CsrfExemption[] = [
 ];
 
 /**
+ * Endpoints whose response clears the session cookies. They need same-origin
+ * proof even without a session cookie, because a browser applies the cookie
+ * deletions to a cross-site top-level POST that carried none.
+ */
+export const WEB_SESSION_CLEARING_PATHS: ReadonlySet<string> = new Set([
+  '/api/auth/logout',
+  '/api/v1/auth/accounts/logout',
+  '/api/v1/auth/accounts/logout-all',
+]);
+
+/**
  * Origins of satellite apps whose `/api/*` requests are forwarded verbatim to
  * Web. A forwarded request arrives on Web's own host, so a client that sends
  * no `Sec-Fetch-Site` identifies itself by the satellite's `Origin` instead.
@@ -58,6 +69,9 @@ export function guardWebApiCsrf(
     headers: req.headers,
     method: req.method,
     pathname: req.nextUrl.pathname,
+    requireOriginWithoutSessionCookie: WEB_SESSION_CLEARING_PATHS.has(
+      req.nextUrl.pathname
+    ),
   });
   if (verdict.ok) return null;
 
