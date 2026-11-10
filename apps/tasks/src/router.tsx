@@ -1,6 +1,7 @@
 import { createRouter } from '@tanstack/react-router';
 import { routerBasepath } from '@tuturuuu/start-bridge/start/base-path';
 import { routeTree } from './routeTree.gen';
+import './runtime/app-base';
 import { TasksError } from './runtime/router-shell';
 import '@tuturuuu/tasks-ui/globals.css';
 import './style/prosemirror.css';
