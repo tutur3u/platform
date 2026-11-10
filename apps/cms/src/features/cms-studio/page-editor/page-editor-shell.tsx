@@ -82,7 +82,7 @@ export function PageEditorShell({
         className
       )}
     >
-      <div className="sticky top-0 z-20 border-[var(--ieeai-border)] border-b bg-white/95 backdrop-blur">
+      <div className="z-20 border-[var(--ieeai-border)] border-b bg-white/95 backdrop-blur lg:sticky lg:top-0">
         {topBar}
       </div>
 

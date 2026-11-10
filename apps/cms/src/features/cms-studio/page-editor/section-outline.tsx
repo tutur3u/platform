@@ -54,8 +54,16 @@ export function SectionOutline({
 
   return (
     <nav aria-label={labels.outlineTitle} className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className={cn(ieeai.eyebrow)}>{labels.outlineTitle}</h2>
+      <div
+        className={cn(
+          'items-center justify-between gap-2',
+          onAdd ? 'flex' : 'hidden lg:flex'
+        )}
+      >
+        {/* On narrow screens the panel toggle already shows this title. */}
+        <h2 className={cn(ieeai.eyebrow, 'hidden lg:block')}>
+          {labels.outlineTitle}
+        </h2>
         {onAdd ? (
           <button
             type="button"

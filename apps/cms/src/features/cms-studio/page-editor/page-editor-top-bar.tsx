@@ -96,7 +96,7 @@ export function PageEditorTopBar({
         </div>
         <span
           className={cn(
-            'hidden shrink-0 rounded-full px-2.5 py-0.5 font-semibold text-xs sm:inline-flex',
+            'inline-flex shrink-0 rounded-full px-2.5 py-0.5 font-semibold text-xs',
             status.live
               ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200'
               : 'bg-[var(--ieeai-surface-2)] text-[var(--ieeai-muted)]'
@@ -133,11 +133,11 @@ export function PageEditorTopBar({
         {preview ? (
           <button
             type="button"
-            className={cn(ieeai.pillSecondary, ieeai.focus, 'h-9')}
+            className={cn(ieeai.pillSecondary, ieeai.focus, 'h-9 px-3 sm:px-4')}
             onClick={preview.onPreview}
           >
             <Eye className="size-4" aria-hidden />
-            {preview.label}
+            <span className="sr-only sm:not-sr-only">{preview.label}</span>
           </button>
         ) : null}
         {publish ? (
