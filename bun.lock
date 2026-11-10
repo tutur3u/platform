@@ -1222,6 +1222,7 @@
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/legal": "workspace:*",
+        "@tuturuuu/marketing-shell": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/start-bridge": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
