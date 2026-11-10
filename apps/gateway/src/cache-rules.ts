@@ -191,7 +191,8 @@ export type BodyProblem = 'empty-body' | 'truncated-body';
 export async function inspectAssetBody(
   response: Response
 ): Promise<{ response: Response; problem: BodyProblem | null }> {
-  const declared = Number(response.headers.get('content-length'));
+  const header = response.headers.get('content-length');
+  const declared = header === null ? Number.NaN : Number(header);
   const encoded = (response.headers.get('content-encoding') ?? '')
     .trim()
     .toLowerCase();
