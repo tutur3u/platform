@@ -88,7 +88,7 @@ describe('unmanaged profile atomic write and original-operation observation', ()
     expect(options).toMatchObject({
       method: 'POST',
       cache: 'no-store',
-      redirect: 'error',
+      redirect: 'manual',
     });
     expect(f.authorize.mock.calls).toEqual([[actorUserId], [actorUserId]]);
   });
