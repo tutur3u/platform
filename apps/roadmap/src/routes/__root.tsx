@@ -12,12 +12,25 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      {
+        name: 'viewport',
+        content: 'width=device-width, initial-scale=1, viewport-fit=cover',
+      },
+      {
+        name: 'theme-color',
+        content: '#0a0a0a',
+        media: '(prefers-color-scheme: dark)',
+      },
+      {
+        name: 'theme-color',
+        content: '#fdf9f7',
+        media: '(prefers-color-scheme: light)',
+      },
       { title: 'Roadmap · Tuturuuu' },
       {
         name: 'description',
         content:
-          'Follow Tuturuuu’s migration to Cloudflare. Public milestones, current work and the evidence behind each update.',
+          'What Tuturuuu is building: every product track, milestone and deliverable, with what shipped this week, live from public pull requests and deploy checks.',
       },
     ],
     links: [

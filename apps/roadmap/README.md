@@ -1,103 +1,76 @@
 # Tuturuuu public roadmap
 
-A public, read-only migration roadmap served by TanStack Start, Vite+ and Void on
-Cloudflare Workers. The canonical app mount is `/roadmap`; assets and server-function
-URLs use the same prefix. The provider asset base is root (omitted in source);
-the post-build packaging step moves client files beneath `dist/client/roadmap/`.
-Thus `/roadmap/assets/example.js` maps to the physical
-`dist/client/roadmap/assets/example.js` through the `ASSETS` binding. Wrangler must be at least 4.148.0. There are no accounts, database bindings, analytics,
-forms, provider credentials or private fleet dependencies.
+The public product roadmap at https://tuturuuu.com/roadmap/, served by TanStack
+Start, Vite+ and Void on Cloudflare Workers. The canonical app mount is
+`/roadmap`; assets and server-function URLs use the same prefix. The provider
+asset base is root (omitted in source); the post-build packaging step moves
+client files beneath `dist/client/roadmap/`. Thus `/roadmap/assets/example.js`
+maps to the physical `dist/client/roadmap/assets/example.js` through the
+`ASSETS` binding. Wrangler must be at least 4.148.0. There are no accounts,
+database bindings, analytics, forms, provider credentials or private fleet
+dependencies.
 
-## Public evidence
+## Content and status
 
-`scripts/refresh-snapshot.mjs` reads immutable tracked source for the fixed allowlist
-of public customer-facing products and three explicitly admitted public route entries. Run it manually; it has no watcher, network
-fetch, database, provider credentials or private fleet dependencies.
+`src/content/tracks.ts` is the curated roadmap: tracks → milestones →
+deliverables. Each deliverable lists the public PRs in tutur3u/platform that
+deliver it and the app whose production deploy must contain them. Status is
+never written by hand; `src/live/status.ts` derives it from evidence:
+
+| Status | Rule |
+| --- | --- |
+| Live | Every PR merged and the app's deployed commit is at or after the last merge on main. Hosting moves (`requires: 'workers'`) need the app's probe to answer from Workers. Mobile needs the latest `mobile-v*` release tag to contain the merge. Items with no deploy target are live once merged. |
+| Waiting for prod sync | Merged; production does not contain it yet, or the deploy cannot be verified publicly. |
+| Waiting for merge | Every unmerged PR is open, not draft and approved. |
+| In progress | Any other open PR, or curated `fallback: 'in_progress'` with no PR. |
+| Planned | No public evidence. No claims. |
+
+`src/content/coming-soon.ts` holds approved announcement copy only; change it
+only with an approved replacement. Never add private products, client names,
+security incidents, operational notes or tokens to content.
+
+## Live data
+
+Data comes from public sources only, in two layers:
+
+1. **Build time.** `scripts/generate-roadmap-data.mjs` (run by `build`,
+   `build:cloudflare` and `data:refresh`) reads the public GitHub REST API (open,
+   approved and recently merged PRs, every PR the content references, main
+   HEAD, deployed-commit-vs-main compares and the latest mobile release tag)
+   and probes each allowlisted app's public `/api/build-info`. It writes
+   `src/generated/live.json`. `GITHUB_TOKEN`/`GH_TOKEN` is optional and only
+   lifts the anonymous rate limit; it is never written. If GitHub fails, the
+   previous file is kept with its own timestamp. `ROADMAP_OFFLINE=1` skips the
+   refresh.
+2. **In the browser.** After hydration the page refreshes from the public
+   GitHub API (unauthenticated, the viewer's own quota, about 10 calls) and
+   from `GET /roadmap/api/hosts`, then every 10 minutes while visible. The last
+   good result is kept in `localStorage` for 10 minutes. A failed refresh shows
+   the newest good data with its real observation time ("Live check
+   unavailable"), never a fresher-looking label.
+
+`GET|HEAD /roadmap/api/hosts` probes the fixed allowlist in
+`src/live/host-probe.ts` (request input never selects a host), with manual
+redirects, a 4-second timeout and a 16 KiB body bound. It returns only
+`{ app, platform, commit }` per app, with `private,no-store`. One isolate
+shares a result for 60 seconds, so bursts fan out at most once a minute.
+
+The shipped feed (`src/live/feed.ts`) publishes merged PR titles only when
+they are `feat`/`perf` in a public product scope and contain no incident,
+security, customer or internal-plumbing wording. Client or organisation names
+are blocked through hashed terms in `src/content/title-denylist.ts`; add one
+with `node apps/roadmap/scripts/hash-denylist-term.mjs "Name"` and never
+commit the name itself.
 
 ```sh
-node apps/roadmap/scripts/refresh-snapshot.mjs <source-sha> apps/roadmap/evidence/public-inputs.json [observation-ISO-time]
+GITHUB_TOKEN=$(gh auth token) bun run --cwd apps/roadmap data:refresh
 node --test apps/roadmap/src/roadmap-data.test.ts
 ```
 
-The optional input is bounded to 128 KiB and validated by
-`src/migration-evidence.ts`: `{ "schemaVersion": 2, "apps": {} }` is an empty
-input. App keys must belong to the public allowlist. Each value has exactly `source`, `pr` and `production`, each nullable.
-Source records pin the cohort and app subtree; PR records include the exact public
-GitHub API provenance URL and observation time. Historic review and checks stay
-UNKNOWN or empty when they were not observed, rather than implying current green. The snapshot records these normalized inputs,
-the input SHA-256, source commit, observation time and source-verified merge
-inclusion. Reproduce it with the same source, input bytes and observation time.
-Review public evidence inputs before generating; never include private products,
-customer records, accounts, check logs, security reasons or operational notes.
-No status is assigned directly in the input. Source URLs encode each path segment
-using RFC3986, including brackets and parentheses. Every evidence URL must be
-absolute HTTPS at its category's exact host, without userinfo, query or fragment;
-malformed escapes and noncanonical/raw reserved path characters are rejected.
-Supplied migration PR and production receipt links accompany source links when
-actual stage proof is available; no PR is inferred from configuration.
-
-A PR record identifies its public first-party PR URL, `migration_completion`
-or roadmap-only `root_assets_correction` scope, open/merged/closed state, current head, draft flag, review decision and
-reviewed head, observation time, required check names, check names/head/conclusions,
-and nullable merge SHA/time. Only use a PR that completes the product migration;
-configuration scaffolding or an unrelated feature PR is not completion evidence.
-The generator requires a recorded merged SHA to be an ancestor of the source.
-It does not fetch or authenticate manually supplied metadata: retain the actual
-public evidence and review its provenance, scope and observation before inclusion.
-
-The lifecycle is `planned` → `rolling_out` → `waiting_for_merge` →
-`waiting_for_production_sync` → `live`. The public labels are Planned, Rolling
-out, Waiting for merge, Waiting for prod sync and Live. Configuration only supports work in
-progress. Awaiting merge requires a fresh non-draft open PR, explicit approval at
-its current head, a nonempty required check set and all recorded checks successful
-at that head. Missing, skipped, pending, unknown, stale or mismatched checks cannot
-establish readiness. An evidenced merged migration waits for production verification.
-Blocked is a separate public-safe flag derived from the publication hold, never
-a replacement stage; the checkbox combines with any lifecycle filter and search.
-
-A production record must have kind `production_readback`, an app scope, a named
-accepted public target, immutable public repository `receiptUrl` and SHA-256,
-deployed and response SHAs, version UUID, acceptance result and observation time.
-Response and deployed SHA must match exactly. The equivalence proof retains the
-separate pinned source, merge and deployed commits plus app identity and subtree.
-The generator checks merge ancestry and reads all three app subtrees from Git;
-only exact app-tree equality permits a different deployment cohort. Whole commits
-are never treated as equal because one app matches. A receipt may predate the
-merge when the independently released cohort has identical app source; the
-24-hour freshness fence still applies.
-
-The generator reads the immutable receipt blob without fetching it and checks
-its bounded bytes and digest. Its JSON must exactly equal the production record
-without the `receiptUrl` and `receiptSha256` pointer fields. An archive/build,
-unknown receipt, wrong app/host/cohort/merge/subtree, or mismatched response cannot
-establish live. This validates provenance and source consistency; it does not
-authenticate provider metadata. Independent source and receipt review remains
-required before integration.
-
-For roadmap, only the admitted `/roadmap/` URLs at `roadmap.tuturuuu.com` and
-`tuturuuu-roadmap.tuturuuu-e89.workers.dev` can carry production proof. The canonical
-apex URL is not an accepted serving target. The original 14 products retain their exact apex target restrictions; Playground
-and Shortener have no admitted production target in this input and remain
-merge-backed only. All evidence categories retain canonical RFC3986 HTTPS
-and exact-host validation.
-
-The committed public inputs contain merge-backed Playground #7647, Shortener
-#7788 and roadmap #7797 facts observed through the public GitHub API, plus source
-app subtrees at `a3a26468748d9660851b809bb4a43f7ab94610d3`. They support waiting
-for production verification, not live. Their product links point to source-verified
-public route definitions rather than invented marketing pages; the original 14
-public product entries are retained. No other fleet entries are included.
-
-Roadmap cohort `299ed1dfd72870685cf47291a2e35efe876d8ff9` and merge `a3a26468`
-have verified app subtree `3b8d0a012d919d1a2ccb00755e077b2c727847fe`. The required
-immutable public production receipt, digest and recorded observation/provenance
-are not supplied in this input, so roadmap live remains unclaimed. No raw provider
-operations or private receipts belong in the evidence directory. A future public
-receipt must contain only sanitized admitted production fields, without credentials,
-account identifiers, local paths or private fleet details.
-
-Pure Node tests cover every stage, orthogonal blocking, filters/counts, bilingual
-labels, public boundaries and invalid/stale/head-mismatched evidence.
+`src/roadmap-data.test.ts` (D79) covers the validator, status engine, content
+guards, the approved plan copy, feed safety (including a denylist and hashed
+names), freshness merging and the host probe. Each guard has a broken variant
+that must fail.
 
 ## Build and publication
 
@@ -187,8 +160,8 @@ any existing zone redirect with this contract and capture routing preimages
 before a hosted rollout.
 No DNS, zone, provider or deployment operation follows from source publication.
 Before sealing, `scripts/pre-seal-doctor.mjs` serves the built Worker on
-loopback with `Host: tuturuuu.com` (200, Tuturuuu branding, the five stage
-labels, public HTML cache, immutable hashed asset) and `Host:
+loopback with `Host: tuturuuu.com` (200, Tuturuuu branding, the five status
+labels and the approved plan card, public HTML cache, immutable hashed asset) and `Host:
 roadmap.tuturuuu.com` (301 straight to `https://tuturuuu.com/roadmap/`), and
 reads `/roadmap/api/build-info` for `ROADMAP_SOURCE_SHA`. It also runs
 `scripts/ci/asset-smoke.mjs`: every CSS, JS and font URL referenced by the
@@ -221,7 +194,8 @@ Official tooling references:
 
 The public page opts into `@tuturuuu/satellite/public` for the shared brand,
 logo and theme. It does not mount authenticated satellite providers or resolve
-sessions. EN/VI controls, filters and evidence use the bundled public snapshot.
+sessions. EN/VI controls, filters and statuses use the generated public data,
+refreshed in the browser from public sources.
 A central sign-in link is the only account affordance. Root and mounted-host
 router selection and the canonical apex URL remain owned by the request adapter.
 

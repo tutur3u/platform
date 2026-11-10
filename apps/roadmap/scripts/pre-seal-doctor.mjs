@@ -33,10 +33,11 @@ registerHooks({
 
 export const STAGE_LABELS = [
   'Planned',
-  'Rolling out',
+  'In progress',
   'Waiting for merge',
   'Waiting for prod sync',
   'Live',
+  'Mira subscription plans',
 ];
 
 const LOGO = 'https://tuturuuu.com/media/logos/transparent.png';

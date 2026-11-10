@@ -1,6 +1,7 @@
 import handler from '@tanstack/react-start/server-entry';
 import { buildInfoResponse, isBuildInfoPath } from './build-info.ts';
 import { isHashedAssetPath, withRoadmapCachePolicy } from './cache-policy.ts';
+import { hostsResponse, isHostsPath } from './live/host-probe.ts';
 import {
   normalizeLocalHost,
   prepareRoadmapRequest,
@@ -49,6 +50,18 @@ export default {
       return withRoadmapCachePolicy(
         request,
         buildInfoResponse(__ROADMAP_BUILD_SHA__, request.method)
+      );
+    }
+    if (isHostsPath(url.pathname)) {
+      return withRoadmapCachePolicy(
+        request,
+        await hostsResponse(
+          request.method,
+          (url, init) => fetch(url, init),
+          /^[a-f0-9]{40}$/.test(__ROADMAP_BUILD_SHA__)
+            ? __ROADMAP_BUILD_SHA__
+            : null
+        )
       );
     }
     const asset = await hashedAssetResponse(request, options[0]);
