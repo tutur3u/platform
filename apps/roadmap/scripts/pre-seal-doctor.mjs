@@ -5,6 +5,7 @@
  * and Host roadmap.tuturuuu.com. A passing live probe is not enough: the same
  * checker must reject a broken variant (D79) before the artifact is sealed.
  */
+import { createHash } from 'node:crypto';
 import { once } from 'node:events';
 import { existsSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
@@ -108,6 +109,51 @@ function canonicalFailures(observation, body) {
   return failures;
 }
 
+const REQUIRED_CSP = [
+  "object-src 'none'",
+  "base-uri 'none'",
+  "frame-ancestors 'self'",
+  "connect-src 'self' https://api.github.com",
+];
+
+/**
+ * sha256 of each inline script, as a CSP source expression. Same scan as
+ * src/csp.ts; end tags may carry whitespace or attributes (`</script >`).
+ */
+export function inlineScriptHashes(html) {
+  const hashes = [];
+  for (const match of String(html).matchAll(
+    /<script\b([^>]*)>([\s\S]*?)<\/script[^>]*>/gi
+  )) {
+    if (/(?:^|\s)src\s*=/i.test(match[1] ?? '') || !match[2]) continue;
+    hashes.push(
+      `'sha256-${createHash('sha256').update(match[2]).digest('base64')}'`
+    );
+  }
+  return hashes;
+}
+
+/** Every SSR inline script must be allowed, and nothing broader. */
+export function cspFailures(body, csp) {
+  const policy = String(csp ?? '');
+  if (!policy) return ['canonical HTML missing content-security-policy'];
+  const failures = [];
+  const scriptSrc =
+    policy
+      .split(';')
+      .map((part) => part.trim())
+      .find((part) => part.startsWith('script-src ')) ?? '';
+  if (!scriptSrc) failures.push('CSP missing script-src');
+  if (/'unsafe-inline'|'unsafe-eval'|\*|https?:/.test(scriptSrc))
+    failures.push(`CSP script-src too broad: ${scriptSrc}`);
+  for (const hash of inlineScriptHashes(body))
+    if (!scriptSrc.split(/\s+/).includes(hash))
+      failures.push(`CSP script-src does not allow inline script ${hash}`);
+  for (const directive of REQUIRED_CSP)
+    if (!policy.includes(directive)) failures.push(`CSP missing ${directive}`);
+  return failures;
+}
+
 export function assessDoctor(observation) {
   const failures = [];
   const canonical = observation.canonical ?? {};
@@ -150,6 +196,7 @@ export function assessDoctor(observation) {
     failures.push(`canonical HTML cache-control ${cache || '(missing)'}`);
   }
   failures.push(...canonicalFailures(observation, body));
+  failures.push(...cspFailures(body, canonical.csp));
   if (!body.includes('id="timeline-title"'))
     failures.push('canonical HTML missing the timeline');
   if (
@@ -238,6 +285,7 @@ function probe(port, path, host) {
             status: response.statusCode ?? 0,
             location: headerValue(response.headers.location),
             cacheControl: headerValue(response.headers['cache-control']),
+            csp: headerValue(response.headers['content-security-policy']),
             contentType: headerValue(response.headers['content-type']),
             bytes: Buffer.concat(chunks),
             body: Buffer.concat(chunks).toString('utf8'),

@@ -89,6 +89,24 @@ guards, the approved plan copy, feed safety (including a denylist and hashed
 names), freshness merging and the host probe. Each guard has a broken variant
 that must fail.
 
+## Content-Security-Policy
+
+`src/csp.ts` attaches a CSP to every HTML response from the SSR handler.
+`script-src` is `'self'` plus the sha256 of each inline script in that exact
+response (theme bootstrap and TanStack stream bootstrap; the stream bootstrap
+changes per request, so hashes are computed per response). There is no
+`'unsafe-inline'`, `'unsafe-eval'` or nonce (the document is publicly
+cacheable). Scripts injected after the Worker, including Cloudflare's
+edge-injected JavaScript detections, are blocked. Other directives:
+`default-src 'self'`, `style-src 'self' 'unsafe-inline'` (inline styles cannot
+run script; SSR bar widths and the marketing shell's runtime scroll-lock style
+need it), `img-src`/`font-src 'self' data:`,
+`connect-src 'self' https://api.github.com`, `object-src 'none'`,
+`base-uri 'none'`, `form-action 'none'`, `frame-ancestors 'self'` and
+`upgrade-insecure-requests`. The pre-seal doctor fails if any SSR inline
+script is not allowed or `script-src` is broader; a source test keeps raw-HTML
+and dynamic-code sinks out of `src`.
+
 ## Build and publication
 
 Use the frozen dependency versions in this workspace manifest. In an admitted CI
