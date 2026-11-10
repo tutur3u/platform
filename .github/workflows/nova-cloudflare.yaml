@@ -336,6 +336,9 @@ jobs:
           test "$(node -p "require('./apps/nova/dist/server/wrangler.json').preview_urls")" = false
           test -f apps/nova/dist/server/index.mjs
           test -d apps/nova/dist/client
+      - name: Pre-seal doctor on the production Host header
+        timeout-minutes: 3
+        run: node scripts/ci/pre-seal-doctor.mjs nova apps/nova nova.tuturuuu.com "$SOURCE_SHA"
       - name: Validate, seal and pack the final production output
         env:
           NOVA_SOURCE_SHA: ${{ env.SOURCE_SHA }}
