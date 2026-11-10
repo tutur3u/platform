@@ -38,7 +38,10 @@ export function serializeSyncFailures(
       ...kept,
       {
         connectionId: failure.connectionId,
-        calendarName: failure.calendarName.slice(0, CALENDAR_NAME_MAX_CHARS),
+        calendarName: String(failure.calendarName ?? '').slice(
+          0,
+          CALENDAR_NAME_MAX_CHARS
+        ),
         code: failure.code,
       },
     ];
