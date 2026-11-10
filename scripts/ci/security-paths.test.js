@@ -77,15 +77,27 @@ test('security-sensitive paths require review by category', () => {
   }
 });
 
-test('cache-policy is not rls-database and a real RLS path still is', () => {
-  assert.ok(
-    !categoriesOf(['apps/roadmap/src/cache-policy.ts']).includes('rls-database')
-  );
-  assert.ok(
-    !categoriesOf([
-      'apps/calendar/src/lib/calendar/google-oauth-urls.ts',
-    ]).includes('rls-database')
-  );
+test('policy filenames stay reviewed and are not labeled rls-database', () => {
+  for (const filePath of [
+    'apps/roadmap/src/cache-policy.ts',
+    'apps/calendar/src/runtime/response-policy.ts',
+    'apps/finance/src/lib/api-route-policies.ts',
+    'apps/mobile/lib/features/auth/required_mfa_policy.dart',
+  ]) {
+    const categories = categoriesOf([filePath]);
+    assert.ok(categories.includes('security-policy'), filePath);
+    assert.equal(categories.includes('rls-database'), false, filePath);
+  }
+  for (const filePath of [
+    'apps/calendar/src/lib/calendar/google-oauth-urls.ts',
+    'apps/web/src/lib/use-image-urls.ts',
+  ]) {
+    assert.equal(
+      categoriesOf([filePath]).includes('rls-database'),
+      false,
+      filePath
+    );
+  }
   assert.ok(
     categoriesOf([
       'supabase/migrations/20260101000000_enable_rls.sql',
