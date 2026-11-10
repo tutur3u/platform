@@ -904,10 +904,10 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7970",
-        "reason": "Gateway Worker config (#7970) is the provider-owned wrangler.jsonc, not a CI publisher. Pending migration to cloudflare.config.ts; the pending-migration removal condition remains."
+        "decision": "https://github.com/tutur3u/platform/pull/8048",
+        "reason": "REV-8048: formatting-only change (trailing commas added by oxfmt) to the provider-owned gateway wrangler.jsonc; no config values changed. The pending-migration gap and its removal condition remain."
       },
-      "digest": "43facbe1ee937323e1ad40dfb202ecf12012beaa6d47ebf3919c062d23cbf772"
+      "digest": "bfae370a32c8556de317babc69ef42dc823c7cf2f53727f65ebd2a928932e48b"
     },
     "apps/git/.gitignore": {
       "lines": 1,
@@ -2513,6 +2513,16 @@
       },
       "digest": "998eab277701cfe7eb3e4c9670cf831bc372faada4dd8b603cf69d6cbbd808a6"
     },
+    "scripts/ci/cms-native-artifact.test.py": {
+      "lines": 5,
+      "uses": 5,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8051",
+        "reason": "REV-8051: the native seal test fixture names the emitted wrangler.json and .void-wrangler.jsonc config paths. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "23c7d480f98c6d765ed9923b09ffc1ea465f257688893e1d22e5221d0ef3d2c7"
+    },
     "scripts/ci/finance-cutover-smoke.mjs": {
       "lines": 1,
       "uses": 1,
@@ -2713,6 +2723,16 @@
       },
       "digest": "6d5307a70cba9f3e0b46e661415f77a3ec285dc135980df299839f07e80a387c"
     },
+    "scripts/ci/mind-native-artifact.test.py": {
+      "lines": 5,
+      "uses": 5,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8051",
+        "reason": "REV-8051: the native seal test fixture names the emitted wrangler.json and .void-wrangler.jsonc config paths. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "23c7d480f98c6d765ed9923b09ffc1ea465f257688893e1d22e5221d0ef3d2c7"
+    },
     "scripts/ci/native-config-default-probe.mjs": {
       "lines": 4,
       "uses": 4,
@@ -2873,6 +2893,16 @@
       },
       "digest": "c63cce5b834793d1c373b7e550aa81958f6e2645afd87d2444ef2e64043b9160"
     },
+    "scripts/ci/nova-native-artifact.test.py": {
+      "lines": 5,
+      "uses": 5,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8051",
+        "reason": "REV-8051: the native seal test fixture names the emitted wrangler.json and .void-wrangler.jsonc config paths. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "23c7d480f98c6d765ed9923b09ffc1ea465f257688893e1d22e5221d0ef3d2c7"
+    },
     "scripts/ci/pay-native-artifact.test.py": {
       "lines": 8,
       "uses": 9,
@@ -2912,6 +2942,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "aba0d9cb39738a5d38ae942061604adfe84a0f6266913037cdf9d4b47a5ae757"
+    },
+    "scripts/ci/rewise-native-artifact.test.py": {
+      "lines": 5,
+      "uses": 5,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8051",
+        "reason": "REV-8051: the native seal test fixture names the emitted wrangler.json and .void-wrangler.jsonc config paths. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "23c7d480f98c6d765ed9923b09ffc1ea465f257688893e1d22e5221d0ef3d2c7"
     },
     "scripts/ci/rust-verification-workflow.test.js": {
       "lines": 8,
