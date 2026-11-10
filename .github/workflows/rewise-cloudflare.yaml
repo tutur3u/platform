@@ -232,6 +232,9 @@ jobs:
           command: cd apps/rewise && bun run build:cloudflare
           token: ''
           team: ''
+      - name: Pre-seal doctor on the production Host header
+        timeout-minutes: 3
+        run: node scripts/ci/pre-seal-doctor.mjs rewise apps/rewise rewise.tuturuuu.com "$SOURCE_SHA" --expect-redirect
       - name: Seal and pack Worker, assets and emitted Wrangler config
         run: |
           python3 scripts/ci/rewise-native-artifact.py config apps/rewise
