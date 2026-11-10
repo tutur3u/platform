@@ -46,6 +46,7 @@ export interface CallState {
   liveAssistant?: { sessionId: string; ownerId: string };
   title?: string;
   roomExpiresAt?: string;
+  maxParticipants?: number;
   ended: boolean;
   settings: MeetRoomSettings;
   approved: MeetApprovedParticipant[];
@@ -138,6 +139,7 @@ export function reduceCallState(
         admission: message.admission === 'waiting' ? 'waiting' : 'admitted',
         admissionReason: undefined,
         roomExpiresAt: message.roomExpiresAt,
+        maxParticipants: message.limits?.maxParticipants,
         error: null,
         remoteTracks: message.tracks
           ? Object.fromEntries(
