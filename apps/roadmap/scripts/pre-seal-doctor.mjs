@@ -115,21 +115,20 @@ export function assessDoctor(observation) {
   if (canonical.status !== 200) {
     failures.push(`canonical status ${canonical.status}, expected 200`);
   }
-  if (!body.includes('aria-label="Tuturuuu"')) {
-    failures.push('canonical HTML missing Tuturuuu branding');
-  }
-  if (!MOUNTED_LOGO.test(body)) {
+  // The shared marketing layout (@tuturuuu/marketing-shell), as on /home.
+  for (const [marker, name] of [
+    ['id="navbar"', 'the marketing navbar'],
+    ['id="main-content"', 'the marketing main frame'],
+    ['<footer', 'the marketing footer'],
+    ['alt="Tuturuuu"', 'Tuturuuu branding'],
+  ])
+    if (!body.includes(marker)) failures.push(`canonical HTML missing ${name}`);
+  if (!MOUNTED_LOGO.test(body))
     failures.push('canonical HTML missing the mounted Tuturuuu logo');
-  }
-  if (!body.includes('public-satellite-shell')) {
-    failures.push('canonical HTML missing the shared satellite shell');
-  }
-  if (
-    !body.includes('https://tuturuuu.com/login') ||
-    !body.includes('Sign in')
-  ) {
-    failures.push('canonical HTML missing the optional sign-in link');
-  }
+  if (body.includes('public-satellite-shell'))
+    failures.push('canonical HTML still uses the satellite shell');
+  if (!body.includes('https://tuturuuu.com/login'))
+    failures.push('canonical HTML missing the get-started link');
   const plansShown = observation.showPlans ?? true;
   if (plansShown !== body.includes(PLAN_LABEL)) {
     failures.push(
@@ -488,7 +487,7 @@ async function main() {
             ...observation,
             canonical: {
               status: 200,
-              body: `<div class="public-satellite-shell" aria-label="Tuturuuu">${LOGO_TAG} Sign in https://tuturuuu.com/login ${STAGE_LABELS.join(' ')} /roadmap/assets/index-CGgt8iCG.js</div>`,
+              body: `<header id="navbar"><img alt="Tuturuuu" src="/roadmap/assets/tuturuuu-logo-Abcd1234.png"></header><div id="main-content"></div><footer></footer> https://tuturuuu.com/login ${STAGE_LABELS.join(' ')} /roadmap/assets/index-CGgt8iCG.js</div>`,
               cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
             },
             satellite: {

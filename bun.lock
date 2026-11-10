@@ -1773,6 +1773,7 @@
         "@tanstack/react-router": "1.170.45",
         "@tanstack/react-start": "1.169.3",
         "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/marketing-shell": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "react": "19.2.8",
@@ -3053,6 +3054,23 @@
         "@tuturuuu/typescript-config": "workspace:*",
         "typescript": "7.0.2",
         "vitest": "^5.0.5",
+      },
+    },
+    "packages/marketing-shell": {
+      "name": "@tuturuuu/marketing-shell",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/react": "19.2.18",
+        "typescript": "7.0.2",
+      },
+      "peerDependencies": {
+        "next-themes": "*",
+        "react": "*",
       },
     },
     "packages/masonry": {
@@ -5906,6 +5924,8 @@
     "@tuturuuu/mail": ["@tuturuuu/mail@workspace:apps/mail"],
 
     "@tuturuuu/marketing": ["@tuturuuu/marketing@workspace:apps/marketing"],
+
+    "@tuturuuu/marketing-shell": ["@tuturuuu/marketing-shell@workspace:packages/marketing-shell"],
 
     "@tuturuuu/masonry": ["@tuturuuu/masonry@workspace:packages/masonry"],
 
