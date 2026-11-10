@@ -601,6 +601,8 @@ jobs:
           command: cd apps/tasks && bun run build:cloudflare
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || (github.event_name != 'pull_request' && secrets.TURBO_TEAM)) || '' }}
+      - name: Refuse server-only APIs in the client bundle
+        run: node scripts/ci/client-bundle-guard.mjs apps/tasks/dist/client
       - name: Record bounded emitted config receipt
         if: always()
         run: node scripts/ci/native-emitted-config-receipt.mjs apps/tasks "$SOURCE_SHA" "$RUNNER_TEMP/tasks-emitted-config.json"
