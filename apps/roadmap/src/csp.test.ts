@@ -107,3 +107,63 @@ describe('content security policy: styles', () => {
     assert.doesNotMatch(policy.split('; ')[0], /unsafe-inline/);
   });
 });
+
+describe('content security policy: only real script elements are hashed (D87 A5)', () => {
+  const sha = (text: string) =>
+    createHash('sha256').update(text).digest('base64');
+  const injected = 'alert(1)';
+
+  const variants: [string, string][] = [
+    [
+      'double-quoted attribute',
+      `<div title="<script>${injected}</script>">x</div>`,
+    ],
+    [
+      'single-quoted attribute',
+      `<a data-x='<script>${injected}</script>' href="/">x</a>`,
+    ],
+    ['unquoted attribute', `<p data-x=<script>${injected}</script>>x</p>`],
+    ['comment', `<!-- <script>${injected}</script> -->`],
+    ['title text', `<title><script>${injected}</script></title>`],
+    ['textarea text', `<textarea><script>${injected}</script></textarea>`],
+    ['style text', `<style>/* <script>${injected}</script> */</style>`],
+  ];
+  for (const [name, snippet] of variants)
+    it(`an attribute or text containing <script> is never hashed: ${name}`, async () => {
+      const html = `<!doctype html><html><head><script>boot()</script></head><body>${snippet}<script>later()</script></body></html>`;
+      assert.deepEqual(inlineScripts(html), ['boot()', 'later()']);
+      const policy = await contentSecurityPolicy(html);
+      assert.ok(
+        !policy.includes(sha(injected)),
+        'injected text must not be allowed'
+      );
+      assert.ok(
+        policy.includes(sha('boot()')) && policy.includes(sha('later()'))
+      );
+    });
+
+  it('src is an exact attribute name; data-src stays inline', () => {
+    assert.deepEqual(
+      inlineScripts(
+        '<script src="/a.js"></script><script SRC=/b.js></script><script data-src="x">c()</script>'
+      ),
+      ['c()']
+    );
+  });
+
+  it('keeps Unicode text aligned (length-preserving lowercase)', () => {
+    assert.deepEqual(
+      inlineScripts(
+        '<p>İstanbul Tiếng Việt</p><SCRIPT>d()</SCRIPT ><script>e()</script\nx>'
+      ),
+      ['d()', 'e()']
+    );
+  });
+
+  it('broken variant: the attribute holds a complete script element as text', () => {
+    // A whole-document scan sees this as a script; the tokenizer must not.
+    const html = `<div title="<script>${injected}</script>"></div>`;
+    assert.ok(html.includes(`<script>${injected}</script>`));
+    assert.deepEqual(inlineScripts(html), []);
+  });
+});

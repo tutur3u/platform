@@ -222,3 +222,10 @@ test('D79: a missing or permissive CSP fails the doctor', () => {
     assessDoctor(noObject).failures.includes("CSP missing object-src 'none'")
   );
 });
+
+test('D79/D87 A5: script text inside an attribute is not counted as an inline script', () => {
+  assert.deepEqual(
+    inlineScriptHashes('<div title="<script>alert(1)</script>"></div>'),
+    []
+  );
+});

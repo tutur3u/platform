@@ -14,6 +14,7 @@ import { registerHooks } from 'node:module';
 import { join, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { showPlans } from '../src/content/tracks.ts';
+import { inlineScriptTexts } from '../src/html-scripts.ts';
 import {
   reportAssetSmokeRejection,
   smokeAssets,
@@ -116,21 +117,11 @@ const REQUIRED_CSP = [
   "connect-src 'self' https://api.github.com",
 ];
 
-/**
- * sha256 of each inline script, as a CSP source expression. Same scan as
- * src/csp.ts; end tags may carry whitespace or attributes (`</script >`).
- */
+/** sha256 of each real inline script (same tokenizer as src/csp.ts). */
 export function inlineScriptHashes(html) {
-  const hashes = [];
-  for (const match of String(html).matchAll(
-    /<script\b([^>]*)>([\s\S]*?)<\/script[^>]*>/gi
-  )) {
-    if (/(?:^|\s)src\s*=/i.test(match[1] ?? '') || !match[2]) continue;
-    hashes.push(
-      `'sha256-${createHash('sha256').update(match[2]).digest('base64')}'`
-    );
-  }
-  return hashes;
+  return inlineScriptTexts(String(html)).map(
+    (text) => `'sha256-${createHash('sha256').update(text).digest('base64')}'`
+  );
 }
 
 /** Every SSR inline script must be allowed, and nothing broader. */
