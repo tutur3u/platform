@@ -288,6 +288,13 @@ export const features2: ComparisonFeature[] = [
     detail: 'standard',
   },
   {
+    id: 'cms-renderer_0',
+    app: 'cms-renderer',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
+  {
     id: 'marketing_0',
     app: 'marketing',
     category: 'internal',
