@@ -21,11 +21,19 @@ export function assertRuntimeEnvironment(env: RuntimeEnvironment): void {
     !!env.UPSTASH_REDIS_REST_URL.trim() &&
     typeof env.UPSTASH_REDIS_REST_TOKEN === 'string' &&
     !!env.UPSTASH_REDIS_REST_TOKEN.trim();
-  const binding = typeof env.ABUSE_GUARD === 'object' && env.ABUSE_GUARD !== null;
-  const configured = binding && typeof env.ABUSE_GUARD_KEY_PEPPER === 'string' && !!env.ABUSE_GUARD_KEY_PEPPER.trim() && typeof env.ABUSE_GUARD_FAMILIES === 'string' && !!env.ABUSE_GUARD_FAMILIES.trim();
+  const binding =
+    typeof env.ABUSE_GUARD === 'object' && env.ABUSE_GUARD !== null;
+  const configured =
+    binding &&
+    typeof env.ABUSE_GUARD_KEY_PEPPER === 'string' &&
+    !!env.ABUSE_GUARD_KEY_PEPPER.trim() &&
+    typeof env.ABUSE_GUARD_FAMILIES === 'string' &&
+    !!env.ABUSE_GUARD_FAMILIES.trim();
   if (!legacy && !configured) {
     const missing = binding
-      ? ['ABUSE_GUARD_KEY_PEPPER', 'ABUSE_GUARD_FAMILIES'].filter((name) => typeof env[name] !== 'string' || !String(env[name]).trim())
+      ? ['ABUSE_GUARD_KEY_PEPPER', 'ABUSE_GUARD_FAMILIES'].filter(
+          (name) => typeof env[name] !== 'string' || !String(env[name]).trim()
+        )
       : ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'];
     throw new Error(`Missing abuse guard runtime names: ${missing.join(', ')}`);
   }

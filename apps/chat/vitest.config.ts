@@ -11,7 +11,12 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    exclude: [...configDefaults.exclude, 'e2e/**'],
+    exclude: [
+      ...configDefaults.exclude,
+      'e2e/**',
+      // node:test profile check; `bun run test` runs it with node --test.
+      'cloudflare/**',
+    ],
     globals: true,
   },
 });
