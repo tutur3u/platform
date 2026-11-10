@@ -137,4 +137,51 @@ describe('native occurrence SWR feed', () => {
     rerender();
     expect(result.current.data).toBe(EMPTY_NATIVE_OCCURRENCES);
   });
+  it('keeps cached rows across a remount instead of dropping them on unmount', async () => {
+    const { client, wrapper } = setup();
+    const first = renderHook(
+      () => useNativeCalendarOccurrences('ws', dates, 'UTC', false),
+      { wrapper }
+    );
+    await waitFor(() => expect(first.result.current.data).toEqual([event]));
+    first.unmount();
+    mock.list.mockImplementation(() => new Promise(() => {}));
+    const second = renderHook(
+      () => useNativeCalendarOccurrences('ws', dates, 'UTC', false),
+      { wrapper }
+    );
+    expect(second.result.current.data).toEqual([event]);
+    expect(client.getQueryCache().getAll()).toHaveLength(1);
+  });
+  it('keeps the previous range rows while the next range loads', async () => {
+    const { wrapper } = setup();
+    const { result, rerender } = renderHook(
+      ({ range }) => useNativeCalendarOccurrences('ws', range, 'UTC', false),
+      { wrapper, initialProps: { range: dates } }
+    );
+    await waitFor(() => expect(result.current.data).toEqual([event]));
+    mock.list.mockImplementation(() => new Promise(() => {}));
+    rerender({ range: [new Date(2026, 9, 12)] });
+    expect(result.current.isPlaceholderData).toBe(true);
+    expect(result.current.data).toEqual([event]);
+  });
+  it('drops rows that belong to another actor when the actor changes', async () => {
+    const { client, wrapper } = setup();
+    const { result, rerender } = renderHook(
+      () => useNativeCalendarOccurrences('ws', dates, 'UTC', false),
+      { wrapper }
+    );
+    await waitFor(() => expect(result.current.data).toEqual([event]));
+    mock.actor.actorId = 'other';
+    mock.list.mockImplementation(() => new Promise(() => {}));
+    rerender();
+    await waitFor(() =>
+      expect(
+        client
+          .getQueryCache()
+          .getAll()
+          .some((query) => query.queryKey[2] === 'actor')
+      ).toBe(false)
+    );
+  });
 });

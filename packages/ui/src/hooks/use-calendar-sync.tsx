@@ -31,19 +31,17 @@ import type {
 } from './calendar-connection-types';
 import { runCalendarProviderSync } from './calendar-provider-sync';
 import {
-  type CacheUpdate,
-  type CalendarCache,
-  updateCalendarRangeCache,
-} from './calendar-range-cache';
-import {
-  calendarEventInQueryRange,
-  calendarRangeCacheKey,
-  calendarRangeIncludesToday,
-} from './calendar-sync-range';
+  CALENDAR_EVENTS_QUERY_ROOT,
+  calendarEventsQueryOptions,
+  keepCalendarEventsWithinScope,
+  prefetchAdjacentCalendarRanges,
+} from './calendar-events-query';
+import { calendarEventInQueryRange } from './calendar-sync-range';
 import {
   nativeOccurrencesKey,
   useNativeCalendarOccurrences,
 } from './use-native-calendar-occurrences';
+import { useWorkspaceActor } from './use-workspace-visibility';
 
 // Extended CalendarEvent type with habit flags
 export type CalendarEventWithHabitInfo = CalendarEvent & {
@@ -104,7 +102,10 @@ const CalendarSyncContext = createContext<{
   syncStatus: SyncStatus;
 
   // Loading states
+  /** True only while a range has no events at all: no cache and no placeholder. */
   isLoading: boolean;
+  /** True while rows from the previous range stand in for the loading one. */
+  isPlaceholderData: boolean;
   isSyncing: boolean;
 }>({
   data: null,
@@ -142,6 +143,7 @@ const CalendarSyncContext = createContext<{
 
   // Loading states
   isLoading: false,
+  isPlaceholderData: false,
   isSyncing: false,
 });
 
@@ -173,7 +175,6 @@ export const CalendarSyncProvider = ({
     'day' | '4-day' | 'week' | 'month'
   >('day');
   const [isActiveSyncOn, setIsActiveSyncOn] = useState(true);
-  const [calendarCache, setCalendarCache] = useState<CalendarCache>({});
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ state: 'idle' });
   const [optimisticState, setOptimisticState] =
@@ -181,8 +182,6 @@ export const CalendarSyncProvider = ({
       events: {},
       removedIds: [],
     });
-  const prevDatesRef = useRef<string>('');
-  const isForcedRef = useRef<boolean>(false);
   const lastSyncTimeRef = useRef<number>(0);
   const queryClient = useQueryClient();
   const nativeOccurrences = useNativeCalendarOccurrences(
@@ -236,28 +235,14 @@ export const CalendarSyncProvider = ({
 
   const setCalendarConnections = setCalendarConnectionsState;
 
-  const activeCacheKey = useMemo(
+  const actorId = useWorkspaceActor()?.actorId;
+  const eventsQueryOptions = useMemo(
     () =>
-      dates.length ? `${wsId}:${calendarRangeCacheKey(dates, timezone)}` : '',
-    [dates, timezone, wsId]
+      dates.length
+        ? calendarEventsQueryOptions({ actorId, dates, timezone, wsId })
+        : null,
+    [actorId, dates, timezone, wsId]
   );
-  const activeCachedDatabaseEvents = activeCacheKey
-    ? calendarCache[activeCacheKey]?.dbEvents
-    : undefined;
-
-  // Enhanced cache staleness check - shorter staleness for current week
-  const isCacheStaleEnhanced = (lastUpdated: number, dateRange: Date[]) => {
-    const isCurrentWeek = calendarRangeIncludesToday(dateRange, timezone);
-    // 30 seconds for current week, 5 minutes for other weeks
-    const staleTime = isCurrentWeek ? 30 * 1000 : 5 * 60 * 1000; // 30 seconds
-    return Date.now() - lastUpdated >= staleTime;
-  };
-
-  const updateCache = useCallback((cacheKey: string, update: CacheUpdate) => {
-    setCalendarCache((prev) =>
-      updateCalendarRangeCache(prev, cacheKey, update)
-    );
-  }, []);
 
   const isVisibleInCurrentRange = useCallback(
     (event: { start_at?: string; end_at?: string }) =>
@@ -318,58 +303,33 @@ export const CalendarSyncProvider = ({
     [isVisibleInCurrentRange]
   );
 
-  const { data: fetchedData, isLoading: isDatabaseLoading } = useQuery({
-    queryKey: ['databaseCalendarEvents', wsId, activeCacheKey],
-    enabled: !hasExternalEvents && !!wsId && dates.length > 0,
-    staleTime: 2 * 60_000,
-    gcTime: 30 * 60_000,
-    queryFn: async () => {
-      if (!activeCacheKey) return null;
-
-      const cachedData = calendarCache[activeCacheKey];
-
-      // If we have cached data and it's not stale, return it immediately
-      if (
-        cachedData &&
-        !isCacheStaleEnhanced(cachedData.dbLastUpdated, dates) &&
-        !isForcedRef.current &&
-        !queryClient.getQueryState([
-          'databaseCalendarEvents',
-          wsId,
-          activeCacheKey,
-        ])?.isInvalidated
-      ) {
-        return cachedData.dbEvents;
-      }
-
-      // Otherwise fetch fresh data via API (which handles E2EE decryption)
-      const { start: startDate, end: endDate } = calendarQueryRange(
-        dates,
-        timezone
-      );
+  // Stale-while-revalidate per visible range: a cached range renders at once and
+  // revalidates in the background, and the previous range's rows stand in while
+  // a new range loads so the grid never swaps to a skeleton on navigation.
+  const {
+    data: fetchedData,
+    isLoading: isDatabaseLoading,
+    isPlaceholderData: isDatabasePlaceholder,
+  } = useQuery<WorkspaceCalendarEvent[]>({
+    queryKey: eventsQueryOptions?.queryKey ?? [
+      CALENDAR_EVENTS_QUERY_ROOT,
+      wsId,
+    ],
+    enabled: !hasExternalEvents && !!wsId && !!eventsQueryOptions,
+    staleTime: eventsQueryOptions?.staleTime,
+    gcTime: eventsQueryOptions?.gcTime,
+    placeholderData: (previous, previousQuery) =>
+      keepCalendarEventsWithinScope<WorkspaceCalendarEvent[]>(
+        previous,
+        previousQuery?.queryKey,
+        { actorId, wsId }
+      ),
+    queryFn: async (context): Promise<WorkspaceCalendarEvent[]> => {
+      if (!eventsQueryOptions) return [];
 
       try {
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/calendar/events?start_at=${startDate.toISOString()}&end_at=${endDate.toISOString()}`,
-          { cache: 'no-store' }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(errorData?.error || 'Failed to fetch events');
-        }
-
-        const result = await response.json();
-        const fetchedData = result.data || [];
-
-        // Update cache with new data and reset isForced flag
-        updateCache(activeCacheKey, {
-          dbEvents: fetchedData,
-          dbLastUpdated: Date.now(),
-        });
-
-        // Reset the ref immediately (synchronous)
-        isForcedRef.current = false;
+        // E2EE decryption happens in the API route; the payload is unchanged.
+        const fetchedData = await eventsQueryOptions.queryFn(context);
 
         setError(null);
         setSyncStatus((currentStatus) =>
@@ -403,10 +363,30 @@ export const CalendarSyncProvider = ({
     refetchIntervalInBackground: false,
   });
 
+  // Warm the previous and next range once the visible one is known. This only
+  // fills the TanStack cache; nothing is read into component state.
+  useEffect(() => {
+    if (hasExternalEvents || !wsId || !eventsQueryOptions) return;
+    void prefetchAdjacentCalendarRanges(queryClient, {
+      actorId,
+      dates,
+      timezone,
+      wsId,
+    });
+  }, [
+    actorId,
+    dates,
+    eventsQueryOptions,
+    hasExternalEvents,
+    queryClient,
+    timezone,
+    wsId,
+  ]);
+
   // Legacy direct Google fetch/reconcile is disabled. Provider inbound sync is
   // owned by the workspace sync route so account/calendar identity stays scoped.
   const { isLoading: isGoogleLoading } = useQuery({
-    queryKey: ['googleCalendarEvents', wsId, activeCacheKey],
+    queryKey: ['googleCalendarEvents', wsId, eventsQueryOptions?.queryKey[2]],
     enabled: false,
     staleTime: 2 * 60_000,
     gcTime: 30 * 60_000,
@@ -415,10 +395,12 @@ export const CalendarSyncProvider = ({
 
   // Fetch habit calendar events to identify which events are habits
   const { data: habitEventData } = useQuery({
-    queryKey: ['habitCalendarEvents', wsId, activeCacheKey],
+    queryKey: ['habitCalendarEvents', wsId, eventsQueryOptions?.queryKey[2]],
     enabled: !hasExternalEvents && !!wsId && dates.length > 0,
     staleTime: 2 * 60_000,
     gcTime: 30 * 60_000,
+    placeholderData: (previous, previousQuery) =>
+      previousQuery?.queryKey[1] === wsId ? previous : undefined,
     queryFn: async () => {
       const { start: startDate, end: endDate } = calendarQueryRange(
         dates,
@@ -459,20 +441,6 @@ export const CalendarSyncProvider = ({
     refetchIntervalInBackground: false,
   });
 
-  // Helper to check if dates have actually changed
-  const areDatesEqual = useCallback(
-    (newDates: Date[]) => {
-      const newDatesStr = calendarRangeCacheKey(newDates, timezone);
-      const prevDatesStr = prevDatesRef.current;
-      const areEqual = newDatesStr === prevDatesStr;
-      if (!areEqual) {
-        prevDatesRef.current = newDatesStr;
-      }
-      return areEqual;
-    },
-    [timezone]
-  );
-
   // Invalidate and refetch events
   const refresh = useCallback(() => {
     if (hasExternalEvents) {
@@ -480,15 +448,20 @@ export const CalendarSyncProvider = ({
       return null;
     }
 
-    if (!activeCacheKey) return null;
+    if (!eventsQueryOptions) return null;
 
-    isForcedRef.current = true;
     queryClient.invalidateQueries({ queryKey: nativeOccurrencesKey(wsId) });
 
     queryClient.invalidateQueries({
-      queryKey: ['databaseCalendarEvents', wsId, activeCacheKey],
+      queryKey: eventsQueryOptions.queryKey,
     });
-  }, [queryClient, wsId, activeCacheKey, hasExternalEvents, externalRefresh]);
+  }, [
+    queryClient,
+    wsId,
+    eventsQueryOptions,
+    hasExternalEvents,
+    externalRefresh,
+  ]);
 
   // Sync Google events of current view to Tuturuuu database
   const syncToTuturuuu = useCallback(
@@ -570,57 +543,43 @@ export const CalendarSyncProvider = ({
     [wsId, isActiveSyncOn, refresh, queryClient]
   );
 
-  // Trigger refetch from DB when changing views (optimized to reduce load)
-  useEffect(() => {
-    if (hasExternalEvents) {
-      return;
-    }
-
-    // Skip if dates haven't actually changed
-    if (areDatesEqual(dates)) {
-      return;
-    }
-
-    const cacheData = calendarCache[activeCacheKey];
-
-    // For current week, force a fresh database fetch
-    const isCurrentWeek = calendarRangeIncludesToday(dates, timezone);
-
-    if (cacheData && isCurrentWeek) {
-      isForcedRef.current = true;
-      // For current week, reset database cache timestamp to force refresh
-      updateCache(activeCacheKey, {
-        dbLastUpdated: 0,
-      });
-    }
-  }, [
-    dates,
-    calendarCache,
-    timezone,
-    areDatesEqual,
-    activeCacheKey,
-    updateCache,
-    hasExternalEvents,
-  ]);
-
   /*
   Show data from database to Tuturuuu
   */
+
+  // Rows carried over from the previous range only count where they overlap the
+  // visible one, so agenda and per-day consumers never list another week.
+  const inRangeWhilePlaceholder = useCallback(
+    <T extends { start_at?: string; end_at?: string }>(
+      rows: T[],
+      isPlaceholder: boolean
+    ) =>
+      isPlaceholder ? rows.filter((row) => isVisibleInCurrentRange(row)) : rows,
+    [isVisibleInCurrentRange]
+  );
 
   const visibleDatabaseEvents = useMemo(
     () =>
       hasExternalEvents
         ? ((externalEvents ?? []) as WorkspaceCalendarEvent[])
         : [
-            ...(fetchedData ?? activeCachedDatabaseEvents ?? []),
-            ...nativeOccurrences.data,
+            ...inRangeWhilePlaceholder(
+              fetchedData ?? [],
+              isDatabasePlaceholder
+            ),
+            ...inRangeWhilePlaceholder(
+              nativeOccurrences.data,
+              nativeOccurrences.isPlaceholderData
+            ),
           ],
     [
-      activeCachedDatabaseEvents,
       externalEvents,
       fetchedData,
       hasExternalEvents,
+      inRangeWhilePlaceholder,
+      isDatabasePlaceholder,
       nativeOccurrences.data,
+      nativeOccurrences.isPlaceholderData,
     ]
   );
 
@@ -771,7 +730,7 @@ export const CalendarSyncProvider = ({
   const value = {
     data: hasExternalEvents
       ? ((externalEvents ?? []) as WorkspaceCalendarEvent[])
-      : (fetchedData ?? activeCachedDatabaseEvents ?? null),
+      : (fetchedData ?? null),
     googleData,
     error: error ?? nativeOccurrences.error,
     dates,
@@ -803,11 +762,10 @@ export const CalendarSyncProvider = ({
     syncStatus,
 
     // Loading states
-    isLoading:
-      externalEventsLoading ||
-      isDatabaseLoading ||
-      isGoogleLoading ||
-      (!hasExternalEvents && dates.length > 0 && nativeOccurrences.isLoading),
+    // Skeleton gate: only when the range has no events to show, neither cached
+    // nor carried over. Native occurrences stream in without blocking the grid.
+    isLoading: externalEventsLoading || isDatabaseLoading || isGoogleLoading,
+    isPlaceholderData: !hasExternalEvents && isDatabasePlaceholder,
     isSyncing,
   };
 

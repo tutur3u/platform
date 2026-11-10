@@ -36,17 +36,23 @@ export async function workspaceShellModel(
   const { workspace, user } = scope;
   const cookieStore = await cookies();
   const behavior = parseSidebarBehavior(cookieStore);
-  const admin = await createAdminClient({ noCookie: true });
-  const { data: calendarConnections } = await admin
-    .from('calendar_connections')
-    .select('*')
-    .eq('ws_id', workspace.id)
-    .order('created_at', { ascending: true });
+  // The profile lookup and the connection read do not depend on each other.
+  const [{ data: calendarConnections }, profile] = await Promise.all([
+    (async () => {
+      const admin = await createAdminClient({ noCookie: true });
+      return admin
+        .from('calendar_connections')
+        .select('*')
+        .eq('ws_id', workspace.id)
+        .order('created_at', { ascending: true });
+    })(),
+    getSatelliteCurrentUser('calendar'),
+  ]);
   return {
     kind: 'workspace' as const,
     workspace,
     user: { id: user.id },
-    profile: await getSatelliteCurrentUser('calendar'),
+    profile,
     behavior,
     behaviorUpdatedAt: getSidebarBehaviorUpdatedAt(cookieStore),
     defaultCollapsed: getSidebarCollapsedState(cookieStore, behavior),

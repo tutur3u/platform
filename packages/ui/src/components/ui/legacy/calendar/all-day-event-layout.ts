@@ -13,6 +13,20 @@ dayjs.extend(timezone);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 export const MAX_EVENTS_DISPLAY = 2;
+/** One empty all-day row; always rendered so arriving events never shift the grid. */
+export const ALL_DAY_BAR_MIN_HEIGHT_REM = 1.9;
+/** While a new range loads on carried-over rows, the bar never shrinks below the last settled height. */
+export function stableAllDayBarHeight({
+  barHeight,
+  isPlaceholder,
+  settledHeight,
+}: {
+  barHeight: number;
+  isPlaceholder: boolean;
+  settledHeight: number;
+}) {
+  return isPlaceholder ? Math.max(barHeight, settledHeight) : barHeight;
+}
 function getZonedDay(date: Date, _zone?: string) {
   return dayjs(date).startOf('day');
 }
