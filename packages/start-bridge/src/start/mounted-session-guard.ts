@@ -44,6 +44,35 @@ export function isMountedLogoutPath(appPath: string): boolean {
 }
 
 /**
+ * The global logout forwarded from a mount answers with session-cookie
+ * deletions, which a browser applies even to a cross-site top-level POST that
+ * carried no cookie. So, unlike other mutations, it needs same-origin proof
+ * whether or not a session cookie is present: `Sec-Fetch-Site: same-origin`,
+ * or without Fetch Metadata an `Origin` equal to the request's own. Anything
+ * but POST is refused. Returns `null` to continue.
+ */
+export function refuseCrossOriginMountedLogout(
+  request: Request
+): Response | null {
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', {
+      status: 405,
+      headers: { Allow: 'POST', 'Cache-Control': 'no-store' },
+    });
+  }
+  const site = request.headers.get('sec-fetch-site');
+  const sameOrigin =
+    site !== null
+      ? site.toLowerCase() === 'same-origin'
+      : request.headers.get('origin') === new URL(request.url).origin;
+  if (sameOrigin) return null;
+  return Response.json(
+    { code: 'CSRF_REJECTED', error: 'Cross-origin request rejected' },
+    { headers: { 'Cache-Control': 'no-store' }, status: 403 }
+  );
+}
+
+/**
  * The terminal refusal for a mounted request to a session-minting endpoint:
  * no verification, rotation or `Set-Cookie`. Returns `null` for any other path.
  */

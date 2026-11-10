@@ -25,6 +25,7 @@ import type { BridgeRequestContext } from '../server/request-context';
 import { admitMountedMutation, type BridgeCsrfOptions } from './csrf-admission';
 import {
   isMountedLogoutPath,
+  refuseCrossOriginMountedLogout,
   refuseMountedSessionMinting,
   stripMountedSessionWrites,
 } from './mounted-session-guard';
@@ -191,11 +192,9 @@ export function createBridgeHandler<
         request: incoming,
       });
       if (refused) return refused;
-      if (isMountedLogoutPath(appPath) && incoming.method !== 'POST') {
-        return new Response('Method Not Allowed', {
-          status: 405,
-          headers: { Allow: 'POST', 'Cache-Control': 'no-store' },
-        });
+      if (isMountedLogoutPath(appPath)) {
+        const refusedLogout = refuseCrossOriginMountedLogout(incoming);
+        if (refusedLogout) return refusedLogout;
       }
     }
     const nonce = options.csp ? createNonce() : undefined;
