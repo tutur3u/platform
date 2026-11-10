@@ -904,10 +904,10 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8048",
-        "reason": "REV-8048: formatting-only change (trailing commas added by oxfmt) to the provider-owned gateway wrangler.jsonc; no config values changed. The pending-migration gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/pull/8115",
+        "reason": "REV-8115: the gateway config documents the mounted-path variable and its service-binding rollout in comments, and a config file's digest covers every line. No Wrangler invocation and no value change beyond the already-merged mounted-path variable; the pending-migration gap and its removal condition remain."
       },
-      "digest": "bfae370a32c8556de317babc69ef42dc823c7cf2f53727f65ebd2a928932e48b"
+      "digest": "83955808302a9db4572b556174019ac78f28f5b31f1579e83d0998debfaeb1bd"
     },
     "apps/git/.gitignore": {
       "lines": 1,
@@ -2912,6 +2912,26 @@
         "reason": "REV-8011: the artifact guard names the emitted wrangler.json. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
       },
       "digest": "e7b622e75addfb4456930b33cdb9e88a733b271b4b791e61fc0e22c42b44a35a"
+    },
+    "scripts/ci/pre-seal-doctor.mjs": {
+      "lines": 5,
+      "uses": 5,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8115",
+        "reason": "REV-8115: the pre-seal doctor serves the exact sealed Void artifact locally through the isolated unstable_startWorker API with synthetic bindings, as the void-emitted-runtime gap describes (cf's runtime harness has no sealed Void-config runner). It never publishes or invokes the CLI; it names the emitted config path and sets the metrics and log-suppression variables. Remove with the gap."
+      },
+      "digest": "65efd62fe475d018244c79490faad9f7af3bd1b399951cd3c0660166f013f679"
+    },
+    "scripts/ci/pre-seal-doctor.test.mjs": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8115",
+        "reason": "REV-8115: the pre-seal doctor serves the exact sealed Void artifact locally through the isolated unstable_startWorker API with synthetic bindings, as the void-emitted-runtime gap describes (cf's runtime harness has no sealed Void-config runner). It never publishes or invokes the CLI; it names the emitted config path and sets the metrics and log-suppression variables. Remove with the gap."
+      },
+      "digest": "ac5c969950b1a07e1730f04f861bd1b16ae5cc67c32d2970fee38bbe0a18c6da"
     },
     "scripts/ci/production-publication-policy.test.js": {
       "lines": 1,

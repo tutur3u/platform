@@ -33,6 +33,13 @@ test('parseArgs accepts --expect-redirect and --config in any position', () => {
   assert.equal(parsed.config, 'dist/wave1/wrangler.json');
 });
 
+test('parseArgs --wave1 selects the wave-1 sealed config', () => {
+  assert.equal(
+    parseArgs([...ok, '--wave1']).config,
+    'dist/wave1/wrangler.json'
+  );
+});
+
 test('parseArgs rejects malformed input', () => {
   assert.throws(() => parseArgs(ok.slice(0, 3)), /4 positional/u);
   assert.throws(() => parseArgs([...ok, 'extra']), /4 positional/u);
