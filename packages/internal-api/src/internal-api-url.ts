@@ -64,6 +64,17 @@ export function hasAppBaseResolverFor(
   return defaultAppBaseRegistration()?.app === app;
 }
 
+/**
+ * `path` resolved by the registered resolver when it serves `app` (its own
+ * routes go under the app's mount, e.g. `/tasks/api/...` on
+ * `tuturuuu.com/tasks`); otherwise `path` unchanged. For browser code shared
+ * across apps, so it only changes inside the owning app.
+ */
+export function resolveOwnAppApiPath(app: string, path: string): string {
+  const registration = defaultAppBaseRegistration();
+  return registration?.app === app ? registration.resolver(path) : path;
+}
+
 type AppApiBaseOptions = {
   appBaseResolver?: InternalApiAppBaseResolver;
   baseUrl?: string;

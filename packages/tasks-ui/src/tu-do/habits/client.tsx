@@ -17,6 +17,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
 import HabitCard from './habit-card';
 import HabitFormDialog from './habit-form-dialog';
+import { tasksApiPath } from '../shared/tasks-paths';
 
 interface HabitsClientPageProps {
   wsId: string;
@@ -67,7 +68,7 @@ export default function HabitsClientPage({ wsId }: HabitsClientPageProps) {
   const handleDelete = async (habitId: string) => {
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/habits/${habitId}`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/habits/${habitId}`),
         { method: 'DELETE' }
       );
 
@@ -87,7 +88,7 @@ export default function HabitsClientPage({ wsId }: HabitsClientPageProps) {
   const handleComplete = async (habitId: string, date: string) => {
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/habits/${habitId}/complete`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/habits/${habitId}/complete`),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
