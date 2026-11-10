@@ -1,22 +1,10 @@
 import { Sparkles } from '@tuturuuu/icons';
 import { visibleComingSoon } from '../content/coming-soon';
 import { type Status, statuses } from '../live/status';
-import type { useLiveData } from '../live/use-live-data';
 import type { RoadmapView } from '../view-model';
-import { FreshnessPill } from './chrome';
-import type { Lang, Messages } from './shared';
+import type { Messages } from './shared';
 
-export function Hero({
-  t,
-  lang,
-  live,
-  view,
-}: {
-  t: Messages;
-  lang: Lang;
-  live: ReturnType<typeof useLiveData>;
-  view: RoadmapView;
-}) {
+export function Hero({ t, view }: { t: Messages; view: RoadmapView }) {
   const stats = [
     {
       label: t.stats.shippedWeek,
@@ -57,15 +45,6 @@ export function Hero({
         <span className="accent">{t.titleAccent}</span>
       </h1>
       <p className="intro">{t.intro}</p>
-      <FreshnessPill
-        t={t}
-        lang={lang}
-        state={live.state}
-        generatedAt={live.data.generatedAt}
-        now={live.now}
-        mounted={live.mounted}
-        onRefresh={() => void live.refresh()}
-      />
       <dl className="stats">
         {stats.map((stat) => (
           <div className={`stat tone-${stat.tone}`} key={stat.label}>

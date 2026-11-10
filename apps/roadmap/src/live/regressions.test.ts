@@ -7,6 +7,11 @@
  */
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
+import {
+  NAV_CHROME,
+  shellNavOffset,
+  stickyClearsNavbar,
+} from '../../../../packages/marketing-shell/src/nav-metrics.ts';
 import { describe, it } from 'node:test';
 import { comingSoon, visibleComingSoon } from '../content/coming-soon.ts';
 import { showPlans, tracks } from '../content/tracks.ts';
@@ -233,5 +238,53 @@ describe('shared marketing shell package', () => {
         /SIL Open Font License/
       );
     }
+  });
+});
+
+describe('navbar clearance for the filter bar', () => {
+  const read = (path: string) =>
+    readFileSync(new URL(path, import.meta.url), 'utf8');
+
+  it('keeps the sticky filters below the pill, full and compact', () => {
+    assert.equal(shellNavOffset(false), 76);
+    assert.equal(shellNavOffset(true), 56);
+    assert.ok(shellNavOffset(true) < shellNavOffset(false));
+    assert.equal(
+      shellNavOffset(false),
+      NAV_CHROME.full.pad + NAV_CHROME.full.bar + NAV_CHROME.full.gap
+    );
+    assert.equal(
+      stickyClearsNavbar(
+        shellNavOffset(false),
+        NAV_CHROME.full.pad + NAV_CHROME.full.bar
+      ),
+      true
+    );
+    assert.equal(
+      stickyClearsNavbar(
+        shellNavOffset(true),
+        NAV_CHROME.compact.pad + NAV_CHROME.compact.bar
+      ),
+      true
+    );
+    // Broken variant: pinning the filter bar to the viewport top hides it
+    // under the fixed pill.
+    assert.equal(stickyClearsNavbar(0, NAV_CHROME.full.bar), false);
+  });
+
+  it('wires the compact pill to the same offsets the page docks against', () => {
+    const css = read('../styles.css');
+    const sticky = css.match(/\.sticky-bar \{[^}]+\}/)?.[0] ?? '';
+    assert.match(sticky, /top:\s*var\(--shell-nav-offset,\s*76px\)/);
+    assert.doesNotMatch(sticky, /top:\s*0\b/);
+    const shell = read(
+      '../../../../packages/marketing-shell/src/nav-shell.tsx'
+    );
+    assert.match(shell, /compact \? 'pt-2' : 'pt-3 sm:pt-4'/);
+    assert.match(shell, /compact \? 'h-11' : 'h-14'/);
+    const tracks = read('../components/tracks.tsx');
+    assert.match(tracks, /shellNavOffset\(false\)/);
+    const hero = read('../components/hero.tsx');
+    assert.doesNotMatch(hero, /FreshnessPill|className=["']freshness/);
   });
 });

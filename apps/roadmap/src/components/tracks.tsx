@@ -1,5 +1,6 @@
 import { ChevronDown } from '@tuturuuu/icons';
-import type { ReactNode } from 'react';
+import { shellNavOffset } from '@tuturuuu/marketing-shell';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { APP_NAMES } from '../live/host-probe';
 import { shippedShare, statuses } from '../live/status';
 import {
@@ -37,13 +38,41 @@ export function TracksSection({
   view,
   filter,
   setFilter,
+  onDock,
 }: {
   t: Messages;
   lang: Lang;
   view: RoadmapView;
   filter: StatusFilter;
   setFilter: (filter: StatusFilter) => void;
+  /** True once this section has reached the full-size navbar. */
+  onDock?: (docked: boolean) => void;
 }) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !onDock) return;
+    // Dock against the full pill. Compacting happens after this line is
+    // crossed, so the threshold must not follow the compact offset.
+    const dockLine = shellNavOffset(false);
+    let frame: number | null = null;
+    const update = () => {
+      frame = null;
+      onDock(el.getBoundingClientRect().top < dockLine);
+    };
+    const schedule = () => {
+      if (frame !== null) return;
+      frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
+  }, [onDock]);
   const filters: StatusFilter[] = ['all', 'shipped', 'active', 'planned'];
   const visible = view.tracks
     .map((track) => ({
@@ -65,6 +94,7 @@ export function TracksSection({
         title={t.tracks.title}
         subtitle={t.tracks.subtitle}
       />
+      <div ref={sentinelRef} className="nav-sentinel" aria-hidden />
       <div className="sticky-bar">
         <nav className="track-nav" aria-label={t.tracks.nav}>
           {view.tracks.map((track) => (

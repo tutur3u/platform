@@ -126,24 +126,9 @@
   border: 1px solid var(--rm-line);
   background: var(--rm-panel);
 }
-.icon-button.small {
-  width: 28px;
-  height: 28px;
-  border: 0;
-  background: transparent;
-  color: var(--rm-muted);
-}
 .icon-button:disabled {
   cursor: default;
   opacity: 0.6;
-}
-.spin {
-  animation: spin 1s linear infinite;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* Hero */
@@ -270,46 +255,6 @@
 .hero .overall {
   width: 100%;
   text-align: left;
-}
-.hero .freshness {
-  justify-self: center;
-}
-.freshness {
-  justify-self: start;
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 8px;
-  padding: 6px 6px 6px 12px;
-  border: 1px solid var(--rm-line);
-  border-radius: 999px;
-  background: var(--rm-panel);
-  font-size: 13px;
-}
-.freshness-time {
-  color: var(--rm-muted);
-}
-.pulse {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--rm-planned);
-}
-.freshness.live .pulse {
-  background: var(--rm-live);
-  box-shadow: 0 0 0 0 color-mix(in oklab, var(--rm-live) 60%, transparent);
-  animation: ping 2s ease-out infinite;
-}
-.freshness.refreshing .pulse {
-  background: var(--rm-sync);
-}
-.freshness.failed .pulse {
-  background: var(--rm-progress);
-}
-@keyframes ping {
-  70% {
-    box-shadow: 0 0 0 8px transparent;
-  }
 }
 .stats {
   margin: 8px 0 0;
@@ -624,18 +569,24 @@
 }
 
 /* Tracks */
+.nav-sentinel {
+  height: 1px;
+  margin: 0;
+  pointer-events: none;
+}
 .sticky-bar {
   position: sticky;
-  top: 0;
-  z-index: 5;
+  top: var(--shell-nav-offset, 76px);
+  z-index: 40;
   display: grid;
   gap: 10px;
   margin: 0 -24px;
   padding: 10px 24px;
-  background: color-mix(in oklab, var(--rm-bg) 88%, transparent);
+  background: color-mix(in oklab, var(--rm-bg) 92%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--rm-line);
+  transition: top 0.3s ease;
 }
 .track-nav {
   display: flex;
@@ -676,7 +627,7 @@
   gap: 14px;
 }
 .track {
-  scroll-margin-top: 120px;
+  scroll-margin-top: calc(var(--shell-nav-offset, 76px) + 96px);
   padding: 16px;
   border: 1px solid var(--rm-line);
   border-radius: var(--rm-radius);
@@ -899,10 +850,31 @@ code {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .bloom,
-  .spin,
-  .freshness.live .pulse {
+  .bloom {
     animation: none;
+  }
+  .sticky-bar {
+    transition: none;
+  }
+}
+
+/* Once the navbar shrinks, the filter row sits in one line on a wide screen. */
+.roadmap[data-nav-compact] .sticky-bar {
+  gap: 6px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+@media (min-width: 720px) {
+  .roadmap[data-nav-compact] .sticky-bar {
+    display: flex;
+    align-items: center;
+  }
+  .roadmap[data-nav-compact] .track-nav {
+    flex: 1;
+    min-width: 0;
+  }
+  .roadmap[data-nav-compact] .filters {
+    flex: none;
   }
 }
 

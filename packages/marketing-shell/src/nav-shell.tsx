@@ -13,6 +13,8 @@ interface MarketingNavShellProps {
    * viewport — the docs shell, where the sidebar owns the left edge.
    */
   placement?: 'overlay' | 'column';
+  /** Shorter pill (pt-2 + h-11). The page docks its own bar in the space freed. */
+  compact?: boolean;
 }
 
 /**
@@ -27,6 +29,7 @@ export function MarketingNavShell({
   menu,
   actions,
   placement = 'overlay',
+  compact = false,
 }: MarketingNavShellProps) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -54,7 +57,8 @@ export function MarketingNavShell({
   return (
     <header
       className={cn(
-        'z-50 px-3 pt-3 sm:px-4 sm:pt-4',
+        'z-50 px-3 sm:px-4',
+        compact ? 'pt-2' : 'pt-3 sm:pt-4',
         placement === 'overlay'
           ? 'fixed inset-x-0 top-0'
           : // Sticky rather than fixed: the docs column scrolls inside the
@@ -66,8 +70,9 @@ export function MarketingNavShell({
       <div
         className={cn(
           // overflow-visible so the Products/Resources panels can escape the pill
-          'relative mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 overflow-visible rounded-2xl px-3 transition-all duration-500 sm:px-4',
-          scrolled || placement === 'column'
+          'relative mx-auto flex max-w-7xl items-center justify-between gap-3 overflow-visible rounded-2xl px-3 transition-all duration-300 sm:px-4',
+          compact ? 'h-11' : 'h-14',
+          scrolled || compact || placement === 'column'
             ? 'border border-foreground/10 bg-background/70 shadow-foreground/5 shadow-lg backdrop-blur-xl'
             : 'border border-transparent bg-transparent'
         )}
@@ -78,7 +83,9 @@ export function MarketingNavShell({
           aria-hidden
           className={cn(
             'pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-foreground/25 to-transparent transition-opacity duration-500',
-            scrolled || placement === 'column' ? 'opacity-100' : 'opacity-0'
+            scrolled || compact || placement === 'column'
+              ? 'opacity-100'
+              : 'opacity-0'
           )}
         />
 

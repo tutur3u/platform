@@ -20,6 +20,7 @@ export function MarketingNavbar({
   logoSrc,
   signInHref = 'https://tuturuuu.com/login',
   siteUrl = 'https://tuturuuu.com',
+  navCompact = false,
   LinkComponent = Anchor,
   ImageComponent = Img,
 }: {
@@ -30,12 +31,14 @@ export function MarketingNavbar({
   logoSrc: string;
   signInHref?: string;
   siteUrl?: string;
+  navCompact?: boolean;
   LinkComponent?: ShellLink;
   ImageComponent?: ShellImage;
 }) {
   const onLogin = pathname === '/login';
   return (
     <MarketingNavShell
+      compact={navCompact}
       logo={
         <LinkComponent
           className="flex flex-none items-center gap-2 transition-opacity hover:opacity-80"
@@ -43,26 +46,40 @@ export function MarketingNavbar({
         >
           <ImageComponent
             alt="Tuturuuu"
-            className="h-8 w-8 transition-transform hover:scale-105"
+            className={
+              navCompact
+                ? 'h-7 w-7'
+                : 'h-8 w-8 transition-transform hover:scale-105'
+            }
             height={32}
             src={logoSrc}
             width={32}
           />
-          <span className="font-bold text-2xl">Tuturuuu</span>
+          <span
+            className={
+              navCompact
+                ? 'hidden font-bold text-lg md:inline'
+                : 'font-bold text-2xl'
+            }
+          >
+            Tuturuuu
+          </span>
         </LinkComponent>
       }
       menu={<MarketingNavMenu siteUrl={siteUrl} t={t} />}
       actions={
         <>
-          <LinkComponent
-            className={cn(
-              'inline-flex h-10 items-center rounded-lg bg-primary px-4 font-medium text-primary-foreground text-sm transition-opacity hover:opacity-90',
-              onLogin && 'pointer-events-none opacity-50'
-            )}
-            href={signInHref}
-          >
-            {t('common.get-started')}
-          </LinkComponent>
+          {navCompact ? null : (
+            <LinkComponent
+              className={cn(
+                'inline-flex h-10 items-center rounded-lg bg-primary px-4 font-medium text-primary-foreground text-sm transition-opacity hover:opacity-90',
+                onLogin && 'pointer-events-none opacity-50'
+              )}
+              href={signInHref}
+            >
+              {t('common.get-started')}
+            </LinkComponent>
+          )}
           {onLocaleChange ? (
             <button
               aria-label={locale === 'en' ? 'Tiếng Việt' : 'English'}
