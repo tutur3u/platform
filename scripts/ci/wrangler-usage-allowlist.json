@@ -2563,6 +2563,16 @@
       },
       "digest": "7bb4ae9947213258a577a33c2de7a5886266c02267f7edd54e82515d876dcdce"
     },
+    "scripts/ci/infrastructure-native-artifact.test.py": {
+      "lines": 5,
+      "uses": 5,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8143",
+        "reason": "REV-8143: the production-profile test fixture names the emitted wrangler.json and .void-wrangler.jsonc config paths, as the Mind seal test does. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "23c7d480f98c6d765ed9923b09ffc1ea465f257688893e1d22e5221d0ef3d2c7"
+    },
     "scripts/ci/meet-build-metadata.test.js": {
       "lines": 14,
       "uses": 17,
