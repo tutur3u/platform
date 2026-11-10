@@ -65,7 +65,9 @@
   },
   "hosting": {
     "title": "Mỗi ứng dụng đang chạy ở đâu",
-    "subtitle": "Kiểm tra trực tiếp endpoint build-info công khai của từng ứng dụng, so với commit mới nhất trên main.",
+    "subtitle": "Endpoint build-info công khai của từng ứng dụng, kiểm tra từ bên ngoài Cloudflare và so với commit mới nhất trên main.",
+    "checked": "Kiểm tra hosting",
+    "checkedNote": "ở lần triển khai lộ trình gần nhất. Liên kết rút gọn và chính trang lộ trình được kiểm tra trực tiếp.",
     "workers": "Cloudflare Workers",
     "vercel": "Vercel",
     "store": "Kho ứng dụng",

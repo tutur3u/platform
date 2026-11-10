@@ -54,6 +54,23 @@ export const PROBED_APPS = (
   url: entry.url ?? `https://${entry.app}.tuturuuu.com/api/build-info`,
 }));
 
+/**
+ * Inside Cloudflare, a Worker's subrequest to another host in its own zone
+ * does not run the Worker routed on that host: it reaches the zone origin
+ * (still Vercel for many hosts). Probing *.tuturuuu.com from the roadmap
+ * Worker therefore reports "vercel" for apps that are on Workers. Only the
+ * build-time probe, run outside Cloudflare, may classify same-zone hosts.
+ */
+export function isSameZoneUrl(url: string): boolean {
+  const host = new URL(url).hostname;
+  return host === 'tuturuuu.com' || host.endsWith('.tuturuuu.com');
+}
+
+/** Hosts the Worker may probe at runtime: other zones only. */
+export const RUNTIME_PROBED_APPS = PROBED_APPS.filter(
+  (entry) => !isSameZoneUrl(entry.url)
+);
+
 export const APP_NAMES: Record<string, string> = {
   ...Object.fromEntries(PROBED_APPS.map((entry) => [entry.app, entry.name])),
   roadmap: 'Roadmap',
@@ -130,9 +147,10 @@ async function readBounded(response: Response): Promise<string> {
 export async function probeHosts(
   fetcher: ProbeFetch,
   selfCommit: string | null,
-  timeoutMs = 4000
+  timeoutMs = 4000,
+  apps: readonly { app: string; url: string }[] = PROBED_APPS
 ): Promise<ProbeResult[]> {
-  const probes = PROBED_APPS.map(async ({ app, url }) => {
+  const probes = apps.map(async ({ app, url }) => {
     try {
       const response = await fetcher(url, {
         method: 'GET',
@@ -224,7 +242,12 @@ export async function hostsResponse(
       headers: { ...headers, allow: 'GET, HEAD' },
     });
   if (!memo || now - memo.at > 60_000) {
-    const payload = probeHosts(fetcher, selfCommit).then((hosts) => ({
+    const payload = probeHosts(
+      fetcher,
+      selfCommit,
+      4000,
+      RUNTIME_PROBED_APPS
+    ).then((hosts) => ({
       checkedAt: new Date(now).toISOString(),
       hosts,
     }));

@@ -76,7 +76,13 @@ function RoadmapPage() {
             filter={filter}
             setFilter={setFilter}
           />
-          <HostingSection t={t} lang={lang} view={view} main={live.data.main} />
+          <HostingSection
+            t={t}
+            lang={lang}
+            view={view}
+            main={live.data.main}
+            hostsCheckedAt={initialData.generatedAt}
+          />
           <Method t={t} />
         </main>
       </PublicSatelliteShell>

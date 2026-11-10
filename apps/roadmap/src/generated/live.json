@@ -1,12 +1,20 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-10T06:40:58.711Z",
+  "generatedAt": "2026-11-10T07:07:55.938Z",
   "source": "build",
   "main": {
-    "sha": "8d3f02d1ad3c57ad867a8586939c9aead928739b",
-    "at": "2026-11-10T05:55:48.000Z"
+    "sha": "1b58b995f0a460ede49459a37fd2994858457e85",
+    "at": "2026-11-10T07:05:40.000Z"
   },
   "prs": [
+    {
+      "number": 8079,
+      "title": "feat(roadmap): redesign as a live product roadmap",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-10T06:49:22.000Z"
+    },
     {
       "number": 8077,
       "title": "fix(roadmap): smoke canonical assets and land the slash redirect once",
@@ -2374,21 +2382,21 @@
       "platform": "vercel",
       "commit": "4382dd3223b7ec40782ae1f7fad3b0e5837d64bf",
       "commitAt": "2026-11-08T23:42:45.000Z",
-      "behindBy": 190
+      "behindBy": 192
     },
     {
       "app": "apps",
       "platform": "workers",
       "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
       "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 31
+      "behindBy": 33
     },
     {
       "app": "calendar",
       "platform": "workers",
       "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
       "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 31
+      "behindBy": 33
     },
     {
       "app": "chat",
@@ -2402,7 +2410,7 @@
       "platform": "workers",
       "commit": "a71e906194eff1a5e9e23113c5443e6273b75061",
       "commitAt": "2026-11-10T01:14:49.000Z",
-      "behindBy": 20
+      "behindBy": 22
     },
     {
       "app": "colab",
@@ -2423,21 +2431,21 @@
       "platform": "workers",
       "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
       "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 31
+      "behindBy": 33
     },
     {
       "app": "finance",
       "platform": "workers",
       "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
       "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 31
+      "behindBy": 33
     },
     {
       "app": "forms",
       "platform": "workers",
       "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
       "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 31
+      "behindBy": 33
     },
     {
       "app": "hive",
@@ -2458,7 +2466,7 @@
       "platform": "workers",
       "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
       "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 31
+      "behindBy": 33
     },
     {
       "app": "mail",
@@ -2493,7 +2501,7 @@
       "platform": "store",
       "commit": "fb2df520d8778a092023f762dbb1aaeda8c3b2cb",
       "commitAt": "2026-11-08T17:49:20.000Z",
-      "behindBy": 277
+      "behindBy": 279
     },
     {
       "app": "nova",
@@ -2507,7 +2515,7 @@
       "platform": "vercel",
       "commit": "4382dd3223b7ec40782ae1f7fad3b0e5837d64bf",
       "commitAt": "2026-11-08T23:42:45.000Z",
-      "behindBy": 190
+      "behindBy": 192
     },
     {
       "app": "playground",
@@ -2526,8 +2534,8 @@
     {
       "app": "roadmap",
       "platform": "workers",
-      "commit": "8d3f02d1ad3c57ad867a8586939c9aead928739b",
-      "commitAt": "2026-11-10T05:55:48.000Z",
+      "commit": "1b58b995f0a460ede49459a37fd2994858457e85",
+      "commitAt": "2026-11-10T07:05:40.000Z",
       "behindBy": 0
     },
     {
@@ -2535,42 +2543,42 @@
       "platform": "workers",
       "commit": "58825f154b90e59af8ff93768f2601a758ae0f39",
       "commitAt": "2026-11-09T16:47:40.000Z",
-      "behindBy": 90
+      "behindBy": 92
     },
     {
       "app": "storefront",
       "platform": "workers",
       "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
       "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 31
+      "behindBy": 33
     },
     {
       "app": "tasks",
       "platform": "workers",
       "commit": "89ebac54c0cf58e446640c617008776a20bde11d",
       "commitAt": "2026-11-10T05:19:51.000Z",
-      "behindBy": 3
+      "behindBy": 5
     },
     {
       "app": "teach",
       "platform": "workers",
       "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
       "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 31
+      "behindBy": 33
     },
     {
       "app": "tools",
       "platform": "workers",
       "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
       "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 31
+      "behindBy": 33
     },
     {
       "app": "track",
       "platform": "workers",
       "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
       "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 31
+      "behindBy": 33
     },
     {
       "app": "web",

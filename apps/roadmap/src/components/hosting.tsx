@@ -14,11 +14,14 @@ export function HostingSection({
   lang,
   view,
   main,
+  hostsCheckedAt,
 }: {
   t: Messages;
   lang: Lang;
   view: RoadmapView;
   main: { sha: string; at: string } | null;
+  /** Build-time probe: the only one that can see same-zone hosting. */
+  hostsCheckedAt: string;
 }) {
   return (
     <section className="section" aria-labelledby="hosting-title">
@@ -27,6 +30,13 @@ export function HostingSection({
         title={t.hosting.title}
         subtitle={t.hosting.subtitle}
       />
+      <p className="main-commit">
+        {t.hosting.checked}{' '}
+        <time dateTime={hostsCheckedAt}>
+          {formatDate(hostsCheckedAt, lang, true)} (UTC+7)
+        </time>{' '}
+        {t.hosting.checkedNote}
+      </p>
       {main ? (
         <p className="main-commit">
           {t.hosting.main}:{' '}
