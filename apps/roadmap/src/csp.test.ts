@@ -170,12 +170,21 @@ describe('content security policy: only real script elements are hashed (D87 A5)
     createHash('sha256').update(text).digest('base64');
   const injected = 'alert(1)';
 
-  /** #8084's whole-document regex: the broken variant these tests must catch. */
-  const regexVariant = (html: string) =>
-    [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)].flatMap(
-      (match) =>
-        /(?:^|\s)src\s*=/i.test(match[1] ?? '') || !match[2] ? [] : [match[2]]
-    );
+  /**
+   * The broken variant these tests must catch: #8084 read the whole document
+   * as text, so any `<script>…</script>` substring counted. Plain substring
+   * search, not an HTML-filtering regex.
+   */
+  const wholeDocumentScan = (html: string) => {
+    const found: string[] = [];
+    for (let at = html.indexOf('<script>'); at !== -1;) {
+      const close = html.indexOf('</script>', at);
+      if (close === -1) break;
+      found.push(html.slice(at + '<script>'.length, close));
+      at = html.indexOf('<script>', close);
+    }
+    return found;
+  };
 
   const variants: [string, string][] = [
     [
@@ -209,10 +218,10 @@ describe('content security policy: only real script elements are hashed (D87 A5)
       );
     });
 
-  it('broken variant: a whole-document regex hashes the attribute payload', async () => {
-    // D79: the assertion above fails on #8084's regex, so it can catch it.
+  it('broken variant: a whole-document scan hashes the attribute payload', async () => {
+    // D79: the assertion above fails on #8084's text scan, so it can catch it.
     const html = `<div title="<script>${injected}</script>"></div>`;
-    assert.deepEqual(regexVariant(html), [injected]);
+    assert.deepEqual(wholeDocumentScan(html), [injected]);
     assert.deepEqual(await inlineScripts(html), []);
     assert.ok(!(await contentSecurityPolicy(html)).includes(sha(injected)));
   });
