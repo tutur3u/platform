@@ -66,4 +66,38 @@ describe('getAllowedFirstPartyCorsOrigin', () => {
       expect(allowed(origin, dev)).toBeNull();
     }
   });
+
+  it('admits the configured staging domain the same strict way, off production only', () => {
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+      '.staging.tutur3u.com'
+    );
+    expect(allowed('https://tasks.staging.tutur3u.com', prod)).toBe(
+      'https://tasks.staging.tutur3u.com'
+    );
+    expect(allowed('https://staging.tutur3u.com', prod)).toBe(
+      'https://staging.tutur3u.com'
+    );
+    for (const origin of [
+      'https://a.b.staging.tutur3u.com',
+      'http://tasks.staging.tutur3u.com',
+      'https://tasks.staging.tutur3u.com:8443',
+      'https://tutur3u.com',
+      'https://evil.tutur3u.com',
+    ]) {
+      expect(allowed(origin, prod)).toBeNull();
+    }
+  });
+
+  it('never admits staging origins without a staging deployment', () => {
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN', '');
+    expect(allowed('https://tasks.staging.tutur3u.com', prod)).toBeNull();
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'production');
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+      '.staging.tutur3u.com'
+    );
+    expect(allowed('https://tasks.staging.tutur3u.com', prod)).toBeNull();
+  });
 });
