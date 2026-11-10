@@ -80,6 +80,26 @@ describe('roadmap public proxy', () => {
     );
   });
 
+  it('sends a bare satellite roadmap location to the slashed canonical path', async () => {
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(null, {
+          headers: { location: 'https://roadmap.tuturuuu.com/roadmap?q=1' },
+          status: 301,
+        })
+    );
+
+    const response = await proxyRoadmapPublicRequest(
+      new NextRequest('https://tuturuuu.com/roadmap/?q=1'),
+      fetchImpl
+    );
+
+    expect(response?.status).toBe(301);
+    expect(response?.headers.get('location')).toBe(
+      'https://tuturuuu.com/roadmap/?q=1'
+    );
+  });
+
   it('serves the mount root without redirecting back to the slash form', async () => {
     const fetchImpl = vi.fn(
       async (_input: RequestInfo | URL, _init?: RequestInit) =>

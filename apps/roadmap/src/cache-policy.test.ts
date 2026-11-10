@@ -209,6 +209,11 @@ test('host-selected SSR mount and physical transport keys remain isolated', asyn
 
   for (const [url, location] of [
     ['https://roadmap.tuturuuu.com/', 'https://tuturuuu.com/roadmap/'],
+    ['https://roadmap.tuturuuu.com/roadmap', 'https://tuturuuu.com/roadmap/'],
+    [
+      'https://roadmap.tuturuuu.com/roadmap?q=1',
+      'https://tuturuuu.com/roadmap/?q=1',
+    ],
     [
       'https://roadmap.tuturuuu.com/roadmap/assets/app-12345678.js',
       'https://tuturuuu.com/roadmap/assets/app-12345678.js',

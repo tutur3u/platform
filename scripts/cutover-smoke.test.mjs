@@ -402,6 +402,40 @@ describe('cutover-smoke harness', () => {
       expect(report.errors.length).toBeGreaterThan(0);
       expect(report.errors.some((e) => e.includes('LoginRoute'))).toBe(true);
     });
+
+    it('fails D15 when a configured asset smoke gets a non-CSS stylesheet', async () => {
+      const html = '<link rel="stylesheet" href="/assets/styles-Abcd1234.css">';
+      const mockFetch = vi.fn(async (url) => {
+        if (String(url).endsWith('.css')) {
+          return createMockResponse(404, '<html>missing</html>', {
+            'content-type': 'text/html',
+          });
+        }
+        return createMockResponse(200, html, { 'content-type': 'text/html' });
+      });
+      const report = await runCutoverSmoke('demo', 'https://tuturuuu.com', {
+        fetchImpl: mockFetch,
+        customConfig: {
+          apps: {
+            demo: {
+              name: 'demo',
+              entryRoute: '/',
+              loginRoute: '/login',
+              paths: ['/', '/login', '/a', '/robots.txt', '/manifest.json'],
+              assetSmoke: {
+                canonicalOrigin: 'https://tuturuuu.com',
+                pages: ['/'],
+              },
+            },
+          },
+        },
+      });
+      expect(report.pass).toBe(false);
+      expect(report.summary.assetSmoke.passed).toBe(false);
+      expect(
+        report.errors.some((error) => error.includes('[AssetSmoke]'))
+      ).toBe(true);
+    });
   });
 
   describe('parseArgs', () => {

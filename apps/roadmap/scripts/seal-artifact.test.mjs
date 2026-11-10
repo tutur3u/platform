@@ -362,7 +362,8 @@ test('satellite host 301s to the canonical roadmap and workers.dev does not', as
     ['/', 'https://tuturuuu.com/roadmap/'],
     ['/?x=1', 'https://tuturuuu.com/roadmap/?x=1'],
     ['/deep', 'https://tuturuuu.com/roadmap/deep'],
-    ['/roadmap', 'https://tuturuuu.com/roadmap'],
+    ['/roadmap', 'https://tuturuuu.com/roadmap/'],
+    ['/roadmap?x=1', 'https://tuturuuu.com/roadmap/?x=1'],
     ['/roadmap/?x=1&x=2', 'https://tuturuuu.com/roadmap/?x=1&x=2'],
     ['/roadmap/deep?x=%2F', 'https://tuturuuu.com/roadmap/deep?x=%2F'],
     ['/roadmap/assets/app.js', 'https://tuturuuu.com/roadmap/assets/app.js'],
@@ -372,6 +373,13 @@ test('satellite host 301s to the canonical roadmap and workers.dev does not', as
     assert.equal(response.headers.get('Location'), target);
     assert.equal(new URL(target).host, 'tuturuuu.com');
   }
+  const bare = roadmapBoundary(new Request('https://tuturuuu.com/roadmap?x=1'));
+  assert.equal(bare.status, 308);
+  assert.equal(bare.headers.get('Location'), '/roadmap/?x=1');
+  assert.equal(
+    roadmapBoundary(new Request('https://tuturuuu.com/roadmap/')),
+    undefined
+  );
   const worker = new Request(
     'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/assets/app.js'
   );

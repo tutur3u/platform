@@ -180,16 +180,24 @@ functions against that artifact. Synthetic source tests do not attest a build,
 seal, runtime or deployment. A PR synthetic merge SHA is distinct from its PR head
 and from the reviewed main commit used for release.
 
-The canonical page remains https://tuturuuu.com/roadmap/. The satellite host
-only redirects there. The release owner must reconcile any existing zone
-redirect with this contract and capture routing preimages before a hosted rollout.
+The canonical page remains https://tuturuuu.com/roadmap/. `https://tuturuuu.com/roadmap`
+and `https://roadmap.tuturuuu.com/roadmap` each redirect once, directly to that
+URL. The satellite host only redirects there. The release owner must reconcile
+any existing zone redirect with this contract and capture routing preimages
+before a hosted rollout.
 No DNS, zone, provider or deployment operation follows from source publication.
 Before sealing, `scripts/pre-seal-doctor.mjs` serves the built Worker on
 loopback with `Host: tuturuuu.com` (200, Tuturuuu branding, the five stage
 labels, public HTML cache, immutable hashed asset) and `Host:
-roadmap.tuturuuu.com` (301), and reads `/roadmap/api/build-info` for
-`ROADMAP_SOURCE_SHA`. The same checker must reject a broken variant. Verify
-that local result against the hosted routes after publication.
+roadmap.tuturuuu.com` (301 straight to `https://tuturuuu.com/roadmap/`), and
+reads `/roadmap/api/build-info` for `ROADMAP_SOURCE_SHA`. It also runs
+`scripts/ci/asset-smoke.mjs`: every CSS, JS and font URL referenced by the
+canonical and satellite documents must return 200 with the matching MIME type
+on `tuturuuu.com`. The same checker must reject a broken variant, including a
+stylesheet that returns 404 `text/html`. Post-deploy D15 runs that smoke for
+any app whose cutover entry sets `assetSmoke` (`node scripts/ci/asset-smoke.mjs`,
+or `node scripts/cutover-smoke.mjs roadmap https://tuturuuu.com`). Verify that
+local result against the hosted routes after publication.
 
 Capture the existing route mapping and immutable Worker version before a write.
 For a regression, the release owner restores those exact route mappings and the
