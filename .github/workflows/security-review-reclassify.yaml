@@ -13,12 +13,10 @@ on:
     types:
       - completed
 
-# Supersede an older reclassification of the same pull request. When the
-# workflow_run payload has no pull request, head_sha keeps unrelated signals
-# out of one shared slot.
 concurrency:
-  group: ${{ github.workflow }}-pr-${{ github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.head_sha }}
-  cancel-in-progress: true
+  group: security-review-reclassify-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+  queue: max
 
 permissions:
   contents: read
@@ -66,8 +64,8 @@ jobs:
           TRIGGER_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: node scripts/ci/security-review-classification.js
 
-  # Supersedes an older reclassify job for this pull request. The group uses
-  # this workflow's name, so it does not cancel a classification run.
+  # Evaluates and posts inside the same per-PR group as the classifier
+  # (security-review-pr-<number>), so the two never interleave.
   reclassify:
     name: Reclassify security review
     needs: resolve
@@ -75,8 +73,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     concurrency:
-      group: ${{ github.workflow }}-pr-${{ needs.resolve.outputs.number }}
-      cancel-in-progress: true
+      group: security-review-pr-${{ needs.resolve.outputs.number }}
+      cancel-in-progress: false
+      queue: max
     permissions:
       checks: write
       contents: read

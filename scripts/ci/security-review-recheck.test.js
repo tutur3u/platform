@@ -71,8 +71,8 @@ test('reclassification runs only default-branch classifier code', () => {
   const on = triggers(workflow);
   assert.deepEqual(Object.keys(on), ['workflow_run']);
   assert.deepEqual(on.workflow_run.workflows, ['Security Review Recheck']);
-  assert.equal(workflow.concurrency['cancel-in-progress'], true);
-  assert.equal(workflow.concurrency.queue, undefined);
+  assert.equal(workflow.concurrency['cancel-in-progress'], false);
+  assert.equal(workflow.concurrency.queue, 'max');
   assert.deepEqual(workflow.permissions, { contents: 'read' });
   const classifier = readWorkflow('security-review-classifier.yaml');
   const { resolve, reclassify } = workflow.jobs;
@@ -119,22 +119,31 @@ test('reclassification runs only default-branch classifier code', () => {
   assert.equal(post.env.PR_NUMBER, expression('needs.resolve.outputs.number'));
   assert.equal(post.env.HEAD_SHA, expression('needs.resolve.outputs.head_sha'));
   assert.equal(post.env.PR_AUTHOR, expression('needs.resolve.outputs.author'));
-  // Each writer supersedes its own older run. The workflow name keeps the
-  // classifier and the reclassify job from cancelling each other.
+  // REV-6456-16: one repository-wide, non-cancelling group per pull request
+  // is shared by every per-PR writer. queue max keeps a dismissed approval
+  // from being overwritten by an older in-flight classification.
+  const perPull = (group) =>
+    /^security-review-pr-\$\{\{ [\w.]+ \}\}$/u.test(group);
+  for (const [name, concurrency] of [
+    ['classifier', classifier.concurrency],
+    ['reclassify', reclassify.concurrency],
+  ]) {
+    assert.ok(perPull(concurrency.group), `${name}: ${concurrency.group}`);
+    assert.equal(concurrency['cancel-in-progress'], false, name);
+    assert.equal(concurrency.queue, 'max', name);
+  }
   assert.equal(
     classifier.concurrency.group,
-    `${expression('github.workflow')}-pr-${expression('github.event.pull_request.number')}`
+    expression('github.event.pull_request.number').replace(
+      /^/u,
+      'security-review-pr-'
+    )
   );
-  assert.equal(classifier.concurrency['cancel-in-progress'], true);
   assert.equal(
     reclassify.concurrency.group,
-    `${expression('github.workflow')}-pr-${expression('needs.resolve.outputs.number')}`
+    `security-review-pr-${expression('needs.resolve.outputs.number')}`
   );
-  assert.equal(reclassify.concurrency['cancel-in-progress'], true);
-  assert.notEqual(
-    classifier.concurrency.group,
-    reclassify.concurrency.group
-  );
+  assert.notEqual(workflow.concurrency.group, reclassify.concurrency.group);
   const text = source('security-review-reclassify.yaml');
   assert.doesNotMatch(
     text,
