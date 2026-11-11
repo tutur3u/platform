@@ -16,6 +16,7 @@ import {
 import {
   DOCUMENT_BUDGET,
   documentBudgetReport,
+  scriptCoverage,
   pendingBoundaryFailures,
   redundantAltFailures,
 } from './doctor-markup.mjs';
@@ -53,6 +54,7 @@ function passingRaw() {
       path,
       status: 200,
       size: 330_000,
+      scripts: { inline: 4, uncovered: 0 },
       speculative: [],
     })),
     history: {
@@ -375,5 +377,34 @@ test('D79: a Suspense boundary left pending on the server fails the doctor', () 
   assert.ok(
     verdict.failures.some((failure) => failure.includes('pending Suspense')),
     verdict.failures.join('\n')
+  );
+});
+
+test('D79: every public page has exactly four inline scripts, all hashed', () => {
+  const observation = passing();
+  assert.deepEqual(assessDoctor(observation).failures, []);
+  const csp = "script-src 'self' 'sha256-a' 'sha256-b' 'sha256-c' 'sha256-d'";
+  const four = ["'sha256-a'", "'sha256-b'", "'sha256-c'", "'sha256-d'"];
+  assert.deepEqual(scriptCoverage(four, csp), { inline: 4, uncovered: 0 });
+  // Broken variants: a fifth inline script (the old hydration loader), and
+  // one the policy does not hash.
+  observation.documents[1].scripts = scriptCoverage(
+    [...four, "'sha256-loader'"],
+    `${csp} 'sha256-loader'`
+  );
+  observation.documents[3].scripts = scriptCoverage(
+    ["'sha256-a'", "'sha256-b'", "'sha256-c'", "'sha256-x'"],
+    csp
+  );
+  const failures = assessDoctor(observation).failures;
+  assert.ok(
+    failures.includes('/roadmap/vi has 5 inline scripts, expected exactly 4'),
+    failures.join('\n')
+  );
+  assert.ok(
+    failures.includes(
+      '/roadmap/vi/workshops/edufest-2026 has 1 inline scripts its CSP does not hash'
+    ),
+    failures.join('\n')
   );
 });

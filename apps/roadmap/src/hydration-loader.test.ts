@@ -1,21 +1,31 @@
 /**
- * D79 tests for the inline hydration loader (src/defer-hydration.ts), run in
- * a sandbox with a fake document (via src/roadmap-data.test.ts). Each check
- * runs the real loader and a broken variant that must fail it.
+ * D79 tests for the boot script (src/boot/roadmap-boot.js): the hydration
+ * loader and lite mode, run in a sandbox with a fake document (via
+ * src/roadmap-data.test.ts). Each check runs the real script and a broken
+ * variant that must fail it.
  */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import vm from 'node:vm';
 import {
-  HYDRATION_LOADER,
+  DEFERRED_ENTRY_ATTRIBUTE,
+  DEFERRED_PRELOAD_REL,
+  FALLBACK_MS,
   IDLE_TIMEOUT_MS,
   INTENT_EVENTS,
 } from './defer-hydration.ts';
+import { isLiteDevice } from './lite-mode.ts';
+
+const BOOT = readFileSync(
+  new URL('./boot/roadmap-boot.js', import.meta.url),
+  'utf8'
+);
 
 type Fn = (...args: unknown[]) => unknown;
 
 /** Run `source` against a fake page; returns handles to drive it. */
-function boot(source: string) {
+function boot(source: string, navigator: object = {}) {
   const listeners = new Map<string, Fn[]>();
   const imports: string[] = [];
   const idle: { run: Fn; timeout?: number }[] = [];
@@ -24,9 +34,16 @@ function boot(source: string) {
   let paint: Fn = () => {};
   let finishImport: Fn = () => {};
   const appended: unknown[] = [];
+  const attributes = new Map<string, string>();
   const context = {
+    navigator,
     document: {
-      currentScript: { remove() {} },
+      readyState: 'complete',
+      addEventListener() {},
+      documentElement: {
+        setAttribute: (name: string, value: string) =>
+          attributes.set(name, value),
+      },
       head: { append: (node: unknown) => appended.push(node) },
       querySelectorAll: () => [
         { getAttribute: () => '/roadmap/assets/roadmap-Abcd1234.js' },
@@ -70,6 +87,7 @@ function boot(source: string) {
     imports,
     idle,
     appended,
+    attributes,
     fire: (type: string, event: object = {}) => {
       for (const fn of [...(listeners.get(type) ?? [])]) fn(event);
     },
@@ -94,9 +112,15 @@ function boot(source: string) {
 
 /** A fake <button>; `hydrate()` attaches React props the way React DOM does. */
 function fakeButton() {
+  const attrs = new Map<string, string>();
   const button = {
     isConnected: true,
     clicks: 0,
+    parentNode: null,
+    setAttribute: (name: string, value: string) => attrs.set(name, value),
+    removeAttribute: (name: string) => attrs.delete(name),
+    hasAttribute: (name: string) => attrs.has(name),
+    attrs,
     click() {
       button.clicks += 1;
     },
@@ -148,24 +172,24 @@ async function replaysFirstClick(source: string) {
 
 describe('perf: the bundle loads at the first intent or just after the LCP', () => {
   it('nothing loads before an intent or a paint is reported', () => {
-    const page = boot(HYDRATION_LOADER);
+    const page = boot(BOOT);
     assert.deepEqual(page.imports, []);
     assert.equal(page.idle.length, 0);
   });
 
   it('the first pointerdown, touchstart, keydown or focusin starts it, once', () => {
-    assert.equal(startsOnIntent(HYDRATION_LOADER), true);
+    assert.equal(startsOnIntent(BOOT), true);
     // Broken variant: a loader that ignores intent waits for the paint.
-    const noIntent = HYDRATION_LOADER.replace(
-      JSON.stringify(INTENT_EVENTS),
-      '[]'
+    const noIntent = BOOT.replace(
+      "var INTENTS = ['pointerdown', 'touchstart', 'keydown', 'focusin'];",
+      'var INTENTS = [];'
     );
-    assert.notEqual(noIntent, HYDRATION_LOADER);
+    assert.notEqual(noIntent, BOOT);
     assert.equal(startsOnIntent(noIntent), false);
   });
 
   it('after the largest contentful paint it loads in an idle period, within 1 s', () => {
-    const page = boot(HYDRATION_LOADER);
+    const page = boot(BOOT);
     page.paint();
     assert.equal(page.idle.length, 1);
     assert.ok((page.idle[0]?.timeout ?? Infinity) <= IDLE_TIMEOUT_MS);
@@ -176,18 +200,18 @@ describe('perf: the bundle loads at the first intent or just after the LCP', () 
   });
 
   it('the first click on a button is replayed once React has hydrated it', async () => {
-    assert.equal(await replaysFirstClick(HYDRATION_LOADER), true);
+    assert.equal(await replaysFirstClick(BOOT), true);
     // Broken variant: without the click recorder the first tap is lost.
-    const noReplay = HYDRATION_LOADER.replace(
-      "addEventListener('click',",
-      "void('click',"
+    const noReplay = BOOT.replace(
+      "addEventListener(\n    'click',",
+      "void(\n    'click',"
     );
-    assert.notEqual(noReplay, HYDRATION_LOADER);
+    assert.notEqual(noReplay, BOOT);
     assert.equal(await replaysFirstClick(noReplay), false);
   });
 
   it('links and other elements are left to the browser', () => {
-    const page = boot(HYDRATION_LOADER);
+    const page = boot(BOOT);
     let stopped = false;
     page.fire('click', {
       target: { closest: () => null },
@@ -196,5 +220,74 @@ describe('perf: the bundle loads at the first intent or just after the LCP', () 
       },
     });
     assert.equal(stopped, false);
+  });
+});
+
+describe('perf: the boot script matches the documented contract', () => {
+  it('uses the same intents, timeouts and attributes as defer-hydration.ts', () => {
+    assert.ok(
+      BOOT.includes(
+        `var INTENTS = ${JSON.stringify(INTENT_EVENTS).replaceAll('"', "'").replaceAll(',', ', ')};`
+      )
+    );
+    assert.ok(BOOT.includes(`var IDLE_TIMEOUT_MS = ${IDLE_TIMEOUT_MS};`));
+    assert.ok(BOOT.includes(`var FALLBACK_MS = ${FALLBACK_MS};`));
+    assert.ok(BOOT.includes(`link[rel="${DEFERRED_PRELOAD_REL}"]`));
+    assert.ok(BOOT.includes(`script[${DEFERRED_ENTRY_ATTRIBUTE}]`));
+    assert.ok(!/prefetch|prerender|speculationrules/i.test(BOOT));
+    assert.ok(!BOOT.includes('/roadmap/assets/'));
+  });
+
+  it('a held tap shows as pressed at once, before hydration', () => {
+    const page = boot(BOOT);
+    const button = fakeButton();
+    button.setAttribute('aria-pressed', 'false');
+    page.fire('click', { target: button, stopImmediatePropagation() {} });
+    assert.equal(button.attrs.get('aria-pressed'), 'true');
+    assert.ok(button.attrs.has('data-roadmap-pending'));
+  });
+});
+
+describe('perf: lite mode is decided before the first paint', () => {
+  const devices = [
+    { hardwareConcurrency: 4, deviceMemory: 8 },
+    { hardwareConcurrency: 8, deviceMemory: 2 },
+    { hardwareConcurrency: 8, deviceMemory: 8, connection: { saveData: true } },
+    { hardwareConcurrency: 12, deviceMemory: 8 },
+    {},
+  ];
+  const lite = (source: string, device: object) =>
+    boot(source, device).attributes.has('data-lite');
+
+  it('the boot script and the pure decision agree on every device', () => {
+    assert.deepEqual(
+      devices.map((device) => isLiteDevice(device)),
+      [true, true, true, false, false]
+    );
+    for (const device of devices)
+      assert.equal(lite(BOOT, device), isLiteDevice(device));
+    // Broken variant: a script with the wrong threshold disagrees.
+    const broken = BOOT.replace(
+      '(cores && cores <= 4)',
+      '(cores && cores <= 2)'
+    );
+    assert.notEqual(broken, BOOT);
+    assert.ok(devices.some((d) => lite(broken, d) !== isLiteDevice(d)));
+  });
+
+  it('the boot script is async, so it never blocks the first paint', () => {
+    assert.match(
+      readFileSync(new URL('./boot.ts', import.meta.url), 'utf8'),
+      /return \{ src: bootUrl, async: true \};/
+    );
+  });
+
+  it('both page heads render the boot script ahead of everything else they add', () => {
+    for (const head of ['./pages/roadmap-head.ts', './pages/edufest-head.ts'])
+      assert.match(
+        readFileSync(new URL(head, import.meta.url), 'utf8'),
+        /scripts: \[\s*bootScript\(\),/,
+        head
+      );
   });
 });

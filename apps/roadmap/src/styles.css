@@ -3205,3 +3205,11 @@ html[data-lite] .roadmap .backdrop-blur-xl {
   content-visibility: auto;
   contain-intrinsic-block-size: auto 720px;
 }
+/* A tap held until hydration (src/boot/roadmap-boot.js) shows at once:
+   toggles flip their pressed state, other buttons dim until they respond. */
+button[data-roadmap-pending] {
+  cursor: progress;
+}
+button[data-roadmap-pending]:not([aria-pressed]) {
+  opacity: 0.72;
+}

@@ -1,5 +1,6 @@
 /** Markup and size checks the pre-seal doctor runs on the public documents. */
 import { MAX_DOCUMENT_BYTES } from '../src/csp.ts';
+import { canonicalSmoke } from './canonical-smoke.mjs';
 
 /**
  * The navbar logo sits beside the visible brand name, so its alt text must be
@@ -79,4 +80,49 @@ export function pendingBoundaryFailures(html) {
   return pending
     ? [`canonical HTML streams ${pending} pending Suspense boundaries`]
     : [];
+}
+
+/**
+ * Inline scripts per public page: the router's four (JSON-LD, theme,
+ * router bootstrap, stream boundary). The boot script and the hydration
+ * loader are external same-origin assets, so a fifth inline script means
+ * something new now depends on a CSP hash.
+ */
+export const EXPECTED_INLINE_SCRIPTS = 4;
+
+/** How many inline scripts a page has, and how many its CSP leaves out. */
+export function scriptCoverage(hashes, csp) {
+  const policy = String(csp ?? '');
+  return {
+    inline: hashes.length,
+    uncovered: hashes.filter((hash) => !policy.includes(hash)).length,
+  };
+}
+
+export function inlineScriptFailures(document) {
+  const scripts = document?.scripts;
+  if (!scripts) return [`${document?.path} inline scripts were not counted`];
+  const failures = [];
+  if (scripts.inline !== EXPECTED_INLINE_SCRIPTS)
+    failures.push(
+      `${document.path} has ${scripts.inline} inline scripts, expected exactly ${EXPECTED_INLINE_SCRIPTS}`
+    );
+  if (scripts.uncovered > 0)
+    failures.push(
+      `${document.path} has ${scripts.uncovered} inline scripts its CSP does not hash`
+    );
+  return failures;
+}
+
+/**
+ * The production canonical smoke, run against the built Worker before the
+ * seal: it must find the hashed history asset from the page scripts, as it
+ * will on tuturuuu.com. Prints its failures; returns its verdict.
+ */
+export async function builtWorkerSmoke(fetchImpl) {
+  const smoke = await canonicalSmoke({ fetchImpl });
+  for (const failure of smoke.failures)
+    console.error(`- canonical smoke: ${failure}`);
+  if (smoke.ok) console.log('canonical smoke passed on the built Worker');
+  return smoke;
 }

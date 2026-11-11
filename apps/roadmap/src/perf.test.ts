@@ -15,12 +15,10 @@ import {
   DEFERRED_ENTRY_ATTRIBUTE,
   DEFERRED_PRELOAD_REL,
   deferHydration,
-  HYDRATION_LOADER,
 } from './defer-hydration.ts';
 import { loadHistoryWhenNear, type Observe } from './history/lazy-load.ts';
 import { periodChipName, scrubberWindow } from './history/timeline.ts';
 import { inlineScriptTexts } from './html-scripts.ts';
-import { isLiteDevice, LITE_MODE_SOURCE } from './lite-mode.ts';
 import { afterIdleAndVisible, type DeferEnv } from './live/defer.ts';
 import { fetchPullFacts } from './live/github.ts';
 import { isRateLimited, LIVE_SEARCH } from './live/use-live-data.ts';
@@ -99,44 +97,6 @@ describe('perf: expensive CSS stays off phones and low-end devices', () => {
       widens('.track { contain-intrinsic-size: auto 720px; }'),
       true
     );
-  });
-});
-
-describe('perf: lite mode is decided before the first paint', () => {
-  const run = (source: string, navigator: object) => {
-    const attributes = new Map<string, string>();
-    const document = {
-      documentElement: {
-        setAttribute: (name: string, value: string) =>
-          attributes.set(name, value),
-      },
-    };
-    new Function('navigator', 'document', source)(navigator, document);
-    return attributes.has('data-lite');
-  };
-  const devices = [
-    { hardwareConcurrency: 4, deviceMemory: 8 },
-    { hardwareConcurrency: 8, deviceMemory: 2 },
-    { hardwareConcurrency: 8, deviceMemory: 8, connection: { saveData: true } },
-    { hardwareConcurrency: 12, deviceMemory: 8 },
-    {},
-  ];
-
-  it('the inline script and the pure decision agree on every device', () => {
-    assert.deepEqual(
-      devices.map((device) => isLiteDevice(device)),
-      [true, true, true, false, false]
-    );
-    for (const device of devices)
-      assert.equal(run(LITE_MODE_SOURCE, device), isLiteDevice(device));
-    // Broken variant: a script with the wrong threshold disagrees.
-    const broken = LITE_MODE_SOURCE.replace('c<=4', 'c<=2');
-    assert.ok(devices.some((d) => run(broken, d) !== isLiteDevice(d)));
-  });
-
-  it('both page heads render it, ahead of everything else they add', () => {
-    for (const head of ['./pages/roadmap-head.ts', './pages/edufest-head.ts'])
-      assert.match(read(head), /scripts: \[\s*liteModeScript\(\),/, head);
   });
 });
 
@@ -295,14 +255,18 @@ describe('perf: the served document fetches no module before paint or intent', (
         `<script type="text/plain" ${DEFERRED_ENTRY_ATTRIBUTE}="" src="/roadmap/assets/index-Abcd1234.js"></script>`
       )
     );
-    assert.deepEqual(inlineScriptTexts(served), [HYDRATION_LOADER]);
+    // Attributes change; no element (and so no inline script) is added.
+    assert.deepEqual(inlineScriptTexts(served), []);
+    assert.equal(served.split('<script').length, html.split('<script').length);
     // Broken variant: an untouched document fetches modules before paint.
     assert.equal(early(html), true);
   });
 
-  it('the loader never prefetches and is static for the CSP', () => {
-    assert.ok(!/prefetch|prerender|speculationrules/i.test(HYDRATION_LOADER));
-    assert.ok(!HYDRATION_LOADER.includes('/roadmap/assets/'));
+  it('adds no inline script, so the CSP keeps the four the router renders', () => {
+    const inserting = (doc: string) =>
+      deferHydration(doc).replace('</body>', '<script>boot()</script></body>');
+    // Broken variant: a transform that inserts an inline loader.
+    assert.equal(inlineScriptTexts(inserting(html)).length, 1);
     assert.match(
       read('./worker.ts'),
       /withContentSecurityPolicy\(response, deferHydration\)/
@@ -371,6 +335,21 @@ describe('perf: hydration is split into section boundaries', () => {
     assert.deepEqual(
       wrapped('{visible.map((t) => <TrackCard key={t.id} />)}'),
       []
+    );
+  });
+});
+
+describe('perf: the entry chunk names the hashed history asset', () => {
+  it('the roadmap head links it (no fetch), so its URL lives in the entry chunk', () => {
+    const head = read('./pages/roadmap-head.ts');
+    assert.match(head, /historyAlternateLink\(\),/);
+    const link = read('./history/history-url.ts');
+    assert.match(link, /rel: 'alternate',\s*type: 'application\/json'/);
+    assert.ok(!/prefetch|preload|prerender/.test(link));
+    // The timeline reads the same module, so both share one URL.
+    assert.match(
+      read('./history/use-history.ts'),
+      /import \{ historyUrl \} from '\.\/history-url\.ts';/
     );
   });
 });

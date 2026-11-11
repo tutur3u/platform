@@ -175,3 +175,59 @@ test('D79: speculation rules markup on a canonical page fails the smoke', async 
       `${page}: ${failures.join('\n')}`
     );
 });
+
+/**
+ * The deferred-hydration page as the Worker serves it: the entry is an inert
+ * `type="text/plain"` script, route chunks are inert `roadmap-modulepreload`
+ * hints, and the boot script is external. `historyIn` says which file
+ * carries the hashed history URL.
+ */
+function deferredZone(historyIn) {
+  const page = `<!doctype html><html><head>
+<link rel="roadmap-modulepreload" href="/roadmap/assets/roadmap-Abcd1234.js" fetchPriority="low"/>
+<link rel="alternate" type="application/json" href="${HISTORY}" title="Roadmap history"/>
+<script src="/roadmap/assets/roadmap-boot-Abcd1234.js"></script>
+</head><body><h1>Roadmap</h1>
+<script type="text/plain" data-roadmap-entry="" src="/roadmap/assets/index-Abcd1234.js"></script>
+</body></html>`;
+  return async (input) => {
+    const url = new URL(typeof input === 'string' ? input : input.url);
+    if (CANONICAL_PAGES.includes(url.pathname))
+      return new Response(page, {
+        status: 200,
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      });
+    if (url.pathname === HISTORY)
+      return new Response('{"a":1}', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    if (/^\/roadmap\/assets\/[\w-]+\.js$/.test(url.pathname))
+      return new Response(
+        url.pathname.includes(historyIn) ? `var h="${HISTORY}";` : 'x',
+        { status: 200, headers: { 'content-type': 'text/javascript' } }
+      );
+    return new Response('missing', { status: 404 });
+  };
+}
+
+test('D79: the smoke finds the history asset in the entry the page names, with hydration deferred', async () => {
+  const passing = await canonicalSmoke({
+    origin: ORIGIN,
+    fetchImpl: deferredZone('/index-'),
+  });
+  assert.deepEqual(passing.failures, []);
+  assert.ok(passing.checked.includes(`200 history ${HISTORY}`));
+  // Broken variant (#8190 at 7d39dbbd): the URL only in a route chunk the
+  // page names through an inert hint, which the smoke never fetches.
+  const broken = await canonicalSmoke({
+    origin: ORIGIN,
+    fetchImpl: deferredZone('/roadmap-Abcd1234'),
+  });
+  assert.ok(
+    broken.failures.includes(
+      'no page script references a hashed history asset'
+    ),
+    broken.failures.join('\n')
+  );
+});

@@ -227,6 +227,7 @@ export function assessDoctor(observation) {
     for (const href of document.speculative ?? [])
       failures.push(`${path} speculatively loads ${href}: ${SPEED_BRAIN}`);
     failures.push(...markup.documentBudgetFailures(document));
+    failures.push(...markup.inlineScriptFailures(document));
   }
   const satellite = observation.satellite ?? {};
   if (satellite.status !== 301) {
@@ -276,6 +277,7 @@ export function brokenVariant(observation) {
     documents: (observation.documents ?? []).map((document) => ({
       ...document,
       size: markup.DOCUMENT_BUDGET + 1,
+      scripts: { inline: markup.EXPECTED_INLINE_SCRIPTS + 1, uncovered: 1 },
       speculative: [
         ...(document.speculative ?? []),
         '/roadmap/assets/history-Abcd1234.json',
@@ -359,6 +361,10 @@ export async function observeWorker(port, expectedCommit, root = appRoot()) {
       path,
       status: result.status,
       size: String(result.body).length,
+      scripts: markup.scriptCoverage(
+        inlineScriptHashes(result.body),
+        result.csp
+      ),
       speculative: speculativeLinks(result.body),
     });
   }
@@ -702,6 +708,7 @@ async function main() {
       fetchImpl: doctorFetch(running.port),
     });
     for (const failure of assetSmoke.failures) console.error(`- ${failure}`);
+    const smoke = await markup.builtWorkerSmoke(doctorFetch(running.port));
     const brokenAssets = await smokeAssets({
       pages: [CANONICAL_URL],
       canonicalOrigin: 'https://tuturuuu.com',
@@ -724,7 +731,13 @@ async function main() {
     });
     const assetRejection = reportAssetSmokeRejection(brokenAssets);
     console.error(assetRejection);
-    if (!verdict.ok || !broken.ok || !assetSmoke.ok || brokenAssets.ok) {
+    if (
+      !verdict.ok ||
+      !broken.ok ||
+      !assetSmoke.ok ||
+      brokenAssets.ok ||
+      !smoke.ok
+    ) {
       process.exit(1);
     }
     console.log(
