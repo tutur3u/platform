@@ -3,7 +3,7 @@ import { visibleComingSoon } from '../content/coming-soon';
 import { type Status, statuses } from '../live/status';
 import type { LiveData } from '../live/model';
 import type { RoadmapView } from '../view-model';
-import { HeroOrbits, ShippingPulse } from './pulse';
+import { ShippingPulse } from './pulse';
 import type { Lang, Messages } from './shared';
 
 export function Hero({
@@ -45,19 +45,16 @@ export function Hero({
   ];
   return (
     <section className="hero" aria-labelledby="page-title">
-      <div className="hero-backdrop" aria-hidden>
-        <span className="bloom bloom-a" />
-        <span className="bloom bloom-b" />
-        <span className="grid-lines" />
-        <HeroOrbits />
-      </div>
+      <div className="hero-wash" aria-hidden />
       <p className="eyebrow">
         <span className="eyebrow-dot" aria-hidden />
         {t.eyebrow}
       </p>
       <h1 id="page-title">
-        <span>{t.title}</span>
-        <span className="accent">{t.titleAccent}</span>
+        <span className="hero-h1-main">{t.title}</span>
+        <span className="hero-h1-sub">
+          <MarkedPhrase text={t.titleAccent} mark={t.titleMark} />
+        </span>
       </h1>
       <p className="intro">{t.intro}</p>
       <dl className="stats">
@@ -76,6 +73,19 @@ export function Hero({
         <ShippingPulse t={t} lang={lang} data={data} now={now} />
       </div>
     </section>
+  );
+}
+
+/** One phrase of `text` underlined in brand purple; the rest stays plain. */
+export function MarkedPhrase({ text, mark }: { text: string; mark: string }) {
+  const at = mark ? text.indexOf(mark) : -1;
+  if (at < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, at)}
+      <span className="hero-mark">{mark}</span>
+      {text.slice(at + mark.length)}
+    </>
   );
 }
 

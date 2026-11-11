@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { EduFestWorkshopPage, edufestHead } from '../../pages/edufest';
+import { EduFestWorkshopPage } from '../../pages/edufest';
+import { edufestHead } from '../../pages/edufest-head';
 
 export const Route = createFileRoute('/workshops/edufest-2026')({
   head: () => edufestHead('en'),

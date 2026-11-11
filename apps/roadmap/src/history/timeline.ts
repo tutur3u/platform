@@ -84,6 +84,46 @@ export function scrubberPeriods(
   }));
 }
 
+/** Chips the scrubber renders at once; arrows and keys reach the rest. */
+export const SCRUBBER_WINDOW = 24;
+
+/**
+ * The slice of `periods` the scrubber renders: SCRUBBER_WINDOW chips that
+ * always include `selected`, leaning toward the present. Rendering every week
+ * since 2022 put 200+ buttons in the DOM for a strip that shows about ten.
+ */
+export function scrubberWindow<T extends { key: string }>(
+  periods: readonly T[],
+  selected: string,
+  size = SCRUBBER_WINDOW
+): T[] {
+  if (periods.length <= size) return [...periods];
+  const found = periods.findIndex((period) => period.key === selected);
+  const index = found < 0 ? periods.length - 1 : found;
+  const end = Math.min(
+    periods.length,
+    Math.max(index + 1 + Math.floor(size / 3), size)
+  );
+  return periods.slice(end - size, end);
+}
+
+/**
+ * A period chip's accessible name. It starts with the chip's visible label
+ * (for example "Now" or "W46"), so voice users can say what they see
+ * (WCAG 2.5.3 Label in Name), then adds the period key and its count.
+ */
+export function periodChipName(
+  visible: string,
+  key: string,
+  total: number,
+  words: { changeOne: string; changes: string }
+) {
+  const count = `${total} ${total === 1 ? words.changeOne : words.changes}`;
+  return visible === key
+    ? `${visible}: ${count}`
+    : `${visible}, ${key}: ${count}`;
+}
+
 export type TimelineGroup = {
   track: string;
   name: string;

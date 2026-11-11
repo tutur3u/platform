@@ -121,6 +121,7 @@
     "changeOne": "change"
   },
   "titleAccent": "Shipped in the open.",
+  "titleMark": "in the open",
   "pulse": {
     "title": "Shipping pulse",
     "merged": "pull requests merged",
