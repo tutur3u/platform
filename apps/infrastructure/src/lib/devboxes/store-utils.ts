@@ -50,6 +50,15 @@ export function getDevboxStorageError(error: DevboxStorageErrorLike) {
     return new DevboxStoreError(DEVBOX_READINESS_MESSAGE, 503);
   }
 
+  if (message === 'Devbox lease not found.')
+    return new DevboxStoreError(message, 404);
+  if (message === 'Devbox lease is not active.')
+    return new DevboxStoreError(message, 409);
+  if (
+    message === 'Devbox runner is not available to this actor.' ||
+    message === 'Devbox lease ownership is immutable.'
+  )
+    return new DevboxStoreError(message, 403);
   return new DevboxStoreError(message);
 }
 
