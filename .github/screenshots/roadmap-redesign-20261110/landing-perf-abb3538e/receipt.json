@@ -185,7 +185,8 @@
     "wrangler": 0,
     "check-changed": 0,
     "format": 0,
-    "build": 0
+    "build": 0,
+    "source-size": 0
   },
   "method": {
     "lighthouse": "12.8.2 mobile defaults, median of 3 per metric",
@@ -220,5 +221,12 @@
       104
     ],
     "interactionScope": "Products menu only; different machine, not used as the paired comparison."
+  },
+  "sourceSize": {
+    "command": "node scripts/check-source-size.js",
+    "exit": 0,
+    "changedAuthoredFilesChecked": 44,
+    "maximumAllowedLines": 700,
+    "violations": 0
   }
 }
