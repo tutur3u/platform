@@ -27,14 +27,14 @@ lineage=(
   20261101090100_exclude_easy_center_from_meet_transcript_purge
 )
 self_v1=(
-  20261109223001_meet_ai_self_v1_contracts
-  20261109223002_meet_ai_chunks_legacy_sequence_key
-  20261109223003_meet_ai_chunks_stream_sequence_key
-  20261109223004_meet_ai_chunks_account_session_idx
-  20261109223005_meet_ai_chunks_timeline_idx
-  20261109223006_meet_ai_chunks_stream_identity_guard
-  20261109223007_validate_meet_ai_self_v1_constraints
-  20261109223008_meet_ai_self_v1_read_contracts
+  20261111120201_meet_ai_self_v1_contracts
+  20261111120202_meet_ai_chunks_legacy_sequence_key
+  20261111120203_meet_ai_chunks_stream_sequence_key
+  20261111120204_meet_ai_chunks_account_session_idx
+  20261111120205_meet_ai_chunks_timeline_idx
+  20261111120206_meet_ai_chunks_stream_identity_guard
+  20261111120207_validate_meet_ai_self_v1_constraints
+  20261111120208_meet_ai_self_v1_read_contracts
 )
 # main's meet-ai-consent-schema/-retention suites need main's full parent RLS
 # (workspace_meetings policies, creator membership triggers); run them on a
@@ -48,7 +48,7 @@ forward() {
   local m
   for m in "${self_v1[@]}"; do
     case $m in
-      2026110922300[2-5]_*) run "supabase/migrations/$m.sql" ;; # CONCURRENTLY: no transaction
+      2026111112020[2-5]_*) run "supabase/migrations/$m.sql" ;; # CONCURRENTLY: no transaction
       *) run "supabase/migrations/$m.sql" tx ;;
     esac
   done
@@ -86,14 +86,14 @@ echo '== forward'
 suites_pass
 
 # Rollback round trip, in the documented order, then forward again.
-for m in 20261109223008_meet_ai_self_v1_read_contracts \
-  20261109223007_validate_meet_ai_self_v1_constraints \
-  20261109223006_meet_ai_chunks_stream_identity_guard \
-  20261109223005_meet_ai_chunks_timeline_idx \
-  20261109223004_meet_ai_chunks_account_session_idx \
-  20261109223003_meet_ai_chunks_stream_sequence_key \
-  20261109223002_meet_ai_chunks_legacy_sequence_key \
-  20261109223001_meet_ai_self_v1_contracts; do
+for m in 20261111120208_meet_ai_self_v1_read_contracts \
+  20261111120207_validate_meet_ai_self_v1_constraints \
+  20261111120206_meet_ai_chunks_stream_identity_guard \
+  20261111120205_meet_ai_chunks_timeline_idx \
+  20261111120204_meet_ai_chunks_account_session_idx \
+  20261111120203_meet_ai_chunks_stream_sequence_key \
+  20261111120202_meet_ai_chunks_legacy_sequence_key \
+  20261111120201_meet_ai_self_v1_contracts; do
   run "rollbacks/$m.rollback.sql"
 done
 $PSQL -X -At -v ON_ERROR_STOP=1 -c "alter table public.meet_ai_sessions validate constraint meet_ai_sessions_user_id_fkey"
