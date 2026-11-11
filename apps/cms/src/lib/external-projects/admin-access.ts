@@ -40,3 +40,5 @@ export async function requireCmsRootExternalProjectsAdmin() {
     user,
   };
 }
+
+export { getCmsExternalProjectAdminAccess } from './site-admin-access';

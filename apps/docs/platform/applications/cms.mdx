@@ -206,3 +206,63 @@ Built-in projects match their registered adapter id; custom projects match the
 canonical project id. The shared `custom` adapter name grants no project access.
 This follows the same identity rule as app-token handoff. Coverage:
 `apps/web/src/lib/external-projects/app-credentials.test.ts`.
+
+## Mapped external-site administration
+
+External sites can use the existing CMS session gate through
+`getCmsExternalProjectAdminAccess(origin)` or the authoritative Web endpoint
+`POST /api/v1/workspaces/{workspaceId}/external-projects/admin-access` with JSON
+`{ "origin": "https://site.example" }`. The endpoint accepts the same user
+session or app coordination bearer token as other external-project APIs; machine
+credentials alone do not authorize an administrator. External app tokens need
+`external-projects:publish`, `external-projects:manage` or `external-projects:*`,
+matching the existing edit-mode scope policy. Keep bearer credentials on
+the caller's server, out of URLs, logs and browser storage.
+
+The deployment-owned `EXTERNAL_PROJECT_ADMIN_BINDINGS` value is a JSON array of
+`{ origin, workspaceId, canonicalProjectId }` records. Origins are exact HTTPS
+origins without paths, credentials or trailing slashes. Workspace IDs must be
+real workspace UUIDs, and canonical IDs must match enabled, active database
+bindings. An absent, malformed, duplicate or mismatched mapping denies access.
+Multiple approved origins may reference the same canonical project and workspace.
+A workspace retains one canonical template binding; renderer sections can
+separate site/admin content from docs content without another workspace or
+competing binding. Canonical project keys can contain dots. Provision mappings
+through the normal product and deployment processes; the adapter does not create
+workspaces, invitations or bindings.
+
+The site admin `/admin` and analytics `/admin/analytics` use the same decision.
+Both require an accepted `MEMBER` membership and existing workspace CMS edit,
+publish or manage permission. Root-only administrative access cannot substitute
+for site workspace staff membership. General central CMS root administration
+retains its existing policy. Call this check on every protected page and API
+request before loading protected data; do not cache success or rely on a client
+layout. The Web result is private/no-store and discloses only the authenticated
+actor's own email. A denied actor's email can also come from the existing
+session identity API; never enumerate invitations to explain a denial.
+
+The adapter is available to site-runtime integrations; its presence does not
+wire an external frontend layout or activate a production mapping. A native D1
+analytics reader must consume this same gate on its server before querying D1.
+
+### Invitation acceptance boundary
+
+Automatic acceptance stays disabled until the normal product acceptance flow
+can prove exact verified Auth email matching, pending invitation validity,
+auditing, and atomic invitation revalidation/consumption under concurrent
+acceptance or revocation. Do not match domains, aliases, profile emails or
+unverified session claims. An already accepted member is authorized only by
+current membership and permissions, never by replaying an invitation.
+
+`finalize_workspace_invitation_membership_v2` serializes membership and role
+writes but reads role IDs supplied by the service. Invitation lookup and cleanup
+in `app-token-decision.ts` occur outside that transaction. Consequently this RPC
+alone does not prove the revocation/acceptance fence required for unattended
+acceptance. Do not bypass that hold with service-role writes or a new gate.
+
+Regression coverage: `packages/utils/src/external-project-admin-binding.test.ts`,
+`apps/cms/src/lib/external-projects/site-admin-access.test.ts`, and the Web
+`external-projects/admin-access/route.test.ts` cover mapping, canonical identity,
+central denial and root-only/nonmember rejection. Existing invitation status and
+acceptance tests remain required; they do not substitute for transaction-level
+race evidence before enabling automatic acceptance.
