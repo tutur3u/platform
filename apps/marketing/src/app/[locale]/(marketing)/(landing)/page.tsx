@@ -1,4 +1,3 @@
-import './landing.css';
 import { getTranslations } from 'next-intl/server';
 import {
   DeferredFeatures,
