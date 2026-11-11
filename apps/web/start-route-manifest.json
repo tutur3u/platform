@@ -43,18 +43,18 @@
     }
   ],
   "summary": {
-    "total": 858,
+    "total": 859,
     "categories": {
       "api": 664,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 163,
+      "page": 164,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 846 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 847 }
   },
   "routes": [
     {
@@ -220,6 +220,14 @@
     {
       "pattern": "/[locale]/[wsId]/billing/success",
       "source": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/success/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/[wsId]/domains",
+      "source": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/domains/page.tsx",
       "category": "page",
       "owner": "web-next",
       "disposition": "Next-fallback",

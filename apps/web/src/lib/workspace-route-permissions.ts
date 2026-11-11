@@ -49,6 +49,8 @@ export function getWorkspaceRoutePermissionRequirements(
       return ['manage_calendar'];
     case 'documents':
       return ['manage_documents'];
+    case 'domains':
+      return ['view_workspace_domains', 'manage_workspace_domains'];
     case 'drive':
       return ['manage_drive'];
     case 'education':
