@@ -1,9 +1,12 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import { getConfirmedAuthEmail } from '@tuturuuu/supabase/next/user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { resolveJournalWorkspaceId } from '@/lib/personal-journal/auth';
+import { isTuturuuuExperimentalAccount } from '@/lib/personal-journal/audience';
+import { isJournalMoodTrackingEnabled } from '@/lib/personal-journal/flag';
 import JournalClient from './client';
 export default async function PersonalJournalPage({
   params,
@@ -33,7 +36,15 @@ export default async function PersonalJournalPage({
   if (error) throw new Error('Journal access unavailable');
   if (!data?.personal || data.deleted || data.creator_id !== user.id)
     notFound();
+  const moodTracking =
+    (await isJournalMoodTrackingEnabled(wsId)) &&
+    isTuturuuuExperimentalAccount(getConfirmedAuthEmail(user));
   return (
-    <JournalClient key={`${user.id}:${wsId}`} actorId={user.id} wsId={wsId} />
+    <JournalClient
+      key={`${user.id}:${wsId}`}
+      actorId={user.id}
+      moodTracking={moodTracking}
+      wsId={wsId}
+    />
   );
 }
