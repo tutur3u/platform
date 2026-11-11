@@ -18,6 +18,11 @@ import {
   AI_LEVELS_DELIVERABLE,
   CAPABILITIES,
   CLASSROOM_FLOW,
+  EXPERIENCES,
+  FAQ,
+  HIGHLIGHTS,
+  INSIGHTS_DELIVERABLE,
+  INSIGHTS_DEMO,
   JOURNEY,
   OUTCOMES,
   TOOLS,
@@ -190,5 +195,62 @@ describe('EduFest workshop: calendar and map', () => {
       mapHref('702 Nguyen Van Linh') ?? '',
       /^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=702%20Nguyen/
     );
+  });
+});
+
+describe('EduFest workshop: richer content', () => {
+  it('every highlight, experience and FAQ id has copy in both languages', () => {
+    for (const messages of [en, vi]) {
+      for (const id of HIGHLIGHTS)
+        assert.ok(messages.highlights.items[id].title);
+      for (const item of EXPERIENCES)
+        assert.ok(
+          messages.experience.items[
+            item.id as keyof typeof messages.experience.items
+          ],
+          item.id
+        );
+      for (const id of FAQ)
+        assert.ok(messages.faq.items[id].q && messages.faq.items[id].a);
+      for (const id of INSIGHTS_DEMO.stickingPoints)
+        assert.ok(messages.insights.stuck[id]);
+    }
+  });
+
+  it('the insights dashboard is always marked as demo data', () => {
+    assert.equal(en.insights.demo, 'Demo data');
+    assert.equal(vi.insights.demo, 'Dữ liệu mẫu');
+    assert.match(en.insights.demoNote, /not from a real class/i);
+    const component = readFileSync(
+      new URL('../../components/workshop.tsx', import.meta.url),
+      'utf8'
+    );
+    assert.match(component, /className="ws-demo-pill">\{t\.insights\.demo\}/);
+    assert.ok(deliverables.has(INSIGHTS_DELIVERABLE));
+    const { hints, full, none } = INSIGHTS_DEMO.aiHelp;
+    assert.equal(hints + full + none, 100);
+    assert.equal(
+      INSIGHTS_DEMO.quizBuckets.reduce(
+        (sum, bucket) => sum + bucket.learners,
+        0
+      ),
+      INSIGHTS_DEMO.joined
+    );
+  });
+
+  it('readiness counts are derived, and FAQ answers stay honest', () => {
+    const component = readFileSync(
+      new URL('../../components/workshop.tsx', import.meta.url),
+      'utf8'
+    );
+    assert.match(component, /counts\[statusOf\(item, statuses\)\] \+= 1/);
+    assert.match(en.faq.items.ready.a, /Planned means not built yet/);
+    assert.match(en.faq.items.registration.a, /not open yet/);
+    // Broken variant: an attributed quote would read as a fake testimonial.
+    for (const messages of [en, vi])
+      assert.doesNotMatch(
+        JSON.stringify(messages.experience),
+        /[—-]\s*[A-Z][a-z]+ [A-Z]\.|“[^”]+”\s*[—-]/
+      );
   });
 });
