@@ -126,6 +126,13 @@ Workspace holds copies of Web files. Re-compare the auth and account files with
 - External-project scope checks live in `lib/external-projects/access-mode.ts`,
   and the route permissions include `edit_external_projects`.
 
+- `lib/api-auth.ts` and `lib/supabase-session-request.ts` match Web byte for byte,
+  so `preferSupabaseSessionAuth` reads the browser Supabase identity when a
+  supported auth cookie exists.
+- `lib/auth/account-switch-routes.ts` is Web's `lib/auth/multi-account/routes.ts`
+  under a different path, so a new Web workspace route segment must be added to
+  both.
+
 Intentional differences from Web: no roadmap proxy or `/roadmap` public path
 (Web owns the public roadmap), no API cost and CSRF guard in the proxy (see
 above), `lib/datasets/page-access.ts` redirects a `401` to the login, and the
