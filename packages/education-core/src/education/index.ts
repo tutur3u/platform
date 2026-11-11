@@ -3,3 +3,4 @@ export * from './access';
 export * from './json-payload-schema';
 export * from './private-quiz-answers';
 export * from './revalidate-quiz-paths';
+export * from './inline-assistant';

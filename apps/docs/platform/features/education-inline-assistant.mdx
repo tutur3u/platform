@@ -1,0 +1,50 @@
+---
+title: "Education inline assistance contracts"
+description: "Policy and suggestion boundaries for educational editor adapters."
+---
+
+The portable `@tuturuuu/education-core/education/inline-assistant` module defines
+subject-aware prompts and validates inline suggestions. It has no network,
+storage, framework or provider dependency. It does not enable assistance on a
+classroom surface by itself.
+
+## Trusted policy
+
+An adapter must resolve workspace AI enablement and the teacher's help level from
+trusted server state after authenticating the learner and checking access to the
+classroom and document. Learner request fields cannot grant a help level.
+Unknown or missing levels resolve to `off`; workspace disablement overrides
+`full`. The supported levels are `off`, `hints` and `full`.
+
+`buildAssistanceMessages` returns null when assistance is off or text is empty.
+It bounds snapshots to 12,000 UTF-16 code units and keeps untrusted student text
+in a separate user message. Subject guidance covers writing, math, physics,
+chemistry, biology and a general fallback. Explanations can use English or
+Vietnamese. Only an authenticated adapter using the workspace's existing
+configured provider path may send these messages.
+
+Hints mode instructs the model to avoid answers, strips replacement fields from
+validated results and prohibits applying edits. These structural controls do not
+prove explanations are answer-free. Evaluate the configured model against
+answer-leakage fixtures before enabling remote hints for assessed work.
+
+## Editor adapters
+
+`validateInlineSuggestions` bounds provider output to twenty findings, rejects
+invalid, overlapping and duplicate ranges, verifies quoted original text, and
+rejects ranges splitting Unicode surrogate pairs. Treat explanation and replacement
+strings as text, never executable HTML. An empty list does not certify a correct
+answer.
+
+Offsets refer to the exact plain-text snapshot in UTF-16 code units. They are not
+ProseMirror positions. A rich-text adapter must maintain an explicit mapping and
+apply changes through its editor transaction API to preserve formatting.
+`applyInlineSuggestion` supports plain-text adapters and rejects any snapshot
+change, invalid range, disabled policy, or hint-only edit.
+
+Recheck policy when generating and applying findings. Cancel outstanding requests
+and remove visible suggestions when policy, workspace, document or learner changes.
+Use instance-local bounded caches; never share student text or findings between
+workspaces or learners. An adapter must supply accessible accept/dismiss controls,
+explanations, keyboard focus handling and stale-result recovery before enabling
+inline assistance.
