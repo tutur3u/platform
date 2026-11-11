@@ -82,13 +82,7 @@ describe('Upskii is the official mark and always linked', () => {
       't.tools.subtitle',
       'copy.title',
     ])
-      assert.match(
-        source,
-        new RegExp(
-          `<UpskiiText text=\\{${field.replace(/[.[\]]/g, '\\$&')}\\} />`
-        ),
-        field
-      );
+      assert.ok(source.includes(`<UpskiiText text={${field}} />`), field);
     assert.match(
       source,
       /<UpskiiLink>\{t\.tools\.names\.upskii\}<\/UpskiiLink>/
