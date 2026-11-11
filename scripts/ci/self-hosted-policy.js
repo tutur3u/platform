@@ -1,9 +1,9 @@
-const HOST_LABELS = ['studio', 'i9', 'm3', 'm4', 'skr-linux'].map(
+const HOST_LABELS = ['studio', 'macbook1'].map(
   (host) => `ttr-selfhosted-${host}`
 );
 const TRUST_GUARD =
-  "github.event_name == 'pull_request' && github.event.pull_request.head.repo.id == github.event.pull_request.base.repo.id && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.base.repo.full_name == github.repository";
-const ROUTE = `\${{ ${TRUST_GUARD} && contains(fromJSON('${JSON.stringify(HOST_LABELS)}'), vars.CI_VALIDATION_RUNNER) && fromJSON(format('["self-hosted","{0}"]', vars.CI_VALIDATION_RUNNER)) || 'ubuntu-latest' }}`;
+  "github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.head.repo.id == github.event.pull_request.base.repo.id && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.base.repo.full_name == github.repository";
+const ROUTE = `\${{ ${TRUST_GUARD} && contains(fromJSON('${JSON.stringify(HOST_LABELS)}'), vars.CI_VALIDATION_RUNNER) && vars.CI_VALIDATION_RUNNER || 'ubuntu-latest' }}`;
 const OWNERS = new Set([
   'type-check.yaml:type-check-pr',
   'turbo-unit-tests.yaml:test-shards-pr',
