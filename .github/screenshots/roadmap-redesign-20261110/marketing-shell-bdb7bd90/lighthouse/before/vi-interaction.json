@@ -1,0 +1,59 @@
+{
+  "log": [
+    "Các sản phẩm",
+    "Tài nguyên",
+    "Toggle theme",
+    "theme toggled",
+    "viToggle language"
+  ],
+  "events": [
+    {
+      "name": "pointerdown",
+      "duration": 40
+    },
+    {
+      "name": "pointerup",
+      "duration": 40
+    },
+    {
+      "name": "click",
+      "duration": 40
+    },
+    {
+      "name": "pointerdown",
+      "duration": 16
+    },
+    {
+      "name": "pointerup",
+      "duration": 16
+    },
+    {
+      "name": "click",
+      "duration": 16
+    },
+    {
+      "name": "pointerdown",
+      "duration": 48
+    },
+    {
+      "name": "pointerup",
+      "duration": 48
+    },
+    {
+      "name": "click",
+      "duration": 48
+    },
+    {
+      "name": "pointerdown",
+      "duration": 24
+    },
+    {
+      "name": "pointerup",
+      "duration": 24
+    },
+    {
+      "name": "click",
+      "duration": 24
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "log": [
+    "Các sản phẩm",
+    "Tài nguyên",
+    "Toggle theme",
+    "theme toggled",
+    "en",
+    "language toggled",
+    "localized document confirmed"
+  ],
+  "events": [
+    {
+      "name": "pointerdown",
+      "duration": 40
+    },
+    {
+      "name": "pointerup",
+      "duration": 40
+    },
+    {
+      "name": "click",
+      "duration": 40
+    },
+    {
+      "name": "pointerdown",
+      "duration": 24
+    },
+    {
+      "name": "pointerup",
+      "duration": 24
+    },
+    {
+      "name": "click",
+      "duration": 24
+    },
+    {
+      "name": "pointerdown",
+      "duration": 32
+    },
+    {
+      "name": "pointerup",
+      "duration": 32
+    },
+    {
+      "name": "click",
+      "duration": 32
+    },
+    {
+      "name": "pointerdown",
+      "duration": 16
+    },
+    {
+      "name": "pointerup",
+      "duration": 16
+    },
+    {
+      "name": "click",
+      "duration": 16
+    }
+  ]
+}

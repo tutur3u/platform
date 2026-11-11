@@ -1,0 +1,24 @@
+$ node scripts/check-changed.js
+check:changed: 74 changed file(s) since 33069539b7; 19 step(s).
+  shared-config: not covered; CI only: root/shared configuration (bun.lock)
+  cold workspace declarations (@tuturuuu/devbox, @tuturuuu/editor, @tuturuuu/masonry, tuturuuu): type errors outside changed files are advisory; CI stays authoritative.
+ok   branch name feat/marketing-adopt-shell-20261110 (0.0s)
+ok   source-size (700 LOC ceiling) (0.6s)
+ok   generated docs inventory (0.3s)
+ok   generated app SEO assets (0.0s)
+ok   docs navigation audit (2.0s)
+ok   oxfmt check (42 files) (0.0s)
+ok   oxlint (37 files) (0.1s)
+ok   server-console (1.0s)
+ok   internal-app-auth (0.4s)
+ok   satellite-cookie-auth (0.2s)
+ok   browser-session-surface (1.1s)
+ok   published package dependencies (0.0s)
+ok   mobile Lucide icons match web (0.0s)
+ok   vitest apps/marketing (5 related files) (0.8s)
+ok   vitest packages/marketing-shell (1 related files) (0.6s)
+ok   type-check apps/marketing (0.4s) - tsc x1
+ok   type-check apps/roadmap (0.3s) - tsc x1
+ok   type-check packages/marketing-shell (0.1s) - tsc x1
+ok   Staging cookie-domain isolation (5.3s)
+check:changed: all passed in 13.2s.

@@ -1,0 +1,581 @@
+{
+  "pr": "https://github.com/tutur3u/platform/pull/8129",
+  "head": "bdb7bd904f61f9c8e914fe6671b01070a6908042",
+  "base": "33069539b7a181cd74542ac6d53b9f80d34de92b",
+  "diffStat": "apps/docs/reference/repository/catalog.mdx         |   2 +-\n apps/docs/reference/repository/dependencies-2.mdx  |   4 +-\n apps/docs/reference/repository/dependencies-3.mdx  |   4 +-\n apps/docs/reference/repository/dependencies-4.mdx  |   6 +-\n apps/marketing/package.json                        |   2 +\n apps/marketing/scripts/marketing-css.mjs           |   6 +-\n apps/marketing/scripts/marketing-css.test.ts       |  20 +-\n apps/marketing/scripts/optimize-hero-poster.mjs    |  18 ++\n .../(marketing)/fonts/OFL-JetBrainsMono.txt        |  93 ------\n .../src/app/[locale]/(marketing)/fonts/README.md   |  11 -\n .../fonts/jetbrains-mono-variable.woff2            | Bin 113680 -> 0 bytes\n .../src/app/[locale]/(marketing)/layout.tsx        |  35 +--\n .../app/[locale]/(marketing)/marketing-fonts.ts    |  30 --\n .../src/app/[locale]/(marketing)/products/page.tsx |   2 +-\n apps/marketing/src/app/[locale]/auth-button.tsx    |  43 ---\n apps/marketing/src/app/[locale]/layout.tsx         |   1 +\n .../[locale]/marketing-nav/marketing-nav-menu.tsx  | 139 ---------\n .../[locale]/marketing-nav/marketing-nav-shell.tsx |  95 -------\n .../app/[locale]/marketing-nav/nav-dropdown.tsx    | 200 -------------\n .../src/app/[locale]/marketing-nav/products.ts     | 139 ---------\n .../src/app/[locale]/marketing-navbar.tsx          |  37 ---\n apps/marketing/src/app/[locale]/menu.tsx           |  53 ----\n apps/marketing/src/app/[locale]/mobile-menu.tsx    | 203 --------------\n .../src/app/[locale]/navbar-logo-link.tsx          |  65 -----\n .../src/app/[locale]/public-navbar-actions.tsx     |  26 --\n .../src/app/[locale]/shared/navigation-config.tsx  | 141 ----------\n apps/marketing/src/assets.d.ts                     |   8 +\n .../landing/deferred-landing-sections.test.tsx     |  16 +-\n .../landing/deferred-landing-sections.tsx          |   4 +-\n .../components/landing/hero/hero-assets.test.ts    |  29 ++\n .../src/components/landing/hero/hero-assets.ts     |  33 +++\n .../src/components/landing/hero/hero-section.tsx   |   2 +-\n .../components/landing/hero/product-tour-1280.webp | Bin 0 -> 17114 bytes\n .../components/landing/hero/product-tour-480.webp  | Bin 0 -> 6348 bytes\n .../components/landing/hero/product-tour-960.webp  | Bin 0 -> 12522 bytes\n .../src/components/landing/hero/video-player.tsx   |   5 +-\n .../src/components/landing/shared/static-icons.tsx | 312 +--------------------\n .../landing/shared/use-landing-reduced-motion.ts   |  35 +--\n apps/marketing/src/components/layouts/Footer.tsx   |  28 --\n .../src/components/layouts/marketing-controls.tsx  |  31 ++\n .../src/components/layouts/marketing-frame.tsx     |  24 ++\n .../src/lib/marketing-render-context.test.ts       |  21 ++\n apps/marketing/src/lib/marketing-render-context.ts |  30 ++\n apps/marketing/src/routes/__root.tsx               |  10 +-\n apps/marketing/src/start-bridge/page-route.tsx     |  12 +-\n bun.lock                                           |   8 +\n packages/marketing-shell/README.md                 |  11 +\n packages/marketing-shell/package.json              |  15 +-\n packages/marketing-shell/scripts/subset-mono.py    |  28 ++\n packages/marketing-shell/src/fonts.css             |  45 +++\n .../src/fonts/jetbrains-mono-400-latin.woff2       | Bin 0 -> 19884 bytes\n .../src/fonts/jetbrains-mono-400-vietnamese.woff2  | Bin 0 -> 3912 bytes\n .../src/fonts/jetbrains-mono-latin.woff2           | Bin 0 -> 47192 bytes\n .../src/fonts/jetbrains-mono-vietnamese.woff2      | Bin 0 -> 8056 bytes\n packages/marketing-shell/src/footer.tsx            |   4 +-\n packages/marketing-shell/src/index.ts              |   2 +\n packages/marketing-shell/src/marketing-shell.tsx   |   4 +\n packages/marketing-shell/src/mobile-menu.tsx       |   4 +-\n packages/marketing-shell/src/nav-actions.tsx       | 100 +++++++\n packages/marketing-shell/src/nav-dropdown.tsx      |  33 ++-\n packages/marketing-shell/src/nav-menu.tsx          |   4 +-\n packages/marketing-shell/src/nav-shell.tsx         |   7 +-\n packages/marketing-shell/src/navbar.tsx            |  60 ++--\n packages/marketing-shell/src/navigation.tsx        |   4 +-\n packages/marketing-shell/src/products.ts           |   2 +-\n packages/marketing-shell/src/shell.test.tsx        | 114 ++++++++\n .../marketing-shell/src}/static-icons.LICENSE      |   0\n packages/marketing-shell/src/static-icons.tsx      | 311 ++++++++++++++++++++\n packages/marketing-shell/src/types.ts              |   3 +\n packages/marketing-shell/src/use-static-motion.ts  |  35 +++\n packages/marketing-shell/tsconfig.json             |   1 +\n packages/marketing-shell/vitest.config.ts          |   6 +\n packages/ui/src/globals.css                        |   2 +\n 73 files changed, 1015 insertions(+), 1763 deletions(-)",
+  "shortStat": "73 files changed, 1015 insertions(+), 1763 deletions(-)",
+  "portTable": [
+    [
+      "Server wordmark; no routing-hook suspense",
+      "Shared navbar.tsx + async marketing-frame.tsx; routing hooks confined to marketing-controls.tsx."
+    ],
+    [
+      "Named mobile navigation and video control",
+      "nav-actions.tsx and mobile-menu.tsx retain localized trigger/Sheet names; video-hero.tsx retains the visible watch text in playLabel."
+    ],
+    [
+      "First-use mobile island",
+      "nav-actions.tsx loads mobile-menu.tsx only on click; the loaded Sheet opens immediately."
+    ],
+    [
+      "Native desktop dropdown; closed panels hidden",
+      "Shared nav-dropdown.tsx uses CSS, click/Escape, hidden panels and no Framer dependency."
+    ],
+    [
+      "Plain SVG icon graph and licence",
+      "Shared static-icons.tsx/LICENSE; app reexports the subpath; products/navigation/nav-menu render server-side."
+    ],
+    [
+      "No global query provider",
+      "Marketing layout omits QueryProvider; pricing-island.tsx and the contact-local provider retain their own graph."
+    ],
+    [
+      "Trimmed client translations",
+      "ROOT_CLIENT_MESSAGE_PATHS retained; marketing-render-context.ts sends only landing/commercialComparison plus shared paths on EN/VI roots. Other routes retain full sets."
+    ],
+    [
+      "Deferred bento/demo/AI/pricing/stats/CTA; hash links",
+      "deferred-landing-sections.tsx and HashScroll retained; problem/payoff also wait for viewport proximity."
+    ],
+    [
+      "Immediate hero/reveal and click-to-load video",
+      "rise.ts, reveal.tsx, hero/video files retained; video-player.tsx adds matching responsive WebP/preload assets."
+    ],
+    [
+      "Constrained-device motion and timers",
+      "Shared use-static-motion.ts; app alias preserves all demo/AI/pricing/count-up/hero consumers and tests. Shared shell disables backdrop blur and dropdown resize motion on constrained devices."
+    ],
+    [
+      "Static paint and manual marquee",
+      "landing.css, manual product-marquee.tsx, trust-badge contrast, demo/AI timer guards retained unchanged."
+    ],
+    [
+      "One stylesheet identity",
+      "Main's start-bridge page-render.tsx normalization retained unchanged; shared fonts and landing CSS co-located with root globals.css. One stylesheet request, no crossorigin mismatch."
+    ],
+    [
+      "App-scoped CSS graph",
+      "marketing-css.mjs includes shared-shell transitive UI imports; scanner test covers them. Vite plugin retained."
+    ],
+    [
+      "Font assets and deleted app files",
+      "Duplicate app font setup removed; shared OFL faces retained, mono EN/VI subsets added with full-glyph fallback and small static 400 faces. Deleted navigation gains are all mapped above; no performance gain discarded."
+    ]
+  ],
+  "measurements": {
+    "before": [
+      {
+        "url": "http://127.0.0.1:7847/",
+        "runs": [
+          {
+            "score": 84,
+            "LCP": 3642.2878,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 229.763671875
+          },
+          {
+            "score": 84,
+            "LCP": 3641.8912,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 229.763671875
+          },
+          {
+            "score": 80,
+            "LCP": 4096.5779999999995,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 229.763671875
+          }
+        ],
+        "median": {
+          "score": 84,
+          "LCP": 3642.2878,
+          "TBT": 0,
+          "CLS": 0,
+          "JSKB": 229.763671875
+        },
+        "INPProxy": null,
+        "interactionLog": [
+          "Products",
+          "Resources",
+          "Toggle theme",
+          "theme toggled",
+          "viToggle language"
+        ],
+        "INPProxyUpperBoundMs": 16
+      },
+      {
+        "url": "http://127.0.0.1:7847/vi",
+        "runs": [
+          {
+            "score": 82,
+            "LCP": 3790.8324000000002,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 229.763671875
+          },
+          {
+            "score": 83,
+            "LCP": 3634.4297500000025,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 229.763671875
+          },
+          {
+            "score": 82,
+            "LCP": 3796.0740000000014,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 229.763671875
+          }
+        ],
+        "median": {
+          "score": 82,
+          "LCP": 3790.8324000000002,
+          "TBT": 0,
+          "CLS": 0,
+          "JSKB": 229.763671875
+        },
+        "INPProxy": 48,
+        "interactionLog": [
+          "Các sản phẩm",
+          "Tài nguyên",
+          "Toggle theme",
+          "theme toggled",
+          "viToggle language"
+        ]
+      }
+    ],
+    "after": [
+      {
+        "url": "http://127.0.0.1:7857/",
+        "runs": [
+          {
+            "score": 84,
+            "LCP": 3465.8113999999996,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 209.833984375
+          },
+          {
+            "score": 84,
+            "LCP": 3462.8123999999984,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 209.833984375
+          },
+          {
+            "score": 84,
+            "LCP": 3464.3357999999994,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 209.833984375
+          }
+        ],
+        "median": {
+          "score": 84,
+          "LCP": 3464.3357999999994,
+          "TBT": 0,
+          "CLS": 0,
+          "JSKB": 209.833984375
+        },
+        "INPProxy": 48,
+        "interactionLog": [
+          "Products",
+          "Resources",
+          "Toggle theme",
+          "theme toggled",
+          "vi",
+          "language toggled",
+          "localized document confirmed"
+        ]
+      },
+      {
+        "url": "http://127.0.0.1:7857/vi",
+        "runs": [
+          {
+            "score": 83,
+            "LCP": 3613.288599999998,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 209.833984375
+          },
+          {
+            "score": 83,
+            "LCP": 3612.3961,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 209.833984375
+          },
+          {
+            "score": 83,
+            "LCP": 3612.9103999999998,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 209.833984375
+          }
+        ],
+        "median": {
+          "score": 83,
+          "LCP": 3612.9103999999998,
+          "TBT": 0,
+          "CLS": 0,
+          "JSKB": 209.833984375
+        },
+        "INPProxy": 40,
+        "interactionLog": [
+          "Các sản phẩm",
+          "Tài nguyên",
+          "Toggle theme",
+          "theme toggled",
+          "en",
+          "language toggled",
+          "localized document confirmed"
+        ]
+      }
+    ]
+  },
+  "method": {
+    "lighthouse": "12.8.2 mobile defaults; median of 3 per metric; six final samples",
+    "before": "Sealed #8188 reports (abb3538e88228a752d79bdc687a0aac983955b98; merged as 33069539), production Worker through gzip-only local proxy",
+    "after": "Production Worker build through the same gzip-only buffering proxy, 7857 -> Vite preview 7856",
+    "limits": "Local synthetic comparison, not edge/field metrics; gzip buffering differs from production Cloudflare Brotli/streaming/caching. Lighthouse and interaction sampling used Node 22.16; final CI gates/builds additionally pass on Node 24.22.2 with matching client asset hashes.",
+    "interaction": "Playwright Chromium, 1440x844, CDP CPU rate 4, EventTiming durationThreshold 16ms; Products, Resources, theme, language, scroll; localized HTML confirmed in both directions. <16 baseline means no qualifying event, not zero."
+  },
+  "gates": {
+    "frozen-install": {
+      "cmd": [
+        "bun",
+        "install",
+        "--frozen-lockfile"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "2759 installs across 3077 packages checked; lockfile unchanged"
+    },
+    "oxlint": {
+      "cmd": [
+        "bunx",
+        "oxlint",
+        "apps/marketing/scripts/marketing-css.mjs",
+        "apps/marketing/scripts/marketing-css.test.ts",
+        "apps/marketing/scripts/optimize-hero-poster.mjs",
+        "apps/marketing/src/app/[locale]/(marketing)/layout.tsx",
+        "apps/marketing/src/app/[locale]/(marketing)/products/page.tsx",
+        "apps/marketing/src/app/[locale]/layout.tsx",
+        "apps/marketing/src/assets.d.ts",
+        "apps/marketing/src/components/landing/deferred-landing-sections.test.tsx",
+        "apps/marketing/src/components/landing/deferred-landing-sections.tsx",
+        "apps/marketing/src/components/landing/hero/hero-assets.test.ts",
+        "apps/marketing/src/components/landing/hero/hero-assets.ts",
+        "apps/marketing/src/components/landing/hero/hero-section.tsx",
+        "apps/marketing/src/components/landing/hero/video-player.tsx",
+        "apps/marketing/src/components/landing/shared/static-icons.tsx",
+        "apps/marketing/src/components/landing/shared/use-landing-reduced-motion.ts",
+        "apps/marketing/src/components/layouts/marketing-controls.tsx",
+        "apps/marketing/src/components/layouts/marketing-frame.tsx",
+        "apps/marketing/src/lib/marketing-render-context.test.ts",
+        "apps/marketing/src/lib/marketing-render-context.ts",
+        "apps/marketing/src/routes/__root.tsx",
+        "apps/marketing/src/start-bridge/page-route.tsx",
+        "packages/marketing-shell/src/footer.tsx",
+        "packages/marketing-shell/src/index.ts",
+        "packages/marketing-shell/src/marketing-shell.tsx",
+        "packages/marketing-shell/src/mobile-menu.tsx",
+        "packages/marketing-shell/src/nav-actions.tsx",
+        "packages/marketing-shell/src/nav-dropdown.tsx",
+        "packages/marketing-shell/src/nav-menu.tsx",
+        "packages/marketing-shell/src/nav-shell.tsx",
+        "packages/marketing-shell/src/navbar.tsx",
+        "packages/marketing-shell/src/navigation.tsx",
+        "packages/marketing-shell/src/products.ts",
+        "packages/marketing-shell/src/shell.test.tsx",
+        "packages/marketing-shell/src/static-icons.tsx",
+        "packages/marketing-shell/src/types.ts",
+        "packages/marketing-shell/src/use-static-motion.ts",
+        "packages/marketing-shell/vitest.config.ts"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "37 JS/TS files; 0 errors, 0 warnings"
+    },
+    "format": {
+      "cmd": [
+        "bunx",
+        "oxfmt",
+        "--check",
+        "."
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "21,513 files; 0 formatting failures"
+    },
+    "stylelint": {
+      "cmd": [
+        "npx",
+        "--yes",
+        "stylelint@16",
+        "--config",
+        "/tmp/marketing-shell-pass/stylelint.json",
+        "packages/marketing-shell/src/fonts.css",
+        "packages/ui/src/globals.css"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "2 CSS files; 0 duplicate selectors"
+    },
+    "source-size": {
+      "cmd": [
+        "node",
+        "scripts/check-source-size.js"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "38 changed authored sources; 0 violations above 700 lines"
+    },
+    "wrangler": {
+      "cmd": [
+        "node",
+        "scripts/ci/wrangler-usage.js"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "320 files inventoried (20 config, 41 manifests, 121 scripts, 99 source, 39 workflows)"
+    },
+    "docs-inventory": {
+      "cmd": [
+        "node",
+        "scripts/generate-docs-inventory.js",
+        "--check"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "0 stale; 4 generated inventory files refreshed"
+    },
+    "app-seo": {
+      "cmd": [
+        "node",
+        "scripts/generate-app-seo.js",
+        "--check"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "0 stale"
+    },
+    "type-marketing": {
+      "cmd": [
+        "bun",
+        "run",
+        "type-check"
+      ],
+      "cwd": "apps/marketing",
+      "exit": 0,
+      "counts": "0 errors"
+    },
+    "type-marketing-shell": {
+      "cmd": [
+        "bun",
+        "run",
+        "type-check"
+      ],
+      "cwd": "packages/marketing-shell",
+      "exit": 0,
+      "counts": "0 errors"
+    },
+    "type-roadmap": {
+      "cmd": [
+        "bun",
+        "run",
+        "type-check"
+      ],
+      "cwd": "apps/roadmap",
+      "exit": 0,
+      "counts": "0 errors"
+    },
+    "marketing-tests": {
+      "cmd": [
+        "bun",
+        "run",
+        "test"
+      ],
+      "cwd": "apps/marketing",
+      "exit": 0,
+      "counts": "9 files, 45 passed, 0 failed"
+    },
+    "shell-tests": {
+      "cmd": [
+        "bun",
+        "run",
+        "test"
+      ],
+      "cwd": "packages/marketing-shell",
+      "exit": 0,
+      "counts": "1 file, 5 passed, 0 failed"
+    },
+    "roadmap-tests": {
+      "cmd": [
+        "node",
+        "--test",
+        "apps/roadmap/src/roadmap-data.test.ts",
+        "apps/roadmap/src/cache-policy.test.ts",
+        "apps/roadmap/scripts/seal-artifact.test.mjs",
+        "apps/roadmap/scripts/pre-seal-doctor.test.mjs"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "222 tests: 219 passed, 3 skipped, 0 failed; 43 suites"
+    },
+    "marketing-build": {
+      "cmd": [
+        "bun",
+        "run",
+        "build:cloudflare"
+      ],
+      "cwd": "apps/marketing",
+      "exit": 0,
+      "counts": "production Worker build succeeded"
+    },
+    "check-changed": {
+      "cmd": [
+        "bun",
+        "check:changed"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "19 steps passed; 0 failures"
+    },
+    "roadmap-build": {
+      "command": "(cd apps/roadmap && ROADMAP_OFFLINE=1 ROADMAP_SOURCE_SHA=$(git rev-parse HEAD) bun run build:cloudflare)",
+      "exit": 0,
+      "counts": "passed at bdb7bd904f61f9c8e914fe6671b01070a6908042"
+    },
+    "roadmap-doctor": {
+      "command": "ROADMAP_SOURCE_SHA=$(git rev-parse HEAD) node apps/roadmap/scripts/pre-seal-doctor.mjs",
+      "exit": 0,
+      "counts": "passed at bdb7bd904f61f9c8e914fe6671b01070a6908042"
+    }
+  },
+  "typeCheckComparison": {
+    "origin/main": {
+      "marketing": 0,
+      "marketing-shell": 0,
+      "roadmap": 0
+    },
+    "head": {
+      "marketing": 0,
+      "marketing-shell": 0,
+      "roadmap": 0
+    },
+    "newErrors": 0
+  },
+  "screenshotsTree": "https://github.com/tutur3u/platform/tree/screenshots/roadmap-redesign-20261110/.github/screenshots/roadmap-redesign-20261110/marketing-shell-bdb7bd90",
+  "screenshots": [
+    {
+      "name": "en-light-390.png",
+      "heading": "Your Team.One Workspace.",
+      "height": 844,
+      "href": "http://localhost:7857/",
+      "lang": "en",
+      "width": 390
+    },
+    {
+      "name": "en-dark-390.png",
+      "heading": "Your Team.One Workspace.",
+      "height": 844,
+      "href": "http://localhost:7857/",
+      "lang": "en",
+      "width": 390
+    },
+    {
+      "name": "en-light-1440.png",
+      "heading": "Your Team.One Workspace.",
+      "height": 1000,
+      "href": "http://localhost:7857/",
+      "lang": "en",
+      "width": 1440
+    },
+    {
+      "name": "en-dark-1440.png",
+      "heading": "Your Team.One Workspace.",
+      "height": 1000,
+      "href": "http://localhost:7857/",
+      "lang": "en",
+      "width": 1440
+    },
+    {
+      "name": "vi-light-390.png",
+      "heading": "Đội nhóm của bạn.Một nơi làm việc.",
+      "height": 844,
+      "href": "http://localhost:7857/vi",
+      "lang": "vi",
+      "width": 390
+    },
+    {
+      "name": "vi-dark-390.png",
+      "heading": "Đội nhóm của bạn.Một nơi làm việc.",
+      "height": 844,
+      "href": "http://localhost:7857/vi",
+      "lang": "vi",
+      "width": 390
+    },
+    {
+      "name": "vi-light-1440.png",
+      "heading": "Đội nhóm của bạn.Một nơi làm việc.",
+      "height": 1000,
+      "href": "http://localhost:7857/vi",
+      "lang": "vi",
+      "width": 1440
+    },
+    {
+      "name": "vi-dark-1440.png",
+      "heading": "Đội nhóm của bạn.Một nơi làm việc.",
+      "height": 1000,
+      "href": "http://localhost:7857/vi",
+      "lang": "vi",
+      "width": 1440
+    },
+    {
+      "name": "roadmap-light-390.png",
+      "heading": "What we’re building.Shipped in the open.",
+      "height": 844,
+      "href": "http://localhost:7858/roadmap",
+      "lang": "en",
+      "width": 390
+    },
+    {
+      "name": "roadmap-dark-390.png",
+      "heading": "What we’re building.Shipped in the open.",
+      "height": 844,
+      "href": "http://localhost:7858/roadmap",
+      "lang": "en",
+      "width": 390
+    },
+    {
+      "name": "roadmap-light-1440.png",
+      "heading": "What we’re building.Shipped in the open.",
+      "height": 1000,
+      "href": "http://localhost:7858/roadmap",
+      "lang": "en",
+      "width": 1440
+    },
+    {
+      "name": "roadmap-dark-1440.png",
+      "heading": "What we’re building.Shipped in the open.",
+      "height": 1000,
+      "href": "http://localhost:7858/roadmap",
+      "lang": "en",
+      "width": 1440
+    }
+  ],
+  "authorLog": "vhpx <contact@vohoangphuc.com>\n\nvhpx <contact@vohoangphuc.com>\nRender marketing routes with the shared navigation, footer and self-hosted\nfonts. Remove the duplicate navigation cluster and source the shared shell\nclasses for every host app.",
+  "trailers": [],
+  "limits": [
+    "Score >=90 and LCP <2.5s remain unmet; the 84/82 and 3.64/3.79s floor passes. INP proxy <200ms passes.",
+    "LCP is the responsive video poster in both locales. Representative simulated render delay is 2.44s EN / 2.70s VI (70% / 75% of LCP); image load itself is about 126 / 135ms.",
+    "One 35.6KiB gzip stylesheet blocks for about 1.36s; Lighthouse estimates 450ms savings. The 111KiB gzip framework entry contains about 51KiB unused JS (400ms estimated LCP savings).",
+    "Next cut: route-level critical CSS plus progressive Start/RSC resource delivery and framework entry splitting; preserve the fully styled first paint and EN/VI typography.",
+    "Production noindex/indexing is outside scope, owned by PR #8178/release policy; protected worker, SEO policy, Void config and native runtime files are unchanged."
+  ]
+}
