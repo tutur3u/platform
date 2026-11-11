@@ -244,6 +244,63 @@ test(description, { timeout: 30000 }, async (t) => {
     assert.deepEqual(egress, []);
   });
   await t.test(
+    'startup refuses missing required bindings without development fallbacks',
+    async () => {
+      for (const name of ['CF_ACCESS_TEAM_DOMAIN', 'CF_ACCESS_AUD']) {
+        const bindings = {
+          ...config.vars,
+          ...admitted,
+          WEB_START_CANDIDATE: 'staging',
+        };
+        delete bindings[name];
+        const incomplete = instance(bindings);
+        const response = await incomplete.dispatchFetch(`${base}/__web1`, {
+          headers,
+        });
+        assert.equal(response.status, 503);
+        assert.equal(response.headers.has('set-cookie'), false);
+      }
+      assert.deepEqual(egress, []);
+    }
+  );
+  await t.test('anonymous staging root remains behind Access', async () => {
+    const response = await enabled.dispatchFetch(base + '/');
+    assert.equal(response.status, 403);
+    assert.equal(response.headers.has('set-cookie'), false);
+    const unknown = await enabled.dispatchFetch(
+      'https://unknown.workers.dev/',
+      {
+        method: 'OPTIONS',
+      }
+    );
+    assert.equal(unknown.status, 503);
+    assert.deepEqual(egress, []);
+  });
+  await t.test(
+    'well-known metadata stays blocked natively without issuer cookies or egress',
+    async () => {
+      for (const path of [
+        '/.well-known/openid-configuration',
+        '/.well-known/jwks.json',
+      ]) {
+        for (const method of ['GET', 'HEAD']) {
+          const response = await enabled.dispatchFetch(base + path, {
+            method,
+            headers,
+          });
+          assert.equal(response.status, 404);
+          assert.equal(await response.text(), '');
+          assert.equal(
+            response.headers.get('x-tuturuuu-web-renderer'),
+            'native-Worker'
+          );
+          assert.equal(response.headers.has('set-cookie'), false);
+        }
+      }
+      assert.deepEqual(egress, []);
+    }
+  );
+  await t.test(
     'native public policy documents SSR in both languages without egress or session writes',
     async () => {
       for (const path of legalPages.flatMap(({ slug }) => [
