@@ -20,9 +20,12 @@ const context = (value, overrides = {}) => ({
   vars: { CI_VALIDATION_RUNNER: value },
   github: {
     event_name: 'pull_request',
+    actor: 'vhpx',
+    triggering_actor: 'vhpx',
     repository: 'tutur3u/platform',
     event: {
       pull_request: {
+        user: { login: 'vhpx' },
         head: { repo: { id: 1, full_name: 'tutur3u/platform' } },
         base: { repo: { id: 1, full_name: 'tutur3u/platform' } },
       },
@@ -89,12 +92,16 @@ test('unset, malformed and unsupported routing values fail closed to hosted', ()
     'true',
     'self-hosted',
     'ttr-selfhosted-unknown',
+    'ttr-selfhosted-i9',
+    'ttr-selfhosted-m3',
+    'ttr-selfhosted-m4',
+    'ttr-selfhosted-skr-linux',
     '["self-hosted"]',
   ]) {
     assert.equal(route(context(value)), 'ubuntu-latest');
   }
   for (const label of HOST_LABELS) {
-    assert.deepEqual(route(context(label)), ['self-hosted', label]);
+    assert.equal(route(context(label)), label);
     for (const event_name of [
       'push',
       'pull_request_target',
@@ -155,4 +162,35 @@ test('required Test root-script CI invokes runner lint before dependency executi
   assert.ok(
     index < steps.findIndex((step) => step.name === 'Install dependencies')
   );
+});
+
+test('Dependabot always retains hosted routing', () => {
+  assert.deepEqual(HOST_LABELS, [
+    'ttr-selfhosted-studio',
+    'ttr-selfhosted-macbook1',
+  ]);
+  for (const label of HOST_LABELS) {
+    for (const field of ['actor', 'triggering_actor', 'author']) {
+      const scope = context(label);
+      if (field === 'author')
+        scope.github.event.pull_request.user.login = 'dependabot[bot]';
+      else scope.github[field] = 'dependabot[bot]';
+      assert.equal(route(scope), 'ubuntu-latest');
+    }
+  }
+});
+test('host-only runners cannot be selected by legacy self-hosted labels', () => {
+  const copy = structuredClone(workflows);
+  copy['legacy.yaml'] = {
+    jobs: { legacy: { 'runs-on': ['self-hosted', 'macOS', 'ARM64'] } },
+  };
+  assert.deepEqual(lintSelfHostedWorkflows(copy), []);
+  for (const value of [
+    'ttr-selfhosted-studio',
+    'ttr-selfhosted-macbook1',
+    '${{ vars.CI_VALIDATION_RUNNER }}',
+  ]) {
+    copy['rogue.yaml'] = { jobs: { rogue: { 'runs-on': value } } };
+    assert.ok(lintSelfHostedWorkflows(copy).length);
+  }
 });
