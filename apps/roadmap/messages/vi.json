@@ -115,5 +115,17 @@
     "moreOtherOne": "thay đổi khác",
     "changeOne": "thay đổi"
   },
-  "titleAccent": "Ra mắt công khai."
+  "titleAccent": "Ra mắt công khai.",
+  "pulse": {
+    "title": "Nhịp phát hành",
+    "merged": "pull request đã gộp",
+    "today": "Hôm nay",
+    "source": "14 ngày gần nhất, từ các pull request công khai mà lộ trình này theo dõi.",
+    "table": "Xem số liệu"
+  },
+  "glance": {
+    "title": "Toàn cảnh mọi sản phẩm",
+    "subtitle": "Mỗi mảng đã phát hành được bao nhiêu. Chạm vào một mảng để xem chi tiết.",
+    "shipped": "đã phát hành"
+  }
 }

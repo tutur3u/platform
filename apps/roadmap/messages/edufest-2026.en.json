@@ -232,7 +232,9 @@
       "track": "Track",
       "colab": "Colab",
       "tulletin": "Tulletin"
-    }
+    },
+    "tuturuuuBlurb": "The workspace for live classes, AI agents, notes, tasks and the calendar used throughout the session.",
+    "upskiiBlurb": "AI-assisted courses, quizzes and assessments. You build and take a lesson here."
   },
   "skip": "Skip to the workshop",
   "highlights": {
@@ -342,5 +344,13 @@
   },
   "illustration": {
     "label": "Illustration: a teacher moves from the front desk to a student seat, while an AI agent supports every desk."
+  },
+  "sim": {
+    "title": "Try the classroom",
+    "subtitle": "Step through the session from the student’s seat and back. Change how much the AI agent may help, and watch the class respond.",
+    "window": "Live class · Agentic AI 101",
+    "quizQuestion": "Quick check: what is the first step to solve 2x + 6 = 14?",
+    "timer": "Time left",
+    "points": "plus point"
   }
 }

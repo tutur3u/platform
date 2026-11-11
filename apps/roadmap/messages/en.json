@@ -115,5 +115,17 @@
     "moreOtherOne": "other change",
     "changeOne": "change"
   },
-  "titleAccent": "Shipped in the open."
+  "titleAccent": "Shipped in the open.",
+  "pulse": {
+    "title": "Shipping pulse",
+    "merged": "pull requests merged",
+    "today": "Today",
+    "source": "Last 14 days, from the public pull requests this roadmap tracks.",
+    "table": "Show the numbers"
+  },
+  "glance": {
+    "title": "Every product at a glance",
+    "subtitle": "How much of each track has shipped. Tap a track to jump to its details.",
+    "shipped": "shipped"
+  }
 }
