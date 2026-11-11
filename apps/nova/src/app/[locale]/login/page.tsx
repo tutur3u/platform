@@ -1,6 +1,6 @@
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { withAppBase } from '@tuturuuu/start-bridge/app-url';
-import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/core';
+import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/reader';
 import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';

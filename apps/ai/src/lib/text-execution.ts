@@ -1,6 +1,6 @@
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import { getAiStudioRequestId } from '@tuturuuu/ai/studio/request';
-import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/core';
+import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/reader';
 import type { Json } from '@tuturuuu/types';
 import { NoObjectGeneratedError } from 'ai';
 import { z } from 'zod';

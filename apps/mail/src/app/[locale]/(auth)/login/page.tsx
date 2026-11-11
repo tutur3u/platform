@@ -5,7 +5,7 @@ import {
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { getSatelliteSupabaseSessionUser } from '@tuturuuu/satellite/auth';
 import { withAppBase } from '@tuturuuu/start-bridge/app-url';
-import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context';
+import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/reader';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, TTR_URL } from '@/constants/common';
