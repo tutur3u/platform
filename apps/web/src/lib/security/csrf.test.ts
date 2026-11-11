@@ -9,6 +9,20 @@ import {
 } from './csrf';
 
 const SESSION_COOKIE = 'sb-abc-auth-token=value';
+const REMOVED_ORIGINS = [
+  'https://calendar.tuturuuu.com',
+  'https://cms.tuturuuu.com',
+  'https://drive.tuturuuu.com',
+  'https://external.tuturuuu.com',
+  'https://finance.tuturuuu.com',
+  'https://hive.tuturuuu.com',
+  'https://infra.tuturuuu.com',
+  'https://mail.tuturuuu.com',
+  'https://meet.tuturuuu.com',
+  'https://storefront.tuturuuu.com',
+  'https://tasks.tuturuuu.com',
+  'https://track.tuturuuu.com',
+];
 
 function request(
   path: string,
@@ -262,6 +276,45 @@ describe('guardWebApiCsrf', () => {
     }
   });
 
+  it.each(REMOVED_ORIGINS)(
+    'rejects removed satellite %s in enforce mode',
+    (origin) => {
+      expect(WEB_CSRF_TRUSTED_ORIGINS).not.toContain(origin);
+      for (const site of [undefined, 'same-site', 'cross-site']) {
+        expect(
+          guardWebApiCsrf(
+            request('/api/v1/things', {
+              cookie: SESSION_COOKIE,
+              origin,
+              ...(site ? { 'sec-fetch-site': site } : {}),
+            }),
+            { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
+          )?.status
+        ).toBe(403);
+      }
+    }
+  );
+
+  it.each(['off', 'report'] as const)(
+    'keeps removed satellite admission unchanged in %s mode',
+    (mode) => {
+      for (const origin of REMOVED_ORIGINS) {
+        for (const site of [undefined, 'same-site']) {
+          expect(
+            guardWebApiCsrf(
+              request('/api/v1/things', {
+                cookie: SESSION_COOKIE,
+                origin,
+                ...(site ? { 'sec-fetch-site': site } : {}),
+              }),
+              { configuredOrigin: 'https://tuturuuu.com', mode }
+            )
+          ).toBeNull();
+        }
+      }
+    }
+  );
+
   it.each([undefined, 'same-site', 'cross-site'])(
     'checks every trusted satellite with Fetch Metadata %s',
     (site) => {
@@ -335,13 +388,16 @@ describe('guardWebApiCsrf', () => {
     );
     vi.stubEnv(
       'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
-      'cms:https://cms.tutur3u.com,tools:https://tools.tutur3u.com'
+      'contacts:https://contacts.tutur3u.com,cms:https://cms.tutur3u.com,tools:https://tools.tutur3u.com'
     );
-    expect(getWebCsrfTrustedOrigins()).toEqual(['https://cms.tutur3u.com']);
+    expect(getWebCsrfTrustedOrigins()).toEqual([
+      'https://contacts.tutur3u.com',
+    ]);
     for (const site of [undefined, 'same-site', 'cross-site']) {
       for (const origin of [
+        'https://contacts.tutur3u.com',
+        'https://contacts.tuturuuu.com',
         'https://cms.tutur3u.com',
-        'https://cms.tuturuuu.com',
         'https://tools.tutur3u.com',
       ]) {
         const req = new NextRequest('https://web.tutur3u.com/api/v1/things', {
@@ -358,7 +414,7 @@ describe('guardWebApiCsrf', () => {
             mode: 'enforce',
           })?.status ?? 200
         ).toBe(
-          origin === 'https://cms.tutur3u.com' && site !== 'cross-site'
+          origin === 'https://contacts.tutur3u.com' && site !== 'cross-site'
             ? 200
             : 403
         );

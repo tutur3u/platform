@@ -31,20 +31,30 @@ are rejected. The existing parsed-origin comparison canonicalizes default ports;
 `:443` on HTTPS denotes the same origin. Missing and literal `null` Origin
 behavior is unchanged. There is no wildcard subdomain trust.
 
-Production satellites are `https://<name>.tuturuuu.com` for **ai, calendar,
-chat, cms, colab, contacts, drive, external, finance, forms, git, hive, infra,
-infrastructure, inventory, learn, lettin, mail, meet, mind, nova, parley, pay,
-rewise, shortener, storefront, tasks, teach, track, workspace**, plus
-`https://nova.ai.vn`. The launchable-app and internal-domain registries identify
-the app identities; each included Next app config forwards `/api/*` to Web.
-Infrastructure's internal-domain registry retains both `infra` and
-`infrastructure` hosts for that app. External is in SEO policy and has its own
-API-forwarding config. Shortener has its own forwarding config and launchable
-entry. Colab's Worker bridges account support mutations through
+Production satellites are `https://<name>.tuturuuu.com` for **ai, chat, colab,
+contacts, forms, git, infrastructure, inventory, learn, lettin, mind, nova,
+parley, pay, rewise, shortener, teach, workspace**, plus `https://nova.ai.vn`.
+The launchable-app and internal-domain registries identify app candidates; the
+owning forwarding config and current host eligibility determine admission.
+Retiring a satellite removes its origin from this list. A redirect target is
+not automatically trusted and needs a separate origin audit.
+
+Colab's Worker bridges account support mutations through
 `src/server/platform-proxy.ts`, preserving its explicit Origin. Nova's SEO
 policy gives its `nova.ai.vn` canonical origin while both app registries retain
 `nova.tuturuuu.com`. Browsers sending `cross-site` from `nova.ai.vn` are still
 rejected; listing it only covers callers without that metadata.
+
+Host checks exclude `external.tuturuuu.com` and `infra.tuturuuu.com` because
+they do not resolve, and `hive.tuturuuu.com` because it returns 503. Hive needs
+owner confirmation of live service and a fresh audit before readmission.
+`storefront.tuturuuu.com` redirects to `store.tuturuuu.com`; neither is trusted.
+Calendar, CMS, Drive, Finance, Mail, Meet, Tasks and Track redirect to
+`tuturuuu.com/login` and are excluded under the cross-host redirect rule,
+including authentication redirects. This exclusion does not assert retirement.
+Nova (both hosts), Rewise and Shortener resolve but returned 429; Workspace
+returned 404. Those responses establish neither application health nor enforce
+readiness, but do not meet the DNS/5xx/cross-host redirect removal criteria.
 
 Excluded from satellite trust:
 

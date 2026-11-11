@@ -35,28 +35,20 @@ export const WEB_SESSION_CLEARING_PATHS: ReadonlySet<string> = new Set([
  * Origins of satellite apps whose `/api/*` requests are forwarded verbatim to
  * Web. A forwarded request arrives on Web's own host, so a client that sends
  * no `Sec-Fetch-Site` or `same-site` proves trust with its exact `Origin`.
+ * Retiring a satellite removes its origin from this list.
  * The `tuturuuu.com/<app>` mounts share Web's origin and need no entry.
  */
 export const WEB_CSRF_TRUSTED_ORIGINS: readonly string[] = [
   'https://ai.tuturuuu.com',
-  'https://calendar.tuturuuu.com',
   'https://chat.tuturuuu.com',
-  'https://cms.tuturuuu.com',
   'https://colab.tuturuuu.com',
   'https://contacts.tuturuuu.com',
-  'https://drive.tuturuuu.com',
-  'https://external.tuturuuu.com',
-  'https://finance.tuturuuu.com',
   'https://forms.tuturuuu.com',
   'https://git.tuturuuu.com',
-  'https://hive.tuturuuu.com',
-  'https://infra.tuturuuu.com',
   'https://infrastructure.tuturuuu.com',
   'https://inventory.tuturuuu.com',
   'https://learn.tuturuuu.com',
   'https://lettin.tuturuuu.com',
-  'https://mail.tuturuuu.com',
-  'https://meet.tuturuuu.com',
   'https://mind.tuturuuu.com',
   'https://nova.ai.vn',
   'https://nova.tuturuuu.com',
@@ -64,10 +56,7 @@ export const WEB_CSRF_TRUSTED_ORIGINS: readonly string[] = [
   'https://pay.tuturuuu.com',
   'https://rewise.tuturuuu.com',
   'https://shortener.tuturuuu.com',
-  'https://storefront.tuturuuu.com',
-  'https://tasks.tuturuuu.com',
   'https://teach.tuturuuu.com',
-  'https://track.tuturuuu.com',
   'https://workspace.tuturuuu.com',
 ];
 
