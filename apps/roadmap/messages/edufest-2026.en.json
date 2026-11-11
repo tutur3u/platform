@@ -1,0 +1,228 @@
+{
+  "meta": {
+    "title": "When Teachers Become Students · EduFest 2026",
+    "description": "40 exclusive seats at EduFest 2026. Take the student's seat, master a brand-new topic alongside cutting-edge AI agents, and discover first-hand how agentic AI transforms teaching and learning."
+  },
+  "hero": {
+    "eyebrow": "EduFest 2026 · Hands-on workshop",
+    "title": "When Teachers Become Students",
+    "titleAccent": "Step Inside the Agentic AI Classroom",
+    "subtitle": "40 exclusive seats at EduFest 2026. Take the student's seat, master a brand-new topic alongside cutting-edge AI agents, and discover first-hand how agentic AI transforms teaching and learning.",
+    "date": "Date",
+    "venue": "Venue",
+    "toBeAnnounced": "To be announced",
+    "seats": "Only 40 seats",
+    "cta": "Registration coming soon",
+    "scarcity": "40 seats, first come, first served.",
+    "dateValue": "Saturday, 5 December 2026",
+    "venueValue": "RMIT University Vietnam, Saigon South (SGS) Campus, 702 Nguyen Van Linh, Building 2",
+    "addToCalendar": "Add to calendar",
+    "openMap": "Open map"
+  },
+  "status": {
+    "live": "Live",
+    "in_progress": "In progress",
+    "planned": "Planned"
+  },
+  "agenda": {
+    "title": "What happens in the room",
+    "subtitle": "Most teachers sit as students. A few teach. Then everyone switches seats.",
+    "items": {
+      "roles": {
+        "title": "Welcome and role cards",
+        "body": "Most of you become students. A few become teachers and teaching assistants."
+      },
+      "lesson": {
+        "title": "Master something brand new",
+        "body": "Tackle an unfamiliar topic live, with AI agents guiding you every step."
+      },
+      "upskii": {
+        "title": "Build an AI lesson in minutes",
+        "body": "Generate a lesson and quiz with AI on Upskii, then take it the way your students would."
+      },
+      "practice": {
+        "title": "Practice, quiz and plus points",
+        "body": "Work alone and in pairs, then check understanding together."
+      },
+      "debrief": {
+        "title": "Switch seats and debrief",
+        "body": "Look at the class through the teacher's tools, and plan your own first lesson."
+      }
+    }
+  },
+  "outcomes": {
+    "title": "What you leave with",
+    "items": {
+      "feel": "Experience an agentic AI classroom first-hand, from the student’s seat.",
+      "when": "Learn when an AI agent should give a hint, and when it should hold back.",
+      "plan": "Leave with a ready-to-run plan for your own first agentic lesson.",
+      "look": "Exclusive early access to cutting-edge AI agents for education, including what is still being built."
+    }
+  },
+  "journey": {
+    "title": "Your seat, step by step",
+    "subtitle": "Walk through the workshop from the student's seat and back again.",
+    "step": "Step",
+    "previous": "Previous",
+    "next": "Next",
+    "seatStudent": "You are a student",
+    "seatTeacher": "You are the teacher again",
+    "uses": "What helps here",
+    "steps": {
+      "arrive": {
+        "title": "Take a student's seat",
+        "body": "You join a live class as a student. A few colleagues take the teacher and teaching assistant seats."
+      },
+      "learn": {
+        "title": "Learn something new",
+        "body": "The topic is new to you on purpose, so you feel what your students feel."
+      },
+      "stuck": {
+        "title": "Get stuck, get a hint",
+        "body": "When you are stuck, the AI agent helps at the level your teacher chose: a hint, not the answer."
+      },
+      "upskii": {
+        "title": "Try a lesson on Upskii",
+        "body": "An AI-assisted lesson and quiz, made in minutes, taken from the student's side."
+      },
+      "practise": {
+        "title": "Practise together",
+        "body": "Write by hand, code with a partner, and keep notes linked to your tasks."
+      },
+      "check": {
+        "title": "Check what you learned",
+        "body": "A short quiz on a timer, with plus points for taking part."
+      },
+      "switch": {
+        "title": "Switch seats",
+        "body": "Back in the teacher's seat, you see how the class went, the fairness settings, and what the AI did."
+      }
+    }
+  },
+  "aiDemo": {
+    "title": "How much should the AI agent help?",
+    "subtitle": "The teacher decides for each class or session. AI is off by default.",
+    "legend": "AI help level",
+    "student": "Student",
+    "assistant": "AI agent",
+    "note": "A demonstration of the planned behaviour, not a live AI.",
+    "question": "Solve 2x + 6 = 14.",
+    "levels": {
+      "off": {
+        "label": "Off",
+        "reply": "AI help is off for this class. Ask your teacher or a teaching assistant."
+      },
+      "hints": {
+        "label": "Hints, no answers",
+        "reply": "What could you do to both sides to leave 2x on its own? Try that first."
+      },
+      "full": {
+        "label": "Full help",
+        "reply": "Subtract 6 from both sides: 2x = 8. Divide both sides by 2: x = 4."
+      }
+    }
+  },
+  "flow": {
+    "title": "One class, start to finish",
+    "subtitle": "What teachers and students use before, during and after class.",
+    "stages": {
+      "before": "Before class",
+      "during": "During class",
+      "after": "After class"
+    }
+  },
+  "capabilities": {
+    "title": "Agentic capabilities you will use yourself",
+    "subtitle": "For students, teachers and school admins, today and next. The small tag names the tool behind each one.",
+    "honesty": "Every item is labelled Live, In progress or Planned from the public roadmap of the tools used. Planned means not built yet.",
+    "groups": {
+      "live": "Run live classes that include everyone",
+      "support": "Help each learner, without giving answers away",
+      "assess": "Check understanding",
+      "prepare": "Prepare lessons and materials",
+      "organise": "Organise study time and notes",
+      "govern": "Keep AI safe and accountable"
+    },
+    "items": {
+      "class-size": "Run a class sized to your plan, with the host admitting people",
+      "co-teach": "Teach with co-teachers and teaching assistants in one room",
+      "share": "Share documents, slides, PDFs and YouTube in class",
+      "captions": "Live captions and a summary of how the class went",
+      "transcripts": "Live transcripts and notes from a session",
+      "co-code": "Code together in a shared workbench during class",
+      "ai-levels": "Choose how much AI helps, for each class: off, hints only, or full",
+      "handwriting": "Turn handwriting and drawings into text and maths (LaTeX)",
+      "mira-screen": "Ask an assistant to open apps and use what is on screen",
+      "mira-voice": "Talk to an AI assistant by voice",
+      "chat-files": "Ask AI about the files you upload",
+      "coding-lab": "Practise programming in a coding lab that supports many programming languages",
+      "team-ai": "Student teams can run AI work at the same time",
+      "quiz": "Quizzes, assignments and a class timer",
+      "points": "Plus points for taking part",
+      "quiz-sets": "Keep reusable quiz sets",
+      "certificates": "Finish a course and earn a certificate",
+      "one-question": "Answer one question at a time, keyboard friendly",
+      "surveys": "Build surveys and exit tickets",
+      "generators": "Generate courses, quizzes and tests with AI",
+      "teaching-studio": "Prepare lessons in an AI teaching studio",
+      "problem-bank": "Build a bank of programming exercises",
+      "family-mail": "Draft messages to families with AI",
+      "team-workshops": "Run team workshops with an activity history",
+      "notebooks": "Class notebooks linked to tasks and the calendar",
+      "homework": "See all homework in one My tasks list",
+      "projects": "Run group projects on boards with sprints",
+      "study-time": "Schedule study time around deadlines automatically",
+      "class-invites": "Invite a whole class to a session",
+      "find-time": "Find a time that works for the whole group",
+      "notes": "Keep class notes on the web and on your phone",
+      "note-links": "Link notes to tasks, events and meetings",
+      "mira-home": "Start each day from an assistant that knows your schedule",
+      "focus": "Track focus sessions with a Pomodoro timer",
+      "class-storage": "Shared storage for each class group",
+      "expiring-links": "Share files with links that expire",
+      "integrity": "Fairness controls, with a clear notice to students",
+      "ai-policy": "One AI policy for the whole school",
+      "ai-log": "A log of every AI run, for review",
+      "byo-key": "Use your own AI API key",
+      "byo-chatgpt": "Use the ChatGPT subscription you already have",
+      "edu-admin": "Manage classes, courses and learners"
+    }
+  },
+  "explorer": {
+    "title": "Find what fits your role",
+    "subtitle": "Filter by who you are and how ready each item is.",
+    "role": "Role",
+    "status": "Status",
+    "all": "All",
+    "roles": {
+      "student": "Students",
+      "teacher": "Teachers",
+      "admin": "School admins"
+    },
+    "shown": "shown",
+    "none": "Nothing matches these filters yet."
+  },
+  "tools": {
+    "title": "Tools you'll get hands-on access to",
+    "subtitle": "This workshop runs on Tuturuuu and Upskii. The labels above show how ready each part is today.",
+    "poweredBy": "Powered by",
+    "roadmap": "See the public roadmap",
+    "names": {
+      "meet": "Meet",
+      "upskii": "Upskii",
+      "learn": "Learn and Teach",
+      "tasks": "Tasks",
+      "calendar": "Calendar",
+      "notes": "Notes",
+      "mira": "Mira",
+      "ai-studio": "AI Studio",
+      "chat": "Chat",
+      "drive": "Drive",
+      "forms": "Forms",
+      "mail": "Mail",
+      "track": "Track",
+      "colab": "Colab"
+    }
+  },
+  "skip": "Skip to the workshop"
+}

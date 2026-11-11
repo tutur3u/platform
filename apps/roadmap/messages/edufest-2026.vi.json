@@ -1,0 +1,228 @@
+{
+  "meta": {
+    "title": "Khi thầy cô làm học trò · EduFest 2026",
+    "description": "40 suất trải nghiệm độc quyền tại EduFest 2026. Thầy cô ngồi vào ghế học trò, chinh phục một chủ đề hoàn toàn mới cùng các AI Agent tiên tiến nhất, và tự tay khám phá cách AI đồng hành cùng người dạy lẫn người học."
+  },
+  "hero": {
+    "eyebrow": "EduFest 2026 · Workshop thực hành",
+    "title": "Khi thầy cô làm học trò",
+    "titleAccent": "Bước vào lớp học AI Agent thế hệ mới",
+    "subtitle": "40 suất trải nghiệm độc quyền tại EduFest 2026. Thầy cô ngồi vào ghế học trò, chinh phục một chủ đề hoàn toàn mới cùng các AI Agent tiên tiến nhất, và tự tay khám phá cách AI đồng hành cùng người dạy lẫn người học.",
+    "date": "Thời gian",
+    "venue": "Địa điểm",
+    "toBeAnnounced": "Sẽ thông báo sớm",
+    "seats": "Chỉ 40 suất",
+    "cta": "Sắp mở đăng ký",
+    "scarcity": "Chỉ 40 suất, ưu tiên thầy cô đăng ký sớm.",
+    "dateValue": "Thứ Bảy, 05/12/2026",
+    "venueValue": "Đại học RMIT Việt Nam, Cơ sở Nam Sài Gòn (SGS), 702 Nguyễn Văn Linh, Tòa nhà 2",
+    "addToCalendar": "Thêm vào lịch",
+    "openMap": "Xem bản đồ"
+  },
+  "status": {
+    "live": "Đã dùng được",
+    "in_progress": "Đang hoàn thiện",
+    "planned": "Trong kế hoạch"
+  },
+  "agenda": {
+    "title": "Trong phòng workshop, điều gì sẽ diễn ra?",
+    "subtitle": "Phần lớn thầy cô ngồi vào ghế học trò, vài thầy cô đứng lớp. Rồi cả phòng cùng đổi vai.",
+    "items": {
+      "roles": {
+        "title": "Làm quen và nhận vai",
+        "body": "Phần lớn thầy cô vào vai học trò, một vài thầy cô vào vai giáo viên và trợ giảng."
+      },
+      "lesson": {
+        "title": "Chinh phục một điều hoàn toàn mới",
+        "body": "Học ngay một chủ đề hoàn toàn xa lạ, với AI Agent đồng hành từng bước."
+      },
+      "upskii": {
+        "title": "Soạn bài cùng AI chỉ trong vài phút",
+        "body": "Dùng AI trên Upskii để tạo một bài học và bài kiểm tra, rồi tự làm thử như học trò của mình."
+      },
+      "practice": {
+        "title": "Luyện tập, kiểm tra và điểm cộng",
+        "body": "Làm bài một mình rồi theo cặp, sau đó cùng kiểm tra xem mình đã nắm bài đến đâu."
+      },
+      "debrief": {
+        "title": "Đổi vai và cùng nhìn lại",
+        "body": "Nhìn lại lớp học qua góc nhìn của giáo viên, rồi lên kế hoạch cho tiết học AI Agent đầu tiên của chính thầy cô."
+      }
+    }
+  },
+  "outcomes": {
+    "title": "Điều thầy cô mang về",
+    "items": {
+      "feel": "Tận mắt trải nghiệm một lớp học AI Agent, ngay từ ghế học trò.",
+      "when": "Biết khi nào AI Agent nên gợi ý, và khi nào nên để học trò tự nghĩ.",
+      "plan": "Một kế hoạch sẵn sàng cho tiết học AI Agent đầu tiên của riêng thầy cô.",
+      "look": "Được trải nghiệm sớm, độc quyền các AI Agent tiên tiến dành cho giáo dục, kể cả những tính năng vẫn đang được xây dựng."
+    }
+  },
+  "journey": {
+    "title": "Hành trình đổi vai",
+    "subtitle": "Đi qua từng chặng của buổi workshop: từ ghế học trò, rồi trở lại bục giảng.",
+    "step": "Bước",
+    "previous": "Trước",
+    "next": "Tiếp theo",
+    "seatStudent": "Thầy cô đang là học trò",
+    "seatTeacher": "Thầy cô trở lại bục giảng",
+    "uses": "Công cụ hỗ trợ ở bước này",
+    "steps": {
+      "arrive": {
+        "title": "Ngồi vào ghế học trò",
+        "body": "Thầy cô bước vào một lớp học trực tuyến trong vai học trò, còn vài đồng nghiệp nhận vai giáo viên và trợ giảng."
+      },
+      "learn": {
+        "title": "Học một điều hoàn toàn mới",
+        "body": "Chủ đề được chọn vì thầy cô chưa từng học, để thầy cô thấu hiểu đúng cảm giác của học trò mình."
+      },
+      "stuck": {
+        "title": "Bí bài? Có gợi ý ngay",
+        "body": "Khi bí bài, AI Agent hỗ trợ đúng mức mà giáo viên đã đặt: gợi ý hướng làm, không đưa sẵn đáp án."
+      },
+      "upskii": {
+        "title": "Thử một bài học trên Upskii",
+        "body": "Một bài học và bài kiểm tra do AI hỗ trợ soạn chỉ trong vài phút, để thầy cô làm thử ngay từ phía học trò."
+      },
+      "practise": {
+        "title": "Cùng nhau luyện tập",
+        "body": "Viết tay, lập trình cùng một đồng nghiệp, và lưu ghi chú gắn với bài tập của mình."
+      },
+      "check": {
+        "title": "Kiểm tra điều đã học",
+        "body": "Một bài kiểm tra ngắn có đếm giờ, kèm điểm cộng cho những ai tích cực tham gia."
+      },
+      "switch": {
+        "title": "Đổi vai",
+        "body": "Trở lại bục giảng, thầy cô xem lớp vừa diễn ra thế nào, các thiết lập đảm bảo công bằng trong lớp, và những gì AI đã hỗ trợ."
+      }
+    }
+  },
+  "aiDemo": {
+    "title": "AI Agent nên giúp đến đâu?",
+    "subtitle": "Giáo viên quyết định cho từng lớp hoặc từng buổi học. Mặc định, AI luôn tắt.",
+    "legend": "Mức hỗ trợ của AI",
+    "student": "Học trò",
+    "assistant": "AI Agent",
+    "note": "Đây chỉ là mô phỏng cách hoạt động dự kiến, không phải AI thật.",
+    "question": "Giải phương trình 2x + 6 = 14.",
+    "levels": {
+      "off": {
+        "label": "Tắt",
+        "reply": "Lớp này đang tắt hỗ trợ AI. Em hãy hỏi thầy cô hoặc trợ giảng nhé."
+      },
+      "hints": {
+        "label": "Chỉ gợi ý",
+        "reply": "Em thử nghĩ xem: mình cần làm gì với cả hai vế để 2x đứng một mình? Em thử bước đó trước nhé."
+      },
+      "full": {
+        "label": "Hỗ trợ đầy đủ",
+        "reply": "Trừ 6 ở cả hai vế, ta được 2x = 8. Chia cả hai vế cho 2, ta được x = 4."
+      }
+    }
+  },
+  "flow": {
+    "title": "Một tiết học, từ đầu đến cuối",
+    "subtitle": "Thầy cô và học trò dùng gì trước, trong và sau giờ học.",
+    "stages": {
+      "before": "Trước giờ học",
+      "during": "Trong giờ học",
+      "after": "Sau giờ học"
+    }
+  },
+  "capabilities": {
+    "title": "Những năng lực AI Agent thầy cô sẽ tự tay trải nghiệm",
+    "subtitle": "Dành cho học trò, thầy cô và ban quản lý nhà trường: có tính năng đã dùng được hôm nay, có tính năng đang hoàn thiện hoặc nằm trong kế hoạch. Thẻ nhỏ cho biết công cụ đứng sau từng mục.",
+    "honesty": "Mỗi mục đều mang một trong ba nhãn Đã dùng được, Đang hoàn thiện hoặc Trong kế hoạch, theo lộ trình công khai của các công cụ. “Trong kế hoạch” nghĩa là chưa được xây dựng.",
+    "groups": {
+      "live": "Dạy học trực tuyến, không bỏ lại học trò nào",
+      "support": "Đồng hành cùng từng học trò, không đưa sẵn đáp án",
+      "assess": "Kiểm tra mức độ hiểu bài",
+      "prepare": "Soạn bài và học liệu",
+      "organise": "Sắp xếp giờ tự học và ghi chú",
+      "govern": "Dùng AI an toàn, minh bạch"
+    },
+    "items": {
+      "class-size": "Mở lớp theo sĩ số của gói, người chủ trì duyệt ai được vào lớp",
+      "co-teach": "Cùng giáo viên phụ và trợ giảng dạy chung trong một phòng học",
+      "share": "Chia sẻ tài liệu, slide, PDF và video YouTube ngay trong lớp",
+      "captions": "Phụ đề trực tiếp và bản tóm tắt buổi học",
+      "transcripts": "Bản ghi lời giảng và ghi chú trực tiếp trong buổi học",
+      "co-code": "Cùng lập trình trên một màn hình chung trong giờ học",
+      "ai-levels": "Chọn mức hỗ trợ của AI cho từng lớp: tắt, chỉ gợi ý, hoặc đầy đủ",
+      "handwriting": "Chuyển chữ viết tay và hình vẽ thành văn bản và công thức toán (LaTeX)",
+      "mira-screen": "Nhờ AI Agent mở ứng dụng và làm việc với nội dung trên màn hình",
+      "mira-voice": "Trò chuyện với AI Agent bằng giọng nói",
+      "chat-files": "Hỏi AI về những tài liệu thầy cô tải lên",
+      "coding-lab": "Luyện lập trình trong phòng lab hỗ trợ nhiều ngôn ngữ lập trình",
+      "team-ai": "Các nhóm học trò cùng lúc làm việc với AI",
+      "quiz": "Câu đố, bài tập và đồng hồ đếm giờ dùng chung cho cả lớp",
+      "points": "Điểm cộng cho học trò tích cực",
+      "quiz-sets": "Lưu bộ câu hỏi để dùng lại nhiều lần",
+      "certificates": "Hoàn thành khoá học và nhận chứng chỉ",
+      "one-question": "Trả lời từng câu một, thao tác được bằng bàn phím",
+      "surveys": "Tạo khảo sát và phiếu cuối giờ",
+      "generators": "Dùng AI tạo khoá học, câu đố và bài kiểm tra",
+      "teaching-studio": "Soạn bài trong studio giảng dạy tích hợp AI",
+      "problem-bank": "Xây dựng ngân hàng bài tập lập trình",
+      "family-mail": "Soạn thư gửi phụ huynh cùng AI",
+      "team-workshops": "Tổ chức workshop nhóm, có lưu lịch sử hoạt động",
+      "notebooks": "Sổ tay lớp học gắn với bài tập và lịch",
+      "homework": "Xem mọi bài tập trong một danh sách duy nhất",
+      "projects": "Theo dõi dự án nhóm trên bảng công việc theo từng chặng",
+      "study-time": "Tự động xếp giờ tự học quanh các hạn nộp",
+      "class-invites": "Mời cả lớp vào một buổi học",
+      "find-time": "Tìm khung giờ phù hợp cho cả nhóm",
+      "notes": "Ghi chép bài học trên web và điện thoại",
+      "note-links": "Gắn ghi chú với bài tập, sự kiện và buổi họp",
+      "mira-home": "Bắt đầu mỗi ngày cùng một AI Agent nắm rõ lịch của thầy cô",
+      "focus": "Theo dõi các phiên tập trung bằng đồng hồ Pomodoro",
+      "class-storage": "Kho lưu trữ chung cho từng lớp",
+      "expiring-links": "Chia sẻ tài liệu bằng đường dẫn có thời hạn",
+      "integrity": "Thiết lập đảm bảo công bằng trong lớp, có thông báo rõ cho học trò",
+      "ai-policy": "Một chính sách AI chung cho cả trường",
+      "ai-log": "Nhật ký ghi lại mọi lần AI làm việc, để xem lại khi cần",
+      "byo-key": "Dùng khoá API AI riêng của nhà trường",
+      "byo-chatgpt": "Dùng tài khoản ChatGPT thầy cô đang có",
+      "edu-admin": "Quản lý lớp, khoá học và học viên"
+    }
+  },
+  "explorer": {
+    "title": "Tìm đúng điều phù hợp với thầy cô",
+    "subtitle": "Lọc theo vai trò và mức độ sẵn sàng của từng tính năng.",
+    "role": "Vai trò",
+    "status": "Trạng thái",
+    "all": "Tất cả",
+    "roles": {
+      "student": "Học trò",
+      "teacher": "Thầy cô",
+      "admin": "Ban quản lý"
+    },
+    "shown": "mục đang hiển thị",
+    "none": "Chưa có mục nào khớp bộ lọc này."
+  },
+  "tools": {
+    "title": "Công cụ thầy cô được trải nghiệm",
+    "subtitle": "Buổi workshop chạy trên Tuturuuu và Upskii. Các nhãn phía trên cho biết mỗi phần hiện đã sẵn sàng đến đâu.",
+    "poweredBy": "Vận hành bởi",
+    "roadmap": "Xem lộ trình công khai",
+    "names": {
+      "meet": "Meet",
+      "upskii": "Upskii",
+      "learn": "Learn và Teach",
+      "tasks": "Tasks",
+      "calendar": "Lịch",
+      "notes": "Ghi chú",
+      "mira": "Mira",
+      "ai-studio": "AI Studio",
+      "chat": "Chat",
+      "drive": "Drive",
+      "forms": "Forms",
+      "mail": "Mail",
+      "track": "Track",
+      "colab": "Colab"
+    }
+  },
+  "skip": "Đi tới nội dung workshop"
+}
