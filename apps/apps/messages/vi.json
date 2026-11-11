@@ -244,6 +244,10 @@
       "unchecked": "Cần làm"
     },
     "hide_sidebar": "Ẩn thanh bên",
+    "picker_pin": "Ghim không gian làm việc",
+    "picker_pinned": "Đã ghim",
+    "picker_recent": "Gần đây",
+    "picker_unpin": "Bỏ ghim không gian làm việc",
     "public_profile": "Hồ sơ công khai"
   },
   "finance": {
