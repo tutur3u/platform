@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   handleCalendarSafetyNet,
   isCalendarMeetTogetherPath,
+  isCalendarStaticAssetPath,
   proxyCalendarBareQueryRequest,
 } from './calendar-apex-gateway';
 
@@ -230,5 +231,27 @@ describe('calendar bare /calendar?query fallback proxy', () => {
     );
     expect(loop?.status).toBe(502);
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+describe('calendar static asset paths', () => {
+  it('matches only /calendar assets with the matcher-excluded extensions', () => {
+    for (const path of [
+      '/calendar/logo.png',
+      '/calendar/a/b.svg',
+      '/calendar/x.webp',
+    ]) {
+      expect(isCalendarStaticAssetPath(path), path).toBe(true);
+    }
+    for (const path of [
+      '/calendar/a/b.css',
+      '/calendar/logo.png/x',
+      '/calendar-team/logo.png',
+      '/calendar.png',
+      '/other/logo.png',
+      '/calendar/Logo.PNG',
+    ]) {
+      expect(isCalendarStaticAssetPath(path), path).toBe(false);
+    }
   });
 });

@@ -44,7 +44,11 @@ import {
   calendarPreferenceGuardOptions,
   handleCalendarPreferenceGuardResponse,
 } from './lib/calendar-preference-guard';
-import { handleCalendarApexGateway } from './lib/calendar-apex-gateway';
+import {
+  handleCalendarApexGateway,
+  handleCalendarSafetyNet,
+  isCalendarStaticAssetPath,
+} from './lib/calendar-apex-gateway';
 import { getChatAppOrigin } from './lib/chat-app-url';
 import { getContactsAppOrigin } from './lib/contacts-app-url';
 import { getDriveAppOrigin } from './lib/drive-app-url';
@@ -1433,7 +1437,7 @@ const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
   return null;
 };
 
-export const proxy = withStagingOriginProof(
+const stagedWebProxy = withStagingOriginProof(
   webProxy,
   () =>
     new NextResponse('Forbidden', {
@@ -1441,6 +1445,16 @@ export const proxy = withStagingOriginProof(
       headers: { 'Cache-Control': 'no-store' },
     })
 );
+
+export const proxy = (req: NextRequest) => {
+  // `/calendar/**` assets reach the proxy only through the matcher entries
+  // below, for the rollback safety net. Without it they pass through untouched,
+  // as they did before those entries existed (no locale, auth or staging logic).
+  if (isCalendarStaticAssetPath(req.nextUrl.pathname)) {
+    return handleCalendarSafetyNet(req) ?? NextResponse.next();
+  }
+  return stagedWebProxy(req);
+};
 export const config = {
   matcher: [
     /*
@@ -1454,11 +1468,15 @@ export const config = {
      * Excludes static assets: svg, png, jpg, jpeg, mp3, wav, ogg, m4a, pdf,
      * gif and webp.
      * `/roadmap` is listed on its own so mounted worker assets keep those
-     * extensions and still reach the public proxy.
+     * extensions and still reach the public proxy. `/calendar` is listed for
+     * the same reason: so the rollback safety net sees assets under it. Those
+     * asset requests pass through untouched unless the safety net is on.
      */
 
     '/roadmap',
     '/roadmap/:path*',
+    '/calendar',
+    '/calendar/:path*',
     '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|manifest.webmanifest|sw.js|serwist|monitoring|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|mp3|wav|ogg|m4a|pdf|gif|webp)$).*)',
   ],
 };

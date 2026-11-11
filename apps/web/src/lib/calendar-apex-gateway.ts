@@ -76,6 +76,26 @@ export function getCalendarSubdomainOrigin(env: Env = process.env) {
     : getLocalInternalAppUrl('calendar', 'http://localhost:7806');
 }
 
+/**
+ * The static-asset extensions the general proxy matcher excludes. Keep in sync
+ * with `config.matcher` in `proxy.ts` (a test compares the two).
+ */
+export const CALENDAR_STATIC_ASSET_EXTENSIONS =
+  'svg|png|jpg|jpeg|mp3|wav|ogg|m4a|pdf|gif|webp';
+const STATIC_ASSET_PATH = new RegExp(
+  `\\.(?:${CALENDAR_STATIC_ASSET_EXTENSIONS})$`
+);
+
+/**
+ * `/calendar/**` paths that the general matcher excludes (static assets). The
+ * matcher lists `/calendar/:path*` on its own so the safety net can see them;
+ * with the flag off they must behave exactly as before, which is to skip the
+ * proxy entirely.
+ */
+export function isCalendarStaticAssetPath(pathname: string) {
+  return isCalendarApexPath(pathname) && STATIC_ASSET_PATH.test(pathname);
+}
+
 /** Whether a pathname is Web's own `/calendar/meet-together` page tree. */
 export function isCalendarMeetTogetherPath(pathname: string) {
   return (

@@ -1129,6 +1129,95 @@ describe('web proxy api handling', () => {
       expect(mocks.authProxy).not.toHaveBeenCalled();
     });
 
+    it('lists /calendar in the matcher, in sync with the asset exclusion', async () => {
+      const { config } = await import('../proxy');
+      const { CALENDAR_STATIC_ASSET_EXTENSIONS } =
+        await import('../lib/calendar-apex-gateway');
+
+      expect(config.matcher).toEqual(
+        expect.arrayContaining(['/calendar', '/calendar/:path*'])
+      );
+      expect(config.matcher).toEqual(
+        expect.arrayContaining(['/roadmap', '/roadmap/:path*'])
+      );
+      expect(
+        config.matcher.find((entry) => entry.startsWith('/((?!'))
+      ).toContain(`\\.(?:${CALENDAR_STATIC_ASSET_EXTENSIONS})$`);
+    });
+
+    it.each([
+      '/calendar/logo.png',
+      '/calendar/a/b.svg',
+      '/calendar/meet-together/hero.webp',
+    ])('passes %s through untouched while the flags are off', async (path) => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      const { proxy } = await import('../proxy');
+      const response = await proxy(new NextRequest(`http://localhost${path}`));
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('location')).toBeNull();
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(mocks.authProxy).not.toHaveBeenCalled();
+      expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    });
+
+    it('does not run locale or auth for a flagged-off asset under /calendar even with only the fallback flag', async () => {
+      vi.stubEnv('CALENDAR_APEX_FALLBACK_PROXY', '1');
+      const { proxy } = await import('../proxy');
+      const response = await proxy(
+        new NextRequest('http://localhost/calendar/logo.png?x=1')
+      );
+
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+      expect(mocks.authProxy).not.toHaveBeenCalled();
+    });
+
+    it.each(['/calendar/logo.png', '/calendar/a/b.png'])(
+      'sends %s to the subdomain with a no-store 307 when the safety net is on',
+      async (path) => {
+        vi.stubEnv('CALENDAR_APEX_SAFETY_NET', '1');
+        const { proxy } = await import('../proxy');
+        const response = await proxy(
+          new NextRequest(`http://localhost${path}?v=2`)
+        );
+
+        expect(response.status).toBe(307);
+        expect(response.headers.get('cache-control')).toBe('no-store');
+        const location = new URL(response.headers.get('location') ?? '');
+        expect(location.pathname).toBe(path.replace('/calendar', ''));
+        expect(location.search).toBe('?v=2');
+        expect(location.host).not.toBe('localhost');
+        expect(mocks.authProxy).not.toHaveBeenCalled();
+      }
+    );
+
+    it('redirects /calendar/a/b.css (non-excluded extension) with the safety net on', async () => {
+      vi.stubEnv('CALENDAR_APEX_SAFETY_NET', '1');
+      const { proxy } = await import('../proxy');
+      const response = await proxy(
+        new NextRequest('http://localhost/calendar/a/b.css')
+      );
+
+      expect(response.status).toBe(307);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(new URL(response.headers.get('location') ?? '').pathname).toBe(
+        '/a/b.css'
+      );
+    });
+
+    it('leaves a meet-together asset to pass through even with the safety net on', async () => {
+      vi.stubEnv('CALENDAR_APEX_SAFETY_NET', '1');
+      const { proxy } = await import('../proxy');
+      const response = await proxy(
+        new NextRequest('http://localhost/calendar/meet-together/hero.webp')
+      );
+
+      expect(response.headers.get('location')).toBeNull();
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+    });
+
     it.each(PUBLIC_MARKETING_ALIAS_CASES)(
       'keeps the meet-together alias $url with both flags on',
       async ({ expectedLocation, url }) => {

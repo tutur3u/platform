@@ -269,16 +269,23 @@ resolve `https://tuturuuu.com/calendar/*` to Calendar by longest base-path prefi
 allowlist use the apex mount. `RESERVED_WORKSPACE_HANDLES` is unchanged and
 still reserves `calendar`.
 
-Two Web flags cover what the zone routes cannot (both server env, `1` or `true`):
+Two Web flags cover what the zone routes cannot (both server env, `1` or `true`).
+`NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS` is shared: putting `tasks` in it also
+turns on the new registry classification for Tasks (`tuturuuu.com/tasks/*`).
 
 - `CALENDAR_APEX_FALLBACK_PROXY`: a zone route on the bare path `tuturuuu.com/calendar`
   does not match a request with a query string, so Web proxies bare `/calendar?query`
   (GET and HEAD only; 405 otherwise) to `CALENDAR_APEX_UPSTREAM_URL`, default
-  `https://calendar.tuturuuu.com/calendar`. It forwards `Cookie` but not
-  `Authorization`, drops `Set-Cookie`, and answers `private, no-store`.
+  `https://calendar.tuturuuu.com/calendar`. **Keep it OFF** until Calendar's
+  `TTR_ONE_ORIGIN_CALENDAR` flag is on and Calendar actually serves at `/calendar`
+  on its subdomain: the default upstream assumes that. It forwards `Cookie` but
+  not `Authorization`, drops `Set-Cookie`, and answers `private, no-store`.
 - `CALENDAR_APEX_SAFETY_NET`: rollback in one step. With the zone routes removed,
   `/calendar/:path*` reaches Web and gets a no-store 307 to the same path on
-  `calendar.tuturuuu.com`. It wins over the fallback proxy.
+  `calendar.tuturuuu.com`. It wins over the fallback proxy. The proxy matcher lists
+  `/calendar` and `/calendar/:path*` so assets (`.png` and the other excluded
+  extensions) reach it too; with the flag off those asset requests pass through
+  untouched, with no locale, auth or staging handling, as before.
 
 `/calendar/meet-together` stays a Web page: neither flag touches it, and `proxy.ts`
 still redirects it to `/meet-together`.
