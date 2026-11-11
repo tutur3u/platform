@@ -1481,3 +1481,12 @@ Keep emitted-Worker acceptance behind an explicit `test:runtime` command and
 `.acceptance.mjs` filename so source-only gates cannot invoke it without an
 artifact. Use `.invalid` hosts for isolated runtime preview fixtures; retain
 production-like preview refusal in the source auth matrix.
+
+### Workspace picker component verification
+
+The network-fenced fictional fixture and capture matrix are documented in
+`apps/docs/platform/features/hidden-workspaces.mdx` under isolated component
+verification. Preserve cached list choices on refresh failure, explicit retry,
+and actor-scoped visibility gates when adjusting picker presentation. Verify
+A → B → A resets for search, restore mode, pins, and recent selections with
+`workspace-picker-content.test.tsx` alongside the actor lifetime hook tests.

@@ -229,6 +229,10 @@
       "unchecked": "To do"
     },
     "close": "Close",
+    "picker_pin": "Pin workspace",
+    "picker_pinned": "Pinned",
+    "picker_recent": "Recent",
+    "picker_unpin": "Unpin workspace",
     "public_profile": "Public profile",
     "retry": "Retry"
   },

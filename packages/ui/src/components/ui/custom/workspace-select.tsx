@@ -56,6 +56,7 @@ import {
 import { Input } from '../input';
 import { Popover, PopoverTrigger } from '../popover';
 import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
+import { useWorkspacePickerPreferences } from './use-workspace-picker-preferences';
 import { WorkspacePickerContent } from './workspace-picker-content';
 import {
   buildWorkspaceSetupHandoffUrl,
@@ -133,6 +134,7 @@ export function WorkspaceSelect({
     wsId && wsId !== PERSONAL_WORKSPACE_SLUG
       ? resolveWorkspaceId(wsId)
       : undefined;
+  const pickerPreferences = useWorkspacePickerPreferences(actorId);
   const {
     data: listedWorkspaces,
     isPending: listLoading,
@@ -434,7 +436,7 @@ export function WorkspaceSelect({
               size="xs"
               variant="outline"
               aria-expanded={open}
-              aria-label="Select a workspace"
+              aria-label={t('common.select_workspace')}
               className={cn(
                 hideLeading ? 'justify-center p-0' : 'justify-start',
                 'w-full whitespace-normal text-start',
@@ -498,6 +500,8 @@ export function WorkspaceSelect({
             </Button>
           </PickerTrigger>
           <WorkspacePickerContent
+            key={actorId ?? 'signed-out'}
+            preferences={pickerPreferences}
             presentation={presentation}
             onClose={() => setOpen(false)}
             workspaces={workspaces ?? []}
