@@ -129,7 +129,8 @@
           "Toggle theme",
           "theme toggled",
           "viToggle language"
-        ]
+        ],
+        "INPProxyUpperBoundMs": 16
       },
       {
         "url": "http://127.0.0.1:7847/vi",
@@ -192,7 +193,10 @@
     "after": "Cloudflare production build, Vite preview port 7846 through gzip-only HTTP proxy port 7847",
     "compressionLimit": "Live Cloudflare Brotli and local gzip, network distance and edge caching differ. The gzip proxy buffers responses. Uncompressed preview was measured separately at 56/56, LCP 11.34/11.79s on an intermediate candidate; not the sealed head.",
     "inpProxy": "Playwright Chromium CDP CPU rate 4; worst event timing while opening Products/Resources, toggling theme/language and scrolling; desktop 1440x844. Not field INP.",
-    "screenshots": "16 viewport PNGs: EN/VI x light/dark x 390x844/1440x1000; before live, after local production build."
+    "screenshots": "16 viewport PNGs: EN/VI x light/dark x 390x844/1440x1000; before live, after local production build.",
+    "eventTimingThresholdMs": 16,
+    "emptyEventSample": "A null proxy with a complete action log means no EventTiming entries at or above the 16 ms observer threshold; report <16 ms, not zero.",
+    "retry": "One Vietnamese Lighthouse gather failed with Target.closeTarget: No target with given id found. Completed EN and VI samples were retained; only missing VI samples were resumed with identical options."
   },
   "limits": [
     "Performance score >=90 and LCP <2.5s are not achieved.",
@@ -200,5 +204,21 @@
     "Full below-fold DOM is created when the reader scrolls; initial DOM is reduced.",
     "Next cut: route-level critical CSS and progressive Start/RSC shell rendering to remove the remaining stylesheet/entry/stream render chain."
   ],
-  "screenshotsTree": "https://github.com/tutur3u/platform/tree/screenshots/roadmap-redesign-20261110/.github/screenshots/roadmap-redesign-20261110/landing-perf-abb3538e"
+  "screenshotsTree": "https://github.com/tutur3u/platform/tree/screenshots/roadmap-redesign-20261110/.github/screenshots/roadmap-redesign-20261110/landing-perf-abb3538e",
+  "suppliedStudioBaseline": {
+    "score": [
+      57,
+      57
+    ],
+    "LCPSeconds": [
+      8.9,
+      9.1
+    ],
+    "TBTMs": 65,
+    "INPProxyMs": [
+      96,
+      104
+    ],
+    "interactionScope": "Products menu only; different machine, not used as the paired comparison."
+  }
 }
