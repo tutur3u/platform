@@ -17,7 +17,23 @@
     "dateValue": "Thứ Bảy, 05/12/2026",
     "venueValue": "Đại học RMIT Việt Nam, Cơ sở Nam Sài Gòn (SGS), 702 Nguyễn Văn Linh, Tòa nhà 2",
     "addToCalendar": "Thêm vào lịch",
-    "openMap": "Mở bản đồ"
+    "openMap": "Mở bản đồ",
+    "titleMark": "học trò",
+    "stageLabel": "Minh hoạ một lớp học trực tiếp: thầy cô ngồi ở ghế học trò, còn AI Agent trả lời bằng một gợi ý thay vì đưa sẵn đáp án.",
+    "stageWindow": "Lớp học trực tiếp · AI Agent nhập môn",
+    "stageLive": "Trực tiếp",
+    "stageLesson": "Bài 1",
+    "stageLessonTitle": "Để AI Agent lên kế hoạch cho tuần học",
+    "stageBullets": [
+      "Giao mục tiêu, không giao từng bước",
+      "Yêu cầu Agent tự rà soát kế hoạch",
+      "Quyết định phần việc nào cần con người"
+    ],
+    "stageYou": "Bạn",
+    "stageTyping": "Làm sao để Agent tự kiểm tra lại kế hoạch của nó?",
+    "stageHint": "Gợi ý",
+    "stageReply": "Thử yêu cầu Agent liệt kê những điểm có thể sai trước, rồi sửa từng điểm một.",
+    "factsLabel": "Thông tin sự kiện"
   },
   "status": {
     "live": "Đã dùng được",
@@ -120,6 +136,17 @@
         "label": "Hỗ trợ đầy đủ",
         "reply": "Trừ 6 ở cả hai vế, ta được 2x = 8. Chia cả hai vế cho 2, ta được x = 4."
       }
+    },
+    "practise": {
+      "question": "Vòng lặp của em chạy mãi không dừng. Em sót chỗ nào ạ?",
+      "off": "Lúc luyện tập, hỗ trợ AI đang tắt. Em thử cùng bạn tìm lỗi trước nhé.",
+      "hints": "Em xem lại dòng thay đổi biến đếm. Biến đó có bao giờ chạm tới mốc làm vòng lặp dừng không?",
+      "full": "Biến đếm không bao giờ tăng. Thêm count = count + 1 vào trong vòng lặp, chương trình sẽ dừng sau 10 lần."
+    },
+    "check": {
+      "off": "Đang làm bài kiểm tra: hỗ trợ AI bị khoá cho tới khi cả lớp nộp bài.",
+      "hints": "Trả lời sai? AI Agent đưa một gợi ý trước khi em làm lại lần hai.",
+      "full": "Khi bài kiểm tra kết thúc, AI Agent giải thích từng đáp án theo từng bước."
     }
   },
   "flow": {

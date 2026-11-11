@@ -17,7 +17,23 @@
     "dateValue": "Saturday, 5 December 2026",
     "venueValue": "RMIT University Vietnam, Saigon South (SGS) Campus, 702 Nguyen Van Linh, Building 2",
     "addToCalendar": "Add to calendar",
-    "openMap": "Open map"
+    "openMap": "Open map",
+    "titleMark": "Students",
+    "stageLabel": "An illustrated live class: you sit in a student seat while the AI agent answers with a hint, not the answer.",
+    "stageWindow": "Live class · Agentic AI 101",
+    "stageLive": "Live",
+    "stageLesson": "Lesson 1",
+    "stageLessonTitle": "Let an agent plan your week",
+    "stageBullets": [
+      "Give the agent a goal, not steps",
+      "Ask it to check its own plan",
+      "Decide what stays human"
+    ],
+    "stageYou": "You",
+    "stageTyping": "How do I get the agent to check its own plan?",
+    "stageHint": "Hint",
+    "stageReply": "Ask it to list what could go wrong first, then to fix one thing.",
+    "factsLabel": "Event details"
   },
   "status": {
     "live": "Live",
@@ -120,6 +136,17 @@
         "label": "Full help",
         "reply": "Subtract 6 from both sides: 2x = 8. Divide both sides by 2: x = 4."
       }
+    },
+    "practise": {
+      "question": "My loop never stops. What did I miss?",
+      "off": "AI help is off while you practise. Work it out with your partner first.",
+      "hints": "Look at the line that changes your counter. Does it ever reach the value that stops the loop?",
+      "full": "The counter never increases. Add count = count + 1 inside the loop and it stops after 10 runs."
+    },
+    "check": {
+      "off": "Quiz mode: AI help stays locked until everyone has answered.",
+      "hints": "Wrong answer? The AI agent gives one hint before your second try.",
+      "full": "When the quiz closes, the AI agent explains every answer step by step."
     }
   },
   "flow": {
