@@ -3,9 +3,9 @@ import profiles from './native-profiles.json' with { type: 'json' };
 /**
  * Build-time selector for the native Finance artifact. Staging is the default;
  * `production` must be requested explicitly. Each profile admits only its own
- * root host, so a staging-data artifact can never serve finance.tuturuuu.com.
+ * root and mount hosts, so a staging-data artifact can never serve finance.tuturuuu.com.
  * Node-side only (Void/Vite config, runtime fixtures): the Worker receives just
- * the selected root host through a Vite define, never the other profile.
+ * the selected hosts through a Vite define, never the other profile.
  */
 export const FINANCE_NATIVE_PROFILE_ENV = 'VITE_FINANCE_NATIVE_PROFILE';
 

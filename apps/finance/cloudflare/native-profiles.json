@@ -10,7 +10,8 @@
       "NEXT_PUBLIC_APP_URL": "https://finance.tutur3u.com",
       "FINANCE_APP_URL": "https://finance.tutur3u.com",
       "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co"
-    }
+    },
+    "mountHost": "web.tutur3u.com"
   },
   "production": {
     "workerName": "tuturuuu-finance",
@@ -21,6 +22,7 @@
       "NEXT_PUBLIC_APP_URL": "https://finance.tuturuuu.com",
       "FINANCE_APP_URL": "https://finance.tuturuuu.com",
       "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co"
-    }
+    },
+    "mountHost": "tuturuuu.com"
   }
 }

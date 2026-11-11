@@ -78,14 +78,14 @@ async function qualifyMode(t, mode) {
           },
         });
       }
-      return signedSsrFixtureResponse(request, signedCalls, origin);
+      return signedSsrFixtureResponse(request, signedCalls, origin, base);
     },
   });
   await t.test(
     `WebGL sandbox pass-through and neighbouring framing denial at ${origin}`,
     async () => {
       for (const path of [...webglPaths, ...neighbouringPaths]) {
-        const response = await runtime.fetch(`${origin}${path}`, {
+        const response = await runtime.fetch(`${origin}${base}${path}`, {
           headers: { authorization: 'Bearer ttr_finance_runtime_fixture' },
         });
         assert.equal(response.status, 200);
@@ -220,6 +220,12 @@ async function qualifyMode(t, mode) {
   );
 
   await t.test(`wildcard Accept-Language at ${origin}${base}`, async () => {
+    for (const path of [base || '/', `${base}/`]) {
+      const bare = await runtime.fetch(`${origin}${path}`);
+      assert.equal(bare.status, 307);
+      assert.equal(new URL(bare.headers.get('location')).pathname, '/login');
+      await bare.text();
+    }
     for (const [language, supported] of [
       ['*', 'en'],
       ['en-US,en;q=0.9,*;q=0.1', 'en'],
@@ -259,7 +265,7 @@ async function qualifyMode(t, mode) {
         ...syntheticSessionHeaders(runtime.secret),
         'accept-language': locale,
       };
-      let url = `${origin}/${locale}/${fixtureWorkspaceId}?no-redirect=1`;
+      let url = `${origin}${base}/${locale}/${fixtureWorkspaceId}?no-redirect=1`;
       let response;
       for (let hop = 0; hop < 4; hop++) {
         response = await runtime.fetch(url, { headers });
@@ -277,6 +283,22 @@ async function qualifyMode(t, mode) {
       assert.match(response.headers.get('vary') ?? '', /Cookie/i);
       assert.equal(response.headers.get('x-frame-options'), 'DENY');
       const html = await response.text();
+      const assetUrls = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/gu)]
+        .map((match) => match[1])
+        .filter((url) => url.includes('/assets/'));
+      assert.ok(assetUrls.length > 0, 'SSR must reference compiled assets');
+      for (const asset of assetUrls) {
+        const target = new URL(asset, origin);
+        assert.equal(target.origin, origin);
+        assert.ok(target.pathname.startsWith(`${base}/assets/`), asset);
+      }
+      if (base) {
+        assert.doesNotMatch(
+          html,
+          /(?:href|src)=["']\/(?:assets|en|vi|personal)\//u,
+          'Mounted SSR links and assets must retain the app base'
+        );
+      }
       assert.match(html, new RegExp(`<html[^>]+lang=["']${locale}["']`));
       assert.ok(
         html.includes(fixtureWorkspaceName),
@@ -300,9 +322,12 @@ async function qualifyMode(t, mode) {
     assert.ok(
       signedCalls.includes(`/api/workspaces/${fixtureWorkspaceId}/transactions`)
     );
-    const rejected = await runtime.fetch(`${origin}/en/${fixtureWorkspaceId}`, {
-      headers: syntheticSessionHeaders(`${runtime.secret}-invalid`),
-    });
+    const rejected = await runtime.fetch(
+      `${origin}${base}/en/${fixtureWorkspaceId}`,
+      {
+        headers: syntheticSessionHeaders(`${runtime.secret}-invalid`),
+      }
+    );
     assert.equal(rejected.status, 307, 'Invalid signatures must not reach SSR');
     assert.equal(new URL(rejected.headers.get('location')).pathname, '/login');
     await rejected.text();
@@ -319,11 +344,24 @@ async function qualifyMode(t, mode) {
     for (const path of [
       '/favicon.ico',
       '/robots.txt',
+      '/android-chrome-192x192.png',
       `/assets/${javascript}`,
       `/assets/${stylesheet}`,
     ]) {
       const response = await runtime.fetch(`${origin}${base}${path}`);
       assert.equal(response.status, 200, path);
+      const mime = response.headers.get('content-type') ?? '';
+      const expected = path.endsWith('.js')
+        ? /(?:text|application)\/javascript/
+        : path.endsWith('.css')
+          ? /text\/css/
+          : path.endsWith('.png')
+            ? /image\/png/
+            : path.endsWith('.ico')
+              ? /image\/(?:x-icon|vnd.microsoft.icon)/
+              : /text\/plain/;
+      assert.match(mime, expected, path);
+      console.log(`ASSET_SMOKE ${origin}${base}${path} 200 ${mime}`);
       assert.ok((await response.arrayBuffer()).byteLength > 0, path);
     }
   });
@@ -333,7 +371,12 @@ async function qualifyMode(t, mode) {
     async (browserTest) => {
       const require = createRequire(join(app, '../web/package.json'));
       const { chromium } = require('playwright');
-      const browser = await chromium.launch({ headless: true });
+      const browser = await chromium.launch({
+        headless: true,
+        ...(process.env.FINANCE_TEST_SYSTEM_CHROME === '1'
+          ? { channel: 'chrome' }
+          : {}),
+      });
       browserTest.after(() => browser.close());
       {
         const origin = await financeBrowserListener(browserTest, runtime, mode);
@@ -364,18 +407,19 @@ async function qualifyMode(t, mode) {
   );
 
   await t.test(
-    "raw Host admits its profile root and rejects apex, other profiles' and unlisted hosts",
+    'raw Host admits profile root/mount and rejects neighbours, foreign profiles and unlisted hosts',
     async () => {
       for (const mode of modes) {
         const admitted = await runtime.rawFetch(
-          `${mode.origin}/api/build-info`
+          `${mode.origin}${mode.base}/api/build-info`
         );
         assert.equal(admitted.status, 200);
         assert.equal((await admitted.json()).commitHash, runtime.source);
       }
       for (const origin of [
         ...foreignOrigins,
-        'https://tuturuuu.com/finance',
+        `https://${profile.mountHost}/finance-extra`,
+        `https://${profile.mountHost}`,
         'https://unknown.example.test',
       ]) {
         const rejected = await runtime.rawFetch(`${origin}/api/build-info`);
@@ -406,5 +450,35 @@ test(
     for (const mode of modes) {
       await t.test(mode.origin, (modeTest) => qualifyMode(modeTest, mode));
     }
+  }
+);
+
+test(
+  'opt-in canonical 301 preserves slashless mount, deep paths and query',
+  { timeout: 60000 },
+  async (t) => {
+    const origin = `https://${profile.rootHost}`;
+    const runtime = await financeRuntime(t, {
+      financeOrigin: origin,
+      canonical: true,
+    });
+    for (const [path, target] of [
+      ['/', '/finance'],
+      ['/en/ws-1?ref=a&ref=b', '/finance/en/ws-1?ref=a&ref=b'],
+    ]) {
+      const response = await runtime.rawFetch(`${origin}${path}`, {
+        headers: { accept: 'text/html', 'sec-fetch-mode': 'navigate' },
+      });
+      assert.equal(response.status, 301);
+      assert.equal(
+        response.headers.get('location'),
+        `https://${profile.mountHost}${target}`
+      );
+      await response.text();
+    }
+    const api = await runtime.rawFetch(`${origin}/api/build-info`);
+    assert.equal(api.status, 200, 'Machine API paths must stay on their host');
+    await api.text();
+    assert.deepEqual(runtime.unexpected, []);
   }
 );
