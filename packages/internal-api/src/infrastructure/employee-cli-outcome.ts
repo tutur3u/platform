@@ -24,7 +24,7 @@ export async function observeEmployeeCliRecoveryOutcome(
     {
       method: 'GET',
       cache: 'no-store',
-      redirect: 'error',
+      redirect: 'manual',
       signal: options?.signal,
       headers: { 'Idempotency-Key': operationId },
     }

@@ -120,7 +120,8 @@ test('reclassification runs only default-branch classifier code', () => {
   assert.equal(post.env.HEAD_SHA, expression('needs.resolve.outputs.head_sha'));
   assert.equal(post.env.PR_AUTHOR, expression('needs.resolve.outputs.author'));
   // REV-6456-16: one repository-wide, non-cancelling group per pull request
-  // is shared by every per-PR writer.
+  // is shared by every per-PR writer. queue max keeps a dismissed approval
+  // from being overwritten by an older in-flight classification.
   const perPull = (group) =>
     /^security-review-pr-\$\{\{ [\w.]+ \}\}$/u.test(group);
   for (const [name, concurrency] of [
@@ -129,6 +130,7 @@ test('reclassification runs only default-branch classifier code', () => {
   ]) {
     assert.ok(perPull(concurrency.group), `${name}: ${concurrency.group}`);
     assert.equal(concurrency['cancel-in-progress'], false, name);
+    assert.equal(concurrency.queue, 'max', name);
   }
   assert.equal(
     classifier.concurrency.group,
@@ -141,6 +143,7 @@ test('reclassification runs only default-branch classifier code', () => {
     reclassify.concurrency.group,
     `security-review-pr-${expression('needs.resolve.outputs.number')}`
   );
+  assert.notEqual(workflow.concurrency.group, reclassify.concurrency.group);
   const text = source('security-review-reclassify.yaml');
   assert.doesNotMatch(
     text,

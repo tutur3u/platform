@@ -1,0 +1,437 @@
+'use client';
+
+import type { UIMessage } from '@tuturuuu/ai/types';
+import { Button } from '@tuturuuu/ui/button';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { useLiveAPIContext } from '@/hooks/use-live-api';
+import type { LiveConversationChange } from '../assistant/use-live-conversation';
+import type { LiveComposer } from '../components/mira-voice-mode-switcher';
+import { AuroraBlob, StatusPill } from './assistant-visuals';
+import type { GroundingMetadata } from './audio/multimodal-live-client';
+import { ChatBox } from './components/chat-box/chat-box';
+import ControlTray from './components/control-tray/control-tray';
+import { LiveActionPreview } from './components/live-action-preview';
+import { LiveCalendarResult } from './components/live-calendar-result';
+import { LiveWorkspace } from './components/live-workspace';
+import VideoPreview from './components/video-panel/video-preview';
+import { VisualizationContainer } from './components/visualizations/visualization-container';
+import { LiveInteractionStatus } from './live-interaction-status';
+import type { ServerContent } from './multimodal-live';
+import { isModelTurn } from './multimodal-live';
+import { useVisualizationStore } from './stores/visualization-store';
+import type { GoogleSearchVisualization } from './types/visualizations';
+import { useLiveConversation } from './use-live-conversation';
+import { useLiveJournal } from './use-live-journal';
+import { useLiveTools } from './use-live-tools';
+
+export function stopMediaStream(stream: MediaStream | null) {
+  stream?.getTracks().forEach((track) => {
+    track.stop();
+  });
+}
+
+export function AssistantVoiceSession({
+  modeControl,
+  onReturnToChat,
+  onResultsChange,
+  inputOpen,
+  onToggleInput,
+  onError,
+  onComposerChange,
+  history,
+  onConversationChange,
+  onRestartSession,
+  wsId,
+}: {
+  modeControl?: ReactNode;
+  onReturnToChat?: () => void;
+  onResultsChange?: (results: ReactNode) => void;
+  inputOpen?: boolean;
+  onToggleInput?: () => void;
+  onError: (error: Error) => void;
+  history?: UIMessage[];
+  onConversationChange?: LiveConversationChange;
+  onComposerChange?: (composer: LiveComposer | null) => void;
+  onRestartSession: () => Promise<void>;
+  wsId: string;
+}) {
+  const t = useTranslations('dashboard.voice_assistant.studio');
+  const reducedMotion = useReducedMotion();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [textChatOpen, setTextChatOpen] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [activeVideoStream, setActiveVideoStream] =
+    useState<MediaStream | null>(null);
+  const [videoType, setVideoType] = useState<'webcam' | 'screen' | null>(null);
+  const [inputVolume, setInputVolume] = useState(0);
+  const [videoStopRequest, setVideoStopRequest] = useState(0);
+
+  const activeVideoStreamRef = useRef<MediaStream | null>(null);
+
+  const {
+    client,
+    connect,
+    connected,
+    connectionStatus,
+    disconnect,
+    volume,
+    authorizationExpired,
+  } = useLiveAPIContext();
+  const disconnectRef = useRef(disconnect);
+  disconnectRef.current = disconnect;
+  const isUserSpeaking = inputVolume > 0.1;
+  useEffect(() => {
+    let cancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      if (cancelled) return;
+      void connect().catch((error) => {
+        if (cancelled) return;
+        onError(error instanceof Error ? error : new Error(String(error)));
+      });
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [connect, onError]);
+
+  useEffect(() => {
+    activeVideoStreamRef.current = activeVideoStream;
+  }, [activeVideoStream]);
+
+  useEffect(() => {
+    const handleConnectionError = () => {
+      setIsSpeaking(false);
+    };
+    client.on('error', handleConnectionError);
+    return () => {
+      client.off('error', handleConnectionError);
+    };
+  }, [client]);
+
+  useEffect(
+    () => () => {
+      stopMediaStream(activeVideoStreamRef.current);
+      void disconnectRef.current();
+    },
+    []
+  );
+
+  const { activities, notes, decide, calendarResult } = useLiveTools(wsId);
+  const { entries, sendText: sendJournalText } = useLiveJournal();
+  const recordText = useLiveConversation(onConversationChange, history);
+  const sendText = useCallback(
+    (text: string) => {
+      sendJournalText(text);
+      recordText(text);
+    },
+    [sendJournalText, recordText]
+  );
+  useEffect(() => {
+    onComposerChange?.({
+      connected,
+      connecting:
+        connectionStatus === 'connecting' ||
+        connectionStatus === 'reconnecting',
+      sendText,
+      disconnect,
+    });
+    return () => onComposerChange?.(null);
+  }, [connected, connectionStatus, sendText, disconnect, onComposerChange]);
+  const { addVisualization } = useVisualizationStore();
+  const hasVisualizations = useVisualizationStore(
+    (state) =>
+      state.visualizations.some((item) => !item.dismissed) ||
+      !!(state.centerVisualization && !state.centerVisualization.dismissed)
+  );
+
+  // Handle grounding metadata for Google Search visualization
+  useEffect(() => {
+    if (!client) return;
+
+    const handleGroundingMetadata = (metadata: GroundingMetadata) => {
+      // Extract search query and sources
+      const query = metadata.webSearchQueries?.[0] || 'Web search';
+      const results =
+        metadata.groundingChunks
+          ?.filter((chunk) => chunk.web)
+          .map((chunk) => ({
+            title: chunk.web!.title,
+            url: chunk.web!.uri,
+          })) || [];
+
+      if (results.length > 0) {
+        // Add Google Search visualization
+        const visData: Omit<
+          GoogleSearchVisualization,
+          'id' | 'createdAt' | 'dismissed' | 'side'
+        > = {
+          type: 'google_search',
+          data: {
+            query,
+            results,
+            totalResults: results.length,
+          },
+        };
+        const visId = addVisualization(visData);
+        console.log(`[Assistant] Added Google Search visualization: ${visId}`);
+      }
+    };
+
+    client.on('groundingmetadata', handleGroundingMetadata);
+    return () => {
+      client.off('groundingmetadata', handleGroundingMetadata);
+    };
+  }, [client, addVisualization]);
+
+  // Handle GoAway message (server requesting graceful disconnection)
+  useEffect(() => {
+    if (!client) return;
+
+    const handleGoAway = (data: { timeLeft?: string }) => {
+      console.log(
+        '[Assistant] Server requesting disconnect, time left:',
+        data.timeLeft || 'unknown'
+      );
+      // The session resumption will automatically handle reconnection
+      // using the stored session handle
+    };
+
+    client.on('goaway', handleGoAway);
+    return () => {
+      client.off('goaway', handleGoAway);
+    };
+  }, [client]);
+
+  // Handle GenerationComplete (model finished generating all output)
+  useEffect(() => {
+    if (!client) return;
+
+    const handleGenerationComplete = () => {
+      console.log('[Assistant] Generation complete');
+      // Clear transcript state cleanly when generation is complete
+      setIsSpeaking(false);
+    };
+
+    client.on('generationcomplete', handleGenerationComplete);
+    return () => {
+      client.off('generationcomplete', handleGenerationComplete);
+    };
+  }, [client]);
+
+  // Handle transcription from voice (native audio model) or text content (standard model)
+  useEffect(() => {
+    if (!client) return;
+
+    const handleTranscription = (text: string) => {
+      if (text) {
+        setIsSpeaking(true);
+      }
+    };
+
+    // For standard models, text comes through content event
+    const handleContent = (content: ServerContent) => {
+      if (isModelTurn(content)) {
+        const text = content.modelTurn.parts
+          .filter((p) => 'text' in p && p.text)
+          .map((p) => ('text' in p ? p.text : ''))
+          .join('');
+        if (text) {
+          setIsSpeaking(true);
+        }
+      }
+    };
+
+    // Detect audio output for speaking state
+    const handleAudio = () => {
+      setIsSpeaking(true);
+    };
+
+    const handleTurnComplete = () => {
+      setIsSpeaking(false);
+    };
+
+    // Listen to both transcription (native audio) and content (standard model)
+    client.on('transcription', handleTranscription);
+    client.on('content', handleContent);
+    client.on('audio', handleAudio);
+    client.on('turncomplete', handleTurnComplete);
+    client.on('interrupted', handleTurnComplete);
+
+    return () => {
+      client.off('transcription', handleTranscription);
+      client.off('content', handleContent);
+      client.off('audio', handleAudio);
+      client.off('turncomplete', handleTurnComplete);
+      client.off('interrupted', handleTurnComplete);
+    };
+  }, [client]);
+
+  useEffect(() => {
+    onResultsChange?.(
+      <>
+        <LiveCalendarResult result={calendarResult} />
+        {hasVisualizations && <VisualizationContainer wsId={wsId} />}
+      </>
+    );
+    return () => onResultsChange?.(null);
+  }, [onResultsChange, calendarResult, hasVisualizations, wsId]);
+
+  if (onConversationChange)
+    return (
+      <div className="min-w-0 max-w-full">
+        <ControlTray
+          compact
+          leading={modeControl}
+          onReturnToChat={onReturnToChat}
+          textChatOpen={inputOpen}
+          onToggleChat={onToggleInput}
+          onError={onError}
+          onRestartSession={onRestartSession}
+          videoRef={videoRef}
+          supportsVideo
+          onVideoStreamChange={(stream, type) => {
+            setActiveVideoStream(stream);
+            setVideoType(type);
+          }}
+          onInputVolumeChange={setInputVolume}
+          videoStopRequest={videoStopRequest}
+        />
+        <LiveInteractionStatus />
+        <div className="max-h-32 space-y-2 overflow-y-auto overscroll-contain empty:hidden">
+          {activities
+            .filter((activity) => activity.status === 'approval')
+            .map((activity) => (
+              <div
+                key={activity.id}
+                className="max-h-40 overflow-auto rounded-lg border p-2"
+              >
+                <LiveActionPreview args={activity.args} />
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => decide(activity.id, true)}>
+                    {t('approve')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => decide(activity.id, false)}
+                  >
+                    {t('decline')}
+                  </Button>
+                </div>
+              </div>
+            ))}
+        </div>
+        <AnimatePresence initial={false}>
+          {activeVideoStream && (
+            <motion.div
+              key="media-preview"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: reducedMotion ? 0 : 0.18 }}
+              className="overflow-hidden"
+            >
+              <VideoPreview
+                compact
+                stream={activeVideoStream}
+                type={videoType}
+                onClose={() => {
+                  setActiveVideoStream(null);
+                  setVideoType(null);
+                  setVideoStopRequest((request) => request + 1);
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <video ref={videoRef} autoPlay playsInline muted className="hidden" />
+      </div>
+    );
+
+  return (
+    <LiveWorkspace
+      inline={!!onConversationChange}
+      hasResults={!!calendarResult || hasVisualizations}
+      connected={connected}
+      authorizationExpired={authorizationExpired}
+      speaking={isSpeaking || volume > 0.03}
+      listening={isUserSpeaking}
+      entries={entries}
+      activities={activities}
+      notes={notes}
+      decide={decide}
+      visualization={
+        <AuroraBlob
+          connected={connected}
+          isSpeaking={isSpeaking}
+          isUserSpeaking={isUserSpeaking}
+          volume={volume}
+        />
+      }
+      status={
+        <StatusPill
+          connected={connected}
+          connectionStatus={connectionStatus}
+          isUserSpeaking={isUserSpeaking}
+          isSpeaking={isSpeaking || volume > 0.03}
+        />
+      }
+      results={
+        <>
+          <LiveCalendarResult result={calendarResult} />
+          <VisualizationContainer wsId={wsId} />
+        </>
+      }
+      controls={
+        <>
+          <ControlTray
+            onError={onError}
+            onRestartSession={onRestartSession}
+            videoRef={videoRef}
+            supportsVideo={true}
+            textChatOpen={onComposerChange ? false : textChatOpen}
+            onToggleChat={
+              onComposerChange ? undefined : () => setTextChatOpen((v) => !v)
+            }
+            onVideoStreamChange={(stream, type) => {
+              setActiveVideoStream(stream);
+              setVideoType(type);
+            }}
+            onInputVolumeChange={setInputVolume}
+            videoStopRequest={videoStopRequest}
+          />
+          <AnimatePresence>
+            {!onComposerChange && textChatOpen && connected && (
+              <ChatBox
+                connected={connected}
+                disabled={!connected}
+                onSubmit={async (text: string) => sendText(text)}
+              />
+            )}
+          </AnimatePresence>
+        </>
+      }
+    >
+      <VideoPreview
+        stream={activeVideoStream}
+        type={videoType}
+        onClose={() => {
+          setActiveVideoStream(null);
+          setVideoType(null);
+          setVideoStopRequest((request) => request + 1);
+        }}
+      />
+      <video ref={videoRef} autoPlay playsInline muted className="hidden" />
+    </LiveWorkspace>
+  );
+}

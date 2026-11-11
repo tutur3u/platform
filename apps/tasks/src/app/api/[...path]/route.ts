@@ -228,6 +228,9 @@ async function proxyToWebApi(request: NextRequest, context: RouteContext) {
     statusText: upstreamResponse.statusText,
   });
 
+  // On the tuturuuu.com/tasks mount the shared root session is the session:
+  // never emit Supabase cookie deletions there (D87 no-writer probe).
+  if (request.nextUrl.basePath) return response;
   return clearSupabaseAuthCookies(request, response);
 }
 

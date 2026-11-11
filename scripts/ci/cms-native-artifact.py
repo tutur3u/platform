@@ -29,7 +29,18 @@ def load():
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
         "workers_dev": False, "preview_urls": False,
     }
-    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
+    # Exact service binding from apps/cms/void.config.ts. Any other list fails.
+    module.NORMALIZED_DEFAULTS = {
+        **module.NORMALIZED_DEFAULTS,
+        "topLevelName": WORKER,
+        "services": [
+            {
+                "binding": "ABUSE_GUARD",
+                "service": "tuturuuu-abuse-guard",
+                "entrypoint": "AbuseGuardEntrypoint",
+            },
+        ],
+    }
     module.RECEIPT = "cms-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
     return module
@@ -37,6 +48,13 @@ def load():
 
 def main():
     # The shared CLI reads its exact source from APPS_SOURCE_SHA.
+    import sys
+    if "--profile" in sys.argv:
+        profile_index = sys.argv.index("--profile")
+        profile = sys.argv[profile_index + 1] if profile_index + 1 < len(sys.argv) else None
+        del sys.argv[profile_index:profile_index + 2]
+        if profile != "production":
+            raise SystemExit("only the production artifact profile is supported")
     if "CMS_SOURCE_SHA" in os.environ:
         os.environ["APPS_SOURCE_SHA"] = os.environ["CMS_SOURCE_SHA"]
     else:

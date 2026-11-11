@@ -98,11 +98,13 @@ jobs:
           package-manager-cache: false
       - run: bun install --frozen-lockfile
       - name: Check public roadmap data
-        run: node --test apps/roadmap/src/roadmap-data.test.ts apps/roadmap/scripts/seal-artifact.test.mjs
+        run: node --test apps/roadmap/src/roadmap-data.test.ts apps/roadmap/src/cache-policy.test.ts apps/roadmap/scripts/seal-artifact.test.mjs apps/roadmap/scripts/pre-seal-doctor.test.mjs
       - name: Build the exact roadmap Worker
         run: bun run --cwd apps/roadmap build:cloudflare
       - name: Check generated-route types
         run: bun run --cwd apps/roadmap type-check
+      - name: Pre-seal doctor
+        run: node apps/roadmap/scripts/pre-seal-doctor.mjs
       - name: Seal emitted source and files
         run: node apps/roadmap/scripts/seal-artifact.mjs "$SOURCE_SHA"
       - name: Archive the exact Worker and client output

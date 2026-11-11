@@ -1,6 +1,21 @@
 export const PUBLIC_DOCUMENT_CACHE =
   'public,s-maxage=300,stale-while-revalidate=86400';
 export const PRIVATE_RESPONSE_CACHE = 'private,no-store';
+/** The public, anonymous pages: one per page and language, no other path. */
+export const PUBLIC_DOCUMENTS = new Set([
+  '/roadmap',
+  '/roadmap/vi',
+  '/roadmap/workshops/edufest-2026',
+  '/roadmap/vi/workshops/edufest-2026',
+]);
+export const IMMUTABLE_ASSET_CACHE = 'public, max-age=31536000, immutable';
+
+/** Vite content hashes look like `index-CGgt8iCG.js`. */
+export function isHashedAssetPath(pathname: string): boolean {
+  return /^\/roadmap\/assets\/(?:[^/]+\/)*[^/]+-[A-Za-z0-9_-]{8,}\.[A-Za-z0-9]+$/.test(
+    pathname
+  );
+}
 
 /** Header-only policy: no cache storage, identity lookup or background work. */
 export function withRoadmapCachePolicy(
@@ -18,7 +33,6 @@ export function withRoadmapCachePolicy(
       .get('vary')
       ?.split(',')
       .map((item) => item.trim().toLowerCase()) ?? [];
-  const upstreamCache = response.headers.get('cache-control') ?? '';
   const safe =
     exactHost &&
     ['GET', 'HEAD'].includes(request.method) &&
@@ -30,15 +44,26 @@ export function withRoadmapCachePolicy(
     !/[%\\]/.test(url.pathname) &&
     !url.pathname.includes('//') &&
     !response.headers.has('set-cookie') &&
-    vary.every((item) => item === 'accept-encoding') &&
-    !/\b(?:private|no-store|no-cache)\b/i.test(upstreamCache);
+    vary.every((item) => item === 'accept-encoding');
   const contentType = response.headers.get('content-type') ?? '';
   const html = /^text\/html(?:;|$)/i.test(contentType);
   const document =
-    (url.host === 'tuturuuu.com' && url.pathname === '/roadmap/') ||
+    (url.host === 'tuturuuu.com' && PUBLIC_DOCUMENTS.has(url.pathname)) ||
     (url.host === 'roadmap.tuturuuu.com' && url.pathname === '/');
 
-  // Asset caching remains the native asset supplier's responsibility.
+  if (safe && isHashedAssetPath(url.pathname)) {
+    if (response.headers.get('cache-control') === IMMUTABLE_ASSET_CACHE)
+      return response;
+    const headers = new Headers(response.headers);
+    headers.set('cache-control', IMMUTABLE_ASSET_CACHE);
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
+
+  // Unhashed files keep the supplier policy. They are not immutable.
   if (safe && !html && url.pathname.startsWith('/roadmap/assets/'))
     return response;
 

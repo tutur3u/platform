@@ -5,6 +5,10 @@ export type CacheClass = 'page' | 'static' | 'bypass';
 export interface ManifestRoute {
   id: string;
   origin: string;
+  /** Page group that a deployment flag can move to `flagOrigin`. */
+  group?: string;
+  /** Origin that serves the group while its flag is on. */
+  flagOrigin?: string;
   cache: Exclude<CacheClass, 'bypass'>;
   /** Paths may carry a leading `/<locale>` segment. */
   localized: boolean;
@@ -22,6 +26,8 @@ export interface Manifest {
 export interface RouteMatch {
   routeId: string;
   origin: string;
+  group?: string;
+  flagOrigin?: string;
   cache: CacheClass;
   /** Path with any locale prefix removed; `/` for a bare locale. */
   pathname: string;
@@ -54,6 +60,8 @@ export function matchRoute(
       return {
         routeId: route.id,
         origin: route.origin,
+        group: route.group,
+        flagOrigin: route.flagOrigin,
         cache: route.cache,
         pathname,
         locale: null,
@@ -67,6 +75,8 @@ export function matchRoute(
       return {
         routeId: route.id,
         origin: route.origin,
+        group: route.group,
+        flagOrigin: route.flagOrigin,
         cache: route.cache,
         pathname: split.pathname,
         locale: split.locale,

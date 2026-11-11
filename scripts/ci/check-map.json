@@ -6,6 +6,8 @@
       ".github/**",
       "package.json",
       "bun.lock",
+      "turbo.json",
+      "tsconfig*.json",
       "**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx,json,jsonc,css,graphql,gql,md,mdx,yaml,yml,html}",
       ".editorconfig",
       ".gitignore"
@@ -14,6 +16,8 @@
       ".github/**",
       "package.json",
       "bun.lock",
+      "turbo.json",
+      "tsconfig*.json",
       "apps/*/messages/**",
       "packages/*/messages/**",
       "apps/*/src/**",
@@ -28,6 +32,8 @@
       ".github/**",
       "package.json",
       "bun.lock",
+      "turbo.json",
+      "tsconfig*.json",
       "apps/docs/**",
       "apps/*/src/app/**",
       "apps/*/public/**",
@@ -49,6 +55,10 @@
     ],
     "migrations": [
       ".github/**",
+      "package.json",
+      "bun.lock",
+      "turbo.json",
+      "tsconfig*.json",
       "apps/database/supabase/migrations/**.sql",
       "scripts/check-migration-timestamps*",
       "tuturuuu*.ts"
@@ -56,6 +66,9 @@
     "mobile": [
       ".github/**",
       "package.json",
+      "bun.lock",
+      "turbo.json",
+      "tsconfig*.json",
       "apps/mobile/lib/core/config/api_config.dart",
       "apps/*/src/app/api/**",
       "apps/web/src/legacy-api-routes/**",
@@ -66,6 +79,10 @@
     ],
     "plugin": [
       ".github/**",
+      "package.json",
+      "bun.lock",
+      "turbo.json",
+      "tsconfig*.json",
       "plugins/**",
       ".agents/**",
       ".claude/**",

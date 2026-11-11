@@ -30,7 +30,7 @@ const PAUSED_JOB = /^(\$\{\{ )?false( \}\})?$/u;
 // with a reviewed push, schedule or manual trigger change.
 const PROTECTED_TRIGGERS = {
   'rewise-cloudflare.yaml': 'fe6b54462e91b1bf',
-  'git-cloudflare.yaml': '0a3cc2c97958f5cd',
+  'git-cloudflare.yaml': '518ca2530d7a63ef',
   'external-cloudflare.yaml': '0a3cc2c97958f5cd',
   'ai-cloudflare.yaml': '2b1f1ae8795d0216',
   'api-worker.yaml': '058d68d5d261d527',
@@ -104,6 +104,15 @@ const PROTECTED_TRIGGERS = {
   'type-check.yaml': '47acd08d33c6cf4c',
   'web-start-candidate.yaml': '0a3cc2c97958f5cd',
   'workspace-permission-scope-contract.yaml': '0a3cc2c97958f5cd',
+  'chat-cloudflare.yaml': '4c7010c51cef2ee2',
+  'drive-cloudflare-artifact.yaml': '0a3cc2c97958f5cd',
+  'hive-cloudflare.yaml': '170330c93275beda',
+  'infrastructure-cloudflare.yaml': '8b74315dfe557569',
+  'learn-cloudflare.yaml': 'c1dc547df2674fca',
+  'marketing-cloudflare.yaml': '975602b8f7271cbc',
+  'mind-cloudflare.yaml': '188b2dc67dc86f60',
+  'teach-cloudflare.yaml': 'b37341dc49021b0b',
+  'workspace-cloudflare.yaml': '659081e2b1855001',
 };
 
 const EXTRA_PROTECTED_INPUTS = {
@@ -320,12 +329,23 @@ for (const file of [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS]) {
         renderTemplate(policy.group, push),
         'label events must share the admitted run group'
       );
-      assert.ok(policy.group.endsWith(UNADMITTED_GROUP_SUFFIX), policy.group);
-      assert.notEqual(
-        renderTemplate(policy.group, unadmitted),
-        renderTemplate(policy.group, labelled),
-        'unadmitted runs must never cancel an admitted run'
-      );
+      const admittedGroup = renderTemplate(policy.group, labelled);
+      if (admittedGroup === `${workflow.name}-pr-42`) {
+        // One pull-request slot. A later admitted run cancels the older one,
+        // including a run whose payload had not yet received ready-for-ci.
+        assert.equal(
+          renderTemplate(policy.group, unadmitted),
+          admittedGroup,
+          'one pull request uses one group'
+        );
+      } else {
+        assert.ok(policy.group.endsWith(UNADMITTED_GROUP_SUFFIX), policy.group);
+        assert.notEqual(
+          renderTemplate(policy.group, unadmitted),
+          admittedGroup,
+          'unadmitted runs must never cancel an admitted run'
+        );
+      }
       if (policy.queue !== 'max') {
         assert.equal(
           evaluateExpression(String(policy['cancel-in-progress']), labelled),

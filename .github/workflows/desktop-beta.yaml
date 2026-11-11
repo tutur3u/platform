@@ -24,10 +24,14 @@ on:
         type: boolean
         default: true
 
+# Pull requests supersede. A production push, and a manual run that publishes,
+# share one non-cancelling group for the whole run, including version
+# derivation. A dry manual run stays on its own group. queue max cannot sit on
+# this block: pull requests cancel, and GitHub rejects that together with
+# queue max. The publish job still holds desktop-beta-production-publish.
 concurrency:
-  group: desktop-beta-${{ github.ref }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
-  cancel-in-progress: false
-  queue: max
+  group: ${{ ((github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1) && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || ((github.event_name == 'push' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production' && inputs.dry_run == false)) && 'desktop-beta-production' || format('desktop-beta-{0}-{1}-{2}', github.ref, github.sha, github.run_id) }}
+  cancel-in-progress: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1 }}
 
 permissions:
   contents: read
@@ -299,6 +303,10 @@ jobs:
 
   publish:
     name: Publish verified desktop beta
+    concurrency:
+      group: desktop-beta-production-publish
+      cancel-in-progress: false
+      queue: max
     needs: [build, release-status]
     env:
       DESKTOP_BETA_PLATFORMS: ${{ needs.release-status.outputs.platforms }}

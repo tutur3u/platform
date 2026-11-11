@@ -8,7 +8,10 @@ import importlib.util
 import os
 from pathlib import Path
 
-WORKER = "tuturuuu-hive-vite-staging"
+PROFILE = os.environ.get("VITE_HIVE_NATIVE_PROFILE", "staging")
+if PROFILE not in ("staging", "production"):
+    raise ValueError("Unknown hive native profile")
+WORKER = "tuturuuu-hive" if PROFILE == "production" else "tuturuuu-hive-vite-staging"
 PUBLIC_FILES = (
     "assets/hive/hive-voxel-asset-sheet.png",
     "hive-landing-reference.png",
@@ -24,9 +27,11 @@ def load():
     module.IDENTITY = {
         **module.IDENTITY,
         "name": WORKER,
+        "vars": {"TUTURUUU_NOINDEX": "0" if PROFILE == "production" else "1"},
         "compatibility_date": "2026-10-12",
-        "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
+        "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
         "workers_dev": False,
+        "preview_urls": False,
     }
     module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
     module.RECEIPT = "hive-native-artifact.json"

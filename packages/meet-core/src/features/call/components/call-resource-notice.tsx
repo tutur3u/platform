@@ -3,7 +3,8 @@ import { useTranslations } from 'next-intl';
 
 /** Limit call-wide notices to actionable room resource errors. */
 export function resourceErrorKey(error: string | null) {
-  return error === 'participant_limit_reached' ||
+  return error === 'admission_closed' ||
+    error === 'participant_limit_reached' ||
     error === 'publisher_limit_reached' ||
     error === 'media_track_limit_reached'
     ? error

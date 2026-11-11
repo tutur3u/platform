@@ -11,7 +11,7 @@
     "serve:chat": "NODE_OPTIONS='--max-http-header-size=65536 --experimental-require-module' next start -p 7821",
     "start": "NODE_OPTIONS='--max-http-header-size=65536' next start -p 7821",
     "preview": "next build --turbopack && NODE_OPTIONS='--max-http-header-size=65536' next start -p 7821",
-    "test": "vitest run",
+    "test": "vitest run && node --test cloudflare/deployment-profile.test.mjs",
     "test:watch": "vitest",
     "stop": "cd ../database && bun sb:stop",
     "sb:status": "cd ../database && bun sb:status",

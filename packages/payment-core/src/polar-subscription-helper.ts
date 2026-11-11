@@ -6,8 +6,10 @@ import { addDays } from 'date-fns';
 import { syncProductToDatabase } from './polar-product-helper';
 import {
   isAiCreditPackProduct,
+  isCustomDomainAddonProduct,
   parseCreditPackTokens,
 } from './polar-product-metadata';
+import { upsertWorkspaceDomainAddon } from './workspace-domain-addon';
 
 const CREDIT_PACK_EXPIRY_DAYS = 60;
 
@@ -284,6 +286,15 @@ export async function syncSubscriptionToDatabase(
     );
 
     return { purchaseData };
+  }
+
+  if (isCustomDomainAddonProduct(subscription.product.metadata)) {
+    const { domainAddonData } = await upsertWorkspaceDomainAddon(
+      supabase,
+      wsId,
+      subscription
+    );
+    return { domainAddonData };
   }
 
   const { subscriptionData, isSeatBased } = await upsertSubscription(

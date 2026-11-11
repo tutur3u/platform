@@ -27,6 +27,7 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toast } from '@tuturuuu/ui/sonner';
+import { getBrowserTimezone } from '@tuturuuu/utils/timezone';
 import { useTranslations } from 'next-intl';
 import { useQueryStates } from 'nuqs';
 import { useEffect, useRef, useState } from 'react';
@@ -56,7 +57,6 @@ import {
   normalizePeriodicReportPeriod,
   periodicReportFilterKeys,
   periodicReportFilters,
-  periodicReportMonthScope,
 } from './periodic-report-filters';
 import {
   type PeriodicEmailPreview,
@@ -119,6 +119,7 @@ export default function PeriodicReportsPanel({
     direction: sortDirection,
     start: rawPeriodStart,
     end: rawPeriodEnd,
+    titleMonth,
   } = filters;
   const cadence = controlledCadence ?? urlCadence;
   const stage =
@@ -131,9 +132,7 @@ export default function PeriodicReportsPanel({
     rawPeriodStart,
     rawPeriodEnd
   );
-  // Monthly: reports for one month (their period, else the estimated month).
-  const month = periodicReportMonthScope({ ...filters, cadence });
-  const { reportMonth, timeZone } = month;
+  const timeZone = getBrowserTimezone();
   const [debouncedQuery] = useDebounce(query.trim(), 300);
   const actor = useWorkspaceActor();
   const [queryInstance] = useState(() => crypto.randomUUID());
@@ -211,7 +210,7 @@ export default function PeriodicReportsPanel({
       sortDirection,
       periodStart,
       periodEnd,
-      reportMonth,
+      titleMonth,
     ],
     enabled: Boolean(actor),
     queryFn: async ({ pageParam }) => {
@@ -224,7 +223,7 @@ export default function PeriodicReportsPanel({
         cadence,
         periodStart: periodStart || undefined,
         periodEnd: periodEnd || undefined,
-        month: reportMonth ?? undefined,
+        titleMonth: titleMonth || undefined,
         generationStatus:
           generationStatus === 'all' ? undefined : generationStatus,
         deliveryStatus: deliveryStatus === 'all' ? undefined : deliveryStatus,
@@ -233,8 +232,7 @@ export default function PeriodicReportsPanel({
         query: debouncedQuery || undefined,
         sortBy,
         sortDirection,
-        timezone:
-          periodStart || periodEnd || reportMonth ? timeZone : undefined,
+        timezone: periodStart || periodEnd ? timeZone : undefined,
       });
       actor.assertActive();
       return { ...page, queryScope };
@@ -303,6 +301,8 @@ export default function PeriodicReportsPanel({
   const firstPage = currentRows ? ownedData?.pages[0] : undefined;
   const counts = firstPage?.counts;
   const summaryPartial = firstPage?.summaryPartial === true;
+  // Months found in the titles, counted over the whole scope on the server.
+  const titleMonths = firstPage?.titleMonths;
   const categoryCounts = firstPage?.categoryCounts;
   const totalReports = firstPage?.total;
   // All stages in scope, so the group stays visible on the default view.
@@ -427,8 +427,7 @@ export default function PeriodicReportsPanel({
         toolbar={
           <div className="space-y-3">
             <PeriodicReportsScopeHeader
-              month={reportMonth}
-              page={firstPage}
+              titleMonth={titleMonth}
               periodStart={periodStart}
               periodEnd={periodEnd}
               onRefresh={() => reportsQuery.refetch()}
@@ -462,7 +461,7 @@ export default function PeriodicReportsPanel({
                   generation: 'all',
                   start: '',
                   end: '',
-                  month: '',
+                  titleMonth: '',
                   query: '',
                   sort: 'period',
                   direction: 'desc',
@@ -474,10 +473,13 @@ export default function PeriodicReportsPanel({
               periodStart={periodStart}
               periodEnd={periodEnd}
               onPeriodChange={(start, end) => void setFilters({ start, end })}
-              reportMonth={month.pickerValue}
-              defaultMonth={month.defaultMonth}
-              onMonthChange={(value) =>
-                void setFilters({ month: value, start: '', end: '' })
+              titleMonth={titleMonth}
+              titleMonths={titleMonths}
+              titleMonthsPartial={summaryPartial}
+              onTitleMonthChange={
+                cadence === 'monthly'
+                  ? (value) => void setFilters({ titleMonth: value })
+                  : undefined
               }
               query={query}
               isSearching={
@@ -617,7 +619,7 @@ export default function PeriodicReportsPanel({
                     query: '',
                     start: '',
                     end: '',
-                    month: 'all',
+                    titleMonth: '',
                   });
                 }}
               >

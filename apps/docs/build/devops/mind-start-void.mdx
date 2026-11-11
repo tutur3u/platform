@@ -12,12 +12,12 @@ the route is flipped. `vercel-production-mind.yaml` still deploys the Next app.
 
 ## Worker
 
-- Staging candidate: `tuturuuu-mind-vite-staging` (`workers_dev` off, `TUTURUUU_NOINDEX=1`). A production Worker (`tuturuuu-mind`, `workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=0`) is created by the cutover PR; nothing here attaches a route.
+- Staging candidate: the staging Worker name (`workers_dev` off, `TUTURUUU_NOINDEX=1`). A production Worker (`tuturuuu-mind`, `workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=0`) is created by the cutover PR; nothing here attaches a route.
 - Entry: `apps/mind/cloudflare/worker.ts`; Wrangler config is emitted by `void` into `dist`.
 - Host: `mind.tuturuuu.com`. Root-only: `mountHosts` is empty and `unknownHost` is `reject`, so `tuturuuu.com/mind` and any other host answer 404 before app code runs.
 - Binding: `ASSETS` (static output, `run_worker_first`).
 - Variables (names): `TUTURUUU_NOINDEX`, optional `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`).
-- Secrets (names, set in the Worker, never in the repo): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`. Compare with the Vercel project environment list before the flip.
+- Secrets (names, set in the Worker, never in the repo): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, and `TUTURUUU_APP_COORDINATION_SECRET`. Configure service binding `ABUSE_GUARD` to `tuturuuu-abuse-guard`, secret `ABUSE_GUARD_KEY_PEPPER`, and text variable `ABUSE_GUARD_FAMILIES=proxy`; `ABUSE_GUARD_TIMEOUT_MS` is optional. Upstash is not required. Compare the remaining Worker secrets with the Vercel project environment list before the flip.
 - Optional variables read by the source: `MIND_APP_URL`, `WEB_APP_URL`.
 
 ## Build and qualification

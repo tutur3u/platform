@@ -1,7 +1,7 @@
 ---
 title: "Cross-App Cutover Smoke Harness (D15)"
 description: "Universal post-cutover smoke check script for Cloudflare Workers migrations: anon 200 entry route, login rendering, redirect loop detection, and 5xx probe."
-updatedAt: '2026-11-09'
+updatedAt: '2026-11-10'
 audience: developers
 ---
 
@@ -18,6 +18,7 @@ Under **D74** and **COMMON** migration invariants, every cutover requires a rapi
 3. **No Redirect Loops**: Tracks the complete redirect history for every probed route and asserts that no circular redirects or excessive chain lengths occur.
 4. **No 5xx Server Errors on 5 Listed Paths**: Probes at least 5 distinct routes configured per app in `scripts/cutover-smoke-config.json` (such as landing, login, pricing/about, health, robots.txt, or manifest.json) and verifies none return a 5xx server status code (`500`-`599`).
 5. **Deterministic JSON Output**: Outputs machine-readable `PASS`/`FAIL` JSON report to stdout with detailed timings, redirect chains, and failure reasons. Exits with code `0` on `PASS` and `1` on `FAIL`.
+6. **Asset smoke, when configured**: An app may set `assetSmoke` in the route table. D15 then runs `scripts/ci/asset-smoke.mjs` for that app: it fetches each configured page, follows at most one redirect, and requires every referenced CSS, JS and font URL to return 200 with the matching MIME type on the canonical origin. A second redirect fails the check. Other apps are unchanged.
 
 ---
 
@@ -32,7 +33,7 @@ Run directly with Node or Bun:
 node scripts/cutover-smoke.mjs web https://staging.tuturuuu.com
 
 # Probing apps/marketing on preview or edge URL
-node scripts/cutover-smoke.mjs marketing https://marketing-preview.workers.dev
+node scripts/cutover-smoke.mjs marketing https://<preview-host>
 
 # Probing apps/shortener on custom domain
 node scripts/cutover-smoke.mjs shortener https://ttr.link
@@ -49,6 +50,12 @@ node scripts/cutover-smoke.mjs --app tools --url https://tools.tuturuuu.com --ti
 
 # Using a custom route table config
 node scripts/cutover-smoke.mjs --app web --url https://tuturuuu.com --config ./custom-routes.json
+
+# Asset smoke by itself. Any gateway-routed app can pass its own pages.
+node scripts/ci/asset-smoke.mjs \
+  --canonical-origin https://tuturuuu.com \
+  --page https://tuturuuu.com/roadmap/ \
+  --page https://roadmap.tuturuuu.com/
 ```
 
 ---

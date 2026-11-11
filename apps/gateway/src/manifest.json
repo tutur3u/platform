@@ -1,49 +1,107 @@
 {
   "locales": ["en", "vi"],
   "origins": {
-    "web": { "env": "WEB_ORIGIN" }
+    "web": {
+      "env": "WEB_ORIGIN"
+    },
+    "marketing": {
+      "env": "MARKETING_ORIGIN"
+    }
   },
-  "default": { "origin": "web", "cache": "bypass" },
+  "default": {
+    "origin": "web",
+    "cache": "bypass"
+  },
   "routes": [
+    {
+      "id": "marketing-legal",
+      "group": "legal",
+      "flagOrigin": "marketing",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": [
+        "/privacy",
+        "/terms",
+        "/acceptable-use",
+        "/community-guidelines",
+        "/security"
+      ],
+      "prefix": ["/legal/", "/security/"]
+    },
+    {
+      "id": "marketing-company",
+      "group": "company",
+      "flagOrigin": "marketing",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": [
+        "/about",
+        "/branding",
+        "/careers",
+        "/contact",
+        "/contributors",
+        "/partners",
+        "/women-in-tech"
+      ],
+      "prefix": []
+    },
+    {
+      "id": "marketing-products",
+      "group": "products",
+      "flagOrigin": "marketing",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": ["/products"],
+      "prefix": ["/products/"]
+    },
+    {
+      "id": "marketing-solutions",
+      "group": "solutions",
+      "flagOrigin": "marketing",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": [],
+      "prefix": ["/solutions/"]
+    },
+    {
+      "id": "marketing-blog",
+      "group": "blog",
+      "flagOrigin": "marketing",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": ["/blog"],
+      "prefix": ["/blog/"]
+    },
+    {
+      "id": "marketing-home",
+      "group": "home",
+      "flagOrigin": "marketing",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": ["/", "/pricing"],
+      "prefix": []
+    },
     {
       "id": "marketing-pages",
       "origin": "web",
       "cache": "page",
       "localized": true,
       "exact": [
-        "/",
-        "/about",
-        "/acceptable-use",
-        "/blog",
-        "/branding",
-        "/careers",
         "/changelog",
-        "/community-guidelines",
-        "/contact",
-        "/contributors",
         "/download",
         "/meet",
         "/meet-together",
         "/models",
-        "/partners",
         "/portfolio",
-        "/pricing",
-        "/privacy",
-        "/products",
-        "/qr-generator",
-        "/security",
-        "/terms",
-        "/women-in-tech"
+        "/qr-generator"
       ],
-      "prefix": [
-        "/blog/",
-        "/changelog/",
-        "/legal/",
-        "/products/",
-        "/security/",
-        "/solutions/",
-        "/visualizations/"
-      ]
+      "prefix": ["/changelog/", "/visualizations/"]
     },
     {
       "id": "satellite-landings",
@@ -65,6 +123,14 @@
         "/manifest.json"
       ],
       "prefix": ["/.well-known/"]
+    },
+    {
+      "id": "marketing-assets",
+      "origin": "marketing",
+      "cache": "static",
+      "localized": false,
+      "exact": [],
+      "prefix": ["/assets/"]
     },
     {
       "id": "static-assets",

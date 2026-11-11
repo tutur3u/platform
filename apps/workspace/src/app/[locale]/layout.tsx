@@ -1,0 +1,158 @@
+import { AppThemeProvider, Providers } from '@/components/providers';
+import { PrivacyConsent } from '@/components/privacy-consent';
+import { siteConfig } from '@/constants/configs';
+import { supportedLocales } from '@/i18n/routing';
+import '@/style/prosemirror.css';
+import '@/style/react-easy-crop.css';
+import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
+import '@tuturuuu/tasks-ui/globals.css';
+import { Toaster } from '@tuturuuu/ui/sonner';
+import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
+import { cn } from '@tuturuuu/utils/format';
+import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
+import type { Metadata } from 'next';
+import { locale as getRootLocale } from 'next/root-params';
+import { getMessages } from 'next-intl/server';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
+import { type ReactNode, Suspense } from 'react';
+import { getPublicClientMessages } from '@/i18n/client-messages';
+
+export { viewport } from '@tuturuuu/utils/common/nextjs';
+
+interface Props {
+  children: ReactNode;
+  params: Promise<{
+    locale: string;
+  }>;
+}
+
+async function PublicClientProviders({ children }: { children: ReactNode }) {
+  const publicClientMessages = getPublicClientMessages(await getMessages());
+
+  return (
+    <NuqsAdapter>
+      <Providers messages={publicClientMessages}>
+        {children}
+        <PrivacyConsent />
+      </Providers>
+    </NuqsAdapter>
+  );
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  return generateCommonMetadata({
+    config: {
+      description: {
+        en: 'Connect team tasks, calendars, documents, and business tools in one open-source workspace with AI assistance.',
+        vi: 'Kết nối công việc nhóm, lịch, tài liệu và công cụ kinh doanh trong một không gian làm việc mã nguồn mở với trợ lý AI.',
+      },
+      indexable: true,
+      keywords: [
+        'business management platform',
+        'AI productivity',
+        'team collaboration',
+        'workflow automation',
+        'workspace management',
+      ],
+      manifest: '/manifest.webmanifest',
+      name: siteConfig.name,
+      url: siteConfig.url,
+      ogImage: siteConfig.ogImage,
+    },
+    params,
+  });
+}
+
+export function generateStaticParams() {
+  return supportedLocales.map((locale) => ({ locale }));
+}
+
+async function ServiceWorkerBoundary({
+  children,
+  serviceWorkerUrl,
+}: {
+  children: ReactNode;
+  serviceWorkerUrl: string;
+}) {
+  if (process.env.NODE_ENV === 'development') {
+    return <>{children}</>;
+  }
+
+  const { OfflineProvider } = await import('@tuturuuu/offline/provider');
+
+  return (
+    <OfflineProvider
+      register={false}
+      options={{ updateViaCache: 'none' }}
+      swUrl={serviceWorkerUrl}
+    >
+      {children}
+    </OfflineProvider>
+  );
+}
+
+async function VercelRuntimeSignals() {
+  const isVercelDeployment =
+    process.env.VERCEL === '1' || Boolean(process.env.VERCEL_URL);
+
+  if (!isVercelDeployment) {
+    return null;
+  }
+
+  const { VercelAnalytics, VercelInsights } = await import('@tuturuuu/vercel');
+
+  return (
+    <>
+      <VercelAnalytics />
+      <VercelInsights />
+    </>
+  );
+}
+
+async function ProductionDatabaseIndicator() {
+  const isProductionDatabase =
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.');
+  const isProductionRuntime = process.env.NODE_ENV === 'production';
+
+  if (!isProductionDatabase || isProductionRuntime) {
+    return null;
+  }
+
+  const { ProductionIndicator } =
+    await import('@tuturuuu/ui/custom/production-indicator');
+
+  return <ProductionIndicator />;
+}
+
+export default async function RootLayout({ children }: Props) {
+  const locale = await resolveRootLocale(
+    supportedLocales,
+    await getRootLocale()
+  );
+  const deploymentStamp =
+    process.env.PLATFORM_DEPLOYMENT_STAMP?.trim() || 'local';
+  const serviceWorkerUrl = `/serwist/sw.js?v=${encodeURIComponent(deploymentStamp)}`;
+
+  return (
+    <html lang={locale} suppressHydrationWarning data-scroll-behavior="smooth">
+      <body
+        className={cn(
+          'overflow-y-auto bg-root-background antialiased',
+          font.className
+        )}
+      >
+        <ServiceWorkerBoundary serviceWorkerUrl={serviceWorkerUrl}>
+          <VercelRuntimeSignals />
+          <AppThemeProvider>
+            <Suspense>
+              <PublicClientProviders>{children}</PublicClientProviders>
+            </Suspense>
+          </AppThemeProvider>
+          <TailwindIndicator />
+          <ProductionDatabaseIndicator />
+          <Toaster />
+        </ServiceWorkerBoundary>
+      </body>
+    </html>
+  );
+}

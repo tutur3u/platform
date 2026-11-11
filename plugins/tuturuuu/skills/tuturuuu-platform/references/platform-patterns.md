@@ -501,7 +501,12 @@ Rules:
   same code keeps working on tuturuuu.com. Opt in explicitly:
   `resolveWorkspaceRouteAccess(request, wsId, [permissions])` for workspace routes,
   or `withSessionAuth(handler, { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH })`,
-  then authorize on workspace permissions (the actor's app grants nothing). A
+  then authorize on workspace permissions (the actor's app grants nothing).
+  `preferSupabaseSessionAuth` keeps the browser Supabase identity ahead of a
+  stale app session. Chat forwards both that cookie and a `ttr_app_` bearer, and
+  `createClient` would ignore the Supabase cookie and answer 401. Session auth
+  removes those app-session markers before the Supabase read and still does not
+  accept the app session while the Supabase cookie is present. A
   narrow per-app allowlist such as `{ targetApp: 'teach' }` silently 401s every
   other app, so widen it when a second app starts calling the route.
   Symptom to recognise: **one action inside an otherwise-working panel fails while
@@ -1489,3 +1494,11 @@ Run the provider bookkeeping and context suites separately. An unset fixture URL
 skips PG tests and cannot count as lock acceptance. Do not infer cross-origin
 Set-Cookie ordering from these tests; see
 [shared-session scope](../../../../../apps/docs/platform/architecture/shared-session.mdx#account-switch-serialization).
+### Workspace picker component verification
+
+The network-fenced fictional fixture and capture matrix are documented in
+`apps/docs/platform/features/hidden-workspaces.mdx` under isolated component
+verification. Preserve cached list choices on refresh failure, explicit retry,
+and actor-scoped visibility gates when adjusting picker presentation. Verify
+A → B → A resets for search, restore mode, pins, and recent selections with
+`workspace-picker-content.test.tsx` alongside the actor lifetime hook tests.

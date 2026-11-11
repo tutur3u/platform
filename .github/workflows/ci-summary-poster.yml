@@ -28,7 +28,7 @@ on:
     - cron: "7,22,37,52 * * * *"
 
 concurrency:
-  group: "${{ github.event.pull_request.number && format('ci-summary-{0}', github.event.pull_request.number) || 'ci-summary-refresh' }}"
+  group: ${{ ((github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1) && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}', github.event.pull_request.number && format('ci-summary-{0}', github.event.pull_request.number) || 'ci-summary-refresh') }}
   cancel-in-progress: true
 
 permissions:

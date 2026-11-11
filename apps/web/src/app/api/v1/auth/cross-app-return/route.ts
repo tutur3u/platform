@@ -42,8 +42,6 @@ function decodeReturnUrl(returnUrl: string) {
 
 type ResolvedCrossAppTarget = {
   appName: string;
-  /** Set for an app mounted on the apex: its verifier and app-relative next path. */
-  mount?: { basePath: string; nextPath: string };
   canonicalReturnUrl: string;
   kind: AppDomain['kind'] | 'managed-tuturuuu';
   /** Registry apps only: handoffs must be bound to an S256 challenge. */
@@ -52,6 +50,22 @@ type ResolvedCrossAppTarget = {
   targetApp: string;
 };
 
+/**
+ * `https://tuturuuu.com/<base><nextPath>` without a trailing slash: the app
+ * root is `https://tuturuuu.com/<base>`, never `…/<base>/`.
+ */
+function mountedAppReturnUrl(
+  origin: string,
+  basePath: string,
+  nextPath: string
+) {
+  const rest =
+    nextPath === '/' || nextPath.startsWith('/?') || nextPath.startsWith('/#')
+      ? nextPath.slice(1)
+      : nextPath;
+  return `${origin}${basePath}${rest}`;
+}
+
 function mapConfiguredUrlToApp(
   returnUrl: string
 ): ResolvedCrossAppTarget | null {
@@ -59,19 +73,22 @@ function mapConfiguredUrlToApp(
   const mounted = getMountedAppVerifyTokenMatch(decodedUrl);
 
   if (mounted) {
+    const nextPath = normalizeAuthRedirectPath(
+      mounted.nextUrl,
+      mounted.origin,
+      '/'
+    );
+    // Same origin: the shared root session already authenticates the
+    // mounted app, so it is returned to directly, with no handoff token.
     return {
       appName: mounted.name,
-      canonicalReturnUrl: mounted.canonicalUrl,
+      canonicalReturnUrl: mountedAppReturnUrl(
+        mounted.origin,
+        mounted.basePath,
+        nextPath
+      ),
       kind: 'internal',
-      mount: {
-        basePath: mounted.basePath,
-        nextPath: normalizeAuthRedirectPath(
-          mounted.nextUrl,
-          mounted.origin,
-          '/'
-        ),
-      },
-      requiresToken: true,
+      requiresToken: false,
       targetApp: mounted.name,
     };
   }
@@ -143,16 +160,6 @@ async function resolveTargetApp(
 
 function buildTokenReturnUrl(target: ResolvedCrossAppTarget) {
   const nextUrl = new URL(target.canonicalReturnUrl);
-
-  if (target.mount) {
-    const verifyUrl = new URL(
-      `${target.mount.basePath}/verify-token`,
-      nextUrl.origin
-    );
-    verifyUrl.searchParams.set('nextUrl', target.mount.nextPath);
-
-    return verifyUrl;
-  }
 
   if (target.kind === 'internal') {
     const normalizedTargetPath = normalizeAuthRedirectPath(

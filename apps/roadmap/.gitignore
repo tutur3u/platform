@@ -1,6 +1,6 @@
 node_modules/
 dist/
 .void/
-.wrangler/
+.void-wrangler.jsonc
 src/routeTree.gen.ts
 roadmap-artifact.json

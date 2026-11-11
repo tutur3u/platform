@@ -226,6 +226,11 @@
       "import": "./dist/mail.js",
       "require": "./dist/mail.js"
     },
+    "./meetings": {
+      "types": "./dist/meetings.d.ts",
+      "import": "./dist/meetings.js",
+      "require": "./dist/meetings.js"
+    },
     "./meet": {
       "types": "./dist/meet.d.ts",
       "import": "./dist/meet.js",
@@ -445,6 +450,11 @@
       "types": "./dist/sso.d.ts",
       "import": "./dist/sso.js",
       "require": "./dist/sso.js"
+    },
+    "./workspace-domains": {
+      "types": "./dist/workspace-domains.d.ts",
+      "import": "./dist/workspace-domains.js",
+      "require": "./dist/workspace-domains.js"
     },
     "./native-integrity": {
       "types": "./dist/native-integrity.d.ts",

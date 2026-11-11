@@ -50,6 +50,42 @@
     "apps/web/src/lib/api-auth.ts",
     "apps/web/src/lib/notes-voice/access.ts",
     "apps/web/src/lib/post-check-audit.ts",
+    {
+      "file": "apps/workspace/src/app/[locale]/(auth)/login/form.tsx",
+      "reason": "Byte-identical copy of the allowlisted apps/web/src/app/[locale]/(auth)/login/form.tsx from the workspace carve-out (#7944). Selene RULING item 7 option A. Tracked follow-up: remove the duplicates at cutover. Any divergence from the web copy needs its own security review."
+    },
+    {
+      "file": "apps/workspace/src/app/[locale]/(auth)/login/passkey-login-button.tsx",
+      "reason": "Byte-identical copy of the allowlisted apps/web/src/app/[locale]/(auth)/login/passkey-login-button.tsx from the workspace carve-out (#7944). Selene RULING item 7 option A. Tracked follow-up: remove the duplicates at cutover. Any divergence from the web copy needs its own security review."
+    },
+    {
+      "file": "apps/workspace/src/app/[locale]/(auth)/login/required-mfa-enrollment.tsx",
+      "reason": "Byte-identical copy of the allowlisted apps/web/src/app/[locale]/(auth)/login/required-mfa-enrollment.tsx from the workspace carve-out (#7944). Selene RULING item 7 option A. Tracked follow-up: remove the duplicates at cutover. Any divergence from the web copy needs its own security review."
+    },
+    {
+      "file": "apps/workspace/src/app/[locale]/(auth)/sso/consent/reauthenticate.tsx",
+      "reason": "Byte-identical copy of the allowlisted apps/web/src/app/[locale]/(auth)/sso/consent/reauthenticate.tsx from the workspace carve-out (#7944). Selene RULING item 7 option A. Tracked follow-up: remove the duplicates at cutover. Any divergence from the web copy needs its own security review."
+    },
+    {
+      "file": "apps/workspace/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mira-meeting-create.tsx",
+      "reason": "Byte-identical copy of the allowlisted apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mira-meeting-create.tsx from the workspace carve-out (#7944). Selene RULING item 7 option A. Tracked follow-up: remove the duplicates at cutover. Any divergence from the web copy needs its own security review."
+    },
+    {
+      "file": "apps/workspace/src/app/[locale]/(dashboard)/[wsId]/notes/note-key-transfer.tsx",
+      "reason": "Byte-identical copy of the allowlisted apps/web/src/app/[locale]/(dashboard)/[wsId]/notes/note-key-transfer.tsx from the workspace carve-out (#7944). Selene RULING item 7 option A. Tracked follow-up: remove the duplicates at cutover. Any divergence from the web copy needs its own security review."
+    },
+    {
+      "file": "apps/workspace/src/components/mira-soul-scope.tsx",
+      "reason": "Byte-identical copy of the allowlisted apps/web/src/components/mira-soul-scope.tsx from the workspace carve-out (#7944). Selene RULING item 7 option A. Tracked follow-up: remove the duplicates at cutover. Any divergence from the web copy needs its own security review."
+    },
+    {
+      "file": "apps/workspace/src/components/settings/account/passkeys-settings.tsx",
+      "reason": "Byte-identical copy of the allowlisted apps/web/src/components/settings/account/passkeys-settings.tsx from the workspace carve-out (#7944). Selene RULING item 7 option A. Tracked follow-up: remove the duplicates at cutover. Any divergence from the web copy needs its own security review."
+    },
+    {
+      "file": "apps/workspace/src/lib/api-auth.ts",
+      "reason": "Byte-identical copy of the allowlisted apps/web/src/lib/api-auth.ts from the workspace carve-out (#7944). Selene RULING item 7 option A. Tracked follow-up: remove the duplicates at cutover. Any divergence from the web copy needs its own security review."
+    },
     "packages/ai/src/chat/google/mira-timezone.ts",
     "packages/ai/src/chat/google/route-mira-runtime.ts",
     "packages/ai/src/tools/mira-tool-types.ts",

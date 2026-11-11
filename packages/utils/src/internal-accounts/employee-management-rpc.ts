@@ -72,7 +72,7 @@ export function createEmployeeManagementTransport(input: {
     const response = await fetcher(new URL(`/rest/v1/rpc/${name}`, origin), {
       method: 'POST',
       cache: 'no-store',
-      redirect: 'error',
+      redirect: 'manual',
       signal: AbortSignal.timeout(8000),
       headers: {
         apikey: input.key,
@@ -84,6 +84,11 @@ export function createEmployeeManagementTransport(input: {
       },
       body: JSON.stringify(body),
     });
+    if (
+      response.type === 'opaqueredirect' ||
+      (response.status >= 300 && response.status < 400)
+    )
+      return { data: null, error: { code: 'UNAVAILABLE' } };
     const data = await readJson(response);
     if (
       !response.ok ||

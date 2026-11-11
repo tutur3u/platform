@@ -225,6 +225,7 @@ export function applyMeetRoomCommand(
         });
       }
 
+      if (state.budget) state = startRoomBudget(state, token, Date.parse(now));
       const capacityError = roomCapacityError(
         state,
         token,

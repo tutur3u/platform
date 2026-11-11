@@ -52,3 +52,16 @@ export function isAiCreditPackProduct(metadata: PolarMetadata): boolean {
 export function parseCreditPackTokens(metadata: PolarMetadata): number | null {
   return parsePositiveInteger(metadata?.tokens);
 }
+
+/**
+ * Workspace custom-domain add-on: a Polar product whose metadata carries
+ * `product_kind: "custom_domain_addon"`. One unit (seat) is one domain.
+ * Reconciled into private.workspace_domain_addons, never into plan tables.
+ */
+export function isCustomDomainAddonProduct(metadata: PolarMetadata): boolean {
+  const kind = metadata?.product_kind;
+  return (
+    typeof kind === 'string' &&
+    kind.trim().toLowerCase() === 'custom_domain_addon'
+  );
+}

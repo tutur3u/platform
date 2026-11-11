@@ -2,13 +2,20 @@ import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
 import type { PayEnvironment } from './cloudflare/worker';
+const rootHost = import.meta.env?.VITE_PAY_NATIVE_ROOT_HOST;
+
+declare global {
+  interface ImportMetaEnv {
+    readonly VITE_PAY_NATIVE_ROOT_HOST?: string;
+  }
+}
 
 const framablePaths = framablePathRegexes();
 
 export default defineBridgeAppConfig<PayEnvironment>({
   csp: defaultContentSecurityPolicy,
   mounts: {
-    rootHosts: ['pay.tutur3u.com'],
+    rootHosts: rootHost ? [rootHost] : [],
     mountHosts: [],
     unknownHost: 'reject',
   },

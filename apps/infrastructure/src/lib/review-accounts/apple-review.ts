@@ -26,7 +26,9 @@ async function appleRequest<T>(
   const response = await fetch(`${APPLE_ORIGIN}${path}`, {
     ...options,
     cache: 'no-store',
-    redirect: 'error',
+    // workerd rejects redirect: 'error'. A redirect is never ok, so the bearer
+    // token is not replayed and the response body is never read.
+    redirect: 'manual',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',

@@ -8,11 +8,13 @@ import importlib.util
 import os
 from pathlib import Path
 
-WORKER = "tuturuuu-chat-vite-staging"
-PUBLIC_FILES = (
-    "media/logos/transparent.png",
-    "robots.txt",
-)
+PROFILE = os.environ.get("VITE_CHAT_NATIVE_PROFILE", "staging")
+if PROFILE not in ("staging", "production"):
+    raise ValueError("Unknown chat native profile")
+WORKER = "tuturuuu-chat" if PROFILE == "production" else "tuturuuu-chat-vite-staging"
+# Chat ships robots.txt only. The Apps seal compares each listed file with
+# apps/chat/public, so a copied sitemap entry fails the seal.
+PUBLIC_FILES = ("robots.txt",)
 
 
 def load():
@@ -23,9 +25,11 @@ def load():
     module.IDENTITY = {
         **module.IDENTITY,
         "name": WORKER,
+        "vars": {"TUTURUUU_NOINDEX": "0" if PROFILE == "production" else "1"},
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
         "workers_dev": False,
+        "preview_urls": False,
     }
     module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
     module.RECEIPT = "chat-native-artifact.json"

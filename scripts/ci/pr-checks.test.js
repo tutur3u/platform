@@ -85,6 +85,7 @@ const resultSet = (overrides = {}, selected = {}) =>
               'branch-name',
               'commit-trailers',
               'staging-hosts',
+              'blast-radius',
               'admitted',
             ].includes(id)
               ? 'success'
@@ -179,6 +180,122 @@ test('gated callers stay deferred until ready while script-only checks remain el
       name
     );
   assert.equal(workflow.jobs.admitted.if, undefined);
+});
+
+test('a scope error or timeout runs the selected suite and a false output still skips', () => {
+  const withScope = (
+    result,
+    outputs,
+    { ready = true, base = 'main' } = {}
+  ) => ({
+    github: {
+      base_ref: base,
+      event: {
+        pull_request: { labels: ready ? [{ name: 'ready-for-ci' }] : [] },
+      },
+    },
+    needs: { scope: { result, outputs } },
+  });
+  for (const name of [
+    'oxc',
+    'i18n',
+    'docs',
+    'migration-timestamps',
+    'migrations',
+    'mobile',
+    'plugin',
+  ]) {
+    assert.match(workflow.jobs[name].if, /^always\(\) && !cancelled\(\) && /u);
+    assert.equal(
+      Boolean(
+        evaluateExpression(workflow.jobs[name].if, withScope('failure', {}))
+      ),
+      true,
+      name
+    );
+    assert.equal(
+      Boolean(
+        evaluateExpression(workflow.jobs[name].if, withScope('cancelled', {}))
+      ),
+      true,
+      name
+    );
+    assert.equal(
+      Boolean(
+        evaluateExpression(workflow.jobs[name].if, withScope('skipped', {}))
+      ),
+      false,
+      name
+    );
+  }
+  assert.equal(
+    Boolean(
+      evaluateExpression(
+        workflow.jobs.oxc.if,
+        withScope('success', { oxc: 'false' })
+      )
+    ),
+    false
+  );
+  assert.equal(
+    Boolean(
+      evaluateExpression(
+        workflow.jobs.oxc.if,
+        withScope('success', { oxc: 'true' })
+      )
+    ),
+    true
+  );
+  assert.equal(
+    Boolean(
+      evaluateExpression(
+        workflow.jobs.oxc.if,
+        withScope('failure', {}, { ready: false })
+      )
+    ),
+    false
+  );
+  assert.equal(
+    Boolean(
+      evaluateExpression(
+        workflow.jobs.mobile.if,
+        withScope('failure', {}, { base: 'production' })
+      )
+    ),
+    false
+  );
+});
+
+test('a missing path-filter output selects the check and the string false does not', () => {
+  for (const name of [
+    'oxc',
+    'i18n',
+    'docs',
+    'migrations',
+    'mobile',
+    'plugin',
+  ]) {
+    const expression = workflow.jobs.scope.outputs[name];
+    assert.equal(evaluateExpression(expression, { steps: {} }), 'true', name);
+    assert.equal(
+      evaluateExpression(expression, {
+        steps: { paths: { outputs: { [name]: 'false' } } },
+      }),
+      'false',
+      name
+    );
+    assert.equal(
+      evaluateExpression(expression, {
+        steps: { paths: { outputs: { [name]: 'true' } } },
+      }),
+      'true',
+      name
+    );
+  }
+  for (const step of workflow.jobs.scope.steps)
+    assert.equal(step['continue-on-error'], true);
+  const paths = workflow.jobs.scope.steps.find((step) => step.id === 'paths');
+  assert.equal(paths.with.token, undefined);
 });
 
 test('security scope remains always on for every security-relevant path without readiness', () => {
@@ -328,5 +445,21 @@ test('the staging host guard runs on every full PR run and fails the aggregate',
       gate(resultSet({ 'staging-hosts': status })).status,
       1,
       `staging-hosts ${status}`
+    );
+});
+
+test('the blast-radius lock runs on every full PR run and fails the aggregate', () => {
+  const job = workflow.jobs['blast-radius'];
+  assert.equal(job.name, 'Pull request blast radius');
+  assert.equal(job.if, workflow.jobs['branch-name'].if);
+  assert.deepEqual(job.permissions, { contents: 'read' });
+  assert.equal(job.steps[0].with['persist-credentials'], false);
+  assert.match(job.steps.at(-1).run, /pr-blast-radius\.test\.mjs/u);
+  assert.ok(workflow.jobs.gate.needs.includes('blast-radius'));
+  for (const status of ['failure', 'cancelled', 'skipped'])
+    assert.equal(
+      gate(resultSet({ 'blast-radius': status })).status,
+      1,
+      `blast-radius ${status}`
     );
 });

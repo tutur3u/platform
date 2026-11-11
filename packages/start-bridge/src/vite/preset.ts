@@ -273,6 +273,8 @@ export function startBridgePreset(
       ),
     },
     clientDefine: (command) => ({
+      // Lets server-only modules drop their Node-only setup from client chunks.
+      'import.meta.env.START_BRIDGE_CLIENT': 'true',
       'process.env': JSON.stringify({
         ...Object.fromEntries(
           Object.entries(env).filter(([name]) =>

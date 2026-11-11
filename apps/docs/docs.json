@@ -107,6 +107,7 @@
               "platform/features/mira-health-planning-tools",
               "platform/features/task-reminder-delivery",
               "platform/domain-gating-design",
+              "platform/workspace-domains-runbook",
               "platform/features/safe-workspace-invitations",
               "platform/features/tasks-board-header",
               "platform/features/tasks-board-cards",
@@ -193,6 +194,7 @@
                   "build/devops/tanstack-cloudflare-migration-inventory",
                   "build/devops/worker-services-reconciliation",
                   "build/devops/playground-isolation-contract",
+                  "build/devops/workspace-start-void",
                   "build/devops/external-start-void",
                   "build/devops/playground-cutover-packet",
                   "build/devops/contacts-start-candidate",
@@ -219,6 +221,8 @@
                   "build/devops/git-start-void",
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",
+                  "build/devops/d74-cutover-runbooks",
+                  "build/devops/drive-start-void",
                   "build/devops/nova-start-void",
                   "build/devops/lettin-start-void",
                   "build/devops/tasks-start-void",
@@ -246,6 +250,8 @@
                   "build/devops/e2e-proof-reuse",
                   "build/devops/turbo-remote-cache",
                   "build/devops/gateway-worker",
+                  "build/devops/cutover-smoke-harness",
+                  "build/devops/marketing-start-void",
                   "build/devops/background-work-inventory",
                   "build/devops/cloudflare-processor-migration",
                   "build/devops/web-cloudflare-migration",
@@ -538,6 +544,7 @@
                   "reference/repository/routes/learn",
                   "reference/repository/routes/lettin",
                   "reference/repository/routes/mail",
+                  "reference/repository/routes/marketing",
                   "reference/repository/routes/mastermind",
                   "reference/repository/routes/meet",
                   "reference/repository/routes/meet-realtime",
@@ -565,7 +572,9 @@
                   "reference/repository/routes/web-2",
                   "reference/repository/routes/web-3",
                   "reference/repository/routes/web-4",
-                  "reference/repository/routes/web-5"
+                  "reference/repository/routes/web-5",
+                  "reference/repository/routes/workspace",
+                  "reference/repository/routes/workspace-domains"
                 ],
                 "expanded": false
               }

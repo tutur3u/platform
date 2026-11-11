@@ -3,6 +3,12 @@
 
 Reuses the reviewed Apps seal/restore implementation with this app's Worker
 identity, public files and source-SHA channel.
+
+Two production shapes exist. VITE_NOVA_NATIVE_PROFILE=production seals the
+un-rewritten Void output of the production build (native matrix). The
+``--profile production`` flag seals the cutover output after the workflow's
+config rewrite: production worker, topLevelName and vars, same four emitted
+fields as the staging output.
 """
 import importlib.util
 import os
@@ -55,33 +61,68 @@ PUBLIC_FILES = (
 )
 
 
-def load():
+# Exact vars the cutover workflow writes into the final production config.
+CUTOVER_VARS = {
+    "TUTURUUU_NOINDEX": "0",
+    "NODE_ENV": "production",
+    "TUTURUUU_REQUIRE_SECRETS": "1",
+    "NEXT_PUBLIC_APP_URL": "https://nova.tuturuuu.com",
+    "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+}
+
+
+def load(cutover=False):
+    worker = "tuturuuu-nova" if cutover else WORKER
     path = Path(__file__).with_name("apps-native-artifact.py")
     spec = importlib.util.spec_from_file_location("nova_native_artifact_base", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     module.IDENTITY = {
         **module.IDENTITY,
-        "name": WORKER,
-        "vars": {"TUTURUUU_NOINDEX": "0" if PROFILE == "production" else "1"},
+        "name": worker,
+        "vars": dict(CUTOVER_VARS) if cutover else {"TUTURUUU_NOINDEX": "0" if PROFILE == "production" else "1"},
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
         "workers_dev": False,
         "preview_urls": False,
     }
-    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
-    module.RECEIPT = "nova-native-artifact.json"
+    # Exact service binding from apps/nova/void.config.ts. Any other list fails.
+    module.NORMALIZED_DEFAULTS = {
+        **module.NORMALIZED_DEFAULTS,
+        "topLevelName": worker,
+        "services": [
+            {
+                "binding": "ABUSE_GUARD",
+                "service": "tuturuuu-abuse-guard",
+                "entrypoint": "AbuseGuardEntrypoint",
+            },
+        ],
+    }
+    if cutover:
+        module.NORMALIZED_DEFAULTS = {
+            **module.NORMALIZED_DEFAULTS,
+            "preview_urls": False,
+            "upload_source_maps": False,
+        }
+    module.RECEIPT = "nova-production-artifact.json" if cutover else "nova-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
     return module
 
 
 def main():
+    import sys
+    cutover = False
+    if len(sys.argv) > 1 and sys.argv[1] == "--profile":
+        if len(sys.argv) < 3 or sys.argv[2] != "production":
+            raise SystemExit("only the production artifact profile is supported")
+        cutover = True
+        del sys.argv[1:3]
     # The shared CLI reads its exact source from APPS_SOURCE_SHA.
     if "NOVA_SOURCE_SHA" in os.environ:
         os.environ["APPS_SOURCE_SHA"] = os.environ["NOVA_SOURCE_SHA"]
     else:
         os.environ.pop("APPS_SOURCE_SHA", None)
-    load().main()
+    load(cutover).main()
 
 
 if __name__ == "__main__":

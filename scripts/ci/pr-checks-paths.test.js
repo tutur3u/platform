@@ -25,6 +25,8 @@ const common = {
   ],
   'package.json': ['package.json'],
   'bun.lock': ['bun.lock'],
+  'turbo.json': ['turbo.json'],
+  'tsconfig*.json': ['tsconfig.json', 'tsconfig.base.json'],
 };
 const cases = {
   oxc: {
@@ -82,6 +84,10 @@ const cases = {
   },
   migrations: {
     '.github/**': common['.github/**'],
+    'package.json': common['package.json'],
+    'bun.lock': common['bun.lock'],
+    'turbo.json': common['turbo.json'],
+    'tsconfig*.json': common['tsconfig*.json'],
     'apps/database/supabase/migrations/**.sql': [
       'apps/database/supabase/migrations/20261027000000_change.sql',
     ],
@@ -93,6 +99,9 @@ const cases = {
   mobile: {
     '.github/**': common['.github/**'],
     'package.json': common['package.json'],
+    'bun.lock': common['bun.lock'],
+    'turbo.json': common['turbo.json'],
+    'tsconfig*.json': common['tsconfig*.json'],
     'apps/mobile/lib/core/config/api_config.dart': [
       'apps/mobile/lib/core/config/api_config.dart',
     ],
@@ -111,6 +120,10 @@ const cases = {
   },
   plugin: {
     '.github/**': common['.github/**'],
+    'package.json': common['package.json'],
+    'bun.lock': common['bun.lock'],
+    'turbo.json': common['turbo.json'],
+    'tsconfig*.json': common['tsconfig*.json'],
     'plugins/**': ['plugins/tuturuuu/scripts/validate_plugin.py'],
     '.agents/**': ['.agents/plugins/marketplace.json'],
     '.claude/**': ['.claude/settings.json'],
@@ -165,4 +178,27 @@ test('unrelated prose and mobile screen edits do not select unrelated checks', (
       category
     );
   assert.equal(matches(filters.oxc, 'README.md'), true);
+  for (const category of Object.keys(filters)) {
+    assert.equal(matches(filters[category], 'bun.lock'), true, category);
+    assert.equal(matches(filters[category], 'package.json'), true, category);
+    assert.equal(matches(filters[category], 'turbo.json'), true, category);
+    assert.equal(matches(filters[category], 'tsconfig.json'), true, category);
+    assert.equal(
+      matches('tsconfig*.json', 'apps/calendar/tsconfig.json'),
+      false,
+      category
+    );
+    // oxc already selects every JSON file, including a nested tsconfig.
+    if (category !== 'oxc') {
+      assert.equal(
+        matches(filters[category], 'apps/calendar/tsconfig.json'),
+        false,
+        category
+      );
+    }
+  }
+  assert.equal(
+    matches(filters.migrations, 'apps/calendar/src/page.test.tsx'),
+    false
+  );
 });

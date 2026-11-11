@@ -149,6 +149,8 @@ export const ci = {
   'infrastructure-cloudflare.yaml': true,
   'mind-cloudflare.yaml': true,
   'teach-cloudflare.yaml': true,
+  'marketing-cloudflare.yaml': true,
+  'workspace-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
