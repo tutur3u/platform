@@ -272,10 +272,11 @@ describe('content security policy: oversized documents', () => {
     '<script type="module" async="" src="/roadmap/assets/index-Abcd1234.js"></script>' +
     `</head><body>${'x'.repeat(filler)}<script>(self.$R=self.$R||{})</script></body></html>`;
   const executableInline = (html: string) =>
-    [...html.matchAll(/<script\b([^>]*)>/g)].filter(
+    // Case-insensitive, like browsers: <SCRIPT> and unquoted attributes count.
+    [...html.matchAll(/<script\b([^>]*)>/gi)].filter(
       (match) =>
-        !/\bsrc=/.test(match[1] ?? '') &&
-        !/type="application\/(ld\+)?json"/.test(match[1] ?? '')
+        !/\bsrc\s*=/i.test(match[1] ?? '') &&
+        !/\btype\s*=\s*["']?application\/(ld\+)?json\b/i.test(match[1] ?? '')
     ).length;
   /** A fallback serves no unhashed executable script, but keeps the rest. */
   const degradesSafely = (result: Wrapped) =>
@@ -287,6 +288,18 @@ describe('content security policy: oversized documents', () => {
     (result.body ?? '').includes(
       '<script type="module" async="" src="/roadmap/assets/index-Abcd1234.js">'
     );
+
+  it('the inline-script counter sees any letter case and attribute quoting', () => {
+    assert.equal(
+      executableInline('<SCRIPT>x()</SCRIPT><Script >y()</Script>'),
+      2
+    );
+    assert.equal(
+      executableInline('<SCRIPT TYPE=application/ld+json>{}</SCRIPT>'),
+      0
+    );
+    assert.equal(executableInline('<script SRC=/a.js></script>'), 0);
+  });
 
   it('a normal page keeps the transform and hashes its inline scripts', async () => {
     const result = await withBootLoader(page(1_000));
