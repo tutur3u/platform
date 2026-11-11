@@ -17,6 +17,7 @@ import type { SprintMoveTarget } from '../use-board-sprints';
 
 /** Moves one task to another open sprint, a new one, or out of every sprint. */
 export function PlanSprintMenu({
+  canCreate,
   className,
   current,
   disabled,
@@ -24,6 +25,7 @@ export function PlanSprintMenu({
   openSprints,
   task,
 }: {
+  canCreate: boolean;
   className?: string;
   /** The open sprint holding the task; null while it sits in none. */
   current: BoardSprint | null;
@@ -61,6 +63,7 @@ export function PlanSprintMenu({
           {current?.name ?? t('not_in_sprint')}
         </DropdownMenuLabel>
         <SprintMoveItems
+          canCreate={canCreate}
           current={current}
           onMove={move}
           openSprints={openSprints}

@@ -422,6 +422,22 @@ export const permissionGroups = ({
             disableOnProduction: false,
             disabled: false,
           },
+          {
+            id: 'create_task_sprints',
+            icon: <Plus />,
+            title: t('ws-roles.create_task_sprints'),
+            description: t('ws-roles.create_task_sprints_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'delete_task_sprints',
+            icon: <Trash />,
+            title: t('ws-roles.delete_task_sprints'),
+            description: t('ws-roles.delete_task_sprints_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
         ],
       },
       {
