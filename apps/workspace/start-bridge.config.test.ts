@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api/client';
 import { NextResponse } from '@tuturuuu/start-bridge/next/server';
 import {
   bridgeErrorResponse,
@@ -134,8 +135,12 @@ function handlerFor() {
     proxy: async () => NextResponse.next(),
     start: { fetch: page },
     apiOrigin: config.apiOrigin,
+    webApiOrigin: config.webApiOrigin,
     assets: (env) => env.ASSETS,
-    centralApiOrigin: (env) => resolveWebApiOrigin(env),
+    // The unvalidated read the generated Worker carries; `webApiOrigin` must
+    // take its place.
+    centralApiOrigin: (env) =>
+      env.INTERNAL_WEB_API_ORIGIN ?? 'https://tuturuuu.com',
   });
   return { handler, page, fetcher };
 }
@@ -143,7 +148,13 @@ function handlerFor() {
 const request = (path: string) =>
   new Request(`https://workspace.tuturuuu.com${path}`);
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+  delete (globalThis as Record<symbol, unknown>)[
+    Symbol.for('tuturuuu.internalApi.webApiOriginPolicy')
+  ];
+});
 
 describe('web API origin on the Worker', () => {
   it('forwards /api to the canonical Web origin when unset', async () => {
@@ -220,22 +231,50 @@ describe('web API origin on the Worker', () => {
     }
   );
 
-  it('keeps the origin read behind the shared assertion in cloudflare/worker.ts', () => {
+  it('refuses credentialed internal API calls to an untrusted origin', () => {
+    // Creating the handler publishes the policy, as the Worker does at load.
+    handlerFor();
+    const fetcher = vi.fn();
+    const headers = new Headers({
+      authorization: 'Bearer ttr_app_secret',
+      cookie: 'tuturuuu_app_session=ttr_app_secret',
+    });
+
+    for (const origin of [
+      'https://evil.example',
+      '',
+      'http://tuturuuu.com',
+      'https://tuturuuu.com.evil.test',
+      'https://tuturuuu.com:8443',
+    ]) {
+      vi.stubEnv('INTERNAL_WEB_API_ORIGIN', origin);
+
+      expect(() =>
+        withForwardedInternalApiAuth(headers, {
+          fetch: fetcher as unknown as typeof fetch,
+        })
+      ).toThrow(/INTERNAL_WEB_API_ORIGIN/u);
+    }
+    expect(fetcher).not.toHaveBeenCalled();
+
+    vi.stubEnv('INTERNAL_WEB_API_ORIGIN', 'https://tuturuuu.com');
+    expect(() =>
+      withForwardedInternalApiAuth(headers, {
+        fetch: fetcher as unknown as typeof fetch,
+      })
+    ).not.toThrow();
+  });
+
+  it('passes the checked origin through the generated Worker', () => {
     const source = readFileSync(
       new URL('./cloudflare/worker.ts', import.meta.url),
       'utf8'
     );
 
-    expect(source).toContain(
-      'centralApiOrigin: (env) => resolveWebApiOrigin(env)'
-    );
-    expect(source).not.toMatch(/env\.INTERNAL_WEB_API_ORIGIN\s*\?\?/u);
-    // The startup gate runs before the handler inside the failure boundary.
-    const gate = source.indexOf('resolveWebApiOrigin(env);');
-    const call = source.indexOf('await (await handler)(request, env, ctx)');
-    expect(gate).toBeGreaterThan(source.indexOf('try {'));
-    expect(gate).toBeLessThan(call);
-    expect(source.slice(call)).toContain('bridgeErrorResponse()');
+    expect(config.webApiOrigin).toBe(resolveWebApiOrigin);
+    // The Worker is generated: the codemod template emits this line from the
+    // app config, so dropping it from either side must fail here.
+    expect(source).toContain('webApiOrigin: appConfig.webApiOrigin,');
   });
 });
 

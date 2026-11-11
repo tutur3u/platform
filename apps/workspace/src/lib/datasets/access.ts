@@ -9,7 +9,10 @@ import { NextResponse } from 'next/server';
 
 export const DATASET_PERMISSION = 'ai_lab';
 
-const DATASET_AUDIENCE = ['workspace', 'platform'] as const;
+// Every other satellite resolves its actor against its own audience. A
+// `platform` token is minted for Web's APIs and carries per-route scopes that
+// this resolver never checks, so it is not an audience for Workspace pages.
+const DATASET_AUDIENCE = 'workspace' as const;
 
 export async function resolveDatasetWorkspaceAccess(
   wsId: string,

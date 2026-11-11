@@ -64,9 +64,14 @@ guard is restored in the portable package.
 
 That protection holds only while the forward target runs Web's proxy.
 `start-bridge.config.ts` therefore resolves the origin through
-`resolveWebApiOrigin`, and every Worker read of `INTERNAL_WEB_API_ORIGIN` goes
-through it: the `/api` forward, the proxy rewrite allowlist (`centralApiOrigin`
-in `cloudflare/worker.ts`) and a gate at the top of the Worker's `fetch`.
+`resolveWebApiOrigin` and exports it as the app config's `webApiOrigin`. The
+generated Worker passes that to the bridge handler (`cloudflare/worker.ts` is
+generated from `scripts/start-bridge-codemod/templates.mjs`; do not edit it by
+hand). Every read of `INTERNAL_WEB_API_ORIGIN` then goes through it: the `/api`
+forward, the proxy rewrite allowlist, a check before every request, and
+`@tuturuuu/internal-api`, which sends the user's Cookie and Authorization
+headers to that origin for server-side calls and throws before building any
+request when the value is untrusted.
 
 - `INTERNAL_WEB_API_ORIGIN` unset forwards to `https://tuturuuu.com`.
 - A set value must be exactly an `https` origin, optionally with one trailing

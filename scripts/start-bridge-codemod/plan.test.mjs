@@ -100,6 +100,9 @@ test('generated config targets the staging Worker and keeps Next build', (t) => 
   assert.match(pageRoute, /resolvePageLocation\(data, \{\n\s*proxy,/);
   const worker = read('cloudflare/worker.ts');
   assert.match(worker, /import \{ proxy \} from '\.\.\/src\/proxy';/);
+  // The app config's Web API origin check reaches the handler (it refuses every
+  // request on an untrusted binding), so dropping the line fails here.
+  assert.match(worker, /\n {4}webApiOrigin: appConfig\.webApiOrigin,\n/);
   // Route handlers load from the rsc environment, never statically into ssr.
   assert.match(
     worker,
