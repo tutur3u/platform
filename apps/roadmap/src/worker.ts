@@ -3,6 +3,7 @@ import { buildInfoResponse, isBuildInfoPath } from './build-info.ts';
 import { isHashedAssetPath, withRoadmapCachePolicy } from './cache-policy.ts';
 import { withContentSecurityPolicy } from './csp.ts';
 import { hostsResponse, isHostsPath } from './live/host-probe.ts';
+import { SITEMAP_PATH, sitemapResponse } from './seo.ts';
 import {
   normalizeLocalHost,
   prepareRoadmapRequest,
@@ -51,6 +52,12 @@ export default {
       return withRoadmapCachePolicy(
         request,
         buildInfoResponse(__ROADMAP_BUILD_SHA__, request.method)
+      );
+    }
+    if (url.pathname === SITEMAP_PATH) {
+      return withRoadmapCachePolicy(
+        request,
+        sitemapResponse(request.method, __ROADMAP_BUILD_TIME__)
       );
     }
     if (isHostsPath(url.pathname)) {

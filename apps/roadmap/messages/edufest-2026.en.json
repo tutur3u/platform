@@ -1,7 +1,18 @@
 {
   "meta": {
     "title": "When Teachers Become Students · EduFest 2026",
-    "description": "40 exclusive seats at EduFest 2026. Take the student's seat, master a brand-new topic alongside cutting-edge AI agents, and discover first-hand how agentic AI transforms teaching and learning."
+    "description": "A hands-on AI in education workshop for teachers at EduFest 2026, RMIT University Vietnam (SGS), 5 December 2026. Take the student's seat in an agentic AI classroom. 40 seats."
+  },
+  "seo": {
+    "crumbHome": "Tuturuuu",
+    "crumbRoadmap": "Roadmap",
+    "place": {
+      "venueName": "RMIT University Vietnam, Saigon South (SGS) Campus, Building 2",
+      "streetAddress": "702 Nguyen Van Linh, Tan Phong",
+      "locality": "District 7",
+      "region": "Ho Chi Minh City",
+      "country": "VN"
+    }
   },
   "hero": {
     "eyebrow": "EduFest 2026 · Hands-on workshop",

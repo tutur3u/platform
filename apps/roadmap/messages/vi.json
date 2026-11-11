@@ -1,4 +1,11 @@
 {
+  "meta": {
+    "title": "Lộ trình Tuturuuu: những gì đang xây dựng và ra mắt",
+    "description": "Tuturuuu đang xây dựng gì: mọi dòng sản phẩm, cột mốc và hạng mục, kèm những gì vừa ra mắt trong tuần, cập nhật trực tiếp từ pull request công khai và kiểm tra triển khai.",
+    "imageAlt": "Lộ trình Tuturuuu: những gì đang ra mắt",
+    "crumbHome": "Tuturuuu",
+    "crumbRoadmap": "Lộ trình"
+  },
   "appName": "Lộ trình",
   "eyebrow": "Lộ trình sản phẩm",
   "title": "Những gì chúng tôi đang xây dựng.",

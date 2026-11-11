@@ -1,4 +1,11 @@
 {
+  "meta": {
+    "title": "Tuturuuu Roadmap: what we're building and shipping",
+    "description": "What Tuturuuu is building: every product track, milestone and deliverable, with what shipped this week, live from public pull requests and deploy checks.",
+    "imageAlt": "Tuturuuu Roadmap: what is shipping now",
+    "crumbHome": "Tuturuuu",
+    "crumbRoadmap": "Roadmap"
+  },
   "appName": "Roadmap",
   "eyebrow": "Product roadmap",
   "title": "What we’re building.",
