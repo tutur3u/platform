@@ -74,13 +74,26 @@ describe('mobile privacy release separate from the commercial proposal', () => {
       archiveLinks: { en: '[Previous text](/legal/archive)' },
       mobilePrivacyEffectiveDate: date,
     });
-  it.each([undefined, '', 'date pending', '2026-02-30'])(
-    'refuses publication without a real pinned D: %s',
+  it.each(['', 'date pending', '2026-02-30'])(
+    'refuses publication with an invalid D: %s',
     (date) => {
       expect(() => publish(date)).toThrow('requires a pinned release date');
     }
   );
-  it('accepts publication only with a pinned D', () => {
+  it.each([undefined, null])(
+    'accepts publication with D unset and returns no date: %s',
+    (date) => {
+      const notice = getLegalNotice('en', {
+        published: true,
+        noticeDate: '2026-11-02',
+        laterDate: upcomingLegalRevision.effectiveDate,
+        archiveLinks: { en: '[Previous text](/legal/archive)' },
+        mobilePrivacyEffectiveDate: date,
+      });
+      expect(notice?.mobilePrivacyEffectiveDate).toBeNull();
+    }
+  );
+  it('accepts publication with a valid pinned D', () => {
     expect(publish('2026-11-05')?.mobilePrivacyEffectiveDate).toBe(
       '2026-11-05'
     );

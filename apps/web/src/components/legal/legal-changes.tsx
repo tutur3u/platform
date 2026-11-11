@@ -1,11 +1,15 @@
 import {
+  AUGUST_LEGAL_VERSION,
   diffLegalDocuments,
   getLegalDocument,
+  getLegalDocumentVersion,
   getLegalNotice,
   getProposedLegalDocument,
   type LegalLocale,
   type LegalNoticeConfig,
   legalChangesCopy,
+  legalNotice,
+  REVISION_KINDS,
 } from '@tuturuuu/legal';
 import { ChangeControls, ChangeToc } from './change-controls';
 import { changeCopy } from './change-copy';
@@ -33,10 +37,22 @@ export function LegalChanges({
 }) {
   const copy = changeCopy[locale],
     variant = legalChangesCopy[locale];
-  const notice = getLegalNotice(locale, noticeConfig);
+  const config = noticeConfig ?? legalNotice;
+  const notice = getLegalNotice(locale, config);
+  const published = config.published ? config : undefined;
+  const revisionKinds: readonly string[] = REVISION_KINDS;
   const groups = kinds.map((kind) => {
-    const current = getLegalDocument(kind, locale),
-      proposed = getProposedLegalDocument(kind, locale);
+    // Once published, the revised documents are in force: compare them with
+    // the archived 2026-08-15 text they replace.
+    const revised = Boolean(published) && revisionKinds.includes(kind);
+    const current = revised
+        ? (getLegalDocumentVersion(AUGUST_LEGAL_VERSION, kind, locale) ??
+          getLegalDocument(kind, locale))
+        : getLegalDocument(kind, locale),
+      proposed =
+        revised && published
+          ? getLegalDocument(kind, locale, published)
+          : getProposedLegalDocument(kind, locale);
     return {
       kind,
       current,
@@ -70,7 +86,7 @@ export function LegalChanges({
           data-binding-notice="true"
         >
           <LegalMarkdown>
-            {notice?.binding ?? introBody.join('\n')}
+            {notice?.binding.replace(/^- /gmu, '* ') ?? introBody.join('\n')}
           </LegalMarkdown>
         </section>
       </header>
@@ -202,7 +218,9 @@ export function LegalChanges({
               ))}
             </section>
           ))}
-          {full && <ProposedLegalDocuments locale={locale} />}
+          {full && (
+            <ProposedLegalDocuments locale={locale} notice={published} />
+          )}
         </div>
       </div>
     </main>

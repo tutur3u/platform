@@ -13,7 +13,9 @@ export type LegalNoticeConfig =
       published: true;
       noticeDate: string;
       laterDate: string;
-      mobilePrivacyEffectiveDate?: string;
+      // Mobile release date D. Leave it unset until D is pinned: the mobile
+      // section and Firebase rows then stay out. Never use a placeholder date.
+      mobilePrivacyEffectiveDate?: string | null;
       // Markdown for the "Previous text" link line, per locale. Publish gate:
       // Lex approves the real archive URLs before publication; do not invent
       // them. Publishing without the rendered locale's entry throws.
@@ -38,9 +40,10 @@ export function getLegalNotice(
   const archiveLinks = config.archiveLinks?.[locale]?.trim();
   if (!archiveLinks)
     throw new Error('Archive links are required to publish the notice');
-  const mobilePrivacyEffectiveDate = requireMobilePrivacyReleaseDate(
-    config.mobilePrivacyEffectiveDate
-  );
+  const mobilePrivacyEffectiveDate =
+    config.mobilePrivacyEffectiveDate == null
+      ? null
+      : requireMobilePrivacyReleaseDate(config.mobilePrivacyEffectiveDate);
   const replace = (text: string) =>
     text
       .replaceAll('{N30}', config.laterDate)

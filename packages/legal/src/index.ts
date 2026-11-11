@@ -5,6 +5,7 @@ export * from './notice';
 export { legalNoticeCopy } from './notice-copy';
 export * from './proposed';
 export * from './registry';
+export * from './revision-2026-11-11/render';
 export * from './revision-changes';
 export * from './revisions';
 export * from './subprocessors';
