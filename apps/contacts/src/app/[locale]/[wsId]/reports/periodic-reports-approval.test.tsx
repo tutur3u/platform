@@ -99,6 +99,7 @@ beforeEach(() => {
       {
         id: 'report-1',
         title: 'Synthetic monthly report',
+        feedback: 'Synthetic teacher feedback',
         report_approval_status: 'PENDING',
         delivery_status: 'draft',
         generation_mode: 'manual',
