@@ -18,6 +18,7 @@
   // Worker secrets, so deploys keep them (never committed):
   // WORKSPACE_DOMAINS_EDGE_SECRET - shared with apps/web for the resolve API.
   // STATIC_HOST_MAP - optional bootstrap JSON
-  //   {"<host>": {"wsId": "<uuid>", "name": "<workspace name>"}} consulted
-  //   when the resolve endpoint is unavailable or does not know the host.
+  //   {"<host>": {"wsId": "<uuid>", "name": "<workspace name>"}} used while
+  //   the edge secret is unset, or when the resolver fails (network or 5xx).
+  //   With the secret set, a resolver 404 is final.
 }

@@ -176,10 +176,14 @@ async function askResolver(
 }
 
 /**
- * Resolves a normalized host to its workspace. The database-backed resolver is
- * authoritative when configured; STATIC_HOST_MAP answers when the resolver is
- * unconfigured, unreachable, or does not know the host (bootstrap before the
- * resolver ships).
+ * Resolves a normalized host to its workspace.
+ *
+ * With WORKSPACE_DOMAINS_EDGE_SECRET set, the database-backed resolver is
+ * authoritative: a 404 means "not served" and STATIC_HOST_MAP is ignored, so
+ * removing or suspending a domain takes effect at the edge. STATIC_HOST_MAP
+ * answers only while the resolver is unconfigured (bootstrap), or, with an
+ * explicit warning, while the resolver is unreachable or failing (network
+ * error or 5xx).
  */
 export async function resolveHost(
   host: string,
@@ -187,7 +191,18 @@ export async function resolveHost(
   cache: CacheLike | null,
   waitUntil: (promise: Promise<unknown>) => void
 ): Promise<ResolvedWorkspace | null> {
+  const staticEntry = () =>
+    parseStaticHostMap(env.STATIC_HOST_MAP).get(host) ?? null;
+  if (!env.WORKSPACE_DOMAINS_EDGE_SECRET) return staticEntry();
+
   const answer = await askResolver(host, env, cache, waitUntil);
   if (answer.kind === 'found') return answer.workspace;
-  return parseStaticHostMap(env.STATIC_HOST_MAP).get(host) ?? null;
+  if (answer.kind === 'missing') return null;
+
+  const fallback = staticEntry();
+  console.warn('workspace-domains: resolver unavailable', {
+    host,
+    staticFallback: fallback !== null,
+  });
+  return fallback;
 }

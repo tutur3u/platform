@@ -2011,7 +2011,7 @@
         "decision": "https://github.com/tutur3u/platform/pull/8157",
         "reason": "Workspace custom-domain edge Worker: a route-less Worker whose per-hostname routes apps/web attaches. It is bundled with wrangler deploy --dry-run for operator deploys and moves to cloudflare.config.ts in its per-service parity PR."
       },
-      "digest": "cb081bb001dea2340bb6285e3c7444ff17209abef48acbe829e118c6db67b24e"
+      "digest": "aed31aa25b7e6ee1353f8f2989474b0ae73adf6bd7c8105e16417763c7b2a2ff"
     },
     "apps/workspace/.gitignore": {
       "lines": 2,

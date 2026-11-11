@@ -111,10 +111,8 @@ describe('workspace domains worker', () => {
     expect(html).not.toContain('<Studio>');
     expect(html).toContain('Powered by');
     expect(html).not.toContain('<script');
-    // Delivery was attempted against the default origin and 404ed.
-    expect(t.fetchMock.mock.calls[0]?.[0]).toBe(
-      `https://tuturuuu.com/api/v1/workspaces/${WS_ID}/external-projects/delivery`
-    );
+    // Bootstrap without a secret: no origin calls at all.
+    expect(t.fetchMock).not.toHaveBeenCalled();
   });
 
   it('serves robots.txt for known hosts', async () => {
@@ -147,14 +145,53 @@ describe('workspace domains worker', () => {
     expect(await second.text()).not.toContain('javascript:');
   });
 
-  it('falls back to the static map when the resolver 404s', async () => {
+  it('treats a resolver 404 as authoritative over the static map', async () => {
     const t = setup(() => new Response(null, { status: 404 }));
-    const response = await t.call('https://vohoangphuc.com/', {
+    const env = {
       STATIC_HOST_MAP: STATIC_MAP,
       WORKSPACE_DOMAINS_EDGE_SECRET: 's3cret',
+    };
+    const response = await t.call('https://vohoangphuc.com/', env);
+    expect(response.status).toBe(404);
+    // The negative answer is cached too.
+    expect((await t.call('https://vohoangphuc.com/', env)).status).toBe(404);
+    expect(t.fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the static map only while the resolver is unconfigured', async () => {
+    const t = setup();
+    const response = await t.call('https://vohoangphuc.com/', {
+      STATIC_HOST_MAP: STATIC_MAP,
     });
     expect(response.status).toBe(200);
     expect(await response.text()).toContain('Phuc &lt;Studio&gt;');
+    expect(t.fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the static map with a warning when the resolver fails', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const t = setup(() => new Response('upstream', { status: 503 }));
+    const env = {
+      STATIC_HOST_MAP: STATIC_MAP,
+      WORKSPACE_DOMAINS_EDGE_SECRET: 's3cret',
+    };
+    const known = await t.call('https://vohoangphuc.com/', env);
+    expect(known.status).toBe(200);
+    expect(await known.text()).toContain('Phuc &lt;Studio&gt;');
+    expect(warn).toHaveBeenCalledWith(
+      'workspace-domains: resolver unavailable',
+      { host: 'vohoangphuc.com', staticFallback: true }
+    );
+    // Failures are not cached and unknown hosts still 404.
+    expect((await t.call('https://other.example/', env)).status).toBe(404);
+    expect(t.fetchMock).toHaveBeenCalledTimes(2);
+
+    const offline = setup(() => {
+      throw new TypeError('network down');
+    });
+    expect((await offline.call('https://vohoangphuc.com/', env)).status).toBe(
+      200
+    );
   });
 
   it('ignores an invalid static map', async () => {
@@ -166,7 +203,7 @@ describe('workspace domains worker', () => {
     expect(response.status).toBe(404);
   });
 
-  it('server-renders the published site from the delivery payload', async () => {
+  it('server-renders published content from the edge site endpoint', async () => {
     const payload = {
       collections: [
         {
@@ -192,8 +229,23 @@ describe('workspace domains worker', () => {
         },
       ],
     };
-    const t = setup(() => Response.json(payload));
-    const response = await t.call('https://vohoangphuc.com/');
+    const env = { WORKSPACE_DOMAINS_EDGE_SECRET: 's3cret' };
+    const t = setup((request) => {
+      expect(request.headers.get(EDGE_SECRET_HEADER)).toBe('s3cret');
+      if (request.url.includes('/workspace-domains/resolve')) {
+        return Response.json({
+          wsId: WS_ID,
+          name: 'Phuc',
+          avatarUrl: null,
+          siteAvailable: true,
+        });
+      }
+      expect(request.url).toBe(
+        'https://tuturuuu.com/api/v1/workspace-domains/site?host=vohoangphuc.com'
+      );
+      return Response.json(payload);
+    });
+    const response = await t.call('https://vohoangphuc.com/', env);
     expect(response.status).toBe(200);
     expectHygiene(response);
     const html = await response.text();
@@ -201,8 +253,10 @@ describe('workspace domains worker', () => {
     expect(html).toContain('Hello &lt;b&gt;world&lt;/b&gt;');
     expect(html).not.toContain('<script');
 
-    const missing = await t.call('https://vohoangphuc.com/nope');
+    const missing = await t.call('https://vohoangphuc.com/nope', env);
     expect(missing.status).toBe(404);
+    // Resolve and site answers are cached for the second request.
+    expect(t.fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('answers HEAD without a body', async () => {
@@ -212,5 +266,25 @@ describe('workspace domains worker', () => {
     });
     expect(response.status).toBe(200);
     expect(await response.text()).toBe('');
+  });
+});
+
+describe('site endpoint failures', () => {
+  it('falls back to the landing page when the site endpoint fails', async () => {
+    const t = setup((request) =>
+      request.url.includes('/resolve')
+        ? Response.json({
+            wsId: WS_ID,
+            name: 'Phuc',
+            avatarUrl: null,
+            siteAvailable: true,
+          })
+        : new Response(null, { status: 500 })
+    );
+    const response = await t.call('https://vohoangphuc.com/', {
+      WORKSPACE_DOMAINS_EDGE_SECRET: 's3cret',
+    });
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('Powered by');
   });
 });

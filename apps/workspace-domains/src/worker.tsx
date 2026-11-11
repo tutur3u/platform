@@ -9,6 +9,7 @@ import {
 } from './html';
 import {
   type CacheLike,
+  EDGE_SECRET_HEADER,
   EDGE_USER_AGENT,
   type Env,
   RESOLVE_CACHE_SECONDS,
@@ -33,8 +34,7 @@ interface ExecutionContextLike {
   waitUntil(promise: Promise<unknown>): void;
 }
 
-const DELIVERY_CACHE_ORIGIN =
-  'https://workspace-domains-delivery.cache.invalid';
+const SITE_CACHE_ORIGIN = 'https://workspace-domains-site.cache.invalid';
 const PAGE_CACHE_CONTROL = `public, max-age=${RESOLVE_CACHE_SECONDS}`;
 
 function respond(
@@ -51,14 +51,24 @@ function respond(
   return new Response(method === 'HEAD' ? null : body, { headers, status });
 }
 
-async function loadDelivery(
+/**
+ * Published site content from apps/web's edge-only site endpoint. Only
+ * resolver-backed hosts have one; static bootstrap hosts get the landing page.
+ */
+async function loadSite(
+  host: string,
   workspace: ResolvedWorkspace,
   env: Env,
   cache: CacheLike | null,
   waitUntil: (promise: Promise<unknown>) => void
 ): Promise<DeliveryPayload | null> {
-  if (workspace.siteAvailable === false) return null;
-  const key = new Request(`${DELIVERY_CACHE_ORIGIN}/${workspace.wsId}`);
+  const secret = env.WORKSPACE_DOMAINS_EDGE_SECRET;
+  if (!secret || workspace.source !== 'resolver' || !workspace.siteAvailable) {
+    return null;
+  }
+  const key = new Request(
+    `${SITE_CACHE_ORIGIN}/site?host=${encodeURIComponent(host)}`
+  );
   const cached = await cache?.match(key).catch(() => undefined);
   if (cached) {
     const body = await cached.json().catch(() => null);
@@ -68,15 +78,20 @@ async function loadDelivery(
   let response: Response;
   try {
     response = await fetch(
-      `${resolveOrigin(env)}/api/v1/workspaces/${workspace.wsId}/external-projects/delivery`,
+      `${resolveOrigin(env)}/api/v1/workspace-domains/site?host=${encodeURIComponent(host)}`,
       {
-        headers: { Accept: 'application/json', 'User-Agent': EDGE_USER_AGENT },
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': EDGE_USER_AGENT,
+          [EDGE_SECRET_HEADER]: secret,
+        },
         redirect: 'manual',
       }
     );
   } catch {
     return null;
   }
+  // Failures fall back to the landing page without caching.
   if (response.status !== 200 && response.status !== 404) return null;
   const body = response.ok ? await response.json().catch(() => null) : null;
   const payload = isDeliveryPayload(body) ? body : null;
@@ -146,7 +161,7 @@ export function createHandler(deps: HandlerDeps) {
       );
     }
 
-    const payload = await loadDelivery(workspace, env, cache, waitUntil);
+    const payload = await loadSite(host, workspace, env, cache, waitUntil);
     if (!payload) {
       if (url.pathname !== '/') {
         return respond(notFoundHtml(), 404, HTML_CONTENT_TYPE, method, {
