@@ -170,7 +170,14 @@ function generate({ check = false, root = ROOT } = {}) {
   return stale;
 }
 
-module.exports = { generate, localizedUrl, outputs, sitemap, validateConfig };
+module.exports = {
+  APEX_METADATA_APPS,
+  generate,
+  localizedUrl,
+  outputs,
+  sitemap,
+  validateConfig,
+};
 if (require.main === module) {
   const changed = generate({ check: process.argv.includes('--check') });
   console.log(
