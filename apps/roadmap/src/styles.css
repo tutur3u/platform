@@ -1292,6 +1292,7 @@ code {
   gap: 16px;
 }
 .ws-agenda {
+  position: relative;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1299,6 +1300,7 @@ code {
   gap: 10px;
 }
 .ws-agenda li {
+  position: relative;
   display: flex;
   gap: 12px;
   padding: 14px;
@@ -2022,9 +2024,6 @@ code {
   line-height: 1.55;
 }
 /* Agenda as a timeline: a rail through the numbered steps. */
-.ws-agenda {
-  position: relative;
-}
 .ws-agenda::before {
   content: "";
   position: absolute;
@@ -2033,9 +2032,6 @@ code {
   bottom: 18px;
   width: 2px;
   background: var(--rm-line);
-}
-.ws-agenda li {
-  position: relative;
 }
 .ws-agenda .ws-num {
   background: var(--rm-panel);
