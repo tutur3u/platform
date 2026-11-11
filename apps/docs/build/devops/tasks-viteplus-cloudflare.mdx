@@ -105,9 +105,7 @@ one `void.config.ts` declares:
 
 - `<staging-worker>`, compatibility date `2026-10-19`
 - `nodejs_compat` and `global_fetch_strictly_public`
-- `workers_dev: false`, no vars in the staging profile
-- observability enabled at 5% head sampling, persisted application logs enabled,
-  invocation logs disabled (request URLs must not become invocation log records)
+- `workers_dev: false`, no vars and no observability block
 - static assets with `html_handling: 'none'`, so the offline worker's exact
   `/offline.html` is read directly rather than through the default internal
   redirect to `/offline` (a missing value or an `auto`/trailing-slash policy
@@ -167,12 +165,9 @@ Follow `.wrangler/deploy/config.json`'s `configPath` to inspect the emitted
 Wrangler configuration. Void may retain that pointer as
 `.void/preview-deploy-config.json`; its path is still relative to
 `.wrangler/deploy`. Exactly one pointer is allowed. Inspect that target; do not infer the deployed configuration from source
-alone. Both Tasks artifact profiles require the observability policy above and
-reject its removal or drift. The artifact tests exercise this deploy redirect,
-as well as seal/pack/restore for both profiles.
+alone. Both Tasks artifact profiles validate the emitted identity, bindings and
+asset policy. The artifact tests exercise seal/pack/restore for both profiles.
 
 Router, public-model parse, root-entry fallback and startup diagnostics emit
 fixed messages without raw exception objects. Do not log request payloads,
-credentials, cookies, tokens or customer records. Enabling persistence requires
-review of diagnostics in all reachable handlers and shared dependencies; these
-focused checks do not establish a whole-worker privacy audit.
+credentials, cookies, tokens or customer records.

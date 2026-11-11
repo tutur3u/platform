@@ -17,16 +17,6 @@ export default defineConfig({
     main: 'cloudflare/worker.ts',
     compatibility_date: '2026-10-19',
     compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
-    observability: {
-      enabled: true,
-      head_sampling_rate: 0.05,
-      logs: {
-        enabled: true,
-        head_sampling_rate: 0.05,
-        persist: true,
-        invocation_logs: false,
-      },
-    },
     assets: {
       directory: './dist/client',
       binding: 'ASSETS',

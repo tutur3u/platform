@@ -1492,11 +1492,10 @@ Do not use a previous board's local snapshot as a loading placeholder. See
 `apps/tasks/src/runtime/page-transition-router.test.tsx` and the Tasks
 application page for the query-only navigation exception.
 
-Tasks artifact validation follows `.wrangler/deploy/config.json` to the emitted
-Wrangler config and requires 5% sampling, persisted logs and disabled invocation
-logs in both profiles. Diagnostics must use fixed classifications without raw
-errors or report URLs. Privacy review includes reachable API handlers and shared
-dependencies, not just the Worker entrypoint; see the Tasks native runbook.
+Native Tasks router, startup and root fallback diagnostics use fixed messages
+without raw exceptions. CSP report diagnostics retain only allowlisted directive
+and disposition classifications. See the Tasks native runbook for artifact
+inspection and diagnostic privacy.
 
 ### Workspace picker component verification
 
