@@ -35,8 +35,9 @@ describe('request reader and installation boundary', () => {
     expect(local.get()).toBeUndefined();
     expect(() => local.set('value')).toThrow('context unavailable');
     expect(() => bridgeRequest()).toThrow('context unavailable');
-    expect(() => withBridgeRequest(new Request('https://x.test'), () => {}))
-      .toThrow('store is not installed');
+    expect(() =>
+      withBridgeRequest(new Request('https://x.test'), () => {})
+    ).toThrow('store is not installed');
     expect(anchor[REQUEST_STORE_KEY]).toBeUndefined();
   });
 
@@ -44,26 +45,38 @@ describe('request reader and installation boundary', () => {
     delete anchor[REQUEST_STORE_KEY];
     const first = new AsyncLocalStorage<BridgeRequestContext>();
     expect(installRequestStore(first)).toBe(first);
-    expect(installRequestStore(new AsyncLocalStorage<BridgeRequestContext>())).toBe(first);
+    expect(
+      installRequestStore(new AsyncLocalStorage<BridgeRequestContext>())
+    ).toBe(first);
     const local = createRequestLocal<string>('actor');
     let release = () => {};
-    const barrier = new Promise<void>((resolve) => { release = resolve; });
-    const work = (actor: string) => withBridgeRequest({
-      request: new Request(`https://x.test/${actor}`),
-      nonce: actor, appBase: `/${actor}`,
-    }, async () => {
-      local.set(actor);
-      await barrier;
-      expect(requestNonce()).toBe(actor);
-      expect(runtimeAppBase()).toBe(`/${actor}`);
-      expect(local.get()).toBe(actor);
-      withBridgeRequest({ request: new Request('https://x.test/nested'), nonce: 'nested' }, () => {
-        expect(requestNonce()).toBe('nested');
-        expect(local.get()).toBeUndefined();
-      });
-      expect(requestNonce()).toBe(actor);
-      expect(local.get()).toBe(actor);
+    const barrier = new Promise<void>((resolve) => {
+      release = resolve;
     });
+    const work = (actor: string) =>
+      withBridgeRequest(
+        {
+          request: new Request(`https://x.test/${actor}`),
+          nonce: actor,
+          appBase: `/${actor}`,
+        },
+        async () => {
+          local.set(actor);
+          await barrier;
+          expect(requestNonce()).toBe(actor);
+          expect(runtimeAppBase()).toBe(`/${actor}`);
+          expect(local.get()).toBe(actor);
+          withBridgeRequest(
+            { request: new Request('https://x.test/nested'), nonce: 'nested' },
+            () => {
+              expect(requestNonce()).toBe('nested');
+              expect(local.get()).toBeUndefined();
+            }
+          );
+          expect(requestNonce()).toBe(actor);
+          expect(local.get()).toBe(actor);
+        }
+      );
     const pending = [work('alpha'), work('beta')];
     release();
     await Promise.all(pending);
@@ -78,9 +91,13 @@ describe('legacy server shim bootstrap', () => {
     delete anchor[REQUEST_STORE_KEY];
     vi.resetModules();
     const { headers } = await import('../next/headers');
-    const { withBridgeRequest: run } = await import('../core/request-context-compat');
-    await run(new Request('https://x.test', { headers: { 'x-boundary': 'ready' } }), async () => {
-      expect((await headers()).get('x-boundary')).toBe('ready');
-    });
+    const { withBridgeRequest: run } =
+      await import('../core/request-context-compat');
+    await run(
+      new Request('https://x.test', { headers: { 'x-boundary': 'ready' } }),
+      async () => {
+        expect((await headers()).get('x-boundary')).toBe('ready');
+      }
+    );
   });
 });
