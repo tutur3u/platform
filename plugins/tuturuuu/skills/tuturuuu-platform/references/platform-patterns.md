@@ -41,6 +41,14 @@ credentials, request-provided IDs and raw paths out of diagnostics. Preserve
 status/retry/MFA-cookie behavior. See the [guard diagnostics decision](../../../../../apps/docs/platform/features/mobile-workspace-tools.mdx#guard-rejection-diagnostics)
 and its focused regression coverage before adding a reason or changing middleware.
 
+- Redirect-only pages on the generic Start RSC adapter must resolve before
+  Flight streaming. Make their page function async so the adapter propagates
+  navigation to Start; a sync `redirect()` becomes a production React #441 error
+  row even when HTTP status is 200. Cover both the resolved route and the emitted
+  Worker with a signed fixture. Vite consumers must pass `bridge.experimental`
+  to preserve runtime asset bases on a shared apex mount. See Chat's qualification
+  guide and `cloudflare/home-redirect.runtime.mjs`.
+
 - Native satellites consume shared `@tuturuuu/start-bridge` adapters; app configs
   own hosts and SEO/security headers. Preserve forwarded WebGL sandbox CSP without
   handler-level CSP. Limit asset caching to GET/HEAD paths; keep config imports strippable.

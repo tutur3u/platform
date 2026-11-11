@@ -34,11 +34,12 @@ const seoPolicy = {
   publicPatterns: [],
 };
 
-// Root-only: served at chat.tuturuuu.com; no apex mount, and unknown hosts are rejected.
+// One artifact: the subdomain root and the tuturuuu.com/chat mount.
 const mounts = {
   app: 'chat',
   rootHosts: ['chat.tuturuuu.com'],
-  mountHosts: [],
+  mountHosts: ['tuturuuu.com'],
+  basePath: '/chat',
   unknownHost: 'reject' as const,
   ...appConfig.mounts,
 };

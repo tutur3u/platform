@@ -128,6 +128,7 @@ test('generated config targets the staging Worker and keeps Next build', (t) => 
     read('src/start-bridge/public-assets.bridge.gen.ts'),
     /'\/favicon\.ico',\n {2}'\/robots\.txt',/
   );
+  assert.match(read('vite.config.mts'), /experimental: bridge\.experimental,/);
   const manifest = JSON.parse(read('package.json'));
   assert.equal(manifest.scripts.build, 'next build --turbopack');
   assert.equal(

@@ -34,6 +34,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/constants/common', () => ({
+  CHAT_APP_URL: 'https://chat.tuturuuu.com',
   BASE_URL: 'https://chat.tuturuuu.com',
   WEB_APP_URL: 'https://tuturuuu.com',
 }));

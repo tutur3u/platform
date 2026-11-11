@@ -69,6 +69,7 @@ ${options.map((option) => `  ${option},`).join('\n')}
 
 export default defineConfig(({ command }) => ({
   base: bridge.base,
+  experimental: bridge.experimental,
   define: { ...bridge.define, 'process.env.NODE_ENV': JSON.stringify('production') },
   plugins: [
     startBridgeRscPlugin({ ${pluginOptions.join(', ')} }),

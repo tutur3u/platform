@@ -17,6 +17,7 @@ vi.mock('@tuturuuu/satellite/auth', () => ({
 vi.mock('next/headers', () => ({ headers: loginRedirectMocks.headers }));
 vi.mock('next/navigation', () => ({ redirect: loginRedirectMocks.redirect }));
 vi.mock('@/constants/common', () => ({
+  CHAT_APP_URL: loginRedirectMocks.origin,
   BASE_URL: loginRedirectMocks.origin,
   WEB_APP_URL: 'https://web.example.test',
   TTR_URL: 'https://web.example.test',

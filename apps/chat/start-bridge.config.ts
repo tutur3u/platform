@@ -10,7 +10,8 @@ import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 export default defineBridgeAppConfig({
   mounts: {
     rootHosts: ['chat.tuturuuu.com'],
-    mountHosts: [],
+    mountHosts: ['tuturuuu.com'],
+    basePath: '/chat',
     unknownHost: 'reject',
   },
   // Robots (the app's seo-policy.json allowlist on its canonical host),
