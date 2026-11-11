@@ -44,7 +44,12 @@ function lintSelfHostedWorkflows(workflows) {
       if (job.environment || job.services || job.container)
         reject('privileged execution context is forbidden');
       for (const step of job.steps || []) {
-        if (/^actions\/cache@/.test(step.uses || ''))
+        if (
+          step.uses === './.github/actions/run-with-turbo-remote-cache' &&
+          (step.with?.token || step.with?.team)
+        )
+          reject('tokened Turbo cache inputs are forbidden');
+        if (/^actions\/cache(?:\/save)?@/.test(step.uses || ''))
           reject('cache writes are forbidden');
         if (
           step.uses === './.github/actions/setup-bun-with-retry' &&

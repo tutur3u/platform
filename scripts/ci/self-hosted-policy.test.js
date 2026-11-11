@@ -63,6 +63,15 @@ test('CI runner lint rejects every unauthorized use of host labels', () => {
       job.steps.push({ uses: 'actions/cache@deadbeef' });
     },
     (job) => {
+      job.steps.push({ uses: 'actions/cache/save@deadbeef' });
+    },
+    (job) => {
+      job.steps.push({
+        uses: './.github/actions/run-with-turbo-remote-cache',
+        with: { token: '${{ github.token }}' },
+      });
+    },
+    (job) => {
       job.steps.find((step) => step.uses?.startsWith('actions/checkout@')).with[
         'persist-credentials'
       ] = true;
