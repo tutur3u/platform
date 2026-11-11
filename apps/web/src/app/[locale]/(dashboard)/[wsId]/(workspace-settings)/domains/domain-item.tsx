@@ -35,6 +35,7 @@ const ROW_ERRORS = [
   'dns_lookup_failed',
   'provider_not_configured',
   'entitlement_lapsed',
+  'hostname_in_use',
 ] as const;
 
 function RecordTable({

@@ -21486,6 +21486,7 @@
       "entitlement_paid_plan_required": "Cần gói trả phí để dùng tên miền riêng.",
       "entitlement_staff_session_unverified": "Không thể xác minh tài khoản nhân viên của bạn.",
       "generic": "Đã xảy ra lỗi. Vui lòng thử lại.",
+      "hostname_in_use": "Tên máy chủ này đã được sử dụng trên tên miền nền tảng.",
       "hostname_invalid": "Nhập tên máy chủ như example.com, không kèm giao thức, đường dẫn hoặc cổng.",
       "hostname_reserved": "Tên máy chủ này được dành riêng cho Tuturuuu.",
       "hostname_unavailable": "Tên máy chủ này đang được sử dụng hoặc vừa bị gỡ.",
@@ -21504,6 +21505,7 @@
     "rowErrors": {
       "dns_lookup_failed": "Không thể kiểm tra DNS. Vui lòng thử lại sau.",
       "entitlement_lapsed": "Tên miền này không còn nằm trong quyền sử dụng tên miền của không gian làm việc.",
+      "hostname_in_use": "Tên máy chủ này đã được dùng ở nơi khác trên tên miền nền tảng. Hãy gỡ tên miền và chọn tên khác.",
       "ownership_txt_missing": "Chưa tìm thấy bản ghi TXT xác minh quyền sở hữu. Thay đổi DNS có thể mất vài phút.",
       "provider_not_configured": "Đã xác minh quyền sở hữu. Việc cấp chứng chỉ chưa được cấu hình."
     },

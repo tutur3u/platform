@@ -1,6 +1,11 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { describe, expect, it, vi } from 'vitest';
-import type { CloudflareDomainsClient } from './cloudflare';
+import {
+  CloudflareApiError,
+  type CloudflareDnsRecordSummary,
+  type CloudflareDomainsClient,
+  type CloudflareWorkerRoute,
+} from './cloudflare';
 import {
   addWorkspaceDomain,
   removeWorkspaceDomain,
@@ -104,6 +109,10 @@ const actor = { id: 'user-1', staffSession: true };
 
 function fakeCloudflare(status = 'active') {
   return {
+    listDnsRecords: vi.fn(
+      async (_name: string): Promise<CloudflareDnsRecordSummary[]> => []
+    ),
+    listWorkerRoutes: vi.fn(async (): Promise<CloudflareWorkerRoute[]> => []),
     createCustomHostname: vi.fn(async () => ({
       id: 'ch1',
       hostname: 'example.com',
@@ -172,6 +181,41 @@ describe('workspace domain service', () => {
     expect(cloudflare.createPlatformRecord).toHaveBeenCalledWith('phuc.ttr.gg');
     expect(cloudflare.createWorkerRoute).toHaveBeenCalledWith('phuc.ttr.gg');
     expect(domains[0]).toMatchObject({ entitlement_source: 'staff_bypass' });
+  });
+
+  it('refuses a platform subdomain the zone already answers for, before any row', async () => {
+    const { admin, domains, audit } = fakeAdmin(STAFF_OK);
+    const cloudflare = fakeCloudflare();
+    cloudflare.listDnsRecords.mockImplementation(async (name: string) =>
+      name === 'taken.ttr.gg' ? [{ id: 'x', type: 'A', name }] : []
+    );
+    await expect(
+      addWorkspaceDomain({ admin, cloudflare }, 'ws', actor, 'taken.ttr.gg')
+    ).rejects.toMatchObject({ status: 409, code: 'hostname_in_use' });
+    expect(domains).toHaveLength(0);
+    expect(cloudflare.createPlatformRecord).not.toHaveBeenCalled();
+    expect(audit[0]).toMatchObject({
+      action: 'denied',
+      detail: { reason: 'hostname_in_use', claim: 'dns_record' },
+    });
+  });
+
+  it('records a provisioning conflict without leaving provider state', async () => {
+    const { admin, domains } = fakeAdmin(STAFF_OK);
+    const cloudflare = fakeCloudflare();
+    cloudflare.createWorkerRoute.mockRejectedValue(
+      new CloudflareApiError(409, [10020])
+    );
+    await expect(
+      addWorkspaceDomain({ admin, cloudflare }, 'ws', actor, 'race.ttr.gg')
+    ).rejects.toMatchObject({ status: 409, code: 'hostname_in_use' });
+    expect(cloudflare.deleteDnsRecord).toHaveBeenCalledWith('dns1');
+    expect(domains[0]).toMatchObject({
+      status: 'pending_verification',
+      error: 'hostname_in_use',
+      cloudflare_dns_record_id: null,
+      cloudflare_worker_route_id: null,
+    });
   });
 
   it('keeps a custom hostname pending until the ownership TXT exists', async () => {

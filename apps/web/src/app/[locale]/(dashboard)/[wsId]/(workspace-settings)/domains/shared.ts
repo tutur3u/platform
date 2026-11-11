@@ -15,6 +15,7 @@ export function useDomainErrorMessage() {
       'hostname_invalid',
       'hostname_reserved',
       'hostname_unavailable',
+      'hostname_in_use',
       'entitlement_cap_reached',
       'entitlement_no_slots',
       'entitlement_kill_switch',

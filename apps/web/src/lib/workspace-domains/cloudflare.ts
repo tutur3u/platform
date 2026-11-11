@@ -37,13 +37,61 @@ export interface CloudflareCustomHostname {
   verification_errors?: string[];
 }
 
+/** Cloudflare error codes for "this resource already exists". */
+const CONFLICT_CODES = new Set([
+  // DNS: record already exists, identical record, CNAME/other-type clash.
+  81053, 81054, 81055, 81057, 81058,
+  // Workers routes: duplicate pattern.
+  10020,
+  // Custom hostnames: duplicate hostname.
+  1406, 1407, 1414,
+]);
+
 export class CloudflareApiError extends Error {
   constructor(
     readonly status: number,
-    readonly codes: number[]
+    readonly codes: number[],
+    /** The provider said the resource already exists. */
+    readonly alreadyExists = false
   ) {
     super(`Cloudflare API request failed (${status})`);
   }
+
+  get conflict() {
+    return (
+      this.alreadyExists ||
+      this.status === 409 ||
+      this.codes.some((code) => CONFLICT_CODES.has(code))
+    );
+  }
+}
+
+export interface CloudflareDnsRecordSummary {
+  id: string;
+  type: string;
+  name: string;
+}
+export interface CloudflareWorkerRoute {
+  id: string;
+  pattern: string;
+  script?: string | null;
+}
+
+/**
+ * Whether a Workers route pattern applies to a hostname. Route host parts
+ * match exactly, or as a suffix after a leading `*` (`*.ttr.gg`, `*ttr.gg`).
+ * Any path counts: a route on a path of the host still owns that host.
+ */
+export function workerRouteMatchesHost(pattern: string, hostname: string) {
+  const withoutScheme = pattern
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//u, '');
+  const hostPart = withoutScheme.split('/')[0] ?? '';
+  if (!hostPart) return false;
+  if (hostPart === '*') return true;
+  if (hostPart.startsWith('*')) return hostname.endsWith(hostPart.slice(1));
+  return hostPart === hostname;
 }
 
 /** Reads provider configuration from the environment; null when unconfigured. */
@@ -86,15 +134,19 @@ export function createCloudflareDomainsClient(
     const payload = (await response.json().catch(() => null)) as {
       success?: boolean;
       result?: T;
-      errors?: Array<{ code?: number }>;
+      errors?: Array<{ code?: number; message?: string }>;
     } | null;
     if (!response.ok || !payload?.success) {
       // Never surface the token or raw provider bodies to callers.
+      const errors = payload?.errors ?? [];
       throw new CloudflareApiError(
         response.status,
-        (payload?.errors ?? [])
+        errors
           .map((error) => error.code)
-          .filter((code): code is number => typeof code === 'number')
+          .filter((code): code is number => typeof code === 'number'),
+        errors.some((error) =>
+          /already exist|duplicate/iu.test(error.message ?? '')
+        )
       );
     }
     return payload.result as T;
@@ -103,6 +155,16 @@ export function createCloudflareDomainsClient(
   const zone = `/zones/${config.zoneId}`;
 
   return {
+    /** Every DNS record (all types) at exactly this name. */
+    listDnsRecords(name: string) {
+      return call<CloudflareDnsRecordSummary[]>(
+        `${zone}/dns_records?name=${encodeURIComponent(name)}&per_page=100`
+      );
+    },
+    /** Every Workers route on the zone (zones hold at most a few hundred). */
+    listWorkerRoutes() {
+      return call<CloudflareWorkerRoute[]>(`${zone}/workers/routes`);
+    },
     createCustomHostname(hostname: string) {
       return call<CloudflareCustomHostname>(`${zone}/custom_hostnames`, {
         method: 'POST',

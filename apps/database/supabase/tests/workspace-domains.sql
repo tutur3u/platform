@@ -95,6 +95,17 @@ select is((
   select status from public.workspace_domains where hostname = 'wsd-one.ttr.gg' and status <> 'removed'
 ), 'pending_verification', 'new bindings start pending verification');
 
+-- A live custom binding (like the seeded vohoangphuc.com) cannot be claimed
+-- by another workspace.
+insert into public.workspace_domains (ws_id, hostname, kind, verification_txt_name, verification_txt_value, entitlement_source)
+values ('d0a10000-0000-4000-8000-0000000000a3', 'wsd-bootstrap.example.com', 'custom', '_tuturuuu-verify.wsd-bootstrap.example.com',
+  'tuturuuu-domain-verification=gggggggggggggggggggggggggggggggggggg', 'staff_bypass');
+select throws_ok($$
+  insert into public.workspace_domains (ws_id, hostname, kind, verification_txt_name, verification_txt_value, entitlement_source)
+  values ('d0a10000-0000-4000-8000-0000000000a2', 'wsd-bootstrap.example.com', 'custom', '_tuturuuu-verify.wsd-bootstrap.example.com',
+    'tuturuuu-domain-verification=hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh', 'paid_addon')
+$$, '23505', null, 'a live hostname cannot be claimed by another workspace');
+
 -- Member reads through RLS; others see nothing and cannot write.
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', 'd0a10000-0000-4000-8000-000000000001', 'role', 'authenticated')::text, true);

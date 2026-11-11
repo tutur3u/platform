@@ -27,6 +27,8 @@ describe('classifyWorkspaceDomainHostname', () => {
     'www.ttr.gg',
     'saas.ttr.gg',
     'fysh.ttr.gg',
+    'vhp.ttr.gg',
+    'VHP.ttr.gg.',
     'api.ttr.gg',
     'a.b.ttr.gg',
     'ab.ttr.gg',

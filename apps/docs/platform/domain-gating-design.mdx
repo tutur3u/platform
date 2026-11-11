@@ -60,7 +60,10 @@ claimed by another workspace only by passing a fresh ownership TXT check.
 **Reserved names:** the managed-project rule (`tuturuuu.com`, `tutur3u.com` and
 their subdomains, released domains) plus `tuturuu.com`, the `ttr.gg` apex, nested
 `ttr.gg` names and reserved labels such as `www`, `saas`, `fysh`, `api` and `admin`
-(`packages/utils/src/workspace-domain-hostnames.ts`).
+(`packages/utils/src/workspace-domain-hostnames.ts`). The bootstrap hosts
+`vhp.ttr.gg` (also a reserved label) and `vohoangphuc.com` are bound to their
+workspace by the seed migration `20261111120200`, so no other workspace can
+claim them.
 
 ## Implementation
 
@@ -84,8 +87,18 @@ their subdomains, released domains) plus `tuturuu.com`, the `ttr.gg` apex, neste
 2. **Verify** (`POST .../domains/:id/verify`, idempotent): re-check entitlement,
    then for custom hostnames look up `_tuturuuu-verify.<host>` over DNS-over-HTTPS.
    With proof, create or refresh the Cloudflare custom hostname and show its DCV
-   records; for `ttr.gg` create a proxied record. When the certificate is active,
-   attach the `<host>/*` Worker route and mark the domain `active`.
+   records. When the certificate is active, attach the `<host>/*` Worker route and
+   mark the domain `active`.
+
+   Platform subdomains have no ownership proof, so the zone itself is the proof
+   of absence: before the row is created and again before provisioning, any DNS
+   record at the name (all types), a covering wildcard record (`*.<parent>`) or a
+   Workers route whose pattern matches the host (exact, `*.ttr.gg/*`, `*ttr.gg/*`,
+   `*/*`) refuses the name with `hostname_in_use`. The proxied record and the
+   route are created together; a failure or create conflict (DNS 81053/81057,
+   route 10020, any "already exists") deletes what that attempt created and
+   leaves no provider IDs on the row. Custom hostnames refuse an existing
+   matching route the same way.
 3. **Serve:** the edge Worker resolves the host through
    `GET /api/v1/workspace-domains/resolve` and reads published content from
    `GET /api/v1/workspace-domains/site`. Both require the edge secret and answer

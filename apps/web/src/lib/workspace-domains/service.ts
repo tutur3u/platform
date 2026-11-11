@@ -19,6 +19,12 @@ import {
   type WorkspaceDomainEntitlement,
 } from './entitlement';
 import {
+  assertPlatformHostnameUnclaimed,
+  attachWorkerRoute,
+  HostnameInUseError,
+  provisionPlatformSubdomain,
+} from './provisioning';
+import {
   createOwnershipTxtValue,
   hasOwnershipProof,
   ownershipTxtName,
@@ -220,6 +226,24 @@ export async function addWorkspaceDomain(
     throw new WorkspaceDomainError(403, denyCode(entitlement));
   }
 
+  // A platform subdomain has no ownership proof, so refuse any name the zone
+  // already answers for before a row exists. Verification checks again.
+  if (kind === 'platform_subdomain' && deps.cloudflare) {
+    try {
+      await assertPlatformHostnameUnclaimed(deps.cloudflare, hostname);
+    } catch (error) {
+      if (!(error instanceof HostnameInUseError)) throw error;
+      await audit(deps.admin, {
+        wsId,
+        hostname,
+        action: 'denied',
+        actorId: actor.id,
+        detail: { reason: 'hostname_in_use', claim: error.claim },
+      });
+      throw new WorkspaceDomainError(409, 'hostname_in_use');
+    }
+  }
+
   const { data, error } = await deps.admin
     .from('workspace_domains')
     .insert({
@@ -350,7 +374,12 @@ export async function verifyWorkspaceDomain(
     if (row.kind === 'custom') {
       const hostname = row.cloudflare_custom_hostname_id
         ? await cloudflare.getCustomHostname(row.cloudflare_custom_hostname_id)
-        : await cloudflare.createCustomHostname(row.hostname);
+        : await cloudflare.createCustomHostname(row.hostname).catch((error) => {
+            if (error instanceof CloudflareApiError && error.conflict) {
+              throw new HostnameInUseError('provider_conflict');
+            }
+            throw error;
+          });
       row = await updateDomain(deps.admin, row.id, {
         cloudflare_custom_hostname_id: hostname.id,
         ownership_status: 'verified',
@@ -358,22 +387,26 @@ export async function verifyWorkspaceDomain(
         dns_records: customHostnameDnsRecords(hostname) as Json,
       });
       ready = hostname.status === 'active' && hostname.ssl?.status === 'active';
-    } else {
-      if (!row.cloudflare_dns_record_id) {
-        const recordId = await cloudflare.createPlatformRecord(row.hostname);
+      if (ready && !row.cloudflare_worker_route_id) {
+        const routeId = await attachWorkerRoute(cloudflare, row.hostname);
         row = await updateDomain(deps.admin, row.id, {
-          cloudflare_dns_record_id: recordId,
-          ssl_status: 'active',
+          cloudflare_worker_route_id: routeId,
         });
       }
-      ready = true;
-    }
-
-    if (ready && !row.cloudflare_worker_route_id) {
-      const routeId = await cloudflare.createWorkerRoute(row.hostname);
+    } else if (!row.cloudflare_dns_record_id) {
+      // Record and route are created together or not at all.
+      const created = await provisionPlatformSubdomain(
+        cloudflare,
+        row.hostname
+      );
       row = await updateDomain(deps.admin, row.id, {
-        cloudflare_worker_route_id: routeId,
+        cloudflare_dns_record_id: created.dnsRecordId,
+        cloudflare_worker_route_id: created.routeId,
+        ssl_status: 'active',
       });
+      ready = true;
+    } else {
+      ready = Boolean(row.cloudflare_worker_route_id);
     }
 
     const active = ready && Boolean(row.cloudflare_worker_route_id);
@@ -395,6 +428,22 @@ export async function verifyWorkspaceDomain(
     });
     return toPublicDomain(row);
   } catch (error) {
+    if (error instanceof HostnameInUseError) {
+      row = await updateDomain(deps.admin, row.id, {
+        status: 'pending_verification',
+        error: 'hostname_in_use',
+        last_checked_at: now,
+      });
+      await audit(deps.admin, {
+        wsId,
+        domainId: row.id,
+        hostname: row.hostname,
+        action: 'provider_error',
+        actorId: actor.id,
+        detail: { reason: 'hostname_in_use', claim: error.claim },
+      });
+      throw new WorkspaceDomainError(409, 'hostname_in_use');
+    }
     if (!(error instanceof CloudflareApiError)) throw error;
     row = await updateDomain(deps.admin, row.id, {
       error: `provider_error_${error.status}`,

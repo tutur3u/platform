@@ -53,6 +53,8 @@ export const RESERVED_PLATFORM_SUBDOMAIN_LABELS = Object.freeze([
   'ttr',
   'tuturuuu',
   'tutur3u',
+  // Bootstrap host of the first workspace domain; bound by migration seed.
+  'vhp',
   'www',
 ]);
 

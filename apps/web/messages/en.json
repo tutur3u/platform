@@ -21479,6 +21479,7 @@
       "entitlement_paid_plan_required": "A paid plan is required for custom domains.",
       "entitlement_staff_session_unverified": "Your staff account could not be verified.",
       "generic": "Something went wrong. Try again.",
+      "hostname_in_use": "Something on the platform domain already uses this hostname.",
       "hostname_invalid": "Enter a hostname such as example.com, without a scheme, path or port.",
       "hostname_reserved": "This hostname is reserved for Tuturuuu.",
       "hostname_unavailable": "This hostname is already in use or recently removed.",
@@ -21497,6 +21498,7 @@
     "rowErrors": {
       "dns_lookup_failed": "DNS could not be checked. Try again shortly.",
       "entitlement_lapsed": "This domain is no longer covered by the workspace's domain entitlement.",
+      "hostname_in_use": "This hostname is already used elsewhere on the platform domain. Remove the domain and pick another name.",
       "ownership_txt_missing": "The ownership TXT record was not found yet. DNS changes can take a few minutes.",
       "provider_not_configured": "Ownership is verified. Certificate provisioning is not configured yet."
     },
