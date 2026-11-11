@@ -527,48 +527,81 @@ describe('combined trust and normalized session clearing', () => {
   );
 });
 
-
 describe('encoded non-session parameters retain admission', () => {
   it.each(['off', 'report', 'enforce'] as const)('%s', (mode) => {
     for (const suffix of ['discount%25', 'question%3F', 'fragment%23']) {
       for (const [method, headers] of [
         ['GET', { origin: 'https://tuturuuu.com' }],
         ['POST', { authorization: 'Bearer junk' }],
-        ['POST', { cookie: SESSION_COOKIE, origin: 'https://tuturuuu.com', 'sec-fetch-site': 'same-origin' }],
+        [
+          'POST',
+          {
+            cookie: SESSION_COOKIE,
+            origin: 'https://tuturuuu.com',
+            'sec-fetch-site': 'same-origin',
+          },
+        ],
       ] as const) {
-        const req = new NextRequest(`https://tuturuuu.com/api/v1/things/${suffix}`, { method, headers });
-        expect(guardWebApiCsrf(req, { configuredOrigin: 'https://tuturuuu.com', mode })).toBeNull();
+        const req = new NextRequest(
+          `https://tuturuuu.com/api/v1/things/${suffix}`,
+          { method, headers }
+        );
+        expect(
+          guardWebApiCsrf(req, {
+            configuredOrigin: 'https://tuturuuu.com',
+            mode,
+          })
+        ).toBeNull();
       }
     }
   });
 });
-
 
 describe('ambiguous session-path reporting', () => {
   it('retains the existing report logger without enforcing the refusal', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     try {
       const path = '/api/auth/logout%25-report-r3';
-      const result = guardWebApiCsrf(request(path, {
-        cookie: SESSION_COOKIE,
-        origin: 'https://attacker.tuturuuu.com',
-        'sec-fetch-site': 'cross-site',
-      }), { configuredOrigin: 'https://tuturuuu.com', mode: 'report' });
+      const result = guardWebApiCsrf(
+        request(path, {
+          cookie: SESSION_COOKIE,
+          origin: 'https://attacker.tuturuuu.com',
+          'sec-fetch-site': 'cross-site',
+        }),
+        { configuredOrigin: 'https://tuturuuu.com', mode: 'report' }
+      );
       expect(result).toBeNull();
-      expect(warn).toHaveBeenCalledWith('CSRF check failed', expect.objectContaining({ mode: 'report', route: path }));
+      expect(warn).toHaveBeenCalledWith(
+        'CSRF check failed',
+        expect.objectContaining({ mode: 'report', route: path })
+      );
     } finally {
       warn.mockRestore();
     }
   });
 });
 
-
 describe('double-encoded session clearing paths', () => {
-  it.each(['off', 'report', 'enforce'] as const)('%s does not re-decode residual escapes', (mode) => {
-    for (const path of ['/api/auth/logout%252F', '/api/auth/%256Cogout']) {
-      for (const headers of [{}, { authorization: 'Bearer junk' }, { origin: 'https://workspace.tuturuuu.com', 'sec-fetch-site': 'same-site' }]) {
-        expect(guardWebApiCsrf(request(path, headers), { configuredOrigin: 'https://tuturuuu.com', mode })?.status ?? null).toBe(mode === 'enforce' ? 403 : null);
+  it.each(['off', 'report', 'enforce'] as const)(
+    '%s does not re-decode residual escapes',
+    (mode) => {
+      for (const path of ['/api/auth/logout%252F', '/api/auth/%256Cogout']) {
+        for (const headers of [
+          {},
+          { authorization: 'Bearer junk' },
+          {
+            origin: 'https://workspace.tuturuuu.com',
+            'sec-fetch-site': 'same-site',
+          },
+        ]) {
+          expect(
+            guardWebApiCsrf(request(path, headers), {
+              configuredOrigin: 'https://tuturuuu.com',
+              mode,
+            })?.status ?? null
+          ).toBe(mode === 'enforce' ? 403 : null);
+        }
       }
     }
-  });
+  );
 });

@@ -98,7 +98,6 @@ function normalizeSessionPath(path: string): string | null {
   }
 }
 
-
 const shouldReportCsrfFailure = createCsrfReportLimiter();
 
 /**
@@ -140,8 +139,9 @@ export function guardWebApiCsrf(
     headers: req.headers,
     method: req.method,
     pathname: req.nextUrl.pathname,
-    requireOriginWithoutSessionCookie:
-      WEB_SESSION_CLEARING_PATHS.has(sessionPath ?? req.nextUrl.pathname),
+    requireOriginWithoutSessionCookie: WEB_SESSION_CLEARING_PATHS.has(
+      sessionPath ?? req.nextUrl.pathname
+    ),
   });
   if (verdict.ok) return null;
 
