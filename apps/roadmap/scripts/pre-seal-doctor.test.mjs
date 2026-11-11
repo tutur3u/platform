@@ -7,10 +7,13 @@ import {
   REDIRECT_CHAINS,
   PLAN_LABEL,
   brokenVariant,
+  PUBLIC_DOCUMENT_PATHS,
   reportBrokenVariant,
+  speculativeLinks,
   STAGE_LABELS,
 } from './pre-seal-doctor.mjs';
 import '../../../scripts/ci/asset-smoke.test.mjs';
+import './canonical-smoke.test.mjs';
 
 const LOGO = '/roadmap/assets/tuturuuu-logo-Abcd1234.png';
 const COMMIT = 'a'.repeat(40);
@@ -21,7 +24,7 @@ function passingRaw() {
     canonical: {
       status: 200,
       cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
-      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><link rel="prefetch" href="/roadmap/assets/history-Abcd1234.json" as="fetch"/><h2 id="timeline-title">Timeline</h2><meta property="og:url" content="https://tuturuuu.com/roadmap"/><meta property="og:image" content="https://tuturuuu.com/roadmap/assets/og-roadmap-Abcd1234.png"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><header id="navbar"><a href="https://tuturuuu.com/home"><img alt="Tuturuuu" src="${LOGO}"></a><a href="https://tuturuuu.com/login">Get Started</a></header><div id="main-content"><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div><footer></footer>`,
+      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><h2 id="timeline-title">Timeline</h2><meta property="og:url" content="https://tuturuuu.com/roadmap"/><meta property="og:image" content="https://tuturuuu.com/roadmap/assets/og-roadmap-Abcd1234.png"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><header id="navbar"><a href="https://tuturuuu.com/home"><img alt="Tuturuuu" src="${LOGO}"></a><a href="https://tuturuuu.com/login">Get Started</a></header><div id="main-content"><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div><footer></footer>`,
     },
     satellite: { status: 301, location: 'https://tuturuuu.com/roadmap' },
     redirects: REDIRECT_CHAINS.map((chain) => ({
@@ -38,6 +41,17 @@ function passingRaw() {
     asset: {
       url: '/roadmap/assets/index-CGgt8iCG.js',
       cacheControl: 'public, max-age=31536000, immutable',
+    },
+    documents: PUBLIC_DOCUMENT_PATHS.map((path) => ({
+      path,
+      status: 200,
+      speculative: [],
+    })),
+    history: {
+      url: '/roadmap/assets/history-Abcd1234.json',
+      status: 200,
+      contentType: 'application/json',
+      bytes: 240_855,
     },
   };
 }
@@ -154,17 +168,63 @@ test('D79: a trailing-slash canonical tag fails', () => {
   );
 });
 
-test('D79: a page without the timeline or its history asset fails', () => {
+test('D79: a page without the timeline, or a history asset that is not served, fails', () => {
   const observation = passing();
-  observation.canonical.body = observation.canonical.body
-    .replace('id="timeline-title"', '')
-    .replace('history-Abcd1234.json', 'history.json');
+  observation.canonical.body = observation.canonical.body.replace(
+    'id="timeline-title"',
+    ''
+  );
+  observation.history = { ...observation.history, status: 404, bytes: 0 };
   const verdict = assessDoctor(observation);
   assert.ok(verdict.failures.includes('canonical HTML missing the timeline'));
   assert.ok(
-    verdict.failures.includes(
-      'canonical HTML missing the hashed history prefetch'
+    verdict.failures.some((failure) =>
+      failure.startsWith('hashed history asset /roadmap/assets/history-')
+    ),
+    verdict.failures.join('\n')
+  );
+  observation.history = { url: null };
+  assert.ok(
+    assessDoctor(observation).failures.includes(
+      'the build emitted no hashed history asset'
     )
+  );
+});
+
+test('D79 (#8163): a prefetch or prerender on any public page fails, since the zone 503s Sec-Purpose: prefetch', () => {
+  assert.deepEqual(
+    speculativeLinks(
+      '<link rel="prefetch" href="/roadmap/assets/history-Abcd1234.json" as="fetch"/>' +
+        '<link rel="dns-prefetch" href="https://api.github.com"/>' +
+        "<link href='/roadmap/vi' rel='prerender'>" +
+        '<link rel="preload" as="font" href="/roadmap/assets/a-Abcd1234.woff2">'
+    ),
+    ['/roadmap/assets/history-Abcd1234.json', '/roadmap/vi']
+  );
+  assert.deepEqual(
+    speculativeLinks('<script type="speculationrules">{}</script>'),
+    ['speculationrules']
+  );
+  // Broken variant: the production failure is caught on every page.
+  const observation = passing();
+  observation.documents[2].speculative = [
+    '/roadmap/assets/history-Abcd1234.json',
+  ];
+  const { ok, failures } = assessDoctor(observation);
+  assert.equal(ok, false);
+  assert.ok(
+    failures.some(
+      (failure) =>
+        failure.startsWith(
+          '/roadmap/workshops/edufest-2026 speculatively loads /roadmap/assets/history-'
+        ) && failure.includes('Speed Brain')
+    ),
+    failures.join('\n')
+  );
+  // A page that was never probed is a failure, not a pass.
+  observation.documents = observation.documents.slice(0, 1);
+  assert.ok(
+    assessDoctor(observation).failures.includes('/roadmap/vi was not probed')
   );
 });
 

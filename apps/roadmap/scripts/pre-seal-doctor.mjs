@@ -7,7 +7,7 @@
  */
 import { createHash } from 'node:crypto';
 import { once } from 'node:events';
-import { existsSync, realpathSync } from 'node:fs';
+import { existsSync, readdirSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { createServer, request as httpRequest } from 'node:http';
 import { registerHooks } from 'node:module';
@@ -53,6 +53,40 @@ const LOGO_TAG =
 
 /** Canonical: no trailing slash, like every Tuturuuu URL. */
 export const CANONICAL_URL = 'https://tuturuuu.com/roadmap';
+
+/** Every public page and language; each must render and load cleanly. */
+export const PUBLIC_DOCUMENT_PATHS = [
+  '/roadmap',
+  '/roadmap/vi',
+  '/roadmap/workshops/edufest-2026',
+  '/roadmap/vi/workshops/edufest-2026',
+];
+
+/**
+ * Speculative loads the tuturuuu.com zone cannot serve. Cloudflare Speed
+ * Brain answers every `Sec-Purpose: prefetch` request with 503, even for a
+ * cached URL, so a prefetch or prerender link only ever yields a failed
+ * request and a console error (production, 11 Nov 2026). workers.dev
+ * previews do not show it, so the rule lives here.
+ */
+export function speculativeLinks(html) {
+  const found = [];
+  for (const match of String(html).matchAll(/<link\b([^>]*)>/gi)) {
+    const rel = /\brel\s*=\s*["']?([^"'>]+)/i.exec(match[1])?.[1] ?? '';
+    const tokens = rel.toLowerCase().split(/\s+/);
+    if (tokens.includes('prefetch') || tokens.includes('prerender')) {
+      found.push(
+        /\bhref\s*=\s*["']?([^"'\s>]+)/i.exec(match[1])?.[1] ?? '(no href)'
+      );
+    }
+  }
+  if (String(html).toLowerCase().includes('speculationrules'))
+    found.push('speculationrules');
+  return found;
+}
+
+const SPEED_BRAIN =
+  'Cloudflare Speed Brain answers Sec-Purpose: prefetch with 503 on tuturuuu.com';
 
 /** Every slash or satellite form reaches the canonical in exactly one 301. */
 export const REDIRECT_CHAINS = [
@@ -202,12 +236,32 @@ export function assessDoctor(observation) {
   failures.push(...cspFailures(body, canonical.csp));
   if (!body.includes('id="timeline-title"'))
     failures.push('canonical HTML missing the timeline');
-  if (
-    !/rel="prefetch" href="\/roadmap\/assets\/history-[A-Za-z0-9_-]{8,}\.json"/.test(
-      body
-    )
-  )
-    failures.push('canonical HTML missing the hashed history prefetch');
+  // The timeline fetches its history after mount: the asset must be emitted
+  // and served as JSON from the canonical host, never speculatively loaded.
+  const history = observation.history ?? {};
+  if (!history.url) {
+    failures.push('the build emitted no hashed history asset');
+  } else if (
+    history.status !== 200 ||
+    !/^application\/json\b/.test(String(history.contentType ?? '')) ||
+    !(history.bytes > 0)
+  ) {
+    failures.push(
+      `hashed history asset ${history.url} status ${history.status} content-type ${history.contentType ?? '(missing)'} bytes ${history.bytes ?? 0}, expected 200 application/json`
+    );
+  }
+  const documents = observation.documents ?? [];
+  for (const path of PUBLIC_DOCUMENT_PATHS) {
+    const document = documents.find((item) => item.path === path);
+    if (!document) {
+      failures.push(`${path} was not probed`);
+      continue;
+    }
+    if (document.status !== 200)
+      failures.push(`${path} status ${document.status}, expected 200`);
+    for (const href of document.speculative ?? [])
+      failures.push(`${path} speculatively loads ${href}: ${SPEED_BRAIN}`);
+  }
   const satellite = observation.satellite ?? {};
   if (satellite.status !== 301) {
     failures.push(`satellite status ${satellite.status}, expected 301`);
@@ -250,6 +304,16 @@ export function brokenVariant(observation) {
       { path: '/roadmap/', host: 'tuturuuu.com', status: 200, location: null },
     ],
     buildInfo: { ...observation.buildInfo, commit: '0'.repeat(40) },
+    // The production failure of 11 Nov 2026 (#8163): a prefetched history
+    // asset that the zone answers with 503.
+    history: { ...observation.history, status: 503, bytes: 0 },
+    documents: (observation.documents ?? []).map((document) => ({
+      ...document,
+      speculative: [
+        ...(document.speculative ?? []),
+        '/roadmap/assets/history-Abcd1234.json',
+      ],
+    })),
     canonical: {
       ...observation.canonical,
       // The production failure of 11 Nov 2026: a client-render fallback
@@ -309,8 +373,31 @@ function probe(port, path, host) {
   });
 }
 
-export async function observeWorker(port, expectedCommit) {
+/** The hashed history JSON the client build emitted, as a public path. */
+export function emittedHistoryAsset(root = appRoot()) {
+  const dir = join(root, 'dist/client/roadmap/assets');
+  if (!existsSync(dir)) return null;
+  const file = readdirSync(dir).find((name) =>
+    /^history-[A-Za-z0-9_-]{8,}\.json$/.test(name)
+  );
+  return file ? `/roadmap/assets/${file}` : null;
+}
+
+export async function observeWorker(port, expectedCommit, root = appRoot()) {
   const canonical = await probe(port, '/roadmap', 'tuturuuu.com');
+  const documents = [];
+  for (const path of PUBLIC_DOCUMENT_PATHS) {
+    const result = await probe(port, path, 'tuturuuu.com');
+    documents.push({
+      path,
+      status: result.status,
+      speculative: speculativeLinks(result.body),
+    });
+  }
+  const historyPath = emittedHistoryAsset(root);
+  const historyResult = historyPath
+    ? await probe(port, historyPath, 'tuturuuu.com')
+    : null;
   const redirects = [];
   for (const expected of REDIRECT_CHAINS) {
     const result = await probe(port, expected.path, expected.host);
@@ -346,6 +433,15 @@ export async function observeWorker(port, expectedCommit) {
     expectedCommit,
     showPlans,
     canonical,
+    documents,
+    history: historyResult
+      ? {
+          url: historyPath,
+          status: historyResult.status,
+          contentType: historyResult.contentType,
+          bytes: historyResult.bytes.length,
+        }
+      : { url: null },
     satellite,
     satelliteQuery,
     redirects,
@@ -499,7 +595,10 @@ export function doctorFetch(port) {
 }
 
 const DOCTOR_ASSET_PAGES = [
-  { url: CANONICAL_URL, status: 200 },
+  ...PUBLIC_DOCUMENT_PATHS.map((path) => ({
+    url: `https://tuturuuu.com${path}`,
+    status: 200,
+  })),
   {
     url: 'https://tuturuuu.com/roadmap/',
     status: 301,
