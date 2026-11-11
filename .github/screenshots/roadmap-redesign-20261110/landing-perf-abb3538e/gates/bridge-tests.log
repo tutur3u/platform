@@ -1,9 +1,0 @@
-
- RUN  v5.0.5 WORKSPACE/packages/start-bridge
-
-
- Test Files  1 passed (1)
-      Tests  14 passed (14)
-   Start at  23:19:12
-   Duration  119ms (import 46%, tests 36%, transform 16%, worker 2%)
-
