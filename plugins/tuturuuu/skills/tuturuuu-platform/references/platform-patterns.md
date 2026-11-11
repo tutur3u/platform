@@ -1484,6 +1484,11 @@ production-like preview refusal in the source auth matrix.
 
 ### Workspace picker component verification
 
+For additive client module-provenance qualification and its limits, follow
+`apps/docs/build/devops/native-start-migration.mdx#client-module-provenance-qualification`.
+Keep graph/hash evidence separate from nonce serialization and browser runtime
+acceptance; preserve the server bootstrap edges while qualifying client roots.
+
 The network-fenced fictional fixture and capture matrix are documented in
 `apps/docs/platform/features/hidden-workspaces.mdx` under isolated component
 verification. Preserve cached list choices on refresh failure, explicit retry,
