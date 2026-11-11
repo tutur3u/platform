@@ -1,11 +1,9 @@
-'use client';
-
 import {
   Calendar,
   CheckCircle2,
   Sparkles,
   Timer,
-} from '@tuturuuu/icons/lucide';
+} from '@/components/landing/shared/static-icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';

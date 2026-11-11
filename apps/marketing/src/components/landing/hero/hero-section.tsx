@@ -1,4 +1,7 @@
-import { ArrowRight, PlayCircle } from '@tuturuuu/icons/lucide';
+import {
+  ArrowRight,
+  PlayCircle,
+} from '@/components/landing/shared/static-icons';
 import { useTranslations } from 'next-intl';
 import { HeroAtmosphere } from '../shared/atmosphere';
 import { rise } from '../shared/rise';
@@ -44,7 +47,7 @@ export function HeroSection() {
           <p
             {...rise(
               2,
-              'mt-8 max-w-xl text-balance text-base text-foreground/55 leading-relaxed sm:text-lg'
+              'mt-8 max-w-xl text-balance text-base text-foreground/70 leading-relaxed sm:text-lg'
             )}
           >
             {t('description')}

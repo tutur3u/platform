@@ -1,0 +1,48 @@
+/* Static decoration keeps content readable without continuous painting. */
+.landing-lite *,
+.landing-lite *::before,
+.landing-lite *::after {
+  animation: none !important;
+}
+
+.landing-lite section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 800px;
+}
+
+.landing-lite section:first-of-type {
+  content-visibility: visible;
+}
+
+@media (max-width: 1023px), (prefers-reduced-motion: reduce), (update: slow) {
+  .landing-lite [class*="blur-"],
+  .landing-lite [class*="blur("],
+  .landing-lite [class*="backdrop-blur"] {
+    filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .landing-lite [class*="mix-blend-"] {
+    mix-blend-mode: normal;
+  }
+
+  .landing-lite [aria-hidden][class*="blur-"] {
+    display: none;
+  }
+}
+
+.landing-lite [class*="blur-"],
+.landing-lite [class*="backdrop-blur"] {
+  filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.landing-lite [class*="mix-blend-"] {
+  mix-blend-mode: normal;
+}
+
+@media (max-width: 1023px), (prefers-reduced-motion: reduce) {
+  #navbar-content {
+    backdrop-filter: none;
+  }
+}

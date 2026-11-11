@@ -26,6 +26,7 @@ import { MARKETING_PRODUCT_GROUPS } from './marketing-nav/products';
 import { type NavItem, useNavigation } from './shared/navigation-config';
 
 interface MenuProps {
+  initiallyOpen?: boolean;
   sbUser: SupabaseUser | null;
   user: WorkspaceUser | null;
 }
@@ -72,9 +73,9 @@ const MobileNavLink: React.FC<NavLinkProps> = ({
   onClick,
 }) => <NavLink item={item} className={className} onClick={onClick} />;
 
-export function MobileMenu({ sbUser, user }: MenuProps) {
+export function MobileMenu({ sbUser, user, initiallyOpen = false }: MenuProps) {
   const t = useTranslations();
-  const [isOpened, setIsOpened] = useState(false);
+  const [isOpened, setIsOpened] = useState(initiallyOpen);
   const closeMenu = () => setIsOpened(false);
 
   const { categories } = useNavigation(t);
@@ -86,7 +87,10 @@ export function MobileMenu({ sbUser, user }: MenuProps) {
 
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
-      <SheetTrigger className="rounded-lg p-2 transition-all hover:bg-accent active:bg-accent/80">
+      <SheetTrigger
+        aria-label={t('common.main_navigation')}
+        className="rounded-lg p-2 transition-all hover:bg-accent active:bg-accent/80"
+      >
         <MenuIcon className="h-5 w-5" />
       </SheetTrigger>
 
