@@ -13,6 +13,6 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5197,
     strictPort: true,
-    fs: { deny: ['**/.void/**', '**/.void-wrangler.jsonc', '**/.env*'] },
+    fs: { deny: ['**/.void/**', '**/.void-*', '**/.env*'] },
   },
 });
