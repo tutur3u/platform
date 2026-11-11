@@ -10,6 +10,7 @@ import { describe, it } from 'node:test';
 import './csp.test.ts';
 import './history/history.test.ts';
 import './live/regressions.test.ts';
+import './content/workshops/edufest-2026.test.ts';
 import { comingSoon, visibleComingSoon } from './content/coming-soon.ts';
 import { showPlans, tracks } from './content/tracks.ts';
 import {
