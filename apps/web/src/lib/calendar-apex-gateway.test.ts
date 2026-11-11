@@ -264,7 +264,10 @@ describe('fallback proxy upstream allowlist', () => {
       async (_input: RequestInfo | URL, _init?: RequestInit) =>
         new Response('calendar', { status: 200 })
     );
-  const call = (upstream: string | undefined, env = proxyOn) => {
+  const call = (
+    upstream: string | undefined,
+    env: Record<string, string | undefined> = proxyOn
+  ) => {
     const fetchImpl = okFetch();
     return proxyCalendarBareQueryRequest(
       req('https://tuturuuu.com/calendar?x=1', {
