@@ -26,13 +26,13 @@
     "stageLessonTitle": "Để AI Agent lên kế hoạch cho tuần học",
     "stageBullets": [
       "Giao mục tiêu, không giao từng bước",
-      "Yêu cầu Agent tự rà soát kế hoạch",
-      "Quyết định phần việc nào cần con người"
+      "Yêu cầu AI Agent tự rà soát kế hoạch",
+      "Quyết định phần việc nào cần đến con người"
     ],
-    "stageYou": "Bạn",
-    "stageTyping": "Làm sao để Agent tự kiểm tra lại kế hoạch của nó?",
+    "stageYou": "Thầy cô",
+    "stageTyping": "Làm sao để AI Agent tự kiểm tra lại kế hoạch của chính nó?",
     "stageHint": "Gợi ý",
-    "stageReply": "Thử yêu cầu Agent liệt kê những điểm có thể sai trước, rồi sửa từng điểm một.",
+    "stageReply": "Thử yêu cầu AI Agent liệt kê trước những điểm có thể sai, rồi sửa từng điểm một.",
     "factsLabel": "Thông tin sự kiện"
   },
   "status": {
@@ -138,15 +138,15 @@
       }
     },
     "practise": {
-      "question": "Vòng lặp của em chạy mãi không dừng. Em sót chỗ nào ạ?",
-      "off": "Lúc luyện tập, hỗ trợ AI đang tắt. Em thử cùng bạn tìm lỗi trước nhé.",
-      "hints": "Em xem lại dòng thay đổi biến đếm. Biến đó có bao giờ chạm tới mốc làm vòng lặp dừng không?",
-      "full": "Biến đếm không bao giờ tăng. Thêm count = count + 1 vào trong vòng lặp, chương trình sẽ dừng sau 10 lần."
+      "question": "Vòng lặp của em chạy mãi không dừng. Em bỏ sót chỗ nào ạ?",
+      "off": "Lúc luyện tập, hỗ trợ AI đang tắt. Em thử cùng bạn tìm ra lỗi trước nhé.",
+      "hints": "Em xem lại dòng thay đổi biến đếm nhé. Biến đó có bao giờ chạm tới mốc khiến vòng lặp dừng không?",
+      "full": "Biến đếm của em không bao giờ tăng. Hãy thêm count = count + 1 vào trong vòng lặp, và chương trình sẽ dừng sau 10 lần."
     },
     "check": {
       "off": "Đang làm bài kiểm tra: hỗ trợ AI bị khoá cho tới khi cả lớp nộp bài.",
-      "hints": "Trả lời sai? AI Agent đưa một gợi ý trước khi em làm lại lần hai.",
-      "full": "Khi bài kiểm tra kết thúc, AI Agent giải thích từng đáp án theo từng bước."
+      "hints": "Trả lời sai? AI Agent sẽ đưa một gợi ý trước khi em làm lại lần hai.",
+      "full": "Khi bài kiểm tra kết thúc, AI Agent giải thích từng đáp án, từng bước một."
     }
   },
   "flow": {
