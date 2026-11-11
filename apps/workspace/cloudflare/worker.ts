@@ -10,13 +10,14 @@ import {
 } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import { config as proxyConfig, proxy } from '../src/proxy';
-import appConfig from '../start-bridge.config';
+import appConfig, { resolveWebApiOrigin } from '../start-bridge.config';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 
 export interface WorkspaceEnvironment {
   ASSETS: AssetsBinding;
   INTERNAL_WEB_API_ORIGIN?: string;
+  TUTURUUU_WEB_API_HOSTS?: string;
   TUTURUUU_NOINDEX?: string;
 }
 
@@ -65,8 +66,7 @@ const handler = (
     functionProxy: createFunctionProxy({ targetApp: 'workspace' }),
     publicAssets,
     assets: (env) => env.ASSETS,
-    centralApiOrigin: (env) =>
-      env.INTERNAL_WEB_API_ORIGIN ?? 'https://tuturuuu.com',
+    centralApiOrigin: (env) => resolveWebApiOrigin(env),
   })
 );
 
@@ -74,6 +74,10 @@ export default {
   async fetch(request: Request, env: WorkspaceEnvironment, ctx: WorkerContext) {
     let response: Response;
     try {
+      // Refuse every request before any app code runs when the Web API origin
+      // binding is set to anything but an allowlisted https origin: server
+      // code reads the same variable for credentialed internal API calls.
+      resolveWebApiOrigin(env);
       response = await (await handler)(request, env, ctx);
     } catch (error) {
       // Even a failed route load answers through the response policy.

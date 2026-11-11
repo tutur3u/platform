@@ -158,6 +158,12 @@ test(
           type: 'plain_text',
           value: 'https://central.invalid',
         },
+        // The Worker refuses an origin outside the Web allowlist; the
+        // outbound service still denies every request to it.
+        TUTURUUU_WEB_API_HOSTS: {
+          type: 'plain_text',
+          value: 'central.invalid',
+        },
       },
       build: { bundle: false, processEntrypoint: false },
       dev: {
