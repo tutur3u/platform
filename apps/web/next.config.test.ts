@@ -1,3 +1,4 @@
+import { isCsrfOriginAllowed } from 'next/dist/server/app-render/csrf-protection';
 // @vitest-environment node
 import { modifyRouteRegex } from 'next/dist/lib/redirect-status';
 import { getPathMatch } from 'next/dist/shared/lib/router/utils/path-match';
@@ -65,5 +66,21 @@ describe('web next config headers', () => {
     expect(headers.get('content-security-policy')).toBe(
       "frame-ancestors 'none'"
     );
+  });
+});
+
+describe('public gateway server action origin', () => {
+  it('admits only the exact public host across the private origin hop', async () => {
+    const { default: config } = await import('./next.config');
+    const allowed = config.experimental?.serverActions?.allowedOrigins ?? [];
+    expect(allowed).toEqual(['tuturuuu.com']);
+    expect(isCsrfOriginAllowed('tuturuuu.com', allowed)).toBe(true);
+    for (const host of [
+      'evil.example',
+      'evil.tuturuuu.com',
+      'tuturuuu.com.evil.example',
+    ]) {
+      expect(isCsrfOriginAllowed(host, allowed)).toBe(false);
+    }
   });
 });

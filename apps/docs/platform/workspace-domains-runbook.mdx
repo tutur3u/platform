@@ -1,0 +1,132 @@
+---
+title: "Workspace domains runbook"
+description: "Configure, deploy, and operate workspace custom domains and the edge Worker."
+updatedAt: "2026-11-11"
+---
+
+# Workspace domains runbook
+
+Policy and decisions: [Workspace domains: access and abuse controls](/platform/domain-gating-design).
+
+## Components
+
+| Component | Location | Role |
+| --- | --- | --- |
+| Edge Worker `tuturuuu-workspace-domains` | `apps/workspace-domains` | Serves every bound host. Declares no routes; apps/web attaches `<host>/*` per domain. |
+| Domain API | `apps/web/src/app/api/v1/workspaces/[wsId]/domains` | List, add, verify, remove. |
+| Edge resolve API | `apps/web/src/app/api/v1/workspace-domains/resolve` | Host to public workspace facts, shared-secret auth. |
+| Edge site API | `apps/web/src/app/api/v1/workspace-domains/site` | Published site content for an active, entitled host, shared-secret auth. |
+| Policy and data | `20261111120000`, `20261111120100` migrations | Tables, entitlement, serving policy, kill switch. |
+| Add-on reconciliation | `packages/payment-core/src/workspace-domain-addon.ts` | Polar subscription to `private.workspace_domain_addons`. |
+
+## Environment
+
+apps/web (server only):
+
+| Variable | Purpose |
+| --- | --- |
+| `CLOUDFLARE_SAAS_API_TOKEN` | **Sensitive.** Token scoped to the SaaS zone only (scopes below). Without it, verified domains stay `verifying` with `provider_not_configured`. |
+| `CLOUDFLARE_SAAS_ZONE_ID` | SaaS zone ID (32 hex characters). Production: the `ttr.gg` zone. |
+| `CLOUDFLARE_SAAS_ACCOUNT_ID` | Account that owns the SaaS zone and the Worker (falls back to `CLOUDFLARE_ACCOUNT_ID`). apps/web calls zone-scoped APIs only; deploy tooling uses it. |
+| `WORKSPACE_DOMAINS_PLATFORM_APEX` | Apex for `<label>.<apex>` platform subdomains. Production: `ttr.gg`. Unset disables platform subdomains (fail closed). Existing `ttr.gg` hosts stay reserved whatever the value. |
+| `WORKSPACE_DOMAINS_FALLBACK_ORIGIN` | Cloudflare for SaaS fallback origin that custom hostnames CNAME (or ALIAS) to, shown in the settings page and `ttr domains list`. Production: `saas.ttr.gg`. Unset disables adding custom domains. |
+| `CLOUDFLARE_SAAS_SSL_METHOD` | Optional `http` (default) or `txt` DCV for custom hostnames. |
+| `WORKSPACE_DOMAINS_WORKER_SCRIPT` | Optional Worker name, default `tuturuuu-workspace-domains`. |
+| `WORKSPACE_DOMAINS_EDGE_SECRET` | Shared secret (at least 32 characters) for the resolve API. Unset returns 503. |
+| `WORKSPACE_DOMAINS_BILLING_ENABLED` | `true` (with the product ID below) shows add-on checkout links. Otherwise billing shows as "coming soon". |
+| `WORKSPACE_DOMAINS_POLAR_PRODUCT_ID` | Polar product ID of the add-on. Checkout links stay hidden while it is unset. |
+
+Worker (`apps/workspace-domains`):
+
+| Binding | Kind | Purpose |
+| --- | --- | --- |
+| `RESOLVE_URL` | var | apps/web origin, default `https://tuturuuu.com`. |
+| `WORKSPACE_DOMAINS_EDGE_SECRET` | secret | Same value as apps/web. |
+| `STATIC_HOST_MAP` | secret | Optional bootstrap JSON `{"host": {"wsId": "<uuid>", "name": "<name>"}}`. Used while `WORKSPACE_DOMAINS_EDGE_SECRET` is unset, and as a logged fallback when the resolver fails (network error or 5xx). With the secret set, a resolver 404 is final and the host is not served. Bootstrap hosts get the landing page only. |
+
+## Cloudflare setup
+
+The zone, apex and fallback origin are configuration, not code. Production uses
+the values below; moving the SaaS zone means changing the environment, the
+token and the Worker's account, then re-verifying domains.
+
+1. **SaaS zone** (production `ttr.gg`). Enable SSL for SaaS, create the fallback
+   origin (production `saas.ttr.gg`, a proxied record), and keep the existing
+   platform hosts (`ttr.gg`, `www.ttr.gg`, `fysh.ttr.gg`) on their routes. They
+   stay reserved in the hostname policy; any other existing record or route on
+   the zone also blocks that name from becoming a platform subdomain.
+2. **API token for apps/web**, the SaaS zone only: DNS Edit (platform subdomain
+   records and conflict checks), SSL and Certificates Edit (custom hostnames),
+   Workers Routes Edit (per-host routes and conflict checks). No account-level
+   permissions. Store it as a sensitive environment variable.
+3. **Deploy token** (operator only): account Workers Scripts Edit for publishing
+   `tuturuuu-workspace-domains`. Do not give this scope to apps/web.
+
+### Personal-account dependency
+
+The production SaaS zone `ttr.gg` lives in the owner's personal Cloudflare
+account, not a Tuturuuu organization account. Consequences:
+
+- **Rex** owns rotation of `CLOUDFLARE_SAAS_API_TOKEN`.
+- **Selene** scopes the token to `ttr.gg` only, with DNS Edit, SSL and
+  Certificates Edit and Workers Routes Edit, and keeps it a sensitive
+  environment variable.
+- Losing access to that account stops new domains and certificate renewals;
+  existing records keep serving until removed. Moving to an organization zone
+  is a configuration change (zone ID, account ID, apex, fallback origin, token)
+  plus re-verification of every domain.
+
+## Deploy the Worker
+
+```bash
+cd apps/workspace-domains
+bunx wrangler deploy --dry-run --outdir dist   # bundle check, no upload
+bunx wrangler secret put WORKSPACE_DOMAINS_EDGE_SECRET
+bunx wrangler secret put STATIC_HOST_MAP        # optional bootstrap
+bunx wrangler deploy
+```
+
+The Worker has `workers_dev` and preview URLs off and no routes. For a bootstrap
+host before apps/web ships, attach a route manually: Workers Routes, pattern
+`<host>/*`, Worker `tuturuuu-workspace-domains`, and point the host at the zone
+(custom hostname for external domains, proxied record for a platform subdomain).
+The bootstrap hosts `vhp.ttr.gg` and `vohoangphuc.com` are seeded by migration
+`20261111120200`; their operator-made routes are not tracked on the rows, so
+removing them through the API leaves those routes for manual cleanup.
+
+The Worker reads published content from the edge site API, never from the
+public delivery route, which requires a session in production. Site answers
+contain published entries only, with an allowlist of fields and absolute asset
+URLs on the app origin.
+
+Worker behavior: GET and HEAD only (405 otherwise), `/__health` returns `ok`,
+`/robots.txt` for known hosts, 404 for unknown hosts, strict CSP without scripts,
+`nosniff`, HSTS, no cookies. Resolve and site answers are cached for 60 seconds
+with the Cache API. Origin requests send `User-Agent: tuturuuu-workspace-domains/1`
+because apps/web rejects anonymous API calls without one.
+
+## Polar add-on (billing launch)
+
+Do not create the product until billing is approved. Then:
+
+1. Create a recurring Polar product priced at $10 per unit per month, seat-based so
+   the quantity is the number of domains, with metadata
+   `product_kind: custom_domain_addon`.
+2. Set `WORKSPACE_DOMAINS_POLAR_PRODUCT_ID` to its ID.
+3. Webhooks from the existing Polar endpoint reconcile subscriptions into
+   `private.workspace_domain_addons`; product sync skips the add-on so it never
+   appears as a plan.
+4. After preview sign-off, set
+   `update private.workspace_domain_settings set paid_addon_enabled = true;` and
+   `WORKSPACE_DOMAINS_BILLING_ENABLED=true`.
+
+## Operations
+
+- **Kill switch:** `update private.workspace_domain_settings set enabled = false;`
+  blocks adds, verification and serving through the resolver (the Worker returns
+  404 once its 60-second cache expires; clear `STATIC_HOST_MAP` too).
+- **Cap override:** insert into `private.workspace_domain_caps (ws_id, domain_cap, reason)`.
+- **Audit:** `private.workspace_domain_audit` by `ws_id`, newest first.
+- **Stuck provider cleanup:** removed rows keep their Cloudflare IDs and an `error`
+  such as `provider_cleanup_403`; delete those resources manually.
+- **CLI:** `ttr domains list|add <host>|verify <host>|remove <host> --confirm <host> --workspace <id> [--json]`.

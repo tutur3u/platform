@@ -21,7 +21,7 @@ function passingRaw() {
     canonical: {
       status: 200,
       cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
-      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><link rel="prefetch" href="/roadmap/assets/history-Abcd1234.json" as="fetch"/><h2 id="timeline-title">Timeline</h2><meta property="og:url" content="https://tuturuuu.com/roadmap"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><header id="navbar"><a href="https://tuturuuu.com/home"><img alt="Tuturuuu" src="${LOGO}"></a><a href="https://tuturuuu.com/login">Get Started</a></header><div id="main-content"><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div><footer></footer>`,
+      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><link rel="prefetch" href="/roadmap/assets/history-Abcd1234.json" as="fetch"/><h2 id="timeline-title">Timeline</h2><meta property="og:url" content="https://tuturuuu.com/roadmap"/><meta property="og:image" content="https://tuturuuu.com/roadmap/assets/og-roadmap-Abcd1234.png"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><header id="navbar"><a href="https://tuturuuu.com/home"><img alt="Tuturuuu" src="${LOGO}"></a><a href="https://tuturuuu.com/login">Get Started</a></header><div id="main-content"><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div><footer></footer>`,
     },
     satellite: { status: 301, location: 'https://tuturuuu.com/roadmap' },
     redirects: REDIRECT_CHAINS.map((chain) => ({
@@ -228,4 +228,16 @@ test('D79/D87 A5: script text inside an attribute is not counted as an inline sc
     inlineScriptHashes('<div title="<script>alert(1)</script>"></div>'),
     []
   );
+});
+
+test('D79: a client-render fallback or a missing og:image fails the doctor', () => {
+  const { ok, failures } = assessDoctor(brokenVariant(passing()));
+  assert.equal(ok, false);
+  assert.ok(
+    failures.includes(
+      'canonical HTML fell back to client rendering (server render failed)'
+    ),
+    failures.join('\n')
+  );
+  assert.ok(failures.includes('canonical HTML missing an absolute og:image'));
 });

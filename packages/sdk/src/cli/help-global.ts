@@ -15,6 +15,7 @@ export function getGlobalHelp() {
     '  config set-base-url <url>',
     '  box <run|lease|release|preview|agent|shutdown|cache|doctor|setup|repair>',
     '  external <apps|templates|binding|projects>  configure and manage external sites',
+    '  domains <list|add|verify|remove>  bind custom domains to a workspace',
     '  calendar <events|schedule|sources|calendars|categories|accounts|auth|provider-calendars|connections>',
     '  finance <wallets|checkpoints|transactions|transfers|categories|tags|budgets|recurring>',
     '  workspaces [list]|use [id]',
