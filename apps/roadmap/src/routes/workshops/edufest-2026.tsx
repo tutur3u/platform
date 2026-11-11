@@ -7,6 +7,7 @@ import {
 import { type CSSProperties, useMemo, useState } from 'react';
 import en from '../../../messages/edufest-2026.en.json';
 import vi from '../../../messages/edufest-2026.vi.json';
+import ogImage from '../../assets/og-edufest-2026.png?no-inline';
 import logo from '../../assets/tuturuuu-logo.png?no-inline';
 import type { Lang } from '../../components/shared';
 import {
@@ -23,8 +24,7 @@ import {
   WORKSHOP_PATH,
   WORKSHOP_URL,
 } from '../../content/workshops/edufest-2026';
-import generated from '../../generated/live.json';
-import { parseLiveData } from '../../live/model';
+import { initialLiveData } from '../../live/initial-data';
 import { useLiveData } from '../../live/use-live-data';
 
 export const Route = createFileRoute('/workshops/edufest-2026')({
@@ -35,6 +35,17 @@ export const Route = createFileRoute('/workshops/edufest-2026')({
       { property: 'og:title', content: en.meta.title },
       { property: 'og:description', content: en.meta.description },
       { property: 'og:url', content: WORKSHOP_URL },
+      // Absolute: link previews fetch it without the page's base URL.
+      { property: 'og:image', content: `https://tuturuuu.com${ogImage}` },
+      { property: 'og:image:width', content: '1200' },
+      { property: 'og:image:height', content: '630' },
+      { property: 'og:image:alt', content: en.meta.title },
+      { property: 'og:locale', content: 'en_GB' },
+      { property: 'og:locale:alternate', content: 'vi_VN' },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: en.meta.title },
+      { name: 'twitter:description', content: en.meta.description },
+      { name: 'twitter:image', content: `https://tuturuuu.com${ogImage}` },
     ],
     links: [
       { rel: 'canonical', href: WORKSHOP_URL },
@@ -47,11 +58,10 @@ export const Route = createFileRoute('/workshops/edufest-2026')({
   component: EduFestWorkshopPage,
 });
 
-const initialData = parseLiveData(generated);
-
 function EduFestWorkshopPage() {
   const [lang, setLang] = useState<Lang>('en');
   const t = lang === 'en' ? en : vi;
+  const initialData = initialLiveData();
   const live = useLiveData(initialData);
   const statuses = useWorkshopStatuses(live.data);
   const shellT = useMemo(() => createTranslator(lang), [lang]);

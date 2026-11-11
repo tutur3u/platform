@@ -14,14 +14,16 @@ import { HostingSection, Method } from '../components/hosting';
 import type { Lang } from '../components/shared';
 import { TimelineSection } from '../components/timeline';
 import { TracksSection } from '../components/tracks';
+import ogImage from '../assets/og-roadmap.png?no-inline';
 import historyUrl from '../generated/history.json?url';
-import generated from '../generated/live.json';
-import { parseLiveData } from '../live/model';
+import { initialLiveData } from '../live/initial-data';
 import { useLiveData } from '../live/use-live-data';
 import { buildView, type StatusFilter } from '../view-model';
 
 /** Canonical: no trailing slash, like every Tuturuuu URL. */
 const ROADMAP_URL = 'https://tuturuuu.com/roadmap';
+const ROADMAP_DESCRIPTION =
+  'What Tuturuuu is building: every product track, milestone and deliverable, with what shipped this week, live from public pull requests and deploy checks.';
 
 export const Route = createFileRoute('/')({
   head: () => ({
@@ -29,11 +31,20 @@ export const Route = createFileRoute('/')({
       { title: 'Roadmap · Tuturuuu' },
       { property: 'og:title', content: 'Roadmap · Tuturuuu' },
       { property: 'og:url', content: ROADMAP_URL },
+      { name: 'description', content: ROADMAP_DESCRIPTION },
+      { property: 'og:description', content: ROADMAP_DESCRIPTION },
+      // Absolute: link previews fetch it without the page's base URL.
+      { property: 'og:image', content: `https://tuturuuu.com${ogImage}` },
+      { property: 'og:image:width', content: '1200' },
+      { property: 'og:image:height', content: '630' },
       {
-        name: 'description',
-        content:
-          'What Tuturuuu is building: every product track, milestone and deliverable, with what shipped this week, live from public pull requests and deploy checks.',
+        property: 'og:image:alt',
+        content: 'Tuturuuu Roadmap: what is shipping now',
       },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: 'Roadmap · Tuturuuu' },
+      { name: 'twitter:description', content: ROADMAP_DESCRIPTION },
+      { name: 'twitter:image', content: `https://tuturuuu.com${ogImage}` },
     ],
     links: [
       // Full history for the timeline: hashed, immutable, fetched at idle.
@@ -48,8 +59,6 @@ export const Route = createFileRoute('/')({
   component: RoadmapPage,
 });
 
-const initialData = parseLiveData(generated);
-
 function RoadmapPage() {
   const [lang, setLang] = useState<Lang>('en');
   const [filter, setFilter] = useState<StatusFilter>('all');
@@ -58,6 +67,7 @@ function RoadmapPage() {
     setNavCompact(docked);
   }, []);
   const t = lang === 'en' ? en : vi;
+  const initialData = initialLiveData();
   const live = useLiveData(initialData);
   const view = useMemo(
     () => buildView(live.data, live.now),
