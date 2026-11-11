@@ -258,6 +258,10 @@ jobs:
           test "$(node -p "require('./apps/mind/dist/server/wrangler.json').preview_urls")" = false
           test -f apps/mind/dist/server/index.mjs
           test -d apps/mind/dist/client
+          # Source maps carry the original sources and are never uploaded
+          # (upload_source_maps is false); keep them out of the sealed output.
+          find apps/mind/dist/server -name '*.map' -type f -delete
+          test -z "$(find apps/mind/dist/server -name '*.map' -type f)"
       - name: Validate, seal and pack the final production output
         env:
           MIND_SOURCE_SHA: ${{ env.SOURCE_SHA }}
