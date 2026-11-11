@@ -19,6 +19,7 @@ export const WEB_WORKSPACE_ROUTE_SEGMENTS = new Set([
   'datasets',
   'diet',
   'documents',
+  'domains',
   'drive',
   'epm',
   'external-projects',

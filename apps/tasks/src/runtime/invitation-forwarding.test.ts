@@ -23,12 +23,12 @@ describe('Tasks invitation credential forwarding', () => {
         { secret, now }
       ).access.token;
       const headers = new Headers();
-    if (kind === 'cookie') {
-      headers.set('cookie', `${APP_SESSION_COOKIE_NAME}=${token}`);
-    } else {
-      headers.set('authorization', `Bearer ${token}`);
-    }
-    const response = await forwardToCentralApi(
+      if (kind === 'cookie') {
+        headers.set('cookie', `${APP_SESSION_COOKIE_NAME}=${token}`);
+      } else {
+        headers.set('authorization', `Bearer ${token}`);
+      }
+      const response = await forwardToCentralApi(
         new Request('https://tasks.tuturuuu.com/api/workspaces/invitations', {
           headers,
         }),

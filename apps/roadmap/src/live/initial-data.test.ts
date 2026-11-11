@@ -56,7 +56,10 @@ describe('live snapshot parsing and the Workers clock', () => {
   });
 
   it('both pages build their previews from their own og image', () => {
-    for (const file of ['../pages/roadmap.tsx', '../pages/edufest.tsx']) {
+    for (const file of [
+      '../pages/roadmap-head.ts',
+      '../pages/edufest-head.ts',
+    ]) {
       const source = readFileSync(new URL(file, import.meta.url), 'utf8');
       assert.match(
         source,
