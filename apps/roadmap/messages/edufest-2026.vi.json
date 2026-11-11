@@ -1,7 +1,18 @@
 {
   "meta": {
     "title": "Khi thầy cô làm học trò · EduFest 2026",
-    "description": "40 suất trải nghiệm độc quyền tại EduFest 2026. Thầy cô ngồi vào ghế học trò, chinh phục một chủ đề hoàn toàn mới cùng các AI Agent tiên tiến nhất, và tự tay khám phá cách AI đồng hành cùng người dạy lẫn người học."
+    "description": "Hội thảo thực hành về AI cho giáo dục dành cho giáo viên tại EduFest 2026, Đại học RMIT Việt Nam (SGS), ngày 05/12/2026. Thầy cô ngồi vào ghế học trò trong lớp học Agentic AI. Chỉ 40 suất."
+  },
+  "seo": {
+    "crumbHome": "Tuturuuu",
+    "crumbRoadmap": "Lộ trình",
+    "place": {
+      "venueName": "Đại học RMIT Việt Nam, Cơ sở Nam Sài Gòn (SGS), Tòa nhà 2",
+      "streetAddress": "702 Nguyễn Văn Linh, Tân Phong",
+      "locality": "Quận 7",
+      "region": "Thành phố Hồ Chí Minh",
+      "country": "VN"
+    }
   },
   "hero": {
     "eyebrow": "EduFest 2026 · Workshop thực hành",

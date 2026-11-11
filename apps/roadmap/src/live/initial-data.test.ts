@@ -30,14 +30,18 @@ describe('live snapshot parsing and the Workers clock', () => {
     }
   });
 
-  it('no route module parses live data at top level', () => {
-    const root = new URL('../routes/', import.meta.url);
-    const files = readdirSync(root, { recursive: true })
-      .map(String)
-      .filter((file) => file.endsWith('.tsx'));
-    assert.ok(files.length >= 2);
-    for (const file of files) {
-      const source = readFileSync(new URL(file, root), 'utf8');
+  it('no route or page module parses live data at top level', () => {
+    const files = ['../routes/', '../pages/'].flatMap((dir) => {
+      const root = new URL(dir, import.meta.url);
+      return readdirSync(root, { recursive: true })
+        .map(String)
+        .filter((file) => file.endsWith('.tsx'))
+        .map((file) => new URL(file, root));
+    });
+    assert.ok(files.length >= 6);
+    for (const url of files) {
+      const file = url.pathname.split('/src/')[1] ?? url.pathname;
+      const source = readFileSync(url, 'utf8');
       assert.doesNotMatch(
         source,
         /^(?:const|let|var)[^\n]*\b(?:parseLiveData|initialLiveData)\(/m,
@@ -51,22 +55,15 @@ describe('live snapshot parsing and the Workers clock', () => {
     }
   });
 
-  it('both pages declare an absolute og:image and a large Twitter card', () => {
-    for (const file of [
-      '../routes/index.tsx',
-      '../routes/workshops/edufest-2026.tsx',
-    ]) {
+  it('both pages build their previews from their own og image', () => {
+    for (const file of ['../pages/roadmap.tsx', '../pages/edufest.tsx']) {
       const source = readFileSync(new URL(file, import.meta.url), 'utf8');
       assert.match(
         source,
-        /property: 'og:image', content: `https:\/\/tuturuuu\.com\$\{ogImage\}`/,
+        /import ogImage from '\.\.\/assets\/og-[a-z0-9-]+\.png\?no-inline';/,
         file
       );
-      assert.match(
-        source,
-        /name: 'twitter:card', content: 'summary_large_image'/,
-        file
-      );
+      assert.match(source, /socialMeta\(\{[\s\S]*image: ogImage,/, file);
     }
   });
 });

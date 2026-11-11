@@ -3,10 +3,12 @@ import {
   HeadContent,
   Outlet,
   Scripts,
+  useRouterState,
 } from '@tanstack/react-router';
 import { PublicSatelliteProviders } from '@tuturuuu/satellite/public';
 import type { ReactNode } from 'react';
 import logo from '../assets/tuturuuu-logo.png?no-inline';
+import { langFromPathname } from '../seo';
 import styles from '../styles.css?url';
 
 export const Route = createRootRoute({
@@ -49,8 +51,10 @@ export const Route = createRootRoute({
 });
 
 function Document({ children }: { children: ReactNode }) {
+  // Each language has its own URL, so the document language follows it.
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={langFromPathname(pathname)} suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

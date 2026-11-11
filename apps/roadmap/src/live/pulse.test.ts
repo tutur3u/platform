@@ -70,6 +70,22 @@ describe('Upskii is the official mark and always linked', () => {
     );
   });
 
+  it('renders a small downscale of that official logo, not the 998px original', () => {
+    const png = readFileSync(
+      new URL('../assets/upskii-logo-96.png', import.meta.url)
+    );
+    // PNG IHDR: width and height are the big-endian words at bytes 16 and 20.
+    assert.equal(png.readUInt32BE(16), 96);
+    assert.equal(png.readUInt32BE(20), 96);
+    assert.ok(png.length < 20_000, `${png.length} bytes`);
+    const source = readFileSync(
+      new URL('../components/workshop.tsx', import.meta.url),
+      'utf8'
+    );
+    assert.ok(source.includes("from '../assets/upskii-logo-96.png?no-inline'"));
+    assert.ok(!source.includes("upskii-official-logo.png?no-inline'"));
+  });
+
   it('every rendered Upskii mention goes through a linking helper', () => {
     const source = readFileSync(
       new URL('../components/workshop.tsx', import.meta.url),

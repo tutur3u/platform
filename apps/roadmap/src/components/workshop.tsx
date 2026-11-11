@@ -14,7 +14,9 @@ import {
 } from '@tuturuuu/icons';
 import { Fragment, type ReactNode, useId, useMemo, useState } from 'react';
 import type en from '../../messages/edufest-2026.en.json';
-import upskiiLogo from '../assets/upskii-official-logo.png?no-inline';
+// A 96px downscale of the official mark (assets/upskii-official-logo.png):
+// it renders at 16-40px, so the 998px original only cost page weight.
+import upskiiLogo from '../assets/upskii-logo-96.png?no-inline';
 import { tracks } from '../content/tracks';
 import {
   AGENDA,
