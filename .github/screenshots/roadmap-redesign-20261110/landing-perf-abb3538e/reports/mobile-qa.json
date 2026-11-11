@@ -1,0 +1,76 @@
+[
+  {
+    "locale": "en",
+    "initial": {
+      "dom": 1127,
+      "headings": [
+        {
+          "text": "Your Team.One Workspace.",
+          "top": 144,
+          "hidden": false
+        }
+      ],
+      "styles": [
+        {
+          "href": "/assets/layout-CMfDm6hU.css",
+          "crossOrigin": null
+        }
+      ],
+      "scripts": 44,
+      "animations": 0,
+      "brand": true,
+      "overflow": false
+    },
+    "demo": true,
+    "after": {
+      "dom": 6554,
+      "headings": [
+        {
+          "text": "Your Team.One Workspace.",
+          "top": -18558,
+          "hidden": false
+        }
+      ],
+      "animations": 0,
+      "overflow": false
+    },
+    "errors": []
+  },
+  {
+    "locale": "vi",
+    "initial": {
+      "dom": 1127,
+      "headings": [
+        {
+          "text": "Đội nhóm của bạn.Một nơi làm việc.",
+          "top": 144,
+          "hidden": false
+        }
+      ],
+      "styles": [
+        {
+          "href": "/assets/layout-CMfDm6hU.css",
+          "crossOrigin": null
+        }
+      ],
+      "scripts": 44,
+      "animations": 0,
+      "brand": true,
+      "overflow": false
+    },
+    "demo": true,
+    "after": {
+      "dom": 6554,
+      "headings": [
+        {
+          "text": "Đội nhóm của bạn.Một nơi làm việc.",
+          "top": -18699,
+          "hidden": false
+        }
+      ],
+      "animations": 0,
+      "overflow": false
+    },
+    "errors": []
+  }
+]

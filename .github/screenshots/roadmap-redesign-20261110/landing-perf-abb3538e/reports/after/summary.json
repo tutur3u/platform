@@ -1,0 +1,84 @@
+[
+  {
+    "url": "http://127.0.0.1:7847/",
+    "runs": [
+      {
+        "score": 84,
+        "LCP": 3642.2878,
+        "TBT": 0,
+        "CLS": 0,
+        "JSKB": 229.763671875
+      },
+      {
+        "score": 84,
+        "LCP": 3641.8912,
+        "TBT": 0,
+        "CLS": 0,
+        "JSKB": 229.763671875
+      },
+      {
+        "score": 80,
+        "LCP": 4096.5779999999995,
+        "TBT": 0,
+        "CLS": 0,
+        "JSKB": 229.763671875
+      }
+    ],
+    "median": {
+      "score": 84,
+      "LCP": 3642.2878,
+      "TBT": 0,
+      "CLS": 0,
+      "JSKB": 229.763671875
+    },
+    "INPProxy": null,
+    "interactionLog": [
+      "Products",
+      "Resources",
+      "Toggle theme",
+      "theme toggled",
+      "viToggle language"
+    ]
+  },
+  {
+    "url": "http://127.0.0.1:7847/vi",
+    "runs": [
+      {
+        "score": 82,
+        "LCP": 3790.8324000000002,
+        "TBT": 0,
+        "CLS": 0,
+        "JSKB": 229.763671875
+      },
+      {
+        "score": 83,
+        "LCP": 3634.4297500000025,
+        "TBT": 0,
+        "CLS": 0,
+        "JSKB": 229.763671875
+      },
+      {
+        "score": 82,
+        "LCP": 3796.0740000000014,
+        "TBT": 0,
+        "CLS": 0,
+        "JSKB": 229.763671875
+      }
+    ],
+    "median": {
+      "score": 82,
+      "LCP": 3790.8324000000002,
+      "TBT": 0,
+      "CLS": 0,
+      "JSKB": 229.763671875
+    },
+    "INPProxy": 48,
+    "interactionLog": [
+      "C\u00e1c s\u1ea3n ph\u1ea9m",
+      "T\u00e0i nguy\u00ean",
+      "Toggle theme",
+      "theme toggled",
+      "viToggle language"
+    ]
+  }
+]
