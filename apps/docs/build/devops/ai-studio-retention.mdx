@@ -106,7 +106,7 @@ or unknown days stop the job durably in the Cron Control ledger.
   The next batch fails and the run is recorded `failed`.
 - Config: `AI_STUDIO_RETENTION_MODE` back to `dry-run` or `off`, or remove the
   job from `CRON_CONTROL_ENABLED_JOBS`.
-- `apps/database/rollbacks/20261103110000_ai_studio_retention_schedule.rollback.sql`
+- `apps/database/rollbacks/20261111120310_ai_studio_retention_schedule.rollback.sql`
   drops the new functions and keeps the counts-only run log.
 
 **Deleted rows cannot be restored by any switch or rollback**, only from the
