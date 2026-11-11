@@ -785,7 +785,6 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 /* Hosting: summary bar, platform groups, uniform cards. Platform hues are
@@ -964,6 +963,31 @@
 }
 .host-commit.is-empty {
   opacity: 0.35;
+}
+@media (max-width: 559px) {
+  /* Phones: one card per row, name and freshness on one line. */
+  .hosts {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .host-card {
+    min-height: 0;
+    gap: 6px;
+  }
+  .host-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .host-fresh {
+    flex: none;
+  }
+}
+@media (min-width: 560px) {
+  .hosts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (min-width: 720px) {
   .hosts {
