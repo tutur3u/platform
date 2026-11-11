@@ -16,6 +16,7 @@ import {
 import {
   DOCUMENT_BUDGET,
   documentBudgetReport,
+  pendingBoundaryFailures,
   redundantAltFailures,
 } from './doctor-markup.mjs';
 import '../../../scripts/ci/asset-smoke.test.mjs';
@@ -359,5 +360,20 @@ test('D79: a public document over half the CSP size limit fails the doctor', () 
     assessDoctor(observation).failures.some((failure) =>
       failure.includes('size was not measured')
     )
+  );
+});
+
+test('D79: a Suspense boundary left pending on the server fails the doctor', () => {
+  const observation = passing();
+  observation.canonical.body += '<!--$--><section>done</section><!--/$-->';
+  assert.deepEqual(pendingBoundaryFailures(observation.canonical.body), []);
+  // Broken variant: a boundary streamed later (fallback now, content after).
+  observation.canonical.body +=
+    '<!--$?--><template id="B:0"></template><!--/$-->';
+  const verdict = assessDoctor(observation);
+  assert.equal(verdict.ok, false);
+  assert.ok(
+    verdict.failures.some((failure) => failure.includes('pending Suspense')),
+    verdict.failures.join('\n')
   );
 });

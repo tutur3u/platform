@@ -120,6 +120,15 @@ Targets: Lighthouse mobile 90+, LCP under 2.5 s and interaction latency under
   for `:root:not([data-lite])` at 1024px and wider (infinite animations also
   need `prefers-reduced-motion: no-preference`). Below-the-fold sections use
   `content-visibility: auto`.
+- **Split hydration.** Sections below the hero (each track card, the
+  timeline, each EduFest section) sit in `<Suspense>` boundaries. Nothing
+  suspends, so the server renders them complete (the doctor fails a pending
+  `<!--$?-->` boundary); React hydrates them one at a time, yielding between
+  them and starting with the one a reader taps.
+- **Document size.** The doctor fails any public page over half of
+  `MAX_DOCUMENT_BYTES` and prints each page's margin. Past that limit the
+  CSP cannot hash inline scripts; the Worker then serves the page as
+  rendered so its external module entry still loads.
 - **Small renders.** The status filter is local, deferred state over memoised
   track cards; the navbar dock re-renders only the shell; the timeline
   scrubber renders 24 chips around the selected period; each deliverable's

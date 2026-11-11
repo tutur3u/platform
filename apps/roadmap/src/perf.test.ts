@@ -351,3 +351,26 @@ describe('perf and a11y: the timeline scrubber', () => {
     assert.equal(old.startsWith('Now'), false);
   });
 });
+
+describe('perf: hydration is split into section boundaries', () => {
+  /** Components that `source` renders directly inside a <Suspense>. */
+  const wrapped = (source: string) =>
+    [...source.matchAll(/<Suspense(?: key=\{[^}]+\})?>\s*<(\w+)/g)].map(
+      (match) => match[1]
+    );
+
+  it('wraps the timeline, every track card and each EduFest section below the hero', () => {
+    assert.ok(wrapped(read('./pages/roadmap.tsx')).includes('TimelineSection'));
+    assert.ok(wrapped(read('./pages/roadmap.tsx')).includes('HostingSection'));
+    assert.deepEqual(wrapped(read('./components/tracks.tsx')), ['TrackCard']);
+    const edufest = wrapped(read('./pages/edufest.tsx'));
+    for (const section of ['WsSimulator', 'WsCapabilities', 'WsFaq'])
+      assert.ok(edufest.includes(section), section);
+    assert.ok(!edufest.includes('WsHero'), 'the hero hydrates with the shell');
+    // Broken variant: one unsplit list hydrates as a single long task.
+    assert.deepEqual(
+      wrapped('{visible.map((t) => <TrackCard key={t.id} />)}'),
+      []
+    );
+  });
+});

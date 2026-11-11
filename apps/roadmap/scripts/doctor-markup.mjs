@@ -67,3 +67,16 @@ export function documentBudgetReport(documents = []) {
       `document size ${document.path}: ${Math.round(document.size / 1024)} KiB, ${Math.round((1 - document.size / MAX_DOCUMENT_BYTES) * 100)}% under the ${MAX_DOCUMENT_BYTES / 1024} KiB CSP limit (budget ${DOCUMENT_BUDGET / 1024} KiB)`
   );
 }
+
+/**
+ * The pages wrap sections in Suspense only to split hydration; nothing
+ * suspends, so the server must render every boundary complete. A pending
+ * boundary (<!--$?-->) streams its content later through an inline script
+ * and hydrates late.
+ */
+export function pendingBoundaryFailures(html) {
+  const pending = String(html).split('<!--$?-->').length - 1;
+  return pending
+    ? [`canonical HTML streams ${pending} pending Suspense boundaries`]
+    : [];
+}

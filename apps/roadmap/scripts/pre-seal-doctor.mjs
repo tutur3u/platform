@@ -158,6 +158,7 @@ export function assessDoctor(observation) {
   ])
     if (!body.includes(marker)) failures.push(`canonical HTML missing ${name}`);
   failures.push(...markup.redundantAltFailures(body));
+  failures.push(...markup.pendingBoundaryFailures(body));
   if (!MOUNTED_LOGO.test(body))
     failures.push('canonical HTML missing the mounted Tuturuuu logo');
   if (body.includes('public-satellite-shell'))
