@@ -63,16 +63,23 @@ Workspace-local handler and do not add an `apiOrigin` that bypasses Web until th
 guard is restored in the portable package.
 
 That protection holds only while the forward target runs Web's proxy.
-`start-bridge.config.ts` therefore resolves the target through
-`resolveWebApiOrigin` for every forwarded request:
+`start-bridge.config.ts` therefore resolves the origin through
+`resolveWebApiOrigin`, and every Worker read of `INTERNAL_WEB_API_ORIGIN` goes
+through it: the `/api` forward, the proxy rewrite allowlist (`centralApiOrigin`
+in `cloudflare/worker.ts`) and a gate at the top of the Worker's `fetch`.
 
 - `INTERNAL_WEB_API_ORIGIN` unset forwards to `https://tuturuuu.com`.
-- A set value must be an `https` origin with no credentials, port, path, query or
-  fragment, and its host must be `tuturuuu.com`, the built-in staging Web host
-  (`WEB_API_HOSTS` in `start-bridge.config.ts`) or a hostname listed in
+- A set value must be exactly an `https` origin, optionally with one trailing
+  slash: no credentials, port (even `:443`), path, query, fragment or
+  surrounding text. Its host must be `tuturuuu.com`, the built-in staging Web
+  host (`WEB_API_HOSTS` in `start-bridge.config.ts`) or a hostname listed in
   `TUTURUUU_WEB_API_HOSTS`.
-- Anything else throws, and the bridge answers its generic `500` without
-  contacting the target. A blank value is invalid, not unset.
+- Anything else, including a blank value, fails closed: the Worker answers the
+  bridge's generic `500` before any app code runs, forwards nothing and falls
+  back to nothing. That covers pages, `/api` and unknown hosts alike, because
+  server code reads the same variable for credentialed internal API calls, so a
+  bad value must not serve a page either. A misconfigured deploy is visible at
+  once instead of half-serving.
 
 `TUTURUUU_WEB_API_HOSTS` is a comma-separated list of exact dotted hostnames (no
 wildcards, no `localhost`), read from the Worker environment and never derived
@@ -80,8 +87,10 @@ from a request. Set it only on a deployment whose Web origin is not in the
 built-in list, such as a staging Web Worker, and review the value like any other
 binding. The origin is also a binding, so a `localhost` or `http` target is
 refused: run local development against an `https` Web host and list it. The
-runtime suite binds `https://central.invalid` and never forwards an API request,
-so it does not exercise the check; `start-bridge.config.test.ts` does.
+runtime suite binds `https://central.invalid` and lists `central.invalid` in
+`TUTURUUU_WEB_API_HOSTS`, so the Worker serves while its outbound service denies
+every request. `start-bridge.config.test.ts` covers the refusals, including the
+no-forward and generic `500` outcome.
 
 ## CSRF mode and origins
 
