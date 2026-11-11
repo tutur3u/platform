@@ -585,15 +585,16 @@ describe('double-encoded session clearing paths', () => {
   it.each(['off', 'report', 'enforce'] as const)(
     '%s does not re-decode residual escapes',
     (mode) => {
+      const headerCases: Record<string, string>[] = [
+        {},
+        { authorization: 'Bearer junk' },
+        {
+          origin: 'https://workspace.tuturuuu.com',
+          'sec-fetch-site': 'same-site',
+        },
+      ];
       for (const path of ['/api/auth/logout%252F', '/api/auth/%256Cogout']) {
-        for (const headers of [
-          {},
-          { authorization: 'Bearer junk' },
-          {
-            origin: 'https://workspace.tuturuuu.com',
-            'sec-fetch-site': 'same-site',
-          },
-        ]) {
+        for (const headers of headerCases) {
           expect(
             guardWebApiCsrf(request(path, headers), {
               configuredOrigin: 'https://tuturuuu.com',
