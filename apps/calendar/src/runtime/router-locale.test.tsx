@@ -69,7 +69,7 @@ describe('root resolved locale context', () => {
     const markup = renderToString(<RouterProvider router={router} />);
     expect(markup).toContain('lang="vi"');
     expect(markup).toContain('data-provider-locale="vi"');
-    expect(markup).toContain('Không thể tải giao diện này');
+    expect(markup).toContain('Đã có lỗi xảy ra');
   });
   it('renders the same child-loader error contract in resolved English on the server', async () => {
     transport.locale.mockResolvedValue('en');
@@ -78,7 +78,7 @@ describe('root resolved locale context', () => {
     const markup = renderToString(<RouterProvider router={router} />);
     expect(markup).toContain('lang="en"');
     expect(markup).toContain('data-provider-locale="en"');
-    expect(markup).toContain('This view could not load');
+    expect(markup).toContain('Something went wrong');
   });
   it('does not force Vietnamese when the resolved preference is English', async () => {
     transport.locale.mockResolvedValue('en');

@@ -1,11 +1,14 @@
 import {
   createRootRoute,
+  type ErrorComponentProps,
   HeadContent,
   Outlet,
   Scripts,
+  useRouter,
   useRouterState,
 } from '@tanstack/react-router';
 import { PublicSatelliteProviders } from '@tuturuuu/satellite/public';
+import { StatusPage } from '@tuturuuu/ui/custom/status-page';
 import type { ReactNode } from 'react';
 import logo from '../assets/tuturuuu-logo.png?no-inline';
 import { langFromPathname } from '../seo';
@@ -42,13 +45,40 @@ export const Route = createRootRoute({
   }),
   component: Outlet,
   shellComponent: Document,
-  notFoundComponent: () => (
-    <main>
-      <h1>Page not found</h1>
-      <a href="/roadmap">Return to the roadmap</a>
-    </main>
-  ),
+  notFoundComponent: RoadmapNotFound,
+  errorComponent: RoadmapError,
 });
+
+/** Shared Tuturuuu status page in the visitor's roadmap language. */
+function useRoadmapStatus() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const lang = langFromPathname(pathname);
+  return {
+    appName: 'Roadmap',
+    appHref: lang === 'vi' ? '/roadmap/vi' : '/roadmap',
+    locale: lang,
+    logoSrc: logo,
+  };
+}
+
+function RoadmapNotFound() {
+  return <StatusPage {...useRoadmapStatus()} variant="not-found" />;
+}
+
+function RoadmapError({ error, reset }: ErrorComponentProps) {
+  const router = useRouter();
+  if (import.meta.env.SSR) console.error('Roadmap render failed', error);
+  return (
+    <StatusPage
+      {...useRoadmapStatus()}
+      onRetry={() => {
+        reset();
+        void router.invalidate();
+      }}
+      variant="error"
+    />
+  );
+}
 
 function Document({ children }: { children: ReactNode }) {
   // Each language has its own URL, so the document language follows it.
