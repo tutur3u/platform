@@ -3,7 +3,7 @@
 Reuses the Apps seal/restore implementation, defaulting to the Worker identity
 apps/tasks/void.config.ts declares: root-only (no workers.dev route), the
 strict public fetch flag, no vars (the Worker always sends the Tasks SEO
-policy's robots header), no observability block, and static assets served
+policy's robots header), sampled persisted diagnostics without invocation logs, and static assets served
 with html_handling "none". The production profile pins the final rewritten
 identity and vars while preserving the same member, binding and asset gates.
 """
@@ -28,9 +28,12 @@ def load(profile="staging"):
     spec = importlib.util.spec_from_file_location("tasks_native_artifact_base", source)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    identity = {k: v for k, v in module.IDENTITY.items() if k != "observability"}
     module.IDENTITY = {
-        **identity,
+        **module.IDENTITY,
+        "observability": {
+            "enabled": True, "head_sampling_rate": 0.05,
+            "logs": {"enabled": True, "head_sampling_rate": 0.05, "persist": True, "invocation_logs": False},
+        },
         "name": WORKER,
         "compatibility_date": "2026-10-19",
         "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],

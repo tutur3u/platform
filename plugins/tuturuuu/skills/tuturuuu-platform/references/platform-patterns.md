@@ -1481,3 +1481,19 @@ Keep emitted-Worker acceptance behind an explicit `test:runtime` command and
 `.acceptance.mjs` filename so source-only gates cannot invoke it without an
 artifact. Use `.invalid` hosts for isolated runtime preview fixtures; retain
 production-like preview refusal in the source auth matrix.
+
+
+### Native Tasks navigation and diagnostics
+
+The catch-all native Tasks route pairs its resolved model with its loaded
+pathname. Hide it when the router location differs, before awaiting the next
+server function, and key board/workspace state by actor and resource identity.
+Do not use a previous board's local snapshot as a loading placeholder. See
+`apps/tasks/src/runtime/page-transition-router.test.tsx` and the Tasks
+application page for the query-only navigation exception.
+
+Tasks artifact validation follows `.wrangler/deploy/config.json` to the emitted
+Wrangler config and requires 5% sampling, persisted logs and disabled invocation
+logs in both profiles. Diagnostics must use fixed classifications without raw
+errors or report URLs. Privacy review includes reachable API handlers and shared
+dependencies, not just the Worker entrypoint; see the Tasks native runbook.

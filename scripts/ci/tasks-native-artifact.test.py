@@ -56,7 +56,10 @@ class TasksArtifactTest(unittest.TestCase):
         self.assertEqual(artifact.IDENTITY["compatibility_flags"], ["nodejs_compat", "global_fetch_strictly_public"])
         self.assertIs(artifact.IDENTITY["workers_dev"], False)
         self.assertEqual(artifact.IDENTITY["vars"], {})
-        self.assertNotIn("observability", artifact.IDENTITY)
+        self.assertEqual(artifact.IDENTITY["observability"], {
+            "enabled": True, "head_sampling_rate": 0.05,
+            "logs": {"enabled": True, "head_sampling_rate": 0.05, "persist": True, "invocation_logs": False},
+        })
         self.assertEqual(artifact.ASSET_POLICY["html_handling"], "none")
         self.assertNotIn("html_handling", base.ASSET_POLICY)
         self.assertEqual(artifact.RECEIPT, "tasks-native-artifact.json")
@@ -71,7 +74,9 @@ class TasksArtifactTest(unittest.TestCase):
         self.assertIn("compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public']", source)
         self.assertIn("workers_dev: false", source)
         self.assertIn("html_handling: 'none'", source)
-        self.assertNotIn("observability", source)
+        self.assertIn("head_sampling_rate: 0.05", source)
+        self.assertIn("persist: true", source)
+        self.assertIn("invocation_logs: false", source)
         self.assertNotIn("vars:", source)
 
     def test_seal_pack_restore_round_trip(self):
@@ -135,6 +140,29 @@ class TasksArtifactTest(unittest.TestCase):
                 (app / "dist/native/wrangler.json").write_text(json.dumps({**config, "assets": assets}))
                 with self.assertRaisesRegex(ValueError, message):
                     artifact.validate_output(app)
+
+    def test_observability_drift_is_rejected_through_deploy_redirect(self):
+        for profile in ("staging", "production"):
+            owner = wrapper.load(profile)
+            app, config = self.production_fixture() if profile == "production" else self.fixture()
+            redirect = json.loads((app / base.REDIRECT).read_text())
+            emitted = (app / base.REDIRECT).parent / redirect["configPath"]
+            owner.validate_output(app)
+            expected = config["observability"]
+            for drift in (
+                None,
+                {**expected, "enabled": False},
+                {**expected, "head_sampling_rate": 1},
+                {**expected, "logs": {**expected["logs"], "persist": False}},
+                {**expected, "logs": {**expected["logs"], "invocation_logs": True}},
+            ):
+                with self.subTest(profile=profile, drift=drift):
+                    candidate = {**config, "observability": drift}
+                    if drift is None:
+                        candidate.pop("observability")
+                    emitted.write_text(json.dumps(candidate))
+                    with self.assertRaises(ValueError):
+                        owner.validate_output(app)
 
     def test_cli_requires_the_tasks_source_channel(self):
         app, _ = self.fixture()
