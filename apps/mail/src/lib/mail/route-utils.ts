@@ -57,7 +57,13 @@ export async function withMailContext(
     });
 
     if (error instanceof MailSendError) {
-      return NextResponse.json({ error: error.message }, { status: 502 });
+      return NextResponse.json(
+        {
+          error: 'Mail delivery could not be confirmed',
+          code: 'MAIL_SEND_UNCONFIRMED',
+        },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json(

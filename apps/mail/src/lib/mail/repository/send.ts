@@ -226,14 +226,11 @@ export async function sendMailMessage({
           });
 
     const now = new Date().toISOString();
-    // A rejected or unconfirmed send returns to the drafts so it can be retried;
-    // a provider-accepted message with bounced recipients stays failed.
-    const keepFailed = result.deliveryOutcome === 'accepted';
     const nextStatus = result.success
       ? 'sent'
-      : keepFailed
-        ? 'failed'
-        : 'draft';
+      : result.deliveryOutcome === 'rejected'
+        ? 'draft'
+        : 'failed';
 
     await Promise.all([
       mailMessageTable(access, ctx)
@@ -278,7 +275,7 @@ export async function sendMailMessage({
     });
     await Promise.allSettled([
       mailMessageTable(access, ctx)
-        .update({ status: 'draft' })
+        .update({ status: 'failed' })
         .eq('id', message.id),
       outboundJobId
         ? privateTable(access.admin, 'mail_outbound_jobs')

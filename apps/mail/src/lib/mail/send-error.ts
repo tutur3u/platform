@@ -1,16 +1,12 @@
+export const MAIL_SEND_PUBLIC_MESSAGE = 'Mail delivery could not be confirmed';
+
 export class MailSendError extends Error {
-  constructor(message: string, options?: { cause?: unknown }) {
-    super(message, options);
+  constructor(_message: string, options?: { cause?: unknown }) {
+    super(MAIL_SEND_PUBLIC_MESSAGE, options);
     this.name = 'MailSendError';
   }
 }
 
-export function describeMailError(error: unknown) {
-  if (error instanceof Error) return error.message || error.name;
-  if (typeof error === 'string' && error) return error;
-  try {
-    return JSON.stringify(error) ?? String(error);
-  } catch {
-    return String(error);
-  }
+export function describeMailError(_error: unknown) {
+  return MAIL_SEND_PUBLIC_MESSAGE;
 }
