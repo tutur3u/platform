@@ -39,6 +39,21 @@ export const WEB_CSRF_TRUSTED_ORIGINS: readonly string[] = [
   'https://workspace.tuturuuu.com',
 ];
 
+// Decode once, matching Next's filesystem lookup. Keep this normalization out
+// of the exemption registry: canonicalization must never widen a bypass.
+function sessionClearingPathname(pathname: string): string | null {
+  try {
+    return (
+      decodeURIComponent(pathname).replace(/\/+/gu, '/').replace(/\/+$/u, '') ||
+      '/'
+    );
+  } catch {
+    // Malformed escapes do not match a clearing route. The ordinary cookie
+    // CSRF check still applies to the original pathname.
+    return null;
+  }
+}
+
 const shouldReportCsrfFailure = createCsrfReportLimiter();
 
 /**
@@ -70,8 +85,7 @@ export function guardWebApiCsrf(
     method: req.method,
     pathname: req.nextUrl.pathname,
     requireOriginWithoutSessionCookie: WEB_SESSION_CLEARING_PATHS.has(
-      // `/api/auth/logout/` is the same endpoint.
-      req.nextUrl.pathname.replace(/\/+$/u, '') || '/'
+      sessionClearingPathname(req.nextUrl.pathname) ?? ''
     ),
   });
   if (verdict.ok) return null;
