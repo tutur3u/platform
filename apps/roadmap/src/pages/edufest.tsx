@@ -26,6 +26,7 @@ import {
   WsTools,
 } from '../components/workshop';
 import { WORKSHOP_EVENT } from '../content/workshops/edufest-2026';
+import { heroFontPreloads } from '../hero-fonts';
 import { initialLiveData } from '../live/initial-data';
 import { useLiveData } from '../live/use-live-data';
 
@@ -50,7 +51,7 @@ export function edufestHead(lang: Lang) {
       image: ogImage,
       imageAlt: t.meta.title,
     }),
-    links: alternateLinks('edufest', lang),
+    links: [...heroFontPreloads(lang), ...alternateLinks('edufest', lang)],
     scripts: WORKSHOP_EVENT.isoDate
       ? [
           jsonLdScript(

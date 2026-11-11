@@ -18,6 +18,7 @@ import { TimelineSection } from '../components/timeline';
 import { TracksSection } from '../components/tracks';
 import { tracks } from '../content/tracks';
 import historyUrl from '../generated/history.json?url';
+import { heroFontPreloads } from '../hero-fonts';
 import { initialLiveData } from '../live/initial-data';
 import { useLiveData } from '../live/use-live-data';
 import {
@@ -45,6 +46,7 @@ export function roadmapHead(lang: Lang) {
     links: [
       // Full history for the timeline: hashed, immutable, fetched at idle.
       { rel: 'prefetch', href: historyUrl, as: 'fetch' },
+      ...heroFontPreloads(lang),
       ...alternateLinks('roadmap', lang),
     ],
     scripts: [

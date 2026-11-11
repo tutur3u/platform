@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./fonts.css": "./src/fonts.css",
+    "./fonts/*": "./src/fonts/*",
     "./messages/en.json": "./src/messages/en.json",
     "./messages/vi.json": "./src/messages/vi.json"
   },

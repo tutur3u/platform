@@ -198,3 +198,37 @@ describe('SEO: sitemap', () => {
     assert.ok(!sitemapXml(null).includes('<lastmod>'));
   });
 });
+
+describe('SEO: hero font preloads', () => {
+  it('preload exactly the shell font files the CSS loads, and VI adds its subset', async () => {
+    const { readFileSync } = await import('node:fs');
+    const source = readFileSync(
+      new URL('./hero-fonts.ts', import.meta.url),
+      'utf8'
+    );
+    const fontsCss = readFileSync(
+      new URL(
+        '../../../packages/marketing-shell/src/fonts.css',
+        import.meta.url
+      ),
+      'utf8'
+    );
+    const files = [
+      ...source.matchAll(/marketing-shell\/fonts\/([a-z0-9-]+\.woff2)\?url/g),
+    ].map((match) => match[1]);
+    assert.deepEqual(files.sort(), [
+      'be-vietnam-pro-500-latin.woff2',
+      'be-vietnam-pro-500-vietnamese.woff2',
+      'be-vietnam-pro-600-latin.woff2',
+      'be-vietnam-pro-600-vietnamese.woff2',
+    ]);
+    for (const file of files)
+      assert.ok(
+        fontsCss.includes(`./fonts/${file}`),
+        `${file} is not in fonts.css`
+      );
+    // English pages do not download the Vietnamese subset.
+    const en = source.slice(source.indexOf(': ['), source.indexOf('];'));
+    assert.ok(!/vietnamese/.test(en.split(']')[1] ?? ''), en);
+  });
+});
