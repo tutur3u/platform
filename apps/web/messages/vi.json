@@ -4727,6 +4727,7 @@
       "track_3": "Quản lý thời gian nhóm",
       "voiceAssistant": "Trợ lý giọng nói",
       "workforce": "Quản trị nhân sự",
+      "workspace-domains_0": "Tên miền tùy chỉnh cho không gian làm việc (edge)",
       "workspaces": "Không gian tạo trên mỗi tài khoản"
     },
     "included": "Bao gồm",

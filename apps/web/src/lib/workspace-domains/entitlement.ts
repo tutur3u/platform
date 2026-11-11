@@ -20,8 +20,8 @@ export type WorkspaceDomainEntitlement = z.infer<typeof entitlementSchema>;
 export interface WorkspaceDomainActor {
   id: string;
   /**
-   * isVerifiedTuturuuuStaffSession(user) with allowXwf = false, computed by
-   * the route adapter from the current Auth user. The SQL policy applies the
+   * isVerifiedTuturuuuStaffSession(user) with its default exact-domain
+   * policy (no xwf opt-in), computed by the route adapter from the current Auth user. The SQL policy applies the
    * same rule; both must agree before the staff bypass applies.
    */
   staffSession: boolean;
@@ -34,7 +34,8 @@ export interface WorkspaceDomainActor {
 export function isWorkspaceDomainStaffUser(
   user: Parameters<typeof isVerifiedTuturuuuStaffSession>[0]
 ) {
-  return isVerifiedTuturuuuStaffSession(user, { allowXwf: false });
+  // Default policy is exact @tuturuuu.com only; never opt into xwf here.
+  return isVerifiedTuturuuuStaffSession(user);
 }
 
 const DENIED = (reason: string): WorkspaceDomainEntitlement => ({
