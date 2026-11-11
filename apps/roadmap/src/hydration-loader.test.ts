@@ -20,6 +20,7 @@ function boot(source: string) {
   const imports: string[] = [];
   const idle: { run: Fn; timeout?: number }[] = [];
   const frames: Fn[] = [];
+  const timers: { run: Fn; ms: number }[] = [];
   let paint: Fn = () => {};
   let finishImport: Fn = () => {};
   const appended: unknown[] = [];
@@ -47,7 +48,7 @@ function boot(source: string) {
         (listeners.get(type) ?? []).filter((entry) => entry !== fn)
       ),
     requestAnimationFrame: (fn: Fn) => frames.push(fn),
-    setTimeout: () => 0,
+    setTimeout: (run: Fn, ms: number) => timers.push({ run, ms }),
     PerformanceObserver: class {
       static supportedEntryTypes = ['largest-contentful-paint', 'paint'];
       constructor(callback: Fn) {
@@ -77,8 +78,16 @@ function boot(source: string) {
       finishImport();
       await new Promise((resolve) => setImmediate(resolve));
     },
+    /** Run queued frames and short timers (never the fallback cap). */
     runFrames: (limit = 50) => {
-      for (let i = 0; i < limit && frames.length; i += 1) frames.shift()?.();
+      for (let i = 0; i < limit; i += 1) {
+        const frame = frames.shift();
+        if (frame) frame();
+        const index = timers.findIndex((timer) => timer.ms < 1_000);
+        const timer = index < 0 ? undefined : timers.splice(index, 1)[0];
+        if (timer) timer.run();
+        if (!frame && !timer) break;
+      }
     },
   };
 }
@@ -105,9 +114,14 @@ function startsOnIntent(source: string) {
     const page = boot(source);
     if (page.imports.length) return false;
     page.fire(type);
+    // The fetch starts at once; the import waits a frame so the tap paints.
+    const fetchedAtOnce = page.appended.length === 1 && !page.imports.length;
     page.fire(type);
     page.fire('pointerdown');
-    return page.imports.length === 1 && page.appended.length === 1;
+    page.runFrames();
+    return (
+      fetchedAtOnce && page.imports.length === 1 && page.appended.length === 1
+    );
   });
 }
 
@@ -122,7 +136,7 @@ async function replaysFirstClick(source: string) {
       stopped = true;
     },
   });
-  page.runFrames();
+  page.runFrames(3);
   const clicks = () => button.clicks;
   if (clicks() !== 0 || page.imports.length !== 1) return false;
   await page.finishImport();
@@ -157,6 +171,7 @@ describe('perf: the bundle loads at the first intent or just after the LCP', () 
     assert.ok((page.idle[0]?.timeout ?? Infinity) <= IDLE_TIMEOUT_MS);
     assert.ok(IDLE_TIMEOUT_MS <= 1_000);
     page.idle[0]?.run();
+    page.runFrames();
     assert.equal(page.imports.length, 1);
   });
 

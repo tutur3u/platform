@@ -14,10 +14,11 @@
  *   but becomes `type="text/plain"`, which browsers never fetch or run (the
  *   asset smoke still sees and checks its src);
  * - one static inline script (it removes itself, like the router's stream
- *   scripts) turns the hints back into modulepreload links and imports the
- *   entry on the first pointerdown, touchstart, keydown or focusin anywhere,
- *   or once the largest contentful paint is reported, in an idle period
- *   within IDLE_TIMEOUT_MS; FALLBACK_MS caps the wait.
+ *   scripts) turns the hints back into modulepreload links (the fetch
+ *   starts) on the first pointerdown, touchstart, keydown or focusin
+ *   anywhere, or once the largest contentful paint is reported, in an idle
+ *   period within IDLE_TIMEOUT_MS; FALLBACK_MS caps the wait. It imports the
+ *   entry one frame later, so the tap that started it paints first.
  *
  * A click on a button that is not hydrated yet would do nothing, so the
  * loader records it (and stops it, so React never also sees it) and clicks
@@ -47,7 +48,7 @@ const hydrated=(el)=>Object.keys(el).some((key)=>key.startsWith('__reactProps'))
 const replay=()=>{let frames=0;const tick=()=>{const el=pending;if(!el||!el.isConnected)return;if(hydrated(el)){pending=null;el.click();return}if(++frames<600)requestAnimationFrame(tick)};tick()};
 const start=()=>{if(started)return;started=1;for(const type of intents)removeEventListener(type,start,opts);
 for(const hint of document.querySelectorAll('link[rel="${DEFERRED_PRELOAD_REL}"]')){const link=document.createElement('link');link.rel='modulepreload';link.href=hint.getAttribute('href');document.head.append(link)}
-const entry=document.querySelector('script[${DEFERRED_ENTRY_ATTRIBUTE}]');if(entry)import(entry.getAttribute('src')).then(replay,()=>{})};
+requestAnimationFrame(()=>setTimeout(()=>{const entry=document.querySelector('script[${DEFERRED_ENTRY_ATTRIBUTE}]');if(entry)import(entry.getAttribute('src')).then(replay,()=>{})},0))};
 for(const type of intents)addEventListener(type,start,opts);
 addEventListener('click',(event)=>{const button=event.target&&event.target.closest?event.target.closest('button'):null;if(!button||hydrated(button))return;pending=button;event.stopImmediatePropagation();start();if(started)replay()},true);
 const idle=()=>(window.requestIdleCallback||((cb)=>setTimeout(cb,1)))(start,{timeout:${IDLE_TIMEOUT_MS}});
