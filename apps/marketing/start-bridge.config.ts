@@ -5,11 +5,17 @@ import {
   appRobots,
   createRootResponsePolicy,
 } from '@tuturuuu/start-bridge/response-policy';
+import { PRIVATE_ROBOTS_HEADER } from '@tuturuuu/utils/seo-robots';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 
 export default defineBridgeAppConfig({
   // Robots (the app's seo-policy.json allowlist on its canonical host),
   // framing, sniffing, referrer and private caching on every response; only
   // GET/HEAD static files keep their own caching.
-  wrapResponse: createRootResponsePolicy({ seo: appRobots }),
+  wrapResponse: createRootResponsePolicy({
+    seo: (context) =>
+      new URL(context.request.url).hostname === 'tuturuuu.com'
+        ? appRobots(context)
+        : PRIVATE_ROBOTS_HEADER,
+  }),
 });
