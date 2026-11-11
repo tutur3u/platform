@@ -36,6 +36,14 @@ export interface BridgeAppConfig<Env = unknown> {
     context: { env: Env; path: string }
   ) => string | undefined;
   /**
+   * The app's trusted Web API origin: returns it, or throws when
+   * `INTERNAL_WEB_API_ORIGIN` is set to anything untrusted. The generated
+   * Worker passes it to `createBridgeHandler` (`webApiOrigin`), which refuses
+   * every request on a throw and shares it with `@tuturuuu/internal-api`.
+   * Without it the Worker uses the raw binding or `https://tuturuuu.com`.
+   */
+  webApiOrigin?: (env: Env) => string;
+  /**
    * Generated Worker settings, applied by the codemod to `void.config.ts`,
    * the sealed artifact identity and the runtime test (re-run it after a
    * change; the runtime test fails on drift). `workersDev` defaults to off

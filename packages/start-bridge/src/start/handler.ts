@@ -16,6 +16,7 @@ import {
   resolveAppBase,
 } from '../core/mounts';
 import { fromNextSourcePattern, matchRoute } from '../core/route-match';
+import { publishWebApiOriginPolicy } from '../core/web-api-origin-policy';
 import {
   type BridgeDispatch,
   dispatchThroughProxy,
@@ -53,6 +54,14 @@ export interface BridgeHandlerOptions<Env, Ctx> {
   assets: (env: Env) => AssetsBinding | undefined;
   /** Central Web API origin for unowned `/api/*` paths. */
   centralApiOrigin: (env: Env) => string;
+  /**
+   * The app's trusted Web API origin: returns it, or throws when the binding
+   * is set to anything untrusted. When set it replaces `centralApiOrigin`,
+   * runs before every request (a throw answers the generic `500` before any
+   * proxy, endpoint, forward or page runs) and is published for server code
+   * that reads `INTERNAL_WEB_API_ORIGIN` itself (`@tuturuuu/internal-api`).
+   */
+  webApiOrigin?: (env: Env) => string;
   /**
    * Paths the central Web API owns ahead of the app's own routes (Next
    * `beforeFiles` rewrites). Accepts Next sources (`/api/v1/:wsId/x`) or
@@ -121,6 +130,14 @@ export function createBridgeHandler<
       }
     });
   const publicAssets = options.publicAssets ?? new Set<string>();
+  const centralApiOrigin = (env: Env) =>
+    options.webApiOrigin
+      ? options.webApiOrigin(env)
+      : options.centralApiOrigin(env);
+  if (options.webApiOrigin) {
+    const resolve = options.webApiOrigin;
+    publishWebApiOriginPolicy((vars) => resolve(vars as Env));
+  }
   const isFramable = createFramablePathMatcher(options.framablePaths);
   const inBase = (path: string, prefix: string) =>
     path === prefix || path.startsWith(`${prefix}/`);
@@ -227,7 +244,7 @@ export function createBridgeHandler<
         if (central || pathname === '/api' || pathname.startsWith('/api/')) {
           const origin =
             options.apiOrigin?.(forwarded, { env, path: pathname }) ??
-            options.centralApiOrigin(env);
+            centralApiOrigin(env);
           if (options.forwardApi) return options.forwardApi(forwarded, origin);
           // The central API sees the app-relative path, never the base.
           return forwardToCentralApi(
@@ -259,7 +276,7 @@ export function createBridgeHandler<
         observeNavigation: options.observeNavigation,
         matches: options.matches,
         requestInit: options.requestInit,
-        rewriteOrigins: [options.centralApiOrigin(env)],
+        rewriteOrigins: [centralApiOrigin(env)],
         nonce,
       });
     }
@@ -305,6 +322,8 @@ export function createBridgeHandler<
     ctx: Ctx
   ): Promise<Response> {
     try {
+      // An untrusted Web API origin refuses everything before any app code.
+      options.webApiOrigin?.(env);
       const oneOrigin = decideOneOrigin(incoming, env);
       if (oneOrigin && oneOrigin.action !== 'serve') return oneOrigin.response;
       const response = await handleRequest(incoming, env, ctx);

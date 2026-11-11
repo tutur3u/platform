@@ -7,6 +7,7 @@ import {
   resolveInternalApiUrlWithAppBase,
   withAppApiBaseUrl,
 } from './internal-api-url';
+import { getInternalApiOriginPolicy } from './origin-policy';
 import { mergeHeaders } from './request-headers';
 
 export type InternalApiQueryValue =
@@ -94,6 +95,10 @@ const KNOWN_NON_PLATFORM_LOCALHOST_PORTS = new Set([
 ]);
 
 export { InternalApiError } from './internal-api-error';
+export {
+  type InternalApiOriginPolicy,
+  registerInternalApiOriginPolicy,
+} from './origin-policy';
 export {
   hasAppBaseResolverFor,
   type InternalApiAppBaseResolver,
@@ -214,9 +219,22 @@ function appendQuery(path: string, query?: InternalApiQuery): string {
   return isAbsoluteUrl ? url.toString() : `${url.pathname}${url.search}`;
 }
 
+/**
+ * The configured Web origin. When the app registered an origin policy, a set
+ * `INTERNAL_WEB_API_ORIGIN` (blank included) must satisfy it or this throws,
+ * so no request, and no forwarded Cookie or Authorization header, is built for
+ * an untrusted origin and nothing falls back to another candidate.
+ */
+function resolveInternalWebApiOrigin() {
+  const configured = process.env.INTERNAL_WEB_API_ORIGIN;
+  const policy = getInternalApiOriginPolicy();
+  if (policy && configured !== undefined) return policy(process.env);
+  return resolveConfiguredOrigin(configured);
+}
+
 export function getConfiguredInternalApiBaseUrl() {
   return normalizeBaseUrl(
-    resolveConfiguredOrigin(process.env.INTERNAL_WEB_API_ORIGIN) ||
+    resolveInternalWebApiOrigin() ||
       resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
       resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
       resolveNextPublicAppUrlAsWebOrigin() ||
