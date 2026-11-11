@@ -1,0 +1,23 @@
+{
+  // Edge Worker that serves workspace custom domains (Cloudflare for SaaS
+  // custom hostnames and <label>.ttr.gg platform subdomains). It declares no
+  // routes: apps/web attaches a `<host>/*` Worker route per active domain.
+  // Runbook: apps/docs/platform/workspace-domains-runbook.mdx.
+  "name": "tuturuuu-workspace-domains",
+  "main": "src/worker.tsx",
+  "compatibility_date": "2026-09-28",
+  "workers_dev": false,
+  "preview_urls": false,
+  "minify": true,
+  "limits": { "cpu_ms": 50 },
+  "observability": { "enabled": true, "head_sampling_rate": 0.05 },
+  "vars": {
+    // Origin of apps/web that answers the resolve and public delivery APIs.
+    "RESOLVE_URL": "https://tuturuuu.com",
+  },
+  // Worker secrets, so deploys keep them (never committed):
+  // WORKSPACE_DOMAINS_EDGE_SECRET - shared with apps/web for the resolve API.
+  // STATIC_HOST_MAP - optional bootstrap JSON
+  //   {"<host>": {"wsId": "<uuid>", "name": "<workspace name>"}} consulted
+  //   when the resolve endpoint is unavailable or does not know the host.
+}

@@ -2003,6 +2003,16 @@
       },
       "digest": "1e59666371951ffd119241c49b99fde3d56ab48e3cb2c22f3810b9f0acb3c931"
     },
+    "apps/workspace-domains/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/PENDING",
+        "reason": "Workspace custom-domain edge Worker: a route-less Worker whose per-hostname routes apps/web attaches. It is bundled with wrangler deploy --dry-run for operator deploys and moves to cloudflare.config.ts in its per-service parity PR."
+      },
+      "digest": "cb081bb001dea2340bb6285e3c7444ff17209abef48acbe829e118c6db67b24e"
+    },
     "apps/workspace/.gitignore": {
       "lines": 2,
       "uses": 2,
