@@ -1,12 +1,25 @@
 /** D79: the shipping pulse and the Upskii links. */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import en from '../../messages/en.json' with { type: 'json' };
 import vi from '../../messages/vi.json' with { type: 'json' };
 import type { PrFact } from './model.ts';
 import { shippingPulse } from './pulse.ts';
+
+/** Every EduFest workshop component module (components/workshop/*), joined. */
+function workshopSource(file?: string) {
+  const dir = new URL('../components/workshop/', import.meta.url);
+  const files = file
+    ? [file]
+    : readdirSync(dir)
+        .filter((name) => /\.tsx?$/.test(name))
+        .sort();
+  return files
+    .map((name) => readFileSync(new URL(name, dir), 'utf8'))
+    .join('\n');
+}
 
 const pr = (
   number: number,
@@ -78,19 +91,15 @@ describe('Upskii is the official mark and always linked', () => {
     assert.equal(png.readUInt32BE(16), 96);
     assert.equal(png.readUInt32BE(20), 96);
     assert.ok(png.length < 20_000, `${png.length} bytes`);
-    const source = readFileSync(
-      new URL('../components/workshop.tsx', import.meta.url),
-      'utf8'
+    const source = workshopSource();
+    assert.ok(
+      source.includes("from '../../assets/upskii-logo-96.png?no-inline'")
     );
-    assert.ok(source.includes("from '../assets/upskii-logo-96.png?no-inline'"));
     assert.ok(!source.includes("upskii-official-logo.png?no-inline'"));
   });
 
   it('every rendered Upskii mention goes through a linking helper', () => {
-    const source = readFileSync(
-      new URL('../components/workshop.tsx', import.meta.url),
-      'utf8'
-    );
+    const source = workshopSource();
     assert.match(source, /export const UPSKII_URL = 'https:\/\/upskii\.com';/);
     for (const field of [
       't.agenda.items[id].title',
