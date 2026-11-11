@@ -116,11 +116,11 @@ describe('provider output validation and edits', () => {
     ).toEqual([]);
   });
   it.each([
-    null,
-    [],
-    {},
-    { suggestions: 'bad' },
-    { suggestions: [null, false, 'text'] },
+    [null],
+    [[]],
+    [{}],
+    [{ suggestions: 'bad' }],
+    [{ suggestions: [null, false, 'text'] }],
   ])('accepts malformed provider output without throwing %j', (output) => {
     expect(validateInlineSuggestions(output, snapshot, context)).toEqual([]);
   });
