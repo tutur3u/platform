@@ -15,7 +15,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Miniflare, supportedCompatibilityDate } from 'miniflare';
 import { showPlans } from '../src/content/tracks.ts';
 import { inlineScriptTexts } from '../src/html-scripts.ts';
-import { redundantAltFailures } from './doctor-markup.mjs';
+import * as markup from './doctor-markup.mjs';
 import {
   reportAssetSmokeRejection,
   smokeAssets,
@@ -47,29 +47,7 @@ export const PUBLIC_DOCUMENT_PATHS = [
   '/roadmap/vi/workshops/edufest-2026',
 ];
 
-/**
- * Speculative loads the tuturuuu.com zone cannot serve. Cloudflare Speed
- * Brain answers every `Sec-Purpose: prefetch` request with 503, even for a
- * cached URL, so a prefetch or prerender link only ever yields a failed
- * request and a console error (production, 11 Nov 2026). workers.dev
- * previews do not show it, so the rule lives here.
- */
-export function speculativeLinks(html) {
-  const found = [];
-  for (const match of String(html).matchAll(/<link\b([^>]*)>/gi)) {
-    const rel = /\brel\s*=\s*["']?([^"'>]+)/i.exec(match[1])?.[1] ?? '';
-    const tokens = rel.toLowerCase().split(/\s+/);
-    if (tokens.includes('prefetch') || tokens.includes('prerender')) {
-      found.push(
-        /\bhref\s*=\s*["']?([^"'\s>]+)/i.exec(match[1])?.[1] ?? '(no href)'
-      );
-    }
-  }
-  if (String(html).toLowerCase().includes('speculationrules'))
-    found.push('speculationrules');
-  return found;
-}
-
+export const speculativeLinks = markup.speculativeLinks;
 const SPEED_BRAIN =
   'Cloudflare Speed Brain answers Sec-Purpose: prefetch with 503 on tuturuuu.com';
 
@@ -179,7 +157,7 @@ export function assessDoctor(observation) {
     ['>Tuturuuu</span>', 'the Tuturuuu brand name'],
   ])
     if (!body.includes(marker)) failures.push(`canonical HTML missing ${name}`);
-  failures.push(...redundantAltFailures(body));
+  failures.push(...markup.redundantAltFailures(body));
   if (!MOUNTED_LOGO.test(body))
     failures.push('canonical HTML missing the mounted Tuturuuu logo');
   if (body.includes('public-satellite-shell'))
@@ -247,6 +225,7 @@ export function assessDoctor(observation) {
       failures.push(`${path} status ${document.status}, expected 200`);
     for (const href of document.speculative ?? [])
       failures.push(`${path} speculatively loads ${href}: ${SPEED_BRAIN}`);
+    failures.push(...markup.documentBudgetFailures(document));
   }
   const satellite = observation.satellite ?? {};
   if (satellite.status !== 301) {
@@ -295,6 +274,7 @@ export function brokenVariant(observation) {
     history: { ...observation.history, status: 503, bytes: 0 },
     documents: (observation.documents ?? []).map((document) => ({
       ...document,
+      size: markup.DOCUMENT_BUDGET + 1,
       speculative: [
         ...(document.speculative ?? []),
         '/roadmap/assets/history-Abcd1234.json',
@@ -377,6 +357,7 @@ export async function observeWorker(port, expectedCommit, root = appRoot()) {
     documents.push({
       path,
       status: result.status,
+      size: String(result.body).length,
       speculative: speculativeLinks(result.body),
     });
   }
@@ -712,6 +693,8 @@ async function main() {
           }
     );
     for (const line of broken.lines) console.error(line);
+    for (const line of markup.documentBudgetReport(observation.documents))
+      console.log(line);
     const assetSmoke = await smokeAssets({
       pages: DOCTOR_ASSET_PAGES,
       canonicalOrigin: 'https://tuturuuu.com',

@@ -30,7 +30,11 @@ type HtmlRewriter = {
 };
 
 const MAX_INLINE_SCRIPTS = 32;
-const MAX_DOCUMENT_BYTES = 2 * 1024 * 1024;
+/**
+ * Past this size a document gets no script hashes (see below). The pre-seal
+ * doctor keeps every public page under half of it.
+ */
+export const MAX_DOCUMENT_BYTES = 2 * 1024 * 1024;
 
 /**
  * Text of every real inline (no src) script element, exactly as served.
@@ -119,13 +123,18 @@ export async function withContentSecurityPolicy(
   transform: (html: string) => string = (html) => html
 ): Promise<Response> {
   if (!isHtml(response)) return response;
+  const original = response.body ? await response.text() : '';
   // The transform runs first, so every inline script it adds is hashed.
-  const html = transform(response.body ? await response.text() : '');
+  let html = transform(original);
   let policy: string;
   try {
     if (html.length > MAX_DOCUMENT_BYTES) throw new Error('Document too large');
     policy = await contentSecurityPolicy(html);
   } catch {
+    // No hashes means no inline script runs, including any the transform
+    // added. Serve the document as rendered: its external, same-origin
+    // module entry still loads under 'self'.
+    html = original;
     policy = ["script-src 'self'", ...STATIC_DIRECTIVES].join('; ');
   }
   const headers = new Headers(response.headers);

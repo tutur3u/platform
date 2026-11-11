@@ -13,7 +13,11 @@ import {
   speculativeLinks,
   STAGE_LABELS,
 } from './pre-seal-doctor.mjs';
-import { redundantAltFailures } from './doctor-markup.mjs';
+import {
+  DOCUMENT_BUDGET,
+  documentBudgetReport,
+  redundantAltFailures,
+} from './doctor-markup.mjs';
 import '../../../scripts/ci/asset-smoke.test.mjs';
 import './canonical-smoke.test.mjs';
 
@@ -47,6 +51,7 @@ function passingRaw() {
     documents: PUBLIC_DOCUMENT_PATHS.map((path) => ({
       path,
       status: 200,
+      size: 330_000,
       speculative: [],
     })),
     history: {
@@ -329,5 +334,30 @@ test('D79: a navbar logo whose alt repeats the brand name beside it fails the do
   assert.ok(
     verdict.failures.some((failure) => failure.includes('image-redundant-alt')),
     verdict.failures.join('\n')
+  );
+});
+
+test('D79: a public document over half the CSP size limit fails the doctor', () => {
+  const observation = passing();
+  assert.deepEqual(assessDoctor(observation).failures, []);
+  const report = documentBudgetReport(observation.documents);
+  assert.equal(report.length, PUBLIC_DOCUMENT_PATHS.length);
+  assert.match(report[0] ?? '', /% under the 2048 KiB CSP limit/);
+  // Broken variant: an oversized EduFest page (its CSP would get no hashes).
+  observation.documents[2].size = DOCUMENT_BUDGET + 1;
+  const verdict = assessDoctor(observation);
+  assert.equal(verdict.ok, false);
+  assert.ok(
+    verdict.failures.some((failure) =>
+      failure.startsWith('/roadmap/workshops/edufest-2026 is ')
+    ),
+    verdict.failures.join('\n')
+  );
+  // An unmeasured document is a failure too, never a silent pass.
+  delete observation.documents[0].size;
+  assert.ok(
+    assessDoctor(observation).failures.some((failure) =>
+      failure.includes('size was not measured')
+    )
   );
 });
