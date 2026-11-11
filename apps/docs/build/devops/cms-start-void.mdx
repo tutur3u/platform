@@ -14,9 +14,14 @@ writes.
 
 - Worker: `tuturuuu-cms` for production; the staging Worker name for
   staging.
-- Hosts: `cms.tuturuuu.com` and the `/cms` mount on `tuturuuu.com`. The
-  configuration rejects unknown hosts and disables Workers.dev and preview
-  URLs.
+- Hosts: only the root hosts `cms.tuturuuu.com` and `cms.tutur3u.com`. The
+  `/cms` mount on `tuturuuu.com` is not served today: it is planned only after
+  Tasks and Calendar reach the apex (the end state is `tuturuuu.com/cms`, with
+  satellites moving to paths). The configuration rejects unknown hosts and
+  disables Workers.dev and preview URLs. Source of truth:
+  `apps/cms/start-bridge.config.ts` (`mountHosts: []`, `unknownHost: 'reject'`)
+  and `apps/cms/src/runtime/root-host-policy.test.ts`, which asserts
+  `https://tuturuuu.com/cms/...` returns 404.
 - Build: `cd apps/cms && bun run build:cloudflare`.
 - Static asset binding: `ASSETS`. Optional internal API origin variable:
   `INTERNAL_WEB_API_ORIGIN`. The build profile sets `TUTURUUU_NOINDEX`.
@@ -28,12 +33,11 @@ writes.
 
 ## Smoke checks
 
-After an authorized cutover, probe public deployment identity at both mounts and
+After an authorized cutover, probe public deployment identity on the root host and
 verify the native runtime header and expected source SHA:
 
 ```sh
 curl -fsS -D - https://cms.tuturuuu.com/api/build-info
-curl -fsSI https://tuturuuu.com/cms/api/build-info
 ```
 
 Run the existing isolated emitted-worker and cutover smoke checks before
@@ -45,7 +49,7 @@ node scripts/ci/cms-cutover-smoke.mjs
 ```
 
 Confirm anonymous `/` redirects to `/login`, unknown hosts are rejected, and
-the root and mounted build-info requests return the deployed identity.
+the root-host build-info request returns the deployed identity.
 
 ## Rollback
 
