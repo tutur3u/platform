@@ -149,3 +149,13 @@ When adding a Worker to CODEOWNERS, register its folder in
 `scripts/ci/security-paths.js` and run `security-codeowners-sync.test.js` plus
 `security-paths.test.js`. The cross-check guards native ownership against security
 classification drift; the changed-file planner may not select it for a CODEOWNERS edit.
+
+## Pay mount qualification
+
+Pay's `cloudflare/native-profiles.json` owns build/runtime URL identity; the
+production artifact seal reads that same profile. `payNativeMounts` keeps staging
+root-only and admits the production apex mount. Set the production build base
+through `TUTURUUU_BASE_PATH`; never infer asset readiness from a source URL test.
+Retain raw-body Polar signature rejection on both webhook paths and mounted CSRF
+negative controls. The Pay cutover packet in `apps/docs/build/devops/pay-start-void.mdx`
+contains the credential-free local verification and remaining release gates.
