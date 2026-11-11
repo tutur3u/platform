@@ -8031,6 +8031,8 @@
     "manage_git_repositories_description": "Cho phép quản trị viên nền tảng cấu hình Ứng dụng GitHub và phê duyệt các kho mã công khai cho Git.",
     "manage_user_report_automation": "Quản lý tự động hóa báo cáo",
     "manage_user_report_automation_description": "Cấu hình lịch báo cáo định kỳ, chế độ tạo và mặc định cho không gian làm việc hoặc nhóm.",
+    "manage_workspace_domains": "Quản lý tên miền không gian làm việc",
+    "manage_workspace_domains_description": "Thêm, xác minh và gỡ tên miền tùy chỉnh và tên miền phụ của nền tảng phục vụ trang công khai của không gian làm việc.",
     "member_defaults": "Quyền mặc định của thành viên",
     "member_defaults_description": "Quyền mặc định của thành viên áp dụng cho thành viên không gian làm việc và khóa API. Các quyền mặc định hiện có vẫn thuộc phạm vi thành viên.",
     "member_defaults_tab": "Quyền thành viên",
@@ -8041,6 +8043,8 @@
     "send_user_group_report_emails": "Gửi email báo cáo định kỳ",
     "send_user_group_report_emails_description": "Xem trước, gửi thử, xếp hàng, thử lại và hủy gửi email báo cáo định kỳ đã được duyệt.",
     "singular": "Vai trò",
+    "view_workspace_domains": "Xem tên miền không gian làm việc",
+    "view_workspace_domains_description": "Xem các tên miền tùy chỉnh của không gian làm việc, trạng thái xác minh và quyền sử dụng tên miền.",
     "viewing_window": "Cửa sổ Xem",
     "viewing_window_custom_days": "{days, plural, one {# Ngày} other {# Ngày}}",
     "viewing_window_description": "Giới hạn khả năng hiển thị giao dịch trong một khoảng thời gian cụ thể (tính từ hôm nay)"

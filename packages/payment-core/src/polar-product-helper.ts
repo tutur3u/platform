@@ -3,6 +3,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { getSupportedProductPrice } from './polar-price';
 import {
   isAiCreditPackProduct,
+  isCustomDomainAddonProduct,
   parseCreditPackTokens,
   parseWorkspaceProductTier,
 } from './polar-product-metadata';
@@ -172,6 +173,9 @@ export async function syncProductToDatabase(
   supabase: TypedSupabaseClient,
   product: Product
 ) {
+  // Domain add-ons are not plans or credit packs; their entitlement comes
+  // from subscriptions (private.workspace_domain_addons).
+  if (isCustomDomainAddonProduct(product.metadata)) return null;
   if (product.isArchived) {
     const table = isAiCreditPackProduct(product.metadata)
       ? 'workspace_credit_packs'

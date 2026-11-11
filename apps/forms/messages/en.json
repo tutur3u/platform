@@ -8642,6 +8642,8 @@
     "manage_git_repositories_description": "Allows platform administrators to configure the GitHub App and approve public repositories for Git.",
     "manage_user_report_automation": "Manage Report Automation",
     "manage_user_report_automation_description": "Configure periodic report schedules, generation modes, and workspace or group defaults.",
+    "manage_workspace_domains": "Manage workspace domains",
+    "manage_workspace_domains_description": "Add, verify, and remove custom domains and platform subdomains that serve the workspace's public site.",
     "member_defaults": "Member defaults",
     "member_defaults_description": "Member defaults apply to workspace members and API keys. Existing default permissions remain member-scoped.",
     "member_defaults_tab": "Member defaults",
@@ -8652,6 +8654,8 @@
     "send_user_group_report_emails": "Send Periodic Report Emails",
     "send_user_group_report_emails_description": "Preview, test, queue, retry, and cancel approved periodic report email delivery.",
     "singular": "Role",
+    "view_workspace_domains": "View workspace domains",
+    "view_workspace_domains_description": "See the workspace's custom domains, their verification status, and domain entitlement.",
     "viewing_window": "Viewing Window",
     "viewing_window_custom_days": "{days, plural, one {# Day} other {# Days}}",
     "viewing_window_description": "Limit transaction visibility to a specific time period (rolling from today)"

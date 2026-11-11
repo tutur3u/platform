@@ -59,6 +59,26 @@ describe('workspace permission catalog', () => {
     }
   });
 
+  it('exposes the workspace domain permissions with translations', () => {
+    const ids = permissions({ wsId: workspaceId, user: null }).map(
+      (entry) => entry.id
+    );
+    expect(ids).toContain('view_workspace_domains');
+    expect(ids).toContain('manage_workspace_domains');
+    for (const locale of ['en', 'vi']) {
+      const messages = JSON.parse(
+        readFileSync(
+          resolve(repoRoot, `apps/web/messages/${locale}.json`),
+          'utf8'
+        )
+      );
+      for (const id of ['view_workspace_domains', 'manage_workspace_domains']) {
+        expect(messages['ws-roles'][id]).toBeTruthy();
+        expect(messages['ws-roles'][`${id}_description`]).toBeTruthy();
+      }
+    }
+  });
+
   it('keeps workspace role forms scoped by default', () => {
     const permissionIds = permissions({
       wsId: workspaceId,
