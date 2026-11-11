@@ -13,7 +13,11 @@
     "toBeAnnounced": "Sẽ thông báo sớm",
     "seats": "Chỉ 40 suất",
     "cta": "Sắp mở đăng ký",
-    "scarcity": "Chỉ 40 suất, ưu tiên thầy cô đăng ký sớm."
+    "scarcity": "Chỉ 40 suất, ưu tiên thầy cô đăng ký sớm.",
+    "dateValue": "Thứ Bảy, 05/12/2026",
+    "venueValue": "Đại học RMIT Việt Nam, Cơ sở Nam Sài Gòn (SGS), 702 Nguyễn Văn Linh, Tòa nhà 2",
+    "addToCalendar": "Thêm vào lịch",
+    "openMap": "Xem bản đồ"
   },
   "status": {
     "live": "Đã dùng được",

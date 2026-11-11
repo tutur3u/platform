@@ -1659,3 +1659,19 @@ code {
   margin: 0;
   font-size: 15px;
 }
+.ws-event-links {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.ws-event-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

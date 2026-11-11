@@ -1,9 +1,11 @@
 import {
   ArrowLeft,
   ArrowRight,
+  CalendarPlus,
   CircleCheck,
   CircleDashed,
   CircleDot,
+  MapPin,
 } from '@tuturuuu/icons';
 import { useId, useMemo, useState } from 'react';
 import type en from '../../messages/edufest-2026.en.json';
@@ -24,7 +26,10 @@ import {
   toWorkshopStatus,
   USE_CASES,
   type UseCase,
+  buildIcs,
+  mapHref,
   WORKSHOP_EVENT,
+  WORKSHOP_URL,
   type WorkshopStatus,
 } from '../content/workshops/edufest-2026';
 import type { LiveData } from '../live/model';
@@ -115,17 +120,26 @@ export function WsHero({ t }: { t: EduMessages }) {
       <dl className="ws-facts">
         <div>
           <dt>{t.hero.date}</dt>
-          <dd>{WORKSHOP_EVENT.date ?? t.hero.toBeAnnounced}</dd>
+          <dd>
+            {WORKSHOP_EVENT.isoDate ? (
+              <time dateTime={WORKSHOP_EVENT.isoDate}>{t.hero.dateValue}</time>
+            ) : (
+              t.hero.toBeAnnounced
+            )}
+          </dd>
         </div>
         <div>
           <dt>{t.hero.venue}</dt>
-          <dd>{WORKSHOP_EVENT.venue ?? t.hero.toBeAnnounced}</dd>
+          <dd>
+            {WORKSHOP_EVENT.mapQuery ? t.hero.venueValue : t.hero.toBeAnnounced}
+          </dd>
         </div>
         <div>
           <dt className="sr-only">{t.hero.seats}</dt>
           <dd className="ws-seats">{t.hero.seats}</dd>
         </div>
       </dl>
+      <EventLinks t={t} />
       <div className="ws-cta-row">
         {/* Registration is not open: a real, focusable control that says so. */}
         <button
@@ -142,6 +156,38 @@ export function WsHero({ t }: { t: EduMessages }) {
         </p>
       </div>
     </section>
+  );
+}
+
+function EventLinks({ t }: { t: EduMessages }) {
+  const map = mapHref(WORKSHOP_EVENT.mapQuery);
+  const ics = WORKSHOP_EVENT.isoDate
+    ? buildIcs({
+        isoDate: WORKSHOP_EVENT.isoDate,
+        title: t.meta.title,
+        location: t.hero.venueValue,
+        url: WORKSHOP_URL,
+      })
+    : null;
+  if (!map && !ics) return null;
+  return (
+    <p className="ws-event-links">
+      {ics ? (
+        <a
+          href={`data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`}
+          download="edufest-2026-workshop.ics"
+        >
+          <CalendarPlus size={15} aria-hidden />
+          {t.hero.addToCalendar}
+        </a>
+      ) : null}
+      {map ? (
+        <a href={map} target="_blank" rel="noopener noreferrer">
+          <MapPin size={15} aria-hidden />
+          {t.hero.openMap}
+        </a>
+      ) : null}
+    </p>
   );
 }
 

@@ -133,8 +133,20 @@ describe('EduFest workshop: copy', () => {
     assert.equal(en.hero.titleAccent, 'Step Inside the Agentic AI Classroom');
   });
 
-  it('no date, venue, price, form or link in the call to action', () => {
-    assert.deepEqual(WORKSHOP_EVENT, { date: null, venue: null });
+  it('the date and venue are the confirmed ones; no price, form or link in the call to action', () => {
+    // The USER confirmed Saturday 5 December 2026 at RMIT SGS.
+    assert.equal(WORKSHOP_EVENT.isoDate, '2026-12-05');
+    assert.equal(new Date('2026-12-05T12:00:00Z').getUTCDay(), 6, 'a Saturday');
+    assert.equal(en.hero.dateValue, 'Saturday, 5 December 2026');
+    assert.equal(vi.hero.dateValue, 'Thứ Bảy, 05/12/2026');
+    assert.match(
+      en.hero.venueValue,
+      /RMIT University Vietnam.*702 Nguyen Van Linh.*Building 2/
+    );
+    assert.match(
+      vi.hero.venueValue,
+      /RMIT Việt Nam.*702 Nguyễn Văn Linh.*Tòa nhà 2/
+    );
     assert.equal(en.hero.cta, 'Registration coming soon');
     assert.equal(vi.hero.cta, 'Sắp mở đăng ký');
     for (const messages of [en, vi])
@@ -149,5 +161,34 @@ describe('EduFest workshop: copy', () => {
     );
     assert.doesNotMatch(component, /<form|<input type="email"|type="text"/);
     assert.match(component, /aria-disabled="true"/);
+  });
+});
+
+describe('EduFest workshop: calendar and map', () => {
+  it('builds an all-day iCalendar event with escaped text', async () => {
+    const { buildIcs, mapHref } = await import('./edufest-2026.ts');
+    const ics = buildIcs({
+      isoDate: '2026-12-05',
+      title: 'A, b; c',
+      location: 'RMIT, Building 2',
+      url: 'https://tuturuuu.com/roadmap/workshops/edufest-2026',
+    });
+    assert.match(ics, /DTSTART;VALUE=DATE:20261205\r\n/);
+    assert.match(ics, /DTEND;VALUE=DATE:20261206\r\n/);
+    assert.match(ics, /SUMMARY:A\\, b\\; c\r\n/);
+    assert.match(ics, /LOCATION:RMIT\\, Building 2\r\n/);
+    assert.ok(
+      ics.startsWith('BEGIN:VCALENDAR\r\n') && ics.endsWith('END:VCALENDAR\r\n')
+    );
+    // Broken variant: a month-end date rolls into the next month.
+    assert.match(
+      buildIcs({ isoDate: '2026-12-31', title: 't', location: 'l', url: 'u' }),
+      /DTEND;VALUE=DATE:20270101/
+    );
+    assert.equal(mapHref(null), null);
+    assert.match(
+      mapHref('702 Nguyen Van Linh') ?? '',
+      /^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=702%20Nguyen/
+    );
   });
 });

@@ -13,7 +13,11 @@
     "toBeAnnounced": "To be announced",
     "seats": "Only 40 seats",
     "cta": "Registration coming soon",
-    "scarcity": "40 seats, first come, first served."
+    "scarcity": "40 seats, first come, first served.",
+    "dateValue": "Saturday, 5 December 2026",
+    "venueValue": "RMIT University Vietnam, Saigon South (SGS) Campus, 702 Nguyen Van Linh, Building 2",
+    "addToCalendar": "Add to calendar",
+    "openMap": "Open map"
   },
   "status": {
     "live": "Live",

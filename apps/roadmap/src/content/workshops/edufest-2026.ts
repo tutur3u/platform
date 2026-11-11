@@ -6,11 +6,63 @@
  */
 import type { Status } from '../../live/status';
 
-/** Filled in only once the USER confirms them. Null renders "to be announced". */
-export const WORKSHOP_EVENT: { date: string | null; venue: string | null } = {
-  date: null,
-  venue: null,
+/**
+ * Confirmed by the USER on 11 Nov 2026: Saturday 5 December 2026 at RMIT
+ * University Vietnam, Saigon South campus. Display text is in the messages;
+ * null here renders "to be announced".
+ */
+export const WORKSHOP_EVENT: {
+  isoDate: string | null;
+  mapQuery: string | null;
+} = {
+  isoDate: '2026-12-05',
+  mapQuery:
+    'RMIT University Vietnam, 702 Nguyen Van Linh, Tan Phong, District 7, Ho Chi Minh City',
 };
+
+/** Google Maps search link for the venue, or null while it is unknown. */
+export function mapHref(query: string | null): string | null {
+  return query
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+    : null;
+}
+
+/** An all-day iCalendar event for the workshop date. */
+export function buildIcs({
+  isoDate,
+  title,
+  location,
+  url,
+}: {
+  isoDate: string;
+  title: string;
+  location: string;
+  url: string;
+}): string {
+  const day = isoDate.replaceAll('-', '');
+  const next = new Date(`${isoDate}T00:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  const end = next.toISOString().slice(0, 10).replaceAll('-', '');
+  // RFC 5545 text: escape backslash, semicolon and comma; CRLF line ends.
+  const text = (value: string) => value.replace(/[\\;,]/g, (c) => `\\${c}`);
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Tuturuuu//EduFest 2026 workshop//EN',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `UID:edufest-2026-workshop-${day}@tuturuuu.com`,
+    `DTSTAMP:${day}T000000Z`,
+    `DTSTART;VALUE=DATE:${day}`,
+    `DTEND;VALUE=DATE:${end}`,
+    `SUMMARY:${text(title)}`,
+    `LOCATION:${text(location)}`,
+    `URL:${url}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+    '',
+  ].join('\r\n');
+}
 
 export const WORKSHOP_PATH = '/roadmap/workshops/edufest-2026';
 export const WORKSHOP_URL = `https://tuturuuu.com${WORKSHOP_PATH}`;
