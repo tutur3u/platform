@@ -15,9 +15,15 @@ import {
   WsAgenda,
   WsAiDemo,
   WsCapabilities,
+  WsExperience,
+  WsFaq,
   WsFlow,
   WsHero,
+  WsHighlights,
+  WsInsightsDemo,
   WsJourney,
+  WsReadiness,
+  WsSeatSwap,
   WsTools,
 } from '../../components/workshop';
 import {
@@ -92,11 +98,22 @@ function EduFestWorkshopPage() {
       >
         <main className="page ws-page">
           <WsHero t={t} />
+          <WsHighlights t={t} />
+          <WsSeatSwap t={t} />
           <WsAgenda t={t} />
+          <WsExperience t={t} />
           <WsJourney t={t} statuses={statuses} />
           <WsAiDemo t={t} statuses={statuses} />
           <WsFlow t={t} statuses={statuses} />
+          <WsInsightsDemo t={t} statuses={statuses} />
+          <WsReadiness
+            t={t}
+            statuses={statuses}
+            checkedAt={live.data.generatedAt}
+            lang={lang}
+          />
           <WsCapabilities t={t} statuses={statuses} />
+          <WsFaq t={t} />
           <WsTools t={t} logo={logo} />
         </main>
       </MarketingShell>

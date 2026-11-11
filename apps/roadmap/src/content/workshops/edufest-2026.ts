@@ -94,6 +94,7 @@ export const TOOLS = [
   'mail',
   'track',
   'colab',
+  'tulletin',
 ] as const;
 export type ToolId = (typeof TOOLS)[number];
 
@@ -271,6 +272,51 @@ export const USE_CASES: readonly UseCase[] = [
     'ai-chatgpt-subscriptions'
   ),
   uc('edu-admin', 'govern', 'upskii', ['admin'], 'upskii-education-module'),
+  uc(
+    'marketplace',
+    'prepare',
+    'upskii',
+    ['teacher', 'student'],
+    'upskii-course-marketplace'
+  ),
+  uc('instant-rooms', 'live', 'meet', ['teacher'], 'meet-instant-rooms'),
+  uc(
+    'recorded-transcripts',
+    'live',
+    'meet',
+    ['student', 'teacher'],
+    'meet-recording-transcripts'
+  ),
+  uc(
+    'quick-notes',
+    'organise',
+    'tulletin',
+    ['student', 'teacher'],
+    'tulletin-quick-notes'
+  ),
+  uc(
+    'multi-calendar',
+    'organise',
+    'calendar',
+    ['teacher'],
+    'calendar-multi-account'
+  ),
+  uc(
+    'offline-files',
+    'organise',
+    'drive',
+    ['student', 'teacher'],
+    'drive-offline-list'
+  ),
+  uc('offline-chat', 'support', 'mira', ['student'], 'mira-offline'),
+  uc(
+    'on-device',
+    'govern',
+    'mira',
+    ['student', 'teacher', 'admin'],
+    'mira-local-models'
+  ),
+  uc('ai-spend', 'govern', 'ai-studio', ['admin'], 'ai-provider-expenses'),
 ];
 
 /** Role-play journey: each step lists the capabilities it relies on. */
@@ -307,3 +353,51 @@ export const AI_LEVELS = ['off', 'hints', 'full'] as const;
 export type AiLevel = (typeof AI_LEVELS)[number];
 /** The deliverable behind the AI-help demo. */
 export const AI_LEVELS_DELIVERABLE = 'meet-classroom-ai-levels';
+
+/** Marketing highlights, before the agenda. */
+export const HIGHLIGHTS = ['seat', 'agents', 'early', 'plan'] as const;
+
+/** "What you'll experience" cards; each names the seat it happens in. */
+export const EXPERIENCES: readonly {
+  id: string;
+  seat: 'student' | 'teacher';
+}[] = [
+  { id: 'hint', seat: 'student' },
+  { id: 'handwriting', seat: 'student' },
+  { id: 'quiz', seat: 'student' },
+  { id: 'build', seat: 'teacher' },
+  { id: 'insights', seat: 'teacher' },
+  { id: 'control', seat: 'teacher' },
+];
+
+export const FAQ = [
+  'who',
+  'skills',
+  'ready',
+  'answers',
+  'registration',
+  'after',
+] as const;
+
+/**
+ * Sample data for the classroom-insights mock. Invented for illustration and
+ * labelled "demo data" on the page; it is never presented as a measurement.
+ */
+export const INSIGHTS_DEMO = {
+  learners: 40,
+  joined: 38,
+  questionsToAi: 126,
+  averageQuiz: 7.6,
+  participation: [92, 88, 85, 81, 77, 74, 70, 64, 58, 49],
+  aiHelp: { hints: 64, full: 14, none: 22 },
+  quizBuckets: [
+    { range: '0–2', learners: 2 },
+    { range: '3–5', learners: 7 },
+    { range: '6–8', learners: 17 },
+    { range: '9–10', learners: 12 },
+  ],
+  stickingPoints: ['step2', 'units', 'checking'],
+} as const;
+
+/** The deliverable behind real class insights (planned). */
+export const INSIGHTS_DELIVERABLE = 'meet-classroom-captions';

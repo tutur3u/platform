@@ -17,7 +17,7 @@
     "dateValue": "Thứ Bảy, 05/12/2026",
     "venueValue": "Đại học RMIT Việt Nam, Cơ sở Nam Sài Gòn (SGS), 702 Nguyễn Văn Linh, Tòa nhà 2",
     "addToCalendar": "Thêm vào lịch",
-    "openMap": "Xem bản đồ"
+    "openMap": "Mở bản đồ"
   },
   "status": {
     "live": "Đã dùng được",
@@ -185,7 +185,16 @@
       "ai-log": "Nhật ký ghi lại mọi lần AI làm việc, để xem lại khi cần",
       "byo-key": "Dùng khoá API AI riêng của nhà trường",
       "byo-chatgpt": "Dùng tài khoản ChatGPT thầy cô đang có",
-      "edu-admin": "Quản lý lớp, khoá học và học viên"
+      "edu-admin": "Quản lý lớp, khoá học và học viên",
+      "marketplace": "Tìm và chia sẻ khoá học trên chợ khoá học",
+      "instant-rooms": "Mở ngay một phòng học, gắn với lịch của thầy cô",
+      "recorded-transcripts": "Bản ghi lời giảng do AI tạo từ các buổi học đã ghi hình",
+      "quick-notes": "Ghi nhanh ý tưởng, riêng tư, chỉ mình thầy cô xem được",
+      "multi-calendar": "Dùng cùng lúc nhiều lịch Google và Microsoft",
+      "offline-files": "Xem tài liệu lớp học ngay cả khi không có mạng",
+      "offline-chat": "Đọc lại các cuộc trò chuyện với AI Agent ngay cả khi không có mạng",
+      "on-device": "Chạy mô hình AI ngay trên thiết bị của thầy cô, riêng tư",
+      "ai-spend": "Xem toàn bộ chi phí AI ở một nơi"
     }
   },
   "explorer": {
@@ -221,8 +230,117 @@
       "forms": "Forms",
       "mail": "Mail",
       "track": "Track",
-      "colab": "Colab"
+      "colab": "Colab",
+      "tulletin": "Tulletin"
     }
   },
-  "skip": "Đi tới nội dung workshop"
+  "skip": "Đi tới nội dung workshop",
+  "highlights": {
+    "title": "Vì sao buổi workshop này khác biệt",
+    "items": {
+      "seat": {
+        "title": "Thầy cô ngồi vào ghế học trò",
+        "body": "Phần lớn cả phòng là người học, chỉ vài thầy cô đứng lớp. Thầy cô cảm nhận lớp học AI từ bên trong, trước khi tự mình dẫn dắt."
+      },
+      "agents": {
+        "title": "Tự tay dùng AI Agent thật",
+        "body": "Không phải bài trình chiếu. Thầy cô tự dùng AI Agent trong một tiết học trực tiếp, ngay trên thiết bị của mình."
+      },
+      "early": {
+        "title": "Trải nghiệm sớm, độc quyền",
+        "body": "Được xem trước những tính năng AI mới nhất cho lớp học, kể cả phần vẫn đang được xây dựng, tất cả đều có nhãn rõ ràng."
+      },
+      "plan": {
+        "title": "Mang về một giáo án",
+        "body": "Biến trải nghiệm hôm nay thành kế hoạch cho tiết học có AI hỗ trợ đầu tiên của chính thầy cô."
+      }
+    }
+  },
+  "readiness": {
+    "title": "Hôm nay đã sẵn sàng đến đâu?",
+    "subtitle": "Mọi năng lực trên trang này, được đếm trực tiếp từ lộ trình công khai.",
+    "source": "Nguồn: lộ trình công khai của Tuturuuu, cập nhật lúc",
+    "total": "năng lực",
+    "legend": "Mức độ sẵn sàng của các năng lực trên trang này"
+  },
+  "experience": {
+    "title": "Thầy cô sẽ trải nghiệm những gì",
+    "subtitle": "Những khoảnh khắc trong buổi workshop, ngay từ chiếc ghế thầy cô sẽ ngồi.",
+    "seats": {
+      "student": "Ghế học trò",
+      "teacher": "Ghế giáo viên"
+    },
+    "items": {
+      "hint": "Thầy cô bí một bài toán, và AI Agent đặt đúng câu hỏi mở ra lối giải, mà không đưa sẵn đáp án.",
+      "handwriting": "Thầy cô viết tay một lời giải và thấy nó hiện lên thành chữ, thành công thức toán gọn gàng.",
+      "quiz": "Thầy cô chạy đua với đồng hồ trong một bài kiểm tra ngắn và cùng nhóm giành điểm cộng.",
+      "build": "Thầy cô soạn một bài học và bài kiểm tra cùng AI trong vài phút, rồi tự làm thử.",
+      "insights": "Thầy cô thấy ai đã tham gia, lớp vướng ở đâu, và AI đã hỗ trợ ra sao.",
+      "control": "Thầy cô chọn AI được giúp đến mức nào, và khi nào AI nên im lặng."
+    }
+  },
+  "insights": {
+    "title": "Sau giờ học, giáo viên có thể thấy gì",
+    "subtitle": "Bảng thông tin lớp học mô phỏng.",
+    "demo": "Dữ liệu mẫu",
+    "demoNote": "Số liệu mẫu được tạo ra chỉ để minh hoạ, không lấy từ một lớp học thật.",
+    "joined": "đã tham gia",
+    "questions": "câu hỏi gửi AI Agent",
+    "average": "điểm kiểm tra trung bình",
+    "outOf": "trên 10",
+    "participationTitle": "Mức độ tham gia của từng học trò",
+    "participationNote": "Tỉ lệ hoạt động mỗi học trò tham gia, đã ẩn danh.",
+    "learner": "Học trò",
+    "aiTitle": "AI Agent đã hỗ trợ thế nào",
+    "aiLevels": {
+      "hints": "Chỉ gợi ý",
+      "full": "Hỗ trợ đầy đủ",
+      "none": "Không dùng AI"
+    },
+    "quizTitle": "Kết quả kiểm tra",
+    "quizNote": "Số học trò theo từng khoảng điểm",
+    "stuckTitle": "Lớp hay vướng ở đâu",
+    "stuck": {
+      "step2": "Chuyển vế các số hạng",
+      "units": "Giữ đơn vị cho thống nhất",
+      "checking": "Kiểm tra lại đáp án"
+    },
+    "table": "Xem dữ liệu dạng bảng",
+    "metric": "Chỉ số",
+    "value": "Số liệu",
+    "learnersWord": "học trò",
+    "percent": "Tỉ lệ"
+  },
+  "faq": {
+    "title": "Những câu thầy cô thường hỏi",
+    "items": {
+      "who": {
+        "q": "Workshop này dành cho ai?",
+        "a": "Dành cho thầy cô, trợ giảng và cán bộ quản lý muốn thấy AI Agent làm được gì trong một tiết học thật. Có 40 suất."
+      },
+      "skills": {
+        "q": "Tôi có cần giỏi công nghệ không?",
+        "a": "Không cần. Chỉ cần thầy cô dùng được máy tính hoặc điện thoại để gọi video là có thể tham gia. Mọi bước đều có hướng dẫn."
+      },
+      "ready": {
+        "q": "Mọi tính năng trên trang đều dùng được ngay chứ?",
+        "a": "Chưa phải tất cả. Mỗi năng lực đều được gắn nhãn Đã dùng được, Đang hoàn thiện hoặc Trong kế hoạch theo lộ trình công khai. “Trong kế hoạch” nghĩa là chưa được xây dựng."
+      },
+      "answers": {
+        "q": "AI có đưa luôn đáp án cho học trò không?",
+        "a": "Chỉ khi giáo viên cho phép. Mặc định AI luôn tắt, và giáo viên có thể chọn chế độ chỉ gợi ý, không đưa đáp án."
+      },
+      "registration": {
+        "q": "Đăng ký như thế nào?",
+        "a": "Hiện chưa mở đăng ký. Chỉ có 40 suất, và thông tin đăng ký sẽ được cập nhật tại đây."
+      },
+      "after": {
+        "q": "Sau buổi workshop thì sao?",
+        "a": "Thầy cô mang về kế hoạch cho một tiết học, dùng những năng lực đã dùng được ngay hôm nay."
+      }
+    }
+  },
+  "illustration": {
+    "label": "Minh hoạ: một giáo viên rời bục giảng để ngồi vào ghế học trò, trong khi AI Agent hỗ trợ từng bàn học."
+  }
 }

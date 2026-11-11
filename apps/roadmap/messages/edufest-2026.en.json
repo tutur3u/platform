@@ -185,7 +185,16 @@
       "ai-log": "A log of every AI run, for review",
       "byo-key": "Use your own AI API key",
       "byo-chatgpt": "Use the ChatGPT subscription you already have",
-      "edu-admin": "Manage classes, courses and learners"
+      "edu-admin": "Manage classes, courses and learners",
+      "marketplace": "Find and share courses in a course marketplace",
+      "instant-rooms": "Start an instant class room, linked to your calendar",
+      "recorded-transcripts": "AI transcripts of recorded lessons",
+      "quick-notes": "Capture quick notes and ideas privately",
+      "multi-calendar": "Use several Google and Microsoft calendars at once",
+      "offline-files": "Browse class files offline",
+      "offline-chat": "Read past conversations with the AI agent offline",
+      "on-device": "Run AI models on your own device, privately",
+      "ai-spend": "See all AI spending in one view"
     }
   },
   "explorer": {
@@ -221,8 +230,117 @@
       "forms": "Forms",
       "mail": "Mail",
       "track": "Track",
-      "colab": "Colab"
+      "colab": "Colab",
+      "tulletin": "Tulletin"
     }
   },
-  "skip": "Skip to the workshop"
+  "skip": "Skip to the workshop",
+  "highlights": {
+    "title": "Why this session is different",
+    "items": {
+      "seat": {
+        "title": "You sit in the student’s seat",
+        "body": "Most of the room learns, a few teach. You feel an AI classroom from the inside before you run one."
+      },
+      "agents": {
+        "title": "Real AI agents, hands-on",
+        "body": "Not a slideshow. You use AI agents yourself, in a live lesson, on your own device."
+      },
+      "early": {
+        "title": "Exclusive early access",
+        "body": "See the newest classroom AI first, including what is still being built, clearly labelled."
+      },
+      "plan": {
+        "title": "Leave with a lesson plan",
+        "body": "Turn what you experienced into a plan for your own first AI-supported lesson."
+      }
+    }
+  },
+  "readiness": {
+    "title": "How ready is it today?",
+    "subtitle": "Every capability on this page, counted live from the public roadmap.",
+    "source": "Source: the public Tuturuuu roadmap, checked",
+    "total": "capabilities",
+    "legend": "Readiness of the capabilities on this page"
+  },
+  "experience": {
+    "title": "What you’ll experience",
+    "subtitle": "Moments from the session, in the seat you will be sitting in.",
+    "seats": {
+      "student": "Student seat",
+      "teacher": "Teacher seat"
+    },
+    "items": {
+      "hint": "You are stuck on a problem, and the AI agent asks you the question that unlocks it, without giving the answer away.",
+      "handwriting": "You write a working by hand and watch it become neat text and maths.",
+      "quiz": "You race a short quiz against the timer and earn plus points with your group.",
+      "build": "You build a lesson and quiz with AI in minutes, then try it yourself.",
+      "insights": "You see who joined in, where the class got stuck, and how the AI helped.",
+      "control": "You choose how much the AI may help, and when it should stay quiet."
+    }
+  },
+  "insights": {
+    "title": "What a teacher could see after class",
+    "subtitle": "A mock dashboard of class insights.",
+    "demo": "Demo data",
+    "demoNote": "Sample numbers made up for illustration. Not from a real class.",
+    "joined": "joined",
+    "questions": "questions to the AI agent",
+    "average": "average quiz score",
+    "outOf": "out of 10",
+    "participationTitle": "Participation by learner",
+    "participationNote": "Share of activities each learner took part in, anonymised.",
+    "learner": "Learner",
+    "aiTitle": "How the AI agent helped",
+    "aiLevels": {
+      "hints": "Hints only",
+      "full": "Full help",
+      "none": "No AI"
+    },
+    "quizTitle": "Quiz results",
+    "quizNote": "Learners per score range",
+    "stuckTitle": "Where the class got stuck",
+    "stuck": {
+      "step2": "Moving terms to the other side",
+      "units": "Keeping units consistent",
+      "checking": "Checking the answer"
+    },
+    "table": "Show the data as a table",
+    "metric": "Measure",
+    "value": "Value",
+    "learnersWord": "learners",
+    "percent": "Share"
+  },
+  "faq": {
+    "title": "Questions teachers ask",
+    "items": {
+      "who": {
+        "q": "Who is this workshop for?",
+        "a": "Teachers, teaching assistants and school leaders who want to see what AI agents can do in a real lesson. There are 40 seats."
+      },
+      "skills": {
+        "q": "Do I need technical skills?",
+        "a": "No. If you can use a laptop or phone for a video call, you can take part. Everything is guided."
+      },
+      "ready": {
+        "q": "Is everything shown ready to use?",
+        "a": "Not all of it. Each capability is labelled Live, In progress or Planned from the public roadmap. Planned means not built yet."
+      },
+      "answers": {
+        "q": "Will the AI simply give students the answers?",
+        "a": "Only if the teacher allows it. AI is off by default, and the teacher can choose hints only, with no direct answers."
+      },
+      "registration": {
+        "q": "How do I register?",
+        "a": "Registration is not open yet. Seats are limited to 40, and registration details will be announced here."
+      },
+      "after": {
+        "q": "What happens after the workshop?",
+        "a": "You leave with a plan for one lesson, using the capabilities that are live today."
+      }
+    }
+  },
+  "illustration": {
+    "label": "Illustration: a teacher moves from the front desk to a student seat, while an AI agent supports every desk."
+  }
 }
