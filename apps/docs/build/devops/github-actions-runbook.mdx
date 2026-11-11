@@ -82,6 +82,24 @@ label write generates the real `pull_request:labeled` event. Security classifica
 continues on drafts and bot-authored PRs. Summary metadata events retain draft and
 label transitions so the displayed readiness state stays accurate.
 
+### Opt-in Test and Type Check runners
+
+`CI_VALIDATION_RUNNER` selects only the secret-free PR unit shards and PR Type
+Check job. Empty, malformed or unsupported values retain `ubuntu-latest`; pushes
+and forks remain hosted. Allowed `ttr-selfhosted-<host>` values are defined by `HOST_LABELS` in
+`scripts/ci/self-hosted-policy.js`. Leave the variable unset until a runner is
+registered and independently qualified. Clearing it restores hosted selection for new jobs.
+This source change does not register runners or change fork approval settings.
+
+The routing condition requires a PR with matching head/base repository IDs and
+names. Jobs explicitly grant only `contents: read`, carry no secrets or tokened
+Turbo inputs, disable persistent Bun caching and retain restore-only PR Turbo
+caches. Push jobs carrying credentials remain hosted. The required Test root-script job runs
+`scripts/ci/self-hosted-policy.js` across all workflows; regression tests include
+missing guards, elevated permissions, secret references, cache writers, fork
+fallback and invalid variable controls. Source tests establish policy behavior;
+actual host qualification and execution require separate runtime evidence.
+
 ## Calendar owning-suite timings
 
 The `calendar-native` job in `mail-calendar-tasks-builds.yaml` reports Calendar,

@@ -17,9 +17,7 @@ const selected = {
   ],
   'docs-seo-check.yaml': ['validate'],
   'mobile-api-mappings.yaml': ['verify'],
-  'type-check.yaml': ['type-check-pr'],
   'oxc-check.yaml': ['duplicate-validation', 'format', 'lint'],
-  'turbo-unit-tests.yaml': ['test-shards-pr'],
 };
 const routedViaInput = ['oxc-check.yaml:check-ci'];
 const poolSelectors = ['ci-check.yml:check'];
@@ -263,7 +261,7 @@ test('secret-bearing variants never reach the pool and share check contexts with
     assert.equal(secretJob['runs-on'], 'ubuntu-latest');
     assert.ok(!JSON.stringify(secretJob).includes(poolLabel));
     assert.ok(
-      JSON.stringify(poolJob['runs-on']).includes(poolLabel),
+      JSON.stringify(poolJob['runs-on']).includes('ttr-selfhosted-'),
       `${file}:${poolId}`
     );
     assert.equal(secretJob.name, poolJob.name);
