@@ -254,3 +254,29 @@ describe('EduFest workshop: richer content', () => {
       );
   });
 });
+
+/** The declarations of one CSS rule, by its exact selector. */
+function cssRule(css: string, selector: string): string | null {
+  const start = css.indexOf(`\n${selector} {`);
+  if (start < 0) return null;
+  const open = css.indexOf('{', start);
+  return css.slice(open + 1, css.indexOf('\n}', open));
+}
+
+describe('EduFest workshop: hero glow', () => {
+  it('spans the whole hero instead of a fixed band that stops mid-section', () => {
+    const css = readFileSync(
+      new URL('../../styles.css', import.meta.url),
+      'utf8'
+    );
+    const glow = cssRule(css, '.ws-hero::before');
+    assert.ok(glow, '.ws-hero::before exists');
+    const covers = (rule: string) =>
+      /\n\s*top:/.test(rule) &&
+      /\n\s*bottom:/.test(rule) &&
+      !/\n\s*height:/.test(rule);
+    assert.ok(covers(glow), glow);
+    // Broken variant: the old fixed 560px band is caught.
+    assert.equal(covers('\n  top: -140px;\n  height: 560px;'), false);
+  });
+});
