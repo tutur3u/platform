@@ -58,9 +58,10 @@ const REDACTIONS: Array<[RegExp, string]> = [
   [/\bya29\.[A-Za-z0-9._-]+/g, '[redacted]'],
   [/\b1\/\/[A-Za-z0-9._-]{20,}/g, '[redacted]'],
   [
-    /\b(access_token|refresh_token|id_token|client_secret|code|authorization|apikey|api_key|token|password|secret)(["']?\s*[:=]\s*)(["']?)[^\s"'&,;}]+/gi,
-    '$1$2$3[redacted]',
+    /\b(access_token|refresh_token|id_token|client_secret|code|authorization|apikey|api_key|token|password|secret)(["']?\s*[:=]\s*)(?:"(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s"'&,;}]+)/gi,
+    '$1$2[redacted]',
   ],
+  [/\b(https?:\/\/)[^\s/]+@/gi, '$1'],
   [/(https?:\/\/[^\s"'<>?#]+)[?#][^\s"'<>]*/gi, '$1'],
 ];
 

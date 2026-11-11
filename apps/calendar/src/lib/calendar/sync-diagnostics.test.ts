@@ -94,6 +94,29 @@ describe('bounded calendar diagnostics', () => {
     expect(out).toContain('[redacted]');
   });
 
+  it.each([
+    [
+      '{"client_secret":"canary,still-sensitive"}',
+      ['canary', 'still-sensitive'],
+    ],
+    ["password='canary spaced suffix'", ['canary', 'spaced', 'suffix']],
+    [
+      'https://canary-user:canary-password@host/path',
+      ['canary-user', 'canary-password'],
+    ],
+    [
+      '{"password":"canary\\\"escaped,suffix"}',
+      ['canary', 'escaped', 'suffix'],
+    ],
+    [
+      'password="canary unterminated suffix',
+      ['canary', 'unterminated', 'suffix'],
+    ],
+  ])('removes complete credentials from %s', (input, secrets) => {
+    const output = sanitizeSyncErrorMessage(input);
+    for (const secret of secrets) expect(output).not.toContain(secret);
+  });
+
   it('caps a long message', () => {
     expect(
       sanitizeSyncErrorMessage('x'.repeat(5000)).length
