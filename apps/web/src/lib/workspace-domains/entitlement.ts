@@ -49,13 +49,16 @@ const DENIED = (reason: string): WorkspaceDomainEntitlement => ({
 
 /**
  * Paid add-on checkout stays off until WORKSPACE_DOMAINS_BILLING_ENABLED is
- * `true`. While off, paid workspaces see the price as coming soon and only
+ * `true` and WORKSPACE_DOMAINS_POLAR_PRODUCT_ID names the add-on product. While off, paid workspaces see the price as coming soon and only
  * the staff bypass can activate domains.
  */
 export function isWorkspaceDomainsBillingEnabled(
   env: Record<string, string | undefined> = process.env
 ) {
-  return env.WORKSPACE_DOMAINS_BILLING_ENABLED === 'true';
+  return (
+    env.WORKSPACE_DOMAINS_BILLING_ENABLED === 'true' &&
+    Boolean(env.WORKSPACE_DOMAINS_POLAR_PRODUCT_ID?.trim())
+  );
 }
 
 /** Fails closed: any database error or unexpected shape denies. */

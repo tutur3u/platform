@@ -1,75 +1,116 @@
 ---
-title: "Workspace domain setup: access and abuse controls"
-description: "Proposal for workspace domain eligibility, verification, and lifecycle controls."
-updatedAt: "2026-11-06"
+title: "Workspace domains: access and abuse controls"
+description: "Decisions, entitlement policy, and lifecycle controls for workspace custom domains."
+updatedAt: "2026-11-11"
 ---
 
-# Workspace domain setup: access and abuse controls
+# Workspace domains: access and abuse controls
 
-## Proposal status
+## Status
 
-This document proposes controls for workspace domains. It does not establish current feature availability, approved pricing, or an authorization policy. Product, billing, security, and privacy decisions require acceptance by their responsible owners before implementation.
+The product decisions below are accepted. Slices 1 to 4 are implemented in code;
+billing checkout stays behind a server flag and rollout (slice 5) has not started.
+Operator setup lives in the [workspace domains runbook](/platform/workspace-domains-runbook).
 
-## Proposed scope and defaults
+## Decisions
 
-**Proposed scope:** workspace setup, linking, and continued serving of managed subdomains and customer-owned domains, including email-domain verification and projects created through `ttr project new`.
+**Scope:** a workspace binds hostnames to its public web presence: apex custom
+domains (`example.com`), custom subdomains (`blog.example.com`) and platform
+subdomains (`<label>.ttr.gg`). A domain serves the workspace's published CMS site
+(External Projects delivery rendered with `@tuturuuu/cms-blocks`). Without an
+enabled canonical project it serves a public landing page with the workspace name,
+avatar and a "Powered by Tuturuuu" link, and nothing private.
 
-**Proposed default:** deny. Enable the capability only for (1) trusted workspaces explicitly maintained on a root-managed allowlist, or (2) workspaces on an eligible paid plan with the custom-domain add-on, with a proposed price of **$5 per domain per month**, subject to billing and product approval. Enforce entitlement in server-side create, update, link, and serving paths; hiding a control in the UI is not authorization. The trusted allowlist bypasses paid-plan/add-on requirements, but not verification or safety controls.
+**Default:** deny. A workspace can add a domain only when one of these holds:
 
-**Proposed integration points:** workspace settings, domain-link/create APIs, project provisioning pipeline, email sender-domain verification, billing/entitlement status, operational audit and kill switch. Ineligible workspaces see a disabled control and a plain explanation of the trusted/paid options.
+1. **Paid add-on.** The workspace is on a paid plan (tier is not `FREE`) and holds
+   an active custom-domain add-on whose quantity covers its domains. The add-on
+   costs **$10 per domain per month**. One add-on unit is one domain.
+2. **Staff bypass.** The acting user is verified Tuturuuu staff and holds
+   `manage_workspace_domains` in that workspace. Verified staff means a current
+   Auth user with a confirmed email in exactly `@tuturuuu.com`
+   (`isVerifiedTuturuuuStaffSession` with `allowXwf: false`, and the SQL twin
+   `public.is_verified_tuturuuu_staff(user, false)`). Subdomain mailboxes such as
+   `xwf.tuturuuu.com` and lookalike domains never qualify. No other bypass exists.
 
-**Proposed exceptions:** trusted workspaces may operate without a paid add-on; staff/root may disable the global feature during an incident. No other implicit bypass. While a paid entitlement lapses, retain configuration for a defined grace period, stop accepting new domains immediately, and then disable serving/linkage unless restored. Determine the grace duration before implementation.
+The bypass never skips hostname validation, ownership proof, caps, the kill switch
+or audit. A staff-bypass domain keeps serving only while its creator is still
+verified staff.
 
-## Existing system and grounding
+**Billing launch gate:** paid add-ons ship with no new charge. Checkout appears only
+when `WORKSPACE_DOMAINS_BILLING_ENABLED=true` in apps/web, and add-on entitlement
+counts only when `private.workspace_domain_settings.paid_addon_enabled` is true.
+Until both are on, paid workspaces see the price with a "coming soon" note and only
+the staff bypass can activate domains. Billing goes through the existing Polar
+subscription path; the add-on is a Polar product with metadata
+`product_kind: "custom_domain_addon"` reconciled into
+`private.workspace_domain_addons`, never into plan tables.
 
-The checked-in code provides building blocks for this proposal:
+**Permissions:** `view_workspace_domains` reads domains and entitlement;
+`manage_workspace_domains` adds, verifies and removes them. Workspace creators and
+admins hold both through `has_workspace_permission`.
 
-- [`normalizeInfrastructureProjectHostnames`](https://github.com/tutur3u/platform/blob/86d1369500db9559016af05139bf62591b0a2f6e/apps/web/src/lib/infrastructure/project-model.ts) normalizes and deduplicates input, then rejects unsafe and reserved hostnames. It imports the shared rules through [`managed-project-hostnames.ts`](https://github.com/tutur3u/platform/blob/86d1369500db9559016af05139bf62591b0a2f6e/packages/utils/src/managed-project-hostnames.ts). The create and update functions in [`projects.ts`](https://github.com/tutur3u/platform/blob/86d1369500db9559016af05139bf62591b0a2f6e/apps/web/src/lib/infrastructure/projects.ts) call this validator before persisting hostnames. Input validation alone does not establish domain ownership or billing entitlement.
-- [`layout-data.ts`](https://github.com/tutur3u/platform/blob/86d1369500db9559016af05139bf62591b0a2f6e/apps/web/src/app/%5Blocale%5D/%28dashboard%29/%5BwsId%5D/layout-data.ts) derives a workspace tier from active `workspace_subscriptions` records and `workspace_subscription_products`. This supplies plan context. It does not establish the proposed per-domain add-on entitlement.
-- [`createPolarClient`](https://github.com/tutur3u/platform/blob/86d1369500db9559016af05139bf62591b0a2f6e/packages/payment/src/polar/server.ts) creates a server-side Polar client. The package's `polar/index.ts` exports SDK types and helpers. These exports do not establish a domain billing product or its lifecycle semantics.
+**Limits:** 10 domains per workspace by default (`default_domain_cap`), with a root
+override in `private.workspace_domain_caps`. A lapsed add-on keeps serving for 7 days
+after its period end (`lapse_grace_days`), oldest domains first, then stops; new
+domains are blocked immediately. Removed platform subdomains are quarantined from
+other workspaces for 30 days (`quarantine_days`); a removed custom hostname can be
+claimed by another workspace only by passing a fresh ownership TXT check.
 
-These source references describe implementation building blocks, not deployment evidence for this proposal. Provider readiness, hostname allowances, costs, and Fallback Origin requirements need confirmation before any provisioning plan is accepted. This document makes no claim about an active provider account's configuration.
+**Reserved names:** the managed-project rule (`tuturuuu.com`, `tutur3u.com` and
+their subdomains, released domains) plus `tuturuu.com`, the `ttr.gg` apex, nested
+`ttr.gg` names and reserved labels such as `www`, `saas`, `fysh`, `api` and `admin`
+(`packages/utils/src/workspace-domain-hostnames.ts`).
 
-## Proposed entitlement and lifecycle
+## Implementation
 
-Represent each domain as a workspace-owned resource with normalized hostname, verification state, provider hostname/certificate state, add-on subscription reference, entitlement state, and lifecycle timestamps. A server-side policy function takes workspace, hostname, operation, trusted-list state, paid-plan state, add-on quantity/status, and global kill-switch state; fail closed on missing or stale billing state. Under the proposed pricing model, one active $5/month add-on unit would map to one domain. Reconcile provider webhooks idempotently and periodically against billing state. Do not derive entitlement from browser-supplied state.
+| Slice | Status | Where |
+| --- | --- | --- |
+| 1. Server gate and staff bypass | Implemented | `private.workspace_domain_entitlement`, `apps/web/src/lib/workspace-domains/entitlement.ts` |
+| 2. Paid add-on billing | Reconciliation implemented; checkout held by `WORKSPACE_DOMAINS_BILLING_ENABLED` and `paid_addon_enabled` | `packages/payment-core/src/workspace-domain-addon.ts`, apps/pay Polar webhook |
+| 3. DNS lifecycle and abuse defense | Implemented | Ownership TXT, Cloudflare for SaaS, caps, quarantine, kill switch and audit in `20261111120100_workspace_domains.sql` and `apps/web/src/lib/workspace-domains/service.ts` |
+| 4. Settings, CLI and edge | Implemented | Settings page `/[wsId]/domains`, `ttr domains`, `apps/workspace-domains` Worker |
+| 5. Rollout | Not started | Staff-bypass domains first, then billing preview sign-off |
 
-On lapse, immediately block adding/transferring domains and mark the affected domain pending grace; notify workspace admins and show the deadline. During grace, preserve DNS ownership records and configuration, but do not permit ownership transfer. At grace expiry disable serving and detach safely; retain records for recovery/audit. Cancellation, refund, chargeback, and payment retry semantics need provider-specific decisions. Trusted workspaces do not lapse into paid state, but remain subject to global kill switch and DNS safety.
+`ttr project new` integration and email sender-domain reuse are not implemented.
 
-## Proposed verification and abuse controls
+### Lifecycle
 
-1. Require a unique TXT challenge or provider-approved CNAME proof for every customer-owned hostname; re-check before activation, transfer, and recovery. Verify control of the registrable domain where feasible. Never treat an existing CNAME target alone as proof.
-2. Reject protected brands, platform/reserved names, public suffixes, invalid IDNs, internal/private targets, and names on maintained blocklists. Make checks canonicalization-safe and race-safe at persistence time.
-3. Set per-workspace domain caps (including trusted workspaces), with a documented root override. Rate-limit verification and TLS issuance per workspace and globally; enforce provider limits and alert on budget thresholds.
-4. Prevent takeover: atomically reserve normalized hostnames, require proof for transfer, quarantine removed names, and revalidate ownership before reassignment. Detect dangling CNAME/A/NS targets and suspend routing/cert renewal until repaired.
-5. Audit actor, workspace, hostname, operation, verification, billing transition, and administrative override without logging DNS tokens or secrets. Provide a root kill switch that blocks new attachments and can suspend routing/issuance; exercise it operationally.
-6. Review abuse signals and exceptions with the designated security/operations owner before launch.
+1. **Add** (`POST /api/v1/workspaces/:wsId/domains`): normalize and classify the
+   hostname, check entitlement (fails closed), insert a `pending_verification` row
+   with a random per-domain TXT token, audit. The insert trigger enforces the cap,
+   kill switch and quarantine under a per-workspace lock; a partial unique index
+   keeps one live row per hostname across all workspaces.
+2. **Verify** (`POST .../domains/:id/verify`, idempotent): re-check entitlement,
+   then for custom hostnames look up `_tuturuuu-verify.<host>` over DNS-over-HTTPS.
+   With proof, create or refresh the Cloudflare custom hostname and show its DCV
+   records; for `ttr.gg` create a proxied record. When the certificate is active,
+   attach the `<host>/*` Worker route and mark the domain `active`.
+3. **Serve:** the edge Worker resolves the host through
+   `GET /api/v1/workspace-domains/resolve`, which answers only for `active` domains
+   that `private.workspace_domain_serving_allowed` still entitles.
+4. **Remove** (`DELETE .../domains/:id`): detach the Worker route, DNS record and
+   custom hostname (best effort; failures are recorded), then mark `removed`.
 
-## Proposed project creation integration
+Audit rows in `private.workspace_domain_audit` record actor, workspace, hostname,
+action, entitlement source and outcome, never DNS tokens or provider credentials.
 
-The proposed `ttr project new` integration would collect requested hostname/domain intent and workspace identity, then call the same server policy and provisioning path used by settings. For an eligible project it creates a pending domain record, prints the exact TXT or CNAME instructions, waits for verification, then attaches the hostname and reports status. For an ineligible workspace it explains the disabled feature and paid/trusted eligibility without creating provider resources. Project creation must not bypass caps, verification, kill switch, audit, or billing. Email-domain verification should reuse normalized-domain records and proof state where security boundaries permit; sender identity approval remains a distinct consent/authorization step.
+### Regression coverage
 
-## Proposed implementation phases
+- SQL: `apps/database/supabase/tests/workspace-domains.sql` (staff lookalikes,
+  entitlement reasons, kill switch, cap, quarantine, immutability, RLS).
+- Hostnames: `packages/utils/src/workspace-domain-hostnames.test.ts`.
+- Service, Cloudflare client, ownership, resolve and staff identity:
+  `apps/web/src/lib/workspace-domains/*.test.ts`.
+- Settings UI: `apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/domains/domains-management.test.tsx`.
+- CLI: `packages/sdk/src/cli/domains.test.ts`. Edge Worker: `apps/workspace-domains/src/*.test.ts*`.
 
-Estimate effort only after billing and provider discovery establishes the
-implementation scope and dependencies.
+## Open decisions
 
-| Slice                                | Scope                                                                                                                                              |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Trusted allowlist and server gate | Root-managed allowlist, shared server entitlement check, fail-closed domain create/link/attach checks, disabled UI explanation and audit decisions |
-| 2. Paid add-on billing               | Product/catalog setup, approved per-domain pricing, webhook reconciliation, entitlement reads, billing lifecycle and grace-period disable          |
-| 3. DNS lifecycle and abuse defense   | TXT or CNAME proof, blocklists, caps, transfer/dangling-DNS protection, TLS rate limits, audit and kill switch                                     |
-| 4. Settings and project pipeline     | Domain management UX, proposed project-creation integration, email verification reuse, operator runbook and alerting                               |
-| 5. Rollout                           | Seed trusted workspaces, observe provider usage, staged enablement and recovery/rollback exercise                                                  |
-
-**Proposed phase order:** Slice 1 is the first delivery and must land before any customer-facing domain enablement. Next settle provider/product semantics, then implement Slice 2. Complete Slice 3 before broad exposure. Integrate pipeline and email verification in Slice 4, then perform limited trusted-workspace rollout and expand only after measured abuse/cost behavior is acceptable.
-
-## Decisions required before implementation
-
-- Initial trusted workspace identifiers and who can amend the root-managed list.
-- Confirm $5/domain/month, currency/tax treatment, eligible paid tiers, and Polar product/price and proration/cancellation behavior.
-- Grace duration and lapse actions (suspend immediately vs. grace-period serving).
-- Per-workspace/global caps, verification timeout, quarantine duration, and TLS/provider alert thresholds.
-- Confirm Fallback Origin readiness, billing webhook ownership, and operational kill-switch owner.
+- Billing preview sign-off before enabling checkout, proration and cancellation
+  behavior in Polar, and tax treatment.
+- Rate limits for verification beyond the shared session rate limit, and provider
+  budget alerts for custom hostname issuance.
+- `ttr project new` integration and email sender-domain verification reuse.
 
 For documentation conventions, see [Documenting](/build/development-tools/documenting).

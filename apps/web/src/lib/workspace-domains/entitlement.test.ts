@@ -63,7 +63,7 @@ describe('readWorkspaceDomainEntitlement', () => {
 });
 
 describe('isWorkspaceDomainsBillingEnabled', () => {
-  it('is off unless explicitly true', () => {
+  it('is off unless enabled with a product id', () => {
     expect(isWorkspaceDomainsBillingEnabled({})).toBe(false);
     expect(
       isWorkspaceDomainsBillingEnabled({
@@ -73,6 +73,12 @@ describe('isWorkspaceDomainsBillingEnabled', () => {
     expect(
       isWorkspaceDomainsBillingEnabled({
         WORKSPACE_DOMAINS_BILLING_ENABLED: 'true',
+      })
+    ).toBe(false);
+    expect(
+      isWorkspaceDomainsBillingEnabled({
+        WORKSPACE_DOMAINS_BILLING_ENABLED: 'true',
+        WORKSPACE_DOMAINS_POLAR_PRODUCT_ID: 'prod_123',
       })
     ).toBe(true);
   });
