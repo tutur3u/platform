@@ -17,7 +17,7 @@
     "dateValue": "Thứ Bảy, 05/12/2026",
     "venueValue": "Đại học RMIT Việt Nam, Cơ sở Nam Sài Gòn (SGS), 702 Nguyễn Văn Linh, Tòa nhà 2",
     "addToCalendar": "Thêm vào lịch",
-    "openMap": "Xem bản đồ"
+    "openMap": "Mở bản đồ"
   },
   "status": {
     "live": "Đã dùng được",
@@ -188,12 +188,12 @@
       "edu-admin": "Quản lý lớp, khoá học và học viên",
       "marketplace": "Tìm và chia sẻ khoá học trên chợ khoá học",
       "instant-rooms": "Mở ngay một phòng học, gắn với lịch của thầy cô",
-      "recorded-transcripts": "Bản ghi chữ do AI tạo từ các buổi học đã ghi hình",
-      "quick-notes": "Ghi nhanh ý tưởng, chỉ mình thầy cô xem",
+      "recorded-transcripts": "Bản ghi lời giảng do AI tạo từ các buổi học đã ghi hình",
+      "quick-notes": "Ghi nhanh ý tưởng, riêng tư, chỉ mình thầy cô xem được",
       "multi-calendar": "Dùng cùng lúc nhiều lịch Google và Microsoft",
-      "offline-files": "Xem tài liệu lớp học khi không có mạng",
-      "offline-chat": "Đọc lại các cuộc trò chuyện với AI Agent khi không có mạng",
-      "on-device": "Chạy mô hình AI ngay trên thiết bị, riêng tư",
+      "offline-files": "Xem tài liệu lớp học ngay cả khi không có mạng",
+      "offline-chat": "Đọc lại các cuộc trò chuyện với AI Agent ngay cả khi không có mạng",
+      "on-device": "Chạy mô hình AI ngay trên thiết bị của thầy cô, riêng tư",
       "ai-spend": "Xem toàn bộ chi phí AI ở một nơi"
     }
   },
@@ -240,7 +240,7 @@
     "items": {
       "seat": {
         "title": "Thầy cô ngồi vào ghế học trò",
-        "body": "Phần lớn cả phòng là người học, vài thầy cô đứng lớp. Thầy cô cảm nhận lớp học AI từ bên trong, trước khi tự mình dẫn dắt."
+        "body": "Phần lớn cả phòng là người học, chỉ vài thầy cô đứng lớp. Thầy cô cảm nhận lớp học AI từ bên trong, trước khi tự mình dẫn dắt."
       },
       "agents": {
         "title": "Tự tay dùng AI Agent thật",
@@ -248,7 +248,7 @@
       },
       "early": {
         "title": "Trải nghiệm sớm, độc quyền",
-        "body": "Được xem trước những tính năng AI mới nhất cho lớp học, kể cả những phần đang được xây dựng, đều có nhãn rõ ràng."
+        "body": "Được xem trước những tính năng AI mới nhất cho lớp học, kể cả phần vẫn đang được xây dựng, tất cả đều có nhãn rõ ràng."
       },
       "plan": {
         "title": "Mang về một giáo án",
@@ -264,16 +264,16 @@
     "legend": "Mức độ sẵn sàng của các năng lực trên trang này"
   },
   "experience": {
-    "title": "Những khoảnh khắc thầy cô sẽ trải qua",
-    "subtitle": "Những khoảnh khắc trong buổi workshop, ở đúng vai thầy cô sẽ ngồi.",
+    "title": "Thầy cô sẽ trải nghiệm những gì",
+    "subtitle": "Những khoảnh khắc trong buổi workshop, ngay từ chiếc ghế thầy cô sẽ ngồi.",
     "seats": {
       "student": "Ghế học trò",
       "teacher": "Ghế giáo viên"
     },
     "items": {
-      "hint": "Thầy cô bí một bài toán, và AI Agent đặt đúng câu hỏi gợi mở, mà không đưa sẵn đáp án.",
-      "handwriting": "Thầy cô viết tay lời giải và thấy nó trở thành chữ và công thức toán gọn gàng.",
-      "quiz": "Thầy cô làm nhanh một bài kiểm tra có đếm giờ và cùng nhóm giành điểm cộng.",
+      "hint": "Thầy cô bí một bài toán, và AI Agent đặt đúng câu hỏi mở ra lối giải, mà không đưa sẵn đáp án.",
+      "handwriting": "Thầy cô viết tay một lời giải và thấy nó hiện lên thành chữ, thành công thức toán gọn gàng.",
+      "quiz": "Thầy cô chạy đua với đồng hồ trong một bài kiểm tra ngắn và cùng nhóm giành điểm cộng.",
       "build": "Thầy cô soạn một bài học và bài kiểm tra cùng AI trong vài phút, rồi tự làm thử.",
       "insights": "Thầy cô thấy ai đã tham gia, lớp vướng ở đâu, và AI đã hỗ trợ ra sao.",
       "control": "Thầy cô chọn AI được giúp đến mức nào, và khi nào AI nên im lặng."
@@ -283,7 +283,7 @@
     "title": "Sau giờ học, giáo viên có thể thấy gì",
     "subtitle": "Bảng thông tin lớp học mô phỏng.",
     "demo": "Dữ liệu mẫu",
-    "demoNote": "Số liệu mẫu chỉ để minh hoạ, không lấy từ một lớp học thật.",
+    "demoNote": "Số liệu mẫu được tạo ra chỉ để minh hoạ, không lấy từ một lớp học thật.",
     "joined": "đã tham gia",
     "questions": "câu hỏi gửi AI Agent",
     "average": "điểm kiểm tra trung bình",
@@ -312,14 +312,14 @@
     "percent": "Tỉ lệ"
   },
   "faq": {
-    "title": "Thầy cô thường hỏi",
+    "title": "Những câu thầy cô thường hỏi",
     "items": {
       "who": {
         "q": "Workshop này dành cho ai?",
         "a": "Dành cho thầy cô, trợ giảng và cán bộ quản lý muốn thấy AI Agent làm được gì trong một tiết học thật. Có 40 suất."
       },
       "skills": {
-        "q": "Tôi có cần biết nhiều về công nghệ không?",
+        "q": "Tôi có cần giỏi công nghệ không?",
         "a": "Không cần. Chỉ cần thầy cô dùng được máy tính hoặc điện thoại để gọi video là có thể tham gia. Mọi bước đều có hướng dẫn."
       },
       "ready": {
@@ -328,14 +328,14 @@
       },
       "answers": {
         "q": "AI có đưa luôn đáp án cho học trò không?",
-        "a": "Chỉ khi giáo viên cho phép. Mặc định AI được tắt, và giáo viên có thể chọn chế độ chỉ gợi ý, không đưa đáp án."
+        "a": "Chỉ khi giáo viên cho phép. Mặc định AI luôn tắt, và giáo viên có thể chọn chế độ chỉ gợi ý, không đưa đáp án."
       },
       "registration": {
         "q": "Đăng ký như thế nào?",
         "a": "Hiện chưa mở đăng ký. Chỉ có 40 suất, và thông tin đăng ký sẽ được cập nhật tại đây."
       },
       "after": {
-        "q": "Sau workshop thì sao?",
+        "q": "Sau buổi workshop thì sao?",
         "a": "Thầy cô mang về kế hoạch cho một tiết học, dùng những năng lực đã dùng được ngay hôm nay."
       }
     }
