@@ -722,3 +722,17 @@ test('capture remeasures complete loader/materializer state exactly twice', (t) 
     assert.equal(snapshots, 2, change);
   }
 });
+
+test('classroom flag is pinned OFF in the emitted artifact contract without changing AI guards', () => {
+  assert.equal(identity.vars.MEET_CLASSROOM_LIMITS_ENABLED, 'false');
+  assert.equal(identity.vars.MEET_AI_DISABLED, 'true');
+  assert.equal(identity.vars.MEET_AI_ENABLED_WORKSPACE_IDS, '');
+  const config = emitted();
+  checkPolicy(config, identity, secretNames);
+  for (const value of [undefined, 'true']) {
+    const changed = structuredClone(config);
+    if (value === undefined) delete changed.vars.MEET_CLASSROOM_LIMITS_ENABLED;
+    else changed.vars.MEET_CLASSROOM_LIMITS_ENABLED = value;
+    assert.throws(() => checkPolicy(changed, identity, secretNames));
+  }
+});

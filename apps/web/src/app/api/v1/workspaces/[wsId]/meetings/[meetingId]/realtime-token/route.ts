@@ -1,3 +1,8 @@
+import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
+import {
+  getClassroomParticipantCap,
+  MeetClassroomPolicyError,
+} from '@tuturuuu/utils/meet-classroom-policy';
 import type {
   MeetRealtimeRole,
   MeetRealtimeRoomMode,
@@ -151,6 +156,11 @@ export async function POST(request: Request, { params }: Params) {
       : auth.user.id;
     const signed = signMeetJoinToken({
       accountId: body.deviceId ? auth.user.id : undefined,
+      maxParticipants:
+        process.env.MEET_CLASSROOM_LIMITS_ENABLED === 'true' &&
+        (await isParleySession(meetingId))
+          ? undefined
+          : await getClassroomParticipantCap(meetingId, wsId),
       maxRoomDurationSeconds: await getHostMeetingDurationSeconds(
         meeting.creator_id
       ),
@@ -207,6 +217,11 @@ export async function POST(request: Request, { params }: Params) {
       token: signed.token,
     });
   } catch (error) {
+    if (error instanceof MeetClassroomPolicyError)
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
     console.error('Failed to create Meet realtime token', {
       error: error instanceof Error ? error.message : String(error),
       meetingId,
