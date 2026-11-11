@@ -48,3 +48,32 @@ Use instance-local bounded caches; never share student text or findings between
 workspaces or learners. An adapter must supply accessible accept/dismiss controls,
 explanations, keyboard focus handling and stale-result recovery before enabling
 inline assistance.
+
+## Teach module-content review
+
+The Teach module-content editor provides an opt-in review panel for authenticated
+teachers with course-update permissions. Help level defaults to off. The selected
+level belongs to that teacher's current draft review; it is not persisted as a
+classroom or assessment policy. Choosing Review draft enables review after a
+900 ms typing pause. Turning assistance off or changing subject cancels pending
+work and clears the instance-local, eight-entry cache.
+
+`POST /api/ai/objects/inline-assistance` uses the existing Teach object-generation
+handler. It checks session/workspace permissions, course and module ownership,
+`ENABLE_CHAT`, and metered credits before using the existing configured Google
+SDK path. It separates coach instructions from the draft, opts out of AI memory,
+redacts provider errors, and cancels generation on disconnect. Student assessment
+routes do not use this endpoint.
+
+The panel exposes subject-specific explanations, accept/dismiss and full/hints/off
+controls in English and Vietnamese. Alt+Shift+A focuses the panel from the editor.
+Suggestions use editor decorations; edits use literal text transactions, preserve
+inline marks and participate in editor history. Cross-block, atom-spanning and
+stale ranges cannot be applied. Document content continues through the editor's
+existing serialized autosave path.
+
+The local visual harness at `apps/teach/tests/inline-assistant-visual` renders the
+actual module editor with synthetic content and responses. It supplies reproducible
+visual evidence without making provider calls or production writes. Live-provider
+quality, persistent teacher policy for learners, and the Learn/Meet adapters need
+separate validation before they are enabled.
