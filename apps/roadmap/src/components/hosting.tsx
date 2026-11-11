@@ -1,4 +1,4 @@
-import { hostFreshness } from '../live/host-freshness';
+import { hostBadge } from '../live/host-badge';
 import { REPO_URL } from '../live/model';
 import { statuses } from '../live/status';
 import type { RoadmapView } from '../view-model';
@@ -111,18 +111,23 @@ export function HostingSection({
             </h3>
             <ul className="hosts">
               {group.map((host) => {
-                const fresh = hostFreshness(host);
+                const badge = hostBadge(host);
                 return (
                   <li key={host.app} className={`host-card ${platform}`}>
                     <div className="host-top">
                       <b>{host.name}</b>
-                      {fresh ? (
-                        <span className={`host-fresh ${fresh}`}>
-                          {fresh === 'current'
-                            ? t.hosting.upToDate
-                            : fresh === 'behind'
-                              ? `${host.behindBy} ${t.hosting.commits} ${t.hosting.behind}`
-                              : t.hosting.noCommit}
+                      {badge ? (
+                        <span className={`host-fresh ${badge.kind}`}>
+                          {badge.kind === 'build' ? (
+                            <>
+                              {t.hosting.buildFrom}{' '}
+                              <time dateTime={badge.at}>
+                                {formatDate(badge.at, lang)}
+                              </time>
+                            </>
+                          ) : (
+                            t.hosting.noCommit
+                          )}
                         </span>
                       ) : null}
                     </div>

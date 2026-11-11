@@ -107,13 +107,28 @@ describe('Upskii is the official mark and always linked', () => {
   });
 });
 
-describe('hosting freshness', () => {
-  it('reports current, behind or unknown, and never guesses', async () => {
-    const { hostFreshness } = await import('./host-freshness.ts');
-    assert.equal(hostFreshness({ commit: 'abc', behindBy: 0 }), 'current');
-    assert.equal(hostFreshness({ commit: 'abc', behindBy: 35 }), 'behind');
-    assert.equal(hostFreshness({ commit: null, behindBy: null }), 'unknown');
-    // Broken variant: a reported commit with an unknown lag is not "behind".
-    assert.equal(hostFreshness({ commit: 'abc', behindBy: null }), null);
+describe('hosting badge', () => {
+  it('states only the deployed commit date or a missing commit', async () => {
+    const { hostBadge } = await import('./host-badge.ts');
+    const at = '2026-11-10T07:16:00Z';
+    assert.deepEqual(hostBadge({ commit: 'abc', commitAt: at }), {
+      kind: 'build',
+      at,
+    });
+    assert.deepEqual(hostBadge({ commit: null, commitAt: null }), {
+      kind: 'unknown',
+    });
+    // A reported commit without a known date makes no claim.
+    assert.equal(hostBadge({ commit: 'abc', commitAt: null }), null);
+  });
+
+  it('never renders a commits-behind count, which goes stale between deploys', () => {
+    const hosting = readFileSync(
+      new URL('../components/hosting.tsx', import.meta.url),
+      'utf8'
+    );
+    assert.ok(!hosting.includes('behindBy'), 'hosting.tsx reads behindBy');
+    for (const messages of [en, vi])
+      assert.ok(!('behind' in messages.hosting), 'stale "behind" copy');
   });
 });

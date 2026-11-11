@@ -419,7 +419,8 @@
   display: grid;
   min-width: 0;
   gap: 16px;
-  scroll-margin-top: 16px;
+  /* In-page links land below the fixed navbar, not under it. */
+  scroll-margin-top: calc(var(--shell-nav-offset, 76px) + 16px);
 }
 .section-head h2,
 .method h2 {
@@ -937,13 +938,9 @@
   border-radius: 999px;
   background: currentColor;
 }
-.host-fresh.current {
-  color: var(--rm-live);
-  background: color-mix(in oklab, var(--rm-live) 12%, transparent);
-}
-.host-fresh.behind {
-  color: var(--rm-progress);
-  background: color-mix(in oklab, var(--rm-progress) 12%, transparent);
+.host-fresh.build {
+  color: var(--rm-ink);
+  background: color-mix(in oklab, var(--rm-ink) 8%, transparent);
 }
 .host-fresh.unknown {
   color: var(--rm-muted);
