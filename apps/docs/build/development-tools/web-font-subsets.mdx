@@ -68,21 +68,23 @@ the web root/marketing layouts change. Install the hash-pinned tools into a
 disposable environment, then run from the repository root:
 
 ```bash
-python3 -m venv /tmp/web-font-tools
+python3.13 -m venv /tmp/web-font-tools
 /tmp/web-font-tools/bin/pip install --require-hashes -r scripts/fonts/requirements.lock
 /tmp/web-font-tools/bin/python scripts/fonts/subset_web_fonts.py
 /tmp/web-font-tools/bin/python -m unittest scripts/fonts/test_web_fonts.py
 bun check:changed
 ```
 
-`scripts/fonts/requirements.in` lists the two pins; regenerate the lock with
+`scripts/fonts/requirements.in` lists the tool pins; regenerate the lock with
 `uv pip compile --generate-hashes --universal --python-version 3.13
 scripts/fonts/requirements.in -o scripts/fonts/requirements.lock`.
 
 Admit commands through the executing host's `ttr resources run`. Do not build on
 the M4. Other-host dependency builds require the current task's authorization.
-The generator uses the repository's pinned Biome formatter; install repository
-dependencies first.
+The generator uses the repository's Oxfmt command; install repository dependencies
+first. Matcher tests use the installed Next testing export
+`unstable_doesMiddlewareMatch` with the complete matcher array, including mounted
+roadmap assets, public font paths and protected application paths.
 
 Google Fonts TTF sources and served WOFF2 sources are pinned by immutable
 revision or URL plus SHA-256. The original Google Noto Sans Latin, Latin

@@ -1,10 +1,10 @@
-import { unstable_doesProxyMatch } from 'next/experimental/testing/server';
+import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
 import { expect } from 'vitest';
 
 export function expectStaticAssetMatcher(matchers: readonly string[]) {
   expect(matchers).toHaveLength(3);
   const matches = (url: string) =>
-    unstable_doesProxyMatch({ config: { matcher: [...matchers] }, url });
+    unstable_doesMiddlewareMatch({ config: { matcher: [...matchers] }, url });
   for (const path of [
     '/audio/example.mp3',
     '/audio/example.wav',
