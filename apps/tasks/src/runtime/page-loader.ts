@@ -9,14 +9,14 @@ export const tasksPageInput = z.object({
     .refine((path) => path.startsWith('/') && !path.startsWith('//')),
 });
 
-export const loadTasksLocale = createServerFn({ method: 'GET' })
+export const loadTasksLocale = createServerFn({ method: 'POST' })
   .validator(tasksPageInput)
   .handler(async ({ data }) => {
     const { resolvePathLocale } = await import('./locale');
     return resolvePathLocale(data.path);
   });
 
-export const loadTasksPage = createServerFn({ method: 'GET' })
+export const loadTasksPage = createServerFn({ method: 'POST' })
   .validator(tasksPageInput)
   .handler(async ({ data }) => {
     const { loadPageModel } = await import('./page-model.server');
