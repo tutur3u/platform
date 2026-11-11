@@ -25,6 +25,8 @@ export interface ResolvedWorkspace {
 export const DEFAULT_RESOLVE_URL = 'https://tuturuuu.com';
 export const RESOLVE_CACHE_SECONDS = 60;
 export const EDGE_SECRET_HEADER = 'X-Workspace-Domains-Edge-Secret';
+/** apps/web blocks anonymous API requests without a User-Agent. */
+export const EDGE_USER_AGENT = 'tuturuuu-workspace-domains/1';
 const CACHE_ORIGIN = 'https://workspace-domains.cache.invalid';
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
@@ -131,7 +133,11 @@ async function askResolver(
     response = await fetch(
       `${resolveOrigin(env)}/api/v1/workspace-domains/resolve?host=${encodeURIComponent(host)}`,
       {
-        headers: { Accept: 'application/json', [EDGE_SECRET_HEADER]: secret },
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': EDGE_USER_AGENT,
+          [EDGE_SECRET_HEADER]: secret,
+        },
         redirect: 'manual',
       }
     );

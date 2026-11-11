@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CONTENT_SECURITY_POLICY } from './html';
-import { type CacheLike, EDGE_SECRET_HEADER, type Env } from './resolve';
+import {
+  type CacheLike,
+  EDGE_SECRET_HEADER,
+  EDGE_USER_AGENT,
+  type Env,
+} from './resolve';
 import { createHandler } from './worker';
 
 class MemoryCache implements CacheLike {
@@ -123,6 +128,7 @@ describe('workspace domains worker', () => {
     const t = setup((request) => {
       if (request.url.includes('/workspace-domains/resolve')) {
         expect(request.headers.get(EDGE_SECRET_HEADER)).toBe('s3cret');
+        expect(request.headers.get('user-agent')).toBe(EDGE_USER_AGENT);
         return Response.json({
           wsId: WS_ID,
           name: 'Resolved',

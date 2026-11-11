@@ -9,6 +9,7 @@ import {
 } from './html';
 import {
   type CacheLike,
+  EDGE_USER_AGENT,
   type Env,
   RESOLVE_CACHE_SECONDS,
   type ResolvedWorkspace,
@@ -68,7 +69,10 @@ async function loadDelivery(
   try {
     response = await fetch(
       `${resolveOrigin(env)}/api/v1/workspaces/${workspace.wsId}/external-projects/delivery`,
-      { headers: { Accept: 'application/json' }, redirect: 'manual' }
+      {
+        headers: { Accept: 'application/json', 'User-Agent': EDGE_USER_AGENT },
+        redirect: 'manual',
+      }
     );
   } catch {
     return null;
