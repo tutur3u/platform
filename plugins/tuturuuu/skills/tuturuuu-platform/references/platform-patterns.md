@@ -1490,3 +1490,14 @@ verification. Preserve cached list choices on refresh failure, explicit retry,
 and actor-scoped visibility gates when adjusting picker presentation. Verify
 A → B → A resets for search, restore mode, pins, and recent selections with
 `workspace-picker-content.test.tsx` alongside the actor lifetime hook tests.
+
+### Satellite CSRF trust
+
+Keep Web's CSRF satellite origins explicit and separate from navigation/CORS
+registries. For a sibling `same-site` request, require an exact parsed Origin
+match; never override a `cross-site` verdict with the allowlist. Staging uses
+only its validated configured internal origins under the isolated profile.
+Audit launchable apps, internal domains, SEO policy and each owning forwarding
+config together. Preserve session-clearing endpoint lookup rules. See the
+[Web API CSRF admission decision](../../../../../apps/docs/platform/architecture/one-origin-security.mdx#web-api-csrf-admission)
+and both auth/Web CSRF test suites.

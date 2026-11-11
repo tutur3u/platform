@@ -5,6 +5,8 @@ import {
   createCsrfReportLimiter,
   parseCsrfMode,
 } from '@tuturuuu/auth/csrf';
+import { getConfiguredInternalAppDomains } from '@tuturuuu/utils/internal-domains';
+import { getConfiguredSharedCookieDomainOverride } from '@tuturuuu/utils/shared-cookie';
 import { type NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -32,10 +34,40 @@ export const WEB_SESSION_CLEARING_PATHS: ReadonlySet<string> = new Set([
 /**
  * Origins of satellite apps whose `/api/*` requests are forwarded verbatim to
  * Web. A forwarded request arrives on Web's own host, so a client that sends
- * no `Sec-Fetch-Site` identifies itself by the satellite's `Origin` instead.
+ * no `Sec-Fetch-Site` or `same-site` proves trust with its exact `Origin`.
  * The `tuturuuu.com/<app>` mounts share Web's origin and need no entry.
  */
 export const WEB_CSRF_TRUSTED_ORIGINS: readonly string[] = [
+  'https://ai.tuturuuu.com',
+  'https://calendar.tuturuuu.com',
+  'https://chat.tuturuuu.com',
+  'https://cms.tuturuuu.com',
+  'https://colab.tuturuuu.com',
+  'https://contacts.tuturuuu.com',
+  'https://drive.tuturuuu.com',
+  'https://external.tuturuuu.com',
+  'https://finance.tuturuuu.com',
+  'https://forms.tuturuuu.com',
+  'https://git.tuturuuu.com',
+  'https://hive.tuturuuu.com',
+  'https://infra.tuturuuu.com',
+  'https://infrastructure.tuturuuu.com',
+  'https://inventory.tuturuuu.com',
+  'https://learn.tuturuuu.com',
+  'https://lettin.tuturuuu.com',
+  'https://mail.tuturuuu.com',
+  'https://meet.tuturuuu.com',
+  'https://mind.tuturuuu.com',
+  'https://nova.ai.vn',
+  'https://nova.tuturuuu.com',
+  'https://parley.tuturuuu.com',
+  'https://pay.tuturuuu.com',
+  'https://rewise.tuturuuu.com',
+  'https://shortener.tuturuuu.com',
+  'https://storefront.tuturuuu.com',
+  'https://tasks.tuturuuu.com',
+  'https://teach.tuturuuu.com',
+  'https://track.tuturuuu.com',
   'https://workspace.tuturuuu.com',
 ];
 
@@ -58,7 +90,7 @@ export function guardWebApiCsrf(
     allowedOrigins: [
       req.nextUrl.origin,
       configuredOrigin,
-      ...WEB_CSRF_TRUSTED_ORIGINS,
+      ...getWebCsrfTrustedOrigins(),
     ],
     // Web's credentialed CORS (the accounts API) admits every *.tuturuuu.com
     // origin, wider than this allowlist, so a bearer string never stands in
@@ -93,4 +125,19 @@ export function guardWebApiCsrf(
     { code: 'CSRF_REJECTED', error: 'Cross-origin request rejected' },
     { status: 403 }
   );
+}
+
+/** Cookie-isolated staging trusts only explicitly configured staging satellites. */
+export function getWebCsrfTrustedOrigins(): readonly string[] {
+  if (!getConfiguredSharedCookieDomainOverride())
+    return WEB_CSRF_TRUSTED_ORIGINS;
+
+  const satelliteNames = new Set(
+    WEB_CSRF_TRUSTED_ORIGINS.map(
+      (origin) => new URL(origin).hostname.split('.')[0]
+    )
+  );
+  return getConfiguredInternalAppDomains()
+    .filter((app) => satelliteNames.has(app.name))
+    .map((app) => app.url);
 }

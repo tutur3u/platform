@@ -25,7 +25,7 @@ export interface CsrfCheckInput {
   method: string;
   pathname: string;
   headers: CsrfHeaders;
-  /** Origins that count as this request's own, e.g. `https://tuturuuu.com`. */
+  /** Exact trusted origins, including the request's own origin. */
   allowedOrigins: readonly string[];
   exemptions?: readonly CsrfExemption[];
   isSessionCookieName?: (name: string) => boolean;
@@ -160,12 +160,25 @@ export function checkCsrf(input: CsrfCheckInput): CsrfVerdict {
     secFetchSite,
   });
 
+  // Compare parsed origins only; sibling hosts never inherit trust.
+  const matchesAllowedOrigin = () => {
+    const requestOrigin = origin === null ? null : normalizeOrigin(origin);
+    return (
+      requestOrigin !== null &&
+      input.allowedOrigins.some(
+        (allowedOrigin) => normalizeOrigin(allowedOrigin) === requestOrigin
+      )
+    );
+  };
+
   if (secFetchSite !== null) {
     switch (secFetchSite.toLowerCase()) {
       case 'same-origin':
         return { ok: true, reason: 'same-origin' };
       case 'same-site':
-        return reject('same-site');
+        return matchesAllowedOrigin()
+          ? { ok: true, reason: 'origin-match' }
+          : reject('same-site');
       case 'cross-site':
         return reject('cross-site');
       case 'none':
@@ -178,13 +191,7 @@ export function checkCsrf(input: CsrfCheckInput): CsrfVerdict {
   if (origin === null) return reject('missing-origin');
   if (origin === 'null') return reject('null-origin');
 
-  const requestOrigin = normalizeOrigin(origin);
-  const allowed = input.allowedOrigins.some(
-    (allowedOrigin) =>
-      requestOrigin !== null && normalizeOrigin(allowedOrigin) === requestOrigin
-  );
-
-  return allowed
+  return matchesAllowedOrigin()
     ? { ok: true, reason: 'origin-match' }
     : reject('origin-mismatch');
 }

@@ -14,3 +14,63 @@ Browsers isolate origins rather than application paths. Apps sharing an origin t
 The recorded design uses one shared session across apps on the main origin. Sign-in and logout are intended to apply across those apps. Per-app sessions are not the intended design. The shared-session implementation and each app's admission need separate verification before cutover.
 
 See the [security overview](/platform/architecture/system-design/security-architecture) and [authentication overview](/platform/architecture/authentication).
+
+
+## Web API CSRF admission
+
+Web's proxy calls `guardWebApiCsrf` before the API cost guard. The portable
+`@tuturuuu/auth/csrf` checker also serves mounted requests in Start's bridge.
+`TTR_CSRF_MODE` defaults to `off`; `report` observes failures without blocking,
+and `enforce` returns 403 for rejected cookie-authenticated mutations.
+
+Web trusts exact parsed origins for registered satellites forwarding API calls.
+A trusted Origin is sufficient with absent Fetch Metadata or `same-site`.
+`cross-site`, `none`, and unknown Fetch Metadata remain rejected regardless of
+Origin. Unlisted sibling hosts, lookalikes, HTTP downgrades and nondefault ports
+are rejected. The existing parsed-origin comparison canonicalizes default ports;
+`:443` on HTTPS denotes the same origin. Missing and literal `null` Origin
+behavior is unchanged. There is no wildcard subdomain trust.
+
+Production satellites are `https://<name>.tuturuuu.com` for **ai, calendar,
+chat, cms, colab, contacts, drive, external, finance, forms, git, hive, infra,
+infrastructure, inventory, learn, lettin, mail, meet, mind, nova, parley, pay,
+rewise, shortener, storefront, tasks, teach, track, workspace**, plus
+`https://nova.ai.vn`. The launchable-app and internal-domain registries identify
+the app identities; each included Next app config forwards `/api/*` to Web.
+Infrastructure's internal-domain registry retains both `infra` and
+`infrastructure` hosts for that app. External is in SEO policy and has its own
+API-forwarding config. Shortener has its own forwarding config and launchable
+entry. Colab's Worker bridges account support mutations through
+`src/server/platform-proxy.ts`, preserving its explicit Origin. Nova's SEO
+policy gives its `nova.ai.vn` canonical origin while both app registries retain
+`nova.tuturuuu.com`. Browsers sending `cross-site` from `nova.ai.vn` are still
+rejected; listing it only covers callers without that metadata.
+
+Excluded from satellite trust:
+
+- Apps and Tools: their Next configs define no Web API forwarding.
+- Docs: documentation surface, with no Web mutation forwarding configuration.
+- QR and Mira: legacy registry names without an owning active app/config;
+  QR's launchable successor is Tools.
+- TanStack (`tanstack.tuturuuu.com`): retired runtime, regardless of retained
+  registry entries. Backend workers, mobile and service hosts are not browser
+  satellites forwarding session-cookie mutations.
+- `rewise.me` and `rewise.school`: explicitly retired, uncontrolled domains.
+- Arbitrary siblings, previews, localhost/Portless and external configured apps:
+  registration for navigation or CORS does not grant mutation trust.
+- Web/marketing and mounted `tuturuuu.com/<app>` paths: Web's own origin is
+  already admitted; paths are not additional origins.
+
+The cookie-isolated staging profile replaces the production satellite list
+with entries from the validated configured internal-app registry, restricted to
+the same API-forwarding app identities. It requires the accepted staging cookie
+domain and profile. Production ignores staging registry entries, even when the
+configuration variable is accidentally set. No staging origin is embedded in
+the production list, and staging does not inherit production satellites.
+
+Safe methods, bearer/session-cookie handling, signed-webhook exemptions, and
+the session-clearing endpoint set and lookup stay unchanged. Off/report modes
+continue to admit requests; report logs omit failures for explicitly trusted
+satellites. Roll out report before enforce and review the list whenever app
+ownership, forwarding or domains change. Regressions live in
+`packages/auth/src/csrf.test.ts` and `apps/web/src/lib/security/csrf.test.ts`.
