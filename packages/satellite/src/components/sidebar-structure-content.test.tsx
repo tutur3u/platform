@@ -102,4 +102,36 @@ describe('SidebarStructureContent', () => {
     expect(workspaceSection?.className).toContain('grid-rows-[0fr]');
     expect(workspaceSection?.className).toContain('pb-0');
   });
+
+  it('slides navigation only after it changes while mounted', () => {
+    const baseState = {
+      currentLinks: [],
+      direction: 'forward' as const,
+      history: [] as never[],
+      titleHistory: [] as string[],
+    };
+    const props = {
+      backButton: { title: 'Back' },
+      filteredCurrentLinks: [],
+      isCollapsed: false,
+      setIsCollapsed: vi.fn(),
+      setNavState: vi.fn(),
+      workspaceSelectVisible: false,
+      wsId: 'workspace-id',
+    };
+    const { container, rerender } = render(
+      <SidebarStructureContent {...props} navState={baseState} />
+    );
+    const slide = () => container.querySelector('.animate-in');
+
+    expect(slide()).toBeNull();
+
+    rerender(
+      <SidebarStructureContent
+        {...props}
+        navState={{ ...baseState, history: [[]], titleHistory: ['Tasks'] }}
+      />
+    );
+    expect(slide()?.className).toContain('slide-in-from-right');
+  });
 });
