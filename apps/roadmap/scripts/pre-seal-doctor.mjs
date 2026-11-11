@@ -166,6 +166,18 @@ export function assessDoctor(observation) {
     failures.push('canonical HTML still uses the satellite shell');
   if (!body.includes('https://tuturuuu.com/login'))
     failures.push('canonical HTML missing the get-started link');
+  // React marks a boundary it could not render on the server with <!--$!-->.
+  // The browser recovers, but crawlers and link previews get an empty page.
+  if (body.includes('<!--$!-->'))
+    failures.push(
+      'canonical HTML fell back to client rendering (server render failed)'
+    );
+  if (
+    !/property="og:image" content="https:\/\/tuturuuu\.com\/roadmap\/assets\/[^"]+\.png"/.test(
+      body
+    )
+  )
+    failures.push('canonical HTML missing an absolute og:image');
   const plansShown = observation.showPlans ?? true;
   if (plansShown !== body.includes(PLAN_LABEL)) {
     failures.push(
@@ -238,6 +250,14 @@ export function brokenVariant(observation) {
       { path: '/roadmap/', host: 'tuturuuu.com', status: 200, location: null },
     ],
     buildInfo: { ...observation.buildInfo, commit: '0'.repeat(40) },
+    canonical: {
+      ...observation.canonical,
+      // The production failure of 11 Nov 2026: a client-render fallback
+      // with no preview image.
+      body: `<!--$!--><template></template><!--/$-->${String(
+        observation.canonical?.body ?? ''
+      ).replaceAll('property="og:image"', 'property="og:missing"')}`,
+    },
   };
 }
 

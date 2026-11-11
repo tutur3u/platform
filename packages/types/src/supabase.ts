@@ -19512,6 +19512,136 @@ export type Database = {
           },
         ];
       };
+      workspace_domain_addons: {
+        Row: {
+          created_at: string;
+          current_period_end: string | null;
+          polar_product_id: string;
+          polar_subscription_id: string;
+          quantity: number;
+          status: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          current_period_end?: string | null;
+          polar_product_id: string;
+          polar_subscription_id: string;
+          quantity: number;
+          status: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          current_period_end?: string | null;
+          polar_product_id?: string;
+          polar_subscription_id?: string;
+          quantity?: number;
+          status?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      workspace_domain_audit: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          created_at: string;
+          detail: Json;
+          domain_id: string | null;
+          entitlement_source: string | null;
+          hostname: string;
+          id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          created_at?: string;
+          detail?: Json;
+          domain_id?: string | null;
+          entitlement_source?: string | null;
+          hostname: string;
+          id?: string;
+          ws_id: string;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          created_at?: string;
+          detail?: Json;
+          domain_id?: string | null;
+          entitlement_source?: string | null;
+          hostname?: string;
+          id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      workspace_domain_caps: {
+        Row: {
+          domain_cap: number;
+          reason: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          domain_cap: number;
+          reason: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          domain_cap?: number;
+          reason?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      workspace_domain_settings: {
+        Row: {
+          default_domain_cap: number;
+          enabled: boolean;
+          id: boolean;
+          lapse_grace_days: number;
+          paid_addon_enabled: boolean;
+          quarantine_days: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          default_domain_cap?: number;
+          enabled?: boolean;
+          id?: boolean;
+          lapse_grace_days?: number;
+          paid_addon_enabled?: boolean;
+          quarantine_days?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          default_domain_cap?: number;
+          enabled?: boolean;
+          id?: boolean;
+          lapse_grace_days?: number;
+          paid_addon_enabled?: boolean;
+          quarantine_days?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       workspace_education_access_requests: {
         Row: {
           admin_notes: string | null;
@@ -26078,6 +26208,14 @@ export type Database = {
             };
             Returns: boolean;
           };
+      workspace_domain_entitlement: {
+        Args: { p_actor_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      workspace_domain_serving_allowed: {
+        Args: { p_domain_id: string };
+        Returns: boolean;
+      };
       workspace_role_has_creator_grant: {
         Args: { p_role_id: string };
         Returns: boolean;
@@ -42833,6 +42971,79 @@ export type Database = {
           },
         ];
       };
+      workspace_domains: {
+        Row: {
+          activated_at: string | null;
+          cloudflare_custom_hostname_id: string | null;
+          cloudflare_dns_record_id: string | null;
+          cloudflare_worker_route_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          dns_records: Json;
+          entitlement_source: string;
+          error: string | null;
+          hostname: string;
+          id: string;
+          kind: string;
+          last_checked_at: string | null;
+          ownership_status: string | null;
+          removed_at: string | null;
+          ssl_status: string | null;
+          status: string;
+          updated_at: string;
+          verification_txt_name: string;
+          verification_txt_value: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          activated_at?: string | null;
+          cloudflare_custom_hostname_id?: string | null;
+          cloudflare_dns_record_id?: string | null;
+          cloudflare_worker_route_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          dns_records?: Json;
+          entitlement_source: string;
+          error?: string | null;
+          hostname: string;
+          id?: string;
+          kind: string;
+          last_checked_at?: string | null;
+          ownership_status?: string | null;
+          removed_at?: string | null;
+          ssl_status?: string | null;
+          status?: string;
+          updated_at?: string;
+          verification_txt_name: string;
+          verification_txt_value: string;
+          ws_id: string;
+        };
+        Update: {
+          activated_at?: string | null;
+          cloudflare_custom_hostname_id?: string | null;
+          cloudflare_dns_record_id?: string | null;
+          cloudflare_worker_route_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          dns_records?: Json;
+          entitlement_source?: string;
+          error?: string | null;
+          hostname?: string;
+          id?: string;
+          kind?: string;
+          last_checked_at?: string | null;
+          ownership_status?: string | null;
+          removed_at?: string | null;
+          ssl_status?: string | null;
+          status?: string;
+          updated_at?: string;
+          verification_txt_name?: string;
+          verification_txt_value?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       workspace_email_credentials: {
         Row: {
           access_id: string;
@@ -56685,7 +56896,9 @@ export type Database = {
         | 'manage_desktop_deployment_vault'
         | 'manage_sso_clients'
         | 'manage_mastermind'
-        | 'edit_external_projects';
+        | 'edit_external_projects'
+        | 'view_workspace_domains'
+        | 'manage_workspace_domains';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -59521,6 +59734,8 @@ export const Constants = {
         'manage_sso_clients',
         'manage_mastermind',
         'edit_external_projects',
+        'view_workspace_domains',
+        'manage_workspace_domains',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

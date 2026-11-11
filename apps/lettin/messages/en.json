@@ -1627,7 +1627,11 @@
   },
   "ws-roles": {
     "manage_desktop_deployment_vault": "Manage desktop deployment vault",
-    "manage_desktop_deployment_vault_description": "Allows root workspace members to manage private Windows/macOS signing resources and protected workflow tokens. Does not enable delivery."
+    "manage_desktop_deployment_vault_description": "Allows root workspace members to manage private Windows/macOS signing resources and protected workflow tokens. Does not enable delivery.",
+    "manage_workspace_domains": "Manage workspace domains",
+    "manage_workspace_domains_description": "Add, verify, and remove custom domains and platform subdomains that serve the workspace's public site.",
+    "view_workspace_domains": "View workspace domains",
+    "view_workspace_domains_description": "See the workspace's custom domains, their verification status, and domain entitlement."
   },
   "satellite-account-settings": {
     "email_managed_centrally": "Email changes need confirmation, so they are made in your Tuturuuu account settings.",

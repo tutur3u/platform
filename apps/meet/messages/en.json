@@ -8429,6 +8429,8 @@
     "manage_workspace_audit_logs_description": "Allows members to view all activities in the workspace.",
     "manage_workspace_billing": "Manage workspace billing",
     "manage_workspace_billing_description": "Allows members to view and update billing information.",
+    "manage_workspace_domains": "Manage workspace domains",
+    "manage_workspace_domains_description": "Add, verify, and remove custom domains and platform subdomains that serve the workspace's public site.",
     "manage_workspace_invites": "Manage workspace invites",
     "manage_workspace_invites_description": "Allows members to send, revoke, and accept invites.",
     "manage_workspace_members": "Manage workspace members",
@@ -8536,6 +8538,8 @@
     "view_users_private_info_description": "Allows members to view private information of users in the workspace.",
     "view_users_public_info": "View Users Public Info",
     "view_users_public_info_description": "Allows members to view public information of users in the workspace.",
+    "view_workspace_domains": "View workspace domains",
+    "view_workspace_domains_description": "See the workspace's custom domains, their verification status, and domain entitlement.",
     "without_roles": "Without Roles",
     "workspace": "Workspace",
     "workspace_description": "Core workspace management including members, roles, and settings"

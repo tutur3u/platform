@@ -1,6 +1,58 @@
+import { hostBadge } from '../live/host-badge';
 import { REPO_URL } from '../live/model';
 import { statuses } from '../live/status';
 import type { RoadmapView } from '../view-model';
+
+const PLATFORM_ORDER = ['workers', 'vercel', 'store', 'unknown'] as const;
+type Platform = (typeof PLATFORM_ORDER)[number];
+
+/** A small glyph per platform; the label next to it carries the meaning. */
+function PlatformMark({ platform }: { platform: Platform }) {
+  return <span className={`platform-mark ${platform}`} aria-hidden />;
+}
+
+/** How many apps run on each platform, as one segmented bar with a legend. */
+function HostSummary({
+  t,
+  hosts,
+}: {
+  t: Messages;
+  hosts: RoadmapView['hosts'];
+}) {
+  const counts = PLATFORM_ORDER.map((platform) => ({
+    platform,
+    count: hosts.filter((host) => host.platform === platform).length,
+  })).filter((entry) => entry.count > 0);
+  const total = hosts.length || 1;
+  return (
+    <div className="host-summary">
+      <div
+        className="host-summary-bar"
+        role="img"
+        aria-label={counts
+          .map((entry) => `${t.hosting[entry.platform]} ${entry.count}`)
+          .join(', ')}
+      >
+        {counts.map((entry) => (
+          <span
+            key={entry.platform}
+            className={`host-seg ${entry.platform}`}
+            style={{ width: `${(entry.count / total) * 100}%` }}
+            title={`${t.hosting[entry.platform]}: ${entry.count}`}
+          />
+        ))}
+      </div>
+      <ul className="host-legend">
+        {counts.map((entry) => (
+          <li key={entry.platform}>
+            <PlatformMark platform={entry.platform} />
+            {t.hosting[entry.platform]} <b>{entry.count}</b>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 import {
   formatDate,
   type Lang,
@@ -46,36 +98,58 @@ export function HostingSection({
           · {formatDate(main.at, lang, true)}
         </p>
       ) : null}
-      <ul className="hosts">
-        {view.hosts.map((host) => (
-          <li key={host.app} className={host.platform}>
-            <div className="host-head">
-              <b>{host.name}</b>
-              <span className={`platform ${host.platform}`}>
-                {t.hosting[host.platform === 'store' ? 'store' : host.platform]}
-              </span>
-            </div>
-            <p className="meta">
-              {host.commit ? (
-                <>
-                  <a href={`${REPO_URL}/commit/${host.commit}`}>
-                    <code>{host.commit.slice(0, 7)}</code>
-                  </a>
-                  {host.behindBy === 0 ? (
-                    <span className="ok">{t.hosting.upToDate}</span>
-                  ) : host.behindBy ? (
-                    <span>
-                      {host.behindBy} {t.hosting.commits} {t.hosting.behind}
-                    </span>
-                  ) : null}
-                </>
-              ) : (
-                <span>{t.hosting.noCommit}</span>
-              )}
-            </p>
-          </li>
-        ))}
-      </ul>
+      <HostSummary t={t} hosts={view.hosts} />
+      {PLATFORM_ORDER.map((platform) => {
+        const group = view.hosts.filter((host) => host.platform === platform);
+        if (!group.length) return null;
+        return (
+          <div key={platform} className="host-group">
+            <h3 className={`host-group-title ${platform}`}>
+              <PlatformMark platform={platform} />
+              {t.hosting[platform]}
+              <span className="host-group-count">{group.length}</span>
+            </h3>
+            <ul className="hosts">
+              {group.map((host) => {
+                const badge = hostBadge(host);
+                return (
+                  <li key={host.app} className={`host-card ${platform}`}>
+                    <div className="host-top">
+                      <b>{host.name}</b>
+                      {badge ? (
+                        <span className={`host-fresh ${badge.kind}`}>
+                          {badge.kind === 'build' ? (
+                            <>
+                              {t.hosting.buildFrom}{' '}
+                              <time dateTime={badge.at}>
+                                {formatDate(badge.at, lang)}
+                              </time>
+                            </>
+                          ) : (
+                            t.hosting.noCommit
+                          )}
+                        </span>
+                      ) : null}
+                    </div>
+                    {host.commit ? (
+                      <a
+                        className="host-commit"
+                        href={`${REPO_URL}/commit/${host.commit}`}
+                      >
+                        <code>{host.commit.slice(0, 7)}</code>
+                      </a>
+                    ) : (
+                      <span className="host-commit is-empty" aria-hidden>
+                        <code>-------</code>
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
     </section>
   );
 }
