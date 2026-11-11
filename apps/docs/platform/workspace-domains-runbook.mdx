@@ -15,6 +15,7 @@ Policy and decisions: [Workspace domains: access and abuse controls](/platform/d
 | Edge Worker `tuturuuu-workspace-domains` | `apps/workspace-domains` | Serves every bound host. Declares no routes; apps/web attaches `<host>/*` per domain. |
 | Domain API | `apps/web/src/app/api/v1/workspaces/[wsId]/domains` | List, add, verify, remove. |
 | Edge resolve API | `apps/web/src/app/api/v1/workspace-domains/resolve` | Host to public workspace facts, shared-secret auth. |
+| Edge site API | `apps/web/src/app/api/v1/workspace-domains/site` | Published site content for an active, entitled host, shared-secret auth. |
 | Policy and data | `20261111120000`, `20261111120100` migrations | Tables, entitlement, serving policy, kill switch. |
 | Add-on reconciliation | `packages/payment-core/src/workspace-domain-addon.ts` | Polar subscription to `private.workspace_domain_addons`. |
 
@@ -39,7 +40,7 @@ Worker (`apps/workspace-domains`):
 | --- | --- | --- |
 | `RESOLVE_URL` | var | apps/web origin, default `https://tuturuuu.com`. |
 | `WORKSPACE_DOMAINS_EDGE_SECRET` | secret | Same value as apps/web. |
-| `STATIC_HOST_MAP` | secret | Optional bootstrap JSON `{"host": {"wsId": "<uuid>", "name": "<name>"}}`. Used when the resolver is unconfigured, unreachable, or does not know the host. Clear it once the resolver serves the host. |
+| `STATIC_HOST_MAP` | secret | Optional bootstrap JSON `{"host": {"wsId": "<uuid>", "name": "<name>"}}`. Used while `WORKSPACE_DOMAINS_EDGE_SECRET` is unset, and as a logged fallback when the resolver fails (network error or 5xx). With the secret set, a resolver 404 is final and the host is not served. Bootstrap hosts get the landing page only. |
 
 ## Cloudflare setup
 
@@ -67,9 +68,14 @@ host before apps/web ships, attach a route manually: Workers Routes, pattern
 `<host>/*`, Worker `tuturuuu-workspace-domains`, and point the host at the zone
 (custom hostname for external domains, proxied record for `ttr.gg`).
 
+The Worker reads published content from the edge site API, never from the
+public delivery route, which requires a session in production. Site answers
+contain published entries only, with an allowlist of fields and absolute asset
+URLs on the app origin.
+
 Worker behavior: GET and HEAD only (405 otherwise), `/__health` returns `ok`,
 `/robots.txt` for known hosts, 404 for unknown hosts, strict CSP without scripts,
-`nosniff`, HSTS, no cookies. Resolve and delivery answers are cached for 60 seconds
+`nosniff`, HSTS, no cookies. Resolve and site answers are cached for 60 seconds
 with the Cache API. Origin requests send `User-Agent: tuturuuu-workspace-domains/1`
 because apps/web rejects anonymous API calls without one.
 

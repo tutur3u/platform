@@ -43,9 +43,9 @@
     }
   ],
   "summary": {
-    "total": 859,
+    "total": 860,
     "categories": {
-      "api": 664,
+      "api": 665,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -54,7 +54,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 847 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 848 }
   },
   "routes": [
     {
@@ -3527,6 +3527,14 @@
     {
       "pattern": "/api/v1/workspace-domains/resolve",
       "source": "apps/web/src/app/api/v1/workspace-domains/resolve/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspace-domains/site",
+      "source": "apps/web/src/app/api/v1/workspace-domains/site/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

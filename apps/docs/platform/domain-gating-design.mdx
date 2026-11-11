@@ -87,8 +87,10 @@ their subdomains, released domains) plus `tuturuu.com`, the `ttr.gg` apex, neste
    records; for `ttr.gg` create a proxied record. When the certificate is active,
    attach the `<host>/*` Worker route and mark the domain `active`.
 3. **Serve:** the edge Worker resolves the host through
-   `GET /api/v1/workspace-domains/resolve`, which answers only for `active` domains
-   that `private.workspace_domain_serving_allowed` still entitles.
+   `GET /api/v1/workspace-domains/resolve` and reads published content from
+   `GET /api/v1/workspace-domains/site`. Both require the edge secret and answer
+   only for `active` domains that `private.workspace_domain_serving_allowed`
+   still entitles. A resolver 404 is final at the edge.
 4. **Remove** (`DELETE .../domains/:id`): detach the Worker route, DNS record and
    custom hostname (best effort; failures are recorded), then mark `removed`.
 
