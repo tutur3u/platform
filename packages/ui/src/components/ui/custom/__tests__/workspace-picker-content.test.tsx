@@ -265,3 +265,36 @@ it.each([false, true])(
     expect(onClose).toHaveBeenCalledTimes(withCallback ? 1 : 0);
   }
 );
+
+it('keeps last-known workspaces selectable after a list fetch fails and retries explicitly', () => {
+  const onRetryList = vi.fn();
+  const onSelect = vi.fn();
+  const state = visibility();
+  const { rerender } = render(
+    <Dialog open>
+      <WorkspacePickerContent
+        workspaces={[other]}
+        visibility={state}
+        onSelect={onSelect}
+      />
+    </Dialog>
+  );
+  rerender(
+    <Dialog open>
+      <WorkspacePickerContent
+        workspaces={[other]}
+        visibility={state}
+        onSelect={onSelect}
+        listError={new Error('fetch failed')}
+        onRetryList={onRetryList}
+      />
+    </Dialog>
+  );
+  expect(screen.getByRole('alert')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'retry' }));
+  expect(onRetryList).toHaveBeenCalledOnce();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Another workspace PRO' })
+  );
+  expect(onSelect).toHaveBeenCalledWith(other);
+});

@@ -133,8 +133,15 @@ export function WorkspaceSelect({
     wsId && wsId !== PERSONAL_WORKSPACE_SLUG
       ? resolveWorkspaceId(wsId)
       : undefined;
-  const { data: listedWorkspaces } = useQuery({
+  const {
+    data: listedWorkspaces,
+    isPending: listLoading,
+    error: listError,
+    refetch: retryWorkspaceList,
+  } = useQuery({
     queryKey: ['workspace-ui-list', actorId],
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
     queryFn: async () => {
       actorScope?.assertActive();
       const result = await fetchWorkspaces();
@@ -494,6 +501,11 @@ export function WorkspaceSelect({
             presentation={presentation}
             onClose={() => setOpen(false)}
             workspaces={workspaces ?? []}
+            listLoading={listLoading}
+            listError={listError}
+            onRetryList={() => {
+              void retryWorkspaceList();
+            }}
             currentId={workspace?.id}
             defaultId={defaultWorkspaceId}
             visibility={visibility}

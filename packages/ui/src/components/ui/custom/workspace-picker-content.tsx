@@ -57,6 +57,7 @@ export function WorkspacePickerContent({
   const Title = dropdown ? 'h2' : DialogTitle;
   const Description = dropdown ? 'p' : DialogDescription;
   const t = useTranslations('common');
+  const listT = useTranslations('command_launcher');
   const [restoring, setRestoring] = useState(restoreOnly);
   const [searchVisible, setSearchVisible] = useState(dropdown);
   const [search, setSearch] = useState('');
@@ -156,9 +157,11 @@ export function WorkspacePickerContent({
       {(visibility.isError || visibility.updateError || listError) && (
         <div role="alert" className="flex items-center gap-3 px-4 pt-3">
           <p className="flex-1">
-            {visibility.updateError
-              ? t('hidden_workspaces_update_error')
-              : t('hidden_workspaces_load_error')}
+            {listError
+              ? listT('error_workspaces')
+              : visibility.updateError
+                ? t('hidden_workspaces_update_error')
+                : t('hidden_workspaces_load_error')}
           </p>
           <Button
             variant="outline"
@@ -177,11 +180,14 @@ export function WorkspacePickerContent({
           dropdown ? 'pb-3' : 'pb-28'
         )}
       >
-        {!visibility.known || listLoading || listError ? (
+        {!visibility.known ||
+        ((listLoading || listError) && workspaces.length === 0) ? (
           <p role="status">
-            {visibility.isError || listError
-              ? t('hidden_workspaces_load_error')
-              : t('loading')}
+            {listError
+              ? listT('error_workspaces')
+              : visibility.isError
+                ? t('hidden_workspaces_load_error')
+                : t('loading')}
           </p>
         ) : (
           <>
