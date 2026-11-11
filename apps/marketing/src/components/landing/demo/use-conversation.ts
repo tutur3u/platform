@@ -1,6 +1,7 @@
 'use client';
 
-import { useReducedMotion } from 'framer-motion';
+import { useLandingReducedMotion as useReducedMotion } from '../shared/use-landing-reduced-motion';
+
 import { useEffect, useState } from 'react';
 
 /**
@@ -38,8 +39,7 @@ export function useConversation(beats: readonly number[]) {
     return () => clearTimeout(timer);
   }, [beats, reduced, total]);
 
-  // `useReducedMotion` is `boolean | null` until it has measured; treat the
-  // unmeasured state as "motion allowed" so consumers get a plain boolean.
+  // The server snapshot is static until browser capabilities are known.
   return { step, reduced: reduced === true };
 }
 

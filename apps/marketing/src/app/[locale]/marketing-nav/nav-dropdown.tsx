@@ -2,7 +2,6 @@
 
 import { ChevronDownIcon } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
-import { motion, useReducedMotion } from 'framer-motion';
 import {
   type ReactNode,
   useCallback,
@@ -42,7 +41,6 @@ const CLOSE_GRACE_MS = 140;
  */
 export function NavMenuBar({ menus, children, ariaLabel }: NavMenuBarProps) {
   const [openId, setOpenId] = useState<string | null>(null);
-  const reduced = useReducedMotion();
 
   const barRef = useRef<HTMLElement>(null);
   const triggerRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -176,67 +174,27 @@ export function NavMenuBar({ menus, children, ariaLabel }: NavMenuBarProps) {
 
       {children}
 
-      {/* The single shared sheet */}
-      <motion.div
-        animate={
-          isOpen
-            ? { x: sheet.x, width: sheet.width, opacity: 1, y: 0 }
-            : { x: sheet.x, width: sheet.width, opacity: 0, y: -4 }
-        }
-        className={cn(
-          'absolute top-full left-0 z-50 pt-2',
-          isOpen ? 'pointer-events-auto' : 'pointer-events-none'
-        )}
-        initial={false}
-        transition={
-          reduced
-            ? { duration: 0 }
-            : {
-                x: { type: 'spring', stiffness: 520, damping: 42 },
-                width: { type: 'spring', stiffness: 520, damping: 42 },
-                opacity: { duration: 0.16 },
-                y: { duration: 0.16 },
-              }
-        }
+      <div
+        hidden={!isOpen}
+        className="absolute top-full left-0 z-50 pt-2"
+        style={{ transform: `translateX(${sheet.x}px)`, width: sheet.width }}
       >
-        <motion.div
-          animate={{ height: sheet.height || 'auto' }}
-          className="overflow-hidden rounded-2xl border border-foreground/10 bg-popover/95 text-popover-foreground shadow-foreground/5 shadow-xl backdrop-blur-xl"
-          initial={false}
-          transition={
-            reduced
-              ? { duration: 0 }
-              : { type: 'spring', stiffness: 520, damping: 44 }
-          }
-        >
-          {/* All panels stay mounted and stacked so the sheet can measure the
-              incoming one and cross-fade instead of collapsing between them.
-              `maxWidth` keeps a panel inside the sheet when the sheet itself
-              has been clamped to a narrow viewport. */}
-          <div className="relative">
-            {menus.map((menu) => (
-              <div
-                aria-hidden={openId !== menu.id}
-                className={cn(
-                  'top-0 left-0 w-full transition-opacity duration-200',
-                  openId === menu.id
-                    ? 'relative opacity-100'
-                    : 'pointer-events-none absolute opacity-0'
-                )}
-                id={`nav-sheet-${menu.id}`}
-                key={menu.id}
-                ref={(node) => {
-                  if (node) panelRefs.current.set(menu.id, node);
-                  else panelRefs.current.delete(menu.id);
-                }}
-                style={{ width: menu.width, maxWidth: '100%' }}
-              >
-                {menu.content}
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </motion.div>
+        <div className="overflow-hidden rounded-2xl border border-foreground/10 bg-popover text-popover-foreground shadow-xl">
+          {menus.map((menu) => (
+            <div
+              hidden={openId !== menu.id}
+              id={`nav-sheet-${menu.id}`}
+              key={menu.id}
+              ref={(node) => {
+                if (node) panelRefs.current.set(menu.id, node);
+                else panelRefs.current.delete(menu.id);
+              }}
+            >
+              {menu.content}
+            </div>
+          ))}
+        </div>
+      </div>
     </nav>
   );
 }

@@ -4,6 +4,8 @@ import { MenuIcon } from '@tuturuuu/icons/lucide-static';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 interface MenuProps {
   sbUser: SupabaseUser | null;
@@ -29,9 +31,23 @@ const MobileMenu = dynamic(
 );
 
 export default function Menu({ sbUser, user }: MenuProps) {
+  const [requested, setRequested] = useState(false);
+  const t = useTranslations('common');
   return (
     <div className="flex gap-2 md:hidden">
-      <MobileMenu sbUser={sbUser} user={user} />
+      {requested ? (
+        <MobileMenu sbUser={sbUser} user={user} initiallyOpen />
+      ) : (
+        <button
+          type="button"
+          aria-label={t('main_navigation')}
+          aria-expanded={false}
+          onClick={() => setRequested(true)}
+          className="rounded-lg p-2 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+        >
+          <MenuIcon className="h-5 w-5" />
+        </button>
+      )}
     </div>
   );
 }

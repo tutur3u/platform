@@ -1,5 +1,6 @@
 import { PublicSatelliteProviders } from '@tuturuuu/satellite/public';
 import '@tuturuuu/ui/globals.css';
+import './(marketing)/(landing)/landing.css';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
