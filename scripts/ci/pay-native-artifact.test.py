@@ -48,6 +48,29 @@ class PayArtifactTest(unittest.TestCase):
         (app / base.REDIRECT).write_text(json.dumps({"configPath": "../../dist/native/wrangler.json", "auxiliaryWorkers": []}))
         return app, config
 
+    def test_emitted_staging_vars_match_the_canonical_source_profile(self):
+        app, config = self.fixture()
+        profiles = json.loads((HERE.parents[1] / "apps/pay/cloudflare/native-profiles.json").read_text())
+        config["vars"] = profiles["staging"]["vars"]
+        (app / "dist/native/wrangler.json").write_text(json.dumps(config))
+        artifact.validate_output(app)
+        self.assertEqual(artifact.IDENTITY["vars"], config["vars"])
+
+    def test_staging_vars_still_reject_missing_changed_or_extra_fields(self):
+        for change in ("missing", "changed", "extra"):
+            with self.subTest(change=change):
+                app, config = self.fixture()
+                config["vars"] = dict(config["vars"])
+                if change == "missing":
+                    config["vars"].pop("NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN")
+                elif change == "changed":
+                    config["vars"]["NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN"] = ".tuturuuu.com"
+                else:
+                    config["vars"]["UNREVIEWED_BINDING"] = "not-allowed"
+                (app / "dist/native/wrangler.json").write_text(json.dumps(config))
+                with self.assertRaisesRegex(ValueError, "contract drift: vars"):
+                    artifact.validate_output(app)
+
     def test_identity_is_pay_and_base_module_is_untouched(self):
         self.assertIn("robots.txt", wrapper.PUBLIC_FILES)
         self.assertEqual(artifact.IDENTITY["name"], WORKER)
@@ -68,9 +91,9 @@ class PayArtifactTest(unittest.TestCase):
             for flag in ('false', None):
                 payload = json.loads(wrapper.PROFILE.read_text())
                 if flag is None:
-                    payload.pop('POLAR_SANDBOX')
+                    payload['staging']['vars'].pop('POLAR_SANDBOX')
                 else:
-                    payload['POLAR_SANDBOX'] = flag
+                    payload['staging']['vars']['POLAR_SANDBOX'] = flag
                 profile.write_text(json.dumps(payload))
                 with patch.object(wrapper, 'PROFILE', profile):
                     with self.assertRaisesRegex(RuntimeError, 'requires Polar sandbox'):
