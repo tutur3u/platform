@@ -22,7 +22,7 @@ export const STATUS_PAGE_CSS = [
   `.ttr-sp__bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;width:100%;max-width:72rem;margin:0 auto;padding:1rem}`,
   `.ttr-sp__lockup{display:flex;align-items:center;gap:.625rem;min-width:0}`,
   `.ttr-sp__brand{display:inline-flex;flex:none;align-items:center;gap:.5rem;font-weight:700;font-size:1.125rem;letter-spacing:-.01em}`,
-  `.ttr-sp__brand img{width:1.75rem;height:1.75rem;flex:none}`,
+  `.ttr-sp__brand svg{width:1.75rem;height:1.75rem;flex:none}`,
   `.ttr-sp__app{display:inline-flex;align-items:center;gap:.5rem;min-width:0;color:var(--ttr-sp-muted);font-weight:500;font-size:.9375rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}`,
   `.ttr-sp__app::before{content:"/";color:var(--ttr-sp-faint)}`,
   `.ttr-sp__app:hover{color:var(--ttr-sp-fg)}`,

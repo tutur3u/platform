@@ -1,6 +1,5 @@
 import { StatusPageDocument } from '@tuturuuu/ui/custom/status-page';
 import { renderToStaticMarkup } from 'react-dom/server';
-import logo from './assets/tuturuuu-logo.png?no-inline';
 import { langFromPathname } from './seo.ts';
 
 /**
@@ -15,7 +14,6 @@ export function roadmapNotFoundResponse(request: Request): Response {
       appHref={lang === 'vi' ? '/roadmap/vi' : '/roadmap'}
       appName="Roadmap"
       locale={lang}
-      logoSrc={logo}
       variant="not-found"
     />
   )}`;

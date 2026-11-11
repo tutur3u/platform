@@ -57,7 +57,6 @@ function useRoadmapStatus() {
     appName: 'Roadmap',
     appHref: lang === 'vi' ? '/roadmap/vi' : '/roadmap',
     locale: lang,
-    logoSrc: logo,
   };
 }
 

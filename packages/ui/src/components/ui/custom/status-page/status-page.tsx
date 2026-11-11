@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { TUTURUUU_REMOTE_LOGO_URL } from '../tuturuuu-logo-urls';
 import { StatusBackLink, StatusRetryButton } from './actions';
 import {
   resolveStatusPageLocale,
@@ -7,6 +6,7 @@ import {
   type StatusPageLocale,
   type StatusPageVariant,
 } from './copy';
+import { TuturuuuMark } from './mark';
 import { STATUS_PAGE_CSS, STATUS_PAGE_STYLE_ID } from './styles';
 
 export const TUTURUUU_HOME_URL = 'https://tuturuuu.com';
@@ -27,8 +27,6 @@ export interface StatusPageProps {
   backHref?: string;
   /** Tuturuuu home; defaults to https://tuturuuu.com. */
   homeHref?: string;
-  /** Logo URL the app's CSP allows; defaults to the tuturuuu.com logo. */
-  logoSrc?: string;
   /** The framework's reset/retry. Shown as "Try again" on the error variant. */
   onRetry?: () => void;
   /** Safe error reference (Next `digest`). */
@@ -90,7 +88,6 @@ export function StatusPage({
   helpHref,
   backHref,
   homeHref = TUTURUUU_HOME_URL,
-  logoSrc = TUTURUUU_REMOTE_LOGO_URL,
   onRetry,
   reference,
   details,
@@ -177,7 +174,7 @@ export function StatusPage({
             <div className="ttr-sp__bar">
               <div className="ttr-sp__lockup">
                 <a className="ttr-sp__brand" href={homeHref}>
-                  <img alt="" height={28} src={logoSrc} width={28} />
+                  <TuturuuuMark />
                   <span>Tuturuuu</span>
                 </a>
                 {appName && appHref ? (

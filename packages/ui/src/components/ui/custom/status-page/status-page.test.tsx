@@ -46,7 +46,22 @@ function statusMarkupProblems(
     problems.push('back link');
   if (!links.some((l) => l.href === '/tasks/search' && l.text === copy.search))
     problems.push('search link');
-  if (!doc.querySelector('img[alt=""][width="28"]')) problems.push('logo');
+  const mark = doc.querySelector('header svg[data-tuturuuu-mark]');
+  if (!mark || mark.getAttribute('aria-hidden') !== 'true')
+    problems.push('inline logo');
+  // Same-origin only: no absolute image or resource URL, so a mounted app's
+  // report-only CSP (img-src limited to its own path) records no violation.
+  const remote = [...doc.querySelectorAll('[src], [srcset], link[href]')]
+    .map(
+      (node) =>
+        node.getAttribute('src') ??
+        node.getAttribute('srcset') ??
+        node.getAttribute('href') ??
+        ''
+    )
+    .filter((url) => /^(?:https?:)?\/\//i.test(url.trim()));
+  if (remote.length > 0 || /url\(\s*['"]?(?:https?:)?\/\//i.test(html))
+    problems.push('remote image');
   return problems;
 }
 
@@ -97,6 +112,34 @@ describe('StatusPage', () => {
     expect(statusMarkupProblems(broken, 'en', 'not-found')).toEqual(
       expect.arrayContaining(['h1 count 2', 'script element', 'home link'])
     );
+  });
+
+  it('flags a broken variant: the remote tuturuuu.com logo image', () => {
+    const good = renderToStaticMarkup(
+      <StatusPageDocument
+        appHref="/tasks"
+        locale="en"
+        searchHref="/tasks/search"
+        variant="not-found"
+      />
+    );
+    expect(good).not.toMatch(/https:\/\/[^"]*\.(?:png|svg|jpe?g|webp)/);
+    const remoteLogo = good.replace(
+      /<svg[^>]*data-tuturuuu-mark[\s\S]*?<\/svg>/,
+      '<img alt="" height="28" src="https://tuturuuu.com/media/logos/transparent.png" width="28"/>'
+    );
+    expect(remoteLogo).not.toBe(good);
+    expect(statusMarkupProblems(remoteLogo, 'en', 'not-found')).toEqual([
+      'inline logo',
+      'remote image',
+    ]);
+    const preloaded = good.replace(
+      '</head>',
+      '<link rel="preload" as="image" href="https://tuturuuu.com/media/logos/transparent.png"/></head>'
+    );
+    expect(statusMarkupProblems(preloaded, 'en', 'not-found')).toEqual([
+      'remote image',
+    ]);
   });
 
   it('keeps EN and VI copy keys in parity', () => {
