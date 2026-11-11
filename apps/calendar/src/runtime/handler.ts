@@ -2,8 +2,10 @@ import { retarget } from '@tuturuuu/start-bridge/base-path';
 import { createNonce } from '@tuturuuu/start-bridge/csp';
 import { APP_BASE_HEADER } from '@tuturuuu/start-bridge/mounts';
 import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
+import { admitMountedMutation } from '@tuturuuu/start-bridge/start/csrf-admission';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
+import { applyOneOriginNoindex } from '@tuturuuu/utils/one-origin-routing';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { proxy } from '../proxy';
 import { beforeLocalApiOwner, forwardToOwner } from './api-owner-routing';
@@ -15,6 +17,11 @@ import {
   CALENDAR_LEGACY_FUNCTION_BASE,
 } from './native-function-config';
 import { nativeFunctionProxy } from './native-function-proxy';
+import {
+  calendarNavigationRedirect,
+  decideCalendarOneOrigin,
+  prepareCalendarStartRequest,
+} from './one-origin';
 import { dispatchThroughCalendarProxy } from './proxy-bridge';
 import { publicAssets } from './public-assets';
 import { requestInit } from './request-init';
@@ -42,11 +49,17 @@ export async function handleCalendarRequest(
 ): Promise<Response> {
   const nonce = createNonce();
   try {
-    return await applyCalendarResponsePolicy(
+    const decision = decideCalendarOneOrigin(request, env);
+    const response = await applyCalendarResponsePolicy(
       request,
-      await dispatchCalendarRequest(request, env, ctx, nonce, telemetry),
+      decision && decision.action !== 'serve'
+        ? decision.response
+        : await dispatchCalendarRequest(request, env, ctx, nonce, telemetry),
       nonce
     );
+    return decision?.action === 'serve' && decision.noindex
+      ? applyOneOriginNoindex(response)
+      : response;
   } catch (error) {
     reportCalendarSsrError(error, 'handler');
     throw error;
@@ -91,6 +104,16 @@ async function dispatchCalendarRequest(
       { error: 'The shared session is managed by Web' },
       { status: 409 }
     );
+  if (!base.isRoot) {
+    const refused = admitMountedMutation({
+      appPath: path,
+      mode: 'enforce',
+      request,
+    });
+    if (refused) return refused;
+    const redirect = calendarNavigationRedirect(request, env);
+    if (redirect) return redirect;
+  }
   if (path === '/api/build-info') {
     const identity = workerBuildInfo(
       base.stripRequest(request) ?? request,
@@ -175,7 +198,10 @@ async function dispatchCalendarRequest(
             )
               return start.fetch(base.stripRequest(forwarded) ?? forwarded);
             return start.fetch(
-              new Request(request.url, requestInit(forwarded))
+              prepareCalendarStartRequest(
+                new Request(request.url, requestInit(forwarded)),
+                base.basePath
+              )
             );
           },
         })

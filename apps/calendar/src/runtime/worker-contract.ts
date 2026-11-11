@@ -1,4 +1,6 @@
 export interface CalendarWorkerEnvironment {
+  /** Missing or invalid values refuse the apex; observation redirects use 307. */
+  TTR_ONE_ORIGIN_CALENDAR?: string;
   ASSETS: { fetch(request: Request): Promise<Response> };
   /** Staging only: Access team domain and application AUD for JWT checks. */
   CF_ACCESS_TEAM_DOMAIN?: string;

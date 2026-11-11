@@ -3,6 +3,7 @@ import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { routerBasepath } from '@tuturuuu/start-bridge/start/base-path';
 import { routeTree } from './routeTree.gen';
 import { registerCalendarBrowserApiPaths } from './runtime/calendar-api-client';
+import { canonicalCalendarAddress } from './runtime/one-origin-address';
 import { CalendarError } from './runtime/router-shell';
 import '@tuturuuu/tasks-ui/globals.css';
 import './runtime/typography.css';
@@ -13,7 +14,7 @@ export function getRouter() {
     registerCalendarBrowserApiPaths();
     browserApiRoutingInstalled = true;
   }
-  return createRouter({
+  const router = createRouter({
     routeTree: routeTree,
     basepath: routerBasepath(),
     ssr: { nonce: requestNonce() },
@@ -22,6 +23,15 @@ export function getRouter() {
     defaultPreload: 'intent',
     defaultStaleTime: 0,
   });
+  if (typeof window !== 'undefined' && routerBasepath() === '/calendar') {
+    const keepCanonical = () => {
+      const target = canonicalCalendarAddress(window.location);
+      if (target) window.history.replaceState(window.history.state, '', target);
+    };
+    router.subscribe('onResolved', keepCanonical);
+    router.subscribe('onRendered', keepCanonical);
+  }
+  return router;
 }
 declare module '@tanstack/react-router' {
   interface Register {

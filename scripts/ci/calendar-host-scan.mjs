@@ -11,6 +11,10 @@ export const expectedRootHosts = {
   production: ['calendar.tuturuuu.com'],
   staging: ['calendar.tutur3u.com'],
 };
+export const expectedMountHosts = {
+  production: ['tuturuuu.com'],
+  staging: [],
+};
 // Public production identifier pinned by supabase-production.yaml; never a credential.
 const productionSupabaseRef = 'nzamlzqfdwaaxdefwraj';
 const forbidden = {
@@ -25,6 +29,7 @@ export const productionHostPattern =
   /(?<![a-z0-9-])(?:[a-z0-9-]+\.)*tuturuuu\.com(?![a-z0-9-])/iu;
 export const forwardingSources = [
   'src/runtime/handler.ts',
+  'src/runtime/one-origin.ts',
   'src/runtime/api-owner-routing.ts',
   'src/runtime/request-init.ts',
   'src/runtime/staging-access.ts',
@@ -42,6 +47,7 @@ const textExtensions = new Set([
   '.css',
   '.txt',
 ]);
+const mountHostsPattern = /["']?mountHosts["']?\s*:\s*\[([^\]]*)\]/gu;
 const rootHostsPattern = /["']?rootHosts["']?\s*:\s*\[([^\]]*)\]/gu;
 
 function files(root) {
@@ -66,6 +72,7 @@ export function scanCalendarArtifact(dist, profile) {
   const root = resolve(dist);
   const expected = expectedRootHosts[profile];
   const lists = [];
+  const mountLists = [];
   for (const path of files(root)) {
     const text = readFileSync(path, 'utf8');
     const name = relative(root, path);
@@ -74,6 +81,12 @@ export function scanCalendarArtifact(dist, profile) {
         !text.includes(needle),
         `${profile} artifact ${name} contains ${needle}`
       );
+    for (const match of text.matchAll(mountHostsPattern)) {
+      const hosts = [...match[1].matchAll(/["'`]([^"'`]+)["'`]/gu)].map(
+        ([, host]) => host
+      );
+      mountLists.push({ name, hosts });
+    }
     for (const match of text.matchAll(rootHostsPattern)) {
       const hosts = [...match[1].matchAll(/["'`]([^"'`]+)["'`]/gu)].map(
         ([, host]) => host
@@ -91,7 +104,17 @@ export function scanCalendarArtifact(dist, profile) {
       expected,
       `${profile} artifact ${name} has rootHosts ${hosts.join(',')}`
     );
-  return { lists: lists.length };
+  assert.ok(
+    mountLists.length > 0,
+    `${profile} artifact has no folded mountHosts literal`
+  );
+  for (const { name, hosts } of mountLists)
+    assert.deepEqual(
+      hosts,
+      expectedMountHosts[profile],
+      `${profile} artifact ${name} has mountHosts ${hosts.join(',')}`
+    );
+  return { lists: lists.length, mountLists: mountLists.length };
 }
 
 export function scanCalendarForwardingSources(

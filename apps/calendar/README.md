@@ -17,3 +17,28 @@ The request telemetry port isolates log-drain consumers without installing conso
 Required parent evidence includes affected Web/Tasks/Calendar CI, compiler isolation of server suppliers, actual Worker SSR/hydration/navigation and locale/cookie isolation, OAuth state/consent/refresh/revocation, recurrence/unknown-provider outcomes, Tasks owner routing, emitted service worker policy, enabled telemetry and hosted rollback. No deployment command is added; qualify official SDK output and publish the exact accepted artifact through the existing Wrangler owner.
 
 The artifact verifier accepts exactly one native `.wrangler/deploy/config.json` or Void-saved `.void/preview-deploy-config.json` pointer. Saved bytes retain the native directory as their relative-path base. Seal and archive the selected pointer with the complete emitted output; missing, duplicate, symlinked or changed pointers fail acceptance.
+
+## Apex mount candidate
+
+The production profile admits `tuturuuu.com/calendar` at the Worker boundary;
+no zone route is installed. `TTR_ONE_ORIGIN_CALENDAR` is a Worker variable,
+with missing or invalid values treated as `off` (apex 404, subdomain unchanged).
+`shadow` serves the mount with noindex and no boundary redirects. `on` redirects
+subdomain GET/HEAD document navigations to the apex with revocable 307/no-store;
+API, assets, well-known, server functions and service-worker transport stay local.
+Mounted GET/HEAD document slash URLs collapse to a bare path in one 301 with
+the query preserved. Mounted Meet Together documents redirect outside Calendar
+to `/meet-together`. The bare mount is slash-rewritten only for Start SSR; the
+browser retains `/calendar` through hydration. Staging has no mount hosts.
+
+Mounted mutations enforce the shared Origin/Fetch Metadata CSRF admission before
+proxy or endpoint dispatch. The mounted logout, refresh-app-session and
+verify-app-token endpoints retain their 409 refusal; Web owns the shared
+session. Cookie names, attributes, paths and write behavior are unchanged, as
+are root-host auth and OAuth behavior.
+
+Exact-source CI must run the production-profile `vp build`, emitted-artifact
+host scan (rootHosts and mountHosts), Calendar Vitest and all type-check targets,
+then the emitted Worker on loopback with each public Host header and asset-smoke.
+The execution HOLD above also applies to these receipts locally. Boundary and
+mocked Start handoff tests do not establish actual SSR/hydration or asset output.

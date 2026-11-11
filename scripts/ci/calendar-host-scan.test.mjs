@@ -26,8 +26,11 @@ function artifact(files) {
   }
   return root;
 }
-const mounts = (hosts) =>
-  `const config = { mounts: { rootHosts: ${JSON.stringify(hosts)}, mountHosts: [], unknownHost: "reject" } };`;
+const mounts = (
+  hosts,
+  mountHosts = hosts[0] === 'calendar.tuturuuu.com' ? ['tuturuuu.com'] : []
+) =>
+  `const config = { mounts: { rootHosts: ${JSON.stringify(hosts)}, mountHosts: ${JSON.stringify(mountHosts)}, unknownHost: "reject" } };`;
 
 test('accepts each artifact carrying only its own folded host list', () => {
   for (const [profile, hosts, extra] of [
@@ -53,7 +56,10 @@ test('accepts each artifact carrying only its own folded host list', () => {
       ]),
     });
     try {
-      assert.deepEqual(scanCalendarArtifact(root, profile), { lists: 2 });
+      assert.deepEqual(scanCalendarArtifact(root, profile), {
+        lists: 2,
+        mountLists: 2,
+      });
     } finally {
       rmSync(root, { recursive: true });
     }
@@ -220,7 +226,7 @@ test('the dev server is the only explicit development caller', () => {
 
 test('staging forwarding sources name no production host', () => {
   const appDir = join(import.meta.dirname, '../../apps/calendar');
-  assert.deepEqual(scanCalendarForwardingSources(appDir), { sources: 5 });
+  assert.deepEqual(scanCalendarForwardingSources(appDir), { sources: 6 });
 });
 
 test('flags a production host fallback in staging forwarding sources', () => {
@@ -249,5 +255,33 @@ test('flags a production host fallback in staging forwarding sources', () => {
     );
   } finally {
     rmSync(root, { recursive: true });
+  }
+});
+
+test('requires a folded mountHosts literal and rejects environment drift', () => {
+  for (const [profile, source, error] of [
+    ['production', mounts(['calendar.tuturuuu.com'], []), /has mountHosts/],
+    [
+      'staging',
+      mounts(['calendar.tutur3u.com'], ['tuturuuu.com']),
+      /has mountHosts/,
+    ],
+    [
+      'production',
+      'rootHosts: ["calendar.tuturuuu.com"]',
+      /no folded mountHosts/,
+    ],
+    [
+      'production',
+      'rootHosts: ["calendar.tuturuuu.com"], mountHosts: mode ? a : b',
+      /no folded mountHosts/,
+    ],
+  ]) {
+    const root = artifact({ 'server/index.js': source });
+    try {
+      assert.throws(() => scanCalendarArtifact(root, profile), error);
+    } finally {
+      rmSync(root, { recursive: true });
+    }
   }
 });
