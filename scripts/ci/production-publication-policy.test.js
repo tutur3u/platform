@@ -23,6 +23,7 @@ const apps = [
   'calendar',
   'mail',
   'apps',
+  'workspace',
   'shortener',
   'mastermind',
 ];
@@ -262,7 +263,9 @@ for (const app of apps) {
       surfaces: app === 'meet' ? ['frontend', 'realtime-do'] : ['frontend'],
     };
     const workflow = `${app}-cloudflare.yaml`;
-    const target = ['meet', 'calendar', 'mail', 'apps'].includes(app)
+    const target = ['meet', 'calendar', 'mail', 'apps', 'workspace'].includes(
+      app
+    )
       ? workflow
       : `vercel-production-${app}.yaml`;
     const root = fixture(t, policy);
@@ -315,9 +318,39 @@ test('Calendar, Meet, Mail and Apps admissions open only their publishers while 
   );
 });
 
+test('Workspace admission opens only its route-free seal workflow and adds no publisher', (t) => {
+  const root = fixture(t);
+  assert.equal(
+    runPolicy(root, 'workspace-cloudflare.yaml').output,
+    'allowed=true\n'
+  );
+  // Admission is route-free upload only: no gateway routes, no Vercel publisher.
+  assert.equal(
+    existsSync(
+      join(repoRoot, '.github/workflows/vercel-production-workspace.yaml')
+    ),
+    false
+  );
+  const { jobs } = readWorkflow('workspace-cloudflare.yaml');
+  assert.deepEqual(
+    publicationWrites(jobs).map(([name]) => name),
+    []
+  );
+  assert.match(
+    jobs['workspace-cutover-artifact'].if,
+    /github\.event_name == 'workflow_dispatch'/
+  );
+  for (const app of ['shortener', 'mastermind'])
+    assert.equal(
+      runPolicy(root, `${app}-cloudflare.yaml`).output,
+      'allowed=false\n'
+    );
+});
+
 const publishers = [
   ...apps
-    .filter((app) => app !== 'mastermind')
+    // Workspace has no Vercel publisher; its only workflow is the dispatch-only seal.
+    .filter((app) => app !== 'mastermind' && app !== 'workspace')
     .map((app) => ({
       workflow: `vercel-production-${app}.yaml`,
       job: 'Deploy-Production',

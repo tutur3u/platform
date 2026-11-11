@@ -14,6 +14,7 @@ const protectedSurfaces = {
   calendar: ['frontend'],
   mail: ['frontend'],
   apps: ['frontend'],
+  workspace: ['frontend'],
   // Wave 2: held until a reviewed Start + Void cutover admits it.
   shortener: ['frontend'],
 } as const;
