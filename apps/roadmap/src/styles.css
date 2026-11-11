@@ -73,6 +73,8 @@
 .roadmap {
   min-height: 100dvh;
   background: var(--rm-bg);
+  /* Full-bleed glows reach the viewport edge; never a sideways scroll. */
+  overflow-x: clip;
 }
 .footer-inner {
   padding-top: 8px;
@@ -152,10 +154,28 @@
 }
 .hero-backdrop {
   position: absolute;
-  inset: -96px -24px 0;
+  /* Full bleed, feathered: no edge of the glow is ever a hard line. */
+  top: -140px;
+  bottom: -60px;
+  left: calc(50% - 50vw);
+  right: calc(50% - 50vw);
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 22%,
+    #000 68%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 22%,
+    #000 68%,
+    transparent
+  );
 }
 .bloom {
   position: absolute;
@@ -232,6 +252,10 @@
   text-wrap: balance;
 }
 .hero h1 .accent {
+  /* Room for descenders (p, g) under background-clip: text. */
+  line-height: 1.12;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.08em;
   background: linear-gradient(
     100deg,
     var(--cyan),
@@ -241,7 +265,6 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  padding-bottom: 0.06em;
 }
 .intro {
   margin: 0;
@@ -763,35 +786,205 @@
   padding: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
 }
-.hosts li {
-  padding: 12px;
-  border: 1px solid var(--rm-line);
-  border-radius: 12px;
-  background: var(--rm-panel);
-  min-width: 0;
-}
-.host-head {
+/* Hosting: summary bar, platform groups, uniform cards. Platform hues are
+   identity (Cloudflare orange, Vercel ink); every one ships with a label. */
+.host-summary {
   display: grid;
-  gap: 4px;
-  font-size: 14px;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
 }
-.platform {
-  font-size: 11.5px;
-  font-weight: 600;
+.host-summary-bar {
+  display: flex;
+  gap: 2px;
+  height: 12px;
 }
-.platform.workers {
-  color: var(--rm-live);
+.host-seg {
+  border-radius: 4px;
+  min-width: 4px;
 }
-.platform.vercel {
-  color: var(--rm-ink);
-}
-.platform.unknown {
+.host-legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 13px;
   color: var(--rm-muted);
 }
-.hosts .meta .ok {
+.host-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.host-legend b {
+  color: var(--rm-ink);
+  font-variant-numeric: tabular-nums;
+}
+.platform-mark {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+.platform-mark.vercel {
+  /* Vercel's mark is a triangle. */
+  border-radius: 0;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid var(--rm-ink);
+  background: none;
+}
+.platform-mark.workers,
+.host-seg.workers {
+  background: var(--ws-cf, #f6821f);
+}
+.host-seg.vercel {
+  background: var(--rm-ink);
+}
+.platform-mark.store,
+.host-seg.store {
+  background: var(--rm-sync);
+}
+.platform-mark.unknown,
+.host-seg.unknown {
+  background: var(--rm-planned);
+}
+.host-group {
+  display: grid;
+  gap: 10px;
+}
+.host-group-title {
+  margin: 8px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.host-group-count {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--rm-soft);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rm-muted);
+  font-variant-numeric: tabular-nums;
+}
+.host-card {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  min-height: 92px;
+  align-content: space-between;
+  padding: 14px 14px 12px 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: 14px;
+  background: var(--rm-panel);
+  min-width: 0;
+  overflow: hidden;
+}
+.host-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--rm-planned);
+}
+.host-card.workers::before {
+  background: var(--ws-cf, #f6821f);
+}
+.host-card.vercel::before {
+  background: var(--rm-ink);
+}
+.host-card.store::before {
+  background: var(--rm-sync);
+}
+.host-card:hover {
+  border-color: color-mix(in oklab, var(--rm-ink) 28%, transparent);
+}
+.host-card:focus-within {
+  border-color: var(--rm-sync);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--rm-sync) 22%, transparent);
+}
+.host-top {
+  display: grid;
+  gap: 6px;
+  font-size: 14.5px;
+}
+.host-fresh {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.host-fresh::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.host-fresh.current {
   color: var(--rm-live);
+  background: color-mix(in oklab, var(--rm-live) 12%, transparent);
+}
+.host-fresh.behind {
+  color: var(--rm-progress);
+  background: color-mix(in oklab, var(--rm-progress) 12%, transparent);
+}
+.host-fresh.unknown {
+  color: var(--rm-muted);
+  background: var(--rm-soft);
+}
+.host-commit {
+  justify-self: start;
+  font-size: 12px;
+  color: var(--rm-muted);
+  text-decoration: none;
+  border-radius: 6px;
+}
+.host-commit:hover code {
+  color: var(--rm-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.host-commit.is-empty {
+  opacity: 0.35;
+}
+@media (min-width: 720px) {
+  .hosts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .hosts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .host-card {
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      transform 160ms ease;
+  }
+  .host-card:hover {
+    transform: translateY(-2px);
+  }
 }
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -836,9 +1029,6 @@ code {
   }
   .track {
     padding: 22px;
-  }
-  .hosts {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .method dl div {
     grid-template-columns: 200px 1fr;
@@ -1181,8 +1371,10 @@ code {
 .ws-hero::before {
   content: "";
   position: absolute;
-  inset: -80px -24px auto;
-  height: 360px;
+  top: -140px;
+  left: calc(50% - 50vw);
+  right: calc(50% - 50vw);
+  height: 560px;
   z-index: -1;
   background:
     radial-gradient(
@@ -1196,6 +1388,20 @@ code {
       transparent 70%
     );
   pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 25%,
+    #000 60%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 25%,
+    #000 60%,
+    transparent
+  );
 }
 .ws-hero h1 {
   margin: 0;
@@ -1210,6 +1416,9 @@ code {
 }
 .ws-hero h1 .accent {
   font-size: 0.72em;
+  line-height: 1.15;
+  padding-bottom: 0.16em;
+  margin-bottom: -0.08em;
   letter-spacing: -0.035em;
   background: linear-gradient(
     100deg,
@@ -1220,7 +1429,6 @@ code {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  padding-bottom: 0.06em;
 }
 .ws-facts {
   margin: 4px 0 0;

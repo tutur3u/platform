@@ -112,3 +112,14 @@ describe('Upskii is the official mark and always linked', () => {
     );
   });
 });
+
+describe('hosting freshness', () => {
+  it('reports current, behind or unknown, and never guesses', async () => {
+    const { hostFreshness } = await import('./host-freshness.ts');
+    assert.equal(hostFreshness({ commit: 'abc', behindBy: 0 }), 'current');
+    assert.equal(hostFreshness({ commit: 'abc', behindBy: 35 }), 'behind');
+    assert.equal(hostFreshness({ commit: null, behindBy: null }), 'unknown');
+    // Broken variant: a reported commit with an unknown lag is not "behind".
+    assert.equal(hostFreshness({ commit: 'abc', behindBy: null }), null);
+  });
+});
