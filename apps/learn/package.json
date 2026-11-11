@@ -23,6 +23,7 @@
     "sb:new": "cd ../database && bun sb:new",
     "sb:up": "cd ../database && bun sb:up",
     "sb:typegen": "cd ../database && bun sb:typegen",
+    "prebuild:cloudflare": "turbo run build --filter=@tuturuuu/learn^... --concurrency=2",
     "build:cloudflare": "vp build --configLoader runner",
     "dev:cloudflare": "vp dev --configLoader runner --host 127.0.0.1 --port ${PORT:-7812}",
     "preview:cloudflare": "vp preview --configLoader runner --host 127.0.0.1 --port ${PORT:-7812}",
