@@ -221,7 +221,7 @@ jobs:
   web-fonts:
     name: Web font subsets
     needs: scope
-    if: needs.scope.outputs.fonts == 'true'
+    if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.fonts == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

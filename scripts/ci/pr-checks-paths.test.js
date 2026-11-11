@@ -140,7 +140,8 @@ const cases = {
     'AGENTS.md': ['AGENTS.md'],
     'apps/docs/docs.json': ['apps/docs/docs.json'],
     'tuturuuu*.ts': ['tuturuuu.ts', 'tuturuuu.ci.ts'],
-  },  fonts: {
+  },
+  fonts: {
     ...common,
     'scripts/fonts/**': [
       'scripts/fonts/test_web_fonts.py',

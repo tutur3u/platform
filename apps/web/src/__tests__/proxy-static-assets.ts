@@ -1,8 +1,10 @@
+import { unstable_doesProxyMatch } from 'next/experimental/testing/server';
 import { expect } from 'vitest';
 
 export function expectStaticAssetMatcher(matchers: readonly string[]) {
-  expect(matchers).toHaveLength(1);
-  const matcher = new RegExp(`^${matchers.join('')}$`);
+  expect(matchers).toHaveLength(3);
+  const matches = (url: string) =>
+    unstable_doesProxyMatch({ config: { matcher: [...matchers] }, url });
   for (const path of [
     '/audio/example.mp3',
     '/audio/example.wav',
@@ -12,15 +14,17 @@ export function expectStaticAssetMatcher(matchers: readonly string[]) {
     '/fonts/subsets/noto-sans-latin-core.7b24cd8019.woff2',
     '/fonts/subsets/OFL-notosans.txt',
   ]) {
-    expect(matcher.test(path), path).toBe(false);
+    expect(matches(path), path).toBe(false);
   }
   for (const path of [
+    '/roadmap',
+    '/roadmap/screenshot.png',
     '/en/personal',
     '/api/v1/workspaces/example',
     '/api/v1/fonts/subsets/example',
     '/fonts/private.woff2',
     '/en/fonts/subsets/example',
   ]) {
-    expect(matcher.test(path), path).toBe(true);
+    expect(matches(path), path).toBe(true);
   }
 }

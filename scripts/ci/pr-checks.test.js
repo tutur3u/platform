@@ -173,7 +173,13 @@ test('gated callers stay deferred until ready while script-only checks remain el
       name
     );
   }
-  for (const name of ['migration-timestamps', 'migrations', 'mobile', 'plugin'])
+  for (const name of [
+    'migration-timestamps',
+    'migrations',
+    'mobile',
+    'plugin',
+    'web-fonts',
+  ])
     assert.equal(
       Boolean(evaluateExpression(workflow.jobs[name].if, scope(false))),
       true,
