@@ -266,16 +266,30 @@ describe('content security policy: only real script elements are hashed (D87 A5)
 
 describe('content security policy: oversized documents', () => {
   const page = (filler: number) =>
-    `<!doctype html><html><head><script type="module" async="" src="/roadmap/assets/index-Abcd1234.js"></script></head><body>${'x'.repeat(filler)}</body></html>`;
-  /** A fallback must not serve inline script the policy cannot allow. */
-  const degradesSafely = (result: Wrapped, original: string) =>
+    '<!doctype html><html><head>' +
+    '<script type="application/ld+json">{"@context":"https://schema.org"}</script>' +
+    '<script>self.theme=1</script>' +
+    '<script type="module" async="" src="/roadmap/assets/index-Abcd1234.js"></script>' +
+    `</head><body>${'x'.repeat(filler)}<script>(self.$R=self.$R||{})</script></body></html>`;
+  const executableInline = (html: string) =>
+    [...html.matchAll(/<script\b([^>]*)>/g)].filter(
+      (match) =>
+        !/\bsrc=/.test(match[1] ?? '') &&
+        !/type="application\/(ld\+)?json"/.test(match[1] ?? '')
+    ).length;
+  /** A fallback serves no unhashed executable script, but keeps the rest. */
+  const degradesSafely = (result: Wrapped) =>
     result.headers['content-security-policy']?.startsWith(
       "script-src 'self';"
-    ) === true && result.body === original;
+    ) === true &&
+    executableInline(result.body ?? '') === 0 &&
+    (result.body ?? '').includes('<script type="application/ld+json">') &&
+    (result.body ?? '').includes(
+      '<script type="module" async="" src="/roadmap/assets/index-Abcd1234.js">'
+    );
 
-  it('a normal page keeps the transform and hashes its loader', async () => {
-    const original = page(1_000);
-    const result = await withBootLoader(original);
+  it('a normal page keeps the transform and hashes its inline scripts', async () => {
+    const result = await withBootLoader(page(1_000));
     assert.ok(result.body?.includes('<script>boot()</script>'));
     const hash = createHash('sha256').update('boot()').digest('base64');
     assert.ok(
@@ -283,17 +297,21 @@ describe('content security policy: oversized documents', () => {
     );
   });
 
-  it('an oversized page is served as rendered, so its module entry still loads', async () => {
+  it('an oversized page is served as rendered, minus its executable inline scripts', async () => {
     const original = page(MAX_DOCUMENT_BYTES + 1);
     const result = await withBootLoader(original);
-    assert.equal(degradesSafely(result, original), true);
-    assert.ok(result.body?.includes('<script type="module" async="" src='));
-    // Broken variant: serving the transformed page leaves only a blocked
-    // inline loader, so the page could never hydrate.
-    const blocked = {
-      ...result,
-      body: original.replace('</body>', '<script>boot()</script></body>'),
-    };
-    assert.equal(degradesSafely(blocked, original), false);
+    assert.equal(degradesSafely(result), true);
+    assert.ok(!result.body?.includes('boot()'));
+    // Broken variants: the untouched original (unhashed inline scripts
+    // served), and the transformed page (an inline loader that is blocked).
+    assert.equal(executableInline(original), 2);
+    assert.equal(degradesSafely({ ...result, body: original }), false);
+    assert.equal(
+      degradesSafely({
+        ...result,
+        body: original.replace('</body>', '<script>boot()</script></body>'),
+      }),
+      false
+    );
   });
 });
