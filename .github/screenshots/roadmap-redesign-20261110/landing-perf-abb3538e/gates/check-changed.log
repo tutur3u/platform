@@ -1,0 +1,54 @@
+[ttr resources] queued PID 27367; blockedBy=local_saturated: waiting for the shared validation slots. Tip: --offload auto runs the pushed commit on a trusted devbox runner.
+[ttr resources] queued PID 27367; blockedBy=local_saturated: waiting for the shared validation slots. Tip: --offload auto runs the pushed commit on a trusted devbox runner.
+[ttr resources] queued PID 27367; blockedBy=local_saturated: waiting for the shared validation slots. Tip: --offload auto runs the pushed commit on a trusted devbox runner.
+[ttr resources] running PID 27367
+$ node scripts/check-changed.js
+check:changed: 47 changed file(s) since 0f39da1ea2; 45 step(s).
+  cold workspace declarations (@tuturuuu/devbox, @tuturuuu/editor, @tuturuuu/masonry, tuturuuu): type errors outside changed files are advisory; CI stays authoritative.
+ok   branch name perf/landing-lite-20261111 (0.0s)
+ok   source-size (700 LOC ceiling) (0.7s)
+ok   generated docs inventory (0.4s)
+ok   generated app SEO assets (0.1s)
+ok   oxfmt check (46 files) (0.2s)
+ok   oxlint (45 files) (0.3s)
+ok   server-console (1.1s)
+ok   internal-app-auth (0.5s)
+ok   satellite-cookie-auth (0.2s)
+ok   browser-session-surface (1.2s)
+ok   vitest apps/marketing (3 related files) (0.8s)
+ok   vitest packages/start-bridge (1 related files) (0.4s)
+ok   type-check apps/ai (0.8s) - tsc x1
+ok   type-check apps/apps (0.3s) - tsc x1
+ok   type-check apps/calendar (4.5s) - tsc x5, 1 advisory outside changed files
+ok   type-check apps/chat (0.7s) - tsc x1
+ok   type-check apps/cms (1.1s) - tsc x1
+ok   type-check apps/contacts (2.2s) - tsc x1
+ok   type-check apps/drive (1.5s) - tsc x2
+ok   type-check apps/external (0.3s) - tsc x1, 1 missing-dist ignored, 11 advisory outside changed files
+ok   type-check apps/finance (1.4s) - tsc x1
+ok   type-check apps/forms (1.8s) - tsc x2
+ok   type-check apps/git (0.7s) - tsc x1
+ok   type-check apps/hive (1.0s) - tsc x1
+ok   type-check apps/infrastructure (2.7s) - tsc x1, 1 missing-dist ignored
+ok   type-check apps/inventory (1.6s) - tsc x1
+ok   type-check apps/learn (0.9s) - tsc x1
+ok   type-check apps/mail (2.6s) - tsc x4, 1 advisory outside changed files
+ok   type-check apps/marketing (0.5s) - tsc x1
+ok   type-check apps/mastermind (0.2s) - tsc x1
+ok   type-check apps/mind (0.9s) - tsc x1
+ok   type-check apps/nova (0.9s) - tsc x1
+ok   type-check apps/pay (0.6s) - tsc x1
+ok   type-check apps/playground (0.4s) - tsc x1
+ok   type-check apps/rewise (1.0s) - tsc x1
+ok   type-check apps/shortener (0.3s) - tsc x1
+ok   type-check apps/storefront (0.6s) - tsc x1
+ok   type-check apps/tasks (5.8s) - tsc x3
+ok   type-check apps/teach (2.1s) - tsc x1
+ok   type-check apps/tools (0.4s) - tsc x1
+ok   type-check apps/track (1.0s) - tsc x1
+ok   type-check apps/web (13.9s) - tsc x1, 4 missing-dist ignored
+ok   type-check apps/workspace (9.4s) - tsc x1, 1 missing-dist ignored
+ok   type-check packages/start-bridge (0.3s) - tsc x1
+ok   Staging cookie-domain isolation (5.9s)
+check:changed: all passed in 74.1s.
+[ttr resources] finished; exit 0

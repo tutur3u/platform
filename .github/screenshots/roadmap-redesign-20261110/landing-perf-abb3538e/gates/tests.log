@@ -1,0 +1,10 @@
+$ vitest run --passWithNoTests
+
+ RUN  v5.0.5 WORKSPACE/apps/marketing
+
+
+ Test Files  6 passed (6)
+      Tests  36 passed (36)
+   Start at  23:19:11
+   Duration  735ms (environment 89%, import 6%, tests 3%, worker 2%, transform 1%)
+

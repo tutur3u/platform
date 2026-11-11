@@ -1,0 +1,67 @@
+{
+  "log": [
+    "Products",
+    "Resources",
+    "Toggle theme",
+    "theme toggled",
+    ""
+  ],
+  "events": [
+    {
+      "name": "pointerdown",
+      "duration": 72
+    },
+    {
+      "name": "pointerup",
+      "duration": 72
+    },
+    {
+      "name": "click",
+      "duration": 72
+    },
+    {
+      "name": "pointerdown",
+      "duration": 40
+    },
+    {
+      "name": "pointerup",
+      "duration": 40
+    },
+    {
+      "name": "click",
+      "duration": 40
+    },
+    {
+      "name": "keydown",
+      "duration": 120
+    },
+    {
+      "name": "keyup",
+      "duration": 120
+    },
+    {
+      "name": "pointerdown",
+      "duration": 736
+    },
+    {
+      "name": "pointerup",
+      "duration": 736
+    },
+    {
+      "name": "click",
+      "duration": 736
+    },
+    {
+      "name": "pointerdown",
+      "duration": 184
+    },
+    {
+      "name": "pointerup",
+      "duration": 184
+    },
+    {
+      "name": "click",
+      "duration": 184
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "landing-perf-tools",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "lighthouse": "^12.8.2",
+    "playwright": "^1.65.0"
+  }
+}
