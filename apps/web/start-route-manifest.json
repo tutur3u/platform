@@ -43,18 +43,18 @@
     }
   ],
   "summary": {
-    "total": 860,
+    "total": 861,
     "categories": {
       "api": 665,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 164,
+      "page": 165,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 848 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 849 }
   },
   "routes": [
     {

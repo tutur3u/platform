@@ -2,6 +2,9 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { type Locale, supportedLocales } from '@/i18n/routing';
 
+import { PUBLIC_PATHS } from '@/constants/common';
+import { isRoadmapPublicPath } from './roadmap-public-proxy';
+
 const DESIGN_SEGMENT = 'design';
 const UI_SEGMENT = 'ui';
 
@@ -77,4 +80,19 @@ export function applyDesignDocumentCache(
   );
 
   return response;
+}
+
+export function designAuthOptions(
+  webAppUrl: string,
+  isPublicPath: (pathname: string) => boolean
+) {
+  return {
+    webAppUrl,
+    publicPaths: PUBLIC_PATHS.filter(
+      (path) => !isRoadmapPublicPath(path) && !isDesignPublicPath(path)
+    ),
+    isPublicPath: (pathname: string) =>
+      isPublicPath(pathname) || isDesignPublicPath(pathname),
+    skipApiRoutes: true,
+  };
 }
