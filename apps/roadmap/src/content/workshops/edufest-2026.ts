@@ -353,6 +353,15 @@ export const AI_LEVELS = ['off', 'hints', 'full'] as const;
 export type AiLevel = (typeof AI_LEVELS)[number];
 /** The deliverable behind the AI-help demo. */
 export const AI_LEVELS_DELIVERABLE = 'meet-classroom-ai-levels';
+/**
+ * The only journey steps whose screen changes with the AI help level. The
+ * level control is shown on these steps alone: no control without an effect.
+ */
+export const AI_LEVEL_STEPS = ['stuck', 'practise', 'check'] as const;
+export type AiLevelStep = (typeof AI_LEVEL_STEPS)[number];
+export function isAiLevelStep(id: string): id is AiLevelStep {
+  return (AI_LEVEL_STEPS as readonly string[]).includes(id);
+}
 
 /** Marketing highlights, before the agenda. */
 export const HIGHLIGHTS = ['seat', 'agents', 'early', 'plan'] as const;

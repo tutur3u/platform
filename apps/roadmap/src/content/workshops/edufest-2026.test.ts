@@ -263,20 +263,84 @@ function cssRule(css: string, selector: string): string | null {
   return css.slice(open + 1, css.indexOf('\n}', open));
 }
 
-describe('EduFest workshop: hero glow', () => {
-  it('spans the whole hero instead of a fixed band that stops mid-section', () => {
-    const css = readFileSync(
-      new URL('../../styles.css', import.meta.url),
-      'utf8'
-    );
-    const glow = cssRule(css, '.ws-hero::before');
-    assert.ok(glow, '.ws-hero::before exists');
+describe('EduFest workshop: hero', () => {
+  const css = readFileSync(
+    new URL('../../styles.css', import.meta.url),
+    'utf8'
+  );
+  const component = readFileSync(
+    new URL('../../components/workshop.tsx', import.meta.url),
+    'utf8'
+  );
+
+  it('the wash spans the whole hero instead of a fixed band that stops mid-section', () => {
+    const wash = cssRule(css, '.ws-hero-wash');
+    assert.ok(wash, '.ws-hero-wash exists');
     const covers = (rule: string) =>
       /\n\s*top:/.test(rule) &&
       /\n\s*bottom:/.test(rule) &&
       !/\n\s*height:/.test(rule);
-    assert.ok(covers(glow), glow);
+    assert.ok(covers(wash), wash);
     // Broken variant: the old fixed 560px band is caught.
     assert.equal(covers('\n  top: -140px;\n  height: 560px;'), false);
+  });
+
+  it('drops the floating avatar art and the gradient-text title', () => {
+    assert.ok(!component.includes('WsHeroArt'));
+    assert.ok(!css.includes('.ws-hero-art'));
+    assert.equal(cssRule(css, '.ws-hero h1 .accent'), null);
+    const title = cssRule(css, '.ws-h1-main') ?? '';
+    assert.ok(!/background-clip:\s*text/.test(title), title);
+  });
+
+  it('underlines a phrase that really is in the title, in EN and VI', () => {
+    for (const messages of [en, vi])
+      assert.ok(
+        messages.hero.title.includes(messages.hero.titleMark),
+        messages.hero.titleMark
+      );
+  });
+});
+
+describe('EduFest workshop: AI help levels', () => {
+  it('the level control shows only on steps whose screen changes with it', async () => {
+    const { AI_LEVEL_STEPS, isAiLevelStep } = await import('./edufest-2026.ts');
+    const steps = new Set(JOURNEY.map((step) => step.id));
+    for (const id of AI_LEVEL_STEPS) assert.ok(steps.has(id), id);
+    assert.equal(isAiLevelStep('stuck'), true);
+    // Broken variant: a step without level-dependent content gets no control.
+    assert.equal(isAiLevelStep('arrive'), false);
+    const component = readFileSync(
+      new URL('../../components/workshop.tsx', import.meta.url),
+      'utf8'
+    );
+    const gate = component.indexOf('isAiLevelStep(step.id) ?');
+    assert.ok(gate > 0 && gate < component.indexOf('ws-levels'));
+  });
+
+  it('every level-dependent step has copy for every level, in EN and VI', () => {
+    for (const messages of [en, vi])
+      for (const level of AI_LEVELS) {
+        assert.ok(messages.aiDemo.levels[level].reply);
+        assert.ok(messages.aiDemo.practise[level]);
+        assert.ok(messages.aiDemo.check[level]);
+      }
+  });
+});
+
+describe('Logos', () => {
+  it('are never rounded, masked or clipped', () => {
+    const css = readFileSync(
+      new URL('../../styles.css', import.meta.url),
+      'utf8'
+    );
+    const rules = [...css.matchAll(/\n([^\n{}]*\bimg\b[^\n{}]*)\{([^}]*)\}/g)];
+    assert.ok(rules.length >= 2, 'logo rules found');
+    const clips = (body: string) =>
+      /border-radius|clip-path|mask-image|overflow:\s*(hidden|clip)/.test(body);
+    for (const [, selector, body] of rules)
+      assert.ok(!clips(body), `${selector.trim()} clips a logo`);
+    // Broken variant: the old rounded logo rule is caught.
+    assert.ok(clips('\n  flex: none;\n  border-radius: 12px;\n'));
   });
 });

@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarPlus,
+  ChevronDown,
   CircleCheck,
   CircleDashed,
   CircleDot,
@@ -20,6 +21,7 @@ import {
   AI_LEVELS,
   AI_LEVELS_DELIVERABLE,
   type AiLevel,
+  isAiLevelStep,
   CAPABILITIES,
   CLASSROOM_FLOW,
   EXPERIENCES,
@@ -181,18 +183,49 @@ function UseCaseRow({
   );
 }
 
+/** The title with its one emphasised phrase underlined, kallo-style. */
+function MarkedTitle({ text, mark }: { text: string; mark: string }) {
+  const at = mark ? text.indexOf(mark) : -1;
+  if (at < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, at)}
+      <span className="ws-mark">{mark}</span>
+      {text.slice(at + mark.length)}
+    </>
+  );
+}
+
 export function WsHero({ t }: { t: EduMessages }) {
   const noteId = useId();
   return (
     <section className="ws-hero" aria-labelledby="ws-title">
-      <WsHeroArt />
-      <span className="chip glow">{t.hero.eyebrow}</span>
+      <div className="ws-hero-wash" aria-hidden />
+      <p className="ws-eyebrow">
+        <span className="ws-eyebrow-dot" aria-hidden />
+        {t.hero.eyebrow}
+      </p>
       <h1 id="ws-title">
-        <span>{t.hero.title}</span>
-        <span className="accent">{t.hero.titleAccent}</span>
+        <span className="ws-h1-main">
+          <MarkedTitle text={t.hero.title} mark={t.hero.titleMark} />
+        </span>
+        <span className="ws-h1-sub">{t.hero.titleAccent}</span>
       </h1>
       <p className="intro">{t.hero.subtitle}</p>
-      <dl className="ws-facts">
+      <div className="ws-cta-row">
+        {/* Registration is not open: a real, focusable control that says so. */}
+        <button
+          type="button"
+          className="ws-cta"
+          aria-disabled="true"
+          aria-describedby={noteId}
+          onClick={(event) => event.preventDefault()}
+        >
+          {t.hero.cta}
+        </button>
+        <EventLinks t={t} />
+      </div>
+      <dl className="ws-facts" aria-label={t.hero.factsLabel}>
         <div>
           <dt>{t.hero.date}</dt>
           <dd>
@@ -209,28 +242,68 @@ export function WsHero({ t }: { t: EduMessages }) {
             {WORKSHOP_EVENT.mapQuery ? t.hero.venueValue : t.hero.toBeAnnounced}
           </dd>
         </div>
-        <div>
-          <dt className="sr-only">{t.hero.seats}</dt>
-          <dd className="ws-seats">{t.hero.seats}</dd>
-        </div>
       </dl>
-      <EventLinks t={t} />
-      <div className="ws-cta-row">
-        {/* Registration is not open: a real, focusable control that says so. */}
-        <button
-          type="button"
-          className="ws-cta"
-          aria-disabled="true"
-          aria-describedby={noteId}
-          onClick={(event) => event.preventDefault()}
-        >
-          {t.hero.cta}
-        </button>
-        <p id={noteId} className="ws-scarcity">
-          {t.hero.scarcity}
-        </p>
-      </div>
+      <p id={noteId} className="ws-scarcity">
+        <span className="ws-seats">{t.hero.seats}</span> · {t.hero.scarcity}
+      </p>
+      <WsHeroStage t={t} />
     </section>
+  );
+}
+
+/**
+ * The hero's product moment: a live class seen from a student seat, with the
+ * question being typed and the agent's hint. Illustrative, so it is one
+ * labelled image to assistive tech.
+ */
+function WsHeroStage({ t }: { t: EduMessages }) {
+  const seats = ['a', 'b', 'c', 'you', 'd', 'e', 'f', 'g'];
+  return (
+    <figure className="ws-stage-card" role="img" aria-label={t.hero.stageLabel}>
+      <div className="ws-stage-scene" aria-hidden>
+        <div className="ws-stage-window">
+          <div className="ws-stage-bar">
+            <span className="ws-stage-dots">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="ws-stage-title">{t.hero.stageWindow}</span>
+            <span className="ws-stage-live">{t.hero.stageLive}</span>
+          </div>
+          <div className="ws-stage-body">
+            <div className="ws-stage-slide">
+              <span className="ws-stage-kicker">{t.hero.stageLesson}</span>
+              <strong>{t.hero.stageLessonTitle}</strong>
+              <ol>
+                {t.hero.stageBullets.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ol>
+            </div>
+            <ul className="ws-stage-seats">
+              {seats.map((seat) => (
+                <li
+                  key={seat}
+                  className={seat === 'you' ? 'is-you' : undefined}
+                >
+                  {seat === 'you' ? t.hero.stageYou : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="ws-stage-composer">
+          <p className="ws-stage-typing">
+            {t.hero.stageTyping}
+            <span className="ws-caret" />
+          </p>
+          <p className="ws-stage-reply">
+            <b>{t.hero.stageHint}</b> {t.hero.stageReply}
+          </p>
+        </div>
+      </div>
+    </figure>
   );
 }
 
@@ -252,14 +325,16 @@ function EventLinks({ t }: { t: EduMessages }) {
           href={`data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`}
           download="edufest-2026-workshop.ics"
         >
-          <CalendarPlus size={15} aria-hidden />
+          <CalendarPlus size={16} aria-hidden />
           {t.hero.addToCalendar}
+          <ArrowRight size={15} aria-hidden className="ws-link-arrow" />
         </a>
       ) : null}
       {map ? (
         <a href={map} target="_blank" rel="noopener noreferrer">
-          <MapPin size={15} aria-hidden />
+          <MapPin size={16} aria-hidden />
           {t.hero.openMap}
+          <ArrowRight size={15} aria-hidden className="ws-link-arrow" />
         </a>
       ) : null}
     </p>
@@ -386,6 +461,18 @@ export function WsSimulator({
                 </p>
               </div>
             ) : null}
+            {step.id === 'practise' ? (
+              <div className="ws-chat">
+                <p className="ws-bubble student">
+                  <span className="ws-who">{t.aiDemo.student}</span>
+                  {t.aiDemo.practise.question}
+                </p>
+                <p className={`ws-bubble assistant ${level}`}>
+                  <span className="ws-who">{t.aiDemo.assistant}</span>
+                  {t.aiDemo.practise[level]}
+                </p>
+              </div>
+            ) : null}
             {step.id === 'check' ? (
               <div className="ws-quiz">
                 <p className="ws-quiz-q">{t.sim.quizQuestion}</p>
@@ -396,6 +483,10 @@ export function WsSimulator({
                   <span>{t.sim.timer}</span>
                   <span className="ws-points">+1 {t.sim.points}</span>
                 </p>
+                <p className={`ws-bubble assistant ${level}`}>
+                  <span className="ws-who">{t.aiDemo.assistant}</span>
+                  {t.aiDemo.check[level]}
+                </p>
               </div>
             ) : null}
             <p className="ws-uses-label">{t.journey.uses}</p>
@@ -405,26 +496,29 @@ export function WsSimulator({
               ))}
             </ul>
           </div>
-          <div className="ws-device-foot">
-            <fieldset className="segmented ws-levels">
-              <legend>{t.aiDemo.legend}</legend>
-              {AI_LEVELS.map((id) => (
-                <label key={id} data-checked={level === id ? '' : undefined}>
-                  <input
-                    type="radio"
-                    name={levelName}
-                    value={id}
-                    checked={level === id}
-                    onChange={() => setLevel(id)}
-                  />
-                  {t.aiDemo.levels[id].label}
-                </label>
-              ))}
-            </fieldset>
-            <p className="ws-note">
-              <WsBadge status={aiStatus} t={t} /> {t.aiDemo.note}
-            </p>
-          </div>
+          {/* The level control appears only where it changes the screen. */}
+          {isAiLevelStep(step.id) ? (
+            <div className="ws-device-foot">
+              <fieldset className="segmented ws-levels">
+                <legend>{t.aiDemo.legend}</legend>
+                {AI_LEVELS.map((id) => (
+                  <label key={id} data-checked={level === id ? '' : undefined}>
+                    <input
+                      type="radio"
+                      name={levelName}
+                      value={id}
+                      checked={level === id}
+                      onChange={() => setLevel(id)}
+                    />
+                    {t.aiDemo.levels[id].label}
+                  </label>
+                ))}
+              </fieldset>
+              <p className="ws-note">
+                <WsBadge status={aiStatus} t={t} /> {t.aiDemo.note}
+              </p>
+            </div>
+          ) : null}
           <div className="ws-step-nav">
             <button
               type="button"
@@ -1021,74 +1115,17 @@ export function WsFaq({ t }: { t: EduMessages }) {
       </header>
       <div className="ws-faq">
         {FAQ.map((id) => (
-          <details key={id} className="ws-card">
-            <summary>{t.faq.items[id].q}</summary>
-            <p>{t.faq.items[id].a}</p>
+          <details key={id} className="ws-faq-item">
+            <summary>
+              <span>{t.faq.items[id].q}</span>
+              <ChevronDown size={18} aria-hidden className="ws-faq-icon" />
+            </summary>
+            <div className="ws-faq-answer">
+              <p>{t.faq.items[id].a}</p>
+            </div>
           </details>
         ))}
       </div>
     </section>
-  );
-}
-
-/** Decorative hero art: a classroom constellation with an AI agent at its heart. */
-function WsHeroArt() {
-  const desks: [number, number][] = [
-    [140, 120],
-    [260, 70],
-    [380, 130],
-    [520, 60],
-    [660, 120],
-    [800, 70],
-    [920, 140],
-    [200, 250],
-    [330, 300],
-    [610, 300],
-    [760, 250],
-    [880, 300],
-  ];
-  const hub: [number, number] = [470, 210];
-  return (
-    <svg
-      className="ws-hero-art"
-      viewBox="0 0 1040 360"
-      aria-hidden
-      focusable="false"
-    >
-      <defs>
-        <radialGradient id="ws-hub" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="var(--cyan)" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="var(--purple)" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <circle
-        cx={hub[0]}
-        cy={hub[1]}
-        r="120"
-        fill="url(#ws-hub)"
-        opacity="0.35"
-      />
-      {desks.map(([x, y], i) => (
-        <line
-          key={`l${i}`}
-          x1={hub[0]}
-          y1={hub[1]}
-          x2={x}
-          y2={y}
-          className="ws-art-link"
-        />
-      ))}
-      {desks.map(([x, y], i) => (
-        <g key={`d${i}`} className={`ws-art-desk${i === 3 ? ' is-swap' : ''}`}>
-          <rect x={x - 22} y={y - 14} width="44" height="28" rx="9" />
-          <circle cx={x} cy={y - 24} r="7" />
-        </g>
-      ))}
-      <g className="ws-art-hub">
-        <rect x={hub[0] - 30} y={hub[1] - 22} width="60" height="44" rx="14" />
-        <circle cx={hub[0] - 11} cy={hub[1]} r="4" />
-        <circle cx={hub[0] + 11} cy={hub[1]} r="4" />
-      </g>
-    </svg>
   );
 }
