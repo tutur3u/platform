@@ -11,17 +11,24 @@ import {
 import { PUBLIC_DOCUMENT_PATHS } from './pre-seal-doctor.mjs';
 
 const ORIGIN = 'https://tuturuuu.com';
+const HISTORY = '/roadmap/assets/history-Abcd1234.json';
 
 /**
  * A stand-in for the tuturuuu.com zone: pages and assets answer 200, and,
  * like Cloudflare Speed Brain, any `Sec-Purpose: prefetch` request gets 503.
  */
-function zone({ prefetchHistory }) {
+function zone({
+  prefetchHistory = false,
+  speculationRules = false,
+  history = 'ok',
+  scriptReferencesHistory = true,
+} = {}) {
   const page = `<!doctype html><html><head>
 <link rel="stylesheet" href="/roadmap/assets/styles-Abcd1234.css">
 <link rel="preload" as="font" type="font/woff2" crossorigin="anonymous" href="/roadmap/assets/be-vietnam-pro-500-latin-Abcd1234.woff2">
 ${prefetchHistory ? '<link rel="prefetch" href="/roadmap/assets/history-Abcd1234.json" as="fetch">' : ''}
 <script type="module" src="/roadmap/assets/index-Abcd1234.js"></script>
+${speculationRules ? '<script type="speculationrules">{"prefetch":[{"source":"document"}]}</script>' : ''}
 </head><body><h1>Roadmap</h1></body></html>`;
   const types = {
     '.css': 'text/css',
@@ -39,12 +46,33 @@ ${prefetchHistory ? '<link rel="prefetch" href="/roadmap/assets/history-Abcd1234
         status: 200,
         headers: { 'content-type': 'text/html; charset=utf-8' },
       });
+    if (url.pathname === HISTORY) {
+      if (history === 'missing')
+        return new Response('missing', { status: 404 });
+      if (history === 'html')
+        return new Response('<html>fallback</html>', {
+          status: 200,
+          headers: { 'content-type': 'text/html' },
+        });
+      if (history === 'empty')
+        return new Response('', {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+    }
     const extension = url.pathname.slice(url.pathname.lastIndexOf('.'));
-    if (url.pathname.startsWith('/roadmap/assets/') && types[extension])
-      return new Response(extension === '.json' ? '{"a":1}' : 'x', {
+    if (url.pathname.startsWith('/roadmap/assets/') && types[extension]) {
+      const body =
+        extension === '.json'
+          ? '{"a":1}'
+          : extension === '.js' && scriptReferencesHistory
+            ? `var h=\`${HISTORY}\`;`
+            : 'x';
+      return new Response(body, {
         status: 200,
         headers: { 'content-type': types[extension] },
       });
+    }
     return new Response('missing', { status: 404 });
   };
 }
@@ -98,4 +126,52 @@ test('the smoke, the doctor and the cache policy cover the same public pages', (
     [...PUBLIC_DOCUMENT_PATHS].sort()
   );
   assert.deepEqual([...CANONICAL_PAGES].sort(), [...PUBLIC_DOCUMENTS].sort());
+});
+
+test('the smoke requests the history asset the page scripts load, and requires non-empty JSON', async () => {
+  const pass = await canonicalSmoke({ origin: ORIGIN, fetchImpl: zone() });
+  assert.deepEqual(pass.failures, []);
+  assert.ok(
+    pass.checked.includes(`200 history ${HISTORY}`),
+    pass.checked.join('\n')
+  );
+  // Broken variants: missing, served as HTML, empty, or never referenced.
+  for (const history of ['missing', 'html', 'empty']) {
+    const { ok, failures } = await canonicalSmoke({
+      origin: ORIGIN,
+      fetchImpl: zone({ history }),
+    });
+    assert.equal(ok, false, history);
+    assert.ok(
+      failures.some((failure) =>
+        failure.startsWith(`history ${HISTORY} status`)
+      ),
+      `${history}: ${failures.join('\n')}`
+    );
+  }
+  const unreferenced = await canonicalSmoke({
+    origin: ORIGIN,
+    fetchImpl: zone({ scriptReferencesHistory: false }),
+  });
+  assert.ok(
+    unreferenced.failures.includes(
+      'no page script references a hashed history asset'
+    ),
+    unreferenced.failures.join('\n')
+  );
+});
+
+test('D79: speculation rules markup on a canonical page fails the smoke', async () => {
+  const { ok, failures } = await canonicalSmoke({
+    origin: ORIGIN,
+    fetchImpl: zone({ speculationRules: true }),
+  });
+  assert.equal(ok, false);
+  for (const page of CANONICAL_PAGES)
+    assert.ok(
+      failures.some((failure) =>
+        failure.startsWith(`${page} has <script type="speculationrules">`)
+      ),
+      `${page}: ${failures.join('\n')}`
+    );
 });
