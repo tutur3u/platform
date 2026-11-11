@@ -44,8 +44,9 @@ export function MarketingNavbar({
           className="flex flex-none items-center gap-2 transition-opacity hover:opacity-80"
           href={`${siteUrl}/home`}
         >
+          {/* Decorative: the brand name beside it is the link's text. */}
           <ImageComponent
-            alt="Tuturuuu"
+            alt=""
             className={
               navCompact
                 ? 'h-7 w-7'
@@ -58,7 +59,10 @@ export function MarketingNavbar({
           <span
             className={
               navCompact
-                ? 'hidden font-bold text-lg md:inline'
+                ? // Visually hidden on small screens but still the
+                  // link's accessible name, since the logo is decorative
+                  // (bold only once shown, so phones skip that font file).
+                  'sr-only text-lg md:not-sr-only md:inline md:font-bold'
                 : 'font-bold text-2xl'
             }
           >

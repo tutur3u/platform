@@ -13,6 +13,7 @@ import {
   speculativeLinks,
   STAGE_LABELS,
 } from './pre-seal-doctor.mjs';
+import { redundantAltFailures } from './doctor-markup.mjs';
 import '../../../scripts/ci/asset-smoke.test.mjs';
 import './canonical-smoke.test.mjs';
 
@@ -25,7 +26,7 @@ function passingRaw() {
     canonical: {
       status: 200,
       cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
-      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><h2 id="timeline-title">Timeline</h2><meta property="og:url" content="https://tuturuuu.com/roadmap"/><meta property="og:image" content="https://tuturuuu.com/roadmap/assets/og-roadmap-Abcd1234.png"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><header id="navbar"><a href="https://tuturuuu.com/home"><img alt="Tuturuuu" src="${LOGO}"></a><a href="https://tuturuuu.com/login">Get Started</a></header><div id="main-content"><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div><footer></footer>`,
+      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><h2 id="timeline-title">Timeline</h2><meta property="og:url" content="https://tuturuuu.com/roadmap"/><meta property="og:image" content="https://tuturuuu.com/roadmap/assets/og-roadmap-Abcd1234.png"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><header id="navbar"><a href="https://tuturuuu.com/home"><img alt="" src="${LOGO}"><span class="font-bold">Tuturuuu</span></a><a href="https://tuturuuu.com/login">Get Started</a></header><div id="main-content"><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div><footer></footer>`,
     },
     satellite: { status: 301, location: 'https://tuturuuu.com/roadmap' },
     redirects: REDIRECT_CHAINS.map((chain) => ({
@@ -314,4 +315,19 @@ test('doctor runs the configured compatibility date, capped at what workerd supp
   );
   // Broken variant: a missing date must not reach workerd as undefined.
   assert.equal(doctorCompatibilityDate(undefined, '2026-07-30'), '2026-07-30');
+});
+
+test('D79: a navbar logo whose alt repeats the brand name beside it fails the doctor', () => {
+  const observation = passing();
+  assert.deepEqual(redundantAltFailures(observation.canonical.body), []);
+  observation.canonical.body = observation.canonical.body.replace(
+    '<img alt="" ',
+    '<img alt="Tuturuuu" '
+  );
+  const verdict = assessDoctor(observation);
+  assert.equal(verdict.ok, false);
+  assert.ok(
+    verdict.failures.some((failure) => failure.includes('image-redundant-alt')),
+    verdict.failures.join('\n')
+  );
 });

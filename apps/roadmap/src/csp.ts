@@ -115,10 +115,12 @@ function isHtml(response: Response) {
  * still gets a policy, with no inline script allowed.
  */
 export async function withContentSecurityPolicy(
-  response: Response
+  response: Response,
+  transform: (html: string) => string = (html) => html
 ): Promise<Response> {
   if (!isHtml(response)) return response;
-  const html = response.body ? await response.text() : '';
+  // The transform runs first, so every inline script it adds is hashed.
+  const html = transform(response.body ? await response.text() : '');
   let policy: string;
   try {
     if (html.length > MAX_DOCUMENT_BYTES) throw new Error('Document too large');

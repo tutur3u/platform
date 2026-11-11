@@ -1,3 +1,4 @@
+import { deferHydration } from './defer-hydration';
 import handler from '@tanstack/react-start/server-entry';
 import { buildInfoResponse, isBuildInfoPath } from './build-info.ts';
 import { isHashedAssetPath, withRoadmapCachePolicy } from './cache-policy.ts';
@@ -80,7 +81,7 @@ export default {
     );
     return withRoadmapCachePolicy(
       request,
-      await withContentSecurityPolicy(response)
+      await withContentSecurityPolicy(response, deferHydration)
     );
   },
 };

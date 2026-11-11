@@ -15,6 +15,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Miniflare, supportedCompatibilityDate } from 'miniflare';
 import { showPlans } from '../src/content/tracks.ts';
 import { inlineScriptTexts } from '../src/html-scripts.ts';
+import { redundantAltFailures } from './doctor-markup.mjs';
 import {
   reportAssetSmokeRejection,
   smokeAssets,
@@ -34,8 +35,6 @@ export const PLAN_LABEL = 'Mira subscription plans';
 /** The logo ships inside the roadmap mount; the apex /media path is not ours. */
 export const MOUNTED_LOGO =
   /<img\b[^>]*\bsrc="\/roadmap\/assets\/tuturuuu-logo-[A-Za-z0-9_-]{8,}\.png"/;
-const LOGO_TAG =
-  '<img src="/roadmap/assets/tuturuuu-logo-Abcd1234.png" alt="">';
 
 /** Canonical: no trailing slash, like every Tuturuuu URL. */
 export const CANONICAL_URL = 'https://tuturuuu.com/roadmap';
@@ -177,9 +176,10 @@ export function assessDoctor(observation) {
     ['id="navbar"', 'the marketing navbar'],
     ['id="main-content"', 'the marketing main frame'],
     ['<footer', 'the marketing footer'],
-    ['alt="Tuturuuu"', 'Tuturuuu branding'],
+    ['>Tuturuuu</span>', 'the Tuturuuu brand name'],
   ])
     if (!body.includes(marker)) failures.push(`canonical HTML missing ${name}`);
+  failures.push(...redundantAltFailures(body));
   if (!MOUNTED_LOGO.test(body))
     failures.push('canonical HTML missing the mounted Tuturuuu logo');
   if (body.includes('public-satellite-shell'))
@@ -692,7 +692,7 @@ async function main() {
             ...observation,
             canonical: {
               status: 200,
-              body: `<header id="navbar"><img alt="Tuturuuu" src="/roadmap/assets/tuturuuu-logo-Abcd1234.png"></header><div id="main-content"></div><footer></footer> https://tuturuuu.com/login ${STAGE_LABELS.join(' ')} /roadmap/assets/index-CGgt8iCG.js</div>`,
+              body: `<header id="navbar"><img alt="" src="/roadmap/assets/tuturuuu-logo-Abcd1234.png"><span>Tuturuuu</span></header><div id="main-content"></div><footer></footer> https://tuturuuu.com/login ${STAGE_LABELS.join(' ')} /roadmap/assets/index-CGgt8iCG.js</div>`,
               cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
             },
             satellite: {
