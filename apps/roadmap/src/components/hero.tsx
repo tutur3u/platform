@@ -1,10 +1,24 @@
 import { Sparkles } from '@tuturuuu/icons';
 import { visibleComingSoon } from '../content/coming-soon';
 import { type Status, statuses } from '../live/status';
+import type { LiveData } from '../live/model';
 import type { RoadmapView } from '../view-model';
-import type { Messages } from './shared';
+import { HeroOrbits, ShippingPulse } from './pulse';
+import type { Lang, Messages } from './shared';
 
-export function Hero({ t, view }: { t: Messages; view: RoadmapView }) {
+export function Hero({
+  t,
+  view,
+  lang,
+  data,
+  now,
+}: {
+  t: Messages;
+  view: RoadmapView;
+  lang: Lang;
+  data: LiveData;
+  now: number;
+}) {
   const stats = [
     {
       label: t.stats.shippedWeek,
@@ -35,6 +49,7 @@ export function Hero({ t, view }: { t: Messages; view: RoadmapView }) {
         <span className="bloom bloom-a" />
         <span className="bloom bloom-b" />
         <span className="grid-lines" />
+        <HeroOrbits />
       </div>
       <p className="eyebrow">
         <span className="eyebrow-dot" aria-hidden />
@@ -56,7 +71,10 @@ export function Hero({ t, view }: { t: Messages; view: RoadmapView }) {
           </div>
         ))}
       </dl>
-      <OverallBar totals={view.totals} t={t} />
+      <div className="hero-viz">
+        <OverallBar totals={view.totals} t={t} />
+        <ShippingPulse t={t} lang={lang} data={data} now={now} />
+      </div>
     </section>
   );
 }

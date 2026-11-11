@@ -13,7 +13,6 @@ import type { Lang } from '../../components/shared';
 import {
   useWorkshopStatuses,
   WsAgenda,
-  WsAiDemo,
   WsCapabilities,
   WsExperience,
   WsFaq,
@@ -21,7 +20,7 @@ import {
   WsHero,
   WsHighlights,
   WsInsightsDemo,
-  WsJourney,
+  WsSimulator,
   WsReadiness,
   WsSeatSwap,
   WsTools,
@@ -102,8 +101,7 @@ function EduFestWorkshopPage() {
           <WsSeatSwap t={t} />
           <WsAgenda t={t} />
           <WsExperience t={t} />
-          <WsJourney t={t} statuses={statuses} />
-          <WsAiDemo t={t} statuses={statuses} />
+          <WsSimulator t={t} statuses={statuses} />
           <WsFlow t={t} statuses={statuses} />
           <WsInsightsDemo t={t} statuses={statuses} />
           <WsReadiness

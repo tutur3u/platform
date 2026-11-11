@@ -10,6 +10,7 @@ import vi from '../../messages/vi.json';
 import { Footer } from '../components/chrome';
 import logo from '../assets/tuturuuu-logo.png?no-inline';
 import { ComingSoon, Hero } from '../components/hero';
+import { TrackGlance } from '../components/pulse';
 import { HostingSection, Method } from '../components/hosting';
 import type { Lang } from '../components/shared';
 import { TimelineSection } from '../components/timeline';
@@ -101,7 +102,8 @@ function RoadmapPage() {
         t={shellT}
       >
         <main className="page">
-          <Hero t={t} view={view} />
+          <Hero t={t} view={view} lang={lang} data={live.data} now={live.now} />
+          <TrackGlance t={t} view={view} />
           <ComingSoon t={t} />
           <TimelineSection
             t={t}
