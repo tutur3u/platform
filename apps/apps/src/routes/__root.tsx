@@ -5,6 +5,7 @@ import {
   Scripts,
 } from '@tanstack/react-router';
 import { AppErrorBoundary } from '@tuturuuu/ui/custom/app-error-boundary';
+import { StatusPage } from '@tuturuuu/ui/custom/status-page';
 import type { ReactNode } from 'react';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
@@ -100,6 +101,7 @@ export const Route = createRootRoute({
   errorComponent: ({ error, reset }) => (
     <AppErrorBoundary
       appName="Apps"
+      chrome="page"
       error={
         error instanceof Error
           ? error
@@ -136,11 +138,11 @@ function Document({ children }: { children: ReactNode }) {
 export function Missing() {
   const data = Route.useLoaderData();
   return (
-    <main className="p-8">
-      <h1>404</h1>
-      <a href="/">
-        {(data?.locale === 'vi' ? vi : en).appsGateway.metadata.title}
-      </a>
-    </main>
+    <StatusPage
+      appHref="/"
+      appName="Apps"
+      locale={data?.locale}
+      variant="not-found"
+    />
   );
 }
