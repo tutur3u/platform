@@ -1,5 +1,6 @@
 /**
- * Start the client bundle after the first paint.
+ * Start the client bundle after the first paint, or at the reader's first
+ * intent, whichever comes first.
  *
  * The server-rendered page is complete and readable without JavaScript, but
  * the SSR document asks for ~200 KB of modules up front (modulepreload links
@@ -12,20 +13,46 @@
  * - the entry `<script type="module" async src>` keeps its element and src
  *   but becomes `type="text/plain"`, which browsers never fetch or run (the
  *   asset smoke still sees and checks its src);
- * - one static inline script then, once the browser has reported the first
- *   (largest) contentful paint and the load event has fired, waits one more
- *   frame (4 s at the latest), turns the hints back into modulepreload links
- *   and imports the entry. Like the router's own stream scripts, it removes
- *   itself as it runs.
+ * - one static inline script (it removes itself, like the router's stream
+ *   scripts) turns the hints back into modulepreload links and imports the
+ *   entry on the first pointerdown, touchstart, keydown or focusin anywhere,
+ *   or once the largest contentful paint is reported, in an idle period
+ *   within IDLE_TIMEOUT_MS; FALLBACK_MS caps the wait.
  *
- * Elements stay where React rendered them, so hydration matches. Nothing is
- * prefetched or prerendered (the zone 503s Sec-Purpose: prefetch).
+ * A click on a button that is not hydrated yet would do nothing, so the
+ * loader records it (and stops it, so React never also sees it) and clicks
+ * that button again once React has attached its props: the first tap is
+ * never lost. Links and <summary> keep their native behaviour and are not
+ * touched. Elements stay where React rendered them, so hydration matches.
+ * Nothing is prefetched or prerendered (the zone 503s Sec-Purpose: prefetch).
  */
 export const DEFERRED_PRELOAD_REL = 'roadmap-modulepreload';
 export const DEFERRED_ENTRY_ATTRIBUTE = 'data-roadmap-entry';
+export const INTENT_EVENTS = [
+  'pointerdown',
+  'touchstart',
+  'keydown',
+  'focusin',
+] as const;
+/** After the largest contentful paint, load in the next idle period or by this. */
+export const IDLE_TIMEOUT_MS = 1_000;
+/** Load by this time even if neither a paint nor an intent was reported. */
+export const FALLBACK_MS = 4_000;
 
 /** Static, so its CSP hash is the same for every page and build. */
-export const HYDRATION_LOADER = `document.currentScript.remove();(()=>{let d=0;const go=()=>{if(d)return;d=1;for(const h of document.querySelectorAll('link[rel="${DEFERRED_PRELOAD_REL}"]')){const l=document.createElement('link');l.rel='modulepreload';l.href=h.getAttribute('href');document.head.append(l)}const e=document.querySelector('script[${DEFERRED_ENTRY_ATTRIBUTE}]');if(e)import(e.getAttribute('src'))};let painted=0,loaded=document.readyState==='complete';const check=()=>{if(painted&&loaded)requestAnimationFrame(()=>setTimeout(go,0))};try{const types=PerformanceObserver.supportedEntryTypes||[];new PerformanceObserver((list,o)=>{o.disconnect();painted=1;check()}).observe({type:types.includes('largest-contentful-paint')?'largest-contentful-paint':'paint',buffered:true})}catch(e){painted=1}if(!loaded)addEventListener('load',()=>{loaded=1;check()},{once:true});check();setTimeout(go,4000)})()`;
+export const HYDRATION_LOADER = `document.currentScript.remove();(()=>{
+let started=0,pending=null;
+const intents=${JSON.stringify(INTENT_EVENTS)},opts={capture:true,passive:true};
+const hydrated=(el)=>Object.keys(el).some((key)=>key.startsWith('__reactProps'));
+const replay=()=>{let frames=0;const tick=()=>{const el=pending;if(!el||!el.isConnected)return;if(hydrated(el)){pending=null;el.click();return}if(++frames<600)requestAnimationFrame(tick)};tick()};
+const start=()=>{if(started)return;started=1;for(const type of intents)removeEventListener(type,start,opts);
+for(const hint of document.querySelectorAll('link[rel="${DEFERRED_PRELOAD_REL}"]')){const link=document.createElement('link');link.rel='modulepreload';link.href=hint.getAttribute('href');document.head.append(link)}
+const entry=document.querySelector('script[${DEFERRED_ENTRY_ATTRIBUTE}]');if(entry)import(entry.getAttribute('src')).then(replay,()=>{})};
+for(const type of intents)addEventListener(type,start,opts);
+addEventListener('click',(event)=>{const button=event.target&&event.target.closest?event.target.closest('button'):null;if(!button||hydrated(button))return;pending=button;event.stopImmediatePropagation();start();if(started)replay()},true);
+const idle=()=>(window.requestIdleCallback||((cb)=>setTimeout(cb,1)))(start,{timeout:${IDLE_TIMEOUT_MS}});
+try{const types=PerformanceObserver.supportedEntryTypes||[];new PerformanceObserver((list,observer)=>{observer.disconnect();idle()}).observe({type:types.includes('largest-contentful-paint')?'largest-contentful-paint':'paint',buffered:true})}catch(error){idle()}
+setTimeout(start,${FALLBACK_MS})})()`;
 
 const MODULE_PRELOAD =
   /<link\b(?=[^>]*\brel="modulepreload")([^>]*\bhref="\/roadmap\/assets\/[^"]+\.js"[^>]*)>/g;

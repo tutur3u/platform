@@ -274,7 +274,7 @@ describe('perf: the live GitHub refresh waits and stays bounded', () => {
   });
 });
 
-describe('perf: the client bundle starts after the first paint', () => {
+describe('perf: the served document fetches no module before paint or intent', () => {
   const html =
     '<head><link rel="modulepreload" href="/roadmap/assets/index-Abcd1234.js" fetchPriority="low"/>' +
     '<link rel="modulepreload" href="/roadmap/assets/roadmap-Abcd1234.js" fetchPriority="low"/></head>' +
@@ -300,14 +300,7 @@ describe('perf: the client bundle starts after the first paint', () => {
     assert.equal(early(html), true);
   });
 
-  it('the loader waits for a frame, never prefetches, and is static for the CSP', () => {
-    assert.match(HYDRATION_LOADER, /'largest-contentful-paint'/);
-    assert.match(HYDRATION_LOADER, /addEventListener\('load',/);
-    assert.match(
-      HYDRATION_LOADER,
-      /if\(painted&&loaded\)requestAnimationFrame\(/
-    );
-    assert.match(HYDRATION_LOADER, /requestAnimationFrame\(/);
+  it('the loader never prefetches and is static for the CSP', () => {
     assert.ok(!/prefetch|prerender|speculationrules/i.test(HYDRATION_LOADER));
     assert.ok(!HYDRATION_LOADER.includes('/roadmap/assets/'));
     assert.match(

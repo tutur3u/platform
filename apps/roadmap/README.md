@@ -102,9 +102,11 @@ Targets: Lighthouse mobile 90+, LCP under 2.5 s and interaction latency under
 - **First paint first.** The Worker rewrites each document before hashing its
   inline scripts (`src/defer-hydration.ts`): module preloads and the entry
   script stay in place but inert, and one static inline script imports the
-  bundle once the first contentful paint is reported and the load event has
-  fired, a frame later (4 s at the latest). The server-rendered page is
-  complete without JavaScript.
+  bundle at the reader's first intent (pointerdown, touchstart, keydown or
+  focusin) or in an idle period within 1 s of the largest contentful paint,
+  whichever comes first. A click on a button that is not hydrated yet is
+  held and replayed once React has hydrated that button, so the first tap
+  is never lost; links and `<summary>` work natively throughout.
 - **Small CSS.** `styles.css` excludes `packages/ui/src/components` and
   streamdown from Tailwind's class scan and lists the shell primitives it
   renders, which keeps the stylesheet near 20 KB compressed.
@@ -123,7 +125,7 @@ Targets: Lighthouse mobile 90+, LCP under 2.5 s and interaction latency under
   scrubber renders 24 chips around the selected period; each deliverable's
   status glyph is a CSS mask, not an inline SVG.
 
-`src/perf.test.ts` and `src/a11y.test.ts` (D79, run via
+`src/perf.test.ts`, `src/hydration-loader.test.ts` and `src/a11y.test.ts` (D79, run via
 `src/roadmap-data.test.ts`) guard each rule with a broken variant;
 `src/css-guards.ts` checks the stylesheet.
 

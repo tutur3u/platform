@@ -15,6 +15,7 @@ import './live/initial-data.test.ts';
 import './live/pulse.test.ts';
 import './seo.test.ts';
 import './perf.test.ts';
+import './hydration-loader.test.ts';
 import './a11y.test.ts';
 import { comingSoon, visibleComingSoon } from './content/coming-soon.ts';
 import { showPlans, tracks } from './content/tracks.ts';
