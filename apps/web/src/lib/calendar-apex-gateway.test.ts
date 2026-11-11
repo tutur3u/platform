@@ -223,8 +223,10 @@ describe('calendar bare /calendar?query fallback proxy', () => {
     const fetchImpl = okFetch();
     const loop = await proxyCalendarBareQueryRequest(
       req('https://tuturuuu.com/calendar?x=1'),
+      // Non-production, so the self-origin guard (not the production host
+      // allowlist) is what rejects this.
       {
-        ...proxyOn,
+        CALENDAR_APEX_FALLBACK_PROXY: 'true',
         CALENDAR_APEX_UPSTREAM_URL: 'https://tuturuuu.com/calendar',
       },
       fetchImpl
@@ -253,5 +255,91 @@ describe('calendar static asset paths', () => {
     ]) {
       expect(isCalendarStaticAssetPath(path), path).toBe(false);
     }
+  });
+});
+
+describe('fallback proxy upstream allowlist', () => {
+  const okFetch = () =>
+    vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        new Response('calendar', { status: 200 })
+    );
+  const call = (upstream: string | undefined, env = proxyOn) => {
+    const fetchImpl = okFetch();
+    return proxyCalendarBareQueryRequest(
+      req('https://tuturuuu.com/calendar?x=1', {
+        headers: { cookie: 'sb=secret' },
+      }),
+      upstream === undefined
+        ? env
+        : { ...env, CALENDAR_APEX_UPSTREAM_URL: upstream },
+      fetchImpl
+    ).then((response) => ({ fetchImpl, response }));
+  };
+
+  it('allows the default and an explicit calendar.tuturuuu.com over https in production', async () => {
+    for (const upstream of [
+      undefined,
+      'https://calendar.tuturuuu.com/calendar',
+      'https://CALENDAR.tuturuuu.com/calendar',
+      'https://calendar.tuturuuu.com:443/calendar',
+    ]) {
+      const { fetchImpl, response } = await call(upstream);
+      expect(response?.status, String(upstream)).toBe(200);
+      expect(String(fetchImpl.mock.calls[0]?.[0])).toBe(
+        'https://calendar.tuturuuu.com/calendar?x=1'
+      );
+    }
+  });
+
+  it.each([
+    ['http scheme', 'http://calendar.tuturuuu.com/calendar'],
+    ['the apex host', 'https://tuturuuu.com/calendar'],
+    ['another app host', 'https://tasks.tuturuuu.com/calendar'],
+    ['a suffix lookalike', 'https://calendar.tuturuuu.com.evil.test/calendar'],
+    ['a prefix lookalike', 'https://evil-calendar.tuturuuu.com/calendar'],
+    ['a subdomain of the host', 'https://x.calendar.tuturuuu.com/calendar'],
+    ['a trailing-dot host', 'https://calendar.tuturuuu.com./calendar'],
+    ['userinfo', 'https://user:pw@calendar.tuturuuu.com/calendar'],
+    [
+      'userinfo that hides the host',
+      'https://calendar.tuturuuu.com@evil.test/calendar',
+    ],
+    ['a non-default port', 'https://calendar.tuturuuu.com:8443/calendar'],
+    ['a non-default http port', 'http://calendar.tuturuuu.com:80/calendar'],
+    ['localhost', 'https://localhost/calendar'],
+    ['an invalid URL', 'not a url'],
+    ['a non-http scheme', 'ftp://calendar.tuturuuu.com/calendar'],
+  ])(
+    'rejects %s in production with a 502 and never fetches',
+    async (_name, upstream) => {
+      const { fetchImpl, response } = await call(upstream);
+
+      expect(response?.status).toBe(502);
+      expect(response?.headers.get('cache-control')).toBe('no-store');
+      // No silent fallback to the default host: nothing is fetched at all.
+      expect(fetchImpl).not.toHaveBeenCalled();
+    }
+  );
+
+  it('keeps the permissive non-production behavior (local and staging upstreams)', async () => {
+    const dev = { CALENDAR_APEX_FALLBACK_PROXY: 'true' };
+    for (const upstream of [
+      'http://localhost:7806/calendar',
+      'https://calendar.staging.example.test/calendar',
+    ]) {
+      const { fetchImpl, response } = await call(upstream, dev);
+      expect(response?.status, upstream).toBe(200);
+      expect(String(fetchImpl.mock.calls[0]?.[0])).toBe(`${upstream}?x=1`);
+    }
+  });
+
+  it('stays off by default even with a valid upstream configured', async () => {
+    const { fetchImpl, response } = await call(
+      'https://calendar.tuturuuu.com/calendar',
+      prod
+    );
+    expect(response).toBeNull();
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });

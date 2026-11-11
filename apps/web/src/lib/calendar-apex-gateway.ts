@@ -138,6 +138,15 @@ export function handleCalendarSafetyNet(
   return response;
 }
 
+/**
+ * In production the fallback proxy forwards the visitor's `Cookie`, so the
+ * upstream must be exactly one of these hosts over HTTPS. An override naming
+ * anything else is rejected (502), never replaced by a different host.
+ */
+const PRODUCTION_UPSTREAM_HOSTS: ReadonlySet<string> = new Set([
+  'calendar.tuturuuu.com',
+]);
+
 function getFallbackUpstream(env: Env): URL | null {
   const configured = env[CALENDAR_APEX_UPSTREAM_URL_ENV]?.trim();
   const raw =
@@ -146,6 +155,14 @@ function getFallbackUpstream(env: Env): URL | null {
     const url = new URL(raw);
     if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
     if (url.username || url.password) return null;
+    if (
+      env.NODE_ENV === 'production' &&
+      (url.protocol !== 'https:' ||
+        url.port !== '' ||
+        !PRODUCTION_UPSTREAM_HOSTS.has(url.hostname))
+    ) {
+      return null;
+    }
     return url;
   } catch {
     return null;
