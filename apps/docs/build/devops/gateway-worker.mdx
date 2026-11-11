@@ -132,6 +132,38 @@ Smoke for each group before the next one: anonymous 200 on two paths of the grou
 
 `/assets/*` is the Vite build output of the marketing app. It always goes to `MARKETING_ORIGIN` (cached as static) and falls back to the web origin while `MARKETING_ORIGIN` is unset. It is not tied to a page-group flag, so rolling a group back does not move `/assets/*`; Vercel web has no `/assets` path.
 
+## Marketing robots at the gateway
+
+Marketing groups use the shared `seo-policy.json` Marketing allowlist against
+`Request.url` at gateway ingress. Only canonical HTTPS `tuturuuu.com` URLs in
+an enabled Marketing page group can be public. Private, unknown, malformed,
+noncanonical and non-Marketing paths remain noindex. Forwarded host/protocol
+headers are not authority for this decision. Group ownership stays literal;
+decoding a path for SEO does not move it to another origin.
+
+Marketing's response wrapper emits `x-marketing-origin-robots: 1` only when it
+adds the standard private robots header for a noncanonical backend origin and
+there is no upstream robots header or explicit `TUTURUUU_NOINDEX=1`. The gateway
+can remove exactly that origin-derived restriction on an eligible public page;
+it consumes the marker on every response. Unmarked upstream noindex, including
+explicit private directives, stays intact. Marketing remains private when
+accessed directly. Bodies, status, CSP, Vary, authentication and cookie headers
+continue through the existing response path.
+
+Gateway `TUTURUUU_NOINDEX=1` forces private robots even on cache hits. A backend
+flag change cannot retroactively change an existing gateway cache entry: use the
+gateway override when an immediate stop is required. Old unmarked cache entries
+remain private until expiry or an independently authorized cache operation.
+
+Regression coverage lives in `apps/gateway/src/marketing-robots.test.ts` and
+`marketing-transport.test.ts`: rewritten backend requests, real loopback HTTP,
+cache hits, redirects, explicit restrictions, and adversarial host/path inputs.
+Source tests and policy fixtures do not qualify the full emitted Marketing
+renderer. Before release, require exact-commit app build/type/lint/test/security
+evidence, independent route/security review, emitted gateway and Marketing
+Worker compatibility checks, and canonical/staging runtime header acceptance.
+Provider deployment and cache operations belong to the release owner.
+
 ## Apps mounted at tuturuuu.com/&lt;app&gt;
 
 An app moved from `<app>.tuturuuu.com` to `tuturuuu.com/<app>` gets two zone
