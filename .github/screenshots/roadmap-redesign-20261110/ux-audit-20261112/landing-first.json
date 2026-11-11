@@ -1,0 +1,35 @@
+{
+  "loads": 5,
+  "results": [
+    {
+      "id": "landing-first-en-390",
+      "route": "/",
+      "width": 390,
+      "error": "TimeoutError: locator.click: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /Main navigation|Điều hướng chính/i, includeHidden: true })\u001b[22m\n"
+    },
+    {
+      "id": "landing-first-en-1440",
+      "route": "/",
+      "width": 1440,
+      "error": "TimeoutError: locator.textContent: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /Toggle language/i })\u001b[22m\n"
+    },
+    {
+      "id": "landing-first-vi-390",
+      "route": "/vi",
+      "width": 390,
+      "immediateExpanded": "true",
+      "laterExpanded": "true",
+      "error": "TimeoutError: locator.textContent: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /Toggle language/i })\u001b[22m\n"
+    },
+    {
+      "id": "landing-first-vi-1440",
+      "route": "/vi",
+      "width": 1440,
+      "label": "enToggle language",
+      "after": {
+        "url": "https://tuturuuu.com/vi",
+        "lang": null
+      }
+    }
+  ]
+}

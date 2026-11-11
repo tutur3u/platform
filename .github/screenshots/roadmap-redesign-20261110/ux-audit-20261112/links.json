@@ -1,0 +1,260 @@
+{
+  "unique": 51,
+  "results": [
+    {
+      "url": "https://tuturuuu.com/",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/?hash-nav=1",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/about",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/acceptable-use",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/blog",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/branding",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/careers",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/changelog",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/community-guidelines",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/contact",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/contributors",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/download",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/facebook-mockup",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/home",
+      "status": 307,
+      "location": "/?no-redirect=1"
+    },
+    {
+      "url": "https://tuturuuu.com/login",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/meet-together",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/onboarding",
+      "status": 307,
+      "location": "https://tuturuuu.com/login?returnUrl=https%3A%2F%2Ftuturuuu.com%2Fverify-token%3FnextUrl%3D%252Fonboarding"
+    },
+    {
+      "url": "https://tuturuuu.com/partners",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/portfolio",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/pricing",
+      "status": 307,
+      "location": "/?hash-nav=1#pricing"
+    },
+    {
+      "url": "https://tuturuuu.com/privacy",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/ai",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/calendar",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/chat",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/crm",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/documents",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/drive",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/finance",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/forms",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/hive",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/inventory",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/lms",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/mail",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/meet-together",
+      "status": 308,
+      "location": "/meet"
+    },
+    {
+      "url": "https://tuturuuu.com/products/qr",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/storefront",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/tasks",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/track",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/products/workflows",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/roadmap",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/roadmap/vi",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/roadmap/vi/workshops/edufest-2026",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/roadmap/workshops/edufest-2026",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/security",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/terms",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/ui",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/vi",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/vi/products/ai",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/vi/products/calendar",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/vi/products/documents",
+      "status": 200,
+      "location": null
+    },
+    {
+      "url": "https://tuturuuu.com/vi/products/tasks",
+      "status": 200,
+      "location": null
+    }
+  ]
+}
