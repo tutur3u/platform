@@ -1,7 +1,6 @@
 import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -10,7 +9,10 @@ import {
   cloudflareDomainsConfigFromEnv,
   createCloudflareDomainsClient,
 } from './cloudflare';
-import type { WorkspaceDomainActor } from './entitlement';
+import {
+  isWorkspaceDomainStaffUser,
+  type WorkspaceDomainActor,
+} from './entitlement';
 import {
   addWorkspaceDomain,
   listWorkspaceDomains,
@@ -40,7 +42,7 @@ async function resolveActor(
     id: userId,
     staffSession:
       !error && data.user?.id === userId
-        ? isVerifiedTuturuuuStaffSession(data.user, { allowXwf: false })
+        ? isWorkspaceDomainStaffUser(data.user)
         : false,
   };
 }

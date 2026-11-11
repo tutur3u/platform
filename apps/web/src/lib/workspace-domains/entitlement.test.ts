@@ -1,6 +1,7 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { describe, expect, it } from 'vitest';
 import {
+  isWorkspaceDomainStaffUser,
   isWorkspaceDomainsBillingEnabled,
   readWorkspaceDomainEntitlement,
 } from './entitlement';
@@ -74,5 +75,30 @@ describe('isWorkspaceDomainsBillingEnabled', () => {
         WORKSPACE_DOMAINS_BILLING_ENABLED: 'true',
       })
     ).toBe(true);
+  });
+});
+
+describe('isWorkspaceDomainStaffUser', () => {
+  const user = (email: string, confirmed = true) => ({
+    email,
+    email_confirmed_at: confirmed ? '2026-01-01T00:00:00Z' : null,
+    identities: [{ provider: 'email', identity_data: {} }],
+  });
+
+  it('accepts only confirmed emails in exactly @tuturuuu.com', () => {
+    expect(isWorkspaceDomainStaffUser(user('staff@tuturuuu.com'))).toBe(true);
+    for (const email of [
+      'staff@xwf.tuturuuu.com',
+      'staff@tuturuuu.com.evil.com',
+      'staff@eviltuturuuu.com',
+      'staff@tuturuuu.co',
+      'tuturuuu.com@example.com',
+    ]) {
+      expect(isWorkspaceDomainStaffUser(user(email))).toBe(false);
+    }
+    expect(isWorkspaceDomainStaffUser(user('staff@tuturuuu.com', false))).toBe(
+      false
+    );
+    expect(isWorkspaceDomainStaffUser(null)).toBe(false);
   });
 });

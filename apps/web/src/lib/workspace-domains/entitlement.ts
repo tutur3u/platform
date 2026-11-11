@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { z } from 'zod';
 
 /** Price shown for the custom-domain add-on (USD per domain per month). */
@@ -24,6 +25,16 @@ export interface WorkspaceDomainActor {
    * same rule; both must agree before the staff bypass applies.
    */
   staffSession: boolean;
+}
+
+/**
+ * Staff bypass identity: a current Auth user with a confirmed email in
+ * exactly @tuturuuu.com (never xwf.tuturuuu.com or lookalike domains).
+ */
+export function isWorkspaceDomainStaffUser(
+  user: Parameters<typeof isVerifiedTuturuuuStaffSession>[0]
+) {
+  return isVerifiedTuturuuuStaffSession(user, { allowXwf: false });
 }
 
 const DENIED = (reason: string): WorkspaceDomainEntitlement => ({
