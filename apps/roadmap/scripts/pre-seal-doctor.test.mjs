@@ -7,6 +7,7 @@ import {
   REDIRECT_CHAINS,
   PLAN_LABEL,
   brokenVariant,
+  doctorCompatibilityDate,
   PUBLIC_DOCUMENT_PATHS,
   reportBrokenVariant,
   speculativeLinks,
@@ -300,4 +301,17 @@ test('D79: a client-render fallback or a missing og:image fails the doctor', () 
     failures.join('\n')
   );
   assert.ok(failures.includes('canonical HTML missing an absolute og:image'));
+});
+
+test('doctor runs the configured compatibility date, capped at what workerd supports', () => {
+  assert.equal(
+    doctorCompatibilityDate('2026-07-01', '2026-07-30'),
+    '2026-07-01'
+  );
+  assert.equal(
+    doctorCompatibilityDate('2026-11-07', '2026-07-30'),
+    '2026-07-30'
+  );
+  // Broken variant: a missing date must not reach workerd as undefined.
+  assert.equal(doctorCompatibilityDate(undefined, '2026-07-30'), '2026-07-30');
 });
