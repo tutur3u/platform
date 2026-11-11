@@ -50,6 +50,31 @@ signature needs a new subpath and a coordinated migration.
 | `vite` | `startBridgePreset`, `startBridgeAliases`, `presetBasePath`, `NEXT_SHIMS` | Plain config fragments; imports only Node built-ins because Vite+ loads it with native type stripping |
 | `codegen` + bin `start-bridge-routes` | `planRegistries`, `classifyRouteFile`, renderers; CLI `generate`/`check` | Fails on any unregistered `route.*`/`page.*` |
 
+## Mounted document slash policy
+
+`mountedTrailingSlash` in `start-bridge.config.ts` is opt-in and defaults to
+false. It accepts `true` or a per-request `(env) => boolean` predicate. The
+Worker template forwards it to `createBridgeHandler`; existing generated
+Workers need regeneration to consume the option. Custom Workers call
+`canonicalizeMountedTrailingSlash` and `mountedTrailingSlashEnabled` from
+`@tuturuuu/start-bridge/start/mounted-navigation` with their resolved `BasePath`.
+
+When enabled, mounted GET/HEAD document navigations such as `/app/`, `/app//`
+and `/app/x/` return one 301 to the path with all trailing slashes removed,
+retaining the query bytes and duplicate keys. This runs before proxy/SSR, so a
+router's 307 cannot take precedence. Root-host requests, bare `/app`, non-navigation
+fetches, upgrades and mutations pass through. `/api`, `/assets`, `/.well-known`
+and `/_serverFn` are always excluded; configured function transports are also
+excluded by the handler. Custom Workers pass extra `machinePathPrefixes`.
+Repeated separators are normalized only for machine-path classification.
+
+Calendar's predicate enables the policy only with `TTR_ONE_ORIGIN_CALENDAR=on`;
+missing/invalid modes and shadow keep it off. Its bare mount retains the internal
+Start slash rewrite and hydration address handling. Learn and other apps remain
+unchanged until their own configuration opts in. The policy changes no cookies,
+CSRF admission, session minting, logout or OAuth behavior. Regression coverage:
+`packages/start-bridge/src/start/mounted-navigation.test.ts`.
+
 ## Worker handler
 
 ```ts

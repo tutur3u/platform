@@ -34,6 +34,7 @@
     "./intl/satellite-locales": "./src/intl/satellite-locales.ts",
     "./intl/server": "./src/intl/server.ts",
     "./start/csrf-admission": "./src/start/csrf-admission.ts",
+    "./start/mounted-navigation": "./src/start/mounted-navigation.ts",
     "./start/handler": "./src/start/handler.ts",
     "./start/base-path": "./src/start/base-path.ts",
     "./start/server-entry": "./src/start/server-entry.ts",

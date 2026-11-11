@@ -323,6 +323,10 @@ test('the app-owned Worker config is created once and never overwritten', (t) =>
     /appConfig\.wrapResponse\(response, \{\s*request,\s*env,\s*mounts,\s*publicAssets,/
   );
   assert.match(worker, /\n {4}apiOrigin: appConfig\.apiOrigin,\n/);
+  assert.match(
+    worker,
+    /\n {4}mountedTrailingSlash: appConfig\.mountedTrailingSlash,\n/
+  );
   // The app's framable paths reach the handler csp and the response policy.
   assert.match(worker, /\n {4}framablePaths: appConfig\.framablePaths,\n/);
   assert.match(

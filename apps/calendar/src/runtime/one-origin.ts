@@ -3,10 +3,15 @@ import {
   trimTrailingSlashes,
 } from '@tuturuuu/start-bridge/base-path';
 import {
+  canonicalizeMountedTrailingSlash,
+  mountedTrailingSlashEnabled,
+} from '@tuturuuu/start-bridge/start/mounted-navigation';
+import {
   decideOneOriginRequest,
   parseOneOriginMode,
 } from '@tuturuuu/utils/one-origin-routing';
-import { calendarMounts } from './calendar-mount';
+import appConfig from '../../start-bridge.config';
+import { calendarBase, calendarMounts } from './calendar-mount';
 import {
   CALENDAR_FUNCTION_BASE,
   CALENDAR_LEGACY_FUNCTION_BASE,
@@ -73,17 +78,23 @@ export function calendarNavigationRedirect(
   const path = url.pathname.slice(base.length) || '/';
   if (machinePrefixes.some((prefix) => inPath(path, prefix))) return null;
   // Meet Together belongs to Web, outside Calendar's response base rewriting.
-  const target = inPath(path, '/meet-together')
-    ? trimTrailingSlashes(path)
-    : url.pathname.endsWith('/')
-      ? trimTrailingSlashes(url.pathname)
-      : null;
-  return target === null
-    ? null
-    : new Response(null, {
-        status: 301,
-        headers: { Location: `${url.origin}${target}${url.search}` },
-      });
+  if (inPath(path, '/meet-together'))
+    return new Response(null, {
+      status: 301,
+      headers: {
+        Location: `${url.origin}${trimTrailingSlashes(path)}${url.search}`,
+      },
+    });
+  const resolved = calendarBase(url);
+  return resolved
+    ? canonicalizeMountedTrailingSlash(request, resolved, {
+        enabled: mountedTrailingSlashEnabled(
+          appConfig.mountedTrailingSlash,
+          env
+        ),
+        machinePathPrefixes: machinePrefixes,
+      })
+    : null;
 }
 
 /** The pinned router's base root needs a slash internally, without a public hop. */

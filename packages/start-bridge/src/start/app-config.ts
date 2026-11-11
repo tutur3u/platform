@@ -1,5 +1,6 @@
 import type { AppSeoPolicy } from '@tuturuuu/utils/seo-robots';
 import type { AppMountConfig } from '../core/mounts';
+import type { MountedTrailingSlashPolicy } from './mounted-navigation';
 
 /**
  * The Worker options an app owns in its `start-bridge.config.ts`. The codemod
@@ -9,6 +10,8 @@ import type { AppMountConfig } from '../core/mounts';
  * generated files.
  */
 export interface BridgeAppConfig<Env = unknown> {
+  /** Opt-in mounted GET/HEAD navigation slash trimming (301); off by default. */
+  mountedTrailingSlash?: MountedTrailingSlashPolicy<Env>;
   /**
    * Content-Security-Policy for each response's nonce (`createBridgeHandler`
    * `csp`); `null` keeps the response's own policy. Framable paths (Web's

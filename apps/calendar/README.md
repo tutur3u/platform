@@ -26,8 +26,11 @@ with missing or invalid values treated as `off` (apex 404, subdomain unchanged).
 `shadow` serves the mount with noindex and no boundary redirects. `on` redirects
 subdomain GET/HEAD document navigations to the apex with revocable 307/no-store;
 API, assets, well-known, server functions and service-worker transport stay local.
-Mounted GET/HEAD document slash URLs collapse to a bare path in one 301 with
-the query preserved. Mounted Meet Together documents redirect outside Calendar
+The bridge's opt-in `mountedTrailingSlash` policy is configured with an
+`on`-only predicate, so it stays off for missing/invalid modes and shadow.
+When enabled, mounted GET/HEAD document slash URLs collapse to a bare path in
+one 301 before the router, with the query preserved. The shared bridge defaults
+to off for apps that omit the option; no other app is enabled here. Mounted Meet Together documents redirect outside Calendar
 to `/meet-together`. The bare mount is slash-rewritten only for Start SSR; the
 browser retains `/calendar` through hydration. Staging has no mount hosts.
 

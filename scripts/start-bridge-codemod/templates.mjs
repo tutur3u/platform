@@ -222,6 +222,7 @@ const handler = (
   createBridgeHandler<${name}, WorkerContext>({
     mounts,
     csp: appConfig.csp,
+    mountedTrailingSlash: appConfig.mountedTrailingSlash,
     apiOrigin: appConfig.apiOrigin,
     framablePaths: appConfig.framablePaths,
     start: createBridgeStartHandler(),
