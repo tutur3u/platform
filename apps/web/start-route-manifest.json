@@ -43,9 +43,9 @@
     }
   ],
   "summary": {
-    "total": 854,
+    "total": 858,
     "categories": {
-      "api": 660,
+      "api": 664,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -54,7 +54,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 842 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 846 }
   },
   "routes": [
     {
@@ -3517,6 +3517,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/workspace-domains/resolve",
+      "source": "apps/web/src/app/api/v1/workspace-domains/resolve/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/workspaces/[wsId]/Mention",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/Mention/route.ts",
       "category": "api",
@@ -3999,6 +4007,30 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/documents",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/documents/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/domains/[domainId]",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/domains/[domainId]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/domains/[domainId]/verify",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/domains/[domainId]/verify/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/domains",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/domains/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
