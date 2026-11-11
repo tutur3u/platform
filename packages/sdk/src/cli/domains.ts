@@ -1,12 +1,58 @@
 import {
-  addWorkspaceDomain,
-  listWorkspaceDomains,
-  removeWorkspaceDomain,
-  verifyWorkspaceDomain,
-  type WorkspaceDomain,
-} from '@tuturuuu/internal-api/workspace-domains';
+  createInternalApiClient,
+  encodePathSegment,
+} from '@tuturuuu/internal-api/client';
 import type { TuturuuuUserClient } from '../platform';
 import { type FlagValue, getFlag } from './args';
+
+type DnsRecord = { type: string; name: string; value: string };
+
+/** Fields of `GET /api/v1/workspaces/:wsId/domains` the CLI reads. */
+interface WorkspaceDomain {
+  id: string;
+  hostname: string;
+  kind: string;
+  status: string;
+  error: string | null;
+  ownershipRecord: DnsRecord | null;
+  routingRecord: DnsRecord | null;
+  providerRecords: DnsRecord[];
+}
+interface DomainsOverview {
+  domains: WorkspaceDomain[];
+  entitlement: {
+    reason: string;
+    source: string | null;
+    used: number;
+    total: number;
+  };
+}
+
+function domainsApi(client: TuturuuuUserClient, workspaceId: string) {
+  const api = createInternalApiClient(client.getClientOptions());
+  const base = `/api/v1/workspaces/${encodePathSegment(workspaceId)}/domains`;
+  const item = (id: string) => `${base}/${encodePathSegment(id)}`;
+  return {
+    list: () => api.json<DomainsOverview>(base, { cache: 'no-store' }),
+    add: (hostname: string) =>
+      api.json<{ domain: WorkspaceDomain }>(base, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hostname }),
+      }),
+    verify: (id: string) =>
+      api.json<{ domain: WorkspaceDomain }>(`${item(id)}/verify`, {
+        method: 'POST',
+        cache: 'no-store',
+      }),
+    remove: (id: string) =>
+      api.json<{ hostname: string; providerCleanupPending: boolean }>(
+        item(id),
+        { method: 'DELETE', cache: 'no-store' }
+      ),
+  };
+}
 
 type Options = {
   client: TuturuuuUserClient;
@@ -42,11 +88,11 @@ function normalize(hostname: string | undefined) {
   return value;
 }
 
-async function findDomain(options: Options, hostname: string) {
-  const overview = await listWorkspaceDomains(
-    options.workspaceId,
-    options.client.getClientOptions()
-  );
+async function findDomain(
+  api: ReturnType<typeof domainsApi>,
+  hostname: string
+) {
+  const overview = await api.list();
   const domain = overview.domains.find((item) => item.hostname === hostname);
   if (!domain) throw new Error(`Domain ${hostname} not found in workspace.`);
   return domain;
@@ -56,12 +102,12 @@ async function findDomain(options: Options, hostname: string) {
 export async function runDomainsCommand(options: Options) {
   const { client, flags, json, positionals } = options;
   const [action = 'list', rawHostname] = positionals;
-  const api = client.getClientOptions();
+  const api = domainsApi(client, options.workspaceId);
   const emit = (value: unknown, text: string) =>
     write(json ? JSON.stringify(value, null, 2) : text);
 
   if (action === 'list') {
-    const overview = await listWorkspaceDomains(options.workspaceId, api);
+    const overview = await api.list();
     const { entitlement } = overview;
     const header = entitlement.source
       ? `Domains: ${entitlement.used}/${entitlement.total} (${entitlement.source})`
@@ -78,20 +124,12 @@ export async function runDomainsCommand(options: Options) {
 
   const hostname = normalize(rawHostname);
   if (action === 'add') {
-    const { domain } = await addWorkspaceDomain(
-      options.workspaceId,
-      hostname,
-      api
-    );
+    const { domain } = await api.add(hostname);
     return emit(domain, describeDomain(domain));
   }
   if (action === 'verify') {
-    const existing = await findDomain(options, hostname);
-    const { domain } = await verifyWorkspaceDomain(
-      options.workspaceId,
-      existing.id,
-      api
-    );
+    const existing = await findDomain(api, hostname);
+    const { domain } = await api.verify(existing.id);
     return emit(domain, describeDomain(domain));
   }
   if (action === 'remove') {
@@ -101,12 +139,8 @@ export async function runDomainsCommand(options: Options) {
         `Removing stops serving immediately. Pass --confirm ${hostname}.`
       );
     }
-    const existing = await findDomain(options, hostname);
-    const result = await removeWorkspaceDomain(
-      options.workspaceId,
-      existing.id,
-      api
-    );
+    const existing = await findDomain(api, hostname);
+    const result = await api.remove(existing.id);
     return emit(
       result,
       result.providerCleanupPending

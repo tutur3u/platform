@@ -1,5 +1,5 @@
 import type { Subscription } from '@tuturuuu/payment/polar';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 const MAX_DOMAIN_ADDON_QUANTITY = 1000;
 

@@ -573,7 +573,8 @@
                   "reference/repository/routes/web-3",
                   "reference/repository/routes/web-4",
                   "reference/repository/routes/web-5",
-                  "reference/repository/routes/workspace"
+                  "reference/repository/routes/workspace",
+                  "reference/repository/routes/workspace-domains"
                 ],
                 "expanded": false
               }
