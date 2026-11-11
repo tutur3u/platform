@@ -186,3 +186,185 @@ describe('bridge CSRF admission', () => {
     expect(await response.text()).toBe('own');
   });
 });
+
+describe('mounted logout dispatch effects', () => {
+  const paths = [
+    '/api/auth/logout',
+    '/api/auth//logout',
+    '/api/auth/logout//',
+    '/api/auth/%6Cogout',
+    '/api/auth/logout%2F',
+    '/api/auth/./logout',
+  ];
+  it.each(['off', 'report', 'enforce'] as const)(
+    'guards aliases before effects in %s mode',
+    async (mode) => {
+      const forward = vi.fn(
+        async () =>
+          new Response('Web logout', {
+            headers: { 'Set-Cookie': 'sb-abc-auth-token=; Path=/; Max-Age=0' },
+          })
+      );
+      const local = vi.fn(async () => new Response('local logout'));
+      const middleware = vi.fn(async () => NextResponse.next());
+      const dispatch = createBridgeHandler<Env, typeof ctx>({
+        mounts: {
+          app: 'meet',
+          rootHosts: ['meet.tuturuuu.com'],
+          mountHosts: ['tuturuuu.com'],
+          basePath: '/meet',
+        },
+        start: { fetch: start },
+        proxy: middleware,
+        endpoints: [{ pattern: '/api/auth/logout', module: { POST: local } }],
+        assets: () => undefined,
+        centralApiOrigin: () => 'https://central.example',
+        forwardApi: forward,
+        csrf: { mode: (env) => env.CSRF_MODE },
+      });
+      for (const path of paths) {
+        for (const cookie of [undefined, SESSION]) {
+          for (const authorization of [undefined, 'Bearer junk']) {
+            for (const method of ['POST', 'GET']) {
+              forward.mockClear();
+              local.mockClear();
+              middleware.mockClear();
+              const headers = new Headers({ 'sec-fetch-site': 'cross-site' });
+              if (cookie) headers.set('cookie', cookie);
+              if (authorization) headers.set('authorization', authorization);
+              const response = await dispatch(
+                new Request(`https://tuturuuu.com/meet${path}`, {
+                  method,
+                  headers,
+                }),
+                { CSRF_MODE: mode },
+                ctx
+              );
+              expect([403, 405]).toContain(response.status);
+              expect(response.headers.getSetCookie()).toEqual([]);
+              expect(forward).not.toHaveBeenCalled();
+              expect(local).not.toHaveBeenCalled();
+              expect(middleware).not.toHaveBeenCalled();
+            }
+          }
+        }
+        forward.mockClear();
+        const admitted = await dispatch(
+          new Request(`https://tuturuuu.com/meet${path}`, {
+            method: 'POST',
+            headers: { 'sec-fetch-site': 'same-origin' },
+          }),
+          { CSRF_MODE: mode },
+          ctx
+        );
+        expect(forward).toHaveBeenCalledTimes(1);
+        expect(admitted.headers.getSetCookie()).toEqual([
+          'sb-abc-auth-token=; Path=/; Max-Age=0',
+        ]);
+        expect(local).not.toHaveBeenCalled();
+      }
+    }
+  );
+});
+
+describe('mounted case-sensitive dispatch', () => {
+  it.each(['/api/auth/Logout', '/api/auth/LOGOUT', '/API/auth/logout'])(
+    'does not dispatch %s to logout or delete cookies',
+    async (path) => {
+      const { dispatchEndpoint } = await import('../core/endpoints');
+      const logout = vi.fn(
+        async () =>
+          new Response('logout', {
+            headers: { 'Set-Cookie': 'session=; Max-Age=0' },
+          })
+      );
+      const forward = vi.fn(
+        async (request: Request) =>
+          (await dispatchEndpoint(
+            [{ pattern: '/api/auth/logout', module: { POST: logout } }],
+            request
+          )) ?? new Response('Not Found', { status: 404 })
+      );
+      const dispatch = createBridgeHandler<Env, typeof ctx>({
+        mounts: {
+          app: 'meet',
+          rootHosts: ['meet.tuturuuu.com'],
+          mountHosts: ['tuturuuu.com'],
+          basePath: '/meet',
+        },
+        start: {
+          fetch: async () => new Response('Not Found', { status: 404 }),
+        },
+        proxy: async () => NextResponse.next(),
+        assets: () => undefined,
+        centralApiOrigin: () => 'https://central.example',
+        forwardApi: forward,
+      });
+      const response = await dispatch(
+        new Request(`https://tuturuuu.com/meet${path}`, { method: 'POST' }),
+        { CSRF_MODE: 'off' },
+        ctx
+      );
+      expect(response.status).toBe(404);
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(logout).not.toHaveBeenCalled();
+      expect(forward).toHaveBeenCalledTimes(path.startsWith('/api/') ? 1 : 0);
+    }
+  );
+});
+
+
+describe('mounted non-session encoded parameters', () => {
+  it.each(['off', 'report', 'enforce'] as const)('dispatches in %s mode', async (mode) => {
+    const local = vi.fn(async () => new Response('dynamic'));
+    const forward = vi.fn(async () => new Response('unexpected forward'));
+    const dispatch = createBridgeHandler<Env, typeof ctx>({
+      mounts: { app: 'meet', rootHosts: ['meet.tuturuuu.com'], mountHosts: ['tuturuuu.com'], basePath: '/meet' },
+      start: { fetch: start }, proxy: async () => NextResponse.next(),
+      endpoints: [{ pattern: '/api/v1/things/[name]', module: { GET: local, POST: local } }],
+      assets: () => undefined, centralApiOrigin: () => 'https://central.example', forwardApi: forward,
+      csrf: { mode: (env) => env.CSRF_MODE },
+    });
+    for (const suffix of ['discount%25', 'question%3F', 'fragment%23']) {
+      for (const [method, headers] of [
+        ['GET', { origin: 'https://tuturuuu.com' }],
+        ['POST', { authorization: 'Bearer junk' }],
+        ['POST', { cookie: SESSION, origin: 'https://tuturuuu.com', 'sec-fetch-site': 'same-origin' }],
+      ] as const) {
+        local.mockClear();
+        const response = await dispatch(new Request(`https://tuturuuu.com/meet/api/v1/things/${suffix}`, { method, headers }), { CSRF_MODE: mode }, ctx);
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe('dynamic');
+        expect(local).toHaveBeenCalledOnce();
+        expect(forward).not.toHaveBeenCalled();
+        expect(response.headers.getSetCookie()).toEqual([]);
+      }
+    }
+  });
+});
+
+
+describe('mounted double-encoded logout paths', () => {
+  it.each(['off', 'report', 'enforce'] as const)('refuses before effects in %s mode', async (mode) => {
+    const local = vi.fn(async () => new Response('logout', { headers: { 'Set-Cookie': 'session=; Max-Age=0' } }));
+    const forward = vi.fn(async () => new Response('Web logout', { headers: { 'Set-Cookie': 'session=; Max-Age=0' } }));
+    const middleware = vi.fn(async () => NextResponse.next());
+    const dispatch = createBridgeHandler<Env, typeof ctx>({
+      mounts: { app: 'meet', rootHosts: ['meet.tuturuuu.com'], mountHosts: ['tuturuuu.com'], basePath: '/meet' },
+      start: { fetch: start }, proxy: middleware,
+      endpoints: [{ pattern: '/api/auth/logout', module: { GET: local, POST: local } }],
+      assets: () => undefined, centralApiOrigin: () => 'https://central.example', forwardApi: forward,
+      csrf: { mode: (env) => env.CSRF_MODE },
+    });
+    for (const path of ['/api/auth/logout%252F', '/api/auth/%256Cogout']) {
+      for (const method of ['GET', 'POST']) {
+        const response = await dispatch(new Request(`https://tuturuuu.com/meet${path}`, { method, headers: { origin: 'https://tuturuuu.com', 'sec-fetch-site': 'same-origin' } }), { CSRF_MODE: mode }, ctx);
+        expect(response.status).toBe(400);
+        expect(response.headers.getSetCookie()).toEqual([]);
+        expect(local).not.toHaveBeenCalled();
+        expect(forward).not.toHaveBeenCalled();
+        expect(middleware).not.toHaveBeenCalled();
+      }
+    }
+  });
+});

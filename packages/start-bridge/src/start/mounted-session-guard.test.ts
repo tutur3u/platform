@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  normalizeSessionPath,
   refuseMountedSessionMinting,
   stripMountedSessionWrites,
 } from './mounted-session-guard';
@@ -75,5 +76,58 @@ describe('stripMountedSessionWrites', () => {
     expect(result.headers.get('location')).toBe('/learn/x');
     expect(result.headers.getSetCookie()).toEqual([]);
     expect(await result.text()).toBe('body');
+  });
+});
+
+describe('public endpoint dispatch semantics', () => {
+  it('uses URL dot resolution, collapsed separators and case-sensitive static matching', async () => {
+    const { dispatchEndpoint } = await import('../core/endpoints');
+    const logout = vi.fn(
+      async () =>
+        new Response('logout', {
+          headers: { 'Set-Cookie': 'session=; Max-Age=0' },
+        })
+    );
+    for (const [path, reaches] of [
+      ['/api/auth//logout', true],
+      ['/api/auth/logout//', true],
+      ['/api/auth/./logout', true],
+      ['/api/auth/%6Cogout', false],
+      ['/api/auth/logout%2F', false],
+      ['/api/auth/Logout', false],
+      ['/API/auth/logout', false],
+      ['/api/auth/LOGOUT', false],
+    ] as const) {
+      logout.mockClear();
+      const response = await dispatchEndpoint(
+        [{ pattern: '/api/auth/logout', module: { POST: logout } }],
+        new Request(`https://tuturuuu.com${path}`, { method: 'POST' })
+      );
+      expect(logout).toHaveBeenCalledTimes(reaches ? 1 : 0);
+      expect(response?.headers.getSetCookie() ?? []).toHaveLength(
+        reaches ? 1 : 0
+      );
+    }
+  });
+});
+
+describe('session path normalization', () => {
+  it.each([
+    '/api/auth/%256Cogout',
+    '/api/auth/%',
+    '/api/auth/logout%00',
+    '/api/auth/logout%3Fignored',
+    '/api/auth/logout%5C',
+  ])('fails closed for %s', (path) => {
+    expect(normalizeSessionPath(path)).toBeNull();
+    const refusal = refuseMountedSessionMinting(path);
+    expect(refusal?.status).toBe(400);
+    expect(refusal?.headers.getSetCookie()).toEqual([]);
+  });
+  it('decodes once, collapses separators and resolves decoded dot segments', () => {
+    expect(normalizeSessionPath('/api/auth/x/%2e%2e//%6Cogout%2F')).toBe(
+      '/api/auth/logout'
+    );
+    expect(normalizeSessionPath('/api/auth/Logout')).toBe('/api/auth/Logout');
   });
 });

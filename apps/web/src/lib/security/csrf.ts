@@ -60,6 +60,45 @@ export const WEB_CSRF_TRUSTED_ORIGINS: readonly string[] = [
   'https://workspace.tuturuuu.com',
 ];
 
+function isSessionNamespace(path: string): boolean {
+  const segments: string[] = [];
+  for (const raw of path.split('/')) {
+    let decoded = raw;
+    try {
+      decoded = decodeURIComponent(raw);
+    } catch {
+      // Retain the malformed segment while classifying its namespace.
+    }
+    for (const segment of decoded.split('/')) {
+      if (!segment || segment === '.') continue;
+      if (segment === '..') segments.pop();
+      else segments.push(segment);
+    }
+  }
+  const normalized = `/${segments.join('/')}`;
+  return ['/api/auth', '/api/v1/auth/accounts'].some(
+    (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`)
+  );
+}
+
+/** Decode once; residual escapes and URL delimiters are ambiguous. */
+function normalizeSessionPath(path: string): string | null {
+  try {
+    const decoded = decodeURIComponent(path);
+    if (/[%\\?#\u0000-\u001f\u007f]/u.test(decoded)) return null;
+    const segments: string[] = [];
+    for (const segment of decoded.split('/')) {
+      if (!segment || segment === '.') continue;
+      if (segment === '..') segments.pop();
+      else segments.push(segment);
+    }
+    return `/${segments.join('/')}`;
+  } catch {
+    return null;
+  }
+}
+
+
 const shouldReportCsrfFailure = createCsrfReportLimiter();
 
 /**
@@ -75,6 +114,17 @@ export function guardWebApiCsrf(
 ): NextResponse | null {
   if (mode === 'off') return null;
 
+  const sessionPath = normalizeSessionPath(req.nextUrl.pathname);
+  if (
+    mode === 'enforce' &&
+    sessionPath === null &&
+    isSessionNamespace(req.nextUrl.pathname)
+  ) {
+    return NextResponse.json(
+      { code: 'CSRF_REJECTED', error: 'Ambiguous path' },
+      { status: 403 }
+    );
+  }
   const verdict = checkCsrf({
     allowedOrigins: [
       req.nextUrl.origin,
@@ -90,9 +140,8 @@ export function guardWebApiCsrf(
     headers: req.headers,
     method: req.method,
     pathname: req.nextUrl.pathname,
-    requireOriginWithoutSessionCookie: WEB_SESSION_CLEARING_PATHS.has(
-      req.nextUrl.pathname
-    ),
+    requireOriginWithoutSessionCookie:
+      WEB_SESSION_CLEARING_PATHS.has(sessionPath ?? req.nextUrl.pathname),
   });
   if (verdict.ok) return null;
 
