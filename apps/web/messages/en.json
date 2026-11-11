@@ -21441,7 +21441,8 @@
     "check": "Check status",
     "checking": "Checking…",
     "confirmRemove": "Remove domain",
-    "description": "Serve this workspace's published site or public page on your own domain or a ttr.gg address.",
+    "customUnavailable": "Custom domains are not configured on this deployment.",
+    "description": "Serve this workspace's published site or public page on your own domain or a platform address.",
     "dns": {
       "help": "Publish these records at your DNS provider, then check the status.",
       "name": "Name",
@@ -21471,6 +21472,7 @@
       "upgradeTitle": "Paid plan required"
     },
     "errors": {
+      "custom_domains_unconfigured": "Custom domains are not configured on this deployment.",
       "entitlement_addon_required": "Add the custom domain add-on to use more domains.",
       "entitlement_billing_unavailable": "The custom domain add-on is not available yet.",
       "entitlement_cap_reached": "This workspace has reached its domain limit.",
@@ -21485,11 +21487,12 @@
       "hostname_unavailable": "This hostname is already in use or recently removed.",
       "workspace_domains_forbidden": "You do not have permission to change domains."
     },
-    "hostnameHelp": "Custom domains point a CNAME (or ALIAS at the apex) to {target} and prove ownership with a TXT record. ttr.gg addresses need no DNS changes.",
+    "hostnameHelp": "Point a CNAME (or ALIAS at the apex) to {target} and prove ownership with a TXT record.",
     "hostnameLabel": "Hostname",
-    "hostnamePlaceholder": "example.com or name.ttr.gg",
+    "hostnamePlaceholder": "example.com",
     "loadError": "Domains could not be loaded.",
     "loading": "Loading domains…",
+    "platformHelp": "Addresses under {apex} need no DNS changes.",
     "readOnly": "You can view domains but not change them.",
     "remove": "Remove",
     "removeDescription": "The domain stops serving this workspace right away. Adding it again requires a new verification.",
@@ -24399,7 +24402,7 @@
     "manage_workspace_billing": "Manage workspace billing",
     "manage_workspace_billing_description": "Allows members to view and update billing information.",
     "manage_workspace_domains": "Manage workspace domains",
-    "manage_workspace_domains_description": "Add, verify, and remove custom domains and ttr.gg subdomains that serve the workspace's public site.",
+    "manage_workspace_domains_description": "Add, verify, and remove custom domains and platform subdomains that serve the workspace's public site.",
     "manage_workspace_integrations": "Manage workspace integrations",
     "manage_workspace_integrations_description": "Allows members to view and update workspace integrations.",
     "manage_workspace_invites": "Manage workspace invites",

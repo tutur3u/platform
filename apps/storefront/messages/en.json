@@ -1319,7 +1319,7 @@
     "manage_user_report_automation": "Manage Report Automation",
     "manage_user_report_automation_description": "Configure periodic report schedules, generation modes, and workspace or group defaults.",
     "manage_workspace_domains": "Manage workspace domains",
-    "manage_workspace_domains_description": "Add, verify, and remove custom domains and ttr.gg subdomains that serve the workspace's public site.",
+    "manage_workspace_domains_description": "Add, verify, and remove custom domains and platform subdomains that serve the workspace's public site.",
     "send_user_group_report_emails": "Send Periodic Report Emails",
     "send_user_group_report_emails_description": "Preview, test, queue, retry, and cancel approved periodic report email delivery.",
     "view_workspace_domains": "View workspace domains",

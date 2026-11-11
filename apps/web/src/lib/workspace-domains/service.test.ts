@@ -106,6 +106,7 @@ const STAFF_OK = {
   remaining: 10,
 };
 const actor = { id: 'user-1', staffSession: true };
+const CONFIG = { platformApex: 'ttr.gg', fallbackOrigin: 'saas.ttr.gg' };
 
 function fakeCloudflare(status = 'active') {
   return {
@@ -134,10 +135,59 @@ function fakeCloudflare(status = 'active') {
 }
 
 describe('workspace domain service', () => {
+  it('fails closed without an apex or fallback origin', async () => {
+    const { admin, domains } = fakeAdmin(STAFF_OK);
+    const unconfigured = { platformApex: null, fallbackOrigin: null };
+    await expect(
+      addWorkspaceDomain(
+        { admin, cloudflare: fakeCloudflare(), config: unconfigured },
+        'ws',
+        actor,
+        'phuc.ttr.gg'
+      )
+    ).rejects.toMatchObject({ status: 400, code: 'hostname_reserved' });
+    await expect(
+      addWorkspaceDomain(
+        { admin, cloudflare: null, config: unconfigured },
+        'ws',
+        actor,
+        'example.com'
+      )
+    ).rejects.toMatchObject({
+      status: 503,
+      code: 'custom_domains_unconfigured',
+    });
+    expect(domains).toHaveLength(0);
+  });
+
+  it('shows the configured fallback origin in DNS instructions', async () => {
+    const { admin } = fakeAdmin(STAFF_OK);
+    const domain = await addWorkspaceDomain(
+      {
+        admin,
+        cloudflare: null,
+        config: { platformApex: null, fallbackOrigin: 'edge.example.net' },
+      },
+      'ws',
+      actor,
+      'example.com'
+    );
+    expect(domain.routingRecord).toEqual({
+      type: 'CNAME',
+      name: 'example.com',
+      value: 'edge.example.net',
+    });
+  });
+
   it('rejects reserved hostnames before any lookup', async () => {
     const { admin } = fakeAdmin(STAFF_OK);
     await expect(
-      addWorkspaceDomain({ admin, cloudflare: null }, 'ws', actor, 'www.ttr.gg')
+      addWorkspaceDomain(
+        { admin, cloudflare: null, config: CONFIG },
+        'ws',
+        actor,
+        'www.ttr.gg'
+      )
     ).rejects.toMatchObject({ status: 400, code: 'hostname_reserved' });
   });
 
@@ -149,7 +199,7 @@ describe('workspace domain service', () => {
       source: null,
     });
     const error = await addWorkspaceDomain(
-      { admin, cloudflare: null },
+      { admin, cloudflare: null, config: CONFIG },
       'ws',
       actor,
       'example.com'
@@ -167,7 +217,7 @@ describe('workspace domain service', () => {
     const { admin, domains } = fakeAdmin(STAFF_OK);
     const cloudflare = fakeCloudflare();
     const domain = await addWorkspaceDomain(
-      { admin, cloudflare },
+      { admin, cloudflare, config: CONFIG },
       'ws',
       actor,
       'Phuc.ttr.gg'
@@ -190,7 +240,12 @@ describe('workspace domain service', () => {
       name === 'taken.ttr.gg' ? [{ id: 'x', type: 'A', name }] : []
     );
     await expect(
-      addWorkspaceDomain({ admin, cloudflare }, 'ws', actor, 'taken.ttr.gg')
+      addWorkspaceDomain(
+        { admin, cloudflare, config: CONFIG },
+        'ws',
+        actor,
+        'taken.ttr.gg'
+      )
     ).rejects.toMatchObject({ status: 409, code: 'hostname_in_use' });
     expect(domains).toHaveLength(0);
     expect(cloudflare.createPlatformRecord).not.toHaveBeenCalled();
@@ -207,7 +262,12 @@ describe('workspace domain service', () => {
       new CloudflareApiError(409, [10020])
     );
     await expect(
-      addWorkspaceDomain({ admin, cloudflare }, 'ws', actor, 'race.ttr.gg')
+      addWorkspaceDomain(
+        { admin, cloudflare, config: CONFIG },
+        'ws',
+        actor,
+        'race.ttr.gg'
+      )
     ).rejects.toMatchObject({ status: 409, code: 'hostname_in_use' });
     expect(cloudflare.deleteDnsRecord).toHaveBeenCalledWith('dns1');
     expect(domains[0]).toMatchObject({
@@ -222,7 +282,7 @@ describe('workspace domain service', () => {
     const { admin } = fakeAdmin(STAFF_OK);
     const cloudflare = fakeCloudflare();
     const added = await addWorkspaceDomain(
-      { admin, cloudflare },
+      { admin, cloudflare, config: CONFIG },
       'ws',
       actor,
       'example.com'
@@ -233,7 +293,7 @@ describe('workspace domain service', () => {
       Response.json({ Status: 3, Answer: [] })
     );
     const pending = await verifyWorkspaceDomain(
-      { admin, cloudflare, fetch: noRecord },
+      { admin, cloudflare, config: CONFIG, fetch: noRecord },
       'ws',
       actor,
       added.id
@@ -251,7 +311,7 @@ describe('workspace domain service', () => {
       })
     );
     const active = await verifyWorkspaceDomain(
-      { admin, cloudflare, fetch: withRecord },
+      { admin, cloudflare, config: CONFIG, fetch: withRecord },
       'ws',
       actor,
       added.id
@@ -260,7 +320,7 @@ describe('workspace domain service', () => {
 
     // Re-verifying reuses the provider resources.
     await verifyWorkspaceDomain(
-      { admin, cloudflare, fetch: withRecord },
+      { admin, cloudflare, config: CONFIG, fetch: withRecord },
       'ws',
       actor,
       added.id
@@ -269,7 +329,7 @@ describe('workspace domain service', () => {
     expect(cloudflare.createWorkerRoute).toHaveBeenCalledTimes(1);
 
     const removed = await removeWorkspaceDomain(
-      { admin, cloudflare },
+      { admin, cloudflare, config: CONFIG },
       'ws',
       actor,
       added.id
@@ -291,7 +351,7 @@ describe('workspace domain service', () => {
       created_by: 'user-1',
     });
     const result = await verifyWorkspaceDomain(
-      { admin, cloudflare: fakeCloudflare() },
+      { admin, cloudflare: fakeCloudflare(), config: CONFIG },
       'ws',
       actor,
       '00000000-0000-4000-8000-0000000000aa'

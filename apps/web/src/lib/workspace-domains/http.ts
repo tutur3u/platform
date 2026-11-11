@@ -5,6 +5,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { workspaceDomainsConfigFromEnv } from './config';
 import {
   cloudflareDomainsConfigFromEnv,
   createCloudflareDomainsClient,
@@ -74,6 +75,7 @@ async function handle(
   const deps: WorkspaceDomainDeps = {
     admin,
     cloudflare: config ? createCloudflareDomainsClient(config) : null,
+    config: workspaceDomainsConfigFromEnv(),
   };
   const actor = await resolveActor(admin, userId);
 

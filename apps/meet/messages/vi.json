@@ -8430,7 +8430,7 @@
     "manage_workspace_billing": "Quản lý thanh toán",
     "manage_workspace_billing_description": "Cho phép các thành viên xem và cập nhật thông tin thanh toán.",
     "manage_workspace_domains": "Quản lý tên miền không gian làm việc",
-    "manage_workspace_domains_description": "Thêm, xác minh và gỡ tên miền tùy chỉnh và tên miền phụ ttr.gg phục vụ trang công khai của không gian làm việc.",
+    "manage_workspace_domains_description": "Thêm, xác minh và gỡ tên miền tùy chỉnh và tên miền phụ của nền tảng phục vụ trang công khai của không gian làm việc.",
     "manage_workspace_invites": "Quản lý lời mời",
     "manage_workspace_invites_description": "Cho phép các thành viên gửi, thu hồi và chấp nhận lời mời.",
     "manage_workspace_members": "Quản lý thành viên",

@@ -7,11 +7,13 @@ import {
 // Dependency-free apart from the managed-project rule so the edge Worker
 // (apps/workspace-domains) and apps/web share one hostname policy.
 
-/** Zone that hosts `<label>.ttr.gg` platform subdomains. */
-export const WORKSPACE_DOMAIN_PLATFORM_ZONE = 'ttr.gg';
-
-/** CNAME/ALIAS target customers point custom hostnames at (Cloudflare for SaaS fallback origin). */
-export const WORKSPACE_DOMAIN_CNAME_TARGET = 'saas.ttr.gg';
+/**
+ * Platform zones whose existing hosts stay reserved whatever apex is
+ * configured. The active platform-subdomain apex and the SaaS fallback origin
+ * are deployment configuration (WORKSPACE_DOMAINS_PLATFORM_APEX,
+ * WORKSPACE_DOMAINS_FALLBACK_ORIGIN), never constants.
+ */
+export const KNOWN_PLATFORM_APEXES = Object.freeze(['ttr.gg']);
 
 /** Zones a workspace domain may never use, on top of the managed-project rule. */
 export const RESERVED_WORKSPACE_DOMAIN_ZONES = Object.freeze([
@@ -21,7 +23,8 @@ export const RESERVED_WORKSPACE_DOMAIN_ZONES = Object.freeze([
 ]);
 
 /**
- * `<label>.ttr.gg` names that belong to the platform. Fails closed for short
+ * `<label>.<apex>` names that belong to the platform, under every known and
+ * configured apex. Fails closed for short
  * labels and generic infrastructure words a customer could use to impersonate
  * Tuturuuu.
  */
@@ -53,7 +56,8 @@ export const RESERVED_PLATFORM_SUBDOMAIN_LABELS = Object.freeze([
   'ttr',
   'tuturuuu',
   'tutur3u',
-  // Bootstrap host of the first workspace domain; bound by migration seed.
+  // Bootstrap host of the first workspace domain (vhp.ttr.gg); bound by
+  // migration seed.
   'vhp',
   'www',
 ]);
@@ -92,14 +96,28 @@ function isWithinZone(hostname: string, zone: string) {
   return hostname === zone || hostname.endsWith(`.${zone}`);
 }
 
+export interface WorkspaceDomainHostnamePolicy {
+  /** Configured platform-subdomain apex; null disables platform subdomains. */
+  platformApex?: string | null;
+}
+
+/** Normalized configured apex, or null when unset or not a safe DNS name. */
+export function normalizePlatformApex(value: string | null | undefined) {
+  const apex = normalizeManagedProjectHostname(value ?? '');
+  return apex && SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN.test(apex) ? apex : null;
+}
+
 /**
  * Classifies a hostname a workspace wants to bind. Platform names
- * (tuturuuu.com, tutur3u.com, the ttr.gg apex, reserved ttr.gg labels and
- * nested ttr.gg names) are rejected; one-label `<label>.ttr.gg` names are
- * platform subdomains; everything else safe is a custom hostname.
+ * (tuturuuu.com, tutur3u.com, released domains, every known or configured
+ * platform apex, reserved labels and nested names under it) are rejected.
+ * One-label `<label>.<apex>` names under the configured apex are platform
+ * subdomains; with no apex configured every name under a platform zone is
+ * reserved (fail closed). Everything else safe is a custom hostname.
  */
 export function classifyWorkspaceDomainHostname(
-  value: unknown
+  value: unknown,
+  policy: WorkspaceDomainHostnamePolicy = {}
 ): WorkspaceDomainHostnameResult {
   const hostname = normalizeWorkspaceDomainHostname(value);
   if (!SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN.test(hostname)) {
@@ -111,12 +129,16 @@ export function classifyWorkspaceDomainHostname(
   ) {
     return { ok: false, hostname, reason: 'reserved' };
   }
-  if (isWithinZone(hostname, WORKSPACE_DOMAIN_PLATFORM_ZONE)) {
-    const label = hostname.slice(
-      0,
-      -(WORKSPACE_DOMAIN_PLATFORM_ZONE.length + 1)
-    );
+  const apex = normalizePlatformApex(policy.platformApex);
+  const zones = [
+    ...new Set([...KNOWN_PLATFORM_APEXES, ...(apex ? [apex] : [])]),
+  ];
+  const zone = zones.find((candidate) => isWithinZone(hostname, candidate));
+  if (zone) {
+    const label =
+      hostname === zone ? '' : hostname.slice(0, -(zone.length + 1));
     if (
+      zone !== apex ||
       !label ||
       label.includes('.') ||
       !PLATFORM_SUBDOMAIN_LABEL_PATTERN.test(label) ||

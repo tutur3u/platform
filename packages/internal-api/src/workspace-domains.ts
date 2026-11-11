@@ -44,7 +44,10 @@ export interface WorkspaceDomainsOverview {
   domains: WorkspaceDomain[];
   entitlement: WorkspaceDomainEntitlement;
   billing: { checkoutEnabled: boolean; pricePerDomainMonthlyUsd: number };
-  cnameTarget: string;
+  /** Configured fallback origin; null when custom domains are disabled. */
+  cnameTarget: string | null;
+  /** Configured platform-subdomain apex; null when they are disabled. */
+  platformApex: string | null;
   providerConfigured: boolean;
   canManage: boolean;
 }

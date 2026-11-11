@@ -12,7 +12,9 @@ describe('classifyWorkspaceDomainHostname', () => {
     ['phuc.ttr.gg', 'platform_subdomain'],
     ['my-site.ttr.gg', 'platform_subdomain'],
   ])('accepts %s as %s', (input, kind) => {
-    const result = classifyWorkspaceDomainHostname(input);
+    const result = classifyWorkspaceDomainHostname(input, {
+      platformApex: 'ttr.gg',
+    });
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.kind).toBe(kind);
   });
@@ -36,7 +38,9 @@ describe('classifyWorkspaceDomainHostname', () => {
     'tuturuu.com',
     'nova.ai.vn',
   ])('reserves %s', (input) => {
-    expect(classifyWorkspaceDomainHostname(input)).toMatchObject({
+    expect(
+      classifyWorkspaceDomainHostname(input, { platformApex: 'ttr.gg' })
+    ).toMatchObject({
       ok: false,
       reason: 'reserved',
     });
@@ -51,6 +55,41 @@ describe('classifyWorkspaceDomainHostname', () => {
     'example.com:8080',
   ])('rejects invalid %s', (input) => {
     expect(classifyWorkspaceDomainHostname(input).ok).toBe(false);
+  });
+});
+
+describe('platform apex configuration', () => {
+  it('disables platform subdomains when no apex is configured', () => {
+    for (const host of ['phuc.ttr.gg', 'ttr.gg', 'vhp.ttr.gg']) {
+      expect(classifyWorkspaceDomainHostname(host)).toMatchObject({
+        ok: false,
+        reason: 'reserved',
+      });
+    }
+    expect(
+      classifyWorkspaceDomainHostname('phuc.ttr.gg', { platformApex: '' })
+    ).toMatchObject({ ok: false, reason: 'reserved' });
+  });
+
+  it('serves another apex while keeping the ttr.gg hosts reserved', () => {
+    const policy = { platformApex: 'Sites.Example.NET.' };
+    expect(
+      classifyWorkspaceDomainHostname('phuc.sites.example.net', policy)
+    ).toMatchObject({ ok: true, kind: 'platform_subdomain' });
+    for (const host of [
+      'sites.example.net',
+      'www.sites.example.net',
+      'saas.sites.example.net',
+      'vhp.sites.example.net',
+      'phuc.ttr.gg',
+      'www.ttr.gg',
+      'ttr.gg',
+    ]) {
+      expect(classifyWorkspaceDomainHostname(host, policy)).toMatchObject({
+        ok: false,
+        reason: 'reserved',
+      });
+    }
   });
 });
 

@@ -19,6 +19,8 @@ interface WorkspaceDomain {
   providerRecords: DnsRecord[];
 }
 interface DomainsOverview {
+  cnameTarget: string | null;
+  platformApex: string | null;
   domains: WorkspaceDomain[];
   entitlement: {
     reason: string;
@@ -112,10 +114,19 @@ export async function runDomainsCommand(options: Options) {
     const header = entitlement.source
       ? `Domains: ${entitlement.used}/${entitlement.total} (${entitlement.source})`
       : `Domains: unavailable (${entitlement.reason})`;
+    const targets = [
+      overview.cnameTarget
+        ? `Custom domains: CNAME (or ALIAS at the apex) to ${overview.cnameTarget}`
+        : 'Custom domains: not configured',
+      overview.platformApex
+        ? `Platform subdomains: <label>.${overview.platformApex}`
+        : 'Platform subdomains: not configured',
+    ];
     return emit(
       overview,
       [
         header,
+        ...targets,
         ...overview.domains.map(describeDomain),
         ...(overview.domains.length ? [] : ['No domains.']),
       ].join('\n')
@@ -152,15 +163,15 @@ export async function runDomainsCommand(options: Options) {
 }
 
 export function domainsHelp() {
-  return `Workspace domains (custom domains and <label>.ttr.gg addresses)
+  return `Workspace domains (custom domains and platform subdomains)
 
   ttr domains list [--workspace <id>] [--json]
   ttr domains add <hostname> [--workspace <id>] [--json]
   ttr domains verify <hostname> [--workspace <id>] [--json]
   ttr domains remove <hostname> --confirm <hostname> [--workspace <id>]
 
-Custom domains need a CNAME (or ALIAS at the apex) to saas.ttr.gg and the
-ownership TXT record printed by add/list; run verify after publishing DNS.
+Custom domains need a CNAME (or ALIAS at the apex) to the fallback origin and
+the ownership TXT record that list prints; run verify after publishing DNS.
 Requires the view or manage workspace domains permission.
 `;
 }

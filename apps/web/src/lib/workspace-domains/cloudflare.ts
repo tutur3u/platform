@@ -1,6 +1,6 @@
 /**
  * Minimal Cloudflare API client for workspace domains: Cloudflare for SaaS
- * custom hostnames, proxied DNS records for `<label>.ttr.gg`, and per-host
+ * custom hostnames, proxied DNS records for platform subdomains, and per-host
  * Worker routes to the `tuturuuu-workspace-domains` edge Worker. Every call
  * is bounded (timeout, no retries); callers re-run verification to retry.
  * Framework-free: credentials and fetch are injected.
@@ -13,6 +13,8 @@ const TIMEOUT_MS = 10_000;
 export interface CloudflareDomainsConfig {
   apiToken: string;
   zoneId: string;
+  /** Account owning the SaaS zone; zone-scoped calls do not need it. */
+  accountId: string | null;
   workerScript: string;
   sslMethod: 'http' | 'txt';
   /** Target for proxied platform-subdomain records. */
@@ -79,7 +81,7 @@ export interface CloudflareWorkerRoute {
 
 /**
  * Whether a Workers route pattern applies to a hostname. Route host parts
- * match exactly, or as a suffix after a leading `*` (`*.ttr.gg`, `*ttr.gg`).
+ * match exactly, or as a suffix after a leading `*` (`*.<apex>`, `*<apex>`).
  * Any path counts: a route on a path of the host still owns that host.
  */
 export function workerRouteMatchesHost(pattern: string, hostname: string) {
@@ -104,6 +106,10 @@ export function cloudflareDomainsConfigFromEnv(
   return {
     apiToken,
     zoneId,
+    accountId:
+      env.CLOUDFLARE_SAAS_ACCOUNT_ID?.trim() ||
+      env.CLOUDFLARE_ACCOUNT_ID?.trim() ||
+      null,
     workerScript:
       env.WORKSPACE_DOMAINS_WORKER_SCRIPT?.trim() ||
       WORKSPACE_DOMAINS_WORKER_SCRIPT,

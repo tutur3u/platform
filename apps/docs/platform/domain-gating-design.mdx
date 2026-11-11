@@ -16,7 +16,10 @@ Operator setup lives in the [workspace domains runbook](/platform/workspace-doma
 
 **Scope:** a workspace binds hostnames to its public web presence: apex custom
 domains (`example.com`), custom subdomains (`blog.example.com`) and platform
-subdomains (`<label>.ttr.gg`). A domain serves the workspace's published CMS site
+subdomains (`<label>.<apex>`). The platform apex and the custom-domain fallback
+origin are configuration (`WORKSPACE_DOMAINS_PLATFORM_APEX`,
+`WORKSPACE_DOMAINS_FALLBACK_ORIGIN`; production `ttr.gg` and `saas.ttr.gg`).
+Either unset disables that kind of domain. A domain serves the workspace's published CMS site
 (External Projects delivery rendered with `@tuturuuu/cms-blocks`). Without an
 enabled canonical project it serves a public landing page with the workspace name,
 avatar and a "Powered by Tuturuuu" link, and nothing private.

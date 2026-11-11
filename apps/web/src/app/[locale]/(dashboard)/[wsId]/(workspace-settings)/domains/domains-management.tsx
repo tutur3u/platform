@@ -119,7 +119,12 @@ export function DomainsManagement({ wsId }: { wsId: string }) {
                     id="workspace-domain-hostname-help"
                     className="text-muted-foreground text-sm"
                   >
-                    {t('hostnameHelp', { target: data.cnameTarget })}
+                    {data.cnameTarget
+                      ? t('hostnameHelp', { target: data.cnameTarget })
+                      : t('customUnavailable')}
+                    {data.platformApex
+                      ? ` ${t('platformHelp', { apex: data.platformApex })}`
+                      : null}
                   </p>
                   {add.error && (
                     <p role="alert" className="text-dynamic-red text-sm">

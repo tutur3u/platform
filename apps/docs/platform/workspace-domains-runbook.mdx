@@ -25,9 +25,11 @@ apps/web (server only):
 
 | Variable | Purpose |
 | --- | --- |
-| `CLOUDFLARE_SAAS_API_TOKEN` | Token for the `ttr.gg` zone (scopes below). Without it, verified domains stay `verifying` with `provider_not_configured`. |
-| `CLOUDFLARE_SAAS_ZONE_ID` | `ttr.gg` zone ID (32 hex characters). |
-| `CLOUDFLARE_ACCOUNT_ID` | Account that owns the zone and the Worker. Deploy tooling only; apps/web calls zone-scoped APIs. |
+| `CLOUDFLARE_SAAS_API_TOKEN` | **Sensitive.** Token scoped to the SaaS zone only (scopes below). Without it, verified domains stay `verifying` with `provider_not_configured`. |
+| `CLOUDFLARE_SAAS_ZONE_ID` | SaaS zone ID (32 hex characters). Production: the `ttr.gg` zone. |
+| `CLOUDFLARE_SAAS_ACCOUNT_ID` | Account that owns the SaaS zone and the Worker (falls back to `CLOUDFLARE_ACCOUNT_ID`). apps/web calls zone-scoped APIs only; deploy tooling uses it. |
+| `WORKSPACE_DOMAINS_PLATFORM_APEX` | Apex for `<label>.<apex>` platform subdomains. Production: `ttr.gg`. Unset disables platform subdomains (fail closed). Existing `ttr.gg` hosts stay reserved whatever the value. |
+| `WORKSPACE_DOMAINS_FALLBACK_ORIGIN` | Cloudflare for SaaS fallback origin that custom hostnames CNAME (or ALIAS) to, shown in the settings page and `ttr domains list`. Production: `saas.ttr.gg`. Unset disables adding custom domains. |
 | `CLOUDFLARE_SAAS_SSL_METHOD` | Optional `http` (default) or `txt` DCV for custom hostnames. |
 | `WORKSPACE_DOMAINS_WORKER_SCRIPT` | Optional Worker name, default `tuturuuu-workspace-domains`. |
 | `WORKSPACE_DOMAINS_EDGE_SECRET` | Shared secret (at least 32 characters) for the resolve API. Unset returns 503. |
@@ -44,14 +46,35 @@ Worker (`apps/workspace-domains`):
 
 ## Cloudflare setup
 
-1. **Zone `ttr.gg` as the Cloudflare for SaaS zone.** Enable SSL for SaaS, create
-   the fallback origin `saas.ttr.gg` (a proxied record), and keep `ttr.gg`,
-   `www.ttr.gg` and `fysh.ttr.gg` on their existing routes.
-2. **API token for apps/web**, zone `ttr.gg` only: SSL and Certificates Edit (custom
-   hostnames), DNS Edit (platform subdomain records), Workers Routes Edit (per-host
-   routes). No account-level permissions.
+The zone, apex and fallback origin are configuration, not code. Production uses
+the values below; moving the SaaS zone means changing the environment, the
+token and the Worker's account, then re-verifying domains.
+
+1. **SaaS zone** (production `ttr.gg`). Enable SSL for SaaS, create the fallback
+   origin (production `saas.ttr.gg`, a proxied record), and keep the existing
+   platform hosts (`ttr.gg`, `www.ttr.gg`, `fysh.ttr.gg`) on their routes. They
+   stay reserved in the hostname policy; any other existing record or route on
+   the zone also blocks that name from becoming a platform subdomain.
+2. **API token for apps/web**, the SaaS zone only: DNS Edit (platform subdomain
+   records and conflict checks), SSL and Certificates Edit (custom hostnames),
+   Workers Routes Edit (per-host routes and conflict checks). No account-level
+   permissions. Store it as a sensitive environment variable.
 3. **Deploy token** (operator only): account Workers Scripts Edit for publishing
    `tuturuuu-workspace-domains`. Do not give this scope to apps/web.
+
+### Personal-account dependency
+
+The production SaaS zone `ttr.gg` lives in the owner's personal Cloudflare
+account, not a Tuturuuu organization account. Consequences:
+
+- **Rex** owns rotation of `CLOUDFLARE_SAAS_API_TOKEN`.
+- **Selene** scopes the token to `ttr.gg` only, with DNS Edit, SSL and
+  Certificates Edit and Workers Routes Edit, and keeps it a sensitive
+  environment variable.
+- Losing access to that account stops new domains and certificate renewals;
+  existing records keep serving until removed. Moving to an organization zone
+  is a configuration change (zone ID, account ID, apex, fallback origin, token)
+  plus re-verification of every domain.
 
 ## Deploy the Worker
 
@@ -66,7 +89,10 @@ bunx wrangler deploy
 The Worker has `workers_dev` and preview URLs off and no routes. For a bootstrap
 host before apps/web ships, attach a route manually: Workers Routes, pattern
 `<host>/*`, Worker `tuturuuu-workspace-domains`, and point the host at the zone
-(custom hostname for external domains, proxied record for `ttr.gg`).
+(custom hostname for external domains, proxied record for a platform subdomain).
+The bootstrap hosts `vhp.ttr.gg` and `vohoangphuc.com` are seeded by migration
+`20261111120200`; their operator-made routes are not tracked on the rows, so
+removing them through the API leaves those routes for manual cleanup.
 
 The Worker reads published content from the edge site API, never from the
 public delivery route, which requires a session in production. Site answers

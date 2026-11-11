@@ -18,7 +18,11 @@ const domain = {
     name: '_tuturuuu-verify.example.com',
     value: 'tuturuuu-domain-verification=abc',
   },
-  routingRecord: { type: 'CNAME', name: 'example.com', value: 'saas.ttr.gg' },
+  routingRecord: {
+    type: 'CNAME',
+    name: 'example.com',
+    value: 'edge.example.net',
+  },
   providerRecords: [],
   createdAt: '2026-11-11T00:00:00.000Z',
   lastCheckedAt: null,
@@ -36,7 +40,8 @@ const overview = {
     remaining: 9,
   },
   billing: { checkoutEnabled: false, pricePerDomainMonthlyUsd: 10 },
-  cnameTarget: 'saas.ttr.gg',
+  cnameTarget: 'edge.example.net',
+  platformApex: null,
   providerConfigured: true,
   canManage: true,
 };
@@ -100,7 +105,9 @@ describe('ttr domains', () => {
     const text = String(output.mock.calls[0]?.[0]);
     expect(text).toContain('Domains: 1/10 (staff_bypass)');
     expect(text).toContain('_tuturuuu-verify.example.com');
-    expect(text).toContain('saas.ttr.gg');
+    expect(text).toContain('to edge.example.net');
+    expect(text).toContain('Platform subdomains: not configured');
+    expect(text).not.toContain('ttr.gg');
   });
 
   it('adds a normalized hostname', async () => {

@@ -63,6 +63,7 @@ function overview(
     },
     billing: { checkoutEnabled: false, pricePerDomainMonthlyUsd: 10 },
     cnameTarget: 'saas.ttr.gg',
+    platformApex: 'ttr.gg',
     providerConfigured: true,
     canManage: true,
     ...patch,
@@ -133,6 +134,29 @@ describe('DomainsManagement', () => {
     ).toBeVisible();
     expect(screen.queryByLabelText('Hostname')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+  });
+});
+
+describe('configuration hints', () => {
+  it('shows the configured fallback origin and apex, or nothing', async () => {
+    mocks.list.mockResolvedValue(
+      overview({ cnameTarget: 'edge.example.net', platformApex: null })
+    );
+    mount();
+    const help = await screen.findByText(/edge\.example\.net/u);
+    expect(help).not.toHaveTextContent('ttr.gg');
+  });
+
+  it('explains when custom domains are not configured', async () => {
+    mocks.list.mockResolvedValue(
+      overview({ cnameTarget: null, platformApex: 'ttr.gg' })
+    );
+    mount();
+    expect(
+      await screen.findByText(
+        /Custom domains are not configured on this deployment\./u
+      )
+    ).toHaveTextContent('Addresses under ttr.gg need no DNS changes.');
   });
 });
 

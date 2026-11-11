@@ -1885,7 +1885,7 @@
     "manage_git_repositories": "Manage Git repositories",
     "manage_git_repositories_description": "Allows platform administrators to configure the GitHub App and approve public repositories for Git.",
     "manage_workspace_domains": "Manage workspace domains",
-    "manage_workspace_domains_description": "Add, verify, and remove custom domains and ttr.gg subdomains that serve the workspace's public site.",
+    "manage_workspace_domains_description": "Add, verify, and remove custom domains and platform subdomains that serve the workspace's public site.",
     "view_workspace_domains": "View workspace domains",
     "view_workspace_domains_description": "See the workspace's custom domains, their verification status, and domain entitlement."
   },

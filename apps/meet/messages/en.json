@@ -8430,7 +8430,7 @@
     "manage_workspace_billing": "Manage workspace billing",
     "manage_workspace_billing_description": "Allows members to view and update billing information.",
     "manage_workspace_domains": "Manage workspace domains",
-    "manage_workspace_domains_description": "Add, verify, and remove custom domains and ttr.gg subdomains that serve the workspace's public site.",
+    "manage_workspace_domains_description": "Add, verify, and remove custom domains and platform subdomains that serve the workspace's public site.",
     "manage_workspace_invites": "Manage workspace invites",
     "manage_workspace_invites_description": "Allows members to send, revoke, and accept invites.",
     "manage_workspace_members": "Manage workspace members",

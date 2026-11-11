@@ -21448,7 +21448,8 @@
     "check": "Kiểm tra trạng thái",
     "checking": "Đang kiểm tra…",
     "confirmRemove": "Gỡ tên miền",
-    "description": "Phục vụ trang đã xuất bản hoặc trang công khai của không gian làm việc trên tên miền riêng hoặc địa chỉ ttr.gg.",
+    "customUnavailable": "Tên miền riêng chưa được cấu hình trên hệ thống này.",
+    "description": "Phục vụ trang đã xuất bản hoặc trang công khai của không gian làm việc trên tên miền riêng hoặc địa chỉ nền tảng.",
     "dns": {
       "help": "Thêm các bản ghi này tại nhà cung cấp DNS, sau đó kiểm tra trạng thái.",
       "name": "Tên",
@@ -21478,6 +21479,7 @@
       "upgradeTitle": "Cần gói trả phí"
     },
     "errors": {
+      "custom_domains_unconfigured": "Tên miền riêng chưa được cấu hình trên hệ thống này.",
       "entitlement_addon_required": "Thêm gói bổ sung tên miền riêng để dùng thêm tên miền.",
       "entitlement_billing_unavailable": "Gói bổ sung tên miền riêng chưa khả dụng.",
       "entitlement_cap_reached": "Không gian làm việc đã đạt giới hạn tên miền.",
@@ -21492,11 +21494,12 @@
       "hostname_unavailable": "Tên máy chủ này đang được sử dụng hoặc vừa bị gỡ.",
       "workspace_domains_forbidden": "Bạn không có quyền thay đổi tên miền."
     },
-    "hostnameHelp": "Tên miền riêng cần bản ghi CNAME (hoặc ALIAS ở tên miền gốc) trỏ tới {target} và một bản ghi TXT để xác minh quyền sở hữu. Địa chỉ ttr.gg không cần thay đổi DNS.",
+    "hostnameHelp": "Tạo bản ghi CNAME (hoặc ALIAS ở tên miền gốc) trỏ tới {target} và xác minh quyền sở hữu bằng bản ghi TXT.",
     "hostnameLabel": "Tên máy chủ",
-    "hostnamePlaceholder": "example.com hoặc ten.ttr.gg",
+    "hostnamePlaceholder": "example.com",
     "loadError": "Không thể tải tên miền.",
     "loading": "Đang tải tên miền…",
+    "platformHelp": "Địa chỉ thuộc {apex} không cần thay đổi DNS.",
     "readOnly": "Bạn có thể xem nhưng không thể thay đổi tên miền.",
     "remove": "Gỡ",
     "removeDescription": "Tên miền sẽ ngừng phục vụ không gian làm việc này ngay lập tức. Thêm lại sẽ cần xác minh mới.",
@@ -24406,7 +24409,7 @@
     "manage_workspace_billing": "Quản lý thanh toán",
     "manage_workspace_billing_description": "Cho phép các thành viên xem và cập nhật thông tin thanh toán.",
     "manage_workspace_domains": "Quản lý tên miền không gian làm việc",
-    "manage_workspace_domains_description": "Thêm, xác minh và gỡ tên miền tùy chỉnh và tên miền phụ ttr.gg phục vụ trang công khai của không gian làm việc.",
+    "manage_workspace_domains_description": "Thêm, xác minh và gỡ tên miền tùy chỉnh và tên miền phụ của nền tảng phục vụ trang công khai của không gian làm việc.",
     "manage_workspace_integrations": "Quản lý tích hợp",
     "manage_workspace_integrations_description": "Cho phép thành viên xem và cập nhật các tích hợp của không gian làm việc.",
     "manage_workspace_invites": "Quản lý lời mời",

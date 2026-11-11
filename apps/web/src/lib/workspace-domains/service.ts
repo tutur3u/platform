@@ -1,9 +1,7 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, Json } from '@tuturuuu/types';
-import {
-  classifyWorkspaceDomainHostname,
-  WORKSPACE_DOMAIN_CNAME_TARGET,
-} from '@tuturuuu/utils/workspace-domain-hostnames';
+import { classifyWorkspaceDomainHostname } from '@tuturuuu/utils/workspace-domain-hostnames';
+import type { WorkspaceDomainsConfig } from './config';
 import {
   CloudflareApiError,
   type CloudflareDomainsClient,
@@ -46,6 +44,7 @@ export class WorkspaceDomainError extends Error {
 export interface WorkspaceDomainDeps {
   admin: TypedSupabaseClient;
   cloudflare: CloudflareDomainsClient | null;
+  config: WorkspaceDomainsConfig;
   fetch?: typeof fetch;
 }
 
@@ -69,7 +68,10 @@ export interface PublicWorkspaceDomain {
 const DOMAIN_COLUMNS =
   'id, ws_id, hostname, kind, status, verification_txt_name, verification_txt_value, ownership_status, ssl_status, dns_records, cloudflare_custom_hostname_id, cloudflare_dns_record_id, cloudflare_worker_route_id, entitlement_source, error, created_by, created_at, updated_at, last_checked_at, activated_at, removed_at';
 
-export function toPublicDomain(row: DomainRow): PublicWorkspaceDomain {
+export function toPublicDomain(
+  row: DomainRow,
+  fallbackOrigin: string | null
+): PublicWorkspaceDomain {
   const custom = row.kind === 'custom';
   return {
     id: row.id,
@@ -87,13 +89,10 @@ export function toPublicDomain(row: DomainRow): PublicWorkspaceDomain {
           value: row.verification_txt_value,
         }
       : null,
-    routingRecord: custom
-      ? {
-          type: 'CNAME',
-          name: row.hostname,
-          value: WORKSPACE_DOMAIN_CNAME_TARGET,
-        }
-      : null,
+    routingRecord:
+      custom && fallbackOrigin
+        ? { type: 'CNAME', name: row.hostname, value: fallbackOrigin }
+        : null,
     providerRecords: row.dns_records,
     createdAt: row.created_at,
     lastCheckedAt: row.last_checked_at,
@@ -183,13 +182,16 @@ export async function listWorkspaceDomains(
   ]);
   if (error) throw new WorkspaceDomainError(503, 'domains_unavailable');
   return {
-    domains: ((data ?? []) as DomainRow[]).map(toPublicDomain),
+    domains: ((data ?? []) as DomainRow[]).map((row) =>
+      toPublicDomain(row, deps.config.fallbackOrigin)
+    ),
     entitlement,
     billing: {
       checkoutEnabled: isWorkspaceDomainsBillingEnabled(),
       pricePerDomainMonthlyUsd: WORKSPACE_DOMAIN_ADDON_PRICE_USD,
     },
-    cnameTarget: WORKSPACE_DOMAIN_CNAME_TARGET,
+    cnameTarget: deps.config.fallbackOrigin,
+    platformApex: deps.config.platformApex,
     providerConfigured: deps.cloudflare !== null,
   };
 }
@@ -204,11 +206,16 @@ export async function addWorkspaceDomain(
   actor: WorkspaceDomainActor,
   rawHostname: string
 ) {
-  const classified = classifyWorkspaceDomainHostname(rawHostname);
+  const classified = classifyWorkspaceDomainHostname(rawHostname, {
+    platformApex: deps.config.platformApex,
+  });
   if (!classified.ok) {
     throw new WorkspaceDomainError(400, `hostname_${classified.reason}`);
   }
   const { hostname, kind } = classified;
+  if (kind === 'custom' && !deps.config.fallbackOrigin) {
+    throw new WorkspaceDomainError(503, 'custom_domains_unconfigured');
+  }
 
   const entitlement = await readWorkspaceDomainEntitlement(
     deps.admin,
@@ -230,7 +237,11 @@ export async function addWorkspaceDomain(
   // already answers for before a row exists. Verification checks again.
   if (kind === 'platform_subdomain' && deps.cloudflare) {
     try {
-      await assertPlatformHostnameUnclaimed(deps.cloudflare, hostname);
+      await assertPlatformHostnameUnclaimed(
+        deps.cloudflare,
+        hostname,
+        deps.config.platformApex
+      );
     } catch (error) {
       if (!(error instanceof HostnameInUseError)) throw error;
       await audit(deps.admin, {
@@ -286,7 +297,7 @@ export async function addWorkspaceDomain(
   if (kind === 'platform_subdomain') {
     return verifyWorkspaceDomain(deps, wsId, actor, row.id);
   }
-  return toPublicDomain(row);
+  return toPublicDomain(row, deps.config.fallbackOrigin);
 }
 
 async function stillEntitled(
@@ -338,7 +349,7 @@ export async function verifyWorkspaceDomain(
       actorId: actor.id,
       entitlementSource: row.entitlement_source,
     });
-    return toPublicDomain(row);
+    return toPublicDomain(row, deps.config.fallbackOrigin);
   }
 
   if (row.kind === 'custom') {
@@ -354,7 +365,7 @@ export async function verifyWorkspaceDomain(
         error: proof === null ? 'dns_lookup_failed' : 'ownership_txt_missing',
         last_checked_at: now,
       });
-      return toPublicDomain(row);
+      return toPublicDomain(row, deps.config.fallbackOrigin);
     }
   }
 
@@ -365,7 +376,7 @@ export async function verifyWorkspaceDomain(
       error: 'provider_not_configured',
       last_checked_at: now,
     });
-    return toPublicDomain(row);
+    return toPublicDomain(row, deps.config.fallbackOrigin);
   }
 
   const cloudflare = deps.cloudflare;
@@ -397,7 +408,8 @@ export async function verifyWorkspaceDomain(
       // Record and route are created together or not at all.
       const created = await provisionPlatformSubdomain(
         cloudflare,
-        row.hostname
+        row.hostname,
+        deps.config.platformApex
       );
       row = await updateDomain(deps.admin, row.id, {
         cloudflare_dns_record_id: created.dnsRecordId,
@@ -426,7 +438,7 @@ export async function verifyWorkspaceDomain(
       entitlementSource: row.entitlement_source,
       detail: { status: row.status },
     });
-    return toPublicDomain(row);
+    return toPublicDomain(row, deps.config.fallbackOrigin);
   } catch (error) {
     if (error instanceof HostnameInUseError) {
       row = await updateDomain(deps.admin, row.id, {
@@ -457,7 +469,7 @@ export async function verifyWorkspaceDomain(
       actorId: actor.id,
       detail: { status: error.status, codes: error.codes.join(',') },
     });
-    return toPublicDomain(row);
+    return toPublicDomain(row, deps.config.fallbackOrigin);
   }
 }
 

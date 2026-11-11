@@ -59,8 +59,10 @@ describe('workerRouteMatchesHost', () => {
 
 describe('coveringWildcardNames', () => {
   it('lists wildcards from the parent up to the zone', () => {
-    expect(coveringWildcardNames('phuc.ttr.gg')).toEqual(['*.ttr.gg']);
-    expect(coveringWildcardNames('a.b.ttr.gg')).toEqual([
+    expect(coveringWildcardNames('phuc.ttr.gg', 'ttr.gg')).toEqual([
+      '*.ttr.gg',
+    ]);
+    expect(coveringWildcardNames('a.b.ttr.gg', 'ttr.gg')).toEqual([
       '*.b.ttr.gg',
       '*.ttr.gg',
     ]);
@@ -71,7 +73,9 @@ describe('provisionPlatformSubdomain', () => {
   it('refuses an existing record of any type', async () => {
     const cloudflare = zone({ records: { 'vhp.ttr.gg': ['TXT'] } });
     expect(
-      await claimOf(provisionPlatformSubdomain(cloudflare, 'vhp.ttr.gg'))
+      await claimOf(
+        provisionPlatformSubdomain(cloudflare, 'vhp.ttr.gg', 'ttr.gg')
+      )
     ).toBe('dns_record');
     expect(cloudflare.createPlatformRecord).not.toHaveBeenCalled();
   });
@@ -79,7 +83,9 @@ describe('provisionPlatformSubdomain', () => {
   it('refuses a covering wildcard record', async () => {
     const cloudflare = zone({ records: { '*.ttr.gg': ['CNAME'] } });
     expect(
-      await claimOf(provisionPlatformSubdomain(cloudflare, 'phuc.ttr.gg'))
+      await claimOf(
+        provisionPlatformSubdomain(cloudflare, 'phuc.ttr.gg', 'ttr.gg')
+      )
     ).toBe('wildcard_dns_record');
   });
 
@@ -88,7 +94,9 @@ describe('provisionPlatformSubdomain', () => {
     async (pattern) => {
       const cloudflare = zone({ routes: [pattern] });
       expect(
-        await claimOf(provisionPlatformSubdomain(cloudflare, 'phuc.ttr.gg'))
+        await claimOf(
+          provisionPlatformSubdomain(cloudflare, 'phuc.ttr.gg', 'ttr.gg')
+        )
       ).toBe('worker_route');
       expect(cloudflare.createPlatformRecord).not.toHaveBeenCalled();
     }
@@ -100,7 +108,9 @@ describe('provisionPlatformSubdomain', () => {
       new CloudflareApiError(400, [10020])
     );
     expect(
-      await claimOf(provisionPlatformSubdomain(cloudflare, 'phuc.ttr.gg'))
+      await claimOf(
+        provisionPlatformSubdomain(cloudflare, 'phuc.ttr.gg', 'ttr.gg')
+      )
     ).toBe('provider_conflict');
     expect(cloudflare.deleteDnsRecord).toHaveBeenCalledWith('dns-new');
   });
@@ -111,7 +121,9 @@ describe('provisionPlatformSubdomain', () => {
       new CloudflareApiError(400, [81057])
     );
     expect(
-      await claimOf(provisionPlatformSubdomain(cloudflare, 'phuc.ttr.gg'))
+      await claimOf(
+        provisionPlatformSubdomain(cloudflare, 'phuc.ttr.gg', 'ttr.gg')
+      )
     ).toBe('provider_conflict');
     expect(cloudflare.createWorkerRoute).not.toHaveBeenCalled();
     expect(cloudflare.deleteDnsRecord).not.toHaveBeenCalled();
@@ -123,16 +135,41 @@ describe('provisionPlatformSubdomain', () => {
       new CloudflareApiError(500, [])
     );
     await expect(
-      provisionPlatformSubdomain(cloudflare, 'phuc.ttr.gg')
+      provisionPlatformSubdomain(cloudflare, 'phuc.ttr.gg', 'ttr.gg')
     ).rejects.toBeInstanceOf(CloudflareApiError);
     expect(cloudflare.deleteDnsRecord).toHaveBeenCalledWith('dns-new');
   });
 
   it('creates both on a free name', async () => {
-    expect(await provisionPlatformSubdomain(zone(), 'phuc.ttr.gg')).toEqual({
+    expect(
+      await provisionPlatformSubdomain(zone(), 'phuc.ttr.gg', 'ttr.gg')
+    ).toEqual({
       dnsRecordId: 'dns-new',
       routeId: 'route-new',
     });
+  });
+});
+
+describe('platform apex', () => {
+  it('refuses every platform subdomain when no apex is configured', async () => {
+    const cloudflare = zone();
+    expect(
+      await claimOf(provisionPlatformSubdomain(cloudflare, 'phuc.ttr.gg', null))
+    ).toBe('platform_disabled');
+    expect(cloudflare.listDnsRecords).not.toHaveBeenCalled();
+  });
+
+  it('checks wildcards under a configured apex', async () => {
+    const cloudflare = zone({ records: { '*.sites.example.net': ['A'] } });
+    expect(
+      await claimOf(
+        provisionPlatformSubdomain(
+          cloudflare,
+          'phuc.sites.example.net',
+          'sites.example.net'
+        )
+      )
+    ).toBe('wildcard_dns_record');
   });
 });
 
