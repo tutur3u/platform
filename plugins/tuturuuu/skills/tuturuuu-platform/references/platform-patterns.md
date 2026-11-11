@@ -1497,3 +1497,12 @@ Wrangler config and requires 5% sampling, persisted logs and disabled invocation
 logs in both profiles. Diagnostics must use fixed classifications without raw
 errors or report URLs. Privacy review includes reachable API handlers and shared
 dependencies, not just the Worker entrypoint; see the Tasks native runbook.
+
+### Workspace picker component verification
+
+The network-fenced fictional fixture and capture matrix are documented in
+`apps/docs/platform/features/hidden-workspaces.mdx` under isolated component
+verification. Preserve cached list choices on refresh failure, explicit retry,
+and actor-scoped visibility gates when adjusting picker presentation. Verify
+A → B → A resets for search, restore mode, pins, and recent selections with
+`workspace-picker-content.test.tsx` alongside the actor lifetime hook tests.

@@ -2914,14 +2914,14 @@
       "digest": "23c7d480f98c6d765ed9923b09ffc1ea465f257688893e1d22e5221d0ef3d2c7"
     },
     "scripts/ci/pay-native-artifact.test.py": {
-      "lines": 8,
-      "uses": 9,
+      "lines": 10,
+      "uses": 11,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8011",
-        "reason": "REV-8011: the artifact guard names the emitted wrangler.json. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/pull/8146",
+        "reason": "REV-8146: reviewed staging-vars rejection tests add canonical emitted config filename fixtures. These tests do not invoke Wrangler; the existing publication gap, owner and removal condition are unchanged."
       },
-      "digest": "e7b622e75addfb4456930b33cdb9e88a733b271b4b791e61fc0e22c42b44a35a"
+      "digest": "32a78472daacd0a61c79d840aa61f6c6d0fb6315dc002606b05e7c17753e2acd"
     },
     "scripts/ci/pre-seal-doctor.mjs": {
       "lines": 5,

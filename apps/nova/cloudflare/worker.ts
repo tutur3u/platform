@@ -45,7 +45,7 @@ const handler = (
       rootHosts: [
         ...new Set([
           'nova.tuturuuu.com',
-          ...(appConfig.mounts.rootHosts ?? []),
+          ...(appConfig.mounts?.rootHosts ?? []),
         ]),
       ],
     },

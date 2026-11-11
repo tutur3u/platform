@@ -297,3 +297,43 @@ only its skeleton. Empty sections show recovery messages. Hiding the current
 workspace confirms the switch, and hiding the last visible one keeps restoration
 available. Restoring a workspace when none is selected selects that workspace.
 Archived-only membership uses the empty-membership presentation, never All hidden.
+
+## Web picker shortcuts
+
+The shared web workspace picker keeps search visible in both the anchored dropdown
+and fullscreen presentation. Arrow Up and Arrow Down move through filtered
+workspace choices; Home and End move to the first and last choices while a choice
+has focus. Search retains the native Home and End text editing behavior.
+
+Pins and the five most recently selected workspaces order visible choices before
+other workspaces. Pins are independent of the account's default workspace and
+never change its landing destination. These shortcuts start empty, remain only
+in the mounted selector session, and reset on every actor transition, including
+A → B → A. They are neither persisted nor synchronized across devices. Hidden
+workspaces stay excluded from normal selection regardless of pin or recent status.
+
+Unresolved visibility gates workspace choices. Initial list loading or failure
+without cached workspaces shows a status; refresh failures retain last-known
+choices with an explicit error and retry.
+Retry uses the existing query and preserves search. The dropdown reserves its list
+height across loading, empty, error, and ready states. Motion respects the system's
+reduced-motion preference. Coverage lives in `workspace-picker-content.test.tsx`
+and the actor visibility hook tests.
+
+### Isolated component verification
+
+Run the fictional picker fixture with the installed dependencies:
+
+```sh
+ttr resources run -- node node_modules/vite/bin/vite.js --config packages/ui/fixtures/workspace-picker/vite.config.ts
+```
+
+Open `http://127.0.0.1:5197/?locale=en&theme=light&state=ready`.
+Use `locale=en|vi`, `theme=light|dark`, and
+`state=ready|loading|empty|failure`. Capture at 390 and 1440 pixels. The fixture
+renders the shared picker controls and styles, supplies fictional workspaces,
+and never loads application sessions or API clients. Its content security policy
+blocks external images and connections; avatar delivery and authenticated API
+behavior are outside this component check. Environment-file loading is disabled.
+Failure retains last-known choices and Retry clears the fictional failure.
+Stop the fixture with Ctrl-C after verification; it uses no persistent storage.
