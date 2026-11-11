@@ -93,3 +93,36 @@ describe('getMountedAppVerifyTokenMatch', () => {
     expect(getActiveAppMounts(undefined).size).toBe(0);
   });
 });
+
+describe('getMountedAppVerifyTokenMatch with the registry mounted', () => {
+  it('still matches the verifier when the registry resolves the apex path to the app', () => {
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', 'calendar');
+    try {
+      expect(
+        getMountedAppVerifyTokenMatch(
+          'https://tuturuuu.com/calendar/verify-token?nextUrl=%2Fpersonal',
+          new Set(['calendar'])
+        )
+      ).toMatchObject({
+        basePath: '/calendar',
+        name: 'calendar',
+        nextUrl: '/personal',
+        origin: 'https://tuturuuu.com',
+      });
+      expect(
+        getMountedAppVerifyTokenMatch(
+          'https://tuturuuu.com/calendar/personal',
+          new Set(['calendar'])
+        )
+      ).toBeNull();
+      expect(
+        getMountedAppVerifyTokenMatch(
+          'https://tuturuuu.com/calendar/verify-token',
+          new Set()
+        )
+      ).toBeNull();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+});

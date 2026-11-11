@@ -1,6 +1,7 @@
 import { listWorkspaceCalendarEvents } from '@tuturuuu/internal-api/calendar';
 import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
+import { isAppMounted, SHARED_APP_ORIGIN } from '@tuturuuu/utils/app-mounts';
 import { z } from 'zod';
 import {
   McpAccessError,
@@ -70,6 +71,26 @@ async function boundedResponse(response: Response) {
   });
 }
 
+const CALENDAR_SUBDOMAIN_ORIGIN = 'https://calendar.tuturuuu.com';
+const CALENDAR_MOUNT_PATH = '/calendar';
+const CALENDAR_EVENTS_PATH =
+  /^\/api\/v1\/workspaces\/[0-9a-f-]{36}\/calendar\/events$/u;
+
+// The calendar events read: the subdomain, or (only while `calendar` is an
+// active mount) the same path under tuturuuu.com/calendar. Never both a
+// different origin and a different path.
+function isCalendarEventsRead(url: URL) {
+  if (url.origin === CALENDAR_SUBDOMAIN_ORIGIN) {
+    return CALENDAR_EVENTS_PATH.test(url.pathname);
+  }
+  return (
+    url.origin === SHARED_APP_ORIGIN &&
+    isAppMounted('calendar') &&
+    url.pathname.startsWith(`${CALENDAR_MOUNT_PATH}/`) &&
+    CALENDAR_EVENTS_PATH.test(url.pathname.slice(CALENDAR_MOUNT_PATH.length))
+  );
+}
+
 // No CLI/config/session vault, arbitrary API method or service-role client.
 // Requires a Supabase OAuth user JWT with the configured MCP audience, validated
 // before construction. API auth compatibility and read-only RLS are release gates.
@@ -84,9 +105,7 @@ export function createMcpReadFetch(
     const tasks =
       url.origin === 'https://tasks.tuturuuu.com' &&
       /^\/api\/v1\/workspaces\/[0-9a-f-]{36}\/tasks$/u.test(path);
-    const calendar =
-      url.origin === 'https://calendar.tuturuuu.com' &&
-      /^\/api\/v1\/workspaces\/[0-9a-f-]{36}\/calendar\/events$/u.test(path);
+    const calendar = isCalendarEventsRead(url);
     const workspaces =
       url.origin === 'https://tuturuuu.com' && path === '/api/v1/workspaces';
     const hidden =

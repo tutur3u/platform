@@ -6,6 +6,7 @@ import {
   getConfiguredExternalAppDomains,
   getConfiguredInternalAppDomains,
   getInternalAppDomainByUrl,
+  getMountedInternalAppDomains,
   PRODUCTION_INTERNAL_APP_DOMAINS,
 } from './internal-domains';
 
@@ -292,5 +293,115 @@ describe('configured staging internal app registry', () => {
     vi.stubEnv(ENV_KEY, 'tasks:https://tasks.tutur3u.com');
 
     expect(getAppDomainByUrl('https://tasks.tuturuuu.com/x')).toEqual(before);
+  });
+});
+
+describe('base-path aware registry (longest prefix)', () => {
+  const MOUNTS_ENV = 'NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS';
+
+  beforeEach(() => {
+    vi.stubEnv(MOUNTS_ENV, undefined);
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_STAGING', undefined);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('adds no mount entry by default, so the registry is unchanged', () => {
+    expect(getMountedInternalAppDomains()).toEqual([]);
+    expect(getAppDomainMap().some((domain) => domain.basePath)).toBe(false);
+    expect(
+      getAppDomainByUrl('https://tuturuuu.com/calendar/personal')
+    ).toMatchObject({ name: 'platform' });
+    expect(getAppDomainByUrl('https://calendar.tuturuuu.com/x')).toMatchObject({
+      name: 'calendar',
+      canonicalUrl: 'https://calendar.tuturuuu.com/x',
+    });
+  });
+
+  it('keeps origin-only legacy entries matching the whole origin', () => {
+    vi.stubEnv(MOUNTS_ENV, 'calendar');
+
+    expect(getAppDomainByUrl('https://tasks.tuturuuu.com/a/b')).toMatchObject({
+      name: 'tasks',
+    });
+    expect(getAppDomainByUrl('https://calendar.tuturuuu.com/')).toMatchObject({
+      name: 'calendar',
+    });
+    expect(getAppDomainByUrl('https://tuturuuu.com/')).toMatchObject({
+      name: 'platform',
+    });
+    expect(getAppDomainByUrl('https://tuturuuu.com/tasks/x')).toMatchObject({
+      name: 'platform',
+    });
+  });
+
+  it('resolves an active mount by its base path, longest prefix first', () => {
+    vi.stubEnv(MOUNTS_ENV, 'calendar');
+
+    for (const path of ['/calendar', '/calendar/', '/calendar/ws/x?y=1']) {
+      expect(
+        getAppDomainByUrl(`https://tuturuuu.com${path}`),
+        path
+      ).toMatchObject({
+        basePath: '/calendar',
+        kind: 'internal',
+        name: 'calendar',
+      });
+    }
+    expect(
+      getInternalAppDomainByUrl('https://tuturuuu.com/calendar/a')?.name
+    ).toBe('calendar');
+    // Preserves the registered subdomain and the platform page
+    expect(getAppDomainByUrl('https://calendar.tuturuuu.com/a')?.basePath).toBe(
+      undefined
+    );
+  });
+
+  it('matches on segment boundaries and the exact origin only', () => {
+    vi.stubEnv(MOUNTS_ENV, 'calendar');
+
+    for (const url of [
+      'https://tuturuuu.com/calendar-team',
+      'https://tuturuuu.com/calendars',
+      'https://tuturuuu.com/Calendar/x',
+      'https://tuturuuu.com/calendar/../tasks',
+      'https://tuturuuu.com/calendar/meet-together-not-this/../../x',
+    ]) {
+      expect(getAppDomainByUrl(url)?.name, url).toBe('platform');
+    }
+    for (const url of [
+      'http://tuturuuu.com/calendar/x',
+      'https://evil.tuturuuu.com/calendar/x',
+      'https://tuturuuu.com.evil.com/calendar/x',
+      'https://user:pw@tuturuuu.com/calendar/x',
+    ]) {
+      expect(getAppDomainByUrl(url)?.basePath, url).toBeUndefined();
+    }
+  });
+
+  it('only mounts apps that are active and known', () => {
+    vi.stubEnv(MOUNTS_ENV, 'calendar, tasks ,not-an-app');
+
+    expect(
+      getMountedInternalAppDomains()
+        .map((d) => d.name)
+        .sort()
+    ).toEqual(['calendar', 'tasks']);
+    expect(getAppDomainByUrl('https://tuturuuu.com/not-an-app')?.name).toBe(
+      'platform'
+    );
+  });
+
+  it('never trusts mounts on a cookie-isolated staging deployment', () => {
+    vi.stubEnv(MOUNTS_ENV, 'calendar');
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_STAGING', '1');
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+      '.staging.tutur3u.com'
+    );
+
+    expect(getAppDomainByUrl('https://tuturuuu.com/calendar/x')).toBeNull();
   });
 });

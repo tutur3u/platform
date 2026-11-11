@@ -7,6 +7,7 @@ import {
   Timer,
   Users,
 } from '@tuturuuu/icons/lucide';
+import { getAppProductionBaseUrl } from '@tuturuuu/utils/app-mounts';
 import {
   ProductPage,
   type ProductPageConfig,
@@ -16,7 +17,11 @@ const config: ProductPageConfig = {
   slug: 'calendar',
   accent: 'blue',
   icon: Calendar,
-  primaryHref: 'https://calendar.tuturuuu.com',
+  // https://calendar.tuturuuu.com, or https://tuturuuu.com/calendar once mounted.
+  primaryHref: getAppProductionBaseUrl(
+    'calendar',
+    'https://calendar.tuturuuu.com'
+  ),
   primaryExternal: true,
   features: [
     { key: 'scheduling', icon: Timer },

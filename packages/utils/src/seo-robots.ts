@@ -14,6 +14,13 @@ export const SEO_LOCALE_PREFIX = '(?:(?:en|vi)/)?';
 
 /** One app's entry in `seo-policy.json`. */
 export interface AppSeoPolicy {
+  /**
+   * Optional mount path when the app is served at `<origin><basePath>` (for
+   * example `/calendar` on the shared origin). Only URLs under the prefix, on
+   * segment boundaries, can be public, and the allowlist is matched against
+   * the path inside the app. Absent (every entry today) means the whole origin.
+   */
+  basePath?: string;
   origin: string;
   publicPaths: readonly string[];
   publicPatterns: readonly string[];
@@ -63,7 +70,17 @@ export function robotsForUrl(
     ...policy.publicPatterns,
   ];
   if (patterns.length === 0) return PRIVATE_ROBOTS_HEADER;
-  const segments = decodedSegments(url.pathname);
+  let pathname = url.pathname;
+  if (policy.basePath) {
+    // Segment boundary on the raw path: `/calendar-team` is not `/calendar`.
+    if (
+      pathname !== policy.basePath &&
+      !pathname.startsWith(`${policy.basePath}/`)
+    )
+      return PRIVATE_ROBOTS_HEADER;
+    pathname = pathname.slice(policy.basePath.length) || '/';
+  }
+  const segments = decodedSegments(pathname);
   // Malformed or ambiguous encodings never become indexable.
   if (!segments) return PRIVATE_ROBOTS_HEADER;
   const path = segments.join('/');

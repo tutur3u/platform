@@ -44,6 +44,7 @@ import {
   calendarPreferenceGuardOptions,
   handleCalendarPreferenceGuardResponse,
 } from './lib/calendar-preference-guard';
+import { handleCalendarApexGateway } from './lib/calendar-apex-gateway';
 import { getChatAppOrigin } from './lib/chat-app-url';
 import { getContactsAppOrigin } from './lib/contacts-app-url';
 import { getDriveAppOrigin } from './lib/drive-app-url';
@@ -1033,6 +1034,10 @@ async function guardGuestWorkspaceRoute({
 async function webProxy(req: NextRequest): Promise<NextResponse> {
   const roadmapResponse = await proxyRoadmapPublicRequest(req);
   if (roadmapResponse) return roadmapResponse;
+
+  // Inert unless CALENDAR_APEX_SAFETY_NET / CALENDAR_APEX_FALLBACK_PROXY is set.
+  const calendarGatewayResponse = await handleCalendarApexGateway(req);
+  if (calendarGatewayResponse) return calendarGatewayResponse;
 
   if (
     req.nextUrl.pathname.startsWith('/api') ||

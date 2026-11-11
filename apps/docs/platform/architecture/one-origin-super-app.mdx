@@ -259,6 +259,30 @@ needs exactly the following from that lane:
 The `[...slug]`-under-`[locale]/[wsId]` prohibition still applies to the retained
 Next page modules. The proxy-ordering trap moves from `/api` to `/<app>/api`.
 
+### Calendar at `tuturuuu.com/calendar`: registry and Web safeguards
+
+All of this is off by default. Listing `calendar` in
+`NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS` makes the registry (`internal-domains.ts`)
+resolve `https://tuturuuu.com/calendar/*` to Calendar by longest base-path prefix
+(entries without a base path keep matching their whole origin), and makes
+`getCalendarAppOrigin()`, the product page link and the MCP calendar read
+allowlist use the apex mount. `RESERVED_WORKSPACE_HANDLES` is unchanged and
+still reserves `calendar`.
+
+Two Web flags cover what the zone routes cannot (both server env, `1` or `true`):
+
+- `CALENDAR_APEX_FALLBACK_PROXY`: a zone route on the bare path `tuturuuu.com/calendar`
+  does not match a request with a query string, so Web proxies bare `/calendar?query`
+  (GET and HEAD only; 405 otherwise) to `CALENDAR_APEX_UPSTREAM_URL`, default
+  `https://calendar.tuturuuu.com/calendar`. It forwards `Cookie` but not
+  `Authorization`, drops `Set-Cookie`, and answers `private, no-store`.
+- `CALENDAR_APEX_SAFETY_NET`: rollback in one step. With the zone routes removed,
+  `/calendar/:path*` reaches Web and gets a no-store 307 to the same path on
+  `calendar.tuturuuu.com`. It wins over the fallback proxy.
+
+`/calendar/meet-together` stays a Web page: neither flag touches it, and `proxy.ts`
+still redirects it to `/meet-together`.
+
 ## Migrating the old subdomains
 
 ### Redirect rules

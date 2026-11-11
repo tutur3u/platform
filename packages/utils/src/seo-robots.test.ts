@@ -91,3 +91,45 @@ describe('encoded paths decode once before every check', () => {
     expect(at('storefront', '/my%2Dshop')).toBeNull();
   });
 });
+
+describe('mounted app policy (base path)', () => {
+  const mounted = {
+    basePath: '/forms-mount',
+    origin: 'https://tuturuuu.com',
+    publicPaths: ['', 'pricing'],
+    publicPatterns: ['f/[^/]+'],
+  };
+  const check = (path: string) =>
+    robotsForUrl(mounted, new URL(`https://tuturuuu.com${path}`));
+
+  it('matches the allowlist against the path inside the mount', () => {
+    for (const path of [
+      '/forms-mount',
+      '/forms-mount/',
+      '/forms-mount/pricing',
+      '/forms-mount/f/abc',
+    ])
+      expect(check(path), path).toBeNull();
+  });
+
+  it('keeps everything outside the mount, or reserved inside it, private', () => {
+    for (const path of [
+      '/',
+      '/pricing',
+      '/forms-mounted',
+      '/forms-mount-x/pricing',
+      '/forms-mount/api/x',
+      '/forms-mount/login',
+      '/forms-mount/other',
+    ])
+      expect(check(path), path).toBe(PRIVATE_ROBOTS_HEADER);
+  });
+
+  it('leaves policies without a base path unchanged', () => {
+    expect(robots('https://forms.tuturuuu.com/f/abc')).toBeNull();
+    expect(policy.calendar).not.toHaveProperty('basePath');
+    expect(
+      robotsForUrl(policy.calendar, new URL('https://tuturuuu.com/calendar/x'))
+    ).toBe(PRIVATE_ROBOTS_HEADER);
+  });
+});

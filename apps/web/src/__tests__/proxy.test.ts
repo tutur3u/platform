@@ -1070,6 +1070,83 @@ describe('web proxy api handling', () => {
     }
   );
 
+  describe('calendar apex safeguards', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    });
+
+    it('does nothing for /calendar paths while both flags are off', async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      const { proxy } = await import('../proxy');
+      await proxy(new NextRequest('http://localhost/calendar/ws?x=1'));
+      await proxy(new NextRequest('http://localhost/calendar?x=1'));
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(mocks.authProxy).toHaveBeenCalledTimes(2);
+    });
+
+    it('sends /calendar/:path* to the subdomain before auth when the safety net is on', async () => {
+      vi.stubEnv('CALENDAR_APEX_SAFETY_NET', '1');
+      const { proxy } = await import('../proxy');
+      const response = await proxy(
+        new NextRequest('http://localhost/calendar/ws/week?eventId=1')
+      );
+
+      expect(response.status).toBe(307);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(new URL(response.headers.get('location') ?? '').pathname).toBe(
+        '/ws/week'
+      );
+      expect(new URL(response.headers.get('location') ?? '').search).toBe(
+        '?eventId=1'
+      );
+      expect(response.headers.get('location')).not.toContain(
+        'http://localhost/'
+      );
+      expect(mocks.authProxy).not.toHaveBeenCalled();
+    });
+
+    it('proxies bare /calendar?query when the fallback flag is on', async () => {
+      vi.stubEnv('CALENDAR_APEX_FALLBACK_PROXY', '1');
+      vi.useRealTimers();
+      const fetchMock = vi.fn(
+        async (_input: RequestInfo | URL, _init?: RequestInit) =>
+          new Response('<html>calendar</html>', { status: 200 })
+      );
+      vi.stubGlobal('fetch', fetchMock);
+      const { proxy } = await import('../proxy');
+      const response = await proxy(
+        new NextRequest('http://localhost/calendar?eventId=1')
+      );
+
+      expect(response.status).toBe(200);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
+        '/calendar?eventId=1'
+      );
+      expect(mocks.authProxy).not.toHaveBeenCalled();
+    });
+
+    it.each(PUBLIC_MARKETING_ALIAS_CASES)(
+      'keeps the meet-together alias $url with both flags on',
+      async ({ expectedLocation, url }) => {
+        vi.stubEnv('CALENDAR_APEX_SAFETY_NET', '1');
+        vi.stubEnv('CALENDAR_APEX_FALLBACK_PROXY', '1');
+        const fetchMock = vi.fn();
+        vi.stubGlobal('fetch', fetchMock);
+        const { proxy } = await import('../proxy');
+        const response = await proxy(new NextRequest(url));
+
+        expect(response.status).toBe(307);
+        expect(response.headers.get('location')).toBe(expectedLocation);
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(mocks.authProxy).not.toHaveBeenCalled();
+      }
+    );
+  });
+
   it('redirects old workspace mail dashboard routes to the mail app before auth', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(

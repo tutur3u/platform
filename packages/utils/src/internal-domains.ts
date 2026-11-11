@@ -1,3 +1,8 @@
+import {
+  ONE_ORIGIN_APP_BASE_PATHS,
+  parseActiveAppMounts,
+  SHARED_APP_ORIGIN,
+} from './app-mounts';
 import { resolveConfiguredInternalAppDomains } from './internal-domains-env';
 import {
   getTuturuuuPortlessAppOrigin,
@@ -394,6 +399,14 @@ export const APP_DOMAIN_MAP = [
 export type AppName = (typeof APP_DOMAIN_MAP)[number]['name'];
 
 export type AppDomain = {
+  /**
+   * Mount path on a shared origin (for example `/calendar` on
+   * `https://tuturuuu.com`). Absent for origin-only entries, which keep
+   * matching the whole origin exactly as before. An entry with a base path
+   * matches only that origin and only paths under the prefix, on segment
+   * boundaries, and wins over a shorter or absent prefix.
+   */
+  basePath?: string;
   kind?: 'external' | 'internal';
   name: string;
   requiresExactOrigin?: boolean;
@@ -487,9 +500,33 @@ export function getAppDomainMap(): AppDomain[] {
       ...domain,
       kind: 'internal' as const,
     })),
+    ...(isolatedFromProduction ? [] : getMountedInternalAppDomains()),
     ...getConfiguredInternalAppDomains(),
     ...getConfiguredExternalAppDomains(),
   ];
+}
+
+/**
+ * Registry entries for apps served at `tuturuuu.com/<basePath>`. Empty unless
+ * the app is listed in `NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS` (the same
+ * switch as `app-mounts.ts`), so the default registry and every subdomain
+ * entry are unchanged. Only apps that already have a built-in entry qualify.
+ */
+export function getMountedInternalAppDomains(
+  activeMounts: ReadonlySet<string> = parseActiveAppMounts()
+): AppDomain[] {
+  const knownApps = new Set<string>(
+    PRODUCTION_INTERNAL_APP_DOMAINS.map((domain) => domain.name)
+  );
+
+  return Object.entries(ONE_ORIGIN_APP_BASE_PATHS)
+    .filter(([app]) => activeMounts.has(app) && knownApps.has(app))
+    .map(([app, basePath]) => ({
+      basePath,
+      kind: 'internal' as const,
+      name: app,
+      url: SHARED_APP_ORIGIN,
+    }));
 }
 
 function parseHttpUrl(value: string) {
@@ -610,11 +647,24 @@ function serializeUrl(value: URL) {
     : value.toString();
 }
 
+function hasPathSegmentPrefix(pathname: string, prefix: string) {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
 function matchesAppDomainUrl(value: URL, domain: AppDomain) {
   const registeredUrl = parseHttpUrl(domain.url);
 
   if (!registeredUrl) {
     return false;
+  }
+
+  if (domain.basePath) {
+    // A mounted app matches its exact origin and path prefix only: no HTTPS
+    // upgrade, no portless variants, and never `/calendar-team` for `/calendar`.
+    return (
+      value.origin === registeredUrl.origin &&
+      hasPathSegmentPrefix(value.pathname, domain.basePath)
+    );
   }
 
   if (value.origin === registeredUrl.origin) {
@@ -673,9 +723,18 @@ export function getAppDomainByUrl(value: string): AppDomainUrlMatch | null {
     return null;
   }
 
-  const domain = getAppDomainMap().find((entry) =>
-    matchesAppDomainUrl(url, entry)
-  );
+  // Longest base path wins; origin-only entries rank 0 and keep first-match
+  // order among themselves, as before.
+  let domain: AppDomain | undefined;
+  for (const entry of getAppDomainMap()) {
+    if (!matchesAppDomainUrl(url, entry)) continue;
+    if (
+      !domain ||
+      (entry.basePath?.length ?? 0) > (domain.basePath?.length ?? 0)
+    ) {
+      domain = entry;
+    }
+  }
 
   return domain
     ? {
