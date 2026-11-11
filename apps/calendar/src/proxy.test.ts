@@ -375,6 +375,8 @@ describe('PWA public-route boundary', () => {
       '/offline.js',
       '/serwist/sw.js',
       '/serwist/sw.js.map',
+      '/site.webmanifest',
+      '/site.mount.webmanifest',
     ]) {
       expect(matcher.test(path)).toBe(false);
     }
@@ -384,6 +386,21 @@ describe('PWA public-route boundary', () => {
       '/offlineXhtml',
       '/offline.html-workspace',
       '/api/v1/tasks',
+    ]) {
+      expect(matcher.test(path)).toBe(true);
+    }
+  });
+  it('exempts only the exact web manifest paths from auth', () => {
+    const matcher = new RegExp(`^${config.matcher[0]}$`);
+    for (const path of ['/site.webmanifest', '/site.mount.webmanifest']) {
+      expect(matcher.test(path)).toBe(false);
+    }
+    for (const path of [
+      '/site.webmanifest/x',
+      '/siteXwebmanifest',
+      '/site.mount.webmanifest/x',
+      '/siteXmount.webmanifest',
+      '/site.mountXwebmanifest',
     ]) {
       expect(matcher.test(path)).toBe(true);
     }

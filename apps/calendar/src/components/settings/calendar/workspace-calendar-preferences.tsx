@@ -23,6 +23,7 @@ import {
   resolveFirstDayOfWeek,
   resolveTimezone,
 } from '@/lib/calendar-settings-resolver';
+import { calendarFetch } from '@/runtime/calendar-api-path';
 
 type WorkspaceCalendarPreferencesProps = {
   wsId: string;
@@ -40,7 +41,9 @@ export function WorkspaceCalendarPreferences({
   const { data: calendarSettings, isLoading: isLoadingWorkspace } = useQuery({
     queryKey: ['workspace-calendar-settings', wsId],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/workspaces/${wsId}/calendar-settings`);
+      const res = await calendarFetch(
+        `/api/v1/workspaces/${wsId}/calendar-settings`
+      );
       if (!res.ok) throw new Error('Failed to fetch calendar settings');
       return res.json() as Promise<{
         timezone: string;
@@ -61,7 +64,7 @@ export function WorkspaceCalendarPreferences({
   const { data: userSettings, isLoading: isLoadingUser } = useQuery({
     queryKey: ['users', 'calendar-settings'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/users/calendar-settings');
+      const res = await calendarFetch('/api/v1/users/calendar-settings');
       if (!res.ok) throw new Error('Failed to fetch user calendar settings');
       return res.json() as Promise<{
         timezone: string;
@@ -77,11 +80,14 @@ export function WorkspaceCalendarPreferences({
       timezone?: string;
       first_day_of_week?: string;
     }) => {
-      const res = await fetch(`/api/v1/workspaces/${wsId}/calendar-settings`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const res = await calendarFetch(
+        `/api/v1/workspaces/${wsId}/calendar-settings`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }
+      );
       if (!res.ok) throw new Error('Failed to update calendar settings');
       return res.json();
     },

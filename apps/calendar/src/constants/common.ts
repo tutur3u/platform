@@ -1,5 +1,6 @@
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+import { CALENDAR_ROOT_ORIGIN, WEB_ORIGIN } from './calendar-origins';
 
 // Re-export shared constants from satellite package
 export {
@@ -19,13 +20,14 @@ export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 
 const DEFAULT_CALENDAR_APP_URL =
   process.env.NODE_ENV === 'production'
-    ? 'https://calendar.tuturuuu.com'
+    ? CALENDAR_ROOT_ORIGIN
     : getLocalInternalAppUrl('calendar', `http://localhost:${PORT}`);
 const DEFAULT_WEB_APP_URL =
   process.env.NODE_ENV === 'production'
-    ? 'https://tuturuuu.com'
+    ? WEB_ORIGIN
     : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
 
+/** Origin of Calendar at its own host root. Mount-aware URLs live in `siteConfig`. */
 export const BASE_URL = resolveInternalAppUrl({
   appName: 'calendar',
   candidates: [

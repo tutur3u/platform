@@ -19,3 +19,14 @@ export function isCalendarApiPath(path: string) {
 export function calendarApiPath(path: string) {
   return isCalendarApiPath(path) ? appPath(path) : path;
 }
+
+/**
+ * `fetch` for browser code that addresses Calendar APIs by their root path.
+ * Owned paths gain the app base under a mount; other inputs pass through.
+ */
+export function calendarFetch(input: RequestInfo | URL, init?: RequestInit) {
+  return fetch(
+    typeof input === 'string' ? calendarApiPath(input) : input,
+    init
+  );
+}

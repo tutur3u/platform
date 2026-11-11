@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getSatelliteAppSession: vi.fn(),
@@ -38,6 +38,10 @@ vi.mock('@/constants/common', () => ({
 }));
 
 describe('Calendar login page', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getSatelliteAppSession.mockResolvedValue(null);
@@ -82,5 +86,41 @@ describe('Calendar login page', () => {
     expect(returnUrl.origin).toBe('https://calendar.tuturuuu.com');
     expect(returnUrl.pathname).toBe('/verify-token');
     expect(returnUrl.searchParams.get('nextUrl')).toBe('/personal');
+  });
+
+  it('returns to the mounted verify-token route when served from the web origin', async () => {
+    vi.stubGlobal('__tuturuuuAppBase', '/calendar');
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
+
+    const LoginPage = (await import('./page')).default;
+
+    await expect(
+      LoginPage({ searchParams: Promise.resolve({}) })
+    ).rejects.toThrow(/^redirect:https:\/\/tuturuuu\.com\/login\?/u);
+
+    const redirectedTo = mocks.redirect.mock.calls[0]?.[0];
+    if (!redirectedTo) throw new Error('Missing redirect URL');
+
+    const returnUrl = new URL(
+      new URL(redirectedTo).searchParams.get('returnUrl') ?? ''
+    );
+    expect(returnUrl.origin).toBe('https://tuturuuu.com');
+    expect(returnUrl.pathname).toBe('/calendar/verify-token');
+    expect(returnUrl.searchParams.get('nextUrl')).toBe('/personal');
+  });
+
+  it('prefixes the signed-in destination with the mount', async () => {
+    vi.stubGlobal('__tuturuuuAppBase', '/calendar');
+    mocks.getSatelliteAppSession.mockResolvedValue({ sub: 'user-id' });
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
+    mocks.normalizeAuthRedirectPath.mockReturnValue('/internal?view=week');
+
+    const LoginPage = (await import('./page')).default;
+
+    await expect(
+      LoginPage({
+        searchParams: Promise.resolve({ next: '/internal?view=week' }),
+      })
+    ).rejects.toThrow('redirect:/calendar/internal?view=week');
   });
 });

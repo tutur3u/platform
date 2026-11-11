@@ -332,7 +332,7 @@ export const config = {
      * - favicon.ico (favicon file)
      * - robots.txt (SEO)
      * - sitemap.xml (SEO)
-     * - site.webmanifest (SEO)
+     * - site.webmanifest and site.mount.webmanifest (SEO)
      * - monitoring (analytics)
      * Excludes files with the following extensions for static assets:
      * - svg
@@ -344,7 +344,7 @@ export const config = {
      * - webp
      */
 
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|offline\\.(?:html|css|js)$|serwist/sw\\.js(?:\\.map)?$|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site\\.(?:mount\\.)?webmanifest$|offline\\.(?:html|css|js)$|serwist/sw\\.js(?:\\.map)?$|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
   ],
 };
 

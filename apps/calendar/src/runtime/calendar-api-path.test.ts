@@ -1,7 +1,7 @@
 import { createInternalApiClient } from '@tuturuuu/internal-api/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { registerCalendarBrowserApiPaths } from './calendar-api-client';
-import { calendarApiPath } from './calendar-api-path';
+import { calendarApiPath, calendarFetch } from './calendar-api-path';
 
 let unregister: (() => void) | undefined;
 afterEach(() => {
@@ -44,5 +44,46 @@ describe('Calendar client API ownership', () => {
     expect(calendarApiPath('https://provider.test/file')).toBe(
       'https://provider.test/file'
     );
+  });
+  it.each([
+    ['', ''],
+    ['/calendar', '/calendar'],
+  ])(
+    'prefixes raw browser calls to Calendar-owned settings routes at base %j',
+    async (base, prefix) => {
+      vi.stubGlobal('__tuturuuuAppBase', base);
+      const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+        Response.json({})
+      );
+      vi.stubGlobal('fetch', fetch);
+      for (const path of [
+        '/api/v1/workspaces/ws/calendar-settings',
+        '/api/v1/users/calendar-settings',
+        '/api/v1/workspaces/ws/calendar/categories',
+        '/api/v1/workspaces/ws/calendar/schedule/preview',
+        '/api/v1/workspaces/ws/calendar-hours',
+      ])
+        await calendarFetch(path, { method: 'PATCH' });
+      expect(fetch.mock.calls.map(([path]) => path)).toEqual([
+        `${prefix}/api/v1/workspaces/ws/calendar-settings`,
+        `${prefix}/api/v1/users/calendar-settings`,
+        `${prefix}/api/v1/workspaces/ws/calendar/categories`,
+        `${prefix}/api/v1/workspaces/ws/calendar/schedule/preview`,
+        `${prefix}/api/v1/workspaces/ws/calendar-hours`,
+      ]);
+      expect(fetch.mock.calls[0]?.[1]).toEqual({ method: 'PATCH' });
+    }
+  );
+  it('leaves Web-owned and non-string inputs untouched under a mount', async () => {
+    vi.stubGlobal('__tuturuuuAppBase', '/calendar');
+    const fetch = vi.fn<typeof globalThis.fetch>(async () => Response.json({}));
+    vi.stubGlobal('fetch', fetch);
+    const url = new URL('https://provider.test/file');
+    await calendarFetch('/api/v1/users/me/profile');
+    await calendarFetch(url);
+    expect(fetch.mock.calls.map(([input]) => input)).toEqual([
+      '/api/v1/users/me/profile',
+      url,
+    ]);
   });
 });

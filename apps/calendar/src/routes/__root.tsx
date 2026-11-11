@@ -1,8 +1,10 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import {
   appBaseHeadScript,
+  runtimeAppBase,
   withAppBase,
 } from '@tuturuuu/start-bridge/start/base-path';
+import { manifestPathFor } from '../constants/site-urls';
 import { loadCalendarLocale } from '../runtime/page-loader';
 import { CalendarError, Document } from '../runtime/router-shell';
 export const Route = createRootRoute({
@@ -26,7 +28,10 @@ export const Route = createRootRoute({
     scripts: [appBaseHeadScript()],
     links: [
       { rel: 'icon', href: withAppBase('/favicon.ico') },
-      { rel: 'manifest', href: withAppBase('/site.webmanifest') },
+      {
+        rel: 'manifest',
+        href: withAppBase(manifestPathFor(runtimeAppBase())),
+      },
     ],
   }),
   notFoundComponent: () => (

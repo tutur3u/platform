@@ -4,11 +4,12 @@ import {
 } from '@tuturuuu/auth/app-session';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
-import { withAppBase } from '@tuturuuu/start-bridge/app-url';
+import { runtimeAppBase, withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, TTR_URL } from '@/constants/common';
+import { resolveCalendarSiteUrls } from '@/constants/site-urls';
 
 const DEFAULT_CALENDAR_PATH = '/personal';
 
@@ -42,9 +43,17 @@ export default async function LoginPage({
     redirect(withAppBase(nextPath));
   }
 
+  // The bridge request carries the host the visitor used. Without it the
+  // origin follows the app base: the web origin under the mount, Calendar's
+  // own origin at the host root.
+  const returnOrigin = resolveCalendarSiteUrls({
+    basePath: runtimeAppBase(),
+    rootOrigin: BASE_URL,
+    webOrigin: TTR_URL,
+  }).origin;
   const returnUrl = new URL(
     withAppBase('/verify-token'),
-    maybeBridgeRequest()?.request.url ?? BASE_URL
+    maybeBridgeRequest()?.request.url ?? returnOrigin
   );
   returnUrl.searchParams.set('nextUrl', nextPath);
 

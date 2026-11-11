@@ -4,7 +4,7 @@ import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { PwaStatus } from '@tuturuuu/ui/pwa-status';
 import { Providers } from '@/components/providers';
-import { siteConfig } from '@/constants/configs';
+import { getSiteConfig, siteConfig } from '@/constants/configs';
 import { supportedLocales } from '@/i18n/routing';
 import '@tuturuuu/tasks-ui/globals.css';
 import { FadeSettingInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/fade-setting-initializer';
@@ -31,6 +31,7 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const site = getSiteConfig();
   return generateCommonMetadata({
     config: {
       description: {
@@ -44,11 +45,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         'team calendar',
         'time tracking',
       ],
-      name: siteConfig.name,
-      url: siteConfig.url,
-      ogImage: siteConfig.ogImage,
-      manifest: `${siteConfig.url}/site.webmanifest`,
-      icons: { icon: '/favicon.ico', apple: '/apple-touch-icon.png' },
+      name: site.name,
+      url: site.url,
+      ogImage: site.ogImage,
+      manifest: site.manifest,
+      icons: site.icons,
     },
     params,
   });
