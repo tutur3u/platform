@@ -233,8 +233,8 @@
       "colab": "Colab",
       "tulletin": "Tulletin"
     },
-    "tuturuuuBlurb": "Không gian làm việc cho lớp học trực tiếp, AI Agent, ghi chú, công việc và lịch dùng xuyên suốt buổi học.",
-    "upskiiBlurb": "Khoá học, câu đố và bài kiểm tra có AI hỗ trợ. Thầy cô sẽ tự soạn và tự học một bài tại đây."
+    "tuturuuuBlurb": "Không gian làm việc cho lớp học trực tiếp, AI Agent, ghi chú, công việc và lịch, dùng xuyên suốt buổi workshop.",
+    "upskiiBlurb": "Khoá học, câu đố và bài kiểm tra có AI hỗ trợ. Thầy cô sẽ tự soạn một bài học và tự làm thử ngay tại đây."
   },
   "skip": "Đi tới nội dung workshop",
   "highlights": {
@@ -347,7 +347,7 @@
   },
   "sim": {
     "title": "Thử ngồi vào lớp học",
-    "subtitle": "Đi qua từng bước của buổi học, từ ghế học trò rồi trở lại bục giảng. Thay đổi mức hỗ trợ của AI Agent và xem lớp học phản hồi ra sao.",
+    "subtitle": "Đi qua từng bước của buổi học, từ ghế học trò rồi trở lại bục giảng. Chỉnh mức hỗ trợ của AI Agent và xem cả lớp phản ứng ra sao.",
     "window": "Lớp học trực tiếp · AI Agent nhập môn",
     "quizQuestion": "Kiểm tra nhanh: bước đầu tiên để giải 2x + 6 = 14 là gì?",
     "timer": "Thời gian còn lại",
