@@ -1,5 +1,6 @@
 import {
   type FeatureFlagCatalog,
+  type FeatureRollout,
   type FlagEnvironment,
   type FlagFamily,
   type FlagKind,
@@ -46,6 +47,7 @@ export interface FeatureFlagRow {
   owner: string | null;
   readOnly: 'mobile-build' | 'workspace-secret' | null;
   scope: FlagScope;
+  rollout?: FeatureRollout;
   verifiedOnProdAt: string | null;
 }
 
@@ -136,7 +138,8 @@ export function buildFeatureFlagDashboardModel(
       legacy: flag.legacy,
       lifecycle: getFlagLifecycle(flag, now),
       mutable: environments.some((state) => state.effective !== 'unknown'),
-      owner: flag.owner,
+      owner: flag.rollout?.owner ?? flag.owner,
+      rollout: flag.rollout,
       readOnly,
       scope: flag.scope,
       verifiedOnProdAt: flag.verifiedOnProdAt,

@@ -17,6 +17,7 @@ const completeFlag: CatalogFlag = {
   scope: 'global',
   description: 'Gate a new feature.',
   owner: 'owner',
+  rollout: { stage: 'internal', owner: 'owner', removeBy: '2026-11-11' },
   createdAt: '2026-11-01',
   apps: ['web'],
   appsComplete: true,
@@ -251,4 +252,21 @@ describe('validateCatalog', () => {
       'new_feature: duplicate entry',
     ]);
   });
+});
+
+it('requires rollout metadata for new release flags while preserving legacy entries', () => {
+  expect(validateFlag({ ...completeFlag, rollout: undefined })).toContain(
+    'new_feature: new release flags require rollout stage, owner and removeBy'
+  );
+  expect(
+    validateFlag({
+      ...completeFlag,
+      rollout: { stage: 'internal', owner: '', removeBy: 'invalid' },
+    })
+  ).toEqual(
+    expect.arrayContaining([
+      'new_feature: owner is required',
+      'new_feature: removeBy must be a calendar date',
+    ])
+  );
 });

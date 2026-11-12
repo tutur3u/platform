@@ -19,6 +19,7 @@ const flag = {
   scope: 'global',
   description: 'Gate a new feature.',
   owner: 'owner',
+  rollout: { stage: 'internal', owner: 'owner', removeBy: '2026-11-11' },
   createdAt: '2026-11-01',
   apps: ['web'],
   appsComplete: true,

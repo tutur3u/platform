@@ -7376,6 +7376,7 @@
       "kind": "Kind",
       "owner": "Owner",
       "remove_by": "Remove by",
+      "stage": "Stage",
       "verified": "Verified on prod"
     },
     "controls": {
@@ -7421,6 +7422,12 @@
       "build": "Build time",
       "global": "Global",
       "workspace": "Per workspace"
+    },
+    "stages": {
+      "ga": "General availability",
+      "internal": "Internal",
+      "rollout": "Rollout",
+      "unconfigured": "Not configured"
     },
     "summary": {
       "awaitingVerification": "Awaiting prod verification",
