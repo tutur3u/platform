@@ -1,5 +1,3 @@
-'use client';
-
 import {
   BookText,
   Code2,
@@ -11,7 +9,7 @@ import {
   Paintbrush,
   Shield,
   Users,
-} from '@tuturuuu/icons/lucide-static';
+} from './static-icons';
 import type { ReactNode } from 'react';
 
 export interface NavItem {
