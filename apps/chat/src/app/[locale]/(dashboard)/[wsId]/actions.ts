@@ -1,5 +1,6 @@
 'use server';
 
+import { appPath } from '@tuturuuu/start-bridge/app-url';
 import { fetchSatelliteWorkspaces } from '@tuturuuu/satellite/workspace-actions';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -16,7 +17,7 @@ export async function fetchWorkspaces() {
       ...workspace,
       avatar_url:
         workspace.avatar_url === TUTURUUU_PRODUCTION_LOGO_URL
-          ? TUTURUUU_LOCAL_LOGO_URL
+          ? appPath(TUTURUUU_LOCAL_LOGO_URL)
           : workspace.avatar_url,
     }))
   );

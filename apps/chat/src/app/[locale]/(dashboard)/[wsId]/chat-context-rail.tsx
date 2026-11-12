@@ -1,5 +1,6 @@
 'use client';
 
+import { appPath } from '@tuturuuu/start-bridge/app-url';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   ChevronDown,
@@ -285,7 +286,7 @@ function WorkspaceRailButton({
   const name = workspace.name || 'Workspace';
   const avatarUrl =
     workspace.id === ROOT_WORKSPACE_ID
-      ? TUTURUUU_LOCAL_LOGO_URL
+      ? appPath(TUTURUUU_LOCAL_LOGO_URL)
       : workspace.avatar_url || workspace.logo_url;
 
   return (
