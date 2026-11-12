@@ -68,6 +68,16 @@ class CheckAppTest(unittest.TestCase):
                 "com.apple.application-identifier": f".{BUNDLE}",
             })
 
+    def test_malformed_signing_prefix(self):
+        for prefix in (".", " ", "\t", "TESTTEAM0", "TESTTEAM010",
+                       "testteam01", "TESTTEAM-1", "TESTTEAM01\n"):
+            with self.subTest(prefix=prefix), self.assertRaises(ValueError):
+                application = f"{prefix}.{BUNDLE}"
+                self.check_entitlements({
+                    "keychain-access-groups": [application],
+                    "com.apple.application-identifier": application,
+                })
+
     def test_unresolved_prefix(self):
         with self.assertRaises(ValueError):
             self.check_entitlements({

@@ -2,6 +2,7 @@
 
 import argparse
 import plistlib
+import re
 import subprocess
 from pathlib import Path
 
@@ -48,7 +49,8 @@ def check_app(app):
     require(len(groups) == 1, "Expected one app-specific Keychain group")
     group = groups[0]
     prefix = group.removesuffix("." + bundle)
-    require("$" not in group and group.endswith("." + bundle) and prefix, group)
+    require(group.endswith("." + bundle)
+            and re.fullmatch(r"[A-Z0-9]{10}", prefix) is not None, group)
     application = entitlements.get("com.apple.application-identifier")
     require(application == f"{prefix}.{bundle}", "Keychain group must match application identifier")
     print(f"Built app Keychain access group: {group}")
