@@ -1,3 +1,4 @@
+import { authorizeInfrastructureCron } from '@/lib/infrastructure-cron-auth';
 import os from 'node:os';
 import { sendSystemEmail } from '@tuturuuu/email-service';
 import type {
@@ -30,8 +31,10 @@ interface DockerRecoveryIncident {
 }
 
 export async function GET(request: NextRequest) {
+  const denied = authorizeInfrastructureCron(request);
+  if (denied) return denied;
   return withCronLogDrain({ jobId: JOB_ID, path: PATH, request }, () =>
-    handleGET(request)
+    handleGET()
   );
 }
 
@@ -201,24 +204,7 @@ function createEmailContent(incidents: DockerRecoveryIncident[]) {
   return { html, subject, text };
 }
 
-async function handleGET(request: NextRequest) {
-  const cronSecret =
-    process.env.CRON_SECRET ?? process.env.VERCEL_CRON_SECRET ?? '';
-
-  if (!cronSecret) {
-    return NextResponse.json(
-      { ok: false, error: 'CRON_SECRET or VERCEL_CRON_SECRET is not set' },
-      { status: 500 }
-    );
-  }
-
-  if (request.headers.get('Authorization') !== `Bearer ${cronSecret}`) {
-    return NextResponse.json(
-      { ok: false, error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
+async function handleGET() {
   try {
     const snapshot = readBlueGreenMonitoringSnapshot({ watcherLogLimit: 500 });
     const settings = snapshot.control.dockerRecoverySettings;
@@ -229,12 +215,12 @@ async function handleGET(request: NextRequest) {
       settings.emailAlertsEnabled || envRecipients.length > 0;
 
     if (!alertsEnabled) {
-      return NextResponse.json({ ok: true, sent: 0, skipped: 'disabled' });
+      return NextResponse.json({ ok: true });
     }
 
     const recipients = resolveAlertRecipients(settings);
     if (recipients.length === 0) {
-      return NextResponse.json({ ok: true, sent: 0, skipped: 'no-recipients' });
+      return NextResponse.json({ ok: true });
     }
 
     const state = readBlueGreenDockerRecoveryAlertState();
@@ -257,7 +243,7 @@ async function handleGET(request: NextRequest) {
         lastCheckedAt: new Date(now).toISOString(),
       });
 
-      return NextResponse.json({ ok: true, sent: 0, skipped: 'no-incidents' });
+      return NextResponse.json({ ok: true });
     }
 
     const lastSentAtMs = state.lastSentAt ? Date.parse(state.lastSentAt) : 0;
@@ -266,7 +252,7 @@ async function handleGET(request: NextRequest) {
       lastSentAtMs > 0 &&
       now - lastSentAtMs < settings.emailAlertCooldownMs
     ) {
-      return NextResponse.json({ ok: true, sent: 0, skipped: 'cooldown' });
+      return NextResponse.json({ ok: true });
     }
 
     const emailContent = createEmailContent(incidents);
@@ -285,18 +271,11 @@ async function handleGET(request: NextRequest) {
     });
 
     if (!result.success) {
-      console.error('Failed to send Docker recovery alert email', {
-        error: result.error,
-        incidentIds: incidents.map((incident) => incident.id),
-        recipients,
-      });
-      return NextResponse.json(
-        { ok: false, error: result.error ?? 'Failed to send alert email' },
-        { status: 500 }
-      );
+      console.error('Infrastructure cron job failed');
+      return NextResponse.json({ ok: false }, { status: 500 });
     }
 
-    const nextState = writeBlueGreenDockerRecoveryAlertState({
+    writeBlueGreenDockerRecoveryAlertState({
       ...state,
       lastCheckedAt: new Date(now).toISOString(),
       lastSentAt: new Date(now).toISOString(),
@@ -311,22 +290,9 @@ async function handleGET(request: NextRequest) {
       recipients,
     });
 
-    return NextResponse.json({
-      ok: true,
-      notifiedIncidentIds: nextState.notifiedIncidentIds,
-      sent: incidents.length,
-    });
-  } catch (error) {
-    console.error('Failed to process Docker recovery alerts', error);
-    return NextResponse.json(
-      {
-        ok: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to process Docker recovery alerts',
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: true });
+  } catch {
+    console.error('Infrastructure cron job failed');
+    return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
