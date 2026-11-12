@@ -189,7 +189,16 @@ Supported by: Chrome 133 (Feb 2025), Edge 133 (Feb 2025), Firefox 130 (Sep 2024)
 
 If your Baseline target does not yet support `SubtleCrypto.supports()`, `encapsulateKey()`, or `'ChaCha20-Poly1305'`, detect support using the **static** `SubtleCrypto.supports()` method and fall back to ephemeral-static Diffie-Hellman key agreement (`'X25519'` + `'HKDF'` + `'AES-GCM'`, or `'ECDH'` with `'P-256'` when targeting browsers prior to `'X25519'` support):
 
-- **Call `SubtleCrypto.supports()` on the `SubtleCrypto` constructor, not on `crypto.subtle`**: `globalThis.SubtleCrypto?.supports?.('encapsulateKey', 'MLKEM768-X25519', 'ChaCha20-Poly1305')` is a synchronous static method returning a boolean (`crypto.subtle.supports` is `undefined`). Note that `SubtleCrypto.supports()` validates operation-specific parameters: bare algorithm strings work for `'encapsulateKey'`, `'decapsulateKey'`, `'generateKey'`, `'importKey'`, `'exportKey'`, and `'getPublicKey'`, whereas probing `'encrypt'` or `'decrypt'` directly requires an `iv` (for example, `SubtleCrypto.supports('encrypt', { name: 'ChaCha20-Poly1305', iv: new Uint8Array(12) })`).
+- **Call `SubtleCrypto.supports()` on the `SubtleCrypto` constructor, not on `crypto.subtle`**: the following synchronous static call returns a boolean (`crypto.subtle.supports` is `undefined`). Note that `SubtleCrypto.supports()` validates operation-specific parameters: bare algorithm strings work for `'encapsulateKey'`, `'decapsulateKey'`, `'generateKey'`, `'importKey'`, `'exportKey'`, and `'getPublicKey'`, whereas probing `'encrypt'` or `'decrypt'` directly requires an `iv` (for example, `SubtleCrypto.supports('encrypt', { name: 'ChaCha20-Poly1305', iv: new Uint8Array(12) })`).
+
+  ```js
+  globalThis.SubtleCrypto?.supports?.(
+    'encapsulateKey',
+    'MLKEM768-X25519',
+    'ChaCha20-Poly1305',
+  );
+  ```
+
 - **Key format in the fallback (`'raw'`)**: While browsers that support Modern WebCrypto also accept `'raw-public'` on `'X25519'` and `'ECDH'`, use `'raw'` in fallback paths targeting older browsers.
 - **Classical fallback (`'X25519'` + `'HKDF'` + `'AES-GCM'`)**: When `SubtleCrypto.supports()` is unavailable or returns `false`, generate an ephemeral `'X25519'` key pair for the sender, export the ephemeral public key as the capsule bytes, derive 256 bits via `deriveBits({ name: 'X25519', public: peerPublicKey }, privateKey, 256)`, and pass those bits through `'HKDF'` (`'SHA-256'`) to derive a 256-bit `'AES-GCM'` key.
 
@@ -203,7 +212,11 @@ const KEM_PUBLIC_KEY_ALGORITHMS = {
 export function supportsPostQuantumEnvelope() {
   return (
     typeof globalThis.SubtleCrypto?.supports === 'function' &&
-    SubtleCrypto.supports('encapsulateKey', 'MLKEM768-X25519', 'ChaCha20-Poly1305')
+    SubtleCrypto.supports(
+      'encapsulateKey',
+      'MLKEM768-X25519',
+      'ChaCha20-Poly1305',
+    )
   );
 }
 

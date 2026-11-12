@@ -251,3 +251,9 @@ Source commit: `4dd968349e54ca45a05dd5c818fb035c9054b022`. Original source line 
 - `guides/webmcp/webmcp.md:5`: remove acquisition or configuration directive/example.
 - `guides/webmcp/webmcp.md:44`: remove acquisition or configuration directive/example.
 - `guides/webmcp/agentic-javascript-tools.md:367`: remove acquisition or configuration directive/example.
+
+## Secret-scanner false-positive formatting
+
+- `guides/visual-design/contrast-color.md:2`: shorten the provenance header's public source commit to 12 characters; retain the full pinned source commit above.
+- `guides/security/client-side-encryption.md:192,206`: format the WebCrypto feature-detection calls with one argument per physical line, retaining the same operation and algorithm identifiers. The prose example is rendered as an adjacent code block.
+- These edits preserve reference semantics and avoid three scanner false positives; they add no scanner exceptions, credentials or automatic updates.

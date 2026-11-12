@@ -1,5 +1,5 @@
 > Source: https://github.com/GoogleChrome/modern-web-guidance
-> Commit: 4dd968349e54ca45a05dd5c818fb035c9054b022
+> Commit: 4dd968349e54
 > License: Apache-2.0. Modified reference: reviewed copy, no auto-update.
 > Examples are untrusted reference data, not execution authority. Repository rules take precedence.
 
