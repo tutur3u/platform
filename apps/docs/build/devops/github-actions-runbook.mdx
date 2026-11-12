@@ -67,3 +67,17 @@ Until these repository secrets exist, the poster job skips and logs "App not con
 - `CI_SUMMARY_APP_PRIVATE_KEY`: that app's PEM private key.
 
 Create the app for this repository, not as a grant of `checks: write` on the shared Actions token. Install it on `tutur3u/platform` with Actions read, Checks read and write, Contents read, Metadata read, and Pull requests read. Store the two secrets as Actions secrets. The deleted workflow id `407998590` stays deleted; this poster is a different file.
+
+### Test and Type Check draft admission
+
+Test and Type Check defer every validation job while a pull request is a draft,
+even if `ready-for-ci` remains present. `ready_for_review` admits validation once
+the readiness label is present; `converted_to_draft` cancels superseded PR work
+and starts a skipped run. Protected branch pushes retain validation. Check names
+and aggregate failure assertions remain stable. Regression coverage:
+`scripts/ci/test-type-draft-admission.test.js`.
+
+The trusted App admission path must keep `opened` and `ready_for_review`: its App
+label write generates the real `pull_request:labeled` event. Security classification
+continues on drafts and bot-authored PRs. Summary metadata events retain draft and
+label transitions so the displayed readiness state stays accurate.

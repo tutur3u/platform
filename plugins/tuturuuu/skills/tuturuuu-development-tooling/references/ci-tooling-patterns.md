@@ -719,6 +719,10 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   must also disable cancellation and use that isolated identity; changing only
   the cancellation flag leaves candidates vulnerable to later main pushes. Never
   combine `queue: max` with cancellation enabled.
+- Test and Type Check gate every job on non-draft status as well as label
+  admission. Keep readiness and draft-conversion triggers together; preserve
+  the App label event and required security classification. Verify with
+  `test-type-draft-admission.test.js`.
 - Defer heavy PR validation on drafts before runner allocation, while keeping
   light lint/type checks. Security jobs, including CodeQL analysis and the
   security-egress contract/preflight, remain eligible on drafts. Heavy-only
