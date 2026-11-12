@@ -13,7 +13,7 @@ Lighthouse 12.8.2 mobile defaults, median of 3; both sides are fresh production 
 | `/vi` | before | 83 | 3.613 | 0 | 0 | 48 | 211.2 |
 | `/vi` | final | 91 | 3.066 | 0 | 0 | 40 | 180.5 |
 
-Lighthouse score and interaction targets pass; the LCP target remains unmet. Both locales beat the 84/83 and 3.46/3.61s floor. Initial script requests fall from 32 to 20; JS transfer falls about 14.6%. Blocking CSS falls to 16.8KiB, with about 156ms blocking duration in the final report.
+Lighthouse score and interaction targets pass; the LCP target remains unmet. Both locales beat the 84/83 and 3.46/3.61s floor. Initial script requests fall from 31 to 20; JS transfer falls about 14.6%. Blocking CSS falls to 16.8KiB, with about 156ms blocking duration in the final report.
 
 All heavy checks ran through `$HOME/ci/tools/ttr-admit`, with the pinned Node 24.22.3 / Bun 1.4.4 directory first on PATH and GitHub token variables removed. `bun x` invokes the pinned Bun directly where `bunx` is absent from that directory.
 
