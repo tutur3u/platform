@@ -31,10 +31,13 @@ They do not prove every handler invokes that helper.
   `src/app/api/auth/refresh-app-session/route.ts` delegate token/session issuance
   to cross-app factories. They remain ADMIN in this preparation; state/PKCE,
   same-origin redirect behavior and grant-free callback semantics require review.
-- `src/app/api/build-info/route.ts` exposes the shared build-info factory without
-  an ADMIN guard. `packages/utils/src/platform-release.ts` includes app name and
-  platform version in addition to build metadata. Keep ADMIN or reduce its
-  payload before allowing a public exception.
+- `src/app/api/build-info/route.ts` invokes the request-aware ADMIN helper on
+  every GET before reading build metadata. Root MEMBER eligibility and
+  view_infrastructure are required; signed-out requests return 401 and
+  ineligible actors return 403. Authorization headers never fall back to cookies.
+  The payload retains app name and platform version, so the route stays ADMIN.
+  Its colocated route.test.ts exercises the real helper and factory with fixture
+  identity/permission suppliers and asserts rejected requests cannot read metadata.
 - The three dedicated infrastructure CRON handlers require a single Bearer token
   verified with fixed-size SHA-256 digests and Node timingSafeEqual before log
   drain or job effects. Missing secrets and invalid credentials return 401 with
