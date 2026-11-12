@@ -1531,3 +1531,13 @@ binding declarations with `wrangler types --include-runtime=false` against the
 emitted `dist/server/wrangler.json`; preserve the checked-in declaration preimage
 when generating temporary qualification output. Keep Void scratch output outside
 the authored patch when running changed-file gates.
+
+### UI SDK category-order pilot boundary
+
+Keep `CategoryOrderPilot` explicitly opt-in and separate from the legacy editor
+and active satellite persistence. Its controlled `value`/`onChange` contract
+commits only on drop; Escape/Tab must cancel without persistence. Reject
+ambiguous category names, localize live announcements, and keep exactly one
+roving tab stop. Run its focused keyboard contract tests before proposing
+changes; browser accessibility, hydration and exact-commit CI remain distinct
+acceptance gates. See the Calendar application decision for scope and coverage.
