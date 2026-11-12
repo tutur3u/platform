@@ -194,7 +194,13 @@ export function withHstsResponsePolicy<Args extends unknown[]>(
       response = await fetch(...args);
     } catch (error) {
       console.error('[start-bridge] worker failed', error);
-      response = new Response('Internal Server Error', { status: 500 });
+      response = new Response('Internal Server Error', {
+        status: 500,
+        headers: {
+          'X-Content-Type-Options': 'nosniff',
+          'Cache-Control': 'no-store',
+        },
+      });
     }
     if (response.status === 101) return response;
     const secured = new Response(response.body, response);

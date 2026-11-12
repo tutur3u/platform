@@ -523,6 +523,8 @@ describe('Worker HSTS final boundary', () => {
       throw new Error('fixture');
     })();
     expect(response.status).toBe(500);
+    expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
     expect(response.headers.get('Strict-Transport-Security')).toBe(
       'max-age=63072000'
     );
