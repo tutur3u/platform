@@ -48,13 +48,15 @@ export function DraftAssistance({
     setState({ kind: 'idle' });
   }, [disabled, eligibility, provider, locale]);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    setState((current) =>
+      current.kind === 'running' ? { kind: 'idle' } : current
+    );
+    return () => {
       active.current?.abort();
       active.current = null;
-    },
-    [value, disabled, eligibility, provider, subject, locale]
-  );
+    };
+  }, [value, disabled, eligibility, provider, subject, locale]);
 
   const stale =
     (state.kind === 'ready' && state.review.source !== value) ||

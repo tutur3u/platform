@@ -154,6 +154,23 @@ describe('draft review interaction', () => {
     expect(draft().value).toBe('new unsaved work');
   });
 
+  it('allows another review after editing and undoing an in-flight draft', () => {
+    const provider = vi.fn<ReviewProvider>(() => new Promise(() => {}));
+    mount({ provider });
+    const original = draft().value;
+    fireEvent.click(reviewButton());
+    expect((reviewButton() as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(draft(), { target: { value: 'edited draft' } });
+    expect(provider.mock.calls[0]?.[1].aborted).toBe(true);
+    fireEvent.change(draft(), { target: { value: original } });
+    expect(draft().value).toBe(original);
+    expect((reviewButton() as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.queryByText(messages.draftAssistance.reviewing)).toBeNull();
+    fireEvent.click(reviewButton());
+    expect(provider).toHaveBeenCalledTimes(2);
+    expect(provider.mock.calls[1]?.[1].aborted).toBe(false);
+  });
+
   it('dismisses without changing the draft', async () => {
     mount({ provider: async () => suggestions });
     fireEvent.click(reviewButton());
