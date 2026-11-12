@@ -794,3 +794,21 @@ root-workspace `MEMBER` membership. Root guests are denied even when guest-defau
 permissions grant the corresponding read or mutation permission. This preserves
 the previous membership fence without changing other administration endpoints.
 Regression coverage: `apps/infrastructure/src/lib/entity-limit-membership.test.ts`.
+
+
+## Dedicated infrastructure cron authorization
+
+The GET jobs at `/api/cron/infrastructure/docker-recovery-alerts`,
+`sample-resources` and `sync-trust-cache` accept a single Bearer credential.
+The server compares fixed-size SHA-256 digests with Node's timingSafeEqual before
+job effects or log draining. Cookies and sessions grant no access. Missing or
+invalid credentials, including missing server configuration, return 401.
+
+`CRON_SECRET` takes precedence over `VERCEL_CRON_SECRET`; an explicitly empty
+primary secret disables authorization. Responses contain only an `ok` status,
+including job failures; caught error payloads are excluded from logs.
+Calendar cron routes remain outside this dedicated exception allowlist.
+
+Regression coverage: `apps/infrastructure/src/lib/infrastructure-cron-auth.test.ts`
+executes the actual handlers with fixture job suppliers; the colocated Docker
+recovery tests cover email delivery and persisted incident watermarks.

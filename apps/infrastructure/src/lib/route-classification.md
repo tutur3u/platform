@@ -35,10 +35,14 @@ They do not prove every handler invokes that helper.
   an ADMIN guard. `packages/utils/src/platform-release.ts` includes app name and
   platform version in addition to build metadata. Keep ADMIN or reduce its
   payload before allowing a public exception.
-- The three `src/app/api/cron/infrastructure/*/route.ts` handlers compare bearer
-  strings directly and return 500 for missing secrets. Dedicated CRON requires
-  constant-time verification and 401 for every unauthorized request; logging,
-  returned job data and absence of session paths also require review.
+- The three dedicated infrastructure CRON handlers require a single Bearer token
+  verified with fixed-size SHA-256 digests and Node timingSafeEqual before log
+  drain or job effects. Missing secrets and invalid credentials return 401 with
+  minimal status; cookies never grant access. Successful responses contain only
+  ok. Job failures return minimal status and log no caught error payload.
+  CRON_SECRET takes precedence over VERCEL_CRON_SECRET (including empty values).
+  Handler-effect coverage lives in infrastructure-cron-auth.test.ts; Docker
+  email and watermark behavior also has colocated regression coverage.
 - `src/app/api/cron/calendar/[job]/route.ts` is outside the dedicated exception
   list. Its job dispatcher needs separate acceptance; Calendar remains held.
 - All remaining inventory entries require per-handler/page acceptance for session,

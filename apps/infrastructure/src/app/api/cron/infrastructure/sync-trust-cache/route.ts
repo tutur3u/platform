@@ -1,3 +1,4 @@
+import { authorizeInfrastructureCron } from '@/lib/infrastructure-cron-auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   type CachedTrustEntry,
@@ -15,10 +16,12 @@ const RECONCILE_TTL_SECONDS = 2 * 60 * 60; // 2 hours
 const WRITE_CONCURRENCY = 32;
 
 export async function GET(request: NextRequest) {
+  const denied = authorizeInfrastructureCron(request);
+  if (denied) return denied;
   await connection();
 
   return withCronLogDrain({ jobId: JOB_ID, path: PATH, request }, () =>
-    handleGET(request)
+    handleGET()
   );
 }
 
@@ -82,26 +85,7 @@ function buildCacheEntry(row: {
   return multiplier > 1 ? { m: multiplier } : null;
 }
 
-async function handleGET(request: NextRequest) {
-  const cronSecret =
-    process.env.CRON_SECRET ?? process.env.VERCEL_CRON_SECRET ?? '';
-
-  if (!cronSecret) {
-    return NextResponse.json(
-      { ok: false, error: 'CRON_SECRET or VERCEL_CRON_SECRET is not set' },
-      { status: 500 }
-    );
-  }
-
-  if (request.headers.get('Authorization') !== `Bearer ${cronSecret}`) {
-    return NextResponse.json(
-      { ok: false, error: 'Unauthorized' },
-      {
-        status: 401,
-      }
-    );
-  }
-
+async function handleGET() {
   try {
     const sbAdmin = await createAdminClient();
     const { data, error } = await sbAdmin.rpc(
@@ -110,11 +94,8 @@ async function handleGET(request: NextRequest) {
     );
 
     if (error) {
-      console.error('Failed to load trusted subjects for cache', error);
-      return NextResponse.json(
-        { ok: false, error: 'Failed to load trusted subjects' },
-        { status: 500 }
-      );
+      console.error('Infrastructure cron job failed');
+      return NextResponse.json({ ok: false }, { status: 500 });
     }
 
     const rows = data ?? [];
@@ -144,17 +125,9 @@ async function handleGET(request: NextRequest) {
       written,
     });
 
-    return NextResponse.json({
-      ok: true,
-      skipped,
-      total: rows.length,
-      written,
-    });
-  } catch (error) {
-    console.error('Failed to sync edge trust cache', error);
-    return NextResponse.json(
-      { ok: false, error: 'Failed to sync trust cache' },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: true });
+  } catch {
+    console.error('Infrastructure cron job failed');
+    return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
