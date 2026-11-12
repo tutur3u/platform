@@ -1,3 +1,4 @@
+import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
 import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
@@ -8,25 +9,34 @@ const framablePaths = framablePathRegexes();
 // vite.config.mts defines the selected native profile's root host. Without it
 // (plain Node loaders) no root host is admitted, so the Worker fails closed.
 const rootHost = import.meta.env?.VITE_FINANCE_NATIVE_ROOT_HOST;
+const mountHost = import.meta.env?.VITE_FINANCE_NATIVE_MOUNT_HOST;
+const mounts = {
+  app: 'finance',
+  basePath: '/finance',
+  rootHosts: rootHost ? [rootHost] : [],
+  mountHosts: mountHost ? [mountHost] : [],
+  unknownHost: 'reject' as const,
+};
 
 declare global {
   interface ImportMetaEnv {
     readonly VITE_FINANCE_NATIVE_ROOT_HOST?: string;
+    readonly VITE_FINANCE_NATIVE_MOUNT_HOST?: string;
   }
 }
 
 export default defineBridgeAppConfig<FinanceEnvironment>({
   csp: defaultContentSecurityPolicy,
-  mounts: {
-    rootHosts: rootHost ? [rootHost] : [],
-    mountHosts: [],
-    unknownHost: 'reject',
-  },
+  mounts,
   wrapResponse(response, { request }) {
     const secured = new Response(response.body, response);
     // Matches Vercel Finance, which sends this on every response.
     secured.headers.set('X-Robots-Tag', 'noindex, nofollow, nosnippet');
-    const pathname = new URL(request.url).pathname;
+    const url = new URL(request.url);
+    const mount = resolveAppBase(url, mounts);
+    const pathname = mount?.basePath
+      ? url.pathname.slice(mount.basePath.length) || '/'
+      : url.pathname;
     if (framablePaths.some((pattern) => pattern.test(pathname))) {
       secured.headers.delete('X-Frame-Options');
     } else {

@@ -48,31 +48,37 @@ export function syntheticSessionHeaders(secret) {
   };
 }
 
-export function signedSsrFixtureResponse(request, calls, financeOrigin) {
+export function signedSsrFixtureResponse(
+  request,
+  calls,
+  financeOrigin,
+  base = ''
+) {
   const url = new URL(request.url);
   const transactions = `/api/workspaces/${fixtureWorkspaceId}/transactions`;
   if (
     url.origin === financeOrigin &&
     request.method === 'GET' &&
-    url.pathname === transactions &&
+    url.pathname === `${base}${transactions}` &&
     url.searchParams.size === 2 &&
     url.searchParams.get('itemsPerPage') === '10' &&
     url.searchParams.get('page') === '1' &&
     request.headers.has('authorization')
   ) {
-    calls.push(url.pathname);
+    calls.push(url.pathname.slice(base.length));
     return Response.json([]);
   }
   if (
     url.origin === financeOrigin &&
     request.method === 'GET' &&
-    url.pathname === `/api/workspaces/${fixtureWorkspaceId}/finance/overview` &&
+    url.pathname ===
+      `${base}/api/workspaces/${fixtureWorkspaceId}/finance/overview` &&
     url.searchParams.size === 2 &&
     url.searchParams.get('includeConfidential') === 'true' &&
     url.searchParams.get('view') === 'date' &&
     request.headers.has('authorization')
   ) {
-    calls.push(url.pathname);
+    calls.push(url.pathname.slice(base.length));
     return Response.json({
       categoryCount: 0,
       invoiceCount: 0,

@@ -31,6 +31,7 @@ export default defineConfig(({ command }) => {
   });
   return {
     base: bridge.base,
+    experimental: bridge.experimental,
     define: {
       ...bridge.define,
       'process.env.NODE_ENV': JSON.stringify(
@@ -38,6 +39,9 @@ export default defineConfig(({ command }) => {
       ),
       'import.meta.env.VITE_FINANCE_NATIVE_PROFILE': JSON.stringify(
         profile.name
+      ),
+      'import.meta.env.VITE_FINANCE_NATIVE_MOUNT_HOST': JSON.stringify(
+        profile.mountHost
       ),
       'import.meta.env.VITE_FINANCE_NATIVE_ROOT_HOST': JSON.stringify(
         profile.rootHost

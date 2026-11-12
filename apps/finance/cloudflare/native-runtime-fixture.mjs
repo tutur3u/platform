@@ -22,11 +22,17 @@ export const app = await realpath(
 export const profile = resolveFinanceNativeProfile(
   process.env[FINANCE_NATIVE_PROFILE_ENV]
 );
-export const modes = [{ origin: `https://${profile.rootHost}`, base: '' }];
+export const modes = [
+  { origin: `https://${profile.rootHost}`, base: '' },
+  { origin: `https://${profile.mountHost}`, base: '/finance' },
+];
 // Every other profile's root host must be refused by this artifact.
 export const foreignOrigins = Object.values(profiles)
   .filter(({ rootHost }) => rootHost !== profile.rootHost)
-  .map(({ rootHost }) => `https://${rootHost}`);
+  .flatMap(({ rootHost, mountHost }) => [
+    `https://${rootHost}`,
+    `https://${mountHost}/finance`,
+  ]);
 
 export async function financeRuntime(t, options = {}) {
   assert.equal(process.env.CI, 'true', 'Requires an emitted native build');
@@ -77,6 +83,12 @@ export async function financeRuntime(t, options = {}) {
     sendMetrics: false,
     bindings: {
       INTERNAL_WEB_API_ORIGIN: plain(fixtureOrigin),
+      ...(options.canonical
+        ? {
+            TTR_ONE_ORIGIN_FINANCE: plain('on'),
+            TTR_ONE_ORIGIN_FINANCE_REDIRECT_STATUS: plain('301'),
+          }
+        : {}),
       FINANCE_APP_URL: plain(options.financeOrigin),
       NEXT_PUBLIC_SUPABASE_URL: plain(fixtureOrigin),
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: plain('fixture-public-key'),

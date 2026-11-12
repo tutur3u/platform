@@ -51,3 +51,42 @@ describe('SSR fixture credential destination fence', () => {
     }
   );
 });
+
+it('admits only exact mounted Finance reads with a credential header', () => {
+  const origin = 'https://web.tutur3u.com';
+  for (const path of paths) {
+    const calls = [];
+    const headers = { authorization: 'Bearer synthetic-session' };
+    expect(
+      signedSsrFixtureResponse(
+        new Request(`${origin}/finance${path}`, { headers }),
+        calls,
+        origin,
+        '/finance'
+      )
+    ).toBeInstanceOf(Response);
+    for (const candidate of [
+      origin + path,
+      `${origin}/finance-extra${path}`,
+      `https://tuturuuu.com/finance${path}`,
+    ]) {
+      expect(
+        signedSsrFixtureResponse(
+          new Request(candidate, { headers }),
+          calls,
+          origin,
+          '/finance'
+        )
+      ).toBeNull();
+    }
+    expect(
+      signedSsrFixtureResponse(
+        new Request(`${origin}/finance${path}`),
+        calls,
+        origin,
+        '/finance'
+      )
+    ).toBeNull();
+    expect(calls).toEqual([path.split('?')[0]]);
+  }
+});

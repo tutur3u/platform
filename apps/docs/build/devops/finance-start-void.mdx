@@ -1,7 +1,7 @@
 ---
 title: "Finance cutover packet"
 description: "Worker, route, bindings, build, smoke and Vercel rollback for the native Finance app."
-updatedAt: "2026-11-09"
+updatedAt: "2026-11-11"
 audience: developers
 ---
 
@@ -15,17 +15,17 @@ values the release owner needs.
 | Item | Value |
 | --- | --- |
 | Worker | Profile `production` (`VITE_FINANCE_NATIVE_PROFILE=production`): `tuturuuu-finance`. Profile `staging` (default): the staging Worker name. `workers_dev` and preview URLs are off; the config declares no routes |
-| Host | `finance.tuturuuu.com` (root mode, one host per profile; staging admits only its reserved staging host). The `tuturuuu.com/finance` mount is not part of this cutover |
+| Host | Production: `finance.tuturuuu.com/` and `tuturuuu.com/finance` (no trailing slash required). Staging admits only its profile's reserved root and mount hosts. Each artifact refuses the other profile and unlisted hosts |
 | Bindings | `ASSETS` (worker-first, no SPA fallback) |
 | Vars (production profile, names) | `INTERNAL_WEB_API_ORIGIN`, `NEXT_PUBLIC_WEB_APP_URL`, `NEXT_PUBLIC_APP_URL`, `FINANCE_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`; values live in `cloudflare/native-profiles.json`, never mixed with the staging profile |
 | Secrets (names) | `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`. The Worker refuses to serve without them |
 | Build | `bun turbo:local run build --filter=@tuturuuu/finance^...`, then `VITE_FINANCE_NATIVE_PROFILE=production bun run --cwd apps/finance build:cloudflare`. `finance-cloudflare.yaml` builds the same profile and uploads the sealed `finance-cutover-production-<sha>` artifact; it never publishes |
-| Routing | Attach only `finance.tuturuuu.com/*`; keep the Vercel CNAME and enable its proxy |
+| Routing | Root cutover: `finance.tuturuuu.com/*`. Apex cutover also needs exact `/finance` and `/finance/*` routed to this Worker. Capture both routes before changing them |
 | Prior Vercel deployment | Not recorded in the repository. Capture the production deployment id, source SHA and the DNS record id, content, proxy state and TTL before the flip |
 
 ## Rollback
 
-Remove only the `finance.tuturuuu.com/*` Worker route and restore the captured DNS
+Restore the captured root and apex Worker routes (including exact `/finance`) and restore the captured DNS
 payload; assign only the Finance hostname to the captured immutable Vercel
 deployment if needed. Never promote the Vercel project as a whole. Freeze
 production sync during the flip and watch, because `vercel-production-finance.yaml`
@@ -44,3 +44,38 @@ curl -s -o /dev/null -w '%{http_code}\n' https://finance.tuturuuu.com/api/v1/wor
 Only exact GET and HEAD `/api/build-info` are public. The rollback smoke is the
 same runner with `--expect legacy`. After the flip, watch 5xx rate, authentication
 failures and p95 latency for 30 to 60 minutes and roll back on regression.
+
+## Local Worker qualification and apex activation
+
+A clean checkout needs `bun install --frozen-lockfile --ignore-scripts` and the
+workspace dependency build in the table before `build:cloudflare`; the app build
+alone cannot resolve `@tuturuuu/internal-api` until its `dist` exports exist.
+`bun run build` is the legacy Next build; use `build:cloudflare` for Workers.
+Generate build identity with `bun scripts/ci/generate-build-metadata.ts` from the
+repository root before building. Run `CI=true CI_SOURCE_SHA=<source-sha> node
+--experimental-strip-types --test
+apps/finance/cloudflare/native-built-worker.runtime.mjs` from that root. Node
+versions with default type stripping do not need the experimental flag. Install
+Chromium through `apps/web`'s pinned Playwright first, or explicitly set
+`FINANCE_TEST_SYSTEM_CHROME=1` to test the locally installed Google Chrome.
+CI keeps the pinned Chromium default. The runtime uses random
+throwaway signing keys, synthetic data and denied provider authentication.
+
+The emitted suite exercises root and mount, slashless `/finance`, EN/VI signed
+SSR, invalid signatures, private caching, reserved Web APIs, framing, and asset
+status/MIME. The Vite preset's `experimental.renderBuiltUrl` keeps JS-imported
+assets under the request base. Router links and owned APIs use the shared app
+base; Web-owned APIs remain Web-owned. Finance disables service-worker
+registration (`OfflineProvider register={false}`), so it claims no root or
+mounted service-worker scope. The bridge emits no font asset and uses CSS/system
+fonts; font HTTP smoke is inapplicable until font files are introduced.
+
+For the canonical apex flip, Rex sets `TTR_ONE_ORIGIN_FINANCE=on` and
+`TTR_ONE_ORIGIN_FINANCE_REDIRECT_STATUS=301` on the production Worker after apex
+acceptance. The shared handler redirects root navigation to exactly
+`https://tuturuuu.com/finance`, preserving deep paths and query strings. Machine
+paths (`/api`, `/assets`, `/_serverFn`, `/.well-known`) keep serving on the old
+host. With the variables absent both admitted hosts serve; `shadow` provides
+an observation mode. No provider routes or canonical settings are changed by a
+local build. Apex session, OAuth callback and real provider acceptance remain
+release gates; capture the prior variables alongside routes for rollback.
