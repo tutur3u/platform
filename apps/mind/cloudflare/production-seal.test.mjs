@@ -55,9 +55,29 @@ test('production removes server source maps before doctor/seal and keeps executa
 test('build preparation strips maps and retains executable scanning', async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'mind-build-preparation-'));
   t.after(() => rm(root, { recursive: true, force: true }));
-  await writeFile(join(root, 'index.mjs'), 'export default "production";');
+  await writeFile(
+    join(root, 'index.mjs'),
+    'export default "production";\n//# sourceMappingURL=index.mjs.map\n'
+  );
+  await writeFile(
+    join(root, 'chunk.js'),
+    'export const x = 1;\n/*# sourceMappingURL=chunk.js.map */'
+  );
+  await writeFile(join(root, 'chunk.js.map'), '{}');
   await writeFile(join(root, 'index.mjs.map'), 'process.env.NODE_ENV');
   await assert.rejects(assertServerArtifact(root), /index\.mjs\.map/u);
+  await prepareServerArtifact(root);
+  assert.equal(
+    await readFile(join(root, 'index.mjs'), 'utf8'),
+    'export default "production";\n'
+  );
+  assert.equal(
+    await readFile(join(root, 'chunk.js'), 'utf8'),
+    'export const x = 1;\n'
+  );
+  await assert.rejects(readFile(join(root, 'index.mjs.map')), {
+    code: 'ENOENT',
+  });
   await prepareServerArtifact(root);
   await assertServerArtifact(root);
   await writeFile(join(root, 'index.mjs'), 'process.env.NODE_ENV');
