@@ -16,7 +16,7 @@
 #   scripts/ci/local-native-gate.sh learn scripts/ci/learn-native-artifact.py LEARN_SOURCE_SHA --profile production
 #
 # Not covered: Meet (uses scripts/ci/verify-meet-start-output.js and an in-tree seal)
-# and any app whose workflow rewrites dist/server/wrangler.json first. Run the
+# and any app whose workflow rewrites the generated Worker config in dist/server first. Run the
 # workflow's own rewrite step verbatim before this helper; never retype it.
 set -euo pipefail
 
