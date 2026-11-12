@@ -8,8 +8,9 @@ import {
 import { PRIVATE_ROBOTS_HEADER } from '@tuturuuu/utils/seo-robots';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 
-import styles from 'virtual:landing-styles';
-import { landingStyles } from './src/lib/landing-styles';
+// Vite replaces this real Node-readable fallback with the emitted CSS mapping.
+import styles from './src/lib/landing-style-map.json' with { type: 'json' };
+import { landingStyles } from './src/lib/landing-styles.ts';
 const secure = createRootResponsePolicy({
   seo: (context) =>
     new URL(context.request.url).hostname === 'tuturuuu.com'

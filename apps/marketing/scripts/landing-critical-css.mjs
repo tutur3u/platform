@@ -83,16 +83,18 @@ export function landingCriticalCss(appRoot) {
   const criticalAssets = new Map();
   return {
     name: 'landing-critical-css',
-    resolveId(id) {
-      if (id === 'virtual:landing-styles') return '\0landing-styles';
-    },
-    load(id) {
-      if (id !== '\0landing-styles') return;
-      if (this.environment.name === 'client') return 'export default {}';
+    enforce: 'pre',
+    transform(code, id) {
+      if (
+        id.split('?')[0] !== resolve(appRoot, 'src/lib/landing-style-map.json')
+      )
+        return;
+      if (this.environment.name === 'client') return { code: '{}', map: null };
       try {
-        return `export default ${readFileSync(manifest, 'utf8')}`;
+        return { code: readFileSync(manifest, 'utf8'), map: null };
       } catch {
-        return 'export default {}';
+        // The real empty module also supports Node qualification and cold dev starts.
+        return { code: '{}', map: null };
       }
     },
     generateBundle(_, bundle) {
