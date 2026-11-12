@@ -1496,3 +1496,17 @@ never a binary from the PR's own lockfile. Keep checkout persistence disabled an
 push only through `scripts/ci/github-token-push.sh`, which passes the token as an
 env-config auth header so it never appears in process argv. See the GitHub
 Actions runbook's frozen-install section for the operating policy.
+
+### Frozen full-tree SQL debt
+
+Use `sql-frozen-debt.js generate <output>` only for an explicitly reviewed corpus;
+never regenerate debt in CI. Keep scanner token identities distinct from line
+numbers and whole-file hashes. SQL literals and quoted identifier case are
+semantic; dollar-body trivia can normalize, while nested literals stay opaque.
+Bind ACL/configuration context and duplicate occurrences. Test unknown paths,
+rules, statement changes, replacements, additions, stale entries and removals.
+Baseline additions require the pinned bot's exact-head digest attestation from
+base-owned code. Initial verifier bootstrap also binds all SQL/security scanner
+source bytes before candidate code executes. Preserve the reviewed workflow
+byte pin until independent security review authorizes its replacement. See the
+full-tree SQL finding debt section in the migrations guide.

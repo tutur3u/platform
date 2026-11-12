@@ -29,8 +29,9 @@ test('an unlisted SQL directory fails inventory and is still scanned by both gua
     }).length
   );
   assert.ok(
-    scanSql(fs.readFileSync(path.join(tmp, file), 'utf8'), { definerRule: true })
-      .length
+    scanSql(fs.readFileSync(path.join(tmp, file), 'utf8'), {
+      definerRule: true,
+    }).length
   );
   assert.ok(
     checkRepository({
@@ -53,7 +54,10 @@ test('both guards discover SQL in all newly covered applications', (t) => {
   ];
   for (const file of files) {
     fs.mkdirSync(path.dirname(path.join(tmp, file)), { recursive: true });
-    fs.writeFileSync(path.join(tmp, file), 'GRANT SELECT ON public.secret TO anon;');
+    fs.writeFileSync(
+      path.join(tmp, file),
+      'GRANT SELECT ON public.secret TO anon;'
+    );
   }
   assert.deepEqual(listSqlFiles(tmp), [...files].sort());
 });

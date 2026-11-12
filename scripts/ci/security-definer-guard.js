@@ -647,7 +647,7 @@ if (require.main === module) {
       );
       // Base verified records are append-only; additions need source binding
       // and an attestation (security-definer-admission.js) before they apply.
-      const findings = await admitVerifiedFindings({
+      const rawFindings = await admitVerifiedFindings({
         root,
         trustedDirectory: __dirname,
         scan: (verifiedFindings) =>
@@ -660,6 +660,12 @@ if (require.main === module) {
             ),
           }),
       });
+      await require('./sql-frozen-debt').admit(root);
+      const findings = require('./sql-frozen-debt').enforce(
+        'definer',
+        rawFindings,
+        root
+      );
       const report = process.argv[2];
       if (report)
         fs.writeFileSync(report, `${JSON.stringify({ findings }, null, 2)}\n`);
