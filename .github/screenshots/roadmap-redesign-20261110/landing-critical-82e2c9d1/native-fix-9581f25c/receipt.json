@@ -1,0 +1,236 @@
+{
+  "head": "9581f25cc43b8e314651f6ff602ef9a71df18224",
+  "previousHead": "82e2c9d1df455414b2deb8e945f3d7e3e51975c2",
+  "fixStat": "apps/docs/reference/repository/dependencies-3.mdx  |  2 +-\n apps/docs/reference/repository/dependencies-4.mdx  |  1 +\n .../native-module-specifiers.runtime.mjs           | 71 ++++++++++++++++++++++\n apps/marketing/package.json                        |  1 +\n apps/marketing/scripts/landing-critical-css.mjs    | 18 +++---\n apps/marketing/src/assets.d.ts                     |  5 --\n apps/marketing/src/lib/landing-style-map.json      |  1 +\n apps/marketing/start-bridge.config.ts              |  5 +-\n bun.lock                                           |  7 ++-\n 9 files changed, 92 insertions(+), 19 deletions(-)",
+  "prStat": "23 files changed, 557 insertions(+), 103 deletions(-)",
+  "rootCause": "Native qualification imports app-owned source config directly through Node, bypassing Vite virtual-module resolution. The emitted Vite Worker was already resolving the virtual import. A real JSON module with a build-time JSON transform now supports both loaders; the helper import includes .ts for Node type stripping.",
+  "before": {
+    "exit": 1,
+    "passed": 0,
+    "failed": 1,
+    "error": "ERR_UNSUPPORTED_ESM_URL_SCHEME virtual:"
+  },
+  "after": {
+    "exit": 0,
+    "passed": 9,
+    "failed": 0
+  },
+  "gates": {
+    "frozen-install": {
+      "cmd": [
+        "bun",
+        "install",
+        "--frozen-lockfile"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "oxlint": {
+      "cmd": [
+        "bun",
+        "x",
+        "oxlint",
+        "apps/marketing/cloudflare/native-module-specifiers.runtime.mjs",
+        "apps/marketing/scripts/landing-critical-css.mjs",
+        "apps/marketing/scripts/landing-critical-css.test.ts",
+        "apps/marketing/src/app/[locale]/(marketing)/layout.tsx",
+        "apps/marketing/src/app/[locale]/layout.tsx",
+        "apps/marketing/src/components/landing/hero/video-hero.tsx",
+        "apps/marketing/src/components/landing/hero/video-player.tsx",
+        "apps/marketing/src/components/layouts/landing-enhancements.test.tsx",
+        "apps/marketing/src/components/layouts/landing-enhancements.tsx",
+        "apps/marketing/src/lib/landing-styles.ts",
+        "apps/marketing/src/lib/marketing-render-context.ts",
+        "apps/marketing/start-bridge.config.ts",
+        "apps/marketing/vite.config.mts",
+        "apps/marketing/vitest.config.ts",
+        "packages/marketing-shell/src/nav-actions.tsx",
+        "packages/marketing-shell/src/theme-toggle.tsx"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "format": {
+      "cmd": [
+        "bun",
+        "x",
+        "oxfmt",
+        "--check",
+        "."
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "stylelint": {
+      "cmd": [
+        "npx",
+        "--yes",
+        "stylelint@16",
+        "--config",
+        "/tmp/landing-native-fix/stylelint.json",
+        "apps/marketing/src/app/[locale]/(marketing)/(landing)/landing.css"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "source-size": {
+      "cmd": [
+        "node",
+        "scripts/check-source-size.js"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "wrangler": {
+      "cmd": [
+        "node",
+        "scripts/ci/wrangler-usage.js"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "docs-inventory": {
+      "cmd": [
+        "node",
+        "scripts/generate-docs-inventory.js",
+        "--check"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "app-seo": {
+      "cmd": [
+        "node",
+        "scripts/generate-app-seo.js",
+        "--check"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "type-marketing": {
+      "cmd": [
+        "bun",
+        "run",
+        "type-check"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing",
+      "exit": 0
+    },
+    "type-marketing-shell": {
+      "cmd": [
+        "bun",
+        "run",
+        "type-check"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/packages/marketing-shell",
+      "exit": 0
+    },
+    "type-roadmap": {
+      "cmd": [
+        "bun",
+        "run",
+        "type-check"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/roadmap",
+      "exit": 0
+    },
+    "marketing-tests": {
+      "cmd": [
+        "bun",
+        "run",
+        "test"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing",
+      "exit": 0
+    },
+    "shell-tests": {
+      "cmd": [
+        "bun",
+        "run",
+        "test"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/packages/marketing-shell",
+      "exit": 0
+    },
+    "roadmap-tests": {
+      "cmd": [
+        "node",
+        "--test",
+        "--test-concurrency=2",
+        "apps/roadmap/src/roadmap-data.test.ts",
+        "apps/roadmap/src/cache-policy.test.ts",
+        "apps/roadmap/scripts/seal-artifact.test.mjs",
+        "apps/roadmap/scripts/pre-seal-doctor.test.mjs"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "marketing-build": {
+      "cmd": [
+        "bun",
+        "run",
+        "build:cloudflare"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing",
+      "exit": 0
+    },
+    "marketing-runtime": {
+      "cmd": [
+        "bun",
+        "run",
+        "test:runtime"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing",
+      "exit": 0
+    },
+    "check-changed": {
+      "cmd": [
+        "bun",
+        "check:changed"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "roadmap-build": {
+      "exit": 0
+    },
+    "roadmap-doctor": {
+      "exit": 0
+    },
+    "roadmap-inline": {
+      "exit": 0
+    },
+    "reserved-staging": {
+      "exit": 0,
+      "counts": "2 passed / 0 failed",
+      "command": "node --test scripts/ci/reserved-staging-names.test.mjs"
+    },
+    "plain-bun-import": {
+      "exit": 0,
+      "counts": "plain import succeeded",
+      "command": "bun --eval \"await import('./apps/marketing/start-bridge.config.ts')\""
+    }
+  },
+  "lighthouse": {
+    "LCP": 2962.1752,
+    "TBT": 0,
+    "CLS": 0,
+    "score": 93.0
+  },
+  "CIEnvironment": {
+    "CI": "true",
+    "TUTURUUU_NOINDEX": "1",
+    "NEXT_PUBLIC_APP_URL": "https://marketing.tuturuuu.com",
+    "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://marketing-ci.supabase.invalid",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_marketing_ci_placeholder",
+    "CI_SOURCE_SHA": "9581f25cc43b8e314651f6ff602ef9a71df18224"
+  },
+  "invariants": "GET / 200 / text-html / EN-VI route allowlist unchanged; secure() still after rewrite; nonce and build-mapped data-href preserved. No protected Worker/SEO/Void/runtime test file modified.",
+  "regression": "ESM lexer scans every emitted JS module for static/re-export/dynamic virtual imports; rejects broken variants and ignores quoted examples. It also requires the build-mapped critical/remaining CSS URLs in the native output, and imports source config through plain Node.",
+  "evidence": "https://github.com/tutur3u/platform/tree/screenshots/roadmap-redesign-20261110/.github/screenshots/roadmap-redesign-20261110/landing-critical-82e2c9d1/native-fix-9581f25c",
+  "reservedBefore": {
+    "exit": 1,
+    "note": "Original 82e2c9d1 source config restored temporarily as a control; Bun virtual import failure reproduced; fixed config restored in finally."
+  }
+}

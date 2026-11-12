@@ -1,0 +1,2 @@
+$ node scripts/generate-route-tree.cjs && tsc --noEmit
+Generated apps/roadmap/src/routeTree.gen.ts

@@ -1,0 +1,37 @@
+D79 broken variant rejected:
+- canonical HTML fell back to client rendering (server render failed)
+- canonical HTML missing an absolute og:image
+- tuturuuu.com/roadmap/ answered 200 , expected one 301 to https://tuturuuu.com/roadmap
+- tuturuuu.com/roadmap/?q=1 answered (missing) , expected one 301 to https://tuturuuu.com/roadmap?q=1
+- tuturuuu.com/roadmap/notes/ answered (missing) , expected one 301 to https://tuturuuu.com/roadmap/notes
+- roadmap.tuturuuu.com/ answered (missing) , expected one 301 to https://tuturuuu.com/roadmap
+- roadmap.tuturuuu.com/roadmap/?x=1 answered (missing) , expected one 301 to https://tuturuuu.com/roadmap?x=1
+- roadmap.tuturuuu.com/notes/?x=1 answered (missing) , expected one 301 to https://tuturuuu.com/roadmap/notes?x=1
+- hashed history asset /roadmap/assets/history-fhCSfClG.json status 503 content-type application/json bytes 0, expected 200 application/json
+- /roadmap speculatively loads /roadmap/assets/history-Abcd1234.json: Cloudflare Speed Brain answers Sec-Purpose: prefetch with 503 on tuturuuu.com
+- /roadmap is 1048577 characters, over the 1048576 budget (half the 2097152 CSP limit, past which the page cannot hydrate)
+- /roadmap has 5 inline scripts, expected exactly 4
+- /roadmap has 1 inline scripts its CSP does not hash
+- /roadmap/vi speculatively loads /roadmap/assets/history-Abcd1234.json: Cloudflare Speed Brain answers Sec-Purpose: prefetch with 503 on tuturuuu.com
+- /roadmap/vi is 1048577 characters, over the 1048576 budget (half the 2097152 CSP limit, past which the page cannot hydrate)
+- /roadmap/vi has 5 inline scripts, expected exactly 4
+- /roadmap/vi has 1 inline scripts its CSP does not hash
+- /roadmap/workshops/edufest-2026 speculatively loads /roadmap/assets/history-Abcd1234.json: Cloudflare Speed Brain answers Sec-Purpose: prefetch with 503 on tuturuuu.com
+- /roadmap/workshops/edufest-2026 is 1048577 characters, over the 1048576 budget (half the 2097152 CSP limit, past which the page cannot hydrate)
+- /roadmap/workshops/edufest-2026 has 5 inline scripts, expected exactly 4
+- /roadmap/workshops/edufest-2026 has 1 inline scripts its CSP does not hash
+- /roadmap/vi/workshops/edufest-2026 speculatively loads /roadmap/assets/history-Abcd1234.json: Cloudflare Speed Brain answers Sec-Purpose: prefetch with 503 on tuturuuu.com
+- /roadmap/vi/workshops/edufest-2026 is 1048577 characters, over the 1048576 budget (half the 2097152 CSP limit, past which the page cannot hydrate)
+- /roadmap/vi/workshops/edufest-2026 has 5 inline scripts, expected exactly 4
+- /roadmap/vi/workshops/edufest-2026 has 1 inline scripts its CSP does not hash
+- satellite status 200, expected 301
+- satellite location (missing)
+- build-info commit 0000000000000000000000000000000000000000, expected 9581f25cc43b8e314651f6ff602ef9a71df18224
+document size /roadmap: 317 KiB, 85% under the 2048 KiB CSP limit (budget 1024 KiB)
+document size /roadmap/vi: 321 KiB, 84% under the 2048 KiB CSP limit (budget 1024 KiB)
+document size /roadmap/workshops/edufest-2026: 130 KiB, 94% under the 2048 KiB CSP limit (budget 1024 KiB)
+document size /roadmap/vi/workshops/edufest-2026: 132 KiB, 94% under the 2048 KiB CSP limit (budget 1024 KiB)
+canonical smoke passed on the built Worker
+D79 asset smoke rejected:
+- stylesheet https://tuturuuu.com/roadmap/assets/styles-Abcd1234.css status 404 content-type text/html, expected 200 text/css
+pre-seal doctor passed for 9581f25cc43b8e314651f6ff602ef9a71df18224 on 127.0.0.1:54602

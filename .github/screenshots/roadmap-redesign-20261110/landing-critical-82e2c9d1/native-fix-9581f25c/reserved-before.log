@@ -1,0 +1,55 @@
+error: Cannot find package 'virtual:landing-styles' from '/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/start-bridge.config.ts'
+
+Bun v1.4.4 (macOS arm64)
+✖ every staging profile and configured root host respects the zone reservation (83.045292ms)
+✔ reserved production services, apex, wildcards, nested and legacy hosts fail closed (64.413834ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 180.073833
+
+✖ failing tests:
+
+test at scripts/ci/reserved-staging-names.test.mjs:38:1
+✖ every staging profile and configured root host respects the zone reservation (83.045292ms)
+  Error: Command failed: bun --eval 
+      import { Glob } from 'bun';
+      import { stagingApps, stagingHost, stagingWebOrigin } from './scripts/wave1-staging/profiles.ts';
+      const hosts = [...stagingApps.map(stagingHost), new URL(stagingWebOrigin).hostname];
+      for (const file of new Glob('apps/*/cloudflare/profile.ts').scanSync('.')) {
+        const mod = await import('./' + file);
+        if (mod.stagingProfile) hosts.push(mod.stagingProfile.host);
+      }
+      for (const file of new Glob('apps/*/start-bridge.config.ts').scanSync('.')) {
+        const mod = await import('./' + file);
+        for (const host of mod.default?.mounts?.rootHosts ?? []) {
+          if (host.includes('*') || host.endsWith('.tutur3u.com') || host.includes('staging.')) hosts.push(host);
+        }
+      }
+      console.log(JSON.stringify(hosts));
+    
+  error: Cannot find package 'virtual:landing-styles' from '/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/start-bridge.config.ts'
+  
+  Bun v1.4.4 (macOS arm64)
+  
+      at genericNodeError (node:internal/errors:986:15)
+      at wrappedFn (node:internal/errors:540:14)
+      at checkExecSyncError (node:child_process:943:11)
+      at execFileSync (node:child_process:979:15)
+      at run (file:///Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/scripts/ci/reserved-staging-names.test.mjs:27:5)
+      at TestContext.<anonymous> (file:///Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/scripts/ci/reserved-staging-names.test.mjs:44:18)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    status: 1,
+    signal: null,
+    output: [ null, '', "error: Cannot find package 'virtual:landing-styles' from '/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/start-bridge.config.ts'\n\nBun v1.4.4 (macOS arm64)\n" ],
+    pid: 67234,
+    stdout: '',
+    stderr: "error: Cannot find package 'virtual:landing-styles' from '/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/start-bridge.config.ts'\n\nBun v1.4.4 (macOS arm64)\n"
+  }

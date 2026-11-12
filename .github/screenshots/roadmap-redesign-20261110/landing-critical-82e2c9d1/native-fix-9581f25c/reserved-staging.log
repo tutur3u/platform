@@ -1,0 +1,12 @@
+[ttr resources] running PID 66634
+✔ every staging profile and configured root host respects the zone reservation (99.019541ms)
+✔ reserved production services, apex, wildcards, nested and legacy hosts fail closed (62.985083ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 195.357458
+[ttr resources] finished; exit 0

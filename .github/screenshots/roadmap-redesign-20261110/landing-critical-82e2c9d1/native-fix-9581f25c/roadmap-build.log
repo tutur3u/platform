@@ -1,0 +1,95 @@
+$ node scripts/generate-roadmap-data.mjs && node scripts/generate-history.mjs && vp build && node scripts/package-assets.mjs
+[roadmap-data] ROADMAP_OFFLINE=1: keeping committed data
+[roadmap-history] ROADMAP_OFFLINE=1: keeping committed history
+transforming...
+✓ 2613 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/client/.assetsignore                                          0.02 kB
+dist/client/assets/tuturuuu-logo-eJmoZVfu.png                      2.57 kB
+dist/client/assets/roadmap-boot-BsZ_IJIo.js                        4.73 kB
+dist/client/assets/be-vietnam-pro-500-vietnamese-D3pY20Dx.woff2    5.10 kB
+dist/client/assets/be-vietnam-pro-600-vietnamese-DbGrrtCq.woff2    5.12 kB
+dist/client/assets/be-vietnam-pro-700-vietnamese-DptIoWwl.woff2    5.13 kB
+dist/client/assets/be-vietnam-pro-800-vietnamese-BEUwTqXl.woff2    5.14 kB
+dist/client/assets/be-vietnam-pro-800-latin-ext-CuRTcTDh.woff2     7.14 kB
+dist/client/assets/be-vietnam-pro-600-latin-ext-BKiYkgig.woff2     7.15 kB
+dist/client/assets/be-vietnam-pro-700-latin-ext-CI8xL9vt.woff2     7.16 kB
+dist/client/assets/be-vietnam-pro-500-latin-ext-D9Mxtggg.woff2     7.18 kB
+dist/client/assets/upskii-logo-96-ByyQD1Z1.png                     7.32 kB
+dist/client/assets/jetbrains-mono-vietnamese-BuiWsewI.woff2        8.05 kB
+dist/client/assets/be-vietnam-pro-500-latin-BcWytNOG.woff2        13.32 kB
+dist/client/assets/be-vietnam-pro-700-latin-CPfR8Jz_.woff2        13.34 kB
+dist/client/assets/be-vietnam-pro-800-latin-B5VTH9An.woff2        13.38 kB
+dist/client/assets/be-vietnam-pro-600-latin-xAC4kEK0.woff2        13.42 kB
+dist/client/assets/jetbrains-mono-labels-CqXkNmBr.woff2           17.47 kB
+dist/client/assets/jetbrains-mono-400-latin-DuuNxu2V.woff2        19.88 kB
+dist/client/assets/jetbrains-mono-latin-BB0eCvjd.woff2            47.19 kB
+dist/client/assets/jetbrains-mono-variable-DYhBJxHs.woff2        113.68 kB
+dist/client/assets/og-roadmap-CBIGGpcn.png                       118.79 kB
+dist/client/assets/history-fhCSfClG.json                         240.85 kB │ gzip:  41.02 kB
+dist/client/assets/og-edufest-2026-DjjopQe0.png                  243.42 kB
+dist/client/assets/styles-DkQxlv5O.css                           123.18 kB │ gzip:  26.48 kB
+dist/client/assets/edufest-2026-OtggOFRF.js                        0.14 kB │ gzip:   0.14 kB
+dist/client/assets/routes-DI0R6Ttt.js                              0.14 kB │ gzip:   0.14 kB
+dist/client/assets/vi-bSsJAug4.js                                  0.14 kB │ gzip:   0.14 kB
+dist/client/assets/vi_.workshops.edufest-2026-_vCe-tvv.js          0.14 kB │ gzip:   0.14 kB
+dist/client/assets/edufest-DwsJZopv.js                            26.05 kB │ gzip:   6.59 kB
+dist/client/assets/roadmap-DNh-j8nN.js                            37.82 kB │ gzip:  13.02 kB
+dist/client/assets/mobile-menu-DboHoZq-.js                        58.08 kB │ gzip:  18.96 kB
+dist/client/assets/use-live-data-DRFxnLQZ.js                     146.79 kB │ gzip:  39.52 kB
+dist/client/assets/index-DXG305gW.js                             464.49 kB │ gzip: 151.66 kB
+
+✓ built in 380ms
+transforming...
+✓ 2681 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/server/wrangler.json                                          1.71 kB │ gzip:  0.80 kB
+dist/server/assets/tuturuuu-logo-eJmoZVfu.png                      2.57 kB
+dist/server/assets/roadmap-boot-BsZ_IJIo.js                        4.73 kB
+dist/server/assets/be-vietnam-pro-500-vietnamese-D3pY20Dx.woff2    5.10 kB
+dist/server/assets/be-vietnam-pro-600-vietnamese-DbGrrtCq.woff2    5.12 kB
+dist/server/assets/be-vietnam-pro-700-vietnamese-DptIoWwl.woff2    5.13 kB
+dist/server/assets/be-vietnam-pro-800-vietnamese-BEUwTqXl.woff2    5.14 kB
+dist/server/assets/be-vietnam-pro-800-latin-ext-CuRTcTDh.woff2     7.14 kB
+dist/server/assets/be-vietnam-pro-600-latin-ext-BKiYkgig.woff2     7.15 kB
+dist/server/assets/be-vietnam-pro-700-latin-ext-CI8xL9vt.woff2     7.16 kB
+dist/server/assets/be-vietnam-pro-500-latin-ext-D9Mxtggg.woff2     7.18 kB
+dist/server/assets/upskii-logo-96-ByyQD1Z1.png                     7.32 kB
+dist/server/assets/jetbrains-mono-vietnamese-BuiWsewI.woff2        8.05 kB
+dist/server/.vite/manifest.json                                   11.88 kB │ gzip:  1.66 kB
+dist/server/assets/be-vietnam-pro-500-latin-BcWytNOG.woff2        13.32 kB
+dist/server/assets/be-vietnam-pro-700-latin-CPfR8Jz_.woff2        13.34 kB
+dist/server/assets/be-vietnam-pro-800-latin-B5VTH9An.woff2        13.38 kB
+dist/server/assets/be-vietnam-pro-600-latin-xAC4kEK0.woff2        13.42 kB
+dist/server/assets/jetbrains-mono-labels-CqXkNmBr.woff2           17.47 kB
+dist/server/assets/jetbrains-mono-400-latin-DuuNxu2V.woff2        19.88 kB
+dist/server/assets/jetbrains-mono-latin-BB0eCvjd.woff2            47.19 kB
+dist/server/assets/jetbrains-mono-variable-DYhBJxHs.woff2        113.68 kB
+dist/server/assets/og-roadmap-CBIGGpcn.png                       118.79 kB
+dist/server/assets/history-fhCSfClG.json                         240.85 kB │ gzip: 41.02 kB
+dist/server/assets/og-edufest-2026-DjjopQe0.png                  243.42 kB
+dist/server/assets/styles-DkQxlv5O.css                           123.18 kB │ gzip: 26.48 kB
+dist/server/assets/start-C63VetBp.js                               0.08 kB │ gzip:  0.10 kB │ map:     0.34 kB
+dist/server/assets/empty-plugin-adapters-BaGcmrjC.js               0.13 kB │ gzip:  0.13 kB │ map:     0.60 kB
+dist/server/assets/vi-BM8lBa5c.js                                  0.18 kB │ gzip:  0.18 kB │ map:     0.70 kB
+dist/server/assets/routes-BVf7X0L8.js                              0.19 kB │ gzip:  0.18 kB │ map:     0.62 kB
+dist/server/assets/edufest-2026-vwaxyl8O.js                        0.19 kB │ gzip:  0.18 kB │ map:     0.71 kB
+dist/server/assets/vi_.workshops.edufest-2026-DXw6g9hB.js          0.21 kB │ gzip:  0.19 kB │ map:     0.81 kB
+dist/server/assets/_tanstack-start-manifest_v-BApE56sJ.js          1.73 kB │ gzip:  0.45 kB
+dist/server/assets/react-dom--cE_BQ0u.js                           3.59 kB │ gzip:  1.38 kB │ map:    12.96 kB
+dist/server/assets/host-probe-BC2ZcuW4.js                          3.83 kB │ gzip:  1.70 kB │ map:    13.57 kB
+dist/server/assets/seo-u1B-GZDL.js                                 4.21 kB │ gzip:  1.75 kB │ map:    14.68 kB
+dist/server/assets/jsx-runtime-BiX_BIZ9.js                         8.61 kB │ gzip:  3.31 kB │ map:    31.59 kB
+dist/server/assets/edufest-DTdvxvwa.js                            26.17 kB │ gzip:  6.66 kB │ map:    84.45 kB
+dist/server/assets/roadmap-D8iOVW2m.js                            38.00 kB │ gzip: 13.11 kB │ map:   140.64 kB
+dist/server/assets/mobile-menu-CB6RaDO5.js                        58.21 kB │ gzip: 19.02 kB │ map:   279.60 kB
+dist/server/assets/request-boundary-DO4A9u9a.js                   71.02 kB │ gzip: 24.71 kB │ map:   402.87 kB
+dist/server/assets/use-live-data-CE6BA2Qg.js                     144.73 kB │ gzip: 38.93 kB │ map:   319.71 kB
+dist/server/assets/router-wwP786Hx.js                            162.82 kB │ gzip: 53.87 kB │ map:   453.32 kB
+dist/server/index.js                                             308.44 kB │ gzip: 97.94 kB │ map: 1,406.98 kB
+
+[plugin vite:css-post] [33m[SOURCEMAP_BROKEN] [0mSourcemap is likely to be incorrect: a plugin (vite:css-post) was used to transform files, but didn't generate a sourcemap for the transformation. Consult the plugin documentation for help: https://rolldown.rs/guide/troubleshooting#warning-sourcemap-is-likely-to-be-incorrect
+
+✓ built in 340ms

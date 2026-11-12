@@ -1,0 +1,14 @@
+$ vitest run --passWithNoTests
+
+ RUN  v5.0.5 /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing
+
+
+ Test Files  11 passed (11)
+      Tests  51 passed (51)
+   Start at  06:00:26
+   Duration  1.99s (environment 85%, import 5%, transform 5%, tests 3%, worker 2%)
+
+Environment  jsdom was created 11 times · 2.58s total, 85% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
