@@ -47,10 +47,10 @@ def check_app(app):
     groups = entitlements.get("keychain-access-groups", [])
     require(len(groups) == 1, "Expected one app-specific Keychain group")
     group = groups[0]
-    require("$" not in group and (group == bundle or group.endswith("." + bundle)), group)
+    prefix = group.removesuffix("." + bundle)
+    require("$" not in group and group.endswith("." + bundle) and prefix, group)
     application = entitlements.get("com.apple.application-identifier")
-    if application:
-        require(group == application, "Keychain group must match application identifier")
+    require(application == f"{prefix}.{bundle}", "Keychain group must match application identifier")
     print(f"Built app Keychain access group: {group}")
     print("Entitlement inspection does not prove a provisioned Keychain write or OAuth login")
 
