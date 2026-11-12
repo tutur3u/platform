@@ -4,7 +4,7 @@
     "@babel/parser": "7.29.9",
     "@lingual/i18n-check": "0.9.5",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@vitest/coverage-v8": "5.0.5",
     "acorn": "8.19.0",
     "lucide-static": "^1.61.0",
