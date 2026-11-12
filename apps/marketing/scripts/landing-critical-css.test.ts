@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { expect, it } from 'vitest';
 import { criticalCss } from './landing-critical-css.mjs';
-import { landingStyles } from '../src/lib/landing-styles';
+import { landingStyles } from '../start-bridge.config';
 it('keeps first-paint utilities, tokens and fonts while excluding below-fold rules', () => {
   const css =
     '@layer theme{:root{--ink:black;--unused:orange}}@font-face{font-family:Brand;font-display:swap}@layer utilities{.hero{color:var(--ink)}.below{display:grid}@media(min-width:640px){.sm\\:large{font-size:3rem}}}';
