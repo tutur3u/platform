@@ -81,4 +81,145 @@ describe('calendar OAuth runtime', () => {
       }).toString()
     ).toBe('https://calendar.tuturuuu.com/?error=x');
   });
+  it('resolves the exact production mount through the normal constants entrypoint', async () => {
+    vi.resetModules();
+    vi.stubEnv('CALENDAR_DEPLOYMENT_PROFILE', 'production');
+    vi.stubEnv('CALENDAR_APP_URL', 'https://tuturuuu.com/calendar/');
+    const runtime = await import('./calendar-oauth-runtime');
+    expect(runtime.resolveCalendarPublicOrigin()).toBe(
+      'https://tuturuuu.com/calendar'
+    );
+  });
+
+  it.each(['https://tuturuuu.com/calendar', 'https://tuturuuu.com/calendar/'])(
+    'preserves the canonical mount and callback result query for %s',
+    (base) => {
+      expect(resolveCalendarPublicOrigin(base)).toBe(
+        'https://tuturuuu.com/calendar'
+      );
+      expect(
+        buildCalendarPostAuthRedirectUrl(base, 'workspace-1', {
+          provider: 'microsoft',
+          connected: 'true',
+        }).toString()
+      ).toBe(
+        'https://tuturuuu.com/calendar/workspace-1?provider=microsoft&connected=true'
+      );
+      expect(
+        buildCalendarPostAuthRedirectUrl(base, null, {
+          error: 'denied',
+        }).toString()
+      ).toBe('https://tuturuuu.com/calendar?error=denied');
+    }
+  );
+
+  it.each([
+    '//attacker.example',
+    'https://attacker.example',
+    '../escape',
+    '%2e%2e',
+  ])('keeps malicious workspace target %s inside Calendar', (workspace) => {
+    const result = buildCalendarPostAuthRedirectUrl(
+      'https://tuturuuu.com/calendar',
+      workspace,
+      {}
+    );
+    expect(result.origin).toBe('https://tuturuuu.com');
+    expect(result.pathname.startsWith('/calendar/')).toBe(true);
+  });
+
+  it.each([
+    [
+      'production',
+      'https://calendar.tuturuuu.com',
+      'https://tuturuuu.com/calendar',
+      'https://calendar.tuturuuu.com',
+    ],
+    [
+      'production',
+      'https://tuturuuu.com/calendar/',
+      'https://calendar.tuturuuu.com',
+      'https://tuturuuu.com/calendar',
+    ],
+    [
+      'production',
+      'not a url',
+      'https://tuturuuu.com/calendar',
+      'https://tuturuuu.com/calendar',
+    ],
+    [
+      'production',
+      'http://0.0.0.0:7806',
+      'https://tuturuuu.com/calendar',
+      'https://tuturuuu.com/calendar',
+    ],
+    [
+      'production',
+      'https://tuturuuu.com/tasks',
+      'https://tuturuuu.com/calendar',
+      'https://tuturuuu.com/calendar',
+    ],
+    [
+      'staging',
+      'https://tuturuuu.com/calendar',
+      'https://calendar.tutur3u.com',
+      'https://calendar.tutur3u.com',
+    ],
+    [
+      'development',
+      'https://tuturuuu.com/calendar',
+      'https://calendar.tuturuuu.com',
+      'https://calendar.tuturuuu.com',
+    ],
+  ])(
+    'preserves candidate priority for profile %s, higher %s and lower %s',
+    async (profile, higher, lower, expected) => {
+      vi.resetModules();
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('CALENDAR_DEPLOYMENT_PROFILE', profile);
+      vi.stubEnv('CALENDAR_APP_URL', higher);
+      vi.stubEnv('NEXT_PUBLIC_CALENDAR_APP_URL', '');
+      vi.stubEnv('NEXT_PUBLIC_APP_URL', lower);
+      vi.stubEnv('BASE_URL', '');
+      const { BASE_URL } = await import('@/constants/common');
+      expect(BASE_URL).toBe(expected);
+    }
+  );
+
+  it.each([null, '.', '..'])(
+    'uses the canonical mounted landing for rejected or absent workspace %s',
+    (workspace) => {
+      for (const base of [
+        'https://tuturuuu.com/calendar',
+        'https://tuturuuu.com/calendar/',
+      ]) {
+        const result = buildCalendarPostAuthRedirectUrl(base, workspace, {
+          error: 'denied',
+        });
+        expect(result.toString()).toBe(
+          'https://tuturuuu.com/calendar?error=denied'
+        );
+        expect(result.pathname).toBe('/calendar');
+      }
+      expect(
+        buildCalendarPostAuthRedirectUrl(
+          'https://calendar.tuturuuu.com',
+          workspace,
+          { error: 'denied' }
+        ).toString()
+      ).toBe('https://calendar.tuturuuu.com/?error=denied');
+    }
+  );
+
+  it('encodes workspace path characters while retaining mount containment and query', () => {
+    const result = buildCalendarPostAuthRedirectUrl(
+      'https://tuturuuu.com/calendar',
+      'workspace/a?b#c',
+      { connected: 'true' }
+    );
+    expect(result.toString()).toBe(
+      'https://tuturuuu.com/calendar/workspace%2Fa%3Fb%23c?connected=true'
+    );
+    expect(result.pathname).toBe('/calendar/workspace%2Fa%3Fb%23c');
+  });
 });

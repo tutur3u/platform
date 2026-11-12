@@ -92,3 +92,43 @@ test('production Worker configs never set a shared cookie-domain override', (t) 
     false
   );
 });
+
+test('Calendar production URLs use the apex mount while retaining the rollback host identity', (t) => {
+  const root = fixture(t, 'calendar');
+  prepare(root, 'calendar', 'production', undefined, sha);
+  const restored = verify(root, 'calendar', 'production', sha);
+  const config = JSON.parse(readFileSync(restored.config, 'utf8'));
+  assert.equal(
+    config.vars.NEXT_PUBLIC_APP_URL,
+    'https://tuturuuu.com/calendar'
+  );
+  assert.equal(
+    config.vars.NEXT_PUBLIC_CALENDAR_APP_URL,
+    'https://tuturuuu.com/calendar'
+  );
+  assert.equal(
+    config.vars.MICROSOFT_REDIRECT_URI,
+    'https://tuturuuu.com/calendar/api/v1/calendar/auth/microsoft/callback'
+  );
+  assert.equal(Object.hasOwn(config.vars, 'GOOGLE_REDIRECT_URI'), false);
+  assert.ok(config.secrets.required.includes('GOOGLE_REDIRECT_URI'));
+  assert.equal(
+    profileFor('calendar', 'production').host,
+    'calendar.tuturuuu.com'
+  );
+});
+
+test('Calendar production path publication cannot replace the retained root service', (t) => {
+  const profile = profileFor('calendar', 'production');
+  assert.equal(profile.name, 'tuturuuu-calendar-path-candidate');
+  assert.equal(
+    profileFor('calendar', 'staging').name,
+    'tuturuuu-calendar-wave1-staging'
+  );
+  const root = fixture(t, 'calendar');
+  prepare(root, 'calendar', 'production', undefined, sha);
+  const restored = verify(root, 'calendar', 'production', sha);
+  const config = JSON.parse(readFileSync(restored.config, 'utf8'));
+  assert.equal(config.name, 'tuturuuu-calendar-path-candidate');
+  assert.notEqual(config.name, 'tuturuuu-calendar');
+});
