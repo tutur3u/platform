@@ -9532,6 +9532,7 @@
     "end_weak_support_done": "Tutoring ended",
     "end_weak_support_failed": "Could not end tutoring. Try again.",
     "end_weak_support_title": "End weak-support tutoring?",
+    "export_choose_range": "Choose date range",
     "export_detailed_csv": "Detailed CSV",
     "export_detailed_xlsx": "Detailed XLSX",
     "export_failed": "Export failed",
