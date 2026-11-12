@@ -3,11 +3,26 @@ import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   guardWebApiCsrf,
+  getWebCsrfTrustedOrigins,
   WEB_CSRF_EXEMPTIONS,
   WEB_CSRF_TRUSTED_ORIGINS,
 } from './csrf';
 
 const SESSION_COOKIE = 'sb-abc-auth-token=value';
+const REMOVED_ORIGINS = [
+  'https://calendar.tuturuuu.com',
+  'https://cms.tuturuuu.com',
+  'https://drive.tuturuuu.com',
+  'https://external.tuturuuu.com',
+  'https://finance.tuturuuu.com',
+  'https://hive.tuturuuu.com',
+  'https://infra.tuturuuu.com',
+  'https://mail.tuturuuu.com',
+  'https://meet.tuturuuu.com',
+  'https://storefront.tuturuuu.com',
+  'https://tasks.tuturuuu.com',
+  'https://track.tuturuuu.com',
+];
 
 function request(
   path: string,
@@ -20,7 +35,7 @@ function request(
 const siblingPost = () =>
   request('/api/v1/workspaces/ws/tasks', {
     cookie: SESSION_COOKIE,
-    origin: 'https://meet.tuturuuu.com',
+    origin: 'https://attacker.tuturuuu.com',
     'sec-fetch-site': 'same-site',
   });
 
@@ -58,7 +73,7 @@ describe('guardWebApiCsrf', () => {
     expect(warn).toHaveBeenCalledWith('CSRF check failed', {
       method: 'POST',
       mode: 'report',
-      origin: 'https://meet.tuturuuu.com',
+      origin: 'https://attacker.tuturuuu.com',
       reason: 'same-site',
       route: '/api/v1/workspaces/ws/tasks',
       secFetchSite: 'same-site',
@@ -261,16 +276,149 @@ describe('guardWebApiCsrf', () => {
     }
   });
 
-  it('keeps a same-site Fetch Metadata request from the workspace subdomain rejected', () => {
-    expect(
-      guardWebApiCsrf(
-        request('/api/v1/workspaces/ws/tasks', {
-          cookie: SESSION_COOKIE,
-          origin: 'https://workspace.tuturuuu.com',
-          'sec-fetch-site': 'same-site',
-        }),
-        { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
-      )?.status
-    ).toBe(403);
+  it.each(REMOVED_ORIGINS)(
+    'rejects removed satellite %s in enforce mode',
+    (origin) => {
+      expect(WEB_CSRF_TRUSTED_ORIGINS).not.toContain(origin);
+      for (const site of [undefined, 'same-site', 'cross-site']) {
+        expect(
+          guardWebApiCsrf(
+            request('/api/v1/things', {
+              cookie: SESSION_COOKIE,
+              origin,
+              ...(site ? { 'sec-fetch-site': site } : {}),
+            }),
+            { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
+          )?.status
+        ).toBe(403);
+      }
+    }
+  );
+
+  it.each(['off', 'report'] as const)(
+    'keeps removed satellite admission unchanged in %s mode',
+    (mode) => {
+      for (const origin of REMOVED_ORIGINS) {
+        for (const site of [undefined, 'same-site']) {
+          expect(
+            guardWebApiCsrf(
+              request('/api/v1/things', {
+                cookie: SESSION_COOKIE,
+                origin,
+                ...(site ? { 'sec-fetch-site': site } : {}),
+              }),
+              { configuredOrigin: 'https://tuturuuu.com', mode }
+            )
+          ).toBeNull();
+        }
+      }
+    }
+  );
+
+  it.each([undefined, 'same-site', 'cross-site'])(
+    'checks every trusted satellite with Fetch Metadata %s',
+    (site) => {
+      for (const origin of WEB_CSRF_TRUSTED_ORIGINS) {
+        expect(
+          guardWebApiCsrf(
+            request('/api/v1/things', {
+              cookie: SESSION_COOKIE,
+              origin,
+              ...(site ? { 'sec-fetch-site': site } : {}),
+            }),
+            { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
+          )?.status ?? 200
+        ).toBe(site === 'cross-site' ? 403 : 200);
+      }
+    }
+  );
+
+  it.each([undefined, 'same-site', 'cross-site'])(
+    'rejects untrusted CMS variants with Fetch Metadata %s',
+    (site) => {
+      for (const origin of [
+        'https://cms.tuturuuu.com.evil.test',
+        'http://cms.tuturuuu.com',
+        'https://cms.tuturuuu.com:8443',
+        'https://attacker.tuturuuu.com',
+        'null',
+        undefined,
+      ]) {
+        expect(
+          guardWebApiCsrf(
+            request('/api/v1/things', {
+              cookie: SESSION_COOKIE,
+              ...(origin ? { origin } : {}),
+              ...(site ? { 'sec-fetch-site': site } : {}),
+            }),
+            { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
+          )?.status
+        ).toBe(403);
+      }
+    }
+  );
+
+  it('never admits staging registry entries in production', () => {
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'production');
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+      '.staging.tutur3u.com'
+    );
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
+      'cms:https://cms.tutur3u.com'
+    );
+    const error = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+    try {
+      expect(getWebCsrfTrustedOrigins()).toEqual(WEB_CSRF_TRUSTED_ORIGINS);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it('isolates explicitly configured staging satellites from production', () => {
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
+    vi.stubEnv('VERCEL_ENV', 'preview');
+    vi.stubEnv('NEXT_PUBLIC_VERCEL_ENV', 'preview');
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+      '.staging.tutur3u.com'
+    );
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
+      'contacts:https://contacts.tutur3u.com,cms:https://cms.tutur3u.com,tools:https://tools.tutur3u.com'
+    );
+    expect(getWebCsrfTrustedOrigins()).toEqual([
+      'https://contacts.tutur3u.com',
+    ]);
+    for (const site of [undefined, 'same-site', 'cross-site']) {
+      for (const origin of [
+        'https://contacts.tutur3u.com',
+        'https://contacts.tuturuuu.com',
+        'https://cms.tutur3u.com',
+        'https://tools.tutur3u.com',
+      ]) {
+        const req = new NextRequest('https://web.tutur3u.com/api/v1/things', {
+          method: 'POST',
+          headers: {
+            cookie: SESSION_COOKIE,
+            origin,
+            ...(site ? { 'sec-fetch-site': site } : {}),
+          },
+        });
+        expect(
+          guardWebApiCsrf(req, {
+            configuredOrigin: 'https://web.tutur3u.com',
+            mode: 'enforce',
+          })?.status ?? 200
+        ).toBe(
+          origin === 'https://contacts.tutur3u.com' && site !== 'cross-site'
+            ? 200
+            : 403
+        );
+      }
+    }
   });
 });

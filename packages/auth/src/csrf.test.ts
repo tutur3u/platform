@@ -205,7 +205,6 @@ describe('checkCsrf', () => {
     it.each([
       ['same-origin', { ok: true, reason: 'same-origin' }],
       ['SAME-ORIGIN', { ok: true, reason: 'same-origin' }],
-      ['same-site', { ok: false, reason: 'same-site' }],
       ['cross-site', { ok: false, reason: 'cross-site' }],
       ['none', { ok: false, reason: 'fetch-site-none' }],
       ['weird', { ok: false, reason: 'unknown-fetch-site' }],
@@ -221,6 +220,49 @@ describe('checkCsrf', () => {
       }
     });
   });
+
+  it.each([undefined, 'same-site', 'SAME-SITE', 'cross-site'])(
+    'requires an exact trusted origin with Fetch Metadata %s',
+    (site) => {
+      for (const origin of [
+        APEX,
+        'https://cms.tuturuuu.com',
+        'https://attacker.tuturuuu.com',
+        'https://cms.tuturuuu.com.evil.test',
+        'http://cms.tuturuuu.com',
+        'https://cms.tuturuuu.com:8443',
+        'null',
+        undefined,
+      ]) {
+        const verdict = checkCsrf({
+          allowedOrigins: [APEX, 'https://cms.tuturuuu.com'],
+          headers: new Headers({
+            cookie: SESSION_COOKIE,
+            ...(origin ? { origin } : {}),
+            ...(site ? { 'sec-fetch-site': site } : {}),
+          }),
+          method: 'POST',
+          pathname: '/api/v1/things',
+        });
+        expect(verdict.ok).toBe(
+          (origin === APEX || origin === 'https://cms.tuturuuu.com') &&
+            site !== 'cross-site'
+        );
+        if (!origin || origin === 'null') {
+          expect(verdict).toMatchObject({
+            reason:
+              site === 'cross-site'
+                ? 'cross-site'
+                : site
+                  ? 'same-site'
+                  : origin
+                    ? 'null-origin'
+                    : 'missing-origin',
+          });
+        }
+      }
+    }
+  );
 
   describe('without Fetch Metadata (older browsers)', () => {
     it.each([
