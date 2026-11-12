@@ -1,7 +1,7 @@
 'use client';
 
 import { CalendarConnectionsCompact } from './calendar-connections-compact';
-import { CalendarConnectionsSettingsContent } from './calendar-connections-settings-content';
+import { CalendarConnectionsSettingsContent } from './calendar-connections-settings-lazy';
 import { CalendarSyncAttentionButton } from './calendar-sync-attention-button';
 import {
   type CalendarConnectionsUnifiedVariant,

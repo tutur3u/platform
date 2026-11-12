@@ -111,6 +111,49 @@ Set `SIDEBAR_SHIFT_SHOTS=<dir>` to also save collapsed, mid-reveal, and expanded
 screenshots. It needs the installed workspace and a Playwright Chromium; it uses no
 network and no authentication, so it does not cover signed-in data states.
 
+### Calendar settings load boundary
+
+Calendar's sidebar, header status control, and compact connection picker share
+`calendar-connections-settings-lazy.tsx`. Closed dialogs do not load the settings
+implementation. The explicit settings variant loads it when rendered, with a
+fixed-height skeleton while its module resolves. Keep those entrypoints behind
+the same boundary; an eager import in a status control puts settings back into
+the initial Calendar module graph.
+
+The isolated Calendar fixture mounts the real list, status control, and shared
+`Structure` with in-memory calendar state, an image adapter, and synthetic events:
+
+```sh
+ttr resources run -- node scripts/ci/calendar-sidebar-performance.mjs
+```
+
+Open `http://127.0.0.1:4193/?mode=hover` in the native preview. Use
+`mode=expanded` for the pinned-sidebar control and `data=loading` or `data=empty`
+for list states. The fixture has no auth, database, OAuth, or provider services.
+Stop its owned server after verification. It is a development fixture, not a
+production build or signed-in Calendar acceptance test.
+
+Pin source, lockfile, actual viewport, theme, and runtime before comparing runs.
+Warm the development transforms once; HTTP responses use `Cache-Control: no-store`
+and file watching is disabled. Pass `--baseline <full-Git-SHA>` to replay the four
+consumer modules at an immutable baseline without modifying the checkout. The
+services, CSS, and fixture remain identical between baseline and working-tree runs.
+Take a native preview snapshot immediately after each navigation to force frame
+presentation; hidden preview compositing can otherwise defer LCP arbitrarily.
+Record `window.calendarPerformance.report()` after paint and
+`window.calendarPerformance.sample()` through pointer entry and exit.
+The report includes the last LCP candidate, session-window CLS, raw shift entries,
+resource sizes, and page errors. A missing LCP entry is unavailable evidence,
+never zero. Compare like-for-like samples and retain failed runs.
+
+Verify that the settings module is absent before opening the dialog and present
+after opening it; check close/reopen and calendar toggles too. Hover must retain
+one grid rectangle while the rail expands. The pinned-sidebar toggle is a negative
+control: it intentionally changes the reserved width and must be detectable by
+the geometry probe. Repeat narrow viewports and both themes. The deferred-module
+regression is `calendar-connections-settings-lazy.test.tsx`; browser metrics do
+not replace its focused test or the owning app's type check and build.
+
 ## Navigation, forms, and states
 
 With expand-all enabled or search active, sidebar groups are non-collapsible and

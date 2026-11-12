@@ -11,6 +11,7 @@ load only the reference section needed by the affected surface.
 - `references/web-start-candidate.md`: default-off native Web slices, static HTML, staging acceptance and rollback.
 - `references/platform-patterns.md`: Cache Components, satellite actors, shared API
   boundaries, dashboard interaction, translations, and navigation.
+- `references/calendar-sidebar-performance.md`: isolated Calendar load and hover measurements.
 - `references/repository-workflows.md`: app ownership, settings shells, package
   commands, task capture, and coordination metadata.
 - `references/employee-cli-recovery.md`: operation-only CLI employee recovery authorization and dispatch fences.
