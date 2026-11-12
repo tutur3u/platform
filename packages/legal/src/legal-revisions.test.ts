@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { reviseLegalDocument } from './commercial-revisions';
-import { getLegalDocument } from './documents';
+import { getLegalDocument, LEGAL_DOCUMENTS } from './documents';
 import { getProposedLegalDocument } from './proposed';
+import { getLegalRevision, upcomingMobilePrivacyRevision } from './revisions';
 
 // Recovered from c967e8d2db75fc65159c7dcb31ed1b27673ae924, before c0ce0bb108b.
 const footers = {
@@ -46,6 +47,20 @@ const hashes = {
     terms: 'ca183937ac34e341a1462c1a76561105fa84f21ce3bf66f1c186b9326072631c',
   },
 } as const;
+const meetPublicationHashes = {
+  en: {
+    privacy: '1c1f7426e19c5d5be1fd01f861cf3310e166987538f7b5163d7d4af6981c11bc',
+    terms: 'ea66220bcf79da35a338f9b2f01deffee031e7dcb82d62042423e73d8d54b038',
+    subprocessors:
+      '84bd25819c73538963defa626719bf1ee00e79d9f42ee1017f86fd287a392af4',
+  },
+  vi: {
+    privacy: '95c55d6edf986eb6e82767f8429c27b9a5d7204ac538b964ff3327e243e458d0',
+    terms: '4a854bc70815c268a0b3bfdc7dd1cdf44a3a31debe682776f72fea604283f837',
+    subprocessors:
+      '122ba105e557b937aa0b2777c7abd0341a54948dd3f6fcdf9daacc5488961a29',
+  },
+} as const;
 describe('effective legal publications', () => {
   for (const locale of ['en', 'vi'] as const) {
     for (const kind of [
@@ -56,7 +71,7 @@ describe('effective legal publications', () => {
       'subprocessors',
     ] as const) {
       it(`${locale}/${kind} preserves historical text and date`, () => {
-        const d = getLegalDocument(kind, locale);
+        const d = LEGAL_DOCUMENTS[locale][kind];
         expect(d.effectiveDate).toBe('2026-08-15');
         expect(d.version).toBe('2026-08-15');
         expect(d.footer).toBe(footers[locale][kind]);
@@ -73,6 +88,68 @@ describe('effective legal publications', () => {
         );
       });
     }
+    for (const kind of ['privacy', 'terms', 'subprocessors'] as const) {
+      it(`${locale}/${kind} consumes the proposed dated Meet publication`, () => {
+        const baseline = LEGAL_DOCUMENTS[locale][kind];
+        const document = getLegalDocument(kind, locale);
+        expect(document.effectiveDate).toBe('2026-11-12');
+        expect(document.publishedDate).toBe('2026-11-12');
+        expect(document.version).toBe('2026-11-12');
+        expect(document.reviewRequired).toBe(true);
+        expect(document.footer).toBe(baseline.footer);
+        expect(document.summaryRows).toEqual(baseline.summaryRows);
+        expect(document.sections.slice(0, baseline.sections.length)).toEqual(
+          baseline.sections
+        );
+        const additions = document.sections.slice(baseline.sections.length);
+        expect(additions.length).toBeGreaterThan(0);
+        expect(
+          additions.every((section) => section.id?.startsWith('meet-ai-'))
+        ).toBe(true);
+        const text = JSON.stringify({
+          effectiveDate: document.effectiveDate,
+          sections: document.sections.map(({ content, title }) => ({
+            content,
+            title,
+          })),
+          summaryRows: document.summaryRows,
+        });
+        expect(createHash('sha256').update(text).digest('hex')).toBe(
+          meetPublicationHashes[locale][kind]
+        );
+      });
+    }
+    it(`${locale} unrelated canonical publications retain identity`, () => {
+      expect(getLegalDocument('dpa', locale)).toBe(LEGAL_DOCUMENTS[locale].dpa);
+      expect(getLegalDocument('sla', locale)).toBe(LEGAL_DOCUMENTS[locale].sla);
+    });
+    it(`${locale} freezes commercial proposals while mobile inherits current`, () => {
+      for (const kind of ['privacy', 'terms', 'subprocessors'] as const) {
+        expect(getLegalRevision(kind, locale, '2026-09-13-draft')).toEqual(
+          reviseLegalDocument(LEGAL_DOCUMENTS[locale][kind])
+        );
+        const proposed = getProposedLegalDocument(kind, locale);
+        expect(proposed.version).toBe('2026-11-02');
+        expect(proposed.reviewRequired).toBe(true);
+        expect(
+          proposed.sections.some((section) =>
+            section.id?.startsWith('meet-ai-')
+          )
+        ).toBe(false);
+      }
+      const current = getLegalDocument('privacy', locale);
+      const mobile = getLegalRevision(
+        'privacy',
+        locale,
+        upcomingMobilePrivacyRevision.version
+      );
+      expect(mobile.sections.slice(0, current.sections.length)).toEqual(
+        current.sections
+      );
+      expect(mobile.effectiveDate).toBeNull();
+      expect(mobile.published).toBe(false);
+      expect(mobile.reviewRequired).toBe(true);
+    });
     for (const kind of ['acceptable-use', 'community-guidelines'] as const) {
       it(`${locale}/${kind} serves the February policy`, () => {
         const d = getLegalDocument(kind, locale);
