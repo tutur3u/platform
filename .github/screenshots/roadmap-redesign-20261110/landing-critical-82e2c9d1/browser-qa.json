@@ -1,0 +1,30 @@
+{
+  "menus": [
+    {
+      "path": "/",
+      "open": {
+        "name": "Main navigation",
+        "open": true
+      },
+      "closed": {
+        "expanded": "false",
+        "focus": "Main navigation"
+      }
+    },
+    {
+      "path": "/roadmap",
+      "open": {
+        "name": "Main navigation",
+        "open": true
+      },
+      "closed": {
+        "expanded": "false",
+        "focus": "Main navigation"
+      }
+    }
+  ],
+  "video": {
+    "decorations": "none",
+    "src": "https://www.youtube-nocookie.com/embed/JGWbvaAC24Q?autoplay=1&rel=0&modestbranding=1&showinfo=0"
+  }
+}

@@ -1,0 +1,32 @@
+[ttr resources] running PID 85799
+
+ RUN  v5.0.5 /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing
+
+ ❯ scripts/landing-critical-css.test.ts (5 tests | 1 failed) 5ms
+   × does not confuse a utility with a substring of a different utility 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  scripts/landing-critical-css.test.ts > does not confuse a utility with a substring of a different utility
+AssertionError: expected '.p-1{padding:4px}.p-1\.5{padding:6px}' not to contain '.p-1{'
+
+Expected: ".p-1{"
+Received: ".p-1{padding:4px}.p-1\.5{padding:6px}"
+
+ ❯ scripts/landing-critical-css.test.ts:57:77
+     55| });
+     56| it('does not confuse a utility with a substring of a different utility…
+     57|  expect(criticalCss('.p-1{padding:4px}.p-1\\.5{padding:6px}', 'p-1.5')…
+       |                                                                             ^
+     58| });
+     59|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  04:57:34
+   Duration  314ms (environment 84%, transform 8%, import 5%, tests 2%, worker 1%)
+
+[ttr resources] finished; exit 1

@@ -1,0 +1,11 @@
+[ttr resources] running PID 87724
+
+ RUN  v5.0.5 /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  04:59:17
+   Duration  100ms (transform 45%, import 42%, tests 8%, worker 4%)
+
+[ttr resources] finished; exit 0

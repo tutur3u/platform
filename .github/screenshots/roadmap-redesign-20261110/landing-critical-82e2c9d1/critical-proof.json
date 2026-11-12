@@ -1,0 +1,34 @@
+[
+  {
+    "path": "/",
+    "width": 390,
+    "theme": "light",
+    "checked": 57,
+    "differences": [],
+    "totalDifferences": 0
+  },
+  {
+    "path": "/vi",
+    "width": 390,
+    "theme": "dark",
+    "checked": 55,
+    "differences": [],
+    "totalDifferences": 0
+  },
+  {
+    "path": "/",
+    "width": 1440,
+    "theme": "dark",
+    "checked": 135,
+    "differences": [],
+    "totalDifferences": 0
+  },
+  {
+    "path": "/vi",
+    "width": 1440,
+    "theme": "light",
+    "checked": 136,
+    "differences": [],
+    "totalDifferences": 0
+  }
+]

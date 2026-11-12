@@ -1,0 +1,7 @@
+bun install v1.4.4 (38afee6c8)
+Resolving dependencies
+Resolved, downloaded and extracted [4]
+
+$ node scripts/install-git-hooks.js
+
+Checked 2760 installs across 3078 packages (no changes) [134.00ms]

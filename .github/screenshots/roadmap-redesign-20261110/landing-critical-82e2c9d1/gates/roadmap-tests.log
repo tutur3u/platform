@@ -1,0 +1,389 @@
+D79 asset smoke rejected:
+- stylesheet https://tuturuuu.com/roadmap/assets/styles-Abcd1234.css status 404 content-type text/html, expected 200 text/css
+D79 asset smoke rejected:
+- image https://tuturuuu.com/media/logos/transparent.png status 200 content-type image/png bytes 0, expected 200 non-empty image/*
+D79 broken variant rejected:
+- canonical HTML fell back to client rendering (server render failed)
+- canonical HTML missing an absolute og:image
+- tuturuuu.com/roadmap/ answered 200 , expected one 301 to https://tuturuuu.com/roadmap
+- tuturuuu.com/roadmap/?q=1 answered (missing) , expected one 301 to https://tuturuuu.com/roadmap?q=1
+- tuturuuu.com/roadmap/notes/ answered (missing) , expected one 301 to https://tuturuuu.com/roadmap/notes
+- roadmap.tuturuuu.com/ answered (missing) , expected one 301 to https://tuturuuu.com/roadmap
+- roadmap.tuturuuu.com/roadmap/?x=1 answered (missing) , expected one 301 to https://tuturuuu.com/roadmap?x=1
+- roadmap.tuturuuu.com/notes/?x=1 answered (missing) , expected one 301 to https://tuturuuu.com/roadmap/notes?x=1
+- hashed history asset /roadmap/assets/history-Abcd1234.json status 503 content-type application/json bytes 0, expected 200 application/json
+- /roadmap speculatively loads /roadmap/assets/history-Abcd1234.json: Cloudflare Speed Brain answers Sec-Purpose: prefetch with 503 on tuturuuu.com
+- /roadmap is 1048577 characters, over the 1048576 budget (half the 2097152 CSP limit, past which the page cannot hydrate)
+- /roadmap has 5 inline scripts, expected exactly 4
+- /roadmap has 1 inline scripts its CSP does not hash
+- /roadmap/vi speculatively loads /roadmap/assets/history-Abcd1234.json: Cloudflare Speed Brain answers Sec-Purpose: prefetch with 503 on tuturuuu.com
+- /roadmap/vi is 1048577 characters, over the 1048576 budget (half the 2097152 CSP limit, past which the page cannot hydrate)
+- /roadmap/vi has 5 inline scripts, expected exactly 4
+- /roadmap/vi has 1 inline scripts its CSP does not hash
+- /roadmap/workshops/edufest-2026 speculatively loads /roadmap/assets/history-Abcd1234.json: Cloudflare Speed Brain answers Sec-Purpose: prefetch with 503 on tuturuuu.com
+- /roadmap/workshops/edufest-2026 is 1048577 characters, over the 1048576 budget (half the 2097152 CSP limit, past which the page cannot hydrate)
+- /roadmap/workshops/edufest-2026 has 5 inline scripts, expected exactly 4
+- /roadmap/workshops/edufest-2026 has 1 inline scripts its CSP does not hash
+- /roadmap/vi/workshops/edufest-2026 speculatively loads /roadmap/assets/history-Abcd1234.json: Cloudflare Speed Brain answers Sec-Purpose: prefetch with 503 on tuturuuu.com
+- /roadmap/vi/workshops/edufest-2026 is 1048577 characters, over the 1048576 budget (half the 2097152 CSP limit, past which the page cannot hydrate)
+- /roadmap/vi/workshops/edufest-2026 has 5 inline scripts, expected exactly 4
+- /roadmap/vi/workshops/edufest-2026 has 1 inline scripts its CSP does not hash
+- satellite status 200, expected 301
+- satellite location (missing)
+- build-info commit 0000000000000000000000000000000000000000, expected aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+✔ extraction keeps css, js and fonts and ignores data urls and images (1.153875ms)
+✔ D79: a stylesheet 404 with an HTML body fails the asset smoke (1.938166ms)
+✔ a passing page accepts one redirect and a font referenced by CSS (0.5415ms)
+✔ a satellite 301 that lands on a second 308 is a redirect chain (0.446333ms)
+✔ an empty document and a soft HTML asset response fail (0.301458ms)
+✔ a preview base does not fetch production satellite pages (0.090458ms)
+✔ extraction keeps <img> and icon links as images, not data or external hosts (0.345292ms)
+✔ D79: a zero-byte 200 image/png logo fails the asset smoke (0.220416ms)
+✔ D79: a logo outside the mount that returns 404 text/html fails (0.196708ms)
+✔ D79: an empty JSON data asset fails; a real one passes (0.2975ms)
+✔ the canonical smoke passes when pages and assets load without prefetch (1.06325ms)
+✔ D79 (#8163): a prefetched asset that the zone 503s fails the canonical smoke (0.551541ms)
+✔ resource hints are replayed with the headers a browser sends (0.05775ms)
+✔ the smoke, the doctor and the cache policy cover the same public pages (0.032542ms)
+✔ the smoke requests the history asset the page scripts load, and requires non-empty JSON (2.887084ms)
+✔ D79: speculation rules markup on a canonical page fails the smoke (0.406917ms)
+✔ D79: the smoke finds the history asset in the entry the page names, with hydration deferred (0.584459ms)
+✔ a correct worker passes the pre-seal doctor (0.825917ms)
+✔ D79: the doctor fails on a broken variant (0.512833ms)
+✔ D79: an apex logo outside the roadmap mount fails the doctor (0.121583ms)
+✔ D79: the plans card must follow the showPlans flag both ways (0.254667ms)
+✔ D79: a slash form served as a page fails the no-slash canonical (0.086458ms)
+✔ D79: a two-hop chain (via the slash form) fails (0.093583ms)
+✔ D79: a trailing-slash canonical tag fails (0.0765ms)
+✔ D79: a page without the timeline, or a history asset that is not served, fails (0.089667ms)
+✔ D79 (#8163): a prefetch or prerender on any public page fails, since the zone 503s Sec-Purpose: prefetch (0.173375ms)
+✔ D79: the satellite shell instead of the marketing layout fails (0.060333ms)
+✔ D79: an inline script missing from the CSP fails the doctor (0.056708ms)
+✔ D79: a missing or permissive CSP fails the doctor (0.12475ms)
+✔ D79/D87 A5: script text inside an attribute is not counted as an inline script (0.020291ms)
+✔ D79: a client-render fallback or a missing og:image fails the doctor (0.069417ms)
+✔ doctor runs the configured compatibility date, capped at what workerd supports (0.0235ms)
+✔ D79: a navbar logo whose alt repeats the brand name beside it fails the doctor (0.075166ms)
+✔ D79: a public document over half the CSP size limit fails the doctor (0.121208ms)
+✔ D79: a Suspense boundary left pending on the server fails the doctor (0.055375ms)
+✔ D79: every public page has exactly four inline scripts, all hashed (0.09425ms)
+✔ file bytes, size and digest come from one regular-file descriptor (1.470541ms)
+✔ no-follow access rejects symlinks and non-regular descriptors (0.609333ms)
+✔ hard-linked files cannot import an outside artifact object (0.779667ms)
+✔ replacing a pathname cannot redirect an already-open descriptor (0.651959ms)
+✔ growth during a descriptor read refuses the seal (0.668959ms)
+﹣ qualified Linux sealing retains config/source assertions and refuses reuse (0.041042ms) # SKIP
+﹣ ancestor replacement is refused without following an outside sentinel (0.033583ms) # SKIP
+﹣ entry replacement with identical bytes still fails inode identity (0.027875ms) # SKIP
+✔ unsupported hosts fail closed before filesystem enumeration (0.118041ms)
+✔ root and slash forms canonicalize to no-slash in one 301; the document is /roadmap (8.490875ms)
+✔ encoded path aliases cannot reach the asset fallback (0.124584ms)
+✔ root provider base maps every physical client key to the public mount (0.339833ms)
+✔ packaging moves real bytes once and refuses unsafe or missing clients (2.799792ms)
+✔ satellite host 301s to the canonical roadmap and workers.dev does not (2.590167ms)
+✔ host selection ignores forwarded spoofing and preserves mounted fallback hosts (0.406708ms)
+✔ both host modes reject encoded aliases, backslashes and protocol-relative redirect targets (0.598292ms)
+D79 public-cache guard rejected:
+- apps/roadmap/src/routes/index.tsx:1 auth-session-import (@tuturuuu/auth/session) while cache-control is public,s-maxage=300,stale-while-revalidate=86400
+- apps/roadmap/src/routes/index.tsx:2 cookie-read (.headers.get('cookie') while cache-control is public,s-maxage=300,stale-while-revalidate=86400
+- apps/roadmap/src/routes/index.tsx:3 authorization-read (.headers.get('Authorization') while cache-control is public,s-maxage=300,stale-while-revalidate=86400
+- apps/roadmap/src/routes/index.tsx:4 cookie-read (document.cookie) while cache-control is public,s-maxage=300,stale-while-revalidate=86400
+✔ exact root and mounted documents share public policy without reading identity (11.854708ms)
+✔ auth, variants, unknown hosts and unsuccessful responses remain private (0.866209ms)
+✔ composition preserves streams, status, MIME bytes and native asset policy (0.464084ms)
+✔ failure and restart perform no storage, network, timers or cache writes (0.128125ms)
+✔ host-selected SSR mount and physical transport keys remain isolated (0.608417ms)
+✔ loopback Host selects the public host contract (0.219542ms)
+✔ roadmap source stays anonymous while the public document is shared (11.751625ms)
+✔ D79: auth, session, cookie or authorization cannot stay on the public cache (0.472459ms)
+✔ every public page and language shares the document cache; nothing next to them does (0.283417ms)
+(node:91204) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+▶ content security policy
+  ✔ hashes exactly the inline scripts and nothing broader (579.299417ms)
+  ✔ broken variant: a script injected after SSR is not allowed (1.751416ms)
+  ✔ attaches the header to HTML only and keeps the body byte-for-byte (4.391875ms)
+  ✔ roadmap source has no HTML or eval sinks that would bypass escaping (4.124666ms)
+✔ content security policy (590.035625ms)
+▶ content security policy: end-tag variants
+  ✔ finds inline scripts whose end tags carry whitespace or attributes (1.411333ms)
+✔ content security policy: end-tag variants (1.481791ms)
+▶ content security policy: styles
+  ✔ allows inline styles (no script) while scripts stay hash-only (1.396375ms)
+✔ content security policy: styles (1.490875ms)
+▶ content security policy: only real script elements are hashed (D87 A5)
+  ✔ an attribute or text containing <script> is never hashed: double-quoted attribute (3.59925ms)
+  ✔ an attribute or text containing <script> is never hashed: single-quoted attribute (2.316583ms)
+  ✔ an attribute or text containing <script> is never hashed: unquoted attribute (2.065166ms)
+  ✔ an attribute or text containing <script> is never hashed: comment (1.621875ms)
+  ✔ an attribute or text containing <script> is never hashed: title text (1.566542ms)
+  ✔ an attribute or text containing <script> is never hashed: textarea text (1.919625ms)
+  ✔ an attribute or text containing <script> is never hashed: style text (2.20125ms)
+  ✔ an attribute or text containing <script> is never hashed: noscript text (1.611ms)
+  ✔ broken variant: a whole-document scan hashes the attribute payload (3.061583ms)
+  ✔ src is an exact attribute name; data-src stays inline (1.172375ms)
+  ✔ keeps Unicode text aligned and matches tag names case-insensitively (0.9115ms)
+  ✔ collects script text split across parser chunks (2.38425ms)
+  ✔ an unclosed script at end of file is not allowed (0.90975ms)
+✔ content security policy: only real script elements are hashed (D87 A5) (25.694916ms)
+▶ content security policy: oversized documents
+  ✔ the inline-script counter sees any letter case and attribute quoting (0.186875ms)
+  ✔ a normal page keeps the transform and hashes its inline scripts (1.155917ms)
+  ✔ an oversized page is served as rendered, minus its executable inline scripts (18.664ms)
+✔ content security policy: oversized documents (20.1135ms)
+▶ v2 history: classifier
+  ✔ maps conventional scopes and legacy keywords to public tracks (0.201541ms)
+  ✔ broken variant never publishes: Add internal_email_api keys table and include authorization checks (0.031708ms)
+  ✔ broken variant never publishes: feat(tasks): patch XSS in the comment renderer (0.015042ms)
+  ✔ broken variant never publishes: feat(finance): customer-specific invoice preset (0.014083ms)
+  ✔ broken variant never publishes: Add incident banner after the outage (0.014958ms)
+  ✔ broken variant never publishes: feat(ci): seal the production artifact (0.014291ms)
+  ✔ broken variant never publishes: feat(tasks): add database schema for sprints (0.013625ms)
+  ✔ broken variant never publishes: chore(tasks): rename sprint store (0.011583ms)
+  ✔ broken variant never publishes: feat(unknown-scope): something new and shiny (0.013166ms)
+  ✔ broken variant never publishes: Add WIP quiz page (0.016208ms)
+  ✔ drops bots and dependency churn; hashed client terms stay anonymous (0.317792ms)
+✔ v2 history: classifier (0.758083ms)
+▶ v2 history: build, validate, periods
+  ✔ drops noise, dates in UTC+7 and aggregates every view (0.221625ms)
+  ✔ accepts the committed history asset (3.559ms)
+  ✔ broken variant rejected: tampered aggregate (0.145583ms)
+  ✔ broken variant rejected: title on a fix (0.045584ms)
+  ✔ broken variant rejected: duplicate entry (0.031959ms)
+  ✔ broken variant rejected: unknown track index (0.033ms)
+  ✔ broken variant rejected: extra field (0.026584ms)
+  ✔ periods follow ISO weeks and calendar months in Vietnam time (0.174125ms)
+✔ v2 history: build, validate, periods (4.312167ms)
+▶ v2 timeline
+  ✔ collapses a deliverable PR into the deliverable, once (0.174291ms)
+  ✔ merges live PRs merged after the build into the current period (0.1245ms)
+  ✔ parses shareable URL state and rejects broken variants (0.172875ms)
+✔ v2 timeline (0.505416ms)
+▶ v2 timeline: paired merges
+  ✔ folds identical titles (dev/production pairs) into one row (0.077834ms)
+✔ v2 timeline: paired merges (0.099333ms)
+▶ production hosting regression (same-zone probes)
+  ✔ the build-time probe sees the apps that run on Workers (0.033959ms)
+  ✔ the Worker never probes hosts in its own zone at runtime (0.887167ms)
+  ✔ broken variant: same-zone probes misread as Vercel cannot flip Workers apps (2.606375ms)
+  ✔ a failed probe is unknown, never Vercel (0.292916ms)
+✔ production hosting regression (same-zone probes) (3.874375ms)
+▶ plans flag
+  ✔ is on by default and shows exactly the approved copy (0.034167ms)
+  ✔ hides the card with the flag off, without touching the copy (0.02025ms)
+✔ plans flag (0.081833ms)
+▶ no-slash canonical address
+  ✔ restores /roadmap after the router writes its slash root (0.877958ms)
+✔ no-slash canonical address (0.89675ms)
+▶ shared marketing shell package
+  ✔ stays framework-agnostic (no Next imports) so every app can share it (2.322333ms)
+  ✔ ships the OFL licences beside the self-hosted fonts (0.182167ms)
+✔ shared marketing shell package (2.539917ms)
+▶ navbar clearance for the filter bar
+  ✔ keeps the sticky filters below the pill, full and compact (0.048ms)
+  ✔ wires the compact pill to the same offsets the page docks against (0.2885ms)
+✔ navbar clearance for the filter bar (0.36725ms)
+▶ EduFest workshop: statuses come only from the roadmap
+  ✔ every capability, the AI demo and the journey resolve to real deliverables (0.103625ms)
+  ✔ broken variant: a misspelled deliverable is caught (0.024791ms)
+  ✔ collapses the five roadmap stages into three honest labels (0.036ms)
+  ✔ planned classroom items without PR evidence never read as live (0.639917ms)
+✔ EduFest workshop: statuses come only from the roadmap (0.849166ms)
+▶ EduFest workshop: copy
+  ✔ EN and VI carry exactly the same keys, and cover every id (0.337542ms)
+  ✔ the hero and page title stay brand-neutral; Vietnamese says AI Agent (0.128667ms)
+  ✔ the date and venue are the confirmed ones; no price, form or link in the call to action (0.886792ms)
+✔ EduFest workshop: copy (1.389583ms)
+▶ EduFest workshop: calendar and map
+  ✔ builds an all-day iCalendar event with escaped text (0.162583ms)
+✔ EduFest workshop: calendar and map (0.181041ms)
+▶ EduFest workshop: richer content
+  ✔ every highlight, experience and FAQ id has copy in both languages (0.052ms)
+  ✔ the insights dashboard is always marked as demo data (0.294667ms)
+  ✔ readiness counts are derived, and FAQ answers stay honest (0.2965ms)
+✔ EduFest workshop: richer content (0.673ms)
+▶ EduFest workshop: hero
+  ✔ the wash spans the whole hero instead of a fixed band that stops mid-section (0.106709ms)
+  ✔ drops the floating avatar art and the gradient-text title (0.090791ms)
+  ✔ underlines a phrase that really is in the title, in EN and VI (0.020125ms)
+✔ EduFest workshop: hero (0.244125ms)
+▶ EduFest workshop: AI help levels
+  ✔ the level control shows only on steps whose screen changes with it (0.106416ms)
+  ✔ every level-dependent step has copy for every level, in EN and VI (0.025416ms)
+✔ EduFest workshop: AI help levels (0.152542ms)
+▶ Logos
+  ✔ are never rounded, masked or clipped (0.322667ms)
+✔ Logos (0.34ms)
+▶ live snapshot parsing and the Workers clock
+  ✔ broken variant: parsing with the module-evaluation clock (0) throws (0.107167ms)
+  ✔ importing the helper with Date.now() = 0 does not parse anything (1.32575ms)
+  ✔ no route or page module parses live data at top level (0.529792ms)
+  ✔ both pages build their previews from their own og image (0.101583ms)
+✔ live snapshot parsing and the Workers clock (2.111167ms)
+▶ shipping pulse
+  ✔ counts merged PRs per Vietnam day over the window, oldest first (0.112917ms)
+  ✔ broken variant: a merge in the future is not counted (0.027666ms)
+  ✔ has EN/VI copy for the pulse and the glance (0.022417ms)
+✔ shipping pulse (0.193084ms)
+▶ Upskii is the official mark and always linked
+  ✔ ships the official logo from upskii/platform, byte for byte (0.691417ms)
+  ✔ renders a small downscale of that official logo, not the 998px original (0.536208ms)
+  ✔ every rendered Upskii mention goes through a linking helper (0.41775ms)
+✔ Upskii is the official mark and always linked (1.674833ms)
+▶ hosting badge
+  ✔ states only the deployed commit date or a missing commit (0.262375ms)
+  ✔ never renders a commits-behind count, which goes stale between deploys (0.054084ms)
+✔ hosting badge (0.338042ms)
+▶ SEO: one URL per page and language
+  ✔ each language is canonical to itself, with en, vi and x-default alternates (0.09675ms)
+  ✔ reads the language from the path (0.057542ms)
+  ✔ previews use an absolute image and the page locale (0.077292ms)
+✔ SEO: one URL per page and language (0.259333ms)
+▶ SEO: copy
+  ✔ titles and descriptions are unique per page and language, and fit search results (0.038625ms)
+  ✔ Vietnamese copy carries its search terms naturally, each once (0.026542ms)
+✔ SEO: copy (0.083875ms)
+▶ SEO: structured data
+  ✔ the workshop is a scheduled, in-person Event with the confirmed date and venue, and no price (0.174208ms)
+  ✔ the roadmap is a WebPage listing every product track, with breadcrumbs (0.086417ms)
+  ✔ JSON-LD cannot close its script element (0.031084ms)
+✔ SEO: structured data (0.319042ms)
+▶ SEO: sitemap
+  ✔ lists every page in both languages with alternates and the deploy time (0.114541ms)
+✔ SEO: sitemap (0.12825ms)
+▶ SEO: hero font preloads
+  ✔ preload exactly the shell font files the CSS loads, and VI adds its subset (0.184083ms)
+✔ SEO: hero font preloads (0.197583ms)
+▶ perf: expensive CSS stays off phones and low-end devices
+  ✔ runs no infinite animation outside reduced-motion on a wide, non-lite screen (2.69425ms)
+  ✔ uses no backdrop-filter, blend mode or blur in lite mode or on small screens (4.001792ms)
+  ✔ turns the shared navbar blur off below desktop and in lite mode (0.0845ms)
+  ✔ animates no layout property (height, width, top) in transitions or keyframes (1.367375ms)
+  ✔ skips rendering below-the-fold sections with a remembered height only (7.913041ms)
+✔ perf: expensive CSS stays off phones and low-end devices (16.118292ms)
+▶ perf: the history JSON loads only when the timeline nears the viewport
+  ✔ requests nothing on load and exactly once when the timeline is near (0.197375ms)
+  ✔ D79 broken variant: an eager loader is caught before the timeline is visible (0.054875ms)
+  ✔ the hook fetches only through the observed loader (0.171792ms)
+✔ perf: the history JSON loads only when the timeline nears the viewport (0.457708ms)
+▶ perf: the live GitHub refresh waits and stays bounded
+  ✔ runs only after load, while visible, in an idle period (0.135916ms)
+  ✔ D79 broken variant: refreshing on mount is caught (0.027916ms)
+  ✔ one refresh makes at most four search requests (anonymous limit is ten a minute) (1.35325ms)
+  ✔ recognises GitHub rate limits, so the browser backs off (0.079166ms)
+✔ perf: the live GitHub refresh waits and stays bounded (1.638708ms)
+▶ perf: the served document fetches no module before paint or intent
+  ✔ leaves no module fetch in the served document and keeps every reference (0.166125ms)
+  ✔ adds no inline script, so the CSP keeps the four the router renders (0.096459ms)
+✔ perf: the served document fetches no module before paint or intent (0.284416ms)
+▶ perf and a11y: the timeline scrubber
+  ✔ renders a bounded window that always holds the selected period (0.105584ms)
+  ✔ names each chip starting with its visible label (label-content-name-mismatch) (0.034ms)
+✔ perf and a11y: the timeline scrubber (0.160916ms)
+▶ perf: hydration is split into section boundaries
+  ✔ wraps the timeline, every track card and each EduFest section below the hero (0.20975ms)
+✔ perf: hydration is split into section boundaries (0.22425ms)
+▶ perf: the entry chunk names the hashed history asset
+  ✔ the roadmap head links it (no fetch), so its URL lives in the entry chunk (0.130042ms)
+✔ perf: the entry chunk names the hashed history asset (0.1435ms)
+▶ perf: the bundle loads at the first intent or just after the LCP
+  ✔ nothing loads before an intent or a paint is reported (0.472208ms)
+  ✔ the first pointerdown, touchstart, keydown or focusin starts it, once (1.225542ms)
+  ✔ after the largest contentful paint it loads in an idle period, within 1 s (0.227292ms)
+  ✔ the first click on a button is replayed once React has hydrated it (7.662166ms)
+  ✔ links and other elements are left to the browser (0.324667ms)
+✔ perf: the bundle loads at the first intent or just after the LCP (9.971875ms)
+▶ perf: the boot script matches the documented contract
+  ✔ uses the same intents, timeouts and attributes as defer-hydration.ts (0.086541ms)
+  ✔ a held tap shows as pressed at once, before hydration (0.273792ms)
+✔ perf: the boot script matches the documented contract (0.388375ms)
+▶ perf: lite mode is decided before the first paint
+  ✔ the boot script and the pure decision agree on every device (1.384083ms)
+  ✔ the boot script is async, so it never blocks the first paint (0.107208ms)
+  ✔ both page heads render the boot script ahead of everything else they add (0.097875ms)
+✔ perf: lite mode is decided before the first paint (1.624375ms)
+▶ a11y: shared footer labels
+  ✔ every mono label reaches 4.5:1 in light and dark (1.8155ms)
+✔ a11y: shared footer labels (1.836083ms)
+▶ a11y: shared navbar logo
+  ✔ the logo is decorative next to the brand name (image-redundant-alt) (0.058917ms)
+  ✔ the brand name stays the link text on small screens (sr-only, not hidden) (0.025625ms)
+✔ a11y: shared navbar logo (0.107666ms)
+▶ a11y: the compact navbar keeps the logo link named
+  ✔ hides the brand name visually, not from the accessibility tree (0.753875ms)
+✔ a11y: the compact navbar keeps the logo link named (0.767875ms)
+▶ a11y: workshop pages keep the navbar controls
+  ✔ only the docked roadmap hides them, never an always-compact workshop page (0.381042ms)
+✔ a11y: workshop pages keep the navbar controls (0.396ms)
+▶ live data validator
+  ✔ accepts the committed generated data (0.83575ms)
+  ✔ accepts a well-formed payload (0.056541ms)
+  ✔ rejects a broken variant: null (0.026708ms)
+  ✔ rejects a broken variant: wrong schema (0.014084ms)
+  ✔ rejects a broken variant: extra field (0.020208ms)
+  ✔ rejects a broken variant: missing hosts (0.014458ms)
+  ✔ rejects a broken variant: future observation (0.020042ms)
+  ✔ rejects a broken variant: bad time (0.017583ms)
+  ✔ rejects a broken variant: merged without time (0.019458ms)
+  ✔ rejects a broken variant: open with merge time (0.017375ms)
+  ✔ rejects a broken variant: duplicate PR (0.018ms)
+  ✔ rejects a broken variant: PR extra field (0.014833ms)
+  ✔ rejects a broken variant: bad commit (0.015166ms)
+  ✔ rejects a broken variant: unknown platform (0.01425ms)
+  ✔ rejects a broken variant: compare facts without commit (0.013583ms)
+✔ live data validator (1.219667ms)
+▶ status engine
+  ✔ is live only when the deploy is at or after the merge (0.065667ms)
+  ✔ broken variant: an older deploy is not live (0.025583ms)
+  ✔ broken variant: an unverifiable deploy is never live (0.022917ms)
+  ✔ needs every PR merged before shipping (0.034833ms)
+  ✔ waits for merge only when every open PR is ready and approved (0.030458ms)
+  ✔ broken variant: missing evidence falls back, never to live (0.026416ms)
+  ✔ hosting moves are live only while the probe answers from Workers (0.028417ms)
+  ✔ mobile ships only once a store release contains the merge (0.032417ms)
+✔ status engine (0.324084ms)
+▶ curated content
+  ✔ covers every requested track (0.036ms)
+  ✔ has unique ids, real PR numbers and no curated live claims (0.162334ms)
+  ✔ never publishes internal or incident wording (0.548334ms)
+  ✔ keeps the approved plan copy verbatim (0.027208ms)
+✔ curated content (0.805083ms)
+▶ shipped feed safety
+  ✔ publishes user-facing features from public product scopes (0.071459ms)
+  ✔ denylist drops: feat(tasks): fix the data leak in shared boards (0.016417ms)
+  ✔ denylist drops: feat(chat): incident follow-up for message delivery (0.011417ms)
+  ✔ denylist drops: feat(mail): patch XSS in the renderer (0.011459ms)
+  ✔ denylist drops: feat(calendar): rotate the provider token (0.016375ms)
+  ✔ denylist drops: feat(finance): customer-specific invoice preset (0.010708ms)
+  ✔ denylist drops: feat(meet): outage banner after the postmortem (0.019375ms)
+  ✔ denylist drops: feat(ci): seal the production artifact (0.011458ms)
+  ✔ denylist drops: chore(tasks): bump dependencies (0.010833ms)
+  ✔ denylist drops: fix(tasks): repair drag and drop (0.010625ms)
+  ✔ denylist drops: feat(unknown-scope): something new (0.011959ms)
+  ✔ denylist drops: feat(tasks): ship the D74 runbook (0.010833ms)
+  ✔ denylist drops: feat(drive): vulnerability disclosure page (0.010208ms)
+  ✔ drops hashed client names without publishing them (0.073959ms)
+  ✔ broken variant: an empty incident pattern would leak (0.015083ms)
+  ✔ keeps only the last 7 days, newest first (0.039042ms)
+  ✔ groups days in Vietnam time (0.021625ms)
+✔ shipped feed safety (0.477209ms)
+▶ freshness
+  ✔ a failed host probe never erases a known observation (0.045792ms)
+  ✔ a narrow live refresh keeps older merged PRs (0.027042ms)
+  ✔ view counts and filters stay consistent (0.082ms)
+✔ freshness (0.180583ms)
+▶ host probe
+  ✔ classifies Workers, Vercel and unknown hosts (0.134167ms)
+  ✔ broken variant: never leaks probe body or header content (0.053ms)
+  ✔ probes only the fixed allowlist, without following redirects (0.787625ms)
+  ✔ serves only {app, platform, commit}, uncached, and coalesces bursts (0.214041ms)
+  ✔ broken variant: hosts payload with extra fields or unknown apps is rejected (0.054ms)
+✔ host probe (1.287167ms)
+ℹ tests 241
+ℹ suites 50
+ℹ pass 238
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 3
+ℹ todo 0
+ℹ duration_ms 1097.211875

@@ -1,0 +1,28 @@
+[ttr resources] queued PID 2445; blockedBy=local_saturated: waiting for the shared validation slots. Tip: --offload auto runs the pushed commit on a trusted devbox runner.
+[ttr resources] queued PID 2445; blockedBy=local_saturated: waiting for the shared validation slots. Tip: --offload auto runs the pushed commit on a trusted devbox runner.
+[ttr resources] queued PID 2445; blockedBy=local_saturated: waiting for the shared validation slots. Tip: --offload auto runs the pushed commit on a trusted devbox runner.
+[ttr resources] queued PID 2445; blockedBy=local_saturated: waiting for the shared validation slots. Tip: --offload auto runs the pushed commit on a trusted devbox runner.
+[ttr resources] running PID 2445
+$ node scripts/check-changed.js
+check:changed: 22 changed file(s) since 5f510d6db9; 17 step(s).
+  shared-config: not covered; CI only: root/shared configuration (bun.lock)
+  cold workspace declarations (@tuturuuu/devbox, @tuturuuu/editor, @tuturuuu/masonry, tuturuuu): type errors outside changed files are advisory; CI stays authoritative.
+ok   branch name perf/landing-critical-css-20261113 (0.0s)
+ok   source-size (700 LOC ceiling) (0.7s)
+ok   generated docs inventory (0.6s)
+ok   generated app SEO assets (0.1s)
+ok   docs navigation audit (2.2s)
+ok   oxfmt check (18 files) (0.1s)
+ok   oxlint (16 files) (0.2s)
+ok   server-console (0.4s)
+ok   internal-app-auth (0.6s)
+ok   satellite-cookie-auth (0.3s)
+ok   browser-session-surface (1.7s)
+ok   mobile Lucide icons match web (0.1s)
+ok   vitest apps/marketing (3 related files) (0.9s)
+ok   type-check apps/marketing (0.5s) - tsc x1
+ok   type-check apps/roadmap (0.3s) - tsc x1
+ok   type-check packages/marketing-shell (0.2s) - tsc x1
+ok   Staging cookie-domain isolation (6.7s)
+check:changed: all passed in 15.8s.
+[ttr resources] finished; exit 0

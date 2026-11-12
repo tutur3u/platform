@@ -1,0 +1,474 @@
+{
+  "head": "82e2c9d1df455414b2deb8e945f3d7e3e51975c2",
+  "base": "5f510d6db991bd3792e697cc2ee3ff7d543295a1",
+  "branch": "perf/landing-critical-css-20261113",
+  "diffStat": "apps/docs/reference/repository/dependencies-2.mdx  |   2 +-\n apps/docs/reference/repository/dependencies-3.mdx  |   2 +-\n apps/docs/reference/repository/dependencies-4.mdx  |   2 +\n apps/marketing/package.json                        |   2 +\n apps/marketing/scripts/landing-critical-css.mjs    | 153 +++++++++++++++++++++\n .../marketing/scripts/landing-critical-css.test.ts |  62 +++++++++\n .../app/[locale]/(marketing)/(landing)/landing.css |   4 +\n .../src/app/[locale]/(marketing)/layout.tsx        |   9 +-\n apps/marketing/src/app/[locale]/layout.tsx         |   5 +-\n apps/marketing/src/assets.d.ts                     |   5 +\n .../src/components/landing/hero/video-hero.tsx     |  42 ++++--\n .../src/components/landing/hero/video-player.tsx   | 106 +++++---------\n .../layouts/landing-enhancements.test.tsx          |  21 +++\n .../components/layouts/landing-enhancements.tsx    |  37 +++++\n apps/marketing/src/lib/landing-styles.ts           |  23 ++++\n apps/marketing/src/lib/marketing-render-context.ts |   6 +\n apps/marketing/start-bridge.config.ts              |  36 ++++-\n apps/marketing/vite.config.mts                     |   2 +\n apps/marketing/vitest.config.ts                    |   6 +-\n bun.lock                                           |  10 +-\n packages/marketing-shell/src/nav-actions.tsx       |   4 +-\n packages/marketing-shell/src/theme-toggle.tsx      |  40 ++++++\n 22 files changed, 480 insertions(+), 99 deletions(-)",
+  "shortStat": "22 files changed, 480 insertions(+), 99 deletions(-)",
+  "metrics": {
+    "before": [
+      {
+        "url": "http://127.0.0.1:7857/",
+        "runs": [
+          {
+            "score": 84,
+            "LCP": 3468.7762999999995,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 211.1962890625
+          },
+          {
+            "score": 84,
+            "LCP": 3467.7941,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 211.1962890625
+          },
+          {
+            "score": 84,
+            "LCP": 3464.060800000001,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 211.1962890625
+          }
+        ],
+        "median": {
+          "score": 84,
+          "LCP": 3467.7941,
+          "TBT": 0,
+          "CLS": 0,
+          "JSKB": 211.1962890625
+        },
+        "INPProxy": 40,
+        "actions": [
+          "Products",
+          "Resources",
+          "Toggle theme",
+          "theme toggled",
+          "vi",
+          "language toggled",
+          "localized document confirmed"
+        ]
+      },
+      {
+        "url": "http://127.0.0.1:7857/vi",
+        "runs": [
+          {
+            "score": 83,
+            "LCP": 3613.1551,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 211.1962890625
+          },
+          {
+            "score": 83,
+            "LCP": 3612.700200000001,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 211.1962890625
+          },
+          {
+            "score": 83,
+            "LCP": 3613.7706,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 211.1962890625
+          }
+        ],
+        "median": {
+          "score": 83,
+          "LCP": 3613.1551,
+          "TBT": 0,
+          "CLS": 0,
+          "JSKB": 211.1962890625
+        },
+        "INPProxy": 48,
+        "actions": [
+          "Các sản phẩm",
+          "Tài nguyên",
+          "Toggle theme",
+          "theme toggled",
+          "en",
+          "language toggled",
+          "localized document confirmed"
+        ]
+      }
+    ],
+    "final": [
+      {
+        "url": "http://127.0.0.1:7857/",
+        "runs": [
+          {
+            "score": 93,
+            "LCP": 2966.4389000000006,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 180.455078125
+          },
+          {
+            "score": 93,
+            "LCP": 2990.598,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 180.455078125
+          },
+          {
+            "score": 93,
+            "LCP": 2986.8832,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 180.455078125
+          }
+        ],
+        "median": {
+          "score": 93,
+          "LCP": 2986.8832,
+          "TBT": 0,
+          "CLS": 0,
+          "JSKB": 180.455078125
+        },
+        "INPProxy": 40,
+        "actions": [
+          "Products",
+          "Resources",
+          "",
+          "theme toggled and confirmed",
+          "vi",
+          "language toggled",
+          "localized document confirmed"
+        ]
+      },
+      {
+        "url": "http://127.0.0.1:7857/vi",
+        "runs": [
+          {
+            "score": 91,
+            "LCP": 3068.7340999999997,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 180.455078125
+          },
+          {
+            "score": 91,
+            "LCP": 3065.9336999999996,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 180.455078125
+          },
+          {
+            "score": 92,
+            "LCP": 3055.1041999999998,
+            "TBT": 0,
+            "CLS": 0,
+            "JSKB": 180.455078125
+          }
+        ],
+        "median": {
+          "score": 91,
+          "LCP": 3065.9336999999996,
+          "TBT": 0,
+          "CLS": 0,
+          "JSKB": 180.455078125
+        },
+        "INPProxy": 40,
+        "actions": [
+          "Các sản phẩm",
+          "Tài nguyên",
+          "",
+          "theme toggled and confirmed",
+          "en",
+          "language toggled",
+          "localized document confirmed"
+        ]
+      }
+    ]
+  },
+  "gates": {
+    "frozen-install": {
+      "cmd": [
+        "bun",
+        "install",
+        "--frozen-lockfile"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "2760 installs across 3078 packages; unchanged lockfile"
+    },
+    "oxlint": {
+      "cmd": [
+        "bun",
+        "x",
+        "oxlint",
+        "apps/marketing/scripts/landing-critical-css.mjs",
+        "apps/marketing/scripts/landing-critical-css.test.ts",
+        "apps/marketing/src/app/[locale]/(marketing)/layout.tsx",
+        "apps/marketing/src/app/[locale]/layout.tsx",
+        "apps/marketing/src/assets.d.ts",
+        "apps/marketing/src/components/landing/hero/video-hero.tsx",
+        "apps/marketing/src/components/landing/hero/video-player.tsx",
+        "apps/marketing/src/components/layouts/landing-enhancements.test.tsx",
+        "apps/marketing/src/components/layouts/landing-enhancements.tsx",
+        "apps/marketing/src/lib/landing-styles.ts",
+        "apps/marketing/src/lib/marketing-render-context.ts",
+        "apps/marketing/start-bridge.config.ts",
+        "apps/marketing/vite.config.mts",
+        "apps/marketing/vitest.config.ts",
+        "packages/marketing-shell/src/nav-actions.tsx",
+        "packages/marketing-shell/src/theme-toggle.tsx"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "16 changed JS/TS files; 0 errors/warnings"
+    },
+    "format": {
+      "cmd": [
+        "bun",
+        "x",
+        "oxfmt",
+        "--check",
+        "."
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "21,586 files; 0 failures"
+    },
+    "stylelint": {
+      "cmd": [
+        "npx",
+        "--yes",
+        "stylelint@16",
+        "--config",
+        "/tmp/landing-m3/stylelint.json",
+        "apps/marketing/src/app/[locale]/(marketing)/(landing)/landing.css"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "1 authored CSS file; 0 duplicate selectors"
+    },
+    "source-size": {
+      "cmd": [
+        "node",
+        "scripts/check-source-size.js"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "47 authored sources in default comparison; 0 violations"
+    },
+    "wrangler": {
+      "cmd": [
+        "node",
+        "scripts/ci/wrangler-usage.js"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "inventory completed"
+    },
+    "docs-inventory": {
+      "cmd": [
+        "node",
+        "scripts/generate-docs-inventory.js",
+        "--check"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "0 stale; 3 generated dependency inventories updated"
+    },
+    "app-seo": {
+      "cmd": [
+        "node",
+        "scripts/generate-app-seo.js",
+        "--check"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "0 stale"
+    },
+    "type-marketing": {
+      "cmd": [
+        "bun",
+        "run",
+        "type-check"
+      ],
+      "cwd": "apps/marketing",
+      "exit": 0,
+      "counts": "base 0 / head 0 / new 0 errors"
+    },
+    "type-marketing-shell": {
+      "cmd": [
+        "bun",
+        "run",
+        "type-check"
+      ],
+      "cwd": "packages/marketing-shell",
+      "exit": 0,
+      "counts": "base 0 / head 0 / new 0 errors"
+    },
+    "type-roadmap": {
+      "cmd": [
+        "bun",
+        "run",
+        "type-check"
+      ],
+      "cwd": "apps/roadmap",
+      "exit": 0,
+      "counts": "base 0 / head 0 / new 0 errors"
+    },
+    "marketing-tests": {
+      "cmd": [
+        "bun",
+        "run",
+        "test"
+      ],
+      "cwd": "apps/marketing",
+      "exit": 0,
+      "counts": "11 files; 51 passed, 0 failed"
+    },
+    "shell-tests": {
+      "cmd": [
+        "bun",
+        "run",
+        "test"
+      ],
+      "cwd": "packages/marketing-shell",
+      "exit": 0,
+      "counts": "1 file; 5 passed, 0 failed"
+    },
+    "roadmap-tests": {
+      "cmd": [
+        "node",
+        "--test",
+        "--test-concurrency=2",
+        "apps/roadmap/src/roadmap-data.test.ts",
+        "apps/roadmap/src/cache-policy.test.ts",
+        "apps/roadmap/scripts/seal-artifact.test.mjs",
+        "apps/roadmap/scripts/pre-seal-doctor.test.mjs"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "241 tests; 238 passed, 3 skipped, 0 failed; 50 suites"
+    },
+    "marketing-build": {
+      "cmd": [
+        "bun",
+        "run",
+        "build:cloudflare"
+      ],
+      "cwd": "apps/marketing",
+      "exit": 0,
+      "counts": "production Worker build passed; sealed build repeated at exact head"
+    },
+    "check-changed": {
+      "cmd": [
+        "bun",
+        "check:changed"
+      ],
+      "cwd": ".",
+      "exit": 0,
+      "counts": "22 changed files; 17 steps passed"
+    },
+    "roadmap-build": {
+      "command": "(cd apps/roadmap && ROADMAP_OFFLINE=1 ROADMAP_SOURCE_SHA=$(git rev-parse HEAD) bun run build:cloudflare)",
+      "exit": 0,
+      "counts": "exact-head build passed"
+    },
+    "roadmap-doctor": {
+      "command": "ROADMAP_SOURCE_SHA=$(git rev-parse HEAD) node apps/roadmap/scripts/pre-seal-doctor.mjs",
+      "exit": 0,
+      "counts": "exact-head doctor and negative fixture passed"
+    },
+    "roadmap-inline": {
+      "command": "node <four-public-document inline-script probe>",
+      "exit": 0,
+      "counts": "4 inline scripts on each of 4 public documents"
+    },
+    "source-size-exact": {
+      "command": "node scripts/check-source-size.js --base 5f510d6db991bd3792e697cc2ee3ff7d543295a1",
+      "exit": 0,
+      "counts": "15 changed authored sources; 0 violations"
+    }
+  },
+  "toolchain": {
+    "node": "/Users/thanhpham/tools/pinned-24.22.3-1.4.4/bin/node",
+    "nodeVersion": "24.22.3",
+    "bun": "/Users/thanhpham/tools/pinned-24.22.3-1.4.4/bin/bun",
+    "bunVersion": "1.4.4",
+    "bunSHA256": "0a2237cdcfa0d16ef501d9acca9f0026309ef348bea7393a64e8d1e3609565cc",
+    "hooksPath": ".githooks",
+    "admission": "/Users/thanhpham/ci/tools/ttr-admit"
+  },
+  "method": "Fresh baseline and final production Worker builds; Lighthouse 12.8.2 mobile defaults, median of 3 per metric, same gzip-only buffering proxy; Playwright 4x CPU EventTiming threshold 16ms, desktop navigation/theme/language/scroll. Synthetic, not field INP or production edge CWV.",
+  "screenshotsTree": "https://github.com/tutur3u/platform/tree/screenshots/roadmap-redesign-20261110/.github/screenshots/roadmap-redesign-20261110/landing-critical-82e2c9d1",
+  "criticalStyleProof": [
+    {
+      "path": "/",
+      "width": 390,
+      "theme": "light",
+      "checked": 57,
+      "differences": [],
+      "totalDifferences": 0
+    },
+    {
+      "path": "/vi",
+      "width": 390,
+      "theme": "dark",
+      "checked": 55,
+      "differences": [],
+      "totalDifferences": 0
+    },
+    {
+      "path": "/",
+      "width": 1440,
+      "theme": "dark",
+      "checked": 135,
+      "differences": [],
+      "totalDifferences": 0
+    },
+    {
+      "path": "/vi",
+      "width": 1440,
+      "theme": "light",
+      "checked": 136,
+      "differences": [],
+      "totalDifferences": 0
+    }
+  ],
+  "browserQA": {
+    "menus": [
+      {
+        "path": "/",
+        "open": {
+          "name": "Main navigation",
+          "open": true
+        },
+        "closed": {
+          "expanded": "false",
+          "focus": "Main navigation"
+        }
+      },
+      {
+        "path": "/roadmap",
+        "open": {
+          "name": "Main navigation",
+          "open": true
+        },
+        "closed": {
+          "expanded": "false",
+          "focus": "Main navigation"
+        }
+      }
+    ],
+    "video": {
+      "decorations": "none",
+      "src": "https://www.youtube-nocookie.com/embed/JGWbvaAC24Q?autoplay=1&rel=0&modestbranding=1&showinfo=0"
+    }
+  },
+  "csp": "No directive changes, unsafe-inline, inline styles/scripts or inline load handlers added. External hashed CSS; existing scripts/nonces preserved. Built root CSP remains frame-ancestors none.",
+  "limits": [
+    "Lighthouse >=90 and INP proxy <200ms pass; LCP <2.5s remains unmet. Non-regression floor passes on both locales.",
+    "LCP poster simulated render delay remains 2.13s EN / 2.21s VI (71% / 72%); image load itself is 152 / 123ms in representative reports.",
+    "Framework entry still has about 48KiB unused JS (Lighthouse estimates 300ms savings). Next cut needs Start/RSC hydration/entry architecture beyond the local UI islands.",
+    "Blocking CSS is 16.8KiB vs 35.6KiB; total CSS is about 40.1KiB due split cascade scaffolding. HTML is buffered for the landing-only resource-identity rewrite; other routes keep their original response.",
+    "Local gzip buffering differs from Cloudflare Brotli, streaming, caching and network distance; no field-CWV claim.",
+    "Protected worker.ts, SEO policy, void.config.ts and native-built-worker.runtime.mjs are unchanged."
+  ],
+  "authorLog": "vhpx <contact@vohoangphuc.com>"
+}

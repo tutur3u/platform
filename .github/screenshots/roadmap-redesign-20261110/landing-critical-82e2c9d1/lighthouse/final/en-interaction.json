@@ -1,0 +1,69 @@
+{
+  "log": [
+    "Products",
+    "Resources",
+    "",
+    "theme toggled and confirmed",
+    "vi",
+    "language toggled",
+    "localized document confirmed"
+  ],
+  "events": [
+    {
+      "name": "pointerdown",
+      "duration": 40
+    },
+    {
+      "name": "pointerup",
+      "duration": 40
+    },
+    {
+      "name": "click",
+      "duration": 40
+    },
+    {
+      "name": "pointerdown",
+      "duration": 16
+    },
+    {
+      "name": "pointerup",
+      "duration": 16
+    },
+    {
+      "name": "click",
+      "duration": 16
+    },
+    {
+      "name": "pointerdown",
+      "duration": 32
+    },
+    {
+      "name": "pointerup",
+      "duration": 32
+    },
+    {
+      "name": "click",
+      "duration": 32
+    },
+    {
+      "name": "pointerdown",
+      "duration": 16
+    },
+    {
+      "name": "pointerup",
+      "duration": 16
+    },
+    {
+      "name": "click",
+      "duration": 16
+    },
+    {
+      "name": "keydown",
+      "duration": 16
+    },
+    {
+      "name": "keyup",
+      "duration": 16
+    }
+  ]
+}
