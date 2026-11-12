@@ -7,7 +7,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { DraftAssistance } from '../draft-assistance/draft-assistance';
 import {
   CoachSidebar,
   EmptyChat,
@@ -20,6 +21,7 @@ const LEARNER_AI_MODEL = 'google/gemini-3-flash';
 export function LearnerAiChat({ wsId }: { wsId: string }) {
   const t = useTranslations();
   const [input, setInput] = useState('');
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [chatId, setChatId] = useState(() => generateRandomUUID());
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const transport = useMemo(
@@ -129,6 +131,13 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
           {isBusy ? <ThinkingIndicator /> : null}
         </div>
 
+        <DraftAssistance
+          key={wsId}
+          value={input}
+          onChange={setInput}
+          editorRef={inputRef}
+          disabled={isBusy}
+        />
         <form
           className="border-border border-t bg-card p-3"
           onSubmit={(event) => {
@@ -138,6 +147,8 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
         >
           <div className="flex items-end gap-2 rounded-lg border border-border bg-background p-2">
             <Textarea
+              ref={inputRef}
+              aria-label={t('aiChat.placeholder')}
               className="max-h-40 min-h-12 resize-none rounded-lg border-0 bg-transparent shadow-none focus-visible:ring-0"
               disabled={isBusy}
               onChange={(event) => setInput(event.target.value)}

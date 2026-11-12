@@ -585,6 +585,34 @@
     "yourResponse": "Câu trả lời của bạn",
     "youtubeVideo": "Video YouTube"
   },
+  "draftAssistance": {
+    "accept": "Chấp nhận chỉnh sửa",
+    "cancel": "Hủy góp ý",
+    "credits": "Đoạn được chọn sẽ gửi qua AI của không gian làm việc. Các giới hạn gói, tín dụng và hỗ trợ học tập hiện có vẫn áp dụng.",
+    "empty": "Không còn chỉnh sửa có căn cứ. Đây không phải bảo đảm tính chính xác hay kết quả chấm điểm.",
+    "error": "Góp ý thất bại hoặc đoạn chọn không hợp lệ. Hãy chọn nội dung không rỗng trong giới hạn rồi thử lại. Bản nháp được giữ nguyên.",
+    "original": "Nội dung gốc",
+    "reject": "Bỏ qua chỉnh sửa",
+    "remove": "Xóa đoạn này",
+    "replacement": "Nội dung đề xuất",
+    "retry": "Thử góp ý lại",
+    "review": "Góp ý đoạn chọn hoặc bản nháp",
+    "reviewing": "Đang xem xét. Các đề xuất sẽ xuất hiện khi quá trình hoàn tất.",
+    "scope": "Chọn một đoạn hoặc xem xét bản nháp (tối đa {limit} ký tự). Nội dung chỉ thay đổi khi bạn chấp nhận chỉnh sửa.",
+    "stale": "Bản nháp đã thay đổi. Hãy yêu cầu góp ý lại trước khi áp dụng chỉnh sửa.",
+    "subject": "Môn học",
+    "subjects": {
+      "biology": "Sinh học",
+      "chemistry": "Hóa học",
+      "math": "Toán",
+      "other": "Môn học khác",
+      "physics": "Vật lý",
+      "writing": "Viết và bài luận"
+    },
+    "suggestions": "Chỉnh sửa được đề xuất",
+    "title": "Góp ý bài viết và khoa học",
+    "unavailable": "Chưa thể góp ý bằng AI cho đến khi xác nhận điều kiện của không gian làm việc và chính sách hỗ trợ học tập. Bạn vẫn có thể sửa bản nháp."
+  },
   "educationTodo": {
     "assignedCount": "{count} mục được giao trong loại này, bao gồm mục đã hoàn thành",
     "assignments": "Bài tập",

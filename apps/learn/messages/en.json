@@ -585,6 +585,34 @@
     "yourResponse": "Your response",
     "youtubeVideo": "YouTube video"
   },
+  "draftAssistance": {
+    "accept": "Accept edit",
+    "cancel": "Cancel review",
+    "credits": "Review sends the selected text through workspace AI. Existing plan, credit and learning-assistance limits apply.",
+    "empty": "No supported edits remain. This is not a correctness or grading guarantee.",
+    "error": "Review failed or the selection is invalid. Keep a nonempty selection within the limit and retry. Your draft is unchanged.",
+    "original": "Original",
+    "reject": "Dismiss edit",
+    "remove": "Remove this text",
+    "replacement": "Suggested replacement",
+    "retry": "Retry review",
+    "review": "Review selection or draft",
+    "reviewing": "Reviewing. Suggestions appear when the review is complete.",
+    "scope": "Select a passage, or review the draft (up to {limit} characters). Your text changes only when you accept an edit.",
+    "stale": "The draft changed. Review it again before applying suggestions.",
+    "subject": "Subject",
+    "subjects": {
+      "biology": "Biology",
+      "chemistry": "Chemistry",
+      "math": "Math",
+      "other": "Other subjects",
+      "physics": "Physics",
+      "writing": "Writing & essays"
+    },
+    "suggestions": "Suggested edits",
+    "title": "Writing & science review",
+    "unavailable": "AI review is unavailable until workspace eligibility and learning-assistance policy are confirmed. Your draft stays editable."
+  },
   "educationTodo": {
     "assignedCount": "{count} assigned items in this category, including completed items",
     "assignments": "Assignments",
