@@ -1838,15 +1838,8 @@ Meet AI are the consented recording and transcription paths.
 - The web `POST /api/ai/meetings/transcription` endpoint returns 403
   `LEGACY_MEETING_AI_DISABLED` unconditionally, before authentication, body
   parsing, database access, usage, credits or provider work.
-- The shared stored-recording transcription handler authenticates, applies the shared API
-  proxy limiter (ten requests per minute per user), verifies MEMBER status in
-  the resolved workspace, then looks up the meeting by both id and workspace.
-  Non-members get 403 before any meeting lookup. Members always receive a
-  localized 403 `LEGACY_MEETING_TRANSCRIPTION_DISABLED` refusal pointing to
-  Meet AI. No audio is read and no usage, credit or provider call happens.
-  The retired `legacy_meeting_transcription_enabled` workspace config key has
-  no effect, whether written through the generic settings API or directly
-  under RLS.
+- The shared stored-recording transcription handler and unused legacy call
+  recording hook are removed; neither exposes an alternate entrypoint.
 - The legacy recorder never starts a new recording session: the record toggle
   only stops an already-active session; `PUT`/`PATCH` refuse status
   `recording`; the chunk and complete-recording upload routes refuse every
@@ -1858,7 +1851,6 @@ Meet AI are the consented recording and transcription paths.
   transcript viewing and deletion behave as before. No data is deleted.
 
 Regression coverage:
-`packages/ai/src/meetings/transcription/route.test.ts`,
 `apps/web/src/legacy-api-routes/ai/meetings/transcription/route.test.ts`
 (early unconditional refusal), the legacy record, recording
 session and upload route tests under
