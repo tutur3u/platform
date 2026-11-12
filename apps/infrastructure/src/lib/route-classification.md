@@ -23,10 +23,12 @@ They do not prove every handler invokes that helper.
 
 ## Required enforcement and review gaps
 
-- `src/app/api/auth/logout/route.ts` exports GET as well as POST and delegates
-  to a central-host logout redirect. PRELOGIN requires POST with same-origin
-  intent and relative redirects. GET is classified ADMIN here but is not guarded
-  by the classification helper at runtime.
+- `src/app/api/auth/logout/route.ts` accepts POST only with an exact own-origin
+  Origin and absent or same-origin Fetch Metadata intent before the shared logout
+  factory clears cookies. GET returns 405 with Allow POST and no cookie effects.
+  Browser responses redirect to relative /login; JSON responses retain success.
+  Colocated handler-effect tests exercise the actual cookie-clearing factory;
+  router dispatch and emitted runtime acceptance remain separate gates.
 - `src/app/api/auth/verify-app-token/route.ts` and
   `src/app/api/auth/refresh-app-session/route.ts` delegate token/session issuance
   to cross-app factories. They remain ADMIN in this preparation; state/PKCE,

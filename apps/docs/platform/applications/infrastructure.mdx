@@ -825,3 +825,15 @@ rule applies to Infrastructure; other apps retain their owning access contracts.
 
 Regression coverage: `apps/infrastructure/src/app/api/build-info/route.test.ts`
 executes the handler, ADMIN helper and metadata factory with fixture suppliers.
+
+## Prelogin logout
+
+Infrastructure logout accepts POST with an exact own-origin Origin header and
+absent or same-origin Fetch Metadata intent. This requirement applies with or
+without cookies and bearer headers. Rejected intent returns 403 before session
+cookie deletion; GET returns 405 with Allow POST and no cookie effects. Successful
+logout retains shared app-session and Supabase cookie deletion. Browser responses
+redirect to relative `/login`; JSON clients receive `{ success: true }`.
+Cross-app trusted origins do not grant this prelogin exception. Handler-effect
+coverage is in `apps/infrastructure/src/app/api/auth/logout/route.test.ts`;
+router dispatch and hosted runtime acceptance require separate validation.
