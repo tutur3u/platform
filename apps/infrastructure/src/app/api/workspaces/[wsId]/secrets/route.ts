@@ -47,7 +47,7 @@ export async function GET(request: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
-  const auth = await authorizeInfrastructureWorkspaceSecretsRequest();
+  const auth = await authorizeInfrastructureWorkspaceSecretsRequest(req);
   if (!auth.ok) return auth.response;
 
   const parsed = secretSchema.safeParse(await req.json().catch(() => null));
