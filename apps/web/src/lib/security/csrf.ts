@@ -5,6 +5,8 @@ import {
   createCsrfReportLimiter,
   parseCsrfMode,
 } from '@tuturuuu/auth/csrf';
+import { getConfiguredInternalAppDomains } from '@tuturuuu/utils/internal-domains';
+import { getConfiguredSharedCookieDomainOverride } from '@tuturuuu/utils/shared-cookie';
 import { type NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -32,12 +34,69 @@ export const WEB_SESSION_CLEARING_PATHS: ReadonlySet<string> = new Set([
 /**
  * Origins of satellite apps whose `/api/*` requests are forwarded verbatim to
  * Web. A forwarded request arrives on Web's own host, so a client that sends
- * no `Sec-Fetch-Site` identifies itself by the satellite's `Origin` instead.
+ * no `Sec-Fetch-Site` or `same-site` proves trust with its exact `Origin`.
+ * Retiring a satellite removes its origin from this list.
  * The `tuturuuu.com/<app>` mounts share Web's origin and need no entry.
  */
 export const WEB_CSRF_TRUSTED_ORIGINS: readonly string[] = [
+  'https://ai.tuturuuu.com',
+  'https://chat.tuturuuu.com',
+  'https://colab.tuturuuu.com',
+  'https://contacts.tuturuuu.com',
+  'https://forms.tuturuuu.com',
+  'https://git.tuturuuu.com',
+  'https://infrastructure.tuturuuu.com',
+  'https://inventory.tuturuuu.com',
+  'https://learn.tuturuuu.com',
+  'https://lettin.tuturuuu.com',
+  'https://mind.tuturuuu.com',
+  'https://nova.ai.vn',
+  'https://nova.tuturuuu.com',
+  'https://parley.tuturuuu.com',
+  'https://pay.tuturuuu.com',
+  'https://rewise.tuturuuu.com',
+  'https://shortener.tuturuuu.com',
+  'https://teach.tuturuuu.com',
   'https://workspace.tuturuuu.com',
 ];
+
+function isSessionNamespace(path: string): boolean {
+  const segments: string[] = [];
+  for (const raw of path.split('/')) {
+    let decoded = raw;
+    try {
+      decoded = decodeURIComponent(raw);
+    } catch {
+      // Retain the malformed segment while classifying its namespace.
+    }
+    for (const segment of decoded.split('/')) {
+      if (!segment || segment === '.') continue;
+      if (segment === '..') segments.pop();
+      else segments.push(segment);
+    }
+  }
+  const normalized = `/${segments.join('/')}`;
+  return ['/api/auth', '/api/v1/auth/accounts'].some(
+    (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`)
+  );
+}
+
+/** Decode once; residual escapes and URL delimiters are ambiguous. */
+function normalizeSessionPath(path: string): string | null {
+  try {
+    const decoded = decodeURIComponent(path);
+    if (/[%\\?#\u0000-\u001f\u007f]/u.test(decoded)) return null;
+    const segments: string[] = [];
+    for (const segment of decoded.split('/')) {
+      if (!segment || segment === '.') continue;
+      if (segment === '..') segments.pop();
+      else segments.push(segment);
+    }
+    return `/${segments.join('/')}`;
+  } catch {
+    return null;
+  }
+}
 
 const shouldReportCsrfFailure = createCsrfReportLimiter();
 
@@ -54,11 +113,22 @@ export function guardWebApiCsrf(
 ): NextResponse | null {
   if (mode === 'off') return null;
 
+  const sessionPath = normalizeSessionPath(req.nextUrl.pathname);
+  if (
+    mode === 'enforce' &&
+    sessionPath === null &&
+    isSessionNamespace(req.nextUrl.pathname)
+  ) {
+    return NextResponse.json(
+      { code: 'CSRF_REJECTED', error: 'Ambiguous path' },
+      { status: 403 }
+    );
+  }
   const verdict = checkCsrf({
     allowedOrigins: [
       req.nextUrl.origin,
       configuredOrigin,
-      ...WEB_CSRF_TRUSTED_ORIGINS,
+      ...getWebCsrfTrustedOrigins(),
     ],
     // Web's credentialed CORS (the accounts API) admits every *.tuturuuu.com
     // origin, wider than this allowlist, so a bearer string never stands in
@@ -70,7 +140,7 @@ export function guardWebApiCsrf(
     method: req.method,
     pathname: req.nextUrl.pathname,
     requireOriginWithoutSessionCookie: WEB_SESSION_CLEARING_PATHS.has(
-      req.nextUrl.pathname
+      sessionPath ?? req.nextUrl.pathname
     ),
   });
   if (verdict.ok) return null;
@@ -93,4 +163,19 @@ export function guardWebApiCsrf(
     { code: 'CSRF_REJECTED', error: 'Cross-origin request rejected' },
     { status: 403 }
   );
+}
+
+/** Cookie-isolated staging trusts only explicitly configured staging satellites. */
+export function getWebCsrfTrustedOrigins(): readonly string[] {
+  if (!getConfiguredSharedCookieDomainOverride())
+    return WEB_CSRF_TRUSTED_ORIGINS;
+
+  const satelliteNames = new Set(
+    WEB_CSRF_TRUSTED_ORIGINS.map(
+      (origin) => new URL(origin).hostname.split('.')[0]
+    )
+  );
+  return getConfiguredInternalAppDomains()
+    .filter((app) => satelliteNames.has(app.name))
+    .map((app) => app.url);
 }

@@ -31,8 +31,42 @@ export const MOUNTED_SESSION_MINTING_PATHS: ReadonlySet<string> = new Set([
   '/api/auth/refresh-app-session',
 ]);
 
-function withoutTrailingSlash(path: string) {
-  return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path;
+function isSessionNamespace(path: string): boolean {
+  const segments: string[] = [];
+  for (const raw of path.split('/')) {
+    let decoded = raw;
+    try {
+      decoded = decodeURIComponent(raw);
+    } catch {
+      // Retain the malformed segment while classifying its namespace.
+    }
+    for (const segment of decoded.split('/')) {
+      if (!segment || segment === '.') continue;
+      if (segment === '..') segments.pop();
+      else segments.push(segment);
+    }
+  }
+  const normalized = `/${segments.join('/')}`;
+  return ['/api/auth', '/api/v1/auth/accounts'].some(
+    (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`)
+  );
+}
+
+/** Decode once; residual escapes and URL delimiters are ambiguous. */
+export function normalizeSessionPath(path: string): string | null {
+  try {
+    const decoded = decodeURIComponent(path);
+    if (/[%\\?#\u0000-\u001f\u007f]/u.test(decoded)) return null;
+    const segments: string[] = [];
+    for (const segment of decoded.split('/')) {
+      if (!segment || segment === '.') continue;
+      if (segment === '..') segments.pop();
+      else segments.push(segment);
+    }
+    return `/${segments.join('/')}`;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -40,7 +74,7 @@ function withoutTrailingSlash(path: string) {
  * `/api/auth/logout` (one global logout), never served by the app.
  */
 export function isMountedLogoutPath(appPath: string): boolean {
-  return withoutTrailingSlash(appPath) === '/api/auth/logout';
+  return normalizeSessionPath(appPath) === '/api/auth/logout';
 }
 
 /**
@@ -77,7 +111,13 @@ export function refuseCrossOriginMountedLogout(
  * no verification, rotation or `Set-Cookie`. Returns `null` for any other path.
  */
 export function refuseMountedSessionMinting(appPath: string): Response | null {
-  if (!MOUNTED_SESSION_MINTING_PATHS.has(withoutTrailingSlash(appPath))) {
+  const path = normalizeSessionPath(appPath);
+  if (path === null) {
+    return isSessionNamespace(appPath)
+      ? new Response('Bad Request', { status: 400 })
+      : null;
+  }
+  if (!MOUNTED_SESSION_MINTING_PATHS.has(path)) {
     return null;
   }
   return Response.json(
