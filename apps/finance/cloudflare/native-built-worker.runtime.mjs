@@ -375,6 +375,7 @@ async function qualifyMode(t, mode) {
       }
       for (const origin of [
         ...foreignOrigins,
+        'https://tuturuuu.com',
         'https://tuturuuu.com/finance',
         'https://unknown.example.test',
       ]) {

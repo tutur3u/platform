@@ -1496,3 +1496,13 @@ never a binary from the PR's own lockfile. Keep checkout persistence disabled an
 push only through `scripts/ci/github-token-push.sh`, which passes the token as an
 env-config auth header so it never appears in process argv. See the GitHub
 Actions runbook's frozen-install section for the operating policy.
+
+### Native artifact profile parity
+
+Keep production config rewrites and artifact validators in agreement, including
+producer metadata, top-level Worker name, public URLs, required-secret flags and
+source-map upload policy. Test explicit profile parsing before invoking the shared
+seal CLI. Runtime fixtures compare complete canonical profile bindings, including
+cookie domains, and retain foreign-profile refusal controls. Generate real source
+metadata before emitted-runtime identity checks; see the native Start migration
+runbook's artifact profile and runtime fixture contracts.
