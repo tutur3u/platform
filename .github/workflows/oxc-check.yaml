@@ -153,7 +153,7 @@ jobs:
           npm_config_ignore_scripts: 'true'
         run: |
           set +e
-          oxc_output=$(npx --yes oxlint@1.89.0 --deny-warnings --threads 2 . 2>&1)
+          oxc_output=$(npx --yes oxlint@1.93.0 --deny-warnings --threads 2 . 2>&1)
           oxc_exit_code=$?
           set -e
           printf '%s\n' "$oxc_output"
