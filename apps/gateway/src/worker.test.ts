@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { manifest } from './manifest';
-import { type CacheLike, createHandler, type Env } from './worker';
+import worker, { type CacheLike, createHandler, type Env } from './worker';
 
 class MemoryCache implements CacheLike {
   entries = new Map<string, Response>();
@@ -364,7 +364,7 @@ describe('bare mount paths', () => {
     fetch = vi.fn(
       async (request: Request) =>
         new Response(
-          `learn ${new URL(request.url).pathname}${new URL(request.url).search}`
+          `calendar ${new URL(request.url).pathname}${new URL(request.url).search}`
         )
     )
   ) {
@@ -373,16 +373,16 @@ describe('bare mount paths', () => {
       env: {
         ...ENV,
         GATEWAY_MOUNTED_PATHS: paths,
-        MOUNT_LEARN: { fetch },
+        MOUNT_CALENDAR: { fetch },
       } as unknown as Env,
     };
   }
 
   it('hands exactly /<app> with a query to the app binding, untouched', async () => {
     const t = setup(() => new Response('web'));
-    const { env, fetch } = mountEnv('/learn, /tasks');
-    const res = await t.call('/learn?x=1&y=%20z', undefined, env);
-    expect(await res.text()).toBe('learn /learn?x=1&y=%20z');
+    const { env, fetch } = mountEnv('/calendar, /tasks');
+    const res = await t.call('/calendar?x=1&y=%20z', undefined, env);
+    expect(await res.text()).toBe('calendar /calendar?x=1&y=%20z');
     expect(res.headers.get('x-gateway-cache')).toBe('MOUNT');
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(t.fetchMock).not.toHaveBeenCalled();
@@ -390,13 +390,13 @@ describe('bare mount paths', () => {
 
   it('keeps unlisted, unbound, nested and lookalike paths on the web origin', async () => {
     const t = setup(() => new Response('web'));
-    const { env, fetch } = mountEnv('/learn,/tasks');
+    const { env, fetch } = mountEnv('/calendar,/tasks');
     for (const path of [
       '/tasks?x=1',
-      '/learn/courses',
-      '/learning',
-      '/Learn',
-      '/en/learn',
+      '/calendar/courses',
+      '/calendaring',
+      '/Calendar',
+      '/en/calendar',
     ]) {
       expect(await (await t.call(path, undefined, env)).text()).toBe('web');
     }
@@ -406,7 +406,7 @@ describe('bare mount paths', () => {
   it('ignores the binding when the path is not listed (rollback)', async () => {
     const t = setup(() => new Response('web'));
     const { env, fetch } = mountEnv('');
-    expect(await (await t.call('/learn?x=1', undefined, env)).text()).toBe(
+    expect(await (await t.call('/calendar?x=1', undefined, env)).text()).toBe(
       'web'
     );
     expect(fetch).not.toHaveBeenCalled();
@@ -415,12 +415,251 @@ describe('bare mount paths', () => {
   it('answers 502 when the mounted app throws', async () => {
     const t = setup(() => new Response('web'));
     const { env } = mountEnv(
-      '/learn',
+      '/calendar',
       vi.fn(async () => {
         throw new Error('down');
       })
     );
-    const res = await t.call('/learn?x=1', undefined, env);
+    const res = await t.call('/calendar?x=1', undefined, env);
     expect(res.status).toBe(502);
+  });
+});
+
+describe('explicit Calendar mounts through Worker fetch', () => {
+  function fixture(paths = '/calendar,/calendar/*') {
+    const binding = vi.fn(
+      async (_request: Request) => new Response('calendar')
+    );
+    const web = vi.fn(async (_request: Request) => new Response('web'));
+    vi.stubGlobal('fetch', web);
+    vi.stubGlobal('caches', { default: new MemoryCache() });
+    const env = {
+      ...ENV,
+      GATEWAY_MOUNTED_PATHS: paths,
+      MOUNT_CALENDAR: { fetch: binding },
+    };
+    const call = (path: string, init?: RequestInit) =>
+      worker.fetch(
+        new Request(`https://tuturuuu.com${path}`, init),
+        env as unknown as Env,
+        { waitUntil: () => undefined }
+      );
+    return { binding, web, env, call };
+  }
+
+  it.each(['/calendar', '/calendar/', '/calendar/events?a=%2F&x=1&x=2+3'])(
+    'keeps the complete path and query for %s',
+    async (path) => {
+      const t = fixture();
+      const response = await t.call(path);
+      expect(await response.text()).toBe('calendar');
+      expect(response.headers.get('x-gateway-cache')).toBe('MOUNT');
+      expect(t.binding.mock.calls[0]?.[0].url).toBe(
+        `https://tuturuuu.com${path}`
+      );
+      expect(t.web).not.toHaveBeenCalled();
+    }
+  );
+
+  it('sanitizes forwarding authority while preserving body, method, auth, cookies and abort', async () => {
+    const t = fixture();
+    const controller = new AbortController();
+    const denied = {
+      'X-Forwarded-Host': 'evil.example',
+      'X-Forwarded-Proto': 'http',
+      'X-Forwarded-For': '192.0.2.1',
+      'X-Forwarded-Prefix': '/api',
+      'X-Real-IP': '192.0.2.1',
+      'X-Original-URL': '/api',
+      'X-Original-Host': 'evil.example',
+      Forwarded: 'host=evil.example;proto=http',
+      'CF-Connecting-IP': '192.0.2.1',
+      'CF-Connecting-IPv6': '2001:db8::1',
+      'x-tuturuuu-app-base': '/api',
+    };
+    const request = new Request('https://tuturuuu.com/calendar/events?q=%20', {
+      method: 'POST',
+      body: 'event=one&event=two',
+      signal: controller.signal,
+      headers: {
+        ...denied,
+        authorization: 'Bearer disposable-test',
+        cookie: 'tuturuuu_session=disposable; preference=one',
+        'content-type': 'application/x-www-form-urlencoded',
+        'x-test-header': 'preserved',
+      },
+    });
+    await worker.fetch(request, t.env as unknown as Env, {
+      waitUntil: () => undefined,
+    });
+    const sent = t.binding.mock.calls[0]?.[0];
+    expect(sent).not.toBe(request);
+    expect(sent?.url).toBe(request.url);
+    for (const name of Object.keys(denied)) {
+      expect(sent?.headers.has(name)).toBe(false);
+      expect(request.headers.has(name)).toBe(true);
+    }
+    expect(sent?.headers.get('x-gateway-hop')).toBe('1');
+    expect(request.headers.has('x-gateway-hop')).toBe(false);
+    expect(sent?.method).toBe('POST');
+    expect(sent?.headers.get('authorization')).toBe('Bearer disposable-test');
+    expect(sent?.headers.get('cookie')).toBe(
+      'tuturuuu_session=disposable; preference=one'
+    );
+    expect(sent?.headers.get('x-test-header')).toBe('preserved');
+    expect(sent?.headers.get('content-type')).toBe(
+      'application/x-www-form-urlencoded'
+    );
+    expect(await sent?.text()).toBe('event=one&event=two');
+    expect(sent?.bodyUsed).toBe(true);
+    expect(sent?.signal.aborted).toBe(false);
+    controller.abort();
+    expect(sent?.signal.aborted).toBe(true);
+    expect(t.web).not.toHaveBeenCalled();
+  });
+
+  it('preserves redirects, duplicate cookies and response headers', async () => {
+    const t = fixture();
+    const headers = new Headers({
+      location: '/calendar/login?return=%2Fcalendar',
+      'x-app': 'calendar',
+    });
+    headers.append('set-cookie', 'one=1; Path=/; HttpOnly');
+    headers.append('set-cookie', 'two=2; Path=/; Secure');
+    t.binding.mockImplementation(
+      async () => new Response(null, { status: 307, headers })
+    );
+    const response = await t.call('/calendar');
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      '/calendar/login?return=%2Fcalendar'
+    );
+    expect(response.headers.getSetCookie()).toEqual(headers.getSetCookie());
+    expect(response.headers.getSetCookie()).toHaveLength(2);
+    expect(response.headers.get('x-app')).toBe('calendar');
+    expect(t.web).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    '/calendar-evil',
+    '/calendars/events',
+    '/Calendar',
+    '/calendar%2Fevents',
+    '/en/calendar',
+    '/api/v1/calendar',
+    '/auth/callback?code=disposable',
+    '/login',
+    '/unknown',
+    '/',
+    '/roadmap',
+    '/roadmap/items',
+  ])('preserves Web precedence outside the mount: %s', async (path) => {
+    const t = fixture();
+    expect(await (await t.call(path)).text()).toBe('web');
+    expect(t.binding).not.toHaveBeenCalled();
+    expect(t.web).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['', '/calendar-evil/*', '/calendar/**', '/*', '/Calendar/*'])(
+    'does not admit Calendar through invalid or absent entries: %s',
+    async (paths) => {
+      const t = fixture(paths);
+      expect(await (await t.call('/calendar/events')).text()).toBe('web');
+      expect(t.binding).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    ['/api/x', 'MOUNT_API'],
+    ['/auth/callback', 'MOUNT_AUTH'],
+    ['/login', 'MOUNT_LOGIN'],
+    ['/oauth/callback', 'MOUNT_OAUTH'],
+    ['/_next/static/app.js', 'MOUNT__NEXT'],
+    ['/learn/courses', 'MOUNT_LEARN'],
+  ])('rejects runtime-only mount authority for %s', async (path, name) => {
+    const segment = `/${path.split('/')[1]}`;
+    const t = fixture(`${segment},${segment}/*`);
+    const forbidden = vi.fn(
+      async (_request: Request) => new Response('forbidden')
+    );
+    const env = { ...t.env, [name]: { fetch: forbidden } };
+    const response = await worker.fetch(
+      new Request(`https://tuturuuu.com${path}`),
+      env as unknown as Env,
+      { waitUntil: () => undefined }
+    );
+    expect(await response.text()).toBe('web');
+    expect(forbidden).not.toHaveBeenCalled();
+    expect(t.binding).not.toHaveBeenCalled();
+    expect(t.web).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['/calendar/../api/x', '/api/x'],
+    ['/%63alendar/x', '/%63alendar/x'],
+    ['//calendar/x', '//calendar/x'],
+    ['/Calendar/x', '/Calendar/x'],
+    ['/calendar%2F..%2Fapi', '/calendar%2F..%2Fapi'],
+    [String.raw`/calendar\..\api`, '/api'],
+    ['/calendarx/y', '/calendarx/y'],
+  ])('never mounts hostile target %s', async (target, normalizedPath) => {
+    const t = fixture();
+    const request = new Request(`https://tuturuuu.com${target}`);
+    expect(new URL(request.url).pathname).toBe(normalizedPath);
+    const response = await worker.fetch(request, t.env as unknown as Env, {
+      waitUntil: () => undefined,
+    });
+    expect(await response.text()).toBe('web');
+    expect(t.binding).not.toHaveBeenCalled();
+    expect(t.web).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps bare and subtree admission independent', async () => {
+    const t = fixture('/calendar/*');
+    expect(await (await t.call('/calendar')).text()).toBe('web');
+    expect(await (await t.call('/calendar/events')).text()).toBe('calendar');
+  });
+
+  it('does not mount on a foreign host', async () => {
+    const t = fixture();
+    const response = await worker.fetch(
+      new Request('https://evil.example/calendar'),
+      t.env as unknown as Env,
+      { waitUntil: () => undefined }
+    );
+    expect(await response.text()).toBe('web');
+    expect(t.binding).not.toHaveBeenCalled();
+  });
+
+  it('keeps unbound admitted paths on Web', async () => {
+    const t = fixture();
+    const response = await worker.fetch(
+      new Request('https://tuturuuu.com/calendar/events'),
+      { ...ENV, GATEWAY_MOUNTED_PATHS: '/calendar,/calendar/*' },
+      { waitUntil: () => undefined }
+    );
+    expect(await response.text()).toBe('web');
+    expect(t.binding).not.toHaveBeenCalled();
+  });
+
+  it('returns 502 without an auth fallback or retry when the app fails', async () => {
+    const t = fixture();
+    t.binding.mockRejectedValue(new Error('disposable failure'));
+    const response = await t.call('/calendar', {
+      headers: { cookie: 'session=disposable' },
+    });
+    expect(response.status).toBe(502);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(t.binding).toHaveBeenCalledTimes(1);
+    expect(t.web).not.toHaveBeenCalled();
+  });
+
+  it('retains the loop fence ahead of mount dispatch', async () => {
+    const t = fixture();
+    expect(
+      (await t.call('/calendar', { headers: { 'x-gateway-hop': '1' } })).status
+    ).toBe(508);
+    expect(t.binding).not.toHaveBeenCalled();
+    expect(t.web).not.toHaveBeenCalled();
   });
 });
