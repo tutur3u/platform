@@ -4433,6 +4433,7 @@
       "approve": "Phê duyệt",
       "approved": "Đã phê duyệt",
       "ask_in_chat": "Hỏi @mira trong trò chuyện",
+      "assistant_unavailable": "Mira Live tạm thời không khả dụng. Chưa có trợ lý nào tham gia cuộc họp.",
       "cancel": "Hủy",
       "deafen_mira": "Tắt tiếng Mira",
       "delete_memory": "Xóa ghi nhớ",

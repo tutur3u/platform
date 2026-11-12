@@ -41,6 +41,15 @@ validated again at execution time. Room sessions never receive these tools.
 A room admin can stop the shared assistant even when another admin invited it.
 The room presence expires automatically if its initiating session disappears.
 
+## Unavailable invitations
+
+Meet and Parley show localized unavailable feedback when a Live start is denied
+by the AI availability gate or missing Live service configuration. No assistant
+joins on those denials. Other permission and startup failures retain the generic
+error. This feedback does not enable Live or bypass its authorization, audio
+consent, or limits. Synthetic regression coverage:
+`invite-unavailable.test.tsx` and `live-workspace-identity.test.tsx`.
+
 ## Mira in the meeting
 
 Room chat is the default, including solo meetings. Mention **@mira**, **@ttr**,

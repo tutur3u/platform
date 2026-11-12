@@ -4433,6 +4433,7 @@
       "approve": "Approve",
       "approved": "Approved",
       "ask_in_chat": "Ask @mira in chat",
+      "assistant_unavailable": "Mira Live is temporarily unavailable. No assistant joined the meeting.",
       "cancel": "Cancel",
       "deafen_mira": "Deafen Mira",
       "delete_memory": "Delete memory",

@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   list: vi.fn(),
   hidden: vi.fn(),
   start: vi.fn(),
+  error: undefined as string | undefined,
 }));
 vi.mock('@tuturuuu/internal-api/users', () => ({
   getCurrentUserHiddenWorkspaces: mocks.hidden,
@@ -30,6 +31,7 @@ vi.mock('@tuturuuu/internal-api/workspaces', () => ({
 vi.mock('./use-live-assistant', () => ({
   useLiveAssistant: () => ({
     status: 'idle',
+    error: mocks.error,
     mode: 'personal',
     start: mocks.start,
     send: vi.fn(),
@@ -42,6 +44,7 @@ vi.mock('./live-review-card', () => ({ LiveReviewCard: () => null }));
 afterEach(cleanup);
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.error = undefined;
   mocks.hidden.mockResolvedValue({ hiddenWorkspaceIds: [] });
   mocks.list.mockResolvedValue([
     {
@@ -416,3 +419,18 @@ it('does not retry failed workspace queries for a mismatched supplied account', 
   expect(mocks.hidden).toHaveBeenCalledTimes(visibility);
   expect(mocks.start).not.toHaveBeenCalled();
 });
+
+for (const locale of ['en', 'vi'] as const) {
+  it(`shows localized unavailable feedback in the Live dialog in ${locale}`, async () => {
+    mocks.error = 'assistant_unavailable';
+    renderPanel('account-owner', locale);
+    const text = (locale === 'en' ? messages : vietnamese).meet.live;
+    fireEvent.click(screen.getByRole('button', { name: text.title }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      locale === 'en'
+        ? 'Mira Live is temporarily unavailable. No assistant joined the meeting.'
+        : 'Mira Live tạm thời không khả dụng. Chưa có trợ lý nào tham gia cuộc họp.'
+    );
+    expect(mocks.start).not.toHaveBeenCalled();
+  });
+}

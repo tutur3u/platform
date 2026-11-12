@@ -335,13 +335,23 @@ export function useLiveAssistant(
       }
       if (!(await ready)) throw new Error('Live startup failed');
       return !current.stopped;
-    } catch {
+    } catch (error) {
       player.close();
       microphone?.getTracks().forEach((track) => {
         track.stop();
       });
       if (generation === startGeneration.current) {
-        if (!roomAudioRef.current.suppressed) setError('start_failed');
+        if (!roomAudioRef.current.suppressed)
+          setError(
+            error instanceof Error &&
+              'status' in error &&
+              ((error.status === 403 &&
+                error.message === 'Meet AI is temporarily unavailable') ||
+                (error.status === 503 &&
+                  error.message === 'Live assistant is unavailable'))
+              ? 'assistant_unavailable'
+              : 'start_failed'
+          );
         await stop();
         if (!roomAudioRef.current.suppressed) setStatus('error');
       }
