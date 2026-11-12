@@ -133,6 +133,25 @@ test('trusted CI guard rejects inventory expansion and digest edits, permits shr
   fs.mkdirSync(trusted);
   fs.mkdirSync(path.join(candidate, 'scripts/ci'), { recursive: true });
   execFileSync('git', ['init', '-q', candidate]);
+  execFileSync('git', ['-C', candidate, 'config', 'user.name', 'vhpx']);
+  execFileSync('git', [
+    '-C',
+    candidate,
+    'config',
+    'user.email',
+    'contact@vohoangphuc.com',
+  ]);
+  execFileSync('git', [
+    '-C',
+    candidate,
+    'commit',
+    '--allow-empty',
+    '-qm',
+    'test: SQL guard fixture base',
+  ]);
+  const base = execFileSync('git', ['-C', candidate, 'rev-parse', 'HEAD'], {
+    encoding: 'utf8',
+  }).trim();
   const copied = new Set();
   function copy(name) {
     if (copied.has(name)) return;
@@ -160,6 +179,8 @@ test('trusted CI guard rejects inventory expansion and digest edits, permits shr
     path.join(__dirname, 'security-definer-verified-findings.json'),
     path.join(candidate, 'scripts/ci/security-definer-verified-findings.json')
   );
+  for (const directory of [trusted, path.join(candidate, 'scripts/ci')])
+    fs.writeFileSync(path.join(directory, 'sql-frozen-debt.json'), '[]\n');
   const run = (entries) => {
     fs.writeFileSync(historicalFile, JSON.stringify(entries));
     return spawnSync(
@@ -168,6 +189,7 @@ test('trusted CI guard rejects inventory expansion and digest edits, permits shr
       {
         cwd: candidate,
         encoding: 'utf8',
+        env: { ...process.env, BASE_SHA: base },
       }
     );
   };

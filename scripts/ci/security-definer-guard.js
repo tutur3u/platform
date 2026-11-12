@@ -2,7 +2,6 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
 const {
   statements,
   tokens,
@@ -518,15 +517,7 @@ function checkRepository({
         'utf8'
       )
     );
-  const paths =
-    files ??
-    execFileSync('git', ['ls-files', '--', `${MIGRATIONS}*.sql`], {
-      cwd: root,
-      encoding: 'utf8',
-    })
-      .trim()
-      .split('\n')
-      .filter(Boolean);
+  const paths = files ?? require('./sql-guard-scope').listSqlFiles(root);
   // Definers the SQL grant guard already accepts: frozen inherited ACLs and
   // its source-bound reviewed exceptions (one mechanism per finding; never
   // duplicate those entries in security-definer-verified-findings.json).
@@ -656,7 +647,7 @@ if (require.main === module) {
       );
       // Base verified records are append-only; additions need source binding
       // and an attestation (security-definer-admission.js) before they apply.
-      const findings = await admitVerifiedFindings({
+      const rawFindings = await admitVerifiedFindings({
         root,
         trustedDirectory: __dirname,
         scan: (verifiedFindings) =>
@@ -669,6 +660,12 @@ if (require.main === module) {
             ),
           }),
       });
+      await require('./sql-frozen-debt').admit(root);
+      const findings = require('./sql-frozen-debt').enforce(
+        'definer',
+        rawFindings,
+        root
+      );
       const report = process.argv[2];
       if (report)
         fs.writeFileSync(report, `${JSON.stringify({ findings }, null, 2)}\n`);

@@ -16,8 +16,6 @@ const {
 const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
-const MIGRATIONS_DIR = 'apps/database/supabase/migrations';
-const ROLLBACKS_DIR = 'apps/database/rollbacks';
 const OPEN_ROLES = ['public', 'anon'];
 const RULES = {
   anonGrant: 'anon-grant',
@@ -599,30 +597,27 @@ function changedSqlFiles(rootDir, env = process.env) {
 
 // --- Repository evaluation ----------------------------------------------
 
-function listSqlFiles(rootDir = ROOT_DIR) {
-  return [
-    MIGRATIONS_DIR,
-    ROLLBACKS_DIR,
-    'apps/database/supabase/schemas',
-  ].flatMap((directory) => {
-    const absolute = path.join(rootDir, directory);
-    if (!fs.existsSync(absolute)) return [];
-    return fs
-      .readdirSync(absolute, { recursive: true })
-      .filter((name) => name.endsWith('.sql'))
-      .sort()
-      .map((name) => `${directory}/${name}`);
-  });
-}
+const { listSqlFiles } = require('./sql-guard-scope');
 
-function checkRepository(rootDir = ROOT_DIR, env = process.env) {
+function checkRepository(
+  rootDir = ROOT_DIR,
+  env = process.env,
+  { raw = false } = {}
+) {
   const base = changedSqlFiles(rootDir, env);
-  return evaluateSqlFiles({
+  const result = evaluateSqlFiles({
     files: listSqlFiles(rootDir),
     baseline: loadBaseline(rootDir, baselineReference(rootDir, base, env)),
     readFile: (file) => fs.readFileSync(path.join(rootDir, file), 'utf8'),
     verifiedFindings: require('./sql-grant-guard-verified-findings'),
   });
+  if (!raw)
+    result.violations = require('./sql-frozen-debt').enforce(
+      'grant',
+      result.violations,
+      rootDir
+    );
+  return result;
 }
 
 function formatLegacyReport(legacy) {
@@ -667,14 +662,23 @@ module.exports = {
 };
 
 if (require.main === module) {
-  const { violations, legacy } = checkRepository();
-  if (process.argv.includes('--report')) {
-    console.log(formatLegacyReport(legacy));
-    console.log(`Non-baselined SQL findings for triage: ${violations.length}`);
-    for (const violation of violations) console.log(violation.message);
-  } else {
-    for (const violation of violations) console.error(violation.message);
-    if (violations.length > 0) process.exit(1);
-    console.log('SQL grant guard passed.');
-  }
+  (async () => {
+    if (!process.argv.includes('--report'))
+      await require('./sql-frozen-debt').admit(process.cwd());
+    const { violations, legacy } = checkRepository();
+    if (process.argv.includes('--report')) {
+      console.log(formatLegacyReport(legacy));
+      console.log(
+        `Non-baselined SQL findings for triage: ${violations.length}`
+      );
+      for (const violation of violations) console.log(violation.message);
+    } else {
+      for (const violation of violations) console.error(violation.message);
+      if (violations.length > 0) process.exit(1);
+      console.log('SQL grant guard passed.');
+    }
+  })().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
 }

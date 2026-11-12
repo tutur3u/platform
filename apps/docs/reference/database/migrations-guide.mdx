@@ -1035,3 +1035,34 @@ depends on which record pins it.
    Records that carry a `line` (verified records, reviewed exceptions) also
    break on any line shift. Check by running the guards locally and confirming
    no pinned digest or line changed.
+
+### Full-tree SQL finding debt
+
+`scripts/ci/sql-frozen-debt.json` is scanner-generated historical debt, not an
+access approval. Both guards still discover every SQL file; the exact-directory
+inventory rejects new SQL locations. Each entry binds scanner, path, rule,
+severity and a normalized offending-statement SHA256. Occurrences prevent an
+identical duplicate from reusing one entry. Literal bytes and quoted identifier
+case remain significant. Comments and whitespace outside literals are trivia;
+dollar bodies are tokenized recursively. ACL/configuration statements in the
+same file also bind the identity because they affect routine exposure.
+
+Generate explicitly with `node scripts/ci/sql-frozen-debt.js generate <output>`;
+CI never regenerates debt. Unknown findings and unnecessary stale entries fail.
+Remove resolved entries together with their findings. New entries require the
+pinned release bot's exact-head `security/sql-frozen-debt-admission` status,
+with `sql-debt sha256:<canonical-additions-digest>`, checked by base-owned code.
+Self-declared review fields and equal finding counts confer no authority.
+
+For a base without this verifier, Security Checks first uses its existing
+base-owned definer attestation verifier. The bootstrap record has purpose
+`sql-frozen-debt-bootstrap` and a SHA256 of sorted `[path, contents]` pairs for
+all `scripts/ci/(sql-|security-)*.(js|json)` files at the exact checkout head.
+The existing `security/definer-record-admission` context must cover that record
+before candidate scanner code runs. This is a security review gate, not an early
+approval. The workflow's reviewed-byte contract and independent exact-head
+security review remain required. Regression controls live in
+`sql-frozen-debt.test.js`; existing scanner fixtures retain their raw assertions.
+
+Applied SQL outside migrations and rollbacks remains ranked owner follow-up
+in the private security register. A debt entry does not establish live database exposure or remediation.

@@ -291,6 +291,8 @@ async function verifyAttestation({
   head,
   token,
   fetch,
+  context = ATTESTATION_CONTEXT,
+  description,
 }) {
   if (!token)
     throw new Error(
@@ -298,7 +300,7 @@ async function verifyAttestation({
     );
   if (typeof fetch !== 'function')
     throw new Error('Definer record attestation needs fetch.');
-  const expected = attestationDescription(additions, rebinds);
+  const expected = description ?? attestationDescription(additions, rebinds);
   for (let page = 1; page <= STATUS_PAGES; page += 1) {
     let statuses;
     try {
@@ -323,9 +325,7 @@ async function verifyAttestation({
       throw new Error(
         'Definer record attestation lookup returned no status list.'
       );
-    const status = statuses.find(
-      (entry) => entry?.context === ATTESTATION_CONTEXT
-    );
+    const status = statuses.find((entry) => entry?.context === context);
     if (status) {
       if (
         status.state !== 'success' ||
@@ -344,7 +344,7 @@ async function verifyAttestation({
     if (statuses.length < 100) break;
   }
   throw new Error(
-    `Missing ${ATTESTATION_CONTEXT} status on ${head}; expected "${expected}".`
+    `Missing ${context} status on ${head}; expected "${expected}".`
   );
 }
 
@@ -400,6 +400,7 @@ module.exports = {
   canonicalJson,
   modifiedMigrations,
   recordsDigest,
+  resolveShas,
   splitLedger,
   splitVerifiedRecords,
   verifyAttestation,

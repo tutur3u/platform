@@ -91,9 +91,41 @@ jobs:
             if git cat-file -e "$BASE_SHA:scripts/ci/security-definer-admission.js" 2>/dev/null; then
               git show "$BASE_SHA:scripts/ci/security-definer-admission.js" > "$dir/security-definer-admission.js"
             fi
+            if test -f scripts/ci/sql-frozen-debt.json && ! git cat-file -e "$BASE_SHA:scripts/ci/sql-frozen-debt.js" 2>/dev/null; then
+              # Only the base-owned verifier receives the read-only token. The
+              # attestation binds all SQL/security scanner source and debt bytes.
+              node - "$dir" <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const { createHash } = require('node:crypto');
+          const path = require('node:path');
+          const trusted = require(path.resolve(process.argv[2], 'security-definer-admission.js'));
+          const head = process.env.HEAD_SHA;
+          if (!/^[a-f0-9]{40}$/.test(head || '')) throw new Error('Invalid bootstrap head');
+          const git = (args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+          if (git(['rev-parse', 'HEAD']).trim() !== head) throw new Error('Bootstrap checkout/head mismatch');
+          const files = git(['ls-tree', '-r', '--name-only', head, '--', 'scripts/ci']).trim().split('\n')
+            .filter((file) => /^scripts\/ci\/(?:sql-|security-).*\.(?:js|json)$/.test(file)).sort();
+          const bytes = files.map((file) => [file, git(['show', `${head}:${file}`])]);
+          const digest = createHash('sha256').update(JSON.stringify(bytes)).digest('hex');
+          const additions = [{ purpose: 'sql-frozen-debt-bootstrap', digest }];
+          trusted.verifyAttestation({ additions, head, token: process.env.GITHUB_TOKEN, fetch: globalThis.fetch })
+            .catch((error) => { console.error(error.message); process.exitCode = 1; });
+          NODE
+              for file in scripts/ci/sql-*.js scripts/ci/sql-*.json scripts/ci/security-*.js scripts/ci/security-*.json; do
+                git show "$HEAD_SHA:$file" > "$dir/$(basename "$file")"
+              done
+            fi
+            for file in sql-frozen-debt.js sql-frozen-debt.json; do
+              if git cat-file -e "$BASE_SHA:scripts/ci/$file" 2>/dev/null; then
+                git show "$BASE_SHA:scripts/ci/$file" > "$dir/$file"
+              fi
+            done
+            if git cat-file -e "$BASE_SHA:scripts/ci/sql-guard-scope.js" 2>/dev/null; then
+              git show "$BASE_SHA:scripts/ci/sql-guard-scope.js" > "$dir/sql-guard-scope.js"
+            fi
           else
             echo "::warning::Definer guard bootstrap requires independent CI/security review."
-            for file in security-definer-baseline.json security-definer-blocks.js security-definer-guard.js security-definer-historical-blocks.json security-definer-reviewed-blocks.json security-definer-roles.js security-definer-verified-findings.json security-sql.js sql-grant-acl.js sql-grant-frozen-definers.js sql-grant-end-state-guard.js sql-grant-identifiers.js sql-grant-reviewed-exceptions.js security-definer-admission.js; do
+            for file in security-definer-baseline.json security-definer-blocks.js security-definer-guard.js security-definer-historical-blocks.json security-definer-reviewed-blocks.json security-definer-roles.js security-definer-verified-findings.json security-sql.js sql-grant-acl.js sql-grant-frozen-definers.js sql-grant-end-state-guard.js sql-grant-identifiers.js sql-grant-reviewed-exceptions.js security-definer-admission.js sql-guard-scope.js sql-frozen-debt.js; do
               cp "scripts/ci/$file" "$dir/$file"
             done
           fi
