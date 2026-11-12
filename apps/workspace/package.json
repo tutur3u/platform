@@ -139,7 +139,7 @@
     "html2canvas-pro": "^2.5.2",
     "isomorphic-dompurify": "^4.6.0",
     "jose": "^6.2.13",
-    "jotai": "^3.0.1",
+    "jotai": "^3.0.2",
     "jspdf": "^4.2.1",
     "juice": "^12.2.0",
     "katex": "^0.18.11",
