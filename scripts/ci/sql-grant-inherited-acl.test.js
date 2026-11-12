@@ -276,7 +276,9 @@ test('the repository passes with every remaining inherited pass evidenced', () =
   const { satisfied } =
     require('./sql-grant-end-state-guard').checkRepository();
   assert.deepEqual(
-    violations.map((violation) => violation.message),
+    require('./sql-frozen-debt')
+      .enforce('grant', violations, ROOT)
+      .map((violation) => violation.message),
     []
   );
   const inherited = satisfied.filter((entry) => entry.mode === 'inherited-acl');
@@ -306,7 +308,7 @@ test('the repository passes with every remaining inherited pass evidenced', () =
     process.execPath,
     [
       '-e',
-      `const { checkSnapshot } = require(${JSON.stringify(path.join(__dirname, 'sql-grant-repository-fixture'))}); const result = checkSnapshot(${JSON.stringify(ROOT)}); if (result.violations.length) { console.error(result.violations); process.exit(1); } console.log('SQL grant guard passed.');`,
+      `const { checkSnapshot } = require(${JSON.stringify(path.join(__dirname, 'sql-grant-repository-fixture'))}); const result = checkSnapshot(${JSON.stringify(ROOT)}); result.violations = require(${JSON.stringify(path.join(__dirname, 'sql-frozen-debt'))}).enforce('grant', result.violations, ${JSON.stringify(ROOT)}); if (result.violations.length) { console.error(result.violations); process.exit(1); } console.log('SQL grant guard passed.');`,
     ],
     { encoding: 'utf8' }
   );

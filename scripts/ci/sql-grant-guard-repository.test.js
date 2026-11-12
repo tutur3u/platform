@@ -126,6 +126,10 @@ test('CI fetches an absent named base and deepens a depth-two checkout', () => {
       () => baselineReference(checkout, head, { GITHUB_EVENT_NAME: 'push' }),
       /payload is required/
     );
+    fs.writeFileSync(
+      path.join(checkout, 'scripts/ci/sql-frozen-debt.json'),
+      '[]\n'
+    );
     const { checkRepository } = require('./sql-grant-guard');
     assert.ok(
       checkRepository(checkout, {}).violations.some(
