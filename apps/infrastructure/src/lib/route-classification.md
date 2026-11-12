@@ -1,0 +1,54 @@
+# Infrastructure route classification preparation
+
+`route-classification.ts` owns the exception allowlist. Its input is a canonical
+route pattern and an exact uppercase HTTP method. Every unmatched pair is ADMIN.
+Callers must resolve the canonical route before classification; this function is
+not a URL parser or an authorization middleware.
+
+`route-inventory.jsonl` enumerates 319 actual page/route source files and 429
+method entries using the existing Start bridge classifier and exported-method
+parser. The enumeration test compares APIs with the emitted bridge registry and
+checks that every exception resolves to a source handler. There are five
+exception entries: GET /login, POST /api/auth/logout, and GET for each of the
+three /api/cron/infrastructure jobs (docker-recovery-alerts, sample-resources,
+sync-trust-cache). There are no PUBLIC entries: no health handler exists and
+build-info returns metadata beyond SHA and build time. Calendar remains ADMIN.
+
+This is a preparation policy; existing handlers do not automatically invoke it.
+The existing `authorizeInfrastructureAdminRequest` is the enforcement helper
+for subsequent handler migration. Tests exercise that real helper with fixture
+identity and permission suppliers, including unknown ADMIN paths, signed-out
+401, root guest 403, and invalid bearer rejection despite an eligible cookie.
+They do not prove every handler invokes that helper.
+
+## Required enforcement and review gaps
+
+- `src/app/api/auth/logout/route.ts` exports GET as well as POST and delegates
+  to a central-host logout redirect. PRELOGIN requires POST with same-origin
+  intent and relative redirects. GET is classified ADMIN here but is not guarded
+  by the classification helper at runtime.
+- `src/app/api/auth/verify-app-token/route.ts` and
+  `src/app/api/auth/refresh-app-session/route.ts` delegate token/session issuance
+  to cross-app factories. They remain ADMIN in this preparation; state/PKCE,
+  same-origin redirect behavior and grant-free callback semantics require review.
+- `src/app/api/build-info/route.ts` exposes the shared build-info factory without
+  an ADMIN guard. `packages/utils/src/platform-release.ts` includes app name and
+  platform version in addition to build metadata. Keep ADMIN or reduce its
+  payload before allowing a public exception.
+- The three `src/app/api/cron/infrastructure/*/route.ts` handlers compare bearer
+  strings directly and return 500 for missing secrets. Dedicated CRON requires
+  constant-time verification and 401 for every unauthorized request; logging,
+  returned job data and absence of session paths also require review.
+- `src/app/api/cron/calendar/[job]/route.ts` is outside the dedicated exception
+  list. Its job dispatcher needs separate acceptance; Calendar remains held.
+- All remaining inventory entries require per-handler/page acceptance for session,
+  root membership and view_infrastructure or a specific manage permission. An
+  imported guard alone cannot prove each exported method invokes it. Workspace
+  helper wrappers can omit the request, so bearer/cookie equivalence must be
+  checked at each call site. No blanket auth acceptance is claimed.
+- Landing-page ADMIN behavior, login state/PKCE and redirects need runtime review.
+
+Selene owns independent source and final authentication acceptance. Pax owns
+publication and integration. Rename integration retains the PR-A-first condition.
+Source tests provide no emitted Worker, production build, staging, cutover or
+production authorization evidence.
