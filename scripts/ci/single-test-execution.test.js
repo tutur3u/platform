@@ -5,20 +5,43 @@ const { runWorkflowGate } = require('./workflow-gate-test-helper');
 
 const producer = readWorkflow('turbo-unit-tests.yaml');
 const consumer = readWorkflow('codecov.yaml');
+const rawProducer = readWorkflow('turbo-unit-tests.yaml', { raw: true });
 const enabled = () => ({
   result: 'success',
   outputs: { should_run: 'true', run_checks: 'true' },
 });
-function admitted(job, needs, cancelled = false, event = 'push') {
+function admitted(job, needs, cancelled = false, event = 'push', pr = {}) {
   const code = job.if
     .replace(/^\$\{\{\s*|\s*\}\}$/g, '')
-    .replace(/needs\.([a-z-]+)/g, (_, id) => `needs['${id}']`);
+    .replace(/needs\.([a-z-]+)/g, (_, id) => `needs['${id}']`)
+    .replace(
+      /github\.event\.pull_request\.labels\.\*\.name/g,
+      'github.event.pull_request.labels.map((label) => label.name)'
+    );
   return Function(
     'needs',
     'cancelled',
     'github',
+    'contains',
     `return (${code});`
-  )(needs, () => cancelled, { event_name: event });
+  )(
+    needs,
+    () => cancelled,
+    {
+      event_name: event,
+      event:
+        event === 'pull_request'
+          ? {
+              pull_request: {
+                draft: false,
+                labels: [{ name: 'ready-for-ci' }],
+                ...pr,
+              },
+            }
+          : {},
+    },
+    (values, value) => values.includes(value)
+  );
 }
 function gate(job, env) {
   return runWorkflowGate(job, {
@@ -87,6 +110,18 @@ test('both switchboard entries independently admit the shared execution', () => 
       unit || coverage
     );
     assert.equal(admitted(producer.jobs['test-shards-pr'], needs), false);
+    for (const pr of [{ draft: true }, { labels: [] }]) {
+      assert.equal(
+        admitted(
+          rawProducer.jobs['test-shards-pr'],
+          needs,
+          false,
+          'pull_request',
+          pr
+        ),
+        false
+      );
+    }
     for (const code of ['false', '', 'garbage']) {
       needs.changes.outputs.code = code;
       assert.equal(admitted(producer.jobs['test-shards'], needs), false);

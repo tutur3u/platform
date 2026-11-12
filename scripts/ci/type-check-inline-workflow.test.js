@@ -53,7 +53,12 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   const withoutCredentials = (steps) =>
     steps.map((step) => {
       if (!step.with) return step;
-      const { token: _token, team: _team, ...rest } = step.with;
+      const {
+        token: _token,
+        team: _team,
+        'cache-enabled': _cache,
+        ...rest
+      } = step.with;
       return { ...step, with: rest };
     });
   assert.deepEqual(
