@@ -132,6 +132,10 @@ async function qualifyMode(t, mode) {
         info.headers.get('x-robots-tag'),
         'noindex, nofollow, nosnippet'
       );
+      assert.equal(
+        info.headers.get('strict-transport-security'),
+        'max-age=63072000'
+      );
       assert.equal(info.headers.get('x-frame-options'), 'DENY');
       assert.equal(info.headers.get('x-content-type-options'), 'nosniff');
       assert.equal(

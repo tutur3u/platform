@@ -1490,3 +1490,14 @@ verification. Preserve cached list choices on refresh failure, explicit retry,
 and actor-scoped visibility gates when adjusting picker presentation. Verify
 A → B → A resets for search, restore mode, pins, and recent selections with
 `workspace-picker-content.test.tsx` alongside the actor lifetime hook tests.
+
+### Native Worker HSTS boundary
+
+Keep HSTS enforcement outside app-owned response wrappers and startup guards.
+Use `withHstsResponsePolicy` from `@tuturuuu/start-bridge/response-policy` at
+native Worker fetch boundaries with exactly `max-age=63072000`. Preserve
+WebSocket upgrade responses. Regenerate only the owned boundary or runtime
+assertion from the codemod template; retain app-specific startup and routing
+content. Run the policy tests and fleet enumeration, then require sealed emitted
+Worker runtime checks for delivery evidence. Source enumeration alone does not
+prove emitted runtime behavior. See `apps/docs/build/devops/start-bridge-codemod.mdx`.
