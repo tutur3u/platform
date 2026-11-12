@@ -180,9 +180,11 @@ broker with shell fan-out. Revert the group to sequential children for rollback.
 
 ## Inactive runtimes until further notice
 
-Docker setup, Rust, and TanStack Start are paused; the Docker cron runner is
-retired. Keep `docker-setup-check.yaml`, Docker-backed E2E jobs, Rust/TanStack
-workflows and direct deploy jobs disabled, including manual dispatch. Retain
+Docker setup and Rust are paused; the Docker cron runner and `apps/tanstack-web`
+are retired. Per-app native TanStack Start on Cloudflare Workers is the active
+target and keeps its CI. Keep `docker-setup-check.yaml`, Docker-backed E2E jobs,
+Rust and `apps/tanstack-web` workflows and direct deploy jobs disabled,
+including manual dispatch. Retain
 policy tests but exclude inactive implementation suites from default discovery.
 Root commands fail visibly rather than starting or refreshing those runtimes.
 `bun update-all` explicitly targets maintained workspaces; Renovate ignores
