@@ -1,6 +1,7 @@
 import { tracks as contentTracks } from './content/tracks.ts';
 import { localDay, shippedFeed } from './live/feed.ts';
 import { APP_NAMES } from './live/host-probe.ts';
+import { type HostingSnapshot, providerFor } from './live/hosting.ts';
 import type { LiveData } from './live/model.ts';
 import {
   countStatuses,
@@ -26,7 +27,13 @@ const WEEK = 7 * 86_400_000;
 export function buildView(
   data: LiveData,
   now: number,
-  tracks: readonly Track[] = contentTracks
+  tracks: readonly Track[] = contentTracks,
+  /**
+   * This build's hosting observation. When given, every provider comes from
+   * it (unobserved: unknown), never from the data file or a browser cache,
+   * whose provider fields may be from an older build.
+   */
+  hosting: HostingSnapshot | null = null
 ) {
   const index = indexLiveData(data);
   const derived = deriveTracks(tracks, index);
@@ -55,9 +62,24 @@ export function buildView(
   const feed = shippedFeed(data.prs, now).filter(
     (item) => !curatedPrs.has(item.number)
   );
-  const hosts = data.hosts
-    .filter((host) => host.app !== 'mobile')
-    .map((host) => ({ ...host, name: APP_NAMES[host.app] ?? host.app }))
+  const apps = new Set(
+    data.hosts.filter((host) => host.app !== 'mobile').map((host) => host.app)
+  );
+  for (const entry of hosting?.providers ?? []) apps.add(entry.app);
+  const hosts = [...apps]
+    .map((app) => {
+      const host = data.hosts.find((item) => item.app === app);
+      return {
+        app,
+        commit: host?.commit ?? null,
+        commitAt: host?.commitAt ?? null,
+        behindBy: host?.behindBy ?? null,
+        platform: hosting
+          ? providerFor(hosting, app)
+          : (host?.platform ?? 'unknown'),
+        name: APP_NAMES[app] ?? app,
+      };
+    })
     .sort(
       (a, b) =>
         platformRank(a.platform) - platformRank(b.platform) ||
@@ -73,6 +95,8 @@ export function buildView(
     hosts,
     mobile: data.hosts.find((host) => host.app === 'mobile') ?? null,
     onWorkers: hosts.filter((host) => host.platform === 'workers').length,
+    /** Whether this build observed hosting (false: show not verifiable). */
+    hostingVerified: hosting ? hosting.mode === 'probed' : true,
     today: localDay(new Date(now).toISOString()),
   };
 }
