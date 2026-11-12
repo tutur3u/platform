@@ -41,7 +41,11 @@ while [ "$#" -gt 0 ]; do
 done
 
 case "$app" in *[!a-z0-9-]* | "") echo "invalid app name" >&2; exit 2 ;; esac
-case "$sha_env" in *[!A-Z0-9_]* | "") echo "invalid source sha variable name" >&2; exit 2 ;; esac
+case "$sha_env" in
+  [A-Z]*_SOURCE_SHA) ;;
+  *) echo "source sha variable must look like <APP>_SOURCE_SHA" >&2; exit 2 ;;
+esac
+case "$sha_env" in *[!A-Z0-9_]*) echo "invalid source sha variable name" >&2; exit 2 ;; esac
 [ -f "$script" ] || { echo "artifact script not found: $script" >&2; exit 2; }
 [ -d "apps/$app/dist" ] || { echo "apps/$app/dist missing: build the app first" >&2; exit 2; }
 
