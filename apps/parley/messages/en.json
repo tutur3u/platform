@@ -4410,6 +4410,7 @@
       "scheduled": "Scheduled time"
     },
     "live": {
+      "assistant_unavailable": "Mira Live is temporarily unavailable. No assistant joined the meeting.",
       "add_memory": "Add memory",
       "ai_participant": "AI assistant",
       "approve": "Approve",

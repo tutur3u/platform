@@ -358,7 +358,11 @@ export function MeetLivePanel({
               role="alert"
               className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm"
             >
-              {t('session_error')}
+              {t(
+                live.error === 'assistant_unavailable'
+                  ? 'assistant_unavailable'
+                  : 'session_error'
+              )}
             </p>
           )}
         </div>

@@ -4410,6 +4410,7 @@
       "scheduled": "Giờ họp dự kiến"
     },
     "live": {
+      "assistant_unavailable": "Mira Live tạm thời không khả dụng. Chưa có trợ lý nào tham gia cuộc họp.",
       "add_memory": "Thêm ghi nhớ",
       "ai_participant": "Trợ lý AI",
       "approve": "Phê duyệt",
