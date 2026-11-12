@@ -1506,3 +1506,15 @@ seal CLI. Runtime fixtures compare complete canonical profile bindings, includin
 cookie domains, and retain foreign-profile refusal controls. Generate real source
 metadata before emitted-runtime identity checks; see the native Start migration
 runbook's artifact profile and runtime fixture contracts.
+
+## Calendar suite timing instrumentation
+
+Keep owning Calendar, Web and Tasks UI tests sequential after the supplier/native
+build and tracked route-tree drift guard in `mail-calendar-tasks-builds.yaml`.
+Separate named steps provide per-suite timings with zero expected green-path
+saving. Preserve inherited production fixtures and default success conditions;
+artifact qualification, consumer types, sealing, runtime and restore remain
+required. Run `calendar-native-artifact.test.mjs` (including the suite-step
+negative controls) and `mail-calendar-tasks-affected.test.js` after edits. See
+[the CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#calendar-owning-suite-timings)
+before proposing a generated-output handoff or parallel suites.
