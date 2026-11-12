@@ -25,13 +25,23 @@ def load():
     module.IDENTITY = {
         **module.IDENTITY,
         "name": WORKER,
-        "vars": {"TUTURUUU_NOINDEX": "0" if PROFILE == "production" else "1"},
+        "vars": {
+            "TUTURUUU_NOINDEX": "0",
+            "NODE_ENV": "production",
+            "TUTURUUU_REQUIRE_SECRETS": "1",
+            "NEXT_PUBLIC_APP_URL": "https://infrastructure.tuturuuu.com",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+        } if PROFILE == "production" else {"TUTURUUU_NOINDEX": "1"},
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
         "workers_dev": False,
         "preview_urls": False,
     }
-    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
+    module.NORMALIZED_DEFAULTS = {
+        **module.NORMALIZED_DEFAULTS,
+        "topLevelName": WORKER,
+        "upload_source_maps": PROFILE != "production",
+    }
     module.RECEIPT = "infrastructure-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
     return module

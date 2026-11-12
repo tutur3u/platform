@@ -49,9 +49,15 @@ class InfrastructureArtifactTest(unittest.TestCase):
         self.assertEqual(production.IDENTITY["name"], "tuturuuu-infrastructure")
         self.assertFalse(production.IDENTITY["workers_dev"])
         self.assertFalse(production.IDENTITY["preview_urls"])
-        self.assertEqual(production.IDENTITY["vars"], {"TUTURUUU_NOINDEX": "0"})
+        self.assertEqual(production.IDENTITY["vars"], {
+            "TUTURUUU_NOINDEX": "0",
+            "NODE_ENV": "production",
+            "TUTURUUU_REQUIRE_SECRETS": "1",
+            "NEXT_PUBLIC_APP_URL": "https://infrastructure.tuturuuu.com",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+        })
         self.assertEqual(production.NORMALIZED_DEFAULTS["topLevelName"], "tuturuuu-infrastructure")
-        self.assertIs(production.NORMALIZED_DEFAULTS["upload_source_maps"], True)
+        self.assertIs(production.NORMALIZED_DEFAULTS["upload_source_maps"], False)
         self.assertNotIn("preview_urls", production.NORMALIZED_DEFAULTS)
         self.assertEqual(production.RECEIPT, "infrastructure-native-artifact.json")
         self.assertEqual(production.PUBLIC_FILES, ("robots.txt",))
@@ -69,6 +75,7 @@ class InfrastructureArtifactTest(unittest.TestCase):
                 try:
                     app, config, pointer = fixture.fixture()
                     config.update(module.IDENTITY)
+                    config["upload_source_maps"] = module.NORMALIZED_DEFAULTS["upload_source_maps"]
                     config["topLevelName"] = module.IDENTITY["name"]
                     fixture.save(app, config, pointer)
                     path = app / "dist/native/wrangler.json"
@@ -83,6 +90,57 @@ class InfrastructureArtifactTest(unittest.TestCase):
                         load(other).validate_output(app)
                 finally:
                     fixture.doCleanups()
+
+    def test_production_security_settings_cannot_be_removed_or_weakened(self):
+        spec = importlib.util.spec_from_file_location(
+            "infrastructure_shared_security_tests", HERE / "apps-native-artifact.test.py"
+        )
+        shared = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(shared)
+        module = load("production")
+        required = {
+            "TUTURUUU_NOINDEX": "0",
+            "NODE_ENV": "production",
+            "TUTURUUU_REQUIRE_SECRETS": "1",
+            "NEXT_PUBLIC_APP_URL": "https://infrastructure.tuturuuu.com",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+        }
+        fixture = shared.ArtifactTest()
+        try:
+            app, config, pointer = fixture.fixture()
+            config.update(module.IDENTITY)
+            config["topLevelName"] = "tuturuuu-infrastructure"
+            config["vars"] = dict(required)
+            config["upload_source_maps"] = False
+            fixture.save(app, config, pointer)
+            module.validate_output(app)
+            for key in required:
+                with self.subTest(missing=key):
+                    config["vars"] = dict(required)
+                    del config["vars"][key]
+                    fixture.save(app, config, pointer)
+                    with self.assertRaisesRegex(ValueError, "contract drift: vars"):
+                        module.validate_output(app)
+            for key, value in (
+                ("NODE_ENV", "development"),
+                ("TUTURUUU_REQUIRE_SECRETS", "0"),
+                ("NEXT_PUBLIC_APP_URL", "https://foreign.invalid"),
+                ("NEXT_PUBLIC_WEB_APP_URL", "http://tuturuuu.com"),
+            ):
+                with self.subTest(weakened=key):
+                    config["vars"] = {**required, key: value}
+                    fixture.save(app, config, pointer)
+                    with self.assertRaisesRegex(ValueError, "contract drift: vars"):
+                        module.validate_output(app)
+            config["vars"] = dict(required)
+            for value in (True, None, "false"):
+                with self.subTest(upload_source_maps=value):
+                    config["upload_source_maps"] = value
+                    fixture.save(app, config, pointer)
+                    with self.assertRaisesRegex(ValueError, "contract drift: upload_source_maps"):
+                        module.validate_output(app)
+        finally:
+            fixture.doCleanups()
 
     def test_unknown_profile_rejected(self):
         env = os.environ.copy()
