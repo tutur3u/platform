@@ -55,3 +55,25 @@ it('fails a stalled audio device instead of waiting forever', async () => {
   await expect(result).resolves.toBe('output_unavailable');
   await expect(withDeadline(Promise.resolve(1), 10, Error)).resolves.toBe(1);
 });
+
+it.each([
+  [403, 'Meet AI is temporarily unavailable', 'service_unavailable'],
+  [503, 'Live assistant is unavailable', 'service_unavailable'],
+  [403, 'Only a room admin can invite the room assistant', 'start_failed'],
+  [403, 'Invalid origin', 'start_failed'],
+  [503, 'Room action is unavailable', 'start_failed'],
+  [500, 'Synthetic internal error', 'start_failed'],
+])(
+  'classifies only the reviewed unavailable responses: %i %s',
+  (status, message, expected) => {
+    const code = liveStartErrorCode(
+      Object.assign(new Error(message), { status })
+    );
+    expect(code).toBe(expected);
+    expect(liveErrorMessageKey(code)).toBe(
+      expected === 'service_unavailable'
+        ? 'assistant_unavailable'
+        : 'error_start_failed'
+    );
+  }
+);

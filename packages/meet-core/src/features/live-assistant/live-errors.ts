@@ -8,6 +8,7 @@ const LIVE_ERROR_KEYS = {
   input_unavailable: 'error_input_unavailable',
   output_unavailable: 'error_output_unavailable',
   start_failed: 'error_start_failed',
+  service_unavailable: 'assistant_unavailable',
 } as const;
 
 export type LiveErrorCode = keyof typeof LIVE_ERROR_KEYS;
@@ -38,7 +39,17 @@ export function microphoneErrorCode(error: unknown): LiveErrorCode {
 }
 
 export function liveStartErrorCode(error: unknown): LiveErrorCode {
-  return error instanceof LiveStartError ? error.code : 'start_failed';
+  if (error instanceof LiveStartError) return error.code;
+  if (
+    error instanceof Error &&
+    'status' in error &&
+    ((error.status === 403 &&
+      error.message === 'Meet AI is temporarily unavailable') ||
+      (error.status === 503 &&
+        error.message === 'Live assistant is unavailable'))
+  )
+    return 'service_unavailable';
+  return 'start_failed';
 }
 
 /** Server-provided details are never rendered; unknown codes use the generic message. */
