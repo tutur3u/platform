@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 
-export const loadMailPage = createServerFn({ method: 'GET' })
+export const loadMailPage = createServerFn({ method: 'POST' })
   .validator(
     z.object({
       path: z

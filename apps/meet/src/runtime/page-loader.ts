@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { observeMeetSsr } from './ssr-diagnostics';
 
-export const loadMeetPage = createServerFn({ method: 'GET' })
+export const loadMeetPage = createServerFn({ method: 'POST' })
   .validator(
     z.object({
       path: z
