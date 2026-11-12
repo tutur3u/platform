@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { dispatchEndpoint } from '@tuturuuu/start-bridge/endpoints';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const jobs = vi.hoisted(() => ({
@@ -38,9 +39,24 @@ import { GET as docker } from '@/app/api/cron/infrastructure/docker-recovery-ale
 import { GET as trust } from '@/app/api/cron/infrastructure/sync-trust-cache/route';
 
 const routes = [
-  { name: 'sample', handler: sample, effect: jobs.sample },
-  { name: 'docker', handler: docker, effect: jobs.snapshot },
-  { name: 'trust', handler: trust, effect: jobs.admin },
+  {
+    name: 'sample',
+    path: '/api/cron/infrastructure/sample-resources',
+    handler: sample,
+    effect: jobs.sample,
+  },
+  {
+    name: 'docker',
+    path: '/api/cron/infrastructure/docker-recovery-alerts',
+    handler: docker,
+    effect: jobs.snapshot,
+  },
+  {
+    name: 'trust',
+    path: '/api/cron/infrastructure/sync-trust-cache',
+    handler: trust,
+    effect: jobs.admin,
+  },
 ];
 beforeEach(() => {
   vi.resetAllMocks();
@@ -66,6 +82,28 @@ afterEach(() => {
 
 for (const route of routes) {
   describe(route.name, () => {
+    it('rejects authenticated implicit HEAD dispatch before cron effects', async () => {
+      const response = await dispatchEndpoint(
+        [{ pattern: route.path, module: { GET: route.handler } }],
+        new NextRequest('https://infrastructure.tuturuuu.com' + route.path, {
+          method: 'HEAD',
+          headers: { authorization: 'Bearer test-cron-secret' },
+        })
+      );
+      expect(response?.status).toBe(405);
+      for (const job of Object.values(jobs)) expect(job).not.toHaveBeenCalled();
+    });
+    it('preserves authenticated GET dispatch and its job effect', async () => {
+      const response = await dispatchEndpoint(
+        [{ pattern: route.path, module: { GET: route.handler } }],
+        new NextRequest('https://infrastructure.tuturuuu.com' + route.path, {
+          headers: { authorization: 'Bearer test-cron-secret' },
+        })
+      );
+      expect(response?.status).toBe(200);
+      expect(route.effect).toHaveBeenCalledTimes(1);
+    });
+
     for (const authorization of [
       undefined,
       'Bearer wrong',
