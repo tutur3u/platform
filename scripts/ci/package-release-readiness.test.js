@@ -3,7 +3,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const {
+  DEFAULT_REGISTRY,
   gatePackageRelease,
+  getDependentWorkspacePackages,
   getChangedFiles,
   getChangedPublishablePackages,
   getLatestCommitChangedFiles,
@@ -55,6 +57,44 @@ test('collects installed workspace prerequisites and ignores dev-only dependenci
       },
     ]
   );
+});
+
+test('dependent workspace lookup retains both public defaults', () => {
+  const rootDir = createFixtureRoot();
+  assert.deepEqual(
+    getDependentWorkspacePackages({
+      packageDir: 'packages/internal-api',
+      repoRoot: rootDir,
+    }),
+    []
+  );
+});
+
+test('dependent workspace lookup retains the default version checker', () => {
+  const rootDir = createFixtureRoot();
+  assert.deepEqual(
+    getDependentWorkspacePackages({
+      packageDir: 'packages/internal-api',
+      repoRoot: rootDir,
+      registry: 'https://registry.example.test',
+    }),
+    []
+  );
+});
+
+test('dependent workspace lookup supplies its default registry', () => {
+  const rootDir = createFixtureRoot();
+  const calls = [];
+  getDependentWorkspacePackages({
+    packageDir: 'packages/types',
+    repoRoot: rootDir,
+    versionExists(options) {
+      calls.push(options);
+      return false;
+    },
+  });
+  assert.ok(calls.length > 0);
+  assert.ok(calls.every(({ registry }) => registry === DEFAULT_REGISTRY));
 });
 
 test('detects changed publishable package manifests', () => {

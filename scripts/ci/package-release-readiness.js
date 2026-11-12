@@ -22,36 +22,14 @@ const {
   getLatestCommitChangedFiles,
   getChangedPublishablePackages,
 } = require('./package-release-changes.js');
-const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
-const DEFAULT_REGISTRY = 'https://registry.npmjs.org';
+const {
+  DEFAULT_REGISTRY,
+  packageVersionExists,
+} = require('./package-release-registry.js');
 const DEFAULT_WAIT_ATTEMPTS = 60;
 const DEFAULT_WAIT_DELAY_MS = 10_000;
-function packageVersionExists({
-  npmCommand = 'npm',
-  packageName,
-  packageVersion,
-  registry = DEFAULT_REGISTRY,
-}) {
-  const result = spawnSync(
-    npmCommand,
-    [
-      'view',
-      `${packageName}@${packageVersion}`,
-      'version',
-      '--registry',
-      registry,
-    ],
-    {
-      encoding: 'utf8',
-      stdio: 'pipe',
-    }
-  );
-
-  return result.status === 0;
-}
-
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

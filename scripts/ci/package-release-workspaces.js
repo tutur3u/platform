@@ -1,3 +1,7 @@
+const {
+  DEFAULT_REGISTRY,
+  packageVersionExists,
+} = require('./package-release-registry.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const {
