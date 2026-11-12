@@ -8,19 +8,18 @@ import '../helpers/pump_app.dart';
 
 void main() {
   test(
-    'fallback advertises only app locales and preserves English resources',
+    'delegate advertises only app locales and loads their resources',
     () async {
       const delegate = AppShadcnLocalizationsDelegate();
       expect(delegate.isSupported(const Locale('en')), isTrue);
       expect(delegate.isSupported(const Locale('vi')), isTrue);
       expect(delegate.isSupported(const Locale('fr')), isFalse);
       final english = await delegate.load(const Locale('en'));
-      final vietnameseFallback = await delegate.load(const Locale('vi'));
-      expect(vietnameseFallback.formNotEmpty, english.formNotEmpty);
-      expect(
-        vietnameseFallback.placeholderDatePicker,
-        english.placeholderDatePicker,
-      );
+      final vietnamese = await delegate.load(const Locale('vi'));
+      expect(english.formNotEmpty, 'This field cannot be empty');
+      expect(vietnamese.formNotEmpty, 'Trường này không được để trống');
+      expect(english.placeholderDatePicker, 'Select a date');
+      expect(vietnamese.placeholderDatePicker, 'Chọn ngày');
       expect(delegate.shouldReload(delegate), isFalse);
     },
   );
@@ -58,9 +57,10 @@ void main() {
           findsOneWidget,
         );
         expect(find.text(locale == 'vi' ? 'Dán' : 'Paste'), findsOneWidget);
-        expect(find.text('Select a date'), findsOneWidget);
+        final datePlaceholder = locale == 'vi' ? 'Chọn ngày' : 'Select a date';
+        expect(find.text(datePlaceholder), findsOneWidget);
         expect(tester.takeException(), isNull);
-        await tester.tap(find.text('Select a date'));
+        await tester.tap(find.text(datePlaceholder));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       },

@@ -416,3 +416,27 @@ teardown attribution. A passing JSON stream never replaces child exit zero,
 source/control/run/envelope binding, the actual exact-nine result or cleanup.
 Diagnostic capture is evidence repair; only a separately admitted exact-source
 hosted attempt can establish the Dart failure or strict 197/9/9 qualification.
+
+## Dependency refresh verification
+
+Resolve dependencies with the installed Flutter version matching the `3.47.x`
+CI workflows. Use `flutter pub upgrade` within the manifest constraints; retain
+`record: 7.1.1` while the app relies on `vendor/record_ios`. Version 7.2 selects
+`record_darwin`, bypassing the vendored input-format and failed-start cleanup
+patch. Review that patch before allowing the native implementation to change.
+`flutter_webrtc` stays at 1.6.2+hotfix.3 because the Android Meet overlay
+validates its version and capturer source hash. Review the overlay before upgrading.
+The permission-handler plugin requires Android compile SDK 37; keep the app
+compile SDK floor aligned with plugin requirements.
+Include generated desktop plugin registrants in the dependency change and keep
+`ios/Podfile.lock` aligned for native iOS dependency updates.
+
+Run analysis and tests through the host resource broker. An unsigned local iOS
+verification needs `--release --no-codesign --flavor development --target
+lib/main_development.dart`; the Android equivalent uses `build apk --release`
+with the same flavor and target. Development APKs use disposable debug signing.
+Do not use production signing or dispatch store publication to verify dependencies.
+Copy the tracked development Firebase plist to the ignored
+`ios/Runner/GoogleService-Info.plist` before local iOS builds.
+The iOS symbol-upload phase skips unsigned builds, and development Android builds
+have mapping uploads disabled.

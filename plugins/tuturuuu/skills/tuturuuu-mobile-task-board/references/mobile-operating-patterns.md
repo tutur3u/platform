@@ -114,6 +114,8 @@ Read only the section relevant to the current feature; paths are repository-rela
 
 ## 4. Flutter Tooling & Platform Details
 
+- **Native dependency refresh**: Keep `flutter_webrtc` at the version and capturer hash accepted by the Android Meet overlay; never relax its guard to accept a dependency update. Keep `record` pinned at 7.1.1 while `vendor/record_ios` owns the input-format crash guard and failed-start cleanup. `record` 7.2 selects `record_darwin` and bypasses that override. Review native implementation selection alongside generated registrants and Podfile.lock; see [dependency verification](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx#dependency-refresh-verification).
+
 - **Android compileSdk Floor for Plugin Bumps**: When upgrading Flutter plugins that pull newer AndroidX AARs, do not rely blindly on `flutter.compileSdkVersion` in `apps/mobile/android/app/build.gradle.kts`. Keep `compileSdk` pinned to `maxOf(flutter.compileSdkVersion, <required floor>)` so plugin metadata requirements (for example API 34+) do not break release builds when the inherited Flutter default lags behind.
 - **Vendored Flutter Dependency Hygiene**: If a Flutter package must be patched locally under `apps/mobile/vendor`, point `dependency_overrides` at that path and exclude `vendor/**` from `apps/mobile/analysis_options.yaml` so `flutter analyze` / `bun check:mobile` validate first-party app code without turning third-party package lints into repo failures.
 - **iOS Lockstep**: After bumping FlutterFire or other iOS-backed Flutter dependencies in `apps/mobile/pubspec.yaml` or `apps/mobile/pubspec.lock`, refresh and commit `apps/mobile/ios/Podfile.lock`.
