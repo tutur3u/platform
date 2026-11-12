@@ -66,7 +66,7 @@
   "hosting": {
     "title": "Mỗi ứng dụng đang chạy ở đâu",
     "subtitle": "Endpoint build-info công khai của từng ứng dụng, kiểm tra từ bên ngoài Cloudflare, cho biết ứng dụng đang chạy commit nào và commit đó được tạo khi nào.",
-    "checked": "Hosting tính đến",
+    "checked": "Nơi chạy ứng dụng tính đến",
     "checkedNote": "(lúc trang này được build; mỗi lần triển khai đều kiểm tra lại)",
     "workers": "Cloudflare Workers",
     "vercel": "Vercel",
@@ -75,8 +75,8 @@
     "buildFrom": "Bản build ngày",
     "noCommit": "Không báo commit",
     "main": "Mới nhất trên main",
-    "notObserved": "Bản build này không kiểm tra được hosting, nên mọi ứng dụng hiển thị là chưa xác minh được.",
-    "badgeAlt": "Huy hiệu Protected by Cloudflare"
+    "notObserved": "Bản build này không kiểm tra được nơi chạy của ứng dụng, nên mọi ứng dụng đều hiển thị là chưa xác minh được.",
+    "badgeAlt": "Huy hiệu “Protected by Cloudflare”"
   },
   "migration": {
     "title": "Chuyển ứng dụng về tuturuuu.com",
@@ -87,13 +87,13 @@
       "done": "Đã chuyển",
       "in_progress": "Đang chuyển",
       "not_started": "Chưa bắt đầu",
-      "unverified": "Chưa xác minh"
+      "unverified": "Chưa xác minh được"
     },
     "from": "từ",
     "to": "sang",
     "list": "Các ứng dụng và đường dẫn mới",
     "asOf": "Kiểm tra lúc trang này được build:",
-    "method": "Đã chuyển: tên miền phụ tự chuyển hướng sang đường dẫn trên tuturuuu.com. Đang chuyển: ứng dụng đã phản hồi tại đường dẫn trên tuturuuu.com. Chưa bắt đầu: chưa có bước nào. Chưa xác minh: lần kiểm tra không nhận được phản hồi."
+    "method": "Đã chuyển: tên miền phụ tự chuyển hướng sang đường dẫn trên tuturuuu.com. Đang chuyển: ứng dụng đã phản hồi tại đường dẫn trên tuturuuu.com. Chưa bắt đầu: chưa đạt điều kiện nào ở trên. Chưa xác minh được: lần kiểm tra không nhận được phản hồi."
   },
   "method": {
     "title": "Cách tính trạng thái",

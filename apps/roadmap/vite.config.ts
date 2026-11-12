@@ -3,6 +3,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite-plus';
+import { snapshotForBuild } from './src/live/hosting.ts';
 import { voidPlugin } from 'void';
 
 const HOSTING_FILE = new URL('./.generated/hosting.json', import.meta.url);
@@ -26,7 +27,10 @@ export default defineConfig(({ command }) => {
       // null outside a build, which the page shows as not verifiable.
       __ROADMAP_HOSTING__: JSON.stringify(
         command === 'build' && existsSync(HOSTING_FILE)
-          ? JSON.parse(readFileSync(HOSTING_FILE, 'utf8'))
+          ? snapshotForBuild(
+              JSON.parse(readFileSync(HOSTING_FILE, 'utf8')),
+              Date.now()
+            )
           : null
       ),
     },

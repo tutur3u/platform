@@ -21,6 +21,8 @@ import {
   type ProbeOutcome,
   parseHostingSnapshot,
   providerCounts,
+  SNAPSHOT_MAX_AGE_MS,
+  snapshotForBuild,
 } from './live/hosting.ts';
 import { parseLiveData } from './live/model.ts';
 import { buildView } from './view-model.ts';
@@ -113,6 +115,22 @@ describe('hosting: the as-of time is the build time', () => {
     const old = read('./components/hosting.tsx');
     assert.ok(!old.includes('hostsCheckedAt'));
     assert.match(old, /hostingAsOf\(hosting\)/);
+  });
+
+  it('a build embeds only a snapshot written for it, never an older file', () => {
+    const fresh = probed();
+    assert.equal(snapshotForBuild(fresh, NOW + 5 * 60_000), fresh);
+    // Broken variant: yesterday's file left before a bare `vp build`.
+    assert.equal(snapshotForBuild(fresh, NOW + SNAPSHOT_MAX_AGE_MS + 1), null);
+    assert.equal(snapshotForBuild({ mode: 'probed' }, NOW), null);
+    assert.match(read('../vite.config.ts'), /snapshotForBuild\(/);
+  });
+
+  it('the build probe never buffers a large body', () => {
+    const probe = read('./live/build-probe.ts');
+    assert.match(probe, /await readBounded\(response\)/);
+    // Broken variant: reading everything first, then checking the size.
+    assert.ok(!/response\.text\(\)/.test(probe));
   });
 
   it('the build writes a fresh snapshot every time, before GitHub and offline mode', () => {

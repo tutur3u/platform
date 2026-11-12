@@ -233,3 +233,19 @@ export function parseHostingSnapshot(value: unknown): HostingSnapshot {
   ) as Record<string, string>;
   return { checkedAt, mode: raw.mode, registry, providers, migration };
 }
+
+/** The longest a snapshot may predate the build that embeds it. */
+export const SNAPSHOT_MAX_AGE_MS = 60 * 60_000;
+
+/**
+ * The snapshot a build may embed: one written for this build (within
+ * SNAPSHOT_MAX_AGE_MS of it). An older file, for example left behind before
+ * a bare `vp build`, is treated as missing, so the page shows "not
+ * verifiable" rather than an old observation.
+ */
+export function snapshotForBuild(value: unknown, buildTime: number): unknown {
+  const snapshot = parseHostingSnapshot(value);
+  if (!snapshot.checkedAt) return null;
+  const age = buildTime - Date.parse(snapshot.checkedAt);
+  return age >= -60_000 && age <= SNAPSHOT_MAX_AGE_MS ? value : null;
+}

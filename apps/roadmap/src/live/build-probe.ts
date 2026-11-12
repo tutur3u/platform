@@ -11,10 +11,14 @@ import {
   type ProbeOutcome,
   subdomainOrigin,
 } from './hosting.ts';
-import { PROBED_APPS, type ProbeFetch, probeHosts } from './host-probe.ts';
+import {
+  PROBED_APPS,
+  type ProbeFetch,
+  probeHosts,
+  readBounded,
+} from './host-probe.ts';
 
 const TIMEOUT_MS = 6_000;
-const MAX_BODY = 16_384;
 const CONCURRENCY = 8;
 
 async function limited<T, R>(
@@ -46,8 +50,8 @@ export async function probe(
       redirect: 'manual',
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    const text = await response.text().catch(() => '');
-    const body = text.length <= MAX_BODY ? text : '';
+    // Stops reading past 16 KiB, so a large body is never buffered.
+    const body = await readBounded(response).catch(() => '');
     let buildInfo: { commit: string; appName: string | null } | null = null;
     if (/json/i.test(response.headers.get('content-type') ?? '')) {
       try {
