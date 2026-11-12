@@ -100,11 +100,20 @@ Targets: Lighthouse mobile 90+, LCP under 2.5 s and interaction latency under
 200 ms at 4x CPU throttling on all four public pages.
 
 - **First paint first.** The Worker rewrites each document before hashing its
-  inline scripts (`src/defer-hydration.ts`): module preloads and the entry
-  script stay in place but inert, and one static inline script imports the
-  bundle once the first contentful paint is reported and the load event has
-  fired, a frame later (4 s at the latest). The server-rendered page is
-  complete without JavaScript.
+  inline scripts (`src/defer-hydration.ts`), changing attributes only: module
+  preloads and the entry script stay in place but inert. The boot script
+  (`src/boot/roadmap-boot.js`, an async hashed same-origin asset in `<head>`,
+  so no inline script and no render blocking) sets lite mode before first paint and imports the bundle at
+  the reader's first intent (pointerdown, touchstart, keydown or focusin) or
+  within 1 s of the largest contentful paint. A tap on a button that is not
+  hydrated yet shows as pressed at once and is replayed once React has
+  hydrated it; links and `<summary>` work natively throughout. Each public
+  page keeps exactly the router's four inline scripts (JSON-LD, theme,
+  router bootstrap, stream boundary); the doctor fails a fifth or an
+  unhashed one, and runs the canonical smoke against the built Worker.
+- **History reference.** The roadmap head links the hashed history JSON as
+  `rel="alternate" type="application/json"` (never fetched), which keeps its
+  URL in the entry chunk where the canonical smoke finds it.
 - **Small CSS.** `styles.css` excludes `packages/ui/src/components` and
   streamdown from Tailwind's class scan and lists the shell primitives it
   renders, which keeps the stylesheet near 20 KB compressed.
@@ -118,12 +127,22 @@ Targets: Lighthouse mobile 90+, LCP under 2.5 s and interaction latency under
   for `:root:not([data-lite])` at 1024px and wider (infinite animations also
   need `prefers-reduced-motion: no-preference`). Below-the-fold sections use
   `content-visibility: auto`.
+- **Split hydration.** Sections below the hero (each track card, the
+  timeline, each EduFest section) sit in `<Suspense>` boundaries. Nothing
+  suspends, so the server renders them complete (the doctor fails a pending
+  `<!--$?-->` boundary); React hydrates them one at a time, yielding between
+  them and starting with the one a reader taps.
+- **Document size.** The doctor fails any public page over half of
+  `MAX_DOCUMENT_BYTES` and prints each page's margin. Past that limit the
+  CSP cannot hash inline scripts; the Worker then serves the page as
+  rendered, without executable inline scripts (JSON-LD stays), so its
+  external module entry still loads and no unhashed script is sent.
 - **Small renders.** The status filter is local, deferred state over memoised
   track cards; the navbar dock re-renders only the shell; the timeline
   scrubber renders 24 chips around the selected period; each deliverable's
   status glyph is a CSS mask, not an inline SVG.
 
-`src/perf.test.ts` and `src/a11y.test.ts` (D79, run via
+`src/perf.test.ts`, `src/hydration-loader.test.ts` and `src/a11y.test.ts` (D79, run via
 `src/roadmap-data.test.ts`) guard each rule with a broken variant;
 `src/css-guards.ts` checks the stylesheet.
 

@@ -7,6 +7,7 @@ import {
 import {
   type CSSProperties,
   memo,
+  Suspense,
   useCallback,
   useMemo,
   useState,
@@ -110,17 +111,29 @@ const RoadmapMain = memo(function RoadmapMain({
       <Hero t={t} view={view} lang={lang} data={data} now={now} />
       <TrackGlance t={t} view={view} />
       <ComingSoon t={t} />
-      <TimelineSection t={t} lang={lang} view={view} live={data} now={now} />
+      {/* Hydration boundaries (nothing suspends; the server renders all of
+          it): below the hero, React hydrates section by section, yielding
+          between them and starting with the one a reader interacts with. */}
+      <Suspense>
+        <TimelineSection t={t} lang={lang} view={view} live={data} now={now} />
+      </Suspense>
       <TracksSection t={t} lang={lang} view={view} onDock={onDock} />
-      <HostingSection
-        t={t}
-        lang={lang}
-        view={view}
-        main={data.main}
-        hostsCheckedAt={hostsCheckedAt}
-      />
-      <Method t={t} />
-      <Footer t={t} lang={lang} data={data} liveCheckFailed={liveCheckFailed} />
+      <Suspense>
+        <HostingSection
+          t={t}
+          lang={lang}
+          view={view}
+          main={data.main}
+          hostsCheckedAt={hostsCheckedAt}
+        />
+        <Method t={t} />
+        <Footer
+          t={t}
+          lang={lang}
+          data={data}
+          liveCheckFailed={liveCheckFailed}
+        />
+      </Suspense>
     </main>
   );
 });

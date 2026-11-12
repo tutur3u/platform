@@ -1108,11 +1108,29 @@ code {
   }
 }
 
-/* Compact controls share the logo pill; only this row scrolls. */
-.roadmap[data-nav-compact] #navbar-content > div:last-child,
-.roadmap[data-nav-compact] #navbar-content > div:nth-child(2) > div,
-.roadmap[data-nav-compact] #navbar-content a > span {
+/* Docked roadmap: the filter row shares the logo pill and only it scrolls.
+   Workshop pages are always compact and have no filter row, so they keep
+   the shell's menu, language switch and theme toggle. */
+.roadmap:not(.workshop)[data-nav-compact] #navbar-content > div:last-child,
+.roadmap:not(.workshop)[data-nav-compact]
+  #navbar-content
+  > div:nth-child(2)
+  > div {
   display: none;
+}
+/* The brand name is the logo link's accessible name (the logo image is
+   decorative), so the docked pill hides it visually, never from screen
+   readers. */
+.roadmap:not(.workshop)[data-nav-compact] #navbar-content a > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 .roadmap[data-nav-compact] .sticky-bar {
   position: fixed;
@@ -3186,4 +3204,12 @@ html[data-lite] .roadmap .backdrop-blur-xl {
 #main-content + footer {
   content-visibility: auto;
   contain-intrinsic-block-size: auto 720px;
+}
+/* A tap held until hydration (src/boot/roadmap-boot.js) shows at once:
+   toggles flip their pressed state, other buttons dim until they respond. */
+button[data-roadmap-pending] {
+  cursor: progress;
+}
+button[data-roadmap-pending]:not([aria-pressed]) {
+  opacity: 0.72;
 }
