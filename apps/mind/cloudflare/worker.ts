@@ -1,4 +1,5 @@
 /// <reference types="@vitejs/plugin-rsc/types" />
+import { withHstsResponsePolicy } from '@tuturuuu/start-bridge/response-policy';
 import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
 import { createFunctionProxy } from '@tuturuuu/start-bridge/function-proxy';
 import { defaultProxyMatches } from '@tuturuuu/start-bridge/proxy-bridge';
@@ -13,6 +14,7 @@ import appConfig from '../start-bridge.config';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import { assertRequiredSecrets } from './required-secrets';
+import { configureMindAbuseGuard } from '../src/runtime/abuse-guard';
 
 export interface MindEnvironment {
   ASSETS: AssetsBinding;
@@ -70,25 +72,28 @@ const handler = (
 );
 
 export default {
-  async fetch(request: Request, env: MindEnvironment, ctx: WorkerContext) {
-    let response: Response;
-    try {
-      assertRequiredSecrets(env);
-      response = await (await handler)(request, env, ctx);
-    } catch (error) {
-      // Even a failed route load answers through the response policy.
-      console.error('[start-bridge] worker failed', error);
-      response = bridgeErrorResponse();
+  fetch: withHstsResponsePolicy(
+    async (request: Request, env: MindEnvironment, ctx: WorkerContext) => {
+      let response: Response;
+      try {
+        configureMindAbuseGuard(env);
+        assertRequiredSecrets(env);
+        response = await (await handler)(request, env, ctx);
+      } catch (error) {
+        // Even a failed route load answers through the response policy.
+        console.error('[start-bridge] worker failed', error);
+        response = bridgeErrorResponse();
+      }
+      return appConfig.wrapResponse
+        ? appConfig.wrapResponse(response, {
+            request,
+            env,
+            mounts,
+            publicAssets,
+            framablePaths: appConfig.framablePaths,
+            seoPolicy,
+          })
+        : response;
     }
-    return appConfig.wrapResponse
-      ? appConfig.wrapResponse(response, {
-          request,
-          env,
-          mounts,
-          publicAssets,
-          framablePaths: appConfig.framablePaths,
-          seoPolicy,
-        })
-      : response;
-  },
+  ),
 };

@@ -80,6 +80,12 @@ generated type files.
 
 ### Settings
 
+- Shared settings dialogs use a 32px desktop inset and fullscreen mobile layout.
+  Keep sidebar search outside its scrolling groups and preserve URL, focus and
+  keyboard navigation. Use `SettingsSection surface="plain"` for flat layout
+  managers that already divide their own rows; do not wrap status/list rows in
+  nested cards. See `apps/docs/platform/features/settings-dialog.mdx`.
+
 - Use `SettingsDialogShell` from
   `@tuturuuu/ui/custom/settings-dialog-shell`.
 - Add tabs to the app's `SettingsDialog`; do not create separate settings pages

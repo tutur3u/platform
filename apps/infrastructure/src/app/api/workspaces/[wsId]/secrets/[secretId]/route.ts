@@ -17,7 +17,7 @@ const secretUpdateSchema = z
 
 export async function PUT(req: Request, { params }: Params) {
   const { secretId, wsId } = await params;
-  const auth = await authorizeInfrastructureWorkspaceSecretsRequest();
+  const auth = await authorizeInfrastructureWorkspaceSecretsRequest(req);
   if (!auth.ok) return auth.response;
 
   const parsed = secretUpdateSchema.safeParse(
@@ -88,9 +88,9 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
+export async function DELETE(req: Request, { params }: Params) {
   const { secretId, wsId } = await params;
-  const auth = await authorizeInfrastructureWorkspaceSecretsRequest();
+  const auth = await authorizeInfrastructureWorkspaceSecretsRequest(req);
   if (!auth.ok) return auth.response;
 
   const { data: existingSecret, error: existingError } = await auth.sbAdmin

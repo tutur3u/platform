@@ -128,7 +128,7 @@ export async function connectEmployeeRejection(): Promise<Port> {
     const response = await fetch(new URL(`/rest/v1/rpc/${name}`, url), {
       method: 'POST',
       cache: 'no-store',
-      redirect: 'error',
+      redirect: 'manual',
       signal: AbortSignal.timeout(8000),
       headers: {
         apikey: key,

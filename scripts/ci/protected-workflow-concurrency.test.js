@@ -9,7 +9,6 @@ const serialized = [
   'colab-cloudflare.yaml',
   'coordination-cloudflare.yaml',
   'cron-control-cloudflare.yaml',
-  'desktop-beta.yaml',
   'desktop-store-draft.yaml',
   'devbox-control-cloudflare.yaml',
   'discord-modal-deploy.yml',
@@ -75,7 +74,6 @@ const serialized = [
 // Cloudflare app workflows are not exceptions: PR validation supersedes and only
 // the production-only deploy job holds the serialized lock.
 const prExceptions = {
-  'desktop-beta.yaml': 'Production publication shares the workflow lock',
   'playground-runtime-acceptance.yaml':
     'Real sandbox must finish bounded cleanup',
   'docker-setup-check.yaml': 'Docker runtime is paused',
@@ -368,11 +366,15 @@ for (const file of serialized) {
 test('production validation and generated release evidence retain immutable attempts', () => {
   for (const [file, workflow] of Object.entries(workflows)) {
     const c = workflow.concurrency;
+    // A workflow with no push trigger cannot cancel a production or release run.
+    if (!Object.hasOwn(events(workflow), 'push')) continue;
     if (
       !c?.group.includes('github.workflow') ||
       mainExceptions[file] ||
       serialized.includes(file) ||
-      file.startsWith('vercel-preview-')
+      file.startsWith('vercel-preview-') ||
+      // Production pushes share one group. The desktop beta test locks it.
+      file === 'desktop-beta.yaml'
     )
       continue;
     for (const ref of [
@@ -436,6 +438,14 @@ for (const [file, workflow] of Object.entries(workflows)) {
         .filter(Boolean);
   for (const [index, policy] of policies.entries()) {
     if (!policy.group.includes('github.run_attempt')) continue;
+    const push = events(workflow).push;
+    const pushesMain =
+      Object.hasOwn(events(workflow), 'push') &&
+      (!push?.branches || push.branches.includes('main')) &&
+      !push?.['branches-ignore']?.includes('main');
+    // Rerun isolation is required where a main push can supersede. Production
+    // publication and pull-request-only workflows assert their own slots.
+    if (!pushesMain) continue;
     test(`${file} policy ${index}: rerun and dispatch qualify immutable attempts`, () => {
       assertQualification(
         policy,
@@ -648,6 +658,203 @@ test('PR path filters never apply to CodeQL main baselines', () => {
   const push = events(workflows['codeql.yml']).push;
   assert.deepEqual(push, { branches: ['main'] });
   assert.ok(events(workflows['codeql.yml']).pull_request['paths-ignore']);
+});
+
+function prGroupExclusion(file) {
+  if (file.includes('cloudflare')) return 'deploys to Cloudflare';
+  if (
+    file.startsWith('vercel-preview-') ||
+    file.startsWith('vercel-production')
+  ) {
+    return 'deploys a Vercel preview or production app';
+  }
+  if (file.startsWith('release-') || file.includes('release-please')) {
+    return 'publishes a release';
+  }
+  const named = {
+    'supabase-production.yaml': 'migrates production',
+    'supabase-staging.yaml': 'migrates staging',
+    'production-package-resume.yaml': 'resumes a production publish',
+    'mobile-deploy-stores.yaml': 'publishes store builds',
+    'desktop-store-draft.yaml': 'publishes a store draft',
+    'wave1-native-publish.yaml': 'publishes native apps',
+    'wave1-native-production.yaml': 'production native publish',
+    'wave1-web-staging.yaml': 'deploys web staging',
+    'discord-modal-deploy.yml': 'deploys Discord modal',
+    'security-checks.yaml': 'sha256-pinned workflow bytes',
+    'docker-setup-check.yaml': 'paused runtime',
+    'rust-backend.yml': 'paused runtime',
+    'playground-runtime-acceptance.yaml': 'sandbox cleanup must finish',
+    'e2e-tests.yaml': 'paused runtime',
+    'tanstack-route-manifest.yaml': 'paused runtime',
+    'security-review-classifier.yaml':
+      'writers share a non-cancelling group per pull request',
+    'security-review-recheck.yaml':
+      'the review signal keeps its base non-cancelling slot',
+  };
+  return named[file] || '';
+}
+
+function prEvent(workflow) {
+  const trigger = events(workflow);
+  for (const event of [
+    'pull_request',
+    'pull_request_target',
+    'pull_request_review',
+  ]) {
+    if (Object.hasOwn(trigger, event)) return event;
+  }
+  return '';
+}
+
+test('every pull_request workflow declares the per-PR superseding group', () => {
+  for (const [file, workflow] of Object.entries(workflows)) {
+    const event = prEvent(workflow);
+    if (!event) continue;
+    const reason = prGroupExclusion(file);
+    if (reason) {
+      assert.ok(reason, file);
+      continue;
+    }
+    const github = {
+      ...context(
+        event === 'pull_request' ? 'refs/pull/99/merge' : 'refs/heads/main',
+        'first',
+        1,
+        event,
+        99
+      ),
+      workflow: workflow.name,
+    };
+    if (event === 'pull_request_review') {
+      github.event.pull_request = { number: 99, head: { sha: 'first' } };
+    }
+    assert.equal(
+      render(workflow.concurrency.group, github),
+      `${workflow.name}-pr-99`,
+      file
+    );
+    assert.equal(
+      render(workflow.concurrency['cancel-in-progress'], github),
+      true,
+      file
+    );
+    assert.notEqual(workflow.concurrency.queue, 'max', file);
+    const other = {
+      ...github,
+      head_ref: 'fix/pr-100',
+      ref: 'refs/pull/100/merge',
+      event: {
+        ...github.event,
+        pull_request: { number: 100, head: { sha: 'first' } },
+      },
+    };
+    assert.notEqual(
+      render(workflow.concurrency.group, other),
+      `${workflow.name}-pr-99`,
+      file
+    );
+  }
+});
+
+test('desktop beta pull requests supersede and publication stays serialized', () => {
+  const workflow = workflows['desktop-beta.yaml'];
+  const pr = {
+    ...context('refs/pull/99/merge', 'first', 1, 'pull_request', 99),
+    workflow: workflow.name,
+  };
+  assert.equal(
+    render(workflow.concurrency.group, pr),
+    `${workflow.name}-pr-99`
+  );
+  assert.equal(render(workflow.concurrency['cancel-in-progress'], pr), true);
+  const manual = {
+    ...context('refs/heads/production', 'one', 1, 'workflow_dispatch'),
+    workflow: workflow.name,
+  };
+  const manualNext = { ...manual, sha: 'two', run_id: 2 };
+  assert.equal(
+    render(workflow.concurrency['cancel-in-progress'], manual),
+    false
+  );
+  assert.notEqual(
+    render(workflow.concurrency.group, manual),
+    render(workflow.concurrency.group, manualNext)
+  );
+  assert.notEqual(
+    render(workflow.concurrency.group, manual),
+    render(workflow.concurrency.group, pr)
+  );
+  const production = context('refs/heads/production', 'one', 1, 'push');
+  assert.equal(
+    render(workflow.concurrency['cancel-in-progress'], production),
+    false
+  );
+  assert.equal(
+    render(workflow.concurrency.group, production),
+    'desktop-beta-production'
+  );
+  assert.equal(
+    render(workflow.concurrency.group, production),
+    render(workflow.concurrency.group, { ...production, sha: 'two', run_id: 2 })
+  );
+  assert.notEqual(
+    render(workflow.concurrency.group, production),
+    render(workflow.concurrency.group, manual)
+  );
+  const publish = workflow.jobs.publish.concurrency;
+  assert.equal(publish.group, 'desktop-beta-production-publish');
+  assert.equal(publish['cancel-in-progress'], false);
+  assert.equal(publish.queue, 'max');
+});
+
+test('security review writers share one non-cancelling group per pull request', () => {
+  const classifier = workflows['security-review-classifier.yaml'];
+  const recheck = workflows['security-review-recheck.yaml'];
+  const reclassify = workflows['security-review-reclassify.yaml'];
+  const admit = workflows['auto-ready-for-ci.yaml'];
+  const admitRun = {
+    ...context('refs/heads/main', 'first', 1, 'pull_request_target', 99),
+    workflow: admit.name,
+  };
+  assert.equal(
+    render(admit.concurrency.group, admitRun),
+    `${admit.name}-pr-99`
+  );
+  assert.equal(render(admit.concurrency['cancel-in-progress'], admitRun), true);
+
+  assert.equal(
+    classifier.concurrency.group,
+    'security-review-pr-${{ github.event.pull_request.number }}'
+  );
+  assert.equal(classifier.concurrency['cancel-in-progress'], false);
+  assert.equal(classifier.concurrency.queue, 'max');
+
+  const writer = reclassify.jobs.reclassify.concurrency;
+  assert.equal(
+    writer.group,
+    'security-review-pr-${{ needs.resolve.outputs.number }}'
+  );
+  assert.equal(writer['cancel-in-progress'], false);
+  assert.equal(writer.queue, 'max');
+  // The workflow slot must stay distinct or GitHub cancels the writer job.
+  assert.notEqual(reclassify.concurrency.group, writer.group);
+  assert.equal(reclassify.concurrency['cancel-in-progress'], false);
+  assert.equal(reclassify.concurrency.queue, 'max');
+  assert.equal(
+    reclassify.concurrency.group,
+    'security-review-reclassify-${{ github.event.workflow_run.head_sha }}'
+  );
+
+  const review = {
+    ...context('refs/pull/99/merge', 'first', 1, 'pull_request_review', 99),
+    workflow: recheck.name,
+  };
+  review.event.pull_request = { number: 99, head: { sha: 'first' } };
+  assert.equal(
+    render(recheck.concurrency['cancel-in-progress'], review),
+    false
+  );
 });
 
 test('main Test pushes retain separate results and never cancel prior validation', () => {

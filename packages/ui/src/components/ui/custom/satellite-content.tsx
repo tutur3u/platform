@@ -8,6 +8,7 @@ import {
   type ReactNode,
   type SetStateAction,
   Suspense,
+  useRef,
 } from 'react';
 import type {
   NavigationState,
@@ -66,6 +67,11 @@ export function SatelliteContent({
     if (window.innerWidth < 768) setIsCollapsed(true);
   };
 
+  // Slide only for navigation that happens while mounted. A remount (the
+  // sidebar swapping between rail and expanded panel) must not replay it.
+  const initialDepth = useRef(navState.history.length);
+  const slideNavigation = navState.history.length !== initialDepth.current;
+
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
       <SidebarWorkspaceSelectSection
@@ -85,9 +91,10 @@ export function SatelliteContent({
         key={navState.history.length}
         className={cn(
           'min-h-0 flex-1 transition-transform duration-300 ease-in-out',
-          navState.direction === 'forward'
-            ? 'slide-in-from-right animate-in'
-            : 'slide-in-from-left animate-in'
+          slideNavigation &&
+            (navState.direction === 'forward'
+              ? 'slide-in-from-right animate-in'
+              : 'slide-in-from-left animate-in')
         )}
       >
         {navState.history.length === 0 ? (

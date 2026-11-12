@@ -5,9 +5,35 @@ description: 'Shared account tabs, settings deep links, URL state and history be
 audience: users
 ---
 
-Every app opens account and app settings in one fullscreen settings dialog. Its
+Every app opens account and app settings in one shared settings dialog. Its
 open state and active tab live in the URL, so links can be shared, the page can
 be refreshed, and browser Back works.
+
+## Layout and navigation
+
+The shared shell fills mobile screens. At desktop widths (768px and above), it
+has a 32px inset, rounded corners, and a backdrop. The desktop sidebar keeps
+search visible while groups scroll independently of the panel. Selected tabs
+have a visible active state and an accessible current-page marker. Exactly one
+entry is current: the active tab name matched exactly within the first group that
+owns it. Closing, search shortcuts and URL state keep their behavior.
+
+On mobile, a section selector opens a navigation drawer. The drawer shows one
+highlight, which starts on the current section and also carries a check mark.
+Touch and hover never move that highlight; the keyboard and search do, and
+clearing the search returns it to the current section. Navigation hover styles
+apply only to fine pointers that can hover. Selector, drawer entries, search and
+close controls are at least 44px tall on mobile, and the drawer skips its slide
+animation under reduced motion. The shell regression suites live in
+`packages/ui/src/components/ui/custom/__tests__/settings-dialog-shell.test.tsx`
+and `settings-mobile-nav.test.tsx` beside it.
+
+Board layout uses always-visible status headings and divided list rows. Each row
+shows its drag handle, list color, name and menu; the status heading above it
+names the status, so rows do not repeat it. Status headings do not collapse. Empty statuses retain a compact hint and an Add list
+action. Drag handles support pointer and keyboard reordering; Edit list provides
+a keyboard-accessible status selector, including empty target statuses. Ordering
+coverage lives in `packages/tasks-ui/src/tu-do/shared/board-layout-ordering.test.ts`.
 
 ## URL contract
 

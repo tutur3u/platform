@@ -15,11 +15,43 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 2. Download the artifact: `gh run download <run-id> -R tutur3u/platform -n <artifact-name> -D /tmp/<app>-cutover`.
    Take the run id from a run on the production ref (`main`) at the accepted source SHA, and verify the run's head SHA. Never take an artifact by name alone: a name can match a pull-request run.
 3. Secrets: set `TUTURUUU_APP_COORDINATION_SECRET` on every Worker to EXACTLY the value of Web's signer (the `SUPABASE_SECRET_KEY` value) and also set the same `SUPABASE_SECRET_KEY`. Drive, Mind and Rewise refuse requests when `TUTURUUU_APP_COORDINATION_SECRET` is unset, so leaving it unset is not an option. The dedicated signing value comes later through the accept-only slot (see the app-coordination secret rollout page).
-4. Provision the secret names from the packet on the Worker, then deploy the artifact config route-free: `bunx wrangler deploy --config /tmp/<app>-cutover/dist/server/wrangler.json --name <worker>` (no route yet).
+4. Provision every secret name from the packet on the Worker BEFORE the code upload, then deploy the artifact config route-free. A Worker with the abuse guard (`ABUSE_GUARD` service binding) needs `ABUSE_GUARD_KEY_PEPPER` and the other required secrets set first; upload validation fails closed without them. `bunx wrangler deploy --config /tmp/<app>-cutover/dist/server/wrangler.json --name <worker>` (no route yet).
 5. Smoke the Worker on its own hostname before any route change: `node scripts/cutover-smoke.mjs <app> https://<worker-hostname>`.
-6. Attach the route or custom domain for the host (proxied, in front of the still-valid Vercel origin where possible).
+6. Attach the route or custom domain for the host (proxied, in front of the still-valid Vercel origin where possible). Proxied DNS flips happen only after the smoke in step 5 passes.
 7. Re-run the smoke on the public host and watch for 5 minutes: no 5xx, login renders, entry route as expected.
 8. Rollback on any 5xx above 1% for 5 minutes, a wrong redirect or a broken login: remove the route or repoint the DNS record to the Vercel pin. Never rebuild on the rollback path. No data or migration is involved.
+
+### Pre-seal doctor
+
+The artifact jobs of nova, rewise and the wave-1 apps run `scripts/ci/pre-seal-doctor.mjs` before the seal and pack. It starts the Worker from the emitted config in a disposable copy of `dist` (local workerd, synthetic secret values, every outbound request refused) and requests the PRODUCTION host with an explicit `Host` header. The seal is refused unless both answers hold:
+
+- `GET /` answers 200, or with `--expect-redirect` a 30x whose `Location` is an auth path (`/login`, `/verify-token`). Pass the flag for apps that hand anonymous visitors to login; it is on for rewise, calendar and mail.
+- `GET /api/build-info` answers 200 JSON whose `commitHash` equals the source SHA.
+
+Any 401, 404 or 5xx on either request fails the step with the status and host in the message, so no seal exists for the app. It removes its temp directory and stops the Worker on every exit path and gives up after 120 seconds.
+
+```sh
+node scripts/ci/pre-seal-doctor.mjs <app> apps/<app> <production-host> <sha> [--expect-redirect] [--config dist/wave1/wrangler.json]
+```
+
+`--config` names the emitted Worker config inside the artifact directory (default `dist/server/wrangler.json`; the wave-1 production profile lives at `dist/wave1/wrangler.json`). It is the first check to run by hand against a downloaded artifact too.
+
+Misses it exists to catch:
+
+- nova: the production host is not in the Worker's `rootHosts`, so `/` and `/api/build-info` answer 404.
+- rewise: the proxy rejects the anonymous build identity, so `/api/build-info` answers 401.
+- apps: the production profile lacks `APPS_CANONICAL_HOST_ENABLED=1`, so every request answers 503 "Staging gateway only".
+
+### Wave-1 apps (apps, calendar, mail)
+
+Build these only as a production artifact. A plain `bun run build:cloudflare` produces the staging profile: the apps Worker then lacks `APPS_CANONICAL_HOST_ENABLED=1` and answers 503 "Staging gateway only", and calendar lacks `CALENDAR_DEPLOYMENT_PROFILE=production`. The production profile in `scripts/ci/wave1-native-profile.mjs` sets both.
+
+1. `bun turbo:local run build --filter=@tuturuuu/<app> --concurrency=2` with `CALENDAR_DEPLOYMENT_PROFILE=production` exported.
+2. `node scripts/ci/wave1-native-artifact.mjs prepare <app> production <sha>`.
+3. `CI=true node scripts/ci/wave1-native-runtime.mjs <app> production <sha>`.
+4. `node scripts/ci/wave1-native-artifact.mjs verify <app> production <sha>`.
+
+Run it through `wave1-native-production.yaml` (input `app`, from the `production` ref) rather than by hand. The `build:cloudflare` steps in `apps-cloudflare.yaml` and `meet-cloudflare.yaml` build CI fixtures with placeholder Supabase values and are never a cutover artifact. Meet is not a wave-1 profile; its Worker is already live and is redeployed from `meet-cloudflare.yaml`.
 
 ## 1. shortener
 
@@ -81,7 +113,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Packet | `rewise-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs rewise https://rewise.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
-| Note | Needs UPSTASH_REDIS_REST_URL/TOKEN and ABUSE_GUARD_BACKEND=upstash on the Worker. |
+| Abuse guard | Binding `ABUSE_GUARD` → service `tuturuuu-abuse-guard`; secret `ABUSE_GUARD_KEY_PEPPER`; variable `ABUSE_GUARD_FAMILIES=proxy`; optional `ABUSE_GUARD_TIMEOUT_MS`. |
 
 ## 6. drive
 
@@ -151,7 +183,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | --- | --- |
 | Worker | `tuturuuu-calendar` |
 | Hosts | calendar.tuturuuu.com |
-| Artifact | wave1-native-production.yaml, input app=calendar, environment wave1-calendar-production |
+| Artifact | wave1-native-production.yaml, input app=calendar, environment wave1-calendar-production; `node scripts/ci/wave1-native-artifact.mjs prepare calendar production <sha>`, then its runtime and verify steps (never plain `build:cloudflare`) |
 | Vercel rollback pin | dpl_EDfFFKFtpxeJ29UUmxZc1VNqLsX2 |
 | Packet | `wave1-cutover-packets` |
 | Smoke | `node scripts/cutover-smoke.mjs calendar https://calendar.tuturuuu.com` |
@@ -163,7 +195,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | --- | --- |
 | Worker | `tuturuuu-mail` |
 | Hosts | mail.tuturuuu.com |
-| Artifact | wave1-native-production.yaml, input app=mail, environment wave1-mail-production |
+| Artifact | wave1-native-production.yaml, input app=mail, environment wave1-mail-production; `node scripts/ci/wave1-native-artifact.mjs prepare mail production <sha>`, then its runtime and verify steps (never plain `build:cloudflare`) |
 | Vercel rollback pin | dpl_G7VbMYiwb9BhAm9i2FK8N3Udw3s3 |
 | Packet | `wave1-cutover-packets` |
 | Smoke | `node scripts/cutover-smoke.mjs mail https://mail.tuturuuu.com` |
@@ -176,7 +208,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | --- | --- |
 | Worker | `tuturuuu-apps` |
 | Hosts | apps.tuturuuu.com |
-| Artifact | wave1-native-production.yaml, input app=apps, environment wave1-apps-production |
+| Artifact | wave1-native-production.yaml, input app=apps, environment wave1-apps-production; `node scripts/ci/wave1-native-artifact.mjs prepare apps production <sha>`, then its runtime and verify steps (never plain `build:cloudflare`) |
 | Vercel rollback pin | dpl_7jwSj1yvqqtjxagQqsVr8kZ97ByS |
 | Packet | `wave1-cutover-packets` |
 | Smoke | `node scripts/cutover-smoke.mjs apps https://apps.tuturuuu.com` |
@@ -228,7 +260,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Packet | `mind-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs mind https://mind.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
-| Required secrets | Besides the coordination secret: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` and the variable `ABUSE_GUARD_BACKEND=upstash`. Missing any of them makes every request answer 500 (`required-secrets.ts`). |
+| Abuse guard | Service binding `ABUSE_GUARD` → `tuturuuu-abuse-guard`, secret `ABUSE_GUARD_KEY_PEPPER`, and text variable `ABUSE_GUARD_FAMILIES=proxy`; `ABUSE_GUARD_TIMEOUT_MS` is optional. Upstash is not required. |
 
 ## Not cut over tonight
 
@@ -260,6 +292,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Vercel rollback pin | dpl_2q4z1TbzV96W2foT8JfLzz4ZEGZY |
 | Smoke | `node scripts/cutover-smoke.mjs cms https://cms.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Abuse guard | Service binding `ABUSE_GUARD` to `tuturuuu-abuse-guard`, secret `ABUSE_GUARD_KEY_PEPPER`, text variable `ABUSE_GUARD_FAMILIES=proxy`, and optional `ABUSE_GUARD_TIMEOUT_MS`. Upstash credentials are not required. |
 
 ## ai
 
@@ -290,7 +323,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | --- | --- |
 | Worker | `tuturuuu-git` |
 | Hosts | git.tuturuuu.com |
-| Artifact | git-cloudflare.yaml, job git-cutover-artifact |
+| Artifact | git-cloudflare.yaml, job git-cutover-artifact (`VITE_GIT_NATIVE_PROFILE=production`, sealed by `scripts/ci/git-native-artifact.py`; no routes) |
 | Vercel rollback pin | dpl_6ReHrAjbW7ahNKyL1ssgDZEdGeq4 |
 | Packet | `git-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs git https://git.tuturuuu.com` |
@@ -315,6 +348,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Vercel rollback pin | dpl_5GdmHYYQ1AfLeZcZ1pZ79zKDokGQ |
 | Packet | `nova-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs nova https://nova.tuturuuu.com` |
+| Abuse guard | Service binding `ABUSE_GUARD` (`tuturuuu-abuse-guard`), secret `ABUSE_GUARD_KEY_PEPPER`, `ABUSE_GUARD_FAMILIES=proxy`, optional `ABUSE_GUARD_TIMEOUT_MS`. Upstash credentials are not required. |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
 
 ## pay
@@ -328,3 +362,17 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 | Packet | `pay-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs pay https://pay.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+
+## workspace
+
+| Item | Value |
+| --- | --- |
+| Worker | `tuturuuu-workspace` |
+| Hosts | First flip: `workspace.tuturuuu.com` only. `tuturuuu.com` paths stay on Web. |
+| Artifact | workspace-cloudflare.yaml, job `workspace-cutover-artifact` (`workspace-cutover-<sha>`). Route-free: `workers_dev` false, `preview_urls` false, no routes. Dispatch on `main`; the job does not deploy. |
+| Vercel rollback pin | none for `apps/workspace` (no Vercel project). Apex stays on the Web pin in Web apex pin; re-read that pin at flip time. |
+| Packet | `workspace-start-void` |
+| Smoke | unknown host answers 404; `GET /api/v1/mobile/version` is forwarded and answered by Web; logout-all clears `tuturuuu_multi_session_store`. Commands are in the packet's gateway plan. |
+| Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Deploy conditions | (a) `#7981` (`b84abea571`) is in the main commit, that commit's required workflows are green, and the artifact is built from that commit. (b) `INTERNAL_WEB_API_ORIGIN` unset and `TUTURUUU_WEB_API_HOSTS` unset on the production Worker. (c) Post-deploy smoke: unknown host answers 404, an `/api/v1` GET is forwarded and answered by Web, logout-all clears `tuturuuu_multi_session_store`. (d) `TTR_CSRF_MODE` stays off `enforce` until Web itself is deployed with `apps/web/src/lib/security/csrf.ts`. |
+| Required names | Build injection from `vite.config.mts`: `NODE_ENV`, optional `TUTURUUU_BASE_PATH`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`. Worker var `TUTURUUU_NOINDEX=0`. Request env from `start-bridge.config.ts`: `INTERNAL_WEB_API_ORIGIN` and `TUTURUUU_WEB_API_HOSTS`, both unset in production. Runtime secrets: `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`. |

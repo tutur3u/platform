@@ -49,8 +49,8 @@
     "apps/database/supabase/migrations/20260930100002_user_group_activity_fast_page.sql": "d0e4f5a3b3c38f34f92f948b501fa29cf42013d1fd118301d94cb8b651c37b62",
     "apps/database/supabase/migrations/20260930110000_user_group_activity_anchor_extraction.sql": "38db0fbab057f0a3363df2aca4778fd9d8050e5a4e434fe292385e51215a90f1",
     "apps/database/supabase/migrations/20261011002100_tutoring_teacher_hours.sql": "f2a49bb8f8f0399f3c332dbe782d1c99e3c717aef25c8d0cbadcbecce5a7903b",
-    "packages/types/src/supabase.ts": "2525316774595c87302e8451d655bbd37e243e0344198bd01ffe01870324e123",
-    "packages/users-core/src/routes/users/reports/[reportId]/route.ts": "82a8a4f251fc29d836bd915cbaef1129386e40b2342f4517814cc8ddaf397e6c"
+    "packages/types/src/supabase.ts": "cfd03b9ebc7caab8291b5595a5bf023c385ff4dfdf53a1a92c3a68fa3b398cdb",
+    "packages/users-core/src/routes/users/reports/[reportId]/route.ts": "641924a91c0c713a117e981075b736ec12d213f7169ff831a732c78147330e91"
   },
   "publicDocumentPage": {
     "path": "apps/web/src/app/[locale]/(marketing)/documents/[documentId]/page.tsx",

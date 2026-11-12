@@ -29,6 +29,19 @@ try {
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: plain('sb_publishable_fixture'),
     TUTURUUU_APP_COORDINATION_SECRET: { type: 'secret_text', value: secret },
     SUPABASE_SECRET_KEY: { type: 'secret_text', value: secret },
+    ABUSE_GUARD: {
+      type: 'fetcher',
+      fetcher: async () =>
+        new Response('{"error":"guard_unavailable"}', {
+          status: 503,
+          headers: { 'content-type': 'application/json' },
+        }),
+    },
+    ABUSE_GUARD_KEY_PEPPER: {
+      type: 'secret_text',
+      value: 'DUMMY-cms-abuse-guard-key-pepper-synthetic-only-0000000001',
+    },
+    ABUSE_GUARD_FAMILIES: plain('proxy'),
   };
   const options = {
     config: join(scratch, relative(app, configPath)),

@@ -1155,6 +1155,29 @@
       },
       "verifiedOnProdAt": null,
       "legacy": false
+    },
+    {
+      "key": "ENABLE_JOURNAL_MOOD_TRACKING",
+      "family": "workspace-secret",
+      "kind": "release",
+      "scope": "workspace",
+      "description": "Private mood chart and JSON export on the personal journal.",
+      "owner": "platform",
+      "createdAt": "2026-11-09",
+      "apps": ["web", "infrastructure"],
+      "appsComplete": true,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "apps/web/src/lib/personal-journal/flag.ts",
+        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": false
     }
   ]
 }

@@ -48,6 +48,29 @@ class PayArtifactTest(unittest.TestCase):
         (app / base.REDIRECT).write_text(json.dumps({"configPath": "../../dist/native/wrangler.json", "auxiliaryWorkers": []}))
         return app, config
 
+    def test_emitted_staging_vars_match_the_canonical_source_profile(self):
+        app, config = self.fixture()
+        profiles = json.loads((HERE.parents[1] / "apps/pay/cloudflare/native-profiles.json").read_text())
+        config["vars"] = profiles["staging"]["vars"]
+        (app / "dist/native/wrangler.json").write_text(json.dumps(config))
+        artifact.validate_output(app)
+        self.assertEqual(artifact.IDENTITY["vars"], config["vars"])
+
+    def test_staging_vars_still_reject_missing_changed_or_extra_fields(self):
+        for change in ("missing", "changed", "extra"):
+            with self.subTest(change=change):
+                app, config = self.fixture()
+                config["vars"] = dict(config["vars"])
+                if change == "missing":
+                    config["vars"].pop("NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN")
+                elif change == "changed":
+                    config["vars"]["NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN"] = ".tuturuuu.com"
+                else:
+                    config["vars"]["UNREVIEWED_BINDING"] = "not-allowed"
+                (app / "dist/native/wrangler.json").write_text(json.dumps(config))
+                with self.assertRaisesRegex(ValueError, "contract drift: vars"):
+                    artifact.validate_output(app)
+
     def test_identity_is_pay_and_base_module_is_untouched(self):
         self.assertIn("robots.txt", wrapper.PUBLIC_FILES)
         self.assertEqual(artifact.IDENTITY["name"], WORKER)
@@ -68,9 +91,9 @@ class PayArtifactTest(unittest.TestCase):
             for flag in ('false', None):
                 payload = json.loads(wrapper.PROFILE.read_text())
                 if flag is None:
-                    payload.pop('POLAR_SANDBOX')
+                    payload['staging']['vars'].pop('POLAR_SANDBOX')
                 else:
-                    payload['POLAR_SANDBOX'] = flag
+                    payload['staging']['vars']['POLAR_SANDBOX'] = flag
                 profile.write_text(json.dumps(payload))
                 with patch.object(wrapper, 'PROFILE', profile):
                     with self.assertRaisesRegex(RuntimeError, 'requires Polar sandbox'):
@@ -79,7 +102,7 @@ class PayArtifactTest(unittest.TestCase):
     def production_output(self, *, web="https://tuturuuu.com", vars_extra=None, client="client", server="server"):
         wrapper.PRODUCTION = True
         app, config = self.fixture()
-        config["vars"] = {"NEXT_PUBLIC_WEB_APP_URL": web, **(vars_extra or {})}
+        config["vars"] = {"NEXT_PUBLIC_WEB_APP_URL": web, "POLAR_SANDBOX": "false", **(vars_extra or {})}
         config_path = app / "dist/native/wrangler.json"
         config_path.write_text(json.dumps(config))
         client_path = app / "dist/client/assets/entry.js"
@@ -102,6 +125,27 @@ class PayArtifactTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "staging marker"):
             wrapper.reject_staging_production(app, output)
 
+    def test_production_profile_accepts_compiled_staging_allowlists(self):
+        server = (
+            "R=[`.staging.tutur3u.com`];if(r&&e!==`.staging.tutur3u.com`)throw Error(`x`);"
+            "new Set(`web.ai.pay`.split(`.`).map(e=>`${e}.tutur3u.com`))"
+        )
+        app, output = self.production_output(client=server, server=server)
+        wrapper.reject_staging_production(app, output)
+
+    def test_production_profile_rejects_staging_host_beside_an_allowlist(self):
+        for host in ("https://pay.tutur3u.com", "https://web.tutur3u.com/api", "tutur3u.com", ".other.tutur3u.com"):
+            app, output = self.production_output(server="[`.staging.tutur3u.com`]" + host)
+            with self.assertRaisesRegex(ValueError, "staging marker"):
+                wrapper.reject_staging_production(app, output)
+
+    def test_production_profile_rejects_staging_cookie_domain_in_config(self):
+        app, output = self.production_output(
+            vars_extra={"NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".staging.tutur3u.com"}
+        )
+        with self.assertRaisesRegex(ValueError, "staging marker in production config"):
+            wrapper.reject_staging_production(app, output)
+
     def test_production_profile_rejects_staging_supabase_project_ref(self):
         app, output = self.production_output(server="https://fxefojytwimjiqxseqag.supabase.co")
         with self.assertRaisesRegex(ValueError, "staging marker"):
@@ -111,6 +155,21 @@ class PayArtifactTest(unittest.TestCase):
         app, output = self.production_output(vars_extra={"POLAR_SERVER": "https://sandbox-api.polar.sh"})
         with self.assertRaisesRegex(ValueError, "Polar server"):
             wrapper.reject_staging_production(app, output)
+
+    def test_production_profile_rejects_polar_sandbox_flag(self):
+        for flag in ("true", "", "1"):
+            app, output = self.production_output(vars_extra={"POLAR_SANDBOX": flag})
+            with self.assertRaisesRegex(ValueError, "POLAR_SANDBOX"):
+                wrapper.reject_staging_production(app, output)
+
+    def test_production_profile_accepts_polar_sandbox_text_in_bundles(self):
+        sdk = (
+            'let l=`https://polar.sh,https://sandbox.polar.sh`.split(`,`);'
+            'const s={production:"https://api.polar.sh",sandbox:"https://sandbox-api.polar.sh"};'
+            '"Set POLAR_SANDBOX=true in your .env"'
+        )
+        app, output = self.production_output(client=sdk, server=sdk)
+        wrapper.reject_staging_production(app, output)
 
     def test_seal_pack_restore_round_trip(self):
         app, _ = self.fixture()

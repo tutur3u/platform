@@ -9,64 +9,35 @@
       "description": "Apex tuturuuu.com web platform",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/pricing",
-        "/about",
-        "/robots.txt"
-      ]
+      "paths": ["/", "/login", "/pricing", "/about", "/robots.txt"]
     },
     "marketing": {
       "name": "marketing",
       "description": "Marketing and public surface (TanStack Start + Vite+ + Void)",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/pricing",
-        "/about",
-        "/robots.txt"
-      ]
+      "paths": ["/", "/login", "/pricing", "/about", "/robots.txt"]
     },
     "workspace": {
       "name": "workspace",
       "description": "Authenticated workspace application",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/settings",
-        "/dashboard",
-        "/robots.txt"
-      ]
+      "paths": ["/", "/login", "/settings", "/dashboard", "/robots.txt"]
     },
     "shortener": {
       "name": "shortener",
       "description": "Link shortener service",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/health",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/health", "/robots.txt", "/manifest.json"]
     },
     "tools": {
       "name": "tools",
       "description": "Developer utility tools",
       "entryRoute": "/",
       "loginRoute": "/",
-      "paths": [
-        "/",
-        "/health",
-        "/robots.txt",
-        "/manifest.json"
-      ],
+      "paths": ["/", "/health", "/robots.txt", "/manifest.json"],
       "note": "No /login route: the Vercel deployment answers a soft 404 (HTTP 200) for it and the native Worker answers 404, so the login check uses the entry route."
     },
     "playground": {
@@ -74,64 +45,35 @@
       "description": "Sandbox playground",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/sandbox",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/sandbox", "/robots.txt", "/manifest.json"]
     },
     "colab": {
       "name": "colab",
       "description": "Collaborative canvas and documents",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/health",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/health", "/robots.txt", "/manifest.json"]
     },
     "calendar": {
       "name": "calendar",
       "description": "Calendar app",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/month",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/month", "/robots.txt", "/manifest.json"]
     },
     "meet": {
       "name": "meet",
       "description": "Meeting and video rooms",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/rooms",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/rooms", "/robots.txt", "/manifest.json"]
     },
     "apps": {
       "name": "apps",
       "description": "App directory",
       "entryRoute": "/",
       "loginRoute": "/",
-      "paths": [
-        "/",
-        "/store",
-        "/robots.txt",
-        "/manifest.json"
-      ],
+      "paths": ["/", "/store", "/robots.txt", "/manifest.json"],
       "note": "No /login route: the Vercel deployment answers a soft 404 (HTTP 200) for it and the native Worker answers 404, so the login check uses the entry route."
     },
     "mail": {
@@ -139,349 +81,212 @@
       "description": "Mail client",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/inbox",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/inbox", "/robots.txt", "/manifest.json"]
     },
     "roadmap": {
       "name": "roadmap",
       "description": "Public product roadmap",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/feedback",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/feedback", "/robots.txt", "/manifest.json"],
+      "assetSmoke": {
+        "canonicalOrigin": "https://tuturuuu.com",
+        "pages": [
+          { "path": "/roadmap", "status": 200 },
+          {
+            "path": "/roadmap/",
+            "status": 301,
+            "location": "https://tuturuuu.com/roadmap"
+          }
+        ],
+        "satellitePages": [
+          {
+            "url": "https://roadmap.tuturuuu.com/",
+            "status": 301,
+            "location": "https://tuturuuu.com/roadmap"
+          },
+          {
+            "url": "https://roadmap.tuturuuu.com/roadmap",
+            "status": 301,
+            "location": "https://tuturuuu.com/roadmap"
+          }
+        ]
+      }
     },
     "storefront": {
       "name": "storefront",
       "description": "Storefront and e-commerce portal",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/products",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/products", "/robots.txt", "/manifest.json"]
     },
     "parley": {
       "name": "parley",
       "description": "Parley chat and audio rooms",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/rooms",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/rooms", "/robots.txt", "/manifest.json"]
     },
     "drive": {
       "name": "drive",
       "description": "Cloud drive and file storage",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/files",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/files", "/robots.txt", "/manifest.json"]
     },
     "external": {
       "name": "external",
       "description": "External integration bridge",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/health",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/health", "/robots.txt", "/manifest.json"]
     },
     "rewise": {
       "name": "rewise",
       "description": "Rewise flashcards and study app",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/decks",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/decks", "/robots.txt", "/manifest.json"]
     },
     "contacts": {
       "name": "contacts",
       "description": "Customer contacts directory",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/contacts",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/contacts", "/robots.txt", "/manifest.json"]
     },
     "tasks": {
       "name": "tasks",
       "description": "Tasks and project management boards",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/boards",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/boards", "/robots.txt", "/manifest.json"]
     },
     "track": {
       "name": "track",
       "description": "Time tracking and attendance",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/time",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/time", "/robots.txt", "/manifest.json"]
     },
     "finance": {
       "name": "finance",
       "description": "Financial records and invoices",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/invoices",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/invoices", "/robots.txt", "/manifest.json"]
     },
     "teach": {
       "name": "teach",
       "description": "Instructor teaching portal",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/courses",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/courses", "/robots.txt", "/manifest.json"]
     },
     "learn": {
       "name": "learn",
       "description": "Student learning portal",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/library",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/library", "/robots.txt", "/manifest.json"]
     },
     "infrastructure": {
       "name": "infrastructure",
       "description": "Infrastructure operations dashboard",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/domains",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/domains", "/robots.txt", "/manifest.json"]
     },
     "hive": {
       "name": "hive",
       "description": "Hive app",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/robots.txt"
-      ]
+      "paths": ["/", "/login", "/robots.txt"]
     },
     "git": {
       "name": "git",
       "description": "Git repository hosting frontend",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/repositories",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/repositories", "/robots.txt", "/manifest.json"]
     },
     "chat": {
       "name": "chat",
       "description": "Team messaging and chat channels",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/channels",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/channels", "/robots.txt", "/manifest.json"]
     },
     "mind": {
       "name": "mind",
       "description": "Personal knowledge base and notes",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/notes",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/notes", "/robots.txt", "/manifest.json"]
     },
     "nova": {
       "name": "nova",
       "description": "Nova AI assistant UI",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/explore",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/explore", "/robots.txt", "/manifest.json"]
     },
     "lettin": {
       "name": "lettin",
       "description": "Rental and property management",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/listings",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/listings", "/robots.txt", "/manifest.json"]
     },
     "pay": {
       "name": "pay",
       "description": "Payment checkout and transactions",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/checkout",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/checkout", "/robots.txt", "/manifest.json"]
     },
     "cms": {
       "name": "cms",
       "description": "Content management system",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/pages",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/pages", "/robots.txt", "/manifest.json"]
     },
     "ai": {
       "name": "ai",
       "description": "AI models and experimentation hub",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/playground",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/playground", "/robots.txt", "/manifest.json"]
     },
     "forms": {
       "name": "forms",
       "description": "Dynamic forms and responses",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/submissions",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/submissions", "/robots.txt", "/manifest.json"]
     },
     "inventory": {
       "name": "inventory",
       "description": "Inventory and catalog management",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/products",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/products", "/robots.txt", "/manifest.json"]
     },
     "api": {
       "name": "api",
       "description": "Core platform API service",
       "entryRoute": "/",
       "loginRoute": "/health",
-      "paths": [
-        "/",
-        "/health",
-        "/v1/health",
-        "/robots.txt",
-        "/favicon.ico"
-      ]
+      "paths": ["/", "/health", "/v1/health", "/robots.txt", "/favicon.ico"]
     },
     "_default": {
       "name": "default",
       "description": "Fallback configuration for unlisted services",
       "entryRoute": "/",
       "loginRoute": "/login",
-      "paths": [
-        "/",
-        "/login",
-        "/health",
-        "/robots.txt",
-        "/manifest.json"
-      ]
+      "paths": ["/", "/login", "/health", "/robots.txt", "/manifest.json"]
     }
   }
 }

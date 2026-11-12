@@ -341,13 +341,19 @@ describe('Authoritative save refresh admission', () => {
         content: 'Human evidence\nMore evidence',
       })
     );
-    await waitFor(() =>
-      expect(
-        screen.getByRole('button', { name: 'ws-reports.approve' })
-      ).not.toBeDisabled()
-    );
-    transport.fetch.mockResolvedValue(new Response('{}', { status: 200 }));
+    expect(
+      screen.getByRole('button', { name: 'ws-reports.approve' })
+    ).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'ws-reports.approve' }));
-    await waitFor(() => expect(approvalRequests()).toHaveLength(1));
+    expect(approvalRequests()).toHaveLength(0);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'ws-reports.edit_report' })
+    );
+    expect(
+      screen.getByLabelText('user-report-data-table.feedback')
+    ).toHaveValue('');
+    expect(screen.getByLabelText('user-report-data-table.content')).toHaveValue(
+      'Human evidence\nMore evidence'
+    );
   });
 });

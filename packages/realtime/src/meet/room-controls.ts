@@ -119,6 +119,18 @@ export function applyRoomControl(
       broadcast: [{ type: 'room.title.changed', title: message.title }],
     });
   if (message.type === 'room.settings.update') {
+    const maximum = Math.min(
+      state.budget?.maxParticipants ?? 100,
+      token.limits.maxParticipants ?? state.budget?.maxParticipants ?? 0
+    );
+    if (
+      (message.settings.maxParticipants !== undefined ||
+        message.settings.admissionClosed !== undefined) &&
+      (!maximum ||
+        (message.settings.maxParticipants !== undefined &&
+          message.settings.maxParticipants > maximum))
+    )
+      return denied(state, 'permission_denied');
     if (!notesEligible && enablesNoteSharing(message.settings))
       return denied(
         state,

@@ -25,6 +25,14 @@
     "GATEWAY_MARKETING_GROUPS": "",
     // Origin of the apps/marketing Worker (value set at deploy time).
     // "MARKETING_ORIGIN": "https://<marketing worker hostname>",
-    "GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL": "false"
-  }
+    "GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL": "false",
+    // Mount paths of apps served at tuturuuu.com/<app> (e.g. "/learn"). Zone
+    // routes cannot match the bare path once a query string is present, so the
+    // gateway hands exactly /<app> to the service binding MOUNT_<SEGMENT>.
+    // Empty: every bare path stays on WEB_ORIGIN. Removing an entry (with the
+    // app's two zone routes) is that app's one-step rollback.
+    "GATEWAY_MOUNTED_PATHS": "",
+  },
+  // One service binding per mounted app, added at that app's cutover:
+  // "services": [{ "binding": "MOUNT_LEARN", "service": "<learn worker name>" }],
 }

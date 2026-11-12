@@ -4,7 +4,7 @@ import {
   starterScenarios,
   type Team,
 } from '@tuturuuu/multiplayer';
-import { describe, expect, it, vi } from 'vite-plus/test';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import {
   compileSkills,
   executeMockTool,
@@ -13,11 +13,51 @@ import {
 } from './ai';
 import type { Env } from './env';
 
+afterEach(() => vi.unstubAllGlobals());
+
 function model(...responses: unknown[]) {
-  const run = vi.fn(async (..._args: unknown[]) => ({
-    response: JSON.stringify(responses.shift()),
-  }));
-  return { env: { AI: { run } } as unknown as Env, run };
+  let sequence = 0;
+  const run = vi.fn(
+    async (_url: unknown, _init?: { body?: BodyInit | null }) => {
+      sequence += 1;
+      return Response.json(
+        {
+          id: `request-${sequence}`,
+          choices: [
+            {
+              message: {
+                content: { response: JSON.stringify(responses.shift()) },
+              },
+            },
+          ],
+          tuturuuu: { run_id: 'ledger-run', billing: { billedCredits: 1 } },
+        },
+        {
+          headers: {
+            'x-colab-sponsor-workspace': '00000000-0000-0000-0000-000000000000',
+          },
+        }
+      );
+    }
+  );
+  vi.stubGlobal('fetch', run);
+  const env = {
+    COLAB_AI_API_KEY: 'test-only-key',
+    sponsorship: {
+      workshopId: 'room',
+      workshopTitle: 'RISE',
+      hostId: 'host',
+      teamId: 'team-1',
+      teamName: 'Marketing',
+      participantId: 'guest:member',
+      operation: 'run',
+      scenarioId: 'rise-induction-post',
+      jobId: '07a13d30-0599-4572-8d1d-159860105e10',
+      sequence: 0,
+      receipts: [],
+    },
+  } as unknown as Env;
+  return { env, run };
 }
 function team(): Team {
   return {
@@ -218,10 +258,10 @@ describe('meaningful agent run', () => {
       toolCalls: 1,
       stopReason: 'answered',
     });
-    const request = run.mock.calls[1]?.[1] as {
-      messages: Array<{ content: string }>;
+    const request = JSON.parse(String(run.mock.calls[1]?.[1]?.body)) as {
+      instructions: string;
     };
-    expect(request.messages[0]?.content).toContain('FINAL RESPONSE REQUIRED');
+    expect(request.instructions).toContain('FINAL RESPONSE REQUIRED');
     expect(run).toHaveBeenCalledTimes(3);
   });
   it('never executes another action on the reserved final turn', async () => {

@@ -118,32 +118,65 @@ describe('getWorkspacePostsPageData', () => {
     });
     expect(result.postsStatus.total).toBe(3);
   });
-  it('counts all staged recipients beyond the page with identical predicates', async () => {
-    const rows = Array.from({ length: 1203 }, (_, index) => ({
-      row_key: `recipient-${index}`,
-      review_stage: 'pending_approval',
-      approval_status: 'PENDING',
-      queue_status: 'blocked',
-      total_count: 1203,
-    }));
+  // Synthetic counts only. Regression: opening the view applies the default
+  // stage, and the summary used to be counted from that stage's rows alone, so
+  // every other card (and the total) read 0 until another card was clicked.
+  it('shows every stage and the full total even when a stage is selected', async () => {
+    const receipt = {
+      ...summaryReceipt(40),
+      pending_approval_stage_count: 12,
+      approved_awaiting_delivery_count: 8,
+      sent_stage_count: 15,
+      delivery_failed_count: 5,
+    };
     mocks.rpc.mockImplementation(async (name, args) => {
-      expect(name).toBe('get_workspace_post_review_rows');
+      if (name === 'get_workspace_post_review_summary') {
+        // The summary read is never narrowed to the selected stage.
+        expect(args).not.toHaveProperty('p_stage');
+        return { data: [receipt], error: null };
+      }
       expect(args).toMatchObject({
         p_stage: ['pending_approval'],
-        p_approval_status: 'PENDING',
-        p_queue_status: 'blocked',
-        p_user_id: 'user-1',
-        p_included_group_ids: ['group-1'],
-        p_excluded_group_ids: ['group-2'],
-        p_start_date: '2026-01-02',
-        p_end_date: '2026-01-08',
+        p_limit: 10,
       });
       return {
-        data: rows.slice(args.p_offset, args.p_offset + args.p_limit),
+        data: Array.from({ length: 10 }, (_, index) => ({
+          row_key: `recipient-${index}`,
+          review_stage: 'pending_approval',
+          total_count: 12,
+        })),
         error: null,
       };
     });
     const result = await getWorkspacePostsPageData('workspace-1', {
+      stage: 'pending_approval',
+      pageSize: 10,
+    });
+    expect(result.postsData.data).toHaveLength(10);
+    // The list is the selected stage; the cards and total are the whole scope.
+    expect(result.postsData.count).toBe(12);
+    expect(result.postsStatus.total).toBe(40);
+    expect(result.postsStatus.stages).toMatchObject({
+      pending_approval: 12,
+      approved_awaiting_delivery: 8,
+      sent: 15,
+      delivery_failed: 5,
+    });
+  });
+
+  it('keeps the same predicates for the list and the all-stage summary', async () => {
+    const seen: Record<string, unknown>[] = [];
+    mocks.rpc.mockImplementation(async (name, args) => {
+      seen.push({ name, ...args });
+      return {
+        data:
+          name === 'get_workspace_post_review_summary'
+            ? [summaryReceipt(0)]
+            : [],
+        error: null,
+      };
+    });
+    await getWorkspacePostsPageData('workspace-1', {
       stage: 'pending_approval',
       approvalStatus: 'PENDING',
       queueStatus: 'blocked',
@@ -152,17 +185,37 @@ describe('getWorkspacePostsPageData', () => {
       userId: 'user-1',
       start: '2026-01-02',
       end: '2026-01-08',
-      pageSize: 10,
     });
-    expect(result.postsData.data).toHaveLength(10);
-    expect(result.postsData.count).toBe(1203);
-    expect(result.postsStatus).toMatchObject({
-      total: 1203,
-      stages: { pending_approval: 1203, sent: 0 },
-      approvals: { pending: 1203 },
-      queue: { blocked: 1203 },
-    });
-    expect(mocks.rpc).toHaveBeenCalledTimes(4);
+    const shared = {
+      p_approval_status: 'PENDING',
+      p_queue_status: 'blocked',
+      p_user_id: 'user-1',
+      p_included_group_ids: ['group-1'],
+      p_excluded_group_ids: ['group-2'],
+      p_start_date: '2026-01-02',
+      p_end_date: '2026-01-08',
+    };
+    expect(seen).toHaveLength(2);
+    for (const call of seen) expect(call).toMatchObject(shared);
+  });
+
+  it('fails closed when the list and the stage card disagree', async () => {
+    mocks.rpc.mockImplementation(async (name) => ({
+      data:
+        name === 'get_workspace_post_review_summary'
+          ? [summaryReceipt(3)]
+          : [
+              {
+                row_key: 'one',
+                review_stage: 'pending_approval',
+                total_count: 2,
+              },
+            ],
+      error: null,
+    }));
+    await expect(
+      getWorkspacePostsPageData('workspace-1', { stage: 'pending_approval' })
+    ).rejects.toThrow('Report counts changed');
   });
 
   it('retains the full total on a page beyond the last result', async () => {
@@ -177,36 +230,27 @@ describe('getWorkspacePostsPageData', () => {
     expect(result.postsData).toEqual({ count: 1203, data: [] });
   });
 
-  it.each(['missing', 'duplicate', 'drift', 'error'])(
-    'fails closed on %s staged totals instead of inventing a count',
-    async (failure) => {
-      mocks.rpc.mockImplementation(async (_name, args) => {
-        if (args.p_offset === 0)
-          return {
-            data: [{ row_key: 'one', review_stage: 'sent', total_count: 2 }],
-            error: null,
-          };
-        if (failure === 'error')
-          return { data: null, error: { message: 'scan failed' } };
-        return {
-          data:
-            failure === 'missing'
-              ? []
-              : [
-                  {
-                    row_key: failure === 'duplicate' ? 'one' : 'two',
-                    review_stage: 'sent',
-                    total_count: 3,
-                  },
-                ],
-          error: null,
-        };
-      });
-      await expect(
-        getWorkspacePostsPageData('workspace-1', { stage: 'sent' })
-      ).rejects.toThrow();
-    }
-  );
+  it('keeps the selected stage count on a page beyond its last result', async () => {
+    mocks.rpc.mockImplementation(async (name) => ({
+      data:
+        name === 'get_workspace_post_review_rows'
+          ? []
+          : [
+              {
+                ...summaryReceipt(40),
+                pending_approval_stage_count: 12,
+                sent_stage_count: 28,
+              },
+            ],
+      error: null,
+    }));
+    const result = await getWorkspacePostsPageData('workspace-1', {
+      page: 9,
+      stage: 'pending_approval',
+    });
+    expect(result.postsData).toEqual({ count: 12, data: [] });
+    expect(result.postsStatus.total).toBe(40);
+  });
 
   it('rejects missing summary totals', async () => {
     mocks.rpc.mockResolvedValue({ data: [], error: null });

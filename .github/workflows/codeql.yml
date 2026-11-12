@@ -22,7 +22,7 @@ on:
 # The codeql- prefix keeps the group distinct from security-checks.yaml when
 # this runs as its reusable workflow (github.workflow names the caller there).
 concurrency:
-  group: codeql-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  group: ${{ ((github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1 && github.workflow == 'CodeQL Manual Fallback') && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('codeql-{0}-{1}-{2}{3}', github.event_name, github.event.pull_request.number || github.ref, (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest', github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '') }}
   # Only superseded PR scans are cancelled. Main pushes queue (one running,
   # newest pending) so the default-branch baseline that PR gates compare
   # against always completes during bursts of merges.
@@ -142,7 +142,7 @@ jobs:
           persist-credentials: false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@1fc58d04a4d4374f921bdac573c3811c240f9c26 # v4.39.2
+        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           build-mode: none
           languages: ${{ matrix.language }}
@@ -151,7 +151,7 @@ jobs:
       # Fork pull requests get a read-only token, so their results stay local
       # and only feed the new-alert gate below.
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@1fc58d04a4d4374f921bdac573c3811c240f9c26 # v4.39.2
+        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           category: /language:${{ matrix.language }}
           output: ${{ runner.temp }}/codeql-sarif

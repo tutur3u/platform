@@ -29,7 +29,18 @@ def load():
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
         "workers_dev": False, "preview_urls": False,
     }
-    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
+    # Exact service binding from apps/cms/void.config.ts. Any other list fails.
+    module.NORMALIZED_DEFAULTS = {
+        **module.NORMALIZED_DEFAULTS,
+        "topLevelName": WORKER,
+        "services": [
+            {
+                "binding": "ABUSE_GUARD",
+                "service": "tuturuuu-abuse-guard",
+                "entrypoint": "AbuseGuardEntrypoint",
+            },
+        ],
+    }
     module.RECEIPT = "cms-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
     return module

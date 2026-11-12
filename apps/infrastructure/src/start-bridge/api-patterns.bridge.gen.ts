@@ -189,6 +189,7 @@ export const appApiPatterns = [
   "/api/v1/infrastructure/package-stock-changes",
   "/api/v1/infrastructure/packages",
   "/api/v1/infrastructure/payment-methods",
+  "/api/v1/infrastructure/policy-notice",
   "/api/v1/infrastructure/post-email-queue",
   "/api/v1/infrastructure/post-email-queue/run-now",
   "/api/v1/infrastructure/product-categories",

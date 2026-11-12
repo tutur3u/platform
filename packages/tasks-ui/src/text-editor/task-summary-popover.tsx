@@ -27,6 +27,7 @@ import {
   getPriorityIcon,
   getPriorityLabel,
 } from '../tu-do/utils/taskPriorityUtils';
+import { withDocumentAppBase } from '../tu-do/shared/tasks-paths';
 
 interface TaskSummaryPopoverProps {
   children: ReactNode;
@@ -307,7 +308,9 @@ export function TaskSummaryPopover({
                     workspaceId ? (
                       <a
                         key={blocker.id}
-                        href={`/${workspaceId}/tasks/${blocker.id}`}
+                        href={withDocumentAppBase(
+                          `/${workspaceId}/tasks/${blocker.id}`
+                        )}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="group flex items-center gap-1.5 truncate text-xs transition-colors hover:text-foreground"

@@ -83,11 +83,21 @@ jobs:
           command: bun turbo:local run build --filter=@tuturuuu/${{ inputs.app }} --concurrency=2
           token: ''
           team: ''
-      - name: Seal and exercise the original route-free production bytes
-        timeout-minutes: 5
+      - name: Prepare the production profile and receipt
+        timeout-minutes: 2
         run: |
           node scripts/ci/wave1-native-artifact.mjs prepare "$APP" production "$SOURCE_SHA"
           if [ "$APP" = calendar ]; then node scripts/ci/calendar-host-scan.mjs "apps/$APP/dist" production; fi
+      - name: Pre-seal doctor on the production Host header
+        timeout-minutes: 3
+        run: |
+          HOST="$(node --input-type=module -e "import { profileFor } from './scripts/ci/wave1-native-profile.mjs'; console.log(profileFor(process.env.APP, 'production').host)")"
+          FLAGS=()
+          if [ "$APP" = calendar ] || [ "$APP" = mail ]; then FLAGS+=(--expect-redirect); fi
+          node scripts/ci/pre-seal-doctor.mjs "$APP" "apps/$APP" "$HOST" "$SOURCE_SHA" --wave1 "${FLAGS[@]}"
+      - name: Seal and exercise the original route-free production bytes
+        timeout-minutes: 5
+        run: |
           node scripts/ci/wave1-native-runtime.mjs "$APP" production "$SOURCE_SHA"
           node scripts/ci/wave1-native-publish.mjs dry-run "$APP" production "$SOURCE_SHA"
           node scripts/ci/wave1-native-artifact.mjs verify "$APP" production "$SOURCE_SHA"

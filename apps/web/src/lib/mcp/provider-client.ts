@@ -35,7 +35,7 @@ export function createProviderReadClient(
         method: 'GET',
         cache: 'no-store',
         credentials: 'omit',
-        redirect: 'error',
+        redirect: 'manual',
         headers: {
           apikey: publishableKey,
           Authorization: `Bearer ${token}`,

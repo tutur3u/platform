@@ -98,6 +98,7 @@ export {
   hasAppBaseResolverFor,
   type InternalApiAppBaseResolver,
   registerDefaultAppBaseResolver,
+  resolveOwnAppApiPath,
 } from './internal-api-url';
 
 function tryParseAbsoluteUrl(value: string): URL | null {

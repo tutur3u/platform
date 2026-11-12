@@ -83,6 +83,91 @@ describe('checkCsrf', () => {
     ).toEqual({ ok: true, reason: 'bearer' });
   });
 
+  describe('bearerRequiresNoSessionCookie (shared-origin mounts)', () => {
+    const mounted = (headers: Record<string, string>) =>
+      checkCsrf({
+        allowedOrigins: [APEX],
+        bearerRequiresNoSessionCookie: true,
+        headers: new Headers(headers),
+        method: 'POST',
+        pathname: '/api/v1/things',
+      });
+
+    it('refuses a cross-site cookie mutation carrying a junk bearer', () => {
+      expect(
+        mounted({
+          authorization: 'Bearer junk',
+          cookie: SESSION_COOKIE,
+          origin: 'https://evil.tuturuuu.com',
+          'sec-fetch-site': 'same-site',
+        })
+      ).toMatchObject({ ok: false, reason: 'same-site' });
+      expect(
+        mounted({
+          authorization: 'Bearer junk',
+          cookie: SESSION_COOKIE,
+          origin: 'https://evil.tuturuuu.com',
+        })
+      ).toMatchObject({ ok: false, reason: 'origin-mismatch' });
+    });
+
+    it('admits a same-origin cookie mutation that also carries a bearer', () => {
+      expect(
+        mounted({
+          authorization: 'Bearer eyJ.token',
+          cookie: SESSION_COOKIE,
+          'sec-fetch-site': 'same-origin',
+        })
+      ).toEqual({ ok: true, reason: 'same-origin' });
+    });
+
+    it('still exempts a bearer client that sends no session cookie', () => {
+      expect(
+        mounted({
+          authorization: 'Bearer eyJ.token',
+          'sec-fetch-site': 'cross-site',
+        })
+      ).toEqual({ ok: true, reason: 'bearer' });
+    });
+  });
+
+  describe('requireOriginWithoutSessionCookie (session-clearing endpoints)', () => {
+    const clearing = (headers: Record<string, string>) =>
+      checkCsrf({
+        allowedOrigins: [APEX],
+        headers: new Headers(headers),
+        method: 'POST',
+        pathname: '/api/auth/logout',
+        requireOriginWithoutSessionCookie: true,
+      });
+
+    it('refuses a cookie-less cross-site POST', () => {
+      expect(clearing({ 'sec-fetch-site': 'cross-site' })).toMatchObject({
+        ok: false,
+        reason: 'cross-site',
+      });
+      expect(clearing({ origin: 'https://evil.example' })).toMatchObject({
+        ok: false,
+        reason: 'origin-mismatch',
+      });
+      expect(clearing({})).toMatchObject({ ok: false });
+    });
+
+    it('admits same-origin proof and cookie-less bearer clients', () => {
+      expect(clearing({ 'sec-fetch-site': 'same-origin' })).toEqual({
+        ok: true,
+        reason: 'same-origin',
+      });
+      expect(clearing({ origin: APEX })).toMatchObject({ ok: true });
+      expect(
+        clearing({
+          authorization: 'Bearer eyJ.token',
+          'sec-fetch-site': 'cross-site',
+        })
+      ).toEqual({ ok: true, reason: 'bearer' });
+    });
+  });
+
   it('does not treat an empty bearer as bearer auth', () => {
     expect(
       check({

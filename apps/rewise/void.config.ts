@@ -21,6 +21,13 @@ export default defineConfig({
       not_found_handling: 'none',
       run_worker_first: true,
     },
+    services: [
+      {
+        binding: 'ABUSE_GUARD',
+        service: 'tuturuuu-abuse-guard',
+        entrypoint: 'AbuseGuardEntrypoint',
+      },
+    ],
     observability: { enabled: true, head_sampling_rate: 0.05 },
   },
 });

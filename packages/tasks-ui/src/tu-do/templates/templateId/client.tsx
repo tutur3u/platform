@@ -50,6 +50,7 @@ import type { BoardTemplateWithContent, TemplateTask } from '../types';
 import { EditTemplateDialog } from './edit-template-dialog';
 import { ShareTemplateDialog } from './share-template-dialog';
 import { UseTemplateDialog } from './use-template-dialog';
+import { tasksApiPath } from '../../shared/tasks-paths';
 
 interface Props {
   wsId: string;
@@ -240,7 +241,7 @@ export default function TemplateDetailClient({
     setIsDeleting(true);
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/templates/${template.id}`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/templates/${template.id}`),
         {
           method: 'DELETE',
         }

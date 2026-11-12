@@ -11,7 +11,12 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    exclude: [...configDefaults.exclude, 'e2e/**'],
+    exclude: [
+      ...configDefaults.exclude,
+      'e2e/**',
+      // node:test files; the native job runs them with node --test.
+      'cloudflare/**',
+    ],
     globals: true,
   },
 });

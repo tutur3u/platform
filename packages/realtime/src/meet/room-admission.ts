@@ -31,11 +31,23 @@ export function admitOrHold(
   now: string
 ): MeetRoomOutcome {
   state = accountRoomTime(state, Date.parse(now));
+  if (state.budget) state = startRoomBudget(state, token, Date.parse(now));
   const expired = expireRoomBudget(state, Date.parse(now));
   if (expired) return expired;
   if (state.ended)
     return outcome(state, {
       reply: [{ type: 'room.ended' }],
+      disconnect: [token.userId],
+    });
+  if (
+    token.role !== 'host' &&
+    state.settings?.admissionClosed &&
+    (state.budget?.maxParticipants !== undefined ||
+      token.limits.maxParticipants !== undefined) &&
+    !state.presence[token.userId]
+  )
+    return outcome(state, {
+      reply: [{ type: 'error', error: 'admission_closed' }],
       disconnect: [token.userId],
     });
   if (
@@ -127,6 +139,8 @@ function buildReady(
       : undefined,
     limits: {
       ...token.limits,
+      maxParticipants:
+        state.budget?.maxParticipants ?? token.limits.maxParticipants,
       maxPublishers: state.budget?.maxPublishers ?? token.limits.maxPublishers,
       maxViewers: state.budget?.maxViewers ?? token.limits.maxViewers,
     },

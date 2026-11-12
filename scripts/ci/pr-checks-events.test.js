@@ -140,31 +140,66 @@ test('a failed branch check leaves selected validation eligible but fails the ag
 });
 
 test('metadata-only runs cannot cancel validation or each other, including the admission callee', () => {
-  for (const policy of [workflow.concurrency, admission.concurrency]) {
-    const normal = context();
-    const normalGroup = renderTemplate(policy.group, normal);
-    assert.equal(
-      normalGroup,
-      renderTemplate(policy.group, context('labeled', 'ready-for-ci', true, 2))
-    );
-    const first = context('labeled', 'WIP', true, 3);
-    const second = context('unlabeled', 'WIP', true, 4);
-    const group = renderTemplate(policy.group, first);
-    assert.notEqual(group, normalGroup);
-    assert.notEqual(group, renderTemplate(policy.group, second));
-    assert.equal(
-      evaluateExpression(policy['cancel-in-progress'], first),
-      false
-    );
-    assert.equal(
-      evaluateExpression(policy['cancel-in-progress'], second),
-      false
-    );
-    assert.notEqual(
-      normalGroup,
-      renderTemplate(policy.group, context('synchronize', undefined, false))
-    );
-  }
+  const normal = context();
+  const normalGroup = renderTemplate(workflow.concurrency.group, normal);
+  assert.equal(
+    normalGroup,
+    `${workflow.name}-pr-42`,
+    'a pull request shares one superseding group'
+  );
+  assert.equal(
+    normalGroup,
+    renderTemplate(
+      workflow.concurrency.group,
+      context('labeled', 'ready-for-ci', true, 2)
+    )
+  );
+  const first = context('labeled', 'WIP', true, 3);
+  const second = context('unlabeled', 'WIP', true, 4);
+  // GitHub drops an older pending run that shares a group, even when cancel
+  // is off. Metadata labels therefore keep the distinct -metadata- slot.
+  const firstGroup = renderTemplate(workflow.concurrency.group, first);
+  const secondGroup = renderTemplate(workflow.concurrency.group, second);
+  assert.notEqual(firstGroup, normalGroup);
+  assert.notEqual(secondGroup, normalGroup);
+  assert.notEqual(firstGroup, secondGroup);
+  assert.match(firstGroup, /-metadata-3-1$/u);
+  assert.match(secondGroup, /-metadata-4-1$/u);
+  const securityLabel = context('labeled', 'security-review-required', true, 5);
+  assert.notEqual(
+    renderTemplate(workflow.concurrency.group, securityLabel),
+    normalGroup
+  );
+  assert.match(
+    renderTemplate(workflow.concurrency.group, securityLabel),
+    /-metadata-5-1$/u
+  );
+  assert.equal(
+    evaluateExpression(workflow.concurrency['cancel-in-progress'], first),
+    false
+  );
+  assert.equal(
+    evaluateExpression(workflow.concurrency['cancel-in-progress'], second),
+    false
+  );
+  assert.equal(
+    normalGroup,
+    renderTemplate(
+      workflow.concurrency.group,
+      context('synchronize', undefined, false)
+    )
+  );
+  const callee = admission.concurrency;
+  const calleeGroup = renderTemplate(callee.group, normal);
+  const calleeFirst = renderTemplate(callee.group, first);
+  assert.notEqual(calleeFirst, calleeGroup);
+  assert.notEqual(calleeFirst, renderTemplate(callee.group, second));
+  assert.equal(evaluateExpression(callee['cancel-in-progress'], first), false);
+  assert.equal(evaluateExpression(callee['cancel-in-progress'], second), false);
+  assert.notEqual(
+    calleeGroup,
+    renderTemplate(callee.group, context('synchronize', undefined, false))
+  );
 });
 
 test('cancellation prevents the aggregate from allocating a runner', () => {

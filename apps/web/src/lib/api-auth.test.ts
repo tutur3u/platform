@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
+  APP_SESSION_COOKIE_NAME: 'tuturuuu_app_session',
   attachSupabaseAuthUser: mocks.attachSupabaseAuthUser,
   createAppSessionUser: mocks.createAppSessionUser,
   getAppSessionTokenFromRequest: mocks.getAppSessionTokenFromRequest,
@@ -233,6 +234,116 @@ describe('withSessionAuth app-session step-up controls', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ success: true });
+    expect(mocks.verifyAppSessionRequest).not.toHaveBeenCalled();
+  });
+
+  it('reads the Supabase session when Chat also sends an app-session marker', async () => {
+    const signedInUser = {
+      created_at: '2026-06-26T00:00:00.000Z',
+      email: 'user-b@example.com',
+      id: 'user-b',
+    };
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    mocks.enforceAdaptiveStepUpChallenge.mockResolvedValue(null);
+    mocks.createClient.mockImplementation(async (sessionRequest: Request) => {
+      const authorization = sessionRequest.headers.get('authorization') ?? '';
+      const cookie = sessionRequest.headers.get('cookie') ?? '';
+      const isolated =
+        authorization.startsWith('Bearer ttr_app_') ||
+        cookie
+          .split(';')
+          .some((part) => part.trim().startsWith('tuturuuu_app_session='));
+      return {
+        auth: {
+          getUser: vi.fn().mockResolvedValue(
+            isolated
+              ? {
+                  data: { user: null },
+                  error: { message: 'Auth session missing' },
+                }
+              : { data: { user: signedInUser }, error: null }
+          ),
+        },
+      };
+    });
+    mocks.resolveAuthenticatedSessionUser.mockImplementation(
+      async (client: {
+        auth: {
+          getUser: () => Promise<{
+            data: { user: typeof signedInUser | null };
+            error: { message: string } | null;
+          }>;
+        };
+      }) => {
+        const { data, error } = await client.auth.getUser();
+        return { authError: error, user: data.user };
+      }
+    );
+
+    const route = withSessionAuth(
+      async (_request, { user }) => NextResponse.json({ userId: user.id }),
+      {
+        allowAppSessionAuth: { targetApp: 'chat' },
+        preferSupabaseSessionAuth: true,
+        rateLimit: false,
+      }
+    );
+    const response = await route(
+      new NextRequest(
+        'https://chat.tuturuuu.com/api/v1/notifications/unread-count',
+        {
+          headers: {
+            authorization: 'Bearer ttr_app_chat-session',
+            cookie:
+              'tuturuuu_app_session=ttr_app_chat-session; sb-project-auth-token=signed-in',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ userId: 'user-b' });
+    expect(mocks.verifyAppSessionRequest).not.toHaveBeenCalled();
+    const sessionRequest = mocks.createClient.mock.calls[0]?.[0] as Request;
+    expect(sessionRequest.headers.get('authorization')).toBeNull();
+    expect(sessionRequest.headers.get('cookie')).toBe(
+      'sb-project-auth-token=signed-in'
+    );
+  });
+
+  it('keeps a present Supabase cookie from falling back to the app session', async () => {
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: null },
+          error: { message: 'Auth session missing' },
+        }),
+      },
+    });
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      authError: { message: 'Auth session missing' },
+      user: null,
+    });
+
+    const route = withSessionAuth(async () => NextResponse.json({ ok: true }), {
+      allowAppSessionAuth: { targetApp: 'chat' },
+      preferSupabaseSessionAuth: true,
+      rateLimit: false,
+    });
+    const response = await route(
+      new NextRequest(
+        'https://chat.tuturuuu.com/api/v1/notifications/unread-count',
+        {
+          headers: {
+            authorization: 'Bearer ttr_app_chat-session',
+            cookie: 'sb-project-auth-token=stale',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(401);
     expect(mocks.verifyAppSessionRequest).not.toHaveBeenCalled();
   });
 });

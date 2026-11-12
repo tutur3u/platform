@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+  withHstsResponsePolicy,
   appRobots,
   createRootResponsePolicy,
   denyFrameAncestors,
@@ -466,5 +467,64 @@ describe('framable responses and stateful patterns', () => {
           'X-Frame-Options'
         )
       ).toBeNull();
+  });
+});
+
+describe('HSTS response policy', () => {
+  it.each([200, 204, 301, 302, 400, 401, 404, 500, 503])(
+    'replaces weaker mixed-case HSTS on status %s without duplicating it',
+    (status) => {
+      const headers = apply('https://chat.tuturuuu.com/api/test', {
+        status,
+        headers: {
+          'sTrIcT-tRaNsPoRt-SeCuRiTy': 'max-age=0',
+          'Permissions-Policy': 'camera=()',
+          'Set-Cookie': 'session=test; Secure; HttpOnly',
+        },
+      });
+      expect(headers.get('strict-transport-security')).toBe('max-age=63072000');
+      expect(
+        [...headers.keys()].filter((key) => key === 'strict-transport-security')
+      ).toHaveLength(1);
+      expect(headers.get('Permissions-Policy')).toBe('camera=()');
+      expect(headers.get('Set-Cookie')).toBe('session=test; Secure; HttpOnly');
+    }
+  );
+  it.each(['/en', '/assets/app.js', '/robots.txt', '/api/test'])(
+    'adds missing HSTS for %s',
+    (path) => {
+      expect(
+        apply(`https://storefront.tuturuuu.com${path}`).get(
+          'Strict-Transport-Security'
+        )
+      ).toBe('max-age=63072000');
+    }
+  );
+});
+
+describe('Worker HSTS final boundary', () => {
+  it.each([200, 204, 301, 307, 404, 500, 503])(
+    'finalizes app overrides and startup responses: %s',
+    async (status) => {
+      const headers = new Headers();
+      headers.append('Strict-Transport-Security', 'max-age=0');
+      headers.append('strict-transport-security', 'max-age=1; preload');
+      const response = await withHstsResponsePolicy(
+        () => new Response(null, { status, headers })
+      )();
+      expect(response.status).toBe(status);
+      expect(response.headers.get('Strict-Transport-Security')).toBe(
+        'max-age=63072000'
+      );
+    }
+  );
+  it('finalizes a thrown handler failure', async () => {
+    const response = await withHstsResponsePolicy(() => {
+      throw new Error('fixture');
+    })();
+    expect(response.status).toBe(500);
+    expect(response.headers.get('Strict-Transport-Security')).toBe(
+      'max-age=63072000'
+    );
   });
 });

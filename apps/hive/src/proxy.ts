@@ -91,12 +91,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       request.headers.delete('cookie');
       request.headers.delete('authorization');
     }
-    const appSessionRefresh = isLocalAuthApi || isBuildInfoRead
-      ? null
-      : await refreshAppSessionForRequest(request, {
-          sessionMode: 'supabase-first',
-          targetApp: 'hive',
-        });
+    const appSessionRefresh =
+      isLocalAuthApi || isBuildInfoRead
+        ? null
+        : await refreshAppSessionForRequest(request, {
+            sessionMode: 'supabase-first',
+            targetApp: 'hive',
+          });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(

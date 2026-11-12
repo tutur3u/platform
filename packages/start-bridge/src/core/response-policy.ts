@@ -153,6 +153,7 @@ export function createRootResponsePolicy<Env = unknown>(
         typeof options.seo === 'function' ? options.seo(context) : options.seo;
       if (robots !== null) headers.set('X-Robots-Tag', robots);
     }
+    headers.set('Strict-Transport-Security', 'max-age=63072000');
     headers.set('X-Content-Type-Options', 'nosniff');
     headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     const framed = isFramable(path) || appFramable(context.framablePaths)(path);
@@ -179,6 +180,25 @@ export function createRootResponsePolicy<Env = unknown>(
       headers.set('Cache-Control', 'private, no-store');
       headers.set('Vary', varyWith(headers.get('Vary'), 'Cookie'));
     }
+    return secured;
+  };
+}
+
+/** Final HSTS boundary, including app overrides and startup/error responses. */
+export function withHstsResponsePolicy<Args extends unknown[]>(
+  fetch: (...args: Args) => Response | Promise<Response>
+) {
+  return async (...args: Args): Promise<Response> => {
+    let response: Response;
+    try {
+      response = await fetch(...args);
+    } catch (error) {
+      console.error('[start-bridge] worker failed', error);
+      response = new Response('Internal Server Error', { status: 500 });
+    }
+    if (response.status === 101) return response;
+    const secured = new Response(response.body, response);
+    secured.headers.set('Strict-Transport-Security', 'max-age=63072000');
     return secured;
   };
 }

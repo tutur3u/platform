@@ -451,6 +451,11 @@
       "import": "./dist/sso.js",
       "require": "./dist/sso.js"
     },
+    "./workspace-domains": {
+      "types": "./dist/workspace-domains.d.ts",
+      "import": "./dist/workspace-domains.js",
+      "require": "./dist/workspace-domains.js"
+    },
     "./native-integrity": {
       "types": "./dist/native-integrity.d.ts",
       "import": "./dist/native-integrity.js",

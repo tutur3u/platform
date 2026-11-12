@@ -17,4 +17,5 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlagMap = {
   ENABLE_AVATAR: false,
   ENABLE_LOGO: false,
   newsletter_sending: false,
+  ENABLE_JOURNAL_MOOD_TRACKING: false,
 };

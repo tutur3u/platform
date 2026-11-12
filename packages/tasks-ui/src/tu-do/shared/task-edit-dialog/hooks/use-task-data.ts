@@ -13,6 +13,7 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { useMemo, useRef } from 'react';
 import { z } from 'zod';
+import { tasksApiPath } from '../../tasks-paths';
 
 const SharedTaskContextSchema = z.object({
   boardConfig: z
@@ -324,7 +325,9 @@ export function useTaskData({
         }
 
         const response = await fetch(
-          `/api/v1/workspaces/${realWorkspaceId}/tasks?${query.toString()}`,
+          tasksApiPath(
+            `/api/v1/workspaces/${realWorkspaceId}/tasks?${query.toString()}`
+          ),
           { cache: 'no-store' }
         );
 

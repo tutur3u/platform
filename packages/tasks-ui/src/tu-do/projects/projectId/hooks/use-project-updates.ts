@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useCallback, useMemo, useState } from 'react';
 import type { ProjectUpdate } from '../types';
+import { tasksApiPath } from '../../../shared/tasks-paths';
 
 interface UseProjectUpdatesOptions {
   wsId: string;
@@ -28,7 +29,9 @@ export function useProjectUpdates({
     queryKey: ['project-updates', wsId, projectId],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates`
+        tasksApiPath(
+          `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates`
+        )
       );
       if (!response.ok) {
         throw new Error('Failed to fetch updates');
@@ -46,7 +49,9 @@ export function useProjectUpdates({
   const postUpdateMutation = useMutation({
     mutationFn: async (content: string) => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates`,
+        tasksApiPath(
+          `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates`
+        ),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -81,7 +86,9 @@ export function useProjectUpdates({
   const deleteUpdateMutation = useMutation({
     mutationFn: async (updateId: string) => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates/${updateId}`,
+        tasksApiPath(
+          `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates/${updateId}`
+        ),
         { method: 'DELETE' }
       );
 
@@ -117,7 +124,9 @@ export function useProjectUpdates({
       content: string;
     }) => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates/${updateId}`,
+        tasksApiPath(
+          `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates/${updateId}`
+        ),
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },

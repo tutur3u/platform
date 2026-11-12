@@ -16,6 +16,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useId, useState } from 'react';
+import { tasksApiPath } from '../../shared/tasks-paths';
 
 interface TemplateShare {
   id: string;
@@ -59,7 +60,9 @@ export function ShareTemplateDialog({
     setIsLoadingShares(true);
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/templates/${templateId}/shares`
+        tasksApiPath(
+          `/api/v1/workspaces/${wsId}/templates/${templateId}/shares`
+        )
       );
 
       if (response.ok) {
@@ -94,7 +97,9 @@ export function ShareTemplateDialog({
     setIsAddingShare(true);
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/templates/${templateId}/shares`,
+        tasksApiPath(
+          `/api/v1/workspaces/${wsId}/templates/${templateId}/shares`
+        ),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -125,7 +130,9 @@ export function ShareTemplateDialog({
     setIsDeletingShare(shareId);
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/templates/${templateId}/shares?shareId=${shareId}`,
+        tasksApiPath(
+          `/api/v1/workspaces/${wsId}/templates/${templateId}/shares?shareId=${shareId}`
+        ),
         {
           method: 'DELETE',
         }

@@ -12,7 +12,19 @@ export default defineConfig({
     compatibility_date: '2026-10-12',
     compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
     workers_dev: false,
+    preview_urls: false,
     vars: { TUTURUUU_NOINDEX: '1' },
+    services: [
+      {
+        binding: 'WORKER_SELF_REFERENCE',
+        service: 'tuturuuu-mind',
+      },
+      {
+        binding: 'ABUSE_GUARD',
+        service: 'tuturuuu-abuse-guard',
+        entrypoint: 'AbuseGuardEntrypoint',
+      },
+    ],
     assets: {
       binding: 'ASSETS',
       directory: './dist/client',
