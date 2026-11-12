@@ -1,6 +1,9 @@
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { authorizeInfrastructureWorkspaceSecretsRequest } from '@/lib/infrastructure-admin-access';
+import {
+  authorizeInfrastructureAdminRequest,
+  authorizeInfrastructureWorkspaceSecretsRequest,
+} from '@/lib/infrastructure-admin-access';
 
 import { canMutateInfrastructureSecret } from '@/lib/managed-cron-secret';
 
@@ -13,7 +16,13 @@ const secretSchema = z.object({
   value: z.string().max(16_384),
 });
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
+  const admin = await authorizeInfrastructureAdminRequest(
+    'view_infrastructure',
+    true,
+    request
+  );
+  if (!admin.ok) return admin.response;
   await connection();
   const { wsId } = await params;
   const auth = await authorizeInfrastructureWorkspaceSecretsRequest();
