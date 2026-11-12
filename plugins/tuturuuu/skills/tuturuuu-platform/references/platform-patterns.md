@@ -1501,3 +1501,33 @@ assertion from the codemod template; retain app-specific startup and routing
 content. Run the policy tests and fleet enumeration, then require sealed emitted
 Worker runtime checks for delivery evidence. Source enumeration alone does not
 prove emitted runtime behavior. See `apps/docs/build/devops/start-bridge-codemod.mdx`.
+For bespoke Tasks, Drive and Shortener entries, run
+`node --test scripts/hsts-bespoke-boundaries.test.mjs`; route suppliers are
+isolated, startup guards are real, and WebSocket runtime acceptance stays separate.
+
+The Apps primary Worker applies the outer HSTS policy after its staging cookie
+wrapper, including the canonical-host refusal. Run
+`node --test scripts/hsts-apps-boundary.test.mjs` for source-boundary regression
+coverage. The staging gateway entry and asset-service bypass require separate
+ownership and runtime qualification.
+
+The handwritten Apps staging gateway finalizes HSTS after staging cookie and HEAD
+wrappers. Its source entry regression is `scripts/hsts-apps-gateway-boundary.test.mjs`;
+it covers canonical-host refusal, missing assets, redirects, binding failures and
+hostile duplicate headers. Route/framework suppliers are isolated; emitted Worker,
+WebSocket upgrade and deployment acceptance require separate execution evidence.
+
+The Mail HTTP Worker finalizes HSTS outside its handler, covering local 404,
+mounted-session 409, build-info and RUM returns. Run
+`node --test scripts/hsts-mail-boundary.test.mjs` for the source-entry regression.
+The entry and handler execute with isolated framework/service suppliers and inner
+response wrappers. Emitted Worker, real WebSocket upgrades and deployed behavior
+require separate acceptance evidence.
+
+Mail Worker type checks require the canonical declaration producer
+`bun run --cwd apps/mail type-check:boundary` before the Worker program. The full
+`type-check` script sequences app, declaration, Worker and config checks. Qualify
+binding declarations with `wrangler types --include-runtime=false` against the
+emitted `dist/server/wrangler.json`; preserve the checked-in declaration preimage
+when generating temporary qualification output. Keep Void scratch output outside
+the authored patch when running changed-file gates.
