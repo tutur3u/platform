@@ -126,6 +126,45 @@ describe('workspace secrets ADMIN boundary', () => {
       expect(mocks.from).not.toHaveBeenCalled();
     }
   );
+  it('rejects mixed bearer view and cookie secret identities', async () => {
+    mocks.session.mockResolvedValue({ id: 'cookie-b' });
+    mocks.getUser.mockResolvedValue({
+      data: { user: { id: 'bearer-a' } },
+      error: null,
+    });
+    mocks.permissions.mockImplementation(
+      async ({ user }: { user: { id: string } }) => ({
+        membershipType: 'MEMBER',
+        containsPermission: (permission: string) =>
+          user.id === 'bearer-a'
+            ? permission === 'view_infrastructure'
+            : permission === 'manage_workspace_secrets',
+      })
+    );
+    expect((await get('Bearer actor-a')).status).toBe(403);
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.session).not.toHaveBeenCalled();
+  });
+  it('admits a bearer with both permissions without consulting cookie identity', async () => {
+    mocks.session.mockResolvedValue({ id: 'cookie-b' });
+    mocks.getUser.mockResolvedValue({
+      data: { user: { id: 'bearer-a' } },
+      error: null,
+    });
+    mocks.permissions.mockImplementation(
+      async ({ user }: { user: { id: string } }) => ({
+        membershipType: 'MEMBER',
+        containsPermission: (permission: string) =>
+          user.id === 'bearer-a'
+            ? ['view_infrastructure', 'manage_workspace_secrets'].includes(
+                permission
+              )
+            : permission === 'view_infrastructure',
+      })
+    );
+    expect((await get('Bearer actor-a')).status).toBe(200);
+    expect(mocks.session).not.toHaveBeenCalled();
+  });
   it('preserves the secret management permission requirement', async () => {
     mocks.permissions.mockResolvedValue({
       membershipType: 'MEMBER',

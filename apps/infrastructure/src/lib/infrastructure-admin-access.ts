@@ -70,6 +70,7 @@ export async function authorizeInfrastructureAdminRequest(
     ok: true as const,
     sbAdmin,
     user: session.user,
+    permissions,
   };
 }
 

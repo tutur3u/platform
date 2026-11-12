@@ -25,10 +25,17 @@ export async function GET(request: Request, { params }: Params) {
   if (!admin.ok) return admin.response;
   await connection();
   const { wsId } = await params;
-  const auth = await authorizeInfrastructureWorkspaceSecretsRequest();
-  if (!auth.ok) return auth.response;
+  if (
+    !admin.permissions?.containsPermission('manage_workspace_secrets') &&
+    !admin.permissions?.containsPermission('manage_workspace_roles')
+  ) {
+    return NextResponse.json(
+      { error: 'Infrastructure permission required' },
+      { status: 403 }
+    );
+  }
 
-  const { data, error } = await auth.sbAdmin
+  const { data, error } = await admin.sbAdmin
     .from('workspace_secrets')
     .select('*')
     .eq('ws_id', wsId)
