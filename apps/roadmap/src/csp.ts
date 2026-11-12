@@ -13,18 +13,54 @@
  * nonce would be replayable. No 'unsafe-inline' or 'unsafe-eval' for scripts.
  */
 
-import { inlineScriptTexts } from './html-scripts.ts';
+/** The Workers runtime's streaming HTML parser (lol-html). */
+declare const HTMLRewriter: new () => HtmlRewriter;
+type HtmlRewriter = {
+  on(
+    selector: string,
+    handlers: {
+      element?(element: {
+        hasAttribute(name: string): boolean;
+        onEndTag(handler: () => void): void;
+      }): void;
+      text?(chunk: { text: string }): void;
+    }
+  ): HtmlRewriter;
+  transform(response: Response): Response;
+};
 
 const MAX_INLINE_SCRIPTS = 32;
 const MAX_DOCUMENT_BYTES = 2 * 1024 * 1024;
 
 /**
  * Text of every real inline (no src) script element, exactly as served.
- * Tokenized, not regex-matched: `<script>` inside attribute values, comments
- * or raw-text elements is data and must never be hashed into script-src.
+ *
+ * Collected by the runtime's HTML parser, not by scanning the text: a
+ * `<script>` inside an attribute value, a comment or a raw-text element
+ * (title, textarea, style, noscript) is data, never a script element, and is
+ * never hashed into script-src. Text arrives in chunks; an element's text is
+ * complete at its end tag. An unclosed script at end of file is left out, so
+ * it stays blocked.
  */
-export function inlineScripts(html: string): string[] {
-  return inlineScriptTexts(html);
+export async function inlineScripts(html: string): Promise<string[]> {
+  const scripts: string[] = [];
+  let current: string | null = null;
+  await new HTMLRewriter()
+    .on('script', {
+      element(element) {
+        current = element.hasAttribute('src') ? null : '';
+        element.onEndTag(() => {
+          if (current) scripts.push(current);
+          current = null;
+        });
+      },
+      text(chunk) {
+        if (current !== null) current += chunk.text;
+      },
+    })
+    .transform(new Response(html))
+    .text();
+  return scripts;
 }
 
 export async function sha256Base64(text: string): Promise<string> {
@@ -58,7 +94,7 @@ export const STATIC_DIRECTIVES = [
 ] as const;
 
 export async function contentSecurityPolicy(html: string): Promise<string> {
-  const scripts = inlineScripts(html);
+  const scripts = await inlineScripts(html);
   if (scripts.length > MAX_INLINE_SCRIPTS)
     throw new Error('Unexpected number of inline scripts');
   const hashes = [...new Set(await Promise.all(scripts.map(sha256Base64)))];
@@ -79,10 +115,12 @@ function isHtml(response: Response) {
  * still gets a policy, with no inline script allowed.
  */
 export async function withContentSecurityPolicy(
-  response: Response
+  response: Response,
+  transform: (html: string) => string = (html) => html
 ): Promise<Response> {
   if (!isHtml(response)) return response;
-  const html = response.body ? await response.text() : '';
+  // The transform runs first, so every inline script it adds is hashed.
+  const html = transform(response.body ? await response.text() : '');
   let policy: string;
   try {
     if (html.length > MAX_DOCUMENT_BYTES) throw new Error('Document too large');

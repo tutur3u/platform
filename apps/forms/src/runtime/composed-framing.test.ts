@@ -54,9 +54,19 @@ describe('composed Forms bridge and final framing policy', () => {
     `${webgl}-extra/index.html`,
     `${webgl.replace('/webgl', '/webglx')}/index.html`,
     '/api/v1/workspaces/ws/external-projects/assets/webgl/index.html',
-    `/vi${webgl}/index.html`,
   ])('denies framing for the neighbouring path %s', async (path) => {
     const response = await serve(path);
+    expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+    // Not framable: the forwarded policy is kept word for word, and a second
+    // policy denies framing.
+    expect(response.headers.get('Content-Security-Policy')).toBe(
+      `${sandbox}, frame-ancestors 'none'`
+    );
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+  });
+
+  it('applies the app page policy on the locale-prefixed neighbour', async () => {
+    const response = await serve(`/vi${webgl}/index.html`);
     expect(response.headers.get('X-Frame-Options')).toBe('DENY');
     expect(response.headers.get('Content-Security-Policy')).toContain(
       "frame-ancestors 'none'"

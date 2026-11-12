@@ -1,4 +1,11 @@
 {
+  "meta": {
+    "title": "Tuturuuu Roadmap: what we're building and shipping",
+    "description": "What Tuturuuu is building: every product track, milestone and deliverable, with what shipped this week, live from public pull requests and deploy checks.",
+    "imageAlt": "Tuturuuu Roadmap: what is shipping now",
+    "crumbHome": "Tuturuuu",
+    "crumbRoadmap": "Roadmap"
+  },
   "appName": "Roadmap",
   "eyebrow": "Product roadmap",
   "title": "What we’re building.",
@@ -58,16 +65,14 @@
   },
   "hosting": {
     "title": "Where each app runs",
-    "subtitle": "Each app’s public build-info endpoint, probed from outside Cloudflare and compared with the latest commit on main.",
+    "subtitle": "Each app’s public build-info endpoint, probed from outside Cloudflare, shows which commit it runs and when that commit was made.",
     "checked": "Hosting checked",
-    "checkedNote": "at the last roadmap deploy. Short links and the roadmap itself are re-checked live.",
+    "checkedNote": "· short links and the roadmap itself are re-checked live.",
     "workers": "Cloudflare Workers",
     "vercel": "Vercel",
     "store": "App stores",
     "unknown": "Not verifiable",
-    "upToDate": "Up to date with main",
-    "behind": "behind main",
-    "commits": "commits",
+    "buildFrom": "Build from",
     "noCommit": "Commit not reported",
     "main": "Latest on main"
   },
@@ -115,5 +120,18 @@
     "moreOtherOne": "other change",
     "changeOne": "change"
   },
-  "titleAccent": "Shipped in the open."
+  "titleAccent": "Shipped in the open.",
+  "titleMark": "in the open",
+  "pulse": {
+    "title": "Shipping pulse",
+    "merged": "pull requests merged",
+    "today": "Today",
+    "source": "Last 14 days, from the public pull requests this roadmap tracks.",
+    "table": "Show the numbers"
+  },
+  "glance": {
+    "title": "Every product at a glance",
+    "subtitle": "How much of each track has shipped. Tap a track to jump to its details.",
+    "shipped": "shipped"
+  }
 }

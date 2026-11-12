@@ -1,6 +1,13 @@
 export const PUBLIC_DOCUMENT_CACHE =
   'public,s-maxage=300,stale-while-revalidate=86400';
 export const PRIVATE_RESPONSE_CACHE = 'private,no-store';
+/** The public, anonymous pages: one per page and language, no other path. */
+export const PUBLIC_DOCUMENTS = new Set([
+  '/roadmap',
+  '/roadmap/vi',
+  '/roadmap/workshops/edufest-2026',
+  '/roadmap/vi/workshops/edufest-2026',
+]);
 export const IMMUTABLE_ASSET_CACHE = 'public, max-age=31536000, immutable';
 
 /** Vite content hashes look like `index-CGgt8iCG.js`. */
@@ -41,7 +48,7 @@ export function withRoadmapCachePolicy(
   const contentType = response.headers.get('content-type') ?? '';
   const html = /^text\/html(?:;|$)/i.test(contentType);
   const document =
-    (url.host === 'tuturuuu.com' && url.pathname === '/roadmap') ||
+    (url.host === 'tuturuuu.com' && PUBLIC_DOCUMENTS.has(url.pathname)) ||
     (url.host === 'roadmap.tuturuuu.com' && url.pathname === '/');
 
   if (safe && isHashedAssetPath(url.pathname)) {

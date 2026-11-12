@@ -1,6 +1,4 @@
-'use client';
-
-import { ArrowRight } from '@tuturuuu/icons/lucide-static';
+import { ArrowRight } from '@/components/landing/shared/static-icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useNavigation } from '../shared/navigation-config';

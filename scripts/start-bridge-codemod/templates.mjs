@@ -181,6 +181,7 @@ import { createProxyMatcher } from '${BRIDGE.proxyMatcher}';
     ? 'AssetsBinding'
     : '{ fetch(request: Request): Promise<Response> }';
   return `${header(app)}/// <reference types="@vitejs/plugin-rsc/types" />
+import { withHstsResponsePolicy } from '${BRIDGE.responsePolicy}';
 ${assetsImport}import { createFunctionProxy } from '${BRIDGE.functionProxy}';
 ${matcherImports}import {
   bridgeErrorResponse,
@@ -239,7 +240,7 @@ const handler = (
 );
 
 export default {
-  async fetch(request: Request, env: ${name}, ctx: WorkerContext) {
+  fetch: withHstsResponsePolicy(async (request: Request, env: ${name}, ctx: WorkerContext) => {
     let response: Response;
     try {
       response = await (await handler)(request, env, ctx);
@@ -258,7 +259,7 @@ export default {
           seoPolicy,
         })
       : response;
-  },
+  }),
 };
 `;
 }

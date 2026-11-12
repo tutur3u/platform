@@ -340,7 +340,55 @@ describe('framable paths keep the upstream CSP (uploaded WebGL builds)', () => {
       'https://tuturuuu.com/cms/api/v1/sso/saml/post-response',
       'https://cms.tuturuuu.com/api/v1/unsubscribe',
     ])
+      // Kept verbatim; framing is denied by a second policy (see below).
+      expect(await cspOf(handler, url), url).toBe(
+        `${own}, frame-ancestors 'none'`
+      );
+  });
+
+  it("appends frame-ancestors 'none' to a forwarded policy that sets none", async () => {
+    const own = "default-src 'none'; style-src 'unsafe-inline'";
+    const handler = build({
+      forwardApi: async () =>
+        new Response('<!doctype html><p>unsubscribed</p>', {
+          headers: { 'Content-Security-Policy': own },
+        }),
+    });
+    const response = await handler(
+      new Request('https://cms.tuturuuu.com/api/v1/unsubscribe'),
+      env,
+      ctx
+    );
+    // Two policies: the forwarded string untouched, then the framing denial.
+    expect(response.headers.get('Content-Security-Policy')).toBe(
+      `${own}, frame-ancestors 'none'`
+    );
+    expect(await response.text()).toBe('<!doctype html><p>unsubscribed</p>');
+  });
+
+  it('leaves a forwarded frame-ancestors value as sent', async () => {
+    const own = "default-src 'none'; frame-ancestors 'self'";
+    const handler = build({
+      forwardApi: async () =>
+        new Response('embed', {
+          headers: { 'Content-Security-Policy': own },
+        }),
+    });
+    for (const url of [
+      'https://cms.tuturuuu.com/api/v1/embed',
+      'https://tuturuuu.com/cms/api/v1/embed',
+    ])
       expect(await cspOf(handler, url), url).toBe(own);
+  });
+
+  it('adds nothing on a framable path', async () => {
+    const handler = build();
+    for (const url of [
+      `https://cms.tuturuuu.com${webgl}`,
+      `https://cms.tuturuuu.com${webgl}/index.html`,
+      `https://tuturuuu.com/cms${webgl}/Build/game.loader.js`,
+    ])
+      expect(await cspOf(handler, url), url).toBe(sandbox);
   });
 
   it('lets an app keep an upstream policy or add framable paths', async () => {
@@ -356,7 +404,8 @@ describe('framable paths keep the upstream CSP (uploaded WebGL builds)', () => {
         keep,
         'https://cms.tuturuuu.com/api/v1/workspaces/ws-1/external-projects/assets/a-1'
       )
-    ).toBe(sandbox);
+      // Not framable: the upstream policy is kept, and framing is denied.
+    ).toBe(`${sandbox}, frame-ancestors 'none'`);
     expect(await cspOf(keep, 'https://cms.tuturuuu.com/en')).toMatch(
       /frame-ancestors 'none'$/u
     );

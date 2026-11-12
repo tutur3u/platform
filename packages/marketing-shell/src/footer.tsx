@@ -22,7 +22,7 @@ function FooterColumn({
   return (
     <div className="grid content-start gap-3">
       <div className="flex items-center gap-2">
-        <span className="font-mono-ui text-[0.6rem] text-foreground/35 uppercase tracking-[0.2em]">
+        <span className="font-mono-ui text-[0.6rem] text-foreground/65 uppercase tracking-[0.2em]">
           {title}
         </span>
         <span
@@ -278,11 +278,11 @@ export function MarketingFooter({
 
         {/* Bottom bar */}
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-foreground/10 border-t pt-8 sm:flex-row">
-          <p className="text-balance text-center font-mono-ui text-[0.65rem] text-foreground/35 uppercase tracking-[0.12em] sm:text-left">
+          <p className="text-balance text-center font-mono-ui text-[0.65rem] text-foreground/65 uppercase tracking-[0.12em] sm:text-left">
             {t('common.copyright')}
           </p>
           <Link
-            className="inline-flex items-center gap-2 rounded-full border border-foreground/10 px-3 py-1.5 font-mono-ui text-[0.62rem] text-foreground/50 uppercase tracking-[0.16em] transition-colors hover:border-foreground/25 hover:text-foreground"
+            className="inline-flex items-center gap-2 rounded-full border border-foreground/10 px-3 py-1.5 font-mono-ui text-[0.62rem] text-foreground/65 uppercase tracking-[0.16em] transition-colors hover:border-foreground/25 hover:text-foreground"
             href="https://github.com/tutur3u/platform"
             rel="noopener noreferrer"
             target="_blank"

@@ -13,7 +13,13 @@ export default defineConfig(({ command }) => {
   }
   return {
     base: '/roadmap/',
-    define: { __ROADMAP_BUILD_SHA__: JSON.stringify(source ?? 'development') },
+    define: {
+      __ROADMAP_BUILD_SHA__: JSON.stringify(source ?? 'development'),
+      // The sitemap's lastmod: when this exact build was made.
+      __ROADMAP_BUILD_TIME__: JSON.stringify(
+        command === 'build' ? new Date().toISOString() : null
+      ),
+    },
     plugins: [
       voidPlugin(),
       tailwindcss(),

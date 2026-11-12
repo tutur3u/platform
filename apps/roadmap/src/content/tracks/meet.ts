@@ -142,5 +142,85 @@ export const meetTrack: Track = {
         },
       ],
     },
+    {
+      id: 'meet-classroom',
+      title: 'Classroom',
+      summary: 'Meet as a classroom for Learn and Teach, built in stages.',
+      deliverables: [
+        {
+          // #8141 is merged, but its flag stays off in production until main
+          // is green. Add [8141] back once the flag is reported on, so this
+          // never reads as live early.
+          id: 'meet-classroom-caps',
+          title: 'Class size caps and host admission',
+          prs: [],
+          app: 'meet',
+          fallback: 'in_progress',
+        },
+        {
+          id: 'meet-classroom-roles',
+          title: 'Teachers and teaching assistants in one room',
+          prs: [],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'meet-classroom-share',
+          title: 'Share documents, slides, PDFs and YouTube in class',
+          prs: [],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'meet-classroom-quizzes',
+          title: 'Quizzes, assignments and a class timer',
+          prs: [],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'meet-classroom-points',
+          title: 'Plus points for participation',
+          prs: [],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'meet-classroom-ai-levels',
+          title: 'Teacher-chosen AI help: off, hints only, or full',
+          prs: [],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'meet-classroom-captions',
+          title: 'Live captions and class insights',
+          prs: [],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'meet-classroom-integrity',
+          title: 'Integrity controls with a notice to students',
+          prs: [],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'meet-classroom-drawing',
+          title: 'Handwriting and drawings to text and LaTeX',
+          prs: [],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'meet-classroom-notebooks',
+          title: 'Class notebooks linked to tasks and calendar',
+          prs: [],
+          app: null,
+          fallback: 'planned',
+        },
+      ],
+    },
   ],
 };

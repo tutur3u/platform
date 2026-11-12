@@ -46,6 +46,7 @@ export async function getFeatureFlags(
     ENABLE_AVATAR,
     ENABLE_LOGO,
     newsletter_sending,
+    ENABLE_JOURNAL_MOOD_TRACKING,
   ] = await Promise.all([
     verifySecret({
       forceAdmin,
@@ -137,6 +138,12 @@ export async function getFeatureFlags(
       name: FEATURE_FLAGS.newsletter_sending,
       value: 'true',
     }),
+    verifySecret({
+      forceAdmin,
+      wsId,
+      name: FEATURE_FLAGS.ENABLE_JOURNAL_MOOD_TRACKING,
+      value: 'true',
+    }),
   ]);
 
   return {
@@ -155,6 +162,7 @@ export async function getFeatureFlags(
     ENABLE_AVATAR,
     ENABLE_LOGO,
     newsletter_sending,
+    ENABLE_JOURNAL_MOOD_TRACKING,
   };
 }
 

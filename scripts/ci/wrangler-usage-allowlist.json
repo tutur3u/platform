@@ -1444,20 +1444,22 @@
       "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7982",
-        "reason": "Start + Void candidate (#7982) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+        "decision": "https://github.com/tutur3u/platform/pull/8228",
+        "reason": "Proposal for synthetic local qualification only; Security acceptance pending. Local emitted Worker SDK with synthetic guard binding and isolated registry; no provider access."
       },
-      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20",
+      "kind": "source"
     },
     "apps/mind/cloudflare/auth-redirect.runtime.mjs": {
       "lines": 1,
       "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7964",
-        "reason": "Start + Void candidate (#7964) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+        "decision": "https://github.com/tutur3u/platform/pull/8228",
+        "reason": "Proposal for synthetic local qualification only; Security acceptance pending. Local emitted Worker SDK with synthetic guard binding and isolated registry; no provider access."
       },
-      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20",
+      "kind": "source"
     },
     "apps/mind/cloudflare/native-built-worker.runtime.mjs": {
       "lines": 1,
@@ -2002,6 +2004,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "1e59666371951ffd119241c49b99fde3d56ab48e3cb2c22f3810b9f0acb3c931"
+    },
+    "apps/workspace-domains/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8157",
+        "reason": "Workspace custom-domain edge Worker: a route-less Worker whose per-hostname routes apps/web attaches. It is bundled with wrangler deploy --dry-run for operator deploys and moves to cloudflare.config.ts in its per-service parity PR."
+      },
+      "digest": "aed31aa25b7e6ee1353f8f2989474b0ae73adf6bd7c8105e16417763c7b2a2ff"
     },
     "apps/workspace/.gitignore": {
       "lines": 2,
@@ -2563,6 +2575,17 @@
       },
       "digest": "7bb4ae9947213258a577a33c2de7a5886266c02267f7edd54e82515d876dcdce"
     },
+    "scripts/ci/fixtures/native-abuse-guard.mjs": {
+      "kind": "script",
+      "lines": 1,
+      "uses": 1,
+      "digest": "4f791977cb084883cb3386f1961b5abfd3c5bcaa6f21008b0e52247be3cf2d26",
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8228",
+        "reason": "Proposal for synthetic local qualification only; Security acceptance pending. Disposable abuse-guard config and local SDK denial/cleanup controls; no provider access."
+      }
+    },
     "scripts/ci/meet-build-metadata.test.js": {
       "lines": 14,
       "uses": 17,
@@ -2732,6 +2755,17 @@
         "reason": "REV-8051: the native seal test fixture names the emitted wrangler.json and .void-wrangler.jsonc config paths. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
       },
       "digest": "23c7d480f98c6d765ed9923b09ffc1ea465f257688893e1d22e5221d0ef3d2c7"
+    },
+    "scripts/ci/native-abuse-guard.runtime.mjs": {
+      "kind": "script",
+      "lines": 4,
+      "uses": 4,
+      "digest": "2a4ff2672f33bcc9db01a1a41d82df83b619812216f7bc6ebfa095d0d475e2f9",
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8228",
+        "reason": "Proposal for synthetic local qualification only; Security acceptance pending. Disposable abuse-guard config and local SDK denial/cleanup controls; no provider access."
+      }
     },
     "scripts/ci/native-config-default-probe.mjs": {
       "lines": 4,
@@ -2904,14 +2938,14 @@
       "digest": "23c7d480f98c6d765ed9923b09ffc1ea465f257688893e1d22e5221d0ef3d2c7"
     },
     "scripts/ci/pay-native-artifact.test.py": {
-      "lines": 8,
-      "uses": 9,
+      "lines": 10,
+      "uses": 11,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8011",
-        "reason": "REV-8011: the artifact guard names the emitted wrangler.json. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/pull/8146",
+        "reason": "REV-8146: reviewed staging-vars rejection tests add canonical emitted config filename fixtures. These tests do not invoke Wrangler; the existing publication gap, owner and removal condition are unchanged."
       },
-      "digest": "e7b622e75addfb4456930b33cdb9e88a733b271b4b791e61fc0e22c42b44a35a"
+      "digest": "32a78472daacd0a61c79d840aa61f6c6d0fb6315dc002606b05e7c17753e2acd"
     },
     "scripts/ci/pre-seal-doctor.mjs": {
       "lines": 5,

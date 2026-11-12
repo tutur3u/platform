@@ -44,6 +44,7 @@ const NAVIGATION_ICON_NAMES = [
   'FolderSync',
   'GalleryVerticalEnd',
   'Gauge',
+  'Globe',
   'GraduationCap',
   'Group',
   'HandCoins',

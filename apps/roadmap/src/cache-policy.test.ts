@@ -356,3 +356,22 @@ test('D79: auth, session, cookie or authorization cannot stay on the public cach
     []
   );
 });
+
+test('every public page and language shares the document cache; nothing next to them does', async () => {
+  const { PUBLIC_DOCUMENTS } = await import('./cache-policy.ts');
+  for (const path of PUBLIC_DOCUMENTS)
+    assert.equal(
+      control(new Request(`https://tuturuuu.com${path}`)),
+      PUBLIC_DOCUMENT_CACHE,
+      path
+    );
+  // Broken variants: near misses, queries and other hosts stay private.
+  for (const url of [
+    'https://tuturuuu.com/roadmap/vi/x',
+    'https://tuturuuu.com/roadmap/workshops',
+    'https://tuturuuu.com/roadmap/vi/workshops/edufest-2026?lang=vi',
+    'https://tuturuuu.com/roadmap/sitemap.xml',
+    'https://roadmap.tuturuuu.com/vi',
+  ])
+    assert.equal(control(new Request(url)), PRIVATE_RESPONSE_CACHE, url);
+});

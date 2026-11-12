@@ -19,8 +19,6 @@
   "id": "./",
   "start_url": "./personal",
   "scope": "./",
-  "categories": [
-    "productivity"
-  ],
+  "categories": ["productivity"],
   "prefer_related_applications": false
 }

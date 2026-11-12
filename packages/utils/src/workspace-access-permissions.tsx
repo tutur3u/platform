@@ -1,4 +1,11 @@
-import { KeyRound, Settings2, UserCheck, UserCog } from '@tuturuuu/icons';
+import {
+  Globe,
+  Globe2,
+  KeyRound,
+  Settings2,
+  UserCheck,
+  UserCog,
+} from '@tuturuuu/icons';
 import type { RolePermission } from './permissions';
 
 export function workspaceAccessPermissions(
@@ -34,6 +41,22 @@ export function workspaceAccessPermissions(
       icon: <KeyRound />,
       title: t('ws-roles.manage_sso_clients'),
       description: t('ws-roles.manage_sso_clients_description'),
+      disableOnProduction: false,
+      disabled: false,
+    },
+    {
+      id: 'view_workspace_domains',
+      icon: <Globe />,
+      title: t('ws-roles.view_workspace_domains'),
+      description: t('ws-roles.view_workspace_domains_description'),
+      disableOnProduction: false,
+      disabled: false,
+    },
+    {
+      id: 'manage_workspace_domains',
+      icon: <Globe2 />,
+      title: t('ws-roles.manage_workspace_domains'),
+      description: t('ws-roles.manage_workspace_domains_description'),
       disableOnProduction: false,
       disabled: false,
     },

@@ -1839,6 +1839,7 @@
       "track_3": "Quản lý thời gian nhóm",
       "voiceAssistant": "Trợ lý giọng nói",
       "workforce": "Quản trị nhân sự",
+      "workspace-domains_0": "Tên miền tùy chỉnh cho không gian làm việc (edge)",
       "workspaces": "Không gian tạo trên mỗi tài khoản"
     },
     "included": "Bao gồm",
@@ -2357,6 +2358,10 @@
     "pharmacies": "Nhà thuốc",
     "pharmacies-description": "Chuẩn hóa việc quản lý và dịch vụ nhà thuốc.",
     "pick_a_date": "Chọn một ngày",
+    "picker_pin": "Ghim không gian làm việc",
+    "picker_pinned": "Đã ghim",
+    "picker_recent": "Gần đây",
+    "picker_unpin": "Bỏ ghim không gian làm việc",
     "pink": "Hồng",
     "pitch": "Kế hoạch kinh doanh",
     "pitch-description": "Kế hoạch kinh doanh của Tuturuuu.",

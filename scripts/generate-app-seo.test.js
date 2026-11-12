@@ -4,6 +4,7 @@ const path = require('node:path');
 const os = require('node:os');
 const test = require('node:test');
 const {
+  APEX_METADATA_APPS,
   generate,
   outputs,
   sitemap,
@@ -15,7 +16,12 @@ const root = path.resolve(__dirname, '..');
 test('static assets are current, own their host, and omit private sitemaps', () => {
   assert.deepEqual(generate({ check: true }), []);
   for (const [app, config] of Object.entries(policy)) {
-    if (app === 'web') continue;
+    // The apex apps (web, marketing) share tuturuuu.com; web's metadata routes
+    // publish its sitemap and robots.txt, so no static file is generated.
+    if (APEX_METADATA_APPS.has(app)) {
+      assert.equal(outputs().get(`apps/${app}/public/sitemap.xml`), undefined);
+      continue;
+    }
     const map = outputs();
     const xml = map.get(`apps/${app}/public/sitemap.xml`);
     if (!config.publicPaths.length) {
@@ -191,4 +197,16 @@ test('rejects duplicate localized URLs and overlong protocol URLs', () => {
       validateConfig('nova', { ...config, publicPaths: ['a'.repeat(2048)] }),
     /Invalid or duplicate localized/
   );
+});
+
+test('apex apps never get a static sitemap, even with public paths', () => {
+  assert.ok(
+    APEX_METADATA_APPS.has('web') && APEX_METADATA_APPS.has('marketing')
+  );
+  assert.ok(policy.marketing.publicPaths.length > 0);
+  const map = outputs();
+  for (const app of APEX_METADATA_APPS) {
+    assert.equal(map.get(`apps/${app}/public/sitemap.xml`), undefined, app);
+    assert.equal(map.get(`apps/${app}/public/robots.txt`), undefined, app);
+  }
 });

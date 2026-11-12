@@ -3,15 +3,13 @@ import {
   HeadContent,
   Outlet,
   Scripts,
+  useRouterState,
 } from '@tanstack/react-router';
 import { PublicSatelliteProviders } from '@tuturuuu/satellite/public';
 import type { ReactNode } from 'react';
 import logo from '../assets/tuturuuu-logo.png?no-inline';
-import historyUrl from '../generated/history.json?url';
+import { langFromPathname } from '../seo';
 import styles from '../styles.css?url';
-
-/** Canonical: no trailing slash, like every Tuturuuu URL. */
-const ROADMAP_URL = 'https://tuturuuu.com/roadmap';
 
 export const Route = createRootRoute({
   head: () => ({
@@ -31,28 +29,15 @@ export const Route = createRootRoute({
         content: '#fdf9f7',
         media: '(prefers-color-scheme: light)',
       },
-      { title: 'Roadmap · Tuturuuu' },
+      // Title, description, og:title/url, canonical and hreflang are per
+      // page: each route sets its own, so no page claims another's URL.
       { property: 'og:type', content: 'website' },
       { property: 'og:site_name', content: 'Tuturuuu' },
-      { property: 'og:title', content: 'Roadmap · Tuturuuu' },
-      { property: 'og:url', content: ROADMAP_URL },
-      {
-        name: 'description',
-        content:
-          'What Tuturuuu is building: every product track, milestone and deliverable, with what shipped this week, live from public pull requests and deploy checks.',
-      },
     ],
     links: [
       { rel: 'stylesheet', href: styles },
       { rel: 'icon', type: 'image/png', href: logo },
-      // Full history for the timeline: hashed, immutable, fetched at idle.
-      { rel: 'prefetch', href: historyUrl, as: 'fetch' },
       { rel: 'apple-touch-icon', href: logo },
-      { rel: 'canonical', href: ROADMAP_URL },
-      // One URL serves both languages (the EN/VI switch is client-side).
-      { rel: 'alternate', hrefLang: 'en', href: ROADMAP_URL },
-      { rel: 'alternate', hrefLang: 'vi', href: ROADMAP_URL },
-      { rel: 'alternate', hrefLang: 'x-default', href: ROADMAP_URL },
     ],
   }),
   component: Outlet,
@@ -66,8 +51,10 @@ export const Route = createRootRoute({
 });
 
 function Document({ children }: { children: ReactNode }) {
+  // Each language has its own URL, so the document language follows it.
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={langFromPathname(pathname)} suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

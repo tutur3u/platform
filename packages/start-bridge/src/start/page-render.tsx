@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react';
+import { cloneElement, type ReactElement, type ReactNode } from 'react';
 import { runtimeAppBase } from '../core/app-url';
 import { type BridgePage, matchPage } from '../core/pages';
 import type { RouteParams } from '../core/route-match';
@@ -106,6 +106,15 @@ export async function expandServerElements(
 ): Promise<ReactNode[]> {
   const expanded: ReactNode[] = [];
   for (const item of flattenFragments(node)) {
+    if (isElement(item, 'link') && 'data-rsc-css-href' in item.props) {
+      // Start preinitializes this href at high precedence without CORS. Matching
+      // resource identity lets React emit one stylesheet for the RSC root.
+      expanded.push(
+        cloneElement(item, { precedence: 'high', crossOrigin: undefined })
+      );
+      continue;
+    }
+
     const type =
       typeof item === 'object' && item !== null && 'type' in item
         ? (item as { type: unknown }).type
