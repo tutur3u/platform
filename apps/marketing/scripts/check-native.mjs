@@ -49,6 +49,7 @@ assert.ok(
 );
 const scratch = mkdtempSync(join(tmpdir(), 'marketing-native-check-'));
 try {
+  run('node', ['--test', 'scripts/ci/wrangler-usage-guard.test.js']);
   // These are the owning native-start-app.yaml commands, including its separate binding program.
   run('bun', ['run', 'type-check'], app);
   run('bun', ['run', 'build:cloudflare'], app);
