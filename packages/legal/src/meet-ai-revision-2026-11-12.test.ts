@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getLegalDocument } from './documents';
+import { getLegalDocument, LEGAL_DOCUMENTS } from './documents';
 import {
   MEET_AI_LEGAL_CONTRACTS,
   MEET_AI_LEGAL_SOURCE_SHA,
@@ -13,7 +13,7 @@ describe('Meet AI disclosure draft', () => {
     'covers Privacy, Terms and subprocessors in %s without activating an agreement',
     (locale) => {
       for (const kind of ['privacy', 'terms', 'subprocessors'] as const) {
-        const original = getLegalDocument(kind, locale);
+        const original = LEGAL_DOCUMENTS[locale][kind];
         const before = structuredClone(original);
         const draft = reviseMeetAiLegalDocument(original);
         expect(original).toEqual(before);
@@ -34,12 +34,20 @@ describe('Meet AI disclosure draft', () => {
     }
   );
 
-  it.each(['en', 'vi'] as const)('preserves unrelated %s documents', (locale) => {
-    for (const kind of ['dpa', 'sla', 'acceptable-use', 'community-guidelines'] as const) {
-      const document = getLegalDocument(kind, locale);
-      expect(reviseMeetAiLegalDocument(document)).toBe(document);
+  it.each(['en', 'vi'] as const)(
+    'preserves unrelated %s documents',
+    (locale) => {
+      for (const kind of [
+        'dpa',
+        'sla',
+        'acceptable-use',
+        'community-guidelines',
+      ] as const) {
+        const document = getLegalDocument(kind, locale);
+        expect(reviseMeetAiLegalDocument(document)).toBe(document);
+      }
     }
-  });
+  );
 
   it('keeps every added disclosure linked to immutable source evidence', () => {
     expect(MEET_AI_LEGAL_SOURCE_SHA).toBe(
@@ -48,7 +56,9 @@ describe('Meet AI disclosure draft', () => {
     for (const locale of ['en', 'vi'] as const) {
       for (const kind of ['privacy', 'terms', 'subprocessors'] as const) {
         const draft = reviseMeetAiLegalDocument(getLegalDocument(kind, locale));
-        for (const section of draft.sections.filter((item) => item.id?.startsWith('meet-ai-'))) {
+        for (const section of draft.sections.filter((item) =>
+          item.id?.startsWith('meet-ai-')
+        )) {
           const evidence = MEET_AI_REVISION_EVIDENCE[section.id!];
           expect(evidence?.length).toBeGreaterThan(0);
           for (const reference of evidence ?? []) {
@@ -66,11 +76,17 @@ describe('Meet AI disclosure draft', () => {
     });
     expect(MEET_AI_REQUIRED_GATES.status).toBe('required-not-verified-live');
     expect(MEET_AI_REQUIRED_GATES.billingRecheckMaxSeconds).toBe(300);
-    expect(MEET_AI_REQUIRED_GATES.billingAuthority).toBe('server-billing-truth');
+    expect(MEET_AI_REQUIRED_GATES.billingAuthority).toBe(
+      'server-billing-truth'
+    );
     expect(MEET_AI_REQUIRED_GATES.unknownBilling).toBe('deny');
     expect(MEET_AI_REQUIRED_GATES.guests).toBe('separate-change');
-    const privacy = reviseMeetAiLegalDocument(getLegalDocument('privacy', 'en'));
-    const copy = privacy.sections.filter((section) => section.id?.startsWith('meet-ai-'));
+    const privacy = reviseMeetAiLegalDocument(
+      getLegalDocument('privacy', 'en')
+    );
+    const copy = privacy.sections.filter((section) =>
+      section.id?.startsWith('meet-ai-')
+    );
     expect(copy.map((section) => section.content).join(' ')).not.toContain(
       'paid-plan entitlement is enforced'
     );
