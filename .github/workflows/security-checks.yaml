@@ -101,7 +101,7 @@ jobs:
           const trusted = require(path.resolve(process.argv[2], 'security-definer-admission.js'));
           const head = process.env.HEAD_SHA;
           if (!/^[a-f0-9]{40}$/.test(head || '')) throw new Error('Invalid bootstrap head');
-          const git = (args) => execFileSync('git', args, { encoding: 'utf8' });
+          const git = (args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
           if (git(['rev-parse', 'HEAD']).trim() !== head) throw new Error('Bootstrap checkout/head mismatch');
           const files = git(['ls-tree', '-r', '--name-only', head, '--', 'scripts/ci']).trim().split('\n')
             .filter((file) => /^scripts\/ci\/(?:sql-|security-).*\.(?:js|json)$/.test(file)).sort();

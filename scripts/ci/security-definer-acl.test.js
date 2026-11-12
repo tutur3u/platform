@@ -352,9 +352,14 @@ test('reasoned source-bound exceptions cannot hide deletion of an ambiguous revo
   assert.equal(check(baseline).length, 1);
 });
 
-test('the complete repository migration history matches the reviewed baseline', () => {
+test('the complete repository SQL history matches the reviewed frozen debt', () => {
+  const root = path.resolve(__dirname, '../..');
   assert.deepEqual(
-    checkRepository({ root: path.resolve(__dirname, '../..') }),
+    require('./sql-frozen-debt').enforce(
+      'definer',
+      checkRepository({ root }),
+      root
+    ),
     []
   );
 });
