@@ -4603,6 +4603,22 @@
       "unsupported_type": "Định dạng bản ghi này chưa thể được phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng."
     }
   },
+  "meet_ai_notice": {
+    "active_mira": "Mira Live sends call audio and text to Google Gemini for assistant replies.",
+    "active_title": "Meet AI is on in this call",
+    "active_transcription": "Call audio is sent to Google Gemini to make a transcript and notes for this meeting.",
+    "available": "When Meet AI is used in a call, audio and text are sent to Google Gemini for transcripts, notes and assistant replies.",
+    "error": "Meet AI status is unavailable.",
+    "guest": "When Meet AI is active in a call, audio and text are sent to Google Gemini for transcripts, notes and assistant replies.",
+    "indicator_mira": "Mira Live",
+    "indicator_on": "AI on",
+    "indicator_transcribing": "Transcribing",
+    "links_privacy": "Privacy",
+    "links_subprocessors": "Subprocessors",
+    "links_terms": "Terms",
+    "links_updated": "Updated {date}",
+    "off": "Meet AI is off for this workspace."
+  },
   "meet_workspace": {
     "meetings_description": "Xem và quản lý phòng họp của không gian làm việc từ nền tảng trung tâm.",
     "meetings_title": "Các cuộc họp",

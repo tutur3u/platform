@@ -8,7 +8,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { MAX_DISPLAY_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   filterDevicesByKind,
   startMicrophoneMeter,
@@ -120,7 +120,7 @@ export function Lobby({
   joined = false,
   meetingName,
   participants = [],
-  transcriptionNotice,
+  aiNotice,
   initialAudioDeviceId = '',
   initialVideoDeviceId = '',
   outputDeviceId,
@@ -139,7 +139,7 @@ export function Lobby({
   joined?: boolean;
   meetingName: string;
   participants?: readonly LobbyParticipant[];
-  transcriptionNotice?: string;
+  aiNotice?: ReactNode;
   initialAudioDeviceId?: string;
   initialVideoDeviceId?: string;
   outputDeviceId?: string;
@@ -493,11 +493,7 @@ export function Lobby({
               waiting={waiting}
             />
 
-            {transcriptionNotice ? (
-              <output className="mt-3 block rounded-lg border bg-muted/20 p-3 text-sm">
-                {transcriptionNotice}
-              </output>
-            ) : null}
+            {aiNotice}
 
             <AdmissionNotice
               connecting={isJoining}

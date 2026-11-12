@@ -1875,3 +1875,8 @@ This reader compatibility change is always active and must deploy before the
 erase RPC can write markers. It does not enable erase, change feature flags,
 or rewrite existing transcript data. Regression coverage lives in
 `packages/ai/src/meetings/transcript.test.ts` and the shared transcript UI tests.
+
+
+## AI disclosure (display only)
+
+Meet and Parley show a join-time AI notice and legal links for members and signed-in guests. An observed active transcription or Mira Live session keeps a persistent indicator visible to every role, including when status lookup fails. Missing guest transcription visibility stays unknown, and a lookup failure reports status unavailable. The legal revision date is omitted until its live publication is verified. This display records no consent or acknowledgement, changes no Talk to Mira or mute controls, and implements no server processing or paid-plan gate; those controls require separate server delivery. Existing AI containment remains the default. Display regressions are covered by `ai-disclosure-state.test.ts`, `ai-disclosure-notice.test.tsx` and `ai-status-indicator.test.tsx` in `packages/meet-core/src/features`.

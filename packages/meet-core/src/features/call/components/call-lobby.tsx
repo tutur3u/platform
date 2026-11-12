@@ -2,7 +2,7 @@
 
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useRef } from 'react';
+import { type ReactNode, useRef } from 'react';
 import type { MeetRoomController } from '../lib/room-controller';
 import { Lobby, type LobbyParticipant } from './lobby';
 
@@ -16,7 +16,7 @@ export function ConnectedLobby({
   canReadWorkspace,
   joined,
   meetingName,
-  transcriptionNotice,
+  aiNotice,
   outputDeviceId,
   onOutputDeviceChange,
   prepareJoin,
@@ -33,7 +33,7 @@ export function ConnectedLobby({
   /** Join was pressed; the room owns the devices (lobby shown only if held). */
   joined: boolean;
   meetingName: string;
-  transcriptionNotice?: string;
+  aiNotice?: ReactNode;
   outputDeviceId: string;
   onOutputDeviceChange: (deviceId: string) => void;
   prepareJoin: (audioEnabled: boolean) => boolean;
@@ -106,7 +106,7 @@ export function ConnectedLobby({
       onRetry={onRetry}
       outputDeviceId={outputDeviceId}
       participants={participants}
-      transcriptionNotice={transcriptionNotice}
+      aiNotice={aiNotice}
       waiting={room.state.admission === 'waiting'}
     />
   );
