@@ -1,6 +1,6 @@
 'use client';
 import { lazy, Suspense, useState } from 'react';
-import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
+import { MarketingThemeToggle } from './theme-toggle';
 import { cn } from '@tuturuuu/utils/format';
 import type { MarketingLocale, Translate } from './i18n';
 import type { ShellLink } from './types';
@@ -84,7 +84,7 @@ export function MarketingActions({
           {locale}
         </button>
       ) : null}
-      <ThemeToggle />
+      <MarketingThemeToggle />
       <div className="flex md:hidden">
         <LazyMobileMenu
           locale={locale}
